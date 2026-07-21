@@ -10,6 +10,9 @@
 - Changed `variant articles` to union exact annotation, normalized-alias, and
   source-citation routes with per-row provenance, deterministic global ranking,
   one-pass pagination, diagnostic strategies, and explicit incomplete status.
+- Added bounded `variant articles --input <path|->` retrieval for 1-10 structured
+  variants, ordered compact rows, opt-in route/work plans, parseable article
+  follow-ups, and a typed in-memory MCP `variant_articles` tool.
 - Made top-level article-search JSON compact by default, with `--full` restoring
   detailed rows and in-band warnings when date sorting replaces relevance.
 - Added typed PMID/PMCID/DOI/arXiv/Semantic Scholar identifiers to article

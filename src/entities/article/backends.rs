@@ -61,6 +61,32 @@ fn semantic_scholar_status(auth_mode: SemanticScholarAuthMode) -> ArticleSourceS
     }
 }
 
+async fn variant_article_request<T, F>(
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+    source: &str,
+    future: F,
+) -> Result<Option<T>, BioMcpError>
+where
+    F: std::future::Future<Output = Result<T, BioMcpError>>,
+{
+    let Some(execution) = execution else {
+        return future.await.map(Some);
+    };
+    let Some(started) = execution.reserve(route) else {
+        return Ok(None);
+    };
+    let result = future.await;
+    execution.record(
+        route,
+        source,
+        started,
+        if result.is_ok() { "ok" } else { "unavailable" },
+        usize::from(result.is_ok()),
+    );
+    result.map(Some)
+}
+
 fn semantic_scholar_unavailable_outcome(
     auth_mode: SemanticScholarAuthMode,
 ) -> SemanticScholarCandidateOutcome {
@@ -77,6 +103,16 @@ pub(super) async fn search_pubmed_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    search_pubmed_page_with_context(filters, limit, offset, None, "federated").await
+}
+
+pub(super) async fn search_pubmed_page_with_context(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
     if limit == 0 || limit > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
@@ -113,15 +149,22 @@ pub(super) async fn search_pubmed_page(
             );
         }
 
-        let response = client
-            .esearch(&PubMedESearchParams {
+        let Some(response) = variant_article_request(
+            execution,
+            route,
+            "pubmed",
+            client.esearch(&PubMedESearchParams {
                 term: term.clone(),
                 retstart: batch_start,
                 retmax: PUBMED_PAGE_SIZE,
                 date_from: normalized_date_from.clone(),
                 date_to: normalized_date_to.clone(),
-            })
-            .await?;
+            }),
+        )
+        .await?
+        else {
+            break;
+        };
         if total.is_none() {
             total = Some(response.count as usize);
             if total.is_some_and(|value| offset >= value) {
@@ -133,7 +176,16 @@ pub(super) async fn search_pubmed_page(
         }
 
         let batch_len = response.idlist.len();
-        let entries = client.esummary(&response.idlist).await?;
+        let Some(entries) = variant_article_request(
+            execution,
+            route,
+            "pubmed",
+            client.esummary(&response.idlist),
+        )
+        .await?
+        else {
+            break;
+        };
         append_pubmed_entries(
             entries,
             filters,
@@ -209,6 +261,16 @@ pub(super) async fn search_europepmc_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    search_europepmc_page_with_context(filters, limit, offset, None, "federated").await
+}
+
+pub(super) async fn search_europepmc_page_with_context(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
     let europe = EuropePmcClient::new()?;
     let query = build_search_query(filters)?;
     let europepmc_sort = filters.sort.as_europepmc_sort();
@@ -228,9 +290,16 @@ pub(super) async fn search_europepmc_page(
                 "article search is deep (>{WARN_PAGE_THRESHOLD} page fetches); continuing up to {MAX_PAGE_FETCHES} — consider narrowing your query"
             );
         }
-        let resp = europe
-            .search_query_with_sort(&query, page, EUROPE_PMC_PAGE_SIZE, europepmc_sort)
-            .await?;
+        let Some(resp) = variant_article_request(
+            execution,
+            route,
+            "europepmc",
+            europe.search_query_with_sort(&query, page, EUROPE_PMC_PAGE_SIZE, europepmc_sort),
+        )
+        .await?
+        else {
+            break;
+        };
         if total.is_none() {
             total = resp.hit_count.map(|v| v as usize);
             if total.is_some_and(|value| offset >= value) {
@@ -285,9 +354,13 @@ pub(super) async fn search_europepmc_page(
         && !out.iter().any(|row| row.is_retracted == Some(true))
     {
         let retracted_query = format!("({query}) AND PUB_TYPE:\"retracted publication\"");
-        if let Ok(resp) = europe
-            .search_query_with_sort(&retracted_query, 1, 10, europepmc_sort)
-            .await
+        if let Ok(Some(resp)) = variant_article_request(
+            execution,
+            route,
+            "europepmc",
+            europe.search_query_with_sort(&retracted_query, 1, 10, europepmc_sort),
+        )
+        .await
         {
             let replacement = resp
                 .result_list
@@ -326,6 +399,16 @@ pub(super) async fn search_pubtator_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
+    search_pubtator_page_with_context(filters, limit, offset, None, "federated").await
+}
+
+pub(super) async fn search_pubtator_page_with_context(
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
     let pubtator = PubTatorClient::new()?;
     let query = build_pubtator_query(filters, &pubtator).await?;
     let sort = pubtator_sort(filters.sort);
@@ -340,9 +423,16 @@ pub(super) async fn search_pubtator_page(
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
-        let resp = pubtator
-            .search(&query, page, PUBTATOR_PAGE_SIZE, sort)
-            .await?;
+        let Some(resp) = variant_article_request(
+            execution,
+            route,
+            "pubtator",
+            pubtator.search(&query, page, PUBTATOR_PAGE_SIZE, sort),
+        )
+        .await?
+        else {
+            break;
+        };
         if total.is_none() {
             total = resp.count.map(|v| v as usize);
             if total.is_some_and(|value| offset >= value) {

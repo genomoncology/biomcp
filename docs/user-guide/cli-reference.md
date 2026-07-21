@@ -660,6 +660,8 @@ biomcp variant trials "BRAF V600E"
 biomcp variant articles "BRAF V600E"
 biomcp variant articles "BRAF V600E" --strategy annotation
 biomcp variant articles "BRAF V600E" --strategy lexical
+biomcp --json variant articles --input variants.json --debug-plan
+cat variants.json | biomcp --json variant articles --input -
 biomcp variant structure "BRAF V600E"
 biomcp variant oncokb "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
@@ -672,7 +674,12 @@ alias, and source-citation routes. It merges route provenance before ranking and
 applies pagination once. The `annotation` and `lexical` strategies isolate one
 exact route for diagnosis; unresolved default results are explicitly
 best-effort. JSON reports route status and marks incomplete acquisition with an
-unknown total.
+unknown total. Structured `--input <path|->` accepts a JSON array of 1-10 variant
+objects and returns ordered compact `items`; it cannot be combined with the
+positional ID and requires JSON output. `--debug-plan` is also JSON-only and adds
+normalized aliases, provider/call/page facts, ranking inputs, and fixed item and
+request budgets. The typed MCP `variant_articles` tool accepts the same item
+fields in memory.
 
 `biomcp variant normalize ... --json` always writes parseable JSON on exit 0. If no provider returns a normalized form, the payload uses `status: "no_result"`, an empty `results` list, a clear `message`, per-service details, and `_meta.next_commands`.
 

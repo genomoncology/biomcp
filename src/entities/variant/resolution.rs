@@ -1,6 +1,7 @@
 //! rsID, HGVS, and protein change parsing and classification.
 
 use regex::Regex;
+use rmcp::schemars;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
@@ -328,6 +329,182 @@ pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
     Some(format!("{from}{pos}{to}"))
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct VariantArticleRequest {
+    pub request_id: Option<String>,
+    pub gene: Option<String>,
+    pub protein: Option<String>,
+    pub coding: Option<String>,
+    pub transcript: Option<String>,
+    pub genomic: Option<String>,
+    pub accession: Option<String>,
+    pub build: Option<String>,
+    pub position: Option<u64>,
+    #[serde(rename = "ref")]
+    pub reference: Option<String>,
+    pub alt: Option<String>,
+    pub rsid: Option<String>,
+}
+
+impl VariantArticleRequest {
+    fn clean(value: &Option<String>) -> Option<String> {
+        value
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+    }
+
+    pub(crate) fn requested_identity(&self) -> RequestedVariantIdentity {
+        let mut identity = RequestedVariantIdentity {
+            gene: Self::clean(&self.gene),
+            protein_change: Self::clean(&self.protein),
+            coding_change: Self::clean(&self.coding),
+            transcript: Self::clean(&self.transcript),
+            genomic_accession: Self::clean(&self.accession),
+            genome_build: Self::clean(&self.build),
+            position: self.position,
+            reference: Self::clean(&self.reference),
+            alternate: Self::clean(&self.alt),
+            rsid: Self::clean(&self.rsid),
+        };
+        if let Some(genomic) = Self::clean(&self.genomic) {
+            identity.populate_genomic(&genomic);
+        }
+        identity
+    }
+
+    pub(crate) fn validate_identity(&self) -> Result<RequestedVariantIdentity, BioMcpError> {
+        let structured_genomic = self.accession.is_some()
+            || self.build.is_some()
+            || self.position.is_some()
+            || self.reference.is_some()
+            || self.alt.is_some();
+        if self.genomic.is_some() && structured_genomic {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item cannot combine genomic with structured genomic fields".into(),
+            ));
+        }
+        let identity = self.requested_identity();
+        let complete_genomic = identity.genomic_accession.is_some()
+            && identity.position.is_some()
+            && identity.reference.is_some()
+            && identity.alternate.is_some();
+        if (structured_genomic || self.genomic.is_some()) && !complete_genomic {
+            return Err(BioMcpError::InvalidArgument(
+                "genomic identity requires a complete genomic HGVS or accession, position, ref, and alt"
+                    .into(),
+            ));
+        }
+        for (name, supplied, cleaned) in [
+            ("gene", self.gene.is_some(), identity.gene.as_ref()),
+            (
+                "coding",
+                self.coding.is_some(),
+                identity.coding_change.as_ref(),
+            ),
+            (
+                "transcript",
+                self.transcript.is_some(),
+                identity.transcript.as_ref(),
+            ),
+            (
+                "accession",
+                self.accession.is_some(),
+                identity.genomic_accession.as_ref(),
+            ),
+            (
+                "build",
+                self.build.is_some(),
+                identity.genome_build.as_ref(),
+            ),
+            ("ref", self.reference.is_some(), identity.reference.as_ref()),
+            ("alt", self.alt.is_some(), identity.alternate.as_ref()),
+        ] {
+            if supplied && cleaned.is_none() {
+                return Err(BioMcpError::InvalidArgument(format!(
+                    "variant article item field {name} must not be empty"
+                )));
+            }
+        }
+        if self.protein.is_some()
+            && identity
+                .protein_change
+                .as_deref()
+                .and_then(normalize_protein_change)
+                .is_none()
+        {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item protein must be a complete protein change".into(),
+            ));
+        }
+        if let Some(coding) = identity.coding_change.as_deref() {
+            let segment = coding
+                .rsplit_once(':')
+                .map(|(_, value)| value)
+                .unwrap_or(coding);
+            let complete = coding_change_re().is_match(segment);
+            let transcript_compatible = identity.transcript.as_deref().is_none_or(|transcript| {
+                transcript_coding_hgvs_re().is_match(&format!("{transcript}:{segment}"))
+            });
+            if !complete || !transcript_compatible {
+                return Err(BioMcpError::InvalidArgument(
+                    "variant article item coding must be a complete coding change".into(),
+                ));
+            }
+        }
+        if self.rsid.is_some() && !identity.rsid.as_deref().is_some_and(is_rsid) {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item rsid must be a valid rsID".into(),
+            ));
+        }
+        let usable = identity.rsid.as_deref().is_some_and(is_rsid)
+            || complete_genomic
+            || (identity.gene.is_some()
+                && identity
+                    .protein_change
+                    .as_deref()
+                    .and_then(normalize_protein_change)
+                    .is_some())
+            || (identity.coding_change.is_some()
+                && (identity.gene.is_some() || identity.transcript.is_some()));
+        if !usable {
+            return Err(BioMcpError::InvalidArgument(
+                "variant article item needs an rsID, complete genomic identity, gene plus protein, or coding plus gene/transcript"
+                    .into(),
+            ));
+        }
+        Ok(identity)
+    }
+
+    pub(crate) fn display_input(&self, identity: &RequestedVariantIdentity) -> String {
+        Self::clean(&self.genomic)
+            .or_else(|| genomic_alias(identity))
+            .or_else(|| identity.rsid.clone())
+            .or_else(|| {
+                identity.protein_change.as_ref().map(|change| {
+                    identity
+                        .gene
+                        .as_ref()
+                        .map(|gene| format!("{gene} {change}"))
+                        .unwrap_or_else(|| change.clone())
+                })
+            })
+            .or_else(|| {
+                identity.coding_change.as_ref().map(|change| {
+                    identity
+                        .gene
+                        .as_ref()
+                        .or(identity.transcript.as_ref())
+                        .map(|anchor| format!("{anchor} {change}"))
+                        .unwrap_or_else(|| change.clone())
+                })
+            })
+            .unwrap_or_default()
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct RequestedVariantIdentity {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -488,6 +665,16 @@ fn genomic_components(value: &str) -> GenomicComponents<'_> {
         reference,
         alternate: (!alternate.is_empty()).then_some(alternate),
     }
+}
+
+fn coding_change_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r"(?i)^c\.[*+-]?\d+(?:[+-]\d+)?(?:_[*+-]?\d+(?:[+-]\d+)?)?(?:[ACGT]+>[ACGT]+|del(?:[ACGT]+)?|dup(?:[ACGT]+)?|ins[ACGT]+|delins[ACGT]+)$",
+        )
+        .expect("valid regex")
+    })
 }
 
 fn coding_change_segment(value: &str) -> &str {

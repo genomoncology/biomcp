@@ -273,6 +273,24 @@ JSON repeats `requested_variant` on every row and reports `resolution`,
 An incomplete provider route keeps available rows but sets `complete: false`,
 `truncated: true`, and `pagination.total: null`.
 
+For several variants, pass a JSON array of 1-10 structured identities from a file
+or stdin. Each item can use an rsID, complete genomic HGVS, structured genomic
+coordinates, gene plus protein change, or coding change plus gene/transcript:
+
+```bash
+biomcp --json variant articles --input variants.json --limit 10
+cat variants.json | biomcp --json variant articles --input - --debug-plan
+```
+
+The batch response preserves input order under `items`, uses compact article rows,
+and supplies parseable article-detail follow-ups in `_meta.next_commands`. At most
+two items execute concurrently. Work is bounded to 50 logical calls per valid
+item and 50 times the item count for the request. `--debug-plan` is JSON-only and
+adds normalized aliases, route/provider facts, ranking inputs, budgets, and stop
+state; ordinary single and batch output omit plans. The typed MCP
+`variant_articles` tool accepts the same structured item fields directly without
+server-local paths.
+
 ## Search GWAS associations
 
 By gene:

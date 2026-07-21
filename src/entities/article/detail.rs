@@ -254,6 +254,29 @@ pub(super) fn is_pubtator_lag_error(err: &BioMcpError) -> bool {
     }
 }
 
+async fn variant_detail_request<T, F>(
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    source: &str,
+    future: F,
+) -> Option<Result<T, BioMcpError>>
+where
+    F: std::future::Future<Output = Result<T, BioMcpError>>,
+{
+    let Some(execution) = execution else {
+        return Some(future.await);
+    };
+    let started = execution.reserve("enrichment")?;
+    let result = future.await;
+    execution.record(
+        "enrichment",
+        source,
+        started,
+        if result.is_ok() { "ok" } else { "unavailable" },
+        usize::from(result.is_ok()),
+    );
+    Some(result)
+}
+
 pub(super) async fn resolve_article_from_pmid(
     pmid: u32,
     not_found_id: &str,
@@ -262,7 +285,37 @@ pub(super) async fn resolve_article_from_pmid(
     europe: &EuropePmcClient,
     europe_hint: Option<&EuropePmcResult>,
 ) -> Result<Article, BioMcpError> {
-    match pubtator.export_biocjson(pmid).await {
+    resolve_article_from_pmid_with_context(
+        pmid,
+        not_found_id,
+        suggestion_id,
+        pubtator,
+        europe,
+        europe_hint,
+        None,
+    )
+    .await
+}
+
+pub(super) async fn resolve_article_from_pmid_with_context(
+    pmid: u32,
+    not_found_id: &str,
+    suggestion_id: &str,
+    pubtator: &PubTatorClient,
+    europe: &EuropePmcClient,
+    europe_hint: Option<&EuropePmcResult>,
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+) -> Result<Article, BioMcpError> {
+    let Some(pubtator_result) =
+        variant_detail_request(execution, "pubtator", pubtator.export_biocjson(pmid)).await
+    else {
+        return Err(BioMcpError::SourceUnavailable {
+            source_name: "variant article work budget".into(),
+            reason: "item work budget exhausted".into(),
+            suggestion: "Retry with a narrower request".into(),
+        });
+    };
+    match pubtator_result {
         Ok(resp) => {
             let doc = resp
                 .documents
@@ -273,7 +326,12 @@ pub(super) async fn resolve_article_from_pmid(
             let mut article = transform::article::from_pubtator_document(&doc);
             if let Some(hit) = europe_hint {
                 transform::article::merge_europepmc_metadata(&mut article, hit);
-            } else if let Ok(search) = europe.search_by_pmid(&pmid.to_string()).await
+            } else if let Some(Ok(search)) = variant_detail_request(
+                execution,
+                "europepmc",
+                europe.search_by_pmid(&pmid.to_string()),
+            )
+            .await
                 && let Some(hit) = first_europepmc_hit(search)
             {
                 transform::article::merge_europepmc_metadata(&mut article, &hit);
@@ -289,8 +347,20 @@ pub(super) async fn resolve_article_from_pmid(
             let hit = match europe_hint.cloned() {
                 Some(hit) => hit,
                 None => {
-                    let search = europe.search_by_pmid(&pmid.to_string()).await?;
-                    first_europepmc_hit(search)
+                    let Some(search) = variant_detail_request(
+                        execution,
+                        "europepmc",
+                        europe.search_by_pmid(&pmid.to_string()),
+                    )
+                    .await
+                    else {
+                        return Err(BioMcpError::SourceUnavailable {
+                            source_name: "variant article work budget".into(),
+                            reason: "item work budget exhausted".into(),
+                            suggestion: "Retry with a narrower request".into(),
+                        });
+                    };
+                    first_europepmc_hit(search?)
                         .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?
                 }
             };

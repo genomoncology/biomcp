@@ -105,6 +105,27 @@ source, and matched-alias provenance. Use `--strategy annotation` or
 incomplete, inspect `complete`, `truncated`, `pagination.total`, and
 `source_status` rather than treating an empty page as a complete miss.
 
+For a bounded shortlist across several exact variants, write 1-10 structured
+objects and make one JSON request:
+
+```json
+[
+  {"request_id":"braf-v600e","gene":"BRAF","protein":"p.V600E"},
+  {"request_id":"myd88-s219c","gene":"MYD88","protein":"p.S219C"}
+]
+```
+
+```bash
+biomcp --json variant articles --input variants.json --limit 5
+biomcp --json variant articles --input variants.json --debug-plan
+```
+
+The compact ordered `items` retain resolution, route/source, pagination,
+completeness, and retraction facts without abstracts or hydrated article cards.
+Use `_meta.next_commands` for batch/detail/full-text/assets/citation follow-ups.
+The opt-in plan explains normalized aliases, providers, calls/pages, ranking,
+and the two-worker, 50-work-unit-per-item bounds.
+
 ## Search PubMed directly
 
 ```bash

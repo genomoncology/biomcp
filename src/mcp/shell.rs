@@ -62,11 +62,31 @@ struct TypedGet {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct TypedVariantArticles {
+    #[schemars(length(min = 1, max = 10))]
+    items: Vec<crate::entities::variant::VariantArticleRequest>,
+    #[serde(default = "default_variant_article_strategy")]
+    #[schemars(transform = add_variant_article_strategy_enum)]
+    strategy: String,
+    #[serde(default = "default_typed_limit")]
+    #[schemars(range(min = 1, max = 50))]
+    limit: usize,
+    #[serde(default)]
+    offset: usize,
+    #[serde(default)]
+    debug_plan: bool,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(transparent)]
 struct McpGetSection(#[schemars(transform = add_get_section_enum)] String);
 
 fn default_typed_limit() -> usize {
     10
+}
+
+fn default_variant_article_strategy() -> String {
+    "union".into()
 }
 
 fn add_string_enum(schema: &mut schemars::Schema, values: &[String]) {
@@ -91,6 +111,27 @@ fn add_get_entity_enum(schema: &mut schemars::Schema) {
 
 fn add_get_section_enum(schema: &mut schemars::Schema) {
     add_string_enum(schema, &all_get_sections());
+}
+
+fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
+    add_string_enum(
+        schema,
+        &["union".into(), "annotation".into(), "lexical".into()],
+    );
+}
+
+fn variant_article_strategy(
+    value: &str,
+) -> Result<crate::entities::article::VariantArticleStrategy, McpError> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "union" => Ok(crate::entities::article::VariantArticleStrategy::Union),
+        "annotation" => Ok(crate::entities::article::VariantArticleStrategy::Annotation),
+        "lexical" => Ok(crate::entities::article::VariantArticleStrategy::Lexical),
+        _ => Err(McpError::invalid_params(
+            "variant_articles strategy must be union, annotation, or lexical",
+            None,
+        )),
+    }
 }
 
 const RESOURCE_HELP_URI: &str = "biomcp://help";
@@ -569,6 +610,53 @@ impl BioMcpServer {
         let args = get_args(input)?;
         Self::execute_args(args, json).await
     }
+
+    /// Retrieve compact variant-literature shortlists for 1-10 structured identities.
+    #[tool(annotations(title = "BioMCP variant literature batch", read_only_hint = true))]
+    async fn variant_articles(
+        &self,
+        Parameters(input): Parameters<TypedVariantArticles>,
+    ) -> Result<CallToolResult, McpError> {
+        if input.items.is_empty() || input.items.len() > 10 {
+            return Err(McpError::invalid_params(
+                "variant_articles requires between 1 and 10 items",
+                None,
+            ));
+        }
+        if input.limit == 0 || input.limit > 50 {
+            return Err(McpError::invalid_params(
+                "variant_articles limit must be between 1 and 50",
+                None,
+            ));
+        }
+        let strategy = variant_article_strategy(&input.strategy)?;
+        match crate::entities::article::search_variant_article_batch(
+            input.items,
+            strategy,
+            input.limit,
+            input.offset,
+            input.debug_plan,
+        )
+        .await
+        {
+            Ok(outcome) => {
+                let text = crate::render::json::to_pretty(&outcome.response).map_err(|error| {
+                    McpError::internal_error(
+                        format!("Failed to serialize variant article response: {error}"),
+                        None,
+                    )
+                })?;
+                let text = redact_mcp_json_text(&text).map_err(|error| {
+                    McpError::internal_error(
+                        format!("Failed to sanitize variant article response: {error}"),
+                        None,
+                    )
+                })?;
+                Ok(CallToolResult::success(vec![Content::text(text)]))
+            }
+            Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+        }
+    }
 }
 
 #[tool_handler(router = self.tool_router)]
@@ -585,7 +673,7 @@ impl ServerHandler for BioMcpServer {
             "BioMCP provides biomedical data from leading public biomedical data sources \
              (PubMed, ClinicalTrials.gov, ClinVar, gnomAD, OncoKB, Reactome, UniProt, \
              PharmGKB, OpenFDA, and more). \
-             Prefer the typed `search` and `get` tools for structured entity lookup; use the raw `biomcp` command tool as an escape hatch for long-tail commands. \
+             Prefer the typed `search`, `get`, and `variant_articles` tools for structured entity lookup; use the raw `biomcp` command tool as an escape hatch for long-tail commands. \
              Start with `biomcp skill list` when you need the right playbook, \
              `biomcp list` for a command reference, \
              or `biomcp skill` for guided investigation workflows."
@@ -777,9 +865,9 @@ mod tests {
 
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet,
-        TypedSearch, all_get_sections, get_args, get_section_groups, index_handler,
-        is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text, redact_mcp_text,
-        search_args, subcommand_names, to_resource_result,
+        TypedSearch, TypedVariantArticles, all_get_sections, get_args, get_section_groups,
+        index_handler, is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text,
+        redact_mcp_text, search_args, subcommand_names, to_resource_result,
     };
     use axum::Json;
 
@@ -843,6 +931,61 @@ mod tests {
                 .map(str::to_string)
                 .collect::<BTreeSet<String>>()
         );
+    }
+
+    #[test]
+    fn typed_variant_articles_schema_is_bounded_and_has_structured_identity_fields() {
+        let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedVariantArticles))
+            .expect("variant article schema");
+        let items = &schema["properties"]["items"];
+        assert_eq!(items["minItems"], 1);
+        assert_eq!(items["maxItems"], 10);
+        let item_schema = &schema["$defs"]["VariantArticleRequest"]["properties"];
+        for field in [
+            "request_id",
+            "gene",
+            "protein",
+            "coding",
+            "transcript",
+            "genomic",
+            "accession",
+            "build",
+            "position",
+            "ref",
+            "alt",
+            "rsid",
+        ] {
+            assert!(item_schema.get(field).is_some(), "missing field {field}");
+        }
+        assert_eq!(schema["properties"]["limit"]["minimum"], 1);
+        assert_eq!(schema["properties"]["limit"]["maximum"], 50);
+    }
+
+    #[tokio::test]
+    async fn typed_variant_articles_executes_in_memory_without_stdin_or_paths() {
+        let items = serde_json::from_value(serde_json::json!([
+            {"request_id":"invalid","gene":"BRAF"}
+        ]))
+        .expect("typed variant requests");
+        let result = BioMcpServer::new()
+            .variant_articles(rmcp::handler::server::wrapper::Parameters(
+                TypedVariantArticles {
+                    items,
+                    strategy: "union".into(),
+                    limit: 3,
+                    offset: 0,
+                    debug_plan: true,
+                },
+            ))
+            .await
+            .expect("typed MCP response");
+        let value = serde_json::to_value(result).expect("MCP result JSON");
+        let text = value["content"][0]["text"].as_str().expect("text response");
+        let response: serde_json::Value = serde_json::from_str(text).expect("response JSON");
+
+        assert_eq!(response["items"][0]["request_id"], "invalid");
+        assert_eq!(response["items"][0]["resolution"], serde_json::Value::Null);
+        assert!(response["items"][0]["debug_plan"].is_object());
     }
 
     #[test]
