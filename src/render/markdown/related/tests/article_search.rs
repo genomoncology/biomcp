@@ -130,6 +130,50 @@ fn article_search_related_results_do_not_emit_braf_v600e_gene_get_without_exact_
 }
 
 #[test]
+fn article_search_related_results_suggest_exact_variant_route() {
+    for (rows, gene, drug) in [
+        (vec![article_search_result("22663011")], None, None),
+        (Vec::new(), None, None),
+        (Vec::new(), Some("MSH2"), None),
+        (Vec::new(), None, Some("aspirin")),
+    ] {
+        let related = related_article_search_results(
+            &rows,
+            &article_filters(Some("  MSH2 p.L341P  "), gene, drug),
+            crate::entities::article::ArticleSourceFilter::All,
+            &[],
+        );
+        assert!(related.contains(&"biomcp variant articles \"MSH2 p.L341P\"".to_string()));
+    }
+}
+
+#[test]
+fn article_search_related_results_reject_non_exact_variant_keywords() {
+    for keyword in [
+        "MSH2",
+        "DNA repair",
+        "study ABC123 response",
+        "MSH2 p.L341",
+        "p.L341P",
+        "NM_000251.3:c.1022T>C",
+        "MSH2 p.L341P Lynch syndrome",
+    ] {
+        let related = related_article_search_results(
+            &[],
+            &article_filters(Some(keyword), None, None),
+            crate::entities::article::ArticleSourceFilter::All,
+            &[],
+        );
+        assert!(
+            !related
+                .iter()
+                .any(|command| command.starts_with("biomcp variant articles ")),
+            "unexpected exact-variant suggestion for {keyword:?}"
+        );
+    }
+}
+
+#[test]
 fn article_search_related_results_include_exact_commands_without_result_rows() {
     let exact_commands = vec!["biomcp get disease melanoma".to_string()];
     let related = related_article_search_results(

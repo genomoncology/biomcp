@@ -5,6 +5,7 @@ use std::io::IsTerminal;
 use super::response_contract::{
     JsonResponseContract, command_requests_json, finalize_structured_error,
 };
+use super::skill::SkillCommand;
 use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity, StudyCommand};
 
 fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
@@ -414,16 +415,15 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             }
             Commands::Skill { command } => match command {
                 None => Ok(crate::cli::skill::show_overview()?),
-                Some(crate::cli::skill::SkillCommand::List) => {
-                    Ok(crate::cli::skill::list_use_cases()?)
+                Some(SkillCommand::List) => Ok(crate::cli::skill::list_use_cases()?),
+                Some(SkillCommand::Render) => Ok(crate::cli::skill::render_system_prompt()?),
+                Some(SkillCommand::Status { dir }) => {
+                    Ok(crate::cli::skill::skill_status(dir.as_deref(), json)?)
                 }
-                Some(crate::cli::skill::SkillCommand::Render) => {
-                    Ok(crate::cli::skill::render_system_prompt()?)
-                }
-                Some(crate::cli::skill::SkillCommand::Install { dir, force }) => {
+                Some(SkillCommand::Install { dir, force }) => {
                     Ok(crate::cli::skill::install_skills(dir.as_deref(), force)?)
                 }
-                Some(crate::cli::skill::SkillCommand::Show(args)) => {
+                Some(SkillCommand::Show(args)) => {
                     let key = if args.is_empty() {
                         String::new()
                     } else if args.len() == 1 {

@@ -8,6 +8,7 @@ biomcp skill list
 biomcp skill
 biomcp skill render
 biomcp skill article-follow-up
+biomcp skill exact-variant-literature
 biomcp skill install ~/.claude
 ```
 
@@ -34,14 +35,15 @@ Use `biomcp skill list` to browse the embedded worked examples and
 biomcp skill list
 biomcp skill article-follow-up
 biomcp skill variant-pathogenicity
+biomcp skill exact-variant-literature
 ```
 
-Current builds ship 16 worked examples. The catalog keeps the original
+Current builds ship 17 worked examples. The catalog keeps the original
 treatment lookup, symptom lookup, gene-disease orientation, and article
 follow-up examples, plus expanded playbooks such as `variant-pathogenicity`,
 `drug-regulatory`, `trial-recruitment`, `mutation-catalog`,
-`negative-evidence`, and `normalize-to-codes`. The installed `skills/` tree
-also includes worked examples you can read directly in the repo or in an agent
+`negative-evidence`, `normalize-to-codes`, and `exact-variant-literature`. The
+installed `skills/` tree also includes worked examples you can read directly in the repo or in an agent
 directory:
 
 - [Guide Workflows](../how-to/guide-workflows.md) - variant pathogenicity,
@@ -55,14 +57,26 @@ Install the embedded `skills/` tree into your agent directory:
 biomcp skill install ~/.claude
 ```
 
-Force replacement of an existing install:
+Check whether an installed skill matches this BioMCP binary:
+
+```bash
+biomcp --json skill status ~/.claude
+```
+
+A fresh managed install reports `current`. Missing or invalid management metadata
+reports `unmanaged`; changed managed files report `locally_modified`; and an
+intact older payload reports `stale`. Only `current` omits the recovery command.
+
+Plain install never overwrites an existing skill. Repair an installation
+explicitly:
 
 ```bash
 biomcp skill install ~/.claude --force
 ```
 
-The `dir` argument can point at an agent root such as `~/.claude`, an existing
-`skills/` directory, or a `skills/biomcp/` directory. When you omit `dir`,
+Force replacement updates only BioMCP-managed files and preserves unrelated
+files. The `dir` argument can point at an agent root such as `~/.claude`, an
+existing `skills/` directory, or a `skills/biomcp/` directory. When you omit `dir`,
 BioMCP attempts supported agent-directory detection in your home directory and
 the current working tree, then prompts before installing when stdin is a TTY.
 
@@ -72,6 +86,8 @@ Current builds install the full embedded reference tree into
 `<agent>/skills/biomcp/`, including:
 
 - `SKILL.md`
+- `.biomcp-skill.json` (schema, BioMCP version, canonical render hash, install
+  time, and managed-file hashes)
 - `AUTHORING.md`
 - `use-cases/`
 - `use-cases/_TEMPLATE.md` and `use-cases/_TEMPLATE.ladder.json`

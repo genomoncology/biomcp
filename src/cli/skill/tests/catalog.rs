@@ -187,6 +187,7 @@ fn embedded_use_case_catalog_lists_expected_worked_examples() -> Result<(), BioM
             "syndrome-disambiguation",
             "negative-evidence",
             "normalize-to-codes",
+            "exact-variant-literature",
         ]
     );
 
@@ -200,6 +201,10 @@ fn embedded_use_case_catalog_lists_expected_worked_examples() -> Result<(), BioM
     );
     assert!(
         listing.contains("16 normalize-to-codes - Pattern: Normalize a term to ontology codes")
+    );
+    assert!(
+        listing
+            .contains("17 exact-variant-literature - Pattern: Exact-variant literature retrieval")
     );
     assert!(!listing.contains("_TEMPLATE"));
 
@@ -219,10 +224,10 @@ fn embedded_use_case_anchor_commands_parse() -> Result<(), BioMcpError> {
         .filter(|case| {
             case.number
                 .parse::<u32>()
-                .is_ok_and(|number| (5..=16).contains(&number))
+                .is_ok_and(|number| (5..=17).contains(&number))
         })
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 12);
+    assert_eq!(cases.len(), 13);
 
     for case in cases {
         let content = embedded_text(&case.embedded_path)?;
@@ -265,11 +270,20 @@ fn embedded_use_case_anchor_commands_parse() -> Result<(), BioMcpError> {
             .map(str::trim)
             .filter(|line| !line.is_empty())
             .collect::<Vec<_>>();
-        assert!(
-            (3..=4).contains(&commands.len()),
-            "{} should have 3-4 anchor commands",
-            case.slug
-        );
+        if case.slug == "exact-variant-literature" {
+            assert_eq!(
+                commands.len(),
+                7,
+                "{} should have 7 anchor commands",
+                case.slug
+            );
+        } else {
+            assert!(
+                (3..=4).contains(&commands.len()),
+                "{} should have 3-4 anchor commands",
+                case.slug
+            );
+        }
 
         for command in commands {
             assert!(

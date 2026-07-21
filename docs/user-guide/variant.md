@@ -273,6 +273,11 @@ JSON repeats `requested_variant` on every row and reports `resolution`,
 An incomplete provider route keeps available rows but sets `complete: false`,
 `truncated: true`, and `pagination.total: null`.
 
+For an exact gene-plus-protein literature review, run `biomcp skill
+exact-variant-literature`. It checks identity before the default union shortlist,
+compares selected summaries with `article batch`, requests full text and assets
+only for chosen papers, and expands citations or references only when needed.
+
 For several variants, pass a JSON array of 1-10 structured identities from a file
 or stdin. Each item can use an rsID, complete genomic HGVS, structured genomic
 coordinates, gene plus protein change, or coding change plus gene/transcript:

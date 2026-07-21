@@ -9,6 +9,7 @@ One command grammar covers all entities.
 New to BioMCP? Try:
 
 - `skill install` - install BioMCP skill guidance to your agent
+- `skill status` - compare installed guidance with this BioMCP binary
 - `mcp-config --client claude-desktop` - print local stdio MCP client config
 - `skill list` - choose a worked-example playbook for a question
 - `get gene BRAF` - look up a gene

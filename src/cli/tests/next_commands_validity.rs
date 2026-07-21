@@ -75,6 +75,7 @@ fn article_search_json_next_commands_parse() {
     assert_parses("biomcp get gene BRAF");
     assert_parses("biomcp get drug imatinib");
     assert_parses("biomcp get disease melanoma");
+    assert_parses(r#"biomcp variant articles "MSH2 p.L341P""#);
     assert_parses("biomcp list article");
 }
 

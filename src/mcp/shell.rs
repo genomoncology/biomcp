@@ -1228,6 +1228,12 @@ mod tests {
         assert!(!is_allowed_mcp_command(&[
             "biomcp".into(),
             "skill".into(),
+            "status".into(),
+            "/home/operator/private/skills".into()
+        ]));
+        assert!(!is_allowed_mcp_command(&[
+            "biomcp".into(),
+            "skill".into(),
             "sync".into()
         ]));
         assert!(!is_allowed_mcp_command(&[
@@ -1313,6 +1319,17 @@ mod tests {
     fn generic_mcp_rejection_message_stays_read_only_for_mutating_commands() {
         let args = vec!["biomcp".into(), "update".into()];
         assert_eq!(mcp_rejection_message(&args), GENERIC_MCP_REJECTION_MESSAGE);
+
+        let private = "/home/operator/private/skills";
+        let status_args = vec![
+            "biomcp".into(),
+            "skill".into(),
+            "status".into(),
+            private.into(),
+        ];
+        let message = mcp_rejection_message(&status_args);
+        assert_eq!(message, GENERIC_MCP_REJECTION_MESSAGE);
+        assert!(!message.contains(private));
     }
 
     #[tokio::test]

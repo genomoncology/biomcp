@@ -340,6 +340,7 @@ pub(super) fn related_article_search_results(
             .map(|command| command.trim().to_string())
             .filter(|command| !command.is_empty()),
     );
+    out.extend(article_support::exact_variant_article_follow_up(filters));
     out.extend(article_support::article_date_refinement_hint(
         results,
         filters,

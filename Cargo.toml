@@ -78,6 +78,7 @@ rust-embed = "8"
 flate2 = "1"
 semver = "1"
 sha2 = "0.10"
+libc = "0.2"
 tar = "0.4"
 zip = "0.6"
 

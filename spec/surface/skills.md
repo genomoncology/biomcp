@@ -12,12 +12,40 @@ alongside the canonical prompt.
 
 ```bash
 ../../tools/biomcp-ci skill install ../../.cache/spec-skill-install --force
-find ../../.cache/spec-skill-install/skills/biomcp -maxdepth 3 -type f | sed 's#^.*/biomcp/##' | sort | mustmatch like "AUTHORING.md
+find ../../.cache/spec-skill-install/skills/biomcp -maxdepth 3 -type f | sed 's#^.*/biomcp/##' | sort | mustmatch like ".biomcp-skill.json
+AUTHORING.md
 SKILL.md
 use-cases/16-normalize-to-codes.md
 use-cases/_TEMPLATE.ladder.json
 use-cases/_TEMPLATE.md
 use-cases/normalize-to-codes.ladder.json"
+```
+
+## A fresh managed install reports current
+
+The installation stamp lets BioMCP distinguish its own unchanged payload from
+an unmanaged or drifted skill. A fresh install made by this binary therefore
+reports `current` without rewriting anything.
+
+```bash
+../../tools/biomcp-ci --json skill status ../../.cache/spec-skill-install | jq -r .state | mustmatch 'current'
+```
+
+## The exact-variant literature playbook is executable guidance
+
+The embedded playbook carries one retrieval-only sequence from strict identity
+through evidence escalation. It uses the shipped union, batch, full-text, asset,
+and graph grammar directly rather than teaching an article variant flag or a
+clinical answer.
+
+```bash
+../../tools/biomcp-ci skill exact-variant-literature | mustmatch like 'biomcp search variant MSH2 p.L341P --limit 5
+biomcp variant articles "MSH2 p.L341P" --limit 5
+biomcp article batch 26951660 31433521
+biomcp get article 26951660 fulltext
+biomcp --json get article 26951660 assets
+biomcp article citations 26951660 --limit 5
+biomcp article references 26951660 --limit 5'
 ```
 
 The template files are installed as authoring references, not runnable

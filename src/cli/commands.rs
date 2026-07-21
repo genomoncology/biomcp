@@ -168,6 +168,7 @@ EXAMPLES:
   biomcp skill 01         # open a worked example by number
   biomcp skill article-follow-up
   biomcp skill render     # print canonical agent prompt
+  biomcp skill status     # compare installed guidance with this binary
   biomcp skill install    # install skill to your agent config")]
     Skill {
         #[command(subcommand)]

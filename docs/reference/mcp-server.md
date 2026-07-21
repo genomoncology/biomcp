@@ -120,7 +120,7 @@ Their schemas enumerate valid entity names, valid get section tokens, and the bo
 
 The raw `biomcp` tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as `discover`, `biomcp skill list`, `biomcp skill render`, embedded `biomcp skill <number-or-slug>` lookups, and the catalog-only `study download --list` form.
 
-Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
+Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, `skill status`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Status remains CLI-only because probing an arbitrary skill directory can reveal workstation-local paths. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
 
 ### Resources
 
