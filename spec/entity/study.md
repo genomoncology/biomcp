@@ -129,6 +129,50 @@ running local cohort work.
 ../../tools/biomcp-ci study co-occurrence --study msk_impact_2017 --genes TP53 2>&1 | mustmatch like '--genes must contain 2 to 10 comma-separated symbols'
 ```
 
+## Undefined Statistics
+
+Study analytics retain raw cohort counts while representing statistics that cannot
+be computed as JSON `null`. When neither gene occurs, the complete contingency
+table remains available without implying an association.
+
+```bash
+../../tools/biomcp-ci --json study co-occurrence --study brca_tcga_pan_can_atlas_2018 --genes ZZQQXX,NOTAGENE | mustmatch like '{"pairs":[{"gene_a":"ZZQQXX","gene_b":"NOTAGENE","both_mutated":0,"a_only":0,"b_only":0,"neither":3,"log_odds_ratio":null,"p_value":null}]}'
+```
+
+The same rule applies when only one gene is absent: a zero required marginal
+makes both inferential values undefined while preserving every raw cell.
+
+```bash
+../../tools/biomcp-ci --json study co-occurrence --study brca_tcga_pan_can_atlas_2018 --genes TP53,NOTAGENE | mustmatch like '{"pairs":[{"gene_a":"TP53","gene_b":"NOTAGENE","both_mutated":0,"a_only":1,"b_only":0,"neither":2,"log_odds_ratio":null,"p_value":null}]}'
+```
+
+A zero cell alone does not make a table degenerate. If both genes have observed
+mutations and all row and column marginals are non-zero, BioMCP still reports the
+sparse table's calculated statistics.
+
+```bash
+../../tools/biomcp-ci --json study co-occurrence --study brca_tcga_pan_can_atlas_2018 --genes TP53,PIK3CA | mustmatch like '"both_mutated": 0,
+"a_only": 1,
+"b_only": 1,
+"neither": 1,
+"log_odds_ratio": -
+"p_value": 1'
+```
+
+Likewise, an empty expression-comparison group has a real sample count of zero
+but has no distribution to summarize. Every distribution statistic stays present
+in structured output with a null value.
+
+```bash
+../../tools/biomcp-ci --json study compare --study brca_tcga_pan_can_atlas_2018 --gene ZZQQXX --type expression --target TP53 | mustmatch like '{"groups":[{"group_name":"ZZQQXX-mutant","sample_count":0,"mean":null,"median":null,"min":null,"max":null,"q1":null,"q3":null}]}'
+```
+
+The terminal table uses its standard missing-value marker for that same group.
+
+```bash
+../../tools/biomcp-ci study compare --study brca_tcga_pan_can_atlas_2018 --gene ZZQQXX --type expression --target TP53 | mustmatch like '| ZZQQXX-mutant | 0 | - | - | - | - | - | - |'
+```
+
 ## Comparison & Chart Output
 
 Study analytics should remain usable from the terminal: comparison summaries

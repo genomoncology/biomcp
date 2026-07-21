@@ -215,12 +215,12 @@ pub struct SurvivalResult {
 pub struct ExpressionGroupStats {
     pub group_name: String,
     pub sample_count: usize,
-    pub mean: f64,
-    pub median: f64,
-    pub min: f64,
-    pub max: f64,
-    pub q1: f64,
-    pub q3: f64,
+    pub mean: Option<f64>,
+    pub median: Option<f64>,
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+    pub q1: Option<f64>,
+    pub q3: Option<f64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

@@ -393,15 +393,15 @@ pub fn study_compare_expression_markdown(result: &StudyExpressionComparisonResul
     out.push_str("|---|---|---|---|---|---|---|---|\n");
     for group in &result.groups {
         out.push_str(&format!(
-            "| {} | {} | {:.3} | {:.3} | {:.3} | {:.3} | {:.3} | {:.3} |\n",
+            "| {} | {} | {} | {} | {} | {} | {} | {} |\n",
             group.group_name,
             group.sample_count,
-            group.mean,
-            group.median,
-            group.q1,
-            group.q3,
-            group.min,
-            group.max
+            format_optional_stat(group.mean, 3),
+            format_optional_stat(group.median, 3),
+            format_optional_stat(group.q1, 3),
+            format_optional_stat(group.q3, 3),
+            format_optional_stat(group.min, 3),
+            format_optional_stat(group.max, 3)
         ));
     }
     out.push('\n');
