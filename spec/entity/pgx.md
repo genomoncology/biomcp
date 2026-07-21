@@ -17,12 +17,13 @@ reader can immediately see which drugs are affected.
 ```
 
 The testing-recommendation filter accepts the provider's documented category
-and keeps matching interactions visible.
+and every returned interaction matches it.
 
 ```bash
 set -o pipefail
-../../tools/biomcp-ci search pgx CYP2D6 --pgx-testing "Actionable PGx" --limit 3 \
-  | mustmatch like '| CYP2D6 | codeine | A | Actionable PGx |'
+../../tools/biomcp-ci --json search pgx CYP2D6 --pgx-testing "Actionable PGx" --limit 3 \
+  | jq '(.results | length > 0) and all(.results[]; .pgxtesting == "Actionable PGx")' \
+  | mustmatch 'true'
 ```
 
 ## Drug-First Search

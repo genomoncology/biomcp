@@ -203,7 +203,8 @@ biomcp search disease -q melanoma --source mondo --limit 10 --offset 0
 
 Inheritance accepts named patterns (including broad `dominant`/`recessive`) or HPO
 inheritance IDs. Onset accepts antenatal through late onset; `infancy` normalizes
-to `infantile`. Run `biomcp list disease` for the complete catalogs.
+to `infantile`. Unsupported `--inheritance` and `--onset` values fail locally with
+`invalid_argument`. Run `biomcp list disease` for the complete catalogs.
 
 ### PGx
 
@@ -213,8 +214,9 @@ biomcp search pgx -d warfarin --limit 10
 ```
 
 `--pgx-testing` accepts `Actionable PGx`, `Informative PGx`, `No Clinical PGx`,
-`Testing Recommended`, or `Testing Required`. `--evidence` is a best-effort
-free-text match over guideline names or CPIC levels.
+`Testing Recommended`, or `Testing Required`; unsupported values fail locally with
+`invalid_argument`. `--evidence` is a best-effort free-text match over guideline
+names or CPIC levels.
 
 ### Phenotype (Monarch semsim)
 
@@ -401,7 +403,8 @@ and its `.exact` form; `patient.drug.medicinalproduct[.exact]`;
 `patient.patientonsetage`; `serious`; `seriousnessdeath`;
 `seriousnesshospitalization`; `seriousnesslifethreatening`;
 `seriousnessdisabling`; `seriousnesscongenitalanomali`; `seriousnessother`;
-`patient.reaction.reactionoutcome`; and `primarysource.qualification`.
+`patient.reaction.reactionoutcome`; and `primarysource.qualification`. Unsupported
+`--count` fields fail locally with `invalid_argument`.
 
 ## Get command families
 

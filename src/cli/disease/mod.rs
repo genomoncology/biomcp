@@ -13,7 +13,7 @@ pub struct DiseaseSearchArgs {
     /// Restrict results by ontology source (mondo, doid, mesh)
     #[arg(long)]
     pub source: Option<String>,
-    /// Inheritance: autosomal dominant/recessive, x-linked variants, y-linked, mitochondrial, multifactorial, oligogenic, polygenic, sporadic, somatic mosaicism, dominant/recessive, or an HPO inheritance ID
+    /// Inheritance: autosomal dominant/recessive, x-linked variants, y-linked, mitochondrial, multifactorial, oligogenic, polygenic, sporadic, somatic mosaicism, dominant/recessive, or a supported HPO inheritance ID (see `biomcp list disease`)
     #[arg(long)]
     pub inheritance: Option<String>,
     /// Filter by phenotype term (e.g., HP:0001250)

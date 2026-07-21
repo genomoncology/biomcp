@@ -210,6 +210,17 @@ complete `source_identity` arrays and source-derived `matched_alias`. Gene-only,
 residue-alias, and discovery-filter searches remain broad and omit this exact-match
 metadata.
 
+## Closed-Vocabulary Filters and Enrichment Truthfulness
+
+Disease `--inheritance` and `--onset`, PGx `--pgx-testing`, and FAERS `--count`
+use stable public vocabularies discoverable through the corresponding `biomcp list`
+page. Unsupported values fail locally with `invalid_argument` rather than reaching a
+provider and masquerading as a successful empty result.
+
+Gene-set enrichment remains useful for mixed input while making resolution failures
+explicit. JSON always includes `unresolved_genes`, including `[]` when every symbol
+resolved; Markdown emits `Unresolved genes:` before the result or empty-result message.
+
 ## Cross-Entity Pivot Pattern
 
 Pivot helpers allow moving between related entities without rebuilding filters:

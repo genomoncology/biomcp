@@ -416,6 +416,22 @@ def test_variant_filter_validation_is_aligned_across_user_and_ux_references() ->
         assert contract_landmark in ux_variant
 
 
+def test_closed_filter_and_enrichment_contracts_align_user_and_ux_references() -> None:
+    user_reference = _read_repo("docs/user-guide/cli-reference.md")
+    ux_reference = _read_repo("architecture/ux/cli-reference.md")
+    for landmark in (
+        "--inheritance",
+        "--onset",
+        "--pgx-testing",
+        "--count",
+        "invalid_argument",
+        "unresolved_genes",
+        "Unresolved genes:",
+    ):
+        assert landmark in user_reference
+        assert landmark in ux_reference
+
+
 def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> None:
     technical = _read_repo("architecture/technical/overview.md")
     ux = _read_repo("architecture/ux/cli-reference.md")
