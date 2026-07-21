@@ -1,0 +1,32 @@
+[
+  {
+    "request_id": "atm-grch38",
+    "gene": "ATM",
+    "transcript": "NM_000051.4",
+    "coding": "c.1066-6T>G",
+    "accession": "NC_000011.10",
+    "build": "GRCh38",
+    "position": 108248927,
+    "ref": "T",
+    "alt": "G"
+  },
+  {
+    "request_id": "palb2-grch38",
+    "gene": "PALB2",
+    "transcript": "NM_024675.4",
+    "coding": "c.3350+5G>A",
+    "accession": "NC_000016.10",
+    "build": "GRCh38",
+    "position": 23607859,
+    "ref": "C",
+    "alt": "T"
+  },
+  {
+    "request_id": "atm-grch38-genomic",
+    "gene": "ATM",
+    "transcript": "NM_000051.4",
+    "coding": "c.1066-6T>G",
+    "genomic": "NC_000011.10:g.108248927T>G",
+    "build": "GRCh38"
+  }
+]
