@@ -1100,17 +1100,21 @@ fn build_debug_plan(
             } else {
                 grouped
                     .into_iter()
-                    .map(|(source, events)| VariantArticleProviderPlan {
-                        source,
-                        status: if events.iter().any(|event| event.status != "ok") {
-                            "unavailable".into()
-                        } else {
-                            "ok".into()
-                        },
-                        latency_ms: events.iter().map(|event| event.latency_ms).sum(),
-                        calls: events.len(),
-                        pages: events.iter().map(|event| event.pages).sum(),
-                        cache: "not_applicable",
+                    .map(|(source, events)| {
+                        let successful = events.iter().filter(|event| event.status == "ok").count();
+                        let status = match successful {
+                            0 => "unavailable",
+                            count if count == events.len() => "ok",
+                            _ => "degraded",
+                        };
+                        VariantArticleProviderPlan {
+                            source,
+                            status: status.into(),
+                            latency_ms: events.iter().map(|event| event.latency_ms).sum(),
+                            calls: events.len(),
+                            pages: events.iter().map(|event| event.pages).sum(),
+                            cache: "unavailable",
+                        }
                     })
                     .collect()
             };
@@ -1429,14 +1433,12 @@ struct ValidatedBatchItem {
 }
 
 fn item_error(error: BioMcpError) -> VariantArticleItemError {
+    let code = error.code();
     let message = match error {
         BioMcpError::InvalidArgument(message) => message,
-        other => crate::render::human::sanitize_inline(&other.to_string()),
+        other => crate::render::human::sanitize_inline(&other.public_projection().message),
     };
-    VariantArticleItemError {
-        code: "invalid_argument",
-        message,
-    }
+    VariantArticleItemError { code, message }
 }
 
 fn empty_debug_plan(
@@ -2037,6 +2039,58 @@ mod tests {
                     .as_ref()
                     .is_some_and(|plan| plan.budgets.item.consumed == 0 && plan.routes.is_empty())
         }));
+    }
+
+    #[test]
+    fn item_errors_preserve_runtime_error_classification() {
+        let error = item_error(BioMcpError::SourceUnavailable {
+            source_name: "fixture".into(),
+            reason: "offline".into(),
+            suggestion: "retry".into(),
+        });
+
+        assert_eq!(error.code, "source_unavailable");
+        assert!(!error.message.is_empty());
+    }
+
+    #[test]
+    fn provider_plan_reports_mixed_outcomes_and_unknown_cache_truthfully() {
+        let context = resolved_context();
+        let execution = VariantArticleExecutionContext::single();
+        for status in ["ok", "unavailable"] {
+            execution.record(
+                "exact_lexical",
+                "pubmed",
+                Instant::now(),
+                status,
+                usize::from(status == "ok"),
+            );
+        }
+        let plan = build_debug_plan(
+            "BRAF p.V600E",
+            &context,
+            VariantArticleStrategy::Union,
+            &execution,
+            VariantArticleCountsPlan {
+                pre_dedup: 0,
+                post_dedup: 0,
+                returned: 0,
+            },
+            true,
+            VariantArticleNextPlan {
+                offset: 0,
+                cursor: None,
+            },
+        );
+        let provider = plan
+            .routes
+            .iter()
+            .find(|route| route.route == "exact_lexical")
+            .and_then(|route| route.providers.first())
+            .expect("lexical provider plan");
+
+        assert_eq!(provider.status, "degraded");
+        assert_eq!(provider.cache, "unavailable");
     }
 
     #[test]
