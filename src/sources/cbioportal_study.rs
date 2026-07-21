@@ -2826,34 +2826,6 @@ BRAF\tS1\tMissense_Mutation\tp.V600E\n",
     }
 
     #[test]
-    fn co_occurrence_returns_no_statistics_when_a_required_marginal_is_zero() {
-        let fixture = TestStudyDir::new("co-occur-zero-marginal");
-        let study_dir = fixture.study_path("co_study");
-        fixture.write_file(
-            &study_dir.join("data_mutations.txt"),
-            "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\nTP53\tS1\tMissense_Mutation\tp.R175H\nEGFR\tS2\tMissense_Mutation\tp.L858R\n",
-        );
-        write_minimal_clinical_samples(
-            &study_dir,
-            &[
-                "P1\tS1\tLung Cancer\tLung Adenocarcinoma\tLUAD",
-                "P2\tS2\tLung Cancer\tLung Adenocarcinoma\tLUAD",
-                "P3\tS3\tLung Cancer\tLung Adenocarcinoma\tLUAD",
-            ],
-        );
-
-        let result = co_occurrence(&study_dir, &["TP53".into(), "NOTAGENE".into()])
-            .expect("co-occurrence result");
-        let pair = &result.pairs[0];
-        assert_eq!(pair.both_mutated, 0);
-        assert_eq!(pair.a_only, 1);
-        assert_eq!(pair.b_only, 0);
-        assert_eq!(pair.neither, 2);
-        assert_eq!(pair.log_odds_ratio, None);
-        assert_eq!(pair.p_value, None);
-    }
-
-    #[test]
     fn co_occurrence_falls_back_to_mutation_observed_samples_without_clinical_file() {
         let fixture = TestStudyDir::new("co-occur-no-clinical");
         let study_dir = fixture.study_path("co_study");

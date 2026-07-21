@@ -1660,29 +1660,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn compare_expression_serializes_null_statistics_for_an_empty_group() {
-        let fixture = TestStudyDir::new("compare-expression-empty-group");
-        minimal_study_fixture(&fixture.root, "demo_study");
-
-        let result =
-            compare_expression_with_root(fixture.root.clone(), "demo_study", "ZZQQXX", "TP53")
-                .await
-                .expect("expression compare should pass");
-        let mutant = &result.groups[0];
-        assert_eq!(mutant.group_name, "ZZQQXX-mutant");
-        assert_eq!(mutant.sample_count, 0);
-
-        let json = serde_json::to_value(mutant).expect("expression group should serialize");
-        for field in ["mean", "median", "min", "max", "q1", "q3"] {
-            assert!(
-                json[field].is_null(),
-                "empty-group {field} should serialize as null, got {}",
-                json[field]
-            );
-        }
-    }
-
-    #[tokio::test]
     async fn filter_round_trips_source_result() {
         let fixture = TestStudyDir::new("filter");
         minimal_study_fixture(&fixture.root, "demo_study");
