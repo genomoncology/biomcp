@@ -25,7 +25,8 @@ biomcp update [--check] [--allow-missing-checksum] → self-update or check for 
 biomcp list [entity]          → show entities, commands, and filters
 biomcp skill                  → show the embedded BioMCP agent guide
 biomcp skill render           → print the canonical agent prompt
-biomcp skill install <dir>    → install the BioMCP guide into an agent directory
+biomcp skill install [--force] <dir> → install or explicitly repair the BioMCP guide
+biomcp skill status [dir]     → compare installed guidance with this binary
 biomcp skill list             → list embedded worked examples
 biomcp cache path             → print the managed HTTP cache path (plain text; ignores `--json`)
 biomcp cache stats            → show HTTP cache statistics (JSON supported)
@@ -488,15 +489,20 @@ Overview: `biomcp skill` (prints the embedded `SKILL.md` guide)
 
 Render: `biomcp skill render`
 
-Install: `biomcp skill install ~/.claude --force`
+Install or explicitly repair: `biomcp skill install ~/.claude --force`
+
+Status: `biomcp --json skill status ~/.claude`
 
 List: `biomcp skill list`
 
 Open: `biomcp skill 01` or `biomcp skill article-follow-up`
 
-Install output lands in `skills/biomcp/` and currently includes `SKILL.md`,
-`use-cases/`, `jq-examples.md`, `examples/`, and `schemas/`. The installer auto-discovers existing config
-directories (`.claude`, `.agents/skills/`, etc.) when no directory is passed.
+Install output lands in `skills/biomcp/` and includes `SKILL.md`, a managed
+`.biomcp-skill.json` stamp, `use-cases/`, `jq-examples.md`, `examples/`, and
+`schemas/`. Plain install does not overwrite an existing skill; `--force`
+repairs managed files while preserving unrelated files. The installer and
+status command auto-discover existing config directories (`.claude`,
+`.agents/skills/`, etc.) when no directory is passed.
 
 MCP resources include `biomcp://skill/<slug>` for each embedded worked example.
 

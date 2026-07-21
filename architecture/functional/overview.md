@@ -86,8 +86,9 @@ prints the embedded `skills/SKILL.md` overview, `biomcp skill render` prints
 the same canonical agent prompt for script and eval consumers,
 `biomcp skill list` shows embedded worked examples, and `biomcp skill <name>`
 opens an embedded worked example by number or slug. `biomcp skill install
-<dir>` exports that guide, the `use-cases/` catalog, and supporting references
-into an agent directory.
+<dir>` exports that guide, the `use-cases/` catalog, supporting references, and
+a managed stamp into an agent directory. `biomcp skill status [dir]` compares
+that installation with the running binary without changing files.
 
 `biomcp skill list` is the question-to-playbook entry point. It lists embedded
 worked-example slugs that can be opened with `biomcp skill <slug>` for the full
@@ -100,6 +101,10 @@ The current runtime contract is:
 - `biomcp skill list` shows embedded worked examples
 - `biomcp skill <name>` opens an embedded worked example
 - `biomcp skill install <dir>` installs that guide into `skills/biomcp/`
+- `biomcp skill install --force <dir>` explicitly repairs managed files while
+  preserving unrelated files
+- `biomcp skill status [dir]` reports current, stale, missing, unmanaged, or
+  locally modified guidance
 - `biomcp skill list` shows embedded worked examples for biomedical questions
 - MCP resource listing includes `biomcp://help` plus `biomcp://skill/<slug>`
   for each embedded worked example

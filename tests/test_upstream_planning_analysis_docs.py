@@ -150,6 +150,7 @@ def test_functional_overview_preserves_readme_surface_and_study_family() -> None
     assert "`biomcp skill` shows the BioMCP agent guide" in functional
     assert "`biomcp skill render` prints the canonical agent prompt" in functional
     assert "`biomcp skill install <dir>` installs that guide" in functional
+    assert "`biomcp skill status [dir]` reports current, stale, missing, unmanaged" in functional
     assert "`biomcp skill list` shows embedded worked examples" in functional
     assert "`biomcp skill <name>` opens an embedded worked example" in functional
     assert "`biomcp://skill/<slug>`" in functional
@@ -739,6 +740,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "positional alias" in ux
     assert "biomcp skill                  → show the embedded BioMCP agent guide" in ux
     assert "biomcp skill render           → print the canonical agent prompt" in ux
+    assert "biomcp skill status [dir]     → compare installed guidance" in ux
     assert "biomcp skill list             → list embedded worked examples" in ux
     assert (
         "biomcp cache path             → print the managed HTTP cache path (plain text; ignores `--json`)"
@@ -758,6 +760,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert "Overview: `biomcp skill`" in ux
     assert "Render: `biomcp skill render`" in ux
+    assert "Status: `biomcp --json skill status ~/.claude`" in ux
     assert "List: `biomcp skill list`" in ux
     assert "Open: `biomcp skill 01` or `biomcp skill article-follow-up`" in ux
     assert "biomcp://skill/<slug>" in ux
