@@ -141,8 +141,9 @@ assertion; it validated syntax but did not establish cross-coordinate
 equivalence. `resolution.basis` is `caller_supplied`, `provider_confirmed`, or
 `null`. MyVariant validation is `confirmed`, `not_found`, `indeterminate`,
 `contradictory`, or `unavailable`; `matched_alias` is non-null only when
-confirmed and `contradictory_field` only when contradictory. Invalid items use
-`resolution: null`.
+confirmed and `contradictory_field` only when contradictory. Article
+`provenance.query_aliases` separately records retrieval inputs, not observed or
+verified article identity. Invalid items use `resolution: null`.
 
 | Validation | Retrieval meaning |
 |---|---|

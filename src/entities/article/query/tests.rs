@@ -14,6 +14,18 @@ fn pubtator_sort_sends_param_for_date() {
 }
 
 #[test]
+fn strict_variant_templates_quote_and_escape_provider_inputs() {
+    assert_eq!(
+        build_pubmed_variant_strict_query("TP53", "c.356C>A"),
+        "(\"TP53\"[Title/Abstract] AND \"c.356C>A\"[Title/Abstract])"
+    );
+    assert_eq!(
+        build_europepmc_variant_strict_query("TP53", "c.356C>A"),
+        "TITLE_ABS:\"TP53 c.356C>A\""
+    );
+}
+
+#[test]
 fn europepmc_keyword_does_not_quote_whitespace() {
     let term = europepmc_keyword("large language model clinical trials");
     assert_eq!(term, "large language model clinical trials");
