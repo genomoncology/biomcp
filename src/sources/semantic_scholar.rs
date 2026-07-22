@@ -432,6 +432,26 @@ impl SemanticScholarClient {
         self.send_json(req).await
     }
 
+    pub(crate) fn paper_search_bulk_plan(
+        query: &str,
+        limit: usize,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        let mut plan = Self::paper_search_plan(query, limit, None, api_key)?;
+        plan.path = "graph/v1/paper/search/bulk".into();
+        Ok(plan)
+    }
+
+    pub async fn paper_search_bulk(
+        &self,
+        query: &str,
+        limit: usize,
+    ) -> Result<SemanticScholarSearchResponse, BioMcpError> {
+        let plan = Self::paper_search_bulk_plan(query, limit, self.api_key.as_deref())?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.send_json(req).await
+    }
+
     pub async fn paper_citations(
         &self,
         id: &str,

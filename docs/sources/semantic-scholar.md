@@ -7,7 +7,7 @@ description: "Use BioMCP to add Semantic Scholar TLDRs, citations, references, a
 
 Semantic Scholar supplies provider-defined TLDR, citation, reference, and recommendation records around a paper. BioMCP relays those records; recommendation quality and recall are provider-dependent and not validated by BioMCP.
 
-In BioMCP, Semantic Scholar provides provider-exact author search/detail and an automatic optional `search article --source all` leg when the filter set is compatible; article search is also individually selectable with `--source semanticscholar`. These routes use shared-pool mode at 1 req/2sec without `S2_API_KEY` and authenticated mode at 1 req/sec with the key. The dedicated article helper commands on this page are `get article <id> tldr`, `article citations`, `article references`, and `article recommendations`.
+In BioMCP, Semantic Scholar provides provider-exact author search/detail and an automatic optional `search article --source all` leg when the filter set is compatible; article search is also individually selectable with `--source semanticscholar`. `variant articles --strategy union` uses the bulk phrase endpoint only for its bounded strict lane and retains relevance search as discovery; `--debug-plan` identifies each versioned request. These routes use shared-pool mode at 1 req/2sec without `S2_API_KEY` and authenticated mode at 1 req/sec with the key. The dedicated article helper commands on this page are `get article <id> tldr`, `article citations`, `article references`, and `article recommendations`.
 
 ## What BioMCP exposes
 

@@ -11,9 +11,12 @@ In BioMCP, PubMed is both a direct article-search source and part of the
 default compatible article federation. `search article --source pubmed` uses
 BioMCP's PubMed ESearch/ESummary loop directly, while the default `--source
 all` route combines PubTator3, Europe PMC, and PubMed when the selected
-filters are PubMed-compatible. Direct PubMed search and the compatible
-federated PubMed leg clean question-format unfielded article terms before
-ESearch; BioMCP keeps the raw gene, disease, drug, or keyword wording in
+filters are PubMed-compatible. `variant articles --strategy union` also sends a
+bounded strict request with quoted gene and variant `Title/Abstract` clauses,
+then retains the discovery federation; `--debug-plan` exposes the versioned
+strict request. Direct PubMed search and the compatible federated PubMed leg
+clean question-format unfielded article terms before ESearch; BioMCP keeps the
+raw gene, disease, drug, or keyword wording in
 markdown and JSON query echoes, and other article sources keep their existing
 query behavior. The opt-in `indexing` section uses PubMed citation EFetch XML for associated author affiliations, ORCID, and structured MeSH headings; `all` includes it while ordinary detail/search/batch do not. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, NCBI ID Converter, PMC HTML, and opt-in Semantic Scholar PDF metadata; full text and PDFs remain governed by article-level licenses. Article JSON records the full-text ladder as `not_requested`, `data`, confirmed `empty`, or `unavailable`; a later successful source wins, but a healthy miss cannot erase an earlier source failure. Markdown and `_meta.section_sources` project the same outcome.
 Semantic Scholar TLDR, citation, reference, and recommendation helpers belong

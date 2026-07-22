@@ -23,6 +23,10 @@ fn strict_variant_templates_quote_and_escape_provider_inputs() {
         build_europepmc_variant_strict_query("TP53", "c.356C>A"),
         "TITLE_ABS:\"TP53 c.356C>A\""
     );
+    assert_eq!(
+        build_pubmed_variant_strict_query("TP53\" OR X", "c.356C>A\\\\x"),
+        "(\"TP53\\\" OR X\"[Title/Abstract] AND \"c.356C>A\\\\\\\\x\"[Title/Abstract])"
+    );
 }
 
 #[test]

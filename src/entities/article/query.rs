@@ -74,10 +74,11 @@ pub(super) fn europepmc_keyword(value: &str) -> String {
 }
 
 pub(crate) fn build_pubmed_variant_strict_query(gene: &str, alias: &str) -> String {
+    let escape = |value: &str| value.trim().replace('\\', "\\\\").replace('"', "\\\"");
     format!(
         "(\"{}\"[Title/Abstract] AND \"{}\"[Title/Abstract])",
-        gene.trim().replace('"', "\\\""),
-        alias.trim().replace('"', "\\\"")
+        escape(gene),
+        escape(alias)
     )
 }
 

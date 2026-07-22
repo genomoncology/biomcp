@@ -18,7 +18,10 @@ use crate::entities::variant::{
 };
 use crate::error::BioMcpError;
 
-use super::backends::search_pubtator_page_with_context;
+use super::backends::{
+    search_europepmc_page_with_context, search_pubmed_page_with_context,
+    search_pubtator_page_with_context, search_semantic_scholar_candidates,
+};
 use super::candidates::{
     ArticleCandidate, article_candidate_from_row, merge_article_candidate_pool,
     stable_article_identifier,
@@ -139,6 +142,7 @@ pub(crate) struct VariantArticleExecutionContext {
     request: Arc<SharedWorkBudget>,
     events: Arc<Mutex<Vec<VariantArticleCallEvent>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
+    strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
 }
 
 impl VariantArticleExecutionContext {
@@ -151,6 +155,7 @@ impl VariantArticleExecutionContext {
             request,
             events: Arc::new(Mutex::new(Vec::new())),
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
+            strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
         }
     }
 
@@ -247,6 +252,28 @@ impl VariantArticleExecutionContext {
             .iter()
             .cloned()
             .collect()
+    }
+
+    fn route_stopped(&self, route: &str) -> bool {
+        self.stopped_routes
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .contains(route)
+    }
+
+    fn record_strict_pubtator_query(&self, query_alias: &str, entity_id: &str) {
+        self.strict_pubtator_queries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(query_alias.to_string(), entity_id.to_string());
+    }
+
+    fn strict_pubtator_query(&self, query_alias: &str) -> Option<String> {
+        self.strict_pubtator_queries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(query_alias)
+            .cloned()
     }
 }
 
@@ -523,6 +550,16 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
                 aliases.insert(format!("{transcript}:{coding}"));
             }
         }
+        if let (Some(gene), Some(protein)) = (
+            context.requested.gene.as_deref(),
+            context
+                .requested
+                .protein_change
+                .as_deref()
+                .and_then(crate::entities::variant::normalize_protein_change),
+        ) {
+            aliases.insert(format!("{gene} {protein}"));
+        }
         if let (Some(accession), Some(position), Some(reference), Some(alternate)) = (
             context.requested.genomic_accession.as_deref(),
             context.requested.position,
@@ -681,6 +718,7 @@ async fn annotation_candidates(
             0,
             Some(execution),
             "pubtator_variant",
+            None,
         )
         .await;
         let page = match page_result {
@@ -784,8 +822,8 @@ async fn federated_alias_candidates(
                 candidate.variant_provenance.push(VariantArticleProvenance {
                     route: route.to_string(),
                     source: source_name(source).to_string(),
-                    query_aliases: vec![alias.clone()],
                     matched_alias: Some(alias.clone()),
+                    query_aliases: vec![alias.clone()],
                     native_position: candidate.row.source_local_position.saturating_add(1),
                 });
             }
@@ -829,6 +867,133 @@ async fn federated_alias_candidates(
             )
         })
         .collect();
+    (candidates, incomplete, succeeded, statuses)
+}
+
+async fn strict_provider_candidates(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    strategy: VariantArticleStrategy,
+    execution: &VariantArticleExecutionContext,
+) -> (
+    Vec<ArticleCandidate>,
+    bool,
+    bool,
+    Vec<VariantArticleSourceStatus>,
+) {
+    let filters = article_filters();
+    let plans = provider_variant_query_plan(input, context, strategy);
+    let mut candidates = Vec::new();
+    let mut statuses = Vec::new();
+    let mut incomplete = false;
+    let mut succeeded = false;
+
+    for plan in plans.into_iter().filter(|plan| plan.route == "strict") {
+        let stopped_before = execution.route_stopped("strict");
+        let rows = match plan.provider.as_str() {
+            "pubmed" => search_pubmed_page_with_context(
+                &filters,
+                LEXICAL_ALIAS_FETCH_LIMIT,
+                0,
+                Some(execution),
+                "strict",
+                Some(&plan.query),
+            )
+            .await
+            .map(|page| page.results),
+            "europepmc" => search_europepmc_page_with_context(
+                &filters,
+                LEXICAL_ALIAS_FETCH_LIMIT,
+                0,
+                Some(execution),
+                "strict",
+                Some(&plan.query),
+            )
+            .await
+            .map(|page| page.results),
+            "semanticscholar" => search_semantic_scholar_candidates(
+                &filters,
+                LEXICAL_ALIAS_FETCH_LIMIT,
+                Some(execution),
+                "strict",
+                Some(&plan.query),
+            )
+            .await
+            .and_then(|outcome| {
+                if matches!(
+                    outcome.status.status,
+                    Some(ArticleSourceAvailability::Unavailable)
+                ) {
+                    Err(BioMcpError::Api {
+                        api: "semantic-scholar".into(),
+                        message: "strict search unavailable".into(),
+                    })
+                } else {
+                    Ok(outcome.rows)
+                }
+            }),
+            "pubtator" => {
+                let Some(started) = execution.reserve("strict") else {
+                    incomplete = true;
+                    statuses.push(status("strict", "pubtator", "unavailable"));
+                    continue;
+                };
+                let pubtator = crate::sources::pubtator::PubTatorClient::new();
+                let tokens = match pubtator {
+                    Ok(pubtator) => {
+                        resolve_variant_entity_tokens(&pubtator, input, &context.requested).await
+                    }
+                    Err(error) => Err(error),
+                };
+                execution.record(
+                    "strict",
+                    "pubtator",
+                    started,
+                    if tokens.is_ok() { "ok" } else { "unavailable" },
+                    usize::from(tokens.is_ok()),
+                );
+                match tokens {
+                    Ok(tokens) => match tokens.first() {
+                        Some(token) => {
+                            execution
+                                .record_strict_pubtator_query(&plan.query_alias, &token.entity_id);
+                            search_pubtator_page_with_context(
+                                &filters,
+                                LEXICAL_ALIAS_FETCH_LIMIT,
+                                0,
+                                Some(execution),
+                                "strict",
+                                Some(&token.entity_id),
+                            )
+                        }
+                        .await
+                        .map(|page| page.results),
+                        None => Ok(Vec::new()),
+                    },
+                    Err(error) => Err(error),
+                }
+            }
+            _ => continue,
+        };
+        match rows {
+            Ok(rows) if !execution.route_stopped("strict") || stopped_before => {
+                succeeded = true;
+                statuses.push(status("strict", &plan.provider, "ok"));
+                candidates.extend(rows.into_iter().map(|row| {
+                    candidate_with_provenance(
+                        row,
+                        "strict",
+                        &plan.provider,
+                        vec![plan.query_alias.clone()],
+                    )
+                }));
+            }
+            Ok(_) | Err(_) => {
+                incomplete = true;
+                statuses.push(status("strict", &plan.provider, "unavailable"));
+            }
+        }
+    }
     (candidates, incomplete, succeeded, statuses)
 }
 
@@ -1129,77 +1294,86 @@ fn provider_variant_query_plan(
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
 ) -> Vec<ProviderVariantQueryPlan> {
-    let (alias, gene) = context
+    let gene = context
         .requested
         .gene
         .as_deref()
-        .zip(
-            context
-                .requested
-                .coding_change
-                .as_deref()
-                .or(context.requested.protein_change.as_deref()),
-        )
-        .map(|(gene, alias)| (alias.to_string(), gene.to_string()))
         .or_else(|| {
-            exact_aliases(context)
-                .0
-                .into_iter()
-                .next()
-                .and_then(|query_alias| {
-                    context.requested.gene.as_deref().map(|gene| {
-                        let alias = query_alias
-                            .strip_prefix(&format!("{gene} "))
-                            .unwrap_or(&query_alias)
-                            .to_string();
-                        (alias, gene.to_string())
-                    })
-                })
+            context
+                .source_identity
+                .as_ref()
+                .and_then(|identity| identity.genes.first().map(String::as_str))
         })
-        .unwrap_or_else(|| (input.trim().to_string(), String::new()));
-    let query_alias = if gene.is_empty() {
-        input.trim().to_string()
-    } else {
-        format!("{gene} {alias}")
-    };
+        .unwrap_or_default();
+    let mut aliases = BTreeSet::new();
+    if let Some(coding) = context.requested.coding_change.as_deref() {
+        aliases.insert(coding.trim().to_string());
+        if context.requested.is_authoritative_refseq()
+            && let Some(transcript) = context.requested.transcript.as_deref()
+        {
+            aliases.insert(format!("{transcript}:{coding}"));
+        }
+    }
+    if let Some(protein) = context
+        .requested
+        .protein_change
+        .as_deref()
+        .and_then(crate::entities::variant::normalize_protein_change)
+    {
+        aliases.insert(protein);
+    }
+    if context.requested.is_authoritative_refseq()
+        && let (Some(accession), Some(position), Some(reference), Some(alternate)) = (
+            context.requested.genomic_accession.as_deref(),
+            context.requested.position,
+            context.requested.reference.as_deref(),
+            context.requested.alternate.as_deref(),
+        )
+    {
+        aliases.insert(format!("{accession}:g.{position}{reference}>{alternate}"));
+    }
+    aliases.retain(|alias| !alias.is_empty());
     let mut queries = Vec::new();
     if strategy != VariantArticleStrategy::Annotation && !gene.is_empty() {
-        queries.extend([
-            ProviderVariantQueryPlan {
-                provider: "pubmed".into(),
-                route: "strict".into(),
-                query_alias: query_alias.clone(),
-                query: build_pubmed_variant_strict_query(&gene, &alias),
-                query_template_version: "pubmed-title-abstract-v1".into(),
-            },
-            ProviderVariantQueryPlan {
-                provider: "europepmc".into(),
-                route: "strict".into(),
-                query_alias: query_alias.clone(),
-                query: build_europepmc_variant_strict_query(&gene, &alias),
-                query_template_version: "europepmc-title-abstract-v1".into(),
-            },
-            ProviderVariantQueryPlan {
-                provider: "semanticscholar".into(),
-                route: "strict".into(),
-                query_alias: query_alias.clone(),
-                query: query_alias.clone(),
-                query_template_version: "semantic-scholar-bulk-phrase-v1".into(),
-            },
-            ProviderVariantQueryPlan {
-                provider: "pubtator".into(),
-                route: "strict".into(),
-                query_alias: query_alias.clone(),
-                query: format!("@VARIANT_{query_alias}"),
-                query_template_version: "pubtator-entity-v1".into(),
-            },
-        ]);
+        for alias in aliases.into_iter().take(MAX_EXACT_ALIASES) {
+            let query_alias = format!("{gene} {alias}");
+            queries.extend([
+                ProviderVariantQueryPlan {
+                    provider: "pubmed".into(),
+                    route: "strict".into(),
+                    query_alias: query_alias.clone(),
+                    query: build_pubmed_variant_strict_query(gene, &alias),
+                    query_template_version: "pubmed-title-abstract-v1".into(),
+                },
+                ProviderVariantQueryPlan {
+                    provider: "europepmc".into(),
+                    route: "strict".into(),
+                    query_alias: query_alias.clone(),
+                    query: build_europepmc_variant_strict_query(gene, &alias),
+                    query_template_version: "europepmc-title-abstract-v1".into(),
+                },
+                ProviderVariantQueryPlan {
+                    provider: "semanticscholar".into(),
+                    route: "strict".into(),
+                    query_alias: query_alias.clone(),
+                    query: query_alias.clone(),
+                    query_template_version: "semantic-scholar-bulk-phrase-v1".into(),
+                },
+                ProviderVariantQueryPlan {
+                    provider: "pubtator".into(),
+                    route: "strict".into(),
+                    query_alias: query_alias.clone(),
+                    query: format!("@VARIANT_{query_alias}"),
+                    query_template_version: "pubtator-entity-v1".into(),
+                },
+            ]);
+        }
     }
     if strategy == VariantArticleStrategy::Union {
         queries.push(ProviderVariantQueryPlan {
             provider: "federated".into(),
             route: "discovery".into(),
-            query_alias,
+            query_alias: input.trim().to_string(),
             query: input.trim().to_string(),
             query_template_version: "federated-free-text-v1".into(),
         });
@@ -1289,9 +1463,18 @@ fn build_debug_plan(
         .collect::<Vec<_>>();
     let item_work = execution.item_work();
     let request_work = execution.request_work();
+    let mut provider_queries = provider_variant_query_plan(input, context, strategy);
+    for plan in &mut provider_queries {
+        if plan.provider == "pubtator"
+            && plan.route == "strict"
+            && let Some(query) = execution.strict_pubtator_query(&plan.query_alias)
+        {
+            plan.query = query;
+        }
+    }
     VariantArticleDebugPlan {
         normalized_aliases: context.resolution.normalized_aliases.clone(),
-        provider_queries: provider_variant_query_plan(input, context, strategy),
+        provider_queries,
         routes,
         counts,
         ranking: VariantArticleRankingPlan {
@@ -1469,6 +1652,17 @@ async fn search_variant_articles_identity(
             }
         }
     } else {
+        if matches!(
+            strategy,
+            VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
+        ) {
+            let (rows, incomplete, succeeded, route_statuses) =
+                strict_provider_candidates(input, &context, strategy, &execution).await;
+            candidates.extend(rows);
+            statuses.extend(route_statuses);
+            succeeded_routes += usize::from(succeeded);
+            failed_routes += usize::from(incomplete || !succeeded);
+        }
         if matches!(
             strategy,
             VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
@@ -2082,7 +2276,15 @@ mod tests {
             "pubmed-title-abstract-v1"
         );
         assert_ne!(left_query[0].query, right_query[0].query);
-        assert!(left_query.iter().any(|query| query.route == "discovery"));
+        let discovery = left_query
+            .iter()
+            .position(|query| query.route == "discovery")
+            .expect("union retains discovery");
+        assert!(
+            left_query[..discovery]
+                .iter()
+                .all(|query| query.route == "strict")
+        );
     }
 
     #[test]
@@ -2173,6 +2375,43 @@ mod tests {
             },
         );
         assert!(plan.routes.is_empty());
+    }
+
+    #[test]
+    fn authoritative_refseq_strict_plans_include_only_known_supplied_proteins() {
+        let mut context = resolved_context();
+        context.requested = RequestedVariantIdentity {
+            gene: Some("ATM".into()),
+            protein_change: Some("p.Met16Ile".into()),
+            coding_change: Some("c.47G>A".into()),
+            transcript: Some("NM_000051.4".into()),
+            genomic_accession: Some("NC_000011.10".into()),
+            genome_build: Some("GRCh38".into()),
+            position: Some(108248927),
+            reference: Some("T".into()),
+            alternate: Some("G".into()),
+            ..Default::default()
+        };
+
+        assert!(exact_aliases(&context).0.contains(&"ATM M16I".to_string()));
+        assert!(
+            provider_variant_query_plan("ATM p.Met16Ile", &context, VariantArticleStrategy::Union)
+                .iter()
+                .any(|plan| plan.query_alias == "ATM M16I")
+        );
+
+        context.requested.protein_change = Some("p.?".into());
+        assert!(
+            !exact_aliases(&context)
+                .0
+                .iter()
+                .any(|alias| alias.contains("p.?"))
+        );
+        assert!(
+            !provider_variant_query_plan("ATM p.?", &context, VariantArticleStrategy::Union)
+                .iter()
+                .any(|plan| plan.route == "strict" && plan.query_alias.contains("p.?"))
+        );
     }
 
     #[test]

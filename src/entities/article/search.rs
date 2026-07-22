@@ -229,42 +229,6 @@ where
     outcome
 }
 
-async fn with_variant_semantic_budget<F>(
-    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
-    route: &str,
-    future: F,
-) -> FederatedSourceOutcome<super::backends::SemanticScholarCandidateOutcome>
-where
-    F: Future<Output = Result<super::backends::SemanticScholarCandidateOutcome, BioMcpError>>,
-{
-    let Some(execution) = execution else {
-        return with_federated_source_timeout(ArticleSource::SemanticScholar, future).await;
-    };
-    let Some(started) = execution.reserve(route) else {
-        return FederatedSourceOutcome::Unavailable {
-            error: None,
-            status: source_degraded_status(
-                ArticleSource::SemanticScholar,
-                "variant article work budget exhausted".into(),
-            ),
-        };
-    };
-    let outcome = with_federated_source_timeout(ArticleSource::SemanticScholar, future).await;
-    let ok = matches!(
-        &outcome,
-        FederatedSourceOutcome::Available(value)
-            if !matches!(value.status.status, Some(ArticleSourceAvailability::Unavailable))
-    );
-    execution.record(
-        route,
-        "semanticscholar",
-        started,
-        if ok { "ok" } else { "unavailable" },
-        usize::from(ok),
-    );
-    outcome
-}
-
 fn unavailable_source_error(source: ArticleSource) -> BioMcpError {
     BioMcpError::SourceUnavailable {
         source_name: source.display_name().to_string(),
@@ -314,18 +278,25 @@ pub(super) async fn acquire_federated_article_rows_with_context(
     let (pubtator_leg, europe_leg, pubmed_leg, semantic_scholar_leg, litsense2_leg) = tokio::join!(
         with_federated_source_timeout(
             ArticleSource::PubTator,
-            search_pubtator_page_with_context(filters, fetch_count, 0, execution, route),
+            search_pubtator_page_with_context(filters, fetch_count, 0, execution, route, None),
         ),
         with_federated_source_timeout(
             ArticleSource::EuropePmc,
-            search_europepmc_page_with_context(filters, fetch_count, 0, execution, route),
+            search_europepmc_page_with_context(filters, fetch_count, 0, execution, route, None),
         ),
         async {
             if include_pubmed {
                 Some(
                     with_federated_source_timeout(
                         ArticleSource::PubMed,
-                        search_pubmed_page_with_context(filters, fetch_count, 0, execution, route),
+                        search_pubmed_page_with_context(
+                            filters,
+                            fetch_count,
+                            0,
+                            execution,
+                            route,
+                            None,
+                        ),
                     )
                     .await,
                 )
@@ -333,10 +304,9 @@ pub(super) async fn acquire_federated_article_rows_with_context(
                 None
             }
         },
-        with_variant_semantic_budget(
-            execution,
-            route,
-            search_semantic_scholar_candidates(filters, fetch_count),
+        with_federated_source_timeout(
+            ArticleSource::SemanticScholar,
+            search_semantic_scholar_candidates(filters, fetch_count, execution, route, None),
         ),
         async {
             if include_litsense2 {
@@ -659,7 +629,9 @@ async fn search_relevance_page(
             .await)
         }
         BackendPlan::SemanticScholarOnly => {
-            let outcome = search_semantic_scholar_candidates(filters, fetch_count).await?;
+            let outcome =
+                search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None)
+                    .await?;
             Ok(
                 enrich_and_finalize_article_candidates(outcome.rows, limit, offset, None, filters)
                     .await,
@@ -688,7 +660,8 @@ async fn search_semantic_scholar_page(
         )));
     }
 
-    let outcome = search_semantic_scholar_candidates(filters, fetch_count).await?;
+    let outcome =
+        search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None).await?;
     let page =
         enrich_and_finalize_article_candidates(outcome.rows, limit, offset, None, filters).await;
     Ok(article_search_page(page, vec![outcome.status]))
