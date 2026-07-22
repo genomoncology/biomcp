@@ -52,6 +52,28 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
 }
 ```
 
+## Provider-specific strict query provenance
+
+<!-- mustmatch-lint: skip -->
+
+This live canary checks the request plan rather than article recall. It uses the
+frozen coding collisions to ensure that each strict provider query keeps the gene
+attached to its alias, retains a discovery request, and labels aliases as retrieval
+inputs rather than observed article evidence.
+
+```bash run id=provider-strict-query-live-canary exit=0 timeout=180
+bash ../fixtures/run-variant-article-strict-live-canary.sh ../..
+```
+
+```json expect=provider-strict-query-live-canary contains
+{
+  "all_strict_templates_exact": true,
+  "brca1_aliases_remain_distinct": true,
+  "discovery_route_retained": true,
+  "provenance_uses_query_aliases_only": true
+}
+```
+
 ## Seven-Variant Recall Canary
 
 <!-- mustmatch-lint: skip -->
