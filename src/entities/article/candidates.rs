@@ -18,6 +18,7 @@ pub(super) struct ArticleCandidate {
     pub(super) source_positions: Vec<ArticleSourcePosition>,
     pub(super) semantic_signal: Option<f64>,
     pub(super) variant_provenance: Vec<super::variant_search::VariantArticleProvenance>,
+    pub(super) identity: Option<super::identity_verification::VariantArticleIdentity>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,6 +98,7 @@ pub(super) fn article_candidate_from_row(mut row: ArticleSearchResult) -> Articl
         semantic_signal: (row.source == ArticleSource::LitSense2)
             .then(|| row.score.unwrap_or(0.0).clamp(0.0, 1.0)),
         variant_provenance: Vec::new(),
+        identity: None,
         row,
     }
 }
@@ -157,6 +159,7 @@ fn merge_article_candidate(target: &mut ArticleCandidate, incoming: ArticleCandi
         mut source_positions,
         semantic_signal,
         mut variant_provenance,
+        identity,
     } = incoming;
     let target_row = &mut target.row;
     merge_missing_string(&mut target_row.pmcid, incoming_row.pmcid);
@@ -210,6 +213,9 @@ fn merge_article_candidate(target: &mut ArticleCandidate, incoming: ArticleCandi
     collapse_source_positions(&mut target.source_positions);
     if target.semantic_signal.is_none() {
         target.semantic_signal = semantic_signal;
+    }
+    if target.identity.is_none() {
+        target.identity = identity;
     }
     target.variant_provenance.append(&mut variant_provenance);
     target.variant_provenance.sort();

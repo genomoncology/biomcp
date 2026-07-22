@@ -151,6 +151,26 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, rows)
             return
 
+        if parsed.path == "/publications/export/biocjson":
+            pmid = params.get("pmids", [""])[0]
+            def passage(allele):
+                return {
+                    "infons": {"type": "abstract"},
+                    "text": f"Captured BRAF {allele} evidence.",
+                    "annotations": [
+                        {"text": "BRAF", "infons": {"type": "Gene"}},
+                        {"text": allele, "infons": {"type": "Mutation"}},
+                    ],
+                }
+            passages = {
+                BRAF_ANNOTATION_PMID: [passage("p.V600E")],
+                BRAF_PROTEIN_ALIAS_PMID: [],
+                BRAF_CODING_ALIAS_PMID: [passage("p.V600K")],
+                BRAF_GENOMIC_ALIAS_PMID: [passage("p.V600E"), passage("p.V600K")],
+            }.get(pmid, [])
+            send_json(self, 200, {"PubTator3": [{"pmid": int(pmid), "passages": passages}]})
+            return
+
         if parsed.path == "/search/":
             text = params.get("text", [""])[0]
             if params.get("page", ["1"])[0] != "1":

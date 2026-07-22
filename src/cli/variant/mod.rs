@@ -121,6 +121,12 @@ See also: biomcp list variant")]
         /// Include normalized route, provider, ranking, and work facts (JSON only)
         #[arg(long)]
         debug_plan: bool,
+        /// Verify article identity from captured provider evidence
+        #[arg(long)]
+        verify_identity: bool,
+        /// Return only captured-evidence confirmations (requires --verify-identity)
+        #[arg(long, requires = "verify_identity")]
+        confirmed_only: bool,
         /// Retrieval strategy (union, annotation, or lexical)
         #[arg(long, value_enum, default_value_t = VariantArticleStrategy::Union)]
         strategy: VariantArticleStrategy,

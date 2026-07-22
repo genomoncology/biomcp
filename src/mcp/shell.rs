@@ -75,6 +75,10 @@ struct TypedVariantArticles {
     offset: usize,
     #[serde(default)]
     debug_plan: bool,
+    #[serde(default)]
+    verify_identity: bool,
+    #[serde(default)]
+    confirmed_only: bool,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -645,13 +649,23 @@ impl BioMcpServer {
                 None,
             ));
         }
+        if input.confirmed_only && !input.verify_identity {
+            return Err(McpError::invalid_params(
+                "variant_articles confirmed_only requires verify_identity",
+                None,
+            ));
+        }
         let strategy = variant_article_strategy(&input.strategy)?;
-        match crate::entities::article::search_variant_article_batch(
+        match crate::entities::article::search_variant_article_batch_with_options(
             input.items,
             strategy,
             input.limit,
             input.offset,
             input.debug_plan,
+            crate::entities::article::VariantArticleVerificationOptions {
+                verify_identity: input.verify_identity,
+                confirmed_only: input.confirmed_only,
+            },
         )
         .await
         {
@@ -1006,6 +1020,8 @@ mod tests {
                     limit: 3,
                     offset: 0,
                     debug_plan: true,
+                    verify_identity: false,
+                    confirmed_only: false,
                 },
             ))
             .await

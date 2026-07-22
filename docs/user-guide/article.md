@@ -88,6 +88,16 @@ For the complete strict-identity, union-shortlist, batch, selected full-text/ass
 and conditional citation/reference sequence, run `biomcp skill
 exact-variant-literature`.
 
+`biomcp --json variant articles "BRAF p.V600E" --verify-identity` adds an
+identity projection from captured provider evidence without changing normal
+retrieval recall. `--confirmed-only` requires verification and filters the
+verified candidate pool before ranking and pagination. Retrieval aliases remain
+provenance, not observed article evidence. Identity observations include their
+provider, locator, linked gene, observed alias, and canonical captured-content
+hash; verification artifact hashes in `--debug-plan` are post-response audit
+facts, not retrieval-cache keys. Verification never fetches supplements
+automatically, and an incomplete verification is not a confirmation.
+
 For agent loops, `--session <token>` lets JSON article search compare the
 current keyword with the previous successful article keyword search for the
 same local token. The token is not a secret; use a short non-identifying label

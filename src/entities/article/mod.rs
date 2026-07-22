@@ -9,6 +9,7 @@ mod enrichment;
 mod filters;
 mod fulltext;
 mod graph;
+mod identity_verification;
 mod planner;
 mod query;
 mod ranking;
@@ -21,6 +22,7 @@ pub use self::assets::{article_asset_bytes, article_assets_manifest};
 pub use self::batch::get_batch_compact;
 pub use self::detail::get;
 pub use self::graph::{citations, recommendations, references};
+pub(crate) use self::identity_verification::VariantArticleVerificationOptions;
 #[allow(unused_imports)]
 pub(crate) use self::planner::{
     ArticleSearchDebugSummary, BackendPlan, article_type_limitation_note, litsense2_search_enabled,
@@ -29,9 +31,13 @@ pub(crate) use self::planner::{
 #[allow(unused_imports)]
 pub(crate) use self::ranking::{article_effective_ranking_mode, article_relevance_ranking_policy};
 pub use self::search::{search, search_page, validate_search_page_request};
+#[allow(unused_imports)]
 pub use self::variant_search::{VariantArticleStrategy, search_variant_articles};
+#[allow(unused_imports)]
 pub(crate) use self::variant_search::{
-    parse_variant_article_batch, search_variant_article_batch, search_variant_articles_with_plan,
+    parse_variant_article_batch, search_variant_article_batch,
+    search_variant_article_batch_with_options, search_variant_articles_with_options,
+    search_variant_articles_with_plan,
 };
 
 use std::path::PathBuf;
