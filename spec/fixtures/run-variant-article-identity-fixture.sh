@@ -6,8 +6,10 @@ repo_root="$(cd "$repo_root" && pwd)"
 fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/biomcp-g5-identity.XXXXXX")"
 trap 'rm -rf "$fixture_root"' EXIT
 ready="$fixture_root/ready"
+mode="$fixture_root/mode"
+printf 'normal\n' >"$mode"
 
-uv run --no-sync python - "$ready" <<'PY' >"$fixture_root/server.log" 2>&1 &
+uv run --no-sync python - "$ready" "$mode" <<'PY' >"$fixture_root/server.log" 2>&1 &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -15,6 +17,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 ready = Path(sys.argv[1])
+mode = Path(sys.argv[2])
 # The frozen rows deliberately include a true positive and collision(s) for APC.
 # They are provider response fixtures, not clinical classifications.
 rows = {
@@ -55,6 +58,8 @@ class Handler(BaseHTTPRequestHandler):
             text = query.get("text", [""])[0]
             found = next((gene for gene in rows if gene in text), None)
             values = [article(*value) for value in rows.get(found, [])]
+            if mode.read_text().strip() == "reordered":
+                values.reverse()
             return send(self, 200, {"results": values, "count": len(values), "total_pages": 1, "current": 1, "page_size": 25})
         if path == "/publications/export/biocjson":
             pmid = query.get("pmids", [""])[0]
@@ -80,8 +85,11 @@ export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIO
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 all="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --limit 1)"
-jq -n --argjson all "$all" --argjson confirmed "$confirmed" '
+printf 'reordered\n' >"$mode"
+reordered="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
+jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered "$reordered" '
   def item($id): $all.items[] | select(.request_id == $id);
+  def reordered_item($id): $reordered.items[] | select(.request_id == $id);
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
     frozen_positive_statuses: {apc: has("apc-grch38"; "12901799"; "confirmed"), atm: has("atm-grch38"; "32918381"; "confirmed"), palb2: has("palb2-grch38"; "39999518"; "confirmed"), mlh1: has("mlh1-grch38"; "20864636"; "confirmed")},
@@ -89,6 +97,6 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" '
     intentional_unverified: {brca1: has("brca1-grch38"; "90000003"; "unverified"), pten: has("pten-grch38"; "90000002"; "unverified"), tp53: has("tp53-grch38"; "24376681"; "unverified")},
     conflicting_observation: has("apc-grch38"; "90000001"; "conflicting"),
     outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38").pagination.total == null)),
-    confirmed_page_filters_before_limit: (any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[].results[]; .identity.status == "confirmed")),
-    audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and (.debug_plan.verification.identity_version | type) == "string" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string"))
+    confirmed_page_filters_before_limit: (([ $confirmed.items[] | select(.request_id == "apc-grch38") | .results[] ] | length == 1) and ($confirmed.items[] | select(.request_id == "apc-grch38") | .pagination.limit == 1 and .pagination.returned == 1 and .pagination.total >= 1) and any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[].results[]; .identity.status == "confirmed")),
+    audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash))
   }'
