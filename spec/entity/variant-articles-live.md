@@ -25,14 +25,16 @@ invent command grammar.
 }
 ```
 
-## G5 v2 authoritative identity canary
+## G5 v2 live readiness diagnostic
 
 <!-- mustmatch-lint: skip -->
 
-The frozen seven-identity batch checks assembly-aware exact resolution rather
-than literature recall or clinical interpretation. Every item must resolve,
-execute an exact route with a route-tied literal alias, and report source
-coverage plus terminal state against real providers.
+This live probe is diagnostic only, never the release gate. The frozen routine
+contract in `variant-article-identity.md` owns verified positives, collision
+rejection, pagination, and outage truthfulness. This probe checks that every
+unchanged G5 v2 request still resolves, executes an exact route with a
+route-tied literal alias, and reports source coverage plus terminal state
+against real providers.
 
 ```bash run id=g5-v2-identity-live-canary exit=0 timeout=180
 bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
