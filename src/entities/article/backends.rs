@@ -2,8 +2,6 @@
 
 use std::collections::{HashMap, HashSet};
 
-use tracing::warn;
-
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcClient;
@@ -104,7 +102,7 @@ pub(super) async fn search_pubmed_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    search_pubmed_page_with_context(filters, limit, offset, None, "federated").await
+    search_pubmed_page_with_context(filters, limit, offset, None, "federated", None).await
 }
 
 pub(super) async fn search_pubmed_page_with_context(
@@ -113,6 +111,7 @@ pub(super) async fn search_pubmed_page_with_context(
     offset: usize,
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
     route: &str,
+    strict_query: Option<&str>,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
     if limit == 0 || limit > MAX_FEDERATED_FETCH_RESULTS {
         return Err(BioMcpError::InvalidArgument(format!(
@@ -130,7 +129,10 @@ pub(super) async fn search_pubmed_page_with_context(
         ));
     }
 
-    let term = build_pubmed_search_term(filters)?;
+    let term = match strict_query {
+        Some(query) => query.to_string(),
+        None => build_pubmed_search_term(filters)?,
+    };
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
     let client = PubMedClient::new()?;
 
@@ -261,7 +263,7 @@ pub(super) async fn search_europepmc_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    search_europepmc_page_with_context(filters, limit, offset, None, "federated").await
+    search_europepmc_page_with_context(filters, limit, offset, None, "federated", None).await
 }
 
 pub(super) async fn search_europepmc_page_with_context(
@@ -270,9 +272,13 @@ pub(super) async fn search_europepmc_page_with_context(
     offset: usize,
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
     route: &str,
+    strict_query: Option<&str>,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
     let europe = EuropePmcClient::new()?;
-    let query = build_search_query(filters)?;
+    let query = match strict_query {
+        Some(query) => query.to_string(),
+        None => build_search_query(filters)?,
+    };
     let europepmc_sort = filters.sort.as_europepmc_sort();
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
 
@@ -349,7 +355,8 @@ pub(super) async fn search_europepmc_page_with_context(
 
     // Safety-first default: when date-sorted results contain no visible retraction marker,
     // try adding one matched retracted publication if available.
-    if !filters.exclude_retracted
+    if strict_query.is_none()
+        && !filters.exclude_retracted
         && filters.sort == ArticleSort::Date
         && !out.iter().any(|row| row.is_retracted == Some(true))
     {
@@ -399,7 +406,7 @@ pub(super) async fn search_pubtator_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    search_pubtator_page_with_context(filters, limit, offset, None, "federated").await
+    search_pubtator_page_with_context(filters, limit, offset, None, "federated", None).await
 }
 
 pub(super) async fn search_pubtator_page_with_context(
@@ -408,9 +415,13 @@ pub(super) async fn search_pubtator_page_with_context(
     offset: usize,
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
     route: &str,
+    strict_query: Option<&str>,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
     let pubtator = PubTatorClient::new()?;
-    let query = build_pubtator_query(filters, &pubtator).await?;
+    let query = match strict_query {
+        Some(query) => query.to_string(),
+        None => build_pubtator_query(filters, &pubtator).await?,
+    };
     let sort = pubtator_sort(filters.sort);
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
 
@@ -482,12 +493,17 @@ pub(super) async fn search_pubtator_page_with_context(
 pub(super) async fn search_semantic_scholar_candidates(
     filters: &ArticleSearchFilters,
     limit: usize,
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+    strict_query: Option<&str>,
 ) -> Result<SemanticScholarCandidateOutcome, BioMcpError> {
     let client = SemanticScholarClient::new()?;
     let auth_mode = client.auth_mode();
     let status = semantic_scholar_status(auth_mode);
 
-    let query = build_free_text_article_query(filters);
+    let query = strict_query
+        .map(str::to_string)
+        .unwrap_or_else(|| build_free_text_article_query(filters));
     if query.trim().is_empty() {
         return Ok(SemanticScholarCandidateOutcome {
             rows: Vec::new(),
@@ -500,15 +516,26 @@ pub(super) async fn search_semantic_scholar_candidates(
         normalized_date_to.as_deref(),
     );
 
-    let response = match client
-        .paper_search(&query, limit, year_filter.as_deref())
+    let response = if strict_query.is_some() {
+        variant_article_request(
+            execution,
+            route,
+            "semanticscholar",
+            client.paper_search_bulk(&query, limit),
+        )
         .await
-    {
-        Ok(response) => response,
-        Err(err) => {
-            warn!(%err, query, "Semantic Scholar article search leg failed");
-            return Ok(semantic_scholar_unavailable_outcome(auth_mode));
-        }
+    } else {
+        variant_article_request(
+            execution,
+            route,
+            "semanticscholar",
+            client.paper_search(&query, limit, year_filter.as_deref()),
+        )
+        .await
+    };
+    let response = match response {
+        Ok(Some(response)) => response,
+        Ok(None) | Err(_) => return Ok(semantic_scholar_unavailable_outcome(auth_mode)),
     };
 
     let rows = semantic_scholar_rows_from_response(

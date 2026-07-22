@@ -73,6 +73,23 @@ pub(super) fn europepmc_keyword(value: &str) -> String {
     europepmc_escape(value)
 }
 
+pub(crate) fn build_pubmed_variant_strict_query(gene: &str, alias: &str) -> String {
+    let escape = |value: &str| value.trim().replace('\\', "\\\\").replace('"', "\\\"");
+    format!(
+        "(\"{}\"[Title/Abstract] AND \"{}\"[Title/Abstract])",
+        escape(gene),
+        escape(alias)
+    )
+}
+
+pub(crate) fn build_europepmc_variant_strict_query(gene: &str, alias: &str) -> String {
+    format!(
+        "TITLE_ABS:\"{} {}\"",
+        europepmc_escape(gene),
+        europepmc_escape(alias)
+    )
+}
+
 pub(super) fn build_search_query(filters: &ArticleSearchFilters) -> Result<String, BioMcpError> {
     validate_required_search_filters(filters)?;
     validate_search_filter_values(filters)?;

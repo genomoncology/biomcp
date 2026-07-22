@@ -702,9 +702,9 @@ exact route for diagnosis; unresolved default results are explicitly
 best-effort. JSON reports route status and marks incomplete acquisition with an
 unknown total. Structured `--input <path|->` accepts a JSON array of 1-10 variant
 objects and returns ordered compact `items`; it cannot be combined with the
-positional ID and requires JSON output. `--debug-plan` is also JSON-only and adds
-normalized aliases, provider/call/page facts, ranking inputs, and fixed item and
-request budgets. The typed MCP `variant_articles` tool accepts the same item
+positional ID and requires JSON output. `--debug-plan` is also JSON-only and adds normalized aliases, strict and
+discovery provider requests (with exact query/template version), provider/call/page
+facts, ranking inputs, and fixed item and request budgets. The typed MCP `variant_articles` tool accepts the same item
 fields in memory.
 
 Structured assembly-aware items accept `genomic: "NC_...:g...."` plus `build`,

@@ -19,4 +19,4 @@ Interpretation:
 - `caller_supplied` means BioMCP accepted the supplied fields as one caller assertion; it validated syntax but did not establish cross-coordinate equivalence.
 - `provider_confirmed` means MyVariant uniquely confirmed the request; otherwise inspect `provider_validation` for `not_found`, `indeterminate`, `contradictory`, or `unavailable` and its nullable matched alias or contradictory field.
 - RefSeq exact work uses only caller-present transcript/coding, gene/coding, and genomic aliases; BioMCP performs no liftover, accession-to-`chr` conversion, strand flip, or inferred coordinate expansion.
-- Use the union shortlist, compare summaries in one batch, request full text/assets only for selected papers, and expand citations or references only when needed.
+- Use the union shortlist, compare summaries in one batch, request full text/assets only for selected papers, and expand citations or references only when needed. `provenance.query_aliases` is a retrieval input, not evidence that a paper contains the alias; inspect `--debug-plan` for strict and discovery requests.

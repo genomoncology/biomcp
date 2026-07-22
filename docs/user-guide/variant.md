@@ -259,14 +259,16 @@ and empty object shape is unchanged. This helper does not add structure data to
 default `get variant` output.
 
 `variant articles` first performs one strict variant resolution. Its default
-`--strategy union` combines compatible PubTator variant annotations, normalized
-protein/coding/genomic/rsID aliases across the ordinary article backends, and
-validated source-backed PubMed citations. BioMCP merges duplicate papers with
-all route/source/alias provenance, ranks the union, and applies `--offset` and
-`--limit` once. Use `--strategy annotation` or `--strategy lexical` to diagnose
-one exact route. If resolution is ambiguous or unresolved, exact routes stay
-empty and the default output labels any discovery result as
-`best_effort_free_text` with no exact matched alias.
+`--strategy union` plans provider-specific strict requests before retaining the
+ordinary discovery federation and source-backed PubMed citations. BioMCP merges
+duplicate papers with route/source request provenance, ranks the union, and
+applies `--offset` and `--limit` once. `provenance.query_aliases` records only
+the aliases sent to retrieve a row; it does not claim that an article contains
+or verifies an alias. `--debug-plan` exposes each provider request, route,
+query alias, exact query, and template version. Use `--strategy annotation` or
+`--strategy lexical` to diagnose one exact route. Ambiguous or unresolved input
+still runs strict literal requests unless provider validation contradicts the
+request; discovery rows remain labeled `best_effort_free_text`.
 
 JSON repeats `requested_variant` on every row and reports `resolution`,
 `complete`, `truncated`, full pagination state, and per-route `source_status`.

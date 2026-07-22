@@ -597,6 +597,15 @@ impl RequestedVariantIdentity {
 
     pub(crate) fn from_variant_input(input: &str) -> Result<Self, BioMcpError> {
         let supplied = input.trim();
+        if let Some((gene, coding)) = supplied.split_once(char::is_whitespace)
+            && coding_change_re().is_match(coding.trim())
+        {
+            return Ok(Self {
+                gene: Some(gene.to_string()),
+                coding_change: Some(coding.trim().to_string()),
+                ..Self::default()
+            });
+        }
         match classify_variant_input(supplied) {
             VariantInputKind::Exact(VariantIdFormat::RsId(_)) => Ok(Self {
                 rsid: Some(supplied.to_string()),

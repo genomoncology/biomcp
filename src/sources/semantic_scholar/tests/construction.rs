@@ -182,6 +182,18 @@ fn paper_search_plan_sets_query_limit_year_and_auth() {
 }
 
 #[test]
+fn paper_search_bulk_plan_uses_the_strict_bulk_endpoint() {
+    let plan =
+        SemanticScholarClient::paper_search_bulk_plan("BRAF V600E", 3, Some("test-key")).unwrap();
+
+    assert_eq!(plan.method, HttpMethod::Get);
+    assert_eq!(plan.path, "graph/v1/paper/search/bulk");
+    assert_eq!(plan.query_value("query"), Some("BRAF V600E"));
+    assert_eq!(plan.query_value("year"), None);
+    assert_eq!(plan.header_value("x-api-key"), Some("test-key"));
+}
+
+#[test]
 fn paper_search_plan_validates_query_and_limit() {
     assert!(matches!(
         SemanticScholarClient::paper_search_plan("   ", 3, None, None),

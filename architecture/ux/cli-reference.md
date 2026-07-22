@@ -239,17 +239,19 @@ biomcp variant normalize all NM_000248.3:c.135del
 biomcp variant normalize all 'NM_004448.2:c.829G>T'
 ```
 
-`variant articles` defaults to a bounded union of exact annotation, normalized
-alias, and source-citation routes. It preserves route/source/matched-alias
-provenance through deduplication, then ranks and paginates once. `annotation`
-and `lexical` isolate one exact route for diagnosis. Unresolved union results
-are explicitly best-effort, while incomplete acquisition keeps available rows
-and reports `complete: false`, `truncated: true`, an unknown total, and route
-status. Structured `--input <path|->` is a JSON-only array of 1-10 variant
-identities and returns ordered compact `items`; it cannot be combined with the
-positional ID. `--debug-plan` is JSON-only and reports normalized routes,
-provider work, ranking inputs, and the fixed item/request budgets. MCP callers
-use the typed, in-memory `variant_articles` tool rather than server-local paths.
+`variant articles` defaults to a bounded union of strict provider requests,
+discovery, and source-citation routes. It preserves route/source
+`query_aliases` request provenance through deduplication, then ranks and
+paginates once; query aliases are retrieval inputs, not article evidence.
+`annotation` and `lexical` isolate one exact route for diagnosis. Unresolved
+union results are explicitly best-effort, while incomplete acquisition keeps
+available rows and reports `complete: false`, `truncated: true`, an unknown
+total, and route status. Structured `--input <path|->` is a JSON-only array of
+1-10 variant identities and returns ordered compact `items`; it cannot be
+combined with the positional ID. `--debug-plan` is JSON-only and reports
+provider-specific request templates as well as provider work, ranking inputs,
+and the fixed item/request budgets. MCP callers use the typed `variant_articles`
+tool in memory rather than server-local paths.
 
 Assembly-aware items accept either `genomic: "NC_...:g...."` plus `build`, or
 `accession`, `position`, `ref`, and `alt` plus `build`; `GRCh37` or `GRCh38` is
