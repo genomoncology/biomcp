@@ -16,6 +16,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/trial-numeric-filters.md
   spec/entity/trial-documents.md
   spec/entity/variant.md
+  spec/entity/variant-article-identity.md
   spec/surface/mcp.md
   spec/surface/discover-input.md
   spec/surface/docker-image.md

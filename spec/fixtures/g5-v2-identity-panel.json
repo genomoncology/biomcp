@@ -1,0 +1,9 @@
+[
+  {"request_id":"apc-grch38","gene":"APC","transcript":"NM_000038.6","coding":"c.847C>T","protein":"p.Arg283Ter","accession":"NC_000005.10","build":"GRCh38","position":112815507,"ref":"C","alt":"T"},
+  {"request_id":"atm-grch38","gene":"ATM","transcript":"NM_000051.4","coding":"c.1066-6T>G","accession":"NC_000011.10","build":"GRCh38","position":108248927,"ref":"T","alt":"G"},
+  {"request_id":"brca1-grch38","gene":"BRCA1","transcript":"NM_007294.4","coding":"c.2428A>T","protein":"p.Asn810Tyr","accession":"NC_000017.11","build":"GRCh38","position":43093103,"ref":"T","alt":"A"},
+  {"request_id":"mlh1-grch38","gene":"MLH1","transcript":"NM_000249.4","coding":"c.2246T>C","protein":"p.Leu749Pro","accession":"NC_000003.12","build":"GRCh38","position":37050628,"ref":"T","alt":"C"},
+  {"request_id":"palb2-grch38","gene":"PALB2","transcript":"NM_024675.4","coding":"c.3350+5G>A","accession":"NC_000016.10","build":"GRCh38","position":23607859,"ref":"C","alt":"T"},
+  {"request_id":"pten-grch38","gene":"PTEN","transcript":"NM_000314.8","coding":"c.517C>T","protein":"p.Arg173Cys","accession":"NC_000010.11","build":"GRCh38","position":87952142,"ref":"C","alt":"T"},
+  {"request_id":"tp53-grch38","gene":"TP53","transcript":"NM_000546.6","coding":"c.356C>G","protein":"p.Ala119Gly","accession":"NC_000017.11","build":"GRCh38","position":7676013,"ref":"G","alt":"C"}
+]

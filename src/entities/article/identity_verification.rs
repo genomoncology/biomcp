@@ -7,8 +7,10 @@ use sha2::{Digest, Sha256};
 use crate::entities::variant::RequestedVariantIdentity;
 use crate::sources::pubtator::PubTatorExportResponse;
 
-pub(crate) const VERIFIER_VERSION: &str = "article-identity-v1";
+pub(crate) const VERIFIER_VERSION: &str = "article-identity-v2";
 pub(crate) const PUBTATOR_EXPORT_TEMPLATE_VERSION: &str = "pubtator-export-biocjson-v1";
+const RESPONSE_SUBSET_VERSION: &str = "clinically-relevant-response-v1";
+const CONTENT_SUBSET_VERSION: &str = "clinically-relevant-content-v1";
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct VariantArticleVerificationOptions {
@@ -41,6 +43,10 @@ pub(crate) struct VariantArticleIdentityObservation {
 pub(crate) struct VariantArticleVerificationPlan {
     pub verifier_version: &'static str,
     pub provider_template_version: String,
+    pub response_subset_version: &'static str,
+    pub content_subset_version: &'static str,
+    pub canonical_response_subset_hash: String,
+    pub canonical_content_subset_hash: String,
     pub artifact_id: String,
     pub response_hashes_are_post_response: bool,
     pub captured_content_hashes_are_post_response: bool,
@@ -81,21 +87,87 @@ fn hash(value: &str) -> String {
     )
 }
 
+fn canonical_subset_hash(mut facts: Vec<String>) -> String {
+    facts.sort_unstable();
+    facts.dedup();
+    hash(&facts.join("\n"))
+}
+
+pub(crate) fn canonical_response_subset(response: &PubTatorExportResponse) -> String {
+    let facts = response
+        .documents
+        .iter()
+        .flat_map(|document| {
+            document.passages.iter().map(move |passage| {
+                let annotations = |kind| {
+                    let mut values = passage
+                        .annotations
+                        .iter()
+                        .filter(|annotation| {
+                            annotation
+                                .infons
+                                .as_ref()
+                                .and_then(|infons| infons.kind.as_deref())
+                                == Some(kind)
+                        })
+                        .filter_map(|annotation| annotation.text.as_deref())
+                        .map(normalized)
+                        .collect::<Vec<_>>();
+                    values.sort_unstable();
+                    values.dedup();
+                    values
+                };
+                serde_json::json!({
+                    "pmid": document.pmid,
+                    "section": passage.infons.as_ref().and_then(|infons| infons.kind.as_deref()),
+                    "genes": annotations("Gene"),
+                    "alleles": annotations("Mutation"),
+                })
+                .to_string()
+            })
+        })
+        .collect();
+    canonical_subset_hash(facts)
+}
+
+pub(crate) fn canonical_content_subset(identity: &VariantArticleIdentity) -> String {
+    let facts = identity
+        .observations
+        .iter()
+        .chain(&identity.contradictions)
+        .map(|observation| {
+            serde_json::json!({
+                "source": observation.source,
+                "section": observation.section,
+                "linked_gene": observation.linked_gene,
+                "observed_alias": normalized(&observation.observed_alias),
+                "canonical_content_hash": observation.canonical_content_hash,
+            })
+            .to_string()
+        })
+        .collect();
+    canonical_subset_hash(facts)
+}
+
 pub(crate) fn verification_plan(
     requested: &RequestedVariantIdentity,
     provider_template_version: &str,
-    response_hashes: &[String],
-    content_hashes: &[String],
+    response_subsets: &[String],
+    content_subsets: &[String],
 ) -> VariantArticleVerificationPlan {
     let request = serde_json::to_string(requested).unwrap_or_default();
+    let canonical_response_subset_hash = canonical_subset_hash(response_subsets.to_vec());
+    let canonical_content_subset_hash = canonical_subset_hash(content_subsets.to_vec());
     VariantArticleVerificationPlan {
         verifier_version: VERIFIER_VERSION,
         provider_template_version: provider_template_version.into(),
+        response_subset_version: RESPONSE_SUBSET_VERSION,
+        content_subset_version: CONTENT_SUBSET_VERSION,
         artifact_id: hash(&format!(
-            "{VERIFIER_VERSION}:{provider_template_version}:{request}:{}:{}",
-            response_hashes.join(","),
-            content_hashes.join(",")
+            "{VERIFIER_VERSION}:{provider_template_version}:{request}:{canonical_response_subset_hash}:{canonical_content_subset_hash}"
         )),
+        canonical_response_subset_hash,
+        canonical_content_subset_hash,
         response_hashes_are_post_response: true,
         captured_content_hashes_are_post_response: true,
     }
@@ -406,6 +478,34 @@ mod tests {
     }
 
     #[test]
+    fn canonical_subsets_ignore_provider_annotation_order() {
+        let ordered = response(&["p.V600E", "p.V600K"]);
+        let reordered = response(&["p.V600K", "p.V600E"]);
+
+        assert_eq!(
+            canonical_response_subset(&ordered),
+            canonical_response_subset(&reordered)
+        );
+        assert_eq!(
+            canonical_content_subset(&verify_pubtator(&requested(), &ordered, false)),
+            canonical_content_subset(&verify_pubtator(&requested(), &reordered, false))
+        );
+    }
+
+    #[test]
+    fn unavailable_verification_is_incomplete_and_unverified() {
+        let identity = verify_pubtator(
+            &requested(),
+            &PubTatorExportResponse {
+                documents: Vec::new(),
+            },
+            true,
+        );
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+    }
+
+    #[test]
     fn artifact_is_post_response_and_includes_the_provider_template_version() {
         let response_hashes = ["response".into()];
         let content_hashes = ["content".into()];
@@ -422,6 +522,8 @@ mod tests {
             &content_hashes,
         );
         assert!(plan.response_hashes_are_post_response);
+        assert_eq!(plan.response_subset_version, RESPONSE_SUBSET_VERSION);
+        assert_eq!(plan.content_subset_version, CONTENT_SUBSET_VERSION);
         assert_eq!(
             plan.provider_template_version,
             PUBTATOR_EXPORT_TEMPLATE_VERSION
