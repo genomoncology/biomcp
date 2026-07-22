@@ -103,12 +103,22 @@ pub(crate) async fn handle_command(
             id,
             input,
             debug_plan,
+            verify_identity,
+            confirmed_only,
             strategy,
             limit,
             offset,
         } => {
             return Box::pin(super::articles::handle(
-                id, input, debug_plan, strategy, limit, offset, json,
+                id,
+                input,
+                debug_plan,
+                verify_identity,
+                confirmed_only,
+                strategy,
+                limit,
+                offset,
+                json,
             ))
             .await;
         }

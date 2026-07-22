@@ -35,15 +35,28 @@ async fn read_input(path: &str) -> Result<Vec<u8>, BioMcpError> {
     Ok(bytes)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) async fn handle(
     id: Option<String>,
     input: Option<String>,
     debug_plan: bool,
+    verify_identity: bool,
+    confirmed_only: bool,
     strategy: VariantArticleStrategy,
     limit: usize,
     offset: usize,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    if confirmed_only && !verify_identity {
+        return Err(BioMcpError::InvalidArgument(
+            "variant articles --confirmed-only requires --verify-identity".into(),
+        )
+        .into());
+    }
+    let verification = crate::entities::article::VariantArticleVerificationOptions {
+        verify_identity,
+        confirmed_only,
+    };
     if id.is_some() && input.is_some() {
         return Err(BioMcpError::InvalidArgument(
             "variant articles positional ID cannot be combined with --input".into(),
@@ -59,8 +72,13 @@ pub(super) async fn handle(
     if let Some(path) = input {
         let requests =
             crate::entities::article::parse_variant_article_batch(&read_input(&path).await?)?;
-        let outcome = crate::entities::article::search_variant_article_batch(
-            requests, strategy, limit, offset, debug_plan,
+        let outcome = crate::entities::article::search_variant_article_batch_with_options(
+            requests,
+            strategy,
+            limit,
+            offset,
+            debug_plan,
+            verification,
         )
         .await?;
         let text = crate::render::json::to_pretty(&outcome.response)?;
@@ -75,12 +93,25 @@ pub(super) async fn handle(
         BioMcpError::InvalidArgument("variant articles requires an ID or --input".into())
     })?;
     let outcome = if debug_plan {
-        crate::entities::article::search_variant_articles_with_plan(
-            &id, strategy, limit, offset, true,
+        crate::entities::article::search_variant_articles_with_options(
+            &id,
+            strategy,
+            limit,
+            offset,
+            true,
+            verification,
         )
         .await?
     } else {
-        crate::entities::article::search_variant_articles(&id, strategy, limit, offset).await?
+        crate::entities::article::search_variant_articles_with_options(
+            &id,
+            strategy,
+            limit,
+            offset,
+            false,
+            verification,
+        )
+        .await?
     };
     let text = if json {
         crate::render::json::to_pretty(&outcome.response)?

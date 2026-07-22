@@ -11,6 +11,7 @@ use std::time::Instant;
 use clap::ValueEnum;
 use futures::{StreamExt, stream};
 use serde::Serialize;
+use sha2::Digest;
 
 use crate::entities::variant::{
     NormalizedVariantAliases, RequestedVariantIdentity, VariantArticleResolution,
@@ -29,6 +30,11 @@ use super::candidates::{
 use super::enrichment::{
     enrich_article_search_rows_with_semantic_scholar_context,
     enrich_visible_article_search_rows_with_article_base_context,
+};
+use super::identity_verification::{
+    PUBTATOR_EXPORT_TEMPLATE_VERSION, VariantArticleIdentity, VariantArticleVerificationOptions,
+    VariantArticleVerificationPlan, combine_identities, verification_plan,
+    verify_captured_abstract, verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query,
@@ -95,6 +101,8 @@ pub struct VariantArticleRow {
     pub sources: Vec<String>,
     pub rank: usize,
     pub provenance: Vec<VariantArticleProvenance>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<VariantArticleIdentity>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -359,6 +367,8 @@ pub struct VariantArticleDebugPlan {
     pub truncated: bool,
     pub stopped_routes: Vec<String>,
     pub next: VariantArticleNextPlan,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub verification: Option<VariantArticleVerificationPlan>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -383,6 +393,8 @@ pub struct CompactVariantArticleRow {
     pub sources: Vec<String>,
     pub rank: usize,
     pub is_retracted: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identity: Option<VariantArticleIdentity>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1501,9 +1513,12 @@ fn build_debug_plan(
         truncated,
         stopped_routes: execution.stopped_routes(),
         next,
+        verification: None,
     }
 }
 
+// dead-code reason: search_variant_articles preserves the article facade's default-verification entry point.
+#[allow(dead_code)]
 pub async fn search_variant_articles(
     input: &str,
     strategy: VariantArticleStrategy,
@@ -1513,12 +1528,33 @@ pub async fn search_variant_articles(
     search_variant_articles_with_plan(input, strategy, limit, offset, false).await
 }
 
+// dead-code reason: search_variant_articles_with_plan preserves the article facade's debug-plan entry point.
+#[allow(dead_code)]
 pub async fn search_variant_articles_with_plan(
     input: &str,
     strategy: VariantArticleStrategy,
     limit: usize,
     offset: usize,
     debug_plan: bool,
+) -> Result<VariantArticleOutcome, BioMcpError> {
+    search_variant_articles_with_options(
+        input,
+        strategy,
+        limit,
+        offset,
+        debug_plan,
+        VariantArticleVerificationOptions::default(),
+    )
+    .await
+}
+
+pub(crate) async fn search_variant_articles_with_options(
+    input: &str,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
     let requested = RequestedVariantIdentity::from_variant_input(input)?;
     search_variant_articles_identity(
@@ -1528,11 +1564,13 @@ pub async fn search_variant_articles_with_plan(
         limit,
         offset,
         debug_plan,
+        verification,
         VariantArticleExecutionContext::single(),
     )
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_identity(
     input: &str,
     requested: RequestedVariantIdentity,
@@ -1540,6 +1578,7 @@ async fn search_variant_articles_identity(
     limit: usize,
     offset: usize,
     include_debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
     execution: VariantArticleExecutionContext,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
     if limit == 0 || limit > 50 {
@@ -1775,6 +1814,104 @@ async fn search_variant_articles_identity(
 
     let pre_dedup = candidates.len();
     let mut candidates = merge_article_candidate_pool(candidates);
+    let mut verification_response_hashes = Vec::new();
+    let mut verification_content_hashes = Vec::new();
+    let mut verification_incomplete = false;
+    if verification.verify_identity {
+        for candidate in &mut candidates {
+            let captured = verify_captured_abstract(
+                &context.requested,
+                candidate
+                    .row
+                    .abstract_snippet
+                    .as_deref()
+                    .unwrap_or(&candidate.row.normalized_abstract),
+            );
+            if captured.status != "unverified" {
+                candidate.identity = Some(captured);
+                continue;
+            }
+            let incomplete = match candidate.row.pmid.parse::<u32>() {
+                Ok(pmid) => {
+                    let Some(started) = execution.reserve("identity_verification") else {
+                        verification_incomplete = true;
+                        candidate.identity = Some(combine_identities(
+                            captured.clone(),
+                            verify_pubtator(
+                                &context.requested,
+                                &crate::sources::pubtator::PubTatorExportResponse {
+                                    documents: Vec::new(),
+                                },
+                                true,
+                            ),
+                        ));
+                        continue;
+                    };
+                    let response = match crate::sources::pubtator::PubTatorClient::new() {
+                        Ok(client) => client.export_biocjson(pmid).await,
+                        Err(error) => Err(error),
+                    };
+                    execution.record(
+                        "identity_verification",
+                        "pubtator",
+                        started,
+                        if response.is_ok() {
+                            "ok"
+                        } else {
+                            "unavailable"
+                        },
+                        1,
+                    );
+                    match response {
+                        Ok(response) => {
+                            verification_response_hashes.push(format!(
+                                "{:x}",
+                                sha2::Sha256::digest(
+                                    serde_json::to_string(&response)
+                                        .unwrap_or_default()
+                                        .as_bytes(),
+                                )
+                            ));
+                            let fetched = verify_pubtator(&context.requested, &response, false);
+                            verification_content_hashes.extend(
+                                fetched
+                                    .observations
+                                    .iter()
+                                    .chain(&fetched.contradictions)
+                                    .map(|observation| observation.canonical_content_hash.clone()),
+                            );
+                            candidate.identity =
+                                Some(combine_identities(captured.clone(), fetched));
+                            false
+                        }
+                        Err(_) => true,
+                    }
+                }
+                Err(_) => true,
+            };
+            verification_incomplete |= incomplete;
+            if candidate.identity.is_none() {
+                candidate.identity = Some(combine_identities(
+                    captured.clone(),
+                    verify_pubtator(
+                        &context.requested,
+                        &crate::sources::pubtator::PubTatorExportResponse {
+                            documents: Vec::new(),
+                        },
+                        incomplete,
+                    ),
+                ));
+            }
+        }
+        if verification.confirmed_only {
+            candidates.retain(|candidate| {
+                candidate
+                    .identity
+                    .as_ref()
+                    .is_some_and(|identity| identity.status == "confirmed")
+            });
+        }
+    }
     rank_candidates(&mut candidates);
     let total_candidates = candidates.len();
     let hard_error = succeeded_routes == 0 && failed_routes > 0;
@@ -1791,7 +1928,8 @@ async fn search_variant_articles_identity(
         VariantProviderValidationStatus::Indeterminate
             | VariantProviderValidationStatus::Unavailable
     );
-    let complete = failed_routes == 0 && !budget_stopped && !provider_incomplete;
+    let complete =
+        failed_routes == 0 && !budget_stopped && !provider_incomplete && !verification_incomplete;
     let truncated = !complete || offset > 0 || has_more;
     let rows = visible_candidates
         .into_iter()
@@ -1826,6 +1964,7 @@ async fn search_variant_articles_identity(
                 sources,
                 rank: offset.saturating_add(index).saturating_add(1),
                 provenance: candidate.variant_provenance,
+                identity: candidate.identity,
             }
         })
         .collect::<Vec<_>>();
@@ -1840,7 +1979,7 @@ async fn search_variant_articles_identity(
         "resolved exact-variant route union"
     };
     let debug_plan = include_debug_plan.then(|| {
-        build_debug_plan(
+        let mut plan = build_debug_plan(
             input,
             &context,
             strategy,
@@ -1855,7 +1994,16 @@ async fn search_variant_articles_identity(
                 offset: offset.saturating_add(rows.len()),
                 cursor: None,
             },
-        )
+        );
+        if verification.verify_identity {
+            plan.verification = Some(verification_plan(
+                &context.requested,
+                PUBTATOR_EXPORT_TEMPLATE_VERSION,
+                &verification_response_hashes,
+                &verification_content_hashes,
+            ));
+        }
+        plan
     });
     Ok(VariantArticleOutcome {
         response: VariantArticleResponse {
@@ -1943,6 +2091,7 @@ fn empty_debug_plan(
             offset,
             cursor: None,
         },
+        verification: None,
     }
 }
 
@@ -2005,6 +2154,7 @@ fn compact_row(row: VariantArticleRow) -> CompactVariantArticleRow {
         sources: row.sources,
         rank: row.rank,
         is_retracted: row.article.is_retracted,
+        identity: row.identity,
     }
 }
 
@@ -2044,6 +2194,7 @@ async fn execute_batch_item(
     limit: usize,
     offset: usize,
     debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
     execution: VariantArticleExecutionContext,
 ) -> VariantArticleBatchItem {
     if let Some(error) = request.error.clone() {
@@ -2062,6 +2213,7 @@ async fn execute_batch_item(
         limit,
         offset,
         debug_plan,
+        verification,
         execution,
     )
     .await
@@ -2148,12 +2300,33 @@ where
         .await
 }
 
+// dead-code reason: search_variant_article_batch preserves the batch facade's default-verification entry point.
+#[allow(dead_code)]
 pub async fn search_variant_article_batch(
     requests: Vec<crate::entities::variant::VariantArticleRequest>,
     strategy: VariantArticleStrategy,
     limit: usize,
     offset: usize,
     debug_plan: bool,
+) -> Result<VariantArticleBatchOutcome, BioMcpError> {
+    search_variant_article_batch_with_options(
+        requests,
+        strategy,
+        limit,
+        offset,
+        debug_plan,
+        VariantArticleVerificationOptions::default(),
+    )
+    .await
+}
+
+pub(crate) async fn search_variant_article_batch_with_options(
+    requests: Vec<crate::entities::variant::VariantArticleRequest>,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
 ) -> Result<VariantArticleBatchOutcome, BioMcpError> {
     if limit == 0 || limit > 50 {
         return Err(BioMcpError::InvalidArgument(
@@ -2168,7 +2341,15 @@ pub async fn search_variant_article_batch(
         .into_iter()
         .zip(contexts)
         .map(|(request, execution)| {
-            execute_batch_item(request, strategy, limit, offset, debug_plan, execution)
+            execute_batch_item(
+                request,
+                strategy,
+                limit,
+                offset,
+                debug_plan,
+                verification,
+                execution,
+            )
         })
         .collect();
     let mut items = collect_bounded_ordered(futures).await;
@@ -2801,6 +2982,7 @@ mod tests {
             sources: vec!["pubtator".into()],
             rank: 1,
             provenance: candidate.variant_provenance,
+            identity: None,
         });
         let value = serde_json::to_value(compact).expect("compact JSON");
 

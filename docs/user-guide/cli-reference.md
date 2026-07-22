@@ -704,8 +704,15 @@ unknown total. Structured `--input <path|->` accepts a JSON array of 1-10 varian
 objects and returns ordered compact `items`; it cannot be combined with the
 positional ID and requires JSON output. `--debug-plan` is also JSON-only and adds normalized aliases, strict and
 discovery provider requests (with exact query/template version), provider/call/page
-facts, ranking inputs, and fixed item and request budgets. The typed MCP `variant_articles` tool accepts the same item
-fields in memory.
+facts, ranking inputs, and fixed item and request budgets. `--verify-identity`
+adds captured-evidence identity facts without changing retrieval recall;
+`--confirmed-only` requires verification and filters before rank/pagination.
+Query aliases remain retrieval provenance rather than observed evidence, while
+identity observations retain source, locator, linked gene, observed alias, and
+captured-content hash. Verification artifacts record post-response verifier and
+provider-template versions, not retrieval-cache inputs. The typed `variant_articles`
+MCP tool accepts the same item fields and equivalent `verify_identity`/`confirmed_only`
+controls in memory.
 
 Structured assembly-aware items accept `genomic: "NC_...:g...."` plus `build`,
 or `accession`, `position`, `ref`, and `alt` plus `build`. Versioned RefSeq

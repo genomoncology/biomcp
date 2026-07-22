@@ -151,6 +151,26 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, rows)
             return
 
+        if parsed.path == "/publications/export/biocjson":
+            pmid = params.get("pmids", [""])[0]
+            def passage(allele):
+                return {
+                    "infons": {"type": "abstract"},
+                    "text": f"Captured BRAF {allele} evidence.",
+                    "annotations": [
+                        {"text": "BRAF", "infons": {"type": "Gene"}},
+                        {"text": allele, "infons": {"type": "Mutation"}},
+                    ],
+                }
+            passages = {
+                BRAF_ANNOTATION_PMID: [passage("p.V600E")],
+                BRAF_PROTEIN_ALIAS_PMID: [],
+                BRAF_CODING_ALIAS_PMID: [passage("p.V600K")],
+                BRAF_GENOMIC_ALIAS_PMID: [passage("p.V600E"), passage("p.V600K")],
+            }.get(pmid, [])
+            send_json(self, 200, {"PubTator3": [{"pmid": int(pmid), "passages": passages}]})
+            return
+
         if parsed.path == "/search/":
             text = params.get("text", [""])[0]
             if params.get("page", ["1"])[0] != "1":
@@ -540,6 +560,40 @@ case "$scenario" in
              )
            }
          }'
+    ;;
+  identity-verification-json)
+    verified="$($binary --json variant articles "BRAF p.V600E" --verify-identity --debug-plan --limit 10)"
+    confirmed="$($binary --json variant articles "BRAF p.V600E" --verify-identity --confirmed-only --limit 1)"
+    jq -n \
+      --argjson verified "$verified" \
+      --argjson confirmed "$confirmed" \
+      '{
+        normal_statuses: ([$verified.results[] | select(.pmid == "6010001" or .pmid == "6010002" or .pmid == "6010005" or .pmid == "6010006") | {pmid, status: .identity.status}] | sort_by(.pmid)),
+        alias_only_candidates_never_confirmed: (all($verified.results[] | select(.pmid == "6010002" or .pmid == "6010005" or .pmid == "6010006"); .identity.status != "confirmed")),
+        confirmed_observation_is_auditable: ([$verified.results[] | select(.identity.status == "confirmed") | .identity.observations[] | {
+          source: ((.source | type) == "string" and (.source | length) > 0),
+          section: ((.section | type) == "string" and (.section | length) > 0),
+          locator: ((.locator | type) == "string" and (.locator | length) > 0),
+          linked_gene: (.linked_gene == "BRAF"),
+          observed_alias: ((.observed_alias | type) == "string" and (.observed_alias | length) > 0),
+          canonical_content_hash: ((.canonical_content_hash | type) == "string" and (.canonical_content_hash | length) > 0)
+        }] | length > 0 and all(.[]; .source and .section and .locator and .linked_gene and .observed_alias and .canonical_content_hash)),
+        confirmed_only_keeps_the_confirmed_result: any(
+          $confirmed.results[];
+          .pmid == "6010001" and .identity.status == "confirmed" and .rank == 1
+        ),
+        confirmed_only_excludes_nonconfirmations: all(
+          $confirmed.results[];
+          .identity.status == "confirmed"
+        ),
+        debug_plan_records_verification_artifact: (
+          ($verified.debug_plan.verification.verifier_version | type) == "string"
+          and ($verified.debug_plan.verification.provider_template_version | type) == "string"
+          and ($verified.debug_plan.verification.artifact_id | type) == "string"
+          and ($verified.debug_plan.verification.response_hashes_are_post_response == true)
+          and ($verified.debug_plan.verification.captured_content_hashes_are_post_response == true)
+        )
+      }'
     ;;
   debug-plan-json)
     ordinary_single="$($binary --json variant articles "BRAF p.V600E" --limit 3)"

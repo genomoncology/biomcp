@@ -288,6 +288,37 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. union-json
 }
 ```
 
+## Verified variant-article identity does not promote retrieval aliases
+
+<!-- mustmatch-lint: skip -->
+
+Retrieval aliases explain why a paper was found; they are not observations from
+that paper. With identity verification enabled, the local fixture preserves
+alias-only collisions as unverified, contradictory, or conflicting, and emits
+the captured evidence needed to audit a confirmed result. `--confirmed-only`
+filters that verified pool before ranking and pagination, so earlier collisions
+cannot hide the confirmed paper.
+
+```bash run id=variant-article-identity-verification exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. identity-verification-json
+```
+
+```json expect=variant-article-identity-verification contains
+{
+  "normal_statuses": [
+    {"pmid": "6010001", "status": "confirmed"},
+    {"pmid": "6010002", "status": "unverified"},
+    {"pmid": "6010005", "status": "contradictory"},
+    {"pmid": "6010006", "status": "conflicting"}
+  ],
+  "alias_only_candidates_never_confirmed": true,
+  "confirmed_observation_is_auditable": true,
+  "confirmed_only_keeps_the_confirmed_result": true,
+  "confirmed_only_excludes_nonconfirmations": true,
+  "debug_plan_records_verification_artifact": true
+}
+```
+
 ## Pagination Limits Metadata Enrichment
 
 <!-- mustmatch-lint: skip -->
