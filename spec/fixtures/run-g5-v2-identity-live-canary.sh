@@ -10,9 +10,10 @@ uv run --no-sync python - "$binary" "$panel" <<'PY'
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 binary, panel_path = sys.argv[1:]
-requests = json.load(open(panel_path, encoding="utf-8"))
+requests = json.loads(Path(panel_path).read_text(encoding="utf-8"))
 completed = subprocess.run(
     [binary, "--no-cache", "--json", "variant", "articles", "--input", "-", "--limit", "50", "--verify-identity", "--debug-plan"],
     input=json.dumps(requests), capture_output=True, text=True,
