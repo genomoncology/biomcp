@@ -32,8 +32,9 @@ use super::enrichment::{
     enrich_visible_article_search_rows_with_article_base_context,
 };
 use super::identity_verification::{
-    VariantArticleIdentity, VariantArticleVerificationOptions, VariantArticleVerificationPlan,
-    combine_identities, verification_plan, verify_captured_abstract, verify_pubtator,
+    PUBTATOR_EXPORT_TEMPLATE_VERSION, VariantArticleIdentity, VariantArticleVerificationOptions,
+    VariantArticleVerificationPlan, combine_identities, verification_plan,
+    verify_captured_abstract, verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query,
@@ -1997,6 +1998,7 @@ async fn search_variant_articles_identity(
         if verification.verify_identity {
             plan.verification = Some(verification_plan(
                 &context.requested,
+                PUBTATOR_EXPORT_TEMPLATE_VERSION,
                 &verification_response_hashes,
                 &verification_content_hashes,
             ));

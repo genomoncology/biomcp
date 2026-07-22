@@ -250,8 +250,14 @@ total, and route status. Structured `--input <path|->` is a JSON-only array of
 1-10 variant identities and returns ordered compact `items`; it cannot be
 combined with the positional ID. `--debug-plan` is JSON-only and reports
 provider-specific request templates as well as provider work, ranking inputs,
-and the fixed item/request budgets. MCP callers use the typed `variant_articles`
-tool in memory rather than server-local paths.
+and the fixed item/request budgets. `--verify-identity` adds captured-evidence
+identity facts without changing recall; `--confirmed-only` requires it and
+filters before rank/pagination. Query aliases remain retrieval provenance, not
+observed evidence. Identity observations retain their source, locator, linked
+gene, observed alias, and content hash; debug artifacts are post-response audit
+facts rather than retrieval-cache inputs. MCP callers use the typed `variant_articles`
+MCP tool in memory with equivalent `verify_identity` and `confirmed_only`
+controls.
 
 Assembly-aware items accept either `genomic: "NC_...:g...."` plus `build`, or
 `accession`, `position`, `ref`, and `alt` plus `build`; `GRCh37` or `GRCh38` is

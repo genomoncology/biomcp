@@ -275,6 +275,16 @@ JSON repeats `requested_variant` on every row and reports `resolution`,
 An incomplete provider route keeps available rows but sets `complete: false`,
 `truncated: true`, and `pagination.total: null`.
 
+`--verify-identity` adds captured-evidence `identity` facts without filtering the
+retrieved pool. `--confirmed-only` requires it and filters before ranking and
+pagination. Query aliases remain retrieval provenance, never observed aliases.
+Identity observations retain source, section, locator, linked gene, observed
+alias, and canonical captured-content hash. `--debug-plan` records the
+post-response verifier and provider-template versions plus artifact identity;
+those hashes are audit facts, never retrieval-cache keys. The typed MCP
+`variant_articles` tool exposes equivalent `verify_identity` and
+`confirmed_only` controls and compact identity output.
+
 For an exact gene-plus-protein literature review, run `biomcp skill
 exact-variant-literature`. It checks identity before the default union shortlist,
 compares selected summaries with `article batch`, requests full text and assets

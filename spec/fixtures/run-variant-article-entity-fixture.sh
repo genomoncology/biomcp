@@ -578,14 +578,17 @@ case "$scenario" in
           observed_alias: ((.observed_alias | type) == "string" and (.observed_alias | length) > 0),
           canonical_content_hash: ((.canonical_content_hash | type) == "string" and (.canonical_content_hash | length) > 0)
         }] | length > 0 and all(.[]; .source and .section and .locator and .linked_gene and .observed_alias and .canonical_content_hash)),
-        confirmed_only_page: {
-          pmids: [$confirmed.results[].pmid],
-          statuses: [$confirmed.results[].identity.status],
-          ranks: [$confirmed.results[].rank],
-          pagination: ($confirmed.pagination | {offset, limit, returned, total, has_more})
-        },
+        confirmed_only_keeps_the_confirmed_result: any(
+          $confirmed.results[];
+          .pmid == "6010001" and .identity.status == "confirmed" and .rank == 1
+        ),
+        confirmed_only_excludes_nonconfirmations: all(
+          $confirmed.results[];
+          .identity.status == "confirmed"
+        ),
         debug_plan_records_verification_artifact: (
           ($verified.debug_plan.verification.verifier_version | type) == "string"
+          and ($verified.debug_plan.verification.provider_template_version | type) == "string"
           and ($verified.debug_plan.verification.artifact_id | type) == "string"
           and ($verified.debug_plan.verification.response_hashes_are_post_response == true)
           and ($verified.debug_plan.verification.captured_content_hashes_are_post_response == true)

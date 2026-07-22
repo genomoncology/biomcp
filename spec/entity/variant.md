@@ -313,12 +313,8 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. identity-verificati
   ],
   "alias_only_candidates_never_confirmed": true,
   "confirmed_observation_is_auditable": true,
-  "confirmed_only_page": {
-    "pmids": ["6010001"],
-    "statuses": ["confirmed"],
-    "ranks": [1],
-    "pagination": {"offset": 0, "limit": 1, "returned": 1, "total": 1, "has_more": false}
-  },
+  "confirmed_only_keeps_the_confirmed_result": true,
+  "confirmed_only_excludes_nonconfirmations": true,
   "debug_plan_records_verification_artifact": true
 }
 ```

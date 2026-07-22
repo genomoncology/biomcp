@@ -8,6 +8,7 @@ use crate::entities::variant::RequestedVariantIdentity;
 use crate::sources::pubtator::PubTatorExportResponse;
 
 pub(crate) const VERIFIER_VERSION: &str = "article-identity-v1";
+pub(crate) const PUBTATOR_EXPORT_TEMPLATE_VERSION: &str = "pubtator-export-biocjson-v1";
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct VariantArticleVerificationOptions {
@@ -39,6 +40,7 @@ pub(crate) struct VariantArticleIdentityObservation {
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct VariantArticleVerificationPlan {
     pub verifier_version: &'static str,
+    pub provider_template_version: String,
     pub artifact_id: String,
     pub response_hashes_are_post_response: bool,
     pub captured_content_hashes_are_post_response: bool,
@@ -81,14 +83,16 @@ fn hash(value: &str) -> String {
 
 pub(crate) fn verification_plan(
     requested: &RequestedVariantIdentity,
+    provider_template_version: &str,
     response_hashes: &[String],
     content_hashes: &[String],
 ) -> VariantArticleVerificationPlan {
     let request = serde_json::to_string(requested).unwrap_or_default();
     VariantArticleVerificationPlan {
         verifier_version: VERIFIER_VERSION,
+        provider_template_version: provider_template_version.into(),
         artifact_id: hash(&format!(
-            "{VERIFIER_VERSION}:{request}:{}:{}",
+            "{VERIFIER_VERSION}:{provider_template_version}:{request}:{}:{}",
             response_hashes.join(","),
             content_hashes.join(",")
         )),
@@ -402,9 +406,26 @@ mod tests {
     }
 
     #[test]
-    fn artifact_is_post_response_and_separate_from_requested_identity() {
-        let plan = verification_plan(&requested(), &["response".into()], &["content".into()]);
+    fn artifact_is_post_response_and_includes_the_provider_template_version() {
+        let response_hashes = ["response".into()];
+        let content_hashes = ["content".into()];
+        let plan = verification_plan(
+            &requested(),
+            PUBTATOR_EXPORT_TEMPLATE_VERSION,
+            &response_hashes,
+            &content_hashes,
+        );
+        let different_template = verification_plan(
+            &requested(),
+            "pubtator-export-biocjson-v2",
+            &response_hashes,
+            &content_hashes,
+        );
         assert!(plan.response_hashes_are_post_response);
-        assert_ne!(plan.artifact_id, "BRAF p.V600E");
+        assert_eq!(
+            plan.provider_template_version,
+            PUBTATOR_EXPORT_TEMPLATE_VERSION
+        );
+        assert_ne!(plan.artifact_id, different_template.artifact_id);
     }
 }
