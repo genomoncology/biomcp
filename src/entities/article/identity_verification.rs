@@ -1,3 +1,6 @@
+use std::sync::OnceLock;
+
+use regex::Regex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -52,6 +55,15 @@ fn requested_allele(requested: &RequestedVariantIdentity) -> Option<String> {
         .as_deref()
         .or(requested.coding_change.as_deref())
         .map(str::to_string)
+}
+
+fn contains_token(text: &str, token: &str) -> bool {
+    text.match_indices(token).any(|(start, _)| {
+        let before = text[..start].chars().next_back();
+        let after = text[start + token.len()..].chars().next();
+        before.is_none_or(|character| !character.is_ascii_alphanumeric())
+            && after.is_none_or(|character| !character.is_ascii_alphanumeric())
+    })
 }
 
 fn hash(value: &str) -> String {
@@ -142,9 +154,6 @@ pub(crate) fn verify_pubtator(
                 passage_index + 1
             );
             let matching_gene = genes.iter().any(|candidate| candidate == gene);
-            let matching_allele = alleles
-                .iter()
-                .any(|candidate| normalized(candidate) == allele);
             let observation = |observed_alias: String| VariantArticleIdentityObservation {
                 source: "pubtator",
                 section: section.clone(),
@@ -153,24 +162,18 @@ pub(crate) fn verify_pubtator(
                 observed_alias,
                 canonical_content_hash: content_hash.clone(),
             };
-            if matching_gene && matching_allele && genes.len() == 1 && alleles.len() == 1 {
-                observations.push(observation(alleles[0].clone()));
-            } else if matching_gene && !alleles.is_empty() {
-                contradictions.extend(alleles.into_iter().map(observation));
+            if matching_gene && genes.len() == 1 {
+                for observed_allele in alleles {
+                    if normalized(&observed_allele) == allele {
+                        observations.push(observation(observed_allele));
+                    } else {
+                        contradictions.push(observation(observed_allele));
+                    }
+                }
             }
         }
     }
-    let status = if incomplete {
-        "unverified"
-    } else if !observations.is_empty() && !contradictions.is_empty() {
-        "conflicting"
-    } else if !contradictions.is_empty() {
-        "contradictory"
-    } else if !observations.is_empty() {
-        "confirmed"
-    } else {
-        "unverified"
-    };
+    let status = status_for(&observations, &contradictions);
     VariantArticleIdentity {
         status,
         basis: if status == "confirmed" {
@@ -183,6 +186,128 @@ pub(crate) fn verify_pubtator(
         observations,
         contradictions,
         incomplete,
+    }
+}
+
+fn status_for(
+    observations: &[VariantArticleIdentityObservation],
+    contradictions: &[VariantArticleIdentityObservation],
+) -> &'static str {
+    if !observations.is_empty() && !contradictions.is_empty() {
+        "conflicting"
+    } else if !contradictions.is_empty() {
+        "contradictory"
+    } else if !observations.is_empty() {
+        "confirmed"
+    } else {
+        "unverified"
+    }
+}
+
+pub(crate) fn verify_captured_abstract(
+    requested: &RequestedVariantIdentity,
+    abstract_text: &str,
+) -> VariantArticleIdentity {
+    let requested_gene = requested.gene.as_deref().map(normalized);
+    let requested_allele = requested_allele(requested);
+    let normalized_allele = requested_allele.as_deref().map(normalized);
+    let mut observations = Vec::new();
+    let mut contradictions = Vec::new();
+    static SENTENCE_BOUNDARY_RE: OnceLock<Regex> = OnceLock::new();
+    let sentence_boundary_re = SENTENCE_BOUNDARY_RE
+        .get_or_init(|| Regex::new(r"[.!?]\s+").expect("valid sentence-boundary regex"));
+    static ALLELE_RE: OnceLock<Regex> = OnceLock::new();
+    let allele_re = ALLELE_RE
+        .get_or_init(|| Regex::new(r"(?i)\b[pc]\.[a-z0-9_+\-]+\b").expect("valid allele regex"));
+    static GENE_RE: OnceLock<Regex> = OnceLock::new();
+    let gene_re =
+        GENE_RE.get_or_init(|| Regex::new(r"\b[A-Z]{2,10}[0-9]*\b").expect("valid gene regex"));
+    let text_units = if abstract_text.lines().any(|line| line.contains('|')) {
+        abstract_text.lines().collect::<Vec<_>>()
+    } else {
+        sentence_boundary_re
+            .split(abstract_text)
+            .collect::<Vec<_>>()
+    };
+    for (index, sentence) in text_units.into_iter().enumerate() {
+        let Some(gene) = requested_gene.as_deref() else {
+            continue;
+        };
+        let Some(allele) = normalized_allele.as_deref() else {
+            continue;
+        };
+        let normalized_sentence = sentence.to_ascii_lowercase();
+        let genes = gene_re
+            .find_iter(sentence)
+            .map(|matched| normalized(matched.as_str()))
+            .collect::<Vec<_>>();
+        if !contains_token(&normalized_sentence, gene) || genes.len() != 1 || genes[0] != gene {
+            continue;
+        }
+        let mut observed_alleles = allele_re
+            .find_iter(sentence)
+            .map(|matched| matched.as_str())
+            .collect::<Vec<_>>();
+        observed_alleles.sort_unstable();
+        observed_alleles.dedup();
+        let observation = |observed_alias: &str| VariantArticleIdentityObservation {
+            source: "captured_abstract",
+            section: "abstract".into(),
+            locator: format!("sentence:{}", index + 1),
+            linked_gene: requested.gene.clone().unwrap_or_default(),
+            observed_alias: observed_alias.into(),
+            canonical_content_hash: hash(sentence),
+        };
+        if observed_alleles.len() == 1 && normalized(observed_alleles[0]) == allele {
+            observations.push(observation(observed_alleles[0]));
+        } else if observed_alleles
+            .iter()
+            .any(|observed| normalized(observed) != allele)
+        {
+            contradictions.extend(observed_alleles.into_iter().map(observation));
+        }
+    }
+    let status = status_for(&observations, &contradictions);
+    VariantArticleIdentity {
+        status,
+        basis: if status == "confirmed" {
+            "sentence"
+        } else {
+            "none"
+        },
+        requested_gene: requested.gene.clone(),
+        requested_allele,
+        observations,
+        contradictions,
+        incomplete: false,
+    }
+}
+
+pub(crate) fn combine_identities(
+    captured: VariantArticleIdentity,
+    fetched: VariantArticleIdentity,
+) -> VariantArticleIdentity {
+    let mut observations = captured.observations;
+    observations.extend(fetched.observations);
+    let mut contradictions = captured.contradictions;
+    contradictions.extend(fetched.contradictions);
+    let status = status_for(&observations, &contradictions);
+    VariantArticleIdentity {
+        status,
+        basis: if status == "confirmed" {
+            if fetched.basis != "none" {
+                fetched.basis
+            } else {
+                captured.basis
+            }
+        } else {
+            "none"
+        },
+        requested_gene: captured.requested_gene.or(fetched.requested_gene),
+        requested_allele: captured.requested_allele.or(fetched.requested_allele),
+        observations,
+        contradictions,
+        incomplete: captured.incomplete || fetched.incomplete,
     }
 }
 
@@ -248,6 +373,32 @@ mod tests {
         let identity = verify_pubtator(&requested(), &conflicting, false);
         assert_eq!(identity.status, "conflicting");
         assert_eq!(identity.contradictions.len(), 1);
+    }
+
+    #[test]
+    fn mixed_same_passage_evidence_is_conflicting_and_incomplete_does_not_hide_it() {
+        let identity = verify_pubtator(&requested(), &response(&["p.V600E", "p.V600K"]), true);
+        assert_eq!(identity.status, "conflicting");
+        assert_eq!(identity.observations.len(), 1);
+        assert_eq!(identity.contradictions.len(), 1);
+        assert!(identity.incomplete);
+    }
+
+    #[test]
+    fn one_gene_one_allele_captured_sentence_confirms_but_article_wide_cooccurrence_does_not() {
+        let confirmed = verify_captured_abstract(&requested(), "BRAF p.V600E was observed.");
+        assert_eq!(confirmed.status, "confirmed");
+        let unverified = verify_captured_abstract(
+            &requested(),
+            "BRAF was observed. The tumour carried p.V600E.",
+        );
+        assert_eq!(unverified.status, "unverified");
+        let contradictory = verify_captured_abstract(&requested(), "BRAF p.V600E and p.V600K.");
+        assert_eq!(contradictory.status, "contradictory");
+        let table = verify_captured_abstract(&requested(), "gene | allele\nBRAF | p.V600E");
+        assert_eq!(table.status, "confirmed");
+        let second_gene = verify_captured_abstract(&requested(), "BRAF and ATM p.V600E.");
+        assert_eq!(second_gene.status, "unverified");
     }
 
     #[test]

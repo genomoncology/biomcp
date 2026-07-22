@@ -33,7 +33,7 @@ use super::enrichment::{
 };
 use super::identity_verification::{
     VariantArticleIdentity, VariantArticleVerificationOptions, VariantArticleVerificationPlan,
-    verification_plan, verify_pubtator,
+    combine_identities, verification_plan, verify_captured_abstract, verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query,
@@ -1818,16 +1818,31 @@ async fn search_variant_articles_identity(
     let mut verification_incomplete = false;
     if verification.verify_identity {
         for candidate in &mut candidates {
+            let captured = verify_captured_abstract(
+                &context.requested,
+                candidate
+                    .row
+                    .abstract_snippet
+                    .as_deref()
+                    .unwrap_or(&candidate.row.normalized_abstract),
+            );
+            if captured.status != "unverified" {
+                candidate.identity = Some(captured);
+                continue;
+            }
             let incomplete = match candidate.row.pmid.parse::<u32>() {
                 Ok(pmid) => {
                     let Some(started) = execution.reserve("identity_verification") else {
                         verification_incomplete = true;
-                        candidate.identity = Some(verify_pubtator(
-                            &context.requested,
-                            &crate::sources::pubtator::PubTatorExportResponse {
-                                documents: Vec::new(),
-                            },
-                            true,
+                        candidate.identity = Some(combine_identities(
+                            captured.clone(),
+                            verify_pubtator(
+                                &context.requested,
+                                &crate::sources::pubtator::PubTatorExportResponse {
+                                    documents: Vec::new(),
+                                },
+                                true,
+                            ),
                         ));
                         continue;
                     };
@@ -1853,18 +1868,19 @@ async fn search_variant_articles_identity(
                                 sha2::Sha256::digest(
                                     serde_json::to_string(&response)
                                         .unwrap_or_default()
-                                        .as_bytes()
+                                        .as_bytes(),
                                 )
                             ));
-                            let identity = verify_pubtator(&context.requested, &response, false);
+                            let fetched = verify_pubtator(&context.requested, &response, false);
                             verification_content_hashes.extend(
-                                identity
+                                fetched
                                     .observations
                                     .iter()
-                                    .chain(&identity.contradictions)
+                                    .chain(&fetched.contradictions)
                                     .map(|observation| observation.canonical_content_hash.clone()),
                             );
-                            candidate.identity = Some(identity);
+                            candidate.identity =
+                                Some(combine_identities(captured.clone(), fetched));
                             false
                         }
                         Err(_) => true,
@@ -1874,12 +1890,15 @@ async fn search_variant_articles_identity(
             };
             verification_incomplete |= incomplete;
             if candidate.identity.is_none() {
-                candidate.identity = Some(verify_pubtator(
-                    &context.requested,
-                    &crate::sources::pubtator::PubTatorExportResponse {
-                        documents: Vec::new(),
-                    },
-                    incomplete,
+                candidate.identity = Some(combine_identities(
+                    captured.clone(),
+                    verify_pubtator(
+                        &context.requested,
+                        &crate::sources::pubtator::PubTatorExportResponse {
+                            documents: Vec::new(),
+                        },
+                        incomplete,
+                    ),
                 ));
             }
         }
