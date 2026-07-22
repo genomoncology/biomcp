@@ -38,6 +38,37 @@ ATM_GENOMIC_PMID = "6050003"
 PALB2_CODING_PMID = "6050004"
 PALB2_TRANSCRIPT_PMID = "6050005"
 PALB2_GENOMIC_PMID = "6050006"
+APC_TP53_COLLISION_PMID = "6060001"
+TP53_NKX2_5_COLLISION_PMID = "6060002"
+BRCA1_C788_COLLISION_PMID = "6060003"
+BRCA1_C2428_COLLISION_PMID = "6060004"
+
+COLLISION_VARIANTS = {
+    "APC c.847C>T": ("apc-c847", "APC", "c.847C>T"),
+    "TP53 c.356C>A": ("tp53-c356", "TP53", "c.356C>A"),
+    "BRCA1 c.788G>T": ("brca1-c788", "BRCA1", "c.788G>T"),
+    "BRCA1 c.2428A>T": ("brca1-c2428", "BRCA1", "c.2428A>T"),
+}
+
+
+def variant_hit(variant_id, gene, coding):
+    return {
+        "_id": variant_id,
+        "dbnsfp": {
+            "genename": [gene],
+            "hgvsc": [coding],
+        },
+    }
+
+
+def variant_record(variant_id, gene, coding):
+    return {
+        "_id": variant_id,
+        "dbnsfp": {
+            "genename": [gene],
+            "hgvsc": [coding],
+        },
+    }
 
 
 def send_json(handler, status, payload):
@@ -85,6 +116,10 @@ class Handler(BaseHTTPRequestHandler):
                     }],
                 })
                 return
+            for request, (variant_id, gene, coding) in COLLISION_VARIANTS.items():
+                if gene in query and coding in query:
+                    send_json(self, 200, {"total": 1, "hits": [variant_hit(variant_id, gene, coding)]})
+                    return
             send_json(self, 200, {"total": 0, "hits": []})
             return
 
@@ -95,6 +130,10 @@ class Handler(BaseHTTPRequestHandler):
             if "NC_000011.10" in parsed.path or "NC_000016.10" in parsed.path:
                 send_json(self, 404, {"error": "No variant found"})
                 return
+            for variant_id, gene, coding in COLLISION_VARIANTS.values():
+                if variant_id in parsed.path:
+                    send_json(self, 200, variant_record(variant_id, gene, coding))
+                    return
             send_json(self, 200, {
                 "_id": "chr7:g.140453136A>T",
                 "dbnsfp": {
@@ -148,6 +187,13 @@ class Handler(BaseHTTPRequestHandler):
                     "biotype": "Variant",
                     "name": "MYD88 p.S219C",
                 })
+            for request, (variant_id, gene, coding) in COLLISION_VARIANTS.items():
+                if query == request:
+                    rows.append({
+                        "_id": f"@VARIANT_{variant_id}",
+                        "biotype": "Variant",
+                        "name": f"{gene} {coding}",
+                    })
             send_json(self, 200, rows)
             return
 
@@ -227,6 +273,18 @@ class Handler(BaseHTTPRequestHandler):
                 ],
                 "PALB2 c.3350+5G>A": [
                     pubtator_result(PALB2_CODING_PMID, "PALB2 coding alias fixture article"),
+                ],
+                "APC c.847C>T": [
+                    pubtator_result(APC_TP53_COLLISION_PMID, "APC c.847C>T strict-query fixture article"),
+                ],
+                "TP53 c.356C>A": [
+                    pubtator_result(TP53_NKX2_5_COLLISION_PMID, "TP53 c.356C>A strict-query fixture article"),
+                ],
+                "BRCA1 c.788G>T": [
+                    pubtator_result(BRCA1_C788_COLLISION_PMID, "BRCA1 c.788G>T strict-query fixture article"),
+                ],
+                "BRCA1 c.2428A>T": [
+                    pubtator_result(BRCA1_C2428_COLLISION_PMID, "BRCA1 c.2428A>T strict-query fixture article"),
                 ],
                 "NM_024675.4:c.3350+5G>A": [
                     pubtator_result(PALB2_TRANSCRIPT_PMID, "PALB2 transcript alias fixture article"),
@@ -540,6 +598,37 @@ case "$scenario" in
              )
            }
          }'
+    ;;
+  provider-strict-plan-json)
+    collision_input="$fixture_root/provider-strict-collisions.json"
+    cat >"$collision_input" <<'JSON'
+[
+  {"request_id":"apc-tp53","gene":"APC","coding":"c.847C>T"},
+  {"request_id":"tp53-nkx2-5","gene":"TP53","coding":"c.356C>A"},
+  {"request_id":"brca1-collision-a","gene":"BRCA1","coding":"c.788G>T"},
+  {"request_id":"brca1-collision-b","gene":"BRCA1","coding":"c.2428A>T"}
+]
+JSON
+    batch="$($binary --json variant articles --input "$collision_input" --limit 10 --debug-plan)"
+    single="$($binary --json variant articles "BRAF p.V600E" --limit 10)"
+    jq -n --argjson batch "$batch" --argjson single "$single" '
+      def strict_queries:
+        [(.debug_plan.provider_queries? // [])[]?
+         | select(.route == "strict")
+         | {provider, route, query_alias, query, query_template_version}]
+        | sort_by(.provider, .query_alias);
+      {
+        frozen_collisions: [
+          $batch.items[]
+          | {request_id, strict_queries: strict_queries}
+        ],
+        discovery_route_retained: any($batch.items[];
+          [(.debug_plan.provider_queries? // [])[]? | select(.route == "discovery")] | length > 0),
+        query_provenance: {
+          query_aliases_present: (($single.results | length) > 0 and all($single.results[]; (.provenance | all(has("query_alias"))))),
+          no_observed_alias_claim: (($single.results | length) > 0 and all($single.results[]; (.provenance | all(has("observed_alias") | not))))
+        }
+      }'
     ;;
   debug-plan-json)
     ordinary_single="$($binary --json variant articles "BRAF p.V600E" --limit 3)"

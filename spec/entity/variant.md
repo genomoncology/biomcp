@@ -499,6 +499,69 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. refseq-not-found-js
 }
 ```
 
+## Provider-specific strict queries retain discovery and label query provenance
+
+A strict identity gives each provider the narrowest query syntax it supports, while
+ordinary discovery remains available for recall. Request the JSON debug plan to
+inspect the exact provider request that produced a candidate: a query alias is an
+input to retrieval, not evidence that an article contains or verifies that alias.
+The frozen APC/TP53 and BRCA1 collisions make sure a shared coding spelling cannot
+silently broaden into a different gene or variant.
+
+<!-- mustmatch-lint: skip -->
+
+```bash run id=variant-article-provider-strict-plan exit=0
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. provider-strict-plan-json
+```
+
+```json expect=variant-article-provider-strict-plan contains
+{
+  "frozen_collisions": [
+    {
+      "request_id": "apc-tp53",
+      "strict_queries": [
+        {"provider": "pubmed", "route": "strict", "query_alias": "APC c.847C>T", "query": "(\"APC\"[Title/Abstract] AND \"c.847C>T\"[Title/Abstract])", "query_template_version": "pubmed-title-abstract-v1"},
+        {"provider": "europepmc", "route": "strict", "query_alias": "APC c.847C>T", "query": "TITLE_ABS:\"APC c.847C>T\"", "query_template_version": "europepmc-title-abstract-v1"},
+        {"provider": "semanticscholar", "route": "strict", "query_alias": "APC c.847C>T", "query": "APC c.847C>T", "query_template_version": "semantic-scholar-bulk-phrase-v1"},
+        {"provider": "pubtator", "route": "strict", "query_alias": "APC c.847C>T", "query": "@VARIANT_apc-c847", "query_template_version": "pubtator-entity-v1"}
+      ]
+    },
+    {
+      "request_id": "tp53-nkx2-5",
+      "strict_queries": [
+        {"provider": "pubmed", "route": "strict", "query_alias": "TP53 c.356C>A", "query": "(\"TP53\"[Title/Abstract] AND \"c.356C>A\"[Title/Abstract])", "query_template_version": "pubmed-title-abstract-v1"},
+        {"provider": "europepmc", "route": "strict", "query_alias": "TP53 c.356C>A", "query": "TITLE_ABS:\"TP53 c.356C>A\"", "query_template_version": "europepmc-title-abstract-v1"},
+        {"provider": "semanticscholar", "route": "strict", "query_alias": "TP53 c.356C>A", "query": "TP53 c.356C>A", "query_template_version": "semantic-scholar-bulk-phrase-v1"},
+        {"provider": "pubtator", "route": "strict", "query_alias": "TP53 c.356C>A", "query": "@VARIANT_tp53-c356", "query_template_version": "pubtator-entity-v1"}
+      ]
+    },
+    {
+      "request_id": "brca1-collision-a",
+      "strict_queries": [
+        {"provider": "pubmed", "route": "strict", "query_alias": "BRCA1 c.788G>T", "query": "(\"BRCA1\"[Title/Abstract] AND \"c.788G>T\"[Title/Abstract])", "query_template_version": "pubmed-title-abstract-v1"},
+        {"provider": "europepmc", "route": "strict", "query_alias": "BRCA1 c.788G>T", "query": "TITLE_ABS:\"BRCA1 c.788G>T\"", "query_template_version": "europepmc-title-abstract-v1"},
+        {"provider": "semanticscholar", "route": "strict", "query_alias": "BRCA1 c.788G>T", "query": "BRCA1 c.788G>T", "query_template_version": "semantic-scholar-bulk-phrase-v1"},
+        {"provider": "pubtator", "route": "strict", "query_alias": "BRCA1 c.788G>T", "query": "@VARIANT_brca1-c788", "query_template_version": "pubtator-entity-v1"}
+      ]
+    },
+    {
+      "request_id": "brca1-collision-b",
+      "strict_queries": [
+        {"provider": "pubmed", "route": "strict", "query_alias": "BRCA1 c.2428A>T", "query": "(\"BRCA1\"[Title/Abstract] AND \"c.2428A>T\"[Title/Abstract])", "query_template_version": "pubmed-title-abstract-v1"},
+        {"provider": "europepmc", "route": "strict", "query_alias": "BRCA1 c.2428A>T", "query": "TITLE_ABS:\"BRCA1 c.2428A>T\"", "query_template_version": "europepmc-title-abstract-v1"},
+        {"provider": "semanticscholar", "route": "strict", "query_alias": "BRCA1 c.2428A>T", "query": "BRCA1 c.2428A>T", "query_template_version": "semantic-scholar-bulk-phrase-v1"},
+        {"provider": "pubtator", "route": "strict", "query_alias": "BRCA1 c.2428A>T", "query": "@VARIANT_brca1-c2428", "query_template_version": "pubtator-entity-v1"}
+      ]
+    }
+  ],
+  "discovery_route_retained": true,
+  "query_provenance": {
+    "query_aliases_present": true,
+    "no_observed_alias_claim": true
+  }
+}
+```
+
 ## Batch Variant Literature Is Ordered and Compact
 
 <!-- mustmatch-lint: skip -->
