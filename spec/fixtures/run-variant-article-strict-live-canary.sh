@@ -24,6 +24,7 @@ expected_versions = {
     "pubtator": "pubtator-entity-v1",
 }
 plans = {}
+routes = {}
 rows = []
 for variant in variants:
     completed = subprocess.run(
@@ -45,6 +46,7 @@ for variant in variants:
     )
     payload = json.loads(completed.stdout)
     plans[variant] = payload.get("debug_plan", {}).get("provider_queries", [])
+    routes[variant] = payload.get("debug_plan", {}).get("routes", [])
     rows.extend(payload.get("results", []))
 
 
@@ -90,6 +92,20 @@ discovery_route_retained = all(
     any(query.get("route") == "discovery" for query in plans[variant])
     for variant in variants
 )
+strict_route_executed = all(
+    any(
+        route.get("route") == "strict"
+        and set(expected_versions).issubset(
+            {
+                provider.get("source")
+                for provider in route.get("providers", [])
+                if provider.get("calls", 0) > 0
+            }
+        )
+        for route in routes[variant]
+    )
+    for variant in variants
+)
 provenance_uses_query_aliases_only = bool(rows) and all(
     all(
         isinstance(provenance.get("query_aliases"), list)
@@ -106,6 +122,7 @@ print(
             "all_strict_templates_exact": all_strict_templates_exact,
             "brca1_aliases_remain_distinct": brca1_aliases_remain_distinct,
             "discovery_route_retained": discovery_route_retained,
+            "strict_route_executed": strict_route_executed,
             "provenance_uses_query_aliases_only": provenance_uses_query_aliases_only,
         },
         indent=2,

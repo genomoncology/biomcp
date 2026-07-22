@@ -70,6 +70,7 @@ bash ../fixtures/run-variant-article-strict-live-canary.sh ../..
   "all_strict_templates_exact": true,
   "brca1_aliases_remain_distinct": true,
   "discovery_route_retained": true,
+  "strict_route_executed": true,
   "provenance_uses_query_aliases_only": true
 }
 ```

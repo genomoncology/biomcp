@@ -1262,7 +1262,7 @@ fn plan_queries(
     route: &str,
 ) -> Vec<String> {
     match route {
-        "exact_lexical" => exact_aliases(context).0,
+        "strict" | "exact_lexical" => exact_aliases(context).0,
         "best_effort_free_text" => fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
@@ -1402,6 +1402,14 @@ fn build_debug_plan(
         }
     } else if !resolved {
         match strategy {
+            VariantArticleStrategy::Union
+                if !matches!(
+                    context.resolution.provider_validation.status,
+                    VariantProviderValidationStatus::Contradictory
+                ) =>
+            {
+                vec!["strict", "best_effort_free_text"]
+            }
             VariantArticleStrategy::Union => vec!["best_effort_free_text"],
             VariantArticleStrategy::Annotation => vec!["pubtator_variant"],
             VariantArticleStrategy::Lexical => vec!["exact_lexical"],
@@ -1409,10 +1417,15 @@ fn build_debug_plan(
     } else {
         match strategy {
             VariantArticleStrategy::Union => {
-                vec!["pubtator_variant", "exact_lexical", "source_citation"]
+                vec![
+                    "strict",
+                    "pubtator_variant",
+                    "exact_lexical",
+                    "source_citation",
+                ]
             }
             VariantArticleStrategy::Annotation => vec!["pubtator_variant"],
-            VariantArticleStrategy::Lexical => vec!["exact_lexical"],
+            VariantArticleStrategy::Lexical => vec!["strict", "exact_lexical"],
         }
     };
     let events = execution.events();
@@ -1610,6 +1623,17 @@ async fn search_variant_articles_identity(
                         ))
                     }
                     VariantProviderValidationStatus::Confirmed => {}
+                }
+                if !matches!(
+                    context.resolution.provider_validation.status,
+                    VariantProviderValidationStatus::Contradictory
+                ) {
+                    let (rows, incomplete, succeeded, route_statuses) =
+                        strict_provider_candidates(input, &context, strategy, &execution).await;
+                    candidates.extend(rows);
+                    statuses.extend(route_statuses);
+                    succeeded_routes += usize::from(succeeded);
+                    failed_routes += usize::from(incomplete || !succeeded);
                 }
                 let (rows, incomplete, succeeded, route_statuses) =
                     fallback_candidates(input, &context, &execution).await;
@@ -2285,6 +2309,38 @@ mod tests {
                 .iter()
                 .all(|query| query.route == "strict")
         );
+    }
+
+    #[test]
+    fn debug_plan_reports_strict_route_for_resolved_and_ambiguous_union_requests() {
+        let execution = VariantArticleExecutionContext::single();
+        let counts = VariantArticleCountsPlan {
+            pre_dedup: 0,
+            post_dedup: 0,
+            returned: 0,
+        };
+        let next = VariantArticleNextPlan {
+            offset: 0,
+            cursor: None,
+        };
+        let resolved = resolved_context();
+        let mut ambiguous = resolved.clone();
+        ambiguous.resolution.status = VariantResolutionStatus::Ambiguous;
+        ambiguous.resolution.provider_validation.status =
+            VariantProviderValidationStatus::Indeterminate;
+
+        for context in [&resolved, &ambiguous] {
+            let plan = build_debug_plan(
+                "BRAF p.V600E",
+                context,
+                VariantArticleStrategy::Union,
+                &execution,
+                counts.clone(),
+                false,
+                next.clone(),
+            );
+            assert!(plan.routes.iter().any(|route| route.route == "strict"));
+        }
     }
 
     #[test]
