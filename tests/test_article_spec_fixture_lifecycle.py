@@ -384,6 +384,7 @@ def test_only_owned_article_fixtures_export_unpaced_origin() -> None:
     assert exporters == {
         "run-article-semanticscholar-source-search.sh",
         "run-variant-article-entity-fixture.sh",
+        "run-variant-article-identity-fixture.sh",
         "setup-article-federated-timeout-fixture.sh",
         "setup-article-fulltext-source-fixture.sh",
     }

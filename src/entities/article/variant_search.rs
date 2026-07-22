@@ -8,16 +8,14 @@ use std::sync::{
 };
 use std::time::Instant;
 
-use clap::ValueEnum;
-use futures::{StreamExt, stream};
-use serde::Serialize;
-use sha2::Digest;
-
 use crate::entities::variant::{
     NormalizedVariantAliases, RequestedVariantIdentity, VariantArticleResolution,
     VariantArticleResolutionContext, VariantProviderValidationStatus, VariantResolutionStatus,
 };
 use crate::error::BioMcpError;
+use clap::ValueEnum;
+use futures::{StreamExt, stream};
+use serde::Serialize;
 
 use super::backends::{
     search_europepmc_page_with_context, search_pubmed_page_with_context,
@@ -33,8 +31,8 @@ use super::enrichment::{
 };
 use super::identity_verification::{
     PUBTATOR_EXPORT_TEMPLATE_VERSION, VariantArticleIdentity, VariantArticleVerificationOptions,
-    VariantArticleVerificationPlan, combine_identities, verification_plan,
-    verify_captured_abstract, verify_pubtator,
+    VariantArticleVerificationPlan, canonical_content_subset, canonical_response_subset,
+    combine_identities, verification_plan, verify_captured_abstract, verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query,
@@ -1814,8 +1812,8 @@ async fn search_variant_articles_identity(
 
     let pre_dedup = candidates.len();
     let mut candidates = merge_article_candidate_pool(candidates);
-    let mut verification_response_hashes = Vec::new();
-    let mut verification_content_hashes = Vec::new();
+    let mut verification_response_subsets = Vec::new();
+    let mut verification_content_subsets = Vec::new();
     let mut verification_incomplete = false;
     if verification.verify_identity {
         for candidate in &mut candidates {
@@ -1828,6 +1826,7 @@ async fn search_variant_articles_identity(
                     .unwrap_or(&candidate.row.normalized_abstract),
             );
             if captured.status != "unverified" {
+                verification_content_subsets.push(canonical_content_subset(&captured));
                 candidate.identity = Some(captured);
                 continue;
             }
@@ -1864,24 +1863,12 @@ async fn search_variant_articles_identity(
                     );
                     match response {
                         Ok(response) => {
-                            verification_response_hashes.push(format!(
-                                "{:x}",
-                                sha2::Sha256::digest(
-                                    serde_json::to_string(&response)
-                                        .unwrap_or_default()
-                                        .as_bytes(),
-                                )
-                            ));
+                            verification_response_subsets
+                                .push(canonical_response_subset(&response));
                             let fetched = verify_pubtator(&context.requested, &response, false);
-                            verification_content_hashes.extend(
-                                fetched
-                                    .observations
-                                    .iter()
-                                    .chain(&fetched.contradictions)
-                                    .map(|observation| observation.canonical_content_hash.clone()),
-                            );
-                            candidate.identity =
-                                Some(combine_identities(captured.clone(), fetched));
+                            let identity = combine_identities(captured.clone(), fetched);
+                            verification_content_subsets.push(canonical_content_subset(&identity));
+                            candidate.identity = Some(identity);
                             false
                         }
                         Err(_) => true,
@@ -1999,8 +1986,8 @@ async fn search_variant_articles_identity(
             plan.verification = Some(verification_plan(
                 &context.requested,
                 PUBTATOR_EXPORT_TEMPLATE_VERSION,
-                &verification_response_hashes,
-                &verification_content_hashes,
+                &verification_response_subsets,
+                &verification_content_subsets,
             ));
         }
         plan
