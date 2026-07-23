@@ -343,7 +343,6 @@ pub(crate) fn verify_captured_abstract(
     let requested_gene = requested.gene.as_deref().map(normalized);
     let requested_allele = requested_allele(requested);
     let normalized_allele = requested_allele.as_deref().map(normalized);
-    let mut observations = Vec::new();
     let mut contradictions = Vec::new();
     static SENTENCE_BOUNDARY_RE: OnceLock<Regex> = OnceLock::new();
     let sentence_boundary_re = SENTENCE_BOUNDARY_RE
@@ -393,26 +392,20 @@ pub(crate) fn verify_captured_abstract(
             provider_relation: String::new(),
             canonical_content_hash: hash(sentence),
         };
-        if observed_alleles.len() == 1 && normalized(observed_alleles[0]) == allele {
-            observations.push(observation(observed_alleles[0]));
-        } else if observed_alleles
+        if observed_alleles
             .iter()
             .any(|observed| normalized(observed) != allele)
         {
             contradictions.extend(observed_alleles.into_iter().map(observation));
         }
     }
-    let status = status_for(&observations, &contradictions);
+    let status = status_for(&[], &contradictions);
     VariantArticleIdentity {
         status,
-        basis: if status == "confirmed" {
-            "sentence"
-        } else {
-            "none"
-        },
+        basis: "none",
         requested_gene: requested.gene.clone(),
         requested_allele,
-        observations,
+        observations: Vec::new(),
         contradictions,
         incomplete: false,
     }
@@ -557,18 +550,18 @@ mod tests {
     }
 
     #[test]
-    fn one_gene_one_allele_captured_sentence_confirms_but_article_wide_cooccurrence_does_not() {
-        let confirmed = verify_captured_abstract(&requested(), "BRAF p.V600E was observed.");
-        assert_eq!(confirmed.status, "confirmed");
-        let unverified = verify_captured_abstract(
+    fn captured_sentences_cannot_confirm_without_provider_linkage() {
+        let same_sentence = verify_captured_abstract(&requested(), "BRAF p.V600E was observed.");
+        assert_eq!(same_sentence.status, "unverified");
+        let separate_sentences = verify_captured_abstract(
             &requested(),
             "BRAF was observed. The tumour carried p.V600E.",
         );
-        assert_eq!(unverified.status, "unverified");
+        assert_eq!(separate_sentences.status, "unverified");
         let contradictory = verify_captured_abstract(&requested(), "BRAF p.V600E and p.V600K.");
         assert_eq!(contradictory.status, "contradictory");
         let table = verify_captured_abstract(&requested(), "gene | allele\nBRAF | p.V600E");
-        assert_eq!(table.status, "confirmed");
+        assert_eq!(table.status, "unverified");
         let second_gene = verify_captured_abstract(&requested(), "BRAF and ATM p.V600E.");
         assert_eq!(second_gene.status, "unverified");
     }
