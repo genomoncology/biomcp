@@ -6,6 +6,13 @@
       "date": "2012",
       "journal": "The New England journal of medicine",
       "authors": ["Example Author"],
+      "relations": [
+        {
+          "id": "relation-1",
+          "infons": {"type": "gene_variant"},
+          "nodes": [{"refid": "gene-1", "role": "gene"}, {"refid": "mutation-1", "role": "mutation"}]
+        }
+      ],
       "passages": [
         {
           "infons": {
@@ -14,6 +21,7 @@
           "text": "BRAF alterations are observed in melanoma.",
           "annotations": [
             {
+              "id": "gene-1",
               "text": "BRAF",
               "infons": {
                 "type": "Gene",
