@@ -264,6 +264,7 @@ case "$mode" in
       spec/entity/trial.md
       spec/entity/vaers.md
       spec/entity/variant-hotspots.md
+      spec/entity/clingen-erepo-live.md
       spec/entity/variant-myvariant-live.md
       spec/entity/variant-articles-live.md
       spec/surface/cli.md
