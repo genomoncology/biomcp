@@ -41,6 +41,7 @@ nav:
       - Overview: sources/index.md
       - PubMed: sources/pubmed.md
       - ClinicalTrials.gov: sources/clinicaltrials-gov.md
+      - ClinGen ERepo: sources/clingen-erepo.md
       - ClinVar: sources/clinvar.md
       - OpenFDA: sources/openfda.md
       - UniProt: sources/uniprot.md

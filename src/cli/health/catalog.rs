@@ -302,6 +302,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "ClinGen ERepo",
+        affects: Some("variant erepo helper"),
+        probe: ProbeKind::Get {
+            url: "https://erepo.clinicalgenome.org/evrepo/api/summary/classifications?columns=caId&values=CA015543&matchTypes=exact&pgSize=1&pg=1",
+        },
+    },
+    SourceDescriptor {
         api: "gnomAD",
         affects: Some("gene constraint section"),
         probe: ProbeKind::PostJson {

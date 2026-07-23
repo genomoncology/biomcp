@@ -681,6 +681,19 @@ SOURCE_PAGE_SPECS = {
             'biomcp search phenotype "HP:0001250 HP:0001263" --limit 10',
         ],
     },
+    "clingen-erepo.md": {
+        "title": "ClinGen ERepo MCP Tool for Expert Assertions | BioMCP",
+        "description": "Retrieve versioned ClinGen Evidence Repository expert assertions by CAid through BioMCP without inferring ACMG/AMP evidence strength.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://erepo.clinicalgenome.org",
+        "required_intro_phrases": ["ClinGen Allele identifier", "ACMG/AMP"],
+        "exposes": ["variant erepo <CAid>", "variant_erepo"],
+        "example_commands": [
+            "biomcp --json variant erepo CA015543",
+            "biomcp --json variant erepo CA015543 --detail",
+            "biomcp --json variant erepo --input caids.json",
+        ],
+    },
 }
 
 EXPECTED_SOURCE_FILES = [OVERVIEW_FILE, *SOURCE_PAGE_SPECS]
@@ -689,6 +702,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - Overview: sources/index.md
       - PubMed: sources/pubmed.md
       - ClinicalTrials.gov: sources/clinicaltrials-gov.md
+      - ClinGen ERepo: sources/clingen-erepo.md
       - ClinVar: sources/clinvar.md
       - OpenFDA: sources/openfda.md
       - UniProt: sources/uniprot.md

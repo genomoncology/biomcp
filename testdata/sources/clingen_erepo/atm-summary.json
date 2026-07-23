@@ -1,0 +1,107 @@
+{
+  "data": [
+    {
+      "PCERDocID": "PCER000003282",
+      "_id": "AlleleRecords/1573021616",
+      "_key": "1573021616",
+      "_rev": "_lZDYLa6---",
+      "affiliationId": "50039",
+      "approvedDate": "2022-03-09",
+      "caId": "CA151456",
+      "classification": "Benign",
+      "condition": "ATM-related cancer predisposition",
+      "cvId": "3038",
+      "docVersion": "2.0.0",
+      "ep": "Hereditary Breast, Ovarian and Pancreatic Cancer VCEP",
+      "gene": "ATM",
+      "geneNcbiId": "472",
+      "hgvs": [
+        "NM_000051.4:c.1066-6T>G",
+        "NC_000011.10:g.108248927T>G",
+        "CM000673.2:g.108248927T>G",
+        "NC_000011.9:g.108119654T>G",
+        "CM000673.1:g.108119654T>G",
+        "NC_000011.8:g.107624864T>G",
+        "NG_009830.1:g.31096T>G",
+        "LRG_135:g.31096T>G",
+        "ENST00000452508.7:c.1066-6T>G",
+        "ENST00000713593.1:c.*537-6T>G",
+        "ENST00000278616.9:c.1066-6T>G",
+        "ENST00000682516.1:n.1200-6T>G",
+        "ENST00000682956.1:n.1200-6T>G",
+        "ENST00000683174.1:n.1216-6T>G",
+        "ENST00000683605.1:n.561-6T>G",
+        "ENST00000684037.1:c.*1-6T>G",
+        "ENST00000684061.1:n.1200-6T>G",
+        "ENST00000684179.1:n.1035-6T>G",
+        "ENST00000527805.6:c.1066-6T>G",
+        "ENST00000675595.1:c.901-6T>G",
+        "ENST00000675843.1:c.1066-6T>G",
+        "ENST00000278616.8:c.1066-6T>G",
+        "ENST00000452508.6:c.1066-6T>G",
+        "ENST00000527805.5:c.1066-6T>G",
+        "NM_000051.3:c.1066-6T>G",
+        "LRG_135t1:c.1066-6T>G",
+        "XM_005271561.3:c.1066-6T>G",
+        "XM_005271562.3:c.1066-6T>G",
+        "XM_006718843.2:c.1066-6T>G",
+        "XM_011542840.1:c.1066-6T>G",
+        "XM_011542841.1:c.1066-6T>G",
+        "XM_011542842.1:c.901-6T>G",
+        "XM_011542843.1:c.1066-6T>G",
+        "XM_011542844.1:c.22-6T>G",
+        "XM_011542845.1:c.-73-1774T>G",
+        "XM_011542846.1:c.1066-6T>G",
+        "NM_001351834.1:c.1066-6T>G",
+        "XM_005271562.5:c.1066-6T>G",
+        "XM_006718843.4:c.1066-6T>G",
+        "XM_011542840.3:c.1066-6T>G",
+        "XM_011542842.3:c.901-6T>G",
+        "XM_011542843.2:c.1066-6T>G",
+        "XM_011542844.3:c.22-6T>G",
+        "XM_011542845.2:c.-73-1774T>G",
+        "XM_017017789.2:c.1066-6T>G",
+        "XM_017017790.2:c.1066-6T>G",
+        "XM_017017791.1:c.1066-6T>G",
+        "XM_017017792.2:c.1066-6T>G",
+        "XR_002957150.1:n.1799-6T>G",
+        "NM_001351834.2:c.1066-6T>G",
+        "NM_000051.4(ATM):c.1066-6T>G"
+      ],
+      "hgvsSearch": "nm_000051.4:c.1066-6t>g nc_000011.10:g.108248927t>g cm000673.2:g.108248927t>g nc_000011.9:g.108119654t>g cm000673.1:g.108119654t>g nc_000011.8:g.107624864t>g ng_009830.1:g.31096t>g lrg_135:g.31096t>g enst00000452508.7:c.1066-6t>g enst00000713593.1:c.*537-6t>g enst00000278616.9:c.1066-6t>g enst00000682516.1:n.1200-6t>g enst00000682956.1:n.1200-6t>g enst00000683174.1:n.1216-6t>g enst00000683605.1:n.561-6t>g enst00000684037.1:c.*1-6t>g enst00000684061.1:n.1200-6t>g enst00000684179.1:n.1035-6t>g enst00000527805.6:c.1066-6t>g enst00000675595.1:c.901-6t>g enst00000675843.1:c.1066-6t>g enst00000278616.8:c.1066-6t>g enst00000452508.6:c.1066-6t>g enst00000527805.5:c.1066-6t>g nm_000051.3:c.1066-6t>g lrg_135t1:c.1066-6t>g xm_005271561.3:c.1066-6t>g xm_005271562.3:c.1066-6t>g xm_006718843.2:c.1066-6t>g xm_011542840.1:c.1066-6t>g xm_011542841.1:c.1066-6t>g xm_011542842.1:c.901-6t>g xm_011542843.1:c.1066-6t>g xm_011542844.1:c.22-6t>g xm_011542845.1:c.-73-1774t>g xm_011542846.1:c.1066-6t>g nm_001351834.1:c.1066-6t>g xm_005271562.5:c.1066-6t>g xm_006718843.4:c.1066-6t>g xm_011542840.3:c.1066-6t>g xm_011542842.3:c.901-6t>g xm_011542843.2:c.1066-6t>g xm_011542844.3:c.22-6t>g xm_011542845.2:c.-73-1774t>g xm_017017789.2:c.1066-6t>g xm_017017790.2:c.1066-6t>g xm_017017791.1:c.1066-6t>g xm_017017792.2:c.1066-6t>g xr_002957150.1:n.1799-6t>g nm_001351834.2:c.1066-6t>g nm_000051.4(atm):c.1066-6t>g",
+      "metCodes": [
+        "BP2_Strong",
+        "BS1"
+      ],
+      "metCodesSearch": "bp2_strong bs1",
+      "moi": "Autosomal dominant inheritance",
+      "mondoId": "MONDO:0700270",
+      "preferredVarTitle": "NM_000051.4(ATM):c.1066-6T>G",
+      "publishedDate": "2025-09-15",
+      "retracted": false,
+      "summaryDesc": "The ATM c.1066-6T>G variant has a GnomAD (v2.1.1) filtering allele frequency of 0.2081% (NFE) which is above the ATM BS1 threshold of .05% (BS1). In silico predictors (SpliceAI Acceptor Loss 0.62; MaxEntScan -2.49) are indeterminate about whether this variant affects splicing. This variant has been observed in a homozygous and compound heterozygous state (presumed) in multiple individuals without Ataxia-Telangiectasia (BP2_Strong, GTR Lab IDs: 61756, 26957, 500031). In summary, this variant meets criteria to be classified as benign based on the ACMG/AMP criteria applied as specified by the HBOP Variant Curation Expert Panel",
+      "unMetCodes": [
+        "PM2",
+        "BP4",
+        "BA1"
+      ],
+      "unMetCodesSearch": "pm2 bp4 ba1",
+      "uuid": "bccd9f16-4086-4c14-8d78-04c52ad58630",
+      "versionsList": [
+        "2.0.0",
+        "1.1.0",
+        "1.0.0"
+      ]
+    }
+  ],
+  "metadata": {
+    "rendered": {
+      "by": "https://erepo.genome.network/evrepo/api/summary/srvc",
+      "when": "2026-07-23T20:06:45.267Z"
+    }
+  },
+  "status": {
+    "code": 200,
+    "name": "OK"
+  }
+}

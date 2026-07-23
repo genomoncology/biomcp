@@ -689,6 +689,8 @@ biomcp variant articles "BRAF V600E" --strategy lexical
 biomcp --json variant articles --input variants.json --debug-plan
 cat variants.json | biomcp --json variant articles --input -
 biomcp variant structure "BRAF V600E"
+biomcp --json variant erepo CA015543
+biomcp --json variant erepo CA015543 --detail
 biomcp variant oncokb "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>
 biomcp variant normalize all NM_000248.3:c.135del
@@ -702,7 +704,9 @@ exact route for diagnosis; unresolved default results are explicitly
 best-effort. JSON reports route status and marks incomplete acquisition with an
 unknown total. Structured `--input <path|->` accepts a JSON array of 1-10 variant
 objects and returns ordered compact `items`; it cannot be combined with the
-positional ID and requires JSON output. `--debug-plan` is also JSON-only and adds normalized aliases, strict and
+positional ID and requires JSON output. `variant erepo` accepts a CAid, preserves
+source-listed expert assertion facts, and limits detail to one explicitly selected
+versioned document. `--debug-plan` is also JSON-only and adds normalized aliases, strict and
 discovery provider requests (with exact query/template version), provider/call/page
 facts, ranking inputs, and fixed item and request budgets. `--verify-identity`
 adds captured-evidence identity facts without changing retrieval recall;

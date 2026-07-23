@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "rendered": {
+      "by": "https://erepo.genome.network/evrepo/api/summary/srvc",
+      "when": "2026-07-23T20:06:45.811Z"
+    }
+  },
+  "status": {
+    "code": 404,
+    "msg": "No records were found for given query",
+    "name": "Not Found"
+  }
+}

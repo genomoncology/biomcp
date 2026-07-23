@@ -13,6 +13,7 @@ DIRECT_SOURCE_MODULES = {
     "chembl": "ChEMBL",
     "civic": "CIViC",
     "clingen": "ClinGen",
+    "clingen_erepo": "ClinGen ERepo",
     "clinicaltrials": "ClinicalTrials.gov",
     "complexportal": "ComplexPortal",
     "cpic": "CPIC",

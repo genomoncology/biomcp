@@ -82,7 +82,8 @@ impl JsonResponseContract {
             },
             Commands::Get { .. } => Self::NONE,
             Commands::Variant { cmd } => match cmd {
-                super::VariantCommand::Articles { input: Some(_), .. } => Self {
+                super::VariantCommand::Articles { input: Some(_), .. }
+                | super::VariantCommand::Erepo { .. } => Self {
                     collection_paths: &[ITEMS_PATH],
                 },
                 super::VariantCommand::Trials { .. }

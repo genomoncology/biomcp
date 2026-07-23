@@ -41,6 +41,7 @@ fn health_inventory_includes_all_expected_sources() {
             "GTEx",
             "DGIdb",
             "ClinGen",
+            "ClinGen ERepo",
             "gnomAD",
             "UniProt",
             "QuickGO",
@@ -96,6 +97,10 @@ fn markdown_shows_new_affects_mappings() {
         Some("gene druggability, drug target, and disease association sections")
     );
     assert_eq!(affects_for_api("ClinGen"), Some("gene clingen section"));
+    assert_eq!(
+        affects_for_api("ClinGen ERepo"),
+        Some("variant erepo helper")
+    );
     assert_eq!(affects_for_api("gnomAD"), Some("gene constraint section"));
     assert_eq!(
         affects_for_api("NIH Reporter"),

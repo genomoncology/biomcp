@@ -1,0 +1,73 @@
+{
+  "data": [
+    {
+      "PCERDocID": "PCER000000124",
+      "_id": "AlleleRecords/1573008758",
+      "_key": "1573008758",
+      "_rev": "_lZDYH4G--A",
+      "affiliationId": "50012",
+      "approvedDate": "2017-10-18",
+      "caId": "CA000498",
+      "classification": "Pathogenic",
+      "condition": "PTEN hamartoma tumor syndrome",
+      "cvId": "189500",
+      "docVersion": "1.0.0",
+      "ep": "PTEN VCEP",
+      "gene": "PTEN",
+      "geneNcbiId": "5728",
+      "hgvs": [
+        "NM_000314.6:c.517C>T",
+        "NC_000010.11:g.87952142C>T",
+        "CM000672.2:g.87952142C>T",
+        "NC_000010.10:g.89711899C>T",
+        "CM000672.1:g.89711899C>T",
+        "NC_000010.9:g.89701879C>T",
+        "NG_007466.2:g.93704C>T",
+        "LRG_311:g.93704C>T",
+        "NM_000314.5:c.517C>T",
+        "NM_001304717.2:c.1036C>T",
+        "NM_001304718.1:c.-75C>T",
+        "XM_006717926.2:c.472C>T",
+        "XM_011539981.1:c.517C>T",
+        "XM_011539982.1:c.421C>T",
+        "XR_945789.1:n.1388C>T",
+        "XR_945790.1:n.1505C>T",
+        "XR_945791.1:n.1205-5711C>T",
+        "NM_000314.7:c.517C>T",
+        "NM_001304717.5:c.1036C>T",
+        "NM_001304718.2:c.-75C>T",
+        "ENST00000371953.7:c.517C>T",
+        "NM_000314.6(PTEN):c.517C>T (p.Arg173Cys)"
+      ],
+      "hgvsSearch": "nm_000314.6:c.517c>t nc_000010.11:g.87952142c>t cm000672.2:g.87952142c>t nc_000010.10:g.89711899c>t cm000672.1:g.89711899c>t nc_000010.9:g.89701879c>t ng_007466.2:g.93704c>t lrg_311:g.93704c>t nm_000314.5:c.517c>t nm_001304717.2:c.1036c>t nm_001304718.1:c.-75c>t xm_006717926.2:c.472c>t xm_011539981.1:c.517c>t xm_011539982.1:c.421c>t xr_945789.1:n.1388c>t xr_945790.1:n.1505c>t xr_945791.1:n.1205-5711c>t nm_000314.7:c.517c>t nm_001304717.5:c.1036c>t nm_001304718.2:c.-75c>t enst00000371953.7:c.517c>t nm_000314.6(pten):c.517c>t (p.arg173cys)",
+      "metCodes": [
+        "PM2",
+        "PS2_Very",
+        "PS3",
+        "PS4_Moderate",
+        "PP1",
+        "PP2"
+      ],
+      "metCodesSearch": "pm2 ps2_very ps3 ps4_moderate pp1 pp2",
+      "moi": "Autosomal dominant inheritance",
+      "mondoId": "MONDO:0017623",
+      "preferredVarTitle": "NM_000314.6(PTEN):c.517C>T (p.Arg173Cys)",
+      "publishedDate": "2018-12-10",
+      "summaryDesc": "PTEN c.517C>T (p.R173C) meets criteria to be classified as pathogenic for PTEN Hamartoma Tumor syndrome in an autosomal dominant manner using modified ACMG criteria (Mester et al. 2018; manuscript in preparation).  Please see a summary of the rules and criteria codes in the “PTEN ACMG Specifications Summary” document (assertion method column).\n\nPS2_VS: At least two proven OR one proven plus two assumed de novo observations in a patient with the disease and no family history. (PMID 17526800, PMID 22628360, internal laboratory contributor(s) SCV000222220.10)\nPS3: Phosphatase activity <50% of wild type. (PMID 10866302)\nPM2: Absent in large sequenced populations (PMID 27535533).\nPS4_M: Probands with phenotype specificity score of 2-3.5. (PMID 22628360, PMID 17526800, PMID 17526801)\nPP1: Co-segregation with disease in multiple affected family members, with 3 or 4 meioses observed. (PMID 22628360)\nPP2: PTEN is defined by the PTEN Expert Panel as a gene that has a low rate of benign missense variation and where missense variants are a common mechanism of disease.",
+      "uuid": "8f2c1cdc-0442-4dc1-ace0-ee811465348e",
+      "versionsList": [
+        "1.0.0"
+      ]
+    }
+  ],
+  "metadata": {
+    "rendered": {
+      "by": "https://erepo.genome.network/evrepo/api/summary/srvc",
+      "when": "2026-07-23T20:06:45.428Z"
+    }
+  },
+  "status": {
+    "code": 200,
+    "name": "OK"
+  }
+}

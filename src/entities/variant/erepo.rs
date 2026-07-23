@@ -1,0 +1,514 @@
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+
+use crate::error::BioMcpError;
+use crate::sources::clingen_erepo::ERepoClient;
+
+const MAX_CAIDS: usize = 50;
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum ERepoBatchInput {
+    Caids(Vec<String>),
+    Object { caids: Vec<String> },
+}
+
+impl ERepoBatchInput {
+    pub(crate) fn into_caids(self) -> Vec<String> {
+        match self {
+            Self::Caids(caids) | Self::Object { caids } => caids,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoResponse {
+    pub items: Vec<ERepoItem>,
+    pub complete: bool,
+    pub source_status: Vec<ERepoSourceStatus>,
+    pub provider: &'static str,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoSourceStatus {
+    pub source: &'static str,
+    pub status: &'static str,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoItem {
+    pub caid: String,
+    pub assertions: Vec<ERepoAssertion>,
+    pub complete: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoAssertion {
+    pub assertion_id: String,
+    pub doc_version: String,
+    pub versions: Vec<String>,
+    pub classification: Option<String>,
+    pub condition: Option<String>,
+    pub mondo_id: Option<String>,
+    pub moi: Option<String>,
+    pub vcep: Option<String>,
+    pub gene: Option<String>,
+    pub gene_ncbi_id: Option<String>,
+    pub hgvs: Vec<String>,
+    pub preferred_variant_title: Option<String>,
+    pub approved_date: Option<String>,
+    pub published_date: Option<String>,
+    pub retracted: Option<bool>,
+    pub pcer_doc_id: Option<String>,
+    pub summary_description: Option<String>,
+    pub source_url: String,
+    pub criteria: Vec<ERepoCriterion>,
+    pub unmet_codes_state: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<ERepoDetail>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoCriterion {
+    pub source_token: String,
+    pub code: String,
+    pub status: &'static str,
+    pub explicit_strength: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoDetail {
+    pub source_url: String,
+    pub assertion_uuid: String,
+    pub provider_entity_id: Option<String>,
+    pub body_sha256: String,
+    pub body_bytes: usize,
+    pub response_version: Option<String>,
+    pub service_version: Option<String>,
+    pub template_version: Option<String>,
+    pub criteria: Vec<ERepoDetailCriterion>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoDetailCriterion {
+    pub code: Option<String>,
+    pub default_strength: Option<String>,
+    pub statement_outcome: Option<String>,
+    pub comments: Vec<String>,
+    pub curator_facts: Vec<Value>,
+    pub pmids: Vec<ERepoPmid>,
+    pub locator: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoPmid {
+    pub pmid: u64,
+    pub assertion_uuid: String,
+    pub provider_entity_id: Option<String>,
+    pub locator: String,
+}
+
+pub(crate) async fn retrieve(
+    caids: Vec<String>,
+    detail: bool,
+    assertion_id: Option<&str>,
+    version: Option<&str>,
+) -> Result<ERepoResponse, BioMcpError> {
+    if caids.is_empty() || caids.len() > MAX_CAIDS {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo requires between 1 and 50 CAids".into(),
+        ));
+    }
+    if caids.iter().any(|caid| caid.trim().is_empty()) {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo CAid must not be empty".into(),
+        ));
+    }
+    if !detail && version.is_some() {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo --version requires --detail".into(),
+        ));
+    }
+    if detail && caids.len() != 1 {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo --detail is only available for one CAid".into(),
+        ));
+    }
+    let client = ERepoClient::new()?;
+    let mut items = Vec::with_capacity(caids.len());
+    for caid in caids {
+        let envelope = client.summary(&caid).await?;
+        let rows = envelope
+            .get("data")
+            .and_then(Value::as_array)
+            .ok_or_else(|| invalid("summary data must be an array"))?;
+        if rows.len() > 25 {
+            return Err(invalid("summary exceeded the 25 assertion bound"));
+        }
+        let mut assertions = rows
+            .iter()
+            .map(|row| summary(row, &client))
+            .collect::<Result<Vec<_>, _>>()?;
+        assertions.sort_by(|a, b| {
+            a.assertion_id
+                .cmp(&b.assertion_id)
+                .then(a.doc_version.cmp(&b.doc_version))
+        });
+        if detail {
+            let selected = select(&assertions, assertion_id, version)?;
+            let (envelope, bytes) = client
+                .detail(&selected.assertion_id, &selected.doc_version)
+                .await?;
+            let data = envelope
+                .get("data")
+                .and_then(Value::as_object)
+                .ok_or_else(|| invalid("detail data must be one object"))?;
+            let url = client.detail_url(&selected.assertion_id, &selected.doc_version);
+            if data.get("uuid").and_then(Value::as_str) != Some(selected.assertion_id.as_str())
+                || data.get("@id").and_then(Value::as_str) != Some(url.as_str())
+            {
+                return Err(invalid(
+                    "detail identity did not match selected assertion version",
+                ));
+            }
+            let selected_index = assertions
+                .iter()
+                .position(|row| {
+                    row.assertion_id == selected.assertion_id
+                        && row.doc_version == selected.doc_version
+                })
+                .expect("selected summary exists");
+            assertions[selected_index].detail = Some(detail_projection(
+                data,
+                &selected.assertion_id,
+                &url,
+                &bytes,
+            ));
+        }
+        items.push(ERepoItem {
+            caid,
+            assertions,
+            complete: true,
+        });
+    }
+    Ok(ERepoResponse {
+        items,
+        complete: true,
+        source_status: vec![ERepoSourceStatus {
+            source: "clingen_erepo",
+            status: "available",
+        }],
+        provider: "ClinGen ERepo",
+    })
+}
+
+fn summary(row: &Value, client: &ERepoClient) -> Result<ERepoAssertion, BioMcpError> {
+    let assertion_id = required_string(row, "uuid")?;
+    let doc_version = required_string(row, "docVersion")?;
+    let versions = strings(row.get("versionsList"));
+    if !versions.iter().any(|value| value == &doc_version) {
+        return Err(invalid("summary docVersion is not in versionsList"));
+    }
+    let mut criteria = tokens(row.get("metCodes"), "met");
+    let unmet_provided = row.get("unMetCodes").is_some();
+    criteria.extend(tokens(row.get("unMetCodes"), "unmet"));
+    Ok(ERepoAssertion {
+        source_url: client.detail_url(&assertion_id, &doc_version),
+        assertion_id,
+        doc_version,
+        versions,
+        classification: string(row, "classification"),
+        condition: string(row, "condition"),
+        mondo_id: string(row, "mondoId"),
+        moi: string(row, "moi"),
+        vcep: string(row, "ep"),
+        gene: string(row, "gene"),
+        gene_ncbi_id: string(row, "geneNcbiId"),
+        hgvs: strings(row.get("hgvs")),
+        preferred_variant_title: string(row, "preferredVarTitle"),
+        approved_date: string(row, "approvedDate"),
+        published_date: string(row, "publishedDate"),
+        retracted: row.get("retracted").and_then(Value::as_bool),
+        pcer_doc_id: string(row, "PCERDocID"),
+        summary_description: string(row, "summaryDesc"),
+        criteria,
+        unmet_codes_state: if unmet_provided {
+            "provided"
+        } else {
+            "not_provided"
+        },
+        detail: None,
+    })
+}
+
+fn select<'a>(
+    rows: &'a [ERepoAssertion],
+    assertion_id: Option<&str>,
+    version: Option<&str>,
+) -> Result<&'a ERepoAssertion, BioMcpError> {
+    let candidates = match assertion_id {
+        Some(id) => rows
+            .iter()
+            .filter(|row| row.assertion_id == id)
+            .collect::<Vec<_>>(),
+        None if rows.len() == 1 => rows.iter().collect(),
+        None => {
+            return Err(BioMcpError::InvalidArgument(format!(
+                "variant erepo --detail requires --assertion; choices: {}",
+                rows.iter()
+                    .map(|row| row.assertion_id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
+        }
+    };
+    let row = candidates.first().copied().ok_or_else(|| {
+        BioMcpError::InvalidArgument("variant erepo assertion was not found for this CAid".into())
+    })?;
+    if let Some(version) = version {
+        if !row.versions.iter().any(|candidate| candidate == version) {
+            return Err(BioMcpError::InvalidArgument(
+                "variant erepo --version must exactly match a summary versionsList value".into(),
+            ));
+        }
+        if version != row.doc_version {
+            return Err(BioMcpError::InvalidArgument(
+                "variant erepo --version requires a matching summary document version".into(),
+            ));
+        }
+    }
+    Ok(row)
+}
+
+fn detail_projection(
+    data: &serde_json::Map<String, Value>,
+    uuid: &str,
+    url: &str,
+    bytes: &[u8],
+) -> ERepoDetail {
+    let provider_entity_id = data.get("id").and_then(Value::as_str).map(str::to_owned);
+    let mut criteria = Vec::new();
+    for (line_index, line) in data
+        .get("evidenceLine")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        for (item_index, item) in line
+            .get("evidenceItem")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .enumerate()
+        {
+            if item.get("type").and_then(Value::as_str) != Some("CriterionAssessment") {
+                continue;
+            }
+            let locator = format!("/evidenceLine/{line_index}/evidenceItem/{item_index}");
+            let comments = item
+                .get("contribution")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(|contribution| contribution.get("comments"))
+                .flat_map(comment_strings)
+                .collect::<Vec<_>>();
+            let mut pmids = structured_pmids(item, uuid, provider_entity_id.clone(), &locator);
+            for comment in &comments {
+                pmids.extend(comment_pmids(
+                    comment,
+                    uuid,
+                    provider_entity_id.clone(),
+                    &format!("{locator}/contribution/comments"),
+                ));
+            }
+            let mut seen = std::collections::BTreeSet::new();
+            pmids.retain(|pmid| seen.insert(pmid.pmid));
+            criteria.push(ERepoDetailCriterion {
+                code: item
+                    .pointer("/criterion/label")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
+                default_strength: item
+                    .pointer("/criterion/defaultStrength/label")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
+                statement_outcome: item
+                    .pointer("/statementOutcome/label")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
+                comments,
+                curator_facts: item
+                    .get("contribution")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default(),
+                pmids,
+                locator,
+            });
+        }
+    }
+    let metadata = data.get("metadata");
+    ERepoDetail {
+        source_url: url.into(),
+        assertion_uuid: uuid.into(),
+        provider_entity_id,
+        body_sha256: format!("{:x}", Sha256::digest(bytes)),
+        body_bytes: bytes.len(),
+        response_version: metadata
+            .and_then(|value| value.get("version"))
+            .and_then(Value::as_str)
+            .map(str::to_owned),
+        service_version: metadata
+            .and_then(|value| value.get("serviceVersion"))
+            .and_then(Value::as_str)
+            .map(str::to_owned),
+        template_version: metadata
+            .and_then(|value| value.get("templateVersion"))
+            .and_then(Value::as_str)
+            .map(str::to_owned),
+        criteria,
+    }
+}
+
+fn structured_pmids(
+    item: &Value,
+    uuid: &str,
+    entity: Option<String>,
+    locator: &str,
+) -> Vec<ERepoPmid> {
+    let mut out = Vec::new();
+    collect_structured_pmids(item, uuid, entity, locator, &mut out);
+    out
+}
+fn collect_structured_pmids(
+    value: &Value,
+    uuid: &str,
+    entity: Option<String>,
+    locator: &str,
+    out: &mut Vec<ERepoPmid>,
+) {
+    match value {
+        Value::Object(map) => {
+            for (key, value) in map {
+                if matches!(key.as_str(), "pmid" | "PMID") {
+                    for pmid in comment_pmids(
+                        value.as_str().unwrap_or_default(),
+                        uuid,
+                        entity.clone(),
+                        &format!("{locator}/{key}"),
+                    ) {
+                        out.push(pmid);
+                    }
+                } else {
+                    collect_structured_pmids(
+                        value,
+                        uuid,
+                        entity.clone(),
+                        &format!("{locator}/{key}"),
+                        out,
+                    );
+                }
+            }
+        }
+        Value::Array(values) => {
+            for (index, value) in values.iter().enumerate() {
+                collect_structured_pmids(
+                    value,
+                    uuid,
+                    entity.clone(),
+                    &format!("{locator}/{index}"),
+                    out,
+                );
+            }
+        }
+        _ => {}
+    }
+}
+fn comment_pmids(text: &str, uuid: &str, entity: Option<String>, locator: &str) -> Vec<ERepoPmid> {
+    let lower = text.to_ascii_lowercase();
+    let mut out = Vec::new();
+    let mut start = 0;
+    while let Some(found) = lower[start..]
+        .find("pmid:")
+        .or_else(|| lower[start..].find("pmids:"))
+    {
+        let at = start + found;
+        let tail = &text[at..];
+        let values = tail
+            .split_once(':')
+            .map(|(_, values)| values)
+            .unwrap_or_default();
+        for token in values
+            .split(|ch: char| !(ch.is_ascii_digit() || matches!(ch, ',' | ';' | ' ' | '\t')))
+            .next()
+            .unwrap_or_default()
+            .split(|ch: char| !ch.is_ascii_digit())
+        {
+            if let Ok(pmid) = token.parse::<u64>()
+                && pmid > 0
+            {
+                out.push(ERepoPmid {
+                    pmid,
+                    assertion_uuid: uuid.into(),
+                    provider_entity_id: entity.clone(),
+                    locator: locator.into(),
+                });
+            }
+        }
+        start = at + 5;
+    }
+    out
+}
+fn comment_strings(value: &Value) -> Vec<String> {
+    match value {
+        Value::String(value) => vec![value.clone()],
+        Value::Array(values) => values
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_owned)
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+fn tokens(value: Option<&Value>, status: &'static str) -> Vec<ERepoCriterion> {
+    strings(value)
+        .into_iter()
+        .map(|source_token| {
+            let (code, explicit_strength) = source_token
+                .split_once('_')
+                .map_or((source_token.clone(), None), |(code, strength)| {
+                    (code.into(), Some(strength.into()))
+                });
+            ERepoCriterion {
+                source_token,
+                code,
+                status,
+                explicit_strength,
+            }
+        })
+        .collect()
+}
+fn required_string(value: &Value, key: &str) -> Result<String, BioMcpError> {
+    string(value, key).ok_or_else(|| invalid(&format!("summary {key} is required")))
+}
+fn string(value: &Value, key: &str) -> Option<String> {
+    value.get(key).and_then(Value::as_str).map(str::to_owned)
+}
+fn strings(value: Option<&Value>) -> Vec<String> {
+    value
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::to_owned)
+        .collect()
+}
+fn invalid(message: &str) -> BioMcpError {
+    BioMcpError::Api {
+        api: "ClinGen ERepo".into(),
+        message: message.into(),
+    }
+}

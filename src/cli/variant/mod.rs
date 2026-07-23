@@ -160,6 +160,31 @@ See also: biomcp list variant")]
         /// Variant identifier (rsID, HGVS, or "GENE CHANGE")
         id: String,
     },
+    /// Retrieve versioned ClinGen ERepo expert assertions by CAid
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp --json variant erepo CA015543
+  biomcp --json variant erepo CA015543 --detail
+  biomcp --json variant erepo --input caids.json
+
+Note: Batch input accepts 1-50 CAids and returns summaries only. Detail requires one CAid and, when multiple assertions exist, an explicit assertion UUID.")]
+    Erepo {
+        /// ClinGen Allele identifier (for example CA015543)
+        #[arg(required_unless_present = "input")]
+        caid: Option<String>,
+        /// JSON input file, or - for stdin, containing 1-50 CAids
+        #[arg(long, value_name = "PATH")]
+        input: Option<String>,
+        /// Fetch one selected versioned SEPIO detail document
+        #[arg(long)]
+        detail: bool,
+        /// Assertion UUID required when the summary has multiple assertions
+        #[arg(long)]
+        assertion: Option<String>,
+        /// Exact document version, available only with --detail
+        #[arg(long)]
+        version: Option<String>,
+    },
     /// Normalize explicit transcript HGVS with Mutalyzer and/or VariantValidator
     #[command(after_help = "\
 EXAMPLES:
@@ -223,6 +248,7 @@ impl VariantSearchPlan {
 
 mod articles;
 mod dispatch;
+mod erepo;
 mod guidance;
 mod normalization_json;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
