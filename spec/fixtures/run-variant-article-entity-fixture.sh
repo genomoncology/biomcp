@@ -153,22 +153,30 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/publications/export/biocjson":
             pmid = params.get("pmids", [""])[0]
-            def passage(allele):
+            def passage(allele, index):
                 return {
                     "infons": {"type": "abstract"},
                     "text": f"Captured BRAF {allele} evidence.",
                     "annotations": [
-                        {"text": "BRAF", "infons": {"type": "Gene"}},
-                        {"text": allele, "infons": {"type": "Mutation"}},
+                        {"id": f"gene-{index}", "text": "BRAF", "infons": {"type": "Gene", "identifier": "gene:BRAF"}},
+                        {"id": f"allele-{index}", "text": allele, "infons": {"type": "Mutation", "identifier": f"mutation:{allele}"}},
                     ],
                 }
             passages = {
-                BRAF_ANNOTATION_PMID: [passage("p.V600E")],
+                BRAF_ANNOTATION_PMID: [passage("p.V600E", 1)],
                 BRAF_PROTEIN_ALIAS_PMID: [],
-                BRAF_CODING_ALIAS_PMID: [passage("p.V600K")],
-                BRAF_GENOMIC_ALIAS_PMID: [passage("p.V600E"), passage("p.V600K")],
+                BRAF_CODING_ALIAS_PMID: [passage("p.V600K", 1)],
+                BRAF_GENOMIC_ALIAS_PMID: [passage("p.V600E", 1), passage("p.V600K", 2)],
             }.get(pmid, [])
-            send_json(self, 200, {"PubTator3": [{"pmid": int(pmid), "passages": passages}]})
+            relations = [{
+                "id": f"gene-variant-{index}",
+                "infons": {"type": "gene_variant"},
+                "nodes": [
+                    {"refid": f"gene-{index}", "role": "gene"},
+                    {"refid": f"allele-{index}", "role": "mutation"},
+                ],
+            } for index, _ in enumerate(passages, start=1)]
+            send_json(self, 200, {"PubTator3": [{"pmid": int(pmid), "passages": passages, "relations": relations}]})
             return
 
         if parsed.path == "/search/":

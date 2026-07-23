@@ -707,11 +707,12 @@ discovery provider requests (with exact query/template version), provider/call/p
 facts, ranking inputs, and fixed item and request budgets. `--verify-identity`
 adds captured-evidence identity facts without changing retrieval recall;
 `--confirmed-only` requires verification and filters before rank/pagination.
-Query aliases remain retrieval provenance rather than observed evidence, while
-identity observations retain source, locator, linked gene, observed alias, and
-captured-content hash. Verification artifacts record versioned clinically relevant
-response/content subsets plus post-response verifier and provider-template versions,
-not retrieval-cache inputs. Incomplete verification remains truncated with no total;
+Query aliases remain retrieval provenance rather than observed evidence.
+Confirmation requires a provider relation linking the gene and allele annotations;
+same-passage co-occurrence is insufficient. Identity observations retain source,
+locator, linked gene, observed alias, provider linkage, and captured-content hash.
+Verification artifacts record versioned clinically relevant response/content subsets
+plus post-response verifier and provider-template versions, not retrieval-cache inputs. Incomplete verification remains truncated with no total;
 frozen fixtures are release proof and live probes are diagnostics. The typed `variant_articles`
 MCP tool accepts the same item fields and equivalent `verify_identity`/`confirmed_only`
 controls in memory.

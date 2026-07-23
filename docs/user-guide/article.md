@@ -92,10 +92,12 @@ exact-variant-literature`.
 identity projection from captured provider evidence without changing normal
 retrieval recall. `--confirmed-only` requires verification and filters the
 verified candidate pool before ranking and pagination. Retrieval aliases remain
-provenance, not observed article evidence. Identity observations include their
-provider, locator, linked gene, observed alias, and canonical captured-content
-hash; verification artifact hashes in `--debug-plan` are versioned clinically
-relevant response/content subset audit facts, not retrieval-cache keys. Verification
+provenance, not observed article evidence. Confirmation requires a provider
+relation linking the gene and allele annotations; same-passage co-occurrence is
+not enough. Identity observations include their provider, locator, linked gene,
+observed alias, provider linkage, and canonical captured-content hash;
+verification artifact hashes in `--debug-plan` are versioned clinically relevant
+response/content subset audit facts, not retrieval-cache keys. Verification
 never fetches supplements automatically, and an incomplete verification is not a
 confirmation: it keeps the result incomplete, truncated, and without a total. Frozen
 fixtures provide release proof; live probes are diagnostics.

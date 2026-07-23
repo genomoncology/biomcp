@@ -43,12 +43,11 @@ fn parses_export_response_fixture() {
             .and_then(|i| i.kind.as_deref()),
         Some("abstract")
     );
-    assert!(
-        doc.passages[0]
-            .annotations
-            .iter()
-            .any(|annotation| annotation.text.as_deref() == Some("BRAF"))
-    );
+    assert_eq!(doc.relations[0].id.as_deref(), Some("relation-1"));
+    assert_eq!(doc.relations[0].nodes[0].refid.as_deref(), Some("gene-1"));
+    assert!(doc.passages[0].annotations.iter().any(|annotation| {
+        annotation.id.as_deref() == Some("gene-1") && annotation.text.as_deref() == Some("BRAF")
+    }));
 }
 
 #[test]

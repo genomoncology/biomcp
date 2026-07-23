@@ -293,9 +293,11 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. union-json
 <!-- mustmatch-lint: skip -->
 
 Retrieval aliases explain why a paper was found; they are not observations from
-that paper. With identity verification enabled, the local fixture preserves
-alias-only collisions as unverified, contradictory, or conflicting, and emits
-the captured evidence needed to audit a confirmed result. `--confirmed-only`
+that paper. With identity verification enabled, confirmation requires a provider
+relation linking the gene and allele annotations; shared-passage annotations remain
+unverified. The local fixture preserves alias-only collisions as unverified,
+contradictory, or conflicting, and emits the captured evidence needed to audit a
+confirmed result. `--confirmed-only`
 filters that verified pool before ranking and pagination, so earlier collisions
 cannot hide the confirmed paper.
 

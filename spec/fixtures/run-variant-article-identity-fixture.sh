@@ -64,7 +64,26 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/publications/export/biocjson":
             pmid = query.get("pmids", [""])[0]
             if pmid == "90000002": return send(self, 503, {"error": "fixture outage"})
-            docs = [{"pmid": int(pmid), "passages": [{"infons": {"type": "abstract"}, "text": f"{gene} {allele} frozen content.", "annotations": [{"text": gene, "infons": {"type": "Gene"}}, {"text": allele, "infons": {"type": "Mutation"}}]} for gene, allele in passages.get(pmid, [])]}]
+            pairs = passages.get(pmid, [])
+            docs = [{
+                "pmid": int(pmid),
+                "passages": [{
+                    "infons": {"type": "abstract"},
+                    "text": f"{gene} {allele} frozen content.",
+                    "annotations": [
+                        {"id": f"gene-{index}", "text": gene, "infons": {"type": "Gene", "identifier": f"gene:{gene}"}},
+                        {"id": f"allele-{index}", "text": allele, "infons": {"type": "Mutation", "identifier": f"mutation:{allele}"}},
+                    ],
+                } for index, (gene, allele) in enumerate(pairs, start=1)],
+                "relations": [{
+                    "id": f"gene-variant-{index}",
+                    "infons": {"type": "gene_variant"},
+                    "nodes": [
+                        {"refid": f"gene-{index}", "role": "gene"},
+                        {"refid": f"allele-{index}", "role": "mutation"},
+                    ],
+                } for index, _ in enumerate(pairs, start=1)],
+            }]
             return send(self, 200, {"PubTator3": docs})
         if path.endswith("/esearch.fcgi"): return send(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
         if path.endswith("/esummary.fcgi"): return send(self, 200, {"result": {"uids": []}})

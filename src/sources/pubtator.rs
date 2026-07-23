@@ -343,6 +343,8 @@ pub struct PubTatorDocument {
     pub authors: Vec<String>,
     #[serde(default)]
     pub passages: Vec<PubTatorPassage>,
+    #[serde(default)]
+    pub relations: Vec<PubTatorRelation>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -361,8 +363,23 @@ pub struct PubTatorInfons {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PubTatorAnnotation {
+    pub id: Option<String>,
     pub text: Option<String>,
     pub infons: Option<PubTatorAnnotationInfons>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PubTatorRelation {
+    pub id: Option<String>,
+    pub infons: Option<serde_json::Value>,
+    #[serde(default)]
+    pub nodes: Vec<PubTatorRelationNode>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PubTatorRelationNode {
+    pub refid: Option<String>,
+    pub role: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
