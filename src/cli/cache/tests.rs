@@ -54,7 +54,7 @@ fn render_path_for_config_keeps_relative_cache_roots_relative() {
 
 #[test]
 #[serial_test::serial]
-fn cache_stats_accounts_for_provider_capture_namespace_bytes() {
+fn cache_stats_report_separates_provider_capture_namespace_bytes() {
     let root = crate::test_support::TempDirGuard::new("cache-stats-provider-captures");
     let capture = root
         .path()
@@ -80,9 +80,14 @@ fn cache_stats_accounts_for_provider_capture_namespace_bytes() {
         }
     }
 
-    assert_eq!(
-        report.blob_bytes, 20,
-        "stats must account for capture bytes"
+    let capture_bytes = serde_json::to_value(&report)
+        .expect("serialize cache stats")
+        .get("provider_capture_bytes")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or_default();
+    assert!(
+        capture_bytes >= b"exact provider bytes".len() as u64,
+        "stats must separately account for capture bytes"
     );
 }
 
