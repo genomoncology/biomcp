@@ -85,6 +85,7 @@ pub(super) fn list_variant() -> String {
 - `get variant <id> all` - include all sections
 - `variant normalize <service> <transcript_hgvs>` - normalize explicit transcript HGVS with Mutalyzer and/or VariantValidator
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
+- `variant erepo <CAid>` - versioned ClinGen expert assertion facts
 
 ## Search filters
 
@@ -135,6 +136,7 @@ Transcript normalization examples:
 - `variant articles <id> [--strategy <union|annotation|lexical>]` - exact-route union by default; diagnostic route isolation is opt-in
 - `--json variant articles --input <path|-> [--debug-plan]` - ordered compact literature for 1-10 structured variants
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
+- `variant erepo <CAid> [--detail --assertion <UUID> --version <exact-docVersion>]` - versioned ClinGen expert assertion facts
 "#
     .to_string();
 

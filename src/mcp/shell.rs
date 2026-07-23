@@ -62,6 +62,21 @@ struct TypedGet {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct TypedVariantErepo {
+    #[serde(default)]
+    caid: Option<String>,
+    #[serde(default)]
+    #[schemars(length(min = 1, max = 50))]
+    caids: Option<Vec<String>>,
+    #[serde(default)]
+    detail: bool,
+    #[serde(default)]
+    assertion_id: Option<String>,
+    #[serde(default)]
+    version: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct TypedVariantArticles {
     #[schemars(length(min = 1, max = 10))]
     items: Vec<crate::entities::variant::VariantArticleRequest>,
@@ -629,6 +644,58 @@ impl BioMcpServer {
         let json = input.json;
         let args = get_args(input)?;
         Self::execute_args(args, json).await
+    }
+
+    /// Retrieve versioned ClinGen ERepo expert assertions for one CAid or a bounded CAid batch.
+    #[tool(annotations(title = "BioMCP ClinGen ERepo assertions", read_only_hint = true))]
+    async fn variant_erepo(
+        &self,
+        Parameters(input): Parameters<TypedVariantErepo>,
+    ) -> Result<CallToolResult, McpError> {
+        let caids = match (input.caid, input.caids) {
+            (Some(caid), None) => vec![caid],
+            (None, Some(caids)) if !caids.is_empty() && caids.len() <= 50 => caids,
+            _ => {
+                return Err(McpError::invalid_params(
+                    "variant_erepo requires exactly one of caid or caids (1-50)",
+                    None,
+                ));
+            }
+        };
+        if caids.len() != 1
+            && (input.detail || input.assertion_id.is_some() || input.version.is_some())
+        {
+            return Err(McpError::invalid_params(
+                "variant_erepo detail selectors require singular caid",
+                None,
+            ));
+        }
+        match crate::entities::variant::retrieve_erepo(
+            caids,
+            input.detail,
+            input.assertion_id.as_deref(),
+            input.version.as_deref(),
+        )
+        .await
+        {
+            Ok(response) => Ok(CallToolResult::success(vec![Content::text(
+                redact_mcp_json_text(&crate::render::json::to_pretty(&response).map_err(
+                    |error| {
+                        McpError::internal_error(
+                            format!("Failed to serialize ERepo response: {error}"),
+                            None,
+                        )
+                    },
+                )?)
+                .map_err(|error| {
+                    McpError::internal_error(
+                        format!("Failed to sanitize ERepo response: {error}"),
+                        None,
+                    )
+                })?,
+            )])),
+            Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+        }
     }
 
     /// Retrieve compact variant-literature shortlists for 1-10 structured identities.

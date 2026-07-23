@@ -90,7 +90,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["get gene <symbol> clingen"],
+    "bioMcp_surfaces": ["get gene <symbol> clingen", "variant erepo <CAid>"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "public web/API access",
@@ -99,7 +99,24 @@
     "terms_url": "https://clinicalgenome.org/",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly."
+    "notes": "BioMCP uses distinct ClinGen Search and Evidence Repository origins; ERepo assertions preserve panel source facts and versioned SEPIO provenance without interpretation."
+  },
+  {
+    "id": "clingen_erepo",
+    "name": "ClinGen ERepo",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["variant erepo <CAid>"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public web/API access",
+    "license_summary": "public ClinGen curation resources with publication and attribution expectations",
+    "redistribution_summary": "generally queryable and reusable, but users should preserve attribution and source context",
+    "terms_url": "https://erepo.clinicalgenome.org",
+    "key_url": null,
+    "reviewed_on": "2026-07-23",
+    "notes": "BioMCP retrieves only bounded exact-CAid summaries and explicitly selected versioned detail documents."
   },
   {
     "id": "clinicaltrials-gov",

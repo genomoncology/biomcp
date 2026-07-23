@@ -4,6 +4,10 @@
 
 ### New features
 
+- Added `variant erepo` and typed `variant_erepo` MCP retrieval of versioned ClinGen
+  Evidence Repository assertions, preserving source-listed criterion coverage and
+  selected SEPIO provenance without ACMG/AMP interpretation.
+
 - Resolved recognized JATS- and PMC-HTML-linked article supplements through stable
   asset keys, bounded provider fetches, merged discovery provenance, and typed
   per-file coverage without exposing provider URLs.

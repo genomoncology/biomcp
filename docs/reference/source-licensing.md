@@ -126,7 +126,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 
 ### ClinGen
 
-- BioMCP surfaces: `get gene <symbol> clingen`
+- BioMCP surfaces: `get gene <symbol> clingen; variant erepo <CAid>`
 - Integration mode: `direct_api`
 - BioMCP auth: `none`
 - Provider access / registration: public web/API access
@@ -135,6 +135,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://clinicalgenome.org/>
 - Reviewed on: `2026-03-20`
 - Notes: Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly.
+
+### ClinGen ERepo
+
+- BioMCP surfaces: `variant erepo <CAid>`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: public web/API access
+- License / terms summary: public ClinGen curation resources with publication and attribution expectations
+- Redistribution / reuse summary: generally queryable and reusable, but users should preserve attribution and source context
+- Official terms URL: <https://erepo.clinicalgenome.org>
+- Reviewed on: `2026-07-23`
+- Notes: BioMCP exposes bounded source facts and explicitly selected versioned detail without interpreting expert assertions.
 
 ### ClinicalTrials.gov
 

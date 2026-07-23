@@ -14,6 +14,22 @@ BioMCP supports multiple input forms:
 These exact formats are accepted by `biomcp get variant` and the exact-ID
 helper commands.
 
+## ClinGen ERepo expert assertions
+
+Use a ClinGen Allele identifier (CAid) to retrieve source-faithful expert-panel
+assertion summaries. The result keeps met and unmet source lists separate and does
+not infer a criterion strength from defaults or comments.
+
+```bash
+biomcp variant erepo CA015543
+biomcp --json variant erepo CA015543 --detail
+biomcp --json variant erepo --input caids.json
+```
+
+Batch input accepts 1–50 CAids and is summary-only. Detail fetches one assertion;
+when a summary has multiple assertions, supply `--assertion <UUID>`, and use
+`--version <exact-docVersion>` only with `--detail`.
+
 ## Search variants
 
 By gene and protein change:

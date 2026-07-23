@@ -138,6 +138,18 @@ pub(crate) async fn handle_command(
                 crate::render::markdown::variant_oncokb_markdown(&result)
             }
         }
+        VariantCommand::Erepo {
+            caid,
+            input,
+            detail,
+            assertion,
+            version,
+        } => {
+            return Box::pin(super::erepo::handle(
+                caid, input, detail, assertion, version, json,
+            ))
+            .await;
+        }
         VariantCommand::Normalize { service, variant } => {
             let result = crate::entities::variant::normalize_variant(&service, &variant).await?;
             if json {

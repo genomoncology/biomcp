@@ -152,6 +152,7 @@ New to BioMCP? Try:
 - `variant trials <id> --source <ctgov|nci> --limit <N> --offset <N>`
 - `variant articles <id> [--strategy <union|annotation|lexical>]`
 - `--json variant articles --input <path|-> [--debug-plan]`
+- `variant erepo <CAid> [--detail --assertion <UUID> --version <exact-docVersion>]`
   - structured input accepts 1-10 variants and returns ordered compact item envelopes
   - defaults to an exact-route union with provenance before one final pagination pass
   - unresolved union results are explicitly best-effort; diagnostic exact routes stay empty

@@ -6,6 +6,7 @@ use crate::entities::section_outcome::SectionOutcomes;
 use crate::entities::source_state_registry::outcome_keys;
 use crate::sources::civic::{CivicContext, CivicEvidenceItem};
 
+mod erepo;
 mod get;
 mod gwas;
 mod normalization;
@@ -15,6 +16,11 @@ mod structure;
 #[cfg(test)]
 mod test_support;
 
+#[allow(unused_imports)]
+pub(crate) use self::erepo::{
+    ERepoAssertion, ERepoBatchInput, ERepoCriterion, ERepoItem, ERepoResponse, ERepoSourceStatus,
+    retrieve as retrieve_erepo,
+};
 pub use self::get::{VARIANT_SECTION_NAMES, get, get_with_workflow_signals, oncokb};
 #[allow(unused_imports)]
 pub use self::gwas::{gwas_search_query_summary, search_gwas, search_gwas_page};
