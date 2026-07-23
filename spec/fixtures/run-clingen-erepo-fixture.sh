@@ -45,6 +45,7 @@ while [[ ! -s "$tmp/port" ]]; do sleep 0.05; done
 export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$(<"$tmp/port")"
 export BIOMCP_CACHE_MODE=off
 
+markdown="$($binary variant erepo CA015543)"
 summary="$($binary --json variant erepo CA015543)"
 detail="$($binary --json variant erepo CA015543 --detail)"
 pten="$($binary --json variant erepo CA000498)"
@@ -66,7 +67,8 @@ open(os.environ["MCP_FILE"], "w").write(result["result"]["content"][0]["text"])
 proc.terminate(); proc.wait()
 PY
 mcp="$(<"$tmp/mcp.json")"
-jq -n --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson ambiguous "$ambiguous" '{
+jq -n --arg markdown "$markdown" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson ambiguous "$ambiguous" '{
+  plain_cli_reports_summary: ($markdown | contains("ClinGen ERepo expert assertions") and contains("Classification: Pathogenic")),
   apc_summary_preserves_source_facts: ($summary.items[0].assertions[0].classification == "Pathogenic"),
   plain_ps4_has_no_explicit_strength: (($summary.items[0].assertions[0].criteria[] | select(.source_token == "PS4").explicit_strength) == null),
   default_strength_is_not_applied_strength: (($detail.items[0].assertions[0].detail.criteria[] | select(.code == "PS4").default_strength) == "Pathogenic Strong"),

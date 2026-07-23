@@ -16,7 +16,11 @@ mod structure;
 #[cfg(test)]
 mod test_support;
 
-pub(crate) use self::erepo::{ERepoBatchInput, retrieve as retrieve_erepo};
+#[allow(unused_imports)]
+pub(crate) use self::erepo::{
+    ERepoAssertion, ERepoBatchInput, ERepoCriterion, ERepoItem, ERepoResponse, ERepoSourceStatus,
+    retrieve as retrieve_erepo,
+};
 pub use self::get::{VARIANT_SECTION_NAMES, get, get_with_workflow_signals, oncokb};
 #[allow(unused_imports)]
 pub use self::gwas::{gwas_search_query_summary, search_gwas, search_gwas_page};

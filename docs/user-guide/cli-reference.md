@@ -689,7 +689,7 @@ biomcp variant articles "BRAF V600E" --strategy lexical
 biomcp --json variant articles --input variants.json --debug-plan
 cat variants.json | biomcp --json variant articles --input -
 biomcp variant structure "BRAF V600E"
-biomcp --json variant erepo CA015543
+biomcp variant erepo CA015543
 biomcp --json variant erepo CA015543 --detail
 biomcp variant oncokb "BRAF V600E"
 biomcp variant normalize <service> <transcript_hgvs>

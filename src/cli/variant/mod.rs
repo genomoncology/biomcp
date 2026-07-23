@@ -179,10 +179,10 @@ Note: Batch input accepts 1-50 CAids and returns summaries only. Detail requires
         #[arg(long)]
         detail: bool,
         /// Assertion UUID required when the summary has multiple assertions
-        #[arg(long)]
+        #[arg(long, requires = "detail")]
         assertion: Option<String>,
         /// Exact document version, available only with --detail
-        #[arg(long)]
+        #[arg(long, requires = "detail")]
         version: Option<String>,
     },
     /// Normalize explicit transcript HGVS with Mutalyzer and/or VariantValidator

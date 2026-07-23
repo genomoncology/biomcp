@@ -21,7 +21,7 @@ assertion summaries. The result keeps met and unmet source lists separate and do
 not infer a criterion strength from defaults or comments.
 
 ```bash
-biomcp --json variant erepo CA015543
+biomcp variant erepo CA015543
 biomcp --json variant erepo CA015543 --detail
 biomcp --json variant erepo --input caids.json
 ```

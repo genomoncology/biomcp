@@ -22,6 +22,7 @@ bash ../fixtures/run-clingen-erepo-fixture.sh ../..
 
 ```json expect=clingen-erepo-frozen contains
 {
+  "plain_cli_reports_summary": true,
   "apc_summary_preserves_source_facts": true,
   "plain_ps4_has_no_explicit_strength": true,
   "default_strength_is_not_applied_strength": true,

@@ -125,9 +125,9 @@ pub(crate) async fn retrieve(
             "variant erepo CAid must not be empty".into(),
         ));
     }
-    if !detail && version.is_some() {
+    if !detail && (assertion_id.is_some() || version.is_some()) {
         return Err(BioMcpError::InvalidArgument(
-            "variant erepo --version requires --detail".into(),
+            "variant erepo --assertion and --version require --detail".into(),
         ));
     }
     if detail && caids.len() != 1 {
@@ -533,6 +533,18 @@ fn invalid(message: &str) -> BioMcpError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn selectors_require_detail() {
+        let error = retrieve(vec!["CA015543".into()], false, Some("assertion"), None)
+            .await
+            .expect_err("selection without detail must be rejected before a source request");
+        assert!(
+            error
+                .to_string()
+                .contains("--assertion and --version require --detail")
+        );
+    }
 
     #[test]
     fn selector_accepts_an_exact_historical_version() {
