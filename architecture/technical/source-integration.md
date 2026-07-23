@@ -19,6 +19,8 @@ source's transport, authentication, and payload shape.
   `src/sources/cancerhotspots.rs`, and `src/sources/complexportal.rs`.
 - Current examples of extension work include `src/sources/opentargets.rs`,
   which already owns multiple OpenTargets query paths.
+- ClinGen Search and ClinGen ERepo have distinct origins and response contracts,
+  so they remain separate source modules.
 - Every source module must be declared from `src/sources/mod.rs`.
 
 This prevents duplicated auth handling, base URL overrides, rate limiting, and

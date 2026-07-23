@@ -34,15 +34,14 @@ impl ERepoClient {
     }
 
     pub(crate) fn detail_plan(uuid: &str, version: &str) -> RequestPlan {
-        RequestPlan::get(format!(
-            "evrepo/api/summary/classification/{uuid}/doc/sepio/version/{version}"
-        ))
+        RequestPlan::get(detail_path(uuid, version))
     }
 
     pub(crate) fn detail_url(&self, uuid: &str, version: &str) -> String {
         format!(
-            "{}/evrepo/api/summary/classification/{uuid}/doc/sepio/version/{version}",
-            self.base.trim_end_matches('/')
+            "{}/{}",
+            self.base.trim_end_matches('/'),
+            detail_path(uuid, version)
         )
     }
 
@@ -100,16 +99,40 @@ impl ERepoClient {
     }
 }
 
+fn detail_path(uuid: &str, version: &str) -> String {
+    let mut url = reqwest::Url::parse("https://erepo.clinicalgenome.org/")
+        .expect("static ERepo origin is valid");
+    url.path_segments_mut()
+        .expect("static ERepo origin accepts path segments")
+        .extend([
+            "evrepo",
+            "api",
+            "summary",
+            "classification",
+            uuid,
+            "doc",
+            "sepio",
+            "version",
+            version,
+        ]);
+    url.path().trim_start_matches('/').to_owned()
+}
+
 fn is_no_records_404(bytes: &[u8]) -> bool {
-    serde_json::from_slice::<Value>(bytes)
+    let Some(status) = serde_json::from_slice::<Value>(bytes)
         .ok()
-        .and_then(|value| {
-            value
-                .pointer("/status/message")
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        })
-        .is_some_and(|message| message.eq_ignore_ascii_case("No records found"))
+        .and_then(|value| value.get("status").cloned())
+    else {
+        return false;
+    };
+    status.get("code").and_then(Value::as_i64) == Some(404)
+        && ["message", "msg"]
+            .into_iter()
+            .filter_map(|key| status.get(key).and_then(Value::as_str))
+            .any(|message| {
+                message.eq_ignore_ascii_case("No records found")
+                    || message.eq_ignore_ascii_case("No records were found for given query")
+            })
 }
 
 fn decode_envelope(status: StatusCode, bytes: &[u8]) -> Result<Value, BioMcpError> {
@@ -132,3 +155,6 @@ fn decode_envelope(status: StatusCode, bytes: &[u8]) -> Result<Value, BioMcpErro
     }
     Ok(value)
 }
+
+#[cfg(test)]
+mod tests;

@@ -157,14 +157,15 @@ pub(crate) async fn retrieve(
         });
         if detail {
             let selected = select(&assertions, assertion_id, version)?;
+            let detail_version = version.unwrap_or(&selected.doc_version);
             let (envelope, bytes) = client
-                .detail(&selected.assertion_id, &selected.doc_version)
+                .detail(&selected.assertion_id, detail_version)
                 .await?;
             let data = envelope
                 .get("data")
                 .and_then(Value::as_object)
                 .ok_or_else(|| invalid("detail data must be one object"))?;
-            let url = client.detail_url(&selected.assertion_id, &selected.doc_version);
+            let url = client.detail_url(&selected.assertion_id, detail_version);
             if data.get("uuid").and_then(Value::as_str) != Some(selected.assertion_id.as_str())
                 || data.get("@id").and_then(Value::as_str) != Some(url.as_str())
             {
@@ -266,17 +267,12 @@ fn select<'a>(
     let row = candidates.first().copied().ok_or_else(|| {
         BioMcpError::InvalidArgument("variant erepo assertion was not found for this CAid".into())
     })?;
-    if let Some(version) = version {
-        if !row.versions.iter().any(|candidate| candidate == version) {
-            return Err(BioMcpError::InvalidArgument(
-                "variant erepo --version must exactly match a summary versionsList value".into(),
-            ));
-        }
-        if version != row.doc_version {
-            return Err(BioMcpError::InvalidArgument(
-                "variant erepo --version requires a matching summary document version".into(),
-            ));
-        }
+    if let Some(version) = version
+        && !row.versions.iter().any(|candidate| candidate == version)
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo --version must exactly match a summary versionsList value".into(),
+        ));
     }
     Ok(row)
 }
@@ -307,11 +303,9 @@ fn detail_projection(
                 continue;
             }
             let locator = format!("/evidenceLine/{line_index}/evidenceItem/{item_index}");
-            let comments = item
-                .get("contribution")
-                .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
+            let curator_facts = contribution_facts(item);
+            let comments = curator_facts
+                .iter()
                 .filter_map(|contribution| contribution.get("comments"))
                 .flat_map(comment_strings)
                 .collect::<Vec<_>>();
@@ -340,11 +334,7 @@ fn detail_projection(
                     .and_then(Value::as_str)
                     .map(str::to_owned),
                 comments,
-                curator_facts: item
-                    .get("contribution")
-                    .and_then(Value::as_array)
-                    .cloned()
-                    .unwrap_or_default(),
+                curator_facts,
                 pmids,
                 locator,
             });
@@ -462,6 +452,33 @@ fn comment_pmids(text: &str, uuid: &str, entity: Option<String>, locator: &str) 
     }
     out
 }
+fn contribution_facts(value: &Value) -> Vec<Value> {
+    let mut facts = Vec::new();
+    collect_contribution_facts(value, &mut facts);
+    facts
+}
+
+fn collect_contribution_facts(value: &Value, facts: &mut Vec<Value>) {
+    match value {
+        Value::Object(map) => {
+            for (key, value) in map {
+                if key == "contribution"
+                    && let Some(contributions) = value.as_array()
+                {
+                    facts.extend(contributions.iter().cloned());
+                }
+                collect_contribution_facts(value, facts);
+            }
+        }
+        Value::Array(values) => {
+            for value in values {
+                collect_contribution_facts(value, facts);
+            }
+        }
+        _ => {}
+    }
+}
+
 fn comment_strings(value: &Value) -> Vec<String> {
     match value {
         Value::String(value) => vec![value.clone()],
@@ -510,5 +527,24 @@ fn invalid(message: &str) -> BioMcpError {
     BioMcpError::Api {
         api: "ClinGen ERepo".into(),
         message: message.into(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn selector_accepts_an_exact_historical_version() {
+        let value: Value = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/atm-summary.json"
+        )))
+        .expect("fixture JSON");
+        let client = ERepoClient::new().expect("client");
+        let row = summary(&value["data"][0], &client).expect("summary");
+
+        assert_eq!(row.doc_version, "2.0.0");
+        assert!(select(&[row], None, Some("1.0.0")).is_ok());
     }
 }
