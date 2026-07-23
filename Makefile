@@ -13,6 +13,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/entity/trial-numeric-filters.md \
 	spec/entity/trial-documents.md \
 	spec/entity/variant.md \
+	spec/entity/clingen-erepo.md \
 	spec/entity/variant-article-identity.md \
 	spec/surface/mcp.md \
 	spec/surface/discover-input.md \
@@ -38,6 +39,7 @@ SPEC_LIVE_PATHS = \
 	spec/entity/trial.md \
 	spec/entity/vaers.md \
 	spec/entity/variant-hotspots.md \
+	spec/entity/clingen-erepo-live.md \
 	spec/entity/variant-myvariant-live.md \
 	spec/entity/variant-articles-live.md \
 	spec/surface/cli.md \
