@@ -8,7 +8,7 @@ use ssri::Integrity;
 
 use super::{
     CacheStatsAgeRange, CacheStatsOrigin, CacheStatsReport, build_cache_stats_report,
-    collect_cache_stats_report_with, render_path_for_config,
+    collect_cache_stats_report, collect_cache_stats_report_with, render_path_for_config,
 };
 use crate::cache::{
     CacheBlob, CacheConfigOrigins, CacheEntry, CacheSnapshot, ConfigOrigin, DiskFreeThreshold,
@@ -49,6 +49,40 @@ fn render_path_for_config_keeps_relative_cache_roots_relative() {
     assert_eq!(
         render_path_for_config(&config),
         PathBuf::from("relative-cache/http").display().to_string()
+    );
+}
+
+#[test]
+#[serial_test::serial]
+fn cache_stats_accounts_for_provider_capture_namespace_bytes() {
+    let root = crate::test_support::TempDirGuard::new("cache-stats-provider-captures");
+    let capture = root
+        .path()
+        .join("captures")
+        .join("cspec")
+        .join("sha256")
+        .join("ab")
+        .join("abcdef");
+    std::fs::create_dir_all(capture.parent().expect("capture parent"))
+        .expect("create capture namespace");
+    std::fs::write(&capture, b"exact provider bytes").expect("seed capture bytes");
+
+    let previous = std::env::var_os("BIOMCP_CACHE_DIR");
+    // SAFETY: this serial test restores the process-wide configuration variable.
+    unsafe { std::env::set_var("BIOMCP_CACHE_DIR", root.path()) };
+    let report = collect_cache_stats_report().expect("collect managed cache stats");
+    // SAFETY: restore the process-wide configuration variable before assertions can panic.
+    unsafe {
+        if let Some(value) = previous {
+            std::env::set_var("BIOMCP_CACHE_DIR", value);
+        } else {
+            std::env::remove_var("BIOMCP_CACHE_DIR");
+        }
+    }
+
+    assert_eq!(
+        report.blob_bytes, 20,
+        "stats must account for capture bytes"
     );
 }
 
