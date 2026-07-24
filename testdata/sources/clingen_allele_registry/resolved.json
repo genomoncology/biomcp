@@ -1,0 +1,13 @@
+{
+  "@id": "https://reg.genome.network/allele/CA123",
+  "communityStandardTitle": ["title"],
+  "genomicAlleles": [
+    {"referenceGenome": "GRCh37", "hgvs": ["NC_000017.10:g.2A>G"]},
+    {"referenceGenome": "GRCh38", "hgvs": ["NC_000017.11:g.1A>G"]}
+  ],
+  "transcriptAlleles": [
+    {"MANE": {"maneStatus": "MANE Plus Clinical", "maneVersion": "1", "nucleotide": {"RefSeq": {"hgvs": "NM_2.1:c.2A>G"}}}},
+    {"MANE": {"maneStatus": "MANE Select", "maneVersion": "1", "nucleotide": {"RefSeq": {"hgvs": "NM_1.1:c.1A>G"}}}}
+  ],
+  "externalRecords": {"dbSNP": [{"rs": 20}, {"rs": 2}], "ClinVarVariations": [{"variationId": 10}]}
+}

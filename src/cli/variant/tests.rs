@@ -7,6 +7,7 @@ use super::dispatch::{VariantSearchPlan, parse_simple_gene_change, resolve_varia
 use crate::cli::{
     Cli, Commands, GetEntity, OutputStream, SearchEntity, VariantCommand, run_outcome,
 };
+use crate::entities::variant as entity;
 
 #[test]
 fn search_variant_parses_single_token_positional_query() {
@@ -667,12 +668,12 @@ fn ticket_377_variant_renderer_envelope_contracts() {
     assert!(markdown.contains("See also:"));
     assert!(markdown.contains("biomcp search disease --query melanoma"));
 
-    let normalization = crate::entities::variant::VariantNormalizationResponse {
+    let normalization = entity::VariantNormalizationResponse {
         input: "NM_004333.6:c.1799T>A".to_string(),
-        services: vec![
-            crate::entities::variant::VariantNormalizationServiceResult {
+        services: vec![entity::VariantNormalizationAggregate::Legacy(
+            entity::VariantNormalizationServiceResult {
                 service: "mutalyzer".to_string(),
-                status: crate::entities::variant::VariantNormalizationStatus::InvalidInput,
+                status: entity::VariantNormalizationStatus::InvalidInput,
                 input_description: Some("NM_004333.6:c.1799T>A".to_string()),
                 normalized_description: None,
                 corrected_description: None,
@@ -682,7 +683,7 @@ fn ticket_377_variant_renderer_envelope_contracts() {
                 warnings: vec!["fixture warning from normalization service".to_string()],
                 message: Some("Invalid transcript HGVS".to_string()),
             },
-        ],
+        )],
     };
     let normalization_json = serde_json::to_value(&normalization).expect("normalization JSON");
     assert_eq!(normalization_json["services"][0]["status"], "invalid_input");

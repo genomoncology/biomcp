@@ -86,6 +86,7 @@ pub(super) fn list_variant() -> String {
 - `get variant <id> gwas` - GWAS trait associations
 - `get variant <id> all` - include all sections
 - `variant normalize <service> <transcript_hgvs>` - normalize explicit transcript HGVS with Mutalyzer and/or VariantValidator
+- `variant normalize car <HGVS>` - read-only ClinGen Allele Registry CAid lookup for supported versioned RefSeq HGVS; `--input` accepts a JSON batch of 1-50 values
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 - `variant erepo <CAid>` - versioned ClinGen expert assertion facts
 
@@ -139,6 +140,7 @@ Transcript normalization examples:
 - `--json variant articles --input <path|-> [--debug-plan]` - ordered compact literature for 1-10 structured variants
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 - `variant erepo <CAid> [--detail --assertion <UUID> --version <exact-docVersion>]` - versioned ClinGen expert assertion facts
+- `variant normalize car <HGVS>` - read-only ClinGen Allele Registry lookup for supported versioned RefSeq HGVS
 "#
     .to_string();
 

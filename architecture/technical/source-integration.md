@@ -19,9 +19,10 @@ source's transport, authentication, and payload shape.
   `src/sources/cancerhotspots.rs`, and `src/sources/complexportal.rs`.
 - Current examples of extension work include `src/sources/opentargets.rs`,
   which already owns multiple OpenTargets query paths.
-- ClinGen Search, ClinGen ERepo, and ClinGen CSpec have distinct origins and response
-  contracts, so they remain separate source modules. CSpec selection uses an exact
-  provider resource IRI and stores the bounded response before parsing.
+- ClinGen Search, ClinGen Allele Registry, ClinGen ERepo, and ClinGen CSpec have distinct
+  origins and response contracts, so they remain separate source modules. CAR uses only
+  bounded read-only projected requests and an origin-restricted client; CSpec selection uses
+  an exact provider resource IRI and stores the bounded response before parsing.
 - Every source module must be declared from `src/sources/mod.rs`.
 
 This prevents duplicated auth handling, base URL overrides, rate limiting, and

@@ -1,0 +1,420 @@
+use std::borrow::Cow;
+
+use reqwest::{StatusCode, Url};
+use serde_json::Value;
+
+use crate::entities::variant::{
+    CarAliasCollection, CarNormalizationBatchResponse, CarNormalizationItem,
+    CarNormalizationStatus, CarProvenance,
+};
+use crate::error::{BioMcpError, SourceContext, SourceProvider};
+use crate::sources::{RequestBuilderSourceContextExt, RequestPlan, request_from_plan};
+
+const CAR_BASE: &str = "https://reg.genome.network";
+const CAR_BASE_ENV: &str = "BIOMCP_CLINGEN_CAR_BASE";
+const CAR_BODY_LIMIT: usize = 256 * 1024;
+const CAR_BATCH_BODY_LIMIT: usize = 2 * 1024 * 1024;
+const CAR_FIELDS: &str = "none @id communityStandardTitle genomicAlleles transcriptAlleles.MANE externalRecords.dbSNP externalRecords.ClinVarVariations";
+type ProjectedAliases = (
+    Option<String>,
+    Vec<String>,
+    Vec<String>,
+    Vec<String>,
+    Vec<String>,
+);
+
+pub(crate) struct ClinGenAlleleRegistryClient {
+    client: reqwest_middleware::ClientWithMiddleware,
+    base: Cow<'static, str>,
+}
+
+impl ClinGenAlleleRegistryClient {
+    pub(crate) fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(CAR_BASE, CAR_BASE_ENV);
+        let parsed = Url::parse(base.as_ref()).map_err(|_| {
+            BioMcpError::InvalidArgument("invalid ClinGen Allele Registry base URL".into())
+        })?;
+        let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::clingen_car(&parsed)?;
+        Ok(Self {
+            client: crate::sources::provider_url_client(&policy)?,
+            base,
+        })
+    }
+
+    pub(crate) fn normalize_plan(hgvs: &str) -> RequestPlan {
+        RequestPlan::get("allele")
+            .query("hgvs", hgvs)
+            .query("fields", CAR_FIELDS)
+    }
+
+    pub(crate) async fn normalize(&self, input: &str) -> Result<CarNormalizationItem, BioMcpError> {
+        let response = crate::sources::apply_cache_mode(request_from_plan(
+            &self.client,
+            self.base.as_ref(),
+            &Self::normalize_plan(input),
+        ))
+        .send_with_source_context(SourceContext::retry(SourceProvider::CLINGEN_CAR))
+        .await;
+        let Ok(response) = response else {
+            return Ok(empty(
+                input,
+                CarNormalizationStatus::Unavailable,
+                false,
+                Some("ClinGen Allele Registry request failed".into()),
+                None,
+            ));
+        };
+        let status = response.status();
+        let version = response
+            .headers()
+            .get("X-CAR-Version")
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        let bytes = crate::sources::read_limited_source_body_with_limit(
+            response,
+            SourceContext::narrow(SourceProvider::CLINGEN_CAR),
+            CAR_BODY_LIMIT,
+        )
+        .await;
+        match bytes {
+            Ok(bytes) => Ok(decode_normalize_response(input, status, version, &bytes)),
+            Err(_) => Ok(empty(
+                input,
+                CarNormalizationStatus::Unavailable,
+                false,
+                Some("ClinGen Allele Registry response was unavailable".into()),
+                version,
+            )),
+        }
+    }
+
+    pub(crate) async fn normalize_batch(
+        &self,
+        inputs: &[String],
+    ) -> Result<CarNormalizationBatchResponse, BioMcpError> {
+        let url = format!("{}/alleles", self.base.trim_end_matches('/'));
+        let response = crate::sources::apply_cache_mode(
+            self.client
+                .post(url)
+                .query(&[("file", "hgvs"), ("fields", CAR_FIELDS)])
+                .header(reqwest::header::CONTENT_TYPE, "text/plain; charset=utf-8")
+                .body(format!("{}\n", inputs.join("\n"))),
+        )
+        .send_with_source_context(SourceContext::retry(SourceProvider::CLINGEN_CAR))
+        .await;
+        let Ok(response) = response else {
+            return Ok(unavailable_batch(inputs, None));
+        };
+        let status = response.status();
+        let version = response
+            .headers()
+            .get("X-CAR-Version")
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        let bytes = crate::sources::read_limited_source_body_with_limit(
+            response,
+            SourceContext::narrow(SourceProvider::CLINGEN_CAR),
+            CAR_BATCH_BODY_LIMIT,
+        )
+        .await;
+        let Ok(bytes) = bytes else {
+            return Ok(unavailable_batch(inputs, version));
+        };
+        if !status.is_success() {
+            return Ok(unavailable_batch(inputs, version));
+        }
+        let rows = serde_json::from_slice::<Vec<Value>>(&bytes).ok();
+        let items: Vec<CarNormalizationItem> = rows
+            .filter(|rows| rows.len() == inputs.len())
+            .map(|rows| {
+                rows.iter()
+                    .zip(inputs)
+                    .map(|(row, input)| {
+                        decode_normalize_response(
+                            input,
+                            status,
+                            version.clone(),
+                            &serde_json::to_vec(row).unwrap_or_default(),
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_else(|| {
+                inputs
+                    .iter()
+                    .map(|input| {
+                        empty(
+                            input,
+                            CarNormalizationStatus::Indeterminate,
+                            false,
+                            Some("CAR batch response did not preserve input positions".into()),
+                            version.clone(),
+                        )
+                    })
+                    .collect()
+            });
+        let complete = items.iter().all(|item| {
+            !matches!(
+                item.status,
+                CarNormalizationStatus::Indeterminate | CarNormalizationStatus::Unavailable
+            )
+        });
+        Ok(CarNormalizationBatchResponse {
+            items,
+            complete,
+            provider: "ClinGen Allele Registry".into(),
+        })
+    }
+}
+
+fn unavailable_batch(inputs: &[String], version: Option<String>) -> CarNormalizationBatchResponse {
+    CarNormalizationBatchResponse {
+        items: inputs
+            .iter()
+            .map(|input| {
+                empty(
+                    input,
+                    CarNormalizationStatus::Unavailable,
+                    false,
+                    Some("ClinGen Allele Registry response was unavailable".into()),
+                    version.clone(),
+                )
+            })
+            .collect(),
+        complete: false,
+        provider: "ClinGen Allele Registry".into(),
+    }
+}
+
+fn empty(
+    input: &str,
+    status: CarNormalizationStatus,
+    exhaustive: bool,
+    error: Option<String>,
+    version: Option<String>,
+) -> CarNormalizationItem {
+    CarNormalizationItem {
+        input: input.to_owned(),
+        status,
+        exhaustive,
+        caid: None,
+        canonical_title: None,
+        genomic_aliases: CarAliasCollection::default(),
+        transcript_aliases: CarAliasCollection::default(),
+        protein_aliases: CarAliasCollection::default(),
+        external_ids: CarAliasCollection::default(),
+        source: "clingen_car".into(),
+        query: input.to_owned(),
+        warnings: Vec::new(),
+        error,
+        provenance: CarProvenance {
+            request_template_version: "1".into(),
+            car_version: version,
+        },
+    }
+}
+
+pub(crate) fn decode_normalize_response(
+    input: &str,
+    status: StatusCode,
+    version: Option<String>,
+    bytes: &[u8],
+) -> CarNormalizationItem {
+    if status == StatusCode::BAD_REQUEST
+        && serde_json::from_slice::<Value>(bytes)
+            .ok()
+            .is_some_and(|value| value.to_string().contains("HgvsParsingError"))
+    {
+        return empty(
+            input,
+            CarNormalizationStatus::Invalid,
+            true,
+            Some("CAR rejected the HGVS input".into()),
+            version,
+        );
+    }
+    if !status.is_success() {
+        return empty(
+            input,
+            CarNormalizationStatus::Unavailable,
+            false,
+            Some(format!("CAR returned HTTP {}", status.as_u16())),
+            version,
+        );
+    }
+    let Ok(value) = serde_json::from_slice::<Value>(bytes) else {
+        return empty(
+            input,
+            CarNormalizationStatus::Indeterminate,
+            false,
+            Some("CAR returned invalid JSON".into()),
+            version,
+        );
+    };
+    let Some(id) = value.get("@id").and_then(Value::as_str) else {
+        return empty(
+            input,
+            CarNormalizationStatus::Indeterminate,
+            false,
+            Some("CAR response lacked a canonical identity".into()),
+            version,
+        );
+    };
+    if id == "_:CA" {
+        return empty(input, CarNormalizationStatus::NotFound, true, None, version);
+    }
+    let caid = id
+        .rsplit('/')
+        .next()
+        .filter(|value| {
+            value.strip_prefix("CA").is_some_and(|digits| {
+                !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
+            })
+        })
+        .map(str::to_owned);
+    let Some(caid) = caid else {
+        return empty(
+            input,
+            CarNormalizationStatus::Indeterminate,
+            false,
+            Some("CAR response had an unrecognized canonical identity".into()),
+            version,
+        );
+    };
+    let Ok((canonical_title, genomic, transcripts, proteins, external)) = projected_aliases(&value)
+    else {
+        return empty(
+            input,
+            CarNormalizationStatus::Indeterminate,
+            false,
+            Some("CAR response did not match the projected schema".into()),
+            version,
+        );
+    };
+    let mut item = empty(input, CarNormalizationStatus::Resolved, true, None, version);
+    item.caid = Some(caid);
+    item.canonical_title = canonical_title;
+    item.genomic_aliases = CarAliasCollection::bounded(genomic, 12);
+    item.transcript_aliases = CarAliasCollection::bounded(transcripts, 12);
+    item.protein_aliases = CarAliasCollection::bounded(proteins, 8);
+    item.external_ids = CarAliasCollection::bounded(external, 16);
+    item
+}
+
+fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
+    let title = match value.get("communityStandardTitle") {
+        Some(Value::Array(values)) => match values.first() {
+            Some(value) => Some(value.as_str().ok_or(())?.to_owned()),
+            None => None,
+        },
+        Some(_) => return Err(()),
+        None => None,
+    };
+    let mut genomic = Vec::new();
+    if let Some(alleles) = value.get("genomicAlleles") {
+        for allele in alleles.as_array().ok_or(())? {
+            let rank = match allele.get("referenceGenome") {
+                Some(Value::String(reference)) => match reference.as_str() {
+                    "GRCh38" => 0,
+                    "GRCh37" => 1,
+                    "NCBI36" => 2,
+                    _ => 3,
+                },
+                None => 3,
+                Some(_) => return Err(()),
+            };
+            let hgvs = allele.get("hgvs").and_then(Value::as_array).ok_or(())?;
+            for alias in hgvs {
+                genomic.push((rank, alias.as_str().ok_or(())?.to_owned()));
+            }
+        }
+    }
+    genomic.sort();
+    let mut transcripts = Vec::new();
+    let mut proteins = Vec::new();
+    if let Some(alleles) = value.get("transcriptAlleles") {
+        for allele in alleles.as_array().ok_or(())? {
+            let mane = allele.get("MANE").ok_or(())?;
+            let status = mane.get("maneStatus").and_then(Value::as_str).ok_or(())?;
+            mane.get("maneVersion").and_then(Value::as_str).ok_or(())?;
+            let rank = match status {
+                "MANE Select" => 0,
+                "MANE Plus Clinical" => 1,
+                _ => 2,
+            };
+            if let Some(hgvs) = mane.pointer("/nucleotide/RefSeq/hgvs") {
+                transcripts.push((rank, hgvs.as_str().ok_or(())?.to_owned()));
+            }
+            if let Some(hgvs) = mane.pointer("/protein/RefSeq/hgvs") {
+                proteins.push(hgvs.as_str().ok_or(())?.to_owned());
+            }
+        }
+    }
+    transcripts.sort();
+    proteins.sort();
+    let external_records = value.get("externalRecords");
+    let mut external = Vec::new();
+    for (path, prefix) in [("dbSNP", "rs"), ("ClinVarVariations", "ClinVar:")] {
+        let mut ids = Vec::new();
+        if let Some(records) = external_records.and_then(|records| records.get(path)) {
+            for record in records.as_array().ok_or(())? {
+                let key = if path == "dbSNP" { "rs" } else { "variationId" };
+                ids.push(record.get(key).and_then(Value::as_u64).ok_or(())?);
+            }
+        }
+        ids.sort_unstable();
+        external.extend(ids.into_iter().take(8).map(|id| format!("{prefix}{id}")));
+    }
+    Ok((
+        title,
+        genomic.into_iter().map(|(_, alias)| alias).collect(),
+        transcripts.into_iter().map(|(_, alias)| alias).collect(),
+        proteins,
+        external,
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sources::HttpMethod;
+
+    #[test]
+    fn direct_plan_uses_only_the_projected_read_route() {
+        let plan = ClinGenAlleleRegistryClient::normalize_plan("NM_000546.6:c.215C>G");
+        assert_eq!(plan.method, HttpMethod::Get);
+        assert_eq!(plan.path, "allele");
+        assert_eq!(plan.query_value("hgvs"), Some("NM_000546.6:c.215C>G"));
+        assert_eq!(plan.query_value("fields"), Some(CAR_FIELDS));
+    }
+
+    #[test]
+    fn decoder_orders_aliases_and_rejects_schema_drift() {
+        let item = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            include_bytes!("../../testdata/sources/clingen_allele_registry/resolved.json"),
+        );
+        assert_eq!(item.status, CarNormalizationStatus::Resolved);
+        assert_eq!(item.caid.as_deref(), Some("CA123"));
+        assert_eq!(item.genomic_aliases.values[0], "NC_000017.11:g.1A>G");
+        assert_eq!(item.transcript_aliases.values[0], "NM_1.1:c.1A>G");
+        assert_eq!(item.external_ids.values, vec!["rs2", "rs20", "ClinVar:10"]);
+
+        let drift = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            br#"{"@id":"CA123","genomicAlleles":"wrong"}"#,
+        );
+        assert_eq!(drift.status, CarNormalizationStatus::Indeterminate);
+    }
+
+    #[test]
+    fn decoder_does_not_accept_an_empty_caid() {
+        let item =
+            decode_normalize_response("NM_1.1:c.1A>G", StatusCode::OK, None, br#"{"@id":"CA"}"#);
+        assert_eq!(item.status, CarNormalizationStatus::Indeterminate);
+    }
+}
