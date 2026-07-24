@@ -142,7 +142,9 @@ impl ProviderCaptureStore {
             self.with_lock(|| {
                 let blob = self.blob_path(provider, &sha256);
                 let metadata = self.metadata_path(provider, &sha256);
-                if let Ok(existing) = self.read_complete(&manifest.capture_id) {
+                if let Ok(existing) = self.read_complete(&manifest.capture_id)
+                    && existing.manifest.expires_at > now
+                {
                     return Ok(existing.manifest);
                 }
                 let parent = blob.parent().ok_or(ProviderCaptureError::Corrupt)?;
@@ -184,8 +186,10 @@ impl ProviderCaptureStore {
     }
 
     pub(crate) fn retained_bytes(&self) -> Result<u64, ProviderCaptureError> {
-        self.blob_entries()
-            .map(|entries| entries.into_iter().map(|entry| entry.size).sum())
+        self.with_lock(|| {
+            self.blob_entries()
+                .map(|entries| entries.into_iter().map(|entry| entry.size).sum())
+        })
     }
 
     pub(crate) fn maintain(&self) -> Result<u64, ProviderCaptureError> {
@@ -316,13 +320,13 @@ impl ProviderCaptureStore {
     fn metadata_entries(&self) -> Result<Vec<MetadataEntry>, ProviderCaptureError> {
         let mut entries = Vec::new();
         let dir = self.root.join("cspec").join("metadata");
-        if !dir.exists() {
+        if !directory_exists(&dir)? {
             return Ok(entries);
         }
         for shard in fs::read_dir(dir).map_err(|_| ProviderCaptureError::Corrupt)? {
             let shard = shard.map_err(|_| ProviderCaptureError::Corrupt)?.path();
-            if !shard.is_dir() {
-                continue;
+            if !regular_dir(&shard) {
+                return Err(ProviderCaptureError::Corrupt);
             }
             for entry in fs::read_dir(shard).map_err(|_| ProviderCaptureError::Corrupt)? {
                 let path = entry.map_err(|_| ProviderCaptureError::Corrupt)?.path();
@@ -354,13 +358,13 @@ impl ProviderCaptureStore {
     fn blob_entries(&self) -> Result<Vec<BlobEntry>, ProviderCaptureError> {
         let mut entries = Vec::new();
         let dir = self.root.join("cspec").join("sha256");
-        if !dir.exists() {
+        if !directory_exists(&dir)? {
             return Ok(entries);
         }
         for shard in fs::read_dir(dir).map_err(|_| ProviderCaptureError::Corrupt)? {
             let shard = shard.map_err(|_| ProviderCaptureError::Corrupt)?.path();
-            if !shard.is_dir() {
-                continue;
+            if !regular_dir(&shard) {
+                return Err(ProviderCaptureError::Corrupt);
             }
             for entry in fs::read_dir(shard).map_err(|_| ProviderCaptureError::Corrupt)? {
                 let path = entry.map_err(|_| ProviderCaptureError::Corrupt)?.path();
@@ -438,6 +442,14 @@ fn parse_handle(value: &str) -> Result<(ProviderCaptureProvider, &str), Provider
     Ok((ProviderCaptureProvider::parse(provider)?, digest))
 }
 
+fn directory_exists(path: &Path) -> Result<bool, ProviderCaptureError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_dir() => Ok(true),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(false),
+        _ => Err(ProviderCaptureError::Corrupt),
+    }
+}
+
 fn regular_file(path: &Path) -> bool {
     fs::symlink_metadata(path).is_ok_and(|metadata| metadata.file_type().is_file())
 }
@@ -480,7 +492,12 @@ fn sync_dir(path: &Path) -> Result<(), ProviderCaptureError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ProviderCaptureError, ProviderCaptureProvider, ProviderCaptureStore};
+    use std::sync::Arc;
+
+    use super::{
+        MAX_CAPTURE_BYTES, MAX_RETAINED_BYTES, Metadata, ProviderCaptureError,
+        ProviderCaptureProvider, ProviderCaptureStore,
+    };
     use crate::test_support::TempDirGuard;
 
     #[test]
@@ -514,6 +531,42 @@ mod tests {
     }
 
     #[test]
+    fn expires_captures_and_republishes_received_bytes() {
+        let root = TempDirGuard::new("provider-capture-expired");
+        let store = ProviderCaptureStore::new(root.path());
+        let manifest = store
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"original")
+            .expect("capture");
+        let metadata_path = root
+            .path()
+            .join("captures/cspec/metadata")
+            .join(&manifest.sha256[..2])
+            .join(format!("{}.json", manifest.sha256));
+        let mut metadata: Metadata =
+            serde_json::from_slice(&std::fs::read(&metadata_path).expect("read metadata"))
+                .expect("parse metadata");
+        metadata.manifest.expires_at = 0;
+        std::fs::write(
+            &metadata_path,
+            serde_json::to_vec(&metadata).expect("encode metadata"),
+        )
+        .expect("expire metadata");
+
+        assert_eq!(
+            store.read(&manifest.capture_id),
+            Err(ProviderCaptureError::Unavailable)
+        );
+        let republished = store
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"original")
+            .expect("republish expired capture");
+        assert_eq!(republished.capture_id, manifest.capture_id);
+        assert_eq!(
+            store.read(&republished.capture_id),
+            Ok(b"original".to_vec())
+        );
+    }
+
+    #[test]
     fn rejects_oversize_and_invalid_handles() {
         let root = TempDirGuard::new("provider-capture-bound");
         let store = ProviderCaptureStore::new(root.path());
@@ -521,11 +574,92 @@ mod tests {
             store.capture_bytes(
                 ProviderCaptureProvider::Cspec,
                 "text/plain",
-                &vec![0; 4 * 1024 * 1024 + 1]
+                &vec![0; MAX_CAPTURE_BYTES as usize + 1]
             ),
             Err(ProviderCaptureError::Oversize)
         );
         assert_eq!(store.read("capture:other:sha256:0000000000000000000000000000000000000000000000000000000000000000"), Err(ProviderCaptureError::UnsupportedProvider));
+    }
+
+    #[test]
+    fn enforces_namespace_capacity_with_deterministic_lru_eviction() {
+        let root = TempDirGuard::new("provider-capture-capacity");
+        let store = ProviderCaptureStore::new(root.path());
+        let body = vec![0; MAX_CAPTURE_BYTES as usize];
+        let oldest = store
+            .capture_bytes(
+                ProviderCaptureProvider::Cspec,
+                "application/octet-stream",
+                &body,
+            )
+            .expect("capture oldest");
+        let metadata_path = root
+            .path()
+            .join("captures/cspec/metadata")
+            .join(&oldest.sha256[..2])
+            .join(format!("{}.json", oldest.sha256));
+        let mut metadata: Metadata =
+            serde_json::from_slice(&std::fs::read(&metadata_path).expect("read metadata"))
+                .expect("parse metadata");
+        metadata.last_access_at = 0;
+        std::fs::write(
+            &metadata_path,
+            serde_json::to_vec(&metadata).expect("encode metadata"),
+        )
+        .expect("age metadata");
+        for marker in 1..17u8 {
+            let mut body = vec![0; MAX_CAPTURE_BYTES as usize];
+            body[0] = marker;
+            store
+                .capture_bytes(
+                    ProviderCaptureProvider::Cspec,
+                    "application/octet-stream",
+                    &body,
+                )
+                .expect("capture");
+        }
+
+        assert!(store.retained_bytes().expect("retained bytes") <= MAX_RETAINED_BYTES);
+        assert_eq!(
+            store.read(&oldest.capture_id),
+            Err(ProviderCaptureError::Unavailable)
+        );
+    }
+
+    #[test]
+    fn concurrent_same_content_captures_publish_one_complete_record() {
+        let root = TempDirGuard::new("provider-capture-concurrent");
+        let store = Arc::new(ProviderCaptureStore::new(root.path()));
+        let handles = (0..8)
+            .map(|_| {
+                let store = Arc::clone(&store);
+                std::thread::spawn(move || {
+                    store
+                        .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"same")
+                        .expect("capture")
+                        .capture_id
+                })
+            })
+            .map(|thread| thread.join().expect("capture thread"))
+            .collect::<Vec<_>>();
+
+        assert!(handles.windows(2).all(|pair| pair[0] == pair[1]));
+        assert_eq!(store.blob_entries().expect("blob entries").len(), 1);
+        assert_eq!(store.read(&handles[0]), Ok(b"same".to_vec()));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_symlinked_capture_shards() {
+        let root = TempDirGuard::new("provider-capture-symlink");
+        let store = ProviderCaptureStore::new(root.path());
+        let outside = root.path().join("outside");
+        std::fs::create_dir_all(&outside).expect("outside directory");
+        let shard = root.path().join("captures/cspec/sha256/aa");
+        std::fs::create_dir_all(shard.parent().expect("shard parent")).expect("create parent");
+        std::os::unix::fs::symlink(&outside, &shard).expect("symlink shard");
+
+        assert_eq!(store.retained_bytes(), Err(ProviderCaptureError::Corrupt));
     }
 
     #[test]

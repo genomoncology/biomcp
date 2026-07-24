@@ -70,8 +70,8 @@ fn cache_stats_report_separates_provider_capture_namespace_bytes() {
     let previous = std::env::var_os("BIOMCP_CACHE_DIR");
     // SAFETY: this serial test restores the process-wide configuration variable.
     unsafe { std::env::set_var("BIOMCP_CACHE_DIR", root.path()) };
-    let report = collect_cache_stats_report().expect("collect managed cache stats");
-    // SAFETY: restore the process-wide configuration variable before assertions can panic.
+    let report = collect_cache_stats_report();
+    // SAFETY: restore the process-wide configuration variable before handling the result.
     unsafe {
         if let Some(value) = previous {
             std::env::set_var("BIOMCP_CACHE_DIR", value);
@@ -79,6 +79,7 @@ fn cache_stats_report_separates_provider_capture_namespace_bytes() {
             std::env::remove_var("BIOMCP_CACHE_DIR");
         }
     }
+    let report = report.expect("collect managed cache stats");
 
     let capture_bytes = serde_json::to_value(&report)
         .expect("serialize cache stats")
