@@ -170,18 +170,6 @@ mod tests {
     }
 
     #[test]
-    fn all_selector_includes_car_after_existing_normalizers() {
-        let services = parse_variant_normalization_services("all").expect("all selector");
-        assert_eq!(
-            services
-                .into_iter()
-                .map(VariantNormalizationService::as_str)
-                .collect::<Vec<_>>(),
-            vec!["mutalyzer", "variantvalidator", "car"]
-        );
-    }
-
-    #[test]
     fn rejects_non_transcript_guardrail_inputs() {
         let err = validate_transcript_hgvs_input("BRAF V600E").unwrap_err();
         let text = err.to_string();

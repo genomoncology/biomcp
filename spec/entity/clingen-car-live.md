@@ -12,8 +12,8 @@ as the query that was resolved.
 
 ```bash
 ../../tools/biomcp-ci --json variant normalize car 'NM_000546.6:c.215C>G' \
-  | jq '{input: .input, status: .status, exhaustive: .exhaustive, has_caid: (.caid | test("^CA[0-9]+$")), source: .source, query: .query, genomic_aliases: (.genomic_aliases | type), transcript_aliases: (.transcript_aliases | type), protein_aliases: (.protein_aliases | type), external_ids: (.external_ids | type)}' \
-  | mustmatch like '{"input":"NM_000546.6:c.215C>G","status":"resolved","exhaustive":true,"has_caid":true,"source":"clingen_car","query":"NM_000546.6:c.215C>G","genomic_aliases":"array","transcript_aliases":"array","protein_aliases":"array","external_ids":"array"}'
+  | jq '{input: .input, status: .status, exhaustive: .exhaustive, has_caid: (.caid | test("^CA[0-9]+$")), source: .source, query: .query, alias_collections: ([.genomic_aliases, .transcript_aliases, .protein_aliases, .external_ids] | all((.values | type) == "array" and (.source_count | type) == "number" and (.truncated | type) == "boolean")), provenance: {template_version: (.provenance.request_template_version | type), has_car_version: (.provenance | has("car_version"))}}' \
+  | mustmatch like '{"input":"NM_000546.6:c.215C>G","status":"resolved","exhaustive":true,"has_caid":true,"source":"clingen_car","query":"NM_000546.6:c.215C>G","alias_collections":true,"provenance":{"template_version":"string","has_car_version":true}}'
 ```
 
 ## Retain CAR in the all-provider normalization order
