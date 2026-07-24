@@ -1024,11 +1024,11 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::{
-        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet,
-        TypedSearch, TypedVariantArticles, VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE,
-        all_get_sections, get_args, get_section_groups, index_handler, is_allowed_mcp_command,
-        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
-        subcommand_names, to_resource_result,
+        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
+        TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles,
+        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, all_get_sections, get_args,
+        get_section_groups, index_handler, is_allowed_mcp_command, mcp_rejection_message,
+        redact_mcp_json_text, redact_mcp_text, search_args, subcommand_names, to_resource_result,
     };
     use axum::Json;
 
@@ -1091,6 +1091,39 @@ mod tests {
                 .into_iter()
                 .map(str::to_string)
                 .collect::<BTreeSet<String>>()
+        );
+    }
+
+    #[test]
+    fn typed_gene_cspec_schema_exposes_bounded_capture_paging_without_raw_bytes() {
+        let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGeneCspec))
+            .expect("CSpec schema");
+        let properties = &schema["properties"];
+
+        assert!(properties.get("gene").is_some());
+        assert!(properties.get("version_iri").is_some());
+        assert!(properties.get("capture_id").is_some());
+        assert!(properties.get("offset").is_some());
+        assert_eq!(properties["limit"]["minimum"], 1);
+        assert_eq!(properties["limit"]["maximum"], 50);
+        assert!(properties.get("raw_bytes").is_none());
+    }
+
+    #[tokio::test]
+    async fn typed_gene_cspec_rejects_version_and_capture_together_before_network_access() {
+        let result = BioMcpServer::new()
+            .gene_cspec(rmcp::handler::server::wrapper::Parameters(TypedGeneCspec {
+                gene: "ATM".into(),
+                version_iri: Some("https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into()),
+                capture_id: Some("capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()),
+                offset: 0,
+                limit: 25,
+            }))
+            .await;
+
+        assert!(
+            result.is_err(),
+            "mutually exclusive CSpec selectors must fail"
         );
     }
 

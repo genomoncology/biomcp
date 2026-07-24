@@ -10,7 +10,11 @@ use crate::sources::clingen_cspec::CspecClient;
 const FIELD_LIMIT: usize = 16 * 1024;
 
 #[derive(Debug)]
-struct CspecDocumentIri(reqwest::Url);
+struct CspecDocumentIri {
+    url: reqwest::Url,
+    raw: String,
+    specification_id: String,
+}
 
 #[derive(Debug, Serialize)]
 pub(crate) struct CspecManifestResponse {
@@ -71,12 +75,13 @@ pub(crate) async fn retrieve(
     let manifest = manifest(gene, &client).await?;
     if let Some(iri) = version_iri {
         let selected = select(&manifest.resource_iris, iri)?;
-        let bytes = client.document(&selected.0).await?;
+        let bytes = client.document(&selected.url).await?;
         let capture = capture(&bytes)?;
         let stored_bytes = read_capture(&capture.capture_id)?;
         return Ok(serde_json::to_value(page_from_bytes(
             &stored_bytes,
-            selected.0.as_str(),
+            &selected.raw,
+            &selected.specification_id,
             gene,
             offset,
             limit,
@@ -98,7 +103,15 @@ pub(crate) fn page_capture(
     let bytes = store.read(capture_id).map_err(capture_error)?;
     let manifest = capture_manifest(capture_id, &bytes)?;
     let iri = document_iri_from_bytes(&bytes)?;
-    page_from_bytes(&bytes, &iri, gene, offset, limit, &manifest)
+    page_from_bytes(
+        &bytes,
+        &iri.raw,
+        &iri.specification_id,
+        gene,
+        offset,
+        limit,
+        &manifest,
+    )
 }
 
 pub(crate) fn read_capture(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
@@ -124,7 +137,7 @@ async fn manifest(gene: &str, client: &CspecClient) -> Result<CspecManifestRespo
             .and_then(Value::as_str)
             .ok_or_else(|| invalid("manifest row @id is required"))?;
         let parsed = parse_iri(iri)?;
-        resource_iris.push(parsed.0.to_string());
+        resource_iris.push(parsed.raw);
     }
     Ok(CspecManifestResponse {
         gene: gene.into(),
@@ -135,20 +148,23 @@ async fn manifest(gene: &str, client: &CspecClient) -> Result<CspecManifestRespo
 
 fn select(manifest: &[String], value: &str) -> Result<CspecDocumentIri, BioMcpError> {
     let selected = parse_iri(value)?;
-    let matches = manifest
-        .iter()
-        .filter(|candidate| *candidate == selected.0.as_str())
-        .count();
-    match matches {
-        1 => Ok(selected),
-        0 => Err(BioMcpError::NotFound {
+    if !manifest.iter().any(|candidate| candidate == value) {
+        return Err(BioMcpError::NotFound {
             entity: "CSpec version IRI".into(),
             id: value.into(),
             suggestion: "rerun the manifest command and select one exact resource_iris value"
                 .into(),
-        }),
-        _ => Err(invalid("duplicate normalized CSpec manifest IRI")),
+        });
     }
+    let normalized_matches = manifest
+        .iter()
+        .filter_map(|candidate| parse_iri(candidate).ok())
+        .filter(|candidate| candidate.url == selected.url)
+        .count();
+    if normalized_matches != 1 {
+        return Err(invalid("duplicate normalized CSpec manifest IRI"));
+    }
+    Ok(selected)
 }
 
 fn parse_iri(value: &str) -> Result<CspecDocumentIri, BioMcpError> {
@@ -180,7 +196,12 @@ fn parse_iri(value: &str) -> Result<CspecDocumentIri, BioMcpError> {
     {
         return Err(invalid("invalid CSpec resource IRI path"));
     }
-    Ok(CspecDocumentIri(url))
+    let specification_id = parts[3].to_owned();
+    Ok(CspecDocumentIri {
+        url,
+        raw: value.to_owned(),
+        specification_id,
+    })
 }
 
 fn capture(bytes: &[u8]) -> Result<ProviderCaptureManifest, BioMcpError> {
@@ -228,6 +249,7 @@ fn invalid(message: &str) -> BioMcpError {
 fn page_from_bytes(
     bytes: &[u8],
     iri: &str,
+    expected_specification_id: &str,
     gene: &str,
     offset: usize,
     limit: usize,
@@ -247,7 +269,8 @@ fn page_from_bytes(
         .ok_or_else(|| invalid("document entId is required"))?;
     let content = data.get("entContent").and_then(Value::as_object);
     let ld = data.get("ld").and_then(Value::as_object);
-    if data.get("entType").and_then(Value::as_str) != Some("SequenceVariantInterpretation")
+    if specification_id != expected_specification_id
+        || data.get("entType").and_then(Value::as_str) != Some("SequenceVariantInterpretation")
         || content
             .and_then(|value| value.get("namespace"))
             .and_then(Value::as_str)
@@ -312,16 +335,16 @@ fn page_from_bytes(
         capture: provenance(capture),
     })
 }
-fn document_iri_from_bytes(bytes: &[u8]) -> Result<String, BioMcpError> {
+fn document_iri_from_bytes(bytes: &[u8]) -> Result<CspecDocumentIri, BioMcpError> {
     let value: Value = serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
         api: "ClinGen CSpec".into(),
         source,
     })?;
-    value
+    let iri = value
         .pointer("/data/@id")
         .and_then(Value::as_str)
-        .map(str::to_owned)
-        .ok_or_else(|| invalid("captured document has no resource IRI"))
+        .ok_or_else(|| invalid("captured document has no resource IRI"))?;
+    parse_iri(iri)
 }
 fn provenance(m: &ProviderCaptureManifest) -> CaptureProvenance {
     CaptureProvenance {
@@ -389,7 +412,67 @@ fn bounded(value: &str, field: &str, truncated: &mut Vec<String>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{FIELD_LIMIT, bounded};
+    use serde_json::json;
+
+    use super::{FIELD_LIMIT, bounded, page_from_bytes, select};
+    use crate::cache::{ProviderCaptureManifest, ProviderCaptureProvider};
+
+    #[test]
+    fn selection_requires_the_literal_manifest_iri() {
+        let manifest = vec![
+            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1"
+                .to_owned(),
+        ];
+
+        assert!(
+            select(
+                &manifest,
+                "https://CSPEC.GENOME.NET/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1",
+            )
+            .is_err(),
+            "normalized spelling must not select a manifest document"
+        );
+    }
+
+    #[test]
+    fn selected_document_must_match_the_manifest_specification_id() {
+        let bytes = serde_json::to_vec(&json!({
+            "status": { "code": 200 },
+            "metadata": {},
+            "data": {
+                "entType": "SequenceVariantInterpretation",
+                "entId": "GN999",
+                "entContent": { "namespace": "GN999", "version": "1" },
+                "ld": { "CriteriaCode": [] },
+                "ldFor": {}
+            }
+        }))
+        .expect("fixture serializes");
+        let capture = ProviderCaptureManifest {
+            capture_id: "capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            provider: ProviderCaptureProvider::Cspec,
+            media_type: "application/json".into(),
+            byte_length: bytes.len() as u64,
+            sha256: "a".repeat(64),
+            captured_at: 0,
+            expires_at: 1,
+            schema_version: 1,
+        };
+
+        assert!(
+            page_from_bytes(
+                &bytes,
+                "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1",
+                "GN020",
+                "ATM",
+                0,
+                25,
+                &capture,
+            )
+            .is_err(),
+            "document must not be projected under a different manifest specification"
+        );
+    }
 
     #[test]
     fn bounded_preserves_utf8_when_the_limit_splits_a_character() {
