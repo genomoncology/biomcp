@@ -112,15 +112,16 @@ pub(crate) fn execute_clean(
         &config,
         now_ms,
     )?;
-    if !dry_run {
-        report.provider_capture_bytes_freed =
-            crate::cache::ProviderCaptureStore::new(&config.cache_root)
-                .maintain()
-                .map_err(|err| {
-                    BioMcpError::Io(std::io::Error::other(format!(
-                        "provider capture maintenance failed: {err:?}"
-                    )))
-                })?;
+    let capture_store = crate::cache::ProviderCaptureStore::new(&config.cache_root);
+    match if dry_run {
+        capture_store.planned_maintenance_bytes_freed()
+    } else {
+        capture_store.maintain()
+    } {
+        Ok(bytes_freed) => report.provider_capture_bytes_freed = bytes_freed,
+        Err(error) => report
+            .errors
+            .push(format!("provider capture maintenance failed: {error:?}")),
     }
     Ok(report)
 }

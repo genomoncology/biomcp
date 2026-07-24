@@ -86,8 +86,8 @@ impl ProviderCaptureStore {
         media_type: impl Into<String>,
         mut body: R,
     ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
-        fs::create_dir_all(self.root.join(".staging"))
-            .map_err(|_| ProviderCaptureError::Corrupt)?;
+        self.ensure_directory(&self.root)?;
+        self.ensure_directory(&self.root.join(".staging"))?;
         let (mut file, staged) = (0..100)
             .find_map(|attempt| {
                 let staged = self.root.join(".staging").join(format!(
@@ -148,13 +148,14 @@ impl ProviderCaptureStore {
                     return Ok(existing.manifest);
                 }
                 let parent = blob.parent().ok_or(ProviderCaptureError::Corrupt)?;
-                fs::create_dir_all(parent).map_err(|_| ProviderCaptureError::Corrupt)?;
+                self.ensure_directory(parent)?;
                 fs::rename(&staged, &blob).map_err(|_| ProviderCaptureError::Corrupt)?;
                 sync_dir(parent)?;
                 let record = Metadata {
                     manifest: manifest.clone(),
                     last_access_at: now,
                 };
+                self.ensure_directory(metadata.parent().ok_or(ProviderCaptureError::Corrupt)?)?;
                 write_atomic(
                     &metadata,
                     &serde_json::to_vec(&record).map_err(|_| ProviderCaptureError::Corrupt)?,
@@ -176,6 +177,7 @@ impl ProviderCaptureStore {
             }
             record.last_access_at = now;
             let path = self.metadata_path(record.manifest.provider, &record.manifest.sha256);
+            self.ensure_directory(path.parent().ok_or(ProviderCaptureError::Corrupt)?)?;
             write_atomic(
                 &path,
                 &serde_json::to_vec(&record).map_err(|_| ProviderCaptureError::Corrupt)?,
@@ -194,6 +196,10 @@ impl ProviderCaptureStore {
 
     pub(crate) fn maintain(&self) -> Result<u64, ProviderCaptureError> {
         self.with_lock(|| self.maintain_locked(now_secs()?))
+    }
+
+    pub(crate) fn planned_maintenance_bytes_freed(&self) -> Result<u64, ProviderCaptureError> {
+        self.with_lock(|| self.planned_maintenance_bytes_freed_locked(now_secs()?))
     }
 
     fn with_lock<T>(
@@ -307,14 +313,79 @@ impl ProviderCaptureStore {
         Ok(freed)
     }
 
+    fn planned_maintenance_bytes_freed_locked(
+        &self,
+        now: u64,
+    ) -> Result<u64, ProviderCaptureError> {
+        let mut freed = 0;
+        let staging = self.root.join(".staging");
+        if regular_dir(&staging) {
+            for entry in fs::read_dir(&staging).map_err(|_| ProviderCaptureError::Corrupt)? {
+                let path = entry.map_err(|_| ProviderCaptureError::Corrupt)?.path();
+                if regular_file(&path) {
+                    freed += fs::metadata(&path)
+                        .map_err(|_| ProviderCaptureError::Corrupt)?
+                        .len();
+                }
+            }
+        }
+
+        let mut records = self.metadata_entries()?;
+        let mut retained_records = Vec::new();
+        for record in records.drain(..) {
+            if record.metadata.manifest.expires_at <= now {
+                freed += self.record_blob_size(&record)?;
+            } else {
+                retained_records.push(record);
+            }
+        }
+        let referenced = retained_records
+            .iter()
+            .map(|record| record.metadata.manifest.sha256.as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+        for blob in self.blob_entries()? {
+            if !referenced.contains(blob.digest.as_str()) {
+                freed += blob.size;
+            }
+        }
+        retained_records.sort_by_key(|record| {
+            (
+                record.metadata.last_access_at,
+                record.provider.as_str(),
+                record.metadata.manifest.capture_id.clone(),
+            )
+        });
+        let mut retained: u64 = retained_records
+            .iter()
+            .map(|record| record.metadata.manifest.byte_length)
+            .sum();
+        for record in retained_records {
+            if retained <= MAX_RETAINED_BYTES {
+                break;
+            }
+            retained -= record.metadata.manifest.byte_length;
+            freed += self.record_blob_size(&record)?;
+        }
+        Ok(freed)
+    }
+
     fn remove_record(&self, record: &MetadataEntry) -> Result<u64, ProviderCaptureError> {
         let blob = self.blob_path(record.provider, &record.metadata.manifest.sha256);
-        let freed = fs::metadata(&blob)
-            .map(|metadata| metadata.len())
-            .unwrap_or(0);
+        let freed = self.record_blob_size(record)?;
         fs::remove_file(&record.path).map_err(|_| ProviderCaptureError::Corrupt)?;
         let _ = fs::remove_file(blob);
         Ok(freed)
+    }
+
+    fn record_blob_size(&self, record: &MetadataEntry) -> Result<u64, ProviderCaptureError> {
+        let blob = self.blob_path(record.provider, &record.metadata.manifest.sha256);
+        if regular_file(&blob) {
+            fs::metadata(blob)
+                .map(|metadata| metadata.len())
+                .map_err(|_| ProviderCaptureError::Corrupt)
+        } else {
+            Ok(0)
+        }
     }
 
     fn metadata_entries(&self) -> Result<Vec<MetadataEntry>, ProviderCaptureError> {
@@ -342,9 +413,11 @@ impl ProviderCaptureStore {
                     || metadata.manifest.provider != provider
                     || metadata.manifest.sha256 != digest
                     || metadata.manifest.schema_version != SCHEMA_VERSION
+                    || path != self.metadata_path(provider, digest)
                 {
                     return Err(ProviderCaptureError::Corrupt);
                 }
+                self.verified_bytes(&metadata)?;
                 entries.push(MetadataEntry {
                     provider: ProviderCaptureProvider::Cspec,
                     metadata,
@@ -384,6 +457,36 @@ impl ProviderCaptureStore {
             }
         }
         Ok(entries)
+    }
+
+    fn ensure_directory(&self, path: &Path) -> Result<(), ProviderCaptureError> {
+        let relative = path
+            .strip_prefix(&self.root)
+            .map_err(|_| ProviderCaptureError::Corrupt)?;
+        match fs::symlink_metadata(&self.root) {
+            Ok(metadata) if metadata.file_type().is_dir() => {}
+            Ok(_) => return Err(ProviderCaptureError::Corrupt),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                fs::create_dir_all(&self.root).map_err(|_| ProviderCaptureError::Corrupt)?;
+                if !regular_dir(&self.root) {
+                    return Err(ProviderCaptureError::Corrupt);
+                }
+            }
+            Err(_) => return Err(ProviderCaptureError::Corrupt),
+        }
+        let mut current = self.root.clone();
+        for component in relative.components() {
+            current.push(component);
+            match fs::symlink_metadata(&current) {
+                Ok(metadata) if metadata.file_type().is_dir() => {}
+                Ok(_) => return Err(ProviderCaptureError::Corrupt),
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                    fs::create_dir(&current).map_err(|_| ProviderCaptureError::Corrupt)?;
+                }
+                Err(_) => return Err(ProviderCaptureError::Corrupt),
+            }
+        }
+        Ok(())
     }
 
     fn blob_path(&self, provider: ProviderCaptureProvider, digest: &str) -> PathBuf {
@@ -662,6 +765,58 @@ mod tests {
         assert_eq!(store.retained_bytes(), Err(ProviderCaptureError::Corrupt));
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn refuses_to_publish_through_a_symlinked_staging_directory() {
+        let root = TempDirGuard::new("provider-capture-staging-symlink");
+        let store = ProviderCaptureStore::new(root.path());
+        let outside = root.path().join("outside");
+        std::fs::create_dir_all(&outside).expect("outside directory");
+        let captures = root.path().join("captures");
+        std::fs::create_dir_all(&captures).expect("capture root");
+        std::os::unix::fs::symlink(&outside, captures.join(".staging")).expect("symlink staging");
+
+        assert_eq!(
+            store.capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"bytes"),
+            Err(ProviderCaptureError::Corrupt)
+        );
+        assert!(
+            std::fs::read_dir(outside)
+                .expect("read outside")
+                .next()
+                .is_none(),
+            "capture must not create files outside its managed root"
+        );
+    }
+
+    #[test]
+    fn refuses_noncanonical_metadata_without_damaging_a_valid_capture() {
+        let root = TempDirGuard::new("provider-capture-metadata-path");
+        let store = ProviderCaptureStore::new(root.path());
+        let manifest = store
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"original")
+            .expect("capture");
+        let metadata = root
+            .path()
+            .join("captures/cspec/metadata")
+            .join(&manifest.sha256[..2])
+            .join(format!("{}.json", manifest.sha256));
+        let duplicate = root
+            .path()
+            .join("captures/cspec/metadata/ff/duplicate.json");
+        std::fs::create_dir_all(duplicate.parent().expect("duplicate parent"))
+            .expect("create duplicate parent");
+        std::fs::copy(&metadata, &duplicate).expect("copy metadata");
+
+        assert_eq!(store.maintain(), Err(ProviderCaptureError::Corrupt));
+        assert_eq!(
+            store.read(&manifest.capture_id),
+            Err(ProviderCaptureError::Corrupt)
+        );
+        std::fs::remove_file(duplicate).expect("remove invalid metadata");
+        assert_eq!(store.read(&manifest.capture_id), Ok(b"original".to_vec()));
+    }
+
     #[test]
     fn rejects_corrupt_bytes_and_removes_unpublished_orphans() {
         let root = TempDirGuard::new("provider-capture-corrupt");
@@ -669,6 +824,19 @@ mod tests {
         let manifest = store
             .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"original")
             .expect("capture");
+        let orphan = root.path().join("captures/cspec/sha256/ff/orphan");
+        std::fs::create_dir_all(orphan.parent().expect("orphan parent")).expect("create parent");
+        std::fs::write(&orphan, b"orphan").expect("write orphan");
+        assert!(
+            store
+                .planned_maintenance_bytes_freed()
+                .expect("plan maintenance")
+                >= b"orphan".len() as u64
+        );
+        assert!(orphan.exists(), "maintenance planning must not delete data");
+        store.maintain().expect("maintain");
+        assert!(!orphan.exists());
+
         std::fs::write(
             root.path()
                 .join("captures/cspec/sha256")
@@ -681,11 +849,5 @@ mod tests {
             store.read(&manifest.capture_id),
             Err(ProviderCaptureError::Corrupt)
         );
-
-        let orphan = root.path().join("captures/cspec/sha256/ff/orphan");
-        std::fs::create_dir_all(orphan.parent().expect("orphan parent")).expect("create parent");
-        std::fs::write(&orphan, b"orphan").expect("write orphan");
-        store.maintain().expect("maintain");
-        assert!(!orphan.exists());
     }
 }

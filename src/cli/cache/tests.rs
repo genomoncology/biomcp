@@ -8,11 +8,11 @@ use ssri::Integrity;
 
 use super::{
     CacheStatsAgeRange, CacheStatsOrigin, CacheStatsReport, build_cache_stats_report,
-    collect_cache_stats_report, collect_cache_stats_report_with, render_path_for_config,
+    collect_cache_stats_report_with, render_path_for_config,
 };
 use crate::cache::{
     CacheBlob, CacheConfigOrigins, CacheEntry, CacheSnapshot, ConfigOrigin, DiskFreeThreshold,
-    ResolvedCacheConfig,
+    ProviderCaptureProvider, ProviderCaptureStore, ResolvedCacheConfig,
 };
 
 #[test]
@@ -53,42 +53,34 @@ fn render_path_for_config_keeps_relative_cache_roots_relative() {
 }
 
 #[test]
-#[serial_test::serial]
 fn cache_stats_report_separates_provider_capture_namespace_bytes() {
     let root = crate::test_support::TempDirGuard::new("cache-stats-provider-captures");
-    let capture = root
-        .path()
-        .join("captures")
-        .join("cspec")
-        .join("sha256")
-        .join("ab")
-        .join("abcdef");
-    std::fs::create_dir_all(capture.parent().expect("capture parent"))
-        .expect("create capture namespace");
-    std::fs::write(&capture, b"exact provider bytes").expect("seed capture bytes");
+    let manifest = ProviderCaptureStore::new(root.path())
+        .capture_bytes(
+            ProviderCaptureProvider::Cspec,
+            "application/octet-stream",
+            b"exact provider bytes",
+        )
+        .expect("capture provider bytes");
+    let report = build_cache_stats_report(
+        &test_snapshot(root.path().join("http"), Vec::new(), Vec::new()),
+        &test_config(
+            root.path(),
+            10_000_000_000,
+            86_400,
+            CacheConfigOrigins {
+                cache_root: ConfigOrigin::Default,
+                max_size: ConfigOrigin::Default,
+                min_disk_free: ConfigOrigin::Default,
+                max_age: ConfigOrigin::Default,
+            },
+        ),
+    )
+    .expect("build managed cache stats");
 
-    let previous = std::env::var_os("BIOMCP_CACHE_DIR");
-    // SAFETY: this serial test restores the process-wide configuration variable.
-    unsafe { std::env::set_var("BIOMCP_CACHE_DIR", root.path()) };
-    let report = collect_cache_stats_report();
-    // SAFETY: restore the process-wide configuration variable before handling the result.
-    unsafe {
-        if let Some(value) = previous {
-            std::env::set_var("BIOMCP_CACHE_DIR", value);
-        } else {
-            std::env::remove_var("BIOMCP_CACHE_DIR");
-        }
-    }
-    let report = report.expect("collect managed cache stats");
-
-    let capture_bytes = serde_json::to_value(&report)
-        .expect("serialize cache stats")
-        .get("provider_capture_bytes")
-        .and_then(serde_json::Value::as_u64)
-        .unwrap_or_default();
     assert!(
-        capture_bytes >= b"exact provider bytes".len() as u64,
-        "stats must separately account for capture bytes"
+        report.provider_capture_bytes >= manifest.byte_length,
+        "stats must separately account for a valid provider capture"
     );
 }
 
