@@ -23,6 +23,7 @@ pub(crate) struct CleanReport {
     pub(crate) orphans_removed: usize,
     pub(crate) entries_removed: usize,
     pub(crate) bytes_freed: u64,
+    pub(crate) provider_capture_bytes_freed: u64,
     pub(crate) errors: Vec<String>,
 }
 
@@ -75,6 +76,7 @@ where
                 .count(),
             entries_removed: plan.entry_removals.len(),
             bytes_freed: plan.reclaimed_blob_bytes,
+            provider_capture_bytes_freed: 0,
             errors: Vec::new(),
         });
     }
@@ -146,6 +148,7 @@ where
         orphans_removed,
         entries_removed,
         bytes_freed,
+        provider_capture_bytes_freed: 0,
         errors,
     })
 }
@@ -269,6 +272,7 @@ mod tests {
                 orphans_removed: 1,
                 entries_removed: 0,
                 bytes_freed: 12,
+                provider_capture_bytes_freed: 0,
                 errors: Vec::new(),
             }
         );

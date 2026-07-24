@@ -572,6 +572,7 @@ mod tests {
                         orphans_removed: 0,
                         entries_removed: 1,
                         bytes_freed: 5,
+                        provider_capture_bytes_freed: 0,
                         errors: Vec::new(),
                     })
                 }
@@ -636,6 +637,7 @@ mod tests {
                         orphans_removed: 1,
                         entries_removed: 0,
                         bytes_freed: 6,
+                        provider_capture_bytes_freed: 0,
                         errors: Vec::new(),
                     })
                 }
@@ -694,6 +696,7 @@ mod tests {
                         orphans_removed: 0,
                         entries_removed: 0,
                         bytes_freed: 0,
+                        provider_capture_bytes_freed: 0,
                         errors: errors.clone(),
                     })
                 },

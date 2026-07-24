@@ -12,7 +12,7 @@ use super::{
 };
 use crate::cache::{
     CacheBlob, CacheConfigOrigins, CacheEntry, CacheSnapshot, ConfigOrigin, DiskFreeThreshold,
-    ResolvedCacheConfig,
+    ProviderCaptureProvider, ProviderCaptureStore, ResolvedCacheConfig,
 };
 
 #[test]
@@ -49,6 +49,38 @@ fn render_path_for_config_keeps_relative_cache_roots_relative() {
     assert_eq!(
         render_path_for_config(&config),
         PathBuf::from("relative-cache/http").display().to_string()
+    );
+}
+
+#[test]
+fn cache_stats_report_separates_provider_capture_namespace_bytes() {
+    let root = crate::test_support::TempDirGuard::new("cache-stats-provider-captures");
+    let manifest = ProviderCaptureStore::new(root.path())
+        .capture_bytes(
+            ProviderCaptureProvider::Cspec,
+            "application/octet-stream",
+            b"exact provider bytes",
+        )
+        .expect("capture provider bytes");
+    let report = build_cache_stats_report(
+        &test_snapshot(root.path().join("http"), Vec::new(), Vec::new()),
+        &test_config(
+            root.path(),
+            10_000_000_000,
+            86_400,
+            CacheConfigOrigins {
+                cache_root: ConfigOrigin::Default,
+                max_size: ConfigOrigin::Default,
+                min_disk_free: ConfigOrigin::Default,
+                max_age: ConfigOrigin::Default,
+            },
+        ),
+    )
+    .expect("build managed cache stats");
+
+    assert!(
+        report.provider_capture_bytes >= manifest.byte_length,
+        "stats must separately account for a valid provider capture"
     );
 }
 
@@ -150,6 +182,7 @@ fn build_cache_stats_report_empty_snapshot_has_zero_counts_null_age_and_default_
             referenced_blob_bytes: 0,
             blob_count: 0,
             orphan_count: 0,
+            provider_capture_bytes: 0,
             age_range: None,
             max_size_bytes: 10_000_000_000,
             max_size_origin: CacheStatsOrigin::Default,
@@ -281,6 +314,7 @@ fn cache_stats_report_markdown_is_heading_free_and_stable() {
         referenced_blob_bytes: 24,
         blob_count: 3,
         orphan_count: 1,
+        provider_capture_bytes: 0,
         age_range: Some(CacheStatsAgeRange {
             oldest_ms: 100,
             newest_ms: 500,
@@ -301,6 +335,7 @@ fn cache_stats_report_markdown_is_heading_free_and_stable() {
 | Referenced blob bytes | 24 |
 | Blob files | 3 |
 | Orphan blobs | 1 |
+| Provider capture bytes | 0 |
 | Age range | 100 .. 500 |
 | Max size | 5000 bytes (env) |
 | Min disk free | 10% (default) |

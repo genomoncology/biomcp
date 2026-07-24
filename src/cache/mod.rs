@@ -5,6 +5,7 @@ mod limits;
 mod manager;
 pub(crate) mod migration;
 mod planner;
+mod provider_capture;
 
 #[allow(unused_imports)]
 pub(crate) use clean::{CleanOptions, CleanReport, execute_cache_clean};
@@ -26,4 +27,8 @@ pub(crate) use migration::{MigrationOutcome, ensure_body_limited_cache_epoch, mi
 pub(crate) use planner::{
     CacheBlob, CacheCleanupPlan, CacheEntry, CachePlannerError, CacheSnapshot, plan_age_cleanup,
     plan_composite_cleanup, plan_orphan_gc, plan_size_lru, snapshot_cache,
+};
+#[allow(unused_imports)]
+pub(crate) use provider_capture::{
+    ProviderCaptureError, ProviderCaptureManifest, ProviderCaptureProvider, ProviderCaptureStore,
 };

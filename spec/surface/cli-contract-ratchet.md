@@ -83,6 +83,20 @@ arguments instead of returning a successful empty page or bucket list.
 }
 ```
 
+## Cache stats separate provider-capture storage from HTTP cache storage
+
+Provider captures are a bounded internal store, not HTTP CACache blobs. Operators
+can see their aggregate retained size without exposing a capture path or response
+content; the existing HTTP blob metrics retain their original meaning.
+
+```bash
+biomcp --json cache stats | mustmatch like '"provider_capture_bytes":'
+```
+
+```bash
+biomcp --json cache clean --dry-run | mustmatch like '"provider_capture_bytes_freed":'
+```
+
 ## Skill Help Documents Worked-Example Selectors
 
 The skill selector is intentionally positional: agents and humans can open a
