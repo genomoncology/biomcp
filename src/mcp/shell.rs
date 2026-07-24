@@ -62,6 +62,12 @@ struct TypedGet {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct TypedVariantCar {
+    #[schemars(length(min = 1, max = 50))]
+    inputs: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct TypedVariantErepo {
     #[serde(default)]
     caid: Option<String>,
@@ -664,6 +670,34 @@ impl BioMcpServer {
         Self::execute_args(args, json).await
     }
 
+    /// Normalize 1-50 versioned RefSeq HGVS values through the read-only ClinGen Allele Registry.
+    #[tool(annotations(
+        title = "BioMCP ClinGen Allele Registry normalization",
+        read_only_hint = true
+    ))]
+    async fn variant_normalize_car(
+        &self,
+        Parameters(input): Parameters<TypedVariantCar>,
+    ) -> Result<CallToolResult, McpError> {
+        if input.inputs.is_empty() || input.inputs.len() > 50 {
+            return Err(McpError::invalid_params(
+                "variant_normalize_car inputs must contain 1-50 HGVS strings",
+                None,
+            ));
+        }
+        match crate::entities::variant::normalize_car_batch(input.inputs).await {
+            Ok(response) => Ok(CallToolResult::success(vec![Content::text(
+                crate::render::json::to_pretty(&response).map_err(|error| {
+                    McpError::internal_error(
+                        format!("Failed to serialize CAR response: {error}"),
+                        None,
+                    )
+                })?,
+            )])),
+            Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+        }
+    }
+
     /// Retrieve versioned ClinGen ERepo expert assertions for one CAid or a bounded CAid batch.
     #[tool(annotations(title = "BioMCP ClinGen ERepo assertions", read_only_hint = true))]
     async fn variant_erepo(
@@ -1025,7 +1059,7 @@ mod tests {
 
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
-        TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles,
+        TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles, TypedVariantCar,
         VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, all_get_sections, get_args,
         get_section_groups, index_handler, is_allowed_mcp_command, mcp_rejection_message,
         redact_mcp_json_text, redact_mcp_text, search_args, subcommand_names, to_resource_result,
@@ -1125,6 +1159,14 @@ mod tests {
             result.is_err(),
             "mutually exclusive CSpec selectors must fail"
         );
+    }
+
+    #[test]
+    fn typed_variant_car_schema_is_bounded() {
+        let schema =
+            serde_json::to_value(rmcp::schemars::schema_for!(TypedVariantCar)).expect("CAR schema");
+        assert_eq!(schema["properties"]["inputs"]["minItems"], 1);
+        assert_eq!(schema["properties"]["inputs"]["maxItems"], 50);
     }
 
     #[test]

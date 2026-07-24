@@ -14,6 +14,20 @@ BioMCP supports multiple input forms:
 These exact formats are accepted by `biomcp get variant` and the exact-ID
 helper commands.
 
+## ClinGen Allele Registry normalization
+
+Use CAR for a source-provided CAid and bounded alias collections for versioned RefSeq
+transcript coding (`NM_...:c.`) or genomic (`NC_...:g.`) HGVS values. It is a
+read-only lookup: BioMCP does not infer equivalence, register alleles, or liftover.
+
+```bash
+biomcp --json variant normalize car 'NM_000546.6:c.215C>G'
+biomcp --json variant normalize car --input car-hgvs.json
+```
+
+The batch file is a bare JSON array of 1–50 values and may also be read from stdin
+with `--input -`. `--input` is available only with `car` and requires `--json`.
+
 ## ClinGen ERepo expert assertions
 
 Use a ClinGen Allele identifier (CAid) to retrieve source-faithful expert-panel

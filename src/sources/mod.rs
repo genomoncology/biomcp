@@ -65,6 +65,7 @@ pub(crate) mod cbioportal_study;
 pub(crate) mod chembl;
 pub(crate) mod civic;
 pub(crate) mod clingen;
+pub(crate) mod clingen_allele_registry;
 pub(crate) mod clingen_cspec;
 pub(crate) mod clingen_erepo;
 pub(crate) mod clinicaltrials;

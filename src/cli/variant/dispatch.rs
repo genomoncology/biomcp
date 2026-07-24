@@ -6,6 +6,7 @@ use crate::cli::{
     PaginationMeta, empty_sections, normalize_cli_query, pagination_footer_offset,
     search_json_with_meta,
 };
+use crate::error::BioMcpError;
 
 pub(crate) async fn handle_get(
     args: VariantGetArgs,
@@ -150,12 +151,45 @@ pub(crate) async fn handle_command(
             ))
             .await;
         }
-        VariantCommand::Normalize { service, variant } => {
-            let result = crate::entities::variant::normalize_variant(&service, &variant).await?;
-            if json {
-                super::normalization_json::render(&result)?
+        VariantCommand::Normalize {
+            service,
+            variant,
+            input,
+        } => {
+            if input.is_some() && !service.eq_ignore_ascii_case("car") {
+                return Err(BioMcpError::InvalidArgument(
+                    "variant normalize --input is available only for car".into(),
+                )
+                .into());
+            }
+            if let Some(input) = input {
+                return Box::pin(super::car::handle_batch(&input, json)).await;
+            }
+            let variant = variant.ok_or_else(|| {
+                BioMcpError::InvalidArgument(
+                    "variant normalize requires HGVS input or --input".into(),
+                )
+            })?;
+            if service.eq_ignore_ascii_case("car") {
+                let item = crate::entities::variant::normalize_car(&variant).await?;
+                if json {
+                    crate::render::json::to_pretty(&item)?
+                } else {
+                    format!(
+                        "# ClinGen Allele Registry normalization\n\nInput: {}\nStatus: {:?}\nCAid: {}\n",
+                        item.input,
+                        item.status,
+                        item.caid.as_deref().unwrap_or("-")
+                    )
+                }
             } else {
-                crate::render::markdown::variant_normalization_markdown(&result)
+                let result =
+                    crate::entities::variant::normalize_variant(&service, &variant).await?;
+                if json {
+                    super::normalization_json::render(&result)?
+                } else {
+                    crate::render::markdown::variant_normalization_markdown(&result)
+                }
             }
         }
         VariantCommand::External(args) => {

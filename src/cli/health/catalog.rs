@@ -302,6 +302,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "ClinGen Allele Registry",
+        affects: Some("variant normalization"),
+        probe: ProbeKind::Get {
+            url: "https://reg.genome.network/allele?hgvs=NM_000546.6%3Ac.215C%3EG&fields=none%2B%2540id",
+        },
+    },
+    SourceDescriptor {
         api: "ClinGen CSpec",
         affects: Some("gene cspec helper"),
         probe: ProbeKind::Get {

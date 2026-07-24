@@ -41,6 +41,7 @@ fn health_inventory_includes_all_expected_sources() {
             "GTEx",
             "DGIdb",
             "ClinGen",
+            "ClinGen Allele Registry",
             "ClinGen CSpec",
             "ClinGen ERepo",
             "gnomAD",

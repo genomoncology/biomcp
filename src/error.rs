@@ -13,6 +13,7 @@ impl SourceProvider {
     pub const CHEMBL: Self = Self::new("ChEMBL");
     pub const CIVIC: Self = Self::new("CIViC");
     pub const CLINGEN: Self = Self::new("ClinGen");
+    pub const CLINGEN_CAR: Self = Self::new("ClinGen Allele Registry");
     pub const CLINGEN_CSPEC: Self = Self::new("ClinGen CSpec");
     pub const CLINGEN_EREPO: Self = Self::new("ClinGen ERepo");
     pub const CLINICAL_TRIALS: Self = Self::new("ClinicalTrials.gov");
@@ -77,6 +78,7 @@ impl SourceProvider {
         Self::CHEMBL,
         Self::CIVIC,
         Self::CLINGEN,
+        Self::CLINGEN_CAR,
         Self::CLINGEN_CSPEC,
         Self::CLINGEN_EREPO,
         Self::CLINICAL_TRIALS,
@@ -153,6 +155,7 @@ impl SourceProvider {
             "chembl" | "ChEMBL" => Self::CHEMBL,
             "civic" | "CIViC" => Self::CIVIC,
             "clingen" | "ClinGen" => Self::CLINGEN,
+            "clingen_car" | "ClinGen Allele Registry" => Self::CLINGEN_CAR,
             "clingen_cspec" | "ClinGen CSpec" => Self::CLINGEN_CSPEC,
             "clingen_erepo" | "ClinGen ERepo" => Self::CLINGEN_EREPO,
             "clinicaltrials.gov" | "ClinicalTrials.gov" => Self::CLINICAL_TRIALS,

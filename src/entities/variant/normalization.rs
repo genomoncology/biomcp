@@ -7,6 +7,7 @@ use std::sync::OnceLock;
 use crate::error::BioMcpError;
 
 const MAX_TRANSCRIPT_HGVS_LEN: usize = 512;
+const MAX_CAR_HGVS_LEN: usize = 512;
 
 pub(crate) fn transcript_coding_hgvs_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
@@ -63,10 +64,73 @@ impl VariantNormalizationStatus {
     }
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CarAliasCollection {
+    pub values: Vec<String>,
+    pub source_count: usize,
+    pub truncated: bool,
+}
+
+impl CarAliasCollection {
+    pub(crate) fn bounded(mut values: Vec<String>, limit: usize) -> Self {
+        values.sort();
+        values.dedup();
+        let source_count = values.len();
+        values.truncate(limit);
+        Self {
+            values,
+            source_count,
+            truncated: source_count > limit,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CarNormalizationStatus {
+    Resolved,
+    NotFound,
+    Invalid,
+    Indeterminate,
+    Unavailable,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarProvenance {
+    pub request_template_version: String,
+    pub car_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarNormalizationItem {
+    pub input: String,
+    pub status: CarNormalizationStatus,
+    pub exhaustive: bool,
+    pub caid: Option<String>,
+    pub canonical_title: Option<String>,
+    pub genomic_aliases: CarAliasCollection,
+    pub transcript_aliases: CarAliasCollection,
+    pub protein_aliases: CarAliasCollection,
+    pub external_ids: CarAliasCollection,
+    pub source: String,
+    pub query: String,
+    pub warnings: Vec<String>,
+    pub error: Option<String>,
+    pub provenance: CarProvenance,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarNormalizationBatchResponse {
+    pub items: Vec<CarNormalizationItem>,
+    pub complete: bool,
+    pub provider: String,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VariantNormalizationService {
     Mutalyzer,
     VariantValidator,
+    Car,
 }
 
 impl VariantNormalizationService {
@@ -74,6 +138,7 @@ impl VariantNormalizationService {
         match self {
             Self::Mutalyzer => "mutalyzer",
             Self::VariantValidator => "variantvalidator",
+            Self::Car => "car",
         }
     }
 }
@@ -85,13 +150,34 @@ pub fn parse_variant_normalization_services(
         "all" => Ok(vec![
             VariantNormalizationService::Mutalyzer,
             VariantNormalizationService::VariantValidator,
+            VariantNormalizationService::Car,
         ]),
         "mutalyzer" => Ok(vec![VariantNormalizationService::Mutalyzer]),
         "variantvalidator" => Ok(vec![VariantNormalizationService::VariantValidator]),
+        "car" => Ok(vec![VariantNormalizationService::Car]),
         other => Err(BioMcpError::InvalidArgument(format!(
-            "Invalid normalization service: {other}. Expected one of: all, mutalyzer, variantvalidator"
+            "Invalid normalization service: {other}. Expected one of: all, mutalyzer, variantvalidator, car"
         ))),
     }
+}
+
+pub fn validate_car_hgvs_input(input: &str) -> Result<String, BioMcpError> {
+    let trimmed = input.trim();
+    let valid = trimmed.len() <= MAX_CAR_HGVS_LEN
+        && ((trimmed.starts_with("NM_") && trimmed.contains(":c."))
+            || (trimmed.starts_with("NC_") && trimmed.contains(":g.")))
+        && trimmed.split_once(':').is_some_and(|(accession, _)| {
+            accession.rsplit_once('.').is_some_and(|(_, version)| {
+                !version.is_empty() && version.bytes().all(|byte| byte.is_ascii_digit())
+            })
+        });
+    if !valid {
+        return Err(BioMcpError::InvalidArgument(
+            "unsupported_notation: CAR requires versioned RefSeq NM_:c. or NC_:g. HGVS input"
+                .into(),
+        ));
+    }
+    Ok(trimmed.to_owned())
 }
 
 pub fn validate_transcript_hgvs_input(input: &str) -> Result<String, BioMcpError> {
@@ -107,12 +193,80 @@ pub fn validate_transcript_hgvs_input(input: &str) -> Result<String, BioMcpError
     Ok(trimmed.to_string())
 }
 
+pub async fn normalize_car(input: &str) -> Result<CarNormalizationItem, BioMcpError> {
+    let input = validate_car_hgvs_input(input)?;
+    crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new()?
+        .normalize(&input)
+        .await
+}
+
+pub async fn normalize_car_batch(
+    inputs: Vec<String>,
+) -> Result<CarNormalizationBatchResponse, BioMcpError> {
+    if !(1..=50).contains(&inputs.len()) {
+        return Err(BioMcpError::InvalidArgument(
+            "CAR batch input must contain 1-50 HGVS strings".into(),
+        ));
+    }
+    let inputs = inputs
+        .iter()
+        .map(|input| validate_car_hgvs_input(input))
+        .collect::<Result<Vec<_>, _>>()?;
+    crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new()?
+        .normalize_batch(&inputs)
+        .await
+}
+
 pub async fn normalize_variant(
     service: &str,
     input: &str,
 ) -> Result<VariantNormalizationResponse, BioMcpError> {
     let services = parse_variant_normalization_services(service)?;
-    let input = validate_transcript_hgvs_input(input)?;
+    let input = if services == [VariantNormalizationService::Car] {
+        validate_car_hgvs_input(input)?
+    } else {
+        validate_transcript_hgvs_input(input)?
+    };
+    if services
+        == [
+            VariantNormalizationService::Mutalyzer,
+            VariantNormalizationService::VariantValidator,
+            VariantNormalizationService::Car,
+        ]
+    {
+        let (mutalyzer, variantvalidator, car) = tokio::join!(
+            async {
+                crate::sources::mutalyzer::MutalyzerClient::new()?
+                    .normalize(&input)
+                    .await
+            },
+            async {
+                crate::sources::variantvalidator::VariantValidatorClient::new()?
+                    .normalize(&input)
+                    .await
+            },
+            async {
+                let item = normalize_car(&input).await?;
+                Ok::<_, BioMcpError>(car_service_result(item))
+            },
+        );
+        let mut results = Vec::with_capacity(3);
+        for (service, result) in [
+            (VariantNormalizationService::Mutalyzer, mutalyzer),
+            (
+                VariantNormalizationService::VariantValidator,
+                variantvalidator,
+            ),
+            (VariantNormalizationService::Car, car),
+        ] {
+            results.push(result.unwrap_or_else(|err| service_error_result(service, err)));
+        }
+        return Ok(VariantNormalizationResponse {
+            input,
+            services: results,
+        });
+    }
+
     let mut results = Vec::with_capacity(services.len());
 
     for service in services {
@@ -127,6 +281,9 @@ pub async fn normalize_variant(
                     .normalize(&input)
                     .await
             }
+            VariantNormalizationService::Car => {
+                Ok(car_service_result(normalize_car(&input).await?))
+            }
         }
         .unwrap_or_else(|err| service_error_result(service, err));
         results.push(result);
@@ -136,6 +293,25 @@ pub async fn normalize_variant(
         input,
         services: results,
     })
+}
+
+fn car_service_result(item: CarNormalizationItem) -> VariantNormalizationServiceResult {
+    VariantNormalizationServiceResult {
+        service: "car".into(),
+        status: if item.status == CarNormalizationStatus::Resolved {
+            VariantNormalizationStatus::Success
+        } else {
+            VariantNormalizationStatus::ServiceError
+        },
+        input_description: None,
+        normalized_description: item.caid,
+        corrected_description: None,
+        transcript_description: None,
+        protein: None,
+        genomic_descriptions: item.genomic_aliases.values,
+        warnings: item.warnings,
+        message: item.error,
+    }
 }
 
 fn service_error_result(

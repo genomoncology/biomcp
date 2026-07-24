@@ -136,6 +136,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Reviewed on: `2026-03-20`
 - Notes: Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly.
 
+### ClinGen Allele Registry
+
+- BioMCP surfaces: `variant normalize car <HGVS>`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: public web/API access
+- License / terms summary: public ClinGen curation resources with publication and attribution expectations
+- Redistribution / reuse summary: generally queryable and reusable, but users should preserve attribution and source context
+- Official terms URL: <https://reg.genome.network>
+- Reviewed on: `2026-07-24`
+- Notes: BioMCP makes read-only projected CAR lookups and returns source facts without assigning clinical meaning.
+
 ### ClinGen CSpec
 
 - BioMCP surfaces: `gene cspec <GENE>; gene_cspec`

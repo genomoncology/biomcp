@@ -13,6 +13,7 @@ DIRECT_SOURCE_MODULES = {
     "chembl": "ChEMBL",
     "civic": "CIViC",
     "clingen": "ClinGen",
+    "clingen_allele_registry": "ClinGen Allele Registry",
     "clingen_cspec": "ClinGen CSpec",
     "clingen_erepo": "ClinGen ERepo",
     "clinicaltrials": "ClinicalTrials.gov",

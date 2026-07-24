@@ -681,6 +681,19 @@ SOURCE_PAGE_SPECS = {
             'biomcp search phenotype "HP:0001250 HP:0001263" --limit 10',
         ],
     },
+    "clingen-allele-registry.md": {
+        "title": "ClinGen Allele Registry normalization | BioMCP",
+        "description": "Normalize supported versioned RefSeq HGVS values to ClinGen CAids with bounded source aliases.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://reg.genome.network",
+        "required_intro_phrases": ["source facts", "does not infer equivalence"],
+        "exposes": ["variant normalize car <HGVS>", "variant_normalize_car"],
+        "example_commands": [
+            "biomcp --json variant normalize car 'NM_000546.6:c.215C>G'",
+            "biomcp --json variant normalize car --input car-hgvs.json",
+            "printf '[\"NM_000546.6:c.215C>G\"]' | biomcp --json variant normalize car --input -",
+        ],
+    },
     "clingen-cspec.md": {
         "title": "ClinGen CSpec source documents | BioMCP",
         "description": "Retrieve versioned ClinGen Criteria Specification Registry source documents with preserved captures.",
@@ -715,6 +728,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - Overview: sources/index.md
       - PubMed: sources/pubmed.md
       - ClinicalTrials.gov: sources/clinicaltrials-gov.md
+      - ClinGen Allele Registry: sources/clingen-allele-registry.md
       - ClinGen CSpec: sources/clingen-cspec.md
       - ClinGen ERepo: sources/clingen-erepo.md
       - ClinVar: sources/clinvar.md

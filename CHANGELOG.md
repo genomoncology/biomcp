@@ -4,6 +4,10 @@
 
 ### New features
 
+- Added read-only ClinGen Allele Registry (`clingen_car`) normalization for supported
+  versioned RefSeq HGVS values, including bounded CLI JSON batches and the typed
+  `variant_normalize_car` MCP tool.
+
 - Added a private bounded provider-capture store that retains verified public
   response bytes behind content-addressed handles for future source integrations;
   it does not yet add a source command or provider route.
