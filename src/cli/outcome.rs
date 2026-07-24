@@ -1,17 +1,14 @@
 //! CLI outcome execution seam and MCP chart argument rewriting.
 
-use std::io::IsTerminal;
-
 use super::response_contract::{
     JsonResponseContract, command_requests_json, finalize_structured_error,
 };
 use super::skill::SkillCommand;
 use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity, StudyCommand};
-
+use std::io::IsTerminal;
 fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
     error.exit_code()
 }
-
 fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {
     if outcome.exit_code == 0 {
         if let Some(bytes) = outcome.bytes {
@@ -22,7 +19,6 @@ fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {
         anyhow::bail!("{}", outcome.text)
     }
 }
-
 fn mcp_output_flag_error() -> crate::error::BioMcpError {
     crate::error::BioMcpError::InvalidArgument(
         "MCP chart responses do not support --output/-o. Omit file output and consume the inline SVG image content instead.".into(),
@@ -555,7 +551,11 @@ async fn run_outcome_inner(
             .await
         }
         Commands::Gene {
-            cmd: super::GeneCommand::CspecDocument { capture_id },
+            cmd:
+                super::GeneCommand::Cspec(super::gene::CspecArgs {
+                    command: Some(super::gene::CspecCommand::Document { capture_id }),
+                    ..
+                }),
         } => super::gene::cspec::document(capture_id, json),
         Commands::Gene {
             cmd: super::GeneCommand::Definition { symbol },

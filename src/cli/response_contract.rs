@@ -123,8 +123,7 @@ impl JsonResponseContract {
                 super::GeneCommand::Pathways { .. } => Self {
                     collection_paths: &[PATHWAYS_PATH],
                 },
-                super::GeneCommand::Cspec { .. }
-                | super::GeneCommand::CspecDocument { .. }
+                super::GeneCommand::Cspec(_)
                 | super::GeneCommand::Definition { .. }
                 | super::GeneCommand::External(_) => Self::NONE,
             },

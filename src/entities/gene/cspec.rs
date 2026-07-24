@@ -9,6 +9,9 @@ use crate::sources::clingen_cspec::CspecClient;
 
 const FIELD_LIMIT: usize = 16 * 1024;
 
+#[derive(Debug)]
+struct CspecDocumentIri(reqwest::Url);
+
 #[derive(Debug, Serialize)]
 pub(crate) struct CspecManifestResponse {
     pub gene: String,
@@ -20,6 +23,11 @@ pub(crate) struct CspecResponse {
     pub resource_iri: String,
     pub specification_id: String,
     pub display_version: String,
+    pub gene: String,
+    pub disease: Option<String>,
+    pub vcep: Option<String>,
+    pub status: Option<String>,
+    pub current: bool,
     pub criteria: Vec<CspecCriterion>,
     pub offset: usize,
     pub limit: usize,
@@ -63,11 +71,13 @@ pub(crate) async fn retrieve(
     let manifest = manifest(gene, &client).await?;
     if let Some(iri) = version_iri {
         let selected = select(&manifest.resource_iris, iri)?;
-        let bytes = client.document(&selected).await?;
+        let bytes = client.document(&selected.0).await?;
         let capture = capture(&bytes)?;
+        let stored_bytes = read_capture(&capture.capture_id)?;
         return Ok(serde_json::to_value(page_from_bytes(
-            &bytes,
-            selected.as_str(),
+            &stored_bytes,
+            selected.0.as_str(),
+            gene,
             offset,
             limit,
             &capture,
@@ -79,6 +89,7 @@ pub(crate) async fn retrieve(
 
 pub(crate) fn page_capture(
     capture_id: &str,
+    gene: &str,
     offset: usize,
     limit: usize,
 ) -> Result<CspecResponse, BioMcpError> {
@@ -87,7 +98,7 @@ pub(crate) fn page_capture(
     let bytes = store.read(capture_id).map_err(capture_error)?;
     let manifest = capture_manifest(capture_id, &bytes)?;
     let iri = document_iri_from_bytes(&bytes)?;
-    page_from_bytes(&bytes, &iri, offset, limit, &manifest)
+    page_from_bytes(&bytes, &iri, gene, offset, limit, &manifest)
 }
 
 pub(crate) fn read_capture(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
@@ -113,7 +124,7 @@ async fn manifest(gene: &str, client: &CspecClient) -> Result<CspecManifestRespo
             .and_then(Value::as_str)
             .ok_or_else(|| invalid("manifest row @id is required"))?;
         let parsed = parse_iri(iri)?;
-        resource_iris.push(parsed.to_string());
+        resource_iris.push(parsed.0.to_string());
     }
     Ok(CspecManifestResponse {
         gene: gene.into(),
@@ -122,11 +133,11 @@ async fn manifest(gene: &str, client: &CspecClient) -> Result<CspecManifestRespo
     })
 }
 
-fn select(manifest: &[String], value: &str) -> Result<reqwest::Url, BioMcpError> {
+fn select(manifest: &[String], value: &str) -> Result<CspecDocumentIri, BioMcpError> {
     let selected = parse_iri(value)?;
     let matches = manifest
         .iter()
-        .filter(|candidate| *candidate == selected.as_str())
+        .filter(|candidate| *candidate == selected.0.as_str())
         .count();
     match matches {
         1 => Ok(selected),
@@ -140,7 +151,7 @@ fn select(manifest: &[String], value: &str) -> Result<reqwest::Url, BioMcpError>
     }
 }
 
-fn parse_iri(value: &str) -> Result<reqwest::Url, BioMcpError> {
+fn parse_iri(value: &str) -> Result<CspecDocumentIri, BioMcpError> {
     let url = reqwest::Url::parse(value)
         .map_err(|_| invalid("CSpec version must be a full resource IRI"))?;
     if url.scheme() != "https"
@@ -169,7 +180,7 @@ fn parse_iri(value: &str) -> Result<reqwest::Url, BioMcpError> {
     {
         return Err(invalid("invalid CSpec resource IRI path"));
     }
-    Ok(url)
+    Ok(CspecDocumentIri(url))
 }
 
 fn capture(bytes: &[u8]) -> Result<ProviderCaptureManifest, BioMcpError> {
@@ -217,6 +228,7 @@ fn invalid(message: &str) -> BioMcpError {
 fn page_from_bytes(
     bytes: &[u8],
     iri: &str,
+    gene: &str,
     offset: usize,
     limit: usize,
     capture: &ProviderCaptureManifest,
@@ -250,6 +262,26 @@ fn page_from_bytes(
         .and_then(Value::as_str)
         .ok_or_else(|| invalid("document display version is required"))?
         .into();
+    let status = content
+        .and_then(|value| value.get("states"))
+        .and_then(Value::as_array)
+        .and_then(|states| {
+            states
+                .iter()
+                .find(|state| state.get("current") == Some(&Value::Bool(true)))
+        })
+        .and_then(|state| state.get("name"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let vcep = data
+        .get("ldFor")
+        .and_then(|value| value.get("Organization"))
+        .and_then(Value::as_array)
+        .and_then(|organizations| organizations.first())
+        .and_then(|organization| organization.get("entContent"))
+        .and_then(|content| content.get("shortTitle"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
     let all = ld
         .and_then(|value| value.get("CriteriaCode"))
         .and_then(Value::as_array)
@@ -265,6 +297,14 @@ fn page_from_bytes(
         resource_iri: iri.into(),
         specification_id: specification_id.into(),
         display_version,
+        gene: gene.into(),
+        disease: content
+            .and_then(|value| value.get("shortTitle"))
+            .and_then(Value::as_str)
+            .map(str::to_owned),
+        vcep,
+        current: status.is_some(),
+        status,
         offset,
         limit,
         total: all.len(),
@@ -326,7 +366,7 @@ fn criterion(
             .into_iter()
             .flatten()
             .filter_map(Value::as_str)
-            .map(str::to_owned)
+            .map(|value| bounded(value, "citations", &mut truncated_fields))
             .collect(),
         source_locator: format!("/data/ld/CriteriaCode/{index}"),
         capture_hash: capture.sha256.clone(),
@@ -334,10 +374,31 @@ fn criterion(
     })
 }
 fn bounded(value: &str, field: &str, truncated: &mut Vec<String>) -> String {
-    if value.len() > FIELD_LIMIT {
-        truncated.push(field.into());
-        value[..FIELD_LIMIT].to_string()
-    } else {
-        value.into()
+    if value.len() <= FIELD_LIMIT {
+        return value.into();
+    }
+    let end = value
+        .char_indices()
+        .map(|(index, _)| index)
+        .take_while(|index| *index <= FIELD_LIMIT)
+        .last()
+        .expect("non-empty strings have a UTF-8 boundary at zero");
+    truncated.push(field.into());
+    value[..end].into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{FIELD_LIMIT, bounded};
+
+    #[test]
+    fn bounded_preserves_utf8_when_the_limit_splits_a_character() {
+        let input = format!("{}é", "a".repeat(FIELD_LIMIT - 1));
+        let mut truncated = Vec::new();
+
+        let result = bounded(&input, "source_text", &mut truncated);
+
+        assert_eq!(result, "a".repeat(FIELD_LIMIT - 1));
+        assert_eq!(truncated, ["source_text"]);
     }
 }

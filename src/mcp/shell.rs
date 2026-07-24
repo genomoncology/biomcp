@@ -732,10 +732,13 @@ impl BioMcpServer {
             ));
         }
         let result = match input.capture_id {
-            Some(capture_id) => {
-                crate::entities::gene::cspec::page_capture(&capture_id, input.offset, input.limit)
-                    .and_then(|response| crate::render::json::to_pretty(&response))
-            }
+            Some(capture_id) => crate::entities::gene::cspec::page_capture(
+                &capture_id,
+                &input.gene,
+                input.offset,
+                input.limit,
+            )
+            .and_then(|response| crate::render::json::to_pretty(&response)),
             None => crate::entities::gene::cspec::retrieve(
                 &input.gene,
                 input.version_iri.as_deref(),

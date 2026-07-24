@@ -2,7 +2,9 @@ use reqwest::{StatusCode, Url};
 use serde_json::Value;
 
 use crate::error::{BioMcpError, SourceContext, SourceProvider};
-use crate::sources::{RequestBuilderSourceContextExt, read_limited_source_body_with_limit};
+use crate::sources::{
+    RequestBuilderSourceContextExt, ensure_json_content_type, read_limited_source_body_with_limit,
+};
 
 pub(crate) const CSPEC_BASE: &str = "https://cspec.clinicalgenome.org";
 const MANIFEST_LIMIT: usize = 256 * 1024;
@@ -57,18 +59,19 @@ impl CspecClient {
             .send_with_source_context(SourceContext::retry(SourceProvider::CLINGEN_CSPEC))
             .await?;
         let status = response.status();
-        let bytes = read_limited_source_body_with_limit(
-            response,
-            SourceContext::narrow(SourceProvider::CLINGEN_CSPEC),
-            limit,
-        )
-        .await?;
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .cloned();
+        let context = SourceContext::narrow(SourceProvider::CLINGEN_CSPEC);
+        let bytes = read_limited_source_body_with_limit(response, context, limit).await?;
         if !status.is_success() {
             return Err(BioMcpError::Api {
                 api: "ClinGen CSpec".into(),
                 message: format!("HTTP {status}: {}", crate::sources::body_excerpt(&bytes)),
             });
         }
+        ensure_json_content_type(context, content_type.as_ref(), &bytes)?;
         Ok((status, bytes))
     }
 }

@@ -302,6 +302,9 @@ biomcp gene trials BRAF
 biomcp gene drugs BRAF
 biomcp gene articles BRCA1
 biomcp gene pathways BRAF
+biomcp --json gene cspec ATM
+biomcp --json gene cspec ATM --version <full-resource-iri>
+biomcp gene cspec document <capture-id>
 
 # Pathway pivots
 biomcp pathway drugs R-HSA-5673001

@@ -10,6 +10,9 @@
 - Added `variant erepo` and typed `variant_erepo` MCP retrieval of versioned ClinGen
   Evidence Repository assertions, preserving source-listed criterion coverage and
   selected SEPIO provenance without ACMG/AMP interpretation.
+- Added `gene cspec` and typed `gene_cspec` retrieval of versioned ClinGen Criteria
+  Specification source documents, with exact local raw-capture streaming and no
+  ACMG interpretation or classification.
 
 - Resolved recognized JATS- and PMC-HTML-linked article supplements through stable
   asset keys, bounded provider fetches, merged discovery provenance, and typed

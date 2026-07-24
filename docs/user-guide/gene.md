@@ -122,6 +122,19 @@ When ClinGen validity rows are present, the gene card's `See also:` block
 promotes a recruiting-trial search keyed to the newest reviewed disease label
 already shown on the card, ahead of the generic gene pivots.
 
+ClinGen CSpec source documents use a separate, versioned retrieval flow. List a
+gene's returned resource IRIs, select one exact IRI, then use its capture handle
+to stream the original stored bytes locally:
+
+```bash
+biomcp --json gene cspec ATM
+biomcp --json gene cspec ATM --version https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1
+biomcp gene cspec document <capture-id>
+```
+
+CSpec returns source facts and provenance; it does not evaluate ACMG criteria or
+classify variants.
+
 Constraint metrics (gnomAD):
 
 ```bash
