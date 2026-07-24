@@ -4,6 +4,9 @@
 
 ### New features
 
+- Added a private bounded provider-capture store that retains verified public
+  response bytes behind content-addressed handles for future source integrations;
+  it does not yet add a source command or provider route.
 - Added `variant erepo` and typed `variant_erepo` MCP retrieval of versioned ClinGen
   Evidence Repository assertions, preserving source-listed criterion coverage and
   selected SEPIO provenance without ACMG/AMP interpretation.

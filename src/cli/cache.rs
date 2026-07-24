@@ -102,7 +102,7 @@ pub(crate) fn execute_clean(
             BioMcpError::InvalidArgument(format!("system clock is before the Unix epoch: {err}"))
         })?
         .as_millis();
-    crate::cache::execute_cache_clean(
+    let mut report = crate::cache::execute_cache_clean(
         &cache_path,
         crate::cache::CleanOptions {
             max_age,
@@ -111,16 +111,28 @@ pub(crate) fn execute_clean(
         },
         &config,
         now_ms,
-    )
+    )?;
+    if !dry_run {
+        report.provider_capture_bytes_freed =
+            crate::cache::ProviderCaptureStore::new(&config.cache_root)
+                .maintain()
+                .map_err(|err| {
+                    BioMcpError::Io(std::io::Error::other(format!(
+                        "provider capture maintenance failed: {err:?}"
+                    )))
+                })?;
+    }
+    Ok(report)
 }
 
 pub(crate) fn render_clean_text(report: &crate::cache::CleanReport) -> String {
     format!(
-        "Cache clean: dry_run={} orphans_removed={} entries_removed={} bytes_freed={} errors={}",
+        "Cache clean: dry_run={} orphans_removed={} entries_removed={} bytes_freed={} provider_capture_bytes_freed={} errors={}",
         report.dry_run,
         report.orphans_removed,
         report.entries_removed,
         report.bytes_freed,
+        report.provider_capture_bytes_freed,
         report.errors.len()
     )
 }
@@ -196,6 +208,7 @@ pub(crate) struct CacheStatsReport {
     pub(crate) referenced_blob_bytes: u64,
     pub(crate) blob_count: usize,
     pub(crate) orphan_count: usize,
+    pub(crate) provider_capture_bytes: u64,
     pub(crate) age_range: Option<CacheStatsAgeRange>,
     pub(crate) max_size_bytes: u64,
     pub(crate) max_size_origin: CacheStatsOrigin,
@@ -217,6 +230,10 @@ impl CacheStatsReport {
             format!("| Referenced blob bytes | {} |", self.referenced_blob_bytes),
             format!("| Blob files | {} |", self.blob_count),
             format!("| Orphan blobs | {} |", self.orphan_count),
+            format!(
+                "| Provider capture bytes | {} |",
+                self.provider_capture_bytes
+            ),
             format!("| Age range | {age_display} |"),
             format!(
                 "| Max size | {} bytes ({}) |",
@@ -274,6 +291,13 @@ pub(crate) fn build_cache_stats_report(
             .iter()
             .filter(|blob| blob.refcount == 0)
             .count(),
+        provider_capture_bytes: crate::cache::ProviderCaptureStore::new(&config.cache_root)
+            .retained_bytes()
+            .map_err(|err| {
+                BioMcpError::Io(std::io::Error::other(format!(
+                    "provider capture stats failed: {err:?}"
+                )))
+            })?,
         age_range,
         max_size_bytes: config.max_size,
         max_size_origin: CacheStatsOrigin::from(config.origins.max_size),
