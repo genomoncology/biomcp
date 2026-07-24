@@ -412,6 +412,63 @@ mod tests {
     }
 
     #[test]
+    fn blank_node_with_malformed_projected_fact_is_indeterminate() {
+        let item = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            br#"{"@id":"_:CA","genomicAlleles":"wrong"}"#,
+        );
+
+        assert_eq!(item.status, CarNormalizationStatus::Indeterminate);
+        assert!(!item.exhaustive);
+        assert!(item.caid.is_none());
+        assert!(item.genomic_aliases.values.is_empty());
+    }
+
+    #[test]
+    fn external_ids_keep_full_source_metadata_before_per_source_caps() {
+        let item = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            br#"{
+                "@id":"https://reg.genome.network/allele/CA123",
+                "externalRecords": {
+                    "dbSNP": [{"rs":9},{"rs":2},{"rs":2},{"rs":1},{"rs":8},{"rs":3},{"rs":7},{"rs":4},{"rs":6},{"rs":5}],
+                    "ClinVarVariations": [{"variationId":19},{"variationId":12},{"variationId":12},{"variationId":11},{"variationId":18},{"variationId":13},{"variationId":17},{"variationId":14},{"variationId":16},{"variationId":15}]
+                }
+            }"#,
+        );
+
+        assert_eq!(item.status, CarNormalizationStatus::Resolved);
+        assert_eq!(item.external_ids.values.len(), 16);
+        assert_eq!(item.external_ids.source_count, 18);
+        assert!(item.external_ids.truncated);
+        assert_eq!(
+            item.external_ids.values,
+            [
+                "rs1",
+                "rs2",
+                "rs3",
+                "rs4",
+                "rs5",
+                "rs6",
+                "rs7",
+                "rs8",
+                "ClinVar:11",
+                "ClinVar:12",
+                "ClinVar:13",
+                "ClinVar:14",
+                "ClinVar:15",
+                "ClinVar:16",
+                "ClinVar:17",
+                "ClinVar:18",
+            ]
+        );
+    }
+
+    #[test]
     fn decoder_does_not_accept_an_empty_caid() {
         let item =
             decode_normalize_response("NM_1.1:c.1A>G", StatusCode::OK, None, br#"{"@id":"CA"}"#);
