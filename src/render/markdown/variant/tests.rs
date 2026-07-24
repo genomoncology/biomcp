@@ -1,7 +1,7 @@
 use super::*;
 use crate::entities::variant::{
-    TreatmentImplication, VariantNormalizationResponse, VariantNormalizationServiceResult,
-    VariantNormalizationStatus,
+    TreatmentImplication, VariantNormalizationAggregate, VariantNormalizationResponse,
+    VariantNormalizationServiceResult, VariantNormalizationStatus,
 };
 
 #[test]
@@ -442,6 +442,31 @@ fn variant_oncokb_markdown_shows_truncation_note() {
     let markdown = variant_oncokb_markdown(&result);
     assert!(markdown.contains("| Drug | Level | Cancer Type | Note |"));
     assert!(markdown.contains("(and 2 more)"));
+}
+
+#[test]
+fn normalization_markdown_keeps_legacy_collection_labels() {
+    let result = VariantNormalizationResponse {
+        input: "NM_000546.6:c.215C>G".into(),
+        services: vec![VariantNormalizationAggregate::Legacy(
+            VariantNormalizationServiceResult {
+                service: "mutalyzer".into(),
+                status: VariantNormalizationStatus::Success,
+                input_description: None,
+                normalized_description: None,
+                corrected_description: None,
+                transcript_description: None,
+                protein: None,
+                genomic_descriptions: vec!["NC_000017.11:g.7674220C>G".into()],
+                warnings: vec!["provider note".into()],
+                message: None,
+            },
+        )],
+    };
+
+    let markdown = variant_normalization_markdown(&result);
+    assert!(markdown.contains("Genomic descriptions:\n- GRCh38 NC_000017.11:g.7674220C>G"));
+    assert!(markdown.contains("Warnings:\n- provider note"));
 }
 
 #[test]

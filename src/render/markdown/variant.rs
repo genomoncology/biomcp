@@ -273,14 +273,20 @@ pub fn variant_normalization_markdown(result: &VariantNormalizationResponse) -> 
                 if let Some(value) = service.transcript_description.as_deref() {
                     out.push_str(&format!("Transcript description: {value}\n"));
                 }
-                for value in &service.genomic_descriptions {
-                    out.push_str(&format!("- GRCh38 {value}\n"));
+                if !service.genomic_descriptions.is_empty() {
+                    out.push_str("Genomic descriptions:\n");
+                    for value in &service.genomic_descriptions {
+                        out.push_str(&format!("- GRCh38 {value}\n"));
+                    }
                 }
                 if let Some(protein) = &service.protein {
                     out.push_str(&format!("Protein: {protein}\n"));
                 }
-                for warning in &service.warnings {
-                    out.push_str(&format!("- {warning}\n"));
+                if !service.warnings.is_empty() {
+                    out.push_str("Warnings:\n");
+                    for warning in &service.warnings {
+                        out.push_str(&format!("- {warning}\n"));
+                    }
                 }
                 if let Some(message) = service.message.as_deref() {
                     out.push_str(&format!("Message: {message}\n"));

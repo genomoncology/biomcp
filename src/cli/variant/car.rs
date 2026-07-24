@@ -21,6 +21,11 @@ async fn read_input(path: &str) -> Result<Vec<u8>, BioMcpError> {
             .await
     };
     read.map_err(|_| BioMcpError::InvalidArgument("unable to read CAR input".into()))?;
+    if bytes.len() == READ_LIMIT as usize {
+        return Err(BioMcpError::InvalidArgument(
+            "CAR input exceeds the supported size limit".into(),
+        ));
+    }
     Ok(bytes)
 }
 
@@ -79,4 +84,24 @@ pub(super) async fn handle_batch(input: &str, json: bool) -> anyhow::Result<Comm
     Ok(CommandOutcome::stdout(crate::render::json::to_pretty(
         &response,
     )?))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn input_reader_rejects_a_file_larger_than_its_supported_size() {
+        let root = crate::test_support::TempDirGuard::new("car-input-limit");
+        let path = root.path().join("input.json");
+        tokio::fs::write(&path, vec![b' '; 64 * 1024 + 1])
+            .await
+            .expect("write oversized CAR input");
+
+        let result = read_input(path.to_str().expect("UTF-8 temporary path")).await;
+
+        assert!(
+            matches!(result, Err(BioMcpError::InvalidArgument(message)) if message.contains("exceeds"))
+        );
+    }
 }

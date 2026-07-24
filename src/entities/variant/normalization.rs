@@ -101,13 +101,13 @@ pub struct CarAliasCollection {
 
 impl CarAliasCollection {
     pub(crate) fn bounded(values: Vec<String>, limit: usize) -> Self {
-        let source_count = values.len();
         let mut unique = Vec::with_capacity(values.len());
         for value in values {
             if !unique.contains(&value) {
                 unique.push(value);
             }
         }
+        let source_count = unique.len();
         unique.truncate(limit);
         Self {
             values: unique,
@@ -399,5 +399,14 @@ mod tests {
         ] {
             assert!(validate_car_hgvs_input(input).is_err(), "{input}");
         }
+    }
+
+    #[test]
+    fn car_alias_metadata_describes_distinct_returned_aliases() {
+        let aliases = CarAliasCollection::bounded(vec!["NC_000017.11:g.1A>G".into(); 20], 12);
+
+        assert_eq!(aliases.values, ["NC_000017.11:g.1A>G"]);
+        assert_eq!(aliases.source_count, aliases.values.len());
+        assert!(!aliases.truncated);
     }
 }
