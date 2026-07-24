@@ -1,31 +1,25 @@
-# Frozen ClinGen CSpec documents
+# ClinGen CSpec commands
 
 ClinGen's Criteria Specification Registry publishes versioned VCEP source
-specifications. BioMCP lists the exact provider resource IRIs, captures one selected
-document before parsing it, and keeps raw source bytes available through a CLI-only
-capture handle.
+specifications. BioMCP exposes the CSpec command family locally; retrieval itself
+uses the real provider only in the explicit live verification lane.
 
-## Frozen manifest, captured document, and typed MCP page preserve one source capture
+## Inspect CSpec retrieval options
 
 <!-- mustmatch-lint: skip -->
 
-The frozen provider fixture contains BRAF's historical GN004 and current GN049
-series plus ATM GN020. It proves that the full provider IRI remains distinct from
-the display version, parsed criteria and raw output share one capture, and paging
-or typed MCP access does not turn source text into an ACMG conclusion.
+Use the CSpec command's help before choosing a full resource IRI. The command
+accepts a version selector and bounded page controls, and its raw capture reader is
+a distinct `document` subcommand.
 
-```bash run id=clingen-cspec-frozen exit=0
-bash ../fixtures/run-clingen-cspec-fixture.sh ../..
+```bash run id=clingen-cspec-help exit=0
+biomcp gene cspec --help
 ```
 
-```json expect=clingen-cspec-frozen contains
-{
-  "braf_keeps_gn004_and_gn049": true,
-  "atm_full_iri_is_distinct_from_display_version": true,
-  "same_capture_raw_sha256_and_length_match": true,
-  "raw_document_does_not_refetch_cspec": true,
-  "criteria_pages_are_provider_identity_ordered": true,
-  "cli_and_mcp_capture_page_match": true,
-  "criteria_do_not_claim_interpretation": true
-}
+```text expect=clingen-cspec-help contains
+Usage: biomcp gene cspec
+document
+--version
+--offset
+--limit
 ```
