@@ -115,6 +115,28 @@ See also: biomcp list gene")]
         #[arg(long, default_value = "0")]
         offset: usize,
     },
+    /// Retrieve versioned ClinGen Criteria Specification Registry source documents
+    #[command(
+        after_help = "Use a full resource IRI returned by the manifest with --version. Raw capture bytes are available only through `biomcp gene cspec document <capture-id>`."
+    )]
+    Cspec {
+        /// HGNC gene symbol
+        gene: String,
+        /// Exact full CSpec resource IRI from the manifest
+        #[arg(long)]
+        version: Option<String>,
+        /// Skip the first N criteria
+        #[arg(long, default_value = "0")]
+        offset: usize,
+        /// Maximum criteria, 1-50 (default: 25)
+        #[arg(long, default_value = "25")]
+        limit: usize,
+    },
+    /// Stream an exact stored CSpec capture without refetching
+    CspecDocument {
+        /// Provider capture handle returned by CSpec selection
+        capture_id: String,
+    },
     /// Show pathways section for this gene symbol
     #[command(after_help = "\
 EXAMPLES:
@@ -137,6 +159,7 @@ See also: biomcp list gene")]
     External(Vec<String>),
 }
 
+pub(super) mod cspec;
 mod dispatch;
 mod related;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};

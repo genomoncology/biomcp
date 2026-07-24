@@ -16,6 +16,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | PubMed | Article search, PubTator annotations, and PMC full-text handoff | [PubMed](pubmed.md) |
 | ClinicalTrials.gov | Recruiting-study search, eligibility text, and site details | [ClinicalTrials.gov](clinicaltrials-gov.md) |
 | ClinVar | Clinical significance and review-status context for variants | [ClinVar](clinvar.md) |
+| ClinGen CSpec | Versioned VCEP criteria source documents with exact captures | [ClinGen CSpec](clingen-cspec.md) |
 | ClinGen ERepo | Versioned expert assertions and criterion source facts by CAid | [ClinGen ERepo](clingen-erepo.md) |
 | OpenFDA | FAERS, recalls, device events, labels, and U.S. approval context | [OpenFDA](openfda.md) |
 | CDC WONDER VAERS | Vaccine adverse-event summaries, seriousness breakdowns, and age-distribution context | [CDC WONDER VAERS](vaers.md) |

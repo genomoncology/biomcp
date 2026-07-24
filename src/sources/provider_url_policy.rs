@@ -35,6 +35,10 @@ const FIGSHARE_ORIGINS: &[&str] = &[
     "https://s3-eu-west-1.amazonaws.com",
 ];
 const CTGOV_DOCUMENT_ORIGINS: &[&str] = &["https://cdn.clinicaltrials.gov"];
+const CSPEC_ORIGINS: &[&str] = &[
+    "https://cspec.clinicalgenome.org",
+    "https://cspec.genome.network",
+];
 
 macro_rules! provider_url_consumers {
     ($($consumer:ident),+ $(,)?) => {
@@ -123,6 +127,21 @@ impl ProviderUrlPolicy {
     /// Policy for PDF URLs returned in Semantic Scholar payloads.
     pub(crate) fn semantic_scholar_pdf() -> Result<Self, BioMcpError> {
         Self::for_consumer(ProviderUrlConsumer::SemanticScholarPdf, None)
+    }
+
+    /// Policy for exact ClinGen CSpec resource IRIs.
+    pub(crate) fn cspec() -> Result<Self, BioMcpError> {
+        Ok(Self {
+            source: "ClinGen CSpec",
+            provider: SourceProvider::CLINGEN_CSPEC,
+            allowed_origins: CSPEC_ORIGINS
+                .iter()
+                .map(|origin| AllowedOrigin::parse(origin))
+                .collect::<Result<_, _>>()?,
+            credential_origins: Vec::new(),
+            unsafe_test_origin: None,
+            pmc_linked_numeric_id: None,
+        })
     }
 
     /// Policy for one enumerated provider-returned URL consumer. API/CDN base overrides

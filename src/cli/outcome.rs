@@ -555,6 +555,9 @@ async fn run_outcome_inner(
             .await
         }
         Commands::Gene {
+            cmd: super::GeneCommand::CspecDocument { capture_id },
+        } => super::gene::cspec::document(capture_id, json),
+        Commands::Gene {
             cmd: super::GeneCommand::Definition { symbol },
         } => {
             crate::sources::with_no_cache(no_cache, async move {
@@ -640,7 +643,6 @@ pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
 
 async fn run_outcome_with_worker_stack(cli: Cli) -> anyhow::Result<CommandOutcome> {
     const EXECUTE_STACK_BYTES: usize = 8 * 1024 * 1024;
-
     tokio::task::spawn_blocking(move || {
         let handle = std::thread::Builder::new()
             .name("biomcp-cli-execute".into())
@@ -659,7 +661,6 @@ async fn run_outcome_with_worker_stack(cli: Cli) -> anyhow::Result<CommandOutcom
     .await
     .map_err(|err| anyhow::anyhow!("failed to join in-process CLI worker: {err}"))?
 }
-
 /// Main CLI execution - called by the MCP `biomcp` tool.
 ///
 /// # Errors
@@ -690,7 +691,6 @@ pub async fn execute_mcp(mut args: Vec<String>) -> anyhow::Result<CliOutput> {
             svg: None,
         });
     }
-
     let text = Box::pin(execute(rewrite_mcp_chart_args(&args, McpChartPass::Text)?)).await?;
     let svg = Box::pin(execute(rewrite_mcp_chart_args(&args, McpChartPass::Svg)?)).await?;
     Ok(CliOutput {

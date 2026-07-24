@@ -136,6 +136,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Reviewed on: `2026-03-20`
 - Notes: Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly.
 
+### ClinGen CSpec
+
+- BioMCP surfaces: `gene cspec <GENE>; gene_cspec`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: public web/API access
+- License / terms summary: public ClinGen curation resources with publication and attribution expectations
+- Redistribution / reuse summary: generally queryable and reusable, but users should preserve attribution and source context
+- Official terms URL: <https://cspec.clinicalgenome.org>
+- Reviewed on: `2026-07-23`
+- Notes: BioMCP preserves one selected document as a bounded local capture and returns source facts without ACMG interpretation.
+
 ### ClinGen ERepo
 
 - BioMCP surfaces: `variant erepo <CAid>`

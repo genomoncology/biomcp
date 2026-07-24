@@ -77,6 +77,20 @@ struct TypedVariantErepo {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct TypedGeneCspec {
+    gene: String,
+    #[serde(default)]
+    version_iri: Option<String>,
+    #[serde(default)]
+    capture_id: Option<String>,
+    #[serde(default)]
+    offset: usize,
+    #[serde(default = "default_cspec_limit")]
+    #[schemars(range(min = 1, max = 50))]
+    limit: usize,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct TypedVariantArticles {
     #[schemars(length(min = 1, max = 10))]
     items: Vec<crate::entities::variant::VariantArticleRequest>,
@@ -102,6 +116,10 @@ struct McpGetSection(#[schemars(transform = add_get_section_enum)] String);
 
 fn default_typed_limit() -> usize {
     10
+}
+
+fn default_cspec_limit() -> usize {
+    25
 }
 
 fn default_variant_article_strategy() -> String {
@@ -690,6 +708,48 @@ impl BioMcpServer {
                 .map_err(|error| {
                     McpError::internal_error(
                         format!("Failed to sanitize ERepo response: {error}"),
+                        None,
+                    )
+                })?,
+            )])),
+            Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+        }
+    }
+
+    /// Retrieve ClinGen CSpec manifests or bounded pages from one captured exact document.
+    #[tool(annotations(title = "BioMCP ClinGen CSpec", read_only_hint = true))]
+    async fn gene_cspec(
+        &self,
+        Parameters(input): Parameters<TypedGeneCspec>,
+    ) -> Result<CallToolResult, McpError> {
+        if input.version_iri.is_some() && input.capture_id.is_some()
+            || input.limit == 0
+            || input.limit > 50
+        {
+            return Err(McpError::invalid_params(
+                "gene_cspec version_iri and capture_id are mutually exclusive; limit must be 1-50",
+                None,
+            ));
+        }
+        let result = match input.capture_id {
+            Some(capture_id) => {
+                crate::entities::gene::cspec::page_capture(&capture_id, input.offset, input.limit)
+                    .and_then(|response| crate::render::json::to_pretty(&response))
+            }
+            None => crate::entities::gene::cspec::retrieve(
+                &input.gene,
+                input.version_iri.as_deref(),
+                input.offset,
+                input.limit,
+            )
+            .await
+            .and_then(|response| crate::render::json::to_pretty(&response)),
+        };
+        match result {
+            Ok(text) => Ok(CallToolResult::success(vec![Content::text(
+                redact_mcp_json_text(&text).map_err(|error| {
+                    McpError::internal_error(
+                        format!("Failed to sanitize CSpec response: {error}"),
                         None,
                     )
                 })?,

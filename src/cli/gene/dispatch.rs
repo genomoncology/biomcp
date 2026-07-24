@@ -68,6 +68,13 @@ pub(crate) async fn handle_command(
             )
             .await
         }
+        GeneCommand::Cspec {
+            gene,
+            version,
+            offset,
+            limit,
+        } => super::cspec::handle(gene, version, offset, limit, json).await,
+        GeneCommand::CspecDocument { capture_id } => super::cspec::document(capture_id, json),
         GeneCommand::External(args) => {
             let symbol = args.join(" ");
             render_gene_card_outcome(
