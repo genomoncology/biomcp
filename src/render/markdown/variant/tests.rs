@@ -287,18 +287,22 @@ fn phenotype_search_markdown_renders_top_disease_follow_up() {
 fn ticket_406_coordinate_outputs_carry_genome_build_context() {
     let response = VariantNormalizationResponse {
         input: "NM_000248.3:c.135del".to_string(),
-        services: vec![VariantNormalizationServiceResult {
-            service: "variantvalidator".to_string(),
-            status: VariantNormalizationStatus::Success,
-            input_description: Some("NM_000248.3:c.135del".to_string()),
-            normalized_description: Some("NM_000248.3:c.135del".to_string()),
-            corrected_description: None,
-            transcript_description: Some("NM_000248.3:c.135del".to_string()),
-            protein: None,
-            genomic_descriptions: vec!["NC_000023.11:g.32389644del".to_string()],
-            warnings: Vec::new(),
-            message: None,
-        }],
+        services: vec![
+            crate::entities::variant::VariantNormalizationAggregate::Legacy(
+                VariantNormalizationServiceResult {
+                    service: "variantvalidator".to_string(),
+                    status: VariantNormalizationStatus::Success,
+                    input_description: Some("NM_000248.3:c.135del".to_string()),
+                    normalized_description: Some("NM_000248.3:c.135del".to_string()),
+                    corrected_description: None,
+                    transcript_description: Some("NM_000248.3:c.135del".to_string()),
+                    protein: None,
+                    genomic_descriptions: vec!["NC_000023.11:g.32389644del".to_string()],
+                    warnings: Vec::new(),
+                    message: None,
+                },
+            ),
+        ],
     };
 
     let markdown = variant_normalization_markdown(&response);

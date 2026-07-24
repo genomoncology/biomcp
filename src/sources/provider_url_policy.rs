@@ -129,6 +129,29 @@ impl ProviderUrlPolicy {
         Self::for_consumer(ProviderUrlConsumer::SemanticScholarPdf, None)
     }
 
+    /// Policy for the read-only ClinGen Allele Registry API. A fixture base override
+    /// is a selected origin, but redirects remain confined to that origin.
+    pub(crate) fn clingen_car(base: &Url) -> Result<Self, BioMcpError> {
+        let canonical = AllowedOrigin::parse("https://reg.genome.network")?;
+        let configured = AllowedOrigin::from_url(base)
+            .ok_or_else(|| policy_error("ClinGen Allele Registry base has no valid origin"))?;
+        let mut allowed_origins = vec![canonical];
+        if !allowed_origins.contains(&configured) {
+            allowed_origins.push(configured);
+        }
+        let policy = Self {
+            source: "ClinGen Allele Registry",
+            provider: SourceProvider::CLINGEN_CAR,
+            allowed_origins,
+            credential_origins: Vec::new(),
+            unsafe_test_origin: unsafe_test_origin()
+                .or_else(|| selected_loopback_test_origin(base)),
+            pmc_linked_numeric_id: None,
+        };
+        policy.validate_url(base)?;
+        Ok(policy)
+    }
+
     /// Policy for exact ClinGen CSpec resource IRIs.
     pub(crate) fn cspec() -> Result<Self, BioMcpError> {
         Ok(Self {

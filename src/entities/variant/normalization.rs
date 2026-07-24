@@ -9,6 +9,13 @@ use crate::error::BioMcpError;
 const MAX_TRANSCRIPT_HGVS_LEN: usize = 512;
 const MAX_CAR_HGVS_LEN: usize = 512;
 
+pub(crate) fn car_hgvs_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"^(?:NM_[0-9]+\.[0-9]+:c\.|NC_[0-9]+\.[0-9]+:g\.)[^\s]+$").expect("valid regex")
+    })
+}
+
 pub(crate) fn transcript_coding_hgvs_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r"^[A-Z]{2}_[0-9]+\.[0-9]+:c\.[^\s]+$").expect("valid regex"))
@@ -17,7 +24,28 @@ pub(crate) fn transcript_coding_hgvs_re() -> &'static Regex {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantNormalizationResponse {
     pub input: String,
-    pub services: Vec<VariantNormalizationServiceResult>,
+    pub services: Vec<VariantNormalizationAggregate>,
+}
+
+/// Aggregate rows preserve legacy provider shape while CAR retains its own item schema.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum VariantNormalizationAggregate {
+    Legacy(VariantNormalizationServiceResult),
+    Car(CarNormalizationAggregate),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CarNormalizationAggregate {
+    pub service: String,
+    #[serde(flatten)]
+    pub item: CarNormalizationItem,
+}
+
+impl From<VariantNormalizationServiceResult> for VariantNormalizationAggregate {
+    fn from(value: VariantNormalizationServiceResult) -> Self {
+        Self::Legacy(value)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,13 +100,17 @@ pub struct CarAliasCollection {
 }
 
 impl CarAliasCollection {
-    pub(crate) fn bounded(mut values: Vec<String>, limit: usize) -> Self {
-        values.sort();
-        values.dedup();
+    pub(crate) fn bounded(values: Vec<String>, limit: usize) -> Self {
         let source_count = values.len();
-        values.truncate(limit);
+        let mut unique = Vec::with_capacity(values.len());
+        for value in values {
+            if !unique.contains(&value) {
+                unique.push(value);
+            }
+        }
+        unique.truncate(limit);
         Self {
-            values,
+            values: unique,
             source_count,
             truncated: source_count > limit,
         }
@@ -163,14 +195,7 @@ pub fn parse_variant_normalization_services(
 
 pub fn validate_car_hgvs_input(input: &str) -> Result<String, BioMcpError> {
     let trimmed = input.trim();
-    let valid = trimmed.len() <= MAX_CAR_HGVS_LEN
-        && ((trimmed.starts_with("NM_") && trimmed.contains(":c."))
-            || (trimmed.starts_with("NC_") && trimmed.contains(":g.")))
-        && trimmed.split_once(':').is_some_and(|(accession, _)| {
-            accession.rsplit_once('.').is_some_and(|(_, version)| {
-                !version.is_empty() && version.bytes().all(|byte| byte.is_ascii_digit())
-            })
-        });
+    let valid = trimmed.len() <= MAX_CAR_HGVS_LEN && car_hgvs_re().is_match(trimmed);
     if !valid {
         return Err(BioMcpError::InvalidArgument(
             "unsupported_notation: CAR requires versioned RefSeq NM_:c. or NC_:g. HGVS input"
@@ -245,25 +270,22 @@ pub async fn normalize_variant(
                     .normalize(&input)
                     .await
             },
-            async {
-                let item = normalize_car(&input).await?;
-                Ok::<_, BioMcpError>(car_service_result(item))
-            },
+            async { normalize_car(&input).await },
         );
-        let mut results = Vec::with_capacity(3);
-        for (service, result) in [
-            (VariantNormalizationService::Mutalyzer, mutalyzer),
-            (
-                VariantNormalizationService::VariantValidator,
-                variantvalidator,
-            ),
-            (VariantNormalizationService::Car, car),
-        ] {
-            results.push(result.unwrap_or_else(|err| service_error_result(service, err)));
-        }
         return Ok(VariantNormalizationResponse {
-            input,
-            services: results,
+            input: input.clone(),
+            services: vec![
+                VariantNormalizationAggregate::Legacy(mutalyzer.unwrap_or_else(|err| {
+                    service_error_result(VariantNormalizationService::Mutalyzer, err)
+                })),
+                VariantNormalizationAggregate::Legacy(variantvalidator.unwrap_or_else(|err| {
+                    service_error_result(VariantNormalizationService::VariantValidator, err)
+                })),
+                VariantNormalizationAggregate::Car(CarNormalizationAggregate {
+                    service: "car".into(),
+                    item: car.unwrap_or_else(|err| unavailable_car_item(&input, err)),
+                }),
+            ],
         });
     }
 
@@ -282,11 +304,17 @@ pub async fn normalize_variant(
                     .await
             }
             VariantNormalizationService::Car => {
-                Ok(car_service_result(normalize_car(&input).await?))
+                results.push(VariantNormalizationAggregate::Car(
+                    CarNormalizationAggregate {
+                        service: "car".into(),
+                        item: normalize_car(&input).await?,
+                    },
+                ));
+                continue;
             }
         }
         .unwrap_or_else(|err| service_error_result(service, err));
-        results.push(result);
+        results.push(VariantNormalizationAggregate::Legacy(result));
     }
 
     Ok(VariantNormalizationResponse {
@@ -295,22 +323,25 @@ pub async fn normalize_variant(
     })
 }
 
-fn car_service_result(item: CarNormalizationItem) -> VariantNormalizationServiceResult {
-    VariantNormalizationServiceResult {
-        service: "car".into(),
-        status: if item.status == CarNormalizationStatus::Resolved {
-            VariantNormalizationStatus::Success
-        } else {
-            VariantNormalizationStatus::ServiceError
+fn unavailable_car_item(input: &str, _error: BioMcpError) -> CarNormalizationItem {
+    CarNormalizationItem {
+        input: input.into(),
+        status: CarNormalizationStatus::Unavailable,
+        exhaustive: false,
+        caid: None,
+        canonical_title: None,
+        genomic_aliases: CarAliasCollection::default(),
+        transcript_aliases: CarAliasCollection::default(),
+        protein_aliases: CarAliasCollection::default(),
+        external_ids: CarAliasCollection::default(),
+        source: "clingen_car".into(),
+        query: input.into(),
+        warnings: Vec::new(),
+        error: Some("ClinGen Allele Registry request failed".into()),
+        provenance: CarProvenance {
+            request_template_version: "1".into(),
+            car_version: None,
         },
-        input_description: None,
-        normalized_description: item.caid,
-        corrected_description: None,
-        transcript_description: None,
-        protein: None,
-        genomic_descriptions: item.genomic_aliases.values,
-        warnings: item.warnings,
-        message: item.error,
     }
 }
 
@@ -352,5 +383,21 @@ mod tests {
         assert!(text.contains("unsupported_notation"));
         assert!(text.contains("BRAF V600E"));
         assert!(text.contains("transcript HGVS"));
+    }
+
+    #[test]
+    fn car_grammar_accepts_only_versioned_refseq_coding_or_genomic_hgvs() {
+        for input in ["NM_000546.6:c.215C>G", "NC_000017.11:g.7674220C>G"] {
+            assert!(validate_car_hgvs_input(input).is_ok(), "{input}");
+        }
+        for input in [
+            "NM_fake.1:x:c.",
+            "NM_000546:c.215C>G",
+            "NC_000017.11:c.7674220C>G",
+            "NM_000546.6:g.215C>G",
+            "chr17:g.7674220C>G",
+        ] {
+            assert!(validate_car_hgvs_input(input).is_err(), "{input}");
+        }
     }
 }

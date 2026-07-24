@@ -6,7 +6,7 @@ struct VariantNormalizationJsonResponse<'a> {
     status: &'static str,
     message: String,
     results: Vec<&'a str>,
-    services: &'a [crate::entities::variant::VariantNormalizationServiceResult],
+    services: &'a [crate::entities::variant::VariantNormalizationAggregate],
     _meta: VariantNormalizationJsonMeta,
 }
 
@@ -19,12 +19,16 @@ pub(super) fn render(
     result: &crate::entities::variant::VariantNormalizationResponse,
 ) -> Result<String, crate::error::BioMcpError> {
     let mut results = Vec::new();
-    for value in result.services.iter().flat_map(|service| {
-        service
+    for value in result.services.iter().flat_map(|service| match service {
+        crate::entities::variant::VariantNormalizationAggregate::Legacy(service) => service
             .genomic_descriptions
             .iter()
             .map(String::as_str)
             .chain(service.normalized_description.as_deref())
+            .collect::<Vec<_>>(),
+        crate::entities::variant::VariantNormalizationAggregate::Car(car) => {
+            car.item.caid.as_deref().into_iter().collect::<Vec<_>>()
+        }
     }) {
         if !value.trim().is_empty() && !results.contains(&value) {
             results.push(value);
@@ -60,7 +64,8 @@ pub(super) fn render(
 mod tests {
     use super::*;
     use crate::entities::variant::{
-        VariantNormalizationResponse, VariantNormalizationServiceResult, VariantNormalizationStatus,
+        VariantNormalizationAggregate, VariantNormalizationResponse,
+        VariantNormalizationServiceResult, VariantNormalizationStatus,
     };
 
     #[test]
@@ -68,7 +73,7 @@ mod tests {
         let response = VariantNormalizationResponse {
             input: "NM_000000.0:c.1A>T".to_string(),
             services: vec![
-                VariantNormalizationServiceResult {
+                VariantNormalizationAggregate::Legacy(VariantNormalizationServiceResult {
                     service: "mutalyzer".to_string(),
                     status: VariantNormalizationStatus::Success,
                     input_description: None,
@@ -79,8 +84,8 @@ mod tests {
                     genomic_descriptions: Vec::new(),
                     warnings: Vec::new(),
                     message: None,
-                },
-                VariantNormalizationServiceResult {
+                }),
+                VariantNormalizationAggregate::Legacy(VariantNormalizationServiceResult {
                     service: "variantvalidator".to_string(),
                     status: VariantNormalizationStatus::Success,
                     input_description: None,
@@ -91,7 +96,7 @@ mod tests {
                     genomic_descriptions: vec!["NC_000001.11:g.1A>T".to_string()],
                     warnings: Vec::new(),
                     message: None,
-                },
+                }),
             ],
         };
 

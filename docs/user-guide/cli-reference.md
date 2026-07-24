@@ -433,6 +433,17 @@ biomcp gene cspec document <capture-id>
 The full resource IRI selects one document exactly. The raw-document command
 streams its verified local capture and does not refetch the provider.
 
+ClinGen Allele Registry normalization is separate from `get variant`:
+
+```bash
+biomcp --json variant normalize car 'NM_000546.6:c.215C>G'
+biomcp --json variant normalize car --input car-hgvs.json
+```
+
+CAR accepts only supported versioned RefSeq coding or genomic HGVS. The batch is a
+bare JSON array of 1-50 values; lookup is read-only and reports source facts without
+registration or inferred equivalence.
+
 ### Disease
 
 ```bash

@@ -264,10 +264,12 @@ fn transcript_hgvs_normalization_error(
 ) -> BioMcpError {
     let detail = response
         .and_then(|response| {
-            response
-                .services
-                .iter()
-                .find_map(|service| service.message.as_deref())
+            response.services.iter().find_map(|service| match service {
+                crate::entities::variant::VariantNormalizationAggregate::Legacy(service) => {
+                    service.message.as_deref()
+                }
+                crate::entities::variant::VariantNormalizationAggregate::Car(_) => None,
+            })
         })
         .filter(|message| !message.trim().is_empty())
         .map(|message| format!(" Normalization reported: {message}"))
@@ -285,8 +287,16 @@ pub(crate) fn normalized_get_variant_id(
     response
         .services
         .iter()
-        .filter(|service| service.status == VariantNormalizationStatus::Success)
-        .flat_map(|service| service.genomic_descriptions.iter())
+        .filter_map(|service| match service {
+            crate::entities::variant::VariantNormalizationAggregate::Legacy(service)
+                if service.status == VariantNormalizationStatus::Success =>
+            {
+                Some(service.genomic_descriptions.iter())
+            }
+            crate::entities::variant::VariantNormalizationAggregate::Car(_) => None,
+            _ => None,
+        })
+        .flatten()
         .find_map(|candidate| normalized_genomic_hgvs_for_get(candidate))
         .ok_or_else(|| transcript_hgvs_normalization_error(&response.input, Some(response)))
 }

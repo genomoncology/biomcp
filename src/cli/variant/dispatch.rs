@@ -171,17 +171,7 @@ pub(crate) async fn handle_command(
                 )
             })?;
             if service.eq_ignore_ascii_case("car") {
-                let item = crate::entities::variant::normalize_car(&variant).await?;
-                if json {
-                    crate::render::json::to_pretty(&item)?
-                } else {
-                    format!(
-                        "# ClinGen Allele Registry normalization\n\nInput: {}\nStatus: {:?}\nCAid: {}\n",
-                        item.input,
-                        item.status,
-                        item.caid.as_deref().unwrap_or("-")
-                    )
-                }
+                return Box::pin(super::car::handle_single(&variant, json)).await;
             } else {
                 let result =
                     crate::entities::variant::normalize_variant(&service, &variant).await?;

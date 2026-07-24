@@ -26,9 +26,9 @@ pub use self::get::{VARIANT_SECTION_NAMES, get, get_with_workflow_signals, oncok
 pub use self::gwas::{gwas_search_query_summary, search_gwas, search_gwas_page};
 pub use self::normalization::{
     CarAliasCollection, CarNormalizationBatchResponse, CarNormalizationItem,
-    CarNormalizationStatus, CarProvenance, VariantNormalizationResponse,
-    VariantNormalizationService, VariantNormalizationServiceResult, VariantNormalizationStatus,
-    normalize_car, normalize_car_batch, normalize_variant,
+    CarNormalizationStatus, CarProvenance, VariantNormalizationAggregate,
+    VariantNormalizationResponse, VariantNormalizationService, VariantNormalizationServiceResult,
+    VariantNormalizationStatus, normalize_car, normalize_car_batch, normalize_variant,
 };
 pub use self::resolution::{
     classify_variant_input, parse_variant_id, parse_variant_protein_alias, variant_guidance,

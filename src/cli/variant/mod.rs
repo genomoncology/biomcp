@@ -205,10 +205,14 @@ See also: biomcp list variant")]
         /// Service selector: all, mutalyzer, or variantvalidator; CAR is available as car
         service: String,
         /// Transcript HGVS, or CAR-supported versioned RefSeq genomic HGVS
-        #[arg(value_name = "hgvs", required_unless_present = "input")]
+        #[arg(
+            value_name = "hgvs",
+            required_unless_present = "input",
+            conflicts_with = "input"
+        )]
         variant: Option<String>,
         /// JSON file, or - for stdin, containing 1-50 CAR HGVS strings
-        #[arg(long, value_name = "PATH")]
+        #[arg(long, value_name = "PATH", conflicts_with = "variant")]
         input: Option<String>,
     },
     #[command(external_subcommand)]

@@ -24,6 +24,44 @@ async fn read_input(path: &str) -> Result<Vec<u8>, BioMcpError> {
     Ok(bytes)
 }
 
+pub(super) async fn handle_single(input: &str, json: bool) -> anyhow::Result<CommandOutcome> {
+    let item = crate::entities::variant::normalize_car(input).await?;
+    match item.status {
+        crate::entities::variant::CarNormalizationStatus::Invalid => {
+            return Err(BioMcpError::InvalidArgument(
+                item.error
+                    .unwrap_or_else(|| "CAR rejected the HGVS input".into()),
+            )
+            .into());
+        }
+        crate::entities::variant::CarNormalizationStatus::Indeterminate
+        | crate::entities::variant::CarNormalizationStatus::Unavailable => {
+            return Err(BioMcpError::SourceUnavailable {
+                source_name: "ClinGen Allele Registry".into(),
+                reason: item
+                    .error
+                    .unwrap_or_else(|| "normalization was incomplete".into()),
+                suggestion: "Retry the read-only CAR lookup.".into(),
+            }
+            .into());
+        }
+        crate::entities::variant::CarNormalizationStatus::Resolved
+        | crate::entities::variant::CarNormalizationStatus::NotFound => {}
+    }
+    if json {
+        Ok(CommandOutcome::stdout(crate::render::json::to_pretty(
+            &item,
+        )?))
+    } else {
+        Ok(CommandOutcome::stdout(format!(
+            "# ClinGen Allele Registry normalization\n\nInput: {}\nStatus: {:?}\nCAid: {}\n",
+            item.input,
+            item.status,
+            item.caid.as_deref().unwrap_or("-")
+        )))
+    }
+}
+
 pub(super) async fn handle_batch(input: &str, json: bool) -> anyhow::Result<CommandOutcome> {
     if !json {
         return Err(BioMcpError::InvalidArgument(
