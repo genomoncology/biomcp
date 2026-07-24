@@ -1,3 +1,5 @@
+pub(crate) mod cspec;
+
 use std::collections::HashMap;
 use std::fs;
 use std::future::Future;

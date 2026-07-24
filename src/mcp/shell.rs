@@ -77,6 +77,20 @@ struct TypedVariantErepo {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct TypedGeneCspec {
+    gene: String,
+    #[serde(default)]
+    version_iri: Option<String>,
+    #[serde(default)]
+    capture_id: Option<String>,
+    #[serde(default)]
+    offset: usize,
+    #[serde(default = "default_cspec_limit")]
+    #[schemars(range(min = 1, max = 50))]
+    limit: usize,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct TypedVariantArticles {
     #[schemars(length(min = 1, max = 10))]
     items: Vec<crate::entities::variant::VariantArticleRequest>,
@@ -102,6 +116,10 @@ struct McpGetSection(#[schemars(transform = add_get_section_enum)] String);
 
 fn default_typed_limit() -> usize {
     10
+}
+
+fn default_cspec_limit() -> usize {
+    25
 }
 
 fn default_variant_article_strategy() -> String {
@@ -698,6 +716,51 @@ impl BioMcpServer {
         }
     }
 
+    /// Retrieve ClinGen CSpec manifests or bounded pages from one captured exact document.
+    #[tool(annotations(title = "BioMCP ClinGen CSpec", read_only_hint = true))]
+    async fn gene_cspec(
+        &self,
+        Parameters(input): Parameters<TypedGeneCspec>,
+    ) -> Result<CallToolResult, McpError> {
+        if input.version_iri.is_some() && input.capture_id.is_some()
+            || input.limit == 0
+            || input.limit > 50
+        {
+            return Err(McpError::invalid_params(
+                "gene_cspec version_iri and capture_id are mutually exclusive; limit must be 1-50",
+                None,
+            ));
+        }
+        let result = match input.capture_id {
+            Some(capture_id) => crate::entities::gene::cspec::page_capture(
+                &capture_id,
+                &input.gene,
+                input.offset,
+                input.limit,
+            )
+            .and_then(|response| crate::render::json::to_pretty(&response)),
+            None => crate::entities::gene::cspec::retrieve(
+                &input.gene,
+                input.version_iri.as_deref(),
+                input.offset,
+                input.limit,
+            )
+            .await
+            .and_then(|response| crate::render::json::to_pretty(&response)),
+        };
+        match result {
+            Ok(text) => Ok(CallToolResult::success(vec![Content::text(
+                redact_mcp_json_text(&text).map_err(|error| {
+                    McpError::internal_error(
+                        format!("Failed to sanitize CSpec response: {error}"),
+                        None,
+                    )
+                })?,
+            )])),
+            Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+        }
+    }
+
     /// Retrieve compact variant-literature shortlists for 1-10 structured identities.
     #[tool(annotations(title = "BioMCP variant literature batch", read_only_hint = true))]
     async fn variant_articles(
@@ -961,11 +1024,11 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::{
-        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE, TypedGet,
-        TypedSearch, TypedVariantArticles, VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE,
-        all_get_sections, get_args, get_section_groups, index_handler, is_allowed_mcp_command,
-        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
-        subcommand_names, to_resource_result,
+        BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
+        TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles,
+        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, all_get_sections, get_args,
+        get_section_groups, index_handler, is_allowed_mcp_command, mcp_rejection_message,
+        redact_mcp_json_text, redact_mcp_text, search_args, subcommand_names, to_resource_result,
     };
     use axum::Json;
 
@@ -1028,6 +1091,39 @@ mod tests {
                 .into_iter()
                 .map(str::to_string)
                 .collect::<BTreeSet<String>>()
+        );
+    }
+
+    #[test]
+    fn typed_gene_cspec_schema_exposes_bounded_capture_paging_without_raw_bytes() {
+        let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGeneCspec))
+            .expect("CSpec schema");
+        let properties = &schema["properties"];
+
+        assert!(properties.get("gene").is_some());
+        assert!(properties.get("version_iri").is_some());
+        assert!(properties.get("capture_id").is_some());
+        assert!(properties.get("offset").is_some());
+        assert_eq!(properties["limit"]["minimum"], 1);
+        assert_eq!(properties["limit"]["maximum"], 50);
+        assert!(properties.get("raw_bytes").is_none());
+    }
+
+    #[tokio::test]
+    async fn typed_gene_cspec_rejects_version_and_capture_together_before_network_access() {
+        let result = BioMcpServer::new()
+            .gene_cspec(rmcp::handler::server::wrapper::Parameters(TypedGeneCspec {
+                gene: "ATM".into(),
+                version_iri: Some("https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into()),
+                capture_id: Some("capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()),
+                offset: 0,
+                limit: 25,
+            }))
+            .await;
+
+        assert!(
+            result.is_err(),
+            "mutually exclusive CSpec selectors must fail"
         );
     }
 

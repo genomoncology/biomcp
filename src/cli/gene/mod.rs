@@ -42,6 +42,33 @@ pub struct GeneGetArgs {
     pub sections: Vec<String>,
 }
 
+#[derive(Args, Debug)]
+pub struct CspecArgs {
+    /// Stream an exact stored CSpec capture without refetching
+    #[command(subcommand)]
+    pub command: Option<CspecCommand>,
+    /// HGNC gene symbol
+    pub gene: Option<String>,
+    /// Exact full CSpec resource IRI from the manifest
+    #[arg(long)]
+    pub version: Option<String>,
+    /// Skip the first N criteria
+    #[arg(long, default_value = "0")]
+    pub offset: usize,
+    /// Maximum criteria, 1-50 (default: 25)
+    #[arg(long, default_value = "25")]
+    pub limit: usize,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum CspecCommand {
+    /// Stream an exact stored CSpec capture without refetching
+    Document {
+        /// Provider capture handle returned by CSpec selection
+        capture_id: String,
+    },
+}
+
 #[derive(Subcommand, Debug)]
 pub enum GeneCommand {
     /// Show canonical gene definition card (same output as `get gene`)
@@ -115,6 +142,11 @@ See also: biomcp list gene")]
         #[arg(long, default_value = "0")]
         offset: usize,
     },
+    /// Retrieve versioned ClinGen Criteria Specification Registry source documents
+    #[command(
+        after_help = "Use a full resource IRI returned by the manifest with --version. Raw capture bytes are available only through `biomcp gene cspec document <capture-id>`."
+    )]
+    Cspec(CspecArgs),
     /// Show pathways section for this gene symbol
     #[command(after_help = "\
 EXAMPLES:
@@ -137,6 +169,7 @@ See also: biomcp list gene")]
     External(Vec<String>),
 }
 
+pub(super) mod cspec;
 mod dispatch;
 mod related;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};

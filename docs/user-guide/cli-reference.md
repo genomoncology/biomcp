@@ -422,6 +422,17 @@ biomcp get gene BRAF all
 `diagnostics` and `funding` stay opt-in and are not included in
 `biomcp get gene <symbol> all`.
 
+Versioned ClinGen CSpec documents are separate from gene-card sections:
+
+```bash
+biomcp --json gene cspec ATM
+biomcp --json gene cspec ATM --version <full-resource-iri>
+biomcp gene cspec document <capture-id>
+```
+
+The full resource IRI selects one document exactly. The raw-document command
+streams its verified local capture and does not refetch the provider.
+
 ### Disease
 
 ```bash

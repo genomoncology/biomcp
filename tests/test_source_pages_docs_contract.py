@@ -681,6 +681,19 @@ SOURCE_PAGE_SPECS = {
             'biomcp search phenotype "HP:0001250 HP:0001263" --limit 10',
         ],
     },
+    "clingen-cspec.md": {
+        "title": "ClinGen CSpec source documents | BioMCP",
+        "description": "Retrieve versioned ClinGen Criteria Specification Registry source documents with preserved captures.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://cspec.clinicalgenome.org",
+        "required_intro_phrases": ["source facts", "does not evaluate ACMG"],
+        "exposes": ["gene cspec", "gene_cspec"],
+        "example_commands": [
+            "biomcp --json gene cspec ATM",
+            "biomcp --json gene cspec ATM --version https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1",
+            "biomcp gene cspec document <capture-id>",
+        ],
+    },
     "clingen-erepo.md": {
         "title": "ClinGen ERepo MCP Tool for Expert Assertions | BioMCP",
         "description": "Retrieve versioned ClinGen Evidence Repository expert assertions by CAid through BioMCP without inferring ACMG/AMP evidence strength.",
@@ -702,6 +715,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - Overview: sources/index.md
       - PubMed: sources/pubmed.md
       - ClinicalTrials.gov: sources/clinicaltrials-gov.md
+      - ClinGen CSpec: sources/clingen-cspec.md
       - ClinGen ERepo: sources/clingen-erepo.md
       - ClinVar: sources/clinvar.md
       - OpenFDA: sources/openfda.md

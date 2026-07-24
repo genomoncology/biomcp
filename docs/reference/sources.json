@@ -102,6 +102,23 @@
     "notes": "BioMCP uses distinct ClinGen Search and Evidence Repository origins; ERepo assertions preserve panel source facts and versioned SEPIO provenance without interpretation."
   },
   {
+    "id": "clingen_cspec",
+    "name": "ClinGen CSpec",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["gene cspec <GENE>", "gene_cspec"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public web/API access",
+    "license_summary": "public ClinGen curation resources with publication and attribution expectations",
+    "redistribution_summary": "generally queryable and reusable, but users should preserve attribution and source context",
+    "terms_url": "https://cspec.clinicalgenome.org",
+    "key_url": null,
+    "reviewed_on": "2026-07-23",
+    "notes": "BioMCP preserves exact selected CSpec document bytes behind bounded local capture handles and returns source facts without ACMG interpretation."
+  },
+  {
     "id": "clingen_erepo",
     "name": "ClinGen ERepo",
     "tier": 1,

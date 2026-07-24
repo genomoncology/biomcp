@@ -302,6 +302,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "ClinGen CSpec",
+        affects: Some("gene cspec helper"),
+        probe: ProbeKind::Get {
+            url: "https://cspec.clinicalgenome.org/cspec/Gene/id/ATM/SequenceVariantInterpretation/version?detail=low",
+        },
+    },
+    SourceDescriptor {
         api: "ClinGen ERepo",
         affects: Some("variant erepo helper"),
         probe: ProbeKind::Get {

@@ -14,6 +14,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | ChEMBL | `https://www.ebi.ac.uk/chembl/api/data` | Unversioned | ChEMBL data API is stable at `/api/data`; no URL version convention | 2026-02-15 |
 | ClinicalTrials.gov | `https://clinicaltrials.gov/api/v2` | Versioned (`v2`) | Endpoint already pinned to public v2 API | 2026-02-15 |
 | ClinGen Search | `https://search.clinicalgenome.org` | Unversioned | Public search endpoint has no stable version path segment | 2026-06-11 |
+| ClinGen CSpec | `https://cspec.clinicalgenome.org` | Versioned resource documents | Full resource IRI is the selection identity; provider display version remains separate | 2026-07-23 |
 | ClinGen ERepo | `https://erepo.clinicalgenome.org` | Versioned detail documents | Exact `docVersion` is required in the SEPIO detail route | 2026-07-23 |
 | ComplexPortal | `https://www.ebi.ac.uk/intact/complex-ws` | Unversioned | EBI complex web service is path-stable without URL versioning | 2026-06-11 |
 | CPIC | `https://api.cpicpgx.org/v1` | Versioned (`v1`) | Endpoint already pinned | 2026-06-11 |

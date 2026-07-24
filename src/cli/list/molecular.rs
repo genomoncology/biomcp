@@ -29,6 +29,8 @@ pub(super) fn list_gene() -> String {
 - `get gene <symbol> all` - include every standard section (`diagnostics` and `funding` stay opt-in)
 - `gene definition <symbol>` - same card as `get gene <symbol>`
 - `gene get <symbol>` - alias for `gene definition <symbol>`
+- `gene cspec <symbol> [--version <full-resource-iri>]` - versioned ClinGen CSpec source facts and capture provenance
+- `gene cspec document <capture-id>` - exact stored CSpec bytes without refetching
 
 ## Search filters
 

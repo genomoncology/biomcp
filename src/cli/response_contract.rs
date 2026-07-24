@@ -123,9 +123,9 @@ impl JsonResponseContract {
                 super::GeneCommand::Pathways { .. } => Self {
                     collection_paths: &[PATHWAYS_PATH],
                 },
-                super::GeneCommand::Definition { .. } | super::GeneCommand::External(_) => {
-                    Self::NONE
-                }
+                super::GeneCommand::Cspec(_)
+                | super::GeneCommand::Definition { .. }
+                | super::GeneCommand::External(_) => Self::NONE,
             },
             Commands::Protein {
                 cmd: super::ProteinCommand::Structures { .. },

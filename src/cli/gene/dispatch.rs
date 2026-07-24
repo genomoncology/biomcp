@@ -68,6 +68,19 @@ pub(crate) async fn handle_command(
             )
             .await
         }
+        GeneCommand::Cspec(args) => match args.command {
+            Some(super::CspecCommand::Document { .. }) => {
+                unreachable!("raw CSpec documents bypass text rendering")
+            }
+            None => {
+                let gene = args.gene.ok_or_else(|| {
+                    crate::error::BioMcpError::InvalidArgument(
+                        "gene cspec requires a gene symbol or the document subcommand".into(),
+                    )
+                })?;
+                super::cspec::handle(gene, args.version, args.offset, args.limit, json).await
+            }
+        },
         GeneCommand::External(args) => {
             let symbol = args.join(" ");
             render_gene_card_outcome(

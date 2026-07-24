@@ -1,6 +1,6 @@
 use clap::{CommandFactory, Parser};
 
-use super::GeneCommand;
+use super::{CspecCommand, GeneCommand};
 use crate::cli::{Cli, Commands, OutputStream};
 use crate::entities::discover::{
     AliasCanonicalMatch, AliasFallbackDecision, DiscoverConfidence, DiscoverType, MatchTier,
@@ -40,6 +40,30 @@ fn gene_get_alias_parses_as_definition_subcommand() {
         Commands::Gene {
             cmd: GeneCommand::Definition { symbol },
         } => assert_eq!(symbol, "BRAF"),
+        other => panic!("unexpected command: {other:?}"),
+    }
+}
+
+#[test]
+fn gene_cspec_document_parses_as_nested_raw_subcommand() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "gene",
+        "cspec",
+        "document",
+        "capture:cspec:sha256:x",
+    ])
+    .expect("nested CSpec document command should parse");
+
+    match cli.command {
+        Commands::Gene {
+            cmd: GeneCommand::Cspec(args),
+        } => match args.command {
+            Some(CspecCommand::Document { capture_id }) => {
+                assert_eq!(capture_id, "capture:cspec:sha256:x");
+            }
+            other => panic!("unexpected CSpec command: {other:?}"),
+        },
         other => panic!("unexpected command: {other:?}"),
     }
 }

@@ -168,7 +168,7 @@ pub(super) async fn handle_related_command(
                 crate::render::markdown::gene_markdown(&gene, &sections)?
             }
         }
-        GeneCommand::Definition { .. } | GeneCommand::External(_) => {
+        GeneCommand::Cspec(_) | GeneCommand::Definition { .. } | GeneCommand::External(_) => {
             unreachable!("handled by gene dispatch")
         }
     };
