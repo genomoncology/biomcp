@@ -47,6 +47,7 @@ SPEC_LIVE_PATHS=(
   spec/entity/variant-hotspots.md
   spec/entity/clingen-erepo-live.md
   spec/entity/clingen-cspec-live.md
+  spec/entity/clingen-car-live.md
   spec/entity/variant-myvariant-live.md
   spec/entity/variant-articles-live.md
   spec/surface/cli.md
