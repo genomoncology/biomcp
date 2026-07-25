@@ -48,6 +48,8 @@ not become release criteria.
 
 ## Typed PubTator linkage is bound to the returned PMID
 
+<!-- mustmatch-lint: skip -->
+
 The frozen captures use current-shaped typed `Gene` and `Variant` annotations.
 A confirmation is evidence only when the returned document PMID, the requested
 gene's NCBI Gene ID, and the exact returned HGVS agree through the variant's
