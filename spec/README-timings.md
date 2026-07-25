@@ -181,3 +181,45 @@ inheriting article overrides.
 | Section | Lane | Ceiling | Why |
 |---|---|---|---|
 | `spec/entity/gene.md::All-Section Warm Budget` | quarantined from routine `make spec-pr` by ticket 372 | n/a | This timing-only canary failed twice during routine `make spec-pr` at 45599ms and 43332ms against the former 12000ms ceiling. Per ticket 371's request-contract strategy, restore it only as a deterministic benchmark/ratchet or explicit performance lane, not as a default live-heavy spec blocker. |
+
+## Ticket 622/624 Investigation Record — 2026-07-25
+
+Measured on beelink while the March queue was concurrently building ticket
+617, so these are representative of real queue conditions rather than
+clean-room best cases. Machine load ranged from 10 to 24 during collection.
+
+| Phase | Wall | User CPU |
+|---|---:|---:|
+| cold `spec`-profile build (`opt-level = 3`, pre-change) | `184.5s` | `390.5s` |
+| cold `cargo nextest run` | `240.6s` | `373.7s` |
+| ... of which actually running 2,749 tests | `46.4s` | — |
+| `make lint` | `156.5s` | `92.3s` |
+| `make test` | `570.0s` | `546.1s` |
+| `make spec` (routine corpus, warm binary) | `229.2s` | `22.9s` |
+
+Two observations drove tickets 622 and 624.
+
+**Compilation dominates the gate, not assertion count.** Only 46.4s of the
+240.6s `cargo nextest` run executes tests; the rest is compile and link. The
+corpus is already bottom-heavy at 2,749 unit tests against roughly 365 spec
+assertions, so pruning specs is not a speed lever.
+
+**The routine spec lane is dominated by waiting, not work.** `make spec`
+spends 229.2s of wall clock against 22.9s of user CPU — a 10:1 ratio. Fixture
+readiness polling, serialized fixture setup, three `uv run` cold starts, and
+the deliberate `time.sleep(65)` endpoints in
+`setup-article-fulltext-source-fixture.sh:564` and
+`setup-article-federated-timeout-fixture.sh:49` account for the gap rather
+than assertion execution. Any future attempt to speed this lane should target
+the waiting, not the assertions.
+
+**Build-cache note (not a repo concern).** sccache and mold are already active
+for every build via `~/.cargo/config.toml`. However sccache was observed at
+`10 GiB` of a `10 GiB` default cap — completely full — with a Rust cache hit
+rate of `24.3%`. For a 525-dependency crate built across five or more
+worktrees in dev, spec, release and clippy variants, that cap thrashes. Raising
+`SCCACHE_CACHE_SIZE` is an operator/dotfiles change, deliberately not made in
+this repo.
+
+Earlier numbers in this file recording ~60s routine runs predate the current
+fixture set and were not reproducible here.
