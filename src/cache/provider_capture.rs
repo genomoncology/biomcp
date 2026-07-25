@@ -368,7 +368,7 @@ impl ProviderCaptureStore {
         let mut retained_records = Vec::new();
         for record in records.drain(..) {
             if record.metadata.manifest.expires_at <= now {
-                freed += self.record_blob_size(&record)?;
+                freed += self.record_regular_file_bytes(&record)?;
             } else {
                 retained_records.push(record);
             }
@@ -389,37 +389,48 @@ impl ProviderCaptureStore {
                 record.metadata.manifest.capture_id.clone(),
             )
         });
-        let mut retained: u64 = retained_records
-            .iter()
-            .map(|record| record.metadata.manifest.byte_length)
-            .sum();
+        let mut retained = retained_regular_file_bytes(&self.root)?
+            .checked_sub(freed)
+            .ok_or(ProviderCaptureError::Corrupt)?;
         for record in retained_records {
             if retained <= MAX_RETAINED_BYTES {
                 break;
             }
-            retained -= record.metadata.manifest.byte_length;
-            freed += self.record_blob_size(&record)?;
+            let record_bytes = self.record_regular_file_bytes(&record)?;
+            retained = retained
+                .checked_sub(record_bytes)
+                .ok_or(ProviderCaptureError::Corrupt)?;
+            freed += record_bytes;
         }
         Ok(freed)
     }
 
     fn remove_record(&self, record: &MetadataEntry) -> Result<u64, ProviderCaptureError> {
         let blob = self.blob_path(record.provider, &record.metadata.manifest.sha256);
-        let freed = self.record_blob_size(record)?;
+        let freed = self.record_regular_file_bytes(record)?;
         fs::remove_file(&record.path).map_err(|_| ProviderCaptureError::Corrupt)?;
         let _ = fs::remove_file(blob);
         Ok(freed)
     }
 
-    fn record_blob_size(&self, record: &MetadataEntry) -> Result<u64, ProviderCaptureError> {
+    fn record_regular_file_bytes(
+        &self,
+        record: &MetadataEntry,
+    ) -> Result<u64, ProviderCaptureError> {
+        let metadata = fs::metadata(&record.path)
+            .map_err(|_| ProviderCaptureError::Corrupt)?
+            .len();
         let blob = self.blob_path(record.provider, &record.metadata.manifest.sha256);
-        if regular_file(&blob) {
+        let blob = if regular_file(&blob) {
             fs::metadata(blob)
-                .map(|metadata| metadata.len())
-                .map_err(|_| ProviderCaptureError::Corrupt)
+                .map_err(|_| ProviderCaptureError::Corrupt)?
+                .len()
         } else {
-            Ok(0)
-        }
+            0
+        };
+        metadata
+            .checked_add(blob)
+            .ok_or(ProviderCaptureError::Corrupt)
     }
 
     fn metadata_entries(&self) -> Result<Vec<MetadataEntry>, ProviderCaptureError> {
@@ -703,6 +714,32 @@ mod tests {
         assert_eq!(first.capture_id, same.capture_id);
         assert_ne!(first.capture_id, changed.capture_id);
         assert_eq!(store.read(&first.capture_id), Ok(b"exact bytes".to_vec()));
+    }
+
+    #[test]
+    fn captures_survive_store_restart_then_detect_corruption() {
+        let root = TempDirGuard::new("provider-capture-restart");
+        let manifest = ProviderCaptureStore::new(root.path())
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"original")
+            .expect("capture");
+        let restarted = ProviderCaptureStore::new(root.path());
+        assert_eq!(
+            restarted.read(&manifest.capture_id),
+            Ok(b"original".to_vec()),
+            "a fresh store instance must read the published capture"
+        );
+        std::fs::write(
+            root.path()
+                .join("captures/cspec/sha256")
+                .join(&manifest.sha256[..2])
+                .join(&manifest.sha256),
+            b"changed",
+        )
+        .expect("corrupt blob");
+        assert_eq!(
+            restarted.read(&manifest.capture_id),
+            Err(ProviderCaptureError::Corrupt)
+        );
     }
 
     #[test]

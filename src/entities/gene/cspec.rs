@@ -94,6 +94,7 @@ pub(crate) async fn retrieve(
             offset,
             limit,
             &capture,
+            false,
         )?)
         .expect("CSpec response serializes"));
     }
@@ -114,16 +115,26 @@ pub(crate) fn page_capture(
         .capture_binding
         .as_ref()
         .ok_or_else(|| capture_error(ProviderCaptureError::Corrupt))?;
+    validate_binding(binding)?;
     if binding.normalized_gene != gene.to_ascii_uppercase() {
         return Err(BioMcpError::InvalidArgument(
             "CSpec capture does not match the requested gene".into(),
         ));
     }
-    page_from_bytes(&bytes, binding, offset, limit, &manifest)
+    page_from_bytes(&bytes, binding, offset, limit, &manifest, true)
 }
 
 pub(crate) fn read_capture(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
-    store()?.read(capture_id).map_err(capture_error)
+    let store = store()?;
+    let bytes = store.read(capture_id).map_err(capture_error)?;
+    let manifest = store.read_manifest(capture_id).map_err(capture_error)?;
+    validate_binding(
+        manifest
+            .capture_binding
+            .as_ref()
+            .ok_or(BioMcpError::CaptureCorrupt)?,
+    )?;
+    Ok(bytes)
 }
 
 async fn manifest(gene: &str, client: &CspecClient) -> Result<CspecManifestResponse, BioMcpError> {
@@ -235,6 +246,18 @@ fn capture_error(error: ProviderCaptureError) -> BioMcpError {
         }
     }
 }
+fn validate_binding(binding: &CspecCaptureBinding) -> Result<(), BioMcpError> {
+    if binding.binding_schema_version != 1
+        || binding.normalized_gene.is_empty()
+        || binding.normalized_gene != binding.normalized_gene.to_ascii_uppercase()
+        || binding.resource_iri.is_empty()
+        || binding.specification_id.is_empty()
+    {
+        return Err(BioMcpError::CaptureCorrupt);
+    }
+    Ok(())
+}
+
 fn validate_page(_offset: usize, limit: usize) -> Result<(), BioMcpError> {
     if !(1..=50).contains(&limit) {
         Err(BioMcpError::InvalidArgument(
@@ -257,6 +280,7 @@ fn page_from_bytes(
     offset: usize,
     limit: usize,
     capture: &ProviderCaptureManifest,
+    captured_page: bool,
 ) -> Result<CspecResponse, BioMcpError> {
     let value: Value = serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
         api: "ClinGen CSpec".into(),
@@ -274,11 +298,18 @@ fn page_from_bytes(
     let ld = data.get("ld").and_then(Value::as_object);
     if specification_id != binding.specification_id
         || data.get("@id").and_then(Value::as_str) != Some(binding.resource_iri.as_str())
-        || data.get("entType").and_then(Value::as_str) != Some("SequenceVariantInterpretation")
         || content
             .and_then(|value| value.get("namespace"))
             .and_then(Value::as_str)
             != Some(specification_id)
+    {
+        return Err(if captured_page {
+            BioMcpError::CaptureCorrupt
+        } else {
+            invalid("invalid CSpec document identity")
+        });
+    }
+    if data.get("entType").and_then(Value::as_str) != Some("SequenceVariantInterpretation")
         || ld.is_none()
         || !data.get("ldFor").is_some_and(Value::is_object)
     {
@@ -313,21 +344,30 @@ fn page_from_bytes(
         .and_then(|value| value.get("CriteriaCode"))
         .and_then(Value::as_array)
         .ok_or_else(|| invalid("document CriteriaCode must be an array"))?;
-    let criteria = all
+    let parsed_criteria = all
         .iter()
         .enumerate()
         .map(|(index, row)| criterion(row, index, capture))
         .collect::<Result<Vec<_>, _>>()?;
+    let semantic_criteria = parsed_criteria
+        .iter()
+        .map(|(_, semantic)| semantic.clone())
+        .collect::<Vec<_>>();
     let semantic_subset_sha256 = semantic_subset_sha256(
         &binding.specification_id,
         &binding.resource_iri,
         &display_version,
         vcep.as_deref(),
         status.as_deref(),
-        &criteria,
+        &semantic_criteria,
     )?;
-    let total = criteria.len();
-    let criteria = criteria.into_iter().skip(offset).take(limit).collect();
+    let total = parsed_criteria.len();
+    let criteria = parsed_criteria
+        .into_iter()
+        .map(|(criterion, _)| criterion)
+        .skip(offset)
+        .take(limit)
+        .collect();
     Ok(CspecResponse {
         resource_iri: binding.resource_iri.clone(),
         specification_id: specification_id.into(),
@@ -364,7 +404,7 @@ fn criterion(
     row: &Value,
     index: usize,
     capture: &ProviderCaptureManifest,
-) -> Result<CspecCriterion, BioMcpError> {
+) -> Result<(CspecCriterion, Value), BioMcpError> {
     if row.get("entType").and_then(Value::as_str) != Some("CriteriaCode")
         || !row.get("entContent").is_some_and(Value::is_object)
     {
@@ -379,6 +419,7 @@ fn criterion(
             .map(|v| bounded(v, key, truncated))
     };
     let mut citations = Vec::new();
+    let mut semantic_citations = Vec::new();
     if let Some(references) = content.get("references") {
         for reference in references
             .as_array()
@@ -400,16 +441,19 @@ fn criterion(
                 .get("url")
                 .and_then(Value::as_str)
                 .expect("checked URL");
-            if !citations.iter().any(|citation| citation == url) {
+            if !semantic_citations.iter().any(|citation| citation == url) {
+                semantic_citations.push(url.to_owned());
                 if citations.len() == 32 {
-                    truncated_fields.push("citations".into());
-                    break;
+                    if !truncated_fields.iter().any(|field| field == "citations") {
+                        truncated_fields.push("citations".into());
+                    }
+                } else {
+                    citations.push(bounded(url, "citations", &mut truncated_fields));
                 }
-                citations.push(bounded(url, "citations", &mut truncated_fields));
             }
         }
     }
-    Ok(CspecCriterion {
+    let criterion = CspecCriterion {
         source_id: row.get("entId").and_then(Value::as_str).map(str::to_owned),
         code: text("sepioID", &mut truncated_fields),
         label: text("label", &mut truncated_fields),
@@ -422,7 +466,19 @@ fn criterion(
         source_locator: format!("/data/ld/CriteriaCode/{index}"),
         capture_hash: capture.sha256.clone(),
         truncated_fields,
-    })
+    };
+    let semantic = json!({
+        "source_id": row.get("entId").and_then(Value::as_str),
+        "code": content.get("sepioID").and_then(Value::as_str),
+        "label": content.get("label").and_then(Value::as_str),
+        "source_text": content.get("instructionsToUse").and_then(Value::as_str),
+        "source_strength": content.get("baseStrength").and_then(Value::as_str),
+        "configuration": content.get("defaultStrength").and_then(Value::as_str),
+        "thresholds": content.get("originalACMGSummary").and_then(Value::as_str),
+        "assay_restrictions": content.get("additionalComments").and_then(Value::as_str),
+        "citations": semantic_citations,
+    });
+    Ok((criterion, semantic))
 }
 
 fn semantic_subset_sha256(
@@ -431,7 +487,7 @@ fn semantic_subset_sha256(
     display_version: &str,
     vcep: Option<&str>,
     status: Option<&str>,
-    criteria: &[CspecCriterion],
+    criteria: &[Value],
 ) -> Result<String, BioMcpError> {
     let value = json!({
         "specification_id": specification_id,
@@ -464,6 +520,7 @@ mod tests {
 
     use super::{FIELD_LIMIT, bounded, page_from_bytes, select};
     use crate::cache::{CspecCaptureBinding, ProviderCaptureManifest, ProviderCaptureProvider};
+    use crate::error::BioMcpError;
 
     #[test]
     fn selection_requires_the_literal_manifest_iri() {
@@ -520,10 +577,22 @@ mod tests {
                 0,
                 25,
                 &capture,
+                false,
             )
             .is_err(),
-            "document must not be projected under a different manifest specification"
+            "a malformed provider document must not be projected under a different manifest specification"
         );
+        assert!(matches!(
+            page_from_bytes(
+                &bytes,
+                capture.capture_binding.as_ref().expect("binding"),
+                0,
+                25,
+                &capture,
+                true,
+            ),
+            Err(BioMcpError::CaptureCorrupt)
+        ));
     }
 
     #[test]
