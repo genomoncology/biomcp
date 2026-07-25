@@ -471,8 +471,22 @@ fn resolver_error() -> Box<dyn std::error::Error + Send + Sync> {
 pub(crate) fn cspec_fixture_origin() -> Result<Option<Url>, BioMcpError> {
     std::env::var("BIOMCP_CSPEC_FIXTURE_ORIGIN")
         .ok()
-        .map(|raw| Url::parse(raw.trim()).map_err(|_| policy_error("invalid CSpec fixture origin")))
+        .map(|raw| {
+            let url =
+                Url::parse(raw.trim()).map_err(|_| policy_error("invalid CSpec fixture origin"))?;
+            if !is_exact_loopback_origin(&url) {
+                return Err(policy_error("CSpec fixture origin must be exact loopback"));
+            }
+            Ok(url)
+        })
         .transpose()
+}
+
+fn is_exact_loopback_origin(url: &Url) -> bool {
+    selected_loopback_test_origin(url).is_some()
+        && url.path() == "/"
+        && url.query().is_none()
+        && url.fragment().is_none()
 }
 
 fn unsafe_test_origin() -> Option<AllowedOrigin> {
@@ -762,6 +776,28 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn cspec_fixture_origin_requires_a_pathless_loopback_origin() {
+        for raw in ["http://127.0.0.1:43210/", "https://[::1]:43210/"] {
+            assert!(
+                is_exact_loopback_origin(&Url::parse(raw).unwrap()),
+                "accepted {raw}"
+            );
+        }
+        for raw in [
+            "http://localhost:43210/",
+            "http://127.0.0.1:43210/redirect",
+            "http://127.0.0.1:43210/?target=other",
+            "http://127.0.0.1:43210/#fragment",
+            "http://user:secret@127.0.0.1:43210/",
+        ] {
+            assert!(
+                !is_exact_loopback_origin(&Url::parse(raw).unwrap()),
+                "accepted {raw}"
+            );
+        }
     }
 
     #[test]

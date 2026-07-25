@@ -17,7 +17,7 @@ requests_before_raw="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests
 "$bin" gene cspec document "$capture" >"$work/raw.json"
 "$bin" --json gene cspec ATM --capture-id "$capture" --offset 1 --limit 1 >"$work/page-two.json"
 "$bin" --json gene cspec BRCA1 --capture-id "$capture" >"$work/relabel.json" || true
-"$bin" --json gene cspec document 'capture:cspec:sha256:0000000000000000000000000000000000000000000000000000000000000000' >"$work/missing.json" || true
+"$bin" --json gene cspec ATM --capture-id 'capture:cspec:sha256:0000000000000000000000000000000000000000000000000000000000000000' >"$work/missing.json" || true
 
 BIN="$bin" CAPTURE="$capture" OUT="$work/mcp.json" uv run --no-sync python - <<'PY'
 import json, os, subprocess

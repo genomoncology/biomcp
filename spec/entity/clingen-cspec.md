@@ -25,6 +25,7 @@ A capture binds the selected ATM document and gene rather than trusting a later 
 bash ../fixtures/run-clingen-cspec-fixture.sh ../.. | mustmatch like '"capture_binds_requested_gene_and_selected_iri": true
 "cli_capture_page_matches_typed_mcp": true
 "caller_gene_cannot_relabel_capture": true
+"missing_capture_is_capture_unavailable": true
 "raw_bytes_match_reported_sha256_and_length": true
 "raw_read_does_not_refetch": true'
 ```
