@@ -20,7 +20,7 @@ type ProjectedAliases = (
     Vec<String>,
     Vec<String>,
     Vec<String>,
-    Vec<String>,
+    CarAliasCollection,
 );
 
 pub(crate) struct ClinGenAlleleRegistryClient {
@@ -260,6 +260,16 @@ pub(crate) fn decode_normalize_response(
             version,
         );
     };
+    let Ok((canonical_title, genomic, transcripts, proteins, external)) = projected_aliases(&value)
+    else {
+        return empty(
+            input,
+            CarNormalizationStatus::Indeterminate,
+            false,
+            Some("CAR response did not match the projected schema".into()),
+            version,
+        );
+    };
     if id == "_:CA" {
         return empty(input, CarNormalizationStatus::NotFound, true, None, version);
     }
@@ -281,23 +291,13 @@ pub(crate) fn decode_normalize_response(
             version,
         );
     };
-    let Ok((canonical_title, genomic, transcripts, proteins, external)) = projected_aliases(&value)
-    else {
-        return empty(
-            input,
-            CarNormalizationStatus::Indeterminate,
-            false,
-            Some("CAR response did not match the projected schema".into()),
-            version,
-        );
-    };
     let mut item = empty(input, CarNormalizationStatus::Resolved, true, None, version);
     item.caid = Some(caid);
     item.canonical_title = canonical_title;
     item.genomic_aliases = CarAliasCollection::bounded(genomic, 12);
     item.transcript_aliases = CarAliasCollection::bounded(transcripts, 12);
     item.protein_aliases = CarAliasCollection::bounded(proteins, 8);
-    item.external_ids = CarAliasCollection::bounded(external, 16);
+    item.external_ids = external;
     item
 }
 
@@ -354,6 +354,8 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
     proteins.sort();
     let external_records = value.get("externalRecords");
     let mut external = Vec::new();
+    let mut source_count = 0;
+    let mut truncated = false;
     for (path, prefix) in [("dbSNP", "rs"), ("ClinVarVariations", "ClinVar:")] {
         let mut ids = Vec::new();
         if let Some(records) = external_records.and_then(|records| records.get(path)) {
@@ -363,6 +365,9 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
             }
         }
         ids.sort_unstable();
+        ids.dedup();
+        source_count += ids.len();
+        truncated |= ids.len() > 8;
         external.extend(ids.into_iter().take(8).map(|id| format!("{prefix}{id}")));
     }
     Ok((
@@ -370,7 +375,11 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
         genomic.into_iter().map(|(_, alias)| alias).collect(),
         transcripts.into_iter().map(|(_, alias)| alias).collect(),
         proteins,
-        external,
+        CarAliasCollection {
+            values: external,
+            source_count,
+            truncated,
+        },
     ))
 }
 

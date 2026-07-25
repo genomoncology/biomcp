@@ -10,7 +10,9 @@ RefSeq HGVS identities. BioMCP preserves source facts and bounded aliases; it
 does not infer equivalence, register alleles, or assign clinical meaning.
 
 CAR accepts only versioned `NM_...:c.` and `NC_...:g.` identifiers. Its output keeps
-provider cardinality visible when aliases are bounded.
+provider cardinality visible when aliases are bounded. External IDs retain the combined
+pre-cap distinct dbSNP and ClinVar count, and report truncation when either source exceeds
+its eight-ID rendering cap.
 
 ## What BioMCP exposes
 
