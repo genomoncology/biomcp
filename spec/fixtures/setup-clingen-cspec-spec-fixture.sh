@@ -6,8 +6,8 @@ set -euo pipefail
 root="$(cd "${1:-$PWD}" && pwd)"
 cache="$root/.cache"
 env_file="$cache/spec-clingen-cspec-env"
-fixture_root="$(mktemp -d "$cache/spec-clingen-cspec.XXXXXX")"
 mkdir -p "$cache"
+fixture_root="$(mktemp -d "$cache/spec-clingen-cspec.XXXXXX")"
 bash "$(dirname "$0")/cleanup-clingen-cspec-spec-fixture.sh" "$root"
 ready="$fixture_root/origin"
 requests="$fixture_root/requests.jsonl"
@@ -38,7 +38,7 @@ class Handler(BaseHTTPRequestHandler):
     path=self.path.split('?',1)[0]
     with REQUESTS.open('a') as f: f.write(path+'\n')
     parts=[p for p in path.split('/') if p]
-    if len(parts)==7 and parts[:3]==['cspec','Gene','id']:
+    if len(parts)==6 and parts[:3]==['cspec','Gene','id']:
       gene=parts[3]; self.send(envelope([{'@id':iri(spec, version)} for spec,version in SERIES.get(gene, [])])); return
     if len(parts)==6 and parts[:3]==['cspec','SequenceVariantInterpretation','id']:
       spec, version=parts[3],parts[5]

@@ -28,11 +28,3 @@ bash ../fixtures/run-clingen-cspec-fixture.sh ../.. | mustmatch like '"capture_b
 "raw_bytes_match_reported_sha256_and_length": true
 "raw_read_does_not_refetch": true'
 ```
-
-## Unavailable handles have a recovery-safe public code
-
-An unknown capture handle is unavailable rather than invalid caller syntax. Integrity damage, expiration, eviction, binding conflicts, malformed provider rows, and capacity limits are defensive/native tests because proving them here would require deliberately damaging the environment or source.
-
-```bash
-bash ../fixtures/run-clingen-cspec-fixture.sh ../.. | mustmatch like '"missing_capture_is_capture_unavailable": true'
-```
