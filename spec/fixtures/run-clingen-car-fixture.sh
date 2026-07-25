@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="${1:-.}"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+bin="${BIOMCP_BIN:?BIOMCP_BIN must name the fixture-tested binary}"
+
+cat >"$work/panel.json" <<'JSON'
+["NM_000038.6:c.847C>G","NM_000038.6:c.1A>G","NC_000005.9:g.112175951A>G","NM_000051.4:c.7271T>G","NM_007294.4:c.5266dupC","NM_000249.4:c.793C>T","NM_024675.4:c.3113G>A","NM_000314.8:c.388C>G","NM_000546.6:c.215C>G","NM_004333.6:c.1799T>A","NM_000002.1:c.2A>G","NM_000003.1:c.3A>G","NM_000004.1:c.4A>G","NM_000038.6:c.847C>G"]
+JSON
+cat >"$work/cardinality.json" <<'JSON'
+["NM_000005.1:c.5A>G","NM_000546.6:c.215C>G"]
+JSON
+"$bin" --json variant normalize car --input "$work/panel.json" >"$work/panel.out"
+"$bin" --json variant normalize car --input "$work/cardinality.json" >"$work/cardinality.out"
+"$bin" --json variant normalize car 'NM_000001.1:c.1A>G' >"$work/external.out"
+"$bin" --json variant normalize car 'NM_000006.1:c.6A>G' >"$work/external-single.out"
+set +e
+"$bin" --json variant normalize car 'BRCA1' >"$work/invalid.out"
+invalid_exit=$?
+"$bin" --json variant normalize car 'NM_000004.1:c.4A>G' >"$work/outage.out"
+outage_exit=$?
+set -e
+uv run --no-sync python - "$work/over-limit.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    json.dump(["NM_000546.6:c.215C>G"] * 51, handle)
+PY
+set +e
+"$bin" --json variant normalize car --input "$work/over-limit.json" >"$work/over-limit.out"
+over_limit_exit=$?
+set -e
+
+port="$("$root/spec/fixtures/reserve-local-port")"
+"$bin" serve-http --host 127.0.0.1 --port "$port" >"$work/mcp-server.log" 2>&1 &
+mcp_pid=$!
+trap 'kill "$mcp_pid" 2>/dev/null || true; rm -rf "$work"' EXIT
+for _ in $(seq 1 40); do
+  curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null && break
+  sleep 0.1
+done
+curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null
+uv run --with 'mcp>=1.1.1' python - "http://127.0.0.1:$port" <<'PY' >"$work/mcp.out"
+import asyncio
+import sys
+from datetime import timedelta
+from mcp import ClientSession, types
+from mcp.client.streamable_http import streamable_http_client
+
+async def main():
+    async with streamable_http_client(sys.argv[1] + "/mcp", terminate_on_close=False) as streams:
+        async with ClientSession(*streams[:2], read_timeout_seconds=timedelta(seconds=30)) as session:
+            await session.initialize()
+            result = await session.call_tool("variant_normalize_car", {"inputs": ["NM_000546.6:c.215C>G"]})
+            print(next(content.text for content in result.content if isinstance(content, types.TextContent)))
+
+asyncio.run(main())
+PY
+kill "$mcp_pid" 2>/dev/null || true
+wait "$mcp_pid" 2>/dev/null || true
+
+uv run --no-sync python - "$work" "${BIOMCP_CLINGEN_CAR_REQUEST_LOG:?CAR fixture missing request log}" "$invalid_exit" "$outage_exit" "$over_limit_exit" <<'PY'
+import json
+from pathlib import Path
+import sys
+
+FIELDS = "none @id communityStandardTitle genomicAlleles transcriptAlleles.MANE externalRecords.dbSNP externalRecords.ClinVarVariations"
+work = Path(sys.argv[1])
+requests = [json.loads(line) for line in Path(sys.argv[2]).read_text(encoding="utf-8").splitlines()]
+invalid_exit, outage_exit, over_limit_exit = map(int, sys.argv[3:])
+panel_inputs = json.loads((work / "panel.json").read_text(encoding="utf-8"))
+panel = json.loads((work / "panel.out").read_text(encoding="utf-8"))
+cardinality = json.loads((work / "cardinality.out").read_text(encoding="utf-8"))
+external = json.loads((work / "external.out").read_text(encoding="utf-8"))
+external_single = json.loads((work / "external-single.out").read_text(encoding="utf-8"))
+invalid = json.loads((work / "invalid.out").read_text(encoding="utf-8"))
+outage = json.loads((work / "outage.out").read_text(encoding="utf-8"))
+over_limit = json.loads((work / "over-limit.out").read_text(encoding="utf-8"))
+typed_mcp = json.loads((work / "mcp.out").read_text(encoding="utf-8"))
+items = {item["input"]: item for item in panel["items"]}
+expected = {
+    "NM_000038.6:c.847C>G": "CA16023172",
+    "NM_000038.6:c.1A>G": "CA015543",
+    "NC_000005.9:g.112175951A>G": "CA015543",
+    "NM_000051.4:c.7271T>G": "CA151456",
+    "NM_007294.4:c.5266dupC": "CA001621",
+    "NM_000249.4:c.793C>T": "CA009197",
+    "NM_024675.4:c.3113G>A": "CA168760",
+    "NM_000314.8:c.388C>G": "CA000498",
+    "NM_000546.6:c.215C>G": "CA397844357",
+    "NM_004333.6:c.1799T>A": "CA123643",
+}
+blank = items["NM_000002.1:c.2A>G"]
+malformed = items["NM_000003.1:c.3A>G"]
+ids = external["external_ids"]
+values = ids["values"]
+get_template = any(
+    request["method"] == "GET"
+    and request["path"] == "/allele"
+    and request["query"] == {"hgvs": ["NM_000001.1:c.1A>G"], "fields": [FIELDS]}
+    for request in requests
+)
+post_template = any(
+    request["method"] == "POST"
+    and request["path"] == "/alleles"
+    and request["query"] == {"file": ["hgvs"], "fields": [FIELDS]}
+    and request["content_type"] == "text/plain; charset=utf-8"
+    and request["body"] == "\n".join(panel_inputs) + "\n"
+    for request in requests
+)
+report = {
+    "cli_and_typed_mcp_parity": typed_mcp["items"][0]["caid"] == items["NM_000546.6:c.215C>G"]["caid"],
+    "frozen_identity_panel": all(items[key]["caid"] == value for key, value in expected.items()),
+    "request_templates": get_template and post_template,
+    "batch_order_and_duplicates": [item["input"] for item in panel["items"]] == panel_inputs,
+    "batch_cardinality_mismatch_is_incomplete": not cardinality["complete"],
+    "version_provenance": all(item["provenance"]["car_version"] == "fixture-617" for item in panel["items"]),
+    "invalid_grammar_is_rejected": invalid_exit != 0 and invalid["error"]["code"] == "invalid_argument",
+    "outage_is_unavailable": outage_exit != 0 and outage["error"]["code"] == "source_unavailable",
+    "batch_limit_is_rejected": over_limit_exit != 0 and over_limit["error"]["code"] == "invalid_argument",
+    "minimal_blank_node_is_exhaustive_not_found": blank["status"] == "not_found" and blank["exhaustive"] is True,
+    "malformed_blank_node_is_indeterminate": malformed["status"] == "indeterminate" and malformed["exhaustive"] is False,
+    "malformed_blank_node_has_no_credited_facts": malformed["caid"] is None and all(
+        not malformed[key]["values"]
+        and malformed[key]["source_count"] == 0
+        and malformed[key]["truncated"] is False
+        for key in ("genomic_aliases", "transcript_aliases", "protein_aliases", "external_ids")
+    ),
+    "external_ids_have_independent_source_caps": len(values) == 16
+    and external_single["external_ids"]["values"] == [f"rs{n}" for n in range(1, 9)] + ["ClinVar:20"],
+    "external_ids_report_full_distinct_source_count": ids["source_count"] == 18,
+    "external_ids_report_truncation": ids["truncated"] is True and external_single["external_ids"]["truncated"] is True,
+    "external_ids_are_numeric_and_source_ordered": values == [f"rs{n}" for n in range(1, 9)] + [f"ClinVar:{n}" for n in range(11, 19)],
+}
+print(json.dumps(report, sort_keys=True))
+PY

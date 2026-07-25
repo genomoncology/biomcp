@@ -67,6 +67,8 @@ def _runner_workspace(
         "cleanup-disease-survival-spec-fixture.sh",
         "setup-variant-identity-spec-fixture.sh",
         "cleanup-variant-identity-spec-fixture.sh",
+        "setup-clingen-car-spec-fixture.sh",
+        "cleanup-clingen-car-spec-fixture.sh",
         "setup-section-outcomes-spec-fixture.sh",
         "cleanup-section-outcomes-spec-fixture.sh",
     ):

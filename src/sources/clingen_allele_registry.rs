@@ -20,7 +20,7 @@ type ProjectedAliases = (
     Vec<String>,
     Vec<String>,
     Vec<String>,
-    Vec<String>,
+    CarAliasCollection,
 );
 
 pub(crate) struct ClinGenAlleleRegistryClient {
@@ -260,6 +260,16 @@ pub(crate) fn decode_normalize_response(
             version,
         );
     };
+    let Ok((canonical_title, genomic, transcripts, proteins, external)) = projected_aliases(&value)
+    else {
+        return empty(
+            input,
+            CarNormalizationStatus::Indeterminate,
+            false,
+            Some("CAR response did not match the projected schema".into()),
+            version,
+        );
+    };
     if id == "_:CA" {
         return empty(input, CarNormalizationStatus::NotFound, true, None, version);
     }
@@ -281,23 +291,13 @@ pub(crate) fn decode_normalize_response(
             version,
         );
     };
-    let Ok((canonical_title, genomic, transcripts, proteins, external)) = projected_aliases(&value)
-    else {
-        return empty(
-            input,
-            CarNormalizationStatus::Indeterminate,
-            false,
-            Some("CAR response did not match the projected schema".into()),
-            version,
-        );
-    };
     let mut item = empty(input, CarNormalizationStatus::Resolved, true, None, version);
     item.caid = Some(caid);
     item.canonical_title = canonical_title;
     item.genomic_aliases = CarAliasCollection::bounded(genomic, 12);
     item.transcript_aliases = CarAliasCollection::bounded(transcripts, 12);
     item.protein_aliases = CarAliasCollection::bounded(proteins, 8);
-    item.external_ids = CarAliasCollection::bounded(external, 16);
+    item.external_ids = external;
     item
 }
 
@@ -352,8 +352,13 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
     }
     transcripts.sort();
     proteins.sort();
-    let external_records = value.get("externalRecords");
+    let external_records = match value.get("externalRecords") {
+        Some(records) => Some(records.as_object().ok_or(())?),
+        None => None,
+    };
     let mut external = Vec::new();
+    let mut source_count = 0;
+    let mut truncated = false;
     for (path, prefix) in [("dbSNP", "rs"), ("ClinVarVariations", "ClinVar:")] {
         let mut ids = Vec::new();
         if let Some(records) = external_records.and_then(|records| records.get(path)) {
@@ -363,6 +368,9 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
             }
         }
         ids.sort_unstable();
+        ids.dedup();
+        source_count += ids.len();
+        truncated |= ids.len() > 8;
         external.extend(ids.into_iter().take(8).map(|id| format!("{prefix}{id}")));
     }
     Ok((
@@ -370,7 +378,11 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
         genomic.into_iter().map(|(_, alias)| alias).collect(),
         transcripts.into_iter().map(|(_, alias)| alias).collect(),
         proteins,
-        external,
+        CarAliasCollection {
+            values: external,
+            source_count,
+            truncated,
+        },
     ))
 }
 
@@ -409,6 +421,75 @@ mod tests {
             br#"{"@id":"CA123","genomicAlleles":"wrong"}"#,
         );
         assert_eq!(drift.status, CarNormalizationStatus::Indeterminate);
+    }
+
+    #[test]
+    fn blank_node_with_malformed_projected_fact_is_indeterminate() {
+        let item = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            br#"{"@id":"_:CA","genomicAlleles":"wrong"}"#,
+        );
+
+        assert_eq!(item.status, CarNormalizationStatus::Indeterminate);
+        assert!(!item.exhaustive);
+        assert!(item.caid.is_none());
+        assert!(item.genomic_aliases.values.is_empty());
+
+        let item = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            br#"{"@id":"_:CA","externalRecords":"wrong"}"#,
+        );
+
+        assert_eq!(item.status, CarNormalizationStatus::Indeterminate);
+        assert!(!item.exhaustive);
+        assert!(item.caid.is_none());
+        assert!(item.external_ids.values.is_empty());
+    }
+
+    #[test]
+    fn external_ids_keep_full_source_metadata_before_per_source_caps() {
+        let item = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            br#"{
+                "@id":"https://reg.genome.network/allele/CA123",
+                "externalRecords": {
+                    "dbSNP": [{"rs":9},{"rs":2},{"rs":2},{"rs":1},{"rs":8},{"rs":3},{"rs":7},{"rs":4},{"rs":6},{"rs":5}],
+                    "ClinVarVariations": [{"variationId":19},{"variationId":12},{"variationId":12},{"variationId":11},{"variationId":18},{"variationId":13},{"variationId":17},{"variationId":14},{"variationId":16},{"variationId":15}]
+                }
+            }"#,
+        );
+
+        assert_eq!(item.status, CarNormalizationStatus::Resolved);
+        assert_eq!(item.external_ids.values.len(), 16);
+        assert_eq!(item.external_ids.source_count, 18);
+        assert!(item.external_ids.truncated);
+        assert_eq!(
+            item.external_ids.values,
+            [
+                "rs1",
+                "rs2",
+                "rs3",
+                "rs4",
+                "rs5",
+                "rs6",
+                "rs7",
+                "rs8",
+                "ClinVar:11",
+                "ClinVar:12",
+                "ClinVar:13",
+                "ClinVar:14",
+                "ClinVar:15",
+                "ClinVar:16",
+                "ClinVar:17",
+                "ClinVar:18",
+            ]
+        );
     }
 
     #[test]
