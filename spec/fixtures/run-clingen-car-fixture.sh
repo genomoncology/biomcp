@@ -16,6 +16,23 @@ JSON
 "$bin" --json variant normalize car --input "$work/cardinality.json" >"$work/cardinality.out"
 "$bin" --json variant normalize car 'NM_000001.1:c.1A>G' >"$work/external.out"
 "$bin" --json variant normalize car 'NM_000006.1:c.6A>G' >"$work/external-single.out"
+set +e
+"$bin" --json variant normalize car 'BRCA1' >"$work/invalid.out"
+invalid_exit=$?
+"$bin" --json variant normalize car 'NM_000004.1:c.4A>G' >"$work/outage.out"
+outage_exit=$?
+set -e
+uv run --no-sync python - "$work/over-limit.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    json.dump(["NM_000546.6:c.215C>G"] * 51, handle)
+PY
+set +e
+"$bin" --json variant normalize car --input "$work/over-limit.json" >"$work/over-limit.out"
+over_limit_exit=$?
+set -e
 
 port="$("$root/spec/fixtures/reserve-local-port")"
 "$bin" serve-http --host 127.0.0.1 --port "$port" >"$work/mcp-server.log" 2>&1 &
@@ -45,7 +62,7 @@ PY
 kill "$mcp_pid" 2>/dev/null || true
 wait "$mcp_pid" 2>/dev/null || true
 
-uv run --no-sync python - "$work" "${BIOMCP_CLINGEN_CAR_REQUEST_LOG:?CAR fixture missing request log}" <<'PY'
+uv run --no-sync python - "$work" "${BIOMCP_CLINGEN_CAR_REQUEST_LOG:?CAR fixture missing request log}" "$invalid_exit" "$outage_exit" "$over_limit_exit" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -53,11 +70,15 @@ import sys
 FIELDS = "none @id communityStandardTitle genomicAlleles transcriptAlleles.MANE externalRecords.dbSNP externalRecords.ClinVarVariations"
 work = Path(sys.argv[1])
 requests = [json.loads(line) for line in Path(sys.argv[2]).read_text(encoding="utf-8").splitlines()]
+invalid_exit, outage_exit, over_limit_exit = map(int, sys.argv[3:])
 panel_inputs = json.loads((work / "panel.json").read_text(encoding="utf-8"))
 panel = json.loads((work / "panel.out").read_text(encoding="utf-8"))
 cardinality = json.loads((work / "cardinality.out").read_text(encoding="utf-8"))
 external = json.loads((work / "external.out").read_text(encoding="utf-8"))
 external_single = json.loads((work / "external-single.out").read_text(encoding="utf-8"))
+invalid = json.loads((work / "invalid.out").read_text(encoding="utf-8"))
+outage = json.loads((work / "outage.out").read_text(encoding="utf-8"))
+over_limit = json.loads((work / "over-limit.out").read_text(encoding="utf-8"))
 typed_mcp = json.loads((work / "mcp.out").read_text(encoding="utf-8"))
 items = {item["input"]: item for item in panel["items"]}
 expected = {
@@ -97,6 +118,9 @@ report = {
     "batch_order_and_duplicates": [item["input"] for item in panel["items"]] == panel_inputs,
     "batch_cardinality_mismatch_is_incomplete": not cardinality["complete"],
     "version_provenance": all(item["provenance"]["car_version"] == "fixture-617" for item in panel["items"]),
+    "invalid_grammar_is_rejected": invalid_exit != 0 and invalid["error"]["code"] == "invalid_argument",
+    "outage_is_unavailable": outage_exit != 0 and outage["error"]["code"] == "source_unavailable",
+    "batch_limit_is_rejected": over_limit_exit != 0 and over_limit["error"]["code"] == "invalid_argument",
     "minimal_blank_node_is_exhaustive_not_found": blank["status"] == "not_found" and blank["exhaustive"] is True,
     "malformed_blank_node_is_indeterminate": malformed["status"] == "indeterminate" and malformed["exhaustive"] is False,
     "malformed_blank_node_has_no_credited_facts": malformed["caid"] is None and all(

@@ -12,7 +12,8 @@ does not infer equivalence, register alleles, or assign clinical meaning.
 CAR accepts only versioned `NM_...:c.` and `NC_...:g.` identifiers. Its output keeps
 provider cardinality visible when aliases are bounded. External IDs retain the combined
 pre-cap distinct dbSNP and ClinVar count, and report truncation when either source exceeds
-its eight-ID rendering cap.
+its eight-ID rendering cap. A malformed provider response is reported as incomplete rather
+than a conclusive lookup result.
 
 ## What BioMCP exposes
 
