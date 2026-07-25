@@ -90,7 +90,12 @@ class Handler(BaseHTTPRequestHandler):
         if "NM_000005.1:c.5A>G" in inputs:
             send(self, 200, [resolved(inputs[0])])
             return
-        send(self, 200, [resolved(value) for value in inputs])
+        send(self, 200, [
+            {"@id": "_:CA"} if value == "NM_000002.1:c.2A>G" else
+            {"@id": "_:CA", "genomicAlleles": "wrong"} if value == "NM_000003.1:c.3A>G" else
+            resolved(value)
+            for value in inputs
+        ])
 
     def log_message(self, format, *args):
         return
