@@ -140,43 +140,53 @@ pub(crate) fn canonical_response_subset(response: &PubTatorExportResponse) -> St
     let facts = response
         .documents
         .iter()
-        .flat_map(|document| {
+        .map(|document| {
             let mut relations = document
                 .relations
                 .iter()
                 .map(canonical_relation)
                 .collect::<Vec<_>>();
             relations.sort_unstable();
-            document.passages.iter().map(move |passage| {
-                let mut annotations = passage
-                    .annotations
-                    .iter()
-                    .map(|annotation| {
-                        let infons = annotation.infons.as_ref();
-                        serde_json::json!({
-                            "id": annotation.id,
-                            "type": infons.and_then(|value| value.kind.as_deref()),
-                            "name": infons.and_then(|value| value.name.as_deref()),
-                            "identifier": infons.and_then(|value| value.identifier.as_deref()),
-                            "normalized_id": infons.and_then(|value| value.normalized_id),
-                            "hgvs": infons.and_then(|value| value.hgvs.as_deref()),
-                            "gene_id": infons.and_then(|value| value.gene_id),
-                            "gene_ids": infons.and_then(|value| value.gene_ids.as_ref()),
+            let mut passages = document
+                .passages
+                .iter()
+                .map(|passage| {
+                    let mut annotations = passage
+                        .annotations
+                        .iter()
+                        .map(|annotation| {
+                            let infons = annotation.infons.as_ref();
+                            serde_json::json!({
+                                "id": annotation.id,
+                                "type": infons.and_then(|value| value.kind.as_deref()),
+                                "name": infons.and_then(|value| value.name.as_deref()),
+                                "identifier": infons.and_then(|value| value.identifier.as_deref()),
+                                "normalized_id": infons.and_then(|value| value.normalized_id),
+                                "hgvs": infons.and_then(|value| value.hgvs.as_deref()),
+                                "gene_id": infons.and_then(|value| value.gene_id),
+                                "gene_ids": infons.and_then(|value| value.gene_ids.as_ref()),
+                            })
+                            .to_string()
                         })
-                        .to_string()
+                        .collect::<Vec<_>>();
+                    annotations.sort_unstable();
+                    annotations.dedup();
+                    serde_json::json!({
+                        "section": passage.infons.as_ref().and_then(|infons| infons.kind.as_deref()),
+                        "annotations": annotations,
                     })
-                    .collect::<Vec<_>>();
-                annotations.sort_unstable();
-                annotations.dedup();
-                serde_json::json!({
-                    "id": document.id,
-                    "pmid": document.pmid,
-                    "section": passage.infons.as_ref().and_then(|infons| infons.kind.as_deref()),
-                    "annotations": annotations,
-                    "relations": relations,
+                    .to_string()
                 })
-                .to_string()
+                .collect::<Vec<_>>();
+            passages.sort_unstable();
+            passages.dedup();
+            serde_json::json!({
+                "id": document.id,
+                "pmid": document.pmid,
+                "passages": passages,
+                "relations": relations,
             })
+            .to_string()
         })
         .collect();
     canonical_subset_hash(facts)
@@ -244,21 +254,25 @@ fn identifier_tokens(value: &str) -> Option<Vec<String>> {
 }
 
 fn same_coordinate(left: &str, right: &str) -> bool {
-    let coordinate = |value: &str| {
-        value
-            .char_indices()
-            .take_while(|(_, character)| !character.is_ascii_digit() || *character == '.')
-            .last()
-            .map_or(0, |(index, character)| index + character.len_utf8())
-            + value
-                .chars()
-                .skip_while(|character| !character.is_ascii_digit())
-                .take_while(|character| character.is_ascii_digit())
-                .map(char::len_utf8)
-                .sum::<usize>()
-    };
-    let left_end = coordinate(left);
-    left_end > 0 && left.get(..left_end) == right.get(..left_end)
+    fn coordinate(value: &str) -> Option<&str> {
+        let start = value.find(|character: char| character.is_ascii_digit())?;
+        let end = value[start..]
+            .find(|character: char| !character.is_ascii_digit())
+            .map_or(value.len(), |offset| start + offset);
+        let end = value[end..]
+            .strip_prefix(['+', '-'])
+            .and_then(|suffix| {
+                suffix
+                    .find(|character: char| !character.is_ascii_digit())
+                    .map(|offset| end + 1 + offset)
+            })
+            .unwrap_or(end);
+        (start > 0 && start < end).then(|| &value[..end])
+    }
+
+    coordinate(left)
+        .zip(coordinate(right))
+        .is_some_and(|(left, right)| left == right)
 }
 
 fn typed_gene(annotation: &PubTatorAnnotation) -> Option<(&str, u64, &str)> {
@@ -276,6 +290,27 @@ fn typed_gene(annotation: &PubTatorAnnotation) -> Option<(&str, u64, &str)> {
     .then_some((name, id, annotation.id.as_deref()?))
 }
 
+fn linkage_bounds_exceeded(annotation: &PubTatorAnnotation) -> bool {
+    let Some(infons) = annotation.infons.as_ref() else {
+        return false;
+    };
+    if !matches!(infons.kind.as_deref(), Some("Gene" | "Variant")) {
+        return false;
+    }
+    annotation
+        .id
+        .as_deref()
+        .is_some_and(|id| !bounded(id, MAX_ANNOTATION_ID_BYTES))
+        || infons
+            .hgvs
+            .as_deref()
+            .is_some_and(|hgvs| !bounded(hgvs, MAX_HGVS_BYTES))
+        || infons
+            .identifier
+            .as_deref()
+            .is_some_and(|identifier| identifier_tokens(identifier).is_none())
+}
+
 fn typed_variant(annotation: &PubTatorAnnotation) -> Option<(&str, u64, Vec<String>, &str)> {
     let infons = annotation.infons.as_ref()?;
     let hgvs = infons.hgvs.as_deref()?;
@@ -286,7 +321,16 @@ fn typed_variant(annotation: &PubTatorAnnotation) -> Option<(&str, u64, Vec<Stri
     (infons.kind.as_deref() == Some("Variant")
         && bounded(annotation.id.as_deref()?, MAX_ANNOTATION_ID_BYTES)
         && bounded(hgvs, MAX_HGVS_BYTES)
-        && gene_ids.contains(&gene_id)
+        && !gene_ids.is_empty()
+        && gene_ids.iter().all(|id| *id == gene_id)
+        && tokens
+            .iter()
+            .filter_map(|token| token.strip_prefix("CorrespondingGene:"))
+            .all(|id| {
+                !id.is_empty()
+                    && id.bytes().all(|byte| byte.is_ascii_digit())
+                    && id == gene_id.to_string()
+            })
         && tokens
             .iter()
             .any(|token| token == &format!("CorrespondingGene:{gene_id}")))
@@ -336,11 +380,13 @@ pub(crate) fn verify_pubtator(
             let content_hash = hash(passage.text.as_deref().unwrap_or_default());
             let locator = format!("document:{returned_pmid}:passage:{}", passage_index + 1);
             for gene_annotation in &passage.annotations {
+                semantic_anomaly |= linkage_bounds_exceeded(gene_annotation);
                 let Some((gene_name, gene_id, gene_annotation_id)) = typed_gene(gene_annotation)
                 else {
                     continue;
                 };
                 for variant_annotation in &passage.annotations {
+                    semantic_anomaly |= linkage_bounds_exceeded(variant_annotation);
                     let Some((observed_hgvs, variant_gene_id, tokens, variant_annotation_id)) =
                         typed_variant(variant_annotation)
                     else {
@@ -353,10 +399,9 @@ pub(crate) fn verify_pubtator(
                     let matches_allele = normalized(observed_hgvs) == allele;
                     if !(matches_allele
                         || matches_gene
-                            && same_coordinate(
-                                observed_hgvs,
-                                &requested_allele.clone().unwrap_or_default(),
-                            ))
+                            && requested_allele
+                                .as_deref()
+                                .is_some_and(|requested| same_coordinate(observed_hgvs, requested)))
                     {
                         continue;
                     }
@@ -649,6 +694,114 @@ mod tests {
         let identity = verify_pubtator(&requested(), "1", &duplicate, false);
         assert_eq!(identity.status, "confirmed");
         assert_eq!(identity.observations.len(), 1);
+    }
+
+    #[test]
+    fn inconsistent_typed_gene_ids_cannot_confirm() {
+        let mut inconsistent = response(false);
+        inconsistent.documents[0].passages[0].annotations[1]
+            .infons
+            .as_mut()
+            .expect("variant infons")
+            .gene_ids = Some(vec![673, 1]);
+        assert_eq!(
+            verify_pubtator(&requested(), "1", &inconsistent, false).status,
+            "unverified"
+        );
+
+        let infons = inconsistent.documents[0].passages[0].annotations[1]
+            .infons
+            .as_mut()
+            .expect("variant infons");
+        infons.gene_ids = Some(vec![673]);
+        infons.identifier =
+            Some("Variant:p.V600E;CorrespondingGene:673;CorrespondingGene:1".into());
+        assert_eq!(
+            verify_pubtator(&requested(), "1", &inconsistent, false).status,
+            "unverified"
+        );
+    }
+
+    #[test]
+    fn exact_allele_linked_to_another_gene_is_contradictory() {
+        let mut other_gene = response(false);
+        other_gene.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("gene infons")
+            .name = Some("NRAS".into());
+        other_gene.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("gene infons")
+            .identifier = Some("4893".into());
+        other_gene.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("gene infons")
+            .normalized_id = Some(4893);
+        let variant = other_gene.documents[0].passages[0].annotations[1]
+            .infons
+            .as_mut()
+            .expect("variant infons");
+        variant.gene_id = Some(4893);
+        variant.gene_ids = Some(vec![4893]);
+        variant.identifier = Some("Variant:p.V600E;CorrespondingGene:4893".into());
+        assert_eq!(
+            verify_pubtator(&requested(), "1", &other_gene, false).status,
+            "contradictory"
+        );
+    }
+
+    #[test]
+    fn overlong_linkage_fields_are_incomplete_and_ineligible() {
+        let mut overlong = response(false);
+        overlong.documents[0].passages[0].annotations[1].id =
+            Some("x".repeat(MAX_ANNOTATION_ID_BYTES + 1));
+        let identity = verify_pubtator(&requested(), "1", &overlong, false);
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+    }
+
+    #[test]
+    fn intronic_coordinates_are_not_collapsed_into_a_contradiction() {
+        let requested =
+            RequestedVariantIdentity::from_variant_input("ATM c.1066-6T>G").expect("identity");
+        let mut alternate = response(false);
+        alternate.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("gene infons")
+            .name = Some("ATM".into());
+        alternate.documents[0].passages[0].annotations[1]
+            .infons
+            .as_mut()
+            .expect("variant infons")
+            .hgvs = Some("c.1066+5G>A".into());
+        assert_eq!(
+            verify_pubtator(&requested, "1", &alternate, false).status,
+            "unverified"
+        );
+    }
+
+    #[test]
+    fn empty_identity_anomaly_changes_the_response_digest() {
+        let baseline = response(false);
+        let mut anomalous = response(false);
+        anomalous.documents.push(PubTatorDocument {
+            id: Some("2".into()),
+            pmid: Some(2),
+            pmcid: None,
+            date: None,
+            journal: None,
+            authors: vec![],
+            passages: vec![],
+            relations: vec![],
+        });
+        assert_ne!(
+            canonical_response_subset(&baseline),
+            canonical_response_subset(&anomalous)
+        );
     }
 
     #[test]
