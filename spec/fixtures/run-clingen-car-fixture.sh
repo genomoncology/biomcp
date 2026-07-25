@@ -15,6 +15,7 @@ JSON
 "$bin" --json variant normalize car --input "$work/panel.json" >"$work/panel.out"
 "$bin" --json variant normalize car --input "$work/cardinality.json" >"$work/cardinality.out"
 "$bin" --json variant normalize car 'NM_000001.1:c.1A>G' >"$work/external.out"
+"$bin" --json variant normalize car 'NM_000006.1:c.6A>G' >"$work/external-single.out"
 
 port="$("$root/spec/fixtures/reserve-local-port")"
 "$bin" serve-http --host 127.0.0.1 --port "$port" >"$work/mcp-server.log" 2>&1 &
@@ -49,11 +50,14 @@ import json
 from pathlib import Path
 import sys
 
+FIELDS = "none @id communityStandardTitle genomicAlleles transcriptAlleles.MANE externalRecords.dbSNP externalRecords.ClinVarVariations"
 work = Path(sys.argv[1])
-requests = Path(sys.argv[2]).read_text(encoding="utf-8")
+requests = [json.loads(line) for line in Path(sys.argv[2]).read_text(encoding="utf-8").splitlines()]
+panel_inputs = json.loads((work / "panel.json").read_text(encoding="utf-8"))
 panel = json.loads((work / "panel.out").read_text(encoding="utf-8"))
 cardinality = json.loads((work / "cardinality.out").read_text(encoding="utf-8"))
 external = json.loads((work / "external.out").read_text(encoding="utf-8"))
+external_single = json.loads((work / "external-single.out").read_text(encoding="utf-8"))
 typed_mcp = json.loads((work / "mcp.out").read_text(encoding="utf-8"))
 items = {item["input"]: item for item in panel["items"]}
 expected = {
@@ -72,19 +76,39 @@ blank = items["NM_000002.1:c.2A>G"]
 malformed = items["NM_000003.1:c.3A>G"]
 ids = external["external_ids"]
 values = ids["values"]
+get_template = any(
+    request["method"] == "GET"
+    and request["path"] == "/allele"
+    and request["query"] == {"hgvs": ["NM_000001.1:c.1A>G"], "fields": [FIELDS]}
+    for request in requests
+)
+post_template = any(
+    request["method"] == "POST"
+    and request["path"] == "/alleles"
+    and request["query"] == {"file": ["hgvs"], "fields": [FIELDS]}
+    and request["content_type"] == "text/plain; charset=utf-8"
+    and request["body"] == "\n".join(panel_inputs) + "\n"
+    for request in requests
+)
 report = {
     "cli_and_typed_mcp_parity": typed_mcp["items"][0]["caid"] == items["NM_000546.6:c.215C>G"]["caid"],
     "frozen_identity_panel": all(items[key]["caid"] == value for key, value in expected.items()),
-    "request_templates": "GET /allele?" in requests and "fields=none" in requests and "POST /alleles" in requests,
-    "batch_order_and_duplicates": panel["items"][0]["input"] == panel["items"][-1]["input"] == "NM_000038.6:c.847C>G",
+    "request_templates": get_template and post_template,
+    "batch_order_and_duplicates": [item["input"] for item in panel["items"]] == panel_inputs,
     "batch_cardinality_mismatch_is_incomplete": not cardinality["complete"],
     "version_provenance": all(item["provenance"]["car_version"] == "fixture-617" for item in panel["items"]),
     "minimal_blank_node_is_exhaustive_not_found": blank["status"] == "not_found" and blank["exhaustive"] is True,
     "malformed_blank_node_is_indeterminate": malformed["status"] == "indeterminate" and malformed["exhaustive"] is False,
-    "malformed_blank_node_has_no_credited_facts": malformed["caid"] is None and not any(malformed[key]["values"] for key in ("genomic_aliases", "transcript_aliases", "protein_aliases", "external_ids")),
-    "external_ids_have_independent_source_caps": len(values) == 16,
+    "malformed_blank_node_has_no_credited_facts": malformed["caid"] is None and all(
+        not malformed[key]["values"]
+        and malformed[key]["source_count"] == 0
+        and malformed[key]["truncated"] is False
+        for key in ("genomic_aliases", "transcript_aliases", "protein_aliases", "external_ids")
+    ),
+    "external_ids_have_independent_source_caps": len(values) == 16
+    and external_single["external_ids"]["values"] == [f"rs{n}" for n in range(1, 9)] + ["ClinVar:20"],
     "external_ids_report_full_distinct_source_count": ids["source_count"] == 18,
-    "external_ids_report_truncation": ids["truncated"] is True,
+    "external_ids_report_truncation": ids["truncated"] is True and external_single["external_ids"]["truncated"] is True,
     "external_ids_are_numeric_and_source_ordered": values == [f"rs{n}" for n in range(1, 9)] + [f"ClinVar:{n}" for n in range(11, 19)],
 }
 print(json.dumps(report, sort_keys=True))

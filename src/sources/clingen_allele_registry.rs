@@ -352,7 +352,10 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
     }
     transcripts.sort();
     proteins.sort();
-    let external_records = value.get("externalRecords");
+    let external_records = match value.get("externalRecords") {
+        Some(records) => Some(records.as_object().ok_or(())?),
+        None => None,
+    };
     let mut external = Vec::new();
     let mut source_count = 0;
     let mut truncated = false;
@@ -433,6 +436,18 @@ mod tests {
         assert!(!item.exhaustive);
         assert!(item.caid.is_none());
         assert!(item.genomic_aliases.values.is_empty());
+
+        let item = decode_normalize_response(
+            "NM_1.1:c.1A>G",
+            StatusCode::OK,
+            None,
+            br#"{"@id":"_:CA","externalRecords":"wrong"}"#,
+        );
+
+        assert_eq!(item.status, CarNormalizationStatus::Indeterminate);
+        assert!(!item.exhaustive);
+        assert!(item.caid.is_none());
+        assert!(item.external_ids.values.is_empty());
     }
 
     #[test]

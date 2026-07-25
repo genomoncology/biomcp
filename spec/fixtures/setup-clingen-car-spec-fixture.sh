@@ -54,6 +54,14 @@ def external_rich(hgvs):
     }
     return result
 
+def external_single_source(hgvs):
+    result = resolved(hgvs)
+    result["externalRecords"] = {
+        "dbSNP": [{"rs": number} for number in [9, 2, 2, 1, 8, 3, 7, 4, 6, 5]],
+        "ClinVarVariations": [{"variationId": 20}],
+    }
+    return result
+
 def send(handler, status, payload):
     body = json.dumps(payload).encode()
     handler.send_response(status)
@@ -64,15 +72,27 @@ def send(handler, status, payload):
     handler.wfile.write(body)
 
 class Handler(BaseHTTPRequestHandler):
+    def record_request(self, method, parsed, body=""):
+        with REQUEST_LOG.open("a", encoding="utf-8") as log:
+            log.write(json.dumps({
+                "method": method,
+                "path": parsed.path,
+                "query": parse_qs(parsed.query),
+                "content_type": self.headers.get("Content-Type"),
+                "body": body,
+            }) + "\n")
+
     def do_GET(self):
         parsed = urlparse(self.path)
         query = parse_qs(parsed.query)
         hgvs = query.get("hgvs", [""])[0]
-        REQUEST_LOG.write_text(REQUEST_LOG.read_text() + f"GET {self.path}\n")
+        self.record_request("GET", parsed)
         if parsed.path == "/healthz":
             send(self, 200, {"ok": True})
         elif hgvs == "NM_000001.1:c.1A>G":
             send(self, 200, external_rich(hgvs))
+        elif hgvs == "NM_000006.1:c.6A>G":
+            send(self, 200, external_single_source(hgvs))
         elif hgvs == "NM_000002.1:c.2A>G":
             send(self, 200, {"@id": "_:CA"})
         elif hgvs == "NM_000003.1:c.3A>G":
@@ -85,7 +105,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         body = self.rfile.read(int(self.headers.get("Content-Length", "0"))).decode()
-        REQUEST_LOG.write_text(REQUEST_LOG.read_text() + f"POST {self.path} {body!r}\n")
+        self.record_request("POST", parsed, body)
         inputs = [line for line in body.splitlines() if line]
         if "NM_000005.1:c.5A>G" in inputs:
             send(self, 200, [resolved(inputs[0])])
