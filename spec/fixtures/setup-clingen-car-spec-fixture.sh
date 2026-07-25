@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-workspace_root="${1:-$PWD}"
+workspace_root="$(cd "${1:-$PWD}" && pwd)"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-clingen-car-env"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

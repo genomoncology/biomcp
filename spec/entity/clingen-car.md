@@ -7,10 +7,9 @@ the separate live-provider diagnostic remains under `make verify`.
 
 ## Frozen CAR CLI and typed MCP contract
 
-The frozen panel retains its returned CAids, source-labelled aliases, request
-provenance, grammar boundary, GET/POST transport, batch order and duplicate
-preservation, response-cardinality handling, and all-provider ordering. The
-fixture calls the public CLI and typed MCP tool, rather than source helpers.
+The frozen panel retains returned CAids, request provenance, GET/POST transport,
+batch response-cardinality handling, and typed MCP parity. The fixture calls the
+public CLI and typed MCP tool, rather than source helpers.
 
 ```bash
 bash ../fixtures/run-clingen-car-fixture.sh ../.. | mustmatch like '"cli_and_typed_mcp_parity": true
@@ -18,9 +17,7 @@ bash ../fixtures/run-clingen-car-fixture.sh ../.. | mustmatch like '"cli_and_typ
 "request_templates": true
 "batch_order_and_duplicates": true
 "batch_cardinality_mismatch_is_incomplete": true
-"grammar_and_bounds": true
-"version_provenance": true
-"normalize_all_order_and_outage_isolation": true'
+"version_provenance": true'
 ```
 
 APC GRCh37 returning `CA015543` and `NM_000038.6:c.847C>G` returning

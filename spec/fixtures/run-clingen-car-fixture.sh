@@ -7,7 +7,7 @@ trap 'rm -rf "$work"' EXIT
 bin="${BIOMCP_BIN:?BIOMCP_BIN must name the fixture-tested binary}"
 
 cat >"$work/panel.json" <<'JSON'
-["NM_000038.6:c.847C>G","NM_000038.6:c.1A>G","NC_000005.9:g.112175951A>G","NM_000051.4:c.7271T>G","NM_007294.4:c.5266dupC","NM_000249.4:c.793C>T","NM_024675.4:c.3113G>A","NM_000314.8:c.388C>G","NM_000546.6:c.215C>G","NM_004333.6:c.1799T>A","NM_000002.1:c.2A>G","NM_000003.1:c.3A>G","NM_000004.1:c.4A>G"]
+["NM_000038.6:c.847C>G","NM_000038.6:c.1A>G","NC_000005.9:g.112175951A>G","NM_000051.4:c.7271T>G","NM_007294.4:c.5266dupC","NM_000249.4:c.793C>T","NM_024675.4:c.3113G>A","NM_000314.8:c.388C>G","NM_000546.6:c.215C>G","NM_004333.6:c.1799T>A","NM_000002.1:c.2A>G","NM_000003.1:c.3A>G","NM_000004.1:c.4A>G","NM_000038.6:c.847C>G"]
 JSON
 cat >"$work/cardinality.json" <<'JSON'
 ["NM_000005.1:c.5A>G","NM_000546.6:c.215C>G"]
@@ -75,12 +75,10 @@ values = ids["values"]
 report = {
     "cli_and_typed_mcp_parity": typed_mcp["items"][0]["caid"] == items["NM_000546.6:c.215C>G"]["caid"],
     "frozen_identity_panel": all(items[key]["caid"] == value for key, value in expected.items()),
-    "request_templates": "POST /alleles" in requests and "fields=none" in requests,
-    "batch_order_and_duplicates": [item["input"] for item in panel["items"]][:2] == ["NM_000038.6:c.847C>G", "NM_000038.6:c.1A>G"],
+    "request_templates": "GET /allele?" in requests and "fields=none" in requests and "POST /alleles" in requests,
+    "batch_order_and_duplicates": panel["items"][0]["input"] == panel["items"][-1]["input"] == "NM_000038.6:c.847C>G",
     "batch_cardinality_mismatch_is_incomplete": not cardinality["complete"],
-    "grammar_and_bounds": True,
     "version_provenance": all(item["provenance"]["car_version"] == "fixture-617" for item in panel["items"]),
-    "normalize_all_order_and_outage_isolation": True,
     "minimal_blank_node_is_exhaustive_not_found": blank["status"] == "not_found" and blank["exhaustive"] is True,
     "malformed_blank_node_is_indeterminate": malformed["status"] == "indeterminate" and malformed["exhaustive"] is False,
     "malformed_blank_node_has_no_credited_facts": malformed["caid"] is None and not any(malformed[key]["values"] for key in ("genomic_aliases", "transcript_aliases", "protein_aliases", "external_ids")),
