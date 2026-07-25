@@ -54,6 +54,10 @@ def test_installation_doc_covers_binary_first_and_pypi_command_contract() -> Non
     )
     assert INSTALLER_COMMAND in installer_block
     assert "bash -s -- --version 0.8.0" in installer_block
+    assert "fails closed" in installer_block
+    assert "sha256sum" in installer_block
+    assert "shasum -a 256" in installer_block
+    assert "openssl dgst -sha256" in installer_block
     assert "biomcp --version" in installer_block
 
     pypi_block = _markdown_section_block(

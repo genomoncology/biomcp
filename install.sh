@@ -29,47 +29,31 @@ download() {
   fi
 }
 
-download_optional_checksum() {
+download_checksum() {
   local url="$1"
   local dest="$2"
-  local status=""
 
   if command -v curl >/dev/null 2>&1; then
-    status="$(curl -sSL -o "$dest" -w '%{http_code}' "$url")" || return 1
+    curl -fsSL "$url" -o "$dest"
   elif command -v wget >/dev/null 2>&1; then
-    # Wget writes HTTP status lines to stderr; use the final status after redirects.
-    local headers
-    headers="$(wget -qS -O "$dest" "$url" 2>&1 || true)"
-    status="$(printf '%s\n' "$headers" | awk '/^  HTTP\// { code=$2 } END { print code }')"
+    wget -qO "$dest" "$url"
   else
     echo "curl or wget is required to download biomcp" >&2
     return 1
   fi
-
-  if [[ "$status" == "200" ]]; then
-    return 0
-  fi
-
-  rm -f "$dest"
-  if [[ "$status" == "404" ]]; then
-    return 2
-  fi
-
-  if [[ -n "$status" ]]; then
-    echo "Failed to download checksum file (HTTP $status): $url" >&2
-  else
-    echo "Failed to download checksum file: $url" >&2
-  fi
-  return 1
 }
 
 compute_sha256() {
   local file="$1"
+
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$file" | awk '{print tolower($1)}'
   elif command -v shasum >/dev/null 2>&1; then
     shasum -a 256 "$file" | awk '{print tolower($1)}'
+  elif command -v openssl >/dev/null 2>&1; then
+    openssl dgst -sha256 "$file" | awk '{print tolower($NF)}'
   else
+    echo "No SHA-256 tool found; install sha256sum, shasum, or openssl." >&2
     return 1
   fi
 }
@@ -77,24 +61,44 @@ compute_sha256() {
 verify_checksum() {
   local archive="$1"
   local checksum_file="$2"
-  local expected
+  local asset_name
+  local expected=""
   local actual
+  local line
+  local records=0
 
-  expected="$(awk 'NF {print tolower($1); exit}' "$checksum_file" | tr -d '\r')"
-  if [[ ! "$expected" =~ ^[0-9a-f]{64}$ ]]; then
-    echo "Checksum file is invalid: $checksum_file" >&2
+  asset_name="$(basename "$archive")"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    records=$((records + 1))
+    if [[ $records -ne 1 ]]; then
+      echo "Checksum file must contain exactly one record." >&2
+      return 1
+    fi
+
+    if [[ "$line" =~ ^([[:xdigit:]]{64})$ ]]; then
+      expected="${BASH_REMATCH[1],,}"
+    elif [[ "$line" =~ ^([[:xdigit:]]{64})[[:space:]]+\*?([^[:space:]]+)$ ]] && [[ "${BASH_REMATCH[2]}" == "$asset_name" ]]; then
+      expected="${BASH_REMATCH[1],,}"
+    else
+      echo "Checksum file is invalid for ${asset_name}." >&2
+      return 1
+    fi
+  done < "$checksum_file"
+
+  if [[ $records -ne 1 ]]; then
+    echo "Checksum file must contain exactly one record." >&2
     return 1
   fi
 
-  if ! actual="$(compute_sha256 "$archive")"; then
-    echo "Warning: no SHA256 tool available; skipping checksum verification." >&2
-    return 0
+  if ! actual="$(compute_sha256 "$archive")" || [[ ! "$actual" =~ ^[0-9a-f]{64}$ ]]; then
+    echo "Could not compute SHA-256 for ${asset_name}; refusing unverified installation." >&2
+    return 1
   fi
 
   if [[ "$actual" != "$expected" ]]; then
-    echo "Checksum verification failed for $(basename "$archive")" >&2
-    echo "Expected: $expected" >&2
-    echo "Actual:   $actual" >&2
+    echo "Checksum verification failed for ${asset_name}." >&2
     return 1
   fi
 
@@ -186,26 +190,19 @@ tmpdir="$(mktemp -d)"
 cleanup() { rm -rf "$tmpdir"; }
 trap cleanup EXIT
 
-mkdir -p "$INSTALL_DIR"
-
 echo "Downloading ${ASSET} from ${REPO} (version: ${VERSION})..."
 
 archive_path="$tmpdir/$ASSET"
 download "$DOWNLOAD_URL" "$archive_path"
 
 checksum_path="$archive_path.sha256"
-if download_optional_checksum "${DOWNLOAD_URL}.sha256" "$checksum_path"; then
-  echo "Verifying checksum..."
-  verify_checksum "$archive_path" "$checksum_path"
-else
-  checksum_status=$?
-  if [[ $checksum_status -eq 2 ]]; then
-    echo "Warning: checksum file not found for this release; continuing without checksum verification." >&2
-  else
-    echo "Checksum download failed; aborting installation." >&2
-    exit 1
-  fi
+if ! download_checksum "${DOWNLOAD_URL}.sha256" "$checksum_path"; then
+  echo "Could not download release checksum; refusing unverified installation." >&2
+  exit 1
 fi
+
+echo "Verifying checksum..."
+verify_checksum "$archive_path" "$checksum_path"
 
 bin_path=""
 if [[ "$ASSET" == *.tar.gz ]]; then
@@ -235,6 +232,7 @@ else
   exit 1
 fi
 
+mkdir -p "$INSTALL_DIR"
 chmod +x "$bin_path" || true
 installed_bin="$INSTALL_DIR/$(basename "$bin_path")"
 mv -f "$bin_path" "$installed_bin"

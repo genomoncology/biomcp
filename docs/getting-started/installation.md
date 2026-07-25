@@ -10,7 +10,7 @@ After installation, the `biomcp` command should be available in your shell.
 curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
-The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA256 checksum, and places `biomcp` in `~/.local/bin`.
+The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA-256 checksum, and places `biomcp` in `~/.local/bin`. It fails closed: it does not extract or install the archive unless it can download a valid one-record checksum sidecar and verify it locally. Install `sha256sum`, `shasum -a 256`, or `openssl dgst -sha256` before running the installer.
 
 Pin a specific version:
 
@@ -101,5 +101,6 @@ biomcp search gene -q BRAF --limit 1
 ## Troubleshooting quick hits
 
 - Command not found: ensure install location is on `PATH`.
+- Checksum verification fails: retry the download; the installer intentionally refuses to install an archive without a valid checksum and a local `sha256sum`, `shasum`, or `openssl` SHA-256 tool.
 - Build fails at protobuf step: install `protoc`.
 - Network-related health failures: retry and inspect upstream API status.
