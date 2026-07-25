@@ -504,14 +504,10 @@ mod tests {
     }
 
     #[test]
-    fn provider_linked_annotation_confirms_and_hashes_captured_content() {
+    fn arbitrary_relation_membership_cannot_confirm_typed_pubtator_linkage() {
         let identity = verify_pubtator(&requested(), &response(&["p.V600E"]), false);
-        assert_eq!(identity.status, "confirmed");
-        assert_eq!(identity.observations[0].linked_gene, "BRAF");
-        assert_eq!(identity.observations[0].gene_annotation_id, "gene-1");
-        assert_eq!(identity.observations[0].allele_annotation_id, "allele-1");
-        assert!(!identity.observations[0].provider_relation.is_empty());
-        assert!(!identity.observations[0].canonical_content_hash.is_empty());
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.observations.is_empty());
     }
 
     #[test]
