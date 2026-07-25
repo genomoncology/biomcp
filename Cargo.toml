@@ -129,3 +129,7 @@ strip = true
 inherits = "release"
 lto = false
 codegen-units = 16
+# The spec binary exists to exercise contracts, not to be fast at runtime.
+# Inheriting release silently also inherited opt-level = 3, so every ticket
+# gate paid full -O3 codegen for a throwaway build.
+opt-level = 1

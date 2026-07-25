@@ -328,7 +328,7 @@ ready.write_text(f"http://127.0.0.1:{server.server_port}", encoding="utf-8")
 server.serve_forever()
 PY
 
-uv run --no-sync python3 "$server_py" "$ready_file" "$request_log" "$scenario" &
+uv run --no-sync python3 "$server_py" "$ready_file" "$request_log" "$scenario" 8>&- &
 server_pid=$!
 trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 

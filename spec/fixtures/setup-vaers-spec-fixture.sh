@@ -23,7 +23,7 @@ fixture_root="$(mktemp -d "$cache_dir/spec-vaers.XXXXXX")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
 
-python3 - "$ready_file" "$script_dir/vaers" <<'PY' >"$server_log" 2>&1 &
+python3 - "$ready_file" "$script_dir/vaers" <<'PY' >"$server_log" 2>&1 8>&- &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse

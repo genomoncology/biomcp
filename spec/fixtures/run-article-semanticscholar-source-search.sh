@@ -20,7 +20,7 @@ trap cleanup EXIT
 cleanup
 rm -f "$PORT_FILE" "$LOG_FILE" "$PID_FILE"
 
-uv run --no-sync python3 - "$PORT_FILE" >"$LOG_FILE" 2>&1 <<'PY' &
+uv run --no-sync python3 - "$PORT_FILE" >"$LOG_FILE" 2>&1 <<'PY' 8>&- &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer

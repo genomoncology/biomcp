@@ -32,7 +32,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
 
-setsid uv run --no-sync python - "$ready_file" "$request_log" "$server_pid_file" <<'PY' >"$server_log" 2>&1 &
+setsid uv run --no-sync python - "$ready_file" "$request_log" "$server_pid_file" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse

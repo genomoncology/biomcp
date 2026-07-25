@@ -17,7 +17,7 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 rm -f "$PORT_FILE" "$ENV_FILE" "$LOG_FILE" "$PID_FILE"
 
-uv run --no-sync python3 - "$PORT_FILE" >"$LOG_FILE" 2>&1 <<'PY' &
+uv run --no-sync python3 - "$PORT_FILE" >"$LOG_FILE" 2>&1 <<'PY' 8>&- &
 import json
 import sys
 import time

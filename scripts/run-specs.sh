@@ -182,7 +182,18 @@ run_variant_identity_fixture() {
 lock_routine_fixtures() {
   mkdir -p "$ROOT/.cache"
   exec 8>"$ROOT/.cache/spec-routine-fixtures.lock"
-  flock 8
+  # Bounded wait. flock binds to the open file description, not the PID, so a
+  # background fixture server that inherited fd 8 and outlived an interrupted
+  # run holds this lock forever. Every fixture now closes fd 8 explicitly, but
+  # if one ever leaks again this must fail loudly in minutes rather than hang
+  # until the caller's own timeout kills it hours later.
+  if ! flock -w 300 8; then
+    printf 'error: could not acquire %s within 300s.\n' \
+      "$ROOT/.cache/spec-routine-fixtures.lock" >&2
+    printf 'A leaked fixture process is probably still holding it. Find it with:\n' >&2
+    printf '  for f in /proc/[0-9]*/fd/*; do readlink "$f" | grep -q spec-routine-fixtures.lock && echo "$f"; done\n' >&2
+    exit 1
+  fi
 }
 
 run_section_outcome_specs() {

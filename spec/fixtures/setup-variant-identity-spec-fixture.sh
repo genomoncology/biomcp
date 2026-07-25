@@ -16,7 +16,7 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
 : >"$request_log"
 
-uv run --no-sync python - "$workspace_root" "$ready_file" "$request_log" <<'PY' >"$server_log" 2>&1 &
+uv run --no-sync python - "$workspace_root" "$ready_file" "$request_log" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse

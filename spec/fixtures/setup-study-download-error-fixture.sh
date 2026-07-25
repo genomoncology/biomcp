@@ -20,7 +20,7 @@ server_log="$fixture_root/server.log"
 
 mkdir -p "$study_root"
 
-python3 - "$ready_file" <<'PY' >"$server_log" 2>&1 &
+python3 - "$ready_file" <<'PY' >"$server_log" 2>&1 8>&- &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys

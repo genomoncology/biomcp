@@ -39,7 +39,7 @@ cleanup_on_error() {
 
 trap cleanup_on_error EXIT
 
-python3 - "$ready_file" "$request_log" <<'PY' >"$server_log" 2>&1 &
+python3 - "$ready_file" "$request_log" <<'PY' >"$server_log" 2>&1 8>&- &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse

@@ -19,7 +19,7 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request-log.txt"
 : > "$request_log"
 
-python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" 9>&- <<'PY' >"$server_log" 2>&1 &
+python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse

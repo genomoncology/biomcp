@@ -9,7 +9,7 @@ ready="$fixture_root/ready"
 mode="$fixture_root/mode"
 printf 'normal\n' >"$mode"
 
-uv run --no-sync python - "$ready" "$mode" <<'PY' >"$fixture_root/server.log" 2>&1 &
+uv run --no-sync python - "$ready" "$mode" <<'PY' >"$fixture_root/server.log" 2>&1 8>&- &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
