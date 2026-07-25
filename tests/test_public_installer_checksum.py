@@ -84,11 +84,19 @@ def _tools(tmp_path: Path, downloader: str, sha_tool: str) -> Path:
 
 
 def _run_installer(
-    tmp_path: Path, sidecar: str | None, *, downloader: str = "curl", sha_tool: str = "system"
+    tmp_path: Path,
+    sidecar: str | None,
+    *,
+    downloader: str = "curl",
+    sha_tool: str = "system",
+    existing_destination: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     fixture, _ = _fixture(tmp_path, sidecar)
     tools = _tools(tmp_path, downloader, sha_tool)
     install_dir = tmp_path / "install"
+    if existing_destination is not None:
+        install_dir.mkdir()
+        (install_dir / "biomcp").write_text(existing_destination, encoding="utf-8")
     scratch = tmp_path / "scratch"
     scratch.mkdir()
     env = os.environ | {
@@ -140,12 +148,44 @@ def test_installer_refuses_unproven_checksum_before_destination_change(
     assert not (tmp_path / "install" / "biomcp").exists()
 
 
-def test_installer_rejects_mismatched_checksum_before_extraction(tmp_path: Path) -> None:
-    result = _run_installer(tmp_path, f"{'0' * 64}\n")
+def test_installer_accepts_uppercase_checksum_hex(tmp_path: Path) -> None:
+    fixture, digest = _fixture(tmp_path, None)
+    (fixture / "sidecar").write_text(f"{digest.upper()}\n", encoding="utf-8")
+    tools = _tools(tmp_path, "curl", "system")
+    install_dir = tmp_path / "install"
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    result = subprocess.run(
+        ["bash", str(INSTALLER)],
+        text=True,
+        capture_output=True,
+        env=os.environ
+        | {
+            "BIOMCP_INSTALL_DIR": str(install_dir),
+            "BIOMCP_VERSION": "0.0.0",
+            "FIXTURE_DIR": str(fixture),
+            "TMPDIR": str(scratch),
+            "PATH": str(tools),
+        },
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (install_dir / "biomcp").exists()
+    assert not list(scratch.iterdir())
+
+
+def test_installer_rejects_mismatched_checksum_without_touching_existing_destination(
+    tmp_path: Path,
+) -> None:
+    original = "known-good-existing-binary\n"
+    result = _run_installer(
+        tmp_path, f"{'0' * 64}\n", existing_destination=original
+    )
 
     assert result.returncode != 0
     assert "Checksum verification failed" in result.stderr
-    assert not (tmp_path / "install" / "biomcp").exists()
+    assert (tmp_path / "install" / "biomcp").read_text(encoding="utf-8") == original
 
 
 @pytest.mark.parametrize("sha_tool", ["failure", "unavailable"])
