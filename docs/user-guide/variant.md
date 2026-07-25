@@ -309,7 +309,9 @@ An incomplete provider route keeps available rows but sets `complete: false`,
 retrieved pool. `--confirmed-only` requires it and filters before ranking and
 pagination. Query aliases remain retrieval provenance, never observed aliases.
 Identity observations retain source, section, locator, linked gene, observed
-alias, and canonical captured-content hash. `--debug-plan` records versioned clinically relevant response/content subset hashes,
+alias, typed `provider_linkage`, and canonical captured-content hash. Confirmation
+uses only returned-PMID typed PubTator Gene/Variant facts with matching exact HGVS
+and CorrespondingGene/NCBI Gene-ID evidence. `--debug-plan` records versioned clinically relevant response/content subset hashes,
 the post-response verifier and provider-template versions, plus artifact identity;
 those hashes are audit facts, never retrieval-cache keys. Frozen fixture coverage is
 release proof; the matching live probe is diagnostic only. The typed MCP

@@ -45,3 +45,30 @@ truncated, and without a total. The report also requires versioned verifier and
 provider-template facts plus canonical hashes of the clinically relevant
 response and captured-content subsets, so citation ordering or count changes do
 not become release criteria.
+
+## Typed PubTator linkage is bound to the returned PMID
+
+<!-- mustmatch-lint: skip -->
+
+The frozen captures use current-shaped typed `Gene` and `Variant` annotations.
+A confirmation is evidence only when the returned document PMID, the requested
+gene's NCBI Gene ID, and the exact returned HGVS agree through the variant's
+`CorrespondingGene` facts. Missing, mismatched, or extra document identities are
+incomplete provider anomalies, not contrary evidence; their presence cannot turn
+a confirmed exact linkage into a contradiction. An `Association` relation without
+typed linkage remains unverified. Duplicate expected-PMID documents and returned
+document order cannot alter the result. The tagged linkage object keeps this proof
+auditable while the legacy relation fields remain null for this path.
+
+```bash run id=typed-pubtator-identity exit=0
+bash ../fixtures/run-variant-article-identity-fixture.sh ../..
+```
+
+```json expect=typed-pubtator-identity contains
+{
+  "typed_corresponding_gene_proof_is_pmid_bound": true,
+  "document_identity_anomalies_are_incomplete_without_false_contradiction": true,
+  "association_without_typed_linkage_is_unverified": true,
+  "expected_pmid_aggregation_is_order_independent": true
+}
+```

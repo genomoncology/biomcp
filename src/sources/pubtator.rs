@@ -335,6 +335,7 @@ pub struct PubTatorExportResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct PubTatorDocument {
+    pub id: Option<String>,
     pub pmid: Option<u32>,
     pub pmcid: Option<String>,
     pub date: Option<String>,
@@ -386,9 +387,12 @@ pub struct PubTatorRelationNode {
 pub struct PubTatorAnnotationInfons {
     #[serde(rename = "type")]
     pub kind: Option<String>,
-    // dead-code reason: pubtator::identifier preserves the provider shape used by source contract fixtures
-    #[allow(dead_code)]
+    pub name: Option<String>,
     pub identifier: Option<String>,
+    pub normalized_id: Option<u64>,
+    pub hgvs: Option<String>,
+    pub gene_id: Option<u64>,
+    pub gene_ids: Option<Vec<u64>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

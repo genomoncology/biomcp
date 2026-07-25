@@ -92,10 +92,11 @@ exact-variant-literature`.
 identity projection from captured provider evidence without changing normal
 retrieval recall. `--confirmed-only` requires verification and filters the
 verified candidate pool before ranking and pagination. Retrieval aliases remain
-provenance, not observed article evidence. Confirmation requires a provider
-relation linking the gene and allele annotations; same-passage co-occurrence is
-not enough. Identity observations include their provider, locator, linked gene,
-observed alias, provider linkage, and canonical captured-content hash;
+provenance, not observed article evidence. Confirmation requires a returned-PMID
+typed PubTator Gene/Variant linkage whose exact HGVS and CorrespondingGene/NCBI
+Gene-ID facts agree; relations and same-passage co-occurrence are not enough.
+Identity observations include their provider, locator, linked gene, observed alias,
+typed `provider_linkage`, and canonical captured-content hash;
 verification artifact hashes in `--debug-plan` are versioned clinically relevant
 response/content subset audit facts, not retrieval-cache keys. Verification
 never fetches supplements automatically, and an incomplete verification is not a
