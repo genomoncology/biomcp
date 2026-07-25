@@ -730,6 +730,36 @@ mod tests {
     }
 
     #[test]
+    fn retained_bytes_counts_every_owned_regular_file() {
+        let root = TempDirGuard::new("provider-capture-retained-files");
+        let store = ProviderCaptureStore::new(root.path());
+        let manifest = store
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"exact bytes")
+            .expect("capture");
+        let blob = root
+            .path()
+            .join("captures/cspec/sha256")
+            .join(&manifest.sha256[..2])
+            .join(&manifest.sha256);
+        let metadata = root
+            .path()
+            .join("captures/cspec/metadata")
+            .join(&manifest.sha256[..2])
+            .join(format!("{}.json", manifest.sha256));
+        let staging = root.path().join("captures/.staging/interrupted.tmp");
+        std::fs::write(&staging, b"interrupted publication").expect("write staged bytes");
+        let expected = std::fs::metadata(blob).expect("blob metadata").len()
+            + std::fs::metadata(metadata).expect("capture metadata").len()
+            + std::fs::metadata(staging).expect("staging metadata").len();
+
+        assert_eq!(
+            store.retained_bytes().expect("retained bytes"),
+            expected,
+            "the namespace bound must include every retained regular file except the lock"
+        );
+    }
+
+    #[test]
     fn concurrent_same_content_captures_publish_one_complete_record() {
         let root = TempDirGuard::new("provider-capture-concurrent");
         let store = Arc::new(ProviderCaptureStore::new(root.path()));
