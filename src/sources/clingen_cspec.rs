@@ -12,6 +12,7 @@ const DOCUMENT_LIMIT: usize = 4 * 1024 * 1024;
 
 pub(crate) struct CspecClient {
     client: reqwest_middleware::ClientWithMiddleware,
+    fixture_origin: Option<Url>,
 }
 
 impl CspecClient {
@@ -24,11 +25,12 @@ impl CspecClient {
             .map_err(BioMcpError::from)?;
         Ok(Self {
             client: reqwest_middleware::ClientBuilder::new(client).build(),
+            fixture_origin: crate::sources::provider_url_policy::cspec_fixture_origin()?,
         })
     }
 
     pub(crate) async fn manifest(&self, gene: &str) -> Result<Value, BioMcpError> {
-        let mut url = Url::parse(CSPEC_BASE).expect("static CSpec origin is valid");
+        let mut url = self.fetch_url(Url::parse(CSPEC_BASE).expect("static CSpec origin is valid"));
         url.path_segments_mut()
             .expect("static origin accepts path segments")
             .extend([
@@ -47,9 +49,23 @@ impl CspecClient {
 
     pub(crate) async fn document(&self, iri: &Url) -> Result<Vec<u8>, BioMcpError> {
         crate::sources::provider_url_policy::ProviderUrlPolicy::cspec()?.validate_url(iri)?;
-        let (_, bytes) = self.get(iri.clone(), DOCUMENT_LIMIT).await?;
+        let (_, bytes) = self
+            .get(self.fetch_url(iri.clone()), DOCUMENT_LIMIT)
+            .await?;
         decode_envelope(&bytes)?;
         Ok(bytes)
+    }
+
+    fn fetch_url(&self, mut url: Url) -> Url {
+        if let Some(origin) = &self.fixture_origin {
+            url.set_scheme(origin.scheme())
+                .expect("fixture origin has scheme");
+            url.set_host(origin.host_str())
+                .expect("fixture origin has host");
+            url.set_port(origin.port())
+                .expect("fixture origin has valid port");
+        }
+        url
     }
 
     async fn get(&self, url: Url, limit: usize) -> Result<(StatusCode, Vec<u8>), BioMcpError> {

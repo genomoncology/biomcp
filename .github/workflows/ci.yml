@@ -29,6 +29,14 @@ jobs:
       - run: cargo clippy -- -D warnings
       - run: cargo test
 
+  windows-cspec-capture:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Exercise CSpec capture create/read/restart/corruption lifecycle
+        run: cargo test --locked cache::provider_capture
+
   version-sync:
     runs-on: ubuntu-latest
     steps:

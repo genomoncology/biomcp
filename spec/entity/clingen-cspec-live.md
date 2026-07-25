@@ -17,5 +17,8 @@ biomcp --json gene cspec ATM --version https://cspec.genome.network/cspec/Sequen
 "source_sha256"
 "byte_length"
 "resource_iri"
-"display_version"'
+"specification_id"
+"display_version"
+"semantic_subset_version"
+"semantic_subset_sha256"'
 ```

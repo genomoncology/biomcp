@@ -44,6 +44,9 @@ execution failures:
 | `ApiJson` | API response shape changed or returned malformed JSON | Retry once; if repeatable, report issue because upstream format may have changed |
 | `NotFound` | Requested entity ID was not found | Verify identifier format; run `search` before `get` when unsure |
 | `InvalidArgument` | Command arguments are invalid or inconsistent | Re-run with `--help` and correct flag values/section names |
+| `CaptureUnavailable` | A CSpec capture is missing, expired, or evicted | Select the source document again to create a fresh capture |
+| `CaptureCorrupt` | Stored CSpec binding metadata or captured bytes failed integrity checks | Clear the affected cache and select the source document again |
+| `BindingConflict` | Identical CSpec bytes were already captured under different source identity | Select the correct document identity; do not reuse the handle across sources |
 | `ApiKeyRequired` | Source requires an API key that is not set | Export the listed environment variable and retry |
 | `ApiKeyRejected` | Provider rejected the configured API key or the account lacks access | Check the credential is valid and that the account has provider access |
 | `SourceUnavailable` | Requested source could not be used | Review source configuration and retry |

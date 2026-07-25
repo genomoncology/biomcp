@@ -294,6 +294,9 @@ pub enum BioMcpError {
         suggestion: String,
     },
     InvalidArgument(String),
+    CaptureUnavailable,
+    CaptureCorrupt,
+    BindingConflict,
     ApiKeyRequired {
         api: String,
         env_var: String,
@@ -352,6 +355,9 @@ impl BioMcpError {
             }
             Self::NotFound { .. } => format!("Requested item was not found in {source}."),
             Self::InvalidArgument(_) => format!("Invalid request for {source}."),
+            Self::CaptureUnavailable | Self::CaptureCorrupt | Self::BindingConflict => {
+                "Captured source material could not be used.".to_string()
+            }
             Self::ApiKeyRequired { .. } => {
                 format!("Source configuration for {source} is incomplete.")
             }
@@ -384,6 +390,15 @@ impl BioMcpError {
                 suggestion,
             } => format!("{entity} '{id}' not found.\n\n{suggestion}"),
             Self::InvalidArgument(message) => format!("Invalid argument: {message}"),
+            Self::CaptureUnavailable => {
+                "capture_unavailable: captured source material is unavailable".to_string()
+            }
+            Self::CaptureCorrupt => {
+                "capture_corrupt: captured source material is corrupt".to_string()
+            }
+            Self::BindingConflict => {
+                "binding_conflict: capture identity conflicts with the requested source".to_string()
+            }
             Self::ApiKeyRequired {
                 api,
                 env_var,
@@ -468,6 +483,9 @@ impl BioMcpError {
             Self::ApiJson { .. } => "api_json",
             Self::NotFound { .. } => "not_found",
             Self::InvalidArgument(_) => "invalid_argument",
+            Self::CaptureUnavailable => "capture_unavailable",
+            Self::CaptureCorrupt => "capture_corrupt",
+            Self::BindingConflict => "binding_conflict",
             Self::ApiKeyRequired { .. } => "api_key_required",
             Self::ApiKeyRejected { .. } => "api_key_rejected",
             Self::SourceUnavailable { .. } => "source_unavailable",
@@ -526,6 +544,15 @@ impl fmt::Display for BioMcpError {
                 suggestion,
             } => write!(formatter, "{entity} '{id}' not found.\n\n{suggestion}"),
             Self::InvalidArgument(message) => write!(formatter, "Invalid argument: {message}"),
+            Self::CaptureUnavailable => {
+                formatter.write_str("capture_unavailable: captured source material is unavailable")
+            }
+            Self::CaptureCorrupt => {
+                formatter.write_str("capture_corrupt: captured source material is corrupt")
+            }
+            Self::BindingConflict => formatter.write_str(
+                "binding_conflict: capture identity conflicts with the requested source",
+            ),
             Self::ApiKeyRequired {
                 api,
                 env_var,

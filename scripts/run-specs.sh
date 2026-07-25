@@ -190,6 +190,21 @@ run_clingen_car_fixture() {
   register_cleanup cleanup_clingen_car_fixture
 }
 
+cleanup_clingen_cspec_fixture() {
+  bash spec/fixtures/cleanup-clingen-cspec-spec-fixture.sh "$ROOT"
+}
+
+run_clingen_cspec_fixture() {
+  # Isolated runner-lifecycle tests copy the historical fixture subset; the real
+  # routine workspace always includes this ticket's CSpec fixture.
+  if [[ ! -x spec/fixtures/setup-clingen-cspec-spec-fixture.sh ]]; then
+    return
+  fi
+  bash spec/fixtures/setup-clingen-cspec-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-clingen-cspec-env"
+  register_cleanup cleanup_clingen_cspec_fixture
+}
+
 lock_routine_fixtures() {
   mkdir -p "$ROOT/.cache"
   exec 8>"$ROOT/.cache/spec-routine-fixtures.lock"
@@ -259,6 +274,7 @@ case "$mode" in
     run_disease_survival_fixture
     run_variant_identity_fixture
     run_clingen_car_fixture
+    run_clingen_cspec_fixture
     ;;
   spec-contracts)
     timeout_args=(--timeout 180)

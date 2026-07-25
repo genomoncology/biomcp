@@ -30,5 +30,6 @@ pub(crate) use planner::{
 };
 #[allow(unused_imports)]
 pub(crate) use provider_capture::{
-    ProviderCaptureError, ProviderCaptureManifest, ProviderCaptureProvider, ProviderCaptureStore,
+    CspecCaptureBinding, ProviderCaptureError, ProviderCaptureManifest, ProviderCaptureProvider,
+    ProviderCaptureStore,
 };

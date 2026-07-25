@@ -43,6 +43,15 @@ pub(crate) struct ProviderCaptureManifest {
     pub(crate) captured_at: u64,
     pub(crate) expires_at: u64,
     pub(crate) schema_version: u8,
+    pub(crate) capture_binding: Option<CspecCaptureBinding>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct CspecCaptureBinding {
+    pub(crate) binding_schema_version: u8,
+    pub(crate) normalized_gene: String,
+    pub(crate) resource_iri: String,
+    pub(crate) specification_id: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,6 +60,7 @@ pub(crate) enum ProviderCaptureError {
     Oversize,
     Unavailable,
     Corrupt,
+    BindingConflict,
 }
 
 #[derive(Debug, Clone)]
@@ -77,7 +87,20 @@ impl ProviderCaptureStore {
         media_type: impl Into<String>,
         bytes: &[u8],
     ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
-        self.capture(provider, media_type, io::Cursor::new(bytes))
+        self.capture(provider, media_type, io::Cursor::new(bytes), None)
+    }
+
+    pub(crate) fn capture_cspec_bytes(
+        &self,
+        binding: CspecCaptureBinding,
+        bytes: &[u8],
+    ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
+        self.capture(
+            ProviderCaptureProvider::Cspec,
+            "application/json",
+            io::Cursor::new(bytes),
+            Some(binding),
+        )
     }
 
     pub(crate) fn capture<R: Read>(
@@ -85,6 +108,7 @@ impl ProviderCaptureStore {
         provider: ProviderCaptureProvider,
         media_type: impl Into<String>,
         mut body: R,
+        capture_binding: Option<CspecCaptureBinding>,
     ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
         self.ensure_directory(&self.root)?;
         self.ensure_directory(&self.root.join(".staging"))?;
@@ -138,6 +162,7 @@ impl ProviderCaptureStore {
                 captured_at: now,
                 expires_at: now + RETENTION.as_secs(),
                 schema_version: SCHEMA_VERSION,
+                capture_binding,
             };
             self.with_lock(|| {
                 let blob = self.blob_path(provider, &sha256);
@@ -145,7 +170,11 @@ impl ProviderCaptureStore {
                 if let Ok(existing) = self.read_complete(&manifest.capture_id)
                     && existing.manifest.expires_at > now
                 {
-                    return Ok(existing.manifest);
+                    return if existing.manifest.capture_binding == manifest.capture_binding {
+                        Ok(existing.manifest)
+                    } else {
+                        Err(ProviderCaptureError::BindingConflict)
+                    };
                 }
                 let parent = blob.parent().ok_or(ProviderCaptureError::Corrupt)?;
                 self.ensure_directory(parent)?;
@@ -168,6 +197,13 @@ impl ProviderCaptureStore {
         capture_result
     }
 
+    pub(crate) fn read_manifest(
+        &self,
+        capture_id: &str,
+    ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
+        self.with_lock(|| self.read_complete(capture_id).map(|record| record.manifest))
+    }
+
     pub(crate) fn read(&self, capture_id: &str) -> Result<Vec<u8>, ProviderCaptureError> {
         self.with_lock(|| {
             let mut record = self.read_complete(capture_id)?;
@@ -188,10 +224,7 @@ impl ProviderCaptureStore {
     }
 
     pub(crate) fn retained_bytes(&self) -> Result<u64, ProviderCaptureError> {
-        self.with_lock(|| {
-            self.blob_entries()
-                .map(|entries| entries.into_iter().map(|entry| entry.size).sum())
-        })
+        self.with_lock(|| retained_regular_file_bytes(&self.root))
     }
 
     pub(crate) fn maintain(&self) -> Result<u64, ProviderCaptureError> {
@@ -239,6 +272,12 @@ impl ProviderCaptureStore {
             || metadata.manifest.provider != provider
             || metadata.manifest.sha256 != digest
             || metadata.manifest.schema_version != SCHEMA_VERSION
+            || metadata.manifest.provider == ProviderCaptureProvider::Cspec
+                && metadata
+                    .manifest
+                    .capture_binding
+                    .as_ref()
+                    .is_some_and(|binding| binding.binding_schema_version != 1)
         {
             return Err(ProviderCaptureError::Corrupt);
         }
@@ -299,15 +338,10 @@ impl ProviderCaptureStore {
                 record.metadata.manifest.capture_id.clone(),
             )
         });
-        let mut retained: u64 = records
-            .iter()
-            .map(|record| record.metadata.manifest.byte_length)
-            .sum();
         for record in records {
-            if retained <= MAX_RETAINED_BYTES {
+            if retained_regular_file_bytes(&self.root)? <= MAX_RETAINED_BYTES {
                 break;
             }
-            retained -= record.metadata.manifest.byte_length;
             freed += self.remove_record(&record)?;
         }
         Ok(freed)
@@ -334,7 +368,7 @@ impl ProviderCaptureStore {
         let mut retained_records = Vec::new();
         for record in records.drain(..) {
             if record.metadata.manifest.expires_at <= now {
-                freed += self.record_blob_size(&record)?;
+                freed += self.record_regular_file_bytes(&record)?;
             } else {
                 retained_records.push(record);
             }
@@ -355,37 +389,48 @@ impl ProviderCaptureStore {
                 record.metadata.manifest.capture_id.clone(),
             )
         });
-        let mut retained: u64 = retained_records
-            .iter()
-            .map(|record| record.metadata.manifest.byte_length)
-            .sum();
+        let mut retained = retained_regular_file_bytes(&self.root)?
+            .checked_sub(freed)
+            .ok_or(ProviderCaptureError::Corrupt)?;
         for record in retained_records {
             if retained <= MAX_RETAINED_BYTES {
                 break;
             }
-            retained -= record.metadata.manifest.byte_length;
-            freed += self.record_blob_size(&record)?;
+            let record_bytes = self.record_regular_file_bytes(&record)?;
+            retained = retained
+                .checked_sub(record_bytes)
+                .ok_or(ProviderCaptureError::Corrupt)?;
+            freed += record_bytes;
         }
         Ok(freed)
     }
 
     fn remove_record(&self, record: &MetadataEntry) -> Result<u64, ProviderCaptureError> {
         let blob = self.blob_path(record.provider, &record.metadata.manifest.sha256);
-        let freed = self.record_blob_size(record)?;
+        let freed = self.record_regular_file_bytes(record)?;
         fs::remove_file(&record.path).map_err(|_| ProviderCaptureError::Corrupt)?;
         let _ = fs::remove_file(blob);
         Ok(freed)
     }
 
-    fn record_blob_size(&self, record: &MetadataEntry) -> Result<u64, ProviderCaptureError> {
+    fn record_regular_file_bytes(
+        &self,
+        record: &MetadataEntry,
+    ) -> Result<u64, ProviderCaptureError> {
+        let metadata = fs::metadata(&record.path)
+            .map_err(|_| ProviderCaptureError::Corrupt)?
+            .len();
         let blob = self.blob_path(record.provider, &record.metadata.manifest.sha256);
-        if regular_file(&blob) {
+        let blob = if regular_file(&blob) {
             fs::metadata(blob)
-                .map(|metadata| metadata.len())
-                .map_err(|_| ProviderCaptureError::Corrupt)
+                .map_err(|_| ProviderCaptureError::Corrupt)?
+                .len()
         } else {
-            Ok(0)
-        }
+            0
+        };
+        metadata
+            .checked_add(blob)
+            .ok_or(ProviderCaptureError::Corrupt)
     }
 
     fn metadata_entries(&self) -> Result<Vec<MetadataEntry>, ProviderCaptureError> {
@@ -413,6 +458,11 @@ impl ProviderCaptureStore {
                     || metadata.manifest.provider != provider
                     || metadata.manifest.sha256 != digest
                     || metadata.manifest.schema_version != SCHEMA_VERSION
+                    || metadata
+                        .manifest
+                        .capture_binding
+                        .as_ref()
+                        .is_some_and(|binding| binding.binding_schema_version != 1)
                     || path != self.metadata_path(provider, digest)
                 {
                     return Err(ProviderCaptureError::Corrupt);
@@ -588,9 +638,42 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), ProviderCaptureError> {
 }
 
 fn sync_dir(path: &Path) -> Result<(), ProviderCaptureError> {
-    File::open(path)
-        .and_then(|file| file.sync_all())
-        .map_err(|_| ProviderCaptureError::Corrupt)
+    #[cfg(windows)]
+    {
+        let _ = path;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        File::open(path)
+            .and_then(|file| file.sync_all())
+            .map_err(|_| ProviderCaptureError::Corrupt)
+    }
+}
+
+fn retained_regular_file_bytes(path: &Path) -> Result<u64, ProviderCaptureError> {
+    let mut total = 0;
+    for entry in fs::read_dir(path).map_err(|_| ProviderCaptureError::Corrupt)? {
+        let entry = entry.map_err(|_| ProviderCaptureError::Corrupt)?;
+        let entry_path = entry.path();
+        let file_type = entry
+            .file_type()
+            .map_err(|_| ProviderCaptureError::Corrupt)?;
+        if entry.file_name() == ".lock" {
+            continue;
+        }
+        if file_type.is_file() {
+            total += entry
+                .metadata()
+                .map_err(|_| ProviderCaptureError::Corrupt)?
+                .len();
+        } else if file_type.is_dir() {
+            total += retained_regular_file_bytes(&entry_path)?;
+        } else {
+            return Err(ProviderCaptureError::Corrupt);
+        }
+    }
+    Ok(total)
 }
 
 #[cfg(test)]
@@ -631,6 +714,32 @@ mod tests {
         assert_eq!(first.capture_id, same.capture_id);
         assert_ne!(first.capture_id, changed.capture_id);
         assert_eq!(store.read(&first.capture_id), Ok(b"exact bytes".to_vec()));
+    }
+
+    #[test]
+    fn captures_survive_store_restart_then_detect_corruption() {
+        let root = TempDirGuard::new("provider-capture-restart");
+        let manifest = ProviderCaptureStore::new(root.path())
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"original")
+            .expect("capture");
+        let restarted = ProviderCaptureStore::new(root.path());
+        assert_eq!(
+            restarted.read(&manifest.capture_id),
+            Ok(b"original".to_vec()),
+            "a fresh store instance must read the published capture"
+        );
+        std::fs::write(
+            root.path()
+                .join("captures/cspec/sha256")
+                .join(&manifest.sha256[..2])
+                .join(&manifest.sha256),
+            b"changed",
+        )
+        .expect("corrupt blob");
+        assert_eq!(
+            restarted.read(&manifest.capture_id),
+            Err(ProviderCaptureError::Corrupt)
+        );
     }
 
     #[test]
@@ -726,6 +835,36 @@ mod tests {
         assert_eq!(
             store.read(&oldest.capture_id),
             Err(ProviderCaptureError::Unavailable)
+        );
+    }
+
+    #[test]
+    fn retained_bytes_counts_every_owned_regular_file() {
+        let root = TempDirGuard::new("provider-capture-retained-files");
+        let store = ProviderCaptureStore::new(root.path());
+        let manifest = store
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"exact bytes")
+            .expect("capture");
+        let blob = root
+            .path()
+            .join("captures/cspec/sha256")
+            .join(&manifest.sha256[..2])
+            .join(&manifest.sha256);
+        let metadata = root
+            .path()
+            .join("captures/cspec/metadata")
+            .join(&manifest.sha256[..2])
+            .join(format!("{}.json", manifest.sha256));
+        let staging = root.path().join("captures/.staging/interrupted.tmp");
+        std::fs::write(&staging, b"interrupted publication").expect("write staged bytes");
+        let expected = std::fs::metadata(blob).expect("blob metadata").len()
+            + std::fs::metadata(metadata).expect("capture metadata").len()
+            + std::fs::metadata(staging).expect("staging metadata").len();
+
+        assert_eq!(
+            store.retained_bytes().expect("retained bytes"),
+            expected,
+            "the namespace bound must include every retained regular file except the lock"
         );
     }
 

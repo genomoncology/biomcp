@@ -52,6 +52,9 @@ pub struct CspecArgs {
     /// Exact full CSpec resource IRI from the manifest
     #[arg(long)]
     pub version: Option<String>,
+    /// Page a previously selected CSpec capture without refetching
+    #[arg(long)]
+    pub capture_id: Option<String>,
     /// Skip the first N criteria
     #[arg(long, default_value = "0")]
     pub offset: usize,

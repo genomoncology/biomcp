@@ -54,7 +54,7 @@ fixture overrides unless this page lists them in an operator section. They let
 BioMCP's own verification harness redirect a source to a local server or fixture
 file. Do not treat those base-URL overrides as stable operator API.
 
-Known examples include `BIOMCP_ALPHAGENOME_BASE`,
+Known examples include `BIOMCP_CSPEC_FIXTURE_ORIGIN` (an exact loopback origin for the runner-owned CSpec fixture), `BIOMCP_ALPHAGENOME_BASE`,
 `BIOMCP_CANCERHOTSPOTS_BASE`, `BIOMCP_CBIOPORTAL_BASE`,
 `BIOMCP_CBIOPORTAL_DATAHUB_BASE`, `BIOMCP_CHEMBL_BASE`, `BIOMCP_CIVIC_BASE`,
 `BIOMCP_CLINGEN_BASE`, `BIOMCP_CLINGEN_CAR_BASE`, `BIOMCP_CLINGEN_EREPO_BASE`, `BIOMCP_COMPLEXPORTAL_BASE`, `BIOMCP_CPIC_BASE`,
