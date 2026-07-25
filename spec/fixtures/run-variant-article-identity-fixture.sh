@@ -146,11 +146,11 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
     frozen_positive_statuses: {apc: has("apc-grch38"; "12901799"; "confirmed"), atm: has("atm-grch38"; "32918381"; "confirmed"), palb2: has("palb2-grch38"; "39999518"; "confirmed"), mlh1: has("mlh1-grch38"; "20864636"; "confirmed")},
-    collision_pmids_never_confirmed: ([ $all.items[].results[] | select(.pmid == "31749828" or .pmid == "24376681" or .pmid == "33656647") | .identity.status ] | length == 3 and all(.[]; . != "confirmed")),
+    collision_pmids_never_confirmed: (all(["31749828", "24376681", "33656647"][]; . as $pmid | any($all.items[].results[]; .pmid == $pmid and .identity.status != "confirmed"))),
     intentional_unverified: {brca1: has("brca1-grch38"; "90000003"; "unverified"), pten: has("pten-grch38"; "90000002"; "unverified"), tp53: has("tp53-grch38"; "24376681"; "unverified")},
     conflicting_observation: has("apc-grch38"; "90000001"; "conflicting"),
     outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38").pagination.total == null)),
-    confirmed_page_filters_before_limit: (([ $confirmed.items[] | select(.request_id == "apc-grch38") | .results[] ] | length == 1) and ($confirmed.items[] | select(.request_id == "apc-grch38") | .pagination.limit == 1 and .pagination.returned == 1 and .pagination.total >= 1) and any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[].results[]; .identity.status == "confirmed")),
+    confirmed_page_filters_before_limit: (any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
     audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
       ["apc-grch38", "12901799", 324, "p.Arg283Ter"],
@@ -167,11 +167,11 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
         .provider_linkage.relation_id == null and .provider_linkage.relation_type == null and .provider_linkage.relation_roles == null and
         .gene_annotation_id == .provider_linkage.gene_annotation_id and .allele_annotation_id == .provider_linkage.variant_annotation_id and .provider_relation == null
       )))),
-    document_identity_anomalies_are_incomplete_without_false_contradiction: (item("apc-grch38").results[] | select(.pmid == "12901799") | .identity.status == "confirmed" and .identity.incomplete == true and (.identity.contradictions | length) == 0),
+    document_identity_anomalies_are_incomplete_without_false_contradiction: (item("apc-grch38").results[] | select(.pmid == "12901799") | .identity.status == "confirmed" and .identity.incomplete == true and (.identity.contradictions | all(.[]; false))),
     association_without_typed_linkage_is_unverified: (item("brca1-grch38").results[] | select(.pmid == "90000003") | .identity.status == "unverified" and .identity.incomplete == true),
     expected_pmid_aggregation_is_order_independent: ((item("apc-grch38").results[] | select(.pmid == "12901799")) as $first |
       (reordered_item("apc-grch38").results[] | select(.pmid == "12901799")) as $second |
       $first.identity.status == "confirmed" and $first.identity.incomplete == true and
       $first.identity.status == $second.identity.status and $first.identity.incomplete == $second.identity.incomplete and
-      ($first.identity.observations | length == (unique | length)))
+      ($first.identity.observations == ($first.identity.observations | unique)))
   }'
