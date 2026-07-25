@@ -1838,6 +1838,7 @@ async fn search_variant_articles_identity(
                             captured.clone(),
                             verify_pubtator(
                                 &context.requested,
+                                &pmid.to_string(),
                                 &crate::sources::pubtator::PubTatorExportResponse {
                                     documents: Vec::new(),
                                 },
@@ -1865,7 +1866,12 @@ async fn search_variant_articles_identity(
                         Ok(response) => {
                             verification_response_subsets
                                 .push(canonical_response_subset(&response));
-                            let fetched = verify_pubtator(&context.requested, &response, false);
+                            let fetched = verify_pubtator(
+                                &context.requested,
+                                &pmid.to_string(),
+                                &response,
+                                false,
+                            );
                             let identity = combine_identities(captured.clone(), fetched);
                             verification_content_subsets.push(canonical_content_subset(&identity));
                             candidate.identity = Some(identity);
@@ -1882,6 +1888,7 @@ async fn search_variant_articles_identity(
                     captured.clone(),
                     verify_pubtator(
                         &context.requested,
+                        &candidate.row.pmid,
                         &crate::sources::pubtator::PubTatorExportResponse {
                             documents: Vec::new(),
                         },

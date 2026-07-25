@@ -158,8 +158,8 @@ class Handler(BaseHTTPRequestHandler):
                     "infons": {"type": "abstract"},
                     "text": f"Captured BRAF {allele} evidence.",
                     "annotations": [
-                        {"id": f"gene-{index}", "text": "BRAF", "infons": {"type": "Gene", "identifier": "gene:BRAF"}},
-                        {"id": f"allele-{index}", "text": allele, "infons": {"type": "Mutation", "identifier": f"mutation:{allele}"}},
+                        {"id": f"gene-{index}", "text": "BRAF", "infons": {"type": "Gene", "name": "BRAF", "identifier": "673", "normalized_id": 673}},
+                        {"id": f"allele-{index}", "text": allele, "infons": {"type": "Variant", "hgvs": allele, "gene_id": 673, "gene_ids": [673], "identifier": f"Variant:{allele};CorrespondingGene:673"}},
                     ],
                 }
             passages = {
@@ -176,7 +176,7 @@ class Handler(BaseHTTPRequestHandler):
                     {"refid": f"allele-{index}", "role": "mutation"},
                 ],
             } for index, _ in enumerate(passages, start=1)]
-            send_json(self, 200, {"PubTator3": [{"pmid": int(pmid), "passages": passages, "relations": relations}]})
+            send_json(self, 200, {"PubTator3": [{"id": pmid, "pmid": int(pmid), "passages": passages, "relations": relations}]})
             return
 
         if parsed.path == "/search/":
