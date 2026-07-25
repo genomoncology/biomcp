@@ -154,15 +154,28 @@ impl ProviderUrlPolicy {
 
     /// Policy for exact ClinGen CSpec resource IRIs.
     pub(crate) fn cspec() -> Result<Self, BioMcpError> {
+        let fixture_origin = cspec_fixture_origin()?;
+        let mut allowed_origins = CSPEC_ORIGINS
+            .iter()
+            .map(|origin| AllowedOrigin::parse(origin))
+            .collect::<Result<Vec<_>, _>>()?;
+        let unsafe_test_origin = fixture_origin
+            .as_ref()
+            .and_then(selected_loopback_test_origin);
+        if fixture_origin.is_some() && unsafe_test_origin.is_none() {
+            return Err(policy_error("CSpec fixture origin must be exact loopback"));
+        }
+        if let Some(origin) = unsafe_test_origin.as_ref()
+            && !allowed_origins.contains(origin)
+        {
+            allowed_origins.push(origin.clone());
+        }
         Ok(Self {
             source: "ClinGen CSpec",
             provider: SourceProvider::CLINGEN_CSPEC,
-            allowed_origins: CSPEC_ORIGINS
-                .iter()
-                .map(|origin| AllowedOrigin::parse(origin))
-                .collect::<Result<_, _>>()?,
+            allowed_origins,
             credential_origins: Vec::new(),
-            unsafe_test_origin: None,
+            unsafe_test_origin,
             pmc_linked_numeric_id: None,
         })
     }
@@ -453,6 +466,13 @@ fn resolver_error() -> Box<dyn std::error::Error + Send + Sync> {
         std::io::ErrorKind::PermissionDenied,
         "provider URL DNS policy rejected destination",
     ))
+}
+
+pub(crate) fn cspec_fixture_origin() -> Result<Option<Url>, BioMcpError> {
+    std::env::var("BIOMCP_CSPEC_FIXTURE_ORIGIN")
+        .ok()
+        .map(|raw| Url::parse(raw.trim()).map_err(|_| policy_error("invalid CSpec fixture origin")))
+        .transpose()
 }
 
 fn unsafe_test_origin() -> Option<AllowedOrigin> {

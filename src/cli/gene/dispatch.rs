@@ -78,7 +78,15 @@ pub(crate) async fn handle_command(
                         "gene cspec requires a gene symbol or the document subcommand".into(),
                     )
                 })?;
-                super::cspec::handle(gene, args.version, args.offset, args.limit, json).await
+                super::cspec::handle(
+                    gene,
+                    args.version,
+                    args.capture_id,
+                    args.offset,
+                    args.limit,
+                    json,
+                )
+                .await
             }
         },
         GeneCommand::External(args) => {

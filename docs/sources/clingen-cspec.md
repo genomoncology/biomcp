@@ -14,8 +14,10 @@ Use the full resource IRI returned by a manifest when selecting a document; its 
 ## What BioMCP exposes
 
 - `gene cspec <gene>` lists full resource IRIs returned by the provider.
-- `gene cspec <gene> --version <full-IRI>` retrieves one exact source document.
-- Typed MCP `gene_cspec` returns the manifest or bounded parsed capture pages.
+- `gene cspec <gene> --version <full-IRI>` retrieves one exact source document and binds its normalized gene, resource IRI, and specification ID to the capture.
+- `gene cspec <gene> --capture-id <capture-id>` pages that bound capture without another provider request.
+- Typed MCP `gene_cspec` returns the manifest or bounded parsed capture pages. Its caller gene must match the captured binding.
+- Parsed pages include raw-byte provenance and a page-independent `cspec-semantic-v1` digest; citations are deduplicated and capped at 32 per criterion.
 
 ## Example commands
 

@@ -43,6 +43,15 @@ pub(crate) struct ProviderCaptureManifest {
     pub(crate) captured_at: u64,
     pub(crate) expires_at: u64,
     pub(crate) schema_version: u8,
+    pub(crate) capture_binding: Option<CspecCaptureBinding>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct CspecCaptureBinding {
+    pub(crate) binding_schema_version: u8,
+    pub(crate) normalized_gene: String,
+    pub(crate) resource_iri: String,
+    pub(crate) specification_id: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -51,6 +60,7 @@ pub(crate) enum ProviderCaptureError {
     Oversize,
     Unavailable,
     Corrupt,
+    BindingConflict,
 }
 
 #[derive(Debug, Clone)]
@@ -77,7 +87,20 @@ impl ProviderCaptureStore {
         media_type: impl Into<String>,
         bytes: &[u8],
     ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
-        self.capture(provider, media_type, io::Cursor::new(bytes))
+        self.capture(provider, media_type, io::Cursor::new(bytes), None)
+    }
+
+    pub(crate) fn capture_cspec_bytes(
+        &self,
+        binding: CspecCaptureBinding,
+        bytes: &[u8],
+    ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
+        self.capture(
+            ProviderCaptureProvider::Cspec,
+            "application/json",
+            io::Cursor::new(bytes),
+            Some(binding),
+        )
     }
 
     pub(crate) fn capture<R: Read>(
@@ -85,6 +108,7 @@ impl ProviderCaptureStore {
         provider: ProviderCaptureProvider,
         media_type: impl Into<String>,
         mut body: R,
+        capture_binding: Option<CspecCaptureBinding>,
     ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
         self.ensure_directory(&self.root)?;
         self.ensure_directory(&self.root.join(".staging"))?;
@@ -138,6 +162,7 @@ impl ProviderCaptureStore {
                 captured_at: now,
                 expires_at: now + RETENTION.as_secs(),
                 schema_version: SCHEMA_VERSION,
+                capture_binding,
             };
             self.with_lock(|| {
                 let blob = self.blob_path(provider, &sha256);
@@ -145,7 +170,11 @@ impl ProviderCaptureStore {
                 if let Ok(existing) = self.read_complete(&manifest.capture_id)
                     && existing.manifest.expires_at > now
                 {
-                    return Ok(existing.manifest);
+                    return if existing.manifest.capture_binding == manifest.capture_binding {
+                        Ok(existing.manifest)
+                    } else {
+                        Err(ProviderCaptureError::BindingConflict)
+                    };
                 }
                 let parent = blob.parent().ok_or(ProviderCaptureError::Corrupt)?;
                 self.ensure_directory(parent)?;
@@ -168,6 +197,13 @@ impl ProviderCaptureStore {
         capture_result
     }
 
+    pub(crate) fn read_manifest(
+        &self,
+        capture_id: &str,
+    ) -> Result<ProviderCaptureManifest, ProviderCaptureError> {
+        self.with_lock(|| self.read_complete(capture_id).map(|record| record.manifest))
+    }
+
     pub(crate) fn read(&self, capture_id: &str) -> Result<Vec<u8>, ProviderCaptureError> {
         self.with_lock(|| {
             let mut record = self.read_complete(capture_id)?;
@@ -188,10 +224,7 @@ impl ProviderCaptureStore {
     }
 
     pub(crate) fn retained_bytes(&self) -> Result<u64, ProviderCaptureError> {
-        self.with_lock(|| {
-            self.blob_entries()
-                .map(|entries| entries.into_iter().map(|entry| entry.size).sum())
-        })
+        self.with_lock(|| retained_regular_file_bytes(&self.root))
     }
 
     pub(crate) fn maintain(&self) -> Result<u64, ProviderCaptureError> {
@@ -239,6 +272,12 @@ impl ProviderCaptureStore {
             || metadata.manifest.provider != provider
             || metadata.manifest.sha256 != digest
             || metadata.manifest.schema_version != SCHEMA_VERSION
+            || metadata.manifest.provider == ProviderCaptureProvider::Cspec
+                && metadata
+                    .manifest
+                    .capture_binding
+                    .as_ref()
+                    .is_some_and(|binding| binding.binding_schema_version != 1)
         {
             return Err(ProviderCaptureError::Corrupt);
         }
@@ -299,15 +338,10 @@ impl ProviderCaptureStore {
                 record.metadata.manifest.capture_id.clone(),
             )
         });
-        let mut retained: u64 = records
-            .iter()
-            .map(|record| record.metadata.manifest.byte_length)
-            .sum();
         for record in records {
-            if retained <= MAX_RETAINED_BYTES {
+            if retained_regular_file_bytes(&self.root)? <= MAX_RETAINED_BYTES {
                 break;
             }
-            retained -= record.metadata.manifest.byte_length;
             freed += self.remove_record(&record)?;
         }
         Ok(freed)
@@ -413,6 +447,11 @@ impl ProviderCaptureStore {
                     || metadata.manifest.provider != provider
                     || metadata.manifest.sha256 != digest
                     || metadata.manifest.schema_version != SCHEMA_VERSION
+                    || metadata
+                        .manifest
+                        .capture_binding
+                        .as_ref()
+                        .is_some_and(|binding| binding.binding_schema_version != 1)
                     || path != self.metadata_path(provider, digest)
                 {
                     return Err(ProviderCaptureError::Corrupt);
@@ -588,9 +627,42 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), ProviderCaptureError> {
 }
 
 fn sync_dir(path: &Path) -> Result<(), ProviderCaptureError> {
-    File::open(path)
-        .and_then(|file| file.sync_all())
-        .map_err(|_| ProviderCaptureError::Corrupt)
+    #[cfg(windows)]
+    {
+        let _ = path;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        File::open(path)
+            .and_then(|file| file.sync_all())
+            .map_err(|_| ProviderCaptureError::Corrupt)
+    }
+}
+
+fn retained_regular_file_bytes(path: &Path) -> Result<u64, ProviderCaptureError> {
+    let mut total = 0;
+    for entry in fs::read_dir(path).map_err(|_| ProviderCaptureError::Corrupt)? {
+        let entry = entry.map_err(|_| ProviderCaptureError::Corrupt)?;
+        let entry_path = entry.path();
+        let file_type = entry
+            .file_type()
+            .map_err(|_| ProviderCaptureError::Corrupt)?;
+        if entry.file_name() == ".lock" {
+            continue;
+        }
+        if file_type.is_file() {
+            total += entry
+                .metadata()
+                .map_err(|_| ProviderCaptureError::Corrupt)?
+                .len();
+        } else if file_type.is_dir() {
+            total += retained_regular_file_bytes(&entry_path)?;
+        } else {
+            return Err(ProviderCaptureError::Corrupt);
+        }
+    }
+    Ok(total)
 }
 
 #[cfg(test)]

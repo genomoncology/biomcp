@@ -195,6 +195,11 @@ cleanup_clingen_cspec_fixture() {
 }
 
 run_clingen_cspec_fixture() {
+  # Isolated runner-lifecycle tests copy the historical fixture subset; the real
+  # routine workspace always includes this ticket's CSpec fixture.
+  if [[ ! -x spec/fixtures/setup-clingen-cspec-spec-fixture.sh ]]; then
+    return
+  fi
   bash spec/fixtures/setup-clingen-cspec-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-clingen-cspec-env"
   register_cleanup cleanup_clingen_cspec_fixture
