@@ -29,15 +29,17 @@ rows = {
     "PTEN": [("90000002", "PTEN unavailable verification")],
     "TP53": [("24376681", "TP53 retrieval collision")],
 }
+# Minimized PubTator3-shaped captures. These are provider facts, not clinical classifications.
+# Each tuple is (gene symbol, exact provider HGVS, NCBI Gene ID).
 passages = {
-    "12901799": [("APC", "p.Arg283Ter")],
-    "31749828": [("TP53", "c.847C>T")],
-    "90000001": [("APC", "p.Arg283Ter"), ("APC", "p.Arg283Gln")],
-    "32918381": [("ATM", "c.1066-6T>G")],
-    "39999518": [("PALB2", "c.3350+5G>A")],
-    "20864636": [("MLH1", "p.Leu749Pro")],
-    "33656647": [("BRCA1", "c.788G>T")],
-    "24376681": [("NKX2-5", "c.356C>A")],
+    "12901799": [("APC", "p.Arg283Ter", 324)],
+    "31749828": [("TP53", "c.847C>T", 7157)],
+    "90000001": [("APC", "p.Arg283Ter", 324), ("APC", "p.Arg283Gln", 324)],
+    "32918381": [("ATM", "c.1066-6T>G", 472)],
+    "39999518": [("PALB2", "c.3350+5G>A", 79728)],
+    "20864636": [("MLH1", "p.Leu749Pro", 4292)],
+    "33656647": [("BRCA1", "c.788G>T", 672)],
+    "24376681": [("NKX2-5", "c.356C>A", 1482)],
 }
 
 def send(h, status, value):
@@ -66,24 +68,41 @@ class Handler(BaseHTTPRequestHandler):
             if pmid == "90000002": return send(self, 503, {"error": "fixture outage"})
             pairs = passages.get(pmid, [])
             docs = [{
+                "id": pmid,
                 "pmid": int(pmid),
                 "passages": [{
                     "infons": {"type": "abstract"},
                     "text": f"{gene} {allele} frozen content.",
                     "annotations": [
-                        {"id": f"gene-{index}", "text": gene, "infons": {"type": "Gene", "identifier": f"gene:{gene}"}},
-                        {"id": f"allele-{index}", "text": allele, "infons": {"type": "Mutation", "identifier": f"mutation:{allele}"}},
+                        {
+                            "id": f"gene-{index}",
+                            "text": "provider text must not be used as proof",
+                            "infons": {"type": "Gene", "name": gene, "identifier": str(gene_id), "normalized_id": gene_id},
+                        },
+                        {
+                            "id": f"variant-{index}",
+                            "text": "provider text must not be used as proof",
+                            "infons": {
+                                "type": "Variant", "hgvs": allele, "gene_id": gene_id, "gene_ids": [gene_id],
+                                "identifier": f"Variant:{allele};CorrespondingGene:{gene_id}",
+                            },
+                        },
                     ],
-                } for index, (gene, allele) in enumerate(pairs, start=1)],
+                } for index, (gene, allele, gene_id) in enumerate(pairs, start=1)],
+                # Association is deliberately unrelated proof: CorrespondingGene facts above
+                # must carry confirmation, not arbitrary BioC relation membership.
                 "relations": [{
-                    "id": f"gene-variant-{index}",
-                    "infons": {"type": "gene_variant"},
+                    "id": f"association-{index}",
+                    "infons": {"type": "Association"},
                     "nodes": [
-                        {"refid": f"gene-{index}", "role": "gene"},
-                        {"refid": f"allele-{index}", "role": "mutation"},
+                        {"refid": f"gene-{index}", "role": "subject"},
+                        {"refid": f"variant-{index}", "role": "object"},
                     ],
                 } for index, _ in enumerate(pairs, start=1)],
             }]
+            if pmid == "12901799":
+                # A returned document which was not requested is a semantic anomaly only.
+                docs.append({"id": "99999999", "pmid": 99999999, "passages": []})
             return send(self, 200, {"PubTator3": docs})
         if path.endswith("/esearch.fcgi"): return send(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
         if path.endswith("/esummary.fcgi"): return send(self, 200, {"result": {"uids": []}})
@@ -117,5 +136,18 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
     conflicting_observation: has("apc-grch38"; "90000001"; "conflicting"),
     outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38").pagination.total == null)),
     confirmed_page_filters_before_limit: (([ $confirmed.items[] | select(.request_id == "apc-grch38") | .results[] ] | length == 1) and ($confirmed.items[] | select(.request_id == "apc-grch38") | .pagination.limit == 1 and .pagination.returned == 1 and .pagination.total >= 1) and any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[].results[]; .identity.status == "confirmed")),
-    audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash))
+    audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
+    typed_corresponding_gene_proof_is_pmid_bound: (all([
+      ["apc-grch38", "12901799", 324, "p.Arg283Ter"],
+      ["atm-grch38", "32918381", 472, "c.1066-6T>G"],
+      ["palb2-grch38", "39999518", 79728, "c.3350+5G>A"]
+    ][]; . as [$request_id, $pmid, $gene_id, $hgvs] |
+      any(item($request_id).results[]; .pmid == $pmid and .identity.status == "confirmed" and any(.identity.observations[];
+        .provider_linkage.kind == "pubtator_corresponding_gene" and
+        .provider_linkage.expected_pmid == $pmid and .provider_linkage.returned_pmid == $pmid and
+        .provider_linkage.gene_id == $gene_id and .provider_linkage.observed_hgvs == $hgvs and
+        .provider_linkage.relation_id == null and .provider_linkage.relation_type == null and .provider_linkage.relation_roles == null and
+        .gene_annotation_id == .provider_linkage.gene_annotation_id and .allele_annotation_id == .provider_linkage.variant_annotation_id and .provider_relation == null
+      )))),
+    wrong_pmid_is_incomplete_without_false_contradiction: (item("apc-grch38").results[] | select(.pmid == "12901799") | .identity.status == "confirmed" and .identity.incomplete == true and (.identity.contradictions | length) == 0)
   }'
