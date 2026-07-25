@@ -13,6 +13,7 @@ for gene in APC ATM BRCA1 MLH1 PALB2 PTEN TP53 BRAF; do
 done
 "$bin" --json gene cspec ATM --version "$official" --limit 1 >"$work/selected.json"
 capture="$(jq -er '.capture_id' "$work/selected.json")"
+requests_before_raw="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
 "$bin" gene cspec document "$capture" >"$work/raw.json"
 "$bin" --json gene cspec ATM --capture-id "$capture" --offset 1 --limit 1 >"$work/page-two.json"
 "$bin" --json gene cspec BRCA1 --capture-id "$capture" >"$work/relabel.json" || true
@@ -30,10 +31,11 @@ open(os.environ['OUT'],'w').write(reply['result']['content'][0]['text'])
 proc.terminate(); proc.wait()
 PY
 
-uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" <<'PY'
+uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" "$requests_before_raw" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
-work, request_log = map(Path, sys.argv[1:])
+work, request_log = map(Path, sys.argv[1:3])
+requests_before_raw = int(sys.argv[3])
 def load(name): return json.loads((work/name).read_text())
 selected, second, mcp = load('selected.json'), load('page-two.json'), load('mcp.json')
 series = {'APC':'GN089','ATM':'GN020','BRCA1':'GN092','MLH1':'GN115','PALB2':'GN077','PTEN':'GN003','TP53':'GN009','BRAF':'GN049'}
@@ -53,7 +55,7 @@ report={
  'cli_capture_page_matches_typed_mcp': selected==mcp,
  'caller_gene_cannot_relabel_capture': load('relabel.json')['error']['code']=='invalid_argument',
  'raw_bytes_match_reported_sha256_and_length': hashlib.sha256(raw).hexdigest()==selected['source_sha256'] and len(raw)==selected['byte_length'],
- 'raw_read_does_not_refetch': sum('/GN020/version/1.5.1' in r for r in requests)==1,
+ 'raw_read_does_not_refetch': len(requests) == requests_before_raw,
  'missing_capture_is_capture_unavailable': load('missing.json')['error']['code']=='capture_unavailable',
 }
 print(json.dumps(report, sort_keys=True))
