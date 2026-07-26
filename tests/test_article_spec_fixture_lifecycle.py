@@ -198,7 +198,9 @@ def test_runner_signal_cleans_article_fixture(
             runner.wait()
 
 
-@pytest.mark.parametrize("termination_signal", [signal.SIGINT, signal.SIGTERM])
+@pytest.mark.parametrize(
+    "termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]
+)
 def test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns(
     termination_signal: signal.Signals, tmp_path: Path
 ) -> None:
@@ -232,6 +234,8 @@ def test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns(
             check=False,
         )
         assert successor.returncode == 0
+        successor_invocations = (workspace / "mustmatch-invocation-log").read_text()
+        assert "spec/entity/article.md" in successor_invocations
         assert fixture_group != runner_group, (
             "a routine fixture must have its own process group so interruption and stale "
             "recovery can reap its descendants without signaling the coordinator group"
