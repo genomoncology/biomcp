@@ -8,9 +8,11 @@ use futures::stream::{self, StreamExt};
 use crate::error::BioMcpError;
 
 use super::catalog::{ProbeKind, SourceDescriptor, health_sources};
+#[cfg(feature = "alphagenome")]
+use super::http::check_alphagenome_connect;
 use super::http::{
-    check_alphagenome_connect, check_auth_get, check_auth_post_json, check_auth_query_param,
-    check_get, check_optional_auth_get, check_post_json, check_vaers_query, configured_key,
+    check_auth_get, check_auth_post_json, check_auth_query_param, check_get,
+    check_optional_auth_get, check_post_json, check_vaers_query, configured_key,
 };
 use super::local::{
     check_cache_dir, check_cache_limits, check_cvx_local_data, check_ddinter_local_data,
@@ -128,9 +130,15 @@ pub(in crate::cli::health) async fn probe_source(
             )
             .await
         }
+        #[cfg(feature = "alphagenome")]
         ProbeKind::AlphaGenomeConnect { env_var } => {
             check_alphagenome_connect(source.api, env_var, source.affects).await
         }
+        #[cfg(not(feature = "alphagenome"))]
+        ProbeKind::Unavailable { status } => outcome(
+            health_row(source.api, status.into(), "-".into(), source.affects, None),
+            ProbeClass::Excluded,
+        ),
         ProbeKind::VaersQuery => check_vaers_query(source.api, source.affects).await,
     }
 }
@@ -166,10 +174,13 @@ where
     match source.probe {
         ProbeKind::AuthGet { .. }
         | ProbeKind::AuthQueryParam { .. }
-        | ProbeKind::AuthPostJson { .. }
-        | ProbeKind::AlphaGenomeConnect { .. } => Some(true),
+        | ProbeKind::AuthPostJson { .. } => Some(true),
+        #[cfg(feature = "alphagenome")]
+        ProbeKind::AlphaGenomeConnect { .. } => Some(true),
         ProbeKind::OptionalAuthGet { env_var, .. } => Some(configured_key_fn(env_var).is_some()),
         ProbeKind::Get { .. } | ProbeKind::PostJson { .. } | ProbeKind::VaersQuery => None,
+        #[cfg(not(feature = "alphagenome"))]
+        ProbeKind::Unavailable { .. } => None,
     }
 }
 

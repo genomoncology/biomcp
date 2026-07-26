@@ -57,6 +57,7 @@ impl RequestBuilderSourceContextExt for reqwest::RequestBuilder {
 
 mod archive_budget;
 
+#[cfg(feature = "alphagenome")]
 pub(crate) mod alphagenome;
 pub(crate) mod cancerhotspots;
 pub(crate) mod cbioportal;

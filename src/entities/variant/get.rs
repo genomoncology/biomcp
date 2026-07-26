@@ -4,10 +4,12 @@ use std::time::Duration;
 
 use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
+#[cfg(feature = "alphagenome")]
 use crate::sources::alphagenome::AlphaGenomeClient;
 use crate::sources::cancerhotspots::CancerHotspotsClient;
 use crate::sources::cbioportal::CBioPortalClient;
 use crate::sources::civic::CivicClient;
+#[cfg(feature = "alphagenome")]
 use crate::sources::mygene::MyGeneClient;
 use crate::sources::myvariant::MyVariantClient;
 use crate::sources::oncokb::{OncoKBAnnotation, OncoKBClient};
@@ -16,7 +18,9 @@ use crate::transform;
 use super::gwas::add_gwas_section;
 #[cfg(test)]
 use super::gwas::mark_gwas_unavailable;
-use super::resolution::{hgvs_coords_re, parse_variant_id};
+#[cfg(feature = "alphagenome")]
+use super::resolution::hgvs_coords_re;
+use super::resolution::parse_variant_id;
 use super::{
     TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
     VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
@@ -494,6 +498,7 @@ pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
 const VARIANT_SOURCE_UNAVAILABLE: &str =
     "Requested variant source data is temporarily unavailable.";
 
+#[cfg(feature = "alphagenome")]
 async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
     let Some(caps) = hgvs_coords_re().captures(&variant.id) else {
         variant.section_outcomes.complete(
@@ -555,6 +560,15 @@ async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
         ),
     }
 
+    Ok(())
+}
+
+#[cfg(not(feature = "alphagenome"))]
+async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
+    variant.section_outcomes.complete(
+        "predict",
+        SectionOutcome::unavailable("AlphaGenome support was not built into this binary."),
+    );
     Ok(())
 }
 

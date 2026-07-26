@@ -422,6 +422,11 @@ async fn ticket_589_variant_preflights_are_inapplicable_without_provider_credit(
         .await
         .expect("inapplicable GWAS should remain a successful card");
 
+    #[cfg(feature = "alphagenome")]
+    let prediction_outcome = "inapplicable";
+    #[cfg(not(feature = "alphagenome"))]
+    let prediction_outcome = "unavailable";
+
     for (variant, key, provider) in [
         (&prediction, "predict", "AlphaGenome"),
         (&hotspots, "cancerhotspots", "cancerhotspots.org"),
@@ -436,29 +441,37 @@ async fn ticket_589_variant_preflights_are_inapplicable_without_provider_credit(
                 .expect("requested outcome must be completed"),
         )
         .expect("outcome should serialize");
-        assert_eq!(outcome["outcome"], "inapplicable", "key={key}");
+        let expected_outcome = if key == "predict" {
+            prediction_outcome
+        } else {
+            "inapplicable"
+        };
+        assert_eq!(outcome["outcome"], expected_outcome, "key={key}");
         assert_eq!(outcome["sources"], serde_json::json!([]), "key={key}");
         assert!(
             outcome["message"]
                 .as_str()
                 .is_some_and(|message| !message.trim().is_empty()),
-            "inapplicable outcome needs a safe explanation: key={key}, outcome={outcome}"
+            "local outcome needs a safe explanation: key={key}, outcome={outcome}"
         );
-        assert!(
-            !outcome.to_string().contains(provider),
-            "uncontacted provider was credited: key={key}, outcome={outcome}"
-        );
+        if key != "predict" || prediction_outcome == "inapplicable" {
+            assert!(
+                !outcome.to_string().contains(provider),
+                "uncontacted provider was credited: key={key}, outcome={outcome}"
+            );
+        }
 
         let projection = crate::render::provenance::variant_section_sources(variant);
         let projected = projection
             .iter()
             .find(|section| section.key == key)
             .unwrap_or_else(|| panic!("inapplicable outcome missing from provenance: key={key}"));
-        assert_eq!(
-            projected.outcome,
-            crate::entities::section_outcome::SectionOutcomeState::Inapplicable,
-            "key={key}"
-        );
+        let expected_state = if key == "predict" && prediction_outcome == "unavailable" {
+            crate::entities::section_outcome::SectionOutcomeState::Unavailable
+        } else {
+            crate::entities::section_outcome::SectionOutcomeState::Inapplicable
+        };
+        assert_eq!(projected.outcome, expected_state, "key={key}");
         assert!(projected.sources.is_empty(), "key={key}");
         assert!(
             projection
