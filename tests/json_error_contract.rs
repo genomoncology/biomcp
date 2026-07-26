@@ -53,6 +53,246 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
 }
 
 const POST_CHILD_FIXTURE_RESULT_TIMEOUT: Duration = Duration::from_secs(1);
+const CREDENTIAL_FIXTURE_HOST: &str = "127.0.0.2";
+
+#[derive(Debug)]
+struct CredentialFixtureRequest {
+    provider: &'static str,
+    credential_present: bool,
+    credential_in_approved_position: bool,
+}
+
+struct CredentialRedactionFixture {
+    base_url: String,
+    request_rx: mpsc::Receiver<Result<CredentialFixtureRequest, String>>,
+    stop: Arc<AtomicBool>,
+    thread: Option<thread::JoinHandle<()>>,
+}
+
+impl CredentialRedactionFixture {
+    fn start(secret: &'static str) -> Self {
+        let listener =
+            TcpListener::bind((CREDENTIAL_FIXTURE_HOST, 0)).expect("bind credential fixture");
+        listener
+            .set_nonblocking(true)
+            .expect("make credential fixture nonblocking");
+        let base_url = format!("http://{}", listener.local_addr().expect("fixture address"));
+        let (request_tx, request_rx) = mpsc::channel();
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
+        let thread = thread::spawn(move || {
+            loop {
+                if thread_stop.load(Ordering::Relaxed) {
+                    return;
+                }
+                match listener.accept() {
+                    Ok((stream, _)) => {
+                        let result = serve_credential_redaction_request(stream, secret);
+                        let failed = result.is_err();
+                        let _ = request_tx.send(result);
+                        if failed {
+                            return;
+                        }
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(10));
+                    }
+                    Err(_) => {
+                        let _ = request_tx.send(Err("credential fixture accept failed".into()));
+                        return;
+                    }
+                }
+            }
+        });
+        Self {
+            base_url,
+            request_rx,
+            stop,
+            thread: Some(thread),
+        }
+    }
+
+    fn requests(&self) -> Vec<CredentialFixtureRequest> {
+        let first = self
+            .request_rx
+            .recv_timeout(POST_CHILD_FIXTURE_RESULT_TIMEOUT)
+            .expect("credential fixture should receive a request")
+            .expect("credential fixture should serve valid requests");
+        let mut requests = vec![first];
+        while let Ok(result) = self.request_rx.try_recv() {
+            requests.push(result.expect("credential fixture should serve valid requests"));
+        }
+        requests
+    }
+}
+
+impl Drop for CredentialRedactionFixture {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(thread) = self.thread.take() {
+            thread.join().expect("join credential fixture thread");
+        }
+    }
+}
+
+struct LoopbackDenyProxy {
+    url: String,
+    request_rx: mpsc::Receiver<Result<String, String>>,
+    stop: Arc<AtomicBool>,
+    thread: Option<thread::JoinHandle<()>>,
+}
+
+impl LoopbackDenyProxy {
+    fn start() -> Self {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind deny proxy");
+        listener
+            .set_nonblocking(true)
+            .expect("make deny proxy nonblocking");
+        let url = format!(
+            "http://{}",
+            listener.local_addr().expect("deny proxy address")
+        );
+        let (request_tx, request_rx) = mpsc::channel();
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_stop = Arc::clone(&stop);
+        let thread = thread::spawn(move || {
+            loop {
+                if thread_stop.load(Ordering::Relaxed) {
+                    return;
+                }
+                match listener.accept() {
+                    Ok((stream, _)) => {
+                        let result = deny_proxy_request(stream);
+                        let _ = request_tx.send(result);
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(10));
+                    }
+                    Err(_) => {
+                        let _ = request_tx.send(Err("deny proxy accept failed".into()));
+                        return;
+                    }
+                }
+            }
+        });
+        Self {
+            url,
+            request_rx,
+            stop,
+            thread: Some(thread),
+        }
+    }
+
+    fn received_destinations(&self) -> Vec<String> {
+        self.request_rx
+            .try_iter()
+            .map(|result| result.expect("deny proxy should parse request"))
+            .collect()
+    }
+}
+
+impl Drop for LoopbackDenyProxy {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(thread) = self.thread.take() {
+            thread.join().expect("join deny proxy thread");
+        }
+    }
+}
+
+fn read_http_request(stream: &mut TcpStream) -> Result<String, String> {
+    stream
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .map_err(|_| "set fixture read timeout".to_string())?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(2)))
+        .map_err(|_| "set fixture write timeout".to_string())?;
+
+    let mut request = Vec::new();
+    let mut buffer = [0_u8; 1024];
+    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+        let read = stream
+            .read(&mut buffer)
+            .map_err(|_| "read fixture request".to_string())?;
+        if read == 0 || request.len() + read > 16 * 1024 {
+            return Err("fixture request ended early or exceeded 16 KiB".into());
+        }
+        request.extend_from_slice(&buffer[..read]);
+    }
+    String::from_utf8(request).map_err(|_| "fixture request was not UTF-8".into())
+}
+
+fn request_target(request: &str) -> Result<&str, String> {
+    request
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .ok_or_else(|| "fixture request line was invalid".into())
+}
+
+fn serve_credential_redaction_request(
+    mut stream: TcpStream,
+    secret: &str,
+) -> Result<CredentialFixtureRequest, String> {
+    let request = read_http_request(&mut stream)?;
+    let target = request_target(&request)?;
+    let path = target.split_once('?').map_or(target, |(path, _)| path);
+    let (provider, body, status) = match path {
+        "/query" => (
+            "myvariant",
+            r#"{"total":1,"hits":[{"_id":"chr7:g.140453136A>T","dbnsfp":{"genename":"BRAF","hgvsp":"p.Val600Glu","hgvsc":"c.1799T>A"}}]}"#,
+            "200 OK",
+        ),
+        "/entity/autocomplete/" | "/search" | "/search/" => (
+            "pubtator",
+            r#"{"error":"fixture outage"}"#,
+            "503 Service Unavailable",
+        ),
+        _ => {
+            return Err(format!(
+                "credential fixture received unexpected path {path}"
+            ));
+        }
+    };
+    let credential_present = request.contains(secret);
+    let credential_in_approved_position = target.split_once('?').is_some_and(|(_, query)| {
+        query
+            .split('&')
+            .any(|part| part == format!("api_key={secret}"))
+    });
+    write!(
+        stream,
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    )
+    .map_err(|_| "write credential fixture response".to_string())?;
+    stream
+        .flush()
+        .map_err(|_| "flush credential fixture response".to_string())?;
+    Ok(CredentialFixtureRequest {
+        provider,
+        credential_present,
+        credential_in_approved_position,
+    })
+}
+
+fn deny_proxy_request(mut stream: TcpStream) -> Result<String, String> {
+    let request = read_http_request(&mut stream)?;
+    let destination = request_target(&request)?;
+    let destination = destination.split_once('?').map_or_else(
+        || destination.to_string(),
+        |(path, _)| format!("{path}?<redacted>"),
+    );
+    write!(
+        stream,
+        "HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    )
+    .map_err(|_| "write deny proxy response".to_string())?;
+    stream
+        .flush()
+        .map_err(|_| "flush deny proxy response".to_string())?;
+    Ok(destination)
+}
 
 struct MyGeneFixture {
     base_url: String,
@@ -364,7 +604,17 @@ fn human_runtime_source_error_is_safe_and_actionable() {
 
 #[test]
 fn swallowed_source_failures_do_not_log_credentials() {
-    let secret = "VERIFY_SECRET_586";
+    const SECRET: &str = "VERIFY_SECRET_586";
+    let fixture = CredentialRedactionFixture::start(SECRET);
+    let deny_proxy = LoopbackDenyProxy::start();
+    let fixture_address = fixture
+        .base_url
+        .strip_prefix("http://")
+        .expect("fixture URL is HTTP");
+    let fixture_host = fixture_address
+        .split(':')
+        .next()
+        .expect("fixture URL has a host");
     let result = run_biomcp_with_env(
         &[
             "--no-cache",
@@ -377,15 +627,22 @@ fn swallowed_source_failures_do_not_log_credentials() {
             "1",
         ],
         &[
-            ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:0"),
-            ("NCBI_API_KEY", secret),
+            ("BIOMCP_MYVARIANT_BASE", &fixture.base_url),
+            ("BIOMCP_PUBTATOR_BASE", &fixture.base_url),
+            ("NCBI_API_KEY", SECRET),
+            ("HTTP_PROXY", &deny_proxy.url),
+            ("HTTPS_PROXY", &deny_proxy.url),
+            ("ALL_PROXY", &deny_proxy.url),
+            ("NO_PROXY", fixture_host),
         ],
     );
+    let requests = fixture.requests();
+    let denied_destinations = deny_proxy.received_destinations();
 
     assert_eq!(result.code, Some(1));
     assert!(result.stdout.trim().is_empty(), "stdout={}", result.stdout);
     assert!(
-        result.stderr.contains("MyVariant.info"),
+        result.stderr.contains("PubTator 3"),
         "stderr={}",
         result.stderr
     );
@@ -394,12 +651,42 @@ fn swallowed_source_failures_do_not_log_credentials() {
         "stderr={}",
         result.stderr
     );
-    for leaked_detail in [secret, "api_key=", "127.0.0.1:0", "error sending request"] {
-        assert!(
-            !result.stderr.contains(leaked_detail),
-            "swallowed source failure leaked {leaked_detail}: {}",
-            result.stderr
-        );
+    assert!(
+        denied_destinations.is_empty(),
+        "shared client attempted a non-fixture destination: {denied_destinations:?}"
+    );
+    assert!(
+        requests
+            .iter()
+            .any(|request| request.provider == "myvariant"),
+        "fixture requests={requests:?}"
+    );
+    assert!(
+        requests
+            .iter()
+            .any(|request| request.provider == "pubtator"),
+        "fixture requests={requests:?}"
+    );
+    for request in &requests {
+        match request.provider {
+            "myvariant" => assert!(
+                !request.credential_present && !request.credential_in_approved_position,
+                "MyVariant fixture record={request:?}"
+            ),
+            "pubtator" => assert!(
+                request.credential_present && request.credential_in_approved_position,
+                "PubTator fixture record={request:?}"
+            ),
+            provider => panic!("unexpected fixture provider record: {provider}"),
+        }
+    }
+    for output in [&result.stdout, &result.stderr] {
+        for leaked_detail in [SECRET, "api_key=", fixture_address, "error sending request"] {
+            assert!(
+                !output.contains(leaked_detail),
+                "swallowed source failure leaked {leaked_detail}: {output}"
+            );
+        }
     }
 }
 
