@@ -81,13 +81,16 @@ fn nci_health_probe_uses_keyword_query() {
 }
 
 #[test]
-fn alpha_genome_health_probe_connects_without_scoring() {
+fn alphagenome_health_remains_honest_when_the_client_is_not_compiled() {
     let source = health_sources()
         .iter()
         .find(|source| source.api == "AlphaGenome")
-        .expect("alphagenome health source");
+        .expect("alphagenome must remain visible in health when it is not built");
 
-    assert!(matches!(source.probe, ProbeKind::AlphaGenomeConnect { .. }));
+    assert!(
+        !matches!(source.probe, ProbeKind::AlphaGenomeConnect { .. }),
+        "a binary without AlphaGenome must report it as unavailable because it was not built"
+    );
 }
 
 #[test]

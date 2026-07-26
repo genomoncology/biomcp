@@ -26,6 +26,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
   spec/surface/cli-contract-ratchet.md
+  spec/surface/build-profile.md
   spec/surface/trial-retirement.md
   spec/surface/ctgov-helper-pivots.md
 )
