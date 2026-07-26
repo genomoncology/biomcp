@@ -18,7 +18,6 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/variant.md
   spec/entity/clingen-erepo.md
   spec/entity/clingen-cspec.md
-  spec/entity/clingen-car.md
   spec/entity/variant-article-identity.md
   spec/surface/mcp.md
   spec/surface/discover-input.md
@@ -180,16 +179,6 @@ run_variant_identity_fixture() {
   register_cleanup cleanup_variant_identity_fixture
 }
 
-cleanup_clingen_car_fixture() {
-  bash spec/fixtures/cleanup-clingen-car-spec-fixture.sh "$ROOT"
-}
-
-run_clingen_car_fixture() {
-  bash spec/fixtures/setup-clingen-car-spec-fixture.sh "$ROOT"
-  source_if_present "$ROOT/.cache/spec-clingen-car-env"
-  register_cleanup cleanup_clingen_car_fixture
-}
-
 cleanup_clingen_cspec_fixture() {
   bash spec/fixtures/cleanup-clingen-cspec-spec-fixture.sh "$ROOT"
 }
@@ -273,7 +262,6 @@ case "$mode" in
     run_ctgov_fixture
     run_disease_survival_fixture
     run_variant_identity_fixture
-    run_clingen_car_fixture
     run_clingen_cspec_fixture
     ;;
   spec-contracts)

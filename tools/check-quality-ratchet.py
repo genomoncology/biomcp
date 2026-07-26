@@ -655,7 +655,10 @@ def tracked_static_text_paths(root_dir: Path) -> tuple[list[str], list[str]]:
     if proc.returncode != 0:
         return [], [proc.stderr.strip() or "git ls-files failed"]
 
-    return sorted({line for line in proc.stdout.splitlines() if line}), []
+    paths = sorted({line for line in proc.stdout.splitlines() if line})
+    # `git ls-files` includes a file deleted in the current worktree. Quality
+    # checks inspect the candidate tree, so a retired doc must not be read.
+    return [path for path in paths if (root_dir / path).is_file()], []
 
 
 def read_existing_text(root_dir: Path, paths: list[str]) -> tuple[dict[str, str], list[str]]:

@@ -47,6 +47,17 @@ impl ClinGenAlleleRegistryClient {
             .query("fields", CAR_FIELDS)
     }
 
+    pub(crate) fn normalize_batch_plan(inputs: &[String]) -> RequestPlan {
+        RequestPlan::post("alleles")
+            .query("file", "hgvs")
+            .query("fields", CAR_FIELDS)
+            .header(
+                reqwest::header::CONTENT_TYPE.as_str(),
+                "text/plain; charset=utf-8",
+            )
+            .text(format!("{}\n", inputs.join("\n")))
+    }
+
     pub(crate) async fn normalize(&self, input: &str) -> Result<CarNormalizationItem, BioMcpError> {
         let response = crate::sources::apply_cache_mode(request_from_plan(
             &self.client,
@@ -92,14 +103,11 @@ impl ClinGenAlleleRegistryClient {
         &self,
         inputs: &[String],
     ) -> Result<CarNormalizationBatchResponse, BioMcpError> {
-        let url = format!("{}/alleles", self.base.trim_end_matches('/'));
-        let response = crate::sources::apply_cache_mode(
-            self.client
-                .post(url)
-                .query(&[("file", "hgvs"), ("fields", CAR_FIELDS)])
-                .header(reqwest::header::CONTENT_TYPE, "text/plain; charset=utf-8")
-                .body(format!("{}\n", inputs.join("\n"))),
-        )
+        let response = crate::sources::apply_cache_mode(request_from_plan(
+            &self.client,
+            self.base.as_ref(),
+            &Self::normalize_batch_plan(inputs),
+        ))
         .send_with_source_context(SourceContext::retry(SourceProvider::CLINGEN_CAR))
         .await;
         let Ok(response) = response else {
@@ -123,47 +131,56 @@ impl ClinGenAlleleRegistryClient {
         if !status.is_success() {
             return Ok(unavailable_batch(inputs, version));
         }
-        let rows = serde_json::from_slice::<Vec<Value>>(&bytes).ok();
-        let items: Vec<CarNormalizationItem> = rows
-            .filter(|rows| rows.len() == inputs.len())
-            .map(|rows| {
-                rows.iter()
-                    .zip(inputs)
-                    .map(|(row, input)| {
-                        decode_normalize_response(
-                            input,
-                            status,
-                            version.clone(),
-                            &serde_json::to_vec(row).unwrap_or_default(),
-                        )
-                    })
-                    .collect()
-            })
-            .unwrap_or_else(|| {
-                inputs
-                    .iter()
-                    .map(|input| {
-                        empty(
-                            input,
-                            CarNormalizationStatus::Indeterminate,
-                            false,
-                            Some("CAR batch response did not preserve input positions".into()),
-                            version.clone(),
-                        )
-                    })
-                    .collect()
-            });
-        let complete = items.iter().all(|item| {
-            !matches!(
-                item.status,
-                CarNormalizationStatus::Indeterminate | CarNormalizationStatus::Unavailable
-            )
-        });
-        Ok(CarNormalizationBatchResponse {
-            items,
-            complete,
-            provider: "ClinGen Allele Registry".into(),
+        Ok(decode_batch_response(inputs, status, version, &bytes))
+    }
+}
+
+fn decode_batch_response(
+    inputs: &[String],
+    status: StatusCode,
+    version: Option<String>,
+    bytes: &[u8],
+) -> CarNormalizationBatchResponse {
+    let rows = serde_json::from_slice::<Vec<Value>>(bytes).ok();
+    let items: Vec<CarNormalizationItem> = rows
+        .filter(|rows| rows.len() == inputs.len())
+        .map(|rows| {
+            rows.iter()
+                .zip(inputs)
+                .map(|(row, input)| {
+                    decode_normalize_response(
+                        input,
+                        status,
+                        version.clone(),
+                        &serde_json::to_vec(row).unwrap_or_default(),
+                    )
+                })
+                .collect()
         })
+        .unwrap_or_else(|| {
+            inputs
+                .iter()
+                .map(|input| {
+                    empty(
+                        input,
+                        CarNormalizationStatus::Indeterminate,
+                        false,
+                        Some("CAR batch response did not preserve input positions".into()),
+                        version.clone(),
+                    )
+                })
+                .collect()
+        });
+    let complete = items.iter().all(|item| {
+        !matches!(
+            item.status,
+            CarNormalizationStatus::Indeterminate | CarNormalizationStatus::Unavailable
+        )
+    });
+    CarNormalizationBatchResponse {
+        items,
+        complete,
+        provider: "ClinGen Allele Registry".into(),
     }
 }
 
@@ -389,7 +406,7 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sources::HttpMethod;
+    use crate::sources::{HttpMethod, RequestBody};
 
     #[test]
     fn direct_plan_uses_only_the_projected_read_route() {
@@ -398,6 +415,57 @@ mod tests {
         assert_eq!(plan.path, "allele");
         assert_eq!(plan.query_value("hgvs"), Some("NM_000546.6:c.215C>G"));
         assert_eq!(plan.query_value("fields"), Some(CAR_FIELDS));
+    }
+
+    #[test]
+    fn batch_plan_uses_post_and_preserves_input_order_and_duplicates() {
+        let inputs = vec![
+            "NM_000546.6:c.215C>G".into(),
+            "NM_000038.6:c.847C>G".into(),
+            "NM_000546.6:c.215C>G".into(),
+        ];
+        let plan = ClinGenAlleleRegistryClient::normalize_batch_plan(&inputs);
+
+        assert_eq!(plan.method, HttpMethod::Post);
+        assert_eq!(plan.path, "alleles");
+        assert_eq!(plan.query_value("file"), Some("hgvs"));
+        assert_eq!(plan.query_value("fields"), Some(CAR_FIELDS));
+        assert_eq!(
+            plan.header_value("content-type"),
+            Some("text/plain; charset=utf-8")
+        );
+        assert_eq!(
+            plan.body,
+            RequestBody::Text(
+                "NM_000546.6:c.215C>G\nNM_000038.6:c.847C>G\nNM_000546.6:c.215C>G\n".into()
+            )
+        );
+    }
+
+    #[test]
+    fn batch_cardinality_mismatch_is_incomplete() {
+        let inputs = vec!["NM_000546.6:c.215C>G".into(), "NM_000038.6:c.847C>G".into()];
+        let response = decode_batch_response(
+            &inputs,
+            StatusCode::OK,
+            None,
+            br#"[{"@id":"https://reg.genome.network/allele/CA123"}]"#,
+        );
+
+        assert!(!response.complete);
+        assert_eq!(
+            response
+                .items
+                .iter()
+                .map(|item| &item.input)
+                .collect::<Vec<_>>(),
+            inputs.iter().collect::<Vec<_>>()
+        );
+        assert!(response.items.iter().all(|item| {
+            item.status == CarNormalizationStatus::Indeterminate
+                && item.error.as_deref()
+                    == Some("CAR batch response did not preserve input positions")
+        }));
     }
 
     #[test]
