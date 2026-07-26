@@ -1236,7 +1236,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "RUST_LOG=error" not in makefile
     assert re.search(
         r"^test:\n"
-        r"\tcargo nextest run\n"
+        r"\tcargo nextest run \$\(ROUTINE_CARGO_FEATURES\)\n"
         r"\t\$\(MAKE\) test-contracts$",
         makefile,
         flags=re.MULTILINE,
@@ -1256,14 +1256,15 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         flags=re.MULTILINE,
     )
     assert "SPEC_PROFILE ?= spec" in makefile
+    assert "ROUTINE_CARGO_FEATURES ?= --no-default-features" in makefile
     assert "SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp" in makefile
     assert 'SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)' in makefile
     assert "SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))" in makefile
-    assert "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) --bin biomcp --example rmcp_streamable_http_contract)" in makefile
+    assert "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)" in makefile
     assert re.search(
         r"^release-gate: lint\n"
-        r'\t\$\(MAKE\) test SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"\n'
-        r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
+        r'\t\$\(MAKE\) test SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp" ROUTINE_CARGO_FEATURES=\n'
+        r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp" ROUTINE_CARGO_FEATURES=$',
         makefile,
         flags=re.MULTILINE,
     )

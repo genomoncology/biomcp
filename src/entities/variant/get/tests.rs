@@ -482,6 +482,36 @@ async fn ticket_589_variant_preflights_are_inapplicable_without_provider_credit(
     }
 }
 
+#[cfg(feature = "alphagenome")]
+#[tokio::test]
+async fn coordinate_less_prediction_is_inapplicable_without_alphagenome_credit() {
+    let mut variant = braf_variant_stub();
+    variant.id = "rs589000".into();
+
+    add_prediction(&mut variant)
+        .await
+        .expect("coordinate preflight should remain a successful card");
+
+    let outcome = serde_json::to_value(
+        variant
+            .section_outcomes
+            .get("predict")
+            .expect("prediction outcome must be completed"),
+    )
+    .expect("outcome should serialize");
+    assert_eq!(outcome["outcome"], "inapplicable");
+    assert_eq!(
+        outcome["message"],
+        "Genomic coordinates are required for prediction."
+    );
+    assert_eq!(outcome["sources"], serde_json::json!([]));
+    assert!(
+        crate::render::provenance::variant_section_sources(&variant)
+            .iter()
+            .all(|section| !section.sources.iter().any(|source| source == "AlphaGenome"))
+    );
+}
+
 #[test]
 fn therapies_from_oncokb_truncation_shows_count() {
     let annotation: OncoKBAnnotation = serde_json::from_value(serde_json::json!({
