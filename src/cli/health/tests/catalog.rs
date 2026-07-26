@@ -81,19 +81,6 @@ fn nci_health_probe_uses_keyword_query() {
 }
 
 #[test]
-fn alphagenome_health_remains_honest_when_the_client_is_not_compiled() {
-    let source = health_sources()
-        .iter()
-        .find(|source| source.api == "AlphaGenome")
-        .expect("alphagenome must remain visible in health when it is not built");
-
-    assert!(
-        !matches!(source.probe, ProbeKind::AlphaGenomeConnect { .. }),
-        "a binary without AlphaGenome must report it as unavailable because it was not built"
-    );
-}
-
-#[test]
 fn markdown_shows_new_affects_mappings() {
     assert_eq!(affects_for_api("GTEx"), Some("gene expression section"));
     assert_eq!(affects_for_api("DGIdb"), Some("gene druggability section"));

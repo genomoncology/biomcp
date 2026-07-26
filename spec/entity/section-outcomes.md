@@ -52,21 +52,24 @@ A base drug card does not call Drugs@FDA. Its registry records that omission as
   | mustmatch 'true'
 ```
 
-## Inapplicable lookups do not credit providers
+## Local outcomes do not credit providers
 
 A requested enrichment cannot run when the resolved variant lacks that source's
-required identifier. BioMCP reports the local applicability decision without
-claiming that the uncontacted provider returned an empty result.
+required identifier. Likewise, a binary compiled without AlphaGenome reports
+that optional section as unavailable before it reads credentials or contacts a
+provider. BioMCP reports either local decision without claiming that an
+uncontacted provider returned an empty result.
 
-| input | section | uncontacted provider | str:label |
-|---|---|---|---|
-| rs589000 | predict | AlphaGenome | prediction needs genomic coordinates |
-| rs589001 | cbioportal | cBioPortal | cBioPortal needs a gene |
-| rs589001 | civic | CIViC | CIViC needs a molecular profile |
-| chr7:g.140453136A>T | gwas | GWAS Catalog | GWAS needs an rsID |
+| input | section | expected outcome | uncontacted provider | str:label |
+|---|---|---|---|---|
+| rs589000 | predict | inapplicable | AlphaGenome | prediction needs genomic coordinates |
+| chr7:g.140453136A>T | predict | unavailable | AlphaGenome | feature-off prediction says it was not built |
+| rs589001 | cbioportal | inapplicable | cBioPortal | cBioPortal needs a gene |
+| rs589001 | civic | inapplicable | CIViC | CIViC needs a molecular profile |
+| chr7:g.140453136A>T | gwas | inapplicable | GWAS Catalog | GWAS needs an rsID |
 
-```bash each_row="Inapplicable lookups do not credit providers"
+```bash each_row="Local outcomes do not credit providers"
 biomcp --json --no-cache get variant '{{input}}' {{section}} \
-  | jq '(.section_outcomes["{{section}}"].outcome == "inapplicable") and (.section_outcomes["{{section}}"].sources == []) and (((.section_outcomes["{{section}}"].message // "") | length) > 0) and (._meta.section_sources | any(.key == "{{section}}" and .outcome == "inapplicable" and .sources == [])) and (._meta.section_sources | all(.sources | index("{{uncontacted_provider}}") | not))' \
+  | jq '(.section_outcomes["{{section}}"].outcome == "{{expected_outcome}}") and (.section_outcomes["{{section}}"].sources == []) and (if "{{expected_outcome}}" == "unavailable" then ((.section_outcomes["{{section}}"].message // "") | test("not built"; "i")) else (((.section_outcomes["{{section}}"].message // "") | length) > 0) end) and (._meta.section_sources | any(.key == "{{section}}" and .outcome == "{{expected_outcome}}" and .sources == [])) and (._meta.section_sources | all(.sources | index("{{uncontacted_provider}}") | not))' \
   | mustmatch 'true'
 ```

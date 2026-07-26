@@ -300,6 +300,7 @@ case "$mode" in
       spec/entity/clingen-car-live.md
       spec/entity/variant-myvariant-live.md
       spec/entity/variant-articles-live.md
+      spec/surface/build-profile-live.md
       spec/surface/cli.md
       spec/surface/discover.md
     )
