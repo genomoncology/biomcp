@@ -8,6 +8,7 @@ panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 
 uv run --no-sync python - "$binary" "$panel" <<'PY'
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -38,6 +39,31 @@ def supplied_aliases(request):
         f'{request["accession"]}:g.{request["position"]}{request["ref"]}>{request["alt"]}',
     }
 
+def has_canonical_equivalence(item):
+    equivalence = item.get("canonical_equivalence")
+    observations = equivalence.get("observations", []) if isinstance(equivalence, dict) else []
+    caid = equivalence.get("caid") if isinstance(equivalence, dict) else None
+    return (
+        isinstance(equivalence, dict)
+        and equivalence.get("status") == "confirmed"
+        and equivalence.get("complete") is True
+        and equivalence.get("exhaustive") is True
+        and equivalence.get("applicable_identity_count") == 2
+        and isinstance(caid, str)
+        and re.fullmatch(r"CA[0-9]+", caid) is not None
+        and len(observations) == 2
+        and {observation.get("basis") for observation in observations} == {"transcript_coding", "genomic"}
+        and all(
+            observation.get("status") == "resolved"
+            and observation.get("caid") == caid
+            and observation.get("source") == "clingen_car"
+            and observation.get("comparison_complete") is True
+            and isinstance(observation.get("provider_response_sha256"), str)
+            and re.fullmatch(r"[0-9a-f]{64}", observation["provider_response_sha256"]) is not None
+            for observation in observations
+        )
+    )
+
 summary = {
     "expected_request_ids": len(returned_request_ids) == 7 and len(set(returned_request_ids)) == 7 and set(returned_request_ids) == expected_request_ids,
     "total": len(items),
@@ -54,6 +80,7 @@ diagnostics = {
     "schema_parse_failures": [],
     "missing_available_positives": [],
     "unavailable_outages": [],
+    "missing_canonical_equivalence": [],
 }
 for item in recognized_items:
     request_id = item.get("request_id")
@@ -72,7 +99,10 @@ for request_id, pmid in positives.items():
         for row in item.get("results", [])
     ):
         diagnostics["missing_available_positives"].append(request_id)
+for request_id in ("atm-grch38", "palb2-grch38"):
+    if not has_canonical_equivalence(items_by_id.get(request_id, {})):
+        diagnostics["missing_canonical_equivalence"].append(request_id)
 print(json.dumps({"identity_readiness": summary, "identity_diagnostics": diagnostics}, indent=2, sort_keys=True))
-ready = completed.returncode == 0 and summary["expected_request_ids"] and all(value == 7 for key, value in summary.items() if key != "expected_request_ids") and not any(diagnostics[key] for key in ("known_collision_confirmations", "schema_parse_failures", "missing_available_positives"))
+ready = completed.returncode == 0 and summary["expected_request_ids"] and all(value == 7 for key, value in summary.items() if key != "expected_request_ids") and not any(diagnostics[key] for key in ("known_collision_confirmations", "schema_parse_failures", "missing_available_positives", "missing_canonical_equivalence"))
 raise SystemExit(0 if ready else 1)
 PY

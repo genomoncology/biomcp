@@ -36,15 +36,9 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
   "conflicting_observation": true,
   "outage_is_incomplete": true,
   "confirmed_page_filters_before_limit": true,
-  "audit_versions_and_canonical_subsets": true,
-  "canonical_equivalence_confirms_refseq_agreement_without_rewriting_myvariant": true
+  "audit_versions_and_canonical_subsets": true
 }
 ```
-
-The ATM and PALB2 caller assertions each carry both an explicit versioned RefSeq
-transcript/coding identity and an explicit GRCh38 genomic identity. Their matching
-CAR CAid is additive equivalence evidence, not a replacement for the independently
-retained MyVariant `not_found` fact.
 
 The outage response is not a completed negative search: it remains incomplete,
 truncated, and without a total. The report also requires versioned verifier and

@@ -34,7 +34,11 @@ contract in `variant-article-identity.md` owns verified positives, collision
 rejection, pagination, and outage truthfulness. This probe checks that every
 unchanged G5 v2 request still resolves, executes an exact route with a
 route-tied literal alias, and reports source coverage plus terminal state
-against real providers.
+against real providers. ATM and PALB2 also submit independent versioned RefSeq
+transcript/coding and genomic identities to the real CAR: each must expose a
+complete, exhaustive confirmed CAid with auditable transcript and genomic
+observations. CAR evidence is additive to the article result; this probe does
+not infer liftover or make it a clinical claim.
 
 ```bash run id=g5-v2-identity-live-canary exit=0 timeout=180
 bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
@@ -50,6 +54,9 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
     "with_route_tied_alias": 7,
     "with_source_status": 7,
     "with_terminal_state": 7
+  },
+  "identity_diagnostics": {
+    "missing_canonical_equivalence": []
   }
 }
 ```
