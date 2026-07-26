@@ -751,6 +751,11 @@ requires explicit `GRCh37` or `GRCh38`; existing `chrN` identities remain
 compatible. RefSeq exact routes contain only caller-present transcript/coding,
 gene/coding, and genomic aliases. There is no liftover, accession-to-`chr`
 conversion, strand flip, transcript selection, or inferred coordinate alias.
+For items that independently include both eligible versioned RefSeq forms,
+`canonical_equivalence` is an additive CAR observation: it reports agreement or
+incompleteness without altering MyVariant `resolution` or claiming liftover.
+Confirmed CAR aliases may use unused retrieval slots only and remain
+`query_aliases` provenance.
 
 `caller_supplied` means BioMCP accepted the supplied fields as one caller
 assertion; it validated syntax but did not establish cross-coordinate

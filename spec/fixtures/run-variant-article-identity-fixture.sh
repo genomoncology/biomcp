@@ -50,10 +50,26 @@ def send(h, status, value):
 def article(pmid, title):
     return {"_id": pmid, "pmid": pmid, "title": title, "journal": "Frozen fixture", "date": "2024-01-01", "score": 1}
 
+# Opaque fixture-only tokens exercise BioMCP aggregation; they are not registry CAids.
+car_ids = {
+    "NM_000038.6:c.847C>T": "CA900000000001", "NC_000005.10:g.112815507C>T": "CA900000000001",
+    "NM_000051.4:c.1066-6T>G": "CA900000000002", "NC_000011.10:g.108248927T>G": "CA900000000002",
+    "NM_007294.4:c.2428A>T": "CA900000000003", "NC_000017.11:g.43093103T>A": "CA900000000003",
+    "NM_000249.4:c.2246T>C": "CA900000000004", "NC_000003.12:g.37050628T>C": "CA900000000004",
+    "NM_024675.4:c.3350+5G>A": "CA900000000005", "NC_000016.10:g.23607859C>T": "CA900000000005",
+    "NM_000314.8:c.517C>T": "CA900000000006", "NC_000010.11:g.87952142C>T": "CA900000000006",
+    "NM_000546.6:c.356C>G": "CA900000000007", "NC_000017.11:g.7676013G>C": "CA900000000007",
+}
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
     def do_GET(self):
         parsed = urlparse(self.path); query = parse_qs(parsed.query); path = parsed.path
+        if path == "/allele":
+            caid = car_ids.get(query.get("hgvs", [""])[0])
+            if caid:
+                return send(self, 200, {"@id": f"https://fixture.invalid/{caid}"})
+            return send(self, 200, {"@id": "_:CA"})
         if path == "/v1/query": return send(self, 200, {"total": 0, "hits": []})
         if path.startswith("/v1/variant/"): return send(self, 404, {"error": "not found"})
         if path == "/entity/autocomplete/": return send(self, 200, [])
@@ -134,7 +150,7 @@ for _ in $(seq 1 100); do test -s "$ready" && break; sleep 0.05; done
 base_url="$(cat "$ready")"
 binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
 export BIOMCP_CACHE_MODE=off BIOMCP_CACHE_DIR="$fixture_root/cache" BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
-export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url"
+export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url"
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 all="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --limit 1)"

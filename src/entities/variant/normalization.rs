@@ -131,6 +131,8 @@ pub enum CarNormalizationStatus {
 pub struct CarProvenance {
     pub request_template_version: String,
     pub car_version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_sha256: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -341,6 +343,7 @@ fn unavailable_car_item(input: &str, _error: BioMcpError) -> CarNormalizationIte
         provenance: CarProvenance {
             request_template_version: "1".into(),
             car_version: None,
+            response_sha256: None,
         },
     }
 }

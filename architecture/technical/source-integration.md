@@ -28,6 +28,14 @@ source's transport, authentication, and payload shape.
 This prevents duplicated auth handling, base URL overrides, rate limiting, and
 error behavior for the same provider.
 
+For variant-article CAR agreement, article orchestration reuses the existing
+ClinGen Allele Registry client and its shared work budget. Received CAR bodies
+retain a SHA-256 audit fact only after receipt; request-template and equivalence
+rule versions may participate in planning, while CAR service versions and body
+hashes never do. The article response exposes this as additive
+`canonical_equivalence` evidence, not as liftover or a replacement for MyVariant
+resolution.
+
 ## Shared Source Client Conventions
 
 BioMCP source clients should reuse shared helpers from `src/sources/mod.rs`

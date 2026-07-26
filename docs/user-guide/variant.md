@@ -355,9 +355,14 @@ keep `resolution: null`.
 | unavailable | RefSeq resolved/caller-supplied; exact routes; incomplete, truncated, unknown total |
 
 For caller-supplied RefSeq, exact aliases are limited to supplied
-transcript/coding, gene/coding, and RefSeq genomic forms. BioMCP performs no
-liftover, accession-to-`chr` conversion, strand flip, transcript selection, or
-inferred coordinate generation.
+transcript/coding, gene/coding, and RefSeq genomic forms. When both independently
+supplied versioned RefSeq transcript/coding and complete versioned genomic/build
+forms are present, the additive `canonical_equivalence` sibling records CAR CAid
+agreement, terminal observations, and response hashes. It never changes
+`resolution`, chooses a transcript, or performs liftover. Only confirmed CAR
+aliases can fill unused retrieval-alias slots, where they remain query provenance.
+BioMCP performs no liftover, accession-to-`chr` conversion, strand flip,
+transcript selection, or inferred coordinate generation.
 
 ```bash
 biomcp --json variant articles --input variants.json --limit 10

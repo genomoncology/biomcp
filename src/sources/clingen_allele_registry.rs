@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use reqwest::{StatusCode, Url};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 use crate::entities::variant::{
     CarAliasCollection, CarNormalizationBatchResponse, CarNormalizationItem,
@@ -26,6 +27,10 @@ type ProjectedAliases = (
 pub(crate) struct ClinGenAlleleRegistryClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+}
+
+fn response_sha256(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 impl ClinGenAlleleRegistryClient {
@@ -88,7 +93,11 @@ impl ClinGenAlleleRegistryClient {
         )
         .await;
         match bytes {
-            Ok(bytes) => Ok(decode_normalize_response(input, status, version, &bytes)),
+            Ok(bytes) => {
+                let mut item = decode_normalize_response(input, status, version, &bytes);
+                item.provenance.response_sha256 = Some(response_sha256(&bytes));
+                Ok(item)
+            }
             Err(_) => Ok(empty(
                 input,
                 CarNormalizationStatus::Unavailable,
@@ -227,6 +236,7 @@ fn empty(
         provenance: CarProvenance {
             request_template_version: "1".into(),
             car_version: version,
+            response_sha256: None,
         },
     }
 }
@@ -407,6 +417,18 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
 mod tests {
     use super::*;
     use crate::sources::{HttpMethod, RequestBody};
+
+    #[test]
+    fn received_response_hashes_preserve_exact_body_bytes() {
+        assert_eq!(
+            response_sha256(b"CAR response"),
+            "23930aafbb13d87cda75bba884ca09a706e4112a029c71416fc0b669fedae75d"
+        );
+        assert_ne!(
+            response_sha256(b"CAR response"),
+            response_sha256(b"CAR response!")
+        );
+    }
 
     #[test]
     fn direct_plan_uses_only_the_projected_read_route() {
