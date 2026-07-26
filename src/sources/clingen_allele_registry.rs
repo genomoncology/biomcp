@@ -33,6 +33,17 @@ fn response_sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+fn with_response_sha256(
+    mut response: CarNormalizationBatchResponse,
+    bytes: &[u8],
+) -> CarNormalizationBatchResponse {
+    let hash = response_sha256(bytes);
+    for item in &mut response.items {
+        item.provenance.response_sha256 = Some(hash.clone());
+    }
+    response
+}
+
 impl ClinGenAlleleRegistryClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         let base = crate::sources::env_base(CAR_BASE, CAR_BASE_ENV);
@@ -138,9 +149,15 @@ impl ClinGenAlleleRegistryClient {
             return Ok(unavailable_batch(inputs, version));
         };
         if !status.is_success() {
-            return Ok(unavailable_batch(inputs, version));
+            return Ok(with_response_sha256(
+                unavailable_batch(inputs, version),
+                &bytes,
+            ));
         }
-        Ok(decode_batch_response(inputs, status, version, &bytes))
+        Ok(with_response_sha256(
+            decode_batch_response(inputs, status, version, &bytes),
+            &bytes,
+        ))
     }
 }
 
@@ -427,6 +444,19 @@ mod tests {
         assert_ne!(
             response_sha256(b"CAR response"),
             response_sha256(b"CAR response!")
+        );
+    }
+
+    #[test]
+    fn received_batch_response_hashes_preserve_exact_body_bytes() {
+        let body = br#"[{"@id":"_:CA"}]"#;
+        let response = with_response_sha256(
+            unavailable_batch(&["NM_000546.6:c.215C>G".into()], None),
+            body,
+        );
+        assert_eq!(
+            response.items[0].provenance.response_sha256.as_deref(),
+            Some(response_sha256(body).as_str())
         );
     }
 

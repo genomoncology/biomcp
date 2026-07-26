@@ -3391,6 +3391,17 @@ mod tests {
 
     #[test]
     fn canonical_equivalence_aggregation_uses_set_based_state_precedence() {
+        let inapplicable = canonical_equivalence(Vec::new(), Vec::new());
+        assert_eq!(inapplicable.status, "inapplicable");
+        assert!(inapplicable.complete);
+
+        let single = canonical_equivalence(
+            vec![equivalence_observation("unavailable", None, false)],
+            Vec::new(),
+        );
+        assert_eq!(single.status, "single_identity");
+        assert!(!single.complete);
+
         let confirmed = canonical_equivalence(
             vec![
                 equivalence_observation("resolved", Some("CA1"), true),
@@ -3421,6 +3432,36 @@ mod tests {
         );
         assert_eq!(indeterminate.status, "indeterminate");
         assert!(indeterminate.complete);
+
+        let not_found = canonical_equivalence(
+            vec![
+                equivalence_observation("not_found", None, true),
+                equivalence_observation("not_found", None, true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(not_found.status, "not_found");
+        assert!(not_found.complete);
+
+        let unavailable = canonical_equivalence(
+            vec![
+                equivalence_observation("unavailable", None, false),
+                equivalence_observation("not_found", None, true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(unavailable.status, "unavailable");
+        assert!(!unavailable.complete);
+
+        let provider_indeterminate = canonical_equivalence(
+            vec![
+                equivalence_observation("indeterminate", None, false),
+                equivalence_observation("not_found", None, true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(provider_indeterminate.status, "indeterminate");
+        assert!(!provider_indeterminate.complete);
 
         let invalid = canonical_equivalence(
             vec![
