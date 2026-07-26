@@ -53,6 +53,7 @@ fn run_biomcp_with_env(args: &[&str], env: &[(&str, &str)]) -> CommandResult {
 }
 
 const POST_CHILD_FIXTURE_RESULT_TIMEOUT: Duration = Duration::from_secs(1);
+const CREDENTIAL_FIXTURE_HOST: &str = "127.0.0.2";
 
 #[derive(Debug)]
 struct CredentialFixtureRequest {
@@ -70,7 +71,8 @@ struct CredentialRedactionFixture {
 
 impl CredentialRedactionFixture {
     fn start(secret: &'static str) -> Self {
-        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind credential fixture");
+        let listener =
+            TcpListener::bind((CREDENTIAL_FIXTURE_HOST, 0)).expect("bind credential fixture");
         listener
             .set_nonblocking(true)
             .expect("make credential fixture nonblocking");
