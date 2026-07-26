@@ -64,6 +64,11 @@ pub(super) fn list_gene() -> String {
 }
 
 pub(super) fn list_variant() -> String {
+    let alphagenome_predict = if cfg!(feature = "alphagenome") {
+        "AlphaGenome prediction (requires `ALPHAGENOME_API_KEY`)"
+    } else {
+        "AlphaGenome prediction is unavailable because AlphaGenome support was not built into this binary"
+    };
     let has_oncokb = std::env::var("ONCOKB_TOKEN")
         .ok()
         .map(|v| !v.trim().is_empty())
@@ -74,7 +79,7 @@ pub(super) fn list_variant() -> String {
 ## Commands
 
 - `get variant <id>` - core annotation (MyVariant.info)
-- `get variant <id> predict` - AlphaGenome prediction (requires `ALPHAGENOME_API_KEY`)
+- `get variant <id> predict` - {alphagenome_predict}
 - `get variant <id> predictions` - expanded dbNSFP model scores (REVEL, AlphaMissense, etc.)
 - `get variant <id> clinvar` - ClinVar section details
 - `get variant <id> population` - gnomAD population frequencies
@@ -143,6 +148,8 @@ Transcript normalization examples:
 - `variant normalize car <HGVS>` - read-only ClinGen Allele Registry lookup for supported versioned RefSeq HGVS
 "#
     .to_string();
+
+    out = out.replace("{alphagenome_predict}", alphagenome_predict);
 
     if has_oncokb {
         out.push_str("- `variant oncokb <id>` - explicit OncoKB lookup for therapies/levels\n");

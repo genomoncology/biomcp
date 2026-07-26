@@ -45,8 +45,13 @@ pub(in crate::cli::health) enum ProbeKind {
         header_name: &'static str,
         header_value_prefix: &'static str,
     },
+    #[cfg(feature = "alphagenome")]
     AlphaGenomeConnect {
         env_var: &'static str,
+    },
+    #[cfg(not(feature = "alphagenome"))]
+    Unavailable {
+        status: &'static str,
     },
     VaersQuery,
 }
@@ -188,8 +193,19 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
     SourceDescriptor {
         api: "AlphaGenome",
         affects: Some("variant predict section"),
-        probe: ProbeKind::AlphaGenomeConnect {
-            env_var: "ALPHAGENOME_API_KEY",
+        probe: {
+            #[cfg(feature = "alphagenome")]
+            {
+                ProbeKind::AlphaGenomeConnect {
+                    env_var: "ALPHAGENOME_API_KEY",
+                }
+            }
+            #[cfg(not(feature = "alphagenome"))]
+            {
+                ProbeKind::Unavailable {
+                    status: "unavailable (not built)",
+                }
+            }
         },
     },
     SourceDescriptor {

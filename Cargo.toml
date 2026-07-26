@@ -42,9 +42,9 @@ http-cache-semantics = "2"
 http = "1"
 
 # gRPC (AlphaGenome)
-tonic = { version = "0.12", features = ["tls", "tls-roots"] }
-prost = "0.13"
-zstd = "0.13"
+tonic = { version = "0.12", features = ["tls", "tls-roots"], optional = true }
+prost = { version = "0.13", optional = true }
+zstd = { version = "0.13", optional = true }
 
 # JSON
 serde = { version = "1", features = ["derive"] }
@@ -105,7 +105,8 @@ htmd = "0.5.4"
 unpdf = "0.4.5"
 
 [features]
-default = []
+default = ["alphagenome"]
+alphagenome = ["dep:tonic", "dep:prost", "dep:zstd", "dep:tonic-build"]
 charts-png = ["kuva/png"]
 
 [dev-dependencies]
@@ -117,7 +118,7 @@ tempfile = "3"
 rexpect = "0.7.0"
 
 [build-dependencies]
-tonic-build = "0.12"
+tonic-build = { version = "0.12", optional = true }
 
 [profile.release]
 lto = "thin"

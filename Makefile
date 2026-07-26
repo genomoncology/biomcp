@@ -22,6 +22,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/surface/homebrew.md \
 	spec/surface/skills.md \
 	spec/surface/cli-contract-ratchet.md \
+	spec/surface/build-profile.md \
 	spec/surface/trial-retirement.md \
 	spec/surface/ctgov-helper-pivots.md
 SPEC_LIVE_PATHS = \
@@ -45,14 +46,16 @@ SPEC_LIVE_PATHS = \
 	spec/entity/clingen-car-live.md \
 	spec/entity/variant-myvariant-live.md \
 	spec/entity/variant-articles-live.md \
+	spec/surface/build-profile-live.md \
 	spec/surface/cli.md \
 	spec/surface/discover.md
 
 SPEC_PROFILE ?= spec
+ROUTINE_CARGO_FEATURES ?= --no-default-features
 SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
-SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) --bin biomcp --example rmcp_streamable_http_contract)
+SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)
 
 sync-python-dev:
 	uv sync --extra dev --no-install-project
@@ -61,7 +64,7 @@ build:
 	cargo build --release
 
 test:
-	cargo nextest run
+	cargo nextest run $(ROUTINE_CARGO_FEATURES)
 	$(MAKE) test-contracts
 
 test-contracts:
@@ -75,8 +78,8 @@ lint:
 	tools/check-quality-ratchet.sh
 
 release-gate: lint
-	$(MAKE) test SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
-	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
+	$(MAKE) test SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp" ROUTINE_CARGO_FEATURES=
+	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp" ROUTINE_CARGO_FEATURES=
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh

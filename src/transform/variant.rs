@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
+#[cfg(feature = "alphagenome")]
+use crate::entities::variant::VariantPrediction;
 use crate::entities::variant::{
     ConditionReportCount, PopulationFrequency, Variant, VariantCgiAssociation, VariantCivicSection,
-    VariantConservationScores, VariantCosmicContext, VariantPopulationBreakdown, VariantPrediction,
+    VariantConservationScores, VariantCosmicContext, VariantPopulationBreakdown,
     VariantPredictionScore, VariantSearchResult, normalize_protein_change,
 };
 use crate::sources::cbioportal::CBioMutationSummary;
@@ -1065,6 +1067,7 @@ pub fn merge_cbioportal(variant: &mut Variant, summary: &CBioMutationSummary) {
     ));
 }
 
+#[cfg(feature = "alphagenome")]
 pub fn merge_prediction(variant: &mut Variant, prediction: VariantPrediction) {
     variant.prediction = Some(prediction);
 }

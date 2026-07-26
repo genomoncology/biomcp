@@ -26,6 +26,7 @@ SPEC_ROUTINE_PATHS=(
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
   spec/surface/cli-contract-ratchet.md
+  spec/surface/build-profile.md
   spec/surface/trial-retirement.md
   spec/surface/ctgov-helper-pivots.md
 )
@@ -299,6 +300,7 @@ case "$mode" in
       spec/entity/clingen-car-live.md
       spec/entity/variant-myvariant-live.md
       spec/entity/variant-articles-live.md
+      spec/surface/build-profile-live.md
       spec/surface/cli.md
       spec/surface/discover.md
     )

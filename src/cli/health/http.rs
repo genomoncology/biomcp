@@ -326,6 +326,7 @@ pub(in crate::cli::health) async fn check_auth_post_json(
     .await
 }
 
+#[cfg(feature = "alphagenome")]
 pub(in crate::cli::health) async fn check_alphagenome_connect(
     api: &str,
     env_var: &str,
