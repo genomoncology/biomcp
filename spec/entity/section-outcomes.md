@@ -60,9 +60,16 @@ that optional section as unavailable before it reads credentials or contacts a
 provider. BioMCP reports either local decision without claiming that an
 uncontacted provider returned an empty result.
 
+Capability is decided before applicability. A binary that cannot predict says
+so for every `predict` request, including inputs that would also have failed the
+coordinate preflight. Reporting "needs genomic coordinates" from a build that
+would refuse coordinates too invites a caller to retry an input that can never
+succeed here. The coordinate preflight itself still ships in every release
+binary and is proven by a feature-on unit test.
+
 | input | section | expected outcome | uncontacted provider | str:label |
 |---|---|---|---|---|
-| rs589000 | predict | inapplicable | AlphaGenome | prediction needs genomic coordinates |
+| rs589000 | predict | unavailable | AlphaGenome | feature-off prediction says it was not built even without coordinates |
 | chr7:g.140453136A>T | predict | unavailable | AlphaGenome | feature-off prediction says it was not built |
 | rs589001 | cbioportal | inapplicable | cBioPortal | cBioPortal needs a gene |
 | rs589001 | civic | inapplicable | CIViC | CIViC needs a molecular profile |
