@@ -33,6 +33,19 @@ env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
   make -C ../.. -n spec | mustmatch like 'cargo build --locked --profile spec --no-default-features'
 ```
 
+## The routine binary explains unavailable prediction
+
+The routine binary still advertises the `predict` section so scripts can use one
+command shape across artifacts. Its command reference must explain that the
+capability was not built instead of incorrectly telling an operator to set a
+key that cannot enable it.
+
+```bash
+biomcp list variant | mustmatch like 'get variant <id> predict
+not built'
+biomcp list variant | mustmatch not like 'requires `ALPHAGENOME_API_KEY`'
+```
+
 ## Release artifacts retain the AlphaGenome feature
 
 The default package feature keeps the shipped client and all of its runtime and
