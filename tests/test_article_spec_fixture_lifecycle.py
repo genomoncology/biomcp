@@ -198,6 +198,108 @@ def test_runner_signal_cleans_article_fixture(
             runner.wait()
 
 
+@pytest.mark.parametrize(
+    "termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]
+)
+def test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns(
+    termination_signal: signal.Signals, tmp_path: Path
+) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    ready = workspace / "runner-ready"
+    env |= {
+        "BIOMCP_SPEC_RUNNER_READY_FILE": str(ready),
+        "BIOMCP_SPEC_RUNNER_HOLD": "1",
+    }
+    runner = subprocess.Popen(
+        ["bash", "scripts/run-specs.sh", "spec-contracts"], cwd=workspace, env=env
+    )
+    fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
+    try:
+        _wait_until(lambda: ready.exists() and fixture_env.exists())
+        fixture_pid = int(
+            _read_exports(fixture_env)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+        )
+        fixture_group = os.getpgid(fixture_pid)
+        runner_group = os.getpgid(runner.pid)
+
+        os.kill(runner.pid, termination_signal)
+        assert runner.wait(timeout=10) == 128 + termination_signal
+        _wait_until(lambda: not Path(f"/proc/{fixture_pid}").exists())
+        assert not fixture_env.exists()
+
+        successor = subprocess.run(
+            ["bash", "scripts/run-specs.sh", "spec-contracts"],
+            cwd=workspace,
+            env=env | {"BIOMCP_SPEC_RUNNER_HOLD": "0"},
+            check=False,
+        )
+        assert successor.returncode == 0
+        successor_invocations = (workspace / "mustmatch-invocation-log").read_text()
+        assert "spec/entity/article.md" in successor_invocations
+        assert fixture_group != runner_group, (
+            "a routine fixture must have its own process group so interruption and stale "
+            "recovery can reap its descendants without signaling the coordinator group"
+        )
+    finally:
+        if runner.poll() is None:
+            runner.kill()
+            runner.wait()
+        subprocess.run(
+            [
+                "bash",
+                "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
+                str(workspace),
+            ],
+            cwd=workspace,
+            check=False,
+        )
+
+
+def test_cleanup_refuses_mismatched_fixture_process_group(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    _copy_article_fixture(workspace)
+    subprocess.run(
+        [
+            "bash",
+            "spec/fixtures/setup-article-fulltext-source-fixture.sh",
+            str(workspace),
+        ],
+        cwd=workspace,
+        check=True,
+    )
+    fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
+    exports = _read_exports(fixture_env)
+    fixture_pid = int(exports["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"])
+    sentinel = subprocess.Popen(["sleep", "30"], start_new_session=True)
+    try:
+        sentinel_group = os.getpgid(sentinel.pid)
+        fixture_env.write_text(
+            fixture_env.read_text().replace(
+                "export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID="
+                f"{exports['BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID']}",
+                f"export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID={sentinel_group}",
+            )
+        )
+        subprocess.run(
+            [
+                "bash",
+                "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
+                str(workspace),
+            ],
+            cwd=workspace,
+            check=True,
+        )
+        assert sentinel.poll() is None
+        assert Path(f"/proc/{fixture_pid}").exists()
+    finally:
+        if sentinel.poll() is None:
+            sentinel.kill()
+            sentinel.wait()
+        if Path(f"/proc/{fixture_pid}").exists():
+            os.killpg(os.getpgid(fixture_pid), signal.SIGKILL)
+            _wait_until(lambda: not Path(f"/proc/{fixture_pid}").exists())
+
+
 def test_setup_failure_cleans_started_process_and_root(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     _copy_article_fixture(workspace, include_data=False)
