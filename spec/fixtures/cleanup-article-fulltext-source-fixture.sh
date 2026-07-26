@@ -12,6 +12,7 @@ fi
 
 fixture_root="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT:-}"
 fixture_pid="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID:-}"
+fixture_pgid="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID:-}"
 root_is_owned=false
 case "$fixture_root" in
   "$cache_dir"/spec-article-fulltext-source.*) root_is_owned=true ;;
@@ -27,15 +28,23 @@ if $root_is_owned && [[ "$fixture_pid" =~ ^[1-9][0-9]*$ ]] \
   fi
 fi
 
-if $pid_is_owned; then
-  kill "$fixture_pid" 2>/dev/null || true
+pgid_is_owned=false
+if $pid_is_owned && [[ "$fixture_pgid" =~ ^[1-9][0-9]*$ ]]; then
+  actual_pgid="$(ps -o pgid= -p "$fixture_pid" 2>/dev/null | tr -d ' ' || true)"
+  if [ "$actual_pgid" = "$fixture_pgid" ]; then
+    pgid_is_owned=true
+  fi
+fi
+
+if $pgid_is_owned; then
+  kill -TERM -- "-$fixture_pgid" 2>/dev/null || true
   for _ in $(seq 1 50); do
-    if ! kill -0 "$fixture_pid" 2>/dev/null; then
+    if ! kill -0 -- "-$fixture_pgid" 2>/dev/null; then
       break
     fi
     sleep 0.1
   done
-  kill -KILL "$fixture_pid" 2>/dev/null || true
+  kill -KILL -- "-$fixture_pgid" 2>/dev/null || true
 fi
 
 if $root_is_owned; then

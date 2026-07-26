@@ -19,7 +19,7 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request-log.txt"
 : > "$request_log"
 
-python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
+setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -1021,8 +1021,9 @@ ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-
 server.serve_forever()
 PY
 server_pid=$!
+fixture_pgid="$(ps -o pgid= -p "$server_pid" | tr -d ' ')"
 cleanup_failed_setup() {
-  kill "$server_pid" 2>/dev/null || true
+  kill -TERM -- "-$fixture_pgid" 2>/dev/null || true
   rm -rf "$fixture_root"
   rm -f "$env_file"
 }
@@ -1055,6 +1056,7 @@ printf 'export BIOMCP_CACHE_MIN_DISK_FREE=1B\n' >>"$env_file"
 printf 'unset NCBI_API_KEY\n' >>"$env_file"
 printf 'unset S2_API_KEY\n' >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID=%q\n' "$server_pid" >>"$env_file"
+printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID=%q\n' "$fixture_pgid" >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
