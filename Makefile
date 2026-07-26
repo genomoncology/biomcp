@@ -55,7 +55,7 @@ ROUTINE_CARGO_FEATURES ?= --no-default-features
 SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
-SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked $(ROUTINE_CARGO_FEATURES) --profile $(SPEC_PROFILE) --bin biomcp --example rmcp_streamable_http_contract)
+SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)
 
 sync-python-dev:
 	uv sync --extra dev --no-install-project
@@ -78,8 +78,8 @@ lint:
 	tools/check-quality-ratchet.sh
 
 release-gate: lint
-	$(MAKE) test ROUTINE_CARGO_FEATURES= SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
-	$(MAKE) spec ROUTINE_CARGO_FEATURES= SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
+	$(MAKE) test SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp" ROUTINE_CARGO_FEATURES=
+	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp" ROUTINE_CARGO_FEATURES=
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh

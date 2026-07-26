@@ -27,8 +27,10 @@ Cargo with a smaller feature set by hand is not enough if either routine gate
 silently restores the default client.
 
 ```bash
-make -C ../.. -n test | mustmatch like 'cargo nextest run --no-default-features'
-make -C ../.. -n spec | mustmatch like 'cargo build --locked --no-default-features --profile'
+env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
+  make -C ../.. -n test | mustmatch like 'cargo nextest run --no-default-features'
+env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
+  make -C ../.. -n spec | mustmatch like 'cargo build --locked --profile spec --no-default-features'
 ```
 
 ## Release artifacts retain the AlphaGenome feature
