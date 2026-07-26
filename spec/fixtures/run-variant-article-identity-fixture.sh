@@ -31,6 +31,13 @@ rows = {
 }
 # Minimized PubTator3-shaped captures. These are provider facts, not clinical classifications.
 # Each tuple is (gene symbol, exact provider HGVS, NCBI Gene ID).
+car_rows = {
+    "NM_000051.4:c.1066-6T>G": "CA900001",
+    "NC_000011.10:g.108248927T>G": "CA900001",
+    "NM_024675.4:c.3350+5G>A": "CA900001",
+    "NC_000016.10:g.23607859C>T": "CA900001",
+}
+
 passages = {
     "12901799": [("APC", "p.Arg283Ter", 324)],
     "31749828": [("TP53", "c.847C>T", 7157)],
@@ -54,6 +61,12 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
     def do_GET(self):
         parsed = urlparse(self.path); query = parse_qs(parsed.query); path = parsed.path
+        if path == "/allele":
+            hgvs = query.get("hgvs", [""])[0]
+            caid = car_rows.get(hgvs)
+            if caid:
+                return send(self, 200, {"@id": f"https://reg.genome.network/allele/{caid}", "communityStandardTitle": [], "genomicAlleles": [], "transcriptAlleles": []})
+            return send(self, 200, {"@id": "_:CA", "communityStandardTitle": [], "genomicAlleles": [], "transcriptAlleles": []})
         if path == "/v1/query": return send(self, 200, {"total": 0, "hits": []})
         if path.startswith("/v1/variant/"): return send(self, 404, {"error": "not found"})
         if path == "/entity/autocomplete/": return send(self, 200, [])
@@ -134,7 +147,7 @@ for _ in $(seq 1 100); do test -s "$ready" && break; sleep 0.05; done
 base_url="$(cat "$ready")"
 binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
 export BIOMCP_CACHE_MODE=off BIOMCP_CACHE_DIR="$fixture_root/cache" BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
-export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url"
+export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url"
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 all="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --limit 1)"
@@ -144,6 +157,7 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
   def item($id): $all.items[] | select(.request_id == $id);
   def reordered_item($id): $reordered.items[] | select(.request_id == $id);
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
+  def equivalence($id): item($id).canonical_equivalence;
   {
     frozen_positive_statuses: {apc: has("apc-grch38"; "12901799"; "confirmed"), atm: has("atm-grch38"; "32918381"; "confirmed"), palb2: has("palb2-grch38"; "39999518"; "confirmed"), mlh1: has("mlh1-grch38"; "20864636"; "confirmed")},
     collision_pmids_never_confirmed: (all(["31749828", "24376681", "33656647"][]; . as $pmid | any($all.items[].results[]; .pmid == $pmid and .identity.status != "confirmed"))),
@@ -152,6 +166,12 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
     outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38").pagination.total == null)),
     confirmed_page_filters_before_limit: (any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
     audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
+    canonical_equivalence_confirms_refseq_agreement_without_rewriting_myvariant: (all(["atm-grch38", "palb2-grch38"][]; . as $id | (equivalence($id) // {}) as $equivalence |
+      ($equivalence | keys == ["applicable_identity_count", "caid", "complete", "exhaustive", "message", "observations", "status"]) and
+      $equivalence.status == "confirmed" and $equivalence.caid == "CA900001" and $equivalence.exhaustive == true and $equivalence.complete == true and $equivalence.applicable_identity_count == 2 and
+      ($equivalence.observations | length == 2 and all(.[]; . | keys == ["basis", "caid", "car_version", "comparison_complete", "provider_exhaustive", "provider_response_sha256", "query", "request_template_version", "source", "status"] and
+        .status == "resolved" and .caid == "CA900001" and .provider_exhaustive == true and .comparison_complete == true and .source == "clingen_car" and .request_template_version == "1" and (.car_version | type) == "null" and (.provider_response_sha256 | test("^[0-9a-f]{64}$")))) and
+      item($id).resolution.status == "resolved" and item($id).resolution.basis == "caller_supplied" and item($id).resolution.provider_validation == {"source":"myvariant","status":"not_found","matched_alias":null,"contradictory_field":null})),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
       ["apc-grch38", "12901799", 324, "p.Arg283Ter"],
       ["atm-grch38", "32918381", 472, "c.1066-6T>G"],
