@@ -8,7 +8,7 @@ binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
 tmp="$(mktemp -d)"
 trap 'kill "${server_pid:-}" 2>/dev/null || true; rm -rf "$tmp"' EXIT
 
-REPO_ROOT="$repo_root" PORT_FILE="$tmp/port" uv run --no-sync python - <<'PY' &
+REPO_ROOT="$repo_root" PORT_FILE="$tmp/port" uv run --no-sync python - 8>&- <<'PY' &
 import json, os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path

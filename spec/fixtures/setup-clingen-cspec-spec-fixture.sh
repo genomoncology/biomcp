@@ -13,7 +13,7 @@ ready="$fixture_root/origin"
 requests="$fixture_root/requests.jsonl"
 : >"$requests"
 
-READY="$ready" REQUESTS="$requests" uv run --no-sync python - <<'PY' >"$fixture_root/server.log" 2>&1 &
+READY="$ready" REQUESTS="$requests" uv run --no-sync python - 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
 import json, os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
