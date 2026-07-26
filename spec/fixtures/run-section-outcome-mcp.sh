@@ -15,7 +15,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-"$biomcp_bin" serve-http --host 127.0.0.1 --port "$port" >"$log_file" 2>&1 &
+"$biomcp_bin" serve-http --host 127.0.0.1 --port "$port" >"$log_file" 2>&1 8>&- &
 server_pid=$!
 
 for _ in $(seq 1 40); do
