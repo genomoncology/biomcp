@@ -223,3 +223,13 @@ this repo.
 
 Earlier numbers in this file recording ~60s routine runs predate the current
 fixture set and were not reproducible here.
+
+## Ticket 625 AlphaGenome Feature-Gate Result — 2026-07-26
+
+The 2026-07-25 pre-change cold `spec`-profile observation was `154.7s` after
+the profile's `opt-level = 1` pin. With AlphaGenome's gRPC/protobuf dependency
+subtree feature-gated, an isolated cold
+`cargo build --locked --profile spec --no-default-features --bin biomcp --example rmcp_streamable_http_contract`
+on this worktree took `122.33s` wall-clock (`68.64s` user, `19.63s` system).
+The measurement used a fresh temporary `CARGO_TARGET_DIR`; it records build
+cost only, not the fixture and mustmatch time in the full `make spec` gate.
