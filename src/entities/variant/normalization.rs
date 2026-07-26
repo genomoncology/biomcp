@@ -401,6 +401,20 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn invalid_grammar_is_rejected_before_any_request_is_constructed() {
+        let result = normalize_car("BRCA1").await;
+
+        assert!(matches!(result, Err(BioMcpError::InvalidArgument(_))));
+    }
+
+    #[tokio::test]
+    async fn batch_limit_is_rejected_before_any_request_is_constructed() {
+        let result = normalize_car_batch(vec!["NM_000546.6:c.215C>G".into(); 51]).await;
+
+        assert!(matches!(result, Err(BioMcpError::InvalidArgument(_))));
+    }
+
     #[test]
     fn car_alias_metadata_describes_distinct_returned_aliases() {
         let aliases = CarAliasCollection::bounded(vec!["NC_000017.11:g.1A>G".into(); 20], 12);

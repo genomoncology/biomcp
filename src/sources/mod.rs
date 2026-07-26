@@ -256,6 +256,7 @@ pub(crate) enum HttpMethod {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum RequestBody {
     None,
+    Text(String),
     Form(Vec<(String, String)>),
     // dead-code reason: RequestBody::Json is reserved for source request-plan JSON fan-out
     #[allow(dead_code)]
@@ -301,6 +302,11 @@ impl RequestPlan {
 
     pub(crate) fn header(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.headers.push((key.into(), value.into()));
+        self
+    }
+
+    pub(crate) fn text(mut self, body: impl Into<String>) -> Self {
+        self.body = RequestBody::Text(body.into());
         self
     }
 
@@ -366,6 +372,7 @@ pub(crate) fn request_from_plan(
     }
     match &plan.body {
         RequestBody::None => {}
+        RequestBody::Text(body) => req = req.body(body.clone()),
         RequestBody::Form(form) => req = req.form(form),
         RequestBody::Json(json) => req = req.json(json),
     }
