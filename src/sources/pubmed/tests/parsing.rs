@@ -398,3 +398,42 @@ fn decode_json_maps_http_and_content_type_errors() {
     .unwrap_err();
     assert!(format!("{content_type:?}").contains("HTML"));
 }
+
+#[test]
+fn parses_a_real_pubmed_citation_capture() {
+    // Captured from eutils efetch.fcgi for PMID 22663011 on 2026-07-27 with the
+    // same query this client builds. The neighbouring citation tests use
+    // hand-written XML so they can exercise edge cases; this one exists to prove
+    // the parser still matches what PubMed actually sends. A synthesized fixture
+    // can only ever confirm that the parser agrees with itself.
+    let xml = std::str::from_utf8(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pubmed/efetch_citation_22663011.xml"
+    )))
+    .expect("captured citation is utf-8");
+
+    let citation = parse_citation_xml("22663011", xml).expect("real capture must parse");
+
+    // This is what the retired live indexing canary asserted upstream: indexing
+    // is available with at least one author and one MeSH heading.
+    assert!(!citation.authors.is_empty());
+    assert!(!citation.mesh_headings.is_empty());
+
+    assert_eq!(citation.authors[0].name, "Keith T Flaherty");
+    assert!(
+        citation.authors[0]
+            .affiliations
+            .iter()
+            .any(|affiliation| affiliation.text.contains("Massachusetts General Hospital")),
+        "real captures carry affiliation prose, not just names"
+    );
+    let melanoma = citation
+        .mesh_headings
+        .iter()
+        .find(|heading| heading.descriptor.ui.as_deref() == Some("D008545"))
+        .expect("capture indexes Melanoma");
+    assert!(
+        !melanoma.qualifiers.is_empty(),
+        "real MeSH headings carry qualifiers"
+    );
+}

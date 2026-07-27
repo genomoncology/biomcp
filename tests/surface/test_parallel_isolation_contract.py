@@ -861,7 +861,6 @@ ROUTINE_SPEC_PATHS = (
 LIVE_SPEC_PATHS = (
     "spec/entity/article-assets-live.md",
     "spec/entity/article-graph-live.md",
-    "spec/entity/article-indexing-live.md",
     "spec/entity/ddinter-live.md",
     "spec/entity/diagnostic.md",
     "spec/entity/disease.md",
