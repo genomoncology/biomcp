@@ -57,10 +57,12 @@ A complete structured BRAF request supplies both `NM_004333.6:c.1799T>A` and
 `NC_000007.13:g.140453136A>T`. The frozen PubMed response repeats one same-case
 candidate deeply enough to consume an unreserved discovery budget. BioMCP must
 leave work for the requested page's identity verification: `--confirmed-only`
-returns the typed-PubTator-confirmed paper, never an unverified row, and keeps
-complete CAR agreement for the two caller-supplied forms. Its debug plan records
-both the discovery work spent and the verification work reserved and consumed,
-so an operator can explain why verification ran.
+returns the typed-PubTator-confirmed papers, never an unverified row, and keeps
+complete CAR agreement for the two caller-supplied forms. Because discovery stops
+before the provider's full result set, the response remains incomplete and
+truncated rather than claiming exhaustive search. Its debug plan records both the
+discovery work spent and the verification work reserved and consumed, so an
+operator can explain why verification ran.
 
 ```bash run id=deep-discovery-identity-reservation exit=0
 bash ../fixtures/run-variant-article-identity-fixture.sh ../..

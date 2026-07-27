@@ -229,6 +229,24 @@ impl VariantArticleExecutionContext {
             .fetch_add(count, AtomicOrdering::SeqCst);
     }
 
+    pub(crate) fn reserve_identity_verification_through(&self, count: usize) {
+        let verification_consumed = self
+            .allocation
+            .identity_verification_consumed
+            .load(AtomicOrdering::SeqCst);
+        let available_for_verification = self
+            .item
+            .limit
+            .saturating_sub(self.item.consumed.load(AtomicOrdering::SeqCst))
+            .saturating_add(verification_consumed);
+        let target = count.min(available_for_verification);
+        let _ = self.allocation.identity_verification_reserved.fetch_update(
+            AtomicOrdering::SeqCst,
+            AtomicOrdering::SeqCst,
+            |current| (current < target).then_some(target),
+        );
+    }
+
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
         let identity_verification = route == "identity_verification";
         if identity_verification
@@ -333,26 +351,6 @@ impl VariantArticleExecutionContext {
             self.request.limit,
             self.request.consumed.load(AtomicOrdering::SeqCst),
         )
-    }
-
-    fn discovery_exhausted(&self) -> bool {
-        let reserved = self
-            .allocation
-            .identity_verification_reserved
-            .load(AtomicOrdering::SeqCst);
-        reserved > 0
-            && self
-                .item
-                .consumed
-                .load(AtomicOrdering::SeqCst)
-                .saturating_add(reserved)
-                >= self.item.limit
-    }
-
-    fn provider_requests_failed(&self) -> bool {
-        self.events()
-            .iter()
-            .any(|event| event.status == "unavailable")
     }
 
     fn work_allocation(&self) -> VariantArticleWorkAllocationPlan {
@@ -2065,6 +2063,8 @@ async fn search_variant_articles_identity(
         });
     }
     if verification.verify_identity {
+        // Keep one verification unit before discovery. Each discovery page then
+        // expands this reservation for candidates that could occupy the visible page.
         execution.reserve_identity_verification(1);
     }
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
@@ -2277,7 +2277,7 @@ async fn search_variant_articles_identity(
     let mut verification_incomplete = false;
     if verification.verify_identity {
         rank_candidates(&mut candidates);
-        execution.reserve_identity_verification(candidates.len().saturating_sub(1));
+        execution.reserve_identity_verification_through(offset.saturating_add(candidates.len()));
         for candidate in &mut candidates {
             let captured = verify_captured_abstract(
                 &context.requested,
@@ -2384,8 +2384,7 @@ async fn search_variant_articles_identity(
         VariantProviderValidationStatus::Indeterminate
             | VariantProviderValidationStatus::Unavailable
     );
-    let complete = (failed_routes == 0
-        || (execution.discovery_exhausted() && !execution.provider_requests_failed()))
+    let complete = failed_routes == 0
         && !budget_stopped
         && !provider_incomplete
         && !verification_incomplete
@@ -3342,9 +3341,6 @@ mod tests {
         assert_eq!(reserved.work_allocation().discovery.limit, 47);
         assert_eq!(reserved.work_allocation().discovery.consumed, 47);
         assert_eq!(reserved.work_allocation().identity_verification.consumed, 3);
-        assert!(!reserved.provider_requests_failed());
-        reserved.record("strict", "pubmed", Instant::now(), "unavailable", 0);
-        assert!(reserved.provider_requests_failed());
 
         let contexts = VariantArticleExecutionContext::batch(10);
         for context in &contexts {
