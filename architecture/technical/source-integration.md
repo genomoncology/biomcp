@@ -19,10 +19,11 @@ source's transport, authentication, and payload shape.
   `src/sources/cancerhotspots.rs`, and `src/sources/complexportal.rs`.
 - Current examples of extension work include `src/sources/opentargets.rs`,
   which already owns multiple OpenTargets query paths.
-- ClinGen Search, ClinGen Allele Registry, ClinGen ERepo, and ClinGen CSpec have distinct
-  origins and response contracts, so they remain separate source modules. CAR uses only
-  bounded read-only projected requests and an origin-restricted client; CSpec selection uses
-  an exact provider resource IRI and stores the bounded response before parsing.
+- ClinGen Search, ClinGen Allele Registry, ClinGen ERepo, ClinGen CSpec, and ClinGen LDH
+  have distinct origins and response contracts, so they remain separate source modules. CAR
+  uses only bounded read-only projected requests and an origin-restricted client; CSpec
+  selection uses an exact provider resource IRI and stores the bounded response before
+  parsing; LDH validates official annotation IRIs before its fixture-only origin remap.
 - Every source module must be declared from `src/sources/mod.rs`.
 
 This prevents duplicated auth handling, base URL overrides, rate limiting, and
@@ -34,7 +35,9 @@ retain a SHA-256 audit fact only after receipt; request-template and equivalence
 rule versions may participate in planning, while CAR service versions and body
 hashes never do. The article response exposes this as additive
 `canonical_equivalence` evidence, not as liftover or a replacement for MyVariant
-resolution.
+resolution. LDH is a post-retrieval article identity observer: it spends the same
+per-item work budget on one medium lookup and bounded direct annotations, but cannot
+discover, remove, rank, or supply negative evidence for candidates.
 
 ## Shared Source Client Conventions
 

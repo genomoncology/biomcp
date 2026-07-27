@@ -1325,3 +1325,64 @@ def test_wrapper_allows_mustmatch_opt_out_later_in_section(tmp_path: Path) -> No
     assert summary["status"] == "pass"
     assert summary["lint"]["status"] == "pass"
     assert summary["lint"]["finding_count"] == 0
+
+
+def test_profile_independence_audit_flags_a_build_specific_spec_assertion(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path
+    quality_ratchet = _load_ratchet_module()
+    (root / "src" / "cli").mkdir(parents=True)
+    (root / "src" / "cli" / "list.rs").write_text(
+        'pub fn page() -> String {\n'
+        '    let line = if cfg!(feature = "alphagenome") {\n'
+        '        "AlphaGenome prediction (requires `ALPHAGENOME_API_KEY`)"\n'
+        '    } else {\n'
+        '        "AlphaGenome support was not built into this binary"\n'
+        '    };\n'
+        '    line.to_string()\n'
+        '}\n',
+        encoding="utf-8",
+    )
+    (root / "scripts").mkdir()
+    (root / "scripts" / "run-specs.sh").write_text(
+        "SPEC_ROUTINE_PATHS=(\n  spec/surface/page.md\n)\n", encoding="utf-8"
+    )
+    (root / "spec" / "surface").mkdir(parents=True)
+    page = root / "spec" / "surface" / "page.md"
+    page.write_text(
+        "# Page\n\n```bash\nbiomcp list variant | mustmatch like 'not built into this binary'\n```\n",
+        encoding="utf-8",
+    )
+
+    failing = quality_ratchet.check_profile_independent_specs(root)
+    assert failing["status"] == "fail"
+    assert failing["findings"][0]["path"] == "spec/surface/page.md"
+    assert "not built into this binary" in failing["findings"][0]["fragment"]
+
+    page.write_text(
+        "# Page\n\n```bash\nbiomcp list variant | mustmatch like 'get variant <id> predict'\n```\n",
+        encoding="utf-8",
+    )
+    assert quality_ratchet.check_profile_independent_specs(root)["status"] == "pass"
+
+
+def test_profile_independence_audit_reads_the_dual_lane_list_from_the_runner(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path
+    quality_ratchet = _load_ratchet_module()
+    (root / "scripts").mkdir()
+    (root / "scripts" / "run-specs.sh").write_text(
+        "SPEC_ROUTINE_PATHS=(\n"
+        "  spec/entity/one.md\n"
+        "  tests/surface/contract.py\n"
+        "  spec/surface/two.md\n"
+        ")\n\n"
+        "SPEC_LIVE_PATHS=(\n  spec/entity/three-live.md\n)\n",
+        encoding="utf-8",
+    )
+    paths = quality_ratchet.dual_lane_spec_paths(root)
+    # Live pages run only against the release binary, so they are single-lane and
+    # legitimately may assert release-only behavior.
+    assert paths == ["spec/entity/one.md", "spec/surface/two.md"]

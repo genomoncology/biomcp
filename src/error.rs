@@ -16,6 +16,7 @@ impl SourceProvider {
     pub const CLINGEN_CAR: Self = Self::new("ClinGen Allele Registry");
     pub const CLINGEN_CSPEC: Self = Self::new("ClinGen CSpec");
     pub const CLINGEN_EREPO: Self = Self::new("ClinGen ERepo");
+    pub const CLINGEN_LDH: Self = Self::new("ClinGen LDH");
     pub const CLINICAL_TRIALS: Self = Self::new("ClinicalTrials.gov");
     pub const COMPLEX_PORTAL: Self = Self::new("Complex Portal");
     pub const CPIC: Self = Self::new("CPIC");
@@ -81,6 +82,7 @@ impl SourceProvider {
         Self::CLINGEN_CAR,
         Self::CLINGEN_CSPEC,
         Self::CLINGEN_EREPO,
+        Self::CLINGEN_LDH,
         Self::CLINICAL_TRIALS,
         Self::COMPLEX_PORTAL,
         Self::CPIC,
@@ -158,6 +160,7 @@ impl SourceProvider {
             "clingen_car" | "ClinGen Allele Registry" => Self::CLINGEN_CAR,
             "clingen_cspec" | "ClinGen CSpec" => Self::CLINGEN_CSPEC,
             "clingen_erepo" | "ClinGen ERepo" => Self::CLINGEN_EREPO,
+            "clingen_ldh" | "ClinGen LDH" => Self::CLINGEN_LDH,
             "clinicaltrials.gov" | "ClinicalTrials.gov" => Self::CLINICAL_TRIALS,
             "complexportal" | "Complex Portal" => Self::COMPLEX_PORTAL,
             "cpic" | "CPIC" => Self::CPIC,

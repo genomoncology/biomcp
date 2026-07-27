@@ -28,7 +28,6 @@ SPEC_ROUTINE_PATHS = \
 SPEC_LIVE_PATHS = \
 	spec/entity/article-assets-live.md \
 	spec/entity/article-graph-live.md \
-	spec/entity/article-indexing-live.md \
 	spec/entity/ddinter-live.md \
 	spec/entity/diagnostic.md \
 	spec/entity/disease.md \
@@ -44,6 +43,7 @@ SPEC_LIVE_PATHS = \
 	spec/entity/clingen-erepo-live.md \
 	spec/entity/clingen-cspec-live.md \
 	spec/entity/clingen-car-live.md \
+	spec/entity/clingen-ldh-live.md \
 	spec/entity/variant-myvariant-live.md \
 	spec/entity/variant-articles-live.md \
 	spec/surface/build-profile-live.md \

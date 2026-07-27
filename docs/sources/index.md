@@ -19,6 +19,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | ClinGen Allele Registry | Canonical CAids and bounded aliases for supported RefSeq HGVS identities | [ClinGen Allele Registry](clingen-allele-registry.md) |
 | ClinGen CSpec | Versioned VCEP criteria source documents with exact captures | [ClinGen CSpec](clingen-cspec.md) |
 | ClinGen ERepo | Versioned expert assertions and criterion source facts by CAid | [ClinGen ERepo](clingen-erepo.md) |
+| ClinGen LDH | Optional bounded article identity observations with exact PMC selectors | [ClinGen LDH](clingen-ldh.md) |
 | OpenFDA | FAERS, recalls, device events, labels, and U.S. approval context | [OpenFDA](openfda.md) |
 | CDC WONDER VAERS | Vaccine adverse-event summaries, seriousness breakdowns, and age-distribution context | [CDC WONDER VAERS](vaers.md) |
 | UniProt | Canonical protein cards and structure-linked context | [UniProt](uniprot.md) |

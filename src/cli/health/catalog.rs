@@ -339,6 +339,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "ClinGen LDH",
+        affects: Some("variant article identity verification"),
+        probe: ProbeKind::Get {
+            url: "https://ldh.genome.network/ldh/Variant/id/CA151456/ld?detail=med",
+        },
+    },
+    SourceDescriptor {
         api: "gnomAD",
         affects: Some("gene constraint section"),
         probe: ProbeKind::PostJson {

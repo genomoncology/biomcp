@@ -152,6 +152,32 @@ impl ProviderUrlPolicy {
         Ok(policy)
     }
 
+    /// Policy for exact ClinGen LDH annotation IRIs.
+    pub(crate) fn clingen_ldh() -> Result<Self, BioMcpError> {
+        let canonical = AllowedOrigin::parse("https://ldh.genome.network")?;
+        let fixture = std::env::var("BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN")
+            .ok()
+            .and_then(|value| Url::parse(&value).ok());
+        let unsafe_test_origin = fixture.as_ref().and_then(selected_loopback_test_origin);
+        if fixture.is_some() && unsafe_test_origin.is_none() {
+            return Err(policy_error(
+                "ClinGen LDH fixture origin must be exact loopback",
+            ));
+        }
+        let mut allowed_origins = vec![canonical];
+        if let Some(origin) = unsafe_test_origin.as_ref() {
+            allowed_origins.push(origin.clone());
+        }
+        Ok(Self {
+            source: "ClinGen LDH",
+            provider: SourceProvider::CLINGEN_LDH,
+            allowed_origins,
+            credential_origins: Vec::new(),
+            unsafe_test_origin,
+            pmc_linked_numeric_id: None,
+        })
+    }
+
     /// Policy for exact ClinGen CSpec resource IRIs.
     pub(crate) fn cspec() -> Result<Self, BioMcpError> {
         let fixture_origin = cspec_fixture_origin()?;

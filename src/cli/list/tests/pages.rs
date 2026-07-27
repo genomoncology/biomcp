@@ -556,3 +556,28 @@ fn phenotype_list_mentions_hpo_ids_and_symptom_phrases() {
     assert!(phenotype.contains("resolve symptom text to HPO IDs"));
     assert!(phenotype.contains("Run `discover \"<symptom text>\"` first"));
 }
+
+#[test]
+fn list_variant_explains_alphagenome_availability_for_this_build() {
+    let out = render(Some("variant")).expect("list variant page should render");
+    assert!(out.contains("get variant <id> predict"));
+    if cfg!(feature = "alphagenome") {
+        assert!(
+            out.contains("requires `ALPHAGENOME_API_KEY`"),
+            "a feature-on build must name the key that enables prediction"
+        );
+        assert!(
+            !out.contains("not built"),
+            "a feature-on build must not claim the capability is missing"
+        );
+    } else {
+        assert!(
+            out.contains("not built"),
+            "a feature-off build must say the capability was not built"
+        );
+        assert!(
+            !out.contains("requires `ALPHAGENOME_API_KEY`"),
+            "a feature-off build must not send an operator after a key that cannot help"
+        );
+    }
+}

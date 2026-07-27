@@ -55,28 +55,25 @@ A base drug card does not call Drugs@FDA. Its registry records that omission as
 ## Local outcomes do not credit providers
 
 A requested enrichment cannot run when the resolved variant lacks that source's
-required identifier. Likewise, a binary compiled without AlphaGenome reports
-that optional section as unavailable before it reads credentials or contacts a
-provider. BioMCP reports either local decision without claiming that an
-uncontacted provider returned an empty result.
+required identifier. BioMCP records that local decision without claiming that
+an uncontacted provider returned an empty result.
 
-Capability is decided before applicability. A binary that cannot predict says
-so for every `predict` request, including inputs that would also have failed the
-coordinate preflight. Reporting "needs genomic coordinates" from a build that
-would refuse coordinates too invites a caller to retry an input that can never
-succeed here. The coordinate preflight itself still ships in every release
-binary and is proven by a feature-on unit test.
+The separate feature-off AlphaGenome outcome is build-specific: a binary that
+cannot predict says so before it reads credentials or considers coordinates.
+That dual-build property is proven natively by
+`list_variant_explains_alphagenome_availability_for_this_build`, rather than
+by this profile-independent CLI page, which also runs against release builds.
+The coordinate preflight itself still ships in every release binary and is
+proven by a feature-on unit test.
 
 | input | section | expected outcome | uncontacted provider | str:label |
 |---|---|---|---|---|
-| rs589000 | predict | unavailable | AlphaGenome | feature-off prediction says it was not built even without coordinates |
-| chr7:g.140453136A>T | predict | unavailable | AlphaGenome | feature-off prediction says it was not built |
 | rs589001 | cbioportal | inapplicable | cBioPortal | cBioPortal needs a gene |
 | rs589001 | civic | inapplicable | CIViC | CIViC needs a molecular profile |
 | chr7:g.140453136A>T | gwas | inapplicable | GWAS Catalog | GWAS needs an rsID |
 
 ```bash each_row="Local outcomes do not credit providers"
 biomcp --json --no-cache get variant '{{input}}' {{section}} \
-  | jq '(.section_outcomes["{{section}}"].outcome == "{{expected_outcome}}") and (.section_outcomes["{{section}}"].sources == []) and (if "{{expected_outcome}}" == "unavailable" then ((.section_outcomes["{{section}}"].message // "") | test("not built"; "i")) else (((.section_outcomes["{{section}}"].message // "") | length) > 0) end) and (._meta.section_sources | any(.key == "{{section}}" and .outcome == "{{expected_outcome}}" and .sources == [])) and (._meta.section_sources | all(.sources | index("{{uncontacted_provider}}") | not))' \
+  | jq '(.section_outcomes["{{section}}"].outcome == "{{expected_outcome}}") and (.section_outcomes["{{section}}"].sources == []) and (((.section_outcomes["{{section}}"].message // "") | length) > 0) and (._meta.section_sources | any(.key == "{{section}}" and .outcome == "{{expected_outcome}}" and .sources == [])) and (._meta.section_sources | all(.sources | index("{{uncontacted_provider}}") | not))' \
   | mustmatch 'true'
 ```

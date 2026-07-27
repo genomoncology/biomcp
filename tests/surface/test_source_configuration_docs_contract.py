@@ -24,6 +24,7 @@ PUBLIC_BIOMCP_SECTIONS = {
 
 PRODUCTION_READ_ENV_ALLOWLIST = {
     "BIOMCP_TEST_UNPACED_ORIGIN": "fixture-only signal, not operator configuration",
+    "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": "fixture-only signal, not operator configuration",
     "BIOMCP_BUILD_DATE": "compile-time build metadata, not runtime operator configuration",
     "BIOMCP_BUILD_GIT_SHA": "compile-time build metadata, not runtime operator configuration",
     "BIOMCP_BUILD_GIT_TAG": "compile-time build metadata, not runtime operator configuration",

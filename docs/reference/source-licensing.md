@@ -39,6 +39,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | ChEMBL | 1 | direct_api | none | EMBL-EBI open data service; ChEMBL is published for broad reuse | reuse is generally allowed under the provider's open-data terms with attribution where required | <https://www.ebi.ac.uk/chembl/> |
 | CIViC | 1 | direct_api | none | open community knowledgebase; CIViC content is published for unrestricted reuse | reuse is broadly permitted; attribution remains best practice | <https://civicdb.org/home> |
 | ClinGen | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://clinicalgenome.org/> |
+| ClinGen LDH | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://ldh.genome.network> |
 | ClinicalTrials.gov | 1 | direct_api | none | U.S. government public information service | records are broadly reusable; preserve identifiers and avoid implying NLM endorsement | <https://clinicaltrials.gov/data-api/about-api> |
 | ComplexPortal | 1 | direct_api | none | EMBL-EBI open data service | reuse follows EMBL-EBI resource terms and any embedded third-party source obligations | <https://www.ebi.ac.uk/complexportal/> |
 | CPIC | 1 | direct_api | none | CPIC content is published under CC0 with trademark and attribution guidance | content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions | <https://cpicpgx.org/license/> |
@@ -171,6 +172,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://erepo.clinicalgenome.org>
 - Reviewed on: `2026-07-23`
 - Notes: BioMCP exposes bounded source facts and explicitly selected versioned detail without interpreting expert assertions.
+
+### ClinGen LDH
+
+- BioMCP surfaces: `variant articles --verify-identity; variant_articles`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: public web/API access
+- License / terms summary: public ClinGen curation resources with publication and attribution expectations
+- Redistribution / reuse summary: generally queryable and reusable, but users should preserve attribution and source context
+- Official terms URL: <https://ldh.genome.network>
+- Reviewed on: `2026-07-26`
+- Notes: BioMCP performs bounded post-retrieval LDH annotation lookups only as optional article identity observations; it does not discover, remove, rank, or supply negative evidence for candidates.
 
 ### ClinicalTrials.gov
 

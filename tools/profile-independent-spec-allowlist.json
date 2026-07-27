@@ -1,0 +1,10 @@
+{
+  "_comment": [
+    "Strings a binary emits only under some Cargo feature configurations, which a",
+    "dual-lane spec page is nevertheless allowed to contain. Add an entry only when",
+    "the occurrence is prose that does not assert the string as output. Behavior that",
+    "differs by build belongs in a native test covering both branches, never on a page",
+    "that `make spec` and `make release-gate` both execute."
+  ],
+  "allowed_literals": []
+}

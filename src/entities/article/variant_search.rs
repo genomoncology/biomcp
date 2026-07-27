@@ -33,7 +33,8 @@ use super::enrichment::{
 use super::identity_verification::{
     PUBTATOR_EXPORT_TEMPLATE_VERSION, VariantArticleIdentity, VariantArticleVerificationOptions,
     VariantArticleVerificationPlan, canonical_content_subset, canonical_response_subset,
-    combine_identities, verification_plan, verify_captured_abstract, verify_pubtator,
+    combine_identities, verification_plan, verify_captured_abstract, verify_ldh_annotation,
+    verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query,
@@ -156,6 +157,8 @@ pub struct VariantArticleOutcome {
 
 const ITEM_WORK_LIMIT: usize = 50;
 const ITEM_CONCURRENCY_LIMIT: usize = 2;
+const LDH_MEDIUM_LIMIT: usize = 1;
+const LDH_DIRECT_LIMIT: usize = 10;
 
 #[derive(Debug)]
 struct SharedWorkBudget {
@@ -186,6 +189,8 @@ pub(crate) struct VariantArticleExecutionContext {
     events: Arc<Mutex<Vec<VariantArticleCallEvent>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
+    ldh_medium: Arc<AtomicUsize>,
+    ldh_direct: Arc<AtomicUsize>,
 }
 
 impl VariantArticleExecutionContext {
@@ -203,6 +208,8 @@ impl VariantArticleExecutionContext {
             events: Arc::new(Mutex::new(Vec::new())),
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
+            ldh_medium: Arc::new(AtomicUsize::new(0)),
+            ldh_direct: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -248,6 +255,25 @@ impl VariantArticleExecutionContext {
     }
 
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
+        // ClinGen LDH runs last, after every retrieval route and after
+        // per-candidate PubTator verification. Live requests exhaust the shared
+        // item budget before it is reached, so drawing from that pool means the
+        // LDH ladder never runs at all outside a fixture. Its work is separately
+        // and tightly bounded -- one medium lookup and at most ten direct
+        // fetches per item -- so it carries its own allowance rather than
+        // competing for the general pool.
+        if let Some((consumed, cap)) = match route {
+            "clingen_ldh_medium" => Some((&self.ldh_medium, LDH_MEDIUM_LIMIT)),
+            "clingen_ldh_direct" => Some((&self.ldh_direct, LDH_DIRECT_LIMIT)),
+            _ => None,
+        } {
+            if consumed.fetch_add(1, AtomicOrdering::SeqCst) >= cap {
+                consumed.fetch_sub(1, AtomicOrdering::SeqCst);
+                self.stop(route);
+                return None;
+            }
+            return Some(Instant::now());
+        }
         let identity_verification = route == "identity_verification";
         if identity_verification
             && self
@@ -780,7 +806,13 @@ fn canonical_equivalence(
             complete: observation.comparison_complete,
             applicable_identity_count: count,
             observations,
-            aliases: Vec::new(),
+            // One identity cannot establish equivalence, but its CAR aliases are
+            // still the requester's own identity and downstream verification
+            // matches provider strings against them. Dropping them here left the
+            // LDH ladder -- which explicitly accepts a lone resolved identity --
+            // comparing every annotation against an empty alias list, so it
+            // could never confirm one outside a two-identity fixture.
+            aliases,
             message: "one independently supplied CAR HGVS identity cannot establish equivalence"
                 .into(),
         };
@@ -852,7 +884,7 @@ fn canonical_equivalence(
         complete,
         applicable_identity_count: count,
         observations,
-        aliases: if status == "confirmed" {
+        aliases: if status == "confirmed" || count == 1 {
             aliases
         } else {
             Vec::new()
@@ -942,6 +974,9 @@ async fn resolve_canonical_equivalence(
     }
     for item in &items {
         aliases.extend(item.genomic_aliases.values.iter().cloned());
+    }
+    for item in &items {
+        aliases.extend(item.external_ids.values.iter().cloned());
     }
     let mut seen = BTreeSet::new();
     aliases.retain(|alias| seen.insert(alias.clone()));
@@ -2359,6 +2394,13 @@ async fn search_variant_articles_identity(
                 ));
             }
         }
+        verification_incomplete |= add_ldh_observations(
+            &mut candidates,
+            &context.requested,
+            &canonical_equivalence,
+            &execution,
+        )
+        .await;
         if verification.confirmed_only {
             candidates.retain(|candidate| {
                 candidate
@@ -2490,6 +2532,168 @@ async fn search_variant_articles_identity(
         },
         hard_error,
     })
+}
+
+/// Providers disagree on how to spell a PMC identifier: Europe PMC and PubTator
+/// return `PMC8710334`, Semantic Scholar returns the bare `8710334` for the same
+/// article. ClinGen LDH keys its literature set on the prefixed form, so the join
+/// has to happen on one spelling or it silently never matches.
+fn canonical_pmcid(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    let digits = trimmed
+        .strip_prefix("PMC")
+        .or_else(|| trimmed.strip_prefix("pmc"))
+        .unwrap_or(trimmed);
+    (!digits.is_empty() && digits.chars().all(|character| character.is_ascii_digit()))
+        .then(|| format!("PMC{digits}"))
+}
+
+async fn add_ldh_observations(
+    candidates: &mut [ArticleCandidate],
+    requested: &RequestedVariantIdentity,
+    equivalence: &CanonicalEquivalence,
+    execution: &VariantArticleExecutionContext,
+) -> bool {
+    let caid = if equivalence.applicable_identity_count == 1 {
+        equivalence
+            .observations
+            .iter()
+            .find(|observation| observation.status == "resolved" && observation.provider_exhaustive)
+            .and_then(|observation| observation.caid.as_deref())
+    } else if equivalence.applicable_identity_count >= 2 && equivalence.status == "confirmed" {
+        equivalence.caid.as_deref()
+    } else {
+        None
+    };
+    let Some(caid) = caid else { return false };
+    let Some(started) = execution.reserve("clingen_ldh_medium") else {
+        return true;
+    };
+    let client = match crate::sources::ClinGenLdhClient::new() {
+        Ok(client) => client,
+        Err(_) => return true,
+    };
+    let medium = client.medium(caid).await;
+    execution.record(
+        "clingen_ldh_medium",
+        "clingen_ldh",
+        started,
+        if medium.is_ok() { "ok" } else { "unavailable" },
+        1,
+    );
+    let Ok(medium) = medium else { return true };
+    let rows = medium
+        .get("data")
+        .and_then(|data| data.get("VariantsInLiterature"))
+        .and_then(serde_json::Value::as_array);
+    if medium
+        .pointer("/status/code")
+        .and_then(serde_json::Value::as_i64)
+        != Some(200)
+        || medium.get("metadata").is_none()
+        || rows.is_none()
+    {
+        return true;
+    }
+    let rows = rows.unwrap();
+    let mut incomplete = false;
+    let mut direct_bytes = 0;
+    for candidate in candidates
+        .iter_mut()
+        .filter(|candidate| {
+            candidate
+                .row
+                .pmcid
+                .as_deref()
+                .and_then(canonical_pmcid)
+                .is_some_and(|pmcid| {
+                    rows.iter().any(|row| {
+                        row.get("entId").and_then(serde_json::Value::as_str) == Some(pmcid.as_str())
+                    })
+                })
+        })
+        .take(5)
+    {
+        let Some(pmcid) = candidate.row.pmcid.as_deref().and_then(canonical_pmcid) else {
+            continue;
+        };
+        let pmcid = pmcid.as_str();
+        let iris = rows
+            .iter()
+            .filter_map(|row| {
+                let id = row.get("entId").and_then(serde_json::Value::as_str)?;
+                let iri = row.get("entIri").and_then(serde_json::Value::as_str)?;
+                (id == pmcid
+                    && row
+                        .get("entDisposition")
+                        .and_then(serde_json::Value::as_str)
+                        == Some("external")
+                    && row.get("entType").and_then(serde_json::Value::as_str)
+                        == Some("VariantsInLiterature")
+                    && ldh_iri_matches(iri, id))
+                .then_some(iri)
+            })
+            .take(2)
+            .collect::<Vec<_>>();
+        for iri in iris {
+            let Some(started) = execution.reserve("clingen_ldh_direct") else {
+                return true;
+            };
+            let Some(body_limit) =
+                crate::sources::clingen_ldh::remaining_direct_body_limit(direct_bytes)
+            else {
+                return true;
+            };
+            let direct = client.direct(iri, body_limit).await;
+            execution.record(
+                "clingen_ldh_direct",
+                "clingen_ldh",
+                started,
+                if direct.is_ok() { "ok" } else { "unavailable" },
+                1,
+            );
+            match direct {
+                Ok((direct, body_bytes)) => {
+                    direct_bytes += body_bytes;
+                    let ldh = verify_ldh_annotation(
+                        requested,
+                        caid,
+                        &equivalence.aliases,
+                        pmcid,
+                        iri,
+                        &direct,
+                    );
+                    incomplete |= ldh.incomplete;
+                    let existing = candidate.identity.take().unwrap_or_else(|| {
+                        verify_captured_abstract(
+                            requested,
+                            candidate
+                                .row
+                                .abstract_snippet
+                                .as_deref()
+                                .unwrap_or(&candidate.row.normalized_abstract),
+                        )
+                    });
+                    candidate.identity = Some(combine_identities(existing, ldh));
+                }
+                Err(_) => incomplete = true,
+            }
+        }
+    }
+    incomplete
+}
+
+fn ldh_iri_matches(iri: &str, pmcid: &str) -> bool {
+    let Ok(url) = reqwest::Url::parse(iri) else {
+        return false;
+    };
+    url.scheme() == "https"
+        && url.host_str() == Some("ldh.genome.network")
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.query().is_none()
+        && url.fragment().is_none()
+        && url.path() == format!("/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/{pmcid}/data")
 }
 
 pub(crate) fn parse_variant_article_batch(
@@ -3353,6 +3557,30 @@ mod tests {
         }
         assert_eq!(contexts[0].request_work().consumed, 500);
         assert!(contexts[0].request_work().exhausted);
+    }
+
+    #[test]
+    fn ldh_direct_annotation_fetches_stop_after_ten_per_item() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..10 {
+            assert!(execution.reserve("clingen_ldh_direct").is_some());
+        }
+        assert!(execution.reserve("clingen_ldh_direct").is_none());
+        // The LDH allowance is separate from the shared item budget, so a
+        // request that spent its retrieval budget can still run the ladder.
+        assert_eq!(execution.item_work().consumed, 0);
+        assert_eq!(execution.stopped_routes(), vec!["clingen_ldh_direct"]);
+    }
+
+    #[test]
+    fn ldh_medium_lookup_is_one_per_item_and_survives_an_exhausted_item_budget() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..ITEM_WORK_LIMIT {
+            assert!(execution.reserve("strict").is_some());
+        }
+        assert!(execution.reserve("strict").is_none());
+        assert!(execution.reserve("clingen_ldh_medium").is_some());
+        assert!(execution.reserve("clingen_ldh_medium").is_none());
     }
 
     #[test]

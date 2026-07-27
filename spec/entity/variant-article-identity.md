@@ -49,6 +49,30 @@ provider-template facts plus canonical hashes of the clinically relevant
 response and captured-content subsets, so citation ordering or count changes do
 not become release criteria.
 
+## ClinGen LDH observations remain additive and bounded
+
+<!-- mustmatch-lint: skip -->
+
+ClinGen Linked Data Hub annotations are post-retrieval identity observations,
+not article discovery. The frozen candidates prove that exact CAid/gene/PMCID
+and selector links can confirm ATM and PALB2, including a PALB2 annotation that
+also carries unrelated CAids. Empty LDH coverage leaves existing candidates
+available without treating the absence as negative evidence.
+
+```bash run id=clingen-ldh-identity exit=0
+bash ../fixtures/run-variant-article-identity-fixture.sh ../..
+```
+
+```json expect=clingen-ldh-identity contains
+{
+  "clingen_ldh": {
+    "atm_exact_annotation_confirmed": true,
+    "palb2_table_selector_confirmed": true,
+    "empty_coverage_preserves_candidates": true
+  }
+}
+```
+
 ## Deep discovery reserves identity verification for the requested page
 
 <!-- mustmatch-lint: skip -->

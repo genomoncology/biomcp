@@ -44,6 +44,7 @@ nav:
       - ClinGen Allele Registry: sources/clingen-allele-registry.md
       - ClinGen CSpec: sources/clingen-cspec.md
       - ClinGen ERepo: sources/clingen-erepo.md
+      - ClinGen LDH: sources/clingen-ldh.md
       - ClinVar: sources/clinvar.md
       - OpenFDA: sources/openfda.md
       - UniProt: sources/uniprot.md

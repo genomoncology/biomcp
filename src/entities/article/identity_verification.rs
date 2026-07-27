@@ -2,6 +2,8 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 use serde::Serialize;
+use serde::ser::SerializeStruct;
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::entities::variant::RequestedVariantIdentity;
@@ -15,6 +17,12 @@ const MAX_ANNOTATION_ID_BYTES: usize = 256;
 const MAX_HGVS_BYTES: usize = 1024;
 const MAX_IDENTIFIER_TOKENS: usize = 16;
 const MAX_IDENTIFIER_TOKEN_BYTES: usize = 256;
+const MAX_LDH_CAID_BYTES: usize = 32;
+const MAX_LDH_PMCID_BYTES: usize = 16;
+const MAX_LDH_SELECTOR_TYPE_BYTES: usize = 64;
+const MAX_LDH_SELECTOR_VALUE_BYTES: usize = 1024;
+const MAX_LDH_ENTITY_IRI_BYTES: usize = 2048;
+const MAX_LDH_CREATED_AT_BYTES: usize = 64;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct VariantArticleVerificationOptions {
@@ -33,7 +41,7 @@ pub(crate) struct VariantArticleIdentity {
     pub incomplete: bool,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct VariantArticleIdentityObservation {
     pub source: &'static str,
     pub section: String,
@@ -47,20 +55,69 @@ pub(crate) struct VariantArticleIdentityObservation {
     pub canonical_content_hash: String,
 }
 
+impl Serialize for VariantArticleIdentityObservation {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let is_ldh = self.source == "clingen_ldh";
+        let mut state = serializer.serialize_struct(
+            "VariantArticleIdentityObservation",
+            if is_ldh { 7 } else { 10 },
+        )?;
+        state.serialize_field("source", self.source)?;
+        state.serialize_field("section", &self.section)?;
+        state.serialize_field("locator", &self.locator)?;
+        state.serialize_field("linked_gene", &self.linked_gene)?;
+        state.serialize_field("observed_alias", &self.observed_alias)?;
+        if !is_ldh {
+            state.serialize_field("gene_annotation_id", &self.gene_annotation_id)?;
+            state.serialize_field("allele_annotation_id", &self.allele_annotation_id)?;
+            state.serialize_field("provider_relation", &self.provider_relation)?;
+        }
+        state.serialize_field("provider_linkage", &self.provider_linkage)?;
+        state.serialize_field("canonical_content_hash", &self.canonical_content_hash)?;
+        state.end()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub(crate) struct ProviderLinkage {
-    kind: &'static str,
-    expected_pmid: String,
-    returned_pmid: String,
-    gene_annotation_id: String,
-    variant_annotation_id: String,
-    gene_id: u64,
-    observed_hgvs: String,
-    identifier_tokens: Vec<String>,
-    relation_id: Option<String>,
-    relation_type: Option<String>,
-    relation_roles: Option<Vec<String>>,
-    provenance: ProviderLinkageProvenance,
+#[serde(tag = "kind")]
+pub(crate) enum ProviderLinkage {
+    #[serde(rename = "pubtator_corresponding_gene")]
+    Pubtator {
+        expected_pmid: String,
+        returned_pmid: String,
+        gene_annotation_id: String,
+        variant_annotation_id: String,
+        gene_id: u64,
+        observed_hgvs: String,
+        identifier_tokens: Vec<String>,
+        relation_id: Option<String>,
+        relation_type: Option<String>,
+        relation_roles: Option<Vec<String>>,
+        provenance: ProviderLinkageProvenance,
+    },
+    #[serde(rename = "clingen_ldh_annotation")]
+    Ldh {
+        annotation_uuid: String,
+        caid: String,
+        gene_id: Option<u64>,
+        pmcid: String,
+        selector_type: String,
+        selector_value: String,
+        entity_iri: String,
+        created_at: Option<String>,
+        provenance: LdhProvenance,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub(crate) struct LdhProvenance {
+    source: &'static str,
+    request_template_version: &'static str,
+    response_subset_version: &'static str,
+    canonical_response_subset_sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -421,8 +478,7 @@ pub(crate) fn verify_pubtator(
                             gene_annotation_id: gene_annotation_id.into(),
                             allele_annotation_id: variant_annotation_id.into(),
                             provider_relation: None,
-                            provider_linkage: Some(ProviderLinkage {
-                                kind: "pubtator_corresponding_gene",
+                            provider_linkage: Some(ProviderLinkage::Pubtator {
                                 expected_pmid: expected_pmid.into(),
                                 returned_pmid: returned_pmid.into(),
                                 gene_annotation_id: gene_annotation_id.into(),
@@ -473,6 +529,201 @@ pub(crate) fn verify_pubtator(
         observations,
         contradictions,
         incomplete: incomplete || semantic_anomaly || response.documents.is_empty(),
+    }
+}
+
+pub(crate) fn verify_ldh_annotation(
+    requested: &RequestedVariantIdentity,
+    caid: &str,
+    aliases: &[String],
+    pmcid: &str,
+    entity_iri: &str,
+    response: &Value,
+) -> VariantArticleIdentity {
+    let requested_gene = requested.gene.as_deref().map(normalized);
+    let mut observations = Vec::new();
+    let mut contradictions = Vec::new();
+    let valid_shape = response.as_object().is_some_and(|object| {
+        object
+            .keys()
+            .all(|key| key == "annotations" || key == "submittedOn")
+            && object.get("annotations").is_some_and(Value::is_array)
+    });
+    let mut incomplete = !valid_shape;
+    if valid_shape {
+        for annotation in response["annotations"].as_array().into_iter().flatten() {
+            let Some(id) = annotation.get("id").and_then(Value::as_str) else {
+                incomplete = true;
+                continue;
+            };
+            let Some(publication) = annotation.get("publicationId").and_then(Value::as_str) else {
+                incomplete = true;
+                continue;
+            };
+            let Some(article_pmcid) = annotation
+                .pointer("/articleData/articleIDs/PMCID")
+                .and_then(Value::as_str)
+            else {
+                incomplete = true;
+                continue;
+            };
+            let Some(variant_match) = annotation.get("variantMatch").and_then(Value::as_str) else {
+                incomplete = true;
+                continue;
+            };
+            let items = annotation.pointer("/body/items").and_then(Value::as_array);
+            let Some(items) = items else {
+                incomplete = true;
+                continue;
+            };
+            let caid_matches = items.iter().any(|item| {
+                item.get("type").and_then(Value::as_str) == Some("TextualBody")
+                    && item.get("value").and_then(Value::as_str) == Some(caid)
+            });
+            let gene_item = items.iter().find(|item| {
+                item.get("type").and_then(Value::as_str) == Some("TextualBody")
+                    && item.get("value").and_then(Value::as_str) == Some("GeneData")
+            });
+            let gene_symbols = gene_item
+                .and_then(|item| item.get("geneSymbol"))
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>();
+            let gene_matches = gene_symbols
+                .iter()
+                .any(|symbol| requested_gene.as_deref() == Some(normalized(symbol).as_str()));
+            if publication == pmcid
+                && article_pmcid == pmcid
+                && caid_matches
+                && !gene_symbols.is_empty()
+                && requested_gene.is_some()
+                && !gene_matches
+            {
+                contradictions.push(VariantArticleIdentityObservation {
+                    source: "clingen_ldh",
+                    section: "annotation".into(),
+                    locator: entity_iri.into(),
+                    linked_gene: requested.gene.clone().unwrap_or_default(),
+                    observed_alias: caid.into(),
+                    gene_annotation_id: String::new(),
+                    allele_annotation_id: String::new(),
+                    provider_relation: None,
+                    provider_linkage: None,
+                    canonical_content_hash: hash(&annotation.to_string()),
+                });
+                continue;
+            }
+            let Some(target_items) = annotation
+                .pointer("/target/items")
+                .and_then(Value::as_array)
+            else {
+                incomplete = true;
+                continue;
+            };
+            // LDH nests selectors one level below the annotation target: each
+            // `target.items[]` entry carries the `source` it was read from and a
+            // `selector` array of the quotes found there. Only the article's own
+            // page counts as an in-text citation; a quote lifted from a
+            // supplementary XLSX or PDF attached to the same article is not one.
+            let selectors = target_items
+                .iter()
+                .filter(|item| {
+                    item.get("source")
+                        .and_then(Value::as_str)
+                        .is_some_and(|source| {
+                            source == format!("https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}")
+                                || source
+                                    == format!("https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/")
+                        })
+                })
+                .filter_map(|item| item.get("selector").and_then(Value::as_array))
+                .flatten()
+                .filter(|selector| {
+                    matches!(
+                        selector.get("type").and_then(Value::as_str),
+                        Some("TextQuoteSelector" | "TableTextSelector")
+                    ) && selector.get("exact").and_then(Value::as_str) == Some(variant_match)
+                })
+                .collect::<Vec<_>>();
+            if publication != pmcid || article_pmcid != pmcid {
+                incomplete = true;
+                continue;
+            }
+            if !caid_matches {
+                continue;
+            }
+            if !gene_matches
+                || !aliases.iter().any(|alias| alias == variant_match)
+                || selectors.len() != 1
+            {
+                incomplete = true;
+                continue;
+            }
+            let selector = selectors[0];
+            let created_at = annotation.get("created").and_then(Value::as_str);
+            let selector_type = selector.get("type").and_then(Value::as_str);
+            if !bounded(id, MAX_ANNOTATION_ID_BYTES)
+                || !bounded(caid, MAX_LDH_CAID_BYTES)
+                || !bounded(pmcid, MAX_LDH_PMCID_BYTES)
+                || !bounded(variant_match, MAX_LDH_SELECTOR_VALUE_BYTES)
+                || !bounded(entity_iri, MAX_LDH_ENTITY_IRI_BYTES)
+                || !selector_type.is_some_and(|value| bounded(value, MAX_LDH_SELECTOR_TYPE_BYTES))
+                || created_at.is_some_and(|value| !bounded(value, MAX_LDH_CREATED_AT_BYTES))
+            {
+                incomplete = true;
+                continue;
+            }
+            let gene_id = gene_item
+                .and_then(|item| item.get("geneNCBI"))
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_u64)
+                .next();
+            observations.push(VariantArticleIdentityObservation {
+                source: "clingen_ldh",
+                section: "annotation".into(),
+                locator: entity_iri.into(),
+                linked_gene: requested.gene.clone().unwrap_or_default(),
+                observed_alias: variant_match.into(),
+                gene_annotation_id: String::new(),
+                allele_annotation_id: String::new(),
+                provider_relation: None,
+                provider_linkage: Some(ProviderLinkage::Ldh {
+                    annotation_uuid: id.into(),
+                    caid: caid.into(),
+                    gene_id,
+                    pmcid: pmcid.into(),
+                    selector_type: selector_type.unwrap_or_default().into(),
+                    selector_value: variant_match.into(),
+                    entity_iri: entity_iri.into(),
+                    created_at: created_at.map(str::to_owned),
+                    provenance: LdhProvenance {
+                        source: "clingen_ldh",
+                        request_template_version: "ldh-medium-direct-v1",
+                        response_subset_version: "annotation-v1",
+                        canonical_response_subset_sha256: hash(&response.to_string()),
+                    },
+                }),
+                canonical_content_hash: hash(&annotation.to_string()),
+            });
+        }
+    }
+    let status = status_for(&observations, &contradictions);
+    VariantArticleIdentity {
+        status,
+        basis: if observations.is_empty() {
+            "none"
+        } else {
+            "structured_annotation"
+        },
+        requested_gene: requested.gene.clone(),
+        requested_allele: requested_allele(requested),
+        observations,
+        contradictions,
+        incomplete,
     }
 }
 
@@ -871,6 +1122,181 @@ mod tests {
             canonical_response_subset(&baseline),
             canonical_response_subset(&anomalous)
         );
+    }
+
+    /// A capture minimized from the live ClinGen LDH direct response for
+    /// PMC5740532 on 2026-07-27. LDH nests its selectors under
+    /// `target.items[].selector[]`; reading them straight off `target.items[]`
+    /// matches nothing real, so this shape is the contract, not a convenience.
+    fn real_ldh_direct_capture() -> Value {
+        serde_json::json!({
+            "annotations": [{
+                "id": "e5aa8c24-8241-5049-8a25-dd569b8ca139",
+                "publicationId": "PMC5740532",
+                "articleData": {"articleIDs": {"PMCID": "PMC5740532"}},
+                "variantMatch": "rs180177133",
+                "created": "2025-01-17T12:00:41Z",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA151245"},
+                    {"type": "TextualBody", "value": "GeneData",
+                     "geneSymbol": ["PALB2"], "geneNCBI": [79728]}
+                ]},
+                "target": {"type": "List", "items": [{
+                    "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5740532",
+                    "selector": [{"type": "TextQuoteSelector", "exact": "rs180177133"}]
+                }]}
+            }]
+        })
+    }
+
+    fn palb2_requested() -> RequestedVariantIdentity {
+        RequestedVariantIdentity::from_variant_input("PALB2 c.3113G>A").expect("identity")
+    }
+
+    #[test]
+    fn ldh_confirms_an_annotation_in_the_live_response_shape() {
+        let identity = verify_ldh_annotation(
+            &palb2_requested(),
+            "CA151245",
+            &["rs180177133".into()],
+            "PMC5740532",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC5740532/data",
+            &real_ldh_direct_capture(),
+        );
+        assert!(!identity.incomplete);
+        let linkage = identity
+            .observations
+            .iter()
+            .find_map(|observation| observation.provider_linkage.as_ref())
+            .expect("the live shape must yield one LDH linkage");
+        let ProviderLinkage::Ldh {
+            caid,
+            gene_id,
+            pmcid,
+            selector_type,
+            selector_value,
+            ..
+        } = linkage
+        else {
+            panic!("expected an LDH linkage");
+        };
+        assert_eq!(caid, "CA151245");
+        assert_eq!(*gene_id, Some(79728));
+        assert_eq!(pmcid, "PMC5740532");
+        assert_eq!(selector_type, "TextQuoteSelector");
+        assert_eq!(selector_value, "rs180177133");
+    }
+
+    #[test]
+    fn ldh_ignores_a_selector_quoted_from_a_supplementary_file() {
+        // The same live document also annotates variants whose only quotes come
+        // from an attached XLSX or PDF. Those are not in-article citations, so
+        // they must leave the candidate unverified rather than confirmed.
+        let mut response = real_ldh_direct_capture();
+        response["annotations"][0]["target"]["items"][0]["source"] = serde_json::json!(
+            "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5740532/bin/jmedgenet-supp007.pdf"
+        );
+        let identity = verify_ldh_annotation(
+            &palb2_requested(),
+            "CA151245",
+            &["rs180177133".into()],
+            "PMC5740532",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC5740532/data",
+            &response,
+        );
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+        assert!(identity.observations.is_empty());
+    }
+
+    #[test]
+    fn ldh_explicit_requested_caid_wrong_gene_is_contradictory() {
+        let response = serde_json::json!({
+            "annotations": [{
+                "id": "annotation-1",
+                "publicationId": "PMC1",
+                "articleData": {"articleIDs": {"PMCID": "PMC1"}},
+                "variantMatch": "p.V600E",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA1"},
+                    {"type": "TextualBody", "value": "GeneData", "geneSymbol": ["NRAS"]}
+                ]},
+                "target": {"items": []}
+            }]
+        });
+        assert_eq!(
+            verify_ldh_annotation(
+                &requested(),
+                "CA1",
+                &["p.V600E".into()],
+                "PMC1",
+                "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC1/data",
+                &response,
+            )
+            .status,
+            "contradictory"
+        );
+    }
+
+    #[test]
+    fn ldh_unrequested_caid_in_a_multi_caid_annotation_is_ignored() {
+        let response = serde_json::json!({
+            "annotations": [{
+                "id": "annotation-1",
+                "publicationId": "PMC1",
+                "articleData": {"articleIDs": {"PMCID": "PMC1"}},
+                "variantMatch": "p.V600E",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA2"},
+                    {"type": "TextualBody", "value": "GeneData", "geneSymbol": ["BRAF"]}
+                ]},
+                "target": {"type": "List", "items": [{
+                    "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1",
+                    "selector": [{"type": "TextQuoteSelector", "exact": "p.V600E"}]
+                }]}
+            }]
+        });
+        let identity = verify_ldh_annotation(
+            &requested(),
+            "CA1",
+            &["p.V600E".into()],
+            "PMC1",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC1/data",
+            &response,
+        );
+        assert_eq!(identity.status, "unverified");
+        assert!(!identity.incomplete);
+    }
+
+    #[test]
+    fn ldh_wrong_pmcid_is_incomplete_without_a_contradiction() {
+        let response = serde_json::json!({
+            "annotations": [{
+                "id": "annotation-1",
+                "publicationId": "PMC2",
+                "articleData": {"articleIDs": {"PMCID": "PMC2"}},
+                "variantMatch": "p.V600E",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA1"},
+                    {"type": "TextualBody", "value": "GeneData", "geneSymbol": ["BRAF"]}
+                ]},
+                "target": {"type": "List", "items": [{
+                    "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1",
+                    "selector": [{"type": "TextQuoteSelector", "exact": "p.V600E"}]
+                }]}
+            }]
+        });
+        let identity = verify_ldh_annotation(
+            &requested(),
+            "CA1",
+            &["p.V600E".into()],
+            "PMC1",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC1/data",
+            &response,
+        );
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+        assert!(identity.contradictions.is_empty());
     }
 
     #[test]

@@ -254,7 +254,9 @@ and the fixed item/request budgets. `--verify-identity` adds captured-evidence
 identity facts without changing recall; `--confirmed-only` requires it and
 filters before rank/pagination. Query aliases remain retrieval provenance, not
 observed evidence. Identity observations retain their source, locator, linked
-gene, observed alias, and content hash; debug artifacts are post-response audit
+gene, observed alias, and content hash. An optional bounded ClinGen LDH annotation
+can confirm only an applicable CAid/gene/known-PMCID exact selector link; absent
+LDH coverage is not negative evidence. Debug artifacts are post-response audit
 facts rather than retrieval-cache inputs. MCP callers use the typed `variant_articles`
 MCP tool in memory with equivalent `verify_identity` and `confirmed_only`
 controls. When an item independently supplies a versioned RefSeq transcript/coding

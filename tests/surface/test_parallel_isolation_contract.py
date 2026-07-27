@@ -861,7 +861,6 @@ ROUTINE_SPEC_PATHS = (
 LIVE_SPEC_PATHS = (
     "spec/entity/article-assets-live.md",
     "spec/entity/article-graph-live.md",
-    "spec/entity/article-indexing-live.md",
     "spec/entity/ddinter-live.md",
     "spec/entity/diagnostic.md",
     "spec/entity/disease.md",
@@ -875,6 +874,7 @@ LIVE_SPEC_PATHS = (
     "spec/entity/vaers.md",
     "spec/entity/variant-hotspots.md",
     "spec/entity/clingen-erepo-live.md",
+    "spec/entity/clingen-ldh-live.md",
     "spec/entity/clingen-cspec-live.md",
     "spec/entity/clingen-car-live.md",
     "spec/entity/variant-myvariant-live.md",
@@ -975,8 +975,12 @@ def test_ticket_395_verify_owns_live_specs_and_release_live_smoke_delegates() ->
     assert "--mustmatch-" not in verify, "verify must not invoke the deleted pytest plugin"
     assert "scripts/run-specs.sh" in verify, "verify must run live specs through the shared runner"
     assert runner_match is not None, "verify must declare its live spec paths in the shared runner"
-    assert "spec/entity/clingen-car-live.md" in re.findall(r"spec/\S+", runner_match.group("paths")), (
+    runner_paths = re.findall(r"spec/\S+", runner_match.group("paths"))
+    assert "spec/entity/clingen-car-live.md" in runner_paths, (
         "make verify must execute the declared CAR live spec rather than silently omitting it"
+    )
+    assert "spec/entity/clingen-ldh-live.md" in runner_paths, (
+        "make verify must execute the declared LDH live spec rather than silently omitting it"
     )
     for fragment in (
         "tools/biomcp-ci discover",

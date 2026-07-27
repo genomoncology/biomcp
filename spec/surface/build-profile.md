@@ -26,25 +26,27 @@ The ordinary test and spec targets must select this graph themselves. Calling
 Cargo with a smaller feature set by hand is not enough if either routine gate
 silently restores the default client.
 
+This is a claim about the targets' own defaults, so the probe clears every
+build variable an outer gate may have overridden. `release-gate` re-enters
+`make` with `ROUTINE_CARGO_FEATURES=` and `SPEC_PROFILE=release`, and a
+command-line override reaches recipes as an environment variable that `?=`
+will not replace.
+
 ```bash
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
+    -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \
   make -C ../.. -n test | mustmatch like 'cargo nextest run --no-default-features'
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
+    -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \
   make -C ../.. -n spec | mustmatch like 'cargo build --locked --profile spec --no-default-features'
 ```
 
-## The routine binary explains unavailable prediction
-
-The routine binary still advertises the `predict` section so scripts can use one
-command shape across artifacts. Its command reference must explain that the
-capability was not built instead of incorrectly telling an operator to set a
-key that cannot enable it.
-
-```bash
-biomcp list variant | mustmatch like 'get variant <id> predict
-not built'
-biomcp list variant | mustmatch not like 'requires `ALPHAGENOME_API_KEY`'
-```
+The matching claim about what each binary *says* — that a feature-off build
+reports the prediction as not built, and a feature-on build names the key —
+is a property of the binary under test, not of the routine profile. It cannot
+live on this page, because `release-gate` runs these same pages against the
+release binary. It is proven natively for both builds by
+`list_variant_explains_alphagenome_availability_for_this_build`.
 
 ## Release artifacts retain the AlphaGenome feature
 

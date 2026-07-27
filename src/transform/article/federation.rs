@@ -386,7 +386,7 @@ pub fn from_pubtator_search_result(hit: &PubTatorSearchResult) -> Option<Article
         .to_string();
     Some(ArticleSearchResult {
         pmid,
-        pmcid: None,
+        pmcid: hit.pmcid.clone(),
         doi: None,
         arxiv_id: None,
         semantic_scholar_id: None,

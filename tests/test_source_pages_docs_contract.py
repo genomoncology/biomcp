@@ -720,6 +720,19 @@ SOURCE_PAGE_SPECS = {
             "biomcp --json variant erepo --input caids.json",
         ],
     },
+    "clingen-ldh.md": {
+        "title": "ClinGen LDH article identity observations | BioMCP",
+        "description": "Use bounded ClinGen Linked Data Hub article annotations as optional auditable variant identity observations.",
+        "api_access": "No BioMCP API key required.",
+        "official_url": "https://ldh.genome.network",
+        "required_intro_phrases": ["post-retrieval identity", "never discovers"],
+        "exposes": ["clingen_ldh_annotation", "variant articles --verify-identity"],
+        "example_commands": [
+            "biomcp variant articles 'BRAF V600E' --verify-identity",
+            "biomcp --json variant articles 'ATM c.1066-6T>G' --verify-identity",
+            "biomcp --json variant articles --input variants.json --verify-identity",
+        ],
+    },
 }
 
 EXPECTED_SOURCE_FILES = [OVERVIEW_FILE, *SOURCE_PAGE_SPECS]
@@ -731,6 +744,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - ClinGen Allele Registry: sources/clingen-allele-registry.md
       - ClinGen CSpec: sources/clingen-cspec.md
       - ClinGen ERepo: sources/clingen-erepo.md
+      - ClinGen LDH: sources/clingen-ldh.md
       - ClinVar: sources/clinvar.md
       - OpenFDA: sources/openfda.md
       - UniProt: sources/uniprot.md

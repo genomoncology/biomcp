@@ -913,6 +913,206 @@ def check_entity_markdown_quoting_dependencies(root_dir: Path) -> dict[str, obje
     }
 
 
+FEATURE_CFG_RE = re.compile(
+    r'#\[cfg\((?:not\()?feature\s*=\s*"(?P<feature>[^"]+)"\)?\)\]'
+    r'|if\s+cfg!\(feature\s*=\s*"(?P<inline>[^"]+)"\)'
+)
+RUST_STRING_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
+MIN_PROFILE_LITERAL_LEN = 12
+MIN_PROFILE_FRAGMENT_LEN = 8
+
+
+def _brace_span(text: str, start: int) -> tuple[int, int] | None:
+    """Span of the first brace-balanced block at or after `start`.
+
+    Returns None when a statement terminator arrives first, so a gated `use`
+    or `const` declaration does not swallow the next unrelated block.
+    """
+    open_at = text.find("{", start)
+    if open_at == -1:
+        return None
+    terminator = text.find(";", start)
+    if terminator != -1 and terminator < open_at:
+        return None
+    depth = 0
+    for index in range(open_at, len(text)):
+        character = text[index]
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return open_at, index + 1
+    return None
+
+
+def feature_conditional_literals(root_dir: Path) -> dict[str, list[str]]:
+    """User-visible strings a binary emits only under some feature configurations.
+
+    A string produced inside `#[cfg(feature = ...)]`, `#[cfg(not(feature = ...))]`
+    or either arm of `if cfg!(feature = ...)` is true of one build and false of
+    another. Any spec page that both gate lanes execute must not assert one.
+    """
+    literals: dict[str, list[str]] = {}
+    source_root = root_dir / "src"
+    if not source_root.is_dir():
+        return literals
+    for path in sorted(source_root.rglob("*.rs")):
+        relative = path.relative_to(root_dir).as_posix()
+        # Test modules assert these strings; they do not emit them.
+        if "tests" in Path(relative).parts or path.name.endswith("tests.rs"):
+            continue
+        raw = path.read_text(encoding="utf-8")
+        text = raw
+        for match in FEATURE_CFG_RE.finditer(text):
+            spans = []
+            first = _brace_span(text, match.end())
+            if first is None:
+                continue
+            spans.append(first)
+            if match.group("inline"):
+                tail = text[first[1] : first[1] + 32]
+                if "else" in tail:
+                    second = _brace_span(text, first[1])
+                    if second is not None:
+                        spans.append(second)
+            for start, end in spans:
+                for literal in RUST_STRING_RE.finditer(raw[start:end]):
+                    value = literal.group(1)
+                    if len(value) >= MIN_PROFILE_LITERAL_LEN and " " in value:
+                        literals.setdefault(value, []).append(relative)
+    return literals
+
+
+def load_profile_independence_allowlist(root_dir: Path) -> set[str]:
+    path = root_dir / "tools" / "profile-independent-spec-allowlist.json"
+    if not path.is_file():
+        return set()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return set()
+    entries = payload.get("allowed_literals", [])
+    return {entry for entry in entries if isinstance(entry, str)}
+
+
+def dual_lane_spec_paths(root_dir: Path) -> list[str]:
+    """Spec pages both gate lanes run.
+
+    `make spec` runs these against the routine `--no-default-features` binary;
+    `make release-gate` re-runs the same pages against the release binary. The
+    list is read from the runner so it cannot drift from what actually executes.
+    """
+    runner = root_dir / "scripts" / "run-specs.sh"
+    if not runner.is_file():
+        return []
+    text = runner.read_text(encoding="utf-8")
+    paths: list[str] = []
+    for array in ("SPEC_ROUTINE_PATHS",):
+        match = re.search(rf"^{array}=\((?P<body>.*?)^\)", text, flags=re.M | re.S)
+        if match:
+            paths.extend(
+                line.strip()
+                for line in match.group("body").splitlines()
+                if line.strip() and line.strip().endswith(".md")
+            )
+    return sorted(set(paths))
+
+
+def unconditional_literals(root_dir: Path) -> set[str]:
+    """Strings the binary emits regardless of feature configuration."""
+    values: set[str] = set()
+    source_root = root_dir / "src"
+    if not source_root.is_dir():
+        return values
+    conditional = set(feature_conditional_literals(root_dir))
+    for path in sorted(source_root.rglob("*.rs")):
+        relative = path.relative_to(root_dir).as_posix()
+        if "tests" in Path(relative).parts or path.name.endswith("tests.rs"):
+            continue
+        for literal in RUST_STRING_RE.finditer(path.read_text(encoding="utf-8")):
+            value = literal.group(1)
+            if value not in conditional:
+                values.add(value)
+    return values
+
+
+def _asserted_fragments(line: str) -> list[str]:
+    """Text a spec line asserts as output, however it is quoted."""
+    fragments: list[str] = []
+    for quote in ("'", '"'):
+        parts = line.split(quote)
+        if len(parts) >= 3:
+            fragments.extend(parts[1:-1:2])
+    stripped = line.strip().strip("|").strip().strip("'\"").strip()
+    if stripped:
+        fragments.append(stripped)
+    return fragments
+
+
+def check_profile_independent_specs(root_dir: Path) -> dict[str, object]:
+    """Every dual-lane spec page must hold for both build profiles.
+
+    `release-gate` is the only lane that runs spec pages against the release
+    binary, and a flow permits one authoritative release-gate run per ticket.
+    Without this audit a build-specific assertion is invisible to the routine
+    gate, survives on main, and is discovered by whichever ticket next reaches
+    verification -- which then has no run left to prove the repair. Detecting it
+    here makes it a cheap, repeatable routine-gate failure instead.
+
+    A page asserts a *fragment* of what the binary prints, so the match runs that
+    way round: a fragment that appears inside a feature-conditional string and
+    inside no unconditional string is build-specific by construction.
+    """
+    allowlist = load_profile_independence_allowlist(root_dir)
+    conditional = {
+        value: sources
+        for value, sources in feature_conditional_literals(root_dir).items()
+        if value not in allowlist
+    }
+    unconditional = unconditional_literals(root_dir)
+    findings: list[dict[str, object]] = []
+    checked: list[str] = []
+    for relative in dual_lane_spec_paths(root_dir):
+        path = root_dir / relative
+        if not path.is_file():
+            continue
+        checked.append(relative)
+        seen: set[tuple[str, str]] = set()
+        for lineno, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            for fragment in _asserted_fragments(line):
+                fragment = fragment.strip()
+                if len(fragment) < MIN_PROFILE_FRAGMENT_LEN or fragment in allowlist:
+                    continue
+                if any(fragment in value for value in unconditional):
+                    continue
+                for value, sources in conditional.items():
+                    if fragment in value and (relative, fragment) not in seen:
+                        seen.add((relative, fragment))
+                        findings.append({
+                            "path": relative,
+                            "line": lineno,
+                            "fragment": fragment,
+                            "conditional_string": value,
+                            "emitted_by": sorted(set(sources)),
+                            "message": (
+                                "spec page runs under both build profiles but asserts "
+                                "output the binary emits only under some feature "
+                                "configurations; prove build-specific behavior in a "
+                                "native test covering both branches"
+                            ),
+                        })
+    return {
+        "name": "dual_lane_spec_pages_are_profile_independent",
+        "status": "fail" if findings else "pass",
+        "checked_surfaces": checked,
+        "conditional_literal_count": len(conditional),
+        "findings": findings,
+    }
+
+
 def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
     exceptions, errors = load_cli_surface_exceptions(root_dir)
     text_paths, path_errors = tracked_static_text_paths(root_dir)
@@ -934,6 +1134,7 @@ def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
         check_json_next_commands(root_dir, exceptions),
         check_copy_paste_examples_are_shell_safe(root_dir, texts),
         check_entity_markdown_quoting_dependencies(root_dir),
+        check_profile_independent_specs(root_dir),
     ]
     statuses = [payload["status"] for payload in check_payloads]
     status = "pass" if all(value == "pass" for value in statuses) else "fail"
