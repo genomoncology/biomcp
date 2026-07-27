@@ -48,12 +48,11 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
 {
   "identity_readiness": {
     "expected_request_ids": true,
-    "total": 7,
-    "resolved": 7,
-    "with_exact_route": 7,
-    "with_route_tied_alias": 7,
-    "with_source_status": 7,
-    "with_terminal_state": 7
+    "all_resolved": true,
+    "all_have_exact_route": true,
+    "all_have_route_tied_alias": true,
+    "all_have_source_status": true,
+    "all_have_terminal_state": true
   },
   "identity_diagnostics": {
     "missing_canonical_equivalence": []

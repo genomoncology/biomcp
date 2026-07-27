@@ -701,6 +701,12 @@ fn canonical_equivalence(
             None,
             "CAR was unavailable before the identity comparison completed",
         )
+    } else if !provider_exhaustive {
+        (
+            "indeterminate",
+            None,
+            "CAR did not exhaustively resolve every supplied identity",
+        )
     } else if caids.is_empty() {
         (
             "not_found",
@@ -723,11 +729,10 @@ fn canonical_equivalence(
     CanonicalEquivalence {
         status: status.into(),
         caid,
-        exhaustive: if caids.len() >= 2 {
-            provider_exhaustive
-        } else {
-            complete
-        },
+        exhaustive: provider_exhaustive
+            && !statuses.contains("invalid")
+            && !statuses.contains("indeterminate")
+            && !statuses.contains("unavailable"),
         complete,
         applicable_identity_count: count,
         observations,
@@ -1600,14 +1605,6 @@ fn plan_queries(
     }
 }
 
-fn provider_variant_query_plan(
-    input: &str,
-    context: &VariantArticleResolutionContext,
-    strategy: VariantArticleStrategy,
-) -> Vec<ProviderVariantQueryPlan> {
-    provider_variant_query_plan_with_aliases(input, context, strategy, &[])
-}
-
 fn provider_variant_query_plan_with_aliases(
     input: &str,
     context: &VariantArticleResolutionContext,
@@ -1712,14 +1709,19 @@ fn provider_variant_query_plan_with_aliases(
     queries
 }
 
+struct VariantArticleDebugPlanState {
+    counts: VariantArticleCountsPlan,
+    truncated: bool,
+    next: VariantArticleNextPlan,
+}
+
 fn build_debug_plan(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
+    canonical_aliases: &[String],
     execution: &VariantArticleExecutionContext,
-    counts: VariantArticleCountsPlan,
-    truncated: bool,
-    next: VariantArticleNextPlan,
+    state: VariantArticleDebugPlanState,
 ) -> VariantArticleDebugPlan {
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
     let contradictory = matches!(
@@ -1807,7 +1809,8 @@ fn build_debug_plan(
         .collect::<Vec<_>>();
     let item_work = execution.item_work();
     let request_work = execution.request_work();
-    let mut provider_queries = provider_variant_query_plan(input, context, strategy);
+    let mut provider_queries =
+        provider_variant_query_plan_with_aliases(input, context, strategy, canonical_aliases);
     for plan in &mut provider_queries {
         if plan.provider == "pubtator"
             && plan.route == "strict"
@@ -1820,7 +1823,7 @@ fn build_debug_plan(
         normalized_aliases: context.resolution.normalized_aliases.clone(),
         provider_queries,
         routes,
-        counts,
+        counts: state.counts,
         ranking: VariantArticleRankingPlan {
             method: "exact route union with deterministic native-position ranking",
             inputs: ["exactness", "route_source_position", "stable_identifier"],
@@ -1829,9 +1832,9 @@ fn build_debug_plan(
             item: item_work,
             request: request_work,
         },
-        truncated,
+        truncated: state.truncated,
         stopped_routes: execution.stopped_routes(),
-        next,
+        next: state.next,
         verification: None,
     }
 }
@@ -2315,16 +2318,19 @@ async fn search_variant_articles_identity(
             input,
             &context,
             strategy,
+            &canonical_equivalence.aliases,
             &execution,
-            VariantArticleCountsPlan {
-                pre_dedup,
-                post_dedup: total_candidates,
-                returned: rows.len(),
-            },
-            truncated,
-            VariantArticleNextPlan {
-                offset: offset.saturating_add(rows.len()),
-                cursor: None,
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup,
+                    post_dedup: total_candidates,
+                    returned: rows.len(),
+                },
+                truncated,
+                next: VariantArticleNextPlan {
+                    offset: offset.saturating_add(rows.len()),
+                    cursor: None,
+                },
             },
         );
         if verification.verify_identity {
@@ -2805,10 +2811,18 @@ mod tests {
         let mut right = left.clone();
         right.requested.coding_change = Some("c.2428A>T".into());
 
-        let left_query =
-            provider_variant_query_plan("BRCA1 c.788G>T", &left, VariantArticleStrategy::Union);
-        let right_query =
-            provider_variant_query_plan("BRCA1 c.2428A>T", &right, VariantArticleStrategy::Union);
+        let left_query = provider_variant_query_plan_with_aliases(
+            "BRCA1 c.788G>T",
+            &left,
+            VariantArticleStrategy::Union,
+            &[],
+        );
+        let right_query = provider_variant_query_plan_with_aliases(
+            "BRCA1 c.2428A>T",
+            &right,
+            VariantArticleStrategy::Union,
+            &[],
+        );
 
         assert_eq!(left_query.len(), 5);
         assert_eq!(
@@ -2850,10 +2864,13 @@ mod tests {
                 "BRAF p.V600E",
                 context,
                 VariantArticleStrategy::Union,
+                &[],
                 &execution,
-                counts.clone(),
-                false,
-                next.clone(),
+                VariantArticleDebugPlanState {
+                    counts: counts.clone(),
+                    truncated: false,
+                    next: next.clone(),
+                },
             );
             assert!(plan.routes.iter().any(|route| route.route == "strict"));
         }
@@ -2934,16 +2951,19 @@ mod tests {
             "NC_000011.10:g.108248927T>G",
             &context,
             VariantArticleStrategy::Annotation,
+            &[],
             &VariantArticleExecutionContext::single(),
-            VariantArticleCountsPlan {
-                pre_dedup: 0,
-                post_dedup: 0,
-                returned: 0,
-            },
-            false,
-            VariantArticleNextPlan {
-                offset: 0,
-                cursor: None,
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: 0,
+                    post_dedup: 0,
+                    returned: 0,
+                },
+                truncated: false,
+                next: VariantArticleNextPlan {
+                    offset: 0,
+                    cursor: None,
+                },
             },
         );
         assert!(plan.routes.is_empty());
@@ -2967,9 +2987,14 @@ mod tests {
 
         assert!(exact_aliases(&context).0.contains(&"ATM M16I".to_string()));
         assert!(
-            provider_variant_query_plan("ATM p.Met16Ile", &context, VariantArticleStrategy::Union)
-                .iter()
-                .any(|plan| plan.query_alias == "ATM M16I")
+            provider_variant_query_plan_with_aliases(
+                "ATM p.Met16Ile",
+                &context,
+                VariantArticleStrategy::Union,
+                &[],
+            )
+            .iter()
+            .any(|plan| plan.query_alias == "ATM M16I")
         );
 
         context.requested.protein_change = Some("p.?".into());
@@ -2980,9 +3005,14 @@ mod tests {
                 .any(|alias| alias.contains("p.?"))
         );
         assert!(
-            !provider_variant_query_plan("ATM p.?", &context, VariantArticleStrategy::Union)
-                .iter()
-                .any(|plan| plan.route == "strict" && plan.query_alias.contains("p.?"))
+            !provider_variant_query_plan_with_aliases(
+                "ATM p.?",
+                &context,
+                VariantArticleStrategy::Union,
+                &[],
+            )
+            .iter()
+            .any(|plan| plan.route == "strict" && plan.query_alias.contains("p.?"))
         );
     }
 
@@ -3281,16 +3311,19 @@ mod tests {
             "BRAF p.V600E",
             &context,
             VariantArticleStrategy::Union,
+            &[],
             &execution,
-            VariantArticleCountsPlan {
-                pre_dedup: 0,
-                post_dedup: 0,
-                returned: 0,
-            },
-            true,
-            VariantArticleNextPlan {
-                offset: 0,
-                cursor: None,
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: 0,
+                    post_dedup: 0,
+                    returned: 0,
+                },
+                truncated: true,
+                next: VariantArticleNextPlan {
+                    offset: 0,
+                    cursor: None,
+                },
             },
         );
         let provider = plan
@@ -3387,6 +3420,31 @@ mod tests {
             ]
         );
         assert_eq!(sent[3], "ATM alias-0");
+
+        let debug_plan = build_debug_plan(
+            "ATM c.1066-6T>G",
+            &context,
+            VariantArticleStrategy::Union,
+            &aliases,
+            &VariantArticleExecutionContext::single(),
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: 0,
+                    post_dedup: 0,
+                    returned: 0,
+                },
+                truncated: false,
+                next: VariantArticleNextPlan {
+                    offset: 0,
+                    cursor: None,
+                },
+            },
+        );
+        assert!(debug_plan.provider_queries.iter().any(|query| {
+            query.route == "strict"
+                && query.provider == "pubmed"
+                && query.query_alias == "ATM alias-0"
+        }));
     }
 
     #[test]
@@ -3411,6 +3469,18 @@ mod tests {
         );
         assert_eq!(confirmed.status, "confirmed");
         assert!(confirmed.complete);
+
+        let non_exhaustive_resolution = canonical_equivalence(
+            vec![
+                equivalence_observation("resolved", Some("CA1"), true),
+                equivalence_observation("resolved", Some("CA1"), false),
+            ],
+            vec!["NM_000007.14:c.1A>G".into()],
+        );
+        assert_eq!(non_exhaustive_resolution.status, "indeterminate");
+        assert!(!non_exhaustive_resolution.exhaustive);
+        assert!(non_exhaustive_resolution.complete);
+        assert!(non_exhaustive_resolution.aliases.is_empty());
 
         let contradictory = canonical_equivalence(
             vec![

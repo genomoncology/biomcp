@@ -354,8 +354,8 @@ keep `resolution: null`.
 | contradictory facts | unresolved/null; no exact routes; optional `best_effort_free_text` only |
 | unavailable | RefSeq resolved/caller-supplied; exact routes; incomplete, truncated, unknown total |
 
-For caller-supplied RefSeq, exact aliases are limited to supplied
-transcript/coding, gene/coding, and RefSeq genomic forms. When both independently
+For caller-supplied RefSeq, exact aliases start with supplied transcript/coding,
+gene/coding, and RefSeq genomic forms. When both independently
 supplied versioned RefSeq transcript/coding and complete versioned genomic/build
 forms are present, the additive `canonical_equivalence` sibling records CAR CAid
 agreement, terminal observations, and response hashes. It never changes

@@ -166,6 +166,21 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
     intentional_unverified: {brca1: has("brca1-grch38"; "90000003"; "unverified"), pten: has("pten-grch38"; "90000002"; "unverified"), tp53: has("tp53-grch38"; "24376681"; "unverified")},
     conflicting_observation: has("apc-grch38"; "90000001"; "conflicting"),
     outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38").pagination.total == null)),
+    canonical_equivalence_is_additive: all(["atm-grch38", "palb2-grch38"][];
+      . as $request_id | item($request_id) |
+      .canonical_equivalence.caid as $caid |
+      .resolution.provider_validation.status == "not_found"
+      and .canonical_equivalence.status == "confirmed"
+      and .canonical_equivalence.complete == true
+      and .canonical_equivalence.exhaustive == true
+      and ($caid | type) == "string"
+      and ([.canonical_equivalence.observations[].basis] | sort) == ["genomic", "transcript_coding"]
+      and all(.canonical_equivalence.observations[];
+        .status == "resolved"
+        and .caid == $caid
+        and .comparison_complete == true
+        and .source == "clingen_car"
+        and (.provider_response_sha256 | test("^[0-9a-f]{64}$")))),
     confirmed_page_filters_before_limit: (any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
     audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
