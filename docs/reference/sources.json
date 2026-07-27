@@ -153,6 +153,23 @@
     "notes": "BioMCP retrieves only bounded exact-CAid summaries and explicitly selected versioned detail documents."
   },
   {
+    "id": "clingen_ldh",
+    "name": "ClinGen LDH",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["variant articles --verify-identity", "variant_articles"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public web/API access",
+    "license_summary": "public ClinGen curation resources with publication and attribution expectations",
+    "redistribution_summary": "generally queryable and reusable, but users should preserve attribution and source context",
+    "terms_url": "https://ldh.genome.network",
+    "key_url": null,
+    "reviewed_on": "2026-07-26",
+    "notes": "BioMCP uses bounded post-retrieval LDH annotation lookups only as optional article identity observations; it does not discover, remove, rank, or supply negative evidence for candidates."
+  },
+  {
     "id": "clinicaltrials-gov",
     "name": "ClinicalTrials.gov",
     "tier": 1,

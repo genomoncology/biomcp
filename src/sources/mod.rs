@@ -69,7 +69,7 @@ pub(crate) mod clingen;
 pub(crate) mod clingen_allele_registry;
 pub(crate) mod clingen_cspec;
 pub(crate) mod clingen_erepo;
-mod clingen_ldh;
+pub(crate) mod clingen_ldh;
 pub(crate) use clingen_ldh::ClinGenLdhClient;
 pub(crate) mod clinicaltrials;
 pub(crate) mod complexportal;

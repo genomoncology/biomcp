@@ -28,6 +28,9 @@
   supplied versioned RefSeq transcript/coding and genomic/build identities. These
   facts preserve MyVariant resolution, do not perform liftover, and retain
   received-response hashes for audit.
+- Added bounded optional ClinGen LDH article identity observations that bind
+  applicable CAids, genes, known PMCIDs, and exact text/table selectors without
+  changing article discovery, ranking, pagination, or missing-coverage semantics.
 - Added bounded `variant articles --input <path|->` retrieval for 1-10 structured
   variants, ordered compact rows, opt-in route/work plans, parseable article
   follow-ups, and a typed in-memory MCP `variant_articles` tool.

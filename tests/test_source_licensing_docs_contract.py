@@ -16,6 +16,7 @@ DIRECT_SOURCE_MODULES = {
     "clingen_allele_registry": "ClinGen Allele Registry",
     "clingen_cspec": "ClinGen CSpec",
     "clingen_erepo": "ClinGen ERepo",
+    "clingen_ldh": "ClinGen LDH",
     "clinicaltrials": "ClinicalTrials.gov",
     "complexportal": "ComplexPortal",
     "cpic": "CPIC",

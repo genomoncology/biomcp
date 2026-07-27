@@ -734,10 +734,12 @@ facts, ranking inputs, and fixed item and request budgets. `--verify-identity`
 adds captured-evidence identity facts without changing retrieval recall;
 `--confirmed-only` requires verification and filters before rank/pagination.
 Query aliases remain retrieval provenance rather than observed evidence.
-Confirmation requires a returned-PMID PubTator `Gene`/`Variant` linkage: the
-variant's exact HGVS and `CorrespondingGene`/NCBI Gene-ID facts must agree with
-the requested gene. Relations and same-passage co-occurrence alone are
-insufficient. Identity observations retain source, locator, linked gene, observed
+Confirmation requires a returned-PMID PubTator `Gene`/`Variant` linkage whose exact
+HGVS and `CorrespondingGene`/NCBI Gene-ID facts agree, or an optional bounded
+ClinGen LDH CAid/gene/PMCID annotation with one exact text/table selector. LDH
+observes only already retrieved candidates, so absent coverage is not negative
+evidence. Relations and same-passage co-occurrence alone are insufficient. Identity
+observations retain source, locator, linked gene, observed
 alias, the typed `provider_linkage` audit object, and captured-content hash.
 Verification artifacts record versioned clinically relevant response/content subsets
 plus post-response verifier and provider-template versions, not retrieval-cache inputs. Incomplete verification remains truncated with no total;

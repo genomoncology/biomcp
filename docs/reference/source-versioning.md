@@ -17,6 +17,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | ClinGen Allele Registry | `https://reg.genome.network` | Request template v1; response version provenance | The read-only projection is part of lookup identity; nullable `X-CAR-Version` is post-response provenance, never a cache key | 2026-07-24 |
 | ClinGen CSpec | `https://cspec.clinicalgenome.org` | Versioned resource documents | Full resource IRI is the selection identity; provider display version remains separate | 2026-07-23 |
 | ClinGen ERepo | `https://erepo.clinicalgenome.org` | Versioned detail documents | Exact `docVersion` is required in the SEPIO detail route | 2026-07-23 |
+| ClinGen LDH | `https://ldh.genome.network` | Unversioned routes; request/response subset provenance | BioMCP validates the fixed medium and direct routes, then records template and response-subset provenance after receipt rather than using it as a lookup key | 2026-07-26 |
 | ComplexPortal | `https://www.ebi.ac.uk/intact/complex-ws` | Unversioned | EBI complex web service is path-stable without URL versioning | 2026-06-11 |
 | CPIC | `https://api.cpicpgx.org/v1` | Versioned (`v1`) | Endpoint already pinned | 2026-06-11 |
 | CIViC | `https://civicdb.org/api` | Unversioned | Public API root is stable without explicit major version path | 2026-06-11 |
