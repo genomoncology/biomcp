@@ -41,6 +41,9 @@ passages = {
     "33656647": [("BRCA1", "c.788G>T", 672)],
     "90000003": [("BRCA1", "c.788G>T", 672)],
     "24376681": [("NKX2-5", "c.356C>A", 1482)],
+    "90000004": [("BRAF", "p.Val600Glu", 673)],
+    "90000005": [("BRAF", "p.Val600Glu", 673)],
+    "90000006": [("BRAF", "p.Val600Glu", 673)],
 }
 
 def send(h, status, value):
@@ -60,6 +63,7 @@ car_ids = {
     "NM_024675.4:c.3350+5G>A": "CA900000000005", "NC_000016.10:g.23607859C>T": "CA900000000005",
     "NM_000314.8:c.517C>T": "CA900000000006", "NC_000010.11:g.87952142C>T": "CA900000000006",
     "NM_000546.6:c.356C>G": "CA900000000007", "NC_000017.11:g.7676013G>C": "CA900000000007",
+    "NM_004333.6:c.1799T>A": "CA900000000008", "NC_000007.13:g.140453136A>T": "CA900000000008",
 }
 
 class Handler(BaseHTTPRequestHandler):
@@ -151,8 +155,18 @@ class Handler(BaseHTTPRequestHandler):
             if mode.read_text().strip() == "reordered":
                 docs.reverse()
             return send(self, 200, {"PubTator3": docs})
-        if path.endswith("/esearch.fcgi"): return send(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
-        if path.endswith("/esummary.fcgi"): return send(self, 200, {"result": {"uids": []}})
+        # This provider-shaped deep page sequence repeats one valid PMID. It exercises
+        # pagination work without inventing an internal shortcut: PubMed still returns
+        # ESearch IDs and matching ESummary records that BioMCP must deduplicate.
+        if path.endswith("/esearch.fcgi"):
+            if mode.read_text().strip() == "deep-discovery":
+                return send(self, 200, {"esearchresult": {"idlist": ["90000004", "90000005", "90000006"], "count": "100"}})
+            return send(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
+        if path.endswith("/esummary.fcgi"):
+            if mode.read_text().strip() == "deep-discovery":
+                pmids = query.get("id", [""])[0].split(",")
+                return send(self, 200, {"result": {"uids": pmids, **{pmid: {"uid": pmid, "title": "BRAF V600E frozen identity article"} for pmid in pmids}}})
+            return send(self, 200, {"result": {"uids": []}})
         if path in {"/sentences/", "/passages/"}: return send(self, 200, [])
         return send(self, 200, {"results": [], "data": [], "total": 0, "resultList": {"result": []}})
 
@@ -170,11 +184,15 @@ export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIO
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 all="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --limit 1)"
+printf 'deep-discovery\n' >"$mode"
+braf_panel="$repo_root/spec/fixtures/variant-article-braf-identity-input.json"
+reserved="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --confirmed-only --debug-plan --limit 3)"
 printf 'reordered\n' >"$mode"
 reordered="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
-jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered "$reordered" '
+jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reserved "$reserved" --argjson reordered "$reordered" '
   def item($id): $all.items[] | select(.request_id == $id);
   def reordered_item($id): $reordered.items[] | select(.request_id == $id);
+  def reserved_item: $reserved.items[] | select(.request_id == "braf-refseq-grch37");
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
     clingen_ldh: {atm_exact_annotation_confirmed: any(item("atm-grch38").results[]; .pmcid == "PMC9541484" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 472)), palb2_table_selector_confirmed: any(item("palb2-grch38").results[]; .pmcid == "PMC9582472" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 79728 and .provider_linkage.selector_type == "TableTextSelector" and .provider_linkage.caid == "CA900000000005")), empty_coverage_preserves_candidates: (has("mlh1-grch38"; "20864636"; "confirmed") and all(item("mlh1-grch38").results[].identity.observations[]; .source != "clingen_ldh"))},
@@ -199,6 +217,8 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
         and .source == "clingen_car"
         and (.provider_response_sha256 | test("^[0-9a-f]{64}$")))),
     confirmed_page_filters_before_limit: (any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
+    deep_discovery_keeps_structured_braf_for_identity_verification: (reserved_item | .complete == false and .truncated == true and .canonical_equivalence.status == "confirmed" and .canonical_equivalence.complete == true and any(.results[]; .pmid == "90000004" and .identity.status == "confirmed") and all(.results[]; .identity.status == "confirmed")),
+    debug_plan_records_discovery_and_verification_allocation: (reserved_item | .debug_plan as $plan | $plan.work_allocation as $allocation | ($allocation | type) == "object" and ($allocation.discovery.limit | type) == "number" and ($allocation.discovery.consumed | type) == "number" and $allocation.discovery.consumed > 0 and $allocation.discovery.consumed <= $allocation.discovery.limit and $allocation.discovery.limit < $plan.budgets.item.limit and ($allocation.identity_verification.reserved | type) == "number" and ($allocation.identity_verification.consumed | type) == "number" and $allocation.identity_verification.reserved >= 1 and $allocation.identity_verification.consumed > 1 and $allocation.identity_verification.consumed <= $allocation.identity_verification.reserved and ($allocation.discovery.consumed + $allocation.identity_verification.consumed == $plan.budgets.item.consumed)),
     audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
       ["apc-grch38", "12901799", 324, "p.Arg283Ter"],

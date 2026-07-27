@@ -375,9 +375,14 @@ cat variants.json | biomcp --json variant articles --input - --debug-plan
 The batch response preserves input order under `items`, uses compact article rows,
 and supplies parseable article-detail follow-ups in `_meta.next_commands`. At most
 two items execute concurrently. Work is bounded to 50 logical calls per valid
-item and 50 times the item count for the request. `--debug-plan` is JSON-only and
-adds normalized aliases, route/provider facts, ranking inputs, budgets, and stop
-state; ordinary single and batch output omit plans. The typed MCP
+item and 50 times the item count for the request. With `--verify-identity`,
+BioMCP protects verification capacity before discovery and expands that reservation
+as discovery finds page-eligible candidates, so later discovery cannot consume
+the work needed to verify them. A discovery route stopped by
+that bound remains incomplete rather than being presented as exhaustive. `--debug-plan` is
+JSON-only and adds normalized aliases, route/provider facts, ranking inputs,
+budgets, `work_allocation` accounting for discovery and identity verification,
+and stop state; ordinary single and batch output omit plans. The typed MCP
 `variant_articles` tool accepts the same structured item fields directly without
 server-local paths.
 
