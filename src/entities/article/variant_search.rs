@@ -752,7 +752,7 @@ fn canonical_equivalence(
         complete,
         applicable_identity_count: count,
         observations,
-        aliases: if status == "confirmed" {
+        aliases: if status == "confirmed" || count == 1 {
             aliases
         } else {
             Vec::new()
@@ -842,6 +842,9 @@ async fn resolve_canonical_equivalence(
     }
     for item in &items {
         aliases.extend(item.genomic_aliases.values.iter().cloned());
+    }
+    for item in &items {
+        aliases.extend(item.external_ids.values.iter().cloned());
     }
     let mut seen = BTreeSet::new();
     aliases.retain(|alias| seen.insert(alias.clone()));
@@ -2440,9 +2443,15 @@ async fn add_ldh_observations(
     }
     let rows = rows.unwrap();
     let mut incomplete = false;
+    let mut direct_bytes = 0;
     for candidate in candidates
         .iter_mut()
-        .filter(|candidate| candidate.row.pmcid.is_some())
+        .filter(|candidate| {
+            candidate.row.pmcid.as_deref().is_some_and(|pmcid| {
+                rows.iter()
+                    .any(|row| row.get("entId").and_then(serde_json::Value::as_str) == Some(pmcid))
+            })
+        })
         .take(5)
     {
         let pmcid = candidate.row.pmcid.as_deref().unwrap_or_default();
@@ -2467,7 +2476,12 @@ async fn add_ldh_observations(
             let Some(started) = execution.reserve("clingen_ldh_direct") else {
                 return true;
             };
-            let direct = client.direct(iri).await;
+            let Some(body_limit) =
+                crate::sources::clingen_ldh::remaining_direct_body_limit(direct_bytes)
+            else {
+                return true;
+            };
+            let direct = client.direct(iri, body_limit).await;
             execution.record(
                 "clingen_ldh_direct",
                 "clingen_ldh",
@@ -2476,7 +2490,8 @@ async fn add_ldh_observations(
                 1,
             );
             match direct {
-                Ok(direct) => {
+                Ok((direct, body_bytes)) => {
+                    direct_bytes += body_bytes;
                     let ldh = verify_ldh_annotation(
                         requested,
                         caid,

@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 use serde::Serialize;
+use serde::ser::SerializeStruct;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
@@ -16,6 +17,12 @@ const MAX_ANNOTATION_ID_BYTES: usize = 256;
 const MAX_HGVS_BYTES: usize = 1024;
 const MAX_IDENTIFIER_TOKENS: usize = 16;
 const MAX_IDENTIFIER_TOKEN_BYTES: usize = 256;
+const MAX_LDH_CAID_BYTES: usize = 32;
+const MAX_LDH_PMCID_BYTES: usize = 16;
+const MAX_LDH_SELECTOR_TYPE_BYTES: usize = 64;
+const MAX_LDH_SELECTOR_VALUE_BYTES: usize = 1024;
+const MAX_LDH_ENTITY_IRI_BYTES: usize = 2048;
+const MAX_LDH_CREATED_AT_BYTES: usize = 64;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct VariantArticleVerificationOptions {
@@ -34,21 +41,44 @@ pub(crate) struct VariantArticleIdentity {
     pub incomplete: bool,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct VariantArticleIdentityObservation {
     pub source: &'static str,
     pub section: String,
     pub locator: String,
     pub linked_gene: String,
     pub observed_alias: String,
-    #[serde(skip_serializing_if = "String::is_empty")]
     pub gene_annotation_id: String,
-    #[serde(skip_serializing_if = "String::is_empty")]
     pub allele_annotation_id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_relation: Option<String>,
     pub provider_linkage: Option<ProviderLinkage>,
     pub canonical_content_hash: String,
+}
+
+impl Serialize for VariantArticleIdentityObservation {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let is_ldh = self.source == "clingen_ldh";
+        let mut state = serializer.serialize_struct(
+            "VariantArticleIdentityObservation",
+            if is_ldh { 7 } else { 10 },
+        )?;
+        state.serialize_field("source", self.source)?;
+        state.serialize_field("section", &self.section)?;
+        state.serialize_field("locator", &self.locator)?;
+        state.serialize_field("linked_gene", &self.linked_gene)?;
+        state.serialize_field("observed_alias", &self.observed_alias)?;
+        if !is_ldh {
+            state.serialize_field("gene_annotation_id", &self.gene_annotation_id)?;
+            state.serialize_field("allele_annotation_id", &self.allele_annotation_id)?;
+            state.serialize_field("provider_relation", &self.provider_relation)?;
+        }
+        state.serialize_field("provider_linkage", &self.provider_linkage)?;
+        state.serialize_field("canonical_content_hash", &self.canonical_content_hash)?;
+        state.end()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -512,12 +542,14 @@ pub(crate) fn verify_ldh_annotation(
 ) -> VariantArticleIdentity {
     let requested_gene = requested.gene.as_deref().map(normalized);
     let mut observations = Vec::new();
+    let mut contradictions = Vec::new();
     let valid_shape = response.as_object().is_some_and(|object| {
         object
             .keys()
             .all(|key| key == "annotations" || key == "submittedOn")
             && object.get("annotations").is_some_and(Value::is_array)
     });
+    let mut incomplete = !valid_shape;
     if valid_shape {
         for annotation in response["annotations"].as_array().into_iter().flatten() {
             let Some(id) = annotation.get("id").and_then(Value::as_str) else {
@@ -545,14 +577,37 @@ pub(crate) fn verify_ldh_annotation(
                 item.get("type").and_then(Value::as_str) == Some("TextualBody")
                     && item.get("value").and_then(Value::as_str) == Some("GeneData")
             });
-            let gene_matches = gene_item.is_some_and(|item| {
-                item.get("geneSymbol")
-                    .and_then(Value::as_array)
-                    .into_iter()
-                    .flatten()
-                    .filter_map(Value::as_str)
-                    .any(|symbol| requested_gene.as_deref() == Some(normalized(symbol).as_str()))
-            });
+            let gene_symbols = gene_item
+                .and_then(|item| item.get("geneSymbol"))
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>();
+            let gene_matches = gene_symbols
+                .iter()
+                .any(|symbol| requested_gene.as_deref() == Some(normalized(symbol).as_str()));
+            if publication == pmcid
+                && article_pmcid == pmcid
+                && caid_matches
+                && !gene_symbols.is_empty()
+                && requested_gene.is_some()
+                && !gene_matches
+            {
+                contradictions.push(VariantArticleIdentityObservation {
+                    source: "clingen_ldh",
+                    section: "annotation".into(),
+                    locator: entity_iri.into(),
+                    linked_gene: requested.gene.clone().unwrap_or_default(),
+                    observed_alias: caid.into(),
+                    gene_annotation_id: String::new(),
+                    allele_annotation_id: String::new(),
+                    provider_relation: None,
+                    provider_linkage: None,
+                    canonical_content_hash: hash(&annotation.to_string()),
+                });
+                continue;
+            }
             let selectors = annotation
                 .pointer("/target/items")
                 .and_then(Value::as_array)
@@ -586,6 +641,19 @@ pub(crate) fn verify_ldh_annotation(
                 continue;
             }
             let selector = selectors[0];
+            let created_at = annotation.get("created").and_then(Value::as_str);
+            let selector_type = selector.get("type").and_then(Value::as_str);
+            if !bounded(id, MAX_ANNOTATION_ID_BYTES)
+                || !bounded(caid, MAX_LDH_CAID_BYTES)
+                || !bounded(pmcid, MAX_LDH_PMCID_BYTES)
+                || !bounded(variant_match, MAX_LDH_SELECTOR_VALUE_BYTES)
+                || !bounded(entity_iri, MAX_LDH_ENTITY_IRI_BYTES)
+                || !selector_type.is_some_and(|value| bounded(value, MAX_LDH_SELECTOR_TYPE_BYTES))
+                || created_at.is_some_and(|value| !bounded(value, MAX_LDH_CREATED_AT_BYTES))
+            {
+                incomplete = true;
+                continue;
+            }
             let gene_id = gene_item
                 .and_then(|item| item.get("geneNCBI"))
                 .and_then(Value::as_array)
@@ -607,17 +675,10 @@ pub(crate) fn verify_ldh_annotation(
                     caid: caid.into(),
                     gene_id,
                     pmcid: pmcid.into(),
-                    selector_type: selector
-                        .get("type")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                        .into(),
+                    selector_type: selector_type.unwrap_or_default().into(),
                     selector_value: variant_match.into(),
                     entity_iri: entity_iri.into(),
-                    created_at: annotation
-                        .get("created")
-                        .and_then(Value::as_str)
-                        .map(str::to_owned),
+                    created_at: created_at.map(str::to_owned),
                     provenance: LdhProvenance {
                         source: "clingen_ldh",
                         request_template_version: "ldh-medium-direct-v1",
@@ -629,7 +690,7 @@ pub(crate) fn verify_ldh_annotation(
             });
         }
     }
-    let status = status_for(&observations, &[]);
+    let status = status_for(&observations, &contradictions);
     VariantArticleIdentity {
         status,
         basis: if observations.is_empty() {
@@ -640,8 +701,8 @@ pub(crate) fn verify_ldh_annotation(
         requested_gene: requested.gene.clone(),
         requested_allele: requested_allele(requested),
         observations,
-        contradictions: Vec::new(),
-        incomplete: !valid_shape,
+        contradictions,
+        incomplete,
     }
 }
 
@@ -1039,6 +1100,35 @@ mod tests {
         assert_ne!(
             canonical_response_subset(&baseline),
             canonical_response_subset(&anomalous)
+        );
+    }
+
+    #[test]
+    fn ldh_explicit_requested_caid_wrong_gene_is_contradictory() {
+        let response = serde_json::json!({
+            "annotations": [{
+                "id": "annotation-1",
+                "publicationId": "PMC1",
+                "articleData": {"articleIDs": {"PMCID": "PMC1"}},
+                "variantMatch": "p.V600E",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA1"},
+                    {"type": "TextualBody", "value": "GeneData", "geneSymbol": ["NRAS"]}
+                ]},
+                "target": {"items": []}
+            }]
+        });
+        assert_eq!(
+            verify_ldh_annotation(
+                &requested(),
+                "CA1",
+                &["p.V600E".into()],
+                "PMC1",
+                "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC1/data",
+                &response,
+            )
+            .status,
+            "contradictory"
         );
     }
 

@@ -8,6 +8,14 @@ const LDH_BASE: &str = "https://ldh.genome.network";
 const LDH_BASE_ENV: &str = "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN";
 pub(crate) const MEDIUM_BODY_LIMIT: usize = 256 * 1024;
 pub(crate) const DIRECT_BODY_LIMIT: usize = 512 * 1024;
+pub(crate) const DIRECT_BODY_AGGREGATE_LIMIT: usize = 2 * 1024 * 1024;
+
+pub(crate) fn remaining_direct_body_limit(consumed: usize) -> Option<usize> {
+    DIRECT_BODY_AGGREGATE_LIMIT
+        .checked_sub(consumed)
+        .filter(|remaining| *remaining > 0)
+        .map(|remaining| remaining.min(DIRECT_BODY_LIMIT))
+}
 
 pub(crate) struct ClinGenLdhClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -46,7 +54,11 @@ impl ClinGenLdhClient {
         serde_json::from_slice(&bytes).map_err(BioMcpError::Json)
     }
 
-    pub(crate) async fn direct(&self, iri: &str) -> Result<Value, BioMcpError> {
+    pub(crate) async fn direct(
+        &self,
+        iri: &str,
+        body_limit: usize,
+    ) -> Result<(Value, usize), BioMcpError> {
         let mut url = Url::parse(iri).map_err(|_| {
             BioMcpError::InvalidArgument("invalid ClinGen LDH annotation IRI".into())
         })?;
@@ -69,9 +81,29 @@ impl ClinGenLdhClient {
         let bytes = crate::sources::read_limited_source_body_with_limit(
             response,
             SourceContext::narrow(SourceProvider::CLINGEN_LDH),
-            DIRECT_BODY_LIMIT,
+            body_limit.min(DIRECT_BODY_LIMIT),
         )
         .await?;
-        serde_json::from_slice(&bytes).map_err(BioMcpError::Json)
+        let body_bytes = bytes.len();
+        serde_json::from_slice(&bytes)
+            .map(|value| (value, body_bytes))
+            .map_err(BioMcpError::Json)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn direct_body_budget_stops_at_the_aggregate_limit() {
+        assert_eq!(
+            remaining_direct_body_limit(DIRECT_BODY_AGGREGATE_LIMIT - 1),
+            Some(1)
+        );
+        assert_eq!(
+            remaining_direct_body_limit(DIRECT_BODY_AGGREGATE_LIMIT),
+            None
+        );
     }
 }
