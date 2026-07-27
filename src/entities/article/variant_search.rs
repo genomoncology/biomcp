@@ -157,6 +157,8 @@ pub struct VariantArticleOutcome {
 
 const ITEM_WORK_LIMIT: usize = 50;
 const ITEM_CONCURRENCY_LIMIT: usize = 2;
+const LDH_MEDIUM_LIMIT: usize = 1;
+const LDH_DIRECT_LIMIT: usize = 10;
 
 #[derive(Debug)]
 struct SharedWorkBudget {
@@ -180,6 +182,7 @@ pub(crate) struct VariantArticleExecutionContext {
     events: Arc<Mutex<Vec<VariantArticleCallEvent>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
+    ldh_medium: Arc<AtomicUsize>,
     ldh_direct: Arc<AtomicUsize>,
 }
 
@@ -194,6 +197,7 @@ impl VariantArticleExecutionContext {
             events: Arc::new(Mutex::new(Vec::new())),
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
+            ldh_medium: Arc::new(AtomicUsize::new(0)),
             ldh_direct: Arc::new(AtomicUsize::new(0)),
         }
     }
@@ -216,12 +220,24 @@ impl VariantArticleExecutionContext {
     }
 
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
-        if route == "clingen_ldh_direct"
-            && self.ldh_direct.fetch_add(1, AtomicOrdering::SeqCst) >= 10
-        {
-            self.ldh_direct.fetch_sub(1, AtomicOrdering::SeqCst);
-            self.stop(route);
-            return None;
+        // ClinGen LDH runs last, after every retrieval route and after
+        // per-candidate PubTator verification. Live requests exhaust the shared
+        // item budget before it is reached, so drawing from that pool means the
+        // LDH ladder never runs at all outside a fixture. Its work is separately
+        // and tightly bounded -- one medium lookup and at most ten direct
+        // fetches per item -- so it carries its own allowance rather than
+        // competing for the general pool.
+        if let Some((consumed, cap)) = match route {
+            "clingen_ldh_medium" => Some((&self.ldh_medium, LDH_MEDIUM_LIMIT)),
+            "clingen_ldh_direct" => Some((&self.ldh_direct, LDH_DIRECT_LIMIT)),
+            _ => None,
+        } {
+            if consumed.fetch_add(1, AtomicOrdering::SeqCst) >= cap {
+                consumed.fetch_sub(1, AtomicOrdering::SeqCst);
+                self.stop(route);
+                return None;
+            }
+            return Some(Instant::now());
         }
         let reserve = |budget: &SharedWorkBudget| {
             budget
@@ -232,17 +248,11 @@ impl VariantArticleExecutionContext {
                 .is_ok()
         };
         if !reserve(&self.item) {
-            if route == "clingen_ldh_direct" {
-                self.ldh_direct.fetch_sub(1, AtomicOrdering::SeqCst);
-            }
             self.stop(route);
             return None;
         }
         if !reserve(&self.request) {
             self.item.consumed.fetch_sub(1, AtomicOrdering::SeqCst);
-            if route == "clingen_ldh_direct" {
-                self.ldh_direct.fetch_sub(1, AtomicOrdering::SeqCst);
-            }
             self.stop(route);
             return None;
         }
@@ -680,7 +690,13 @@ fn canonical_equivalence(
             complete: observation.comparison_complete,
             applicable_identity_count: count,
             observations,
-            aliases: Vec::new(),
+            // One identity cannot establish equivalence, but its CAR aliases are
+            // still the requester's own identity and downstream verification
+            // matches provider strings against them. Dropping them here left the
+            // LDH ladder -- which explicitly accepts a lone resolved identity --
+            // comparing every annotation against an empty alias list, so it
+            // could never confirm one outside a two-identity fixture.
+            aliases,
             message: "one independently supplied CAR HGVS identity cannot establish equivalence"
                 .into(),
         };
@@ -2394,6 +2410,20 @@ async fn search_variant_articles_identity(
     })
 }
 
+/// Providers disagree on how to spell a PMC identifier: Europe PMC and PubTator
+/// return `PMC8710334`, Semantic Scholar returns the bare `8710334` for the same
+/// article. ClinGen LDH keys its literature set on the prefixed form, so the join
+/// has to happen on one spelling or it silently never matches.
+fn canonical_pmcid(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    let digits = trimmed
+        .strip_prefix("PMC")
+        .or_else(|| trimmed.strip_prefix("pmc"))
+        .unwrap_or(trimmed);
+    (!digits.is_empty() && digits.chars().all(|character| character.is_ascii_digit()))
+        .then(|| format!("PMC{digits}"))
+}
+
 async fn add_ldh_observations(
     candidates: &mut [ArticleCandidate],
     requested: &RequestedVariantIdentity,
@@ -2447,14 +2477,23 @@ async fn add_ldh_observations(
     for candidate in candidates
         .iter_mut()
         .filter(|candidate| {
-            candidate.row.pmcid.as_deref().is_some_and(|pmcid| {
-                rows.iter()
-                    .any(|row| row.get("entId").and_then(serde_json::Value::as_str) == Some(pmcid))
-            })
+            candidate
+                .row
+                .pmcid
+                .as_deref()
+                .and_then(canonical_pmcid)
+                .is_some_and(|pmcid| {
+                    rows.iter().any(|row| {
+                        row.get("entId").and_then(serde_json::Value::as_str) == Some(pmcid.as_str())
+                    })
+                })
         })
         .take(5)
     {
-        let pmcid = candidate.row.pmcid.as_deref().unwrap_or_default();
+        let Some(pmcid) = candidate.row.pmcid.as_deref().and_then(canonical_pmcid) else {
+            continue;
+        };
+        let pmcid = pmcid.as_str();
         let iris = rows
             .iter()
             .filter_map(|row| {
@@ -3383,8 +3422,21 @@ mod tests {
             assert!(execution.reserve("clingen_ldh_direct").is_some());
         }
         assert!(execution.reserve("clingen_ldh_direct").is_none());
-        assert_eq!(execution.item_work().consumed, 10);
+        // The LDH allowance is separate from the shared item budget, so a
+        // request that spent its retrieval budget can still run the ladder.
+        assert_eq!(execution.item_work().consumed, 0);
         assert_eq!(execution.stopped_routes(), vec!["clingen_ldh_direct"]);
+    }
+
+    #[test]
+    fn ldh_medium_lookup_is_one_per_item_and_survives_an_exhausted_item_budget() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..ITEM_WORK_LIMIT {
+            assert!(execution.reserve("strict").is_some());
+        }
+        assert!(execution.reserve("strict").is_none());
+        assert!(execution.reserve("clingen_ldh_medium").is_some());
+        assert!(execution.reserve("clingen_ldh_medium").is_none());
     }
 
     #[test]

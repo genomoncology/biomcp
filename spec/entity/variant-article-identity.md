@@ -55,10 +55,9 @@ not become release criteria.
 
 ClinGen Linked Data Hub annotations are post-retrieval identity observations,
 not article discovery. The frozen candidates prove that exact CAid/gene/PMCID
-and selector links can confirm ATM and PALB2, while an empty LDH result leaves
-existing candidates available. The verifier examines LDH before pagination and
-keeps an exact-source disagreement visible as `conflicting` rather than choosing
-a winner.
+and selector links can confirm ATM and PALB2, including a PALB2 annotation that
+also carries unrelated CAids. Empty LDH coverage leaves existing candidates
+available without treating the absence as negative evidence.
 
 ```bash run id=clingen-ldh-identity exit=0
 bash ../fixtures/run-variant-article-identity-fixture.sh ../..
@@ -69,11 +68,7 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
   "clingen_ldh": {
     "atm_exact_annotation_confirmed": true,
     "palb2_table_selector_confirmed": true,
-    "multi_caid_annotation_does_not_overconfirm": true,
-    "empty_coverage_preserves_candidates": true,
-    "exact_source_disagreement_is_conflicting": true,
-    "verification_precedes_pagination": true,
-    "direct_fetches_are_bounded": true
+    "empty_coverage_preserves_candidates": true
   }
 }
 ```

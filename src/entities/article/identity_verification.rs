@@ -553,22 +553,29 @@ pub(crate) fn verify_ldh_annotation(
     if valid_shape {
         for annotation in response["annotations"].as_array().into_iter().flatten() {
             let Some(id) = annotation.get("id").and_then(Value::as_str) else {
+                incomplete = true;
                 continue;
             };
             let Some(publication) = annotation.get("publicationId").and_then(Value::as_str) else {
+                incomplete = true;
                 continue;
             };
             let Some(article_pmcid) = annotation
                 .pointer("/articleData/articleIDs/PMCID")
                 .and_then(Value::as_str)
             else {
+                incomplete = true;
                 continue;
             };
             let Some(variant_match) = annotation.get("variantMatch").and_then(Value::as_str) else {
+                incomplete = true;
                 continue;
             };
             let items = annotation.pointer("/body/items").and_then(Value::as_array);
-            let Some(items) = items else { continue };
+            let Some(items) = items else {
+                incomplete = true;
+                continue;
+            };
             let caid_matches = items.iter().any(|item| {
                 item.get("type").and_then(Value::as_str) == Some("TextualBody")
                     && item.get("value").and_then(Value::as_str) == Some(caid)
@@ -608,36 +615,50 @@ pub(crate) fn verify_ldh_annotation(
                 });
                 continue;
             }
-            let selectors = annotation
+            let Some(target_items) = annotation
                 .pointer("/target/items")
                 .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
+            else {
+                incomplete = true;
+                continue;
+            };
+            // LDH nests selectors one level below the annotation target: each
+            // `target.items[]` entry carries the `source` it was read from and a
+            // `selector` array of the quotes found there. Only the article's own
+            // page counts as an in-text citation; a quote lifted from a
+            // supplementary XLSX or PDF attached to the same article is not one.
+            let selectors = target_items
+                .iter()
                 .filter(|item| {
+                    item.get("source")
+                        .and_then(Value::as_str)
+                        .is_some_and(|source| {
+                            source == format!("https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}")
+                                || source
+                                    == format!("https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/")
+                        })
+                })
+                .filter_map(|item| item.get("selector").and_then(Value::as_array))
+                .flatten()
+                .filter(|selector| {
                     matches!(
-                        item.get("type").and_then(Value::as_str),
+                        selector.get("type").and_then(Value::as_str),
                         Some("TextQuoteSelector" | "TableTextSelector")
-                    ) && item.get("exact").and_then(Value::as_str) == Some(variant_match)
-                        && item
-                            .get("source")
-                            .and_then(Value::as_str)
-                            .is_some_and(|source| {
-                                source
-                                    == format!("https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}")
-                                    || source
-                                        == format!(
-                                            "https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/"
-                                        )
-                            })
+                    ) && selector.get("exact").and_then(Value::as_str) == Some(variant_match)
                 })
                 .collect::<Vec<_>>();
-            if publication != pmcid
-                || article_pmcid != pmcid
-                || !caid_matches
-                || !gene_matches
+            if publication != pmcid || article_pmcid != pmcid {
+                incomplete = true;
+                continue;
+            }
+            if !caid_matches {
+                continue;
+            }
+            if !gene_matches
                 || !aliases.iter().any(|alias| alias == variant_match)
                 || selectors.len() != 1
             {
+                incomplete = true;
                 continue;
             }
             let selector = selectors[0];
@@ -1103,6 +1124,91 @@ mod tests {
         );
     }
 
+    /// A capture minimized from the live ClinGen LDH direct response for
+    /// PMC5740532 on 2026-07-27. LDH nests its selectors under
+    /// `target.items[].selector[]`; reading them straight off `target.items[]`
+    /// matches nothing real, so this shape is the contract, not a convenience.
+    fn real_ldh_direct_capture() -> Value {
+        serde_json::json!({
+            "annotations": [{
+                "id": "e5aa8c24-8241-5049-8a25-dd569b8ca139",
+                "publicationId": "PMC5740532",
+                "articleData": {"articleIDs": {"PMCID": "PMC5740532"}},
+                "variantMatch": "rs180177133",
+                "created": "2025-01-17T12:00:41Z",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA151245"},
+                    {"type": "TextualBody", "value": "GeneData",
+                     "geneSymbol": ["PALB2"], "geneNCBI": [79728]}
+                ]},
+                "target": {"type": "List", "items": [{
+                    "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5740532",
+                    "selector": [{"type": "TextQuoteSelector", "exact": "rs180177133"}]
+                }]}
+            }]
+        })
+    }
+
+    fn palb2_requested() -> RequestedVariantIdentity {
+        RequestedVariantIdentity::from_variant_input("PALB2 c.3113G>A").expect("identity")
+    }
+
+    #[test]
+    fn ldh_confirms_an_annotation_in_the_live_response_shape() {
+        let identity = verify_ldh_annotation(
+            &palb2_requested(),
+            "CA151245",
+            &["rs180177133".into()],
+            "PMC5740532",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC5740532/data",
+            &real_ldh_direct_capture(),
+        );
+        assert!(!identity.incomplete);
+        let linkage = identity
+            .observations
+            .iter()
+            .find_map(|observation| observation.provider_linkage.as_ref())
+            .expect("the live shape must yield one LDH linkage");
+        let ProviderLinkage::Ldh {
+            caid,
+            gene_id,
+            pmcid,
+            selector_type,
+            selector_value,
+            ..
+        } = linkage
+        else {
+            panic!("expected an LDH linkage");
+        };
+        assert_eq!(caid, "CA151245");
+        assert_eq!(*gene_id, Some(79728));
+        assert_eq!(pmcid, "PMC5740532");
+        assert_eq!(selector_type, "TextQuoteSelector");
+        assert_eq!(selector_value, "rs180177133");
+    }
+
+    #[test]
+    fn ldh_ignores_a_selector_quoted_from_a_supplementary_file() {
+        // The same live document also annotates variants whose only quotes come
+        // from an attached XLSX or PDF. Those are not in-article citations, so
+        // they must leave the candidate unverified rather than confirmed.
+        let mut response = real_ldh_direct_capture();
+        response["annotations"][0]["target"]["items"][0]["source"] = serde_json::json!(
+            "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5740532/bin/jmedgenet-supp007.pdf"
+        );
+        let identity = verify_ldh_annotation(
+            &palb2_requested(),
+            "CA151245",
+            &["rs180177133".into()],
+            "PMC5740532",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC5740532/data",
+            &response,
+        );
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+        assert!(identity.observations.is_empty());
+    }
+
     #[test]
     fn ldh_explicit_requested_caid_wrong_gene_is_contradictory() {
         let response = serde_json::json!({
@@ -1130,6 +1236,67 @@ mod tests {
             .status,
             "contradictory"
         );
+    }
+
+    #[test]
+    fn ldh_unrequested_caid_in_a_multi_caid_annotation_is_ignored() {
+        let response = serde_json::json!({
+            "annotations": [{
+                "id": "annotation-1",
+                "publicationId": "PMC1",
+                "articleData": {"articleIDs": {"PMCID": "PMC1"}},
+                "variantMatch": "p.V600E",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA2"},
+                    {"type": "TextualBody", "value": "GeneData", "geneSymbol": ["BRAF"]}
+                ]},
+                "target": {"type": "List", "items": [{
+                    "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1",
+                    "selector": [{"type": "TextQuoteSelector", "exact": "p.V600E"}]
+                }]}
+            }]
+        });
+        let identity = verify_ldh_annotation(
+            &requested(),
+            "CA1",
+            &["p.V600E".into()],
+            "PMC1",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC1/data",
+            &response,
+        );
+        assert_eq!(identity.status, "unverified");
+        assert!(!identity.incomplete);
+    }
+
+    #[test]
+    fn ldh_wrong_pmcid_is_incomplete_without_a_contradiction() {
+        let response = serde_json::json!({
+            "annotations": [{
+                "id": "annotation-1",
+                "publicationId": "PMC2",
+                "articleData": {"articleIDs": {"PMCID": "PMC2"}},
+                "variantMatch": "p.V600E",
+                "body": {"items": [
+                    {"type": "TextualBody", "value": "CA1"},
+                    {"type": "TextualBody", "value": "GeneData", "geneSymbol": ["BRAF"]}
+                ]},
+                "target": {"type": "List", "items": [{
+                    "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1",
+                    "selector": [{"type": "TextQuoteSelector", "exact": "p.V600E"}]
+                }]}
+            }]
+        });
+        let identity = verify_ldh_annotation(
+            &requested(),
+            "CA1",
+            &["p.V600E".into()],
+            "PMC1",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC1/data",
+            &response,
+        );
+        assert_eq!(identity.status, "unverified");
+        assert!(identity.incomplete);
+        assert!(identity.contradictions.is_empty());
     }
 
     #[test]
