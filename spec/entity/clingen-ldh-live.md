@@ -30,6 +30,9 @@ article has LDH coverage.
 
 ```bash
 biomcp --json variant articles --input ldh-atm.json --verify-identity --limit 10 | mustmatch like '"kind": "clingen_ldh_annotation"
+"caid": "CA151456"
+"gene_id": 472
+"pmcid": "PMC9541484"
 "source": "clingen_ldh"
 "selector_type":'
 ```
