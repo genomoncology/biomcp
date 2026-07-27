@@ -172,10 +172,17 @@ struct VariantArticleCallEvent {
     pages: usize,
 }
 
+#[derive(Debug)]
+struct VariantArticleWorkAllocation {
+    identity_verification_reserved: AtomicUsize,
+    identity_verification_consumed: AtomicUsize,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct VariantArticleExecutionContext {
     item: Arc<SharedWorkBudget>,
     request: Arc<SharedWorkBudget>,
+    allocation: Arc<VariantArticleWorkAllocation>,
     events: Arc<Mutex<Vec<VariantArticleCallEvent>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
@@ -189,6 +196,10 @@ impl VariantArticleExecutionContext {
                 consumed: AtomicUsize::new(0),
             }),
             request,
+            allocation: Arc::new(VariantArticleWorkAllocation {
+                identity_verification_reserved: AtomicUsize::new(0),
+                identity_verification_consumed: AtomicUsize::new(0),
+            }),
             events: Arc::new(Mutex::new(Vec::new())),
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
@@ -212,21 +223,89 @@ impl VariantArticleExecutionContext {
             .collect()
     }
 
+    fn reserve_identity_verification(&self, count: usize) {
+        self.allocation
+            .identity_verification_reserved
+            .fetch_add(count, AtomicOrdering::SeqCst);
+    }
+
+    pub(crate) fn reserve_identity_verification_through(&self, count: usize) {
+        let verification_consumed = self
+            .allocation
+            .identity_verification_consumed
+            .load(AtomicOrdering::SeqCst);
+        let available_for_verification = self
+            .item
+            .limit
+            .saturating_sub(self.item.consumed.load(AtomicOrdering::SeqCst))
+            .saturating_add(verification_consumed);
+        let target = count.min(available_for_verification);
+        let _ = self.allocation.identity_verification_reserved.fetch_update(
+            AtomicOrdering::SeqCst,
+            AtomicOrdering::SeqCst,
+            |current| (current < target).then_some(target),
+        );
+    }
+
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
+        let identity_verification = route == "identity_verification";
+        if identity_verification
+            && self
+                .allocation
+                .identity_verification_consumed
+                .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                    (current
+                        < self
+                            .allocation
+                            .identity_verification_reserved
+                            .load(AtomicOrdering::SeqCst))
+                    .then(|| current + 1)
+                })
+                .is_err()
+        {
+            self.stop(route);
+            return None;
+        }
+        let reserved = self
+            .allocation
+            .identity_verification_reserved
+            .load(AtomicOrdering::SeqCst);
         let reserve = |budget: &SharedWorkBudget| {
             budget
                 .consumed
                 .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
-                    (current < budget.limit).then(|| current + 1)
+                    ((identity_verification || current.saturating_add(reserved) < budget.limit)
+                        && current < budget.limit)
+                        .then(|| current + 1)
                 })
                 .is_ok()
         };
+        let protected_discovery = !identity_verification
+            && reserved > 0
+            && self
+                .item
+                .consumed
+                .load(AtomicOrdering::SeqCst)
+                .saturating_add(reserved)
+                >= self.item.limit;
         if !reserve(&self.item) {
-            self.stop(route);
+            if identity_verification {
+                self.allocation
+                    .identity_verification_consumed
+                    .fetch_sub(1, AtomicOrdering::SeqCst);
+            }
+            if !protected_discovery {
+                self.stop(route);
+            }
             return None;
         }
         if !reserve(&self.request) {
             self.item.consumed.fetch_sub(1, AtomicOrdering::SeqCst);
+            if identity_verification {
+                self.allocation
+                    .identity_verification_consumed
+                    .fetch_sub(1, AtomicOrdering::SeqCst);
+            }
             self.stop(route);
             return None;
         }
@@ -272,6 +351,30 @@ impl VariantArticleExecutionContext {
             self.request.limit,
             self.request.consumed.load(AtomicOrdering::SeqCst),
         )
+    }
+
+    fn work_allocation(&self) -> VariantArticleWorkAllocationPlan {
+        let reserved = self
+            .allocation
+            .identity_verification_reserved
+            .load(AtomicOrdering::SeqCst);
+        let consumed = self
+            .allocation
+            .identity_verification_consumed
+            .load(AtomicOrdering::SeqCst);
+        VariantArticleWorkAllocationPlan {
+            discovery: VariantArticleWork::new(
+                self.item.limit.saturating_sub(reserved),
+                self.item
+                    .consumed
+                    .load(AtomicOrdering::SeqCst)
+                    .saturating_sub(consumed),
+            ),
+            identity_verification: VariantArticleIdentityVerificationAllocation {
+                reserved,
+                consumed,
+            },
+        }
     }
 
     fn events(&self) -> Vec<VariantArticleCallEvent> {
@@ -370,6 +473,18 @@ pub struct VariantArticleBudgetsPlan {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleIdentityVerificationAllocation {
+    pub reserved: usize,
+    pub consumed: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleWorkAllocationPlan {
+    pub discovery: VariantArticleWork,
+    pub identity_verification: VariantArticleIdentityVerificationAllocation,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleNextPlan {
     pub offset: usize,
     pub cursor: Option<String>,
@@ -392,6 +507,7 @@ pub struct VariantArticleDebugPlan {
     pub counts: VariantArticleCountsPlan,
     pub ranking: VariantArticleRankingPlan,
     pub budgets: VariantArticleBudgetsPlan,
+    pub work_allocation: VariantArticleWorkAllocationPlan,
     pub truncated: bool,
     pub stopped_routes: Vec<String>,
     pub next: VariantArticleNextPlan,
@@ -1832,6 +1948,7 @@ fn build_debug_plan(
             item: item_work,
             request: request_work,
         },
+        work_allocation: execution.work_allocation(),
         truncated: state.truncated,
         stopped_routes: execution.stopped_routes(),
         next: state.next,
@@ -1944,6 +2061,11 @@ async fn search_variant_articles_identity(
             },
             hard_error: true,
         });
+    }
+    if verification.verify_identity {
+        // Keep one verification unit before discovery. Each discovery page then
+        // expands this reservation for candidates that could occupy the visible page.
+        execution.reserve_identity_verification(1);
     }
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
     let mut candidates = Vec::new();
@@ -2154,6 +2276,8 @@ async fn search_variant_articles_identity(
     let mut verification_content_subsets = Vec::new();
     let mut verification_incomplete = false;
     if verification.verify_identity {
+        rank_candidates(&mut candidates);
+        execution.reserve_identity_verification_through(offset.saturating_add(candidates.len()));
         for candidate in &mut candidates {
             let captured = verify_captured_abstract(
                 &context.requested,
@@ -2423,6 +2547,13 @@ fn empty_debug_plan(
         budgets: VariantArticleBudgetsPlan {
             item: work.clone(),
             request: work,
+        },
+        work_allocation: VariantArticleWorkAllocationPlan {
+            discovery: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
+            identity_verification: VariantArticleIdentityVerificationAllocation {
+                reserved: 0,
+                consumed: 0,
+            },
         },
         truncated,
         stopped_routes,
@@ -3198,6 +3329,19 @@ mod tests {
 
     #[test]
     fn item_and_request_work_budgets_stop_at_fifty_and_five_hundred() {
+        let reserved = VariantArticleExecutionContext::single();
+        reserved.reserve_identity_verification(3);
+        for _ in 0..ITEM_WORK_LIMIT - 3 {
+            assert!(reserved.reserve("strict").is_some());
+        }
+        assert!(reserved.reserve("strict").is_none());
+        for _ in 0..3 {
+            assert!(reserved.reserve("identity_verification").is_some());
+        }
+        assert_eq!(reserved.work_allocation().discovery.limit, 47);
+        assert_eq!(reserved.work_allocation().discovery.consumed, 47);
+        assert_eq!(reserved.work_allocation().identity_verification.consumed, 3);
+
         let contexts = VariantArticleExecutionContext::batch(10);
         for context in &contexts {
             for _ in 0..ITEM_WORK_LIMIT {

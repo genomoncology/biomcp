@@ -202,6 +202,11 @@ pub(super) async fn search_pubmed_page_with_context(
                 source_position: &mut source_position,
             },
         )?;
+        // Once a strict page has made page-eligible PMIDs visible, keep their
+        // verification capacity before fetching another discovery page.
+        if let Some(execution) = execution {
+            execution.reserve_identity_verification_through(offset.saturating_add(out.len()));
+        }
 
         batch_start = batch_start.saturating_add(batch_len);
         if total.is_some_and(|value| batch_start >= value) {
