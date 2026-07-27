@@ -1,0 +1,11 @@
+[
+  {
+    "request_id": "braf-refseq-grch37",
+    "gene": "BRAF",
+    "transcript": "NM_004333.6",
+    "coding": "c.1799T>A",
+    "protein": "p.Val600Glu",
+    "genomic": "NC_000007.13:g.140453136A>T",
+    "build": "GRCh37"
+  }
+]
