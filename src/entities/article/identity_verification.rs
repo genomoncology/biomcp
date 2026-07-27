@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 use serde::Serialize;
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::entities::variant::RequestedVariantIdentity;
@@ -40,27 +41,53 @@ pub(crate) struct VariantArticleIdentityObservation {
     pub locator: String,
     pub linked_gene: String,
     pub observed_alias: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub gene_annotation_id: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub allele_annotation_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub provider_relation: Option<String>,
     pub provider_linkage: Option<ProviderLinkage>,
     pub canonical_content_hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub(crate) struct ProviderLinkage {
-    kind: &'static str,
-    expected_pmid: String,
-    returned_pmid: String,
-    gene_annotation_id: String,
-    variant_annotation_id: String,
-    gene_id: u64,
-    observed_hgvs: String,
-    identifier_tokens: Vec<String>,
-    relation_id: Option<String>,
-    relation_type: Option<String>,
-    relation_roles: Option<Vec<String>>,
-    provenance: ProviderLinkageProvenance,
+#[serde(tag = "kind")]
+pub(crate) enum ProviderLinkage {
+    #[serde(rename = "pubtator_corresponding_gene")]
+    Pubtator {
+        expected_pmid: String,
+        returned_pmid: String,
+        gene_annotation_id: String,
+        variant_annotation_id: String,
+        gene_id: u64,
+        observed_hgvs: String,
+        identifier_tokens: Vec<String>,
+        relation_id: Option<String>,
+        relation_type: Option<String>,
+        relation_roles: Option<Vec<String>>,
+        provenance: ProviderLinkageProvenance,
+    },
+    #[serde(rename = "clingen_ldh_annotation")]
+    Ldh {
+        annotation_uuid: String,
+        caid: String,
+        gene_id: Option<u64>,
+        pmcid: String,
+        selector_type: String,
+        selector_value: String,
+        entity_iri: String,
+        created_at: Option<String>,
+        provenance: LdhProvenance,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub(crate) struct LdhProvenance {
+    source: &'static str,
+    request_template_version: &'static str,
+    response_subset_version: &'static str,
+    canonical_response_subset_sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -421,8 +448,7 @@ pub(crate) fn verify_pubtator(
                             gene_annotation_id: gene_annotation_id.into(),
                             allele_annotation_id: variant_annotation_id.into(),
                             provider_relation: None,
-                            provider_linkage: Some(ProviderLinkage {
-                                kind: "pubtator_corresponding_gene",
+                            provider_linkage: Some(ProviderLinkage::Pubtator {
                                 expected_pmid: expected_pmid.into(),
                                 returned_pmid: returned_pmid.into(),
                                 gene_annotation_id: gene_annotation_id.into(),
@@ -473,6 +499,149 @@ pub(crate) fn verify_pubtator(
         observations,
         contradictions,
         incomplete: incomplete || semantic_anomaly || response.documents.is_empty(),
+    }
+}
+
+pub(crate) fn verify_ldh_annotation(
+    requested: &RequestedVariantIdentity,
+    caid: &str,
+    aliases: &[String],
+    pmcid: &str,
+    entity_iri: &str,
+    response: &Value,
+) -> VariantArticleIdentity {
+    let requested_gene = requested.gene.as_deref().map(normalized);
+    let mut observations = Vec::new();
+    let valid_shape = response.as_object().is_some_and(|object| {
+        object
+            .keys()
+            .all(|key| key == "annotations" || key == "submittedOn")
+            && object.get("annotations").is_some_and(Value::is_array)
+    });
+    if valid_shape {
+        for annotation in response["annotations"].as_array().into_iter().flatten() {
+            let Some(id) = annotation.get("id").and_then(Value::as_str) else {
+                continue;
+            };
+            let Some(publication) = annotation.get("publicationId").and_then(Value::as_str) else {
+                continue;
+            };
+            let Some(article_pmcid) = annotation
+                .pointer("/articleData/articleIDs/PMCID")
+                .and_then(Value::as_str)
+            else {
+                continue;
+            };
+            let Some(variant_match) = annotation.get("variantMatch").and_then(Value::as_str) else {
+                continue;
+            };
+            let items = annotation.pointer("/body/items").and_then(Value::as_array);
+            let Some(items) = items else { continue };
+            let caid_matches = items.iter().any(|item| {
+                item.get("type").and_then(Value::as_str) == Some("TextualBody")
+                    && item.get("value").and_then(Value::as_str) == Some(caid)
+            });
+            let gene_item = items.iter().find(|item| {
+                item.get("type").and_then(Value::as_str) == Some("TextualBody")
+                    && item.get("value").and_then(Value::as_str) == Some("GeneData")
+            });
+            let gene_matches = gene_item.is_some_and(|item| {
+                item.get("geneSymbol")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                    .any(|symbol| requested_gene.as_deref() == Some(normalized(symbol).as_str()))
+            });
+            let selectors = annotation
+                .pointer("/target/items")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter(|item| {
+                    matches!(
+                        item.get("type").and_then(Value::as_str),
+                        Some("TextQuoteSelector" | "TableTextSelector")
+                    ) && item.get("exact").and_then(Value::as_str) == Some(variant_match)
+                        && item
+                            .get("source")
+                            .and_then(Value::as_str)
+                            .is_some_and(|source| {
+                                source
+                                    == format!("https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}")
+                                    || source
+                                        == format!(
+                                            "https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/"
+                                        )
+                            })
+                })
+                .collect::<Vec<_>>();
+            if publication != pmcid
+                || article_pmcid != pmcid
+                || !caid_matches
+                || !gene_matches
+                || !aliases.iter().any(|alias| alias == variant_match)
+                || selectors.len() != 1
+            {
+                continue;
+            }
+            let selector = selectors[0];
+            let gene_id = gene_item
+                .and_then(|item| item.get("geneNCBI"))
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_u64)
+                .next();
+            observations.push(VariantArticleIdentityObservation {
+                source: "clingen_ldh",
+                section: "annotation".into(),
+                locator: entity_iri.into(),
+                linked_gene: requested.gene.clone().unwrap_or_default(),
+                observed_alias: variant_match.into(),
+                gene_annotation_id: String::new(),
+                allele_annotation_id: String::new(),
+                provider_relation: None,
+                provider_linkage: Some(ProviderLinkage::Ldh {
+                    annotation_uuid: id.into(),
+                    caid: caid.into(),
+                    gene_id,
+                    pmcid: pmcid.into(),
+                    selector_type: selector
+                        .get("type")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .into(),
+                    selector_value: variant_match.into(),
+                    entity_iri: entity_iri.into(),
+                    created_at: annotation
+                        .get("created")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned),
+                    provenance: LdhProvenance {
+                        source: "clingen_ldh",
+                        request_template_version: "ldh-medium-direct-v1",
+                        response_subset_version: "annotation-v1",
+                        canonical_response_subset_sha256: hash(&response.to_string()),
+                    },
+                }),
+                canonical_content_hash: hash(&annotation.to_string()),
+            });
+        }
+    }
+    let status = status_for(&observations, &[]);
+    VariantArticleIdentity {
+        status,
+        basis: if observations.is_empty() {
+            "none"
+        } else {
+            "structured_annotation"
+        },
+        requested_gene: requested.gene.clone(),
+        requested_allele: requested_allele(requested),
+        observations,
+        contradictions: Vec::new(),
+        incomplete: !valid_shape,
     }
 }
 

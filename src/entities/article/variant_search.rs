@@ -33,7 +33,8 @@ use super::enrichment::{
 use super::identity_verification::{
     PUBTATOR_EXPORT_TEMPLATE_VERSION, VariantArticleIdentity, VariantArticleVerificationOptions,
     VariantArticleVerificationPlan, canonical_content_subset, canonical_response_subset,
-    combine_identities, verification_plan, verify_captured_abstract, verify_pubtator,
+    combine_identities, verification_plan, verify_captured_abstract, verify_ldh_annotation,
+    verify_pubtator,
 };
 use super::query::{
     build_europepmc_variant_strict_query, build_pubmed_variant_strict_query,
@@ -179,6 +180,7 @@ pub(crate) struct VariantArticleExecutionContext {
     events: Arc<Mutex<Vec<VariantArticleCallEvent>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
+    ldh_direct: Arc<AtomicUsize>,
 }
 
 impl VariantArticleExecutionContext {
@@ -192,6 +194,7 @@ impl VariantArticleExecutionContext {
             events: Arc::new(Mutex::new(Vec::new())),
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
+            ldh_direct: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -213,6 +216,13 @@ impl VariantArticleExecutionContext {
     }
 
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
+        if route == "clingen_ldh_direct"
+            && self.ldh_direct.fetch_add(1, AtomicOrdering::SeqCst) >= 10
+        {
+            self.ldh_direct.fetch_sub(1, AtomicOrdering::SeqCst);
+            self.stop(route);
+            return None;
+        }
         let reserve = |budget: &SharedWorkBudget| {
             budget
                 .consumed
@@ -222,11 +232,17 @@ impl VariantArticleExecutionContext {
                 .is_ok()
         };
         if !reserve(&self.item) {
+            if route == "clingen_ldh_direct" {
+                self.ldh_direct.fetch_sub(1, AtomicOrdering::SeqCst);
+            }
             self.stop(route);
             return None;
         }
         if !reserve(&self.request) {
             self.item.consumed.fetch_sub(1, AtomicOrdering::SeqCst);
+            if route == "clingen_ldh_direct" {
+                self.ldh_direct.fetch_sub(1, AtomicOrdering::SeqCst);
+            }
             self.stop(route);
             return None;
         }
@@ -2235,6 +2251,13 @@ async fn search_variant_articles_identity(
                 ));
             }
         }
+        verification_incomplete |= add_ldh_observations(
+            &mut candidates,
+            &context.requested,
+            &canonical_equivalence,
+            &execution,
+        )
+        .await;
         if verification.confirmed_only {
             candidates.retain(|candidate| {
                 candidate
@@ -2366,6 +2389,133 @@ async fn search_variant_articles_identity(
         },
         hard_error,
     })
+}
+
+async fn add_ldh_observations(
+    candidates: &mut [ArticleCandidate],
+    requested: &RequestedVariantIdentity,
+    equivalence: &CanonicalEquivalence,
+    execution: &VariantArticleExecutionContext,
+) -> bool {
+    let caid = if equivalence.applicable_identity_count == 1 {
+        equivalence
+            .observations
+            .iter()
+            .find(|observation| observation.status == "resolved" && observation.provider_exhaustive)
+            .and_then(|observation| observation.caid.as_deref())
+    } else if equivalence.applicable_identity_count >= 2 && equivalence.status == "confirmed" {
+        equivalence.caid.as_deref()
+    } else {
+        None
+    };
+    let Some(caid) = caid else { return false };
+    let Some(started) = execution.reserve("clingen_ldh_medium") else {
+        return true;
+    };
+    let client = match crate::sources::ClinGenLdhClient::new() {
+        Ok(client) => client,
+        Err(_) => return true,
+    };
+    let medium = client.medium(caid).await;
+    execution.record(
+        "clingen_ldh_medium",
+        "clingen_ldh",
+        started,
+        if medium.is_ok() { "ok" } else { "unavailable" },
+        1,
+    );
+    let Ok(medium) = medium else { return true };
+    let rows = medium
+        .get("data")
+        .and_then(|data| data.get("VariantsInLiterature"))
+        .and_then(serde_json::Value::as_array);
+    if medium
+        .pointer("/status/code")
+        .and_then(serde_json::Value::as_i64)
+        != Some(200)
+        || medium.get("metadata").is_none()
+        || rows.is_none()
+    {
+        return true;
+    }
+    let rows = rows.unwrap();
+    let mut incomplete = false;
+    for candidate in candidates
+        .iter_mut()
+        .filter(|candidate| candidate.row.pmcid.is_some())
+        .take(5)
+    {
+        let pmcid = candidate.row.pmcid.as_deref().unwrap_or_default();
+        let iris = rows
+            .iter()
+            .filter_map(|row| {
+                let id = row.get("entId").and_then(serde_json::Value::as_str)?;
+                let iri = row.get("entIri").and_then(serde_json::Value::as_str)?;
+                (id == pmcid
+                    && row
+                        .get("entDisposition")
+                        .and_then(serde_json::Value::as_str)
+                        == Some("external")
+                    && row.get("entType").and_then(serde_json::Value::as_str)
+                        == Some("VariantsInLiterature")
+                    && ldh_iri_matches(iri, id))
+                .then_some(iri)
+            })
+            .take(2)
+            .collect::<Vec<_>>();
+        for iri in iris {
+            let Some(started) = execution.reserve("clingen_ldh_direct") else {
+                return true;
+            };
+            let direct = client.direct(iri).await;
+            execution.record(
+                "clingen_ldh_direct",
+                "clingen_ldh",
+                started,
+                if direct.is_ok() { "ok" } else { "unavailable" },
+                1,
+            );
+            match direct {
+                Ok(direct) => {
+                    let ldh = verify_ldh_annotation(
+                        requested,
+                        caid,
+                        &equivalence.aliases,
+                        pmcid,
+                        iri,
+                        &direct,
+                    );
+                    incomplete |= ldh.incomplete;
+                    let existing = candidate.identity.take().unwrap_or_else(|| {
+                        verify_captured_abstract(
+                            requested,
+                            candidate
+                                .row
+                                .abstract_snippet
+                                .as_deref()
+                                .unwrap_or(&candidate.row.normalized_abstract),
+                        )
+                    });
+                    candidate.identity = Some(combine_identities(existing, ldh));
+                }
+                Err(_) => incomplete = true,
+            }
+        }
+    }
+    incomplete
+}
+
+fn ldh_iri_matches(iri: &str, pmcid: &str) -> bool {
+    let Ok(url) = reqwest::Url::parse(iri) else {
+        return false;
+    };
+    url.scheme() == "https"
+        && url.host_str() == Some("ldh.genome.network")
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.query().is_none()
+        && url.fragment().is_none()
+        && url.path() == format!("/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/{pmcid}/data")
 }
 
 pub(crate) fn parse_variant_article_batch(

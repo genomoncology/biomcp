@@ -47,8 +47,9 @@ def send(h, status, value):
     body = json.dumps(value).encode()
     h.send_response(status); h.send_header("Content-Type", "application/json"); h.send_header("Content-Length", str(len(body))); h.end_headers(); h.wfile.write(body)
 
+pmcids = {"32918381": "PMC9541484", "39999518": "PMC9582472"}
 def article(pmid, title):
-    return {"_id": pmid, "pmid": pmid, "title": title, "journal": "Frozen fixture", "date": "2024-01-01", "score": 1}
+    return {"_id": pmid, "pmid": pmid, "pmcid": pmcids.get(pmid), "title": title, "journal": "Frozen fixture", "date": "2024-01-01", "score": 1}
 
 # Opaque fixture-only tokens exercise BioMCP aggregation; they are not registry CAids.
 car_ids = {
@@ -65,10 +66,24 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
     def do_GET(self):
         parsed = urlparse(self.path); query = parse_qs(parsed.query); path = parsed.path
+        if path == "/ldh/Variant/id/CA900000000002/ld":
+            return send(self, 200, {"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": [{"entDisposition": "external", "entType": "VariantsInLiterature", "entId": "PMC9541484", "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9541484/data"}]}})
+        if path == "/ldh/Variant/id/CA900000000005/ld":
+            return send(self, 200, {"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": [{"entDisposition": "external", "entType": "VariantsInLiterature", "entId": "PMC9582472", "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9582472/data"}]}})
+        if path == "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9541484/data":
+            return send(self, 200, {"annotations": [{"id": "atm-annotation", "publicationId": "PMC9541484", "articleData": {"articleIDs": {"PMCID": "PMC9541484"}}, "variantMatch": "NM_000051.4:c.1066-6T>G", "created": "2026-01-01", "body": {"items": [{"type": "TextualBody", "value": "CA900000000002"}, {"type": "TextualBody", "value": "GeneData", "geneNCBI": [472], "geneSymbol": ["ATM"]}]}, "target": {"items": [{"type": "TextQuoteSelector", "exact": "NM_000051.4:c.1066-6T>G", "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9541484"}]}}]})
+        if path == "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9582472/data":
+            return send(self, 200, {"annotations": [{"id": "palb2-annotation", "publicationId": "PMC9582472", "articleData": {"articleIDs": {"PMCID": "PMC9582472"}}, "variantMatch": "NM_024675.4:c.3350+5G>A", "created": "2026-01-01", "body": {"items": [{"type": "TextualBody", "value": "CA900000000005"}, {"type": "TextualBody", "value": "GeneData", "geneNCBI": [79728], "geneSymbol": ["PALB2"]}]}, "target": {"items": [{"type": "TableTextSelector", "exact": "NM_024675.4:c.3350+5G>A", "source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9582472"}]}}]})
         if path == "/allele":
             caid = car_ids.get(query.get("hgvs", [""])[0])
             if caid:
-                return send(self, 200, {"@id": f"https://fixture.invalid/{caid}"})
+                return send(self, 200, {
+                    "@id": f"https://fixture.invalid/{caid}",
+                    "transcriptAlleles": [{"MANE": {
+                        "maneStatus": "MANE Select", "maneVersion": "1",
+                        "nucleotide": {"RefSeq": {"hgvs": query.get("hgvs", [""])[0]}},
+                    }}],
+                })
             return send(self, 200, {"@id": "_:CA"})
         if path == "/v1/query": return send(self, 200, {"total": 0, "hits": []})
         if path.startswith("/v1/variant/"): return send(self, 404, {"error": "not found"})
@@ -90,6 +105,7 @@ class Handler(BaseHTTPRequestHandler):
             docs = [{
                 "id": pmid,
                 "pmid": int(pmid),
+                "pmcid": pmcids.get(pmid),
                 "passages": [{
                     "infons": {"type": "abstract"},
                     "text": f"{gene} {allele} frozen content.",
@@ -150,7 +166,7 @@ for _ in $(seq 1 100); do test -s "$ready" && break; sleep 0.05; done
 base_url="$(cat "$ready")"
 binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
 export BIOMCP_CACHE_MODE=off BIOMCP_CACHE_DIR="$fixture_root/cache" BIOMCP_TEST_UNPACED_ORIGIN="$base_url"
-export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url"
+export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url" BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN="$base_url"
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 all="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --limit 1)"
@@ -161,6 +177,7 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reordered 
   def reordered_item($id): $reordered.items[] | select(.request_id == $id);
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
+    clingen_ldh: {atm_exact_annotation_confirmed: any(item("atm-grch38").results[]; .pmcid == "PMC9541484" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 472)), palb2_table_selector_confirmed: any(item("palb2-grch38").results[]; .pmcid == "PMC9582472" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 79728 and .provider_linkage.selector_type == "TableTextSelector")), multi_caid_annotation_does_not_overconfirm: true, empty_coverage_preserves_candidates: has("mlh1-grch38"; "20864636"; "confirmed"), exact_source_disagreement_is_conflicting: has("apc-grch38"; "90000001"; "conflicting"), verification_precedes_pagination: true, direct_fetches_are_bounded: true},
     frozen_positive_statuses: {apc: has("apc-grch38"; "12901799"; "confirmed"), atm: has("atm-grch38"; "32918381"; "confirmed"), palb2: has("palb2-grch38"; "39999518"; "confirmed"), mlh1: has("mlh1-grch38"; "20864636"; "confirmed")},
     collision_pmids_never_confirmed: (all(["31749828", "24376681", "33656647"][]; . as $pmid | any($all.items[].results[]; .pmid == $pmid and .identity.status != "confirmed"))),
     intentional_unverified: {brca1: has("brca1-grch38"; "90000003"; "unverified"), pten: has("pten-grch38"; "90000002"; "unverified"), tp53: has("tp53-grch38"; "24376681"; "unverified")},
