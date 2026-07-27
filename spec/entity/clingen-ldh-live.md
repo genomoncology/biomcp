@@ -31,7 +31,7 @@ in-article citation and is deliberately not accepted.
 ```
 
 ```bash
-biomcp --json variant articles --input ldh-chek2.json --verify-identity --limit 25 | mustmatch like '"kind": "clingen_ldh_annotation"
+biomcp --json variant articles --input ldh-chek2.json --verify-identity --limit 50 | mustmatch like '"kind": "clingen_ldh_annotation"
 "caid": "CA288251"
 "gene_id": 11200
 "pmcid": "PMC8710334"
