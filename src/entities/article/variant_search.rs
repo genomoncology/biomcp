@@ -349,6 +349,12 @@ impl VariantArticleExecutionContext {
                 >= self.item.limit
     }
 
+    fn provider_requests_failed(&self) -> bool {
+        self.events()
+            .iter()
+            .any(|event| event.status == "unavailable")
+    }
+
     fn work_allocation(&self) -> VariantArticleWorkAllocationPlan {
         let reserved = self
             .allocation
@@ -360,7 +366,7 @@ impl VariantArticleExecutionContext {
             .load(AtomicOrdering::SeqCst);
         VariantArticleWorkAllocationPlan {
             discovery: VariantArticleWork::new(
-                self.item.limit.saturating_sub(reserved.min(1)),
+                self.item.limit.saturating_sub(reserved),
                 self.item
                     .consumed
                     .load(AtomicOrdering::SeqCst)
@@ -2378,7 +2384,8 @@ async fn search_variant_articles_identity(
         VariantProviderValidationStatus::Indeterminate
             | VariantProviderValidationStatus::Unavailable
     );
-    let complete = (failed_routes == 0 || execution.discovery_exhausted())
+    let complete = (failed_routes == 0
+        || (execution.discovery_exhausted() && !execution.provider_requests_failed()))
         && !budget_stopped
         && !provider_incomplete
         && !verification_incomplete
@@ -3324,14 +3331,20 @@ mod tests {
     #[test]
     fn item_and_request_work_budgets_stop_at_fifty_and_five_hundred() {
         let reserved = VariantArticleExecutionContext::single();
-        reserved.reserve_identity_verification(1);
-        for _ in 0..ITEM_WORK_LIMIT - 1 {
+        reserved.reserve_identity_verification(3);
+        for _ in 0..ITEM_WORK_LIMIT - 3 {
             assert!(reserved.reserve("strict").is_some());
         }
         assert!(reserved.reserve("strict").is_none());
-        assert!(reserved.reserve("identity_verification").is_some());
-        assert_eq!(reserved.work_allocation().discovery.consumed, 49);
-        assert_eq!(reserved.work_allocation().identity_verification.consumed, 1);
+        for _ in 0..3 {
+            assert!(reserved.reserve("identity_verification").is_some());
+        }
+        assert_eq!(reserved.work_allocation().discovery.limit, 47);
+        assert_eq!(reserved.work_allocation().discovery.consumed, 47);
+        assert_eq!(reserved.work_allocation().identity_verification.consumed, 3);
+        assert!(!reserved.provider_requests_failed());
+        reserved.record("strict", "pubmed", Instant::now(), "unavailable", 0);
+        assert!(reserved.provider_requests_failed());
 
         let contexts = VariantArticleExecutionContext::batch(10);
         for context in &contexts {
