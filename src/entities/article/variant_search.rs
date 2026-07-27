@@ -3212,6 +3212,17 @@ mod tests {
     }
 
     #[test]
+    fn ldh_direct_annotation_fetches_stop_after_ten_per_item() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..10 {
+            assert!(execution.reserve("clingen_ldh_direct").is_some());
+        }
+        assert!(execution.reserve("clingen_ldh_direct").is_none());
+        assert_eq!(execution.item_work().consumed, 10);
+        assert_eq!(execution.stopped_routes(), vec!["clingen_ldh_direct"]);
+    }
+
+    #[test]
     fn structured_genomic_identity_is_the_resolution_lookup_key() {
         let request = serde_json::from_value::<crate::entities::variant::VariantArticleRequest>(
             serde_json::json!({
