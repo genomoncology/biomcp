@@ -1200,7 +1200,7 @@ mod tests {
     #[test]
     fn typed_variant_articles_preserves_article_resolution_fields_and_nullability() {
         let text = redact_mcp_json_text(
-            r#"{"items":[{"resolution":{"status":"resolved","basis":"caller_supplied","exhaustive":true,"normalized_aliases":{"protein_changes":[],"coding_changes":["c.1066-6T>G"],"genomic_ids":["NC_000011.10:g.108248927T>G"],"rsids":[]},"provider_validation":{"source":"myvariant","status":"not_found","matched_alias":null,"contradictory_field":null}}}]}"#,
+            r#"{"items":[{"resolution":{"status":"resolved","basis":"caller_supplied","exhaustive":true,"normalized_aliases":{"protein_changes":[],"coding_changes":["c.1066-6T>G"],"genomic_ids":["NC_000011.10:g.108248927T>G"],"rsids":[]},"provider_validation":{"source":"myvariant","status":"not_found","matched_alias":null,"contradictory_field":null}},"canonical_equivalence":{"status":"confirmed","caid":"CA900000000002","exhaustive":true,"complete":true,"applicable_identity_count":2,"observations":[{"basis":"transcript_coding","query":"NM_000051.4:c.1066-6T>G","status":"resolved","caid":"CA900000000002","provider_exhaustive":true,"comparison_complete":true,"source":"clingen_car","request_template_version":"1","car_version":null,"provider_response_sha256":"23930aafbb13d87cda75bba884ca09a706e4112a029c71416fc0b669fedae75d"}],"message":"all independently supplied CAR identities resolved to one CAid"}}]}"#,
         )
         .expect("valid MCP JSON");
         let response: serde_json::Value = serde_json::from_str(&text).expect("response JSON");
@@ -1209,6 +1209,14 @@ mod tests {
         assert_eq!(resolution["provider_validation"]["status"], "not_found");
         assert!(resolution["provider_validation"]["matched_alias"].is_null());
         assert!(resolution["provider_validation"]["contradictory_field"].is_null());
+        let equivalence = &response["items"][0]["canonical_equivalence"];
+        assert_eq!(equivalence["status"], "confirmed");
+        assert_eq!(equivalence["observations"][0]["basis"], "transcript_coding");
+        assert!(equivalence["observations"][0]["car_version"].is_null());
+        assert_eq!(
+            equivalence["observations"][0]["provider_response_sha256"],
+            "23930aafbb13d87cda75bba884ca09a706e4112a029c71416fc0b669fedae75d"
+        );
     }
 
     #[tokio::test]

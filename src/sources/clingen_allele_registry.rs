@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use reqwest::{StatusCode, Url};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 use crate::entities::variant::{
     CarAliasCollection, CarNormalizationBatchResponse, CarNormalizationItem,
@@ -26,6 +27,21 @@ type ProjectedAliases = (
 pub(crate) struct ClinGenAlleleRegistryClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+}
+
+fn response_sha256(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+fn with_response_sha256(
+    mut response: CarNormalizationBatchResponse,
+    bytes: &[u8],
+) -> CarNormalizationBatchResponse {
+    let hash = response_sha256(bytes);
+    for item in &mut response.items {
+        item.provenance.response_sha256 = Some(hash.clone());
+    }
+    response
 }
 
 impl ClinGenAlleleRegistryClient {
@@ -88,7 +104,11 @@ impl ClinGenAlleleRegistryClient {
         )
         .await;
         match bytes {
-            Ok(bytes) => Ok(decode_normalize_response(input, status, version, &bytes)),
+            Ok(bytes) => {
+                let mut item = decode_normalize_response(input, status, version, &bytes);
+                item.provenance.response_sha256 = Some(response_sha256(&bytes));
+                Ok(item)
+            }
             Err(_) => Ok(empty(
                 input,
                 CarNormalizationStatus::Unavailable,
@@ -129,9 +149,15 @@ impl ClinGenAlleleRegistryClient {
             return Ok(unavailable_batch(inputs, version));
         };
         if !status.is_success() {
-            return Ok(unavailable_batch(inputs, version));
+            return Ok(with_response_sha256(
+                unavailable_batch(inputs, version),
+                &bytes,
+            ));
         }
-        Ok(decode_batch_response(inputs, status, version, &bytes))
+        Ok(with_response_sha256(
+            decode_batch_response(inputs, status, version, &bytes),
+            &bytes,
+        ))
     }
 }
 
@@ -227,6 +253,7 @@ fn empty(
         provenance: CarProvenance {
             request_template_version: "1".into(),
             car_version: version,
+            response_sha256: None,
         },
     }
 }
@@ -407,6 +434,31 @@ fn projected_aliases(value: &Value) -> Result<ProjectedAliases, ()> {
 mod tests {
     use super::*;
     use crate::sources::{HttpMethod, RequestBody};
+
+    #[test]
+    fn received_response_hashes_preserve_exact_body_bytes() {
+        assert_eq!(
+            response_sha256(b"CAR response"),
+            "23930aafbb13d87cda75bba884ca09a706e4112a029c71416fc0b669fedae75d"
+        );
+        assert_ne!(
+            response_sha256(b"CAR response"),
+            response_sha256(b"CAR response!")
+        );
+    }
+
+    #[test]
+    fn received_batch_response_hashes_preserve_exact_body_bytes() {
+        let body = br#"[{"@id":"_:CA"}]"#;
+        let response = with_response_sha256(
+            unavailable_batch(&["NM_000546.6:c.215C>G".into()], None),
+            body,
+        );
+        assert_eq!(
+            response.items[0].provenance.response_sha256.as_deref(),
+            Some(response_sha256(body).as_str())
+        );
+    }
 
     #[test]
     fn direct_plan_uses_only_the_projected_read_route() {

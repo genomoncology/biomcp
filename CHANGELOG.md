@@ -24,6 +24,10 @@
 - Changed `variant articles` to union exact annotation, normalized-alias, and
   source-citation routes with per-row provenance, deterministic global ranking,
   one-pass pagination, diagnostic strategies, and explicit incomplete status.
+- Added additive `canonical_equivalence` CAR CAid observations for independently
+  supplied versioned RefSeq transcript/coding and genomic/build identities. These
+  facts preserve MyVariant resolution, do not perform liftover, and retain
+  received-response hashes for audit.
 - Added bounded `variant articles --input <path|->` retrieval for 1-10 structured
   variants, ordered compact rows, opt-in route/work plans, parseable article
   follow-ups, and a typed in-memory MCP `variant_articles` tool.

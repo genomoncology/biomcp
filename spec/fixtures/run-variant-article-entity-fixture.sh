@@ -39,6 +39,14 @@ PALB2_CODING_PMID = "6050004"
 PALB2_TRANSCRIPT_PMID = "6050005"
 PALB2_GENOMIC_PMID = "6050006"
 
+# Opaque fixture-only tokens exercise BioMCP aggregation; they are not registry CAids.
+CAR_IDS = {
+    "NM_000051.4:c.1066-6T>G": "CA900000000002",
+    "NC_000011.10:g.108248927T>G": "CA900000000002",
+    "NM_024675.4:c.3350+5G>A": "CA900000000005",
+    "NC_000016.10:g.23607859C>T": "CA900000000005",
+}
+
 
 def send_json(handler, status, payload):
     body = json.dumps(payload).encode("utf-8")
@@ -69,6 +77,14 @@ class Handler(BaseHTTPRequestHandler):
         params = parse_qs(parsed.query)
         with request_log.open("a", encoding="utf-8") as handle:
             handle.write(f"{parsed.path}?{parsed.query}\n")
+
+        if parsed.path == "/allele":
+            caid = CAR_IDS.get(params.get("hgvs", [""])[0])
+            if caid:
+                send_json(self, 200, {"@id": f"https://fixture.invalid/{caid}"})
+            else:
+                send_json(self, 200, {"@id": "_:CA"})
+            return
 
         if parsed.path == "/v1/query":
             query = params.get("q", [""])[0]
@@ -351,6 +367,7 @@ export BIOMCP_EUROPEPMC_BASE="$base_url"
 export BIOMCP_PUBMED_BASE="$base_url/entrez/eutils"
 export BIOMCP_S2_BASE="$base_url"
 export BIOMCP_LITSENSE2_BASE="$base_url"
+export BIOMCP_CLINGEN_CAR_BASE="$base_url"
 
 case "$scenario" in
   all|braf)

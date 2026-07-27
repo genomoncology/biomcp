@@ -9,8 +9,9 @@ use std::sync::{
 use std::time::Instant;
 
 use crate::entities::variant::{
-    NormalizedVariantAliases, RequestedVariantIdentity, VariantArticleResolution,
-    VariantArticleResolutionContext, VariantProviderValidationStatus, VariantResolutionStatus,
+    CarNormalizationItem, CarNormalizationStatus, NormalizedVariantAliases,
+    RequestedVariantIdentity, VariantArticleResolution, VariantArticleResolutionContext,
+    VariantProviderValidationStatus, VariantResolutionStatus,
 };
 use crate::error::BioMcpError;
 use clap::ValueEnum;
@@ -104,9 +105,38 @@ pub struct VariantArticleRow {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct CanonicalEquivalenceObservation {
+    pub basis: String,
+    pub query: String,
+    pub status: String,
+    pub caid: Option<String>,
+    pub provider_exhaustive: bool,
+    pub comparison_complete: bool,
+    pub source: String,
+    pub request_template_version: String,
+    pub car_version: Option<String>,
+    pub provider_response_sha256: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CanonicalEquivalence {
+    pub status: String,
+    pub caid: Option<String>,
+    pub exhaustive: bool,
+    pub complete: bool,
+    pub applicable_identity_count: usize,
+    pub observations: Vec<CanonicalEquivalenceObservation>,
+    pub message: String,
+    #[serde(skip)]
+    aliases: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleResponse {
     pub requested_variant: RequestedVariantIdentity,
     pub resolution: VariantArticleResolution,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub canonical_equivalence: Option<CanonicalEquivalence>,
     pub strategy: VariantArticleStrategy,
     pub complete: bool,
     pub truncated: bool,
@@ -406,6 +436,8 @@ pub struct VariantArticleBatchItem {
     pub request_id: String,
     pub requested_variant: RequestedVariantIdentity,
     pub resolution: Option<VariantArticleResolution>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub canonical_equivalence: Option<CanonicalEquivalence>,
     pub complete: bool,
     pub truncated: bool,
     pub pagination: VariantArticlePagination,
@@ -549,6 +581,257 @@ fn candidate_with_provenance(
     candidate
 }
 
+fn canonical_equivalence_queries(requested: &RequestedVariantIdentity) -> Vec<(String, String)> {
+    let mut queries = Vec::new();
+    if let (Some(transcript), Some(coding)) = (
+        requested.transcript.as_deref(),
+        requested.coding_change.as_deref(),
+    ) {
+        let query = format!("{transcript}:{coding}");
+        if crate::entities::variant::validate_car_hgvs_input(&query).is_ok() {
+            queries.push(("transcript_coding".to_string(), query));
+        }
+    }
+    if requested.is_authoritative_refseq() {
+        let query = format!(
+            "{}:g.{}{}>{}",
+            requested.genomic_accession.as_deref().unwrap_or_default(),
+            requested.position.unwrap_or_default(),
+            requested.reference.as_deref().unwrap_or_default(),
+            requested.alternate.as_deref().unwrap_or_default(),
+        );
+        if crate::entities::variant::validate_car_hgvs_input(&query).is_ok() {
+            queries.push(("genomic".to_string(), query));
+        }
+    }
+    queries.dedup();
+    queries
+}
+
+fn canonical_observation(
+    basis: String,
+    query: String,
+    item: CarNormalizationItem,
+) -> CanonicalEquivalenceObservation {
+    let comparison_complete = matches!(
+        item.status,
+        CarNormalizationStatus::Resolved | CarNormalizationStatus::NotFound
+    );
+    CanonicalEquivalenceObservation {
+        basis,
+        query,
+        status: match item.status {
+            CarNormalizationStatus::Resolved => "resolved",
+            CarNormalizationStatus::NotFound => "not_found",
+            CarNormalizationStatus::Invalid => "invalid",
+            CarNormalizationStatus::Indeterminate => "indeterminate",
+            CarNormalizationStatus::Unavailable => "unavailable",
+        }
+        .into(),
+        caid: item.caid,
+        provider_exhaustive: item.exhaustive,
+        comparison_complete,
+        source: item.source,
+        request_template_version: item.provenance.request_template_version,
+        car_version: item.provenance.car_version,
+        provider_response_sha256: item.provenance.response_sha256,
+    }
+}
+
+fn canonical_equivalence(
+    observations: Vec<CanonicalEquivalenceObservation>,
+    aliases: Vec<String>,
+) -> CanonicalEquivalence {
+    let count = observations.len();
+    if count == 0 {
+        return CanonicalEquivalence {
+            status: "inapplicable".into(),
+            caid: None,
+            exhaustive: true,
+            complete: true,
+            applicable_identity_count: 0,
+            observations,
+            aliases: Vec::new(),
+            message: "no independently supplied CAR HGVS identities".into(),
+        };
+    }
+    if count == 1 {
+        let observation = &observations[0];
+        return CanonicalEquivalence {
+            status: "single_identity".into(),
+            caid: observation.caid.clone(),
+            exhaustive: observation.provider_exhaustive,
+            complete: observation.comparison_complete,
+            applicable_identity_count: count,
+            observations,
+            aliases: Vec::new(),
+            message: "one independently supplied CAR HGVS identity cannot establish equivalence"
+                .into(),
+        };
+    }
+    let caids = observations
+        .iter()
+        .filter_map(|observation| observation.caid.clone())
+        .collect::<BTreeSet<_>>();
+    let provider_exhaustive = observations
+        .iter()
+        .all(|observation| observation.provider_exhaustive);
+    let complete = observations
+        .iter()
+        .all(|observation| observation.comparison_complete);
+    let statuses = observations
+        .iter()
+        .map(|observation| observation.status.as_str())
+        .collect::<BTreeSet<_>>();
+    let (status, caid, message) = if caids.len() >= 2 {
+        (
+            "contradictory",
+            None,
+            "independently supplied CAR identities resolved to different CAids",
+        )
+    } else if statuses.contains("indeterminate") || statuses.contains("invalid") {
+        (
+            "indeterminate",
+            None,
+            "CAR could not complete the identity comparison",
+        )
+    } else if statuses.contains("unavailable") {
+        (
+            "unavailable",
+            None,
+            "CAR was unavailable before the identity comparison completed",
+        )
+    } else if !provider_exhaustive {
+        (
+            "indeterminate",
+            None,
+            "CAR did not exhaustively resolve every supplied identity",
+        )
+    } else if caids.is_empty() {
+        (
+            "not_found",
+            None,
+            "CAR found no canonical allele for the supplied identities",
+        )
+    } else if statuses.contains("not_found") {
+        (
+            "indeterminate",
+            None,
+            "one supplied identity resolved while another was not found",
+        )
+    } else {
+        (
+            "confirmed",
+            caids.first().cloned(),
+            "all independently supplied CAR identities resolved to one CAid",
+        )
+    };
+    CanonicalEquivalence {
+        status: status.into(),
+        caid,
+        exhaustive: provider_exhaustive
+            && !statuses.contains("invalid")
+            && !statuses.contains("indeterminate")
+            && !statuses.contains("unavailable"),
+        complete,
+        applicable_identity_count: count,
+        observations,
+        aliases: if status == "confirmed" {
+            aliases
+        } else {
+            Vec::new()
+        },
+        message: message.into(),
+    }
+}
+
+async fn resolve_canonical_equivalence(
+    requested: &RequestedVariantIdentity,
+    execution: &VariantArticleExecutionContext,
+) -> CanonicalEquivalence {
+    let queries = canonical_equivalence_queries(requested);
+    let client = crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new().ok();
+    let mut observations = Vec::with_capacity(queries.len());
+    let mut items = Vec::new();
+    for (basis, query) in queries {
+        let item = match (execution.reserve("canonical_equivalence"), client.as_ref()) {
+            (Some(started), Some(client)) => {
+                let item =
+                    client
+                        .normalize(&query)
+                        .await
+                        .unwrap_or_else(|_| CarNormalizationItem {
+                            input: query.clone(),
+                            status: CarNormalizationStatus::Unavailable,
+                            exhaustive: false,
+                            caid: None,
+                            canonical_title: None,
+                            genomic_aliases: Default::default(),
+                            transcript_aliases: Default::default(),
+                            protein_aliases: Default::default(),
+                            external_ids: Default::default(),
+                            source: "clingen_car".into(),
+                            query: query.clone(),
+                            warnings: Vec::new(),
+                            error: None,
+                            provenance: crate::entities::variant::CarProvenance {
+                                request_template_version: "1".into(),
+                                car_version: None,
+                                response_sha256: None,
+                            },
+                        });
+                execution.record(
+                    "canonical_equivalence",
+                    "clingen_car",
+                    started,
+                    if matches!(item.status, CarNormalizationStatus::Unavailable) {
+                        "unavailable"
+                    } else {
+                        "ok"
+                    },
+                    1,
+                );
+                item
+            }
+            _ => CarNormalizationItem {
+                input: query.clone(),
+                status: CarNormalizationStatus::Unavailable,
+                exhaustive: false,
+                caid: None,
+                canonical_title: None,
+                genomic_aliases: Default::default(),
+                transcript_aliases: Default::default(),
+                protein_aliases: Default::default(),
+                external_ids: Default::default(),
+                source: "clingen_car".into(),
+                query: query.clone(),
+                warnings: Vec::new(),
+                error: None,
+                provenance: crate::entities::variant::CarProvenance {
+                    request_template_version: "1".into(),
+                    car_version: None,
+                    response_sha256: None,
+                },
+            },
+        };
+        items.push(item.clone());
+        observations.push(canonical_observation(basis, query, item));
+    }
+    let mut aliases = Vec::new();
+    for item in &items {
+        aliases.extend(item.transcript_aliases.values.iter().cloned());
+    }
+    for item in &items {
+        aliases.extend(item.protein_aliases.values.iter().cloned());
+    }
+    for item in &items {
+        aliases.extend(item.genomic_aliases.values.iter().cloned());
+    }
+    let mut seen = BTreeSet::new();
+    aliases.retain(|alias| seen.insert(alias.clone()));
+    canonical_equivalence(observations, aliases)
+}
+
 fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
     if context.requested.is_authoritative_refseq() {
         let mut aliases = BTreeSet::new();
@@ -630,6 +913,26 @@ fn exact_aliases(context: &VariantArticleResolutionContext) -> (Vec<String>, boo
             .take(MAX_EXACT_ALIASES.saturating_sub(ordered.len())),
     );
     (ordered, truncated)
+}
+
+fn exact_aliases_with_equivalence(
+    context: &VariantArticleResolutionContext,
+    equivalence: &CanonicalEquivalence,
+) -> (Vec<String>, bool) {
+    let (mut aliases, truncated) = exact_aliases(context);
+    if equivalence.status != "confirmed" || aliases.len() >= MAX_EXACT_ALIASES {
+        return (aliases, truncated);
+    }
+    for alias in &equivalence.aliases {
+        if !aliases.contains(alias) && aliases.len() < MAX_EXACT_ALIASES {
+            aliases.push(alias.clone());
+        }
+    }
+    let aliases_truncated = equivalence
+        .aliases
+        .iter()
+        .any(|alias| !aliases.contains(alias));
+    (aliases, truncated || aliases_truncated)
 }
 
 fn combined_normalized_aliases(
@@ -884,6 +1187,7 @@ async fn strict_provider_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
+    equivalence: &CanonicalEquivalence,
     execution: &VariantArticleExecutionContext,
 ) -> (
     Vec<ArticleCandidate>,
@@ -892,7 +1196,8 @@ async fn strict_provider_candidates(
     Vec<VariantArticleSourceStatus>,
 ) {
     let filters = article_filters();
-    let plans = provider_variant_query_plan(input, context, strategy);
+    let plans =
+        provider_variant_query_plan_with_aliases(input, context, strategy, &equivalence.aliases);
     let mut candidates = Vec::new();
     let mut statuses = Vec::new();
     let mut incomplete = false;
@@ -1009,6 +1314,7 @@ async fn strict_provider_candidates(
 
 async fn lexical_candidates(
     context: &VariantArticleResolutionContext,
+    equivalence: &CanonicalEquivalence,
     execution: &VariantArticleExecutionContext,
 ) -> (
     Vec<ArticleCandidate>,
@@ -1016,7 +1322,7 @@ async fn lexical_candidates(
     bool,
     Vec<VariantArticleSourceStatus>,
 ) {
-    let (aliases, alias_budget_stopped) = exact_aliases(context);
+    let (aliases, alias_budget_stopped) = exact_aliases_with_equivalence(context, equivalence);
     federated_alias_candidates(aliases, alias_budget_stopped, "exact_lexical", execution).await
 }
 
@@ -1299,10 +1605,11 @@ fn plan_queries(
     }
 }
 
-fn provider_variant_query_plan(
+fn provider_variant_query_plan_with_aliases(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
+    canonical_aliases: &[String],
 ) -> Vec<ProviderVariantQueryPlan> {
     let gene = context
         .requested
@@ -1343,9 +1650,20 @@ fn provider_variant_query_plan(
         aliases.insert(format!("{accession}:g.{position}{reference}>{alternate}"));
     }
     aliases.retain(|alias| !alias.is_empty());
+    let aliases = if canonical_aliases.is_empty() {
+        aliases.into_iter().take(MAX_EXACT_ALIASES).collect()
+    } else {
+        let (mut aliases, _) = exact_aliases(context);
+        for alias in canonical_aliases {
+            if !aliases.contains(alias) && aliases.len() < MAX_EXACT_ALIASES {
+                aliases.push(alias.clone());
+            }
+        }
+        aliases
+    };
     let mut queries = Vec::new();
     if strategy != VariantArticleStrategy::Annotation && !gene.is_empty() {
-        for alias in aliases.into_iter().take(MAX_EXACT_ALIASES) {
+        for alias in aliases {
             let query_alias = format!("{gene} {alias}");
             queries.extend([
                 ProviderVariantQueryPlan {
@@ -1391,14 +1709,19 @@ fn provider_variant_query_plan(
     queries
 }
 
+struct VariantArticleDebugPlanState {
+    counts: VariantArticleCountsPlan,
+    truncated: bool,
+    next: VariantArticleNextPlan,
+}
+
 fn build_debug_plan(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
+    canonical_aliases: &[String],
     execution: &VariantArticleExecutionContext,
-    counts: VariantArticleCountsPlan,
-    truncated: bool,
-    next: VariantArticleNextPlan,
+    state: VariantArticleDebugPlanState,
 ) -> VariantArticleDebugPlan {
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
     let contradictory = matches!(
@@ -1486,7 +1809,8 @@ fn build_debug_plan(
         .collect::<Vec<_>>();
     let item_work = execution.item_work();
     let request_work = execution.request_work();
-    let mut provider_queries = provider_variant_query_plan(input, context, strategy);
+    let mut provider_queries =
+        provider_variant_query_plan_with_aliases(input, context, strategy, canonical_aliases);
     for plan in &mut provider_queries {
         if plan.provider == "pubtator"
             && plan.route == "strict"
@@ -1499,7 +1823,7 @@ fn build_debug_plan(
         normalized_aliases: context.resolution.normalized_aliases.clone(),
         provider_queries,
         routes,
-        counts,
+        counts: state.counts,
         ranking: VariantArticleRankingPlan {
             method: "exact route union with deterministic native-position ranking",
             inputs: ["exactness", "route_source_position", "stable_identifier"],
@@ -1508,9 +1832,9 @@ fn build_debug_plan(
             item: item_work,
             request: request_work,
         },
-        truncated,
+        truncated: state.truncated,
         stopped_routes: execution.stopped_routes(),
-        next,
+        next: state.next,
         verification: None,
     }
 }
@@ -1588,6 +1912,7 @@ async fn search_variant_articles_identity(
         crate::entities::variant::resolve_article_variant_identity(requested, input, &execution)
             .await?;
     context.resolution.normalized_aliases = combined_normalized_aliases(&context);
+    let canonical_equivalence = resolve_canonical_equivalence(&context.requested, &execution).await;
     if !context.available {
         let debug_plan = include_debug_plan.then(|| {
             let mut plan =
@@ -1600,6 +1925,7 @@ async fn search_variant_articles_identity(
             response: VariantArticleResponse {
                 requested_variant: context.requested,
                 resolution: context.resolution,
+                canonical_equivalence: Some(canonical_equivalence),
                 strategy,
                 complete: false,
                 truncated: true,
@@ -1665,8 +1991,14 @@ async fn search_variant_articles_identity(
                     context.resolution.provider_validation.status,
                     VariantProviderValidationStatus::Contradictory
                 ) {
-                    let (rows, incomplete, succeeded, route_statuses) =
-                        strict_provider_candidates(input, &context, strategy, &execution).await;
+                    let (rows, incomplete, succeeded, route_statuses) = strict_provider_candidates(
+                        input,
+                        &context,
+                        strategy,
+                        &canonical_equivalence,
+                        &execution,
+                    )
+                    .await;
                     candidates.extend(rows);
                     statuses.extend(route_statuses);
                     succeeded_routes += usize::from(succeeded);
@@ -1717,8 +2049,14 @@ async fn search_variant_articles_identity(
             strategy,
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
-            let (rows, incomplete, succeeded, route_statuses) =
-                strict_provider_candidates(input, &context, strategy, &execution).await;
+            let (rows, incomplete, succeeded, route_statuses) = strict_provider_candidates(
+                input,
+                &context,
+                strategy,
+                &canonical_equivalence,
+                &execution,
+            )
+            .await;
             candidates.extend(rows);
             statuses.extend(route_statuses);
             succeeded_routes += usize::from(succeeded);
@@ -1760,7 +2098,7 @@ async fn search_variant_articles_identity(
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
             let (rows, incomplete, succeeded, route_statuses) =
-                lexical_candidates(&context, &execution).await;
+                lexical_candidates(&context, &canonical_equivalence, &execution).await;
             candidates.extend(rows);
             statuses.extend(route_statuses);
             succeeded_routes += usize::from(succeeded);
@@ -1922,8 +2260,11 @@ async fn search_variant_articles_identity(
         VariantProviderValidationStatus::Indeterminate
             | VariantProviderValidationStatus::Unavailable
     );
-    let complete =
-        failed_routes == 0 && !budget_stopped && !provider_incomplete && !verification_incomplete;
+    let complete = failed_routes == 0
+        && !budget_stopped
+        && !provider_incomplete
+        && !verification_incomplete
+        && (canonical_equivalence.applicable_identity_count < 2 || canonical_equivalence.complete);
     let truncated = !complete || offset > 0 || has_more;
     let rows = visible_candidates
         .into_iter()
@@ -1977,16 +2318,19 @@ async fn search_variant_articles_identity(
             input,
             &context,
             strategy,
+            &canonical_equivalence.aliases,
             &execution,
-            VariantArticleCountsPlan {
-                pre_dedup,
-                post_dedup: total_candidates,
-                returned: rows.len(),
-            },
-            truncated,
-            VariantArticleNextPlan {
-                offset: offset.saturating_add(rows.len()),
-                cursor: None,
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup,
+                    post_dedup: total_candidates,
+                    returned: rows.len(),
+                },
+                truncated,
+                next: VariantArticleNextPlan {
+                    offset: offset.saturating_add(rows.len()),
+                    cursor: None,
+                },
             },
         );
         if verification.verify_identity {
@@ -2003,6 +2347,7 @@ async fn search_variant_articles_identity(
         response: VariantArticleResponse {
             requested_variant: context.requested,
             resolution: context.resolution,
+            canonical_equivalence: Some(canonical_equivalence),
             strategy,
             complete,
             truncated,
@@ -2165,6 +2510,7 @@ fn empty_item(
         request_id: request.request_id,
         requested_variant: request.requested,
         resolution: None,
+        canonical_equivalence: None,
         complete: false,
         truncated: false,
         pagination: VariantArticlePagination {
@@ -2226,6 +2572,7 @@ async fn execute_batch_item(
         request_id: request.request_id,
         requested_variant: response.requested_variant,
         resolution: Some(response.resolution),
+        canonical_equivalence: response.canonical_equivalence,
         complete: response.complete && error.is_none(),
         truncated: response.truncated,
         pagination: response.pagination,
@@ -2464,10 +2811,18 @@ mod tests {
         let mut right = left.clone();
         right.requested.coding_change = Some("c.2428A>T".into());
 
-        let left_query =
-            provider_variant_query_plan("BRCA1 c.788G>T", &left, VariantArticleStrategy::Union);
-        let right_query =
-            provider_variant_query_plan("BRCA1 c.2428A>T", &right, VariantArticleStrategy::Union);
+        let left_query = provider_variant_query_plan_with_aliases(
+            "BRCA1 c.788G>T",
+            &left,
+            VariantArticleStrategy::Union,
+            &[],
+        );
+        let right_query = provider_variant_query_plan_with_aliases(
+            "BRCA1 c.2428A>T",
+            &right,
+            VariantArticleStrategy::Union,
+            &[],
+        );
 
         assert_eq!(left_query.len(), 5);
         assert_eq!(
@@ -2509,10 +2864,13 @@ mod tests {
                 "BRAF p.V600E",
                 context,
                 VariantArticleStrategy::Union,
+                &[],
                 &execution,
-                counts.clone(),
-                false,
-                next.clone(),
+                VariantArticleDebugPlanState {
+                    counts: counts.clone(),
+                    truncated: false,
+                    next: next.clone(),
+                },
             );
             assert!(plan.routes.iter().any(|route| route.route == "strict"));
         }
@@ -2593,16 +2951,19 @@ mod tests {
             "NC_000011.10:g.108248927T>G",
             &context,
             VariantArticleStrategy::Annotation,
+            &[],
             &VariantArticleExecutionContext::single(),
-            VariantArticleCountsPlan {
-                pre_dedup: 0,
-                post_dedup: 0,
-                returned: 0,
-            },
-            false,
-            VariantArticleNextPlan {
-                offset: 0,
-                cursor: None,
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: 0,
+                    post_dedup: 0,
+                    returned: 0,
+                },
+                truncated: false,
+                next: VariantArticleNextPlan {
+                    offset: 0,
+                    cursor: None,
+                },
             },
         );
         assert!(plan.routes.is_empty());
@@ -2626,9 +2987,14 @@ mod tests {
 
         assert!(exact_aliases(&context).0.contains(&"ATM M16I".to_string()));
         assert!(
-            provider_variant_query_plan("ATM p.Met16Ile", &context, VariantArticleStrategy::Union)
-                .iter()
-                .any(|plan| plan.query_alias == "ATM M16I")
+            provider_variant_query_plan_with_aliases(
+                "ATM p.Met16Ile",
+                &context,
+                VariantArticleStrategy::Union,
+                &[],
+            )
+            .iter()
+            .any(|plan| plan.query_alias == "ATM M16I")
         );
 
         context.requested.protein_change = Some("p.?".into());
@@ -2639,9 +3005,14 @@ mod tests {
                 .any(|alias| alias.contains("p.?"))
         );
         assert!(
-            !provider_variant_query_plan("ATM p.?", &context, VariantArticleStrategy::Union)
-                .iter()
-                .any(|plan| plan.route == "strict" && plan.query_alias.contains("p.?"))
+            !provider_variant_query_plan_with_aliases(
+                "ATM p.?",
+                &context,
+                VariantArticleStrategy::Union,
+                &[],
+            )
+            .iter()
+            .any(|plan| plan.route == "strict" && plan.query_alias.contains("p.?"))
         );
     }
 
@@ -2940,16 +3311,19 @@ mod tests {
             "BRAF p.V600E",
             &context,
             VariantArticleStrategy::Union,
+            &[],
             &execution,
-            VariantArticleCountsPlan {
-                pre_dedup: 0,
-                post_dedup: 0,
-                returned: 0,
-            },
-            true,
-            VariantArticleNextPlan {
-                offset: 0,
-                cursor: None,
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: 0,
+                    post_dedup: 0,
+                    returned: 0,
+                },
+                truncated: true,
+                next: VariantArticleNextPlan {
+                    offset: 0,
+                    cursor: None,
+                },
             },
         );
         let provider = plan
@@ -2987,6 +3361,208 @@ mod tests {
                 "forbidden field {forbidden}"
             );
         }
+    }
+
+    fn equivalence_observation(
+        status: &str,
+        caid: Option<&str>,
+        exhaustive: bool,
+    ) -> CanonicalEquivalenceObservation {
+        CanonicalEquivalenceObservation {
+            basis: "genomic".into(),
+            query: "NC_000017.11:g.1A>G".into(),
+            status: status.into(),
+            caid: caid.map(str::to_string),
+            provider_exhaustive: exhaustive,
+            comparison_complete: matches!(status, "resolved" | "not_found"),
+            source: "clingen_car".into(),
+            request_template_version: "1".into(),
+            car_version: None,
+            provider_response_sha256: None,
+        }
+    }
+
+    #[test]
+    fn canonical_aliases_fill_only_unused_strict_alias_slots() {
+        let mut context = resolved_context();
+        context.requested = RequestedVariantIdentity {
+            gene: Some("ATM".into()),
+            coding_change: Some("c.1066-6T>G".into()),
+            transcript: Some("NM_000051.4".into()),
+            genomic_accession: Some("NC_000011.10".into()),
+            genome_build: Some("GRCh38".into()),
+            position: Some(108248927),
+            reference: Some("T".into()),
+            alternate: Some("G".into()),
+            ..Default::default()
+        };
+        let aliases = (0..10)
+            .map(|index| format!("alias-{index}"))
+            .collect::<Vec<_>>();
+        let plan = provider_variant_query_plan_with_aliases(
+            "ATM c.1066-6T>G",
+            &context,
+            VariantArticleStrategy::Union,
+            &aliases,
+        );
+        let sent = plan
+            .iter()
+            .filter(|query| query.route == "strict" && query.provider == "pubmed")
+            .map(|query| query.query_alias.clone())
+            .collect::<Vec<_>>();
+        assert_eq!(sent.len(), MAX_EXACT_ALIASES);
+        assert_eq!(
+            &sent[..3],
+            [
+                "ATM ATM c.1066-6T>G",
+                "ATM NC_000011.10:g.108248927T>G",
+                "ATM NM_000051.4:c.1066-6T>G",
+            ]
+        );
+        assert_eq!(sent[3], "ATM alias-0");
+
+        let debug_plan = build_debug_plan(
+            "ATM c.1066-6T>G",
+            &context,
+            VariantArticleStrategy::Union,
+            &aliases,
+            &VariantArticleExecutionContext::single(),
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: 0,
+                    post_dedup: 0,
+                    returned: 0,
+                },
+                truncated: false,
+                next: VariantArticleNextPlan {
+                    offset: 0,
+                    cursor: None,
+                },
+            },
+        );
+        assert!(debug_plan.provider_queries.iter().any(|query| {
+            query.route == "strict"
+                && query.provider == "pubmed"
+                && query.query_alias == "ATM alias-0"
+        }));
+    }
+
+    #[test]
+    fn canonical_equivalence_aggregation_uses_set_based_state_precedence() {
+        let inapplicable = canonical_equivalence(Vec::new(), Vec::new());
+        assert_eq!(inapplicable.status, "inapplicable");
+        assert!(inapplicable.complete);
+
+        let single = canonical_equivalence(
+            vec![equivalence_observation("unavailable", None, false)],
+            Vec::new(),
+        );
+        assert_eq!(single.status, "single_identity");
+        assert!(!single.complete);
+
+        let confirmed = canonical_equivalence(
+            vec![
+                equivalence_observation("resolved", Some("CA1"), true),
+                equivalence_observation("resolved", Some("CA1"), true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(confirmed.status, "confirmed");
+        assert!(confirmed.complete);
+
+        let non_exhaustive_resolution = canonical_equivalence(
+            vec![
+                equivalence_observation("resolved", Some("CA1"), true),
+                equivalence_observation("resolved", Some("CA1"), false),
+            ],
+            vec!["NM_000007.14:c.1A>G".into()],
+        );
+        assert_eq!(non_exhaustive_resolution.status, "indeterminate");
+        assert!(!non_exhaustive_resolution.exhaustive);
+        assert!(non_exhaustive_resolution.complete);
+        assert!(non_exhaustive_resolution.aliases.is_empty());
+
+        let contradictory = canonical_equivalence(
+            vec![
+                equivalence_observation("unavailable", None, false),
+                equivalence_observation("resolved", Some("CA1"), true),
+                equivalence_observation("resolved", Some("CA2"), true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(contradictory.status, "contradictory");
+        assert!(!contradictory.complete);
+
+        let indeterminate = canonical_equivalence(
+            vec![
+                equivalence_observation("not_found", None, true),
+                equivalence_observation("resolved", Some("CA1"), true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(indeterminate.status, "indeterminate");
+        assert!(indeterminate.complete);
+
+        let not_found = canonical_equivalence(
+            vec![
+                equivalence_observation("not_found", None, true),
+                equivalence_observation("not_found", None, true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(not_found.status, "not_found");
+        assert!(not_found.complete);
+
+        let unavailable = canonical_equivalence(
+            vec![
+                equivalence_observation("unavailable", None, false),
+                equivalence_observation("not_found", None, true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(unavailable.status, "unavailable");
+        assert!(!unavailable.complete);
+
+        let provider_indeterminate = canonical_equivalence(
+            vec![
+                equivalence_observation("indeterminate", None, false),
+                equivalence_observation("not_found", None, true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(provider_indeterminate.status, "indeterminate");
+        assert!(!provider_indeterminate.complete);
+
+        let invalid = canonical_equivalence(
+            vec![
+                equivalence_observation("invalid", None, true),
+                equivalence_observation("not_found", None, true),
+            ],
+            Vec::new(),
+        );
+        assert_eq!(invalid.status, "indeterminate");
+        assert!(!invalid.exhaustive);
+        assert!(!invalid.complete);
+    }
+
+    #[test]
+    fn canonical_equivalence_queries_require_explicit_versioned_refseq_inputs() {
+        let requested = RequestedVariantIdentity {
+            transcript: Some("NM_000051.4".into()),
+            coding_change: Some("c.1066-6T>G".into()),
+            genomic_accession: Some("NC_000011.10".into()),
+            genome_build: Some("GRCh38".into()),
+            position: Some(108248927),
+            reference: Some("T".into()),
+            alternate: Some("G".into()),
+            ..Default::default()
+        };
+        assert_eq!(canonical_equivalence_queries(&requested).len(), 2);
+        let only_gene = RequestedVariantIdentity {
+            gene: Some("ATM".into()),
+            ..Default::default()
+        };
+        assert!(canonical_equivalence_queries(&only_gene).is_empty());
     }
 
     #[test]

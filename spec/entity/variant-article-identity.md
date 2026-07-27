@@ -35,13 +35,16 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
   },
   "conflicting_observation": true,
   "outage_is_incomplete": true,
+  "canonical_equivalence_is_additive": true,
   "confirmed_page_filters_before_limit": true,
   "audit_versions_and_canonical_subsets": true
 }
 ```
 
 The outage response is not a completed negative search: it remains incomplete,
-truncated, and without a total. The report also requires versioned verifier and
+truncated, and without a total. The two eligible RefSeq requests also retain
+MyVariant `not_found` while exposing a complete, auditable CAR sibling fact; the
+fixture's opaque CAid tokens test local aggregation, not registry truth. The report also requires versioned verifier and
 provider-template facts plus canonical hashes of the clinically relevant
 response and captured-content subsets, so citation ordering or count changes do
 not become release criteria.

@@ -257,7 +257,11 @@ observed evidence. Identity observations retain their source, locator, linked
 gene, observed alias, and content hash; debug artifacts are post-response audit
 facts rather than retrieval-cache inputs. MCP callers use the typed `variant_articles`
 MCP tool in memory with equivalent `verify_identity` and `confirmed_only`
-controls.
+controls. When an item independently supplies a versioned RefSeq transcript/coding
+identity and a complete versioned RefSeq genomic identity with a build, its
+`canonical_equivalence` sibling reports additive CAR CAid agreement. It neither
+changes MyVariant resolution nor performs liftover; confirmed CAR aliases remain
+retrieval provenance only.
 
 Assembly-aware items accept either `genomic: "NC_...:g...."` plus `build`, or
 `accession`, `position`, `ref`, and `alt` plus `build`; `GRCh37` or `GRCh38` is
