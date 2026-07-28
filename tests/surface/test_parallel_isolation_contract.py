@@ -846,6 +846,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/variant.md",
     "spec/entity/clingen-erepo.md",
     "spec/entity/clingen-cspec.md",
+    "spec/entity/clingen-source-composition.md",
     "spec/entity/variant-article-identity.md",
     "spec/surface/mcp.md",
     "spec/surface/discover-input.md",

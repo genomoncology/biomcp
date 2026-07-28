@@ -112,12 +112,16 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get, variant_articles
+cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'ClinGen typed tool: variant_normalize_car
+ClinGen typed tool: variant_erepo
+ClinGen typed tool: gene_cspec
+ClinGen typed tool: variant_articles
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search schema includes entity enum and bounded limit
 get schema includes entity and sections enum
 search and get schemas include author entity
+ClinGen typed tools keep CAR bounds, ERepo selectors, and CSpec capture-only schema
 variant_articles schema includes identity verification controls
 indexing'
 ```

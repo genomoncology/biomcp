@@ -167,7 +167,15 @@ async fn print_typed_tool_surface(
         .iter()
         .map(|tool| tool.name.as_ref())
         .collect::<Vec<_>>();
-    for required in ["biomcp", "search", "get", "variant_articles"] {
+    for required in [
+        "biomcp",
+        "search",
+        "get",
+        "variant_normalize_car",
+        "variant_erepo",
+        "gene_cspec",
+        "variant_articles",
+    ] {
         if !names.contains(&required) {
             anyhow::bail!("typed MCP surface missing tool: {required}");
         }
@@ -185,6 +193,21 @@ async fn print_typed_tool_surface(
         .iter()
         .find(|tool| tool.name == "get")
         .expect("get tool checked above");
+    let variant_normalize_car = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "variant_normalize_car")
+        .expect("variant_normalize_car tool checked above");
+    let variant_erepo = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "variant_erepo")
+        .expect("variant_erepo tool checked above");
+    let gene_cspec = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "gene_cspec")
+        .expect("gene_cspec tool checked above");
     let variant_articles = tools
         .tools
         .iter()
@@ -192,6 +215,9 @@ async fn print_typed_tool_surface(
         .expect("variant_articles tool checked above");
     let search_schema = tool_schema(search);
     let get_schema = tool_schema(get);
+    let variant_normalize_car_schema = tool_schema(variant_normalize_car);
+    let variant_erepo_schema = tool_schema(variant_erepo);
+    let gene_cspec_schema = tool_schema(gene_cspec);
     let variant_articles_schema = tool_schema(variant_articles);
 
     if !json_property_contains(&search_schema, "entity", "pathway") {
@@ -215,18 +241,43 @@ async fn print_typed_tool_surface(
     if !json_property_contains(&get_schema, "sections", "indexing") {
         anyhow::bail!("get sections schema missing indexing enum");
     }
+    for bound in ["1", "50"] {
+        if !json_property_contains(&variant_normalize_car_schema, "inputs", bound) {
+            anyhow::bail!("variant_normalize_car schema missing {bound} input bound");
+        }
+    }
+    for selector in ["caid", "caids"] {
+        if !json_property_contains(&variant_erepo_schema, selector, "string") {
+            anyhow::bail!("variant_erepo schema missing {selector} selector");
+        }
+    }
+    if !json_property_contains(&gene_cspec_schema, "capture_id", "string") {
+        anyhow::bail!("gene_cspec schema missing capture_id");
+    }
+    for bound in ["1", "50"] {
+        if !json_property_contains(&gene_cspec_schema, "limit", bound) {
+            anyhow::bail!("gene_cspec schema missing {bound} paging bound");
+        }
+    }
+    if json_contains(&gene_cspec_schema, "raw_bytes") {
+        anyhow::bail!("gene_cspec schema must not expose CLI-only raw bytes");
+    }
     for control in ["verify_identity", "confirmed_only"] {
         if !json_property_contains(&variant_articles_schema, control, "boolean") {
             anyhow::bail!("variant_articles schema missing {control} boolean");
         }
     }
 
-    println!("MCP typed tools: biomcp, search, get, variant_articles");
+    println!("ClinGen typed tool: variant_normalize_car");
+    println!("ClinGen typed tool: variant_erepo");
+    println!("ClinGen typed tool: gene_cspec");
+    println!("ClinGen typed tool: variant_articles");
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
     println!("search schema includes entity enum and bounded limit");
     println!("search and get schemas include author entity");
     println!("get schema includes entity and sections enum");
+    println!("ClinGen typed tools keep CAR bounds, ERepo selectors, and CSpec capture-only schema");
     println!("variant_articles schema includes identity verification controls");
     println!("indexing");
     Ok(())
