@@ -39,5 +39,5 @@ fixture will report that public consequence after it composes the source-owned
 fixtures; its detailed provider payloads remain owned by those source contracts.
 
 ```bash
-bash ../fixtures/run-variant-article-identity-fixture.sh ../.. | mustmatch like '"clingen_source_namespaces_are_isolated": true'
+bash ../fixtures/run-clingen-source-composition-fixture.sh ../.. | mustmatch like '"clingen_source_namespaces_are_isolated": true'
 ```
