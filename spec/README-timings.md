@@ -62,6 +62,7 @@ locally; the outer routine keeps and executes the caller-provided artifact.
 | `spec/entity/gene.md` | gene search/get canary for identity, tissue-expression context, druggability, and funding/diagnostics pivots |
 | `spec/entity/variant.md` | variant canary for gene-scoped search, protein-filter normalization, residue aliases, and clinical/population context |
 | `spec/entity/variant-article-identity.md` | frozen G5 v2 release gate for verified variant-article positives, collision rejection, pagination, outage truthfulness, and audit facts |
+| `spec/entity/clingen-source-composition.md` | routine offline composition gate for CAR, CSpec, ERepo, and LDH source isolation |
 | `spec/entity/article.md` | article canary for typed vs keyword search, source-aware result structure, annotations, and fulltext fallback |
 | `spec/entity/disease-survival-fixture.md` | deterministic disease-survival canary for MyDisease grounding, SEER fixture rendering, and bounded CLI exit |
 | `spec/entity/trial.md` | trial canary for condition/status search, alias normalization, age-count transparency, and eligibility/location detail |

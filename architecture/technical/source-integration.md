@@ -29,6 +29,11 @@ source's transport, authentication, and payload shape.
 This prevents duplicated auth handling, base URL overrides, rate limiting, and
 error behavior for the same provider.
 
+The ClinGen source ownership map is: CAR normalizes explicit variant input;
+CSpec captures selected source documents; ERepo returns expert assertions; and
+LDH observes requested article identity only. These source results keep their
+own source status, version, cache/capture namespace, and error attribution.
+
 For variant-article CAR agreement, article orchestration reuses the existing
 ClinGen Allele Registry client and its shared work budget. Received CAR bodies
 retain a SHA-256 audit fact only after receipt; request-template and equivalence
