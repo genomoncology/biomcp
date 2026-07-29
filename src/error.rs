@@ -671,6 +671,34 @@ mod tests {
     }
 
     #[test]
+    fn clingen_provider_labels_and_legacy_aliases_remain_distinct() {
+        let providers = [
+            (
+                SourceProvider::CLINGEN_CAR,
+                "clingen_car",
+                "ClinGen Allele Registry",
+            ),
+            (
+                SourceProvider::CLINGEN_CSPEC,
+                "clingen_cspec",
+                "ClinGen CSpec",
+            ),
+            (
+                SourceProvider::CLINGEN_EREPO,
+                "clingen_erepo",
+                "ClinGen ERepo",
+            ),
+            (SourceProvider::CLINGEN_LDH, "clingen_ldh", "ClinGen LDH"),
+        ];
+
+        for (provider, legacy, label) in providers {
+            assert_eq!(provider.label(), label);
+            assert_eq!(SourceProvider::from_legacy(legacy), Some(provider));
+            assert_eq!(SourceProvider::from_legacy(label), Some(provider));
+        }
+    }
+
+    #[test]
     fn source_policy_inventory_is_bounded_and_actionable() {
         for provider in SourceProvider::ALL {
             let label = provider.label();

@@ -101,33 +101,11 @@ fn json_refs_contain(root: &serde_json::Value, value: &serde_json::Value, needle
     }
 }
 
-fn json_property_contains(value: &serde_json::Value, property: &str, needle: &str) -> bool {
-    fn visit(
-        root: &serde_json::Value,
-        value: &serde_json::Value,
-        property: &str,
-        needle: &str,
-    ) -> bool {
-        match value {
-            serde_json::Value::Object(map) => {
-                map.get(property).is_some_and(|property_value| {
-                    json_contains(property_value, needle)
-                        || json_refs_contain(root, property_value, needle)
-                }) || map
-                    .values()
-                    .any(|child| visit(root, child, property, needle))
-            }
-            serde_json::Value::Array(items) => items
-                .iter()
-                .any(|child| visit(root, child, property, needle)),
-            serde_json::Value::String(_)
-            | serde_json::Value::Number(_)
-            | serde_json::Value::Bool(_)
-            | serde_json::Value::Null => false,
-        }
-    }
-
-    visit(value, value, property, needle)
+fn named_root_property_contains(schema: &serde_json::Value, property: &str, needle: &str) -> bool {
+    let Some(value) = schema.pointer(&format!("/properties/{property}")) else {
+        return false;
+    };
+    json_contains(value, needle) || json_refs_contain(schema, value, needle)
 }
 
 fn assert_tool_metadata(tools: &[Tool]) -> anyhow::Result<()> {
@@ -167,7 +145,15 @@ async fn print_typed_tool_surface(
         .iter()
         .map(|tool| tool.name.as_ref())
         .collect::<Vec<_>>();
-    for required in ["biomcp", "search", "get", "variant_articles"] {
+    for required in [
+        "biomcp",
+        "search",
+        "get",
+        "variant_normalize_car",
+        "variant_erepo",
+        "gene_cspec",
+        "variant_articles",
+    ] {
         if !names.contains(&required) {
             anyhow::bail!("typed MCP surface missing tool: {required}");
         }
@@ -185,6 +171,21 @@ async fn print_typed_tool_surface(
         .iter()
         .find(|tool| tool.name == "get")
         .expect("get tool checked above");
+    let variant_normalize_car = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "variant_normalize_car")
+        .expect("variant_normalize_car tool checked above");
+    let variant_erepo = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "variant_erepo")
+        .expect("variant_erepo tool checked above");
+    let gene_cspec = tools
+        .tools
+        .iter()
+        .find(|tool| tool.name == "gene_cspec")
+        .expect("gene_cspec tool checked above");
     let variant_articles = tools
         .tools
         .iter()
@@ -192,36 +193,62 @@ async fn print_typed_tool_surface(
         .expect("variant_articles tool checked above");
     let search_schema = tool_schema(search);
     let get_schema = tool_schema(get);
+    let variant_normalize_car_schema = tool_schema(variant_normalize_car);
+    let variant_erepo_schema = tool_schema(variant_erepo);
+    let gene_cspec_schema = tool_schema(gene_cspec);
     let variant_articles_schema = tool_schema(variant_articles);
 
-    if !json_property_contains(&search_schema, "entity", "pathway") {
+    if !named_root_property_contains(&search_schema, "entity", "pathway") {
         anyhow::bail!("search entity schema missing pathway enum");
     }
-    if !json_property_contains(&search_schema, "entity", "author") {
+    if !named_root_property_contains(&search_schema, "entity", "author") {
         anyhow::bail!("search entity schema missing author enum");
     }
-    if !json_property_contains(&get_schema, "entity", "author") {
+    if !named_root_property_contains(&get_schema, "entity", "author") {
         anyhow::bail!("get entity schema missing author enum");
     }
-    if !json_property_contains(&search_schema, "limit", "25") {
+    if !named_root_property_contains(&search_schema, "limit", "25") {
         anyhow::bail!("search limit schema missing 25 bound");
     }
-    if !json_property_contains(&get_schema, "entity", "gene") {
+    if !named_root_property_contains(&get_schema, "entity", "gene") {
         anyhow::bail!("get entity schema missing gene enum");
     }
-    if !json_property_contains(&get_schema, "sections", "pathways") {
+    if !named_root_property_contains(&get_schema, "sections", "pathways") {
         anyhow::bail!("get sections schema missing pathways enum");
     }
-    if !json_property_contains(&get_schema, "sections", "indexing") {
+    if !named_root_property_contains(&get_schema, "sections", "indexing") {
         anyhow::bail!("get sections schema missing indexing enum");
     }
+    for bound in ["1", "50"] {
+        if !named_root_property_contains(&variant_normalize_car_schema, "inputs", bound) {
+            anyhow::bail!("variant_normalize_car schema missing {bound} input bound");
+        }
+        if !named_root_property_contains(&gene_cspec_schema, "limit", bound) {
+            anyhow::bail!("gene_cspec schema missing {bound} paging bound");
+        }
+    }
+    for selector in ["caid", "caids"] {
+        if !named_root_property_contains(&variant_erepo_schema, selector, "string") {
+            anyhow::bail!("variant_erepo schema missing {selector} selector");
+        }
+    }
+    if !named_root_property_contains(&gene_cspec_schema, "capture_id", "string") {
+        anyhow::bail!("gene_cspec schema missing capture_id");
+    }
+    if gene_cspec_schema.pointer("/properties/raw_bytes").is_some() {
+        anyhow::bail!("gene_cspec schema must not expose CLI-only raw bytes");
+    }
     for control in ["verify_identity", "confirmed_only"] {
-        if !json_property_contains(&variant_articles_schema, control, "boolean") {
+        if !named_root_property_contains(&variant_articles_schema, control, "boolean") {
             anyhow::bail!("variant_articles schema missing {control} boolean");
         }
     }
 
     println!("MCP typed tools: biomcp, search, get, variant_articles");
+    println!(
+        "ClinGen typed tools: variant_normalize_car, variant_erepo, gene_cspec, variant_articles"
+    );
+    println!("ClinGen schemas validate their named root properties");
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
     println!("search schema includes entity enum and bounded limit");
