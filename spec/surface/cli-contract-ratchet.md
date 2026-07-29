@@ -287,8 +287,8 @@ biomcp gene --help | mustmatch like 'cspec
 ClinGen Criteria Specification Registry source documents'
 biomcp variant normalize --help | mustmatch like 'CAR is available as car
 biomcp variant normalize car'
-biomcp variant articles --help | mustmatch like 'Verify article identity from captured provider evidence
-The default union combines exact PubTator annotations'
+biomcp variant articles --help | mustmatch like '--verify-identity
+[default: union]'
 ```
 
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
