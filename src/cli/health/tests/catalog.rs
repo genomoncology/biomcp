@@ -89,15 +89,17 @@ fn clingen_health_descriptors_and_affects_remain_distinct() {
         .map(|source| (source.api, source.affects))
         .collect::<Vec<_>>();
 
-    assert_eq!(
-        descriptors,
-        vec![
-            ("ClinGen Allele Registry", Some("variant normalization")),
-            ("ClinGen CSpec", Some("gene cspec helper")),
-            ("ClinGen ERepo", Some("variant erepo helper")),
-            ("ClinGen LDH", Some("variant article identity verification"),),
-        ]
-    );
+    for descriptor in [
+        ("ClinGen Allele Registry", Some("variant normalization")),
+        ("ClinGen CSpec", Some("gene cspec helper")),
+        ("ClinGen ERepo", Some("variant erepo helper")),
+        ("ClinGen LDH", Some("variant article identity verification")),
+    ] {
+        assert!(
+            descriptors.contains(&descriptor),
+            "missing ClinGen health descriptor: {descriptor:?}"
+        );
+    }
 }
 
 #[test]

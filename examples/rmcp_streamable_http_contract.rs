@@ -292,7 +292,7 @@ async fn print_typed_tool_surface(
         anyhow::bail!("gene_cspec schema must not expose CLI-only raw bytes");
     }
     for control in ["verify_identity", "confirmed_only"] {
-        if !json_property_contains(&variant_articles_schema, control, "boolean") {
+        if !named_root_property_contains(&variant_articles_schema, control, "boolean") {
             anyhow::bail!("variant_articles schema missing {control} boolean");
         }
     }

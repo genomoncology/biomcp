@@ -32,7 +32,7 @@ error behavior for the same provider.
 | ClinGen source | Public role | Internal identity and opt-in role |
 |---|---|---|
 | CAR | `variant normalize car` / `variant_normalize_car`; additive article `canonical_equivalence` | `clingen_car`; bounded explicit normalization only |
-| CSpec | `gene cspec` / `gene_cspec`; CLI-only raw bytes | `cspec` capture namespace; selected-document retrieval only |
+| CSpec | `gene cspec` / `gene_cspec`; CLI-only raw bytes | `clingen_cspec` source status and `cspec` capture namespace; selected-document retrieval only |
 | ERepo | `variant erepo` / `variant_erepo` | `clingen_erepo` source status; explicit expert-assertion lookup only |
 | LDH | additive `variant_articles` identity evidence | `clingen_ldh` source status and separate work-budget routes; only runs with identity verification |
 
