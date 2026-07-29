@@ -699,35 +699,6 @@ mod tests {
     }
 
     #[test]
-    fn clingen_source_contexts_keep_error_attribution_with_two_sources_in_one_process() {
-        let raw_body = "credential=do-not-disclose <upstream diagnostic>";
-        for (failed, healthy) in [
-            (SourceProvider::CLINGEN_CAR, SourceProvider::CLINGEN_EREPO),
-            (SourceProvider::CLINGEN_CSPEC, SourceProvider::CLINGEN_LDH),
-            (SourceProvider::CLINGEN_EREPO, SourceProvider::CLINGEN_CAR),
-            (SourceProvider::CLINGEN_LDH, SourceProvider::CLINGEN_CSPEC),
-        ] {
-            let failed_error = BioMcpError::Api {
-                api: failed.label().into(),
-                message: raw_body.into(),
-            }
-            .with_source_context(SourceContext::retry(failed));
-            let healthy_error = BioMcpError::Api {
-                api: healthy.label().into(),
-                message: "independent response".into(),
-            }
-            .with_source_context(SourceContext::retry(healthy));
-
-            let failed_projection = failed_error.public_projection();
-            let healthy_projection = healthy_error.public_projection();
-            assert_eq!(failed_projection.source, Some(failed.label()));
-            assert_eq!(healthy_projection.source, Some(healthy.label()));
-            assert_ne!(failed_projection.source, healthy_projection.source);
-            assert!(!failed_projection.message.contains(raw_body));
-        }
-    }
-
-    #[test]
     fn source_policy_inventory_is_bounded_and_actionable() {
         for provider in SourceProvider::ALL {
             let label = provider.label();

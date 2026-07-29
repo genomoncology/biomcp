@@ -728,6 +728,80 @@ fn build_http_client_with_config(
 }
 
 #[cfg(test)]
+#[derive(Clone)]
+pub(crate) enum ScriptedResponse {
+    Http {
+        status: StatusCode,
+        headers: Vec<(&'static str, &'static str)>,
+        body: &'static str,
+    },
+    TransportError(&'static str),
+}
+
+#[cfg(test)]
+#[derive(Debug, thiserror::Error)]
+#[error("{0}")]
+struct ScriptedTransportError(&'static str);
+
+#[cfg(test)]
+struct ScriptedMiddleware {
+    responses: std::collections::BTreeMap<&'static str, ScriptedResponse>,
+}
+
+#[cfg(test)]
+#[async_trait::async_trait]
+impl Middleware for ScriptedMiddleware {
+    async fn handle(
+        &self,
+        request: reqwest::Request,
+        _extensions: &mut Extensions,
+        _next: Next<'_>,
+    ) -> reqwest_middleware::Result<reqwest::Response> {
+        match self
+            .responses
+            .get(request.url().host_str().unwrap_or_default())
+        {
+            Some(ScriptedResponse::Http {
+                status,
+                headers,
+                body,
+            }) => {
+                let mut response = http::Response::builder()
+                    .status(*status)
+                    .url(request.url().clone());
+                for (name, value) in headers {
+                    response = response.header(*name, *value);
+                }
+                Ok(response
+                    .body(reqwest::Body::from(*body))
+                    .expect("scripted response")
+                    .into())
+            }
+            Some(ScriptedResponse::TransportError(message)) => Err(
+                reqwest_middleware::Error::middleware(ScriptedTransportError(message)),
+            ),
+            None => Err(reqwest_middleware::Error::middleware(
+                ScriptedTransportError("unexpected scripted request"),
+            )),
+        }
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn scripted_client(
+    responses: impl IntoIterator<Item = (&'static str, ScriptedResponse)>,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    let base_client = reqwest::Client::builder()
+        .build()
+        .map_err(BioMcpError::HttpClientInit)?;
+    Ok(ClientBuilder::new(base_client)
+        .with(ScriptedMiddleware {
+            responses: responses.into_iter().collect(),
+        })
+        .build())
+}
+
+#[cfg(test)]
 pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
     let base_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -1117,6 +1191,9 @@ pub(crate) async fn read_limited_source_body(
 
 #[cfg(test)]
 mod tests {
+    #[path = "clingen_runtime.rs"]
+    mod clingen_runtime;
+
     use super::*;
     use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
     use crate::test_support::TempDirGuard;

@@ -34,6 +34,14 @@ impl ClinGenLdhClient {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_test_client(client: reqwest_middleware::ClientWithMiddleware) -> Self {
+        Self {
+            client,
+            fixture_origin: None,
+        }
+    }
+
     pub(crate) async fn medium(&self, caid: &str) -> Result<Value, BioMcpError> {
         let response = crate::sources::apply_cache_mode(request_from_plan(
             &self.client,

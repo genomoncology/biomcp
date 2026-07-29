@@ -29,6 +29,14 @@ impl CspecClient {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_test_client(client: reqwest_middleware::ClientWithMiddleware) -> Self {
+        Self {
+            client,
+            fixture_origin: None,
+        }
+    }
+
     pub(crate) async fn manifest(&self, gene: &str) -> Result<Value, BioMcpError> {
         let mut url = self.fetch_url(Url::parse(CSPEC_BASE).expect("static CSpec origin is valid"));
         url.path_segments_mut()

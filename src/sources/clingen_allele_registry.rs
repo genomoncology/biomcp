@@ -57,6 +57,17 @@ impl ClinGenAlleleRegistryClient {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_test_client(
+        client: reqwest_middleware::ClientWithMiddleware,
+        base: &'static str,
+    ) -> Self {
+        Self {
+            client,
+            base: Cow::Borrowed(base),
+        }
+    }
+
     pub(crate) fn normalize_plan(hgvs: &str) -> RequestPlan {
         RequestPlan::get("allele")
             .query("hgvs", hgvs)

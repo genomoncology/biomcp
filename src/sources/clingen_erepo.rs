@@ -24,6 +24,17 @@ impl ERepoClient {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_test_client(
+        client: reqwest_middleware::ClientWithMiddleware,
+        base: &'static str,
+    ) -> Self {
+        Self {
+            client,
+            base: Cow::Borrowed(base),
+        }
+    }
+
     pub(crate) fn summary_plan(caid: &str) -> RequestPlan {
         RequestPlan::get("evrepo/api/summary/classifications")
             .query("columns", "caId")
