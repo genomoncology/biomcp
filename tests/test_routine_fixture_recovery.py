@@ -54,6 +54,14 @@ FIXTURES = (
 )
 
 
+def _process_start_identity(pid: int) -> str:
+    """Return Linux procfs start time, which changes when a PID is reused."""
+    stat_fields = (
+        Path(f"/proc/{pid}/stat").read_text().rsplit(")", maxsplit=1)[1].split()
+    )
+    return stat_fields[19]
+
+
 @pytest.mark.parametrize("record_kind", ["pid-reused", "disk-token-only", "live-owner"])
 @pytest.mark.parametrize(
     "_name, cleanup_name, root_prefix, env_name, variable_prefix", FIXTURES
@@ -73,20 +81,30 @@ def test_cleanup_never_signals_an_unvalidated_ownership_record(
     cache.mkdir(parents=True)
     forged_root = cache / f"{root_prefix}.forged"
     forged_root.mkdir()
-    sentinel = subprocess.Popen(["sleep", "30"], start_new_session=True)
     token = f"ticket-628-{record_kind}"
+    sentinel_command = ["sleep", "30"]
+    if record_kind == "live-owner":
+        # This leader mimics the token and workspace marker from disk, but not
+        # the fixture root. A validator must bind the complete live identity.
+        sentinel_command = [
+            "bash",
+            "-c",
+            'exec -a "$1" sleep 30',
+            "fixture-owner",
+            f"fixture-owner {token} {workspace}",
+        ]
+    sentinel = subprocess.Popen(sentinel_command, start_new_session=True)
     env_file = cache / env_name
     try:
-        pgid = os.getpgid(sentinel.pid)
+        start_identity = _process_start_identity(sentinel.pid)
+        if record_kind == "pid-reused":
+            start_identity = str(int(start_identity) + 1)
         exports = {
             f"{variable_prefix}_PID": str(sentinel.pid),
             f"{variable_prefix}_SERVER_PID": str(sentinel.pid),
-            f"{variable_prefix}_PGID": str(pgid),
+            f"{variable_prefix}_PGID": str(os.getpgid(sentinel.pid)),
             f"{variable_prefix}_ROOT": str(forged_root),
-            # These fields are deliberately plausible only on disk. The live
-            # group leader is an unrelated sleep process, so it has neither
-            # this token nor the recorded fixture command/worktree identity.
-            f"{variable_prefix}_PID_START_ID": "0",
+            f"{variable_prefix}_PID_START_ID": start_identity,
             f"{variable_prefix}_OWNER_WORKTREE": str(workspace),
             f"{variable_prefix}_OWNER_TOKEN": token,
         }
@@ -108,6 +126,42 @@ def test_cleanup_never_signals_an_unvalidated_ownership_record(
         assert sentinel.poll() is None, (
             f"{record_kind} record for {_name} must not signal an unrelated live group"
         )
+        assert not env_file.exists()
+    finally:
+        if sentinel.poll() is None:
+            os.killpg(os.getpgid(sentinel.pid), signal.SIGKILL)
+            sentinel.wait()
+
+
+@pytest.mark.parametrize(
+    "_name, cleanup_name, _root_prefix, env_name, _variable_prefix", FIXTURES
+)
+def test_cleanup_discards_a_malformed_ownership_record_without_signaling(
+    tmp_path: Path,
+    _name: str,
+    cleanup_name: str,
+    _root_prefix: str,
+    env_name: str,
+    _variable_prefix: str,
+) -> None:
+    """Malformed on-disk state is discarded, never evaluated or used for a signal."""
+    workspace = tmp_path / "workspace"
+    cache = workspace / ".cache"
+    cache.mkdir(parents=True)
+    sentinel = subprocess.Popen(["sleep", "30"], start_new_session=True)
+    env_file = cache / env_name
+    try:
+        env_file.write_text("this is not an ownership record\n")
+        completed = subprocess.run(
+            [
+                "bash",
+                str(REPO_ROOT / "spec" / "fixtures" / cleanup_name),
+                str(workspace),
+            ],
+            check=False,
+        )
+        assert completed.returncode == 0, "malformed records must be discarded safely"
+        assert sentinel.poll() is None, "malformed records must not authorize a signal"
         assert not env_file.exists()
     finally:
         if sentinel.poll() is None:
