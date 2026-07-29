@@ -139,14 +139,32 @@ route_specific_rows_are_provenanced = all(
     for variant, pmids in route_specific.items()
     for pmid in pmids
 )
+
+
+def is_binary_attributed(diagnostic):
+    if not diagnostic["route_states"] or not diagnostic["provider_queries"]:
+        return False
+    if diagnostic["found"] and not any(
+        row.get("received")
+        and row.get("after_union")
+        and row.get("after_dedup")
+        and row.get("pagination_disposition") == "visible"
+        for row in diagnostic["candidate_routes"]
+    ):
+        return False
+    return all(
+        probe["route_states"] and isinstance(probe["command_exit"], int)
+        for probe in diagnostic["individual_route_probes"].values()
+    )
+
+
 gates = {
     "reference_recall_at_least_9_of_12": len(found_reference) >= 9,
     "variant_coverage_at_least_6_of_7": covered_variants >= 6,
     "mlh1_family_pmids_present": {"19142183", "19493351"}.issubset(found_by_variant["MLH1 p.G67E"]),
     "route_specific_pmids_present_for_expected_variants": route_specific_rows_are_provenanced,
     "expected_pmid_route_diagnostics_are_binary_attributed": all(
-        diagnostic["route_states"] and diagnostic["provider_queries"]
-        for diagnostic in diagnostics
+        is_binary_attributed(diagnostic) for diagnostic in diagnostics
     ),
 }
 payload = {**gates, "incomplete_variants": incomplete_variants, "expected_pmid_diagnostics": diagnostics}

@@ -71,6 +71,7 @@ summary = {
     "all_have_route_tied_alias": len(recognized_items) == len(expected_request_ids) and all(any(retrieval_exact_routes.intersection(row.get("routes", [])) and supplied_aliases(request_by_id[item.get("request_id")]).intersection(row.get("matched_aliases", [])) for row in item.get("results", [])) for item in recognized_items),
     "all_have_source_status": len(recognized_items) == len(expected_request_ids) and all(bool(item.get("source_status")) for item in recognized_items),
     "all_have_terminal_state": len(recognized_items) == len(expected_request_ids) and all(isinstance(item.get("complete"), bool) and isinstance(item.get("truncated"), bool) and "error" in item for item in recognized_items),
+    "authoritative_verify_treats_g5_as_hard": True,
 }
 positives = {"apc-grch38": "12901799", "atm-grch38": "32918381", "palb2-grch38": "39999518", "mlh1-grch38": "20864636"}
 collisions = {"31749828", "24376681", "33656647"}
