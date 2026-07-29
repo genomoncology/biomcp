@@ -1063,5 +1063,5 @@ printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_READY_FILE=%q\n' "$ready_f
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
 trap - EXIT
-bash "$ownership_helper" write "$workspace_root" "article-fulltext-source" "$env_file" "$fixture_root" "$server_pid" "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE" "$owner_arg" >/dev/null
+bash "$ownership_helper" write "$workspace_root" "article-fulltext-source" "$fixture_root" "$server_pid" "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"

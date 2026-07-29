@@ -136,5 +136,5 @@ PY
 
 setup_complete=true
 trap - EXIT
-bash "$ownership_helper" write "$workspace_root" "variant-identity" "$env_file" "$fixture_root" "$server_pid" "BIOMCP_VARIANT_IDENTITY" "$owner_arg" >/dev/null
+bash "$ownership_helper" write "$workspace_root" "variant-identity" "$fixture_root" "$server_pid" "BIOMCP_VARIANT_IDENTITY" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"

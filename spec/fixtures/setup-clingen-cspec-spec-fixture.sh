@@ -61,4 +61,4 @@ test -s "$ready"
   printf 'export BIOMCP_CACHE_DIR=%q\n' "$fixture_root/cache"
   printf 'export BIOMCP_CSPEC_FIXTURE_REQUESTS=%q\n' "$requests"
 } >"$env_file"
-bash "$ownership_helper" write "$root" "clingen-cspec" "$env_file" "$fixture_root" "$pid" "BIOMCP_CSPEC_FIXTURE" "$owner_arg" >/dev/null
+bash "$ownership_helper" write "$root" "clingen-cspec" "$fixture_root" "$pid" "BIOMCP_CSPEC_FIXTURE" "$owner_arg" >/dev/null

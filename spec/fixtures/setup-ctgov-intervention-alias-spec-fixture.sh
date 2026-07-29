@@ -435,9 +435,10 @@ printf 'export BIOMCP_CTGOV_BASE=%q\n' "$base_url/api/v2" >"$env_file"
 printf 'export BIOMCP_CTGOV_CDN_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE=%q\n' "$base_url/v1" >>"$env_file"
 printf 'export BIOMCP_CACHE_MODE=off\n' >>"$env_file"
+printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
 trap - EXIT INT TERM HUP
-bash "$ownership_helper" write "$workspace_root" "ctgov-intervention-alias" "$env_file" "$fixture_root" "$fixture_pgid" "BIOMCP_CTGOV_INTERVENTION_ALIAS" "$owner_arg" >/dev/null
+bash "$ownership_helper" write "$workspace_root" "ctgov-intervention-alias" "$fixture_root" "$fixture_pgid" "BIOMCP_CTGOV_INTERVENTION_ALIAS" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"

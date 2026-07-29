@@ -152,5 +152,5 @@ PY
   printf 'export BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
 
-bash "$ownership_helper" write "$workspace_root" "disease-survival" "$env_file" "$fixture_root" "$server_pid" "BIOMCP_DISEASE_SURVIVAL" "$owner_arg" >/dev/null
+bash "$ownership_helper" write "$workspace_root" "disease-survival" "$fixture_root" "$server_pid" "BIOMCP_DISEASE_SURVIVAL" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"

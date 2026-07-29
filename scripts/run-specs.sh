@@ -218,7 +218,7 @@ run_section_outcome_specs() {
       bash spec/fixtures/setup-section-outcomes-spec-fixture.sh "$ROOT"
       source_if_present "$ROOT/.cache/spec-section-outcomes-env"
       trap 'bash spec/fixtures/cleanup-section-outcomes-spec-fixture.sh "$ROOT"' EXIT
-      mustmatch test "${SECTION_OUTCOME_MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+      8>&- mustmatch test "${SECTION_OUTCOME_MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
     )
   fi
 }
@@ -228,20 +228,20 @@ run_article_markdown_specs() {
     (
       unset BIOMCP_CACHE_MODE
       source_if_present "$ROOT/.cache/spec-article-fulltext-source-env"
-      mustmatch test "${ARTICLE_MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+      8>&- mustmatch test "${ARTICLE_MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
     )
   fi
 }
 
 run_markdown_specs() {
   if ((${#MD_PATHS[@]})); then
-    mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+    8>&- mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
   fi
 }
 
 run_python_contracts() {
   if ((${#PY_PATHS[@]})); then
-    uv run --with pytest --no-project pytest "${PY_PATHS[@]}" -v
+    8>&- uv run --with pytest --no-project pytest "${PY_PATHS[@]}" -v
   fi
 }
 
