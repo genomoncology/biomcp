@@ -779,6 +779,35 @@ mod tests {
     }
 
     #[test]
+    fn cspec_capture_is_unavailable_through_other_clingen_provider_prefixes() {
+        let root = TempDirGuard::new("provider-capture-cross-source");
+        let store = ProviderCaptureStore::new(root.path());
+        let manifest = store
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"CSpec bytes")
+            .expect("capture");
+
+        assert_eq!(
+            store.read(&manifest.capture_id),
+            Ok(b"CSpec bytes".to_vec())
+        );
+        for provider in ["car", "erepo", "ldh"] {
+            let foreign_handle =
+                manifest
+                    .capture_id
+                    .replacen("capture:cspec:", &format!("capture:{provider}:"), 1);
+            assert_eq!(
+                store.read(&foreign_handle),
+                Err(ProviderCaptureError::UnsupportedProvider),
+                "{provider} must not reach CSpec capture bytes"
+            );
+        }
+        assert_eq!(
+            store.read(&manifest.capture_id),
+            Ok(b"CSpec bytes".to_vec())
+        );
+    }
+
+    #[test]
     fn rejects_oversize_and_invalid_handles() {
         let root = TempDirGuard::new("provider-capture-bound");
         let store = ProviderCaptureStore::new(root.path());
