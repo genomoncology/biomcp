@@ -286,7 +286,9 @@ def test_sigkill_orphan_releases_routine_lock_before_stale_recovery(
     workspace = tmp_path / "workspace"
     fixtures = workspace / "spec" / "fixtures"
     fixtures.mkdir(parents=True)
+    (workspace / ".cache").mkdir()
     for name in (
+        "routine-fixture-ownership.sh",
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
         "setup-ctgov-intervention-alias-spec-fixture.sh",
@@ -301,7 +303,7 @@ def test_sigkill_orphan_releases_routine_lock_before_stale_recovery(
         [
             "bash",
             "-c",
-            'exec 8>"$1"; flock 8; bash "$2" "$4"; bash "$3" "$4"; touch "$5"; while :; do sleep 1; done',
+            'exec 8>"$1"; flock 8; bash "$2" "$4"; bash "$3" "$4"; touch "$5"; while :; do sleep 1 8>&-; done',
             "coordinator",
             str(lock_path),
             str(fixtures / "setup-article-fulltext-source-fixture.sh"),
