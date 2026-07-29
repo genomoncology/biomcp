@@ -71,7 +71,9 @@ def _process_start_identity(pid: int) -> str:
     return stat_fields[19]
 
 
-@pytest.mark.parametrize("record_kind", ["pid-reused", "disk-token-only", "live-owner"])
+@pytest.mark.parametrize(
+    "record_kind", ["pid-reused", "disk-token-only", "live-owner", "unexpected-field"]
+)
 @pytest.mark.parametrize(
     "_name, fixture_kind, cleanup_name, root_prefix, env_name, variable_prefix",
     FIXTURES,
@@ -128,9 +130,10 @@ def test_cleanup_never_signals_an_unvalidated_ownership_record(
             f"{variable_prefix}_OWNER_TOKEN": token,
             f"{variable_prefix}_OWNER_ARG": owner_arg,
         }
-        record_file.write_text(
-            "".join(f"{key}={value}\n" for key, value in exports.items())
-        )
+        record_text = "".join(f"{key}={value}\n" for key, value in exports.items())
+        if record_kind == "unexpected-field":
+            record_text += f"{variable_prefix}_UNEXPECTED_FIELD=untrusted\n"
+        record_file.write_text(record_text)
 
         subprocess.run(
             [

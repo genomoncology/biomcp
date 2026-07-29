@@ -50,6 +50,18 @@ write_record() {
   printf '%s\n' "$owner_arg"
 }
 
+record_has_only_known_fields() {
+  local record_file="$1" prefix="$2" line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    case "$line" in
+      "${prefix}_RECORD_VERSION="*|"${prefix}_PID="*|"${prefix}_SERVER_PID="*|\
+      "${prefix}_PGID="*|"${prefix}_ROOT="*|"${prefix}_PID_START_ID="*|\
+      "${prefix}_OWNER_WORKTREE="*|"${prefix}_OWNER_TOKEN="*|"${prefix}_OWNER_ARG="*) ;;
+      *) return 1 ;;
+    esac
+  done <"$record_file"
+}
+
 record_value() {
   local record_file="$1" wanted="$2" line key value result=""
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -77,6 +89,7 @@ cleanup_record() {
   record_file="$(ownership_record_file "$workspace" "$kind")"
   [[ -f "$record_file" ]] || return 0
   local version pid pgid root start worktree token owner_arg actual_pgid actual_start cmdline
+  record_has_only_known_fields "$record_file" "$prefix" || { rm -f "$record_file"; return 0; }
   version="$(record_value "$record_file" "${prefix}_RECORD_VERSION")" || { rm -f "$record_file"; return 0; }
   pid="$(record_value "$record_file" "${prefix}_PID")" || { rm -f "$record_file"; return 0; }
   pgid="$(record_value "$record_file" "${prefix}_PGID")" || { rm -f "$record_file"; return 0; }
