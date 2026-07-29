@@ -61,7 +61,7 @@ locally; the outer routine keeps and executes the caller-provided artifact.
 |---|---|
 | `spec/entity/gene.md` | gene search/get canary for identity, tissue-expression context, druggability, and funding/diagnostics pivots |
 | `spec/entity/variant.md` | variant canary for gene-scoped search, protein-filter normalization, residue aliases, and clinical/population context |
-| `spec/entity/variant-article-identity.md` | frozen G5 v2 release gate for verified variant-article positives, collision rejection, pagination, outage truthfulness, and audit facts |
+| `spec/entity/variant-article-identity.md` | frozen G5 v2 release gate for verified variant-article positives, collision rejection, pagination, outage truthfulness, audit facts, and bounded candidate-route diagnostics |
 | `spec/entity/article.md` | article canary for typed vs keyword search, source-aware result structure, annotations, and fulltext fallback |
 | `spec/entity/disease-survival-fixture.md` | deterministic disease-survival canary for MyDisease grounding, SEER fixture rendering, and bounded CLI exit |
 | `spec/entity/trial.md` | trial canary for condition/status search, alias normalization, age-count transparency, and eligibility/location detail |
@@ -77,6 +77,13 @@ locally; the outer routine keeps and executes the caller-provided artifact.
 | `spec/surface/cli.md` | CLI surface canary for top-level help/list discovery, operator commands, cache-mode exceptions, and health/admin guidance |
 | `spec/surface/mcp.md` | MCP surface canary for stdio/HTTP entrypoints, probe routes, and streamable-HTTP tool execution |
 | `spec/surface/discover.md` | onboarding-surface canary for discover resolution, skill guidance, and fallback behavior |
+
+The live `spec/entity/variant-articles-live.md` canaries are verify-only. G5
+remains useful as a focused diagnostic, but its existing identity, exact-route,
+route-alias, source-status, and terminal-state assertions are hard evidence when
+included in one authoritative `make verify`; the unchanged seven-variant recall
+canary is also hard evidence and its runner preflights required credentials
+before network work.
 
 ## Bash Mustmatch Lint Rule
 

@@ -62,9 +62,22 @@ def run(variant, strategy="union"):
 
 responses = {variant: run(variant) for variant in panel}
 route_probes = {
-    variant: {strategy: run(variant, strategy)[0] for strategy in ("annotation", "lexical")}
+    variant: {strategy: run(variant, strategy) for strategy in ("annotation", "lexical")}
     for variant in panel
 }
+
+
+def probe_diagnostic(payload, returncode, pmid):
+    plan = payload.get("debug_plan", {})
+    return {
+        "command_exit": returncode,
+        "terminal_state": "complete" if payload.get("complete") else "incomplete",
+        "route_states": plan.get("routes", []),
+        "candidate_routes": [
+            row for row in plan.get("candidate_trace", {}).get("candidates", [])
+            if row.get("identifier") == pmid
+        ],
+    }
 found_by_variant = {}
 routes_by_variant = {}
 incomplete_variants = []
@@ -92,15 +105,19 @@ for variant, expected in panel.items():
             "pmid": pmid,
             "found": pmid in found_by_variant[variant],
             "candidate_routes": [row for row in trace if row.get("identifier") == pmid],
+            "candidate_pool_positions": [
+                row["rank_position"] for row in trace
+                if row.get("identifier") == pmid and row.get("rank_position") is not None
+            ],
+            "query_aliases": plan.get("normalized_aliases", {}),
+            "provider_queries": plan.get("provider_queries", []),
+            "retrieval_routes": sorted(routes_by_variant[variant].get(pmid, set())),
             "route_states": plan.get("routes", []),
             "terminal_state": "complete" if payload.get("complete") else "incomplete",
             "command_exit": returncode,
             "individual_route_probes": {
-                strategy: [
-                    row for row in probe.get("debug_plan", {}).get("candidate_trace", {}).get("candidates", [])
-                    if row.get("identifier") == pmid
-                ]
-                for strategy, probe in route_probes[variant].items()
+                strategy: probe_diagnostic(probe, probe_returncode, pmid)
+                for strategy, (probe, probe_returncode) in route_probes[variant].items()
             },
         })
 
@@ -128,7 +145,8 @@ gates = {
     "mlh1_family_pmids_present": {"19142183", "19493351"}.issubset(found_by_variant["MLH1 p.G67E"]),
     "route_specific_pmids_present_for_expected_variants": route_specific_rows_are_provenanced,
     "expected_pmid_route_diagnostics_are_binary_attributed": all(
-        diagnostic["route_states"] for diagnostic in diagnostics
+        diagnostic["route_states"] and diagnostic["provider_queries"]
+        for diagnostic in diagnostics
     ),
 }
 payload = {**gates, "incomplete_variants": incomplete_variants, "expected_pmid_diagnostics": diagnostics}
