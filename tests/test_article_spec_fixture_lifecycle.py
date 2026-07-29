@@ -35,10 +35,15 @@ def _read_exports(path: Path) -> dict[str, str]:
     return exports
 
 
+def _read_record(path: Path) -> dict[str, str]:
+    return dict(line.split("=", 1) for line in path.read_text().splitlines())
+
+
 def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None:
     fixtures = workspace / "spec" / "fixtures"
     fixtures.mkdir(parents=True, exist_ok=True)
     for name in (
+        "routine-fixture-ownership.sh",
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
     ):
@@ -98,10 +103,12 @@ def _runner_workspace(
     mustmatch.write_text(
         "#!/usr/bin/env bash\n"
         'if [ "${1:-}" = --version ]; then echo "mustmatch 1.0.0"; exit 0; fi\n'
+        'if [ -e /proc/$$/fd/8 ]; then printf "inherited-fd-8\\n" >>"$MUSTMATCH_FD_LOG"; fi\n'
         'printf "%s|%s|%s\\n" "$*" "${BIOMCP_PUBTATOR_BASE-}" '
         '"${BIOMCP_TEST_UNPACED_ORIGIN-}" >>"$MUSTMATCH_INVOCATION_LOG"\n'
-        'if [ -n "${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID-}" ]; then\n'
-        '  printf "%s\\n" "$BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID" >>"$ARTICLE_SETUP_LOG"\n'
+        'if [[ "$*" == *"spec/entity/article.md"* ]] && [ -f .cache/spec-article-fulltext-source-ownership ]; then\n'
+        "  awk -F= '$1 == \"BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID\" { print $2 }' "
+        '    .cache/spec-article-fulltext-source-ownership >>"$ARTICLE_SETUP_LOG"\n'
         "fi\n"
         'call="$(wc -l <"$MUSTMATCH_INVOCATION_LOG")"\n'
         'if [ "$call" -eq "${FAIL_MUSTMATCH_CALL:-0}" ]; then exit 7; fi\n'
@@ -113,6 +120,7 @@ def _runner_workspace(
         "MUSTMATCH_BIN": str(mustmatch),
         "ARTICLE_SETUP_LOG": str(workspace / "article-setup-log"),
         "MUSTMATCH_INVOCATION_LOG": str(workspace / "mustmatch-invocation-log"),
+        "MUSTMATCH_FD_LOG": str(workspace / "mustmatch-fd-log"),
         "FAIL_MUSTMATCH_CALL": str(fail_mustmatch_call),
         "BIOMCP_PUBTATOR_BASE": "caller-pubtator",
         "BIOMCP_TEST_UNPACED_ORIGIN": "http://127.0.0.1:9999",
@@ -132,6 +140,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
     pids = (workspace / "article-setup-log").read_text().splitlines()
     assert len(pids) == 1
     assert not Path(f"/proc/{pids[0]}").exists()
+    assert not (workspace / "mustmatch-fd-log").exists()
     invocations = [
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
@@ -183,15 +192,19 @@ def test_runner_signal_cleans_article_fixture(
         ["bash", "scripts/run-specs.sh", "spec-contracts"], cwd=workspace, env=env
     )
     fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
+    fixture_record = workspace / ".cache" / "spec-article-fulltext-source-ownership"
     try:
-        _wait_until(lambda: ready.exists() and fixture_env.exists())
+        _wait_until(
+            lambda: ready.exists() and fixture_env.exists() and fixture_record.exists()
+        )
         pid = int(
-            _read_exports(fixture_env)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+            _read_record(fixture_record)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
         )
         os.kill(runner.pid, termination_signal)
         assert runner.wait(timeout=10) == 128 + termination_signal
         _wait_until(lambda: not Path(f"/proc/{pid}").exists())
         assert not fixture_env.exists()
+        assert not fixture_record.exists()
     finally:
         if runner.poll() is None:
             runner.kill()
@@ -214,10 +227,13 @@ def test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns(
         ["bash", "scripts/run-specs.sh", "spec-contracts"], cwd=workspace, env=env
     )
     fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
+    fixture_record = workspace / ".cache" / "spec-article-fulltext-source-ownership"
     try:
-        _wait_until(lambda: ready.exists() and fixture_env.exists())
+        _wait_until(
+            lambda: ready.exists() and fixture_env.exists() and fixture_record.exists()
+        )
         fixture_pid = int(
-            _read_exports(fixture_env)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+            _read_record(fixture_record)["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
         )
         fixture_group = os.getpgid(fixture_pid)
         runner_group = os.getpgid(runner.pid)
@@ -226,6 +242,7 @@ def test_interrupted_routine_fixture_owns_a_separate_process_group_and_reruns(
         assert runner.wait(timeout=10) == 128 + termination_signal
         _wait_until(lambda: not Path(f"/proc/{fixture_pid}").exists())
         assert not fixture_env.exists()
+        assert not fixture_record.exists()
 
         successor = subprocess.run(
             ["bash", "scripts/run-specs.sh", "spec-contracts"],
@@ -267,17 +284,17 @@ def test_cleanup_refuses_mismatched_fixture_process_group(tmp_path: Path) -> Non
         cwd=workspace,
         check=True,
     )
-    fixture_env = workspace / ".cache" / "spec-article-fulltext-source-env"
-    exports = _read_exports(fixture_env)
-    fixture_pid = int(exports["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"])
+    fixture_record = workspace / ".cache" / "spec-article-fulltext-source-ownership"
+    record = _read_record(fixture_record)
+    fixture_pid = int(record["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"])
     sentinel = subprocess.Popen(["sleep", "30"], start_new_session=True)
     try:
         sentinel_group = os.getpgid(sentinel.pid)
-        fixture_env.write_text(
-            fixture_env.read_text().replace(
-                "export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID="
-                f"{exports['BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID']}",
-                f"export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID={sentinel_group}",
+        fixture_record.write_text(
+            fixture_record.read_text().replace(
+                "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID="
+                f"{record['BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID']}",
+                f"BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID={sentinel_group}",
             )
         )
         subprocess.run(
@@ -392,9 +409,13 @@ def test_article_indexing_request_is_opt_in_and_all_includes_it(tmp_path: Path) 
     binary = Path(os.environ["BIOMCP_BIN"])
 
     def run(*args: str, cache_name: str) -> None:
-        env = os.environ | exports | {
-            "BIOMCP_CACHE_DIR": str(tmp_path / cache_name),
-        }
+        env = (
+            os.environ
+            | exports
+            | {
+                "BIOMCP_CACHE_DIR": str(tmp_path / cache_name),
+            }
+        )
         subprocess.run([binary, *args], env=env, check=True, capture_output=True)
 
     try:
@@ -428,9 +449,10 @@ def test_article_indexing_request_is_opt_in_and_all_includes_it(tmp_path: Path) 
             "indexing",
             cache_name="indexing-cache",
         )
-        assert request_log.read_text().splitlines().count(
-            "indexing:xml:pubmed-efetch"
-        ) == 1
+        assert (
+            request_log.read_text().splitlines().count("indexing:xml:pubmed-efetch")
+            == 1
+        )
 
         run(
             "--json",
@@ -440,9 +462,10 @@ def test_article_indexing_request_is_opt_in_and_all_includes_it(tmp_path: Path) 
             "all",
             cache_name="all-cache",
         )
-        assert request_log.read_text().splitlines().count(
-            "indexing:xml:pubmed-efetch"
-        ) == 2
+        assert (
+            request_log.read_text().splitlines().count("indexing:xml:pubmed-efetch")
+            == 2
+        )
     finally:
         subprocess.run(
             [
@@ -516,8 +539,12 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(
         _read_exports(workspace / ".cache" / "spec-article-fulltext-source-env")
         for workspace in workspaces
     ]
-    roots = {item["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT"] for item in exports}
-    pids = {item["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"] for item in exports}
+    records = [
+        _read_record(workspace / ".cache" / "spec-article-fulltext-source-ownership")
+        for workspace in workspaces
+    ]
+    roots = {item["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT"] for item in records}
+    pids = {item["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"] for item in records}
     bases = {item["BIOMCP_FIGSHARE_BASE"] for item in exports}
     assert len(roots) == len(pids) == len(bases) == 2
     try:
@@ -537,12 +564,12 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(
             cwd=workspaces[0],
             check=True,
         )
-        first_pid = exports[0]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
-        second_pid = exports[1]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+        first_pid = records[0]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
+        second_pid = records[1]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
         assert not Path(f"/proc/{first_pid}").exists()
         assert Path(f"/proc/{second_pid}").exists()
         assert (
-            _status(f'{exports[1]["BIOMCP_FIGSHARE_BASE"]}/graph/v1/author/1716151')
+            _status(f"{exports[1]['BIOMCP_FIGSHARE_BASE']}/graph/v1/author/1716151")
             == 200
         )
     finally:

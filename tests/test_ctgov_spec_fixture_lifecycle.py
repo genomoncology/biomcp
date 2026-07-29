@@ -32,7 +32,13 @@ def _read_exports(path: Path) -> dict[str, str]:
     return exports
 
 
-@pytest.mark.parametrize("termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP])
+def _read_record(path: Path) -> dict[str, str]:
+    return dict(line.split("=", 1) for line in path.read_text().splitlines())
+
+
+@pytest.mark.parametrize(
+    "termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]
+)
 def test_runner_termination_cleans_ctgov_process_group_env_and_port(
     tmp_path: Path, termination_signal: signal.Signals
 ) -> None:
@@ -42,6 +48,7 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
     fixtures.mkdir(parents=True)
     shutil.copy2(REPO_ROOT / "scripts" / "run-specs.sh", workspace / "scripts")
     for name in (
+        "routine-fixture-ownership.sh",
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
         "setup-ctgov-intervention-alias-spec-fixture.sh",
@@ -82,12 +89,21 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
         env=env,
     )
     fixture_env = workspace / ".cache" / "spec-ctgov-intervention-alias-env"
+    fixture_record = workspace / ".cache" / "spec-ctgov-intervention-alias-ownership"
     try:
-        _wait_until(lambda: ready.exists() and fixture_env.exists())
+        _wait_until(
+            lambda: ready.exists() and fixture_env.exists() and fixture_record.exists()
+        )
         exports = _read_exports(fixture_env)
-        supervisor_pid = int(exports["BIOMCP_CTGOV_INTERVENTION_ALIAS_PID"])
-        server_pid = int(exports["BIOMCP_CTGOV_INTERVENTION_ALIAS_SERVER_PID"])
-        host, port_text = exports["BIOMCP_CTGOV_BASE"].removeprefix("http://").split("/", 1)[0].split(":")
+        record = _read_record(fixture_record)
+        supervisor_pid = int(record["BIOMCP_CTGOV_INTERVENTION_ALIAS_PID"])
+        server_pid = int(record["BIOMCP_CTGOV_INTERVENTION_ALIAS_SERVER_PID"])
+        host, port_text = (
+            exports["BIOMCP_CTGOV_BASE"]
+            .removeprefix("http://")
+            .split("/", 1)[0]
+            .split(":")
+        )
         port = int(port_text)
 
         os.kill(runner.pid, termination_signal)
@@ -104,6 +120,10 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
             runner.kill()
             runner.wait()
         subprocess.run(
-            ["bash", str(fixtures / "cleanup-ctgov-intervention-alias-spec-fixture.sh"), str(workspace)],
+            [
+                "bash",
+                str(fixtures / "cleanup-ctgov-intervention-alias-spec-fixture.sh"),
+                str(workspace),
+            ],
             check=False,
         )

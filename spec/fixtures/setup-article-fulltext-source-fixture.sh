@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+
 workspace_root="${1:-$PWD}"
 repo_root="$(git -C "$workspace_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$workspace_root")"
 cache_dir="$workspace_root/.cache"
@@ -14,12 +17,13 @@ flock 9
 bash "$repo_root/spec/fixtures/cleanup-article-fulltext-source-fixture.sh" "$workspace_root"
 
 fixture_root="$(mktemp -d "$cache_dir/spec-article-fulltext-source.XXXXXX")"
+owner_arg="$(bash "$ownership_helper" new-owner "article-fulltext-source" "$fixture_root")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
 request_log="$fixture_root/request-log.txt"
 : > "$request_log"
 
-setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
+setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$owner_arg" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -1021,7 +1025,7 @@ ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-
 server.serve_forever()
 PY
 server_pid=$!
-fixture_pgid="$(ps -o pgid= -p "$server_pid" | tr -d ' ')"
+fixture_pgid="$server_pid"
 cleanup_failed_setup() {
   kill -TERM -- "-$fixture_pgid" 2>/dev/null || true
   rm -rf "$fixture_root"
@@ -1055,11 +1059,9 @@ printf 'export BIOMCP_FIGSHARE_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CACHE_MIN_DISK_FREE=1B\n' >>"$env_file"
 printf 'unset NCBI_API_KEY\n' >>"$env_file"
 printf 'unset S2_API_KEY\n' >>"$env_file"
-printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID=%q\n' "$server_pid" >>"$env_file"
-printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PGID=%q\n' "$fixture_pgid" >>"$env_file"
-printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
 trap - EXIT
+bash "$ownership_helper" write "$workspace_root" "article-fulltext-source" "$fixture_root" "$server_pid" "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"
