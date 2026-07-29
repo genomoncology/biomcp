@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+
 workspace_root="${1:-$PWD}"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-variant-identity-env"
@@ -11,12 +14,13 @@ mkdir -p "$cache_dir"
 bash "$cleanup_script" "$workspace_root"
 
 fixture_root="$(mktemp -d "$cache_dir/spec-variant-identity.XXXXXX")"
+owner_arg="$(bash "$ownership_helper" new-owner "variant-identity" "$fixture_root")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
 : >"$request_log"
 
-uv run --no-sync python - "$workspace_root" "$ready_file" "$request_log" 8>&- <<'PY' >"$server_log" 2>&1 &
+setsid uv run --no-sync python - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -127,11 +131,10 @@ PY
 {
   printf 'export BIOMCP_MYVARIANT_BASE=%q\n' "$base_url/v1"
   printf 'export BIOMCP_CACHE_MODE=off\n'
-  printf 'export BIOMCP_VARIANT_IDENTITY_PID=%q\n' "$server_pid"
-  printf 'export BIOMCP_VARIANT_IDENTITY_ROOT=%q\n' "$fixture_root"
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
 
 setup_complete=true
 trap - EXIT
+bash "$ownership_helper" write "$workspace_root" "variant-identity" "$env_file" "$fixture_root" "$server_pid" "BIOMCP_VARIANT_IDENTITY" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"

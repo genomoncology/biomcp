@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+
 workspace_root="${1:-$PWD}"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-ctgov-intervention-alias-env"
@@ -14,6 +17,7 @@ if [ -x "$cleanup_script" ]; then
 fi
 
 fixture_root="$(mktemp -d "$cache_dir/spec-ctgov-intervention-alias.XXXXXX")"
+owner_arg="$(bash "$ownership_helper" new-owner "ctgov-intervention-alias" "$fixture_root")"
 ready_file="$fixture_root/base-url"
 server_pid_file="$fixture_root/server-pid"
 server_log="$fixture_root/server.log"
@@ -32,7 +36,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
 
-setsid uv run --no-sync python - "$ready_file" "$request_log" "$server_pid_file" 8>&- <<'PY' >"$server_log" 2>&1 &
+setsid uv run --no-sync python - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -431,12 +435,9 @@ printf 'export BIOMCP_CTGOV_BASE=%q\n' "$base_url/api/v2" >"$env_file"
 printf 'export BIOMCP_CTGOV_CDN_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE=%q\n' "$base_url/v1" >>"$env_file"
 printf 'export BIOMCP_CACHE_MODE=off\n' >>"$env_file"
-printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PID=%q\n' "$fixture_pgid" >>"$env_file"
-printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_PGID=%q\n' "$fixture_pgid" >>"$env_file"
-printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_SERVER_PID=%q\n' "$server_pid" >>"$env_file"
-printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
 trap - EXIT INT TERM HUP
+bash "$ownership_helper" write "$workspace_root" "ctgov-intervention-alias" "$env_file" "$fixture_root" "$fixture_pgid" "BIOMCP_CTGOV_INTERVENTION_ALIAS" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"

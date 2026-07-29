@@ -3,17 +3,21 @@
 # only their origin when BIOMCP_CSPEC_FIXTURE_ORIGIN is set by this script.
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+
 root="$(cd "${1:-$PWD}" && pwd)"
 cache="$root/.cache"
 env_file="$cache/spec-clingen-cspec-env"
 mkdir -p "$cache"
 fixture_root="$(mktemp -d "$cache/spec-clingen-cspec.XXXXXX")"
+owner_arg="$(bash "$ownership_helper" new-owner "clingen-cspec" "$fixture_root")"
 bash "$(dirname "$0")/cleanup-clingen-cspec-spec-fixture.sh" "$root"
 ready="$fixture_root/origin"
 requests="$fixture_root/requests.jsonl"
 : >"$requests"
 
-READY="$ready" REQUESTS="$requests" uv run --no-sync python - 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
+READY="$ready" REQUESTS="$requests" setsid uv run --no-sync python - "$owner_arg" 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
 import json, os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -55,7 +59,6 @@ test -s "$ready"
 {
   printf 'export BIOMCP_CSPEC_FIXTURE_ORIGIN=%q\n' "$(<"$ready")"
   printf 'export BIOMCP_CACHE_DIR=%q\n' "$fixture_root/cache"
-  printf 'export BIOMCP_CSPEC_FIXTURE_PID=%q\n' "$pid"
-  printf 'export BIOMCP_CSPEC_FIXTURE_ROOT=%q\n' "$fixture_root"
   printf 'export BIOMCP_CSPEC_FIXTURE_REQUESTS=%q\n' "$requests"
 } >"$env_file"
+bash "$ownership_helper" write "$root" "clingen-cspec" "$env_file" "$fixture_root" "$pid" "BIOMCP_CSPEC_FIXTURE" "$owner_arg" >/dev/null

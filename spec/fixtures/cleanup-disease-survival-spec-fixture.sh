@@ -1,36 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 workspace_root="${1:-$PWD}"
-cache_dir="$workspace_root/.cache"
-env_file="$cache_dir/spec-disease-survival-env"
-
-if [[ -f "$env_file" ]]; then
-  # shellcheck source=/dev/null
-  . "$env_file"
-fi
-
-if [[ -n "${BIOMCP_DISEASE_SURVIVAL_PID:-}" ]] && kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
-  kill "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null || true
-  for _ in $(seq 1 50); do
-    if ! kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
-      break
-    fi
-    sleep 0.1
-  done
-  if kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
-    kill -KILL "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null || true
-    for _ in $(seq 1 50); do
-      if ! kill -0 "$BIOMCP_DISEASE_SURVIVAL_PID" 2>/dev/null; then
-        break
-      fi
-      sleep 0.1
-    done
-  fi
-fi
-
-if [[ -n "${BIOMCP_DISEASE_SURVIVAL_ROOT:-}" ]]; then
-  rm -rf "$BIOMCP_DISEASE_SURVIVAL_ROOT"
-fi
-
-rm -f "$env_file"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$script_dir/routine-fixture-ownership.sh" cleanup "$workspace_root" "disease-survival" "$workspace_root/.cache/spec-disease-survival-env" "BIOMCP_DISEASE_SURVIVAL"

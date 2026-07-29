@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+
 workspace_root="${1:-$PWD}"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-disease-survival-env"
@@ -14,12 +17,13 @@ if [[ -x "$cleanup_script" ]]; then
 fi
 
 fixture_root="$(mktemp -d "$cache_dir/spec-disease-survival.XXXXXX")"
+owner_arg="$(bash "$ownership_helper" new-owner "disease-survival" "$fixture_root")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
 : >"$request_log"
 
-uv run --no-sync python - "$workspace_root" "$ready_file" "$request_log" 8>&- <<'PY' >"$server_log" 2>&1 &
+setsid uv run --no-sync python - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -144,10 +148,9 @@ PY
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/unused-dgidb"
   printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/unused-opentargets"
   printf 'export BIOMCP_CACHE_MODE=off\n'
-  printf 'export BIOMCP_DISEASE_SURVIVAL_PID=%q\n' "$server_pid"
-  printf 'export BIOMCP_DISEASE_SURVIVAL_ROOT=%q\n' "$fixture_root"
   printf 'export BIOMCP_DISEASE_SURVIVAL_READY_FILE=%q\n' "$ready_file"
   printf 'export BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
 
+bash "$ownership_helper" write "$workspace_root" "disease-survival" "$env_file" "$fixture_root" "$server_pid" "BIOMCP_DISEASE_SURVIVAL" "$owner_arg" >/dev/null
 printf '%s\n' "$fixture_root"
