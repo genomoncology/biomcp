@@ -183,7 +183,7 @@ export BIOMCP_CACHE_MODE=off BIOMCP_CACHE_DIR="$fixture_root/cache" BIOMCP_TEST_
 export BIOMCP_PUBTATOR_BASE="$base_url" BIOMCP_MYVARIANT_BASE="$base_url/v1" BIOMCP_EUROPEPMC_BASE="$base_url" BIOMCP_PUBMED_BASE="$base_url/entrez/eutils" BIOMCP_S2_BASE="$base_url" BIOMCP_LITSENSE2_BASE="$base_url" BIOMCP_CLINGEN_CAR_BASE="$base_url" BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN="$base_url"
 panel="$repo_root/spec/fixtures/g5-v2-identity-panel.json"
 all="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
-confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --limit 1)"
+confirmed="$("$binary" --json variant articles --input "$panel" --verify-identity --confirmed-only --debug-plan --limit 1)"
 printf 'deep-discovery\n' >"$mode"
 braf_panel="$repo_root/spec/fixtures/variant-article-braf-identity-input.json"
 reserved="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --confirmed-only --debug-plan --limit 3)"
@@ -238,6 +238,14 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reserved "
         (.verification_disposition | type) == "string" and
         (.pagination_disposition | type) == "string") and
       any($plan.candidate_trace.candidates[]; .identifier == "12901799" and .received == true and .after_union == true and .after_dedup == true and .pagination_disposition == "visible"))),
+    candidate_route_trace_keeps_filtered_observations: (any($confirmed.items[];
+      .debug_plan.candidate_trace.candidates[]? |
+      .identifier == "31749828" and .received == true and .after_dedup == true and
+      .verification_disposition == "filtered_confirmed_only" and
+      .pagination_disposition == "not_visible")),
+    candidate_route_trace_keeps_duplicate_route_observations: (any($all.items[];
+      [.debug_plan.candidate_trace.candidates[]? | select(.identifier == "12901799") | .route] |
+      unique | length >= 2)),
     audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
       ["apc-grch38", "12901799", 324, "p.Arg283Ter"],
