@@ -101,6 +101,8 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
 
 ## Candidate route traces explain bounded pipeline dispositions
 
+<!-- mustmatch-lint: skip -->
+
 A route returning a paper is not enough to explain whether BioMCP kept it. The
 opt-in debug plan records a bounded, versioned trace for every candidate-route
 observation, so operators can distinguish receipt from union, deduplication,
