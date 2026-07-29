@@ -18,6 +18,7 @@ pub(super) struct ArticleCandidate {
     pub(super) source_positions: Vec<ArticleSourcePosition>,
     pub(super) semantic_signal: Option<f64>,
     pub(super) variant_provenance: Vec<super::variant_search::VariantArticleProvenance>,
+    pub(super) candidate_trace: Vec<super::variant_search::VariantArticleCandidateTraceRecord>,
     pub(super) identity: Option<super::identity_verification::VariantArticleIdentity>,
 }
 
@@ -98,6 +99,7 @@ pub(super) fn article_candidate_from_row(mut row: ArticleSearchResult) -> Articl
         semantic_signal: (row.source == ArticleSource::LitSense2)
             .then(|| row.score.unwrap_or(0.0).clamp(0.0, 1.0)),
         variant_provenance: Vec::new(),
+        candidate_trace: Vec::new(),
         identity: None,
         row,
     }
@@ -159,6 +161,7 @@ fn merge_article_candidate(target: &mut ArticleCandidate, incoming: ArticleCandi
         mut source_positions,
         semantic_signal,
         mut variant_provenance,
+        mut candidate_trace,
         identity,
     } = incoming;
     let target_row = &mut target.row;
@@ -218,6 +221,7 @@ fn merge_article_candidate(target: &mut ArticleCandidate, incoming: ArticleCandi
         target.identity = identity;
     }
     target.variant_provenance.append(&mut variant_provenance);
+    target.candidate_trace.append(&mut candidate_trace);
     target.variant_provenance.sort();
     target.variant_provenance.dedup();
     if let Some(local_position) = min_source_local_position(&target.source_positions) {

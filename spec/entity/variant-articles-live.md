@@ -29,9 +29,11 @@ invent command grammar.
 
 <!-- mustmatch-lint: skip -->
 
-This live probe is diagnostic only, never the release gate. The frozen routine
-contract in `variant-article-identity.md` owns verified positives, collision
-rejection, pagination, and outage truthfulness. This probe checks that every
+This focused live probe diagnoses provider state; the frozen routine contract in
+`variant-article-identity.md` owns verified positives, collision rejection,
+pagination, and outage truthfulness. When this probe runs inside the one
+preflighted authoritative verify, its unchanged identity facts are hard release
+gate evidence rather than an optional diagnostic. This probe checks that every
 unchanged G5 v2 request still resolves, executes an exact route with a
 route-tied literal alias, and reports source coverage plus terminal state
 against real providers. ATM and PALB2 also submit independent versioned RefSeq
@@ -52,7 +54,8 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
     "all_have_exact_route": true,
     "all_have_route_tied_alias": true,
     "all_have_source_status": true,
-    "all_have_terminal_state": true
+    "all_have_terminal_state": true,
+    "authoritative_verify_treats_g5_as_hard": true
   },
   "identity_diagnostics": {
     "missing_canonical_equivalence": []
@@ -90,8 +93,10 @@ bash ../fixtures/run-variant-article-strict-live-canary.sh ../..
 The union route should recover the predeclared readiness threshold, cover most
 panel variants, preserve the two MLH1 family papers, and retain every PMID for
 the same variant where an individual route had already demonstrated it, with
-route provenance. Provider drift must be reported
-rather than hidden by weakening the routine fixture contract.
+route provenance. Its JSON attributes every expected PMID to binary-emitted
+route-stage evidence, so provider absence cannot be confused with a BioMCP
+pipeline loss. Provider drift must be reported rather than hidden by weakening
+the routine fixture contract.
 
 ```bash run id=variant-article-live-canary exit=0 timeout=180
 bash ../fixtures/run-variant-articles-live-canary.sh ../..
@@ -102,6 +107,7 @@ bash ../fixtures/run-variant-articles-live-canary.sh ../..
   "reference_recall_at_least_9_of_12": true,
   "variant_coverage_at_least_6_of_7": true,
   "mlh1_family_pmids_present": true,
-  "route_specific_pmids_present_for_expected_variants": true
+  "route_specific_pmids_present_for_expected_variants": true,
+  "expected_pmid_route_diagnostics_are_binary_attributed": true
 }
 ```

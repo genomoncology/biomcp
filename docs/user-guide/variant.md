@@ -295,8 +295,11 @@ duplicate papers with route/source request provenance, ranks the union, and
 applies `--offset` and `--limit` once. `provenance.query_aliases` records only
 the aliases sent to retrieve a row; it does not claim that an article contains
 or verifies an alias. `--debug-plan` exposes each provider request, route,
-query alias, exact query, and template version. Use `--strategy annotation` or
-`--strategy lexical` to diagnose one exact route. Ambiguous or unresolved input
+query alias, exact query, and template version. It also includes a bounded,
+versioned candidate-route trace: receipt, union/dedup survival, rank,
+identity-verification disposition, and pagination visibility for each retained
+candidate-route observation. Use `--strategy annotation` or `--strategy lexical`
+to diagnose one exact route. Ambiguous or unresolved input
 still runs strict literal requests unless provider validation contradicts the
 request; discovery rows remain labeled `best_effort_free_text`.
 
@@ -382,7 +385,10 @@ the work needed to verify them. A discovery route stopped by
 that bound remains incomplete rather than being presented as exhaustive. `--debug-plan` is
 JSON-only and adds normalized aliases, route/provider facts, ranking inputs,
 budgets, `work_allocation` accounting for discovery and identity verification,
-and stop state; ordinary single and batch output omit plans. The typed MCP
+stop state, and the bounded candidate-route trace. Its trace contains only
+identifiers, route/stage dispositions, and bounded rank positions; it excludes
+provider URLs, credentials, headers, and raw response bodies. Ordinary single
+and batch output omit plans. The typed MCP
 `variant_articles` tool accepts the same structured item fields directly without
 server-local paths.
 
