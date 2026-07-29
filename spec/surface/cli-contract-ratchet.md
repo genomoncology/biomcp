@@ -273,6 +273,24 @@ boolean
 discovery-only"
 ```
 
+## ClinGen Opt-In Routes Remain Distinct From Ordinary Defaults
+
+ClinGen's ERepo, CSpec, Allele Registry, and linked-data identity evidence are
+separate opt-in capabilities even though they share an organization name. Their
+local discovery surfaces remain available together without turning verification
+into the ordinary variant-article path.
+
+```bash
+biomcp variant --help | mustmatch like 'erepo
+Retrieve versioned ClinGen ERepo expert assertions by CAid'
+biomcp gene --help | mustmatch like 'cspec
+ClinGen Criteria Specification Registry source documents'
+biomcp variant normalize --help | mustmatch like 'CAR is available as car
+biomcp variant normalize car'
+biomcp variant articles --help | mustmatch like '--verify-identity
+[default: union]'
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the

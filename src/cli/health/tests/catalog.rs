@@ -82,6 +82,27 @@ fn nci_health_probe_uses_keyword_query() {
 }
 
 #[test]
+fn clingen_health_descriptors_and_affects_remain_distinct() {
+    let descriptors = health_sources()
+        .iter()
+        .filter(|source| source.api.starts_with("ClinGen "))
+        .map(|source| (source.api, source.affects))
+        .collect::<Vec<_>>();
+
+    for descriptor in [
+        ("ClinGen Allele Registry", Some("variant normalization")),
+        ("ClinGen CSpec", Some("gene cspec helper")),
+        ("ClinGen ERepo", Some("variant erepo helper")),
+        ("ClinGen LDH", Some("variant article identity verification")),
+    ] {
+        assert!(
+            descriptors.contains(&descriptor),
+            "missing ClinGen health descriptor: {descriptor:?}"
+        );
+    }
+}
+
+#[test]
 fn markdown_shows_new_affects_mappings() {
     assert_eq!(affects_for_api("GTEx"), Some("gene expression section"));
     assert_eq!(affects_for_api("DGIdb"), Some("gene druggability section"));
@@ -90,6 +111,10 @@ fn markdown_shows_new_affects_mappings() {
         Some("gene druggability, drug target, and disease association sections")
     );
     assert_eq!(affects_for_api("ClinGen"), Some("gene clingen section"));
+    assert_eq!(
+        affects_for_api("ClinGen Allele Registry"),
+        Some("variant normalization")
+    );
     assert_eq!(affects_for_api("ClinGen CSpec"), Some("gene cspec helper"));
     assert_eq!(
         affects_for_api("ClinGen ERepo"),
