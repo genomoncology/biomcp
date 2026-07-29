@@ -77,6 +77,35 @@ fn json_contains(value: &serde_json::Value, needle: &str) -> bool {
     }
 }
 
+fn json_property_contains(value: &serde_json::Value, property: &str, needle: &str) -> bool {
+    fn visit(
+        root: &serde_json::Value,
+        value: &serde_json::Value,
+        property: &str,
+        needle: &str,
+    ) -> bool {
+        match value {
+            serde_json::Value::Object(map) => {
+                map.get(property).is_some_and(|property_value| {
+                    json_contains(property_value, needle)
+                        || json_refs_contain(root, property_value, needle)
+                }) || map
+                    .values()
+                    .any(|child| visit(root, child, property, needle))
+            }
+            serde_json::Value::Array(items) => items
+                .iter()
+                .any(|child| visit(root, child, property, needle)),
+            serde_json::Value::String(_)
+            | serde_json::Value::Number(_)
+            | serde_json::Value::Bool(_)
+            | serde_json::Value::Null => false,
+        }
+    }
+
+    visit(value, value, property, needle)
+}
+
 fn json_refs_contain(root: &serde_json::Value, value: &serde_json::Value, needle: &str) -> bool {
     match value {
         serde_json::Value::Object(map) => {
@@ -105,7 +134,31 @@ fn named_root_property_contains(schema: &serde_json::Value, property: &str, need
     let Some(value) = schema.pointer(&format!("/properties/{property}")) else {
         return false;
     };
-    json_contains(value, needle) || json_refs_contain(schema, value, needle)
+    let value = value
+        .get("$ref")
+        .and_then(serde_json::Value::as_str)
+        .and_then(|reference| reference.strip_prefix('#'))
+        .and_then(|pointer| schema.pointer(pointer))
+        .unwrap_or(value);
+    json_contains(value, needle)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::named_root_property_contains;
+    use serde_json::json;
+
+    #[test]
+    fn named_root_property_ignores_nested_refs() {
+        let schema = json!({
+            "properties": {
+                "inputs": { "items": { "$ref": "#/$defs/unrelated" } }
+            },
+            "$defs": { "unrelated": { "maximum": 50 } }
+        });
+
+        assert!(!named_root_property_contains(&schema, "inputs", "50"));
+    }
 }
 
 fn assert_tool_metadata(tools: &[Tool]) -> anyhow::Result<()> {
@@ -198,25 +251,25 @@ async fn print_typed_tool_surface(
     let gene_cspec_schema = tool_schema(gene_cspec);
     let variant_articles_schema = tool_schema(variant_articles);
 
-    if !named_root_property_contains(&search_schema, "entity", "pathway") {
+    if !json_property_contains(&search_schema, "entity", "pathway") {
         anyhow::bail!("search entity schema missing pathway enum");
     }
-    if !named_root_property_contains(&search_schema, "entity", "author") {
+    if !json_property_contains(&search_schema, "entity", "author") {
         anyhow::bail!("search entity schema missing author enum");
     }
-    if !named_root_property_contains(&get_schema, "entity", "author") {
+    if !json_property_contains(&get_schema, "entity", "author") {
         anyhow::bail!("get entity schema missing author enum");
     }
-    if !named_root_property_contains(&search_schema, "limit", "25") {
+    if !json_property_contains(&search_schema, "limit", "25") {
         anyhow::bail!("search limit schema missing 25 bound");
     }
-    if !named_root_property_contains(&get_schema, "entity", "gene") {
+    if !json_property_contains(&get_schema, "entity", "gene") {
         anyhow::bail!("get entity schema missing gene enum");
     }
-    if !named_root_property_contains(&get_schema, "sections", "pathways") {
+    if !json_property_contains(&get_schema, "sections", "pathways") {
         anyhow::bail!("get sections schema missing pathways enum");
     }
-    if !named_root_property_contains(&get_schema, "sections", "indexing") {
+    if !json_property_contains(&get_schema, "sections", "indexing") {
         anyhow::bail!("get sections schema missing indexing enum");
     }
     for bound in ["1", "50"] {
@@ -239,7 +292,7 @@ async fn print_typed_tool_surface(
         anyhow::bail!("gene_cspec schema must not expose CLI-only raw bytes");
     }
     for control in ["verify_identity", "confirmed_only"] {
-        if !named_root_property_contains(&variant_articles_schema, control, "boolean") {
+        if !json_property_contains(&variant_articles_schema, control, "boolean") {
             anyhow::bail!("variant_articles schema missing {control} boolean");
         }
     }
