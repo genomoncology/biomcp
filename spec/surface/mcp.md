@@ -113,6 +113,8 @@ for _ in $(seq 1 40); do
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
 cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get, variant_articles
+ClinGen typed tools: variant_normalize_car, variant_erepo, gene_cspec, variant_articles
+ClinGen schemas validate their named root properties
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search schema includes entity enum and bounded limit
