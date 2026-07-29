@@ -161,12 +161,14 @@ class Handler(BaseHTTPRequestHandler):
         if path.endswith("/esearch.fcgi"):
             if mode.read_text().strip() == "deep-discovery":
                 return send(self, 200, {"esearchresult": {"idlist": ["90000004", "90000005", "90000006"], "count": "100"}})
+            if "APC" in query.get("term", [""])[0]:
+                return send(self, 200, {"esearchresult": {"idlist": ["12901799"], "count": "1"}})
             return send(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
         if path.endswith("/esummary.fcgi"):
+            pmids = query.get("id", [""])[0].split(",")
             if mode.read_text().strip() == "deep-discovery":
-                pmids = query.get("id", [""])[0].split(",")
                 return send(self, 200, {"result": {"uids": pmids, **{pmid: {"uid": pmid, "title": "BRAF V600E frozen identity article"} for pmid in pmids}}})
-            return send(self, 200, {"result": {"uids": []}})
+            return send(self, 200, {"result": {"uids": pmids, **{pmid: {"uid": pmid, "title": "APC frozen identity article"} for pmid in pmids}}})
         if path in {"/sentences/", "/passages/"}: return send(self, 200, [])
         return send(self, 200, {"results": [], "data": [], "total": 0, "resultList": {"result": []}})
 
@@ -189,15 +191,19 @@ braf_panel="$repo_root/spec/fixtures/variant-article-braf-identity-input.json"
 reserved="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --confirmed-only --debug-plan --limit 3)"
 printf 'reordered\n' >"$mode"
 reordered="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
-jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reserved "$reserved" --argjson reordered "$reordered" '
-  def item($id): $all.items[] | select(.request_id == $id);
-  def reordered_item($id): $reordered.items[] | select(.request_id == $id);
-  def reserved_item: $reserved.items[] | select(.request_id == "braf-refseq-grch37");
+printf '%s' "$all" >"$fixture_root/all.json"
+printf '%s' "$confirmed" >"$fixture_root/confirmed.json"
+printf '%s' "$reserved" >"$fixture_root/reserved.json"
+printf '%s' "$reordered" >"$fixture_root/reordered.json"
+jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_root/confirmed.json" --slurpfile reserved "$fixture_root/reserved.json" --slurpfile reordered "$fixture_root/reordered.json" '
+  def item($id): $all[0].items[] | select(.request_id == $id);
+  def reordered_item($id): $reordered[0].items[] | select(.request_id == $id);
+  def reserved_item: $reserved[0].items[] | select(.request_id == "braf-refseq-grch37");
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
     clingen_ldh: {atm_exact_annotation_confirmed: any(item("atm-grch38").results[]; .pmcid == "PMC9541484" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 472)), palb2_table_selector_confirmed: any(item("palb2-grch38").results[]; .pmcid == "PMC9582472" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 79728 and .provider_linkage.selector_type == "TableTextSelector" and .provider_linkage.caid == "CA900000000005")), empty_coverage_preserves_candidates: (has("mlh1-grch38"; "20864636"; "confirmed") and all(item("mlh1-grch38").results[].identity.observations[]; .source != "clingen_ldh"))},
     frozen_positive_statuses: {apc: has("apc-grch38"; "12901799"; "confirmed"), atm: has("atm-grch38"; "32918381"; "confirmed"), palb2: has("palb2-grch38"; "39999518"; "confirmed"), mlh1: has("mlh1-grch38"; "20864636"; "confirmed")},
-    collision_pmids_never_confirmed: (all(["31749828", "24376681", "33656647"][]; . as $pmid | any($all.items[].results[]; .pmid == $pmid and .identity.status != "confirmed"))),
+    collision_pmids_never_confirmed: (all(["31749828", "24376681", "33656647"][]; . as $pmid | any($all[0].items[].results[]; .pmid == $pmid and .identity.status != "confirmed"))),
     intentional_unverified: {brca1: has("brca1-grch38"; "90000003"; "unverified"), pten: has("pten-grch38"; "90000002"; "unverified"), tp53: has("tp53-grch38"; "24376681"; "unverified")},
     conflicting_observation: has("apc-grch38"; "90000001"; "conflicting"),
     outage_is_incomplete: ((item("pten-grch38").complete == false) and (item("pten-grch38").truncated == true) and (item("pten-grch38").pagination.total == null)),
@@ -216,10 +222,10 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reserved "
         and .comparison_complete == true
         and .source == "clingen_car"
         and (.provider_response_sha256 | test("^[0-9a-f]{64}$")))),
-    confirmed_page_filters_before_limit: (any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
+    confirmed_page_filters_before_limit: (any($confirmed[0].items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed[0].items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
     deep_discovery_keeps_structured_braf_for_identity_verification: (reserved_item | .complete == false and .truncated == true and .canonical_equivalence.status == "confirmed" and .canonical_equivalence.complete == true and any(.results[]; .pmid == "90000004" and .identity.status == "confirmed") and all(.results[]; .identity.status == "confirmed")),
     debug_plan_records_discovery_and_verification_allocation: (reserved_item | .debug_plan as $plan | $plan.work_allocation as $allocation | ($allocation | type) == "object" and ($allocation.discovery.limit | type) == "number" and ($allocation.discovery.consumed | type) == "number" and $allocation.discovery.consumed > 0 and $allocation.discovery.consumed <= $allocation.discovery.limit and $allocation.discovery.limit < $plan.budgets.item.limit and ($allocation.identity_verification.reserved | type) == "number" and ($allocation.identity_verification.consumed | type) == "number" and $allocation.identity_verification.reserved >= 1 and $allocation.identity_verification.consumed > 1 and $allocation.identity_verification.consumed <= $allocation.identity_verification.reserved and ($allocation.discovery.consumed + $allocation.identity_verification.consumed == $plan.budgets.item.consumed)),
-    candidate_route_trace_is_versioned_bounded_and_stage_attributed: (all($all.items[];
+    candidate_route_trace_is_versioned_bounded_and_stage_attributed: (all($all[0].items[];
       .debug_plan as $plan |
       ($plan.candidate_trace | type) == "object" and
       $plan.candidate_trace.schema_version == "variant-article-candidate-trace-v1" and
@@ -236,17 +242,17 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reserved "
         (.after_dedup | type) == "boolean" and
         (.rank_position == null or ((.rank_position | type) == "number" and .rank_position >= 1 and .rank_position <= $plan.budgets.item.limit)) and
         (.verification_disposition | type) == "string" and
-        (.pagination_disposition | type) == "string") and
-      any($plan.candidate_trace.candidates[]; .identifier == "12901799" and .received == true and .after_union == true and .after_dedup == true and .pagination_disposition == "visible"))),
-    candidate_route_trace_keeps_filtered_observations: (any($confirmed.items[];
+        (.pagination_disposition | type) == "string")) and
+      any($all[0].items[]; .debug_plan.candidate_trace.candidates[] | .identifier == "12901799" and .received == true and .after_union == true and .after_dedup == true and .pagination_disposition == "visible")),
+    candidate_route_trace_keeps_filtered_observations: (any($confirmed[0].items[];
       .debug_plan.candidate_trace.candidates[]? |
       .identifier == "31749828" and .received == true and .after_dedup == true and
       .verification_disposition == "filtered_confirmed_only" and
       .pagination_disposition == "not_visible")),
-    candidate_route_trace_keeps_duplicate_route_observations: (any($all.items[];
+    candidate_route_trace_keeps_duplicate_route_observations: (any($all[0].items[];
       [.debug_plan.candidate_trace.candidates[]? | select(.identifier == "12901799") | .route] |
       unique | length >= 2)),
-    audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
+    audit_versions_and_canonical_subsets: (all($all[0].items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all[0].items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
       ["apc-grch38", "12901799", 324, "p.Arg283Ter"],
       ["atm-grch38", "32918381", 472, "c.1066-6T>G"],

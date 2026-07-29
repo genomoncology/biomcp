@@ -526,6 +526,26 @@ pub struct ProviderVariantQueryPlan {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleCandidateTraceRecord {
+    pub identifier: String,
+    pub route: String,
+    pub provider_terminal_state: String,
+    pub received: bool,
+    pub after_union: bool,
+    pub after_dedup: bool,
+    pub rank_position: Option<usize>,
+    pub verification_disposition: String,
+    pub pagination_disposition: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleCandidateTrace {
+    pub schema_version: &'static str,
+    pub bounded: bool,
+    pub candidates: Vec<VariantArticleCandidateTraceRecord>,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleDebugPlan {
     pub normalized_aliases: NormalizedVariantAliases,
     pub provider_queries: Vec<ProviderVariantQueryPlan>,
@@ -537,6 +557,7 @@ pub struct VariantArticleDebugPlan {
     pub truncated: bool,
     pub stopped_routes: Vec<String>,
     pub next: VariantArticleNextPlan,
+    pub candidate_trace: VariantArticleCandidateTrace,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub verification: Option<VariantArticleVerificationPlan>,
 }
@@ -720,6 +741,19 @@ fn candidate_with_provenance(
         query_aliases,
         native_position,
     });
+    candidate
+        .candidate_trace
+        .push(VariantArticleCandidateTraceRecord {
+            identifier: stable_article_identifier(&candidate.row),
+            route: route.to_string(),
+            provider_terminal_state: "received".into(),
+            received: true,
+            after_union: false,
+            after_dedup: false,
+            rank_position: None,
+            verification_disposition: "not_requested".into(),
+            pagination_disposition: "not_visible".into(),
+        });
     candidate
 }
 
@@ -1290,6 +1324,19 @@ async fn federated_alias_candidates(
                     query_aliases: vec![alias.clone()],
                     native_position: candidate.row.source_local_position.saturating_add(1),
                 });
+                candidate
+                    .candidate_trace
+                    .push(VariantArticleCandidateTraceRecord {
+                        identifier: stable_article_identifier(&candidate.row),
+                        route: route.to_string(),
+                        provider_terminal_state: "received".into(),
+                        received: true,
+                        after_union: false,
+                        after_dedup: false,
+                        rank_position: None,
+                        verification_disposition: "not_requested".into(),
+                        pagination_disposition: "not_visible".into(),
+                    });
             }
             candidates.push(candidate);
         }
@@ -1864,6 +1911,7 @@ struct VariantArticleDebugPlanState {
     counts: VariantArticleCountsPlan,
     truncated: bool,
     next: VariantArticleNextPlan,
+    candidate_trace: Vec<VariantArticleCandidateTraceRecord>,
 }
 
 fn build_debug_plan(
@@ -1987,6 +2035,15 @@ fn build_debug_plan(
         truncated: state.truncated,
         stopped_routes: execution.stopped_routes(),
         next: state.next,
+        candidate_trace: VariantArticleCandidateTrace {
+            schema_version: "variant-article-candidate-trace-v1",
+            bounded: true,
+            candidates: state
+                .candidate_trace
+                .into_iter()
+                .take(ITEM_WORK_LIMIT)
+                .collect(),
+        },
         verification: None,
     }
 }
@@ -2306,7 +2363,18 @@ async fn search_variant_articles_identity(
     }
 
     let pre_dedup = candidates.len();
+    for candidate in &mut candidates {
+        for trace in &mut candidate.candidate_trace {
+            trace.after_union = true;
+        }
+    }
     let mut candidates = merge_article_candidate_pool(candidates);
+    for candidate in &mut candidates {
+        for trace in &mut candidate.candidate_trace {
+            trace.after_dedup = true;
+        }
+    }
+    let mut filtered_candidate_trace = Vec::new();
     let mut verification_response_subsets = Vec::new();
     let mut verification_content_subsets = Vec::new();
     let mut verification_incomplete = false;
@@ -2401,16 +2469,48 @@ async fn search_variant_articles_identity(
             &execution,
         )
         .await;
+        for candidate in &mut candidates {
+            let disposition = candidate
+                .identity
+                .as_ref()
+                .map_or("unverified", |identity| identity.status);
+            for trace in &mut candidate.candidate_trace {
+                trace.verification_disposition = disposition.into();
+            }
+        }
         if verification.confirmed_only {
-            candidates.retain(|candidate| {
-                candidate
+            candidates.retain_mut(|candidate| {
+                let confirmed = candidate
                     .identity
                     .as_ref()
-                    .is_some_and(|identity| identity.status == "confirmed")
+                    .is_some_and(|identity| identity.status == "confirmed");
+                if !confirmed {
+                    for trace in &mut candidate.candidate_trace {
+                        trace.verification_disposition = "filtered_confirmed_only".into();
+                    }
+                    filtered_candidate_trace.append(&mut candidate.candidate_trace);
+                }
+                confirmed
             });
         }
     }
     rank_candidates(&mut candidates);
+    for (index, candidate) in candidates.iter_mut().enumerate() {
+        for trace in &mut candidate.candidate_trace {
+            trace.rank_position = Some(index.saturating_add(1));
+            trace.pagination_disposition =
+                if index >= offset && index < offset.saturating_add(limit) {
+                    "visible".into()
+                } else {
+                    "not_visible".into()
+                };
+        }
+    }
+    let candidate_trace = candidates
+        .iter()
+        .flat_map(|candidate| candidate.candidate_trace.iter().cloned())
+        .chain(filtered_candidate_trace)
+        .collect();
     let total_candidates = candidates.len();
     let hard_error = succeeded_routes == 0 && failed_routes > 0;
     let has_more = offset.saturating_add(limit) < total_candidates;
@@ -2497,6 +2597,7 @@ async fn search_variant_articles_identity(
                     offset: offset.saturating_add(rows.len()),
                     cursor: None,
                 },
+                candidate_trace,
             },
         );
         if verification.verify_identity {
@@ -2764,6 +2865,11 @@ fn empty_debug_plan(
         next: VariantArticleNextPlan {
             offset,
             cursor: None,
+        },
+        candidate_trace: VariantArticleCandidateTrace {
+            schema_version: "variant-article-candidate-trace-v1",
+            bounded: true,
+            candidates: Vec::new(),
         },
         verification: None,
     }
@@ -3205,10 +3311,69 @@ mod tests {
                     counts: counts.clone(),
                     truncated: false,
                     next: next.clone(),
+                    candidate_trace: Vec::new(),
                 },
             );
             assert!(plan.routes.iter().any(|route| route.route == "strict"));
         }
+    }
+
+    #[test]
+    fn candidate_trace_is_capped_and_serializes_only_stage_facts() {
+        let plan = build_debug_plan(
+            "BRAF p.V600E",
+            &resolved_context(),
+            VariantArticleStrategy::Union,
+            &[],
+            &VariantArticleExecutionContext::single(),
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: 0,
+                    post_dedup: 0,
+                    returned: 0,
+                },
+                truncated: false,
+                next: VariantArticleNextPlan {
+                    offset: 0,
+                    cursor: None,
+                },
+                candidate_trace: (0..=ITEM_WORK_LIMIT)
+                    .map(|index| VariantArticleCandidateTraceRecord {
+                        identifier: index.to_string(),
+                        route: "strict".into(),
+                        provider_terminal_state: "received".into(),
+                        received: true,
+                        after_union: true,
+                        after_dedup: true,
+                        rank_position: Some(index.saturating_add(1)),
+                        verification_disposition: "confirmed".into(),
+                        pagination_disposition: "visible".into(),
+                    })
+                    .collect(),
+            },
+        );
+
+        assert_eq!(plan.candidate_trace.candidates.len(), ITEM_WORK_LIMIT);
+        assert_eq!(
+            serde_json::to_value(&plan.candidate_trace.candidates[0])
+                .expect("candidate trace serializes")
+                .as_object()
+                .expect("candidate trace is an object")
+                .keys()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+            vec![
+                "after_dedup",
+                "after_union",
+                "identifier",
+                "pagination_disposition",
+                "provider_terminal_state",
+                "rank_position",
+                "received",
+                "route",
+                "verification_disposition",
+            ]
+        );
     }
 
     #[test]
@@ -3299,6 +3464,7 @@ mod tests {
                     offset: 0,
                     cursor: None,
                 },
+                candidate_trace: Vec::new(),
             },
         );
         assert!(plan.routes.is_empty());
@@ -3696,6 +3862,7 @@ mod tests {
                     offset: 0,
                     cursor: None,
                 },
+                candidate_trace: Vec::new(),
             },
         );
         let provider = plan
@@ -3810,6 +3977,7 @@ mod tests {
                     offset: 0,
                     cursor: None,
                 },
+                candidate_trace: Vec::new(),
             },
         );
         assert!(debug_plan.provider_queries.iter().any(|query| {
