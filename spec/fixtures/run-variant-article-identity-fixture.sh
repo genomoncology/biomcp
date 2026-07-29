@@ -219,6 +219,25 @@ jq -n --argjson all "$all" --argjson confirmed "$confirmed" --argjson reserved "
     confirmed_page_filters_before_limit: (any($confirmed.items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed.items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
     deep_discovery_keeps_structured_braf_for_identity_verification: (reserved_item | .complete == false and .truncated == true and .canonical_equivalence.status == "confirmed" and .canonical_equivalence.complete == true and any(.results[]; .pmid == "90000004" and .identity.status == "confirmed") and all(.results[]; .identity.status == "confirmed")),
     debug_plan_records_discovery_and_verification_allocation: (reserved_item | .debug_plan as $plan | $plan.work_allocation as $allocation | ($allocation | type) == "object" and ($allocation.discovery.limit | type) == "number" and ($allocation.discovery.consumed | type) == "number" and $allocation.discovery.consumed > 0 and $allocation.discovery.consumed <= $allocation.discovery.limit and $allocation.discovery.limit < $plan.budgets.item.limit and ($allocation.identity_verification.reserved | type) == "number" and ($allocation.identity_verification.consumed | type) == "number" and $allocation.identity_verification.reserved >= 1 and $allocation.identity_verification.consumed > 1 and $allocation.identity_verification.consumed <= $allocation.identity_verification.reserved and ($allocation.discovery.consumed + $allocation.identity_verification.consumed == $plan.budgets.item.consumed)),
+    candidate_route_trace_is_versioned_bounded_and_stage_attributed: (all($all.items[];
+      .debug_plan as $plan |
+      ($plan.candidate_trace | type) == "object" and
+      $plan.candidate_trace.schema_version == "variant-article-candidate-trace-v1" and
+      $plan.candidate_trace.bounded == true and
+      ($plan.candidate_trace.candidates | type) == "array" and
+      ($plan.candidate_trace.candidates | length) <= $plan.budgets.item.limit and
+      all($plan.candidate_trace.candidates[];
+        (keys | sort) == ["after_dedup", "after_union", "identifier", "pagination_disposition", "provider_terminal_state", "rank_position", "received", "route", "verification_disposition"] and
+        (.identifier | type) == "string" and
+        (.route | type) == "string" and
+        (.provider_terminal_state | type) == "string" and
+        (.received | type) == "boolean" and
+        (.after_union | type) == "boolean" and
+        (.after_dedup | type) == "boolean" and
+        (.rank_position == null or ((.rank_position | type) == "number" and .rank_position >= 1 and .rank_position <= $plan.budgets.item.limit)) and
+        (.verification_disposition | type) == "string" and
+        (.pagination_disposition | type) == "string") and
+      any($plan.candidate_trace.candidates[]; .identifier == "12901799" and .received == true and .after_union == true and .after_dedup == true and .pagination_disposition == "visible"))),
     audit_versions_and_canonical_subsets: (all($all.items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all.items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
       ["apc-grch38", "12901799", 324, "p.Arg283Ter"],

@@ -99,6 +99,23 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
 }
 ```
 
+## Candidate route traces explain bounded pipeline dispositions
+
+A route returning a paper is not enough to explain whether BioMCP kept it. The
+opt-in debug plan records a bounded, versioned trace for every candidate-route
+observation, so operators can distinguish receipt from union, deduplication,
+identity verification, and pagination without exposing provider payloads.
+
+```bash run id=candidate-route-trace exit=0
+bash ../fixtures/run-variant-article-identity-fixture.sh ../..
+```
+
+```json expect=candidate-route-trace contains
+{
+  "candidate_route_trace_is_versioned_bounded_and_stage_attributed": true
+}
+```
+
 ## Typed PubTator linkage is bound to the returned PMID
 
 <!-- mustmatch-lint: skip -->
