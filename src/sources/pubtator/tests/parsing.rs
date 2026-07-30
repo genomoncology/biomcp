@@ -21,7 +21,7 @@ fn json_ct() -> HeaderValue {
 }
 
 #[test]
-fn parses_export_response_fixture() {
+fn parses_real_export_capture_and_retains_disease_normalized_id() {
     let resp: PubTatorExportResponse = decode_json(
         crate::error::SourceContext::retry(crate::error::SourceProvider::PUBTATOR3),
         StatusCode::OK,
@@ -31,23 +31,46 @@ fn parses_export_response_fixture() {
     )
     .unwrap();
 
-    assert_eq!(resp.documents.len(), 1);
-    let doc = &resp.documents[0];
-    assert_eq!(doc.pmid, Some(22663011));
-    assert_eq!(doc.pmcid.as_deref(), Some("PMC3326122"));
-    assert_eq!(doc.passages.len(), 1);
+    let document = resp.documents.first().expect("captured document");
+    assert_eq!(document.pmid, Some(22663011));
+    for kind in ["Gene", "Disease", "Chemical", "Species", "Variant"] {
+        assert!(
+            document
+                .passages
+                .iter()
+                .flat_map(|passage| &passage.annotations)
+                .any(|annotation| {
+                    annotation
+                        .infons
+                        .as_ref()
+                        .and_then(|infons| infons.kind.as_deref())
+                        == Some(kind)
+                }),
+            "capture is missing {kind} annotations"
+        );
+    }
+
+    let disease = document
+        .passages
+        .iter()
+        .flat_map(|passage| &passage.annotations)
+        .find(|annotation| {
+            annotation.text.as_deref() == Some("melanoma")
+                && annotation
+                    .infons
+                    .as_ref()
+                    .and_then(|infons| infons.kind.as_deref())
+                    == Some("Disease")
+        })
+        .expect("captured Disease annotation");
+    let infons = serde_json::to_value(disease.infons.as_ref().expect("Disease infons"))
+        .expect("serialize Disease infons");
     assert_eq!(
-        doc.passages[0]
-            .infons
-            .as_ref()
-            .and_then(|i| i.kind.as_deref()),
-        Some("abstract")
+        infons
+            .get("normalized_id")
+            .and_then(serde_json::Value::as_str),
+        Some("D008545")
     );
-    assert_eq!(doc.relations[0].id.as_deref(), Some("relation-1"));
-    assert_eq!(doc.relations[0].nodes[0].refid.as_deref(), Some("gene-1"));
-    assert!(doc.passages[0].annotations.iter().any(|annotation| {
-        annotation.id.as_deref() == Some("gene-1") && annotation.text.as_deref() == Some("BRAF")
-    }));
 }
 
 #[test]
