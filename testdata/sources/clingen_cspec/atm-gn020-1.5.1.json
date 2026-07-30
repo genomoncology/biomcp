@@ -1,0 +1,189 @@
+{
+  "status": {
+    "code": 200,
+    "name": "OK"
+  },
+  "metadata": {
+    "rendered": {
+      "by": "https://cspec.genome.network/cspec/srvc",
+      "when": "2026-07-30T19:37:41.273Z"
+    }
+  },
+  "data": {
+    "entType": "SequenceVariantInterpretation",
+    "entId": "GN020",
+    "entContent": {
+      "namespace": "GN020",
+      "version": "1.5",
+      "states": [
+        {
+          "current": true,
+          "event": {
+            "modifiedBy": "mhoenig",
+            "name": "cspec-released",
+            "prevState": "Approved For Release",
+            "timeStamp": "2025-11-07T16:04:39.465Z"
+          },
+          "name": "Released"
+        },
+        {
+          "current": false,
+          "event": {
+            "modifiedBy": "mhoenig",
+            "name": "cspec-reopened",
+            "prevState": "Released",
+            "timeStamp": "2025-10-28T20:15:50.955Z"
+          },
+          "name": "Pilot Rules In Prep"
+        },
+        {
+          "current": false,
+          "event": {
+            "modifiedBy": "mhoenig",
+            "name": "pilot-rules-submitted",
+            "prevState": "Pilot Rules In Prep",
+            "timeStamp": "2025-10-28T20:29:32.979Z"
+          },
+          "name": "Pilot Rules Submitted"
+        },
+        {
+          "current": false,
+          "event": {
+            "modifiedBy": "sharriso",
+            "name": "pilot-rules-reviewed",
+            "prevState": "Pilot Rules Submitted",
+            "timeStamp": "2025-04-22T16:32:18.245Z"
+          },
+          "name": "Pilot Rules In Prep"
+        },
+        {
+          "current": false,
+          "event": {
+            "modifiedBy": "sharriso",
+            "name": "pilot-rules-approved",
+            "prevState": "Pilot Rules Submitted",
+            "timeStamp": "2025-11-05T21:33:29.950Z"
+          },
+          "name": "Approved For Release"
+        },
+        {
+          "current": false,
+          "event": {
+            "modifiedBy": "meganholdren",
+            "name": "pilot-rules-withdrawn",
+            "prevState": "Pilot Rules Submitted",
+            "timeStamp": "2024-03-04T19:34:25.031Z"
+          },
+          "name": "Pilot Rules In Prep"
+        }
+      ]
+    },
+    "ldFor": {
+      "Organization": [
+        {
+          "entContent": {
+            "abbreviation": "HBOP",
+            "approval": {
+              "step1": {
+                "approvalDate": "2018-11-28T00:00:00.000Z",
+                "approved": true
+              },
+              "step2": {
+                "approvalDate": "2019-10-31T00:00:00.000Z",
+                "approved": true
+              },
+              "step3": {
+                "approvalDate": "2022-01-20T00:00:00.000Z",
+                "approved": true
+              },
+              "step4": {
+                "approvalDate": "2022-01-25T00:00:00.000Z",
+                "approved": true
+              }
+            },
+            "curationActivity": "Variant Pathogenicity",
+            "fullBaseName": "Hereditary Breast, Ovarian and Pancreatic Cancer",
+            "shortBaseName": "HBOP",
+            "shortTitle": "Hereditary Breast, Ovarian and Pancreatic Cancer VCEP",
+            "title": "Hereditary Breast, Ovarian and Pancreatic Cancer Variant Curation Expert Panel",
+            "type": "Variant Curation Expert Panel"
+          },
+          "entId": "50039",
+          "entIri": "http://clinicalgenome.org/affiliation/50039",
+          "entType": "Organization",
+          "ldhId": "639508880",
+          "modified": 1680879306014,
+          "modifier": "cspecAdministrator",
+          "rev": "_inf5B_G--X"
+        }
+      ],
+      "SequenceVariantInterpretation": [
+        {
+          "entContent": {
+            "approvedOn": "03-05-2015",
+            "description": "ACMG ISV guidelines 2015",
+            "namespace": "GN001",
+            "notes": "",
+            "references": [
+              {
+                "source": "PubMed",
+                "url": "https://pubmed.ncbi.nlm.nih.gov/25741868"
+              }
+            ],
+            "shortTitle": "ACMG 2015-Guidelines",
+            "specificationSource": "https://www.acmg.net/docs/Standards_Guidelines_for_the_Interpretation_of_Sequence_Variants.pdf",
+            "tagNameSpaces": [
+              "001"
+            ],
+            "title": "Standards and guidelines for the interpretation of sequence variants: a joint consensus recommendation of the American College of Medical Genetics and Genomics and the Association for Molecular Pathology",
+            "version": "1.0.0"
+          },
+          "entId": "GN001",
+          "entType": "SequenceVariantInterpretation",
+          "ldhId": "135637585",
+          "modified": 1660837903074,
+          "modifier": "cspecAdministrator",
+          "rev": "_inf5BXe---"
+        }
+      ]
+    },
+    "ld": {
+      "CriteriaCode": [
+        {
+          "entType": "CriteriaCode",
+          "entId": null,
+          "entContent": {
+            "sepioID": "SEPIO-CG:99048",
+            "label": "BP6",
+            "instructionsToUse": null,
+            "baseStrength": "Benign",
+            "defaultStrength": "Benign Supporting",
+            "originalACMGSummary": "Reputable source recently reports variant as benign, but the evidence is not available to the laboratory to perform an independent evaluation.",
+            "additionalComments": "This criterion is not for use as recommended by the ClinGen Sequence Variant Interpretation VCEP Review Committee.",
+            "references": [
+              {
+                "id": "29543229",
+                "source": "PubMed",
+                "url": "https://pubmed.ncbi.nlm.nih.gov/29543229"
+              }
+            ]
+          }
+        },
+        {
+          "entType": "CriteriaCode",
+          "entId": null,
+          "entContent": {
+            "sepioID": "SEPIO-CG:99031",
+            "label": "PM5",
+            "instructionsToUse": "*   Based on location of the most C-terminal known pathogenic variant, **p.Arg3047\\*.**\n*   Use as **PM5\\_Supporting** (not moderate)\n*   Do not use for start-loss variants\n*   Do not use for missense changes: Multiple amino acid substitutions at the same residue can be pathogenic or benign and bioinformatic tools cannot yet confidently distinguish them",
+            "baseStrength": "Pathogenic",
+            "defaultStrength": "Pathogenic Moderate",
+            "originalACMGSummary": "Novel missense change at an amino acid residue where a different missense change determined to be pathogenic has been seen before.\nExample: Arg156His is pathogenic; now you observe Arg156Cys.\nCaveat: Beware of changes that impact splicing rather than at the amino acid/protein level.",
+            "additionalComments": "No rescue splicing isoforms have been identified in ATM.",
+            "references": null
+          }
+        }
+      ]
+    }
+  }
+}

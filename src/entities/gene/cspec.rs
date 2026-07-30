@@ -596,6 +596,97 @@ mod tests {
     }
 
     #[test]
+    fn captured_atm_document_without_data_iri_pages_from_manifest_binding() {
+        let bytes = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_cspec/atm-gn020-1.5.1.json"
+        ));
+        let capture = ProviderCaptureManifest {
+            capture_id: "capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            provider: ProviderCaptureProvider::Cspec,
+            media_type: "application/json".into(),
+            byte_length: bytes.len() as u64,
+            sha256: "a".repeat(64),
+            captured_at: 0,
+            expires_at: 1,
+            schema_version: 1,
+            capture_binding: Some(CspecCaptureBinding {
+                binding_schema_version: 1,
+                normalized_gene: "ATM".into(),
+                resource_iri: "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into(),
+                specification_id: "GN020".into(),
+            }),
+        };
+
+        let page = page_from_bytes(
+            bytes,
+            capture.capture_binding.as_ref().expect("binding"),
+            0,
+            25,
+            &capture,
+            false,
+        )
+        .expect("a captured provider document selected from the manifest must page");
+
+        assert_eq!(
+            page.resource_iri,
+            capture
+                .capture_binding
+                .as_ref()
+                .expect("binding")
+                .resource_iri
+        );
+        assert_eq!(page.specification_id, "GN020");
+        assert_eq!(page.display_version, "1.5");
+        assert_eq!(page.total, 2);
+        assert_eq!(page.criteria[0].label.as_deref(), Some("BP6"));
+    }
+
+    #[test]
+    fn post_fetch_paging_failure_is_not_projected_as_a_clingen_provider_failure() {
+        let mut document: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_cspec/atm-gn020-1.5.1.json"
+        )))
+        .expect("fixture JSON");
+        document["data"]["@id"] = json!(
+            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1"
+        );
+        document["data"]["ld"]["CriteriaCode"] = json!({});
+        let bytes = serde_json::to_vec(&document).expect("fixture serializes");
+        let capture = ProviderCaptureManifest {
+            capture_id: "capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            provider: ProviderCaptureProvider::Cspec,
+            media_type: "application/json".into(),
+            byte_length: bytes.len() as u64,
+            sha256: "a".repeat(64),
+            captured_at: 0,
+            expires_at: 1,
+            schema_version: 1,
+            capture_binding: Some(CspecCaptureBinding {
+                binding_schema_version: 1,
+                normalized_gene: "ATM".into(),
+                resource_iri: "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into(),
+                specification_id: "GN020".into(),
+            }),
+        };
+
+        let error = page_from_bytes(
+            &bytes,
+            capture.capture_binding.as_ref().expect("binding"),
+            0,
+            25,
+            &capture,
+            false,
+        )
+        .expect_err("a malformed captured document must not page");
+        let projection = error.public_projection();
+
+        assert_eq!(projection.source, None);
+        assert_eq!(projection.recovery, None);
+    }
+
+    #[test]
     fn bounded_preserves_utf8_when_the_limit_splits_a_character() {
         let input = format!("{}é", "a".repeat(FIELD_LIMIT - 1));
         let mut truncated = Vec::new();
