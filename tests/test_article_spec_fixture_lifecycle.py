@@ -166,6 +166,32 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
     assert not (workspace / ".cache" / "spec-article-fulltext-source-env").exists()
 
 
+def test_runner_rejects_caller_ctgov_values_when_fixture_exports_nothing(
+    tmp_path: Path,
+) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    setup = workspace / "spec" / "fixtures" / "setup-ctgov-intervention-alias-spec-fixture.sh"
+    setup.write_text("#!/usr/bin/env bash\nexit 0\n")
+    setup.chmod(0o755)
+    env |= {
+        "BIOMCP_CTGOV_BASE": "https://clinicaltrials.gov/api/v2",
+        "BIOMCP_CTGOV_CDN_BASE": "https://cdn.clinicaltrials.gov",
+    }
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"],
+        cwd=workspace,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "CTGov fixture did not create" in result.stderr
+    assert not (workspace / "mustmatch-invocation-log").exists()
+
+
 @pytest.mark.parametrize("fail_mustmatch_call", [1, 2])
 def test_runner_cleans_article_fixture_after_child_failure(
     fail_mustmatch_call: int, tmp_path: Path
