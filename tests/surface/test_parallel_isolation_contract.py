@@ -837,25 +837,24 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/author.md",
     "spec/entity/disease-survival-fixture.md",
     "spec/entity/drug-interactions.md",
-    "spec/entity/gwas-numeric-filters.md",
     "spec/entity/section-outcomes.md",
     "spec/entity/study.md",
     "spec/entity/trial-intervention-aliases.md",
-    "spec/entity/trial-numeric-filters.md",
     "spec/entity/trial-documents.md",
     "spec/entity/variant.md",
     "spec/entity/clingen-erepo.md",
     "spec/entity/clingen-cspec.md",
     "spec/entity/variant-article-identity.md",
     "spec/surface/mcp.md",
-    "spec/surface/discover-input.md",
-    "spec/surface/docker-image.md",
-    "spec/surface/homebrew.md",
     "spec/surface/skills.md",
     "spec/surface/cli-contract-ratchet.md",
     "spec/surface/build-profile.md",
     "spec/surface/trial-retirement.md",
-    "spec/surface/ctgov-helper-pivots.md",
+)
+
+STATIC_SPEC_PATHS = (
+    "spec/surface/docker-image.md",
+    "spec/surface/homebrew.md",
 )
 
 LIVE_SPEC_PATHS = (
@@ -965,15 +964,21 @@ def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
 
 def test_ticket_395_routine_and_live_spec_variables_are_disjoint_and_complete() -> None:
     routine = _make_variable_paths("SPEC_ROUTINE_PATHS")
+    static = _make_variable_paths("SPEC_STATIC_PATHS")
     live = _make_variable_paths("SPEC_LIVE_PATHS")
     spec_files = {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/entity").glob("*.md")}
     spec_files |= {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/surface").glob("*.md")}
 
     assert routine == set(ROUTINE_SPEC_PATHS)
+    assert static == set(STATIC_SPEC_PATHS)
     assert live == set(LIVE_SPEC_PATHS)
-    assert not routine & live, "routine and live spec lanes must be disjoint"
+    assert not routine & static and not routine & live and not static & live, (
+        "spec lanes must be disjoint"
+    )
     retired = {"spec/surface/request-plan-ratchets.md"}
-    assert routine | live == spec_files - retired, "every active entity/surface spec must be explicitly routed"
+    assert routine | static | live == spec_files - retired, (
+        "every active entity/surface spec must be explicitly routed"
+    )
 
 
 

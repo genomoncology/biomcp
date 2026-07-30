@@ -153,6 +153,13 @@ The complete warm routine `make test` was `46.06s`. Missing cold phase values
 are recorded as unavailable rather than inferred from aggregate runs. These
 observations make compile reuse visible without introducing a timing SLA.
 
+## Ticket 624 Routine Timing
+
+On 2026-07-29, `/usr/bin/time -p make spec` recorded `real 386.65`, `user
+21.79`, and `sys 11.49` seconds in this worktree. The measurement includes the
+new static Docker/Homebrew lane and is observational, not a claim of
+compilation savings.
+
 ## Ticket 507 Explicit-Fixture Pacing Result
 
 On beelink on 2026-07-13, the parent binary at `e62b45066d931480b8d4fd38df09ab4216af266b`

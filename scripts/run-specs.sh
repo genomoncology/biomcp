@@ -9,26 +9,30 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/author.md
   spec/entity/disease-survival-fixture.md
   spec/entity/drug-interactions.md
-  spec/entity/gwas-numeric-filters.md
   spec/entity/section-outcomes.md
   spec/entity/study.md
   spec/entity/trial-intervention-aliases.md
-  spec/entity/trial-numeric-filters.md
   spec/entity/trial-documents.md
   spec/entity/variant.md
   spec/entity/clingen-erepo.md
   spec/entity/clingen-cspec.md
   spec/entity/variant-article-identity.md
   spec/surface/mcp.md
-  spec/surface/discover-input.md
-  spec/surface/docker-image.md
-  spec/surface/homebrew.md
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
   spec/surface/cli-contract-ratchet.md
   spec/surface/build-profile.md
   spec/surface/trial-retirement.md
-  spec/surface/ctgov-helper-pivots.md
+)
+
+SPEC_STATIC_PATHS=(
+  spec/surface/docker-image.md
+  spec/surface/homebrew.md
+)
+
+SPEC_CTGOV_FIXTURE_PATHS=(
+  spec/entity/trial-intervention-aliases.md
+  spec/entity/trial-documents.md
 )
 
 SPEC_LIVE_PATHS=(
@@ -56,7 +60,7 @@ SPEC_LIVE_PATHS=(
 )
 
 usage() {
-  echo "usage: scripts/run-specs.sh <spec|spec-pr|spec-contracts|verify|verify-cpic|verify-nih-reporter>" >&2
+  echo "usage: scripts/run-specs.sh <spec|spec-static|spec-pr|spec-contracts|verify|verify-cpic|verify-nih-reporter>" >&2
 }
 
 mustmatch_dir() {
@@ -71,6 +75,16 @@ mustmatch_dir() {
     fi
   done
   echo "standalone mustmatch binary not found on PATH or at ~/.local/bin/mustmatch" >&2
+  return 1
+}
+
+paths_include_any() {
+  local candidate path
+  for candidate in "$@"; do
+    for path in "${paths[@]}"; do
+      [[ "$path" == "$candidate" ]] && return 0
+    done
+  done
   return 1
 }
 
@@ -158,6 +172,11 @@ run_ctgov_fixture() {
   bash spec/fixtures/setup-ctgov-intervention-alias-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-ctgov-intervention-alias-env"
   register_cleanup cleanup_ctgov_fixture
+}
+
+require_ctgov_fixture_env() {
+  : "${BIOMCP_CTGOV_BASE:?CTGov fixture did not export BIOMCP_CTGOV_BASE}"
+  : "${BIOMCP_CTGOV_CDN_BASE:?CTGov fixture did not export BIOMCP_CTGOV_CDN_BASE}"
 }
 
 cleanup_disease_survival_fixture() {
@@ -260,10 +279,18 @@ case "$mode" in
     run_article_fixture
     run_study_fixture
     run_ddinter_fixture
-    run_ctgov_fixture
+    if paths_include_any "${SPEC_CTGOV_FIXTURE_PATHS[@]}"; then
+      run_ctgov_fixture
+      require_ctgov_fixture_env
+    fi
     run_disease_survival_fixture
     run_variant_identity_fixture
     run_clingen_cspec_fixture
+    ;;
+  spec-static)
+    timeout_args=(--timeout 180)
+    paths=("${SPEC_STATIC_PATHS[@]}")
+    mustmatch_path_dir="$(mustmatch_dir)"
     ;;
   spec-contracts)
     timeout_args=(--timeout 180)
@@ -278,7 +305,10 @@ case "$mode" in
     lock_routine_fixtures
     run_article_fixture
     run_study_fixture
-    run_ctgov_fixture
+    if paths_include_any "${SPEC_CTGOV_FIXTURE_PATHS[@]}"; then
+      run_ctgov_fixture
+      require_ctgov_fixture_env
+    fi
     ;;
   verify)
     timeout_args=(--timeout 180)
@@ -332,19 +362,23 @@ if [[ "${BIOMCP_SPEC_RUNNER_HOLD:-0}" == 1 ]]; then
   done
 fi
 
-case "$mode" in
-  verify) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
-  verify-cpic|verify-nih-reporter) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
-  *) default_biomcp_bin="$ROOT/target/spec/biomcp" ;;
-esac
-BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"
-case "$BIOMCP_BIN" in
-  /*) ;;
-  *) BIOMCP_BIN="$ROOT/$BIOMCP_BIN" ;;
-esac
-BIOMCP_BIN_DIR="$(cd "$(dirname "$BIOMCP_BIN")" && pwd)"
-export BIOMCP_BIN
-export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"
+if [[ "$mode" == "spec-static" ]]; then
+  export PATH="$mustmatch_path_dir:$PATH"
+else
+  case "$mode" in
+    verify) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
+    verify-cpic|verify-nih-reporter) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
+    *) default_biomcp_bin="$ROOT/target/spec/biomcp" ;;
+  esac
+  BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"
+  case "$BIOMCP_BIN" in
+    /*) ;;
+    *) BIOMCP_BIN="$ROOT/$BIOMCP_BIN" ;;
+  esac
+  BIOMCP_BIN_DIR="$(cd "$(dirname "$BIOMCP_BIN")" && pwd)"
+  export BIOMCP_BIN
+  export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"
+fi
 
 if [[ "$mode" == verify* ]]; then
   prebuild_cargo_test_targets

@@ -67,7 +67,6 @@ def _runner_workspace(
     for name in (
         "setup-study-spec-fixture.sh",
         "setup-ddinter-spec-fixture.sh",
-        "setup-ctgov-intervention-alias-spec-fixture.sh",
         "setup-disease-survival-spec-fixture.sh",
         "cleanup-disease-survival-spec-fixture.sh",
         "setup-variant-identity-spec-fixture.sh",
@@ -80,6 +79,14 @@ def _runner_workspace(
         script = fixtures / name
         script.write_text("#!/usr/bin/env bash\nexit 0\n")
         script.chmod(0o755)
+    ctgov_setup = fixtures / "setup-ctgov-intervention-alias-spec-fixture.sh"
+    ctgov_setup.write_text(
+        "#!/usr/bin/env bash\n"
+        "mkdir -p \"$1/.cache\"\n"
+        "printf 'export BIOMCP_CTGOV_BASE=http://127.0.0.1/api/v2\\n' >\"$1/.cache/spec-ctgov-intervention-alias-env\"\n"
+        "printf 'export BIOMCP_CTGOV_CDN_BASE=http://127.0.0.1\\n' >>\"$1/.cache/spec-ctgov-intervention-alias-env\"\n"
+    )
+    ctgov_setup.chmod(0o755)
     cleanup = fixtures / "cleanup-ctgov-intervention-alias-spec-fixture.sh"
     cleanup.write_text("#!/usr/bin/env bash\nexit 0\n")
     cleanup.chmod(0o755)
