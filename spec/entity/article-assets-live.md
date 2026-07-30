@@ -8,24 +8,23 @@ policy can change independently of BioMCP releases.
 ## PMID 20516115 linked supplements
 
 This article names a PDF and a workbook in NCBI JATS and PMC HTML. Each named
-file must remain visible as its own provider-labelled coverage result: either a
-stable BioMCP handle retrieves it, or a specific typed outcome explains why it
-cannot be retrieved. A generic package miss is not sufficient.
+file must remain visible as its own provider-labelled coverage result and as a
+retrievable asset with a stable BioMCP handle. A generic package miss is not
+sufficient.
 
 ```bash
 ../../tools/biomcp-ci --json get article 20516115 assets | jq '
-. as $manifest |
-def acceptable:
+def acceptable_coverage:
   (.provider.source | type == "string" and length > 0) and
   (.source_document | type == "string" and length > 0) and
-  ((.outcome == "retrievable" and
-    (.handle | startswith("biomcp get article 20516115 asset ")) and
-    (.handle as $handle | $manifest.assets | any(.handle == $handle and .size_bytes > 0 and (.sha256 | test("^[0-9a-f]{64}$"))))) or
-   (.outcome == "healthy_absent") or
-   (.outcome == "access_or_licence_denied") or
-   (.outcome == "unsupported_origin") or
-   (.outcome == "source_unavailable"));
-([.coverage[]? | select(.filename | endswith("Supplementary_Methods__Figures__Tables.pdf"))] | length == 1 and all(acceptable)) and
-([.coverage[]? | select(.filename | endswith("Supplementary_Tables.xls"))] | length == 1 and all(acceptable))
+  (.outcome == "retrievable");
+def retrievable_asset:
+  (.handle | startswith("biomcp get article 20516115 asset ")) and
+  (.size_bytes > 0) and (.sha256 | test("^[0-9a-f]{64}$"));
+(.pmid == "20516115") and
+any(.coverage[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and acceptable_coverage) and
+any(.coverage[]?; (.filename | endswith("Supplementary_Tables.xls")) and acceptable_coverage) and
+any(.assets[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and retrievable_asset) and
+any(.assets[]?; (.filename | endswith("Supplementary_Tables.xls")) and retrievable_asset)
 ' | mustmatch 'true'
 ```

@@ -384,12 +384,19 @@ pub struct PubTatorRelationNode {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum PubTatorNormalizedId {
+    String(String),
+    Number(u64),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct PubTatorAnnotationInfons {
     #[serde(rename = "type")]
     pub kind: Option<String>,
     pub name: Option<String>,
     pub identifier: Option<String>,
-    pub normalized_id: Option<u64>,
+    pub normalized_id: Option<PubTatorNormalizedId>,
     pub hgvs: Option<String>,
     pub gene_id: Option<u64>,
     pub gene_ids: Option<Vec<u64>>,

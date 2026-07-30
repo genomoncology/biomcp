@@ -7,7 +7,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::entities::variant::RequestedVariantIdentity;
-use crate::sources::pubtator::{PubTatorAnnotation, PubTatorExportResponse};
+use crate::sources::pubtator::{PubTatorAnnotation, PubTatorExportResponse, PubTatorNormalizedId};
 
 pub(crate) const VERIFIER_VERSION: &str = "article-identity-v2";
 pub(crate) const PUBTATOR_EXPORT_TEMPLATE_VERSION: &str = "pubtator-export-biocjson-v1";
@@ -326,9 +326,9 @@ fn typed_gene(annotation: &PubTatorAnnotation) -> Option<(&str, u64, &str)> {
         && bounded(annotation.id.as_deref()?, MAX_ANNOTATION_ID_BYTES)
         && !name.is_empty()
         && identifier.bytes().all(|byte| byte.is_ascii_digit())
-        && infons
-            .normalized_id
-            .is_none_or(|normalized_id| normalized_id == id))
+        && infons.normalized_id.as_ref().is_none_or(|normalized_id| {
+            matches!(normalized_id, PubTatorNormalizedId::Number(normalized_id) if *normalized_id == id)
+        }))
     .then_some((name, id, annotation.id.as_deref()?))
 }
 
@@ -877,7 +877,7 @@ mod tests {
                                 kind: Some("Gene".into()),
                                 name: Some("BRAF".into()),
                                 identifier: Some("673".into()),
-                                normalized_id: Some(673),
+                                normalized_id: Some(PubTatorNormalizedId::Number(673)),
                                 hgvs: None,
                                 gene_id: None,
                                 gene_ids: None,
@@ -1029,6 +1029,20 @@ mod tests {
     }
 
     #[test]
+    fn string_normalized_gene_id_cannot_confirm_typed_linkage() {
+        let mut string_normalized_id = response(false);
+        string_normalized_id.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("gene infons")
+            .normalized_id = Some(PubTatorNormalizedId::String("673".into()));
+        assert_eq!(
+            verify_pubtator(&requested(), "1", &string_normalized_id, false).status,
+            "unverified"
+        );
+    }
+
+    #[test]
     fn exact_allele_linked_to_another_gene_is_contradictory() {
         let mut other_gene = response(false);
         other_gene.documents[0].passages[0].annotations[0]
@@ -1045,7 +1059,7 @@ mod tests {
             .infons
             .as_mut()
             .expect("gene infons")
-            .normalized_id = Some(4893);
+            .normalized_id = Some(PubTatorNormalizedId::Number(4893));
         let variant = other_gene.documents[0].passages[0].annotations[1]
             .infons
             .as_mut()
