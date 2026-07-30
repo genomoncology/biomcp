@@ -94,7 +94,6 @@ pub(crate) async fn retrieve(
             offset,
             limit,
             &capture,
-            false,
         )?)
         .expect("CSpec response serializes"));
     }
@@ -121,7 +120,7 @@ pub(crate) fn page_capture(
             "CSpec capture does not match the requested gene".into(),
         ));
     }
-    page_from_bytes(&bytes, binding, offset, limit, &manifest, true)
+    page_from_bytes(&bytes, binding, offset, limit, &manifest)
 }
 
 pub(crate) fn read_capture(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
@@ -274,51 +273,49 @@ fn invalid(message: &str) -> BioMcpError {
     }
 }
 
+fn processing() -> BioMcpError {
+    BioMcpError::InternalProcessing
+}
+
 fn page_from_bytes(
     bytes: &[u8],
     binding: &CspecCaptureBinding,
     offset: usize,
     limit: usize,
     capture: &ProviderCaptureManifest,
-    captured_page: bool,
 ) -> Result<CspecResponse, BioMcpError> {
-    let value: Value = serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
-        api: "ClinGen CSpec".into(),
-        source,
-    })?;
+    let value: Value = serde_json::from_slice(bytes).map_err(|_| processing())?;
     let data = value
         .get("data")
         .and_then(Value::as_object)
-        .ok_or_else(|| invalid("document data must be an object"))?;
+        .ok_or_else(processing)?;
     let specification_id = data
         .get("entId")
         .and_then(Value::as_str)
-        .ok_or_else(|| invalid("document entId is required"))?;
+        .ok_or_else(processing)?;
     let content = data.get("entContent").and_then(Value::as_object);
     let ld = data.get("ld").and_then(Value::as_object);
     if specification_id != binding.specification_id
-        || data.get("@id").and_then(Value::as_str) != Some(binding.resource_iri.as_str())
+        || data
+            .get("@id")
+            .is_some_and(|value| value.as_str() != Some(binding.resource_iri.as_str()))
         || content
             .and_then(|value| value.get("namespace"))
             .and_then(Value::as_str)
             != Some(specification_id)
     {
-        return Err(if captured_page {
-            BioMcpError::CaptureCorrupt
-        } else {
-            invalid("invalid CSpec document identity")
-        });
+        return Err(processing());
     }
     if data.get("entType").and_then(Value::as_str) != Some("SequenceVariantInterpretation")
         || ld.is_none()
         || !data.get("ldFor").is_some_and(Value::is_object)
     {
-        return Err(invalid("invalid CSpec document identity"));
+        return Err(processing());
     }
     let display_version: String = content
         .and_then(|value| value.get("version"))
         .and_then(Value::as_str)
-        .ok_or_else(|| invalid("document display version is required"))?
+        .ok_or_else(processing)?
         .into();
     let status = content
         .and_then(|value| value.get("states"))
@@ -343,12 +340,13 @@ fn page_from_bytes(
     let all = ld
         .and_then(|value| value.get("CriteriaCode"))
         .and_then(Value::as_array)
-        .ok_or_else(|| invalid("document CriteriaCode must be an array"))?;
+        .ok_or_else(processing)?;
     let parsed_criteria = all
         .iter()
         .enumerate()
         .map(|(index, row)| criterion(row, index, capture))
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| processing())?;
     let semantic_criteria = parsed_criteria
         .iter()
         .map(|(_, semantic)| semantic.clone())
@@ -360,7 +358,8 @@ fn page_from_bytes(
         vcep.as_deref(),
         status.as_deref(),
         &semantic_criteria,
-    )?;
+    )
+    .map_err(|_| processing())?;
     let total = parsed_criteria.len();
     let criteria = parsed_criteria
         .into_iter()
@@ -420,7 +419,7 @@ fn criterion(
     };
     let mut citations = Vec::new();
     let mut semantic_citations = Vec::new();
-    if let Some(references) = content.get("references") {
+    if let Some(references) = content.get("references").filter(|value| !value.is_null()) {
         for reference in references
             .as_array()
             .ok_or_else(|| invalid("criterion references must be an array"))?
@@ -577,7 +576,6 @@ mod tests {
                 0,
                 25,
                 &capture,
-                false,
             )
             .is_err(),
             "a malformed provider document must not be projected under a different manifest specification"
@@ -589,9 +587,8 @@ mod tests {
                 0,
                 25,
                 &capture,
-                true,
             ),
-            Err(BioMcpError::CaptureCorrupt)
+            Err(BioMcpError::InternalProcessing)
         ));
     }
 
@@ -631,7 +628,6 @@ mod tests {
             0,
             25,
             &capture,
-            false,
         )
         .expect("a captured provider document selected from the manifest must page");
 
@@ -689,7 +685,6 @@ mod tests {
             0,
             25,
             &capture,
-            false,
         )
         .expect_err("a malformed captured document must not page");
         let projection = error.public_projection();
