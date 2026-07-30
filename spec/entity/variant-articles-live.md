@@ -58,9 +58,6 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
     "authoritative_verify_treats_g5_as_hard": true
   },
   "identity_diagnostics": {
-    "schema_parse_failures": [],
-    "missing_available_positives": [],
-    "unavailable_outages": [],
     "missing_canonical_equivalence": []
   }
 }

@@ -1029,6 +1029,20 @@ mod tests {
     }
 
     #[test]
+    fn string_normalized_gene_id_cannot_confirm_typed_linkage() {
+        let mut string_normalized_id = response(false);
+        string_normalized_id.documents[0].passages[0].annotations[0]
+            .infons
+            .as_mut()
+            .expect("gene infons")
+            .normalized_id = Some(PubTatorNormalizedId::String("673".into()));
+        assert_eq!(
+            verify_pubtator(&requested(), "1", &string_normalized_id, false).status,
+            "unverified"
+        );
+    }
+
+    #[test]
     fn exact_allele_linked_to_another_gene_is_contradictory() {
         let mut other_gene = response(false);
         other_gene.documents[0].passages[0].annotations[0]
