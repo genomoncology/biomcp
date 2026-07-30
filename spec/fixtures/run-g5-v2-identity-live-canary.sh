@@ -71,6 +71,7 @@ summary = {
     "all_have_route_tied_alias": len(recognized_items) == len(expected_request_ids) and all(any(retrieval_exact_routes.intersection(row.get("routes", [])) and supplied_aliases(request_by_id[item.get("request_id")]).intersection(row.get("matched_aliases", [])) for row in item.get("results", [])) for item in recognized_items),
     "all_have_source_status": len(recognized_items) == len(expected_request_ids) and all(bool(item.get("source_status")) for item in recognized_items),
     "all_have_terminal_state": len(recognized_items) == len(expected_request_ids) and all(isinstance(item.get("complete"), bool) and isinstance(item.get("truncated"), bool) and "error" in item for item in recognized_items),
+    "all_results_complete_and_untruncated": len(recognized_items) == len(expected_request_ids) and all(item.get("complete") is True and item.get("truncated") is False for item in recognized_items),
     "authoritative_verify_treats_g5_as_hard": True,
 }
 positives = {"apc-grch38": "12901799", "atm-grch38": "32918381", "palb2-grch38": "39999518", "mlh1-grch38": "20864636"}
@@ -79,7 +80,7 @@ diagnostics = {
     "known_collision_confirmations": [],
     "schema_parse_failures": [],
     "missing_available_positives": [],
-    "unavailable_outages": [],
+    "incomplete_results": [],
     "missing_canonical_equivalence": [],
 }
 for item in recognized_items:
@@ -88,7 +89,7 @@ for item in recognized_items:
     if not isinstance(verification, dict):
         diagnostics["schema_parse_failures"].append(request_id)
     if not item.get("complete", False):
-        diagnostics["unavailable_outages"].append(request_id)
+        diagnostics["incomplete_results"].append(request_id)
     for row in item.get("results", []):
         if row.get("pmid") in collisions and (row.get("identity") or {}).get("status") == "confirmed":
             diagnostics["known_collision_confirmations"].append(row["pmid"])

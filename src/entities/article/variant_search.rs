@@ -3726,6 +3726,33 @@ mod tests {
     }
 
     #[test]
+    fn exact_lexical_allowance_survives_strict_budget_exhaustion() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..ITEM_WORK_LIMIT {
+            assert!(execution.reserve("strict").is_some());
+        }
+
+        assert!(
+            execution.reserve("exact_lexical").is_some(),
+            "strict retrieval must not consume exact lexical work"
+        );
+    }
+
+    #[test]
+    fn identity_verification_allowance_survives_strict_budget_exhaustion() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..ITEM_WORK_LIMIT {
+            assert!(execution.reserve("strict").is_some());
+        }
+        execution.reserve_identity_verification(1);
+
+        assert!(
+            execution.reserve("identity_verification").is_some(),
+            "requested identity verification must not be stopped by retrieval work"
+        );
+    }
+
+    #[test]
     fn ldh_direct_annotation_fetches_stop_after_ten_per_item() {
         let execution = VariantArticleExecutionContext::single();
         for _ in 0..10 {
