@@ -837,25 +837,24 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/author.md",
     "spec/entity/disease-survival-fixture.md",
     "spec/entity/drug-interactions.md",
-    "spec/entity/gwas-numeric-filters.md",
     "spec/entity/section-outcomes.md",
     "spec/entity/study.md",
     "spec/entity/trial-intervention-aliases.md",
-    "spec/entity/trial-numeric-filters.md",
     "spec/entity/trial-documents.md",
     "spec/entity/variant.md",
     "spec/entity/clingen-erepo.md",
     "spec/entity/clingen-cspec.md",
     "spec/entity/variant-article-identity.md",
     "spec/surface/mcp.md",
-    "spec/surface/discover-input.md",
-    "spec/surface/docker-image.md",
-    "spec/surface/homebrew.md",
     "spec/surface/skills.md",
     "spec/surface/cli-contract-ratchet.md",
     "spec/surface/build-profile.md",
     "spec/surface/trial-retirement.md",
-    "spec/surface/ctgov-helper-pivots.md",
+)
+
+STATIC_SPEC_PATHS = (
+    "spec/surface/docker-image.md",
+    "spec/surface/homebrew.md",
 )
 
 LIVE_SPEC_PATHS = (
@@ -924,33 +923,62 @@ def test_article_cache_transition_fixture_owns_disk_floor_precondition() -> None
     assert runner_body.index(source) < runner_body.index("mustmatch test")
 
 
-def test_ticket_504_shell_quoting_ratchet_uses_only_focused_rust_test() -> None:
-    spec = _read_repo("spec/surface/cli-contract-ratchet.md")
-    match = re.search(
-        r"(?ms)^## Runtime next commands quote shell metacharacters\n(?P<section>.*?)(?=^## )",
-        spec,
-    )
-    assert match is not None, "missing runtime shell-metacharacter section"
-    section = match.group("section")
-    assert "biomcp --json discover" not in section
-    assert (
-        "cargo test --lib "
-        "entities::discover::tests::empty_discover_result_quotes_shell_metacharacters_in_json_next_command "
-        "-- --exact"
-    ) in section
+def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
+    runner = _read_repo("scripts/run-specs.sh")
+    makefile = _read_repo("Makefile")
+    discover = _read_repo("src/entities/discover.rs")
+    protein_phenotype = _read_repo("src/cli/tests/next_commands_json_property/protein_phenotype.rs")
+    static_paths = _runner_array_paths("SPEC_STATIC_PATHS")
+    ctgov_paths = _runner_array_paths("SPEC_CTGOV_FIXTURE_PATHS")
+    static_target = _make_target_block("spec-static")
+    routine_target = _make_target_block("spec")
+
+    assert "empty_discover_result_quotes_shell_metacharacters_in_json_next_command" in discover
+    assert "protein_search_json_next_commands_parse" in protein_phenotype
+    assert "phenotype_search_json_next_commands_parse" in protein_phenotype
+    assert static_paths == ["spec/surface/docker-image.md", "spec/surface/homebrew.md"]
+    assert not set(static_paths) & set(_runner_array_paths("SPEC_ROUTINE_PATHS"))
+    assert not set(static_paths) & _make_variable_paths("SPEC_ROUTINE_PATHS")
+    assert {
+        "spec/entity/trial-intervention-aliases.md",
+        "spec/entity/trial-documents.md",
+    } <= set(ctgov_paths)
+    removed_duplicate_specs = {
+        "spec/entity/gwas-numeric-filters.md",
+        "spec/entity/trial-numeric-filters.md",
+        "spec/surface/discover-input.md",
+        "spec/surface/ctgov-helper-pivots.md",
+    }
+    assert not removed_duplicate_specs & set(_runner_array_paths("SPEC_ROUTINE_PATHS"))
+    assert not removed_duplicate_specs & _make_variable_paths("SPEC_ROUTINE_PATHS")
+    assert "paths_include_any" in runner
+    assert "require_ctgov_fixture_env" in runner
+    assert runner.index("require_ctgov_fixture_env") < runner.index("run_markdown_specs")
+    assert "BIOMCP_CTGOV_BASE" in runner
+    assert "BIOMCP_CTGOV_CDN_BASE" in runner
+    assert "$(SPEC_BUILD)" not in static_target
+    assert "scripts/run-specs.sh spec-static" in static_target
+    assert "$(MAKE) spec-static" in routine_target
+    assert "SPEC_STATIC_PATHS" in makefile
 
 
 def test_ticket_395_routine_and_live_spec_variables_are_disjoint_and_complete() -> None:
     routine = _make_variable_paths("SPEC_ROUTINE_PATHS")
+    static = _make_variable_paths("SPEC_STATIC_PATHS")
     live = _make_variable_paths("SPEC_LIVE_PATHS")
     spec_files = {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/entity").glob("*.md")}
     spec_files |= {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/surface").glob("*.md")}
 
     assert routine == set(ROUTINE_SPEC_PATHS)
+    assert static == set(STATIC_SPEC_PATHS)
     assert live == set(LIVE_SPEC_PATHS)
-    assert not routine & live, "routine and live spec lanes must be disjoint"
+    assert not routine & static and not routine & live and not static & live, (
+        "spec lanes must be disjoint"
+    )
     retired = {"spec/surface/request-plan-ratchets.md"}
-    assert routine | live == spec_files - retired, "every active entity/surface spec must be explicitly routed"
+    assert routine | static | live == spec_files - retired, (
+        "every active entity/surface spec must be explicitly routed"
+    )
 
 
 

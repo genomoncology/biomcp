@@ -67,7 +67,6 @@ def _runner_workspace(
     for name in (
         "setup-study-spec-fixture.sh",
         "setup-ddinter-spec-fixture.sh",
-        "setup-ctgov-intervention-alias-spec-fixture.sh",
         "setup-disease-survival-spec-fixture.sh",
         "cleanup-disease-survival-spec-fixture.sh",
         "setup-variant-identity-spec-fixture.sh",
@@ -80,6 +79,14 @@ def _runner_workspace(
         script = fixtures / name
         script.write_text("#!/usr/bin/env bash\nexit 0\n")
         script.chmod(0o755)
+    ctgov_setup = fixtures / "setup-ctgov-intervention-alias-spec-fixture.sh"
+    ctgov_setup.write_text(
+        "#!/usr/bin/env bash\n"
+        "mkdir -p \"$1/.cache\"\n"
+        "printf 'export BIOMCP_CTGOV_BASE=http://127.0.0.1/api/v2\\n' >\"$1/.cache/spec-ctgov-intervention-alias-env\"\n"
+        "printf 'export BIOMCP_CTGOV_CDN_BASE=http://127.0.0.1\\n' >>\"$1/.cache/spec-ctgov-intervention-alias-env\"\n"
+    )
+    ctgov_setup.chmod(0o755)
     cleanup = fixtures / "cleanup-ctgov-intervention-alias-spec-fixture.sh"
     cleanup.write_text("#!/usr/bin/env bash\nexit 0\n")
     cleanup.chmod(0o755)
@@ -157,6 +164,36 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         assert rest_base == "caller-pubtator"
         assert rest_origin == "http://127.0.0.1:9999"
     assert not (workspace / ".cache" / "spec-article-fulltext-source-env").exists()
+
+
+def test_runner_rejects_caller_ctgov_values_when_fixture_exports_nothing(
+    tmp_path: Path,
+) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    setup = workspace / "spec" / "fixtures" / "setup-ctgov-intervention-alias-spec-fixture.sh"
+    setup.write_text("#!/usr/bin/env bash\nexit 0\n")
+    setup.chmod(0o755)
+    cleanup = workspace / "spec" / "fixtures" / "cleanup-ctgov-intervention-alias-spec-fixture.sh"
+    cleanup.write_text("#!/usr/bin/env bash\ntouch \"$1/ctgov-cleaned\"\n")
+    cleanup.chmod(0o755)
+    env |= {
+        "BIOMCP_CTGOV_BASE": "https://clinicaltrials.gov/api/v2",
+        "BIOMCP_CTGOV_CDN_BASE": "https://cdn.clinicaltrials.gov",
+    }
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"],
+        cwd=workspace,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "CTGov fixture did not create" in result.stderr
+    assert (workspace / "ctgov-cleaned").exists()
+    assert not (workspace / "mustmatch-invocation-log").exists()
 
 
 @pytest.mark.parametrize("fail_mustmatch_call", [1, 2])

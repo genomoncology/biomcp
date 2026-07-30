@@ -5,7 +5,15 @@ use super::*;
 
 #[tokio::test]
 async fn search_gwas_page_rejects_invalid_probability_before_client_construction() {
-    for p_value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, -0.01, 1.01] {
+    for (label, p_value) in [
+        ("not a number", f64::NAN),
+        ("positive infinity", f64::INFINITY),
+        ("negative infinity", f64::NEG_INFINITY),
+        ("overflow", f64::INFINITY),
+        ("zero", 0.0),
+        ("negative", -0.01),
+        ("greater than one", 1.01),
+    ] {
         let filters = super::super::GwasSearchFilters {
             p_value: Some(p_value),
             ..Default::default()
@@ -13,8 +21,8 @@ async fn search_gwas_page_rejects_invalid_probability_before_client_construction
         let err = search_gwas_page(&filters, 1, 0)
             .await
             .expect_err("invalid p-value should fail at the entity boundary");
-        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
-        assert!(err.to_string().contains("--p-value"));
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)), "{label}");
+        assert!(err.to_string().contains("--p-value"), "{label}");
     }
 }
 

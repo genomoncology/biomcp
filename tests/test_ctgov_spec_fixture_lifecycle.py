@@ -60,7 +60,14 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
         workspace / "tests" / "fixtures" / "article" / "fulltext",
     )
 
-    for name in ("setup-study-spec-fixture.sh",):
+    for name in (
+        "setup-study-spec-fixture.sh",
+        "setup-ddinter-spec-fixture.sh",
+        "setup-disease-survival-spec-fixture.sh",
+        "cleanup-disease-survival-spec-fixture.sh",
+        "setup-variant-identity-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
+    ):
         script = fixtures / name
         script.write_text("#!/usr/bin/env bash\nexit 0\n")
         script.chmod(0o755)
@@ -84,7 +91,7 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
         "BIOMCP_SPEC_RUNNER_HOLD": "1",
     }
     runner = subprocess.Popen(
-        ["bash", "scripts/run-specs.sh", "spec-contracts"],
+        ["bash", "scripts/run-specs.sh", "spec"],
         cwd=workspace,
         env=env,
     )

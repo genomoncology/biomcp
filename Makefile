@@ -1,4 +1,4 @@
-.PHONY: build test lint check-quality-ratchet release-gate run clean spec spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
+.PHONY: build test lint check-quality-ratchet release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
 .PHONY: output-footprint
 
 SPEC_ROUTINE_PATHS = \
@@ -6,25 +6,23 @@ SPEC_ROUTINE_PATHS = \
 	spec/entity/author.md \
 	spec/entity/disease-survival-fixture.md \
 	spec/entity/drug-interactions.md \
-	spec/entity/gwas-numeric-filters.md \
 	spec/entity/section-outcomes.md \
 	spec/entity/study.md \
 	spec/entity/trial-intervention-aliases.md \
-	spec/entity/trial-numeric-filters.md \
 	spec/entity/trial-documents.md \
 	spec/entity/variant.md \
 	spec/entity/clingen-erepo.md \
 	spec/entity/clingen-cspec.md \
 	spec/entity/variant-article-identity.md \
 	spec/surface/mcp.md \
-	spec/surface/discover-input.md \
-	spec/surface/docker-image.md \
-	spec/surface/homebrew.md \
 	spec/surface/skills.md \
 	spec/surface/cli-contract-ratchet.md \
 	spec/surface/build-profile.md \
 	spec/surface/trial-retirement.md \
-	spec/surface/ctgov-helper-pivots.md
+
+SPEC_STATIC_PATHS = \
+	spec/surface/docker-image.md \
+	spec/surface/homebrew.md
 SPEC_LIVE_PATHS = \
 	spec/entity/article-assets-live.md \
 	spec/entity/article-graph-live.md \
@@ -103,6 +101,10 @@ install:
 spec:
 	$(SPEC_BUILD)
 	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec
+	$(MAKE) spec-static
+
+spec-static:
+	bash scripts/run-specs.sh spec-static
 
 spec-pr:
 	$(SPEC_BUILD)

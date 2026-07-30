@@ -1222,7 +1222,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     runner = _read_repo("scripts/run-specs.sh")
     cargo_toml = _read_repo("Cargo.toml")
     assert (
-        ".PHONY: build test lint check-quality-ratchet release-gate run clean spec spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
+        ".PHONY: build test lint check-quality-ratchet release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
         in makefile
     )
     assert "SPEC_PR_DESELECT_ARGS" not in makefile

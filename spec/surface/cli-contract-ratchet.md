@@ -302,28 +302,3 @@ without touching public upstream services.
 BIOMCP_CACHE_MAX_AGE=172800 biomcp --json cache stats | mustmatch like '"max_age_secs": 172800
 "max_age_origin": "env"'
 ```
-
-## Runtime next commands quote shell metacharacters
-<!-- mustmatch-lint: skip -->
-
-Runtime next commands are meant to be copied into a shell. When a local fallback
-command carries a transcript-HGVS-shaped value with `>`, BioMCP should render the
-argument as one quoted value instead of exposing a redirection operator.
-
-```bash
-cargo test --lib entities::discover::tests::empty_discover_result_quotes_shell_metacharacters_in_json_next_command -- --exact
-```
-
-## Protein and Phenotype Search JSON Metadata Seam
-
-Protein and phenotype search JSON should opt into the metadata envelope instead
-of using the bare generic search helper. These fixture-backed tests exercise the
-local JSON envelope and parse every emitted follow-up command, so the routine
-ratchet does not depend on public upstream availability.
-
-```bash
-cd ../..
-cargo test --locked protein_search_json_next_commands_parse --lib >/tmp/biomcp-protein-json-next-commands.log
-cargo test --locked phenotype_search_json_next_commands_parse --lib >/tmp/biomcp-phenotype-json-next-commands.log
-printf 'protein and phenotype JSON next-command fixture tests passed\n' | mustmatch like "fixture tests passed"
-```
