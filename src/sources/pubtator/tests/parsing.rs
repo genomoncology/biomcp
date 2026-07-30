@@ -63,13 +63,35 @@ fn parses_real_export_capture_and_retains_disease_normalized_id() {
                     == Some("Disease")
         })
         .expect("captured Disease annotation");
-    let infons = serde_json::to_value(disease.infons.as_ref().expect("Disease infons"))
+    let disease_infons = serde_json::to_value(disease.infons.as_ref().expect("Disease infons"))
         .expect("serialize Disease infons");
     assert_eq!(
-        infons
+        disease_infons
             .get("normalized_id")
             .and_then(serde_json::Value::as_str),
         Some("D008545")
+    );
+
+    let gene = document
+        .passages
+        .iter()
+        .flat_map(|passage| &passage.annotations)
+        .find(|annotation| {
+            annotation.text.as_deref() == Some("BRAF")
+                && annotation
+                    .infons
+                    .as_ref()
+                    .and_then(|infons| infons.kind.as_deref())
+                    == Some("Gene")
+        })
+        .expect("captured Gene annotation");
+    let gene_infons = serde_json::to_value(gene.infons.as_ref().expect("Gene infons"))
+        .expect("serialize Gene infons");
+    assert_eq!(
+        gene_infons
+            .get("normalized_id")
+            .and_then(serde_json::Value::as_u64),
+        Some(673)
     );
 }
 
