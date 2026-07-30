@@ -155,8 +155,10 @@ observations make compile reuse visible without introducing a timing SLA.
 
 ## Ticket 624 Routine Timing
 
-On 2026-07-29, `/usr/bin/time -p make spec` recorded `real 386.65`, `user
-21.79`, and `sys 11.49` seconds in this worktree. The measurement includes the
+The pre-change routine lane measurement was `real 229.2s` with a warm binary
+on 2026-07-25 (recorded in the Ticket 622/624 investigation below). On
+2026-07-29, `/usr/bin/time -p make spec` recorded `real 386.65`, `user 21.79`,
+and `sys 11.49` seconds in this worktree. The after measurement includes the
 new static Docker/Homebrew lane and is observational, not a claim of
 compilation savings.
 
