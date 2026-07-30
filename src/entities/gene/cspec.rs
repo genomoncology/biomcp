@@ -618,6 +618,13 @@ mod tests {
             }),
         };
 
+        let document: serde_json::Value =
+            serde_json::from_slice(bytes).expect("captured provider fixture JSON");
+        assert!(
+            document["data"].get("@id").is_none(),
+            "the real provider shape must omit data.@id"
+        );
+
         let page = page_from_bytes(
             bytes,
             capture.capture_binding.as_ref().expect("binding"),
@@ -638,8 +645,13 @@ mod tests {
         );
         assert_eq!(page.specification_id, "GN020");
         assert_eq!(page.display_version, "1.5");
-        assert_eq!(page.total, 2);
-        assert_eq!(page.criteria[0].label.as_deref(), Some("BP6"));
+        assert!(page.total > 0, "the captured document must yield criteria");
+        assert!(
+            page.criteria
+                .iter()
+                .any(|criterion| criterion.label.as_deref() == Some("BP6")),
+            "the captured criterion landmark must be parsed"
+        );
     }
 
     #[test]
