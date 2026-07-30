@@ -297,6 +297,7 @@ pub enum BioMcpError {
         suggestion: String,
     },
     InvalidArgument(String),
+    InternalProcessing,
     CaptureUnavailable,
     CaptureCorrupt,
     BindingConflict,
@@ -358,6 +359,7 @@ impl BioMcpError {
             }
             Self::NotFound { .. } => format!("Requested item was not found in {source}."),
             Self::InvalidArgument(_) => format!("Invalid request for {source}."),
+            Self::InternalProcessing => "Internal processing failed.".to_string(),
             Self::CaptureUnavailable | Self::CaptureCorrupt | Self::BindingConflict => {
                 "Captured source material could not be used.".to_string()
             }
@@ -393,6 +395,7 @@ impl BioMcpError {
                 suggestion,
             } => format!("{entity} '{id}' not found.\n\n{suggestion}"),
             Self::InvalidArgument(message) => format!("Invalid argument: {message}"),
+            Self::InternalProcessing => "Internal processing failed.".to_string(),
             Self::CaptureUnavailable => {
                 "capture_unavailable: captured source material is unavailable".to_string()
             }
@@ -486,6 +489,7 @@ impl BioMcpError {
             Self::ApiJson { .. } => "api_json",
             Self::NotFound { .. } => "not_found",
             Self::InvalidArgument(_) => "invalid_argument",
+            Self::InternalProcessing => "internal_processing",
             Self::CaptureUnavailable => "capture_unavailable",
             Self::CaptureCorrupt => "capture_corrupt",
             Self::BindingConflict => "binding_conflict",
@@ -547,6 +551,7 @@ impl fmt::Display for BioMcpError {
                 suggestion,
             } => write!(formatter, "{entity} '{id}' not found.\n\n{suggestion}"),
             Self::InvalidArgument(message) => write!(formatter, "Invalid argument: {message}"),
+            Self::InternalProcessing => formatter.write_str("Internal processing failed."),
             Self::CaptureUnavailable => {
                 formatter.write_str("capture_unavailable: captured source material is unavailable")
             }
