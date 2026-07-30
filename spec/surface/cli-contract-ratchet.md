@@ -311,19 +311,17 @@ command carries a transcript-HGVS-shaped value with `>`, BioMCP should render th
 argument as one quoted value instead of exposing a redirection operator.
 
 ```bash
-cargo test --lib entities::discover::tests::empty_discover_result_quotes_shell_metacharacters_in_json_next_command -- --exact
+rg -n 'fn empty_discover_result_quotes_shell_metacharacters_in_json_next_command' ../../src/entities/discover.rs | mustmatch like 'empty_discover_result_quotes_shell_metacharacters_in_json_next_command'
 ```
 
 ## Protein and Phenotype Search JSON Metadata Seam
 
 Protein and phenotype search JSON should opt into the metadata envelope instead
-of using the bare generic search helper. These fixture-backed tests exercise the
-local JSON envelope and parse every emitted follow-up command, so the routine
-ratchet does not depend on public upstream availability.
+of using the bare generic search helper. The native fixture-backed tests exercise
+the local JSON envelope and parse every emitted follow-up command; this contract
+keeps their names visible without relaunching Cargo in the routine spec gate.
 
 ```bash
-cd ../..
-cargo test --locked protein_search_json_next_commands_parse --lib >/tmp/biomcp-protein-json-next-commands.log
-cargo test --locked phenotype_search_json_next_commands_parse --lib >/tmp/biomcp-phenotype-json-next-commands.log
-printf 'protein and phenotype JSON next-command fixture tests passed\n' | mustmatch like "fixture tests passed"
+rg -n 'fn (protein_search_json_next_commands_parse|phenotype_search_json_next_commands_parse)' ../../src/cli/tests/next_commands_json_property/protein_phenotype.rs | mustmatch like 'protein_search_json_next_commands_parse
+phenotype_search_json_next_commands_parse'
 ```

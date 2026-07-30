@@ -9,7 +9,9 @@ uses the ordinary script-safe CLI error without exposing backend details.
 
 Discover accepts a trimmed free-text query up to 4,096 UTF-8 bytes. Longer text
 fails as an invalid argument before ontology clients are constructed, without
-exposing an internal backend name.
+exposing an internal backend name. The native
+`discover_request_rejects_oversized_query_before_clients` test covers the ASCII
+and UTF-8 boundaries; this command keeps the public error shape visible.
 
 ```bash run id=oversized-discover exit=2
 bash ../fixtures/run-oversized-discover-query.sh

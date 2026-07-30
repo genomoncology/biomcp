@@ -924,7 +924,7 @@ def test_article_cache_transition_fixture_owns_disk_floor_precondition() -> None
     assert runner_body.index(source) < runner_body.index("mustmatch test")
 
 
-def test_ticket_504_shell_quoting_ratchet_uses_only_focused_rust_test() -> None:
+def test_ticket_504_shell_quoting_ratchet_names_its_native_test_without_running_cargo() -> None:
     spec = _read_repo("spec/surface/cli-contract-ratchet.md")
     match = re.search(
         r"(?ms)^## Runtime next commands quote shell metacharacters\n(?P<section>.*?)(?=^## )",
@@ -933,11 +933,23 @@ def test_ticket_504_shell_quoting_ratchet_uses_only_focused_rust_test() -> None:
     assert match is not None, "missing runtime shell-metacharacter section"
     section = match.group("section")
     assert "biomcp --json discover" not in section
-    assert (
-        "cargo test --lib "
-        "entities::discover::tests::empty_discover_result_quotes_shell_metacharacters_in_json_next_command "
-        "-- --exact"
-    ) in section
+    assert "empty_discover_result_quotes_shell_metacharacters_in_json_next_command" in section
+    assert "cargo test" not in section
+
+
+def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
+    runner = _read_repo("scripts/run-specs.sh")
+    static_paths = _runner_array_paths("SPEC_STATIC_PATHS")
+    ctgov_paths = _runner_array_paths("SPEC_CTGOV_FIXTURE_PATHS")
+    static_target = _make_target_block("spec-static")
+
+    assert static_paths == ["spec/surface/docker-image.md", "spec/surface/homebrew.md"]
+    assert "spec/entity/trial-documents.md" in ctgov_paths
+    assert "require_ctgov_fixture_env" in runner
+    assert "BIOMCP_CTGOV_BASE" in runner
+    assert "BIOMCP_CTGOV_CDN_BASE" in runner
+    assert "$(SPEC_BUILD)" not in static_target
+    assert "scripts/run-specs.sh spec-static" in static_target
 
 
 def test_ticket_395_routine_and_live_spec_variables_are_disjoint_and_complete() -> None:
