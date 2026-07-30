@@ -44,6 +44,7 @@ execution failures:
 | `ApiJson` | API response shape changed or returned malformed JSON | Retry once; if repeatable, report issue because upstream format may have changed |
 | `NotFound` | Requested entity ID was not found | Verify identifier format; run `search` before `get` when unsure |
 | `InvalidArgument` | Command arguments are invalid or inconsistent | Re-run with `--help` and correct flag values/section names |
+| `InternalProcessing` | BioMCP could not process data after a successful retrieval | Report the command and error code; retrying the provider will not repair a repeatable local processing failure |
 | `CaptureUnavailable` | A CSpec capture is missing, expired, or evicted | Select the source document again to create a fresh capture |
 | `CaptureCorrupt` | Stored CSpec binding metadata or captured bytes failed integrity checks | Clear the affected cache and select the source document again |
 | `BindingConflict` | Identical CSpec bytes were already captured under different source identity | Select the correct document identity; do not reuse the handle across sources |

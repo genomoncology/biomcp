@@ -687,6 +687,7 @@ mod tests {
             &capture,
         )
         .expect_err("a malformed captured document must not page");
+        assert_eq!(error.code(), "internal_processing");
         let projection = error.public_projection();
 
         assert_eq!(projection.source, None);
