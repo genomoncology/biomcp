@@ -173,6 +173,9 @@ def test_runner_rejects_caller_ctgov_values_when_fixture_exports_nothing(
     setup = workspace / "spec" / "fixtures" / "setup-ctgov-intervention-alias-spec-fixture.sh"
     setup.write_text("#!/usr/bin/env bash\nexit 0\n")
     setup.chmod(0o755)
+    cleanup = workspace / "spec" / "fixtures" / "cleanup-ctgov-intervention-alias-spec-fixture.sh"
+    cleanup.write_text("#!/usr/bin/env bash\ntouch \"$1/ctgov-cleaned\"\n")
+    cleanup.chmod(0o755)
     env |= {
         "BIOMCP_CTGOV_BASE": "https://clinicaltrials.gov/api/v2",
         "BIOMCP_CTGOV_CDN_BASE": "https://cdn.clinicaltrials.gov",
@@ -189,6 +192,7 @@ def test_runner_rejects_caller_ctgov_values_when_fixture_exports_nothing(
 
     assert result.returncode != 0
     assert "CTGov fixture did not create" in result.stderr
+    assert (workspace / "ctgov-cleaned").exists()
     assert not (workspace / "mustmatch-invocation-log").exists()
 
 

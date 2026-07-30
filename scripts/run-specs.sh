@@ -173,13 +173,13 @@ run_ctgov_fixture() {
   rm -f "$env_file"
   unset BIOMCP_CTGOV_BASE BIOMCP_CTGOV_CDN_BASE
   bash spec/fixtures/setup-ctgov-intervention-alias-spec-fixture.sh "$ROOT"
+  register_cleanup cleanup_ctgov_fixture
   [[ -s "$env_file" ]] || {
     echo "CTGov fixture did not create $env_file" >&2
     return 1
   }
   # shellcheck source=/dev/null
   . "$env_file"
-  register_cleanup cleanup_ctgov_fixture
 }
 
 require_ctgov_fixture_env() {
