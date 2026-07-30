@@ -62,6 +62,7 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
     "schema_parse_failures": [],
     "missing_available_positives": [],
     "incomplete_results": [],
+    "internal_misattributions": [],
     "missing_canonical_equivalence": []
   }
 }
