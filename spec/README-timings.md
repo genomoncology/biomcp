@@ -192,6 +192,15 @@ sources the shared article fixture's source bases and signal only inside the art
 subshell; later Markdown and the Python canary retain the caller environment instead of
 inheriting article overrides.
 
+## Ticket 635 G5 Live Canary Timing
+
+The pre-change release-binary G5 observation was **228s** against the unchanged
+**180-second** heading budget. On 2026-07-31, after authoritative RefSeq exact
+retrieval stopped appending CAR-derived aliases, the release-binary runner took
+**166.38s** (`user 3.97s`, `sys 16.73s`) on beelink. The 180-second budget is
+unchanged. This measurement is live-provider dependent; it records the alias
+selection lever and elapsed result rather than a timing SLA.
+
 ## Per-Section Warm Ceilings
 
 | Section | Lane | Ceiling | Why |

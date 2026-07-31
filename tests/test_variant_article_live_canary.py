@@ -39,15 +39,34 @@ def write_g5_fake_binary(
     *,
     misattribute_uncalled_provider: bool = False,
     malformed_source_status: bool = False,
+    inconsistent_work_allocation: bool = False,
+    provider_incomplete: bool = False,
+    internal_incomplete: bool = False,
 ) -> None:
     source_status = (
         {"exact_lexical": "complete"}
         if malformed_source_status
         else [{
             "route": "exact_lexical",
-            "source": "semanticscholar",
-            "status": "unavailable" if misattribute_uncalled_provider else "ok",
+            "source": "internal" if internal_incomplete else "semanticscholar",
+            "status": (
+                "not_attempted"
+                if internal_incomplete
+                else "degraded"
+                if provider_incomplete
+                else "unavailable"
+                if misattribute_uncalled_provider
+                else "ok"
+            ),
         }]
+    )
+    item_work_consumed = 1 if inconsistent_work_allocation or provider_incomplete else 0
+    exact_work_consumed = 1 if provider_incomplete else 0
+    complete = not (provider_incomplete or internal_incomplete)
+    routes = (
+        [{"route": "exact_lexical", "providers": [{"source": "semanticscholar", "calls": 1}]}]
+        if provider_incomplete
+        else []
     )
     content = """#!/usr/bin/env python3
 import json
@@ -73,10 +92,20 @@ for request in json.load(sys.stdin):
             "identity": {"status": "confirmed"},
         }],
         "source_status": SOURCE_STATUS,
-        "complete": True,
+        "complete": COMPLETE,
         "truncated": False,
         "error": None,
-        "debug_plan": {"verification": {}, "provider_queries": []},
+        "debug_plan": {
+            "verification": {},
+            "provider_queries": [],
+            "budgets": {"item": {"consumed": ITEM_WORK_CONSUMED}},
+            "work_allocation": {
+                "discovery": {"consumed": 0},
+                "exact_lexical": {"item": {"consumed": EXACT_WORK_CONSUMED}},
+                "identity_verification": {"item": {"consumed": 0}},
+            },
+            "routes": ROUTES,
+        },
     }
     if request_id in {"atm-grch38", "palb2-grch38"}:
         item["canonical_equivalence"] = {
@@ -93,7 +122,14 @@ for request in json.load(sys.stdin):
     items.append(item)
 print(json.dumps({"items": items}))
 """
-    path.write_text(content.replace("SOURCE_STATUS", repr(source_status)), encoding="utf-8")
+    path.write_text(
+        content.replace("SOURCE_STATUS", repr(source_status))
+        .replace("ITEM_WORK_CONSUMED", repr(item_work_consumed))
+        .replace("EXACT_WORK_CONSUMED", repr(exact_work_consumed))
+        .replace("COMPLETE", repr(complete))
+        .replace("ROUTES", repr(routes)),
+        encoding="utf-8",
+    )
     path.chmod(0o755)
 
 
@@ -147,6 +183,62 @@ def test_g5_canary_reports_internal_misattribution_for_an_uncalled_provider(
     assert payload["identity_diagnostics"]["internal_misattributions"] == [
         "apc-grch38"
     ]
+
+
+def test_g5_canary_allows_recorded_provider_incompleteness(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    write_g5_fake_binary(binary, provider_incomplete=True)
+
+    completed = subprocess.run(
+        ["bash", str(G5_CANARY), str(REPO_ROOT)],
+        capture_output=True,
+        check=False,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 0
+    assert payload["identity_diagnostics"]["incomplete_results"] == []
+
+
+def test_g5_canary_rejects_internal_unperformed_work(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    write_g5_fake_binary(binary, internal_incomplete=True)
+
+    completed = subprocess.run(
+        ["bash", str(G5_CANARY), str(REPO_ROOT)],
+        capture_output=True,
+        check=False,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert "apc-grch38" in payload["identity_diagnostics"]["incomplete_results"]
+
+
+def test_g5_canary_rejects_inconsistent_work_allocation(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    write_g5_fake_binary(binary, inconsistent_work_allocation=True)
+
+    completed = subprocess.run(
+        ["bash", str(G5_CANARY), str(REPO_ROOT)],
+        capture_output=True,
+        check=False,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert (
+        payload["identity_readiness"][
+            "work_allocation_is_consistent_with_budgets_and_recorded_calls"
+        ]
+        is False
+    )
 
 
 def test_g5_canary_rejects_malformed_source_status(tmp_path: Path) -> None:

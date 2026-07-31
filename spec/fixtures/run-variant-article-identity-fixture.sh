@@ -44,6 +44,9 @@ passages = {
     "90000004": [("BRAF", "p.Val600Glu", 673)],
     "90000005": [("BRAF", "p.Val600Glu", 673)],
     "90000006": [("BRAF", "p.Val600Glu", 673)],
+    "90000007": [("BRAF", "p.Val600Glu", 673)],
+    "90000008": [("BRAF", "p.Val600Glu", 673)],
+    "90000009": [("BRAF", "p.Val600Glu", 673)],
 }
 
 def send(h, status, value):
@@ -160,7 +163,7 @@ class Handler(BaseHTTPRequestHandler):
         # ESearch IDs and matching ESummary records that BioMCP must deduplicate.
         if path.endswith("/esearch.fcgi"):
             if mode.read_text().strip() == "deep-discovery":
-                return send(self, 200, {"esearchresult": {"idlist": ["90000004", "90000005", "90000006"], "count": "100"}})
+                return send(self, 200, {"esearchresult": {"idlist": ["90000004", "90000005", "90000006", "90000007", "90000008", "90000009"], "count": "100"}})
             if "APC" in query.get("term", [""])[0]:
                 return send(self, 200, {"esearchresult": {"idlist": ["12901799"], "count": "1"}})
             return send(self, 200, {"esearchresult": {"idlist": [], "count": "0"}})
@@ -189,16 +192,19 @@ confirmed="$("$binary" --json variant articles --input "$panel" --verify-identit
 printf 'deep-discovery\n' >"$mode"
 braf_panel="$repo_root/spec/fixtures/variant-article-braf-identity-input.json"
 reserved="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --confirmed-only --debug-plan --limit 3)"
+visible="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --debug-plan --limit 3)"
 printf 'reordered\n' >"$mode"
 reordered="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 printf '%s' "$all" >"$fixture_root/all.json"
 printf '%s' "$confirmed" >"$fixture_root/confirmed.json"
 printf '%s' "$reserved" >"$fixture_root/reserved.json"
+printf '%s' "$visible" >"$fixture_root/visible.json"
 printf '%s' "$reordered" >"$fixture_root/reordered.json"
-jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_root/confirmed.json" --slurpfile reserved "$fixture_root/reserved.json" --slurpfile reordered "$fixture_root/reordered.json" '
+jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_root/confirmed.json" --slurpfile reserved "$fixture_root/reserved.json" --slurpfile visible "$fixture_root/visible.json" --slurpfile reordered "$fixture_root/reordered.json" '
   def item($id): $all[0].items[] | select(.request_id == $id);
   def reordered_item($id): $reordered[0].items[] | select(.request_id == $id);
   def reserved_item: $reserved[0].items[] | select(.request_id == "braf-refseq-grch37");
+  def visible_item: $visible[0].items[] | select(.request_id == "braf-refseq-grch37");
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
     clingen_ldh: {atm_exact_annotation_confirmed: any(item("atm-grch38").results[]; .pmcid == "PMC9541484" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 472)), palb2_table_selector_confirmed: any(item("palb2-grch38").results[]; .pmcid == "PMC9582472" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 79728 and .provider_linkage.selector_type == "TableTextSelector" and .provider_linkage.caid == "CA900000000005")), empty_coverage_preserves_candidates: (has("mlh1-grch38"; "20864636"; "confirmed") and all(item("mlh1-grch38").results[].identity.observations[]; .source != "clingen_ldh"))},
@@ -224,7 +230,8 @@ jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_r
         and (.provider_response_sha256 | test("^[0-9a-f]{64}$")))),
     confirmed_page_filters_before_limit: (any($confirmed[0].items[] | select(.request_id == "apc-grch38").results[]; .pmid == "12901799" and .rank == 1) and all($confirmed[0].items[]; .pagination.returned <= .pagination.limit and .pagination.returned == ([.results[]] | length) and all(.results[]; .identity.status == "confirmed"))),
     deep_discovery_keeps_structured_braf_for_identity_verification: (reserved_item | .complete == false and .truncated == true and .canonical_equivalence.status == "confirmed" and .canonical_equivalence.complete == true and any(.results[]; .pmid == "90000004" and .identity.status == "confirmed") and all(.results[]; .identity.status == "confirmed")),
-    debug_plan_records_discovery_and_verification_allocation: (reserved_item | .debug_plan as $plan | $plan.work_allocation as $allocation | ($allocation | type) == "object" and ($allocation.discovery.limit | type) == "number" and ($allocation.discovery.consumed | type) == "number" and $allocation.discovery.consumed > 0 and $allocation.discovery.consumed <= $allocation.discovery.limit and $allocation.discovery.limit < $plan.budgets.item.limit and ($allocation.identity_verification.reserved | type) == "number" and ($allocation.identity_verification.consumed | type) == "number" and $allocation.identity_verification.reserved >= 1 and $allocation.identity_verification.consumed > 1 and $allocation.identity_verification.consumed <= $allocation.identity_verification.reserved and ($allocation.discovery.consumed + $allocation.identity_verification.consumed == $plan.budgets.item.consumed)),
+    identity_verification_is_bounded_to_visible_page: (visible_item | .pagination.returned > 0 and .debug_plan.work_allocation.identity_verification.item.consumed > 0 and .debug_plan.work_allocation.identity_verification.item.consumed <= .pagination.returned),
+    debug_plan_records_discovery_and_verification_allocation: (reserved_item | .debug_plan as $plan | $plan.work_allocation as $allocation | ($allocation | type) == "object" and ($plan.budgets.item.consumed | type) == "number" and ($allocation.discovery.consumed | type) == "number" and $allocation.discovery.consumed > 0 and $allocation.discovery.consumed <= $plan.budgets.item.consumed and ($allocation.exact_lexical.item.consumed | type) == "number" and $allocation.exact_lexical.item.consumed <= $plan.budgets.item.consumed and ($allocation.identity_verification.reserved | type) == "number" and ($allocation.identity_verification.consumed | type) == "number" and $allocation.identity_verification.reserved >= 1 and $allocation.identity_verification.consumed > 1 and $allocation.identity_verification.consumed <= $plan.budgets.item.consumed and ($allocation.discovery.consumed + $allocation.exact_lexical.item.consumed + $allocation.identity_verification.item.consumed == $plan.budgets.item.consumed) and all($plan.routes[] | select(.route == "strict" or .route == "exact_lexical" or .route == "identity_verification"); ([.providers[].calls] | add) as $calls | $calls == 0 or (if .route == "strict" then $allocation.discovery.consumed else if .route == "exact_lexical" then $allocation.exact_lexical.item.consumed else $allocation.identity_verification.item.consumed end end) > 0)),
     candidate_route_trace_is_versioned_bounded_and_stage_attributed: (all($all[0].items[];
       .debug_plan as $plan |
       ($plan.candidate_trace | type) == "object" and

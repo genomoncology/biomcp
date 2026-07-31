@@ -68,6 +68,55 @@ def has_canonical_equivalence(item):
         )
     )
 
+def has_consistent_work_allocation(item):
+    plan = item.get("debug_plan")
+    if not isinstance(plan, dict):
+        return False
+    budgets = plan.get("budgets")
+    allocation = plan.get("work_allocation")
+    if not isinstance(budgets, dict) or not isinstance(allocation, dict):
+        return False
+    item_budget = budgets.get("item")
+    discovery = allocation.get("discovery")
+    exact = allocation.get("exact_lexical")
+    verification = allocation.get("identity_verification")
+    if not all(isinstance(value, dict) for value in (item_budget, discovery, exact, verification)):
+        return False
+    exact_item = exact.get("item")
+    verification_item = verification.get("item")
+    if not isinstance(exact_item, dict) or not isinstance(verification_item, dict):
+        return False
+    consumed = [
+        item_budget.get("consumed"),
+        discovery.get("consumed"),
+        exact_item.get("consumed"),
+        verification_item.get("consumed"),
+    ]
+    if not all(isinstance(value, int) and value >= 0 for value in consumed):
+        return False
+    parent, discovery_consumed, exact_consumed, verification_consumed = consumed
+    if any(value > parent for value in (discovery_consumed, exact_consumed, verification_consumed)):
+        return False
+    if discovery_consumed + exact_consumed + verification_consumed != parent:
+        return False
+    allocation_by_route = {
+        "strict": discovery_consumed,
+        "exact_lexical": exact_consumed,
+        "identity_verification": verification_consumed,
+    }
+    for route in plan.get("routes", []):
+        if not isinstance(route, dict):
+            return False
+        route_name = route.get("route")
+        if route_name not in allocation_by_route:
+            continue
+        for provider in route.get("providers", []):
+            if not isinstance(provider, dict):
+                return False
+            if provider.get("calls", 0) > 0 and allocation_by_route[route_name] == 0:
+                return False
+    return True
+
 summary = {
     "expected_request_ids": len(returned_request_ids) == len(expected_request_ids) and len(set(returned_request_ids)) == len(expected_request_ids) and set(returned_request_ids) == expected_request_ids,
     "all_resolved": len(recognized_items) == len(expected_request_ids) and all((item.get("resolution") or {}).get("status") == "resolved" for item in recognized_items),
@@ -75,6 +124,7 @@ summary = {
     "all_have_route_tied_alias": len(recognized_items) == len(expected_request_ids) and all(any(retrieval_exact_routes.intersection(row.get("routes", [])) and supplied_aliases(request_by_id[item.get("request_id")]).intersection(row.get("matched_aliases", [])) for row in item.get("results", [])) for item in recognized_items),
     "all_have_source_status": len(recognized_items) == len(expected_request_ids) and all(bool(item.get("source_status")) for item in recognized_items),
     "all_have_terminal_state": len(recognized_items) == len(expected_request_ids) and all(isinstance(item.get("complete"), bool) and isinstance(item.get("truncated"), bool) and "error" in item for item in recognized_items),
+    "work_allocation_is_consistent_with_budgets_and_recorded_calls": len(recognized_items) == len(expected_request_ids) and all(has_consistent_work_allocation(item) for item in recognized_items),
     "authoritative_verify_treats_g5_as_hard": True,
 }
 positives = {"apc-grch38": "12901799", "atm-grch38": "32918381", "palb2-grch38": "39999518", "mlh1-grch38": "20864636"}
@@ -106,7 +156,13 @@ for item in recognized_items:
     )
     if not isinstance(verification, dict) or not valid_source_status:
         diagnostics["schema_parse_failures"].append(request_id)
-    if not item.get("complete", False):
+    internal_unperformed_work = any(
+        isinstance(status, dict)
+        and status.get("source") == "internal"
+        and status.get("status") == "not_attempted"
+        for status in (source_status if isinstance(source_status, list) else [])
+    )
+    if not item.get("complete", False) and internal_unperformed_work:
         diagnostics["incomplete_results"].append(request_id)
     recorded_calls = {
         (route.get("route"), provider.get("source"))
