@@ -443,8 +443,10 @@ impl VariantArticleExecutionContext {
 
     fn item_work(&self) -> VariantArticleWork {
         VariantArticleWork::new(
-            self.item.limit,
-            self.item.consumed.load(AtomicOrdering::SeqCst),
+            self.item.limit + self.exact_item.limit + self.identity_item.limit,
+            self.item.consumed.load(AtomicOrdering::SeqCst)
+                + self.exact_item.consumed.load(AtomicOrdering::SeqCst)
+                + self.identity_item.consumed.load(AtomicOrdering::SeqCst),
         )
     }
 
@@ -466,11 +468,8 @@ impl VariantArticleExecutionContext {
             .load(AtomicOrdering::SeqCst);
         VariantArticleWorkAllocationPlan {
             discovery: VariantArticleWork::new(
-                self.item.limit.saturating_sub(reserved),
-                self.item
-                    .consumed
-                    .load(AtomicOrdering::SeqCst)
-                    .saturating_sub(consumed),
+                self.item.limit,
+                self.item.consumed.load(AtomicOrdering::SeqCst),
             ),
             exact_lexical: VariantArticleWorkAllocationScope {
                 item: VariantArticleWork::new(
@@ -1212,7 +1211,10 @@ fn exact_aliases_with_equivalence(
     equivalence: &CanonicalEquivalence,
 ) -> (Vec<String>, bool) {
     let (mut aliases, truncated) = exact_aliases(context);
-    if equivalence.status != "confirmed" || aliases.len() >= MAX_EXACT_ALIASES {
+    if context.requested.is_authoritative_refseq()
+        || equivalence.status != "confirmed"
+        || aliases.len() >= MAX_EXACT_ALIASES
+    {
         return (aliases, truncated);
     }
     for alias in &equivalence.aliases {
@@ -1504,7 +1506,7 @@ async fn strict_provider_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
-    equivalence: &CanonicalEquivalence,
+    exact_aliases: &[String],
     execution: &VariantArticleExecutionContext,
 ) -> (
     Vec<ArticleCandidate>,
@@ -1513,8 +1515,7 @@ async fn strict_provider_candidates(
     Vec<VariantArticleSourceStatus>,
 ) {
     let filters = article_filters();
-    let plans =
-        provider_variant_query_plan_with_aliases(input, context, strategy, &equivalence.aliases);
+    let plans = provider_variant_query_plan_with_aliases(input, context, strategy, exact_aliases);
     let mut candidates = Vec::new();
     let mut statuses = Vec::new();
     let mut incomplete = false;
@@ -1669,8 +1670,8 @@ async fn strict_provider_candidates(
 }
 
 async fn lexical_candidates(
-    context: &VariantArticleResolutionContext,
-    equivalence: &CanonicalEquivalence,
+    aliases: Vec<String>,
+    alias_budget_stopped: bool,
     execution: &VariantArticleExecutionContext,
 ) -> (
     Vec<ArticleCandidate>,
@@ -1678,7 +1679,6 @@ async fn lexical_candidates(
     bool,
     Vec<VariantArticleSourceStatus>,
 ) {
-    let (aliases, alias_budget_stopped) = exact_aliases_with_equivalence(context, equivalence);
     federated_alias_candidates(aliases, alias_budget_stopped, "exact_lexical", execution).await
 }
 
@@ -1936,9 +1936,10 @@ fn plan_queries(
     input: &str,
     context: &VariantArticleResolutionContext,
     route: &str,
+    exact_aliases: &[String],
 ) -> Vec<String> {
     match route {
-        "strict" | "exact_lexical" => exact_aliases(context).0,
+        "strict" | "exact_lexical" => exact_aliases.to_vec(),
         "best_effort_free_text" => fallback_aliases(input, context).0,
         "source_citation" => context
             .source_id
@@ -1969,7 +1970,7 @@ fn provider_variant_query_plan_with_aliases(
     input: &str,
     context: &VariantArticleResolutionContext,
     strategy: VariantArticleStrategy,
-    canonical_aliases: &[String],
+    exact_aliases: &[String],
 ) -> Vec<ProviderVariantQueryPlan> {
     let gene = context
         .requested
@@ -1982,45 +1983,7 @@ fn provider_variant_query_plan_with_aliases(
                 .and_then(|identity| identity.genes.first().map(String::as_str))
         })
         .unwrap_or_default();
-    let mut aliases = BTreeSet::new();
-    if let Some(coding) = context.requested.coding_change.as_deref() {
-        aliases.insert(coding.trim().to_string());
-        if context.requested.is_authoritative_refseq()
-            && let Some(transcript) = context.requested.transcript.as_deref()
-        {
-            aliases.insert(format!("{transcript}:{coding}"));
-        }
-    }
-    if let Some(protein) = context
-        .requested
-        .protein_change
-        .as_deref()
-        .and_then(crate::entities::variant::normalize_protein_change)
-    {
-        aliases.insert(protein);
-    }
-    if context.requested.is_authoritative_refseq()
-        && let (Some(accession), Some(position), Some(reference), Some(alternate)) = (
-            context.requested.genomic_accession.as_deref(),
-            context.requested.position,
-            context.requested.reference.as_deref(),
-            context.requested.alternate.as_deref(),
-        )
-    {
-        aliases.insert(format!("{accession}:g.{position}{reference}>{alternate}"));
-    }
-    aliases.retain(|alias| !alias.is_empty());
-    let aliases = if canonical_aliases.is_empty() {
-        aliases.into_iter().take(MAX_EXACT_ALIASES).collect()
-    } else {
-        let (mut aliases, _) = exact_aliases(context);
-        for alias in canonical_aliases {
-            if !aliases.contains(alias) && aliases.len() < MAX_EXACT_ALIASES {
-                aliases.push(alias.clone());
-            }
-        }
-        aliases
-    };
+    let aliases = exact_aliases.to_vec();
     let mut queries = Vec::new();
     if strategy != VariantArticleStrategy::Annotation && !gene.is_empty() {
         for alias in aliases {
@@ -2126,7 +2089,7 @@ fn build_debug_plan(
     let routes = route_names
         .into_iter()
         .map(|route| {
-            let queries = plan_queries(input, context, route);
+            let queries = plan_queries(input, context, route, canonical_aliases);
             let mut grouped = BTreeMap::<String, Vec<&VariantArticleCallEvent>>::new();
             for event in events.iter().filter(|event| event.route == route) {
                 grouped.entry(event.source.clone()).or_default().push(event);
@@ -2303,6 +2266,8 @@ async fn search_variant_articles_identity(
             .await?;
     context.resolution.normalized_aliases = combined_normalized_aliases(&context);
     let canonical_equivalence = resolve_canonical_equivalence(&context.requested, &execution).await;
+    let (selected_exact_aliases, selected_exact_aliases_truncated) =
+        exact_aliases_with_equivalence(&context, &canonical_equivalence);
     if !context.available {
         let debug_plan = include_debug_plan.then(|| {
             let mut plan =
@@ -2394,7 +2359,7 @@ async fn search_variant_articles_identity(
                         input,
                         &context,
                         strategy,
-                        &canonical_equivalence,
+                        &selected_exact_aliases,
                         &execution,
                     )
                     .await;
@@ -2460,7 +2425,7 @@ async fn search_variant_articles_identity(
                 input,
                 &context,
                 strategy,
-                &canonical_equivalence,
+                &selected_exact_aliases,
                 &execution,
             )
             .await;
@@ -2517,8 +2482,12 @@ async fn search_variant_articles_identity(
             strategy,
             VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
         ) {
-            let (rows, incomplete, succeeded, route_statuses) =
-                lexical_candidates(&context, &canonical_equivalence, &execution).await;
+            let (rows, incomplete, succeeded, route_statuses) = lexical_candidates(
+                selected_exact_aliases.clone(),
+                selected_exact_aliases_truncated,
+                &execution,
+            )
+            .await;
             candidates.extend(rows);
             statuses.extend(route_statuses);
             succeeded_routes += usize::from(succeeded);
@@ -2811,7 +2780,7 @@ async fn search_variant_articles_identity(
             input,
             &context,
             strategy,
-            &canonical_equivalence.aliases,
+            &selected_exact_aliases,
             &execution,
             VariantArticleDebugPlanState {
                 counts: VariantArticleCountsPlan {
@@ -3062,7 +3031,8 @@ fn empty_debug_plan(
     stopped_routes: Vec<String>,
     offset: usize,
 ) -> VariantArticleDebugPlan {
-    let work = VariantArticleWork::new(ITEM_WORK_LIMIT, 0);
+    let item_work =
+        VariantArticleWork::new(ITEM_WORK_LIMIT + EXACT_WORK_LIMIT + ITEM_WORK_LIMIT, 0);
     VariantArticleDebugPlan {
         normalized_aliases: requested.normalized_aliases(),
         provider_queries: Vec::new(),
@@ -3077,8 +3047,8 @@ fn empty_debug_plan(
             inputs: ["exactness", "route_source_position", "stable_identifier"],
         },
         budgets: VariantArticleBudgetsPlan {
-            item: work.clone(),
-            request: work,
+            item: item_work,
+            request: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
         },
         work_allocation: VariantArticleWorkAllocationPlan {
             discovery: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
@@ -3482,6 +3452,7 @@ mod tests {
         left.requested.gene = Some("BRCA1".into());
         left.requested.protein_change = None;
         left.requested.coding_change = Some("c.788G>T".into());
+        left.resolution.normalized_aliases = NormalizedVariantAliases::default();
         let mut right = left.clone();
         right.requested.coding_change = Some("c.2428A>T".into());
 
@@ -3489,21 +3460,30 @@ mod tests {
             "BRCA1 c.788G>T",
             &left,
             VariantArticleStrategy::Union,
-            &[],
+            &exact_aliases(&left).0,
         );
         let right_query = provider_variant_query_plan_with_aliases(
             "BRCA1 c.2428A>T",
             &right,
             VariantArticleStrategy::Union,
-            &[],
+            &exact_aliases(&right).0,
         );
 
-        assert_eq!(left_query.len(), 5);
+        assert_eq!(left_query.len(), 25);
         assert_eq!(
             left_query[0].query_template_version,
             "pubmed-title-abstract-v1"
         );
-        assert_ne!(left_query[0].query, right_query[0].query);
+        assert!(
+            left_query
+                .iter()
+                .any(|query| query.query.contains("c.788G>T"))
+        );
+        assert!(
+            right_query
+                .iter()
+                .any(|query| query.query.contains("c.2428A>T"))
+        );
         let discovery = left_query
             .iter()
             .position(|query| query.route == "discovery")
@@ -3672,7 +3652,12 @@ mod tests {
             Some("ATM c.1066-6T>G")
         );
         assert_eq!(
-            plan_queries("NC_000011.10:g.108248927T>G", &context, "pubtator_variant"),
+            plan_queries(
+                "NC_000011.10:g.108248927T>G",
+                &context,
+                "pubtator_variant",
+                &[],
+            ),
             vec!["NC_000011.10:g.108248927T>G"]
         );
 
@@ -3725,10 +3710,10 @@ mod tests {
                 "ATM p.Met16Ile",
                 &context,
                 VariantArticleStrategy::Union,
-                &[],
+                &exact_aliases(&context).0,
             )
             .iter()
-            .any(|plan| plan.query_alias == "ATM M16I")
+            .any(|plan| plan.query_alias == "ATM ATM M16I")
         );
 
         context.requested.protein_change = Some("p.?".into());
@@ -3743,7 +3728,7 @@ mod tests {
                 "ATM p.?",
                 &context,
                 VariantArticleStrategy::Union,
-                &[],
+                &exact_aliases(&context).0,
             )
             .iter()
             .any(|plan| plan.route == "strict" && plan.query_alias.contains("p.?"))
@@ -3941,11 +3926,8 @@ mod tests {
         for _ in 0..3 {
             assert!(reserved.reserve("identity_verification").is_some());
         }
-        assert_eq!(
-            reserved.work_allocation().discovery.limit,
-            ITEM_WORK_LIMIT - 3
-        );
-        assert_eq!(reserved.work_allocation().discovery.consumed, 44);
+        assert_eq!(reserved.work_allocation().discovery.limit, ITEM_WORK_LIMIT);
+        assert_eq!(reserved.work_allocation().discovery.consumed, 47);
         assert_eq!(reserved.work_allocation().identity_verification.consumed, 3);
         assert_eq!(
             reserved
@@ -4337,17 +4319,21 @@ mod tests {
         context.requested = RequestedVariantIdentity {
             gene: Some("ATM".into()),
             coding_change: Some("c.1066-6T>G".into()),
-            transcript: Some("NM_000051.4".into()),
-            genomic_accession: Some("NC_000011.10".into()),
-            genome_build: Some("GRCh38".into()),
-            position: Some(108248927),
-            reference: Some("T".into()),
-            alternate: Some("G".into()),
             ..Default::default()
         };
-        let aliases = (0..10)
-            .map(|index| format!("alias-{index}"))
-            .collect::<Vec<_>>();
+        context.source_identity = None;
+        context.resolution.normalized_aliases = NormalizedVariantAliases::default();
+        let equivalence = CanonicalEquivalence {
+            status: "confirmed".into(),
+            caid: None,
+            exhaustive: true,
+            complete: true,
+            applicable_identity_count: 2,
+            observations: Vec::new(),
+            message: String::new(),
+            aliases: (0..10).map(|index| format!("alias-{index}")).collect(),
+        };
+        let (aliases, _) = exact_aliases_with_equivalence(&context, &equivalence);
         let plan = provider_variant_query_plan_with_aliases(
             "ATM c.1066-6T>G",
             &context,
@@ -4362,13 +4348,9 @@ mod tests {
         assert_eq!(sent.len(), MAX_EXACT_ALIASES);
         assert_eq!(
             &sent[..3],
-            [
-                "ATM ATM c.1066-6T>G",
-                "ATM NC_000011.10:g.108248927T>G",
-                "ATM NM_000051.4:c.1066-6T>G",
-            ]
+            ["ATM ATM c.1066-6T>G", "ATM alias-0", "ATM alias-1"]
         );
-        assert_eq!(sent[3], "ATM alias-0");
+        assert_eq!(sent[3], "ATM alias-2");
 
         let debug_plan = build_debug_plan(
             "ATM c.1066-6T>G",
