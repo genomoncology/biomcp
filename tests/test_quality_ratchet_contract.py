@@ -1199,6 +1199,55 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
     assert summary["remote_resource_bounds"]["status"] == "pass"
 
 
+def test_source_attributed_status_typing_ratchet_rejects_owned_strings_and_allows_relays(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "source-status-typing"
+    _write_dead_code_fixture(
+        fixture_root,
+        "#[derive(Serialize)]\n"
+        "struct ClaimedProviderStatus {\n"
+        "    source: String,\n"
+        "    status: String,\n"
+        "}\n\n"
+        "#[derive(Deserialize)]\n"
+        "struct UpstreamProviderRelay {\n"
+        "    source: String,\n"
+        "    status: String,\n"
+        "}\n",
+    )
+    allowlist = fixture_root / "tools" / "source-status-typing-allowlist.json"
+    allowlist.parent.mkdir(parents=True)
+    allowlist.write_text('{"entries": []}\n', encoding="utf-8")
+
+    audit = getattr(
+        ratchet,
+        "check_source_attributed_status_is_typed",
+        lambda _root: {"status": "unimplemented", "findings": []},
+    )
+    rejected = audit(fixture_root)
+
+    assert rejected["status"] == "fail"
+    assert any(
+        finding["path"] == "src/lib.rs"
+        and "ClaimedProviderStatus" in finding["message"]
+        for finding in rejected["findings"]
+    )
+
+    source = fixture_root / "src" / "lib.rs"
+    source.write_text(
+        source.read_text(encoding="utf-8").replace(
+            "status: String,\n}\n\n#[derive(Deserialize)]",
+            "status: ClaimedProviderStatusKind,\n}\n\n#[derive(Deserialize)]",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    accepted = audit(fixture_root)
+    assert accepted["status"] == "pass", accepted
+
+
 def test_source_state_registry_rejects_unmapped_and_stale_sections(
     tmp_path: Path,
 ) -> None:

@@ -29,7 +29,11 @@ request_by_id = {request["request_id"]: request for request in requests}
 expected_request_ids = set(request_by_id)
 returned_request_ids = [item.get("request_id") for item in items]
 items_by_id = {item.get("request_id"): item for item in items}
-recognized_items = [items_by_id[request_id] for request_id in expected_request_ids if request_id in items_by_id]
+recognized_items = [
+    items_by_id[request["request_id"]]
+    for request in requests
+    if request["request_id"] in items_by_id
+]
 retrieval_exact_routes = {"exact_lexical", "pubtator_variant"}
 
 def supplied_aliases(request):
@@ -79,16 +83,49 @@ diagnostics = {
     "known_collision_confirmations": [],
     "schema_parse_failures": [],
     "missing_available_positives": [],
-    "unavailable_outages": [],
+    "incomplete_results": [],
+    "internal_misattributions": [],
     "missing_canonical_equivalence": [],
 }
+seen_misattributions = set()
+source_status_kinds = {"ok", "degraded", "unavailable", "skipped", "not_attempted"}
 for item in recognized_items:
     request_id = item.get("request_id")
     verification = (item.get("debug_plan") or {}).get("verification")
-    if not isinstance(verification, dict):
+    source_status = item.get("source_status")
+    valid_source_status = (
+        isinstance(source_status, list)
+        and bool(source_status)
+        and all(
+            isinstance(status, dict)
+            and isinstance(status.get("route"), str)
+            and isinstance(status.get("source"), str)
+            and status.get("status") in source_status_kinds
+            for status in source_status
+        )
+    )
+    if not isinstance(verification, dict) or not valid_source_status:
         diagnostics["schema_parse_failures"].append(request_id)
     if not item.get("complete", False):
-        diagnostics["unavailable_outages"].append(request_id)
+        diagnostics["incomplete_results"].append(request_id)
+    recorded_calls = {
+        (route.get("route"), provider.get("source"))
+        for route in (item.get("debug_plan") or {}).get("routes", [])
+        if isinstance(route, dict)
+        for provider in route.get("providers", [])
+        if isinstance(provider, dict) and provider.get("calls", 0) > 0
+    }
+    misattributions = {
+        (status.get("route"), status.get("source"))
+        for status in (source_status if isinstance(source_status, list) else [])
+        if isinstance(status, dict)
+        and status.get("source") != "internal"
+        and status.get("status") in {"degraded", "unavailable"}
+        and (status.get("route"), status.get("source")) not in recorded_calls
+    }
+    if misattributions.difference(seen_misattributions):
+        diagnostics["internal_misattributions"].append(request_id)
+        seen_misattributions.update(misattributions)
     for row in item.get("results", []):
         if row.get("pmid") in collisions and (row.get("identity") or {}).get("status") == "confirmed":
             diagnostics["known_collision_confirmations"].append(row["pmid"])
@@ -103,6 +140,6 @@ for request_id in ("atm-grch38", "palb2-grch38"):
     if not has_canonical_equivalence(items_by_id.get(request_id, {})):
         diagnostics["missing_canonical_equivalence"].append(request_id)
 print(json.dumps({"identity_readiness": summary, "identity_diagnostics": diagnostics}, indent=2, sort_keys=True))
-ready = completed.returncode == 0 and all(summary.values()) and not any(diagnostics[key] for key in ("known_collision_confirmations", "schema_parse_failures", "missing_available_positives", "missing_canonical_equivalence"))
+ready = completed.returncode == 0 and all(summary.values()) and not any(diagnostics[key] for key in ("known_collision_confirmations", "schema_parse_failures", "missing_available_positives", "incomplete_results", "internal_misattributions", "missing_canonical_equivalence"))
 raise SystemExit(0 if ready else 1)
 PY

@@ -34,9 +34,22 @@ print(json.dumps({{
     path.chmod(0o755)
 
 
-def write_g5_fake_binary(path: Path) -> None:
-    path.write_text(
-        """#!/usr/bin/env python3
+def write_g5_fake_binary(
+    path: Path,
+    *,
+    misattribute_uncalled_provider: bool = False,
+    malformed_source_status: bool = False,
+) -> None:
+    source_status = (
+        {"exact_lexical": "complete"}
+        if malformed_source_status
+        else [{
+            "route": "exact_lexical",
+            "source": "semanticscholar",
+            "status": "unavailable" if misattribute_uncalled_provider else "ok",
+        }]
+    )
+    content = """#!/usr/bin/env python3
 import json
 import sys
 
@@ -59,11 +72,11 @@ for request in json.load(sys.stdin):
             "matched_aliases": [f'{request["gene"]} {request["coding"]}'],
             "identity": {"status": "confirmed"},
         }],
-        "source_status": {"exact_lexical": "complete"},
+        "source_status": SOURCE_STATUS,
         "complete": True,
         "truncated": False,
         "error": None,
-        "debug_plan": {"verification": {}},
+        "debug_plan": {"verification": {}, "provider_queries": []},
     }
     if request_id in {"atm-grch38", "palb2-grch38"}:
         item["canonical_equivalence"] = {
@@ -79,9 +92,8 @@ for request in json.load(sys.stdin):
         }
     items.append(item)
 print(json.dumps({"items": items}))
-""",
-        encoding="utf-8",
-    )
+"""
+    path.write_text(content.replace("SOURCE_STATUS", repr(source_status)), encoding="utf-8")
     path.chmod(0o755)
 
 
@@ -114,6 +126,44 @@ def test_g5_canary_reports_its_authoritative_verify_role(tmp_path: Path) -> None
         ]
         is True
     )
+
+
+def test_g5_canary_reports_internal_misattribution_for_an_uncalled_provider(
+    tmp_path: Path,
+) -> None:
+    binary = tmp_path / "biomcp"
+    write_g5_fake_binary(binary, misattribute_uncalled_provider=True)
+
+    completed = subprocess.run(
+        ["bash", str(G5_CANARY), str(REPO_ROOT)],
+        capture_output=True,
+        check=False,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["identity_diagnostics"]["internal_misattributions"] == [
+        "apc-grch38"
+    ]
+
+
+def test_g5_canary_rejects_malformed_source_status(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    write_g5_fake_binary(binary, malformed_source_status=True)
+
+    completed = subprocess.run(
+        ["bash", str(G5_CANARY), str(REPO_ROOT)],
+        capture_output=True,
+        check=False,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert "apc-grch38" in payload["identity_diagnostics"]["schema_parse_failures"]
 
 
 def test_live_canary_preflight_prints_safe_json_before_invoking_binary(
