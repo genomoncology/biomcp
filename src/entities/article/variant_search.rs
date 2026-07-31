@@ -3970,6 +3970,50 @@ mod tests {
     }
 
     #[test]
+    fn debug_plan_work_allocation_reconciles_parent_budgets_and_recorded_routes() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..44 {
+            let started = execution.reserve("strict").expect("strict work");
+            execution.record("strict", "pubmed", started, "ok", 1);
+        }
+        for _ in 0..EXACT_WORK_LIMIT {
+            let started = execution
+                .reserve("exact_lexical")
+                .expect("exact lexical work");
+            execution.record("exact_lexical", "pubmed", started, "ok", 1);
+        }
+        let started = execution
+            .reserve("identity_verification")
+            .expect("identity verification work");
+        execution.record("identity_verification", "pubtator", started, "ok", 1);
+
+        let allocation = execution.work_allocation();
+        let item = execution.item_work();
+        let recorded_calls = execution.events();
+        let allocated = allocation.discovery.consumed
+            + allocation.exact_lexical.item.consumed
+            + allocation.identity_verification.item.consumed;
+
+        assert!(
+            allocation.discovery.consumed <= item.consumed
+                && allocation.exact_lexical.item.consumed <= item.consumed
+                && allocation.identity_verification.item.consumed <= item.consumed,
+            "no work-allocation child may consume more than budgets.item"
+        );
+        assert_eq!(
+            allocated, item.consumed,
+            "work allocations must reconcile to budgets.item"
+        );
+        assert!(
+            recorded_calls
+                .iter()
+                .any(|call| call.route == "strict" && call.source == "pubmed")
+                && allocation.discovery.consumed > 0,
+            "recorded strict provider calls require discovery allocation"
+        );
+    }
+
+    #[test]
     fn exact_and_identity_request_allowances_are_shared_and_bounded() {
         let contexts = VariantArticleExecutionContext::batch(2);
         for context in &contexts {

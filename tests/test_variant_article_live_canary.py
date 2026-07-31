@@ -76,7 +76,17 @@ for request in json.load(sys.stdin):
         "complete": True,
         "truncated": False,
         "error": None,
-        "debug_plan": {"verification": {}, "provider_queries": []},
+        "debug_plan": {
+            "verification": {},
+            "provider_queries": [],
+            "budgets": {"item": {"consumed": 0}},
+            "work_allocation": {
+                "discovery": {"consumed": 0},
+                "exact_lexical": {"item": {"consumed": 0}},
+                "identity_verification": {"item": {"consumed": 0}},
+            },
+            "routes": [],
+        },
     }
     if request_id in {"atm-grch38", "palb2-grch38"}:
         item["canonical_equivalence"] = {
