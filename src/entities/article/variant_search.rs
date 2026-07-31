@@ -4008,8 +4008,16 @@ mod tests {
             recorded_calls
                 .iter()
                 .any(|call| call.route == "strict" && call.source == "pubmed")
-                && allocation.discovery.consumed > 0,
-            "recorded strict provider calls require discovery allocation"
+                && allocation.discovery.consumed > 0
+                && recorded_calls
+                    .iter()
+                    .any(|call| call.route == "exact_lexical" && call.source == "pubmed")
+                && allocation.exact_lexical.item.consumed > 0
+                && recorded_calls
+                    .iter()
+                    .any(|call| call.route == "identity_verification" && call.source == "pubtator")
+                && allocation.identity_verification.item.consumed > 0,
+            "each recorded strict, exact, and identity provider call requires matching allocation"
         );
     }
 

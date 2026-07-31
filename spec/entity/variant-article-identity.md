@@ -84,9 +84,9 @@ leave work for the requested page's identity verification: `--confirmed-only`
 returns the typed-PubTator-confirmed papers, never an unverified row, and keeps
 complete CAR agreement for the two caller-supplied forms. Because discovery stops
 before the provider's full result set, the response remains incomplete and
-truncated rather than claiming exhaustive search. Its debug plan records both the
-discovery work spent and the verification work reserved and consumed, so an
-operator can explain why verification ran.
+truncated rather than claiming exhaustive search. Its debug plan records the
+discovery, exact-lexical, and verification work against one aggregate parent,
+so an operator can reconcile each recorded route with the work it consumed.
 
 ```bash run id=deep-discovery-identity-reservation exit=0
 bash ../fixtures/run-variant-article-identity-fixture.sh ../..
