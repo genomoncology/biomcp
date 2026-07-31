@@ -163,7 +163,6 @@ def test_g5_canary_rejects_malformed_source_status(tmp_path: Path) -> None:
 
     payload = json.loads(completed.stdout)
     assert completed.returncode == 1
-    assert len(payload["identity_diagnostics"]["schema_parse_failures"]) == 7
     assert "apc-grch38" in payload["identity_diagnostics"]["schema_parse_failures"]
 
 

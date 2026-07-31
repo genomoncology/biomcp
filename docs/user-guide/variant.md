@@ -306,7 +306,9 @@ request; discovery rows remain labeled `best_effort_free_text`.
 JSON repeats `requested_variant` on every row and reports `resolution`,
 `complete`, `truncated`, full pagination state, and per-route `source_status`.
 An incomplete provider route keeps available rows but sets `complete: false`,
-`truncated: true`, and `pagination.total: null`.
+`truncated: true`, and `pagination.total: null`. A route stopped before BioMCP
+makes a provider request is reported as source-neutral `internal` /
+`not_attempted`, rather than attributing an outage to an uncalled provider.
 
 `--verify-identity` adds captured-evidence `identity` facts without filtering the
 retrieved pool. `--confirmed-only` requires it and filters before ranking and
