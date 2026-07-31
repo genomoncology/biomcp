@@ -1987,20 +1987,24 @@ fn provider_variant_query_plan_with_aliases(
     let mut queries = Vec::new();
     if strategy != VariantArticleStrategy::Annotation && !gene.is_empty() {
         for alias in aliases {
+            let alias = alias
+                .strip_prefix(gene)
+                .and_then(|remainder| remainder.strip_prefix(' '))
+                .unwrap_or(&alias);
             let query_alias = format!("{gene} {alias}");
             queries.extend([
                 ProviderVariantQueryPlan {
                     provider: "pubmed".into(),
                     route: "strict".into(),
                     query_alias: query_alias.clone(),
-                    query: build_pubmed_variant_strict_query(gene, &alias),
+                    query: build_pubmed_variant_strict_query(gene, alias),
                     query_template_version: "pubmed-title-abstract-v1".into(),
                 },
                 ProviderVariantQueryPlan {
                     provider: "europepmc".into(),
                     route: "strict".into(),
                     query_alias: query_alias.clone(),
-                    query: build_europepmc_variant_strict_query(gene, &alias),
+                    query: build_europepmc_variant_strict_query(gene, alias),
                     query_template_version: "europepmc-title-abstract-v1".into(),
                 },
                 ProviderVariantQueryPlan {
@@ -3724,7 +3728,7 @@ mod tests {
                 &exact_aliases(&context).0,
             )
             .iter()
-            .any(|plan| plan.query_alias == "ATM ATM M16I")
+            .any(|plan| plan.query_alias == "ATM M16I")
         );
 
         context.requested.protein_change = Some("p.?".into());
@@ -4359,7 +4363,7 @@ mod tests {
         assert_eq!(sent.len(), MAX_EXACT_ALIASES);
         assert_eq!(
             &sent[..3],
-            ["ATM ATM c.1066-6T>G", "ATM alias-0", "ATM alias-1"]
+            ["ATM c.1066-6T>G", "ATM alias-0", "ATM alias-1"]
         );
         assert_eq!(sent[3], "ATM alias-2");
 
