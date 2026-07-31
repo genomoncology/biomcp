@@ -44,8 +44,10 @@ biomcp --json variant articles --input variants.json --verify-identity
 Verify each of up to ten structured variant identities from a JSON array.
 
 The JSON identity projection retains the source, selector, CAid, gene, PMCID, and
-provenance for a confirmed LDH annotation. `--confirmed-only` still filters only
-after verification and before ranking/pagination.
+provenance for a confirmed LDH annotation. Ordinary verification covers only the
+requested visible page. `--confirmed-only` verifies up to 50 ranked candidates
+before filtering and pagination; it reports incomplete when that bound leaves
+candidates unverified.
 
 ## API access
 

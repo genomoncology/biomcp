@@ -2573,8 +2573,17 @@ async fn search_variant_articles_identity(
     let mut verification_incomplete = false;
     if verification.verify_identity {
         rank_candidates(&mut candidates);
-        execution.reserve_identity_verification_through(offset.saturating_add(candidates.len()));
-        for candidate in &mut candidates {
+        let (verification_start, verification_count) = if verification.confirmed_only {
+            (0, candidates.len().min(ITEM_WORK_LIMIT))
+        } else {
+            (offset, candidates.len().saturating_sub(offset).min(limit))
+        };
+        execution.reserve_identity_verification_through(verification_count);
+        for candidate in candidates
+            .iter_mut()
+            .skip(verification_start)
+            .take(verification_count)
+        {
             let captured = verify_captured_abstract(
                 &context.requested,
                 candidate
@@ -2655,6 +2664,8 @@ async fn search_variant_articles_identity(
                 ));
             }
         }
+        verification_incomplete |=
+            verification.confirmed_only && candidates.len() > verification_count;
         let _ldh_incomplete = add_ldh_observations(
             &mut candidates,
             &context.requested,
