@@ -39,7 +39,10 @@ route-tied literal alias, and reports source coverage plus terminal state
 against real providers. Its debug plan also reconciles each reported work
 allocation with the item budget and the recorded strict, exact, and verification
 provider calls, so the diagnostic cannot claim unperformed work or hide work
-outside its parent budget. ATM and PALB2 also submit independent versioned RefSeq
+outside its parent budget. `incomplete_results` reports only incomplete items with
+recorded unperformed internal work; ordinary page pagination and recorded provider
+degradation remain visible in each item's terminal/source status instead of being
+misreported as an internal budget failure. ATM and PALB2 also submit independent versioned RefSeq
 transcript/coding and genomic identities to the real CAR: each must expose a
 complete, exhaustive confirmed CAid with auditable transcript and genomic
 observations. CAR evidence is additive to the article result; this probe does

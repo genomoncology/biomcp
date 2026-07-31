@@ -156,7 +156,13 @@ for item in recognized_items:
     )
     if not isinstance(verification, dict) or not valid_source_status:
         diagnostics["schema_parse_failures"].append(request_id)
-    if not item.get("complete", False):
+    internal_unperformed_work = any(
+        isinstance(status, dict)
+        and status.get("source") == "internal"
+        and status.get("status") == "not_attempted"
+        for status in (source_status if isinstance(source_status, list) else [])
+    )
+    if not item.get("complete", False) and internal_unperformed_work:
         diagnostics["incomplete_results"].append(request_id)
     recorded_calls = {
         (route.get("route"), provider.get("source"))
