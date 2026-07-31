@@ -55,7 +55,6 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
     "all_have_route_tied_alias": true,
     "all_have_source_status": true,
     "all_have_terminal_state": true,
-    "all_results_complete_and_untruncated": true,
     "authoritative_verify_treats_g5_as_hard": true
   },
   "identity_diagnostics": {
