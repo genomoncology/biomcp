@@ -1288,10 +1288,13 @@ async fn annotation_candidates(
     input: &str,
     context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
-) -> Result<(Vec<ArticleCandidate>, bool, bool), BioMcpError> {
-    let pubtator = crate::sources::pubtator::PubTatorClient::new()?;
+) -> Result<(Vec<ArticleCandidate>, bool, bool, bool), BioMcpError> {
     let Some(started) = execution.reserve("pubtator_variant") else {
-        return Ok((Vec::new(), true, false));
+        return Ok((Vec::new(), true, false, true));
+    };
+    let pubtator = match crate::sources::pubtator::PubTatorClient::new() {
+        Ok(client) => client,
+        Err(_) => return Ok((Vec::new(), true, false, true)),
     };
     let token_result = resolve_variant_entity_tokens(&pubtator, input, &context.requested).await;
     execution.record(
@@ -1337,7 +1340,7 @@ async fn annotation_candidates(
         incomplete |= page.total.is_some_and(|total| total > page.results.len());
         for row in page.results {
             if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
-                return Ok((candidates, true, succeeded));
+                return Ok((candidates, true, succeeded, false));
             }
             candidates.push(candidate_with_provenance(
                 row,
@@ -1351,7 +1354,7 @@ async fn annotation_candidates(
             ));
         }
     }
-    Ok((candidates, incomplete, succeeded))
+    Ok((candidates, incomplete, succeeded, false))
 }
 
 async fn federated_alias_candidates(
@@ -1728,25 +1731,26 @@ fn select_hydrated_source_hit(
 async fn citation_candidates(
     context: &VariantArticleResolutionContext,
     execution: &VariantArticleExecutionContext,
-) -> Result<Vec<ArticleCandidate>, BioMcpError> {
+) -> Result<(Vec<ArticleCandidate>, bool), BioMcpError> {
     let Some(retained_hit) = context.source_hit.as_ref() else {
-        return Ok(Vec::new());
+        return Ok((Vec::new(), false));
     };
     let hydrated_hit = if retained_hit.civic.is_none() {
         let Some(started) = execution.reserve("source_citation") else {
-            return Ok(Vec::new());
+            return Ok((Vec::new(), true));
         };
         let source_key = context
             .source_identity
             .as_ref()
             .map(crate::entities::variant::SourceVariantIdentity::normalized_key);
-        let result = match crate::sources::myvariant::MyVariantClient::new() {
-            Ok(client) => client
-                .get_all(&retained_hit.id)
-                .await
-                .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref())),
-            Err(error) => Err(error),
+        let client = match crate::sources::myvariant::MyVariantClient::new() {
+            Ok(client) => client,
+            Err(_) => return Ok((Vec::new(), true)),
         };
+        let result = client
+            .get_all(&retained_hit.id)
+            .await
+            .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
         execution.record(
             "source_citation",
             "myvariant",
@@ -1760,15 +1764,18 @@ async fn citation_candidates(
     };
     let hit = hydrated_hit.as_ref().unwrap_or(retained_hit);
     let query_aliases: Vec<String> = primary_exact_alias(context).into_iter().collect();
-    Ok(crate::sources::myvariant::civic_pubmed_ids(hit)
-        .into_iter()
-        .enumerate()
-        .map(|(position, pmid)| {
-            let mut row = pmid_seed(pmid);
-            row.source_local_position = position;
-            candidate_with_provenance(row, "source_citation", "civic", query_aliases.clone())
-        })
-        .collect())
+    Ok((
+        crate::sources::myvariant::civic_pubmed_ids(hit)
+            .into_iter()
+            .enumerate()
+            .map(|(position, pmid)| {
+                let mut row = pmid_seed(pmid);
+                row.source_local_position = position;
+                candidate_with_provenance(row, "source_citation", "civic", query_aliases.clone())
+            })
+            .collect(),
+        false,
+    ))
 }
 
 fn fallback_aliases(input: &str, context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
@@ -2467,23 +2474,32 @@ async fn search_variant_articles_identity(
             VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
         ) {
             match annotation_candidates(input, &context, &execution).await {
-                Ok((rows, incomplete, succeeded)) => {
+                Ok((rows, incomplete, succeeded, pre_call_stopped)) => {
                     candidates.extend(rows);
-                    let status = if !succeeded {
-                        VariantArticleSourceStatusKind::Unavailable
-                    } else if incomplete {
-                        VariantArticleSourceStatusKind::Degraded
+                    if pre_call_stopped {
+                        statuses.push(status_with_detail(
+                            "pubtator_variant",
+                            "internal",
+                            VariantArticleSourceStatusKind::NotAttempted,
+                            Some("internal work or configuration stopped before a provider call"),
+                        ));
                     } else {
-                        VariantArticleSourceStatusKind::Ok
-                    };
-                    statuses.push(status_with_detail(
-                        "pubtator_variant",
-                        "pubtator",
-                        status,
-                        incomplete.then_some(
-                            "one or more annotation tokens stopped before the route bound",
-                        ),
-                    ));
+                        let status = if !succeeded {
+                            VariantArticleSourceStatusKind::Unavailable
+                        } else if incomplete {
+                            VariantArticleSourceStatusKind::Degraded
+                        } else {
+                            VariantArticleSourceStatusKind::Ok
+                        };
+                        statuses.push(status_with_detail(
+                            "pubtator_variant",
+                            "pubtator",
+                            status,
+                            incomplete.then_some(
+                                "one or more annotation tokens stopped before the route bound",
+                            ),
+                        ));
+                    }
                     succeeded_routes += usize::from(succeeded);
                     failed_routes += usize::from(incomplete || !succeeded);
                 }
@@ -2512,14 +2528,24 @@ async fn search_variant_articles_identity(
             match context.resolution.provider_validation.status {
                 VariantProviderValidationStatus::Confirmed => {
                     match citation_candidates(&context, &execution).await {
-                        Ok(rows) => {
+                        Ok((rows, pre_call_stopped)) => {
                             candidates.extend(rows);
-                            statuses.push(status(
-                                "source_citation",
-                                "myvariant",
-                                VariantArticleSourceStatusKind::Ok,
-                            ));
-                            succeeded_routes += 1;
+                            if pre_call_stopped {
+                                statuses.push(status_with_detail(
+                                    "source_citation",
+                                    "internal",
+                                    VariantArticleSourceStatusKind::NotAttempted,
+                                    Some("internal work or configuration stopped before a provider call"),
+                                ));
+                                failed_routes += 1;
+                            } else {
+                                statuses.push(status(
+                                    "source_citation",
+                                    "myvariant",
+                                    VariantArticleSourceStatusKind::Ok,
+                                ));
+                                succeeded_routes += 1;
+                            }
                         }
                         Err(_) => {
                             statuses.push(status(
@@ -3944,6 +3970,23 @@ mod tests {
     }
 
     #[test]
+    fn exact_and_identity_request_allowances_are_shared_and_bounded() {
+        let contexts = VariantArticleExecutionContext::batch(2);
+        for context in &contexts {
+            for _ in 0..EXACT_WORK_LIMIT {
+                assert!(context.reserve("exact_lexical").is_some());
+            }
+            for _ in 0..ITEM_WORK_LIMIT {
+                assert!(context.reserve("identity_verification").is_some());
+            }
+        }
+
+        let allocation = contexts[0].work_allocation();
+        assert!(allocation.exact_lexical.request.exhausted);
+        assert!(allocation.identity_verification.request.exhausted);
+    }
+
+    #[test]
     fn terminal_state_is_complete_and_untruncated_after_an_auxiliary_budget_stop() {
         assert_eq!(
             variant_article_terminal_state(0, false, false, true, 0, false, 11, 11),
@@ -3965,6 +4008,52 @@ mod tests {
             variant_article_terminal_state(0, true, false, true, 0, false, 11, 11),
             (false, true),
         );
+    }
+
+    #[tokio::test]
+    async fn annotation_pre_call_stop_is_reported_as_internal_work() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..ITEM_WORK_LIMIT {
+            assert!(execution.reserve("pubtator_variant").is_some());
+        }
+
+        let (rows, incomplete, succeeded, pre_call_stopped) =
+            annotation_candidates("BRAF p.V600E", &resolved_context(), &execution)
+                .await
+                .expect("budget stop is not a provider failure");
+        assert!(rows.is_empty());
+        assert!(incomplete);
+        assert!(!succeeded);
+        assert!(pre_call_stopped);
+    }
+
+    #[tokio::test]
+    async fn citation_pre_call_stop_is_reported_as_internal_work() {
+        let execution = VariantArticleExecutionContext::single();
+        for _ in 0..ITEM_WORK_LIMIT {
+            assert!(execution.reserve("source_citation").is_some());
+        }
+        let mut context = resolved_context();
+        context.source_hit = Some(crate::sources::myvariant::MyVariantHit {
+            id: "fixture".into(),
+            cadd: None,
+            clinvar: None,
+            dbnsfp: None,
+            dbsnp: None,
+            gnomad_exome: None,
+            gnomad: None,
+            exac: None,
+            exac_nontcga: None,
+            cosmic: None,
+            cgi: None,
+            civic: None,
+        });
+
+        let (rows, pre_call_stopped) = citation_candidates(&context, &execution)
+            .await
+            .expect("budget stop is not a provider failure");
+        assert!(rows.is_empty());
+        assert!(pre_call_stopped);
     }
 
     #[test]
