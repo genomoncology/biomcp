@@ -72,11 +72,21 @@ pub struct VariantArticleProvenance {
     pub native_position: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum VariantArticleSourceStatusKind {
+    Ok,
+    Degraded,
+    Unavailable,
+    Skipped,
+    NotAttempted,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleSourceStatus {
     pub route: String,
     pub source: String,
-    pub status: String,
+    pub status: VariantArticleSourceStatusKind,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
 }
@@ -156,6 +166,7 @@ pub struct VariantArticleOutcome {
 }
 
 const ITEM_WORK_LIMIT: usize = 50;
+const EXACT_WORK_LIMIT: usize = MAX_EXACT_ALIASES * 5;
 const ITEM_CONCURRENCY_LIMIT: usize = 2;
 const LDH_MEDIUM_LIMIT: usize = 1;
 const LDH_DIRECT_LIMIT: usize = 10;
@@ -185,6 +196,10 @@ struct VariantArticleWorkAllocation {
 pub(crate) struct VariantArticleExecutionContext {
     item: Arc<SharedWorkBudget>,
     request: Arc<SharedWorkBudget>,
+    exact_item: Arc<SharedWorkBudget>,
+    exact_request: Arc<SharedWorkBudget>,
+    identity_item: Arc<SharedWorkBudget>,
+    identity_request: Arc<SharedWorkBudget>,
     allocation: Arc<VariantArticleWorkAllocation>,
     events: Arc<Mutex<Vec<VariantArticleCallEvent>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
@@ -197,6 +212,22 @@ impl VariantArticleExecutionContext {
     fn with_request(request: Arc<SharedWorkBudget>) -> Self {
         Self {
             item: Arc::new(SharedWorkBudget {
+                limit: ITEM_WORK_LIMIT,
+                consumed: AtomicUsize::new(0),
+            }),
+            exact_item: Arc::new(SharedWorkBudget {
+                limit: EXACT_WORK_LIMIT,
+                consumed: AtomicUsize::new(0),
+            }),
+            exact_request: Arc::new(SharedWorkBudget {
+                limit: EXACT_WORK_LIMIT,
+                consumed: AtomicUsize::new(0),
+            }),
+            identity_item: Arc::new(SharedWorkBudget {
+                limit: ITEM_WORK_LIMIT,
+                consumed: AtomicUsize::new(0),
+            }),
+            identity_request: Arc::new(SharedWorkBudget {
                 limit: ITEM_WORK_LIMIT,
                 consumed: AtomicUsize::new(0),
             }),
@@ -225,8 +256,24 @@ impl VariantArticleExecutionContext {
             limit: ITEM_WORK_LIMIT.saturating_mul(item_count),
             consumed: AtomicUsize::new(0),
         });
-        (0..item_count)
+        let contexts = (0..item_count)
             .map(|_| Self::with_request(request.clone()))
+            .collect::<Vec<_>>();
+        let exact_request = Arc::new(SharedWorkBudget {
+            limit: EXACT_WORK_LIMIT.saturating_mul(item_count),
+            consumed: AtomicUsize::new(0),
+        });
+        let identity_request = Arc::new(SharedWorkBudget {
+            limit: ITEM_WORK_LIMIT.saturating_mul(item_count),
+            consumed: AtomicUsize::new(0),
+        });
+        contexts
+            .into_iter()
+            .map(|mut context| {
+                context.exact_request = exact_request.clone();
+                context.identity_request = identity_request.clone();
+                context
+            })
             .collect()
     }
 
@@ -242,10 +289,9 @@ impl VariantArticleExecutionContext {
             .identity_verification_consumed
             .load(AtomicOrdering::SeqCst);
         let available_for_verification = self
-            .item
+            .identity_item
             .limit
-            .saturating_sub(self.item.consumed.load(AtomicOrdering::SeqCst))
-            .saturating_add(verification_consumed);
+            .saturating_sub(verification_consumed);
         let target = count.min(available_for_verification);
         let _ = self.allocation.identity_verification_reserved.fetch_update(
             AtomicOrdering::SeqCst,
@@ -275,6 +321,36 @@ impl VariantArticleExecutionContext {
             return Some(Instant::now());
         }
         let identity_verification = route == "identity_verification";
+        if matches!(route, "exact_lexical" | "identity_verification") {
+            let (item, request) = if identity_verification {
+                (&self.identity_item, &self.identity_request)
+            } else {
+                (&self.exact_item, &self.exact_request)
+            };
+            let reserve = |budget: &SharedWorkBudget| {
+                budget
+                    .consumed
+                    .fetch_update(AtomicOrdering::SeqCst, AtomicOrdering::SeqCst, |current| {
+                        (current < budget.limit).then(|| current + 1)
+                    })
+                    .is_ok()
+            };
+            if !reserve(item) {
+                self.stop(route);
+                return None;
+            }
+            if !reserve(request) {
+                item.consumed.fetch_sub(1, AtomicOrdering::SeqCst);
+                self.stop(route);
+                return None;
+            }
+            if identity_verification {
+                self.allocation
+                    .identity_verification_consumed
+                    .fetch_add(1, AtomicOrdering::SeqCst);
+            }
+            return Some(Instant::now());
+        }
         if identity_verification
             && self
                 .allocation
@@ -396,9 +472,27 @@ impl VariantArticleExecutionContext {
                     .load(AtomicOrdering::SeqCst)
                     .saturating_sub(consumed),
             ),
+            exact_lexical: VariantArticleWorkAllocationScope {
+                item: VariantArticleWork::new(
+                    self.exact_item.limit,
+                    self.exact_item.consumed.load(AtomicOrdering::SeqCst),
+                ),
+                request: VariantArticleWork::new(
+                    self.exact_request.limit,
+                    self.exact_request.consumed.load(AtomicOrdering::SeqCst),
+                ),
+            },
             identity_verification: VariantArticleIdentityVerificationAllocation {
                 reserved,
                 consumed,
+                item: VariantArticleWork::new(
+                    self.identity_item.limit,
+                    self.identity_item.consumed.load(AtomicOrdering::SeqCst),
+                ),
+                request: VariantArticleWork::new(
+                    self.identity_request.limit,
+                    self.identity_request.consumed.load(AtomicOrdering::SeqCst),
+                ),
             },
         }
     }
@@ -499,14 +593,23 @@ pub struct VariantArticleBudgetsPlan {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleWorkAllocationScope {
+    pub item: VariantArticleWork,
+    pub request: VariantArticleWork,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleIdentityVerificationAllocation {
     pub reserved: usize,
     pub consumed: usize,
+    pub item: VariantArticleWork,
+    pub request: VariantArticleWork,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleWorkAllocationPlan {
     pub discovery: VariantArticleWork,
+    pub exact_lexical: VariantArticleWorkAllocationScope,
     pub identity_verification: VariantArticleIdentityVerificationAllocation,
 }
 
@@ -664,20 +767,24 @@ fn source_name(source: ArticleSource) -> &'static str {
     }
 }
 
-fn status(route: &str, source: &str, state: &str) -> VariantArticleSourceStatus {
-    status_with_detail(route, source, state, None)
+fn status(
+    route: &str,
+    source: &str,
+    status: VariantArticleSourceStatusKind,
+) -> VariantArticleSourceStatus {
+    status_with_detail(route, source, status, None)
 }
 
 fn status_with_detail(
     route: &str,
     source: &str,
-    state: &str,
+    status: VariantArticleSourceStatusKind,
     detail: Option<&str>,
 ) -> VariantArticleSourceStatus {
     VariantArticleSourceStatus {
         route: route.to_string(),
         source: source.to_string(),
-        status: state.to_string(),
+        status,
         detail: detail.map(str::to_string),
     }
 }
@@ -1274,6 +1381,7 @@ async fn federated_alias_candidates(
     let mut incomplete = alias_budget_stopped;
     let mut succeeded = false;
     let mut alias_failed = false;
+    let mut budget_stopped = false;
     let mut provider_statuses = BTreeMap::new();
     for result in futures::future::join_all(searches).await {
         let (alias, federated) = match result {
@@ -1284,6 +1392,7 @@ async fn federated_alias_candidates(
                 continue;
             }
         };
+        budget_stopped |= execution.route_stopped(route);
         let alias_succeeded = federated.primary_error.is_none()
             || matches!(
                 federated.semantic_scholar_status.status,
@@ -1353,31 +1462,38 @@ async fn federated_alias_candidates(
                 .or_insert(route_severity);
         }
     }
-    if alias_budget_stopped {
-        for source in ["pubtator", "europepmc", "pubmed", "semanticscholar"] {
-            provider_statuses
-                .entry(source.to_string())
-                .and_modify(|current| *current = (*current).max(1))
-                .or_insert(1);
-        }
-    }
-    let statuses = provider_statuses
+    let calls = execution.events();
+    provider_statuses.retain(|source, severity| {
+        *severity == 0
+            || calls
+                .iter()
+                .any(|event| event.route == route && event.source == *source)
+    });
+    let mut statuses = provider_statuses
         .into_iter()
         .map(|(source, severity)| {
-            let state = match severity {
-                0 => "ok",
-                1 => "degraded",
-                _ => "unavailable",
+            let status = match severity {
+                0 => VariantArticleSourceStatusKind::Ok,
+                1 => VariantArticleSourceStatusKind::Degraded,
+                _ => VariantArticleSourceStatusKind::Unavailable,
             };
             status_with_detail(
                 route,
                 &source,
-                state,
+                status,
                 (severity > 0)
                     .then_some("one or more providers or aliases stopped before the route bound"),
             )
         })
-        .collect();
+        .collect::<Vec<_>>();
+    if alias_budget_stopped || budget_stopped {
+        statuses.push(status_with_detail(
+            route,
+            "internal",
+            VariantArticleSourceStatusKind::NotAttempted,
+            Some("internal work or configuration stopped before a provider call"),
+        ));
+    }
     (candidates, incomplete, succeeded, statuses)
 }
 
@@ -1402,6 +1518,9 @@ async fn strict_provider_candidates(
     let mut succeeded = false;
 
     for plan in plans.into_iter().filter(|plan| plan.route == "strict") {
+        if execution.route_stopped("strict") {
+            break;
+        }
         let stopped_before = execution.route_stopped("strict");
         let rows = match plan.provider.as_str() {
             "pubmed" => search_pubmed_page_with_context(
@@ -1448,8 +1567,13 @@ async fn strict_provider_candidates(
             "pubtator" => {
                 let Some(started) = execution.reserve("strict") else {
                     incomplete = true;
-                    statuses.push(status("strict", "pubtator", "unavailable"));
-                    continue;
+                    statuses.push(status_with_detail(
+                        "strict",
+                        "internal",
+                        VariantArticleSourceStatusKind::NotAttempted,
+                        Some("discovery internal work budget exhausted before a provider call"),
+                    ));
+                    break;
                 };
                 let pubtator = crate::sources::pubtator::PubTatorClient::new();
                 let tokens = match pubtator {
@@ -1491,7 +1615,11 @@ async fn strict_provider_candidates(
         match rows {
             Ok(rows) if !execution.route_stopped("strict") || stopped_before => {
                 succeeded = true;
-                statuses.push(status("strict", &plan.provider, "ok"));
+                statuses.push(status(
+                    "strict",
+                    &plan.provider,
+                    VariantArticleSourceStatusKind::Ok,
+                ));
                 candidates.extend(rows.into_iter().map(|row| {
                     candidate_with_provenance(
                         row,
@@ -1501,9 +1629,36 @@ async fn strict_provider_candidates(
                     )
                 }));
             }
+            Ok(_) | Err(_) if execution.route_stopped("strict") => {
+                incomplete = true;
+                statuses.push(status_with_detail(
+                    "strict",
+                    "internal",
+                    VariantArticleSourceStatusKind::NotAttempted,
+                    Some("discovery internal work budget exhausted before a provider call"),
+                ));
+                break;
+            }
             Ok(_) | Err(_) => {
                 incomplete = true;
-                statuses.push(status("strict", &plan.provider, "unavailable"));
+                let attempted = execution
+                    .events()
+                    .iter()
+                    .any(|event| event.route == "strict" && event.source == plan.provider);
+                statuses.push(if attempted {
+                    status(
+                        "strict",
+                        &plan.provider,
+                        VariantArticleSourceStatusKind::Unavailable,
+                    )
+                } else {
+                    status_with_detail(
+                        "strict",
+                        "internal",
+                        VariantArticleSourceStatusKind::NotAttempted,
+                        Some("internal configuration stopped before a provider call"),
+                    )
+                });
             }
         }
     }
@@ -2102,6 +2257,25 @@ pub(crate) async fn search_variant_articles_with_options(
 }
 
 #[allow(clippy::too_many_arguments)]
+fn variant_article_terminal_state(
+    failed_routes: usize,
+    provider_incomplete: bool,
+    verification_incomplete: bool,
+    canonical_equivalence_complete: bool,
+    offset: usize,
+    has_more: bool,
+    total_candidates: usize,
+    returned_candidates: usize,
+) -> (bool, bool) {
+    let complete = failed_routes == 0
+        && !provider_incomplete
+        && !verification_incomplete
+        && canonical_equivalence_complete;
+    let truncated = !complete || offset > 0 || has_more || total_candidates != returned_candidates;
+    (complete, truncated)
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn search_variant_articles_identity(
     input: &str,
     requested: RequestedVariantIdentity,
@@ -2146,7 +2320,11 @@ async fn search_variant_articles_identity(
                     has_more: false,
                     next_page_token: None,
                 },
-                source_status: vec![status("resolution", "myvariant", "unavailable")],
+                source_status: vec![status(
+                    "resolution",
+                    "myvariant",
+                    VariantArticleSourceStatusKind::Unavailable,
+                )],
                 retrieval_path: "variant resolution unavailable",
                 results: Vec::new(),
                 debug_plan,
@@ -2173,21 +2351,21 @@ async fn search_variant_articles_identity(
                         statuses.push(status_with_detail(
                             "source_citation",
                             "myvariant",
-                            "skipped",
+                            VariantArticleSourceStatusKind::Skipped,
                             Some("provider identity contradicted request"),
                         ))
                     }
                     VariantProviderValidationStatus::NotFound => statuses.push(status_with_detail(
                         "source_citation",
                         "myvariant",
-                        "skipped",
+                        VariantArticleSourceStatusKind::Skipped,
                         Some("no compatible MyVariant record"),
                     )),
                     VariantProviderValidationStatus::Indeterminate => {
                         statuses.push(status_with_detail(
                             "source_citation",
                             "myvariant",
-                            "skipped",
+                            VariantArticleSourceStatusKind::Skipped,
                             Some("provider identity was not confirmable"),
                         ))
                     }
@@ -2195,7 +2373,7 @@ async fn search_variant_articles_identity(
                         statuses.push(status_with_detail(
                             "source_citation",
                             "myvariant",
-                            "skipped",
+                            VariantArticleSourceStatusKind::Skipped,
                             Some("provider validation unavailable"),
                         ))
                     }
@@ -2233,11 +2411,15 @@ async fn search_variant_articles_identity(
                     statuses.push(status_with_detail(
                         "pubtator_variant",
                         "pubtator",
-                        "skipped",
+                        VariantArticleSourceStatusKind::Skipped,
                         Some("provider identity contradicted request"),
                     ));
                 } else {
-                    statuses.push(status("pubtator_variant", "pubtator", "ok"));
+                    statuses.push(status(
+                        "pubtator_variant",
+                        "pubtator",
+                        VariantArticleSourceStatusKind::Ok,
+                    ));
                 }
                 succeeded_routes += 1;
             }
@@ -2249,11 +2431,15 @@ async fn search_variant_articles_identity(
                     statuses.push(status_with_detail(
                         "exact_lexical",
                         "federated",
-                        "skipped",
+                        VariantArticleSourceStatusKind::Skipped,
                         Some("provider identity contradicted request"),
                     ));
                 } else {
-                    statuses.push(status("exact_lexical", "federated", "ok"));
+                    statuses.push(status(
+                        "exact_lexical",
+                        "federated",
+                        VariantArticleSourceStatusKind::Ok,
+                    ));
                 }
                 succeeded_routes += 1;
             }
@@ -2283,17 +2469,17 @@ async fn search_variant_articles_identity(
             match annotation_candidates(input, &context, &execution).await {
                 Ok((rows, incomplete, succeeded)) => {
                     candidates.extend(rows);
-                    let state = if !succeeded {
-                        "unavailable"
+                    let status = if !succeeded {
+                        VariantArticleSourceStatusKind::Unavailable
                     } else if incomplete {
-                        "degraded"
+                        VariantArticleSourceStatusKind::Degraded
                     } else {
-                        "ok"
+                        VariantArticleSourceStatusKind::Ok
                     };
                     statuses.push(status_with_detail(
                         "pubtator_variant",
                         "pubtator",
-                        state,
+                        status,
                         incomplete.then_some(
                             "one or more annotation tokens stopped before the route bound",
                         ),
@@ -2302,7 +2488,11 @@ async fn search_variant_articles_identity(
                     failed_routes += usize::from(incomplete || !succeeded);
                 }
                 Err(_) => {
-                    statuses.push(status("pubtator_variant", "pubtator", "unavailable"));
+                    statuses.push(status(
+                        "pubtator_variant",
+                        "pubtator",
+                        VariantArticleSourceStatusKind::Unavailable,
+                    ));
                     failed_routes += 1;
                 }
             }
@@ -2324,11 +2514,19 @@ async fn search_variant_articles_identity(
                     match citation_candidates(&context, &execution).await {
                         Ok(rows) => {
                             candidates.extend(rows);
-                            statuses.push(status("source_citation", "myvariant", "ok"));
+                            statuses.push(status(
+                                "source_citation",
+                                "myvariant",
+                                VariantArticleSourceStatusKind::Ok,
+                            ));
                             succeeded_routes += 1;
                         }
                         Err(_) => {
-                            statuses.push(status("source_citation", "myvariant", "unavailable"));
+                            statuses.push(status(
+                                "source_citation",
+                                "myvariant",
+                                VariantArticleSourceStatusKind::Unavailable,
+                            ));
                             failed_routes += 1;
                         }
                     }
@@ -2336,14 +2534,14 @@ async fn search_variant_articles_identity(
                 VariantProviderValidationStatus::NotFound => statuses.push(status_with_detail(
                     "source_citation",
                     "myvariant",
-                    "skipped",
+                    VariantArticleSourceStatusKind::Skipped,
                     Some("no compatible MyVariant record"),
                 )),
                 VariantProviderValidationStatus::Indeterminate => {
                     statuses.push(status_with_detail(
                         "source_citation",
                         "myvariant",
-                        "skipped",
+                        VariantArticleSourceStatusKind::Skipped,
                         Some("provider identity was not confirmable"),
                     ));
                     failed_routes += 1;
@@ -2352,7 +2550,7 @@ async fn search_variant_articles_identity(
                     statuses.push(status_with_detail(
                         "source_citation",
                         "myvariant",
-                        "skipped",
+                        VariantArticleSourceStatusKind::Skipped,
                         Some("provider validation unavailable"),
                     ));
                     failed_routes += 1;
@@ -2462,7 +2660,7 @@ async fn search_variant_articles_identity(
                 ));
             }
         }
-        verification_incomplete |= add_ldh_observations(
+        let _ldh_incomplete = add_ldh_observations(
             &mut candidates,
             &context.requested,
             &canonical_equivalence,
@@ -2520,18 +2718,21 @@ async fn search_variant_articles_identity(
         .take(limit)
         .collect::<Vec<_>>();
     enrich_candidates(&mut visible_candidates, &execution).await;
-    let budget_stopped = !execution.stopped_routes().is_empty();
     let provider_incomplete = matches!(
         context.resolution.provider_validation.status,
         VariantProviderValidationStatus::Indeterminate
             | VariantProviderValidationStatus::Unavailable
     );
-    let complete = failed_routes == 0
-        && !budget_stopped
-        && !provider_incomplete
-        && !verification_incomplete
-        && (canonical_equivalence.applicable_identity_count < 2 || canonical_equivalence.complete);
-    let truncated = !complete || offset > 0 || has_more;
+    let (complete, truncated) = variant_article_terminal_state(
+        failed_routes,
+        provider_incomplete,
+        verification_incomplete,
+        canonical_equivalence.applicable_identity_count < 2 || canonical_equivalence.complete,
+        offset,
+        has_more,
+        total_candidates,
+        visible_candidates.len(),
+    );
     let rows = visible_candidates
         .into_iter()
         .enumerate()
@@ -2855,9 +3056,15 @@ fn empty_debug_plan(
         },
         work_allocation: VariantArticleWorkAllocationPlan {
             discovery: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
+            exact_lexical: VariantArticleWorkAllocationScope {
+                item: VariantArticleWork::new(EXACT_WORK_LIMIT, 0),
+                request: VariantArticleWork::new(EXACT_WORK_LIMIT, 0),
+            },
             identity_verification: VariantArticleIdentityVerificationAllocation {
                 reserved: 0,
                 consumed: 0,
+                item: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
+                request: VariantArticleWork::new(ITEM_WORK_LIMIT, 0),
             },
         },
         truncated,
@@ -3708,21 +3915,56 @@ mod tests {
         for _ in 0..3 {
             assert!(reserved.reserve("identity_verification").is_some());
         }
-        assert_eq!(reserved.work_allocation().discovery.limit, 47);
-        assert_eq!(reserved.work_allocation().discovery.consumed, 47);
+        assert_eq!(
+            reserved.work_allocation().discovery.limit,
+            ITEM_WORK_LIMIT - 3
+        );
+        assert_eq!(reserved.work_allocation().discovery.consumed, 44);
         assert_eq!(reserved.work_allocation().identity_verification.consumed, 3);
+        assert_eq!(
+            reserved
+                .work_allocation()
+                .identity_verification
+                .item
+                .consumed,
+            3
+        );
 
         let contexts = VariantArticleExecutionContext::batch(10);
         for context in &contexts {
             for _ in 0..ITEM_WORK_LIMIT {
-                assert!(context.reserve("exact_lexical").is_some());
+                assert!(context.reserve("strict").is_some());
             }
-            assert!(context.reserve("exact_lexical").is_none());
+            assert!(context.reserve("strict").is_none());
             assert_eq!(context.item_work().consumed, ITEM_WORK_LIMIT);
-            assert_eq!(context.stopped_routes(), vec!["exact_lexical"]);
+            assert_eq!(context.stopped_routes(), vec!["strict"]);
         }
         assert_eq!(contexts[0].request_work().consumed, 500);
         assert!(contexts[0].request_work().exhausted);
+    }
+
+    #[test]
+    fn terminal_state_is_complete_and_untruncated_after_an_auxiliary_budget_stop() {
+        assert_eq!(
+            variant_article_terminal_state(0, false, false, true, 0, false, 11, 11),
+            (true, false),
+        );
+    }
+
+    #[test]
+    fn terminal_state_is_incomplete_and_truncated_when_requested_work_is_unperformed() {
+        assert_eq!(
+            variant_article_terminal_state(1, false, false, true, 0, false, 11, 11),
+            (false, true),
+        );
+    }
+
+    #[test]
+    fn terminal_state_does_not_invent_an_internal_stop_for_a_provider_outage() {
+        assert_eq!(
+            variant_article_terminal_state(0, true, false, true, 0, false, 11, 11),
+            (false, true),
+        );
     }
 
     #[test]

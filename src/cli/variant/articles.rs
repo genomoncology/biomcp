@@ -159,7 +159,10 @@ pub(super) async fn handle(
         .response
         .source_status
         .iter()
-        .filter(|status| status.status == "unavailable")
+        .filter(|status| {
+            status.status
+                == crate::entities::article::variant_search::VariantArticleSourceStatusKind::Unavailable
+        })
         .map(|status| match status.source.as_str() {
             "pubtator" => "PubTator 3",
             "myvariant" => "MyVariant.info",

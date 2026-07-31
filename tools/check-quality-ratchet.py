@@ -1758,6 +1758,41 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
     }
 
 
+def check_source_attributed_status_is_typed(root_dir: Path) -> dict[str, object]:
+    allowlist_path = root_dir / "tools" / "source-status-typing-allowlist.json"
+    try:
+        allowlist = set(json.loads(allowlist_path.read_text(encoding="utf-8")).get("entries", []))
+    except (OSError, json.JSONDecodeError):
+        allowlist = set()
+    findings: list[dict[str, object]] = []
+    for path in sorted((root_dir / "src").rglob("*.rs")) if (root_dir / "src").is_dir() else []:
+        relative = path.relative_to(root_dir).as_posix()
+        source = _mask_rust_non_code(path.read_text(encoding="utf-8"))
+        pattern = re.compile(
+            r"#\s*\[\s*derive\s*\((?P<derive>[^]]*)\)\s*\]\s*"
+            r"(?:#\s*\[[^]]*\]\s*)*struct\s+(?P<name>\w+)\s*\{(?P<body>[^}]*)\}",
+            re.S,
+        )
+        for match in pattern.finditer(source):
+            if "Serialize" not in match.group("derive"):
+                continue
+            name = match.group("name")
+            key = f"{relative}::{name}"
+            body = match.group("body")
+            if key in allowlist or not re.search(r"\b(?:source|provider|api|route)\s*:", body):
+                continue
+            if re.search(r"\bstatus\s*:\s*String\b", body):
+                findings.append({
+                    "path": relative,
+                    "message": f"{name} serializes a source-attributed status as String",
+                })
+    return {
+        "name": "source_attributed_status_typing",
+        "status": "fail" if findings else "pass",
+        "findings": findings,
+    }
+
+
 def main() -> int:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -1860,6 +1895,12 @@ def main() -> int:
         source_state_payload,
     )
 
+    source_status_typing_payload = check_source_attributed_status_is_typed(args.root_dir)
+    write_json(
+        args.output_dir / "quality-ratchet-source-status-typing.json",
+        source_status_typing_payload,
+    )
+
     statuses = [
         lint_payload["status"],
         mcp_payload.get("status"),
@@ -1872,6 +1913,7 @@ def main() -> int:
         cli_surface_payload.get("status"),
         remote_resource_payload.get("status"),
         source_state_payload.get("status"),
+        source_status_typing_payload.get("status"),
     ]
     if "error" in statuses:
         summary_status = "error"
@@ -1895,6 +1937,9 @@ def main() -> int:
         "cli_surface_contract": {"status": cli_surface_payload.get("status")},
         "remote_resource_bounds": {"status": remote_resource_payload.get("status")},
         "source_state_registry": {"status": source_state_payload.get("status")},
+        "source_attributed_status_typing": {
+            "status": source_status_typing_payload.get("status")
+        },
     }
     write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
     return 0 if summary_status == "pass" else 1
