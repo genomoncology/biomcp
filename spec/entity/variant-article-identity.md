@@ -113,7 +113,8 @@ observation, so operators can distinguish receipt from union, deduplication,
 identity verification, and pagination without exposing provider payloads. A
 candidate removed by `--confirmed-only` remains attributable rather than
 silently disappearing from the diagnostic, and duplicate route observations
-remain distinct.
+remain distinct. Every emitted result also retains a received, unioned,
+deduplicated, visible route receipt in its debug trace.
 
 ```bash run id=candidate-route-trace exit=0
 bash ../fixtures/run-variant-article-identity-fixture.sh ../..
@@ -122,6 +123,7 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
 ```json expect=candidate-route-trace contains
 {
   "candidate_route_trace_is_versioned_bounded_and_stage_attributed": true,
+  "visible_results_have_candidate_route_receipts": true,
   "candidate_route_trace_keeps_filtered_observations": true,
   "candidate_route_trace_keeps_duplicate_route_observations": true
 }
