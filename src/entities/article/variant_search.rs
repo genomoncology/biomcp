@@ -2167,11 +2167,35 @@ fn build_debug_plan(
         candidate_trace: VariantArticleCandidateTrace {
             schema_version: "variant-article-candidate-trace-v1",
             bounded: true,
-            candidates: state
-                .candidate_trace
-                .into_iter()
-                .take(ITEM_WORK_LIMIT)
-                .collect(),
+            candidates: {
+                let mut visible_identifiers = BTreeSet::new();
+                let selected_indices = state
+                    .candidate_trace
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, record)| {
+                        record.received
+                            && record.after_union
+                            && record.after_dedup
+                            && record.pagination_disposition == "visible"
+                            && visible_identifiers.insert(&record.identifier)
+                    })
+                    .take(ITEM_WORK_LIMIT)
+                    .map(|(index, _)| index)
+                    .collect::<BTreeSet<_>>();
+                let (selected, remaining): (Vec<_>, Vec<_>) = state
+                    .candidate_trace
+                    .into_iter()
+                    .enumerate()
+                    .partition(|(index, _)| selected_indices.contains(index));
+
+                selected
+                    .into_iter()
+                    .chain(remaining)
+                    .map(|(_, record)| record)
+                    .take(ITEM_WORK_LIMIT)
+                    .collect()
+            },
         },
         verification: None,
     }
