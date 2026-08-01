@@ -3675,6 +3675,7 @@ mod tests {
         );
 
         assert!(plan.candidate_trace.bounded);
+        assert_eq!(plan.candidate_trace.candidates.len(), ITEM_WORK_LIMIT);
         assert!(
             plan.candidate_trace.candidates.iter().any(|trace| {
                 trace.identifier == "11805335"
