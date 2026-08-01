@@ -2167,11 +2167,35 @@ fn build_debug_plan(
         candidate_trace: VariantArticleCandidateTrace {
             schema_version: "variant-article-candidate-trace-v1",
             bounded: true,
-            candidates: state
-                .candidate_trace
-                .into_iter()
-                .take(ITEM_WORK_LIMIT)
-                .collect(),
+            candidates: {
+                let mut visible_identifiers = BTreeSet::new();
+                let selected_indices = state
+                    .candidate_trace
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, record)| {
+                        record.received
+                            && record.after_union
+                            && record.after_dedup
+                            && record.pagination_disposition == "visible"
+                            && visible_identifiers.insert(&record.identifier)
+                    })
+                    .take(ITEM_WORK_LIMIT)
+                    .map(|(index, _)| index)
+                    .collect::<BTreeSet<_>>();
+                let (selected, remaining): (Vec<_>, Vec<_>) = state
+                    .candidate_trace
+                    .into_iter()
+                    .enumerate()
+                    .partition(|(index, _)| selected_indices.contains(index));
+
+                selected
+                    .into_iter()
+                    .chain(remaining)
+                    .map(|(_, record)| record)
+                    .take(ITEM_WORK_LIMIT)
+                    .collect()
+            },
         },
         verification: None,
     }
@@ -3601,6 +3625,66 @@ mod tests {
                 "route",
                 "verification_disposition",
             ]
+        );
+    }
+
+    #[test]
+    fn visible_candidate_trace_retains_returned_pmid_when_prefix_is_full() {
+        let plan = build_debug_plan(
+            "ATM p.C2464R",
+            &resolved_context(),
+            VariantArticleStrategy::Union,
+            &[],
+            &VariantArticleExecutionContext::single(),
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: ITEM_WORK_LIMIT.saturating_add(1),
+                    post_dedup: ITEM_WORK_LIMIT.saturating_add(1),
+                    returned: 1,
+                },
+                truncated: true,
+                next: VariantArticleNextPlan {
+                    offset: 1,
+                    cursor: None,
+                },
+                candidate_trace: (0..ITEM_WORK_LIMIT)
+                    .map(|index| VariantArticleCandidateTraceRecord {
+                        identifier: format!("earlier-{index}"),
+                        route: "strict".into(),
+                        provider_terminal_state: "received".into(),
+                        received: true,
+                        after_union: true,
+                        after_dedup: true,
+                        rank_position: Some(index.saturating_add(2)),
+                        verification_disposition: "not_requested".into(),
+                        pagination_disposition: "not_visible".into(),
+                    })
+                    .chain(std::iter::once(VariantArticleCandidateTraceRecord {
+                        identifier: "11805335".into(),
+                        route: "exact_lexical".into(),
+                        provider_terminal_state: "received".into(),
+                        received: true,
+                        after_union: true,
+                        after_dedup: true,
+                        rank_position: Some(1),
+                        verification_disposition: "not_requested".into(),
+                        pagination_disposition: "visible".into(),
+                    }))
+                    .collect(),
+            },
+        );
+
+        assert!(plan.candidate_trace.bounded);
+        assert_eq!(plan.candidate_trace.candidates.len(), ITEM_WORK_LIMIT);
+        assert!(
+            plan.candidate_trace.candidates.iter().any(|trace| {
+                trace.identifier == "11805335"
+                    && trace.received
+                    && trace.after_union
+                    && trace.after_dedup
+                    && trace.pagination_disposition == "visible"
+            }),
+            "every returned article must retain a visible route receipt"
         );
     }
 

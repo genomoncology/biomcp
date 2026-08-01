@@ -251,6 +251,13 @@ jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_r
         (.verification_disposition | type) == "string" and
         (.pagination_disposition | type) == "string")) and
       any($all[0].items[]; .debug_plan.candidate_trace.candidates[] | .identifier == "12901799" and .received == true and .after_union == true and .after_dedup == true and .pagination_disposition == "visible")),
+    visible_results_have_candidate_route_receipts: (all($all[0].items[];
+      . as $item |
+      all($item.results[];
+        .pmid as $pmid |
+        any($item.debug_plan.candidate_trace.candidates[]?;
+          .identifier == $pmid and .received == true and .after_union == true and
+          .after_dedup == true and .pagination_disposition == "visible")))),
     candidate_route_trace_keeps_filtered_observations: (any($confirmed[0].items[];
       .debug_plan.candidate_trace.candidates[]? |
       .identifier == "31749828" and .received == true and .after_dedup == true and
