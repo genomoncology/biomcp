@@ -3605,6 +3605,65 @@ mod tests {
     }
 
     #[test]
+    fn visible_candidate_trace_retains_returned_pmid_when_prefix_is_full() {
+        let plan = build_debug_plan(
+            "ATM p.C2464R",
+            &resolved_context(),
+            VariantArticleStrategy::Union,
+            &[],
+            &VariantArticleExecutionContext::single(),
+            VariantArticleDebugPlanState {
+                counts: VariantArticleCountsPlan {
+                    pre_dedup: ITEM_WORK_LIMIT.saturating_add(1),
+                    post_dedup: ITEM_WORK_LIMIT.saturating_add(1),
+                    returned: 1,
+                },
+                truncated: true,
+                next: VariantArticleNextPlan {
+                    offset: 1,
+                    cursor: None,
+                },
+                candidate_trace: (0..ITEM_WORK_LIMIT)
+                    .map(|index| VariantArticleCandidateTraceRecord {
+                        identifier: format!("earlier-{index}"),
+                        route: "strict".into(),
+                        provider_terminal_state: "received".into(),
+                        received: true,
+                        after_union: true,
+                        after_dedup: true,
+                        rank_position: Some(index.saturating_add(2)),
+                        verification_disposition: "not_requested".into(),
+                        pagination_disposition: "not_visible".into(),
+                    })
+                    .chain(std::iter::once(VariantArticleCandidateTraceRecord {
+                        identifier: "11805335".into(),
+                        route: "exact_lexical".into(),
+                        provider_terminal_state: "received".into(),
+                        received: true,
+                        after_union: true,
+                        after_dedup: true,
+                        rank_position: Some(1),
+                        verification_disposition: "not_requested".into(),
+                        pagination_disposition: "visible".into(),
+                    }))
+                    .collect(),
+            },
+        );
+
+        assert!(plan.candidate_trace.bounded);
+        assert!(
+            plan.candidate_trace.candidates.iter().any(|trace| {
+                trace.identifier == "11805335"
+                    && trace.received
+                    && trace.after_union
+                    && trace.after_dedup
+                    && trace.pagination_disposition == "visible"
+            }),
+            "every returned article must retain a visible route receipt"
+        );
+    }
+
+    #[test]
     fn missing_confirmed_record_during_citation_hydration_is_unavailable() {
         let error = select_hydrated_source_hit(Vec::new(), Some("missing"))
             .expect_err("a stale confirmed record must not become healthy empty coverage");
