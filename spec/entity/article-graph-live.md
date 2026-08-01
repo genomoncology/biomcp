@@ -13,7 +13,8 @@ when Semantic Scholar has no related papers. JSON callers can therefore iterate
 `recommendations` without first repairing a missing field.
 
 ```bash run id=empty-article-recommendations exit=0
-../../tools/biomcp-ci --no-cache --json article recommendations 23450558 --limit 5
+# Use the release binary so this Semantic Scholar canary receives S2_API_KEY.
+../../target/release/biomcp --no-cache --json article recommendations 23450558 --limit 5
 ```
 
 ```json expect=empty-article-recommendations contains
@@ -29,7 +30,8 @@ generically instead of calling every available value a PMID. Deterministic
 renderer tests pin each typed row label because live provider identifiers vary.
 
 ```bash run id=typed-article-citations exit=0
-../../tools/biomcp-ci --no-cache article citations 22663011 --limit 5
+# Use the release binary so this Semantic Scholar canary receives S2_API_KEY.
+../../target/release/biomcp --no-cache article citations 22663011 --limit 5
 ```
 
 ```text expect=typed-article-citations contains
@@ -41,7 +43,8 @@ renderer tests pin each typed row label because live provider identifiers vary.
 ```
 
 ```bash run id=typed-article-recommendations exit=0
-../../tools/biomcp-ci --no-cache article recommendations 22663011 --limit 5
+# Use the release binary so this Semantic Scholar canary receives S2_API_KEY.
+../../target/release/biomcp --no-cache article recommendations 22663011 --limit 5
 ```
 
 ```text expect=typed-article-recommendations contains
@@ -60,7 +63,8 @@ human-readable search table therefore uses a neutral heading; deterministic
 renderer tests pin the PMID, DOI, arXiv, and provider-only row labels.
 
 ```bash run id=typed-article-search exit=0
-../../tools/biomcp-ci --no-cache search article --source semanticscholar --keyword "cancer genomics" --limit 1
+# Use the release binary so this Semantic Scholar canary receives S2_API_KEY.
+../../target/release/biomcp --no-cache search article --source semanticscholar --keyword "cancer genomics" --limit 1
 ```
 
 ```text expect=typed-article-search contains
