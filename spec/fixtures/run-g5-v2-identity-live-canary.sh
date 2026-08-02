@@ -135,6 +135,7 @@ diagnostics = {
     "missing_available_positives": [],
     "incomplete_results": [],
     "internal_misattributions": [],
+    "route_status_contradictions": [],
     "missing_canonical_equivalence": [],
 }
 seen_misattributions = set()
@@ -182,6 +183,36 @@ for item in recognized_items:
     if misattributions.difference(seen_misattributions):
         diagnostics["internal_misattributions"].append(request_id)
         seen_misattributions.update(misattributions)
+    stopped_routes = set((item.get("debug_plan") or {}).get("stopped_routes", []))
+    route_provider_statuses = {
+        (route.get("route"), provider.get("source")): provider.get("status")
+        for route in (item.get("debug_plan") or {}).get("routes", [])
+        if isinstance(route, dict)
+        for provider in route.get("providers", [])
+        if isinstance(provider, dict)
+    }
+    contradictions = {
+        status.get("route")
+        for status in (source_status if isinstance(source_status, list) else [])
+        if isinstance(status, dict)
+        and (
+            (
+                status.get("source") != "internal"
+                and status.get("status") in {"ok", "degraded", "unavailable"}
+                and route_provider_statuses.get((status.get("route"), status.get("source")))
+                in {"ok", "degraded", "unavailable"}
+                and status.get("status")
+                != route_provider_statuses[(status.get("route"), status.get("source"))]
+            )
+            or (
+                isinstance(status.get("detail"), str)
+                and "stopped" in status["detail"]
+                and status.get("route") not in stopped_routes
+            )
+        )
+    }
+    if contradictions:
+        diagnostics["route_status_contradictions"].append(request_id)
     for row in item.get("results", []):
         if row.get("pmid") in collisions and (row.get("identity") or {}).get("status") == "confirmed":
             diagnostics["known_collision_confirmations"].append(row["pmid"])
@@ -196,6 +227,6 @@ for request_id in ("atm-grch38", "palb2-grch38"):
     if not has_canonical_equivalence(items_by_id.get(request_id, {})):
         diagnostics["missing_canonical_equivalence"].append(request_id)
 print(json.dumps({"identity_readiness": summary, "identity_diagnostics": diagnostics}, indent=2, sort_keys=True))
-ready = completed.returncode == 0 and all(summary.values()) and not any(diagnostics[key] for key in ("known_collision_confirmations", "schema_parse_failures", "missing_available_positives", "incomplete_results", "internal_misattributions", "missing_canonical_equivalence"))
+ready = completed.returncode == 0 and all(summary.values()) and not any(diagnostics[key] for key in ("known_collision_confirmations", "schema_parse_failures", "missing_available_positives", "incomplete_results", "internal_misattributions", "route_status_contradictions", "missing_canonical_equivalence"))
 raise SystemExit(0 if ready else 1)
 PY
