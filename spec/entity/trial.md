@@ -15,6 +15,47 @@ Query: condition=melanoma, status=recruiting
 |NCT ID|Title|Status|Phase|Conditions|'
 ```
 
+## Terminal Pagination
+
+A page that reaches the end of a small ClinicalTrials.gov result set must stop an
+agent cleanly: a known total takes precedence over any stale provider cursor.
+This live query deliberately requests 50 rows so its modest condition result set
+is exhausted in one bounded request.
+
+```bash
+../../target/release/biomcp --json search trial -c "Phelan-McDermid Syndrome" --limit 50 \
+  | jq -e '.pagination.total != null and .pagination.returned > 0 and .pagination.returned == .pagination.total and .pagination.has_more == false and .pagination.next_page_token == null' \
+  | mustmatch 'true'
+```
+
+## Cursor Pagination Continues When the Registry Omits a Later Total
+
+<!-- mustmatch-lint: skip -->
+
+ClinicalTrials.gov reports the total with the initial page but can omit it on a
+later cursor request. The opaque token must remain usable in that case rather
+than treating the size of the returned page as a terminal total.
+
+```bash run id=trial-cursor-first
+../../target/release/biomcp --json search trial -c "Phelan-McDermid Syndrome" --limit 5
+```
+
+```json expect=trial-cursor-first contains
+{
+  "pagination": { "has_more": true }
+}
+```
+
+```bash run id=trial-cursor-next uses=trial-cursor-first
+../../target/release/biomcp --json search trial -c "Phelan-McDermid Syndrome" --limit 5 \
+  --next-page '{{trial-cursor-first.pagination.next_page_token}}' \
+  | jq '.pagination.has_more and (.pagination.next_page_token != null)'
+```
+
+```text expect=trial-cursor-next
+true
+```
+
 ## Simple mutation search verifies molecular inclusion
 
 For simple molecular text, broad CTGov discovery is followed by a registry

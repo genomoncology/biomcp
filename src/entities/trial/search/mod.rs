@@ -139,6 +139,9 @@ fn has_any_query(filters: &TrialSearchFilters) -> bool {
         || filters.distance.is_some()
 }
 
+// This exceeds practical single-condition result sets while bounding abusive provider requests.
+const MAX_SEARCH_OFFSET: usize = 100_000;
+
 pub(super) fn validate_search_page_args(
     limit: usize,
     offset: usize,
@@ -158,6 +161,11 @@ pub(super) fn validate_search_page_args(
         return Err(BioMcpError::InvalidArgument(
             "--next-page cannot be used together with --offset".into(),
         ));
+    }
+    if offset > MAX_SEARCH_OFFSET {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--offset must be at most {MAX_SEARCH_OFFSET} for trial search"
+        )));
     }
     Ok(())
 }
@@ -324,13 +332,13 @@ pub async fn search_page(
     next_page: Option<String>,
 ) -> Result<SearchPage<TrialSearchResult>, BioMcpError> {
     validate_trial_search(filters)?;
+    validate_search_page_args(limit, offset, next_page.as_deref())?;
     match filters.source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
             search_page_with_ctgov_client(&client, filters, limit, offset, next_page).await
         }
         TrialSource::NciCts => {
-            validate_search_page_args(limit, offset, next_page.as_deref())?;
             let normalized = validate_trial_search(filters)?;
 
             if filters.date_from.is_some() || filters.date_to.is_some() {

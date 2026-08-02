@@ -50,6 +50,17 @@ fn single_ctgov_context_and_worker(
 }
 
 #[test]
+fn trial_search_rejects_absurd_offset_before_provider_setup() {
+    let err = validate_search_page_args(5, 100_001, None)
+        .expect_err("an absurd offset must fail before CTGov client construction");
+
+    assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    assert!(err.to_string().contains("--offset"));
+    validate_search_page_args(5, 100_000, None)
+        .expect("the maximum trial offset must remain valid");
+}
+
+#[test]
 fn trial_numeric_filters_are_validated_before_request_construction() {
     for age in [
         f64::NAN,
@@ -427,6 +438,24 @@ fn age_filter_uses_native_total_semantics_across_limits() {
 
         assert_eq!(page.total, Some(200));
     }
+}
+
+#[test]
+fn ctgov_cursor_without_a_reported_total_keeps_the_provider_token() {
+    let filters = age_filtered_ctgov_filters();
+    let (context, worker) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(Some("p1".into()), 0, true);
+    apply_ctgov_single_page(
+        &mut state,
+        &context,
+        &worker,
+        5,
+        filtered_page(studies_with_age_matches(5, 5, "20"), Some("p2"), None),
+    );
+    let page = finish_ctgov_single_page(state, &context, 5, 0);
+
+    assert_eq!(page.total, None);
+    assert_eq!(page.next_page_token.as_deref(), Some("p2"));
 }
 
 #[test]

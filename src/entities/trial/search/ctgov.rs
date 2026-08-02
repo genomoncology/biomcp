@@ -284,6 +284,7 @@ struct CtGovSinglePageState {
     page_token: Option<String>,
     remaining_skip: usize,
     requested_total: bool,
+    started_with_cursor: bool,
 }
 
 impl CtGovSinglePageState {
@@ -300,6 +301,9 @@ impl CtGovSinglePageState {
                 .map(str::to_string),
             remaining_skip: offset,
             requested_total,
+            started_with_cursor: next_page
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty()),
         }
     }
 }
@@ -514,8 +518,7 @@ fn finish_ctgov_single_page(
         state.exhausted.then_some(state.verified_total)
     } else {
         state.total.or_else(|| {
-            state
-                .requested_total
+            (!state.started_with_cursor && state.requested_total)
                 .then(|| offset.saturating_add(state.rows.len()))
         })
     };

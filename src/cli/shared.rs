@@ -326,7 +326,7 @@ impl PaginationMeta {
             .map(str::trim)
             .is_some_and(|value| !value.is_empty());
         let has_more = match total {
-            Some(value) => offset.saturating_add(returned) < value || has_token,
+            Some(value) => has_token && offset.saturating_add(returned) < value,
             None => has_token,
         };
         Self {
@@ -335,7 +335,7 @@ impl PaginationMeta {
             returned,
             total,
             has_more,
-            next_page_token,
+            next_page_token: has_more.then_some(next_page_token).flatten(),
         }
     }
 }
@@ -543,6 +543,22 @@ pub(super) fn log_pagination_truncation(observed_total: usize, offset: usize, re
 mod tests {
     use super::*;
     use crate::entities::section_outcome::SectionOutcomeState;
+
+    #[test]
+    fn cursor_total_suppresses_stale_token_past_the_end() {
+        let pagination = PaginationMeta::cursor(4_000, 5, 0, Some(3_738), Some("stale".into()));
+
+        assert!(!pagination.has_more);
+        assert_eq!(pagination.next_page_token, None);
+    }
+
+    #[test]
+    fn cursor_without_token_never_promises_a_next_page() {
+        let pagination = PaginationMeta::cursor(0, 5, 5, Some(10), None);
+
+        assert!(!pagination.has_more);
+        assert_eq!(pagination.next_page_token, None);
+    }
 
     #[test]
     fn section_provenance_keeps_meta_when_search_has_no_next_commands() {
