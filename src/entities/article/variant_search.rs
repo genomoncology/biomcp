@@ -1461,7 +1461,6 @@ async fn strict_provider_candidates(
     let filters = article_filters();
     let plans = provider_variant_query_plan_with_aliases(input, context, strategy, exact_aliases);
     let mut candidates = Vec::new();
-    let mut statuses = Vec::new();
     let mut incomplete = false;
     let mut succeeded = false;
 
@@ -1515,12 +1514,6 @@ async fn strict_provider_candidates(
             "pubtator" => {
                 let Some(started) = execution.reserve("strict") else {
                     incomplete = true;
-                    statuses.push(status_with_detail(
-                        "strict",
-                        "internal",
-                        VariantArticleSourceStatusKind::NotAttempted,
-                        Some("discovery internal work budget exhausted before a provider call"),
-                    ));
                     break;
                 };
                 let pubtator = crate::sources::pubtator::PubTatorClient::new();
@@ -1563,11 +1556,6 @@ async fn strict_provider_candidates(
         match rows {
             Ok(rows) if !execution.route_stopped("strict") || stopped_before => {
                 succeeded = true;
-                statuses.push(status(
-                    "strict",
-                    &plan.provider,
-                    VariantArticleSourceStatusKind::Ok,
-                ));
                 candidates.extend(rows.into_iter().map(|row| {
                     candidate_with_provenance(
                         row,
@@ -1579,36 +1567,22 @@ async fn strict_provider_candidates(
             }
             Ok(_) | Err(_) if execution.route_stopped("strict") => {
                 incomplete = true;
-                statuses.push(status_with_detail(
-                    "strict",
-                    "internal",
-                    VariantArticleSourceStatusKind::NotAttempted,
-                    Some("discovery internal work budget exhausted before a provider call"),
-                ));
                 break;
             }
             Ok(_) | Err(_) => {
                 incomplete = true;
-                let attempted = execution
-                    .events()
-                    .iter()
-                    .any(|event| event.route == "strict" && event.source == plan.provider);
-                statuses.push(if attempted {
-                    status(
-                        "strict",
-                        &plan.provider,
-                        VariantArticleSourceStatusKind::Unavailable,
-                    )
-                } else {
-                    status_with_detail(
-                        "strict",
-                        "internal",
-                        VariantArticleSourceStatusKind::NotAttempted,
-                        Some("internal configuration stopped before a provider call"),
-                    )
-                });
             }
         }
+    }
+    let calls = execution.events();
+    let mut statuses = provider_statuses_for_route("strict", &calls);
+    if let Some(detail) = route_stop_detail(execution.route_stopped("strict")) {
+        statuses.push(status_with_detail(
+            "strict",
+            "internal",
+            VariantArticleSourceStatusKind::NotAttempted,
+            Some(detail),
+        ));
     }
     (candidates, incomplete, succeeded, statuses)
 }
@@ -2408,28 +2382,17 @@ async fn search_variant_articles_identity(
             match annotation_candidates(input, &context, &execution).await {
                 Ok((rows, incomplete, succeeded, pre_call_stopped)) => {
                     candidates.extend(rows);
-                    if pre_call_stopped {
+                    let calls = execution.events();
+                    statuses.extend(provider_statuses_for_route("pubtator_variant", &calls));
+                    if pre_call_stopped
+                        && let Some(detail) =
+                            route_stop_detail(execution.route_stopped("pubtator_variant"))
+                    {
                         statuses.push(status_with_detail(
                             "pubtator_variant",
                             "internal",
                             VariantArticleSourceStatusKind::NotAttempted,
-                            Some("internal work or configuration stopped before a provider call"),
-                        ));
-                    } else {
-                        let status = if !succeeded {
-                            VariantArticleSourceStatusKind::Unavailable
-                        } else if incomplete {
-                            VariantArticleSourceStatusKind::Degraded
-                        } else {
-                            VariantArticleSourceStatusKind::Ok
-                        };
-                        statuses.push(status_with_detail(
-                            "pubtator_variant",
-                            "pubtator",
-                            status,
-                            incomplete.then_some(
-                                "one or more annotation tokens stopped before the route bound",
-                            ),
+                            Some(detail),
                         ));
                     }
                     succeeded_routes += usize::from(succeeded);
@@ -2467,12 +2430,16 @@ async fn search_variant_articles_identity(
                         Ok((rows, pre_call_stopped)) => {
                             candidates.extend(rows);
                             if pre_call_stopped {
-                                statuses.push(status_with_detail(
-                                    "source_citation",
-                                    "internal",
-                                    VariantArticleSourceStatusKind::NotAttempted,
-                                    Some("internal work or configuration stopped before a provider call"),
-                                ));
+                                if let Some(detail) =
+                                    route_stop_detail(execution.route_stopped("source_citation"))
+                                {
+                                    statuses.push(status_with_detail(
+                                        "source_citation",
+                                        "internal",
+                                        VariantArticleSourceStatusKind::NotAttempted,
+                                        Some(detail),
+                                    ));
+                                }
                                 failed_routes += 1;
                             } else {
                                 statuses.push(status(
