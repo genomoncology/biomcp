@@ -298,8 +298,11 @@ or verifies an alias. `--debug-plan` exposes each provider request, route,
 query alias, exact query, and template version. It also includes a bounded,
 versioned candidate-route trace: receipt, union/dedup survival, rank,
 identity-verification disposition, and pagination visibility for each retained
-candidate-route observation. Use `--strategy annotation` or `--strategy lexical`
-to diagnose one exact route. Ambiguous or unresolved input
+candidate-route observation. Candidate trace v2 reports `observed_total`,
+`dropped`, and computed `bounded`; `observed_total - dropped` always equals the
+length of `candidates`. It retains visible, deduplicated receipts first, then
+fills remaining capacity in observation order. Use `--strategy annotation` or
+`--strategy lexical` to diagnose one exact route. Ambiguous or unresolved input
 still runs strict literal requests unless provider validation contradicts the
 request; discovery rows remain labeled `best_effort_free_text`.
 

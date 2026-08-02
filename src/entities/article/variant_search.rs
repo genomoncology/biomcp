@@ -642,6 +642,8 @@ pub struct VariantArticleCandidateTraceRecord {
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleCandidateTrace {
     pub schema_version: &'static str,
+    pub observed_total: usize,
+    pub dropped: usize,
     pub bounded: bool,
     pub candidates: Vec<VariantArticleCandidateTraceRecord>,
 }
@@ -2059,6 +2061,37 @@ fn build_debug_plan(
             plan.query = query;
         }
     }
+    let observed_total = state.candidate_trace.len();
+    let candidates = {
+        let mut visible_identifiers = BTreeSet::new();
+        let selected_indices = state
+            .candidate_trace
+            .iter()
+            .enumerate()
+            .filter(|(_, record)| {
+                record.received
+                    && record.after_union
+                    && record.after_dedup
+                    && record.pagination_disposition == "visible"
+                    && visible_identifiers.insert(&record.identifier)
+            })
+            .take(ITEM_WORK_LIMIT)
+            .map(|(index, _)| index)
+            .collect::<BTreeSet<_>>();
+        let (selected, remaining): (Vec<_>, Vec<_>) = state
+            .candidate_trace
+            .into_iter()
+            .enumerate()
+            .partition(|(index, _)| selected_indices.contains(index));
+
+        selected
+            .into_iter()
+            .chain(remaining)
+            .map(|(_, record)| record)
+            .take(ITEM_WORK_LIMIT)
+            .collect::<Vec<_>>()
+    };
+    let dropped = observed_total - candidates.len();
     VariantArticleDebugPlan {
         normalized_aliases: context.resolution.normalized_aliases.clone(),
         provider_queries,
@@ -2077,37 +2110,11 @@ fn build_debug_plan(
         stopped_routes: execution.stopped_routes(),
         next: state.next,
         candidate_trace: VariantArticleCandidateTrace {
-            schema_version: "variant-article-candidate-trace-v1",
-            bounded: true,
-            candidates: {
-                let mut visible_identifiers = BTreeSet::new();
-                let selected_indices = state
-                    .candidate_trace
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, record)| {
-                        record.received
-                            && record.after_union
-                            && record.after_dedup
-                            && record.pagination_disposition == "visible"
-                            && visible_identifiers.insert(&record.identifier)
-                    })
-                    .take(ITEM_WORK_LIMIT)
-                    .map(|(index, _)| index)
-                    .collect::<BTreeSet<_>>();
-                let (selected, remaining): (Vec<_>, Vec<_>) = state
-                    .candidate_trace
-                    .into_iter()
-                    .enumerate()
-                    .partition(|(index, _)| selected_indices.contains(index));
-
-                selected
-                    .into_iter()
-                    .chain(remaining)
-                    .map(|(_, record)| record)
-                    .take(ITEM_WORK_LIMIT)
-                    .collect()
-            },
+            schema_version: "variant-article-candidate-trace-v2",
+            observed_total,
+            dropped,
+            bounded: dropped > 0,
+            candidates,
         },
         verification: None,
     }
@@ -3014,8 +3021,10 @@ fn empty_debug_plan(
             cursor: None,
         },
         candidate_trace: VariantArticleCandidateTrace {
-            schema_version: "variant-article-candidate-trace-v1",
-            bounded: true,
+            schema_version: "variant-article-candidate-trace-v2",
+            observed_total: 0,
+            dropped: 0,
+            bounded: false,
             candidates: Vec::new(),
         },
         verification: None,
@@ -3494,7 +3503,7 @@ mod tests {
                     offset: 0,
                     cursor: None,
                 },
-                candidate_trace: (0..=ITEM_WORK_LIMIT)
+                candidate_trace: (0..ITEM_WORK_LIMIT)
                     .map(|index| VariantArticleCandidateTraceRecord {
                         identifier: index.to_string(),
                         route: "strict".into(),
@@ -3510,6 +3519,9 @@ mod tests {
             },
         );
 
+        assert_eq!(plan.candidate_trace.observed_total, ITEM_WORK_LIMIT);
+        assert_eq!(plan.candidate_trace.dropped, 0);
+        assert!(!plan.candidate_trace.bounded);
         assert_eq!(plan.candidate_trace.candidates.len(), ITEM_WORK_LIMIT);
         assert_eq!(
             serde_json::to_value(&plan.candidate_trace.candidates[0])
@@ -3531,6 +3543,20 @@ mod tests {
                 "verification_disposition",
             ]
         );
+    }
+
+    #[test]
+    fn empty_debug_plan_has_complete_candidate_trace() {
+        let plan = empty_debug_plan(&resolved_context().requested, false, Vec::new(), 0);
+
+        assert_eq!(
+            plan.candidate_trace.schema_version,
+            "variant-article-candidate-trace-v2"
+        );
+        assert_eq!(plan.candidate_trace.observed_total, 0);
+        assert_eq!(plan.candidate_trace.dropped, 0);
+        assert!(!plan.candidate_trace.bounded);
+        assert!(plan.candidate_trace.candidates.is_empty());
     }
 
     #[test]
@@ -3579,6 +3605,8 @@ mod tests {
             },
         );
 
+        assert_eq!(plan.candidate_trace.observed_total, ITEM_WORK_LIMIT + 1);
+        assert_eq!(plan.candidate_trace.dropped, 1);
         assert!(plan.candidate_trace.bounded);
         assert_eq!(plan.candidate_trace.candidates.len(), ITEM_WORK_LIMIT);
         assert!(
