@@ -198,8 +198,11 @@ for item in recognized_items:
         and (
             (
                 status.get("source") != "internal"
-                and status.get("status") in {"degraded", "unavailable"}
-                and route_provider_statuses.get((status.get("route"), status.get("source"))) == "ok"
+                and status.get("status") in {"ok", "degraded", "unavailable"}
+                and route_provider_statuses.get((status.get("route"), status.get("source")))
+                in {"ok", "degraded", "unavailable"}
+                and status.get("status")
+                != route_provider_statuses[(status.get("route"), status.get("source"))]
             )
             or (
                 isinstance(status.get("detail"), str)
