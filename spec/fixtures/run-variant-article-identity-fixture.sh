@@ -241,9 +241,13 @@ jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_r
     candidate_route_trace_is_versioned_bounded_and_stage_attributed: (all($all[0].items[];
       .debug_plan as $plan |
       ($plan.candidate_trace | type) == "object" and
-      $plan.candidate_trace.schema_version == "variant-article-candidate-trace-v1" and
-      $plan.candidate_trace.bounded == true and
+      $plan.candidate_trace.schema_version == "variant-article-candidate-trace-v2" and
+      ($plan.candidate_trace.observed_total | type) == "number" and
+      ($plan.candidate_trace.dropped | type) == "number" and
+      $plan.candidate_trace.dropped == 0 and
+      $plan.candidate_trace.bounded == false and
       ($plan.candidate_trace.candidates | type) == "array" and
+      $plan.candidate_trace.observed_total == ($plan.candidate_trace.candidates | length) and
       ($plan.candidate_trace.candidates | length) <= $plan.budgets.item.limit and
       all($plan.candidate_trace.candidates[];
         (keys | sort) == ["after_dedup", "after_union", "identifier", "pagination_disposition", "provider_terminal_state", "rank_position", "received", "route", "verification_disposition"] and
@@ -278,6 +282,7 @@ jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_r
       ($trace.observed_total | type) == "number" and
       ($trace.dropped | type) == "number" and
       $trace.observed_total > ($trace.candidates | length) and
+      $trace.dropped > 0 and
       $trace.dropped == ($trace.observed_total - ($trace.candidates | length)) and
       $trace.bounded == true and
       any($trace.candidates[]; .identifier == $visible_pmid and .received == true and
