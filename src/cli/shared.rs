@@ -326,7 +326,7 @@ impl PaginationMeta {
             .map(str::trim)
             .is_some_and(|value| !value.is_empty());
         let has_more = match total {
-            Some(value) => offset.saturating_add(returned) < value || has_token,
+            Some(value) => offset.saturating_add(returned) < value,
             None => has_token,
         };
         Self {
@@ -335,7 +335,7 @@ impl PaginationMeta {
             returned,
             total,
             has_more,
-            next_page_token,
+            next_page_token: has_more.then_some(next_page_token).flatten(),
         }
     }
 }
