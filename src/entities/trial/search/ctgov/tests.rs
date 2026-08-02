@@ -56,6 +56,8 @@ fn trial_search_rejects_absurd_offset_before_provider_setup() {
 
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
     assert!(err.to_string().contains("--offset"));
+    validate_search_page_args(5, 100_000, None)
+        .expect("the maximum trial offset must remain valid");
 }
 
 #[test]

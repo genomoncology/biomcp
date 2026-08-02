@@ -326,7 +326,7 @@ impl PaginationMeta {
             .map(str::trim)
             .is_some_and(|value| !value.is_empty());
         let has_more = match total {
-            Some(value) => offset.saturating_add(returned) < value,
+            Some(value) => has_token && offset.saturating_add(returned) < value,
             None => has_token,
         };
         Self {
@@ -547,6 +547,14 @@ mod tests {
     #[test]
     fn cursor_total_suppresses_stale_token_past_the_end() {
         let pagination = PaginationMeta::cursor(4_000, 5, 0, Some(3_738), Some("stale".into()));
+
+        assert!(!pagination.has_more);
+        assert_eq!(pagination.next_page_token, None);
+    }
+
+    #[test]
+    fn cursor_without_token_never_promises_a_next_page() {
+        let pagination = PaginationMeta::cursor(0, 5, 5, Some(10), None);
 
         assert!(!pagination.has_more);
         assert_eq!(pagination.next_page_token, None);
