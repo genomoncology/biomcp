@@ -12,6 +12,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/section-outcomes.md
   spec/entity/study.md
   spec/entity/trial-intervention-aliases.md
+  spec/entity/trial-numeric-filters.md
   spec/entity/trial-documents.md
   spec/entity/variant.md
   spec/entity/clingen-erepo.md
@@ -32,6 +33,7 @@ SPEC_STATIC_PATHS=(
 
 SPEC_CTGOV_FIXTURE_PATHS=(
   spec/entity/trial-intervention-aliases.md
+  spec/entity/trial-numeric-filters.md
   spec/entity/trial-documents.md
 )
 

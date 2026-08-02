@@ -840,6 +840,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/section-outcomes.md",
     "spec/entity/study.md",
     "spec/entity/trial-intervention-aliases.md",
+    "spec/entity/trial-numeric-filters.md",
     "spec/entity/trial-documents.md",
     "spec/entity/variant.md",
     "spec/entity/clingen-erepo.md",
@@ -941,11 +942,11 @@ def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
     assert not set(static_paths) & _make_variable_paths("SPEC_ROUTINE_PATHS")
     assert {
         "spec/entity/trial-intervention-aliases.md",
+        "spec/entity/trial-numeric-filters.md",
         "spec/entity/trial-documents.md",
     } <= set(ctgov_paths)
     removed_duplicate_specs = {
         "spec/entity/gwas-numeric-filters.md",
-        "spec/entity/trial-numeric-filters.md",
         "spec/surface/discover-input.md",
         "spec/surface/ctgov-helper-pivots.md",
     }

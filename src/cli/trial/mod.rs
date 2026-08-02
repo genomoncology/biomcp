@@ -98,7 +98,7 @@ pub struct TrialSearchArgs {
     /// Finite longitude from -180 through 180 for geographic search
     #[arg(long, allow_hyphen_values = true)]
     pub lon: Option<f64>,
-    /// Distance (miles) for geographic search
+    /// Positive distance (miles) for geographic search
     #[arg(long)]
     pub distance: Option<u32>,
     /// Only return trials with posted results (default: off, include trials with/without posted results)
