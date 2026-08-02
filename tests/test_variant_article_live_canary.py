@@ -45,6 +45,7 @@ def write_g5_fake_binary(
     negative_status_against_ok_call: bool = False,
     ok_status_against_degraded_call: bool = False,
     stop_detail_without_stopped_route: bool = False,
+    recorded_route_stop: bool = False,
 ) -> None:
     source_status = (
         {"exact_lexical": "complete"}
@@ -52,10 +53,14 @@ def write_g5_fake_binary(
         else [
             {
                 "route": "exact_lexical",
-                "source": "internal" if internal_incomplete else "semanticscholar",
+                "source": (
+                    "internal"
+                    if internal_incomplete or recorded_route_stop
+                    else "semanticscholar"
+                ),
                 "status": (
                     "not_attempted"
-                    if internal_incomplete
+                    if internal_incomplete or recorded_route_stop
                     else "degraded"
                     if provider_incomplete
                     else "unavailable"
@@ -69,10 +74,8 @@ def write_g5_fake_binary(
         source_status[0]["status"] = "degraded"
     if ok_status_against_degraded_call:
         source_status[0]["status"] = "ok"
-    if stop_detail_without_stopped_route:
-        source_status[0]["detail"] = (
-            "one or more aliases stopped before the route bound"
-        )
+    if stop_detail_without_stopped_route or recorded_route_stop:
+        source_status[0]["detail"] = "internal work stopped before a provider call"
     item_work_consumed = 1 if inconsistent_work_allocation or provider_incomplete else 0
     exact_work_consumed = 1 if provider_incomplete else 0
     complete = not (provider_incomplete or internal_incomplete)
@@ -133,6 +136,7 @@ for request in json.load(sys.stdin):
                 "identity_verification": {"item": {"consumed": 0}},
             },
             "routes": ROUTES,
+            "stopped_routes": STOPPED_ROUTES,
         },
     }
     if request_id in {"atm-grch38", "palb2-grch38"}:
@@ -154,6 +158,7 @@ print(json.dumps({"items": items}))
         content.replace("SOURCE_STATUS", repr(source_status))
         .replace("ITEM_WORK_CONSUMED", repr(item_work_consumed))
         .replace("EXACT_WORK_CONSUMED", repr(exact_work_consumed))
+        .replace("STOPPED_ROUTES", repr(["exact_lexical"] if recorded_route_stop else []))
         .replace("COMPLETE", repr(complete))
         .replace("ROUTES", repr(routes)),
         encoding="utf-8",
@@ -287,6 +292,21 @@ def test_g5_canary_rejects_stop_detail_without_stopped_route(tmp_path: Path) -> 
     assert (
         "apc-grch38" in payload["identity_diagnostics"]["route_status_contradictions"]
     )
+
+
+def test_g5_canary_allows_stop_detail_for_a_recorded_route_stop(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    write_g5_fake_binary(binary, recorded_route_stop=True)
+
+    completed = subprocess.run(
+        ["bash", str(G5_CANARY), str(REPO_ROOT)],
+        capture_output=True,
+        check=False,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        text=True,
+    )
+
+    assert completed.returncode == 0
 
 
 def test_g5_canary_rejects_internal_unperformed_work(tmp_path: Path) -> None:

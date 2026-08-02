@@ -1331,7 +1331,6 @@ async fn annotation_candidates(
             }
         };
         succeeded = true;
-        incomplete |= page.total.is_some_and(|total| total > page.results.len());
         for row in page.results {
             if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
                 return Ok((candidates, true, succeeded, false));
