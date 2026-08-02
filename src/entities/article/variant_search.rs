@@ -46,8 +46,7 @@ use super::search::{
 };
 use super::{
     ArticleRankingOptions, ArticleSearchFilters, ArticleSearchResult, ArticleSort, ArticleSource,
-    ArticleSourceAvailability, ArticleSourceStatus, ArticleVariantIntent,
-    MAX_FEDERATED_FETCH_RESULTS,
+    ArticleSourceAvailability, ArticleVariantIntent, MAX_FEDERATED_FETCH_RESULTS,
 };
 
 const LEXICAL_ALIAS_FETCH_LIMIT: usize = 25;
@@ -788,48 +787,41 @@ fn status_with_detail(
     }
 }
 
-fn availability_severity(status: Option<ArticleSourceAvailability>) -> u8 {
+fn provider_terminal_status(events: &[&VariantArticleCallEvent]) -> VariantArticleSourceStatusKind {
+    let successful = events.iter().filter(|event| event.status == "ok").count();
+    match successful {
+        0 => VariantArticleSourceStatusKind::Unavailable,
+        count if count == events.len() => VariantArticleSourceStatusKind::Ok,
+        _ => VariantArticleSourceStatusKind::Degraded,
+    }
+}
+
+fn provider_status_name(status: VariantArticleSourceStatusKind) -> &'static str {
     match status {
-        Some(ArticleSourceAvailability::Unavailable) => 2,
-        Some(ArticleSourceAvailability::Degraded) => 1,
-        Some(ArticleSourceAvailability::Ok | ArticleSourceAvailability::Skipped) | None => 0,
+        VariantArticleSourceStatusKind::Ok => "ok",
+        VariantArticleSourceStatusKind::Degraded => "degraded",
+        VariantArticleSourceStatusKind::Unavailable => "unavailable",
+        VariantArticleSourceStatusKind::Skipped => "skipped",
+        VariantArticleSourceStatusKind::NotAttempted => "not_attempted",
     }
 }
 
-fn record_provider_status(
-    statuses: &mut BTreeMap<String, u8>,
-    source: ArticleSource,
-    availability: Option<ArticleSourceAvailability>,
-) {
-    let severity = availability_severity(availability);
-    statuses
-        .entry(source_name(source).to_string())
-        .and_modify(|current| *current = (*current).max(severity))
-        .or_insert(severity);
+fn provider_statuses_for_route(
+    route: &str,
+    events: &[VariantArticleCallEvent],
+) -> Vec<VariantArticleSourceStatus> {
+    let mut grouped = BTreeMap::<String, Vec<&VariantArticleCallEvent>>::new();
+    for event in events.iter().filter(|event| event.route == route) {
+        grouped.entry(event.source.clone()).or_default().push(event);
+    }
+    grouped
+        .into_iter()
+        .map(|(source, events)| status(route, &source, provider_terminal_status(&events)))
+        .collect()
 }
 
-fn record_federated_statuses(
-    statuses: &mut BTreeMap<String, u8>,
-    source_status: &[ArticleSourceStatus],
-    semantic_scholar_status: &ArticleSourceStatus,
-) {
-    for source in [
-        ArticleSource::PubTator,
-        ArticleSource::EuropePmc,
-        ArticleSource::PubMed,
-    ] {
-        let availability = source_status
-            .iter()
-            .find(|status| status.source == source)
-            .and_then(|status| status.status)
-            .or(Some(ArticleSourceAvailability::Ok));
-        record_provider_status(statuses, source, availability);
-    }
-    record_provider_status(
-        statuses,
-        ArticleSource::SemanticScholar,
-        semantic_scholar_status.status,
-    );
+fn route_stop_detail(route_stopped: bool) -> Option<&'static str> {
+    route_stopped.then_some("internal work or configuration stopped before a provider call")
 }
 
 fn candidate_with_provenance(
@@ -1361,7 +1353,7 @@ async fn annotation_candidates(
 
 async fn federated_alias_candidates(
     aliases: Vec<String>,
-    alias_budget_stopped: bool,
+    _alias_budget_stopped: bool,
     route: &str,
     execution: &VariantArticleExecutionContext,
 ) -> (
@@ -1383,11 +1375,9 @@ async fn federated_alias_candidates(
         .map(|rows| (alias, rows))
     });
     let mut candidates = Vec::new();
-    let mut incomplete = alias_budget_stopped;
+    let mut incomplete = false;
     let mut succeeded = false;
     let mut alias_failed = false;
-    let mut budget_stopped = false;
-    let mut provider_statuses = BTreeMap::new();
     for result in futures::future::join_all(searches).await {
         let (alias, federated) = match result {
             Ok(result) => result,
@@ -1397,7 +1387,6 @@ async fn federated_alias_candidates(
                 continue;
             }
         };
-        budget_stopped |= execution.route_stopped(route);
         let alias_succeeded = federated.primary_error.is_none()
             || matches!(
                 federated.semantic_scholar_status.status,
@@ -1405,23 +1394,8 @@ async fn federated_alias_candidates(
             );
         succeeded |= alias_succeeded;
         alias_failed |= !alias_succeeded;
-        incomplete |= !alias_succeeded;
-        record_federated_statuses(
-            &mut provider_statuses,
-            &federated.source_status,
-            &federated.semantic_scholar_status,
-        );
-        for source in federated.truncated_sources {
-            record_provider_status(
-                &mut provider_statuses,
-                source,
-                Some(ArticleSourceAvailability::Degraded),
-            );
-        }
-        incomplete |= provider_statuses.values().any(|severity| *severity > 0);
         for row in federated.rows {
             if candidates.len() >= MAX_FEDERATED_FETCH_RESULTS {
-                incomplete = true;
                 break;
             }
             let sources = if row.matched_sources.is_empty() {
@@ -1455,48 +1429,18 @@ async fn federated_alias_candidates(
             candidates.push(candidate);
         }
     }
-    if !succeeded {
-        incomplete = true;
-    }
-    if alias_failed || !succeeded {
-        let route_severity = if succeeded { 1 } else { 2 };
-        for source in ["pubtator", "europepmc", "pubmed", "semanticscholar"] {
-            provider_statuses
-                .entry(source.to_string())
-                .and_modify(|current| *current = (*current).max(route_severity))
-                .or_insert(route_severity);
-        }
-    }
+    incomplete |= alias_failed || !succeeded;
     let calls = execution.events();
-    provider_statuses.retain(|source, severity| {
-        *severity == 0
-            || calls
-                .iter()
-                .any(|event| event.route == route && event.source == *source)
-    });
-    let mut statuses = provider_statuses
-        .into_iter()
-        .map(|(source, severity)| {
-            let status = match severity {
-                0 => VariantArticleSourceStatusKind::Ok,
-                1 => VariantArticleSourceStatusKind::Degraded,
-                _ => VariantArticleSourceStatusKind::Unavailable,
-            };
-            status_with_detail(
-                route,
-                &source,
-                status,
-                (severity > 0)
-                    .then_some("one or more providers or aliases stopped before the route bound"),
-            )
-        })
-        .collect::<Vec<_>>();
-    if alias_budget_stopped || budget_stopped {
+    incomplete |= calls
+        .iter()
+        .any(|event| event.route == route && event.status != "ok");
+    let mut statuses = provider_statuses_for_route(route, &calls);
+    if let Some(detail) = route_stop_detail(execution.route_stopped(route)) {
         statuses.push(status_with_detail(
             route,
             "internal",
             VariantArticleSourceStatusKind::NotAttempted,
-            Some("internal work or configuration stopped before a provider call"),
+            Some(detail),
         ));
     }
     (candidates, incomplete, succeeded, statuses)
@@ -2111,15 +2055,10 @@ fn build_debug_plan(
                 grouped
                     .into_iter()
                     .map(|(source, events)| {
-                        let successful = events.iter().filter(|event| event.status == "ok").count();
-                        let status = match successful {
-                            0 => "unavailable",
-                            count if count == events.len() => "ok",
-                            _ => "degraded",
-                        };
+                        let status = provider_terminal_status(&events);
                         VariantArticleProviderPlan {
                             source,
-                            status: status.into(),
+                            status: provider_status_name(status).into(),
                             latency_ms: events.iter().map(|event| event.latency_ms).sum(),
                             calls: events.len(),
                             pages: events.iter().map(|event| event.pages).sum(),
@@ -4120,10 +4059,62 @@ mod tests {
     }
 
     #[test]
+    fn recorded_provider_calls_drive_public_and_debug_terminal_statuses() {
+        let ok = VariantArticleCallEvent {
+            route: "exact_lexical".into(),
+            source: "pubmed".into(),
+            status: "ok".into(),
+            latency_ms: 0,
+            pages: 1,
+        };
+        let unavailable = VariantArticleCallEvent {
+            status: "unavailable".into(),
+            ..ok.clone()
+        };
+
+        assert_eq!(
+            provider_terminal_status(&[&ok]),
+            VariantArticleSourceStatusKind::Ok
+        );
+        assert_eq!(
+            provider_terminal_status(&[&ok, &unavailable]),
+            VariantArticleSourceStatusKind::Degraded
+        );
+        assert_eq!(
+            provider_terminal_status(&[&unavailable]),
+            VariantArticleSourceStatusKind::Unavailable
+        );
+        assert_eq!(
+            provider_statuses_for_route("exact_lexical", &[ok, unavailable])
+                .into_iter()
+                .map(|status| status.status)
+                .collect::<Vec<_>>(),
+            vec![VariantArticleSourceStatusKind::Degraded]
+        );
+    }
+
+    #[test]
+    fn only_a_recorded_route_stop_produces_a_stop_detail() {
+        assert_eq!(route_stop_detail(false), None);
+        assert_eq!(
+            route_stop_detail(true),
+            Some("internal work or configuration stopped before a provider call")
+        );
+    }
+
+    #[test]
     fn terminal_state_is_complete_and_untruncated_after_an_auxiliary_budget_stop() {
         assert_eq!(
             variant_article_terminal_state(0, false, false, true, 0, false, 11, 11),
             (true, false),
+        );
+    }
+
+    #[test]
+    fn terminal_state_is_complete_when_pagination_withholds_candidates() {
+        assert_eq!(
+            variant_article_terminal_state(0, false, false, true, 0, true, 11, 5),
+            (true, true),
         );
     }
 
