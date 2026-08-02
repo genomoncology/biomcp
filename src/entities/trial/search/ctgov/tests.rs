@@ -441,6 +441,24 @@ fn age_filter_uses_native_total_semantics_across_limits() {
 }
 
 #[test]
+fn ctgov_cursor_without_a_reported_total_keeps_the_provider_token() {
+    let filters = age_filtered_ctgov_filters();
+    let (context, worker) = single_ctgov_context_and_worker(&filters);
+    let mut state = CtGovSinglePageState::new(Some("p1".into()), 0, true);
+    apply_ctgov_single_page(
+        &mut state,
+        &context,
+        &worker,
+        5,
+        filtered_page(studies_with_age_matches(5, 5, "20"), Some("p2"), None),
+    );
+    let page = finish_ctgov_single_page(state, &context, 5, 0);
+
+    assert_eq!(page.total, None);
+    assert_eq!(page.next_page_token.as_deref(), Some("p2"));
+}
+
+#[test]
 fn ctgov_cursor_preserves_next_page_token_after_offset_full_page_consumption() {
     let filters = age_filtered_ctgov_filters();
     let (context, worker) = single_ctgov_context_and_worker(&filters);
