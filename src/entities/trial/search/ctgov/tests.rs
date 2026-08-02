@@ -50,6 +50,26 @@ fn single_ctgov_context_and_worker(
 }
 
 #[test]
+fn trial_location_requires_a_positive_distance() {
+    let valid = TrialSearchFilters {
+        lat: Some(42.36),
+        lon: Some(-71.06),
+        distance: Some(1),
+        ..Default::default()
+    };
+    validate_location(&valid).expect("a positive distance should validate locally");
+
+    let zero_distance = TrialSearchFilters {
+        distance: Some(0),
+        ..valid
+    };
+    let err = validate_location(&zero_distance)
+        .expect_err("zero distance must fail before any provider work");
+    assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    assert!(err.to_string().contains("--distance"));
+}
+
+#[test]
 fn trial_search_rejects_absurd_offset_before_provider_setup() {
     let err = validate_search_page_args(5, 100_001, None)
         .expect_err("an absurd offset must fail before CTGov client construction");

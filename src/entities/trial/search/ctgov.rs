@@ -80,6 +80,11 @@ pub(super) fn validate_location(filters: &TrialSearchFilters) -> Result<(), BioM
             "--lon must be finite and between -180 and 180".into(),
         ));
     }
+    if filters.distance == Some(0) {
+        return Err(BioMcpError::InvalidArgument(
+            "--distance must be greater than 0".into(),
+        ));
+    }
     if has_distance && (!has_lat || !has_lon) {
         return Err(BioMcpError::InvalidArgument(
             "--distance requires both --lat and --lon".into(),
