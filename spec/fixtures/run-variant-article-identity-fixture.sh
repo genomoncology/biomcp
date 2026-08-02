@@ -99,7 +99,7 @@ class Handler(BaseHTTPRequestHandler):
             text = query.get("text", [""])[0]
             found = next((gene for gene in rows if gene in text), None)
             values = [article(*value) for value in rows.get(found, [])]
-            if mode.read_text().strip() == "trace-overflow" and found == "BRAF":
+            if mode.read_text().strip() == "trace-overflow" and "BRAF" in text:
                 values = [article(f"910{index:05}", "BRAF V600E trace-overflow fixture article") for index in range(51)]
             if mode.read_text().strip() == "reordered":
                 values.reverse()
@@ -164,6 +164,8 @@ class Handler(BaseHTTPRequestHandler):
         # pagination work without inventing an internal shortcut: PubMed still returns
         # ESearch IDs and matching ESummary records that BioMCP must deduplicate.
         if path.endswith("/esearch.fcgi"):
+            if mode.read_text().strip() == "trace-overflow" and "BRAF" in query.get("term", [""])[0]:
+                return send(self, 200, {"esearchresult": {"idlist": ["91000050"], "count": "1"}})
             if mode.read_text().strip() == "deep-discovery":
                 return send(self, 200, {"esearchresult": {"idlist": ["90000004", "90000005", "90000006", "90000007", "90000008", "90000009"], "count": "100"}})
             if "APC" in query.get("term", [""])[0]:
@@ -196,7 +198,7 @@ braf_panel="$repo_root/spec/fixtures/variant-article-braf-identity-input.json"
 reserved="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --confirmed-only --debug-plan --limit 3)"
 visible="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --debug-plan --limit 3)"
 printf 'trace-overflow\n' >"$mode"
-trace_overflow="$("$binary" --json variant articles --input "$braf_panel" --debug-plan --limit 1 --offset 50)"
+trace_overflow="$("$binary" --json variant articles --input "$braf_panel" --debug-plan --limit 1 --offset 1)"
 printf 'reordered\n' >"$mode"
 reordered="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 printf '%s' "$all" >"$fixture_root/all.json"
