@@ -42,7 +42,9 @@ provider calls, so the diagnostic cannot claim unperformed work or hide work
 outside its parent budget. `incomplete_results` reports only incomplete items with
 recorded unperformed internal work; ordinary page pagination and recorded provider
 degradation remain visible in each item's terminal/source status instead of being
-misreported as an internal budget failure. ATM and PALB2 also submit independent versioned RefSeq
+misreported as an internal budget failure. `route_status_contradictions` is empty
+only when a provider's source status agrees with its own recorded route calls and
+every stop explanation names a route in `stopped_routes`. ATM and PALB2 also submit independent versioned RefSeq
 transcript/coding and genomic identities to the real CAR: each must expose a
 complete, exhaustive confirmed CAid with auditable transcript and genomic
 observations. CAR evidence is additive to the article result; this probe does
@@ -69,6 +71,7 @@ bash ../fixtures/run-g5-v2-identity-live-canary.sh ../..
     "missing_available_positives": [],
     "incomplete_results": [],
     "internal_misattributions": [],
+    "route_status_contradictions": [],
     "missing_canonical_equivalence": []
   }
 }
