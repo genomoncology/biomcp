@@ -99,6 +99,8 @@ class Handler(BaseHTTPRequestHandler):
             text = query.get("text", [""])[0]
             found = next((gene for gene in rows if gene in text), None)
             values = [article(*value) for value in rows.get(found, [])]
+            if mode.read_text().strip() == "trace-overflow" and found == "BRAF":
+                values = [article(f"910{index:05}", "BRAF V600E trace-overflow fixture article") for index in range(51)]
             if mode.read_text().strip() == "reordered":
                 values.reverse()
             return send(self, 200, {"results": values, "count": len(values), "total_pages": 1, "current": 1, "page_size": 25})
@@ -193,18 +195,22 @@ printf 'deep-discovery\n' >"$mode"
 braf_panel="$repo_root/spec/fixtures/variant-article-braf-identity-input.json"
 reserved="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --confirmed-only --debug-plan --limit 3)"
 visible="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --debug-plan --limit 3)"
+printf 'trace-overflow\n' >"$mode"
+trace_overflow="$("$binary" --json variant articles --input "$braf_panel" --debug-plan --limit 1 --offset 50)"
 printf 'reordered\n' >"$mode"
 reordered="$("$binary" --json variant articles --input "$panel" --verify-identity --debug-plan --limit 50)"
 printf '%s' "$all" >"$fixture_root/all.json"
 printf '%s' "$confirmed" >"$fixture_root/confirmed.json"
 printf '%s' "$reserved" >"$fixture_root/reserved.json"
 printf '%s' "$visible" >"$fixture_root/visible.json"
+printf '%s' "$trace_overflow" >"$fixture_root/trace-overflow.json"
 printf '%s' "$reordered" >"$fixture_root/reordered.json"
-jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_root/confirmed.json" --slurpfile reserved "$fixture_root/reserved.json" --slurpfile visible "$fixture_root/visible.json" --slurpfile reordered "$fixture_root/reordered.json" '
+jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_root/confirmed.json" --slurpfile reserved "$fixture_root/reserved.json" --slurpfile visible "$fixture_root/visible.json" --slurpfile trace_overflow "$fixture_root/trace-overflow.json" --slurpfile reordered "$fixture_root/reordered.json" '
   def item($id): $all[0].items[] | select(.request_id == $id);
   def reordered_item($id): $reordered[0].items[] | select(.request_id == $id);
   def reserved_item: $reserved[0].items[] | select(.request_id == "braf-refseq-grch37");
   def visible_item: $visible[0].items[] | select(.request_id == "braf-refseq-grch37");
+  def trace_overflow_item: $trace_overflow[0].items[] | select(.request_id == "braf-refseq-grch37");
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
     clingen_ldh: {atm_exact_annotation_confirmed: any(item("atm-grch38").results[]; .pmcid == "PMC9541484" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 472)), palb2_table_selector_confirmed: any(item("palb2-grch38").results[]; .pmcid == "PMC9582472" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 79728 and .provider_linkage.selector_type == "TableTextSelector" and .provider_linkage.caid == "CA900000000005")), empty_coverage_preserves_candidates: (has("mlh1-grch38"; "20864636"; "confirmed") and all(item("mlh1-grch38").results[].identity.observations[]; .source != "clingen_ldh"))},
@@ -266,6 +272,17 @@ jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_r
     candidate_route_trace_keeps_duplicate_route_observations: (any($all[0].items[];
       [.debug_plan.candidate_trace.candidates[]? | select(.identifier == "12901799") | .route] |
       unique | length >= 2)),
+    candidate_route_trace_reports_omissions_and_retains_offset_visible_receipt: (trace_overflow_item |
+      .debug_plan.candidate_trace as $trace |
+      .results[0].pmid as $visible_pmid |
+      ($trace.observed_total | type) == "number" and
+      ($trace.dropped | type) == "number" and
+      $trace.observed_total > ($trace.candidates | length) and
+      $trace.dropped == ($trace.observed_total - ($trace.candidates | length)) and
+      $trace.bounded == true and
+      any($trace.candidates[]; .identifier == $visible_pmid and .received == true and
+        .after_union == true and .after_dedup == true and
+        .pagination_disposition == "visible")),
     audit_versions_and_canonical_subsets: (all($all[0].items[]; .debug_plan.verification.verifier_version == "article-identity-v2" and (.debug_plan.verification.provider_template_version | startswith("pubtator-export")) and .debug_plan.verification.response_subset_version == "clinically-relevant-response-v1" and .debug_plan.verification.content_subset_version == "clinically-relevant-content-v1" and (.debug_plan.verification.canonical_response_subset_hash | type) == "string" and (.debug_plan.verification.canonical_content_subset_hash | type) == "string") and all($all[0].items[]; . as $item | reordered_item($item.request_id) | .debug_plan.verification.canonical_response_subset_hash == $item.debug_plan.verification.canonical_response_subset_hash and .debug_plan.verification.canonical_content_subset_hash == $item.debug_plan.verification.canonical_content_subset_hash)),
     typed_corresponding_gene_proof_is_pmid_bound: (all([
       ["apc-grch38", "12901799", 324, "p.Arg283Ter"],

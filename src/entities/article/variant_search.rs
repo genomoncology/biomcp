@@ -3511,6 +3511,14 @@ mod tests {
         );
 
         assert_eq!(plan.candidate_trace.candidates.len(), ITEM_WORK_LIMIT);
+        let serialized_trace =
+            serde_json::to_value(&plan.candidate_trace).expect("candidate trace serializes");
+        assert_eq!(
+            serialized_trace["observed_total"],
+            serde_json::json!(ITEM_WORK_LIMIT.saturating_add(1))
+        );
+        assert_eq!(serialized_trace["dropped"], serde_json::json!(1));
+        assert_eq!(serialized_trace["bounded"], serde_json::json!(true));
         assert_eq!(
             serde_json::to_value(&plan.candidate_trace.candidates[0])
                 .expect("candidate trace serializes")
