@@ -24,7 +24,7 @@ is exhausted in one bounded request.
 
 ```bash
 ../../target/release/biomcp --json search trial -c "Phelan-McDermid Syndrome" --limit 50 \
-  | jq -e '.pagination.total != null and .pagination.returned > 0 and .pagination.has_more == false and .pagination.next_page_token == null' \
+  | jq -e '.pagination.total != null and .pagination.returned > 0 and .pagination.returned == .pagination.total and .pagination.has_more == false and .pagination.next_page_token == null' \
   | mustmatch 'true'
 ```
 
