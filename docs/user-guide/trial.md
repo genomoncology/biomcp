@@ -28,6 +28,14 @@ Condition searches send the supplied label literally.
 biomcp search trial -c "Rett Syndrome" --limit 20
 ```
 
+### Pagination termination
+
+For JSON trial searches, continue only while `pagination.has_more` is true and
+pass the opaque `pagination.next_page_token` back as `--next-page`. When a
+reported total says the returned page reaches the end, BioMCP returns
+`has_more: false` and no next-page token, even if the upstream registry supplied
+one. This prevents a pagination client from restarting at earlier results.
+
 On the default CTGov path, every `--intervention` worker is sent as one quoted
 literal. BioMCP can expand the name with plausible trade names and
 investigational codes, excludes systematic chemical synonyms, unions the

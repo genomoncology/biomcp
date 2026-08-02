@@ -50,6 +50,15 @@ fn single_ctgov_context_and_worker(
 }
 
 #[test]
+fn trial_search_rejects_absurd_offset_before_provider_setup() {
+    let err = validate_search_page_args(5, 100_001, None)
+        .expect_err("an absurd offset must fail before CTGov client construction");
+
+    assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    assert!(err.to_string().contains("--offset"));
+}
+
+#[test]
 fn trial_numeric_filters_are_validated_before_request_construction() {
     for age in [
         f64::NAN,

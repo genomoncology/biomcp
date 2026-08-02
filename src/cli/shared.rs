@@ -545,6 +545,14 @@ mod tests {
     use crate::entities::section_outcome::SectionOutcomeState;
 
     #[test]
+    fn cursor_total_suppresses_stale_token_past_the_end() {
+        let pagination = PaginationMeta::cursor(4_000, 5, 0, Some(3_738), Some("stale".into()));
+
+        assert!(!pagination.has_more);
+        assert_eq!(pagination.next_page_token, None);
+    }
+
+    #[test]
     fn section_provenance_keeps_meta_when_search_has_no_next_commands() {
         let meta = search_meta_with_section_sources(
             Vec::new(),
