@@ -52,7 +52,7 @@ def invalid_request(request: object) -> bool:
     parsed = urlsplit(request)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return True
-    if parsed.username is not None or parsed.password is not None:
+    if parsed.username is not None or parsed.password is not None or parsed.fragment:
         return True
     return any(
         key.lower() in UNSAFE_REQUEST_FIELDS
@@ -91,7 +91,7 @@ def audit(root: Path) -> dict[str, object]:
     files = sorted(
         path.relative_to(root).as_posix()
         for path in root.rglob("*")
-        if path.is_file() and path.name != MANIFEST_NAME
+        if path.is_file() and path != manifest_path
     )
     discovered = set(files)
     by_path: dict[str, dict[str, object]] = {}

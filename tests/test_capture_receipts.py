@@ -123,6 +123,7 @@ def test_real_capture_receipts_reject_byte_drift(tmp_path: Path) -> None:
             "https://storage.googleapis.com/object?X-Goog-Signature=secret",
             "unsafe",
         ),
+        ("request", "https://example.test/record#opaque-fragment", "unsafe"),
         ("captured_at", "2026-08-03 00:00:00Z", "RFC3339 UTC"),
     ),
 )
@@ -139,3 +140,27 @@ def test_real_capture_receipts_reject_unsafe_request_and_non_rfc3339_timestamp(
 
     assert result.returncode != 0
     assert error in result.stderr
+
+
+def test_repository_audit_does_not_ignore_nested_manifest_named_fixture(
+    tmp_path: Path,
+) -> None:
+    source_root = tmp_path / "sources"
+    nested_fixture = source_root / "example" / "capture-receipts.json"
+    nested_fixture.parent.mkdir(parents=True)
+    nested_fixture.write_text('{"provider": "Example"}\n', encoding="utf-8")
+    (source_root / "capture-receipts.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "entries": [],
+                "historical_corrections": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = _audit(source_root)
+
+    assert result.returncode != 0
+    assert "example/capture-receipts.json" in result.stderr
