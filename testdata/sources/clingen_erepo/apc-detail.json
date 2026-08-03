@@ -1,7 +1,7 @@
 {
   "data": {
     "@context": "https://erepo.genome.network/evrepo/api/context",
-    "@id": "https://erepo.clinicalgenome.org/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0",
+    "@id": "https://cgerepoapi/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0",
     "assertionMethod": {
       "type": "VariantPathogenicityInterpretationGuideline"
     },
@@ -1316,7 +1316,7 @@
   "metadata": {
     "rendered": {
       "by": "https://erepo.genome.network/evrepo/api/summary/srvc",
-      "when": "2026-07-23T20:00:47.097Z"
+      "when": "2026-08-03T00:03:40.545Z"
     }
   },
   "status": {
