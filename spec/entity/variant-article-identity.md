@@ -108,8 +108,8 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
 <!-- mustmatch-lint: skip -->
 
 A route returning a paper is not enough to explain whether BioMCP kept it. The
-opt-in debug plan records a bounded, versioned trace for every candidate-route
-observation, so operators can distinguish receipt from union, deduplication,
+opt-in debug plan records a bounded, versioned trace of candidate-route
+observations, so operators can distinguish receipt from union, deduplication,
 identity verification, and pagination without exposing provider payloads. It
 reports the total observations considered and the number dropped after the
 bound, so a full trace is distinguishable from a truncated one. Retention puts
