@@ -18,7 +18,7 @@ use super::local::{
     check_cache_dir, check_cache_limits, check_cvx_local_data, check_ddinter_local_data,
     check_ema_local_data, check_gtr_local_data, check_who_ivd_local_data, check_who_local_data,
 };
-use super::{HealthReport, HealthRow};
+use super::{HealthReport, HealthRow, HealthStatus};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::cli::health) enum ProbeClass {
@@ -36,7 +36,7 @@ pub(in crate::cli::health) struct ProbeOutcome {
 
 pub(in crate::cli::health) fn health_row(
     api: &str,
-    status: String,
+    status: HealthStatus,
     latency: String,
     affects: Option<&'static str>,
     key_configured: Option<bool>,
@@ -47,6 +47,11 @@ pub(in crate::cli::health) fn health_row(
         latency,
         affects: affects.map(str::to_string),
         key_configured,
+        local_path: None,
+        stale: None,
+        required_env_var: None,
+        missing_files: None,
+        not_built: None,
     }
 }
 
@@ -85,9 +90,6 @@ pub(in crate::cli::health) async fn probe_source(
             env_var,
             header_name,
             header_value_prefix,
-            unauthenticated_ok_status,
-            authenticated_ok_status,
-            unauthenticated_rate_limited_status,
         } => {
             check_optional_auth_get(
                 client,
@@ -96,9 +98,6 @@ pub(in crate::cli::health) async fn probe_source(
                 env_var,
                 header_name,
                 header_value_prefix,
-                unauthenticated_ok_status,
-                authenticated_ok_status,
-                unauthenticated_rate_limited_status,
                 source.affects,
             )
             .await
@@ -135,10 +134,17 @@ pub(in crate::cli::health) async fn probe_source(
             check_alphagenome_connect(source.api, env_var, source.affects).await
         }
         #[cfg(not(feature = "alphagenome"))]
-        ProbeKind::Unavailable { status } => outcome(
-            health_row(source.api, status.into(), "-".into(), source.affects, None),
-            ProbeClass::Excluded,
-        ),
+        ProbeKind::Unavailable => {
+            let mut row = health_row(
+                source.api,
+                HealthStatus::Unavailable,
+                "-".into(),
+                source.affects,
+                None,
+            );
+            row.not_built = Some(true);
+            outcome(row, ProbeClass::Excluded)
+        }
         ProbeKind::VaersQuery => check_vaers_query(source.api, source.affects).await,
     }
 }
@@ -180,7 +186,7 @@ where
         ProbeKind::OptionalAuthGet { env_var, .. } => Some(configured_key_fn(env_var).is_some()),
         ProbeKind::Get { .. } | ProbeKind::PostJson { .. } | ProbeKind::VaersQuery => None,
         #[cfg(not(feature = "alphagenome"))]
-        ProbeKind::Unavailable { .. } => None,
+        ProbeKind::Unavailable => None,
     }
 }
 
@@ -192,7 +198,7 @@ fn timed_out_probe_outcome(source: SourceDescriptor, timeout: Duration) -> Probe
     outcome(
         health_row(
             source.api,
-            "error".into(),
+            HealthStatus::Error,
             format!("{}ms (timeout)", timeout.as_millis()),
             source.affects,
             timeout_key_configured(source),
@@ -213,7 +219,7 @@ where
     outcome(
         health_row(
             source.api,
-            "error".into(),
+            HealthStatus::Error,
             format!("{}ms (timeout)", timeout.as_millis()),
             source.affects,
             timeout_key_configured_with(source, configured_key_fn),

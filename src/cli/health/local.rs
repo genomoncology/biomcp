@@ -7,13 +7,13 @@ use bytesize::ByteSize;
 
 use crate::error::BioMcpError;
 
-use super::HealthRow;
 use super::catalog::{
     CVX_LOCAL_DATA_AFFECTS, DDINTER_LOCAL_DATA_AFFECTS, EMA_LOCAL_DATA_AFFECTS,
     GTR_LOCAL_DATA_AFFECTS, WHO_IVD_LOCAL_DATA_AFFECTS, WHO_LOCAL_DATA_AFFECTS,
 };
 use super::http::configured_key;
 use super::runner::{ProbeClass, ProbeOutcome, health_row, outcome};
+use super::{HealthRow, HealthStatus};
 
 fn local_data_is_stale(root: &Path, files: &[&str], stale_after: Duration) -> bool {
     files.iter().any(|file| {
@@ -44,34 +44,22 @@ where
     if missing.is_empty() {
         let stale = local_data_is_stale(root, required_files, stale_after);
         let (status, class, row_affects) = match (env_configured, stale) {
-            (true, false) => ("configured".to_string(), ProbeClass::Healthy, None),
-            (true, true) => (
-                "configured (stale)".to_string(),
-                ProbeClass::Warning,
-                Some(affects),
-            ),
-            (false, false) => (
-                "available (default path)".to_string(),
-                ProbeClass::Healthy,
-                None,
-            ),
-            (false, true) => (
-                "available (default path, stale)".to_string(),
-                ProbeClass::Warning,
-                Some(affects),
-            ),
+            (true, false) => (HealthStatus::Configured, ProbeClass::Healthy, None),
+            (true, true) => (HealthStatus::Configured, ProbeClass::Warning, Some(affects)),
+            (false, false) => (HealthStatus::Available, ProbeClass::Healthy, None),
+            (false, true) => (HealthStatus::Available, ProbeClass::Warning, Some(affects)),
         };
-        return outcome(
-            health_row(&api, status, "n/a".into(), row_affects, None),
-            class,
-        );
+        let mut row = health_row(&api, status, "n/a".into(), row_affects, None);
+        row.local_path = Some(root.display().to_string());
+        row.stale = stale.then_some(true);
+        return outcome(row, class);
     }
 
     if !env_configured && missing.len() == required_files.len() {
         return outcome(
             health_row(
                 &api,
-                "not configured".into(),
+                HealthStatus::NotConfigured,
                 "n/a".into(),
                 Some(affects),
                 None,
@@ -80,16 +68,9 @@ where
         );
     }
 
-    outcome(
-        health_row(
-            &api,
-            format!("error (missing: {})", missing.join(", ")),
-            "n/a".into(),
-            Some(affects),
-            None,
-        ),
-        ProbeClass::Error,
-    )
+    let mut row = health_row(&api, HealthStatus::Error, "n/a".into(), Some(affects), None);
+    row.missing_files = Some(missing.into_iter().map(str::to_string).collect());
+    outcome(row, ProbeClass::Error)
 }
 
 pub(in crate::cli::health) fn ema_local_data_outcome(
@@ -243,10 +224,15 @@ where
             return outcome(
                 HealthRow {
                     api: "Cache dir".into(),
-                    status: "error".into(),
+                    status: HealthStatus::Error,
                     latency: err.to_string(),
                     affects: Some("local cache-backed lookups and downloads".into()),
                     key_configured: None,
+                    local_path: None,
+                    stale: None,
+                    required_env_var: None,
+                    missing_files: None,
+                    not_built: None,
                 },
                 ProbeClass::Error,
             );
@@ -300,20 +286,30 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome 
         Ok(()) => outcome(
             HealthRow {
                 api: format!("Cache dir ({})", dir.display()),
-                status: "ok".into(),
+                status: HealthStatus::Ok,
                 latency: format!("{}ms", start.elapsed().as_millis()),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
+                not_built: None,
             },
             ProbeClass::Healthy,
         ),
         Err(err) => outcome(
             HealthRow {
                 api: format!("Cache dir ({})", dir.display()),
-                status: "error".into(),
+                status: HealthStatus::Error,
                 latency: format!("{:?}", err.kind()),
                 affects: Some("local cache-backed lookups and downloads".into()),
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
+                not_built: None,
             },
             ProbeClass::Error,
         ),
@@ -349,10 +345,15 @@ where
         return outcome(
             HealthRow {
                 api: "Cache limits".into(),
-                status: "warning".into(),
+                status: HealthStatus::Warning,
                 latency: cache_limits_warning_message(&config, space, &evaluation),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
+                not_built: None,
             },
             ProbeClass::Warning,
         );
@@ -361,10 +362,15 @@ where
     outcome(
         HealthRow {
             api: "Cache limits".into(),
-            status: "ok".into(),
+            status: HealthStatus::Ok,
             latency: "within limits".into(),
             affects: None,
             key_configured: None,
+            local_path: None,
+            stale: None,
+            required_env_var: None,
+            missing_files: None,
+            not_built: None,
         },
         ProbeClass::Healthy,
     )
@@ -396,10 +402,15 @@ fn cache_limits_error_outcome(message: String) -> ProbeOutcome {
     outcome(
         HealthRow {
             api: "Cache limits".into(),
-            status: "error".into(),
+            status: HealthStatus::Error,
             latency: message,
             affects: None,
             key_configured: None,
+            local_path: None,
+            stale: None,
+            required_env_var: None,
+            missing_files: None,
+            not_built: None,
         },
         ProbeClass::Error,
     )

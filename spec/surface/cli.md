@@ -237,7 +237,31 @@ inspection and keep local-runtime admin help truthful about what each sync owns.
 health="$(../../tools/biomcp-ci health --apis-only)"
 mustmatch like "# BioMCP Health Check" <<<"$health"
 mustmatch like "| API | Status | Latency | Affects |" <<<"$health"
+```
 
+Health JSON is an agent interface, so its status is a closed state rather than
+operator prose. Real service outcomes can vary, but every returned row must be
+switchable without parsing a parenthesized explanation.
+
+```bash
+../../tools/biomcp-ci --json health --apis-only \
+  | jq -e '
+    (.rows | length > 0) and
+    all(.rows[];
+      .status == "ok" or
+      .status == "error" or
+      .status == "excluded" or
+      .status == "available" or
+      .status == "configured" or
+      .status == "not_configured" or
+      .status == "warning" or
+      .status == "unavailable"
+    )
+  ' \
+  | mustmatch 'true'
+```
+
+```bash
 empty_data="$(mktemp -d)"
 trap 'rm -rf "$empty_data"' EXIT
 health_json="$(

@@ -121,7 +121,11 @@ WHO IVD local data, cache dir status, and cache-limit warnings when the
 managed HTTP cache is over size or below the configured disk-free floor.
 With `--json`, the health summary includes numeric `healthy`, `warning`,
 `excluded`, `error`, and `total` fields; the four status counts sum to `total`.
-Error rows remain report data and do not change the command's current exit
+Each row's `status` is one of `ok`, `error`, `excluded`, `available`,
+`configured`, `not_configured`, `warning`, or `unavailable`. Context such as a
+local path, staleness, required environment-variable name, and missing files is
+provided in separate fields; callers must not parse the rendered health table
+prose. Error rows remain report data and do not change the command's current exit
 behavior.
 
 `biomcp cache path` is a local-CLI-only operator command. It prints the managed

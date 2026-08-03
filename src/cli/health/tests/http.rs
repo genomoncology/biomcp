@@ -3,12 +3,12 @@
 use reqwest::StatusCode;
 use std::time::Instant;
 
-use super::super::HealthRow;
 use super::super::catalog::health_sources;
 use super::super::http::{
     configured_key_from_value, excluded_outcome, optional_auth_status_outcome, vaers_query_outcome,
 };
 use super::super::runner::{ProbeClass, ProbeOutcome, report_from_outcomes};
+use super::super::{HealthRow, HealthStatus};
 use super::assert_millisecond_latency;
 
 fn semantic_scholar_optional_outcome(status: StatusCode, key_configured: bool) -> ProbeOutcome {
@@ -17,9 +17,7 @@ fn semantic_scholar_optional_outcome(status: StatusCode, key_configured: bool) -
         status,
         7,
         Some(key_configured),
-        "available (unauthenticated, shared rate limit)",
-        "configured (authenticated)",
-        Some("unavailable (set S2_API_KEY for reliable access)"),
+        "S2_API_KEY",
         Some("Semantic Scholar features"),
     )
 }
@@ -34,7 +32,7 @@ fn vaers_query_success_reports_healthy_row() {
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(outcome.row.api, "CDC WONDER VAERS");
-    assert_eq!(outcome.row.status, "ok");
+    assert_eq!(outcome.row.status, HealthStatus::Ok);
     assert_eq!(outcome.row.affects, None);
     assert_millisecond_latency(&outcome.row.latency);
 }
@@ -53,7 +51,7 @@ fn vaers_query_error_reports_error_row_with_affects() {
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.api, "CDC WONDER VAERS");
-    assert_eq!(outcome.row.status, "error");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert!(outcome.row.latency.ends_with("ms (error)"));
     assert_eq!(outcome.row.affects.as_deref(), Some("adverse-event vaers"));
     assert_eq!(outcome.row.key_configured, None);
@@ -70,7 +68,7 @@ fn key_gated_source_is_excluded_when_env_missing() {
     let outcome = excluded_outcome("OncoKB", "ONCOKB_TOKEN", source.affects);
 
     assert_eq!(outcome.class, ProbeClass::Excluded);
-    assert_eq!(outcome.row.status, "excluded (set ONCOKB_TOKEN)");
+    assert_eq!(outcome.row.status, HealthStatus::Excluded);
     assert_eq!(outcome.row.latency, "n/a");
     assert_eq!(
         outcome.row.affects.as_deref(),
@@ -84,10 +82,15 @@ fn excluded_key_gated_row_serializes_key_configured_false() {
     let report = report_from_outcomes(vec![ProbeOutcome {
         row: HealthRow {
             api: "OncoKB".into(),
-            status: "excluded (set ONCOKB_TOKEN)".into(),
+            status: HealthStatus::Excluded,
             latency: "n/a".into(),
             affects: Some("variant oncokb command and variant evidence section".into()),
             key_configured: Some(false),
+            local_path: None,
+            stale: None,
+            required_env_var: Some("ONCOKB_TOKEN".into()),
+            missing_files: None,
+            not_built: None,
         },
         class: ProbeClass::Excluded,
     }]);
@@ -96,7 +99,8 @@ fn excluded_key_gated_row_serializes_key_configured_false() {
     let rows = value["rows"].as_array().expect("rows array");
     let row = rows.first().expect("oncokb row");
 
-    assert_eq!(row["status"], "excluded (set ONCOKB_TOKEN)");
+    assert_eq!(row["status"], "excluded");
+    assert_eq!(row["required_env_var"], "ONCOKB_TOKEN");
     assert_eq!(row["key_configured"], false);
 }
 
@@ -111,7 +115,7 @@ fn empty_key_is_treated_as_missing() {
     let outcome = excluded_outcome("NCI CTS", "NCI_API_KEY", source.affects);
 
     assert_eq!(outcome.class, ProbeClass::Excluded);
-    assert_eq!(outcome.row.status, "excluded (set NCI_API_KEY)");
+    assert_eq!(outcome.row.status, HealthStatus::Excluded);
     assert_eq!(outcome.row.latency, "n/a");
     assert_eq!(outcome.row.key_configured, Some(false));
 }
@@ -120,10 +124,7 @@ fn empty_key_is_treated_as_missing() {
 fn optional_auth_get_reports_unauthed_semantic_scholar_as_healthy() {
     let outcome = semantic_scholar_optional_outcome(StatusCode::OK, false);
     assert_eq!(outcome.class, ProbeClass::Healthy);
-    assert_eq!(
-        outcome.row.status,
-        "available (unauthenticated, shared rate limit)"
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Available);
     assert_eq!(outcome.row.key_configured, Some(false));
 }
 
@@ -131,7 +132,7 @@ fn optional_auth_get_reports_unauthed_semantic_scholar_as_healthy() {
 fn optional_auth_get_reports_authed_semantic_scholar_as_configured() {
     let outcome = semantic_scholar_optional_outcome(StatusCode::OK, true);
     assert_eq!(outcome.class, ProbeClass::Healthy);
-    assert_eq!(outcome.row.status, "configured (authenticated)");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(outcome.row.key_configured, Some(true));
 }
 
@@ -139,10 +140,8 @@ fn optional_auth_get_reports_authed_semantic_scholar_as_configured() {
 fn optional_auth_get_reports_unauthenticated_429_as_unavailable() {
     let outcome = semantic_scholar_optional_outcome(StatusCode::TOO_MANY_REQUESTS, false);
     assert_eq!(outcome.class, ProbeClass::Healthy);
-    assert_eq!(
-        outcome.row.status,
-        "unavailable (set S2_API_KEY for reliable access)"
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Unavailable);
+    assert_eq!(outcome.row.required_env_var.as_deref(), Some("S2_API_KEY"));
     assert_millisecond_latency(&outcome.row.latency);
     assert!(!outcome.row.latency.contains("HTTP 429"));
     assert_eq!(outcome.row.affects, None);
@@ -165,18 +164,23 @@ fn optional_auth_get_reports_unauthenticated_429_as_unavailable() {
         ProbeOutcome {
             row: HealthRow {
                 api: "OpenFDA".into(),
-                status: "error".into(),
+                status: HealthStatus::Error,
                 latency: "timeout".into(),
                 affects: Some("adverse-event search".into()),
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
+                not_built: None,
             },
             class: ProbeClass::Error,
         },
     ])
     .to_markdown();
     assert!(md.contains(&format!(
-        "| Semantic Scholar | {} | {} | - |",
-        outcome.row.status, outcome.row.latency
+        "| Semantic Scholar | unavailable (set S2_API_KEY for reliable access) | {} | - |",
+        outcome.row.latency
     )));
 }
 
@@ -184,7 +188,7 @@ fn optional_auth_get_reports_unauthenticated_429_as_unavailable() {
 fn optional_auth_get_reports_unauthenticated_non_429_as_error() {
     let outcome = semantic_scholar_optional_outcome(StatusCode::FORBIDDEN, false);
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(outcome.row.status, "error");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert!(outcome.row.latency.contains("HTTP 403"));
     assert_eq!(
         outcome.row.affects.as_deref(),
@@ -197,7 +201,7 @@ fn optional_auth_get_reports_unauthenticated_non_429_as_error() {
 fn optional_auth_get_reports_authenticated_429_as_error() {
     let outcome = semantic_scholar_optional_outcome(StatusCode::TOO_MANY_REQUESTS, true);
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(outcome.row.status, "error");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert!(outcome.row.latency.contains("HTTP 429"));
     assert_eq!(
         outcome.row.affects.as_deref(),
