@@ -166,13 +166,7 @@ pub(crate) async fn retrieve(
                 .and_then(Value::as_object)
                 .ok_or_else(|| invalid("detail data must be one object"))?;
             let url = client.detail_url(&selected.assertion_id, detail_version);
-            if data.get("uuid").and_then(Value::as_str) != Some(selected.assertion_id.as_str())
-                || data.get("@id").and_then(Value::as_str) != Some(url.as_str())
-            {
-                return Err(invalid(
-                    "detail identity did not match selected assertion version",
-                ));
-            }
+            validate_detail_identity(data, &selected.assertion_id, &url)?;
             let selected_index = assertions
                 .iter()
                 .position(|row| {
@@ -523,11 +517,30 @@ fn strings(value: Option<&Value>) -> Vec<String> {
         .map(str::to_owned)
         .collect()
 }
-fn invalid(message: &str) -> BioMcpError {
-    BioMcpError::Api {
-        api: "ClinGen ERepo".into(),
-        message: message.into(),
+fn validate_detail_identity(
+    data: &serde_json::Map<String, Value>,
+    assertion_id: &str,
+    requested_url: &str,
+) -> Result<(), BioMcpError> {
+    let requested_path = reqwest::Url::parse(requested_url)
+        .ok()
+        .map(|url| url.path().to_owned());
+    let returned_path = data
+        .get("@id")
+        .and_then(Value::as_str)
+        .and_then(|id| reqwest::Url::parse(id).ok())
+        .map(|url| url.path().to_owned());
+    if data.get("uuid").and_then(Value::as_str) == Some(assertion_id)
+        && returned_path == requested_path
+    {
+        Ok(())
+    } else {
+        Err(BioMcpError::InternalProcessing)
     }
+}
+
+fn invalid(_message: &str) -> BioMcpError {
+    BioMcpError::InternalProcessing
 }
 
 #[cfg(test)]
@@ -558,5 +571,36 @@ mod tests {
 
         assert_eq!(row.doc_version, "2.0.0");
         assert!(select(&[row], None, Some("1.0.0")).is_ok());
+    }
+
+    #[test]
+    fn detail_identity_uses_path_and_reports_mismatches_as_internal() {
+        let requested_url = "https://erepo.clinicalgenome.org/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0";
+        let mut data = serde_json::json!({
+            "uuid": "34ea9707-51d8-44df-818d-f69b075295c5",
+            "@id": "https://cgerepoapi/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0"
+        });
+        let detail = data.as_object().expect("detail object");
+
+        assert!(
+            validate_detail_identity(
+                detail,
+                "34ea9707-51d8-44df-818d-f69b075295c5",
+                requested_url,
+            )
+            .is_ok()
+        );
+
+        data["@id"] = Value::String(
+            "https://cgerepoapi/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/2.0.0".into(),
+        );
+        let error = validate_detail_identity(
+            data.as_object().expect("detail object"),
+            "34ea9707-51d8-44df-818d-f69b075295c5",
+            requested_url,
+        )
+        .expect_err("wrong detail version must fail identity validation");
+
+        assert!(matches!(error, BioMcpError::InternalProcessing));
     }
 }
