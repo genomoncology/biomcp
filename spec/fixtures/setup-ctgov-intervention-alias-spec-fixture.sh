@@ -28,6 +28,7 @@ fixture_pgid=""
 cleanup_incomplete_setup() {
   if [ -n "$fixture_pgid" ]; then
     kill -TERM -- "-$fixture_pgid" 2>/dev/null || true
+    wait "$fixture_pgid" 2>/dev/null || true
   fi
   rm -rf "$fixture_root"
 }
@@ -36,7 +37,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
 
-setsid uv run --no-sync python - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
+setsid python3 - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -439,6 +440,6 @@ printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT=%q\n' "$fixture_root" >>"$en
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG=%q\n' "$request_log" >>"$env_file"
 
-trap - EXIT INT TERM HUP
 bash "$ownership_helper" write "$workspace_root" "ctgov-intervention-alias" "$fixture_root" "$fixture_pgid" "BIOMCP_CTGOV_INTERVENTION_ALIAS" "$owner_arg" >/dev/null
+trap - EXIT INT TERM HUP
 printf '%s\n' "$fixture_root"

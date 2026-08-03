@@ -17,7 +17,7 @@ ready="$fixture_root/origin"
 requests="$fixture_root/requests.jsonl"
 : >"$requests"
 
-READY="$ready" REQUESTS="$requests" setsid uv run --no-sync python - "$owner_arg" 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
+READY="$ready" REQUESTS="$requests" setsid python3 - "$owner_arg" 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
 import json, os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -54,6 +54,15 @@ READY.write_text(f'http://127.0.0.1:{server.server_port}')
 server.serve_forever()
 PY
 pid=$!
+cleanup_incomplete_setup() {
+  kill -TERM -- "-$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
+  rm -rf "$fixture_root"
+}
+trap cleanup_incomplete_setup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 for _ in $(seq 1 50); do test -s "$ready" && break; kill -0 "$pid" 2>/dev/null || { cat "$fixture_root/server.log" >&2; exit 1; }; sleep .1; done
 test -s "$ready"
 {
@@ -62,3 +71,4 @@ test -s "$ready"
   printf 'export BIOMCP_CSPEC_FIXTURE_REQUESTS=%q\n' "$requests"
 } >"$env_file"
 bash "$ownership_helper" write "$root" "clingen-cspec" "$fixture_root" "$pid" "BIOMCP_CSPEC_FIXTURE" "$owner_arg" >/dev/null
+trap - EXIT INT TERM HUP

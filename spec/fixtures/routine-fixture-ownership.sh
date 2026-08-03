@@ -107,9 +107,14 @@ cleanup_record() {
   actual_start="$(proc_start_identity "$pid")" || { rm -f "$record_file"; return 0; }
   cmdline="$(tr '\0' ' ' <"/proc/$pid/cmdline")"
   [[ "$actual_pgid" == "$pgid" && "$actual_start" == "$start" && "$cmdline" == *"$owner_arg"* ]] || { rm -f "$record_file"; return 0; }
+  if [[ -n "${ROUTINE_FIXTURE_LOCK_PATH:-}" ]] && \
+    { [[ ! -e "/proc/$pid/fd/8" ]] || [[ ! "/proc/$pid/fd/8" -ef "$ROUTINE_FIXTURE_LOCK_PATH" ]]; }; then
+    return 0
+  fi
   kill -TERM -- "-$pgid" 2>/dev/null || true
   for _ in $(seq 1 50); do
     kill -0 -- "-$pgid" 2>/dev/null || break
+    [[ "$(ps -o stat= -p "$pid" 2>/dev/null | tr -d ' ')" == Z* ]] && break
     sleep 0.1
   done
   kill -KILL -- "-$pgid" 2>/dev/null || true

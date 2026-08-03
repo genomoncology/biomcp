@@ -20,7 +20,7 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
 : >"$request_log"
 
-setsid uv run --no-sync python - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
+setsid python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -77,14 +77,15 @@ READY.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
 server_pid=$!
-setup_complete=false
 cleanup_partial_setup() {
-  if [[ "$setup_complete" == false ]]; then
-    kill "$server_pid" 2>/dev/null || true
-    rm -rf "$fixture_root"
-  fi
+  kill -TERM -- "-$server_pid" 2>/dev/null || true
+  wait "$server_pid" 2>/dev/null || true
+  rm -rf "$fixture_root"
 }
 trap cleanup_partial_setup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 
 for _ in $(seq 1 50); do
   if [[ -s "$ready_file" ]]; then
@@ -101,7 +102,7 @@ test -s "$ready_file"
 base_url="$(cat "$ready_file")"
 
 for _ in $(seq 1 50); do
-  if uv run --no-sync python - "$base_url/healthz" <<'PY' >/dev/null 2>&1
+  if python3 - "$base_url/healthz" <<'PY' >/dev/null 2>&1
 from urllib.request import urlopen
 import sys
 
@@ -119,7 +120,7 @@ PY
   sleep 0.1
 done
 
-uv run --no-sync python - "$base_url/healthz" <<'PY' >/dev/null
+python3 - "$base_url/healthz" <<'PY' >/dev/null
 from urllib.request import urlopen
 import sys
 
@@ -134,7 +135,6 @@ PY
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"
 
-setup_complete=true
-trap - EXIT
 bash "$ownership_helper" write "$workspace_root" "variant-identity" "$fixture_root" "$server_pid" "BIOMCP_VARIANT_IDENTITY" "$owner_arg" >/dev/null
+trap - EXIT INT TERM HUP
 printf '%s\n' "$fixture_root"
