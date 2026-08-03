@@ -334,6 +334,7 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         "routine-fixture-ownership.sh",
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
+        "cleanup-ctgov-intervention-alias-spec-fixture.sh",
     ):
         shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
     (workspace / "tests").symlink_to(REPO_ROOT / "tests", target_is_directory=True)
@@ -358,6 +359,8 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
     lock_path = workspace / ".cache" / "spec-routine-fixtures.lock"
     fixture_root = workspace / ".cache" / "spec-article-fulltext-source.stale"
     fixture_root.mkdir()
+    active_root = workspace / ".cache" / "spec-ctgov-intervention-alias.active"
+    active_root.mkdir()
     ownership = fixtures / "routine-fixture-ownership.sh"
     owner_arg = subprocess.run(
         [
@@ -382,6 +385,22 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         ],
         start_new_session=True,
     )
+    active_owner_arg = subprocess.run(
+        [
+            "bash",
+            str(ownership),
+            "new-owner",
+            "ctgov-intervention-alias",
+            str(active_root),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    active = subprocess.Popen(
+        ["bash", "-c", 'exec -a "$1" sleep 30', "fixture-owner", active_owner_arg],
+        start_new_session=True,
+    )
     runner: subprocess.Popen[bytes] | None = None
     try:
         _wait_until(lambda: os.path.exists(f"/proc/{stale.pid}/fd/8"))
@@ -399,6 +418,20 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
             ],
             check=True,
         )
+        subprocess.run(
+            [
+                "bash",
+                str(ownership),
+                "write",
+                str(workspace),
+                "ctgov-intervention-alias",
+                str(active_root),
+                str(active.pid),
+                "BIOMCP_CTGOV_INTERVENTION_ALIAS",
+                active_owner_arg,
+            ],
+            check=True,
+        )
         runner = subprocess.Popen(
             ["bash", "scripts/run-specs.sh", "spec-contracts"],
             cwd=workspace,
@@ -413,6 +446,10 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         assert not (
             workspace / ".cache" / "spec-article-fulltext-source-ownership"
         ).exists()
+        assert active.poll() is None
+        assert (
+            workspace / ".cache" / "spec-ctgov-intervention-alias-ownership"
+        ).exists()
     finally:
         if runner is not None and runner.poll() is None:
             runner.kill()
@@ -420,14 +457,17 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         if stale.poll() is None:
             os.killpg(os.getpgid(stale.pid), signal.SIGKILL)
             stale.wait()
-        subprocess.run(
-            [
-                "bash",
-                str(fixtures / "cleanup-article-fulltext-source-fixture.sh"),
-                str(workspace),
-            ],
-            check=False,
-        )
+        for cleanup_name in (
+            "cleanup-article-fulltext-source-fixture.sh",
+            "cleanup-ctgov-intervention-alias-spec-fixture.sh",
+        ):
+            subprocess.run(
+                ["bash", str(fixtures / cleanup_name), str(workspace)],
+                check=False,
+            )
+        if active.poll() is None:
+            os.killpg(os.getpgid(active.pid), signal.SIGKILL)
+            active.wait()
 
 
 @pytest.mark.parametrize(

@@ -225,7 +225,9 @@ run_clingen_cspec_fixture() {
 }
 
 reap_stale_routine_fixtures() {
-  local cleanup
+  local cleanup lock_path="$ROOT/.cache/spec-routine-fixtures.lock"
+  mkdir -p "$ROOT/.cache"
+  : >"$lock_path"
   for cleanup in \
     cleanup-article-fulltext-source-fixture.sh \
     cleanup-ctgov-intervention-alias-spec-fixture.sh \
@@ -233,7 +235,7 @@ reap_stale_routine_fixtures() {
     cleanup-variant-identity-spec-fixture.sh \
     cleanup-clingen-cspec-spec-fixture.sh; do
     [[ -x "spec/fixtures/$cleanup" ]] || continue
-    bash "spec/fixtures/$cleanup" "$ROOT"
+    ROUTINE_FIXTURE_LOCK_PATH="$lock_path" bash "spec/fixtures/$cleanup" "$ROOT"
   done
 }
 
