@@ -47,6 +47,17 @@ interaction card stays readable.
 | Drug | Phenotype | Activity Score | Recommendation | Classification |'
 ```
 
+## Guideline Summaries
+
+Guideline metadata is likewise opt-in. A gene query should expose the CPIC guidance
+that contextualizes its interaction rows without making the default card noisy.
+
+```bash
+../../tools/biomcp-ci get pgx CYP2D6 guidelines | mustmatch like '# CYP2D6 - guidelines
+## Guidelines (CPIC)
+CYP2D6'
+```
+
 ## Population Frequencies
 
 Population allele frequencies should stay available as their own section and
