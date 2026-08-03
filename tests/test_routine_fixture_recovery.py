@@ -431,19 +431,19 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
 
 
 @pytest.mark.parametrize(
-    "_name, _fixture_kind, setup_name, cleanup_name, _env_name, _pid_key",
+    "_name, fixture_kind, setup_name, cleanup_name, _env_name, pid_key",
     SERVER_FIXTURES[1:],
 )
 def test_routine_fixture_setup_does_not_depend_on_uv(
     tmp_path: Path,
     _name: str,
-    _fixture_kind: str,
+    fixture_kind: str,
     setup_name: str,
     cleanup_name: str,
     _env_name: str,
-    _pid_key: str,
+    pid_key: str,
 ) -> None:
-    """Stdlib routine fixtures cannot make lifecycle depend on uv cache warmth."""
+    """Stdlib fixtures start and clean up without uv or leaked owned state."""
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     for name in ("spec", "testdata", "tests"):
@@ -456,6 +456,7 @@ def test_routine_fixture_setup_does_not_depend_on_uv(
     )
     uv.chmod(0o755)
     env = os.environ | {"PATH": f"{no_uv}:{os.environ['PATH']}"}
+    record_path = workspace / ".cache" / f"spec-{fixture_kind}-ownership"
 
     try:
         subprocess.run(
@@ -463,8 +464,10 @@ def test_routine_fixture_setup_does_not_depend_on_uv(
             check=True,
             env=env,
         )
-    finally:
-        subprocess.run(
+        record = _read_record(record_path)
+        server_pid = int(record[pid_key])
+        fixture_root = Path(record[f"{pid_key.removesuffix('_PID')}_ROOT"])
+        cleanup = subprocess.run(
             [
                 "bash",
                 str(REPO_ROOT / "spec" / "fixtures" / cleanup_name),
@@ -473,6 +476,21 @@ def test_routine_fixture_setup_does_not_depend_on_uv(
             check=False,
             env=env,
         )
+        assert cleanup.returncode == 0
+        _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())
+        assert not record_path.exists()
+        assert not fixture_root.exists()
+    finally:
+        if record_path.exists():
+            subprocess.run(
+                [
+                    "bash",
+                    str(REPO_ROOT / "spec" / "fixtures" / cleanup_name),
+                    str(workspace),
+                ],
+                check=False,
+                env=env,
+            )
 
 
 def test_sigkill_orphan_releases_routine_lock_before_stale_recovery(
