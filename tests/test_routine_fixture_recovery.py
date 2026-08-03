@@ -320,6 +320,161 @@ def test_routine_background_server_is_group_owned_and_drops_fd_8(
         lock.close()
 
 
+def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
+    tmp_path: Path,
+) -> None:
+    """A successor reaps an authenticated stale group before touching its lock."""
+    workspace = tmp_path / "workspace"
+    fixtures = workspace / "spec" / "fixtures"
+    fixtures.mkdir(parents=True)
+    (workspace / "scripts").mkdir()
+    (workspace / ".cache").mkdir()
+    shutil.copy2(REPO_ROOT / "scripts" / "run-specs.sh", workspace / "scripts")
+    for name in (
+        "routine-fixture-ownership.sh",
+        "setup-article-fulltext-source-fixture.sh",
+        "cleanup-article-fulltext-source-fixture.sh",
+    ):
+        shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
+    (workspace / "tests").symlink_to(REPO_ROOT / "tests", target_is_directory=True)
+    for name in ("setup-study-spec-fixture.sh", "setup-ddinter-spec-fixture.sh"):
+        script = fixtures / name
+        script.write_text("#!/usr/bin/env bash\nexit 0\n")
+        script.chmod(0o755)
+
+    bin_dir = workspace / "bin"
+    bin_dir.mkdir()
+    for name, body in {
+        "biomcp": "#!/usr/bin/env bash\nexit 0\n",
+        "mustmatch": (
+            "#!/usr/bin/env bash\n"
+            'if [ "${1:-}" = --version ]; then echo "mustmatch 1.0.0"; fi\n'
+        ),
+    }.items():
+        command = bin_dir / name
+        command.write_text(body)
+        command.chmod(0o755)
+
+    lock_path = workspace / ".cache" / "spec-routine-fixtures.lock"
+    fixture_root = workspace / ".cache" / "spec-article-fulltext-source.stale"
+    fixture_root.mkdir()
+    ownership = fixtures / "routine-fixture-ownership.sh"
+    owner_arg = subprocess.run(
+        [
+            "bash",
+            str(ownership),
+            "new-owner",
+            "article-fulltext-source",
+            str(fixture_root),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    stale = subprocess.Popen(
+        [
+            "bash",
+            "-c",
+            'exec 8>"$1"; flock 8; while :; do sleep 1; done',
+            "fixture-owner",
+            str(lock_path),
+            owner_arg,
+        ],
+        start_new_session=True,
+    )
+    runner: subprocess.Popen[bytes] | None = None
+    try:
+        _wait_until(lambda: os.path.exists(f"/proc/{stale.pid}/fd/8"))
+        subprocess.run(
+            [
+                "bash",
+                str(ownership),
+                "write",
+                str(workspace),
+                "article-fulltext-source",
+                str(fixture_root),
+                str(stale.pid),
+                "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE",
+                owner_arg,
+            ],
+            check=True,
+        )
+        runner = subprocess.Popen(
+            ["bash", "scripts/run-specs.sh", "spec-contracts"],
+            cwd=workspace,
+            env=os.environ
+            | {
+                "BIOMCP_BIN": str(bin_dir / "biomcp"),
+                "MUSTMATCH_BIN": str(bin_dir / "mustmatch"),
+            },
+        )
+        assert runner.wait(timeout=3) == 0
+        _wait_until(lambda: not Path(f"/proc/{stale.pid}").exists())
+        assert not (
+            workspace / ".cache" / "spec-article-fulltext-source-ownership"
+        ).exists()
+    finally:
+        if runner is not None and runner.poll() is None:
+            runner.kill()
+            runner.wait()
+        if stale.poll() is None:
+            os.killpg(os.getpgid(stale.pid), signal.SIGKILL)
+            stale.wait()
+        subprocess.run(
+            [
+                "bash",
+                str(fixtures / "cleanup-article-fulltext-source-fixture.sh"),
+                str(workspace),
+            ],
+            check=False,
+        )
+
+
+@pytest.mark.parametrize(
+    "_name, _fixture_kind, setup_name, cleanup_name, _env_name, _pid_key",
+    SERVER_FIXTURES[1:],
+)
+def test_routine_fixture_setup_does_not_depend_on_uv(
+    tmp_path: Path,
+    _name: str,
+    _fixture_kind: str,
+    setup_name: str,
+    cleanup_name: str,
+    _env_name: str,
+    _pid_key: str,
+) -> None:
+    """Stdlib routine fixtures cannot make lifecycle depend on uv cache warmth."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    for name in ("spec", "testdata", "tests"):
+        (workspace / name).symlink_to(REPO_ROOT / name, target_is_directory=True)
+    no_uv = tmp_path / "no-uv"
+    no_uv.mkdir()
+    uv = no_uv / "uv"
+    uv.write_text(
+        "#!/usr/bin/env bash\necho 'uv must not run fixture servers' >&2\nexit 97\n"
+    )
+    uv.chmod(0o755)
+    env = os.environ | {"PATH": f"{no_uv}:{os.environ['PATH']}"}
+
+    try:
+        subprocess.run(
+            ["bash", str(REPO_ROOT / "spec" / "fixtures" / setup_name), str(workspace)],
+            check=True,
+            env=env,
+        )
+    finally:
+        subprocess.run(
+            [
+                "bash",
+                str(REPO_ROOT / "spec" / "fixtures" / cleanup_name),
+                str(workspace),
+            ],
+            check=False,
+            env=env,
+        )
+
+
 def test_sigkill_orphan_releases_routine_lock_before_stale_recovery(
     tmp_path: Path,
 ) -> None:
