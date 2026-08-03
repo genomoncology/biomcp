@@ -90,6 +90,7 @@ fn excluded_key_gated_row_serializes_key_configured_false() {
             stale: None,
             required_env_var: Some("ONCOKB_TOKEN".into()),
             missing_files: None,
+            not_built: None,
         },
         class: ProbeClass::Excluded,
     }]);
@@ -171,6 +172,7 @@ fn optional_auth_get_reports_unauthenticated_429_as_unavailable() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             class: ProbeClass::Error,
         },

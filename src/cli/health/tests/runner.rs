@@ -31,6 +31,7 @@ fn markdown_shows_affects_column_when_present() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             HealthRow {
                 api: "OpenFDA".into(),
@@ -42,6 +43,7 @@ fn markdown_shows_affects_column_when_present() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
         ],
     };
@@ -69,6 +71,7 @@ fn markdown_omits_affects_column_when_all_healthy() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             HealthRow {
                 api: "MyVariant".into(),
@@ -80,6 +83,7 @@ fn markdown_omits_affects_column_when_all_healthy() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
         ],
     };
@@ -106,6 +110,7 @@ fn markdown_decorates_keyed_success_rows_without_changing_status() {
             stale: None,
             required_env_var: None,
             missing_files: None,
+            not_built: None,
         }],
     };
 
@@ -132,6 +137,7 @@ fn markdown_decorates_keyed_error_rows_without_changing_status() {
             stale: None,
             required_env_var: None,
             missing_files: None,
+            not_built: None,
         }],
     };
 
@@ -155,6 +161,7 @@ fn public_row_omits_key_configured_in_json() {
             stale: None,
             required_env_var: None,
             missing_files: None,
+            not_built: None,
         },
         class: ProbeClass::Healthy,
     }]);
@@ -178,11 +185,46 @@ fn keyed_row_serializes_raw_status_with_key_configured_true() {
         stale: None,
         required_env_var: None,
         missing_files: None,
+        not_built: None,
     })
     .expect("serialize keyed row");
 
     assert_eq!(value["status"], "ok");
     assert_eq!(value["key_configured"], true);
+}
+
+#[test]
+fn not_built_row_serializes_fact_and_preserves_markdown() {
+    let row = HealthRow {
+        api: "AlphaGenome".into(),
+        status: HealthStatus::Unavailable,
+        latency: "-".into(),
+        affects: Some("variant predict section".into()),
+        key_configured: None,
+        local_path: None,
+        stale: None,
+        required_env_var: None,
+        missing_files: None,
+        not_built: Some(true),
+    };
+
+    let value = serde_json::to_value(&row).expect("serialize unavailable row");
+    assert_eq!(value["status"], "unavailable");
+    assert_eq!(value["not_built"], true);
+
+    let report = HealthReport {
+        healthy: 0,
+        warning: 0,
+        excluded: 1,
+        error: 0,
+        total: 1,
+        rows: vec![row],
+    };
+    assert!(
+        report
+            .to_markdown()
+            .contains("| AlphaGenome | unavailable (not built) | - | variant predict section |")
+    );
 }
 
 #[test]
@@ -204,6 +246,7 @@ fn all_healthy_includes_warning_and_excluded_rows() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             HealthRow {
                 api: "OncoKB".into(),
@@ -215,6 +258,7 @@ fn all_healthy_includes_warning_and_excluded_rows() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             HealthRow {
                 api: "Cache limits".into(),
@@ -226,6 +270,7 @@ fn all_healthy_includes_warning_and_excluded_rows() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
         ],
     };
@@ -256,6 +301,7 @@ fn markdown_summary_reports_ok_error_excluded_and_warning_counts() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             HealthRow {
                 api: "OpenFDA".into(),
@@ -267,6 +313,7 @@ fn markdown_summary_reports_ok_error_excluded_and_warning_counts() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             HealthRow {
                 api: "OncoKB".into(),
@@ -278,6 +325,7 @@ fn markdown_summary_reports_ok_error_excluded_and_warning_counts() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             HealthRow {
                 api: "Cache limits".into(),
@@ -290,6 +338,7 @@ fn markdown_summary_reports_ok_error_excluded_and_warning_counts() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
         ],
     };
@@ -323,6 +372,7 @@ fn report_counts_use_probe_class_not_status_prefixes() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             class: ProbeClass::Healthy,
         },
@@ -337,6 +387,7 @@ fn report_counts_use_probe_class_not_status_prefixes() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             class: ProbeClass::Excluded,
         },
@@ -351,6 +402,7 @@ fn report_counts_use_probe_class_not_status_prefixes() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             class: ProbeClass::Warning,
         },
@@ -365,6 +417,7 @@ fn report_counts_use_probe_class_not_status_prefixes() {
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             class: ProbeClass::Error,
         },

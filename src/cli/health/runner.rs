@@ -51,6 +51,7 @@ pub(in crate::cli::health) fn health_row(
         stale: None,
         required_env_var: None,
         missing_files: None,
+        not_built: None,
     }
 }
 
@@ -133,16 +134,17 @@ pub(in crate::cli::health) async fn probe_source(
             check_alphagenome_connect(source.api, env_var, source.affects).await
         }
         #[cfg(not(feature = "alphagenome"))]
-        ProbeKind::Unavailable => outcome(
-            health_row(
+        ProbeKind::Unavailable => {
+            let mut row = health_row(
                 source.api,
                 HealthStatus::Unavailable,
                 "-".into(),
                 source.affects,
                 None,
-            ),
-            ProbeClass::Excluded,
-        ),
+            );
+            row.not_built = Some(true);
+            outcome(row, ProbeClass::Excluded)
+        }
         ProbeKind::VaersQuery => check_vaers_query(source.api, source.affects).await,
     }
 }

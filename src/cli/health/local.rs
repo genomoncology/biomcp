@@ -232,6 +232,7 @@ where
                     stale: None,
                     required_env_var: None,
                     missing_files: None,
+                    not_built: None,
                 },
                 ProbeClass::Error,
             );
@@ -293,6 +294,7 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome 
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             ProbeClass::Healthy,
         ),
@@ -307,6 +309,7 @@ pub(in crate::cli::health) async fn probe_cache_dir(dir: &Path) -> ProbeOutcome 
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             ProbeClass::Error,
         ),
@@ -350,6 +353,7 @@ where
                 stale: None,
                 required_env_var: None,
                 missing_files: None,
+                not_built: None,
             },
             ProbeClass::Warning,
         );
@@ -366,6 +370,7 @@ where
             stale: None,
             required_env_var: None,
             missing_files: None,
+            not_built: None,
         },
         ProbeClass::Healthy,
     )
@@ -405,6 +410,7 @@ fn cache_limits_error_outcome(message: String) -> ProbeOutcome {
             stale: None,
             required_env_var: None,
             missing_files: None,
+            not_built: None,
         },
         ProbeClass::Error,
     )

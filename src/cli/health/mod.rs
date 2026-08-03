@@ -37,6 +37,8 @@ pub struct HealthRow {
     pub required_env_var: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub missing_files: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub not_built: Option<bool>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -118,7 +120,10 @@ fn markdown_status(row: &HealthRow) -> String {
             "unavailable (set {} for reliable access)",
             row.required_env_var.as_deref().unwrap_or_default()
         ),
-        (HealthStatus::Unavailable, _) => "unavailable (not built)".to_string(),
+        (HealthStatus::Unavailable, _) if row.not_built == Some(true) => {
+            "unavailable (not built)".to_string()
+        }
+        (HealthStatus::Unavailable, _) => "unavailable".to_string(),
         (HealthStatus::NotConfigured, _) => "not configured".to_string(),
         (HealthStatus::Error, _) if row.missing_files.is_some() => format!(
             "error (missing: {})",

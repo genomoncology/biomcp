@@ -1018,9 +1018,9 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "CDC CVX/MVX local data" in health
     assert "GTR local data" in health
     assert "WHO IVD local data" in health
-    assert "available (default path)" in health
-    assert "not configured" in health
-    assert "error (missing:" in health
+    assert "HealthStatus::Available" in health
+    assert "HealthStatus::NotConfigured" in health
+    assert "row.missing_files" in health
     assert "BioASQ" not in health
     assert "# BioASQ Benchmark" in bioasq_reference
     assert (
