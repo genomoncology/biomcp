@@ -23,9 +23,7 @@ def _audit(source_root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> (
-    None
-):
+def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> None:
     result = _audit(SOURCES_ROOT)
 
     assert result.returncode == 0, result.stderr
@@ -56,9 +54,7 @@ def _valid_receipt(body: bytes) -> dict[str, str]:
     }
 
 
-def _write_real_capture_inventory(
-    source_root: Path, body: bytes, receipt: dict[str, str]
-) -> None:
+def _write_real_capture_inventory(source_root: Path, body: bytes, receipt: dict[str, str]) -> None:
     payload = source_root / "example" / "record.json"
     payload.parent.mkdir(parents=True)
     payload.write_bytes(body)
