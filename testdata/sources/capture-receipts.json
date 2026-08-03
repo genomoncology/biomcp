@@ -1,0 +1,464 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "path": "cancerhotspots/by_gene_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cbioportal/clinical_data.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cbioportal/genes_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cbioportal/mutations.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cbioportal/study.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cbioportal_download/study_list.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "chembl/mechanisms_chembl25.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "chembl/target_chembl3390820.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "civic/context_braf_v600e.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen/dosage.csv",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen/lookup_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen/validity.csv",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen/validity_hgnc_only.csv",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_allele_registry/resolved.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_cspec/README.md",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_cspec/atm-gn020-1.5.1.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1",
+        "captured_at": "2026-07-30T00:00:00Z",
+        "minimization_or_redaction": "Minimized to the envelope, document identity fields, and first two criteria needed by the paging contract.",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before permitted minimization.",
+        "sha256": "6235f874611fffa3d9543bc8f161f3b9184a84824f766e3f0ba04763bd017785"
+      }
+    },
+    {
+      "path": "clingen_erepo/CA001621-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/CA009197-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/CA123643-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/CA168760-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/CA397844357-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/README.md",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/apc-detail.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Evidence Repository",
+        "request": "https://erepo.clinicalgenome.org/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0",
+        "captured_at": "2026-08-03T00:03:40Z",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Evidence Repository before minimization.",
+        "sha256": "f6b1e4bfd2359a4d648626a87d487c4d92e5f2cc723de9347139218c03abad46"
+      }
+    },
+    {
+      "path": "clingen_erepo/apc-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/atm-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_erepo/pten-summary.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clinicaltrials/search.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clinicaltrials/study_contacts.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cpic/frequency_cyp2d6.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cpic/guideline_cyp2d6.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cpic/pair_view_cyp2d6.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cpic/recommendations_codeine.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "dgidb/gene_braf_interactions.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "europepmc/search_pmid_22663011.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gnomad/constraint_ddx3x_null.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gnomad/constraint_graphql_error.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gnomad/constraint_not_found.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gnomad/constraint_tp53.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gtex/gene_search_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gtex/gene_search_empty.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gtex/gene_search_fallback.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gtex/median_expression.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gwas/associations_empty.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gwas/associations_rsid.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "gwas/associations_study_fallback.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "litsense2/sentence_hirschsprung.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "mutalyzer/normalize_erbb2.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "mychem/query_imatinib.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "mydisease/get_mondo_0005105.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "mydisease/query_melanoma.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "mygene/batch_symbols.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "mygene/get_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "mygene/search_egfr.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "myvariant/get_braf_v600e.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "myvariant/search_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "myvariant/search_brca1_contradictory_protein.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "ncbi_efetch/pmc_wrapped_article.xml",
+      "classification": "synthetic_and_ineligible",
+      "ineligible_reason": "Deliberately synthetic parser input; it is not a provider capture."
+    },
+    {
+      "path": "ncbi_idconv/pmid_22663011.json",
+      "classification": "synthetic_and_ineligible",
+      "ineligible_reason": "Deliberately synthetic parser input; it is not a provider capture."
+    },
+    {
+      "path": "nci_cts/search_melanoma.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "nih_reporter/funding_erbb2.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "oncokb/annotation_braf_v600e.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "openfda/device_510k.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "openfda/device_pma.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "openfda/drugsfda_imatinib.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "openfda/faers_count.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "openfda/faers_event.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "pharmgkb/warfarin_annotations.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "pubmed/efetch_citation_22663011.xml",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "pubmed/esearch_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "pubmed/esummary_two_ids.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "pubtator/README.md",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "pubtator/autocomplete_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "pubtator/export_22663011.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=22663011",
+        "captured_at": "2026-07-30T00:00:00Z",
+        "minimization_or_redaction": "none; the committed bytes retain the provider annotation shapes used by the parser contract",
+        "provider_origin_statement": "Bytes were recorded from PubTator3 before minimization.",
+        "sha256": "0ab2b7694f7a5056df298c76554825094d45f7fed4f2bfabeae525f9b1a0d029"
+      }
+    },
+    {
+      "path": "pubtator/search_braf.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "seer/site_catalog.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "seer/survival_payload_97.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/author_batch.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/author_detail.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/author_papers.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/author_search.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/citations.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/paper_batch.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/paper_detail.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/paper_search.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "semantic_scholar/recommendations.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "variantvalidator/normalize_erbb2.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    }
+  ],
+  "confirmed_byte_unfaithful": 0,
+  "historical_corrections": [
+    {
+      "path": "clingen_erepo/apc-detail.json",
+      "status": "recaptured",
+      "detail": "Re-captured after the historical provider @id correction in c3092c88."
+    }
+  ]
+}
