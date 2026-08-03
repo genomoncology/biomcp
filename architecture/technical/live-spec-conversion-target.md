@@ -53,6 +53,10 @@ our parser. Each committed capture must have a machine-readable receipt with:
 Tests must feed the production decoder the recorded/minimized bytes, rather
 than a response assembled from the code's expected fields. A secret-bearing
 header is tested for presence or redacted mode only, never its value.
+`testdata/sources/capture-receipts.json` and
+`tools/check-source-capture-receipts.py` audit this admission boundary: only
+`real_and_receipted` inputs are Tier 3 eligible. Synthetic and pending parser
+inputs remain useful, but cannot support a conversion.
 
 **Audit at ticket 645:** one historical code-shaped edit was confirmed:
 `testdata/sources/clingen_erepo/apc-detail.json` changed the provider `@id` to
