@@ -224,6 +224,19 @@ run_clingen_cspec_fixture() {
   register_cleanup cleanup_clingen_cspec_fixture
 }
 
+reap_stale_routine_fixtures() {
+  local cleanup
+  for cleanup in \
+    cleanup-article-fulltext-source-fixture.sh \
+    cleanup-ctgov-intervention-alias-spec-fixture.sh \
+    cleanup-disease-survival-spec-fixture.sh \
+    cleanup-variant-identity-spec-fixture.sh \
+    cleanup-clingen-cspec-spec-fixture.sh; do
+    [[ -x "spec/fixtures/$cleanup" ]] || continue
+    bash "spec/fixtures/$cleanup" "$ROOT"
+  done
+}
+
 lock_routine_fixtures() {
   mkdir -p "$ROOT/.cache"
   exec 8>"$ROOT/.cache/spec-routine-fixtures.lock"
@@ -285,6 +298,7 @@ case "$mode" in
     timeout_args=(--timeout 180)
     paths=("${SPEC_ROUTINE_PATHS[@]}")
     mustmatch_path_dir="$(mustmatch_dir)"
+    reap_stale_routine_fixtures
     lock_routine_fixtures
     run_article_fixture
     run_study_fixture
@@ -312,6 +326,7 @@ case "$mode" in
       spec/surface/trial-retirement.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
+    reap_stale_routine_fixtures
     lock_routine_fixtures
     run_article_fixture
     run_study_fixture

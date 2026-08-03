@@ -110,6 +110,7 @@ cleanup_record() {
   kill -TERM -- "-$pgid" 2>/dev/null || true
   for _ in $(seq 1 50); do
     kill -0 -- "-$pgid" 2>/dev/null || break
+    [[ "$(ps -o stat= -p "$pid" 2>/dev/null | tr -d ' ')" == Z* ]] && break
     sleep 0.1
   done
   kill -KILL -- "-$pgid" 2>/dev/null || true

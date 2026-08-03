@@ -258,3 +258,19 @@ subtree feature-gated, an isolated cold
 on this worktree took `122.33s` wall-clock (`68.64s` user, `19.63s` system).
 The measurement used a fresh temporary `CARGO_TARGET_DIR`; it records build
 cost only, not the fixture and mustmatch time in the full `make spec` gate.
+
+## Ticket 644 Fixture Lifecycle Timing — 2026-08-02
+
+The six signal-lifecycle cases were measured with:
+
+```console
+/usr/bin/time -p uv run --no-sync pytest tests/test_article_spec_fixture_lifecycle.py tests/test_ctgov_spec_fixture_lifecycle.py -k 'runner_signal_cleans_article_fixture or runner_termination_cleans_ctgov_process_group_env_and_port' -v --durations=0
+```
+
+The cold state was produced immediately before its run with `uv cache clean`;
+there is no fixture virtualenv to remove (the repository `.venv` is the test
+runner environment). The cold run was `real 9.48s` and the subsequent warm run
+was `real 9.29s`. Per-test cold/warm call durations were `1.37–1.38s` for each
+article signal case and `1.68–1.69s` for each CTGov signal case. These are
+observations, not a timing SLA. The unchanged `python3` fixture paths avoid
+`uv` during setup and readiness, so clearing the uv cache did not affect them.
