@@ -3,6 +3,7 @@
 use std::io;
 use std::path::PathBuf;
 
+use super::super::HealthStatus;
 use super::super::catalog::{
     CVX_LOCAL_DATA_AFFECTS, EMA_LOCAL_DATA_AFFECTS, GTR_LOCAL_DATA_AFFECTS,
     WHO_IVD_LOCAL_DATA_AFFECTS, WHO_LOCAL_DATA_AFFECTS,
@@ -32,7 +33,7 @@ fn ema_local_data_not_configured_when_default_root_is_empty() {
         outcome.row.api,
         format!("EMA local data ({})", root.path().display())
     );
-    assert_eq!(outcome.row.status, "not configured");
+    assert_eq!(outcome.row.status, HealthStatus::NotConfigured);
     assert_eq!(outcome.row.latency, "n/a");
     assert_eq!(outcome.row.affects.as_deref(), Some(EMA_LOCAL_DATA_AFFECTS));
 }
@@ -45,13 +46,7 @@ fn ema_local_data_errors_when_default_root_is_partial() {
     let outcome = ema_local_data_outcome(root.path(), false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(
-        outcome.row.status,
-        format!(
-            "error (missing: {})",
-            crate::sources::ema::EMA_REQUIRED_FILES[1..].join(", ")
-        )
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(outcome.row.affects.as_deref(), Some(EMA_LOCAL_DATA_AFFECTS));
 }
 
@@ -62,13 +57,7 @@ fn ema_local_data_errors_when_env_root_is_missing_files() {
     let outcome = ema_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(
-        outcome.row.status,
-        format!(
-            "error (missing: {})",
-            crate::sources::ema::EMA_REQUIRED_FILES.join(", ")
-        )
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(outcome.row.affects.as_deref(), Some(EMA_LOCAL_DATA_AFFECTS));
 }
 
@@ -85,7 +74,7 @@ fn ema_local_data_reports_available_when_default_root_is_complete() {
         outcome.row.api,
         format!("EMA local data ({})", fixture_root.path().display())
     );
-    assert_eq!(outcome.row.status, "available (default path)");
+    assert_eq!(outcome.row.status, HealthStatus::Available);
     assert_eq!(outcome.row.latency, "n/a");
     assert_eq!(outcome.row.affects, None);
 }
@@ -99,7 +88,7 @@ fn ema_local_data_reports_configured_when_env_root_is_complete() {
     let outcome = ema_local_data_outcome(fixture_root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
-    assert_eq!(outcome.row.status, "configured");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(outcome.row.affects, None);
 }
 
@@ -118,7 +107,8 @@ fn ema_local_data_json_reports_healthy_row_without_affects() {
         row["api"],
         format!("EMA local data ({})", fixture_root.path().display())
     );
-    assert_eq!(row["status"], "available (default path)");
+    assert_eq!(row["status"], "available");
+    assert_eq!(row["local_path"], fixture_root.path().display().to_string());
     assert_eq!(row["latency"], "n/a");
     assert!(row.get("affects").is_none());
     assert!(row.get("key_configured").is_none());
@@ -134,12 +124,10 @@ fn ema_local_data_json_reports_error_row_with_affects() {
     let rows = value["rows"].as_array().expect("rows array");
     let row = rows.first().expect("EMA row");
 
+    assert_eq!(row["status"], "error");
     assert_eq!(
-        row["status"],
-        format!(
-            "error (missing: {})",
-            crate::sources::ema::EMA_REQUIRED_FILES[1..].join(", ")
-        )
+        row["missing_files"],
+        serde_json::json!(crate::sources::ema::EMA_REQUIRED_FILES[1..])
     );
     assert_eq!(row["affects"], EMA_LOCAL_DATA_AFFECTS);
     assert!(row.get("key_configured").is_none());
@@ -156,7 +144,7 @@ fn cvx_local_data_not_configured_when_default_root_is_empty() {
         outcome.row.api,
         format!("CDC CVX/MVX local data ({})", root.path().display())
     );
-    assert_eq!(outcome.row.status, "not configured");
+    assert_eq!(outcome.row.status, HealthStatus::NotConfigured);
     assert_eq!(outcome.row.latency, "n/a");
     assert_eq!(outcome.row.affects.as_deref(), Some(CVX_LOCAL_DATA_AFFECTS));
 }
@@ -169,13 +157,7 @@ fn cvx_local_data_errors_when_default_root_is_partial() {
     let outcome = cvx_local_data_outcome(root.path(), false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(
-        outcome.row.status,
-        format!(
-            "error (missing: {})",
-            crate::sources::cvx::CVX_REQUIRED_FILES[1..].join(", ")
-        )
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(outcome.row.affects.as_deref(), Some(CVX_LOCAL_DATA_AFFECTS));
 }
 
@@ -191,7 +173,7 @@ fn cvx_local_data_reports_available_when_default_root_is_complete() {
         outcome.row.api,
         format!("CDC CVX/MVX local data ({})", root.path().display())
     );
-    assert_eq!(outcome.row.status, "available (default path)");
+    assert_eq!(outcome.row.status, HealthStatus::Available);
     assert_eq!(outcome.row.affects, None);
 }
 
@@ -207,7 +189,7 @@ fn cvx_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
     let outcome = cvx_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.status, "configured (stale)");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(outcome.row.affects.as_deref(), Some(CVX_LOCAL_DATA_AFFECTS));
 }
 
@@ -225,7 +207,7 @@ fn who_local_data_not_configured_when_default_root_is_empty() {
             root.path().display()
         )
     );
-    assert_eq!(outcome.row.status, "not configured");
+    assert_eq!(outcome.row.status, HealthStatus::NotConfigured);
     assert_eq!(outcome.row.affects.as_deref(), Some(WHO_LOCAL_DATA_AFFECTS));
 }
 
@@ -236,13 +218,7 @@ fn who_local_data_errors_when_env_root_is_missing_file() {
     let outcome = who_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(
-        outcome.row.status,
-        format!(
-            "error (missing: {})",
-            crate::sources::who_pq::WHO_PQ_REQUIRED_FILES.join(", ")
-        )
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(outcome.row.affects.as_deref(), Some(WHO_LOCAL_DATA_AFFECTS));
 }
 
@@ -261,7 +237,7 @@ fn who_local_data_reports_available_when_default_root_is_complete() {
             root.path().display()
         )
     );
-    assert_eq!(outcome.row.status, "available (default path)");
+    assert_eq!(outcome.row.status, HealthStatus::Available);
     assert_eq!(outcome.row.affects, None);
 }
 
@@ -273,7 +249,7 @@ fn who_local_data_reports_configured_when_env_root_is_complete() {
     let outcome = who_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
-    assert_eq!(outcome.row.status, "configured");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(outcome.row.affects, None);
 }
 
@@ -290,7 +266,7 @@ fn who_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
     let outcome = who_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.status, "configured (stale)");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(outcome.row.affects.as_deref(), Some(WHO_LOCAL_DATA_AFFECTS));
 }
 
@@ -307,7 +283,7 @@ fn who_local_data_reports_default_path_stale_when_complete_but_old() {
     let outcome = who_local_data_outcome(root.path(), false);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.status, "available (default path, stale)");
+    assert_eq!(outcome.row.status, HealthStatus::Available);
     assert_eq!(outcome.row.affects.as_deref(), Some(WHO_LOCAL_DATA_AFFECTS));
 }
 
@@ -325,7 +301,7 @@ fn who_local_data_errors_when_only_api_file_is_missing() {
     let outcome = who_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(outcome.row.status, "error (missing: who_api.csv)");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(outcome.row.affects.as_deref(), Some(WHO_LOCAL_DATA_AFFECTS));
 }
 
@@ -343,7 +319,7 @@ fn who_local_data_errors_when_only_vaccine_file_is_missing() {
     let outcome = who_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(outcome.row.status, "error (missing: who_vaccines.csv)");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(outcome.row.affects.as_deref(), Some(WHO_LOCAL_DATA_AFFECTS));
 }
 
@@ -358,7 +334,7 @@ fn who_ivd_local_data_not_configured_when_default_root_is_empty() {
         outcome.row.api,
         format!("WHO IVD local data ({})", root.path().display())
     );
-    assert_eq!(outcome.row.status, "not configured");
+    assert_eq!(outcome.row.status, HealthStatus::NotConfigured);
     assert_eq!(
         outcome.row.affects.as_deref(),
         Some(WHO_IVD_LOCAL_DATA_AFFECTS)
@@ -372,13 +348,7 @@ fn who_ivd_local_data_errors_when_env_root_is_missing_file() {
     let outcome = who_ivd_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(
-        outcome.row.status,
-        format!(
-            "error (missing: {})",
-            crate::sources::who_ivd::WHO_IVD_REQUIRED_FILES.join(", ")
-        )
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(
         outcome.row.affects.as_deref(),
         Some(WHO_IVD_LOCAL_DATA_AFFECTS)
@@ -397,7 +367,7 @@ fn who_ivd_local_data_reports_available_when_default_root_is_complete() {
         outcome.row.api,
         format!("WHO IVD local data ({})", root.path().display())
     );
-    assert_eq!(outcome.row.status, "available (default path)");
+    assert_eq!(outcome.row.status, HealthStatus::Available);
     assert_eq!(outcome.row.affects, None);
 }
 
@@ -409,7 +379,7 @@ fn who_ivd_local_data_reports_configured_when_env_root_is_complete() {
     let outcome = who_ivd_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
-    assert_eq!(outcome.row.status, "configured");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(outcome.row.affects, None);
 }
 
@@ -422,7 +392,7 @@ fn who_ivd_local_data_reports_configured_stale_when_env_root_is_complete_but_old
     let outcome = who_ivd_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.status, "configured (stale)");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(
         outcome.row.affects.as_deref(),
         Some(WHO_IVD_LOCAL_DATA_AFFECTS)
@@ -440,7 +410,7 @@ fn gtr_local_data_not_configured_when_default_root_is_empty() {
         outcome.row.api,
         format!("GTR local data ({})", root.path().display())
     );
-    assert_eq!(outcome.row.status, "not configured");
+    assert_eq!(outcome.row.status, HealthStatus::NotConfigured);
     assert_eq!(outcome.row.affects.as_deref(), Some(GTR_LOCAL_DATA_AFFECTS));
 }
 
@@ -452,13 +422,7 @@ fn gtr_local_data_errors_when_default_root_is_partial() {
     let outcome = gtr_local_data_outcome(root.path(), false);
 
     assert_eq!(outcome.class, ProbeClass::Error);
-    assert_eq!(
-        outcome.row.status,
-        format!(
-            "error (missing: {})",
-            crate::sources::gtr::GTR_CONDITION_GENE_FILE
-        )
-    );
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(outcome.row.affects.as_deref(), Some(GTR_LOCAL_DATA_AFFECTS));
 }
 
@@ -470,7 +434,7 @@ fn gtr_local_data_reports_available_when_default_root_is_complete() {
     let outcome = gtr_local_data_outcome(root.path(), false);
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
-    assert_eq!(outcome.row.status, "available (default path)");
+    assert_eq!(outcome.row.status, HealthStatus::Available);
     assert_eq!(outcome.row.affects, None);
 }
 
@@ -486,7 +450,7 @@ fn gtr_local_data_reports_configured_stale_when_env_root_is_complete_but_old() {
     let outcome = gtr_local_data_outcome(root.path(), true);
 
     assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.status, "configured (stale)");
+    assert_eq!(outcome.row.status, HealthStatus::Configured);
     assert_eq!(outcome.row.affects.as_deref(), Some(GTR_LOCAL_DATA_AFFECTS));
 }
 
@@ -512,7 +476,7 @@ fn check_cache_limits_within_limits_returns_healthy_row() {
 
     assert_eq!(outcome.class, ProbeClass::Healthy);
     assert_eq!(outcome.row.api, "Cache limits");
-    assert_eq!(outcome.row.status, "ok");
+    assert_eq!(outcome.row.status, HealthStatus::Ok);
     assert_eq!(outcome.row.latency, "within limits");
 }
 
@@ -540,7 +504,7 @@ fn check_cache_limits_warns_when_referenced_bytes_exceed_max_size() {
     );
 
     assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.status, "warning");
+    assert_eq!(outcome.row.status, HealthStatus::Warning);
     assert!(outcome.row.latency.contains("referenced bytes"));
     assert!(outcome.row.latency.contains("biomcp cache clean"));
 }
@@ -566,7 +530,7 @@ fn check_cache_limits_warns_when_disk_floor_is_violated() {
     );
 
     assert_eq!(outcome.class, ProbeClass::Warning);
-    assert_eq!(outcome.row.status, "warning");
+    assert_eq!(outcome.row.status, HealthStatus::Warning);
     assert!(outcome.row.latency.contains("available disk"));
     assert!(outcome.row.latency.contains("biomcp cache clean"));
 }
@@ -593,7 +557,7 @@ fn check_cache_limits_reports_snapshot_errors_as_error_rows() {
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.api, "Cache limits");
-    assert_eq!(outcome.row.status, "error");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert!(outcome.row.latency.contains("boom"));
 }
 
@@ -610,7 +574,7 @@ fn check_cache_dir_success_row_uses_resolved_path_and_ok_contract() {
         outcome.row.api,
         format!("Cache dir ({})", cache_root.display())
     );
-    assert_eq!(outcome.row.status, "ok");
+    assert_eq!(outcome.row.status, HealthStatus::Ok);
     assert_millisecond_latency(&outcome.row.latency);
     assert_eq!(outcome.row.affects, None);
     assert_eq!(outcome.row.key_configured, None);
@@ -629,7 +593,7 @@ fn probe_cache_dir_failure_preserves_error_contract() {
         outcome.row.api,
         format!("Cache dir ({})", blocking_path.display())
     );
-    assert_eq!(outcome.row.status, "error");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert!(
         outcome.row.latency.contains("AlreadyExists")
             || outcome.row.latency.contains("NotADirectory")
@@ -654,7 +618,7 @@ fn check_cache_dir_config_error_matches_pinned_contract() {
 
     assert_eq!(outcome.class, ProbeClass::Error);
     assert_eq!(outcome.row.api, "Cache dir");
-    assert_eq!(outcome.row.status, "error");
+    assert_eq!(outcome.row.status, HealthStatus::Error);
     assert_eq!(
         outcome.row.latency,
         format!(

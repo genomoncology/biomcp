@@ -27,9 +27,6 @@ pub(in crate::cli::health) enum ProbeKind {
         env_var: &'static str,
         header_name: &'static str,
         header_value_prefix: &'static str,
-        unauthenticated_ok_status: &'static str,
-        authenticated_ok_status: &'static str,
-        unauthenticated_rate_limited_status: Option<&'static str>,
     },
     AuthQueryParam {
         url: &'static str,
@@ -50,9 +47,7 @@ pub(in crate::cli::health) enum ProbeKind {
         env_var: &'static str,
     },
     #[cfg(not(feature = "alphagenome"))]
-    Unavailable {
-        status: &'static str,
-    },
+    Unavailable,
     VaersQuery,
 }
 
@@ -202,9 +197,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
             }
             #[cfg(not(feature = "alphagenome"))]
             {
-                ProbeKind::Unavailable {
-                    status: "unavailable (not built)",
-                }
+                ProbeKind::Unavailable
             }
         },
     },
@@ -216,11 +209,6 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
             env_var: "S2_API_KEY",
             header_name: "x-api-key",
             header_value_prefix: "",
-            unauthenticated_ok_status: "available (unauthenticated, shared rate limit)",
-            authenticated_ok_status: "configured (authenticated)",
-            unauthenticated_rate_limited_status: Some(
-                "unavailable (set S2_API_KEY for reliable access)",
-            ),
         },
     },
     SourceDescriptor {

@@ -1,7 +1,3 @@
 {
-  "entries": [
-    "src/cli/health/mod.rs::HealthRow",
-    "src/entities/article/variant_search.rs::CanonicalEquivalenceObservation",
-    "src/entities/article/variant_search.rs::VariantArticleProviderPlan"
-  ]
+  "entries": []
 }

@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
+use super::super::HealthStatus;
 use super::super::catalog::{ProbeKind, SourceDescriptor};
 use super::super::runner::{
     HEALTH_API_PROBE_CONCURRENCY_LIMIT, ProbeClass, ProbeOutcome, report_from_outcomes,
@@ -22,17 +23,25 @@ fn markdown_shows_affects_column_when_present() {
         rows: vec![
             HealthRow {
                 api: "MyGene".into(),
-                status: "ok".into(),
+                status: HealthStatus::Ok,
                 latency: "10ms".into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             HealthRow {
                 api: "OpenFDA".into(),
-                status: "error".into(),
+                status: HealthStatus::Error,
                 latency: "timeout".into(),
                 affects: Some("adverse-event search".into()),
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
         ],
     };
@@ -52,17 +61,25 @@ fn markdown_omits_affects_column_when_all_healthy() {
         rows: vec![
             HealthRow {
                 api: "MyGene".into(),
-                status: "ok".into(),
+                status: HealthStatus::Ok,
                 latency: "10ms".into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             HealthRow {
                 api: "MyVariant".into(),
-                status: "ok".into(),
+                status: HealthStatus::Ok,
                 latency: "11ms".into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
         ],
     };
@@ -81,14 +98,18 @@ fn markdown_decorates_keyed_success_rows_without_changing_status() {
         total: 1,
         rows: vec![HealthRow {
             api: "OncoKB".into(),
-            status: "ok".into(),
+            status: HealthStatus::Ok,
             latency: "10ms".into(),
             affects: None,
             key_configured: Some(true),
+            local_path: None,
+            stale: None,
+            required_env_var: None,
+            missing_files: None,
         }],
     };
 
-    assert_eq!(report.rows[0].status, "ok");
+    assert_eq!(report.rows[0].status, HealthStatus::Ok);
     let md = report.to_markdown();
     assert!(md.contains("| OncoKB | ok (key configured) | 10ms |"));
 }
@@ -103,14 +124,18 @@ fn markdown_decorates_keyed_error_rows_without_changing_status() {
         total: 1,
         rows: vec![HealthRow {
             api: "OncoKB".into(),
-            status: "error".into(),
+            status: HealthStatus::Error,
             latency: "10ms (HTTP 401)".into(),
             affects: Some("variant oncokb command and variant evidence section".into()),
             key_configured: Some(true),
+            local_path: None,
+            stale: None,
+            required_env_var: None,
+            missing_files: None,
         }],
     };
 
-    assert_eq!(report.rows[0].status, "error");
+    assert_eq!(report.rows[0].status, HealthStatus::Error);
     let md = report.to_markdown();
     assert!(md.contains(
         "| OncoKB | error (key configured) | 10ms (HTTP 401) | variant oncokb command and variant evidence section |",
@@ -122,10 +147,14 @@ fn public_row_omits_key_configured_in_json() {
     let report = report_from_outcomes(vec![ProbeOutcome {
         row: HealthRow {
             api: "MyGene".into(),
-            status: "ok".into(),
+            status: HealthStatus::Ok,
             latency: "10ms".into(),
             affects: None,
             key_configured: None,
+            local_path: None,
+            stale: None,
+            required_env_var: None,
+            missing_files: None,
         },
         class: ProbeClass::Healthy,
     }]);
@@ -141,10 +170,14 @@ fn public_row_omits_key_configured_in_json() {
 fn keyed_row_serializes_raw_status_with_key_configured_true() {
     let value = serde_json::to_value(HealthRow {
         api: "OncoKB".into(),
-        status: "ok".into(),
+        status: HealthStatus::Ok,
         latency: "10ms".into(),
         affects: None,
         key_configured: Some(true),
+        local_path: None,
+        stale: None,
+        required_env_var: None,
+        missing_files: None,
     })
     .expect("serialize keyed row");
 
@@ -163,24 +196,36 @@ fn all_healthy_includes_warning_and_excluded_rows() {
         rows: vec![
             HealthRow {
                 api: "MyGene".into(),
-                status: "ok".into(),
+                status: HealthStatus::Ok,
                 latency: "10ms".into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             HealthRow {
                 api: "OncoKB".into(),
-                status: "excluded (set ONCOKB_TOKEN)".into(),
+                status: HealthStatus::Excluded,
                 latency: "n/a".into(),
                 affects: Some("variant oncokb command and variant evidence section".into()),
                 key_configured: Some(false),
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             HealthRow {
                 api: "Cache limits".into(),
-                status: "warning".into(),
+                status: HealthStatus::Warning,
                 latency: "referenced bytes 12 exceed max_size 8; run biomcp cache clean".into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
         ],
     };
@@ -203,32 +248,48 @@ fn markdown_summary_reports_ok_error_excluded_and_warning_counts() {
         rows: vec![
             HealthRow {
                 api: "MyGene".into(),
-                status: "ok".into(),
+                status: HealthStatus::Ok,
                 latency: "10ms".into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             HealthRow {
                 api: "OpenFDA".into(),
-                status: "error".into(),
+                status: HealthStatus::Error,
                 latency: "timeout".into(),
                 affects: Some("adverse-event search".into()),
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             HealthRow {
                 api: "OncoKB".into(),
-                status: "excluded (set ONCOKB_TOKEN)".into(),
+                status: HealthStatus::Excluded,
                 latency: "n/a".into(),
                 affects: Some("variant oncokb command and variant evidence section".into()),
                 key_configured: Some(false),
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             HealthRow {
                 api: "Cache limits".into(),
-                status: "warning".into(),
+                status: HealthStatus::Warning,
                 latency: "available disk 10 B is below min_disk_free 20 B; run biomcp cache clean"
                     .into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
         ],
     };
@@ -254,40 +315,56 @@ fn report_counts_use_probe_class_not_status_prefixes() {
         ProbeOutcome {
             row: HealthRow {
                 api: "Semantic Scholar".into(),
-                status: "available (unauthenticated, shared rate limit)".into(),
+                status: HealthStatus::Available,
                 latency: "15ms".into(),
                 affects: None,
                 key_configured: Some(false),
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             class: ProbeClass::Healthy,
         },
         ProbeOutcome {
             row: HealthRow {
                 api: "OncoKB".into(),
-                status: "excluded (set ONCOKB_TOKEN)".into(),
+                status: HealthStatus::Excluded,
                 latency: "n/a".into(),
                 affects: Some("variant oncokb command and variant evidence section".into()),
                 key_configured: Some(false),
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             class: ProbeClass::Excluded,
         },
         ProbeOutcome {
             row: HealthRow {
                 api: "Cache limits".into(),
-                status: "warning".into(),
+                status: HealthStatus::Warning,
                 latency: "referenced bytes 12 exceed max_size 8; run biomcp cache clean".into(),
                 affects: None,
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             class: ProbeClass::Warning,
         },
         ProbeOutcome {
             row: HealthRow {
                 api: "OpenFDA".into(),
-                status: "error".into(),
+                status: HealthStatus::Error,
                 latency: "timeout".into(),
                 affects: Some("adverse-event search".into()),
                 key_configured: None,
+                local_path: None,
+                stale: None,
+                required_env_var: None,
+                missing_files: None,
             },
             class: ProbeClass::Error,
         },
@@ -352,17 +429,12 @@ fn timed_out_probe_returns_error_row_with_timeout_latency() {
             env_var: "S2_API_KEY",
             header_name: "x-api-key",
             header_value_prefix: "",
-            unauthenticated_ok_status: "available (unauthenticated, shared rate limit)",
-            authenticated_ok_status: "configured (authenticated)",
-            unauthenticated_rate_limited_status: Some(
-                "unavailable (set S2_API_KEY for reliable access)",
-            ),
         },
     };
     let optional_outcome =
         timed_out_probe_outcome_for_test(optional_source, Duration::from_millis(10), |_| None);
     assert_eq!(optional_outcome.class, ProbeClass::Error);
-    assert_eq!(optional_outcome.row.status, "error");
+    assert_eq!(optional_outcome.row.status, HealthStatus::Error);
     assert_eq!(optional_outcome.row.latency, "10ms (timeout)");
     assert_eq!(
         optional_outcome.row.affects.as_deref(),
@@ -383,7 +455,7 @@ fn timed_out_probe_returns_error_row_with_timeout_latency() {
     let auth_outcome =
         timed_out_probe_outcome_for_test(auth_source, Duration::from_millis(10), |_| None);
     assert_eq!(auth_outcome.class, ProbeClass::Error);
-    assert_eq!(auth_outcome.row.status, "error");
+    assert_eq!(auth_outcome.row.status, HealthStatus::Error);
     assert_eq!(auth_outcome.row.latency, "10ms (timeout)");
     assert_eq!(
         auth_outcome.row.affects.as_deref(),
@@ -401,7 +473,7 @@ fn timed_out_probe_returns_error_row_with_timeout_latency() {
     let public_outcome =
         timed_out_probe_outcome_for_test(public_source, Duration::from_millis(10), |_| None);
     assert_eq!(public_outcome.class, ProbeClass::Error);
-    assert_eq!(public_outcome.row.status, "error");
+    assert_eq!(public_outcome.row.status, HealthStatus::Error);
     assert_eq!(public_outcome.row.latency, "10ms (timeout)");
     assert_eq!(
         public_outcome.row.affects.as_deref(),

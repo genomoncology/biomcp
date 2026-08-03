@@ -114,11 +114,21 @@ pub struct VariantArticleRow {
     pub identity: Option<VariantArticleIdentity>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CanonicalEquivalenceStatus {
+    Resolved,
+    NotFound,
+    Invalid,
+    Indeterminate,
+    Unavailable,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct CanonicalEquivalenceObservation {
     pub basis: String,
     pub query: String,
-    pub status: String,
+    pub status: CanonicalEquivalenceStatus,
     pub caid: Option<String>,
     pub provider_exhaustive: bool,
     pub comparison_complete: bool,
@@ -557,7 +567,7 @@ impl VariantArticleWork {
 #[derive(Debug, Clone, Serialize)]
 pub struct VariantArticleProviderPlan {
     pub source: String,
-    pub status: String,
+    pub status: VariantArticleSourceStatusKind,
     pub latency_ms: u64,
     pub calls: usize,
     pub pages: usize,
@@ -798,16 +808,6 @@ fn provider_terminal_status(events: &[&VariantArticleCallEvent]) -> VariantArtic
     }
 }
 
-fn provider_status_name(status: VariantArticleSourceStatusKind) -> &'static str {
-    match status {
-        VariantArticleSourceStatusKind::Ok => "ok",
-        VariantArticleSourceStatusKind::Degraded => "degraded",
-        VariantArticleSourceStatusKind::Unavailable => "unavailable",
-        VariantArticleSourceStatusKind::Skipped => "skipped",
-        VariantArticleSourceStatusKind::NotAttempted => "not_attempted",
-    }
-}
-
 fn provider_statuses_for_route(
     route: &str,
     events: &[VariantArticleCallEvent],
@@ -897,13 +897,12 @@ fn canonical_observation(
         basis,
         query,
         status: match item.status {
-            CarNormalizationStatus::Resolved => "resolved",
-            CarNormalizationStatus::NotFound => "not_found",
-            CarNormalizationStatus::Invalid => "invalid",
-            CarNormalizationStatus::Indeterminate => "indeterminate",
-            CarNormalizationStatus::Unavailable => "unavailable",
-        }
-        .into(),
+            CarNormalizationStatus::Resolved => CanonicalEquivalenceStatus::Resolved,
+            CarNormalizationStatus::NotFound => CanonicalEquivalenceStatus::NotFound,
+            CarNormalizationStatus::Invalid => CanonicalEquivalenceStatus::Invalid,
+            CarNormalizationStatus::Indeterminate => CanonicalEquivalenceStatus::Indeterminate,
+            CarNormalizationStatus::Unavailable => CanonicalEquivalenceStatus::Unavailable,
+        },
         caid: item.caid,
         provider_exhaustive: item.exhaustive,
         comparison_complete,
@@ -963,7 +962,7 @@ fn canonical_equivalence(
         .all(|observation| observation.comparison_complete);
     let statuses = observations
         .iter()
-        .map(|observation| observation.status.as_str())
+        .map(|observation| observation.status)
         .collect::<BTreeSet<_>>();
     let (status, caid, message) = if caids.len() >= 2 {
         (
@@ -971,13 +970,15 @@ fn canonical_equivalence(
             None,
             "independently supplied CAR identities resolved to different CAids",
         )
-    } else if statuses.contains("indeterminate") || statuses.contains("invalid") {
+    } else if statuses.contains(&CanonicalEquivalenceStatus::Indeterminate)
+        || statuses.contains(&CanonicalEquivalenceStatus::Invalid)
+    {
         (
             "indeterminate",
             None,
             "CAR could not complete the identity comparison",
         )
-    } else if statuses.contains("unavailable") {
+    } else if statuses.contains(&CanonicalEquivalenceStatus::Unavailable) {
         (
             "unavailable",
             None,
@@ -995,7 +996,7 @@ fn canonical_equivalence(
             None,
             "CAR found no canonical allele for the supplied identities",
         )
-    } else if statuses.contains("not_found") {
+    } else if statuses.contains(&CanonicalEquivalenceStatus::NotFound) {
         (
             "indeterminate",
             None,
@@ -1009,12 +1010,12 @@ fn canonical_equivalence(
         )
     };
     CanonicalEquivalence {
-        status: status.into(),
+        status: status.to_string(),
         caid,
         exhaustive: provider_exhaustive
-            && !statuses.contains("invalid")
-            && !statuses.contains("indeterminate")
-            && !statuses.contains("unavailable"),
+            && !statuses.contains(&CanonicalEquivalenceStatus::Invalid)
+            && !statuses.contains(&CanonicalEquivalenceStatus::Indeterminate)
+            && !statuses.contains(&CanonicalEquivalenceStatus::Unavailable),
         complete,
         applicable_identity_count: count,
         observations,
@@ -1023,7 +1024,7 @@ fn canonical_equivalence(
         } else {
             Vec::new()
         },
-        message: message.into(),
+        message: message.to_string(),
     }
 }
 
@@ -2020,7 +2021,7 @@ fn build_debug_plan(
             let providers = if grouped.is_empty() {
                 vec![VariantArticleProviderPlan {
                     source: "federated".into(),
-                    status: "skipped".into(),
+                    status: VariantArticleSourceStatusKind::Skipped,
                     latency_ms: 0,
                     calls: 0,
                     pages: 0,
@@ -2033,7 +2034,7 @@ fn build_debug_plan(
                         let status = provider_terminal_status(&events);
                         VariantArticleProviderPlan {
                             source,
-                            status: provider_status_name(status).into(),
+                            status,
                             latency_ms: events.iter().map(|event| event.latency_ms).sum(),
                             calls: events.len(),
                             pages: events.iter().map(|event| event.pages).sum(),
@@ -2806,7 +2807,10 @@ async fn add_ldh_observations(
         equivalence
             .observations
             .iter()
-            .find(|observation| observation.status == "resolved" && observation.provider_exhaustive)
+            .find(|observation| {
+                observation.status == CanonicalEquivalenceStatus::Resolved
+                    && observation.provider_exhaustive
+            })
             .and_then(|observation| observation.caid.as_deref())
     } else if equivalence.applicable_identity_count >= 2 && equivalence.status == "confirmed" {
         equivalence.caid.as_deref()
@@ -4348,7 +4352,7 @@ mod tests {
             .and_then(|route| route.providers.first())
             .expect("lexical provider plan");
 
-        assert_eq!(provider.status, "degraded");
+        assert_eq!(provider.status, VariantArticleSourceStatusKind::Degraded);
         assert_eq!(provider.cache, "unavailable");
     }
 
@@ -4386,7 +4390,14 @@ mod tests {
         CanonicalEquivalenceObservation {
             basis: "genomic".into(),
             query: "NC_000017.11:g.1A>G".into(),
-            status: status.into(),
+            status: match status {
+                "resolved" => CanonicalEquivalenceStatus::Resolved,
+                "not_found" => CanonicalEquivalenceStatus::NotFound,
+                "invalid" => CanonicalEquivalenceStatus::Invalid,
+                "indeterminate" => CanonicalEquivalenceStatus::Indeterminate,
+                "unavailable" => CanonicalEquivalenceStatus::Unavailable,
+                other => panic!("unexpected CAR status: {other}"),
+            },
             caid: caid.map(str::to_string),
             provider_exhaustive: exhaustive,
             comparison_complete: matches!(status, "resolved" | "not_found"),

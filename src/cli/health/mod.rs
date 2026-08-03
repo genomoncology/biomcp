@@ -7,15 +7,36 @@ mod runner;
 
 use crate::error::BioMcpError;
 
+#[derive(Debug, Clone, Copy, serde::Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum HealthStatus {
+    Ok,
+    Error,
+    Excluded,
+    Available,
+    Configured,
+    NotConfigured,
+    Warning,
+    Unavailable,
+}
+
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct HealthRow {
     pub api: String,
-    pub status: String,
+    pub status: HealthStatus,
     pub latency: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub affects: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key_configured: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub local_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stale: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required_env_var: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub missing_files: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -71,11 +92,43 @@ impl HealthReport {
 }
 
 fn markdown_status(row: &HealthRow) -> String {
-    match (row.status.as_str(), row.key_configured) {
-        ("ok", Some(true)) => "ok (key configured)".to_string(),
-        ("error", Some(true)) => "error (key configured)".to_string(),
-        ("error", Some(false)) => "error (key not configured)".to_string(),
-        _ => row.status.clone(),
+    match (row.status, row.key_configured) {
+        (HealthStatus::Ok, Some(true)) => "ok (key configured)".to_string(),
+        (HealthStatus::Error, Some(true)) => "error (key configured)".to_string(),
+        (HealthStatus::Error, Some(false)) => "error (key not configured)".to_string(),
+        (HealthStatus::Excluded, _) => format!(
+            "excluded (set {})",
+            row.required_env_var.as_deref().unwrap_or_default()
+        ),
+        (HealthStatus::Available, Some(false)) => {
+            "available (unauthenticated, shared rate limit)".to_string()
+        }
+        (HealthStatus::Available, _) if row.local_path.is_some() => {
+            if row.stale == Some(true) {
+                "available (default path, stale)".to_string()
+            } else {
+                "available (default path)".to_string()
+            }
+        }
+        (HealthStatus::Configured, Some(true)) => "configured (authenticated)".to_string(),
+        (HealthStatus::Configured, _) if row.stale == Some(true) => {
+            "configured (stale)".to_string()
+        }
+        (HealthStatus::Unavailable, _) if row.required_env_var.is_some() => format!(
+            "unavailable (set {} for reliable access)",
+            row.required_env_var.as_deref().unwrap_or_default()
+        ),
+        (HealthStatus::Unavailable, _) => "unavailable (not built)".to_string(),
+        (HealthStatus::NotConfigured, _) => "not configured".to_string(),
+        (HealthStatus::Error, _) if row.missing_files.is_some() => format!(
+            "error (missing: {})",
+            row.missing_files.as_deref().unwrap_or_default().join(", ")
+        ),
+        (HealthStatus::Ok, _) => "ok".to_string(),
+        (HealthStatus::Error, _) => "error".to_string(),
+        (HealthStatus::Available, _) => "available".to_string(),
+        (HealthStatus::Configured, _) => "configured".to_string(),
+        (HealthStatus::Warning, _) => "warning".to_string(),
     }
 }
 

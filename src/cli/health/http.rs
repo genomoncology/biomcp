@@ -4,6 +4,7 @@ use std::time::Instant;
 
 use crate::error::BioMcpError;
 
+use super::HealthStatus;
 use super::runner::{ProbeClass, ProbeOutcome, health_row, outcome};
 
 pub(in crate::cli::health) fn configured_key(env_var: &str) -> Option<String> {
@@ -21,16 +22,15 @@ pub(in crate::cli::health) fn excluded_outcome(
     env_var: &str,
     affects: Option<&'static str>,
 ) -> ProbeOutcome {
-    outcome(
-        health_row(
-            api,
-            format!("excluded (set {env_var})"),
-            "n/a".into(),
-            affects,
-            Some(false),
-        ),
-        ProbeClass::Excluded,
-    )
+    let mut row = health_row(
+        api,
+        HealthStatus::Excluded,
+        "n/a".into(),
+        affects,
+        Some(false),
+    );
+    row.required_env_var = Some(env_var.to_string());
+    outcome(row, ProbeClass::Excluded)
 }
 
 fn transport_error_latency(start: Instant, err: &reqwest::Error) -> String {
@@ -71,7 +71,7 @@ pub(in crate::cli::health) async fn send_request(
                 outcome(
                     health_row(
                         api,
-                        "ok".into(),
+                        HealthStatus::Ok,
                         format!("{elapsed}ms"),
                         None,
                         key_configured,
@@ -82,7 +82,7 @@ pub(in crate::cli::health) async fn send_request(
                 outcome(
                     health_row(
                         api,
-                        "error".into(),
+                        HealthStatus::Error,
                         format!("{elapsed}ms (HTTP {})", status.as_u16()),
                         affects,
                         key_configured,
@@ -94,7 +94,7 @@ pub(in crate::cli::health) async fn send_request(
         Err(err) => outcome(
             health_row(
                 api,
-                "error".into(),
+                HealthStatus::Error,
                 transport_error_latency(start, &err),
                 affects,
                 key_configured,
@@ -162,22 +162,18 @@ pub(in crate::cli::health) fn optional_auth_status_outcome(
     status: reqwest::StatusCode,
     elapsed_ms: u128,
     key_configured: Option<bool>,
-    unauthenticated_ok_status: &str,
-    authenticated_ok_status: &str,
-    unauthenticated_rate_limited_status: Option<&str>,
+    env_var: &str,
     affects: Option<&'static str>,
 ) -> ProbeOutcome {
-    let success_status = if key_configured == Some(true) {
-        authenticated_ok_status
-    } else {
-        unauthenticated_ok_status
-    };
-
     if status.is_success() {
         return outcome(
             health_row(
                 api,
-                success_status.to_string(),
+                if key_configured == Some(true) {
+                    HealthStatus::Configured
+                } else {
+                    HealthStatus::Available
+                },
                 format!("{elapsed_ms}ms"),
                 None,
                 key_configured,
@@ -186,26 +182,22 @@ pub(in crate::cli::health) fn optional_auth_status_outcome(
         );
     }
 
-    if key_configured == Some(false)
-        && status == reqwest::StatusCode::TOO_MANY_REQUESTS
-        && let Some(status_message) = unauthenticated_rate_limited_status
-    {
-        return outcome(
-            health_row(
-                api,
-                status_message.to_string(),
-                format!("{elapsed_ms}ms"),
-                None,
-                key_configured,
-            ),
-            ProbeClass::Healthy,
+    if key_configured == Some(false) && status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        let mut row = health_row(
+            api,
+            HealthStatus::Unavailable,
+            format!("{elapsed_ms}ms"),
+            None,
+            key_configured,
         );
+        row.required_env_var = Some(env_var.to_string());
+        return outcome(row, ProbeClass::Healthy);
     }
 
     outcome(
         health_row(
             api,
-            "error".into(),
+            HealthStatus::Error,
             format!("{elapsed_ms}ms (HTTP {})", status.as_u16()),
             affects,
             key_configured,
@@ -222,9 +214,6 @@ pub(in crate::cli::health) async fn check_optional_auth_get(
     env_var: &str,
     header_name: &str,
     header_value_prefix: &str,
-    unauthenticated_ok_status: &str,
-    authenticated_ok_status: &str,
-    unauthenticated_rate_limited_status: Option<&str>,
     affects: Option<&'static str>,
 ) -> ProbeOutcome {
     let key = configured_key(env_var);
@@ -238,7 +227,7 @@ pub(in crate::cli::health) async fn check_optional_auth_get(
     let start = Instant::now();
     let error_outcome = |latency: String| {
         outcome(
-            health_row(api, "error".into(), latency, affects, key_configured),
+            health_row(api, HealthStatus::Error, latency, affects, key_configured),
             ProbeClass::Error,
         )
     };
@@ -247,16 +236,7 @@ pub(in crate::cli::health) async fn check_optional_auth_get(
         Ok(response) => {
             let status = response.status();
             let elapsed = start.elapsed().as_millis();
-            optional_auth_status_outcome(
-                api,
-                status,
-                elapsed,
-                key_configured,
-                unauthenticated_ok_status,
-                authenticated_ok_status,
-                unauthenticated_rate_limited_status,
-                affects,
-            )
+            optional_auth_status_outcome(api, status, elapsed, key_configured, env_var, affects)
         }
         Err(err) => error_outcome(transport_error_latency(start, &err)),
     }
@@ -283,7 +263,7 @@ pub(in crate::cli::health) async fn check_auth_query_param(
             return outcome(
                 health_row(
                     api,
-                    "error".into(),
+                    HealthStatus::Error,
                     format!("invalid url: {err}"),
                     affects,
                     Some(true),
@@ -342,7 +322,7 @@ pub(in crate::cli::health) async fn check_alphagenome_connect(
         Ok(_) => outcome(
             health_row(
                 api,
-                "ok".into(),
+                HealthStatus::Ok,
                 format!("{}ms", start.elapsed().as_millis()),
                 None,
                 Some(true),
@@ -352,7 +332,7 @@ pub(in crate::cli::health) async fn check_alphagenome_connect(
         Err(err) => outcome(
             health_row(
                 api,
-                "error".into(),
+                HealthStatus::Error,
                 api_error_latency(start, &err),
                 affects,
                 Some(true),
@@ -385,7 +365,7 @@ pub(in crate::cli::health) fn vaers_query_outcome(
         Ok(()) => outcome(
             health_row(
                 api,
-                "ok".into(),
+                HealthStatus::Ok,
                 format!("{}ms", start.elapsed().as_millis()),
                 None,
                 None,
@@ -395,7 +375,7 @@ pub(in crate::cli::health) fn vaers_query_outcome(
         Err(err) => outcome(
             health_row(
                 api,
-                "error".into(),
+                HealthStatus::Error,
                 api_error_latency(start, &err),
                 affects,
                 None,
