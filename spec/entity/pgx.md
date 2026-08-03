@@ -13,6 +13,7 @@ reader can immediately see which drugs are affected.
 ```bash
 ../../tools/biomcp-ci search pgx CYP2D6 --limit 3 | mustmatch like '...
 # PGx Search: gene=CYP2D6
+...
 | Gene | Drug | CPIC Level | PGx Testing | Guideline |
 | CYP2D6 | codeine | A | Actionable PGx |'
 ```
@@ -35,6 +36,7 @@ interaction surface instead of an undocumented special-case workflow.
 ```bash
 ../../tools/biomcp-ci search pgx --drug clopidogrel --limit 3 | mustmatch like '...
 # PGx Search: drug=clopidogrel
+...
 | CYP2C19 | clopidogrel | A | Actionable PGx |'
 ```
 
@@ -46,6 +48,7 @@ interaction card stays readable.
 ```bash
 ../../tools/biomcp-ci get pgx CYP2D6 recommendations | mustmatch like '...
 # CYP2D6 - recommendations
+...
 ## Recommendations (CPIC)
 | Drug | Phenotype | Activity Score | Recommendation | Classification |'
 ```
@@ -58,6 +61,7 @@ that contextualizes its interaction rows without making the default card noisy.
 ```bash
 ../../tools/biomcp-ci get pgx CYP2D6 guidelines | mustmatch like '...
 # CYP2D6 - guidelines
+...
 ## Guidelines (CPIC)
 | Guideline | Genes | Drugs |'
 ```
@@ -71,6 +75,7 @@ free text.
 ```bash
 ../../tools/biomcp-ci get pgx CYP2D6 frequencies | mustmatch like '...
 # CYP2D6 - frequencies
+...
 ## Population Frequencies (CPIC)
 | Gene | Allele | Population | Frequency | Subjects |'
 ```
