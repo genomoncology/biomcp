@@ -23,7 +23,9 @@ def _audit(source_root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> None:
+def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> (
+    None
+):
     result = _audit(SOURCES_ROOT)
 
     assert result.returncode == 0, result.stderr
@@ -54,7 +56,9 @@ def _valid_receipt(body: bytes) -> dict[str, str]:
     }
 
 
-def _write_real_capture_inventory(source_root: Path, body: bytes, receipt: dict[str, str]) -> None:
+def _write_real_capture_inventory(
+    source_root: Path, body: bytes, receipt: dict[str, str]
+) -> None:
     payload = source_root / "example" / "record.json"
     payload.parent.mkdir(parents=True)
     payload.write_bytes(body)
@@ -113,3 +117,29 @@ def test_real_capture_receipts_reject_byte_drift(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "sha256" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "error"),
+    (
+        (
+            "request",
+            "https://storage.googleapis.com/object?X-Goog-Signature=secret",
+            "unsafe",
+        ),
+        ("captured_at", "2026-08-03 00:00:00Z", "RFC3339 UTC"),
+    ),
+)
+def test_real_capture_receipts_reject_unsafe_request_and_non_rfc3339_timestamp(
+    tmp_path: Path, field: str, value: str, error: str
+) -> None:
+    body = b'{"record": 42}\n'
+    receipt = _valid_receipt(body)
+    receipt[field] = value
+    source_root = tmp_path / "sources"
+    _write_real_capture_inventory(source_root, body, receipt)
+
+    result = _audit(source_root)
+
+    assert result.returncode != 0
+    assert error in result.stderr

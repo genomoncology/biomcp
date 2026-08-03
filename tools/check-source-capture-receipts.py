@@ -27,12 +27,19 @@ REQUIRED_RECEIPT_FIELDS = (
     "provider_origin_statement",
 )
 SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
+RFC3339_UTC_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\Z")
 UNSAFE_REQUEST_FIELDS = {
     "access_token",
     "api_key",
     "apikey",
+    "auth",
+    "authorization",
+    "awsaccesskeyid",
+    "client_secret",
     "credential",
     "key",
+    "password",
+    "secret",
     "signature",
     "sig",
     "token",
@@ -48,13 +55,15 @@ def invalid_request(request: object) -> bool:
     if parsed.username is not None or parsed.password is not None:
         return True
     return any(
-        key.lower() in UNSAFE_REQUEST_FIELDS or key.lower().startswith("x-amz-")
-        for key, _ in parse_qsl(parsed.query, keep_blank_values=True)
+        key.lower() in UNSAFE_REQUEST_FIELDS
+        or key.lower().startswith(("x-amz-", "x-goog-"))
+        for component in (parsed.query, parsed.fragment)
+        for key, _ in parse_qsl(component, keep_blank_values=True)
     )
 
 
 def invalid_utc_timestamp(value: object) -> bool:
-    if not isinstance(value, str) or not value.endswith("Z"):
+    if not isinstance(value, str) or not RFC3339_UTC_RE.fullmatch(value):
         return True
     try:
         parsed = dt.datetime.fromisoformat(value.removesuffix("Z") + "+00:00")
