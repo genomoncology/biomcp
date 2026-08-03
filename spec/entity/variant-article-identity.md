@@ -41,6 +41,17 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
 }
 ```
 
+Canonical-equivalence observations and debug-plan provider rows are separate
+machine interfaces, but both carry closed statuses. The frozen panel exercises
+CAR observations and requested debug plans without making provider availability
+a release criterion.
+
+```bash
+bash ../fixtures/run-variant-article-identity-fixture.sh ../.. \
+  | mustmatch like '"canonical_observation_statuses_are_closed": true
+"debug_plan_provider_statuses_are_closed": true'
+```
+
 The outage response is not a completed negative search: it remains incomplete,
 truncated, and without a total. The two eligible RefSeq requests also retain
 MyVariant `not_found` while exposing a complete, auditable CAR sibling fact; the
