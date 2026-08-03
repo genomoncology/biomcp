@@ -15,6 +15,7 @@ reader can immediately see which drugs are affected.
 # PGx Search: gene=CYP2D6
 ...
 | Gene | Drug | CPIC Level | PGx Testing | Guideline |
+...
 | CYP2D6 | codeine | A | Actionable PGx |'
 ```
 
@@ -50,6 +51,7 @@ interaction card stays readable.
 # CYP2D6 - recommendations
 ...
 ## Recommendations (CPIC)
+...
 | Drug | Phenotype | Activity Score | Recommendation | Classification |'
 ```
 
@@ -63,6 +65,7 @@ that contextualizes its interaction rows without making the default card noisy.
 # CYP2D6 - guidelines
 ...
 ## Guidelines (CPIC)
+...
 | Guideline | Genes | Drugs |'
 ```
 
@@ -77,5 +80,6 @@ free text.
 # CYP2D6 - frequencies
 ...
 ## Population Frequencies (CPIC)
+...
 | Gene | Allele | Population | Frequency | Subjects |'
 ```
