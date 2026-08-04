@@ -829,7 +829,7 @@ This local fixture contract protects the PubTator-to-OA resolution path without
 asking NCBI or PMC to serve the record during routine checks.
 
 ```bash
-../../tools/biomcp-ci --json get article 20516115 assets | jq '(.pmid == "20516115") and any(.coverage[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and .outcome == "retrievable" and (.provider.source | length > 0)) and any(.coverage[]?; (.filename | endswith("Supplementary_Tables.xls")) and .outcome == "retrievable" and (.provider.source | length > 0)) and any(.assets[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and (.handle | startswith("biomcp get article 20516115 asset "))) and any(.assets[]?; (.filename | endswith("Supplementary_Tables.xls")) and (.handle | startswith("biomcp get article 20516115 asset ")))' | mustmatch 'true'
+../../tools/biomcp-ci --json get article 20516115 assets | jq '(.pmid == "20516115") and any(.coverage[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and .outcome == "retrievable" and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0)) and any(.coverage[]?; (.filename | endswith("Supplementary_Tables.xls")) and .outcome == "retrievable" and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0)) and any(.assets[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and (.size_bytes > 0) and (.sha256 | test("^[0-9a-f]{64}$")) and (.handle | startswith("biomcp get article 20516115 asset "))) and any(.assets[]?; (.filename | endswith("Supplementary_Tables.xls")) and (.size_bytes > 0) and (.sha256 | test("^[0-9a-f]{64}$")) and (.handle | startswith("biomcp get article 20516115 asset ")))' | mustmatch 'true'
 ```
 
 ## JATS and PMC HTML Supplement Links Resolve Through Stable Handles
@@ -1064,12 +1064,21 @@ size_bytes"
 
 ## Semantic Scholar Graph Collections Use Neutral Identifiers
 
-Fixture-backed graph calls retain a neutral identifier column because a related
-paper may have a PMID, DOI, arXiv ID, or only a provider ID. A successful empty
+Fixture-backed graph calls retain neutral identifier columns because a related
+paper may have a PMID, DOI, arXiv ID, or only a provider ID. The captured
+citation row keeps a provider-only identifier, and a successful empty
 recommendation result still has an iterable JSON collection.
 
 ```bash
 ../../tools/biomcp-ci article citations 22663011 --limit 1 | mustmatch like "| Identifier | Title | Intents | Influential | Context |"
+```
+
+```bash
+../../tools/biomcp-ci --json article citations 22663011 --limit 1 | jq 'any(.edges[]?.paper; (.paper_id | type == "string" and length > 0) and (.pmid == null) and (.doi == null) and (.arxiv_id == null))' | mustmatch 'true'
+```
+
+```bash
+../../tools/biomcp-ci article recommendations 22663011 --limit 1 | mustmatch like "| Identifier | Title | Journal | Year |"
 ```
 
 ```bash

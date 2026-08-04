@@ -194,6 +194,8 @@ def test_authenticated_semantic_scholar_graph_receiver_preserves_redacted_header
         assert server.state.citation_seen_api_key and all(
             server.state.citation_seen_api_key
         ), "authenticated citation retries should keep x-api-key on every attempt"
+        assert "spec-test-key" not in result.stdout
+        assert "spec-test-key" not in result.stderr
         assert len(server.state.citation_times) >= 2, (
             "authenticated 429 should be retried and reach the recovery response"
         )
