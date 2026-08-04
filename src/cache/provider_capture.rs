@@ -66,6 +66,15 @@ pub(crate) enum ProviderCaptureError {
 #[derive(Debug, Clone)]
 pub(crate) struct ProviderCaptureStore {
     root: PathBuf,
+    #[cfg(test)]
+    pause_after_blob_parent_ready: Option<std::sync::Arc<TestPublicationPause>>,
+}
+
+#[cfg(test)]
+#[derive(Debug)]
+struct TestPublicationPause {
+    ready: std::sync::mpsc::Sender<()>,
+    resume: std::sync::Mutex<std::sync::mpsc::Receiver<()>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,6 +87,27 @@ impl ProviderCaptureStore {
     pub(crate) fn new(cache_root: impl AsRef<Path>) -> Self {
         Self {
             root: cache_root.as_ref().join("captures"),
+            #[cfg(test)]
+            pause_after_blob_parent_ready: None,
+        }
+    }
+
+    #[cfg(test)]
+    fn with_blob_parent_pause(mut self, pause: std::sync::Arc<TestPublicationPause>) -> Self {
+        self.pause_after_blob_parent_ready = Some(pause);
+        self
+    }
+
+    #[cfg(test)]
+    fn pause_after_blob_parent_ready(&self) {
+        if let Some(pause) = &self.pause_after_blob_parent_ready {
+            pause.ready.send(()).expect("test waits for publication");
+            pause
+                .resume
+                .lock()
+                .expect("test publication pause lock")
+                .recv()
+                .expect("test resumes publication");
         }
     }
 
@@ -178,6 +208,8 @@ impl ProviderCaptureStore {
                 }
                 let parent = blob.parent().ok_or(ProviderCaptureError::Corrupt)?;
                 self.ensure_directory(parent)?;
+                #[cfg(test)]
+                self.pause_after_blob_parent_ready();
                 fs::rename(&staged, &blob).map_err(|_| ProviderCaptureError::Corrupt)?;
                 sync_dir(parent)?;
                 let record = Metadata {
@@ -678,11 +710,12 @@ fn retained_regular_file_bytes(path: &Path) -> Result<u64, ProviderCaptureError>
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex, mpsc};
+    use std::time::Duration;
 
     use super::{
         MAX_CAPTURE_BYTES, MAX_RETAINED_BYTES, Metadata, ProviderCaptureError,
-        ProviderCaptureProvider, ProviderCaptureStore,
+        ProviderCaptureProvider, ProviderCaptureStore, TestPublicationPause,
     };
     use crate::test_support::TempDirGuard;
 
@@ -954,6 +987,51 @@ mod tests {
                 .next()
                 .is_none(),
             "capture must not create files outside its managed root"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn refuses_a_blob_shard_swapped_after_validation_without_writing_outside() {
+        use sha2::{Digest, Sha256};
+
+        let root = TempDirGuard::new("provider-capture-shard-swap");
+        let outside = root.path().join("outside");
+        std::fs::create_dir_all(&outside).expect("outside directory");
+        let bytes = b"swapped bytes";
+        let digest = format!("{:x}", Sha256::digest(bytes));
+        let shard = root.path().join("captures/cspec/sha256").join(&digest[..2]);
+        std::fs::create_dir_all(&shard).expect("create canonical shard");
+        let (ready, ready_for_test) = mpsc::channel();
+        let (resume_for_test, resume) = mpsc::channel();
+        let pause = Arc::new(TestPublicationPause {
+            ready,
+            resume: Mutex::new(resume),
+        });
+        let store = ProviderCaptureStore::new(root.path()).with_blob_parent_pause(pause);
+        let capture = std::thread::spawn(move || {
+            store.capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", bytes)
+        });
+
+        ready_for_test
+            .recv_timeout(Duration::from_secs(5))
+            .expect("capture must pause after validating the blob shard");
+        let displaced = root.path().join("displaced-shard");
+        std::fs::rename(&shard, &displaced).expect("displace validated shard");
+        std::os::unix::fs::symlink(&outside, &shard).expect("replace shard with outside symlink");
+        resume_for_test.send(()).expect("resume capture");
+
+        assert_eq!(
+            capture.join().expect("capture thread"),
+            Err(ProviderCaptureError::Corrupt),
+            "a post-validation component swap must fail publication"
+        );
+        assert!(
+            std::fs::read_dir(&outside)
+                .expect("read outside")
+                .next()
+                .is_none(),
+            "capture publication must not write through the swapped shard"
         );
     }
 
