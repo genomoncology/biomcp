@@ -1,34 +1,34 @@
-# Code Review — ticket 652
+# Code Review — ticket 662
 
-## Scope reviewed
+## Scope and traceability
 
-- Read `AGENTS.md`; confirmed mustmatch executable specs live in `spec/*.md` and run through `make spec`.
-- Reviewed the complete `git diff main..HEAD` (28 files; 808 additions, 143 deletions), the final design, red-check record, code log, and ticket operator ruling.
-- Verified the receipt hashes for the CSpec ATM manifest/document and ERepo APC summary/detail against `capture-receipts.json`.
-- Ran `make lint`, `make test`, and `make spec` successfully.
+Reviewed the complete `main..HEAD` diff (17 files; 810 additions / 85 deletions before review repairs), the final design, red-check record, and code log. The data-heavy diff is proportionate to seven raw captured responses plus receipts. The only runtime edit not named by the design was reverted.
 
-## Design completeness and traceability
+Forward traceability: all four proof-matrix entries landed at their named locations. Reverse traceability used `git diff main..HEAD -- 'spec/*'`: the new live-lane ratchet is explicitly named in the matrix, and deletion of exactly the two named live pages is authorized. No invented, relaxed, or silently removed shipped assertion remains.
 
-All final-design decisions and acceptance criteria map to landed code, capture evidence, native tests, fixture drivers, routine specs, and live-path retirement. The two proof-matrix mustmatch rows landed in their specified files; the receipt-admission unit row landed in `tests/test_capture_receipts.py`.
+## Repairs
 
-Scoped reverse audit: `git diff main..HEAD -- 'spec/*'`.
+- Extended CAR’s receipt-backed decoder test to consume the recorded empty and malformed response bytes, pinning their distinct non-resolved outcomes.
+- Added LDH raw-capture coverage through the production medium and direct clients, plus the malformed direct verification outcome.
+- Reverted the undesigned change that treated an LDH annotation with no body as complete. The real direct capture legitimately contains an unrelated body-less annotation; it may still yield the required linkage while the overall result remains incomplete.
 
-- The three new CSpec and three new ERepo observable assertions each trace to a proof-matrix entry.
-- The two changed legacy CSpec literals are the ticket's explicit operator-authorized replacement of synthetic facts with recorded provider bytes; assertion shape was retained.
-- The two removed live pages and their registry entries are explicitly authorized after replacement proof. No shipped assertion was silently relaxed or removed, and no code-authored shipped assertion was found.
+## Validation
 
-## Edit discipline and quality
-
-The diff is proportionate to the named interface: source-local plans and tests, receipt-admitted captures, direct-byte fixture replay, existing routine-spec assertions, and two live registry/page removals. The added CSpec manifest captures are necessary because the pre-existing fixture asserts all named gene series. No unrelated runtime edits, duplicated implementation, security regression, dead code, resource cleanup conflict, stale error text, or shadowing was found.
-
-The record's CSpec citation table includes an extra guideline citation outside the BP6 criterion; the implementation correctly follows the receipt bytes: BP6 itself has the single PubMed 29543229 citation. The native duplicate/order test supplies a duplicate only in its local decoded test value to preserve the deduplication property that the recorded BP6 bytes cannot themselves exercise.
+- Focused CAR/LDH receipt-backed tests: passed
+- `uv run --no-sync pytest tests/test_capture_receipts.py -k clingen_car_and_ldh_live_replacements_have_receipted_captures -v`: passed
+- `uv run --no-sync python tools/check-source-capture-receipts.py --root testdata/sources --json`: passed (107 classified, 0 byte-unfaithful)
+- `make spec`: passed
+- `make lint`: passed
+- `make test`: passed (448 Python contracts; strict MkDocs build)
+- `git diff --check`: passed
 
 ## Defect Register
 
 | # | Category | Lintable | Description |
 |---|----------|----------|-------------|
-| — | None found | — | No repair or separate review commit required. |
+| 1 | missing-assertion | no | CAR empty/malformed and LDH medium/empty/malformed captures were receipt-admitted but not consumed by production-path tests, leaving required captured-outcome coverage absent. Repaired with bounded native tests. |
+| 2 | over-edit | no | `verify_ldh_annotation` stopped marking body-less annotations incomplete solely so the positive capture could assert completeness. This was an undesigned runtime behavior change. Reverted; the linkage assertion remains. |
 
 ## Residual concerns
 
-None. An independent subagent review was attempted but timed out without producing findings; the primary review and all standard gates completed successfully.
+None. No out-of-scope issue was identified.
