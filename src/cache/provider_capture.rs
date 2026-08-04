@@ -806,8 +806,29 @@ impl CaptureDirectory {
                     .map_err(|_| ProviderCaptureError::Corrupt)?;
                 Ok(Some(bytes))
             }
-            Err(ProviderCaptureError::Corrupt) if self.file_status(name)?.is_none() => Ok(None),
+            Err(ProviderCaptureError::Corrupt) if self.entry_missing(name)? => Ok(None),
             Err(error) => Err(error),
+        }
+    }
+
+    fn entry_missing(&self, name: &str) -> Result<bool, ProviderCaptureError> {
+        let name = CString::new(name).map_err(|_| ProviderCaptureError::Corrupt)?;
+        let mut stat = std::mem::MaybeUninit::uninit();
+        // SAFETY: `name` is NUL-terminated and `stat` points to writable storage.
+        if unsafe {
+            libc::fstatat(
+                self.file.as_raw_fd(),
+                name.as_ptr(),
+                stat.as_mut_ptr(),
+                libc::AT_SYMLINK_NOFOLLOW,
+            )
+        } == 0
+        {
+            Ok(false)
+        } else if io::Error::last_os_error().kind() == io::ErrorKind::NotFound {
+            Ok(true)
+        } else {
+            Err(ProviderCaptureError::Corrupt)
         }
     }
 
@@ -1090,6 +1111,28 @@ mod tests {
         .expect("corrupt blob");
         assert_eq!(
             restarted.read(&manifest.capture_id),
+            Err(ProviderCaptureError::Corrupt)
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_a_directory_in_place_of_capture_metadata() {
+        let root = TempDirGuard::new("provider-capture-metadata-directory");
+        let store = ProviderCaptureStore::new(root.path());
+        let manifest = store
+            .capture_bytes(ProviderCaptureProvider::Cspec, "text/plain", b"original")
+            .expect("capture");
+        let metadata = root
+            .path()
+            .join("captures/cspec/metadata")
+            .join(&manifest.sha256[..2])
+            .join(format!("{}.json", manifest.sha256));
+        std::fs::remove_file(&metadata).expect("remove metadata");
+        std::fs::create_dir(&metadata).expect("replace metadata with directory");
+
+        assert_eq!(
+            store.read_manifest(&manifest.capture_id),
             Err(ProviderCaptureError::Corrupt)
         );
     }
