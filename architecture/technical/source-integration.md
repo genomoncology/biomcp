@@ -562,8 +562,10 @@ Authenticated or key-gated integrations have extra requirements.
 - Provider integrations that need byte-fidelity may retain one public response in
   the private bounded capture store. A capture handle resolves only to its
   locally verified original bytes and never triggers a provider refetch; it
-  contains no URL, request metadata, credential, or response content. This is
-  internal infrastructure, not a claim that every source route exposes captures.
+  contains no URL, request metadata, credential, or response content. On Unix,
+  the private store uses descriptor-relative no-follow operations; on other
+  platforms it fails closed as corrupt until an equivalent backend exists. This
+  is internal infrastructure, not a claim that every source route exposes captures.
 
 Semantic Scholar is the model optional-key integration for agent harnesses that
 launch BioMCP as a child process. `SemanticScholarClient::new()` reads
