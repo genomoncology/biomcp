@@ -132,10 +132,13 @@ The stable output fields are:
 Markdown prints `Saved to:` and does not inline full text or manifest prose in
 the article card. When OA package assets are available but not inlined, Markdown
 points to `biomcp --json get article <id> assets`. JSON fulltext responses add a
-structured `not_included` summary for figure images, supplementary files, and
-complex tables plus asset retrieval next commands. Non-PMC Figshare assets stay
-on the explicit asset surface; they are not parsed into full text or treated as
-the `fulltext --pdf` article-body fallback.
+structured `not_included` summary for package figure images, supplementary
+files, and complex tables plus asset retrieval next commands. It is deliberately
+package-only: JATS- or HTML-linked-only assets are available through the explicit
+`assets` and `asset` surfaces, not counted or acquired for an ordinary fulltext
+summary. Non-PMC Figshare assets likewise stay on the explicit asset surface;
+they are not parsed into full text or treated as the `fulltext --pdf`
+article-body fallback.
 Every Article owns `section_outcomes.fulltext`. A base card records
 `not_requested`; a requested ladder completes it once as `data`, `empty`, or
 `unavailable`. Structural coverage and source health are independent: the best
