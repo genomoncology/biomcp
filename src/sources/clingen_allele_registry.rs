@@ -629,4 +629,36 @@ mod tests {
             decode_normalize_response("NM_1.1:c.1A>G", StatusCode::OK, None, br#"{"@id":"CA"}"#);
         assert_eq!(item.status, CarNormalizationStatus::Indeterminate);
     }
+
+    #[test]
+    fn receipt_backed_car_capture_decodes_a_resolved_transcript_identity() {
+        let input = "NM_000546.6:c.215C>G";
+        let bytes = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_allele_registry/tp53-nm_000546.6-c.215c-g.json"
+        ))
+        .expect("ticket 662 must add the recorded CAR transcript response");
+
+        let item = decode_normalize_response(
+            input,
+            StatusCode::OK,
+            Some("captured-car-version".into()),
+            &bytes,
+        );
+
+        assert_eq!(item.status, CarNormalizationStatus::Resolved);
+        assert!(item.exhaustive);
+        assert!(item.caid.as_deref().is_some_and(|caid| {
+            caid.strip_prefix("CA").is_some_and(|digits| {
+                !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
+            })
+        }));
+        assert_eq!(item.query, input);
+        assert_eq!(item.source, "clingen_car");
+        assert!(!item.transcript_aliases.values.is_empty());
+        assert_eq!(
+            item.provenance.car_version.as_deref(),
+            Some("captured-car-version")
+        );
+    }
 }

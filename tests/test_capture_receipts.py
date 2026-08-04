@@ -35,6 +35,25 @@ def test_clingen_live_replacements_have_receipted_manifest_summary_and_detail_ca
     assert classifications.get("clingen_erepo/apc-detail.json") == "real_and_receipted"
 
 
+def test_clingen_car_and_ldh_live_replacements_have_receipted_captures() -> None:
+    manifest = json.loads((SOURCES_ROOT / "capture-receipts.json").read_text(encoding="utf-8"))
+    classifications = {
+        entry["path"]: entry["classification"] for entry in manifest["entries"]
+    }
+
+    expected_paths = {
+        "clingen_allele_registry/tp53-nm_000546.6-c.215c-g.json",
+        "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-empty.json",
+        "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-malformed.json",
+        "clingen_ldh/ca288251-medium.json",
+        "clingen_ldh/ca288251-medium-empty.json",
+        "clingen_ldh/ca288251-pmc8710334-direct.json",
+        "clingen_ldh/ca288251-pmc8710334-direct-malformed.json",
+    }
+
+    assert {path for path in expected_paths if classifications.get(path) == "real_and_receipted"} == expected_paths
+
+
 def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> None:
     result = _audit(SOURCES_ROOT)
 

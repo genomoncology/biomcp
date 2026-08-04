@@ -1314,6 +1314,51 @@ mod tests {
     }
 
     #[test]
+    fn receipt_backed_ldh_direct_capture_confirms_an_article_page_linkage() {
+        let bytes = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_ldh/ca288251-pmc8710334-direct.json"
+        ))
+        .expect("ticket 662 must add the recorded LDH direct annotation response");
+        let response = serde_json::from_slice(&bytes)
+            .expect("ticket 662 LDH direct capture must remain provider JSON");
+        let requested = RequestedVariantIdentity::from_variant_input("CHEK2 c.1100del")
+            .expect("CHEK2 identity");
+
+        let identity = verify_ldh_annotation(
+            &requested,
+            "CA288251",
+            &["rs555607708".into()],
+            "PMC8710334",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
+            &response,
+        );
+
+        assert!(!identity.incomplete);
+        let linkage = identity
+            .observations
+            .iter()
+            .find_map(|observation| observation.provider_linkage.as_ref())
+            .expect("recorded LDH annotation must confirm an article-page linkage");
+        let ProviderLinkage::Ldh {
+            caid,
+            gene_id,
+            pmcid,
+            selector_type,
+            selector_value,
+            ..
+        } = linkage
+        else {
+            panic!("expected an LDH linkage");
+        };
+        assert_eq!(caid, "CA288251");
+        assert_eq!(*gene_id, Some(11200));
+        assert_eq!(pmcid, "PMC8710334");
+        assert_eq!(selector_type, "TextQuoteSelector");
+        assert_eq!(selector_value, "rs555607708");
+    }
+
+    #[test]
     fn unavailable_verification_is_incomplete_and_unverified() {
         let identity = verify_pubtator(
             &requested(),
