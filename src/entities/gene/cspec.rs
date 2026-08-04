@@ -657,6 +657,54 @@ mod tests {
     }
 
     #[test]
+    fn recorded_atm_document_deduplicates_citations_in_provider_order() {
+        let mut document: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_cspec/atm-gn020-1.5.1.json"
+        )))
+        .expect("recorded CSpec document JSON");
+        document["data"]["ld"]["CriteriaCode"][0]["entContent"]["references"] = json!([
+            {"id": "29543229", "source": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/29543229"},
+            {"id": "25741868", "source": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/25741868"},
+            {"id": "29543229", "source": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/29543229"},
+        ]);
+        let bytes = serde_json::to_vec(&document).expect("fixture serializes");
+        let capture = ProviderCaptureManifest {
+            capture_id: "capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            provider: ProviderCaptureProvider::Cspec,
+            media_type: "application/json".into(),
+            byte_length: bytes.len() as u64,
+            sha256: "a".repeat(64),
+            captured_at: 0,
+            expires_at: 1,
+            schema_version: 1,
+            capture_binding: Some(CspecCaptureBinding {
+                binding_schema_version: 1,
+                normalized_gene: "ATM".into(),
+                resource_iri: "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into(),
+                specification_id: "GN020".into(),
+            }),
+        };
+
+        let page = page_from_bytes(
+            &bytes,
+            capture.capture_binding.as_ref().expect("binding"),
+            0,
+            1,
+            &capture,
+        )
+        .expect("recorded document projection");
+
+        assert_eq!(
+            page.criteria[0].citations,
+            [
+                "https://pubmed.ncbi.nlm.nih.gov/29543229",
+                "https://pubmed.ncbi.nlm.nih.gov/25741868",
+            ]
+        );
+    }
+
+    #[test]
     fn post_fetch_paging_failure_is_not_projected_as_a_clingen_provider_failure() {
         let mut document: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),

@@ -1,6 +1,6 @@
 # Live-spec conversion target
 
-Ticket 645 records the target state for the 21 paths in
+Ticket 645 records the target state for the 19 remaining paths in
 `scripts/run-specs.sh::SPEC_LIVE_PATHS`. It complements (and does not replace)
 [the request-contract test architecture](request-contract-test-architecture.md).
 
@@ -68,7 +68,7 @@ conversion may treat an undocumented fixture as a real capture.
 
 ## Classification
 
-All 21 live paths are **convert**. None is **keep** (provider-only smoke) or
+All 19 remaining live paths are **convert**. None is **keep** (provider-only smoke) or
 **retire** (no remaining product contract).
 
 | Path | Tier 2 and Tier 3 replacement before removal |
@@ -86,8 +86,6 @@ All 21 live paths are **convert**. None is **keep** (provider-only smoke) or
 | `trial.md` | CT.gov/NCI plans and cursor handling; dated cursor/contact/eligibility and NCI captures. |
 | `vaers.md` | VAERS/OpenFDA plans and source eligibility; dated VAERS aggregate and unsupported/empty capture. |
 | `variant-hotspots.md` | CancerHotspots plan and structure join; dated BRAF/MYD88, empty, and recurrence captures. |
-| `clingen-erepo-live.md` | CLI detail-selection consumption of ERepo plan; dated summary/detail captures preserving provider `@id`. |
-| `clingen-cspec-live.md` | CSpec manifest/version-page plan and capture-store binding; dated manifest/version, malformed, and paging captures. |
 | `clingen-car-live.md` | CAR transcript-HGVS plan and ordering; dated normalization capture including aliases/version. |
 | `clingen-ldh-live.md` | LDH medium/direct plans, CAid selection, and bounds; dated positive, empty, malformed, and not-attempted captures. |
 | `variant-myvariant-live.md` | MyVariant get/search/filter plans; dated consequence/filter payload captures. |
