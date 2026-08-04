@@ -51,8 +51,6 @@ SPEC_LIVE_PATHS=(
   spec/entity/trial.md
   spec/entity/vaers.md
   spec/entity/variant-hotspots.md
-  spec/entity/clingen-car-live.md
-  spec/entity/clingen-ldh-live.md
   spec/entity/variant-myvariant-live.md
   spec/entity/variant-articles-live.md
   spec/surface/cli.md
@@ -363,8 +361,6 @@ case "$mode" in
       spec/entity/trial.md
       spec/entity/vaers.md
       spec/entity/variant-hotspots.md
-      spec/entity/clingen-car-live.md
-      spec/entity/clingen-ldh-live.md
       spec/entity/variant-myvariant-live.md
       spec/entity/variant-articles-live.md
       spec/surface/build-profile-live.md

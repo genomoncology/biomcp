@@ -1,0 +1,9 @@
+{
+  "actualAllele": "N",
+  "description": "Given allele from reference sequence is incorrect. It does not match actual sequence at given position.",
+  "errorType": "IncorrectReferenceAllele",
+  "givenAllele": "A",
+  "message": "Reference allele does not match for NC_000001.11[0-0,1+0), given=A, found=N.",
+  "referenceSequence": "NC_000001.11",
+  "region": "[0-0,1+0)"
+}

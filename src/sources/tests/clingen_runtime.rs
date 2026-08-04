@@ -1,8 +1,11 @@
 use reqwest::StatusCode;
 
 use super::super::{
-    ScriptedResponse, clingen_allele_registry::ClinGenAlleleRegistryClient,
-    clingen_cspec::CspecClient, clingen_erepo::ERepoClient, clingen_ldh::ClinGenLdhClient,
+    ScriptedResponse,
+    clingen_allele_registry::ClinGenAlleleRegistryClient,
+    clingen_cspec::CspecClient,
+    clingen_erepo::ERepoClient,
+    clingen_ldh::{ClinGenLdhClient, DIRECT_BODY_LIMIT},
     scripted_client,
 };
 use crate::entities::variant::CarNormalizationStatus;
@@ -61,6 +64,75 @@ async fn car_outage_does_not_overwrite_erepo_healthy_empty_or_version() {
             .and_then(serde_json::Value::as_array)
             .map(Vec::len),
         Some(0)
+    );
+}
+
+#[tokio::test]
+async fn receipt_backed_ldh_captures_reach_the_production_medium_and_direct_clients() {
+    let medium_client = scripted_client([(
+        LDH_HOST,
+        ScriptedResponse::Http {
+            status: StatusCode::OK,
+            headers: vec![("content-type", "application/json")],
+            body: include_str!("../../../testdata/sources/clingen_ldh/ca288251-medium.json"),
+        },
+    )])
+    .expect("scripted client");
+    let medium = ClinGenLdhClient::with_test_client(medium_client)
+        .medium("CA288251")
+        .await
+        .expect("recorded medium response");
+    assert!(
+        medium
+            .pointer("/data/VariantsInLiterature")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|rows| rows.iter().any(|row| {
+                row.get("entId").and_then(serde_json::Value::as_str) == Some("PMC8710334")
+            }))
+    );
+
+    let empty_medium_client = scripted_client([(
+        LDH_HOST,
+        ScriptedResponse::Http {
+            status: StatusCode::OK,
+            headers: vec![("content-type", "application/json")],
+            body: include_str!("../../../testdata/sources/clingen_ldh/ca288251-medium-empty.json"),
+        },
+    )])
+    .expect("scripted client");
+    let empty_medium = ClinGenLdhClient::with_test_client(empty_medium_client)
+        .medium("CA999999")
+        .await
+        .expect("recorded empty medium response");
+    assert!(empty_medium.pointer("/data/VariantsInLiterature").is_none());
+
+    let direct_client = scripted_client([(
+        LDH_HOST,
+        ScriptedResponse::Http {
+            status: StatusCode::OK,
+            headers: vec![("content-type", "application/json")],
+            body: include_str!(
+                "../../../testdata/sources/clingen_ldh/ca288251-pmc8710334-direct.json"
+            ),
+        },
+    )])
+    .expect("scripted client");
+    let (direct, body_bytes) = ClinGenLdhClient::with_test_client(direct_client)
+        .direct(
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
+            DIRECT_BODY_LIMIT,
+        )
+        .await
+        .expect("recorded direct response");
+    assert_eq!(
+        body_bytes,
+        include_bytes!("../../../testdata/sources/clingen_ldh/ca288251-pmc8710334-direct.json")
+            .len()
+    );
+    assert!(
+        direct
+            .get("annotations")
+            .is_some_and(serde_json::Value::is_array)
     );
 }
 

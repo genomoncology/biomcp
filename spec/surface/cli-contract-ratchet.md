@@ -290,6 +290,17 @@ biomcp variant articles --help | mustmatch like '--verify-identity
 [default: union]'
 ```
 
+## Converted ClinGen Contracts Leave the Live Lane
+
+ClinGen CAR and LDH response contracts are replayed from receipted local captures.
+Their former provider-health pages must therefore leave the opt-in live lane;
+routine proof owns the deterministic replacement.
+
+```bash
+awk '/SPEC_LIVE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch not like "spec/entity/clingen-car-live.md
+spec/entity/clingen-ldh-live.md"
+```
+
 ## Cache Max-Age Env Override Is Reflected in Cache Stats
 
 The cache configuration reference promises an operator env override for the

@@ -1,0 +1,16 @@
+{
+  "data": {
+    "data": "https://ldh.clinicalgenome.org/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
+    "id": "PMC8710334"
+  },
+  "metadata": {
+    "rendered": {
+      "by": "https://ldh.clinicalgenome.org/ldh/dss/srvc",
+      "when": "2026-08-04T18:27:45.906Z"
+    }
+  },
+  "status": {
+    "code": 200,
+    "name": "OK"
+  }
+}

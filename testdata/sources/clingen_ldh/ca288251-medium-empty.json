@@ -1,0 +1,32 @@
+{
+  "data": {
+    "GnomADExomesV4.1": [
+      {
+        "dataIri": "https://ldh.clinicalgenome.org/ldh/dss/cg/ns/gnomad_v4_1/set/exome/id/CA999999/data",
+        "entDisposition": "external",
+        "entId": "chr1-110407023-C-T",
+        "entIri": "https://gnomad.broadinstitute.org/variant/chr1-110407023-C-T?dataset=gnomad_r4",
+        "entType": "GnomADExomesV4.1"
+      }
+    ],
+    "GnomADGenomesV4.1": [
+      {
+        "dataIri": "https://ldh.clinicalgenome.org/ldh/dss/cg/ns/gnomad_v4_1/set/genome/id/CA999999/data",
+        "entDisposition": "external",
+        "entId": "chr1-110407023-C-T",
+        "entIri": "https://gnomad.broadinstitute.org/variant/chr1-110407023-C-T?dataset=gnomad_r4",
+        "entType": "GnomADGenomesV4.1"
+      }
+    ]
+  },
+  "metadata": {
+    "rendered": {
+      "by": "https://ldh.genome.network/ldh/srvc",
+      "when": "2026-08-04T18:28:32.660Z"
+    }
+  },
+  "status": {
+    "code": 200,
+    "name": "OK"
+  }
+}
