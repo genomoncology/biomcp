@@ -2,8 +2,8 @@
 
 BioMCP's PGx surface connects genes, drugs, and CPIC guidance without forcing
 users to switch tools or guess which source backed the answer. These canaries
-focus on CPIC-style interaction tables plus opt-in recommendation and frequency
-detail.
+focus on CPIC-style interaction tables plus opt-in recommendation, guideline, and
+frequency detail.
 
 ## Gene-First Search
 

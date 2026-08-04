@@ -30,6 +30,15 @@ fn pair_plans_set_expected_filters_and_order() {
 }
 
 #[test]
+fn empty_gene_pair_plan_uses_the_normal_pair_route() {
+    let plan = CpicClient::pairs_by_gene_plan("NOSUCHGENE", 100, 0).expect("empty pair plan");
+
+    assert_eq!(plan.path, "pair_view");
+    assert_eq!(plan.query_value("genesymbol"), Some("eq.NOSUCHGENE"));
+    assert_eq!(plan.query_value("limit"), Some("100"));
+}
+
+#[test]
 fn recommendation_frequency_and_guideline_plans_set_expected_filters() {
     let rec_gene = CpicClient::recommendations_by_gene_plan("cyp2d6", 3).expect("gene rec plan");
     assert_eq!(rec_gene.path, "recommendation_view");
