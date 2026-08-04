@@ -180,7 +180,7 @@ def _run_article_citations(
         )
 
 
-def test_authenticated_semantic_scholar_retry_waits_for_retry_after() -> None:
+def test_authenticated_semantic_scholar_graph_receiver_preserves_redacted_header_presence_and_retry_after() -> None:
     with _RunningSemanticScholarServer(authenticated_retry_after=True) as server:
         result = _run_article_citations(server, api_key="spec-test-key")
 

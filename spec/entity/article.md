@@ -821,6 +821,17 @@ belongs downstream.
 0,1"
 ```
 
+## Receipted PMC Assets Retain Named Retrieval Handles
+
+The captured article asset response names each supplement as a separate,
+provider-labelled coverage result and provides a stable BioMCP retrieval command.
+This local fixture contract protects the PubTator-to-OA resolution path without
+asking NCBI or PMC to serve the record during routine checks.
+
+```bash
+../../tools/biomcp-ci --json get article 20516115 assets | jq '(.pmid == "20516115") and any(.coverage[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and .outcome == "retrievable" and (.provider.source | length > 0)) and any(.coverage[]?; (.filename | endswith("Supplementary_Tables.xls")) and .outcome == "retrievable" and (.provider.source | length > 0)) and any(.assets[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and (.handle | startswith("biomcp get article 20516115 asset "))) and any(.assets[]?; (.filename | endswith("Supplementary_Tables.xls")) and (.handle | startswith("biomcp get article 20516115 asset ")))' | mustmatch 'true'
+```
+
 ## JATS and PMC HTML Supplement Links Resolve Through Stable Handles
 
 An article document can be the only provider surface that names a supplement.
@@ -1049,6 +1060,20 @@ JSON manifest or listing individual package members.
 traces-s1.csv
 sha256
 size_bytes"
+```
+
+## Semantic Scholar Graph Collections Use Neutral Identifiers
+
+Fixture-backed graph calls retain a neutral identifier column because a related
+paper may have a PMID, DOI, arXiv ID, or only a provider ID. A successful empty
+recommendation result still has an iterable JSON collection.
+
+```bash
+../../tools/biomcp-ci article citations 22663011 --limit 1 | mustmatch like "| Identifier | Title | Intents | Influential | Context |"
+```
+
+```bash
+../../tools/biomcp-ci --json article recommendations 23450558 --limit 5 | mustmatch like '{"recommendations": []}'
 ```
 
 ## Semantic Scholar Degrades Truthfully Without a Key
