@@ -44,3 +44,15 @@ Systematic source synonyms do not become additional trial-search workers.
   | mustmatch not like 'benzoic acid
 free base'
 ```
+
+## Alias fanout continues after detail-backed rejection
+
+A page that adds no eligible trial is not the end of an alias-expanded search.
+When detail eligibility rejects every new study in the first fanout round, a
+later page can still supply a qualifying trial for the requested intervention.
+
+```bash
+../../spec/fixtures/ctgov-request-log run-with-mychem ../../tools/biomcp-ci --json search trial --intervention venetoclax --criteria nextpageproof --source ctgov --limit 1 \
+  | jq -r '.results[] | "\(.nct_id): \(.matched_intervention_label)"' \
+  | mustmatch 'NCT51000004: Venclexta'
+```

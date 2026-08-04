@@ -3262,6 +3262,34 @@ pub async fn search_variant_article_batch(
     .await
 }
 
+fn finish_variant_article_batch(
+    items: Vec<VariantArticleBatchItem>,
+    debug_plan: bool,
+    item_count: usize,
+    request_work: VariantArticleWork,
+) -> VariantArticleBatchOutcome {
+    let hard_error = items.iter().any(|item| item.error.is_some());
+    let complete = items
+        .iter()
+        .all(|item| item.complete && item.error.is_none());
+    let truncated = items.iter().any(|item| item.truncated);
+    let next_commands = batch_next_commands(&items);
+    VariantArticleBatchOutcome {
+        response: VariantArticleBatchResponse {
+            items,
+            complete,
+            truncated,
+            _meta: VariantArticleBatchMeta { next_commands },
+            debug_plan: debug_plan.then_some(VariantArticleBatchDebugPlan {
+                item_concurrency_limit: ITEM_CONCURRENCY_LIMIT,
+                work: request_work,
+                items_planned: item_count,
+            }),
+        },
+        hard_error,
+    }
+}
+
 pub(crate) async fn search_variant_article_batch_with_options(
     requests: Vec<crate::entities::variant::VariantArticleRequest>,
     strategy: VariantArticleStrategy,
@@ -3305,26 +3333,12 @@ pub(crate) async fn search_variant_article_batch_with_options(
             }
         }
     }
-    let hard_error = items.iter().any(|item| item.error.is_some());
-    let complete = items
-        .iter()
-        .all(|item| item.complete && item.error.is_none());
-    let truncated = items.iter().any(|item| item.truncated);
-    let next_commands = batch_next_commands(&items);
-    Ok(VariantArticleBatchOutcome {
-        response: VariantArticleBatchResponse {
-            items,
-            complete,
-            truncated,
-            _meta: VariantArticleBatchMeta { next_commands },
-            debug_plan: debug_plan.then_some(VariantArticleBatchDebugPlan {
-                item_concurrency_limit: ITEM_CONCURRENCY_LIMIT,
-                work: request_work,
-                items_planned: item_count,
-            }),
-        },
-        hard_error,
-    })
+    Ok(finish_variant_article_batch(
+        items,
+        debug_plan,
+        item_count,
+        request_work,
+    ))
 }
 
 #[cfg(test)]
@@ -4298,6 +4312,140 @@ mod tests {
                     .as_ref()
                     .is_some_and(|plan| plan.budgets.item.consumed == 0 && plan.routes.is_empty())
         }));
+    }
+
+    fn batch_item(
+        request_id: &str,
+        complete: bool,
+        truncated: bool,
+        error: Option<VariantArticleItemError>,
+    ) -> VariantArticleBatchItem {
+        VariantArticleBatchItem {
+            request_id: request_id.into(),
+            requested_variant: resolved_context().requested,
+            resolution: None,
+            canonical_equivalence: None,
+            complete,
+            truncated,
+            pagination: VariantArticlePagination {
+                offset: 0,
+                limit: 3,
+                returned: 0,
+                total: None,
+                has_more: false,
+                next_page_token: None,
+            },
+            source_status: Vec::new(),
+            error,
+            results: Vec::new(),
+            debug_plan: None,
+        }
+    }
+
+    #[test]
+    fn non_object_batch_item_is_rejected() {
+        assert!(matches!(
+            parse_variant_article_batch(br#"[{"gene":"BRAF","protein":"V600E"},"not-an-object"]"#),
+            Err(BioMcpError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn generated_and_explicit_request_ids_share_duplicate_check() {
+        let requests = parse_variant_article_batch(
+            br#"[{"request_id":"item-2","gene":"BRAF","protein":"V600E"},{"gene":"KRAS","protein":"G12D"}]"#,
+        )
+        .expect("typed requests");
+
+        assert!(matches!(
+            validate_batch_requests(requests),
+            Err(BioMcpError::InvalidArgument(message)) if message.contains("duplicate variant article request_id: item-2")
+        ));
+    }
+
+    #[test]
+    fn mixed_usable_and_terminal_hard_batch_preserves_items_and_hard_exit() {
+        let outcome = finish_variant_article_batch(
+            vec![
+                batch_item("usable", true, false, None),
+                batch_item(
+                    "terminal-hard",
+                    false,
+                    true,
+                    Some(VariantArticleItemError {
+                        code: "source_unavailable",
+                        message: "all required routes unavailable".into(),
+                    }),
+                ),
+            ],
+            false,
+            2,
+            VariantArticleWork::new(100, 2),
+        );
+
+        assert!(
+            outcome.hard_error,
+            "CLI must select its exit-1 JSON outcome"
+        );
+        assert!(!outcome.response.complete);
+        assert!(outcome.response.truncated);
+        assert_eq!(outcome.response.items.len(), 2);
+        assert!(outcome.response.items[0].error.is_none());
+        assert_eq!(
+            outcome.response.items[1].error.as_ref().unwrap().code,
+            "source_unavailable"
+        );
+    }
+
+    #[test]
+    fn usable_partial_degradation_stays_nonterminal() {
+        let outcome = finish_variant_article_batch(
+            vec![batch_item("degraded-but-usable", false, true, None)],
+            false,
+            1,
+            VariantArticleWork::new(50, 1),
+        );
+
+        assert!(
+            !outcome.hard_error,
+            "CLI must retain exit 0 for usable degradation"
+        );
+        assert!(!outcome.response.complete);
+        assert!(outcome.response.truncated);
+        assert!(outcome.response.items[0].error.is_none());
+    }
+
+    #[test]
+    fn route_plans_exclude_transport_secrets_urls_bodies_and_paths() {
+        let plan = empty_debug_plan(&resolved_context().requested, false, Vec::new(), 0);
+        let value = serde_json::to_value(plan).expect("debug plan serializes");
+        let rendered = value.to_string();
+
+        for forbidden in [
+            "super-secret-token",
+            "https://provider.invalid/signed?token=super-secret-token",
+            "raw provider response body",
+            "/tmp/variant-article-input.json",
+        ] {
+            assert!(
+                !rendered.contains(forbidden),
+                "plan leaked {forbidden}: {rendered}"
+            );
+        }
+        fn has_transport_key(value: &serde_json::Value) -> bool {
+            match value {
+                serde_json::Value::Object(fields) => fields.iter().any(|(key, value)| {
+                    matches!(key.as_str(), "url" | "body" | "path" | "headers" | "secret")
+                        || has_transport_key(value)
+                }),
+                serde_json::Value::Array(values) => values.iter().any(has_transport_key),
+                _ => false,
+            }
+        }
+        assert!(
+            !has_transport_key(&value),
+            "debug plan exposed a transport field: {value}"
+        );
     }
 
     #[test]
