@@ -189,6 +189,22 @@ VENCLEXTA_STUDY = {
     }
 }
 
+CONTINUATION_REJECTED_STUDY = {
+    "protocolSection": {
+        "identificationModule": {"nctId": "NCT51000003", "briefTitle": "Rejected Fanout Page Fixture"},
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "eligibilityModule": {"eligibilityCriteria": "Exclusion Criteria: nextpageproof"},
+    }
+}
+
+CONTINUATION_QUALIFYING_STUDY = {
+    "protocolSection": {
+        "identificationModule": {"nctId": "NCT51000004", "briefTitle": "Qualifying Continuation Fixture"},
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "eligibilityModule": {"eligibilityCriteria": "Inclusion Criteria: nextpageproof"},
+    }
+}
+
 VENETOCLAX_MYCHEM_RESPONSE = {
     "total": 1,
     "hits": [
@@ -318,6 +334,8 @@ STUDIES = {
     "nct41300001": CONTACTS_ELIGIBILITY_STUDY,
     "nct51000001": VENETOCLAX_STUDY,
     "nct51000002": VENCLEXTA_STUDY,
+    "nct51000003": CONTINUATION_REJECTED_STUDY,
+    "nct51000004": CONTINUATION_QUALIFYING_STUDY,
 }
 
 
@@ -362,6 +380,19 @@ class Handler(BaseHTTPRequestHandler):
                 and intervention.endswith('"')
             )
             literal_intervention = intervention[1:-1] if is_quoted_literal else intervention
+            continuation_proof = "nextpageproof" in " ".join(query.get("query.term", [])).lower()
+            if continuation_proof and is_quoted_literal and literal_intervention == "venetoclax":
+                if "venetoclax-criteria-page-2" in query.get("pageToken", []):
+                    send_json(self, 200, {"studies": [], "totalCount": 1})
+                else:
+                    send_json(self, 200, {"studies": [CONTINUATION_REJECTED_STUDY], "totalCount": 2, "nextPageToken": "venetoclax-criteria-page-2"})
+                return
+            if continuation_proof and is_quoted_literal and literal_intervention == "Venclexta":
+                if "venclexta-criteria-page-2" in query.get("pageToken", []):
+                    send_json(self, 200, {"studies": [CONTINUATION_QUALIFYING_STUDY], "totalCount": 2})
+                else:
+                    send_json(self, 200, {"studies": [CONTINUATION_REJECTED_STUDY], "totalCount": 2, "nextPageToken": "venclexta-criteria-page-2"})
+                return
             if is_quoted_literal and literal_intervention == "venetoclax":
                 send_json(self, 200, {"studies": [VENETOCLAX_STUDY], "totalCount": 1})
                 return

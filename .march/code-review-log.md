@@ -1,36 +1,38 @@
-# Code Review — Ticket 647
+# Code Review — Ticket 646
 
 ## Scope reviewed
 
-- Read `AGENTS.md`, ticket, design draft/final, red-check evidence, and code log.
-- Reviewed the full `main..HEAD` diff and the complete changed capture-store implementation.
-- Checked design completeness, proof-matrix traceability, shipped-spec diff, edit discipline, security, duplication, and post-fix collateral damage.
+- Read `AGENTS.md`, ticket, design draft/final, red-check evidence, code log, and applicable mustmatch/Rust/Python/testing standards.
+- Confirmed `main` is an ancestor of `HEAD`; reviewed the complete `main..HEAD` diff and both ticket commits.
+- Re-ran the focused native lane plus `make lint`, `make test`, and `make spec`.
 
 ## Audit results
 
-- **Design completeness:** all descriptor-relative traversal, publication, reads, scans, cleanup, lock handling, Unix/non-Unix boundary, documentation, and controlled swap proof work landed.
-- **Traceability:** the sole proof-matrix assertion landed at `src/cache/provider_capture.rs::refuses_a_blob_shard_swapped_after_validation_without_writing_outside`. `git diff main..HEAD -- 'spec/*'` is empty; no shipped assertion was invented, relaxed, or removed.
-- **Edit discipline:** the 1,031-line capture-store change is proportionate to replacing all named managed-tree path operations with descriptor-relative equivalents. The documentation and Windows compile-only CI adjustment are named/mechanical platform-boundary consequences. No over-edit found.
-- **Security/quality:** no path, shell, query, secret, or authorization issue found. Descriptor handles are RAII-owned; no dead code, unused import, double cleanup, stale error message, or shadowed variable resulted from the review repair.
-
-## Fix applied
-
-`CaptureDirectory::read_file` had treated every failed no-follow open whose subsequent `file_status` returned `None` as absent. `file_status` uses `None` for both a missing entry and a directory, so an attacker or corruption replacing an expected metadata file with a directory was reported as `Unavailable` rather than `Corrupt`. The repair checks specifically for `ENOENT`; any extant non-regular entry remains corrupt. A narrow Unix native regression test covers the metadata-directory case.
+- **Design completeness:** all six final proof-matrix entries landed: alias continuation, four native batch cases, and populated single/batch debug-plan redaction.
+- **Forward traceability:** every proof-matrix location has its matching assertion in the ticket diff.
+- **Reverse traceability:** `git diff main..HEAD -- 'spec/*'` contains only the alias-continuation assertion and the route-plan redaction assertion, each specified in the final proof matrix. No shipped assertion was invented, silently relaxed, or silently removed. The prior empty-plan native redaction test was intentionally replaced by the design-final's populated public-spec assertion.
+- **Edit discipline:** 193 changed lines are proportionate to the named minimal slice: two executable docs, their deterministic fixture support, four native tests, and the explicitly design-approved 34-line batch-finishing extraction. No unrelated runtime edit or over-edit found.
+- **Quality/security:** checked serialization fields and fixture data for transport/credential exposure; batch aggregation preserves its existing behavior exactly through the extracted helper. No injection, secret, data-completeness, duplication, resource, dead-code, stale-error, or shadowing defect found.
+- **Collateral / issues:** no repair was necessary and no out-of-scope issue was found.
 
 ## Validation
 
-- `cargo nextest run cache::provider_capture --no-fail-fast` — pass (14 tests)
-- `make lint` — pass
-- `make test` — pass (446 Python tests; native and docs-contract lanes)
-- `make spec` — pass (90 passed/3 skipped; 218 passed/2 skipped; 7 passed; 31 Python contracts; 10 static specs)
-- `git diff --check` — pass
+- `cargo nextest run variant_search --no-fail-fast` — 48 passed
+- `make lint` — passed
+- `make test` — 2,810 native tests passed (30 skipped); 446 Python contracts passed; strict MkDocs build passed
+- `make spec` — 90 passed/3 skipped; 219 passed/2 skipped; 7 passed; 31 Python contracts passed; 10 static specs passed
+- `git diff --check main..HEAD` — passed
+
+## Repair / commit
+
+No defect required repair. Consequently no separate code-review commit was created.
 
 ## Residual concerns
 
-None within ticket scope. No out-of-scope issue filed.
+None within ticket scope.
 
 ## Defect Register
 
 | # | Category | Lintable | Description |
 |---|----------|----------|-------------|
-| 1 | error-classification | no | A directory replacing an expected capture metadata file was misclassified as absent (`Unavailable`) rather than corrupt; descriptor-relative reads now map only `ENOENT` to absence. |
+| — | None found | — | No defects found. |
