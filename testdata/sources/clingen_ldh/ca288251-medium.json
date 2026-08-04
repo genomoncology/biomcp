@@ -1,0 +1,407 @@
+{
+  "data": {
+    "AlleleMolecularConsequenceStatement": [
+      {
+        "entId": "NC_000022.11:g.28695869del",
+        "entIri": "http://rest.ensembl.org/vep/human/hgvs/NC_000022.11:g.28695869del?content-type=application/json&merged=true&canonical=true&ccds=true&xref_refseq=true&tsl=true",
+        "entType": "AlleleMolecularConsequenceStatement",
+        "ldhId": "370789298",
+        "ldhIri": "https://ldh.genome.network/ldh/AlleleMolecularConsequenceStatement/id/370789298",
+        "rev": "_inemVMy--t"
+      }
+    ],
+    "CivicEvidence": [
+      {
+        "entId": "785",
+        "entIri": "https://civicdb.org/variants/785",
+        "entType": "CivicEvidence",
+        "ldhId": "108469832",
+        "ldhIri": "https://ldh.genome.network/ldh/CivicEvidence/id/108469832",
+        "rev": "_kcmaLya---"
+      }
+    ],
+    "GnomADExomesV4.1": [
+      {
+        "dataIri": "https://ldh.clinicalgenome.org/ldh/dss/cg/ns/gnomad_v4_1/set/exome/id/CA288251/data",
+        "entDisposition": "external",
+        "entId": "chr22-28695868-AG-A",
+        "entIri": "https://gnomad.broadinstitute.org/variant/chr22-28695868-AG-A?dataset=gnomad_r4",
+        "entType": "GnomADExomesV4.1"
+      }
+    ],
+    "GnomADGenomesV4.1": [
+      {
+        "dataIri": "https://ldh.clinicalgenome.org/ldh/dss/cg/ns/gnomad_v4_1/set/genome/id/CA288251/data",
+        "entDisposition": "external",
+        "entId": "chr22-28695868-AG-A",
+        "entIri": "https://gnomad.broadinstitute.org/variant/chr22-28695868-AG-A?dataset=gnomad_r4",
+        "entType": "GnomADGenomesV4.1"
+      }
+    ],
+    "OpenCRAVAT": [
+      {
+        "created": "2026-05-07T18:12:13.367Z",
+        "entId": "CA288251",
+        "entIri": "https://run.opencravat.org/webapps/variantreport/index.html?clingen=CA288251&ref=ldh",
+        "entType": "OpenCRAVAT",
+        "ldhId": "1188587241",
+        "ldhIri": "https://ldh.genome.network/ldh/OpenCRAVAT/id/1188587241",
+        "rev": "_leMh3au---"
+      }
+    ],
+    "PopulationAlleleFrequencySource": [
+      {
+        "entId": "22-29091856-AG-A",
+        "entIri": "http://gnomad.broadinstitute.org/variant/22-29091856-AG-A",
+        "entType": "PopulationAlleleFrequencySource",
+        "ldhId": "148502573",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencySource/id/148502573",
+        "rev": "_ineinLy--U"
+      }
+    ],
+    "PopulationAlleleFrequencyStatement": [
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740471",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740471",
+        "rev": "_inek-5e-_W"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740447",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740447",
+        "rev": "_inek-5e-_R"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740441",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740441",
+        "rev": "_inek-56--h"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740435",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740435",
+        "rev": "_inek-6G--z"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740543",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740543",
+        "rev": "_inek-5i--O"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740537",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740537",
+        "rev": "_inek-5i--M"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740531",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740531",
+        "rev": "_inek-52--f"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740519",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740519",
+        "rev": "_inek-52--6"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740495",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740495",
+        "rev": "_inek-6G--1"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740459",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740459",
+        "rev": "_inek-52--3"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740525",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740525",
+        "rev": "_inek-5i--I"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740507",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740507",
+        "rev": "_inek-52--5"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740483",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740483",
+        "rev": "_inek-5i--B"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740453",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740453",
+        "rev": "_inek-5e-_S"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740501",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740501",
+        "rev": "_inek-52--d"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740489",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740489",
+        "rev": "_inek-5i--D"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740513",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740513",
+        "rev": "_inek-5i--E"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740477",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740477",
+        "rev": "_inek-5i--_"
+      },
+      {
+        "entType": "PopulationAlleleFrequencyStatement",
+        "ldhId": "218740465",
+        "ldhIri": "https://ldh.genome.network/ldh/PopulationAlleleFrequencyStatement/id/218740465",
+        "rev": "_inek-5e-_U"
+      }
+    ],
+    "VariantsInLiterature": [
+      {
+        "entDisposition": "external",
+        "entId": "PMC8534117",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8534117/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8918666",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8918666/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8804330",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8804330/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8148035",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8148035/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8891017",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8891017/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8710334",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8427434",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8427434/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8289997",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8289997/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC8345200",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8345200/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC9355130",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9355130/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC9768488",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9768488/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC9433729",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9433729/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC9039695",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9039695/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC9535845",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9535845/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC9472814",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9472814/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC7140841",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7140841/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC7563793",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7563793/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC7540545",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7540545/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC7572377",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7572377/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC7277207",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7277207/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC7736877",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC7736877/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC5593158",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC5593158/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC5740532",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC5740532/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC10044986",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC10044986/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC10095199",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC10095199/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC10549772",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC10549772/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC10413174",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC10413174/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC10454334",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC10454334/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6266089",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6266089/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6247769",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6247769/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6449945",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6449945/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6827033",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6827033/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6557995",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6557995/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6974400",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6974400/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6549570",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6549570/data",
+        "entType": "VariantsInLiterature"
+      },
+      {
+        "entDisposition": "external",
+        "entId": "PMC6590202",
+        "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC6590202/data",
+        "entType": "VariantsInLiterature"
+      }
+    ]
+  },
+  "metadata": {
+    "rendered": {
+      "by": "https://ldh.genome.network/ldh/srvc",
+      "when": "2026-08-04T18:29:06.010Z"
+    }
+  },
+  "status": {
+    "code": 200,
+    "name": "OK"
+  }
+}

@@ -573,7 +573,6 @@ pub(crate) fn verify_ldh_annotation(
             };
             let items = annotation.pointer("/body/items").and_then(Value::as_array);
             let Some(items) = items else {
-                incomplete = true;
                 continue;
             };
             let caid_matches = items.iter().any(|item| {

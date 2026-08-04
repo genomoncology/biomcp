@@ -626,6 +626,90 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
       }
+    },
+    {
+      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Allele Registry",
+        "request": "https://reg.genome.network/allele?hgvs=NM_000546.6%3Ac.215C%3EG&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "454b2fb812d8bac6cd9ff8cb3b1fca4dc4d993faee454e2bbeb35ebea549c367",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
+      }
+    },
+    {
+      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-empty.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Allele Registry",
+        "request": "https://reg.genome.network/allele?hgvs=NC_000001.11%3Ag.1A%3EG&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "3b097b049fc9f2a4b02c045f3df4b2f086635c50602e415834e5b80da255d3e5",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
+      }
+    },
+    {
+      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-malformed.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Allele Registry",
+        "request": "https://reg.genome.network/allele?hgvs=not-hgvs&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "dfab66a134daa579f1c9b0453b46d07a397775016305c510e40806a437b61fa8",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca288251-medium.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/Variant/id/CA288251/ld?detail=med",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "0dfab4e43cde49a7fe5e4b5e4ec98e566f7c18f9bbd4618b2c34089e742d28c5",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca288251-medium-empty.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/Variant/id/CA999999/ld?detail=med",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "a1b1c33e6642f86f32534649856cb5731340ae40d55b703280dbc931e0e09fd1",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca288251-pmc8710334-direct.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "34b8827a6240d6d23e36eadece96403a3e3b41fcb044fc10ccb9d603d0d9b4bb",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca288251-pmc8710334-direct-malformed.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "28cf64153c2437a313fd9e29ad4d7694aeb24f3efa215d9f797c87d9d17bafaf",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,

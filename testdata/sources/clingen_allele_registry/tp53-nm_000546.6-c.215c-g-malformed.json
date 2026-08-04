@@ -1,0 +1,7 @@
+{
+  "description": "Given HGVS expressions cannot be parsed. It is incorrect or not supported.",
+  "errorType": "HgvsParsingError",
+  "hgvs": "not-hgvs",
+  "message": "Unexpected end of expression. The character ':' was not found",
+  "position": "8"
+}

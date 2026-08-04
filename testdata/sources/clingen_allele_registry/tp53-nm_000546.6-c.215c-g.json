@@ -1,0 +1,145 @@
+{
+  "@id": "http://reg.genome.network/allele/CA000072",
+  "communityStandardTitle": [
+    "NM_000546.6(TP53):c.215C>G (p.Pro72Arg)"
+  ],
+  "externalRecords": {
+    "ClinVarVariations": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/12351",
+        "RCV": [
+          "RCV000013144",
+          "RCV000034639",
+          "RCV000079202",
+          "RCV000132165",
+          "RCV000144668",
+          "RCV000300782",
+          "RCV001255631",
+          "RCV002225263",
+          "RCV002496335",
+          "RCV002510562"
+        ],
+        "variationId": 12351
+      }
+    ],
+    "dbSNP": [
+      {
+        "@id": "http://www.ncbi.nlm.nih.gov/snp/1042522",
+        "rs": 1042522
+      }
+    ]
+  },
+  "genomicAlleles": [
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "C",
+          "end": 7676154,
+          "referenceAllele": "G",
+          "start": 7676153
+        }
+      ],
+      "hgvs": [
+        "NC_000017.11:g.7676154G>C",
+        "CM000679.2:g.7676154G>C"
+      ],
+      "referenceGenome": "GRCh38",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000065"
+    },
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "C",
+          "end": 7579472,
+          "referenceAllele": "G",
+          "start": 7579471
+        }
+      ],
+      "hgvs": [
+        "NC_000017.10:g.7579472G>C",
+        "CM000679.1:g.7579472G>C"
+      ],
+      "referenceGenome": "GRCh37",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000041"
+    },
+    {
+      "chromosome": "17",
+      "coordinates": [
+        {
+          "allele": "C",
+          "end": 7520197,
+          "referenceAllele": "G",
+          "start": 7520196
+        }
+      ],
+      "hgvs": [
+        "NC_000017.9:g.7520197G>C"
+      ],
+      "referenceGenome": "NCBI36",
+      "referenceSequence": "http://reg.genome.network/refseq/RS000017"
+    },
+    {
+      "coordinates": [
+        {
+          "allele": "G",
+          "end": 16397,
+          "referenceAllele": "C",
+          "start": 16396
+        }
+      ],
+      "hgvs": [
+        "NG_017013.2:g.16397C>G",
+        "LRG_321:g.16397C>G"
+      ],
+      "referenceSequence": "http://reg.genome.network/refseq/RS003369"
+    }
+  ],
+  "transcriptAlleles": [
+    {
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000269305.9:c.215C>G"
+          },
+          "RefSeq": {
+            "hgvs": "NM_000546.6:c.215C>G"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000269305.4:p.Pro72Arg"
+          },
+          "RefSeq": {
+            "hgvs": "NP_000537.3:p.Pro72Arg"
+          }
+        }
+      }
+    },
+    {
+      "MANE": {
+        "maneVersion": "1.3",
+        "maneStatus": "MANE Select",
+        "nucleotide": {
+          "Ensembl": {
+            "hgvs": "ENST00000269305.9:c.215C>G"
+          },
+          "RefSeq": {
+            "hgvs": "NM_000546.6:c.215C>G"
+          }
+        },
+        "protein": {
+          "Ensembl": {
+            "hgvs": "ENSP00000269305.4:p.Pro72Arg"
+          },
+          "RefSeq": {
+            "hgvs": "NP_000537.3:p.Pro72Arg"
+          }
+        }
+      }
+    }
+  ]
+}
