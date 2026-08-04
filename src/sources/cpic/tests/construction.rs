@@ -18,9 +18,9 @@ fn pair_plans_set_expected_filters_and_order() {
         Some("cpiclevel.asc,drugname.asc")
     );
 
-    let drug = CpicClient::pairs_by_drug_plan(" code*ine% ", 5, 2).expect("drug pair plan");
+    let drug = CpicClient::pairs_by_drug_plan(" clop*idogrel% ", 5, 2).expect("drug pair plan");
     assert_eq!(drug.path, "pair_view");
-    assert_eq!(drug.query_value("drugname"), Some("ilike.*codeine*"));
+    assert_eq!(drug.query_value("drugname"), Some("ilike.*clopidogrel*"));
     assert_eq!(drug.query_value("limit"), Some("5"));
     assert_eq!(drug.query_value("offset"), Some("2"));
     assert_eq!(

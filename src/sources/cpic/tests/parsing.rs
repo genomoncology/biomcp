@@ -25,15 +25,35 @@ fn pair_page_response_decodes_rows_and_total() {
         StatusCode::OK,
         &headers,
         Some(&content_type),
-        fixture!("pair_view_cyp2d6.json"),
+        fixture!("pair_gene_cyp2d6_20260803.json"),
     )
     .expect("pair page");
 
     assert_eq!(page.total, Some(12));
-    assert_eq!(page.rows.len(), 1);
+    assert_eq!(page.rows.len(), 79);
     assert_eq!(page.rows[0].genesymbol, "CYP2D6");
-    assert_eq!(page.rows[0].drugname, "codeine");
+    assert_eq!(page.rows[0].drugname, "amitriptyline");
     assert_eq!(page.rows[0].cpiclevel.as_deref(), Some("A"));
+}
+
+#[test]
+fn drug_pair_page_response_decodes_rows() {
+    let mut headers = HeaderMap::new();
+    headers.insert("content-range", HeaderValue::from_static("0-1/2"));
+    let content_type = HeaderValue::from_static("application/json");
+
+    let page: CpicPage<Vec<CpicPairRow>> = CpicClient::decode_json_page_response(
+        StatusCode::OK,
+        &headers,
+        Some(&content_type),
+        fixture!("pair_drug_clopidogrel_20260803.json"),
+    )
+    .expect("drug pair page");
+
+    assert_eq!(page.total, Some(2));
+    assert_eq!(page.rows.len(), 2);
+    assert_eq!(page.rows[0].genesymbol, "CYP2C19");
+    assert_eq!(page.rows[0].drugname, "clopidogrel");
 }
 
 #[test]
@@ -42,22 +62,27 @@ fn recommendation_and_guideline_responses_decode() {
     let recs: Vec<CpicRecommendationRow> = CpicClient::decode_json_response(
         StatusCode::OK,
         Some(&content_type),
-        fixture!("recommendations_codeine.json"),
+        fixture!("recommendation_cyp2d6_20260803.json"),
     )
     .expect("recommendations");
-    assert_eq!(recs.len(), 1);
-    assert_eq!(recs[0].drugname, "codeine");
-    assert_eq!(recs[0].drugrecommendation.as_deref(), Some("Avoid codeine"));
-    assert_eq!(recs[0].phenotypes["CYP2D6"], "Poor Metabolizer");
+    assert_eq!(recs.len(), 50);
+    assert_eq!(recs[0].drugname, "amitriptyline");
+    assert_eq!(recs[0].phenotypes["CYP2D6"], "Intermediate Metabolizer");
 
     let guidelines: Vec<CpicGuidelineSummaryRow> = CpicClient::decode_json_response(
         StatusCode::OK,
         Some(&content_type),
-        fixture!("guideline_cyp2d6.json"),
+        fixture!("guideline_cyp2d6_20260803.json"),
     )
     .expect("guidelines");
-    assert_eq!(guidelines[0].guideline_name, "CYP2D6 and Opioids");
-    assert_eq!(guidelines[0].genes[0].symbol, "CYP2D6");
+    assert_eq!(guidelines.len(), 7);
+    assert!(guidelines[0].guideline_name.contains("CYP2D6"));
+    assert!(
+        guidelines[0]
+            .genes
+            .iter()
+            .any(|gene| gene.symbol == "CYP2D6")
+    );
 }
 
 #[test]
@@ -66,13 +91,27 @@ fn frequency_response_decodes_rows() {
     let rows: Vec<CpicFrequencyRow> = CpicClient::decode_json_response(
         StatusCode::OK,
         Some(&content_type),
-        fixture!("frequency_cyp2d6.json"),
+        fixture!("frequency_cyp2d6_20260803.json"),
     )
     .expect("frequencies");
 
     assert_eq!(rows[0].genesymbol, "CYP2D6");
-    assert_eq!(rows[0].name, "*1");
-    assert_eq!(rows[0].freq_weighted_avg, Some(0.42));
+    assert_eq!(rows.len(), 30);
+    assert_eq!(rows[0].name, "*103");
+    assert_eq!(rows[0].subjectcount, Some(5036));
+}
+
+#[test]
+fn empty_pair_response_decodes() {
+    let content_type = HeaderValue::from_static("application/json");
+    let rows: Vec<CpicPairRow> = CpicClient::decode_json_response(
+        StatusCode::OK,
+        Some(&content_type),
+        fixture!("pair_empty_20260803.json"),
+    )
+    .expect("empty pair response");
+
+    assert!(rows.is_empty());
 }
 
 #[test]
