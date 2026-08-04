@@ -19,13 +19,12 @@ test_cli_surface_contract_exception_registry_names_initial_exceptions"
 
 ## Verify Lane Routes Source-Pending States
 
-The live lane should route CPIC and NIH Reporter through explicit source
-classification. Known auth or upstream-pending states should be reported to
-operators, while unexpected response shapes remain product-red.
+The live lane should route NIH Reporter through explicit source classification.
+Known upstream-pending states should be reported to operators, while unexpected
+response shapes remain product-red. CPIC PGx proof is receipt-backed and routine.
 
 ```bash
-make -C ../.. -n verify 2>&1 | mustmatch like "tools/biomcp-verify-live cpic
-tools/biomcp-verify-live nih-reporter"
+make -C ../.. -n verify 2>&1 | mustmatch like "tools/biomcp-verify-live nih-reporter"
 ```
 
 ## JSON Usage Errors Stay Parseable For Scripts

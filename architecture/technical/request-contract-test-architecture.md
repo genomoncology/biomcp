@@ -128,9 +128,8 @@ Current invariants:
   `BIOMCP_SEER_BASE` for canned SEER catalog/survival payloads, preserving the
   real request/response path without public upstream dependency.
 - `tools/biomcp-verify-live` owns source-specific live-lane classification for
-  known operator-pending states. CPIC `permission denied to set role "web_anon"`
-  auth failures and NIH Reporter funding-table/source unavailability are reported
-  as operator-pending in `make verify`; unexpected shapes, panics, parse failures,
+  known operator-pending states. NIH Reporter funding-table/source unavailability
+  is reported as operator-pending in `make verify`; unexpected shapes, panics, parse failures,
   and other unclassified source errors remain product-red. Deterministic request,
   response, and renderer tests carry the product-owned proof for those relaxed
   live outcomes.

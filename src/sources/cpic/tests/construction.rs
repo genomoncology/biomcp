@@ -18,15 +18,24 @@ fn pair_plans_set_expected_filters_and_order() {
         Some("cpiclevel.asc,drugname.asc")
     );
 
-    let drug = CpicClient::pairs_by_drug_plan(" code*ine% ", 5, 2).expect("drug pair plan");
+    let drug = CpicClient::pairs_by_drug_plan(" clop*idogrel% ", 5, 2).expect("drug pair plan");
     assert_eq!(drug.path, "pair_view");
-    assert_eq!(drug.query_value("drugname"), Some("ilike.*codeine*"));
+    assert_eq!(drug.query_value("drugname"), Some("ilike.*clopidogrel*"));
     assert_eq!(drug.query_value("limit"), Some("5"));
     assert_eq!(drug.query_value("offset"), Some("2"));
     assert_eq!(
         drug.query_value("order"),
         Some("cpiclevel.asc,genesymbol.asc")
     );
+}
+
+#[test]
+fn empty_gene_pair_plan_uses_the_normal_pair_route() {
+    let plan = CpicClient::pairs_by_gene_plan("NOSUCHGENE", 100, 0).expect("empty pair plan");
+
+    assert_eq!(plan.path, "pair_view");
+    assert_eq!(plan.query_value("genesymbol"), Some("eq.NOSUCHGENE"));
+    assert_eq!(plan.query_value("limit"), Some("100"));
 }
 
 #[test]

@@ -5,7 +5,7 @@
 | Target | Run when | Timeout | Scope | Cache contract |
 |---|---|---|---|---|
 | `make spec-contracts` | profile-compatible deterministic subset | `180s` per heading | offline Markdown executable contracts, including local MCP transport proof | uses the spec-profile binary selected by `PATH` and `BIOMCP_BIN`; no live-smoke commands or Python pytest contracts run in this lane |
-| `make verify` | explicit opt-in operator confidence before releases or upstream checks | n/a | live public-upstream matrix for discover/OLS4, disease, article source status, variant normalization, phenotype, protein, pathway, CPIC PGx, NIH Reporter funding, and other live entity/surface specs | commands go through `tools/biomcp-ci` for cache/XDG roots and optional-key stripping; CPIC and NIH Reporter specs are additionally routed through `tools/biomcp-verify-live` so known source/auth unavailability is reported as operator-pending |
+| `make verify` | explicit opt-in operator confidence before releases or upstream checks | n/a | live public-upstream matrix for discover/OLS4, disease, article source status, variant normalization, phenotype, protein, pathway, NIH Reporter funding, and other live entity/surface specs | commands go through `tools/biomcp-ci` for cache/XDG roots and optional-key stripping; NIH Reporter is additionally routed through `tools/biomcp-verify-live` so known source/auth unavailability is reported as operator-pending |
 | `make release-live-smoke` | compatibility alias for operators that still use the old live-lane name | n/a | delegates to `make verify` | not part of routine gates |
 | `make spec-pr` | PR CI canary and repo-local debugging of the offline executable corpus | `180s` per heading | explicit `SPEC_ROUTINE_PATHS`: local/fixture-backed CLI/MCP Markdown specs plus the parallel-isolation pytest canary | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
 | `make spec` | repo-local routine spec gate and spec debugging | `180s` per heading | the same offline `SPEC_ROUTINE_PATHS` set as `make spec-pr` | uses the same wrapper/cache root; it should pass with external network blocked while local mock servers remain reachable |
@@ -15,9 +15,9 @@ Routine validation now uses offline/deterministic lanes: `make spec` and
 `make spec-pr` run only explicit `SPEC_ROUTINE_PATHS`, and `make spec-contracts`
 keeps a legacy deterministic subset available for profile compatibility. Public upstream confidence is
 live and opt-in through `make verify` (`make release-live-smoke` remains a
-compatibility alias). In that live lane, CPIC `web_anon` auth/permission denial
-and NIH Reporter funding-source/table unavailability are explicit
-operator-pending outcomes, not silent skips; unexpected output shapes and other
+compatibility alias). In that live lane, NIH Reporter funding-source/table
+unavailability is an explicit operator-pending outcome, not a silent skip;
+unexpected output shapes and other
 unclassified failures stay product-red. Ticket 395 moves every live public-upstream spec out of
 routine collection: phenotype/Monarch, protein/UniProt and ComplexPortal,
 disease/discover OLS4 paths, pathway Reactome/WikiPathways/KEGG, plus the other
@@ -70,7 +70,7 @@ locally; the outer routine keeps and executes the caller-provided artifact.
 | `spec/entity/protein.md` | protein canary for reviewed search defaults, UniProt identity, complexes/structures, and JSON follow-up contracts |
 | `spec/entity/pathway.md` | live-smoke-only pathway canary for alias normalization, exact-title ranking, concise KEGG defaults, and source-aware section rejection |
 | `spec/entity/study.md` | study canary for local cBioPortal discovery, typed analytics validation, comparison summaries, and chart output |
-| `spec/entity/pgx.md` | pgx canary for gene/drug CPIC interaction search, opt-in recommendations, and population-frequency detail |
+| `spec/entity/pgx.md` | receipt-backed routine fixture contract for gene/drug CPIC interaction search, opt-in recommendations, guidelines, and population-frequency detail |
 | `spec/entity/phenotype.md` | phenotype canary for HPO/symptom inputs, similarity-ranked disease output, and typed disease follow-ups |
 | `spec/entity/diagnostic.md` | diagnostic canary for source-aware search, gene-first GTR guidance, compact discovery rows, and WHO detail paths |
 | `spec/entity/vaers.md` | vaers canary for vaccine-first CDC aggregation, aggregate-only reporting, and explicit source limitations/combined output |
@@ -112,9 +112,9 @@ comment immediately after the `##` heading.
 - `tools/biomcp-ci` owns `BIOMCP_CACHE_DIR`, `XDG_CACHE_HOME`,
   `XDG_CONFIG_HOME`, optional-key stripping, and the `BIOMCP_SPEC_CACHE_HIT=1`
   to `BIOMCP_CACHE_MODE=infinite` warm-hit replay switch.
-- `tools/biomcp-verify-live` owns source-pending classification for CPIC and NIH
-  Reporter inside `make verify`; it does not replace deterministic routine
-  request/renderer proof.
+- `tools/biomcp-verify-live` owns source-pending classification for NIH Reporter
+  inside `make verify`; it does not replace deterministic routine request/renderer
+  proof.
 - The routine deterministic lane should stay within the spec-v2 design budget:
   `<=5 minutes` warm and `<=15 minutes` cold per cache schema/version key.
 - CI's `spec-stable` job restores `.cache/biomcp-specs/` with the key

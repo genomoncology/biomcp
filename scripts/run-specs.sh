@@ -9,6 +9,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/author.md
   spec/entity/disease-survival-fixture.md
   spec/entity/drug-interactions.md
+  spec/entity/pgx.md
   spec/entity/section-outcomes.md
   spec/entity/study.md
   spec/entity/trial-intervention-aliases.md
@@ -45,7 +46,6 @@ SPEC_LIVE_PATHS=(
   spec/entity/drug.md
   spec/entity/gene.md
   spec/entity/pathway.md
-  spec/entity/pgx.md
   spec/entity/phenotype.md
   spec/entity/protein.md
   spec/entity/trial.md
@@ -62,7 +62,7 @@ SPEC_LIVE_PATHS=(
 )
 
 usage() {
-  echo "usage: scripts/run-specs.sh <spec|spec-static|spec-pr|spec-contracts|verify|verify-cpic|verify-nih-reporter>" >&2
+  echo "usage: scripts/run-specs.sh <spec|spec-static|spec-pr|spec-contracts|verify|verify-nih-reporter>" >&2
 }
 
 mustmatch_dir() {
@@ -213,6 +213,18 @@ cleanup_clingen_cspec_fixture() {
   bash spec/fixtures/cleanup-clingen-cspec-spec-fixture.sh "$ROOT"
 }
 
+cleanup_cpic_fixture() {
+  bash spec/fixtures/cleanup-cpic-spec-fixture.sh "$ROOT"
+}
+
+run_cpic_fixture() {
+  # Isolated runner-lifecycle tests copy only the fixture subset they exercise.
+  [[ -x spec/fixtures/setup-cpic-spec-fixture.sh ]] || return 0
+  bash spec/fixtures/setup-cpic-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-cpic-env"
+  register_cleanup cleanup_cpic_fixture
+}
+
 run_clingen_cspec_fixture() {
   # Isolated runner-lifecycle tests copy the historical fixture subset; the real
   # routine workspace always includes this ticket's CSpec fixture.
@@ -233,7 +245,8 @@ reap_stale_routine_fixtures() {
     cleanup-ctgov-intervention-alias-spec-fixture.sh \
     cleanup-disease-survival-spec-fixture.sh \
     cleanup-variant-identity-spec-fixture.sh \
-    cleanup-clingen-cspec-spec-fixture.sh; do
+    cleanup-clingen-cspec-spec-fixture.sh \
+    cleanup-cpic-spec-fixture.sh; do
     [[ -x "spec/fixtures/$cleanup" ]] || continue
     ROUTINE_FIXTURE_LOCK_PATH="$lock_path" bash "spec/fixtures/$cleanup" "$ROOT"
   done
@@ -312,6 +325,7 @@ case "$mode" in
     run_disease_survival_fixture
     run_variant_identity_fixture
     run_clingen_cspec_fixture
+    run_cpic_fixture
     ;;
   spec-static)
     timeout_args=(--timeout 180)
@@ -364,11 +378,6 @@ case "$mode" in
     mustmatch_path_dir="$(mustmatch_dir)"
     run_live_ddinter_root
     ;;
-  verify-cpic)
-    timeout_args=(--timeout 180)
-    paths=(spec/entity/pgx.md)
-    mustmatch_path_dir="$(mustmatch_dir)"
-    ;;
   verify-nih-reporter)
     timeout_args=(--timeout 180)
     paths=(spec/entity/disease.md spec/entity/gene.md)
@@ -394,7 +403,7 @@ if [[ "$mode" == "spec-static" ]]; then
 else
   case "$mode" in
     verify) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
-    verify-cpic|verify-nih-reporter) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
+    verify-nih-reporter) default_biomcp_bin="$ROOT/target/release/biomcp" ;;
     *) default_biomcp_bin="$ROOT/target/spec/biomcp" ;;
   esac
   BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"

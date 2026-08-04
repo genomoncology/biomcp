@@ -176,6 +176,78 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "cpic/frequency_cyp2d6_20260803.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/population_frequency_view?genesymbol=eq.CYP2D6&select=*&limit=30",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "c2240b203c24e82cc9cc248cc4fa437b4368772e606082935685eb3a11f54ddb",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    {
+      "path": "cpic/guideline_cyp2d6_20260803.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/guideline_summary_view?genes=cs.%5B%7B%22symbol%22%3A%22CYP2D6%22%7D%5D&select=*&limit=40",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "8ad47f79a591100835f819004c5052135d97b940a9f940ffcbac4f74494f5f1c",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    {
+      "path": "cpic/pair_drug_clopidogrel_20260803.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/pair_view?drugname=ilike.*clopidogrel*&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cgenesymbol.asc",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "0b35b4e8d788eb9cd464662dbe407dc4d79d41a3e6deab175f4752c56aa9f751",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    {
+      "path": "cpic/pair_empty_20260803.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.NOSUCHGENE&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    {
+      "path": "cpic/pair_gene_cyp2d6_20260803.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/pair_view?genesymbol=eq.CYP2D6&select=*&limit=100&offset=0&order=cpiclevel.asc%2Cdrugname.asc",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "e2408ec6d131107a0279a47e2a310b2a18ee40da3a4e55a671c685903d751e9e",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    {
+      "path": "cpic/recommendation_cyp2d6_20260803.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CPIC",
+        "request": "https://api.cpicpgx.org/v1/recommendation_view?lookupkey-%3E%3ECYP2D6=not.is.null&select=*&limit=50",
+        "captured_at": "2026-08-03T23:33:28Z",
+        "sha256": "1945b95474ef8fa8fad42e3178e917ab865c969b5b13b31938a9f786b6b0ecfa",
+        "minimization_or_redaction": "Raw public response bytes retained without edits.",
+        "provider_origin_statement": "Captured directly from CPIC's public API."
+      }
+    },
+    {
       "path": "dgidb/gene_braf_interactions.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."

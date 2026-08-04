@@ -60,6 +60,14 @@ FIXTURES = (
         "spec-clingen-cspec-env",
         "BIOMCP_CSPEC_FIXTURE",
     ),
+    (
+        "cpic",
+        "cpic",
+        "cleanup-cpic-spec-fixture.sh",
+        "spec-cpic",
+        "spec-cpic-env",
+        "BIOMCP_CPIC_FIXTURE",
+    ),
 )
 
 
@@ -238,6 +246,14 @@ SERVER_FIXTURES = (
         "cleanup-clingen-cspec-spec-fixture.sh",
         "spec-clingen-cspec-env",
         "BIOMCP_CSPEC_FIXTURE_PID",
+    ),
+    (
+        "cpic",
+        "cpic",
+        "setup-cpic-spec-fixture.sh",
+        "cleanup-cpic-spec-fixture.sh",
+        "spec-cpic-env",
+        "BIOMCP_CPIC_FIXTURE_PID",
     ),
 )
 
