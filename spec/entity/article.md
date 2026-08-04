@@ -1000,9 +1000,11 @@ staging state and still stream the final provider bytes.
 
 ## Fulltext Reports Assets Not Included
 
-Full text Markdown remains text-first, but JSON must tell agents which evidence
-bytes were not inlined and how to retrieve them. The summary is structured so a
-consumer can branch without scraping prose.
+Full text Markdown remains text-first, but JSON must tell agents which package
+evidence bytes were not inlined and how to retrieve them. The fixture also names
+a JATS-only supplement; that linked asset remains on the explicit `assets` and
+`asset` surfaces. The summary is structured so a consumer can branch without
+scraping prose.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663011 fulltext | uv run --no-sync python3 -c '
@@ -1020,8 +1022,9 @@ assert figures.get("retrieve_with") == "biomcp --json get article 22663011 asset
 commands = (doc.get("_meta") or {}).get("next_commands") or []
 assert "biomcp --json get article 22663011 assets" in commands
 assert "biomcp get article 22663011 asset traces-s1.csv" in commands
-print("article fulltext not_included ok")
-' | mustmatch like "article fulltext not_included ok"
+assert "biomcp get article 22663011 asset linked-jats-s2.csv" not in commands
+print("article fulltext package-only summary ok")
+' | mustmatch like "article fulltext package-only summary ok"
 ```
 
 Markdown carries the retrieval command as a pointer instead of embedding the
