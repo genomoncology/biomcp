@@ -644,6 +644,13 @@ case "$scenario" in
          and (.remaining | type) == "number"
          and (.exhausted | type) == "boolean"
          and .consumed + .remaining == .limit;
+       def has_transport_field:
+         [paths as $path
+          | $path[]?
+          | select(type == "string")
+          | ascii_downcase
+          | select(IN("url", "uri", "body", "path", "headers", "authorization", "secret", "token"))]
+         | length > 0;
        def item_plan_shape:
          (.normalized_aliases | type) == "object"
          and ([.routes[].queries[]?] | length) > 0
@@ -665,6 +672,10 @@ case "$scenario" in
            single: ($ordinary_single | has("debug_plan") | not),
            batch: ($ordinary_batch | has("debug_plan") | not)
          },
+         transport_fields_redacted: (
+           [$single.debug_plan, $batch.debug_plan, $batch.items[].debug_plan]
+           | all(.[]; has_transport_field | not)
+         ),
          single: {
            aliases_present: (($single.debug_plan.normalized_aliases | to_entries | map(.value | length) | add) > 0),
            required_routes: {

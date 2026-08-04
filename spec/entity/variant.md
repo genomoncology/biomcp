@@ -584,7 +584,9 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. batch-compact-json
 Request a route plan only in JSON when aliases, provider work, ranking, or a
 truncated acquisition needs explanation. Ordinary output stays compact. A single
 request and every item in a batch expose the same typed route facts, while the
-batch adds its fixed item-worker and request-budget summary.
+batch adds its fixed item-worker and request-budget summary. These diagnostic
+facts never expose transport URLs, request or response bodies, paths, headers,
+or credentials.
 
 ```bash run id=variant-article-plan exit=0
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. debug-plan-json
@@ -593,6 +595,7 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. debug-plan-json
 ```json expect=variant-article-plan contains
 {
   "ordinary_omits_plan": {"single": true, "batch": true},
+  "transport_fields_redacted": true,
   "single": {
     "aliases_present": true,
     "required_routes": {

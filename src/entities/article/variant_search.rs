@@ -4416,39 +4416,6 @@ mod tests {
     }
 
     #[test]
-    fn route_plans_exclude_transport_secrets_urls_bodies_and_paths() {
-        let plan = empty_debug_plan(&resolved_context().requested, false, Vec::new(), 0);
-        let value = serde_json::to_value(plan).expect("debug plan serializes");
-        let rendered = value.to_string();
-
-        for forbidden in [
-            "super-secret-token",
-            "https://provider.invalid/signed?token=super-secret-token",
-            "raw provider response body",
-            "/tmp/variant-article-input.json",
-        ] {
-            assert!(
-                !rendered.contains(forbidden),
-                "plan leaked {forbidden}: {rendered}"
-            );
-        }
-        fn has_transport_key(value: &serde_json::Value) -> bool {
-            match value {
-                serde_json::Value::Object(fields) => fields.iter().any(|(key, value)| {
-                    matches!(key.as_str(), "url" | "body" | "path" | "headers" | "secret")
-                        || has_transport_key(value)
-                }),
-                serde_json::Value::Array(values) => values.iter().any(has_transport_key),
-                _ => false,
-            }
-        }
-        assert!(
-            !has_transport_key(&value),
-            "debug plan exposed a transport field: {value}"
-        );
-    }
-
-    #[test]
     fn item_errors_preserve_runtime_error_classification() {
         let error = item_error(BioMcpError::SourceUnavailable {
             source_name: "fixture".into(),
