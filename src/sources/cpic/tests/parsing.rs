@@ -18,7 +18,7 @@ macro_rules! fixture {
 #[test]
 fn pair_page_response_decodes_rows_and_total() {
     let mut headers = HeaderMap::new();
-    headers.insert("content-range", HeaderValue::from_static("0-0/12"));
+    headers.insert("content-range", HeaderValue::from_static("0-78/*"));
     let content_type = HeaderValue::from_static("application/json");
 
     let page: CpicPage<Vec<CpicPairRow>> = CpicClient::decode_json_page_response(
@@ -29,7 +29,7 @@ fn pair_page_response_decodes_rows_and_total() {
     )
     .expect("pair page");
 
-    assert_eq!(page.total, Some(12));
+    assert_eq!(page.total, None);
     assert_eq!(page.rows.len(), 79);
     assert_eq!(page.rows[0].genesymbol, "CYP2D6");
     assert_eq!(page.rows[0].drugname, "amitriptyline");

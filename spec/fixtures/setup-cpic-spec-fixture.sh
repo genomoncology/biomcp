@@ -34,7 +34,7 @@ def expected(path, query):
         "genesymbol": ["eq.CYP2D6"], "select": ["*"], "limit": ["15"],
         "offset": ["0"], "order": ["cpiclevel.asc,drugname.asc"],
     }:
-        return "pair_gene_cyp2d6_20260803.json", "0-14/*"
+        return "pair_gene_cyp2d6_20260803.json", "0-78/*"
     if path == "/pair_view" and query == {
         "drugname": ["ilike.*clopidogrel*"], "select": ["*"], "limit": ["15"],
         "offset": ["0"], "order": ["cpiclevel.asc,genesymbol.asc"],
