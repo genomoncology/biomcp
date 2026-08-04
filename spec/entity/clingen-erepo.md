@@ -16,6 +16,11 @@ detail with citation locators, deterministic assertion selection, and equivalent
 CLI/MCP batch output. The compact report keeps the executable documentation
 focused on user-visible evidence truth rather than volatile provider payloads.
 
+The summary-selected `--detail` workflow must consume its source plan and replay
+receipt-admitted summary and detail bytes through the public CLI. The provider's
+returned `@id` remains a source fact: its host need not match the local fixture
+origin, while its selected assertion/version path must remain intact.
+
 ```bash run id=clingen-erepo-frozen exit=0
 bash ../fixtures/run-clingen-erepo-fixture.sh ../..
 ```
@@ -35,6 +40,9 @@ bash ../fixtures/run-clingen-erepo-fixture.sh ../..
   "selected_detail_keeps_version_and_citation_locator": true,
   "batch_preserves_order_and_duplicates": true,
   "cli_and_mcp_have_same_contract": true,
-  "summary_and_detail_bounds_are_reported": true
+  "summary_and_detail_bounds_are_reported": true,
+  "detail_cli_consumes_selected_source_plan": true,
+  "receipted_summary_and_detail_drive_cli": true,
+  "provider_at_id_is_preserved_in_detail": true
 }
 ```

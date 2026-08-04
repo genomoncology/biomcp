@@ -27,11 +27,11 @@ impl ERepoClient {
     #[cfg(test)]
     pub(crate) fn with_test_client(
         client: reqwest_middleware::ClientWithMiddleware,
-        base: &'static str,
+        base: impl Into<Cow<'static, str>>,
     ) -> Self {
         Self {
             client,
-            base: Cow::Borrowed(base),
+            base: base.into(),
         }
     }
 

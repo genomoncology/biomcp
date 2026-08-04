@@ -17,9 +17,9 @@ bash ../fixtures/run-clingen-cspec-fixture.sh ../.. | mustmatch like '"all_named
 "semantic_subset_is_page_independent": true'
 ```
 
-## Captured pages keep the selected identity
+## Receipt-backed captured pages keep the selected identity
 
-A capture binds the selected ATM document and gene rather than trusting a later label. Its raw bytes match reported provenance, raw retrieval does not fetch the provider again, and the typed MCP page is the same public projection as the CLI page.
+A capture binds the selected ATM document and gene rather than trusting a later label. Its raw bytes match reported provenance, raw retrieval does not fetch the provider again, and the typed MCP page is the same public projection as the CLI page. The routine fixture must replay receipt-admitted ClinGen manifest and version-page bytes through the shipped command. This proves the manifest request selects the exact resource IRI, the selected page remains capture-backed, and paging preserves provider criterion order without making current provider availability part of the routine gate.
 
 ```bash
 bash ../fixtures/run-clingen-cspec-fixture.sh ../.. | mustmatch like '"capture_binds_requested_gene_and_selected_iri": true
@@ -27,5 +27,8 @@ bash ../fixtures/run-clingen-cspec-fixture.sh ../.. | mustmatch like '"capture_b
 "caller_gene_cannot_relabel_capture": true
 "missing_capture_is_capture_unavailable": true
 "raw_bytes_match_reported_sha256_and_length": true
-"raw_read_does_not_refetch": true'
+"raw_read_does_not_refetch": true
+"receipt_backed_manifest_plan_is_consumed": true
+"receipted_manifest_and_version_page_drive_cli": true
+"paged_capture_keeps_provider_criterion_order": true'
 ```

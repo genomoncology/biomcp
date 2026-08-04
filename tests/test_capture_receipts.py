@@ -23,6 +23,18 @@ def _audit(source_root: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def test_clingen_live_replacements_have_receipted_manifest_summary_and_detail_captures() -> None:
+    manifest = json.loads((SOURCES_ROOT / "capture-receipts.json").read_text(encoding="utf-8"))
+    classifications = {
+        entry["path"]: entry["classification"] for entry in manifest["entries"]
+    }
+
+    assert classifications.get("clingen_cspec/atm-manifest.json") == "real_and_receipted"
+    assert classifications.get("clingen_cspec/atm-gn020-1.5.1.json") == "real_and_receipted"
+    assert classifications.get("clingen_erepo/apc-summary.json") == "real_and_receipted"
+    assert classifications.get("clingen_erepo/apc-detail.json") == "real_and_receipted"
+
+
 def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> None:
     result = _audit(SOURCES_ROOT)
 

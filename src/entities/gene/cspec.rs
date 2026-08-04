@@ -593,7 +593,7 @@ mod tests {
     }
 
     #[test]
-    fn captured_atm_document_without_data_iri_pages_from_manifest_binding() {
+    fn receipted_atm_document_without_data_iri_pages_from_manifest_binding() {
         let bytes = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/clingen_cspec/atm-gn020-1.5.1.json"
@@ -602,9 +602,9 @@ mod tests {
             capture_id: "capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
             provider: ProviderCaptureProvider::Cspec,
             media_type: "application/json".into(),
-            byte_length: bytes.len() as u64,
-            sha256: "a".repeat(64),
-            captured_at: 0,
+            byte_length: 6_830,
+            sha256: "6235f874611fffa3d9543bc8f161f3b9184a84824f766e3f0ba04763bd017785".into(),
+            captured_at: 1_753_936_000,
             expires_at: 1,
             schema_version: 1,
             capture_binding: Some(CspecCaptureBinding {
@@ -641,12 +641,66 @@ mod tests {
         );
         assert_eq!(page.specification_id, "GN020");
         assert_eq!(page.display_version, "1.5");
+        assert_eq!(page.capture.source_sha256, capture.sha256);
+        assert!(
+            page.criteria
+                .iter()
+                .all(|criterion| criterion.capture_hash == capture.sha256)
+        );
         assert!(page.total > 0, "the captured document must yield criteria");
         assert!(
             page.criteria
                 .iter()
                 .any(|criterion| criterion.label.as_deref() == Some("BP6")),
             "the captured criterion landmark must be parsed"
+        );
+    }
+
+    #[test]
+    fn recorded_atm_document_deduplicates_citations_in_provider_order() {
+        let mut document: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_cspec/atm-gn020-1.5.1.json"
+        )))
+        .expect("recorded CSpec document JSON");
+        document["data"]["ld"]["CriteriaCode"][0]["entContent"]["references"] = json!([
+            {"id": "29543229", "source": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/29543229"},
+            {"id": "25741868", "source": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/25741868"},
+            {"id": "29543229", "source": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/29543229"},
+        ]);
+        let bytes = serde_json::to_vec(&document).expect("fixture serializes");
+        let capture = ProviderCaptureManifest {
+            capture_id: "capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            provider: ProviderCaptureProvider::Cspec,
+            media_type: "application/json".into(),
+            byte_length: bytes.len() as u64,
+            sha256: "a".repeat(64),
+            captured_at: 0,
+            expires_at: 1,
+            schema_version: 1,
+            capture_binding: Some(CspecCaptureBinding {
+                binding_schema_version: 1,
+                normalized_gene: "ATM".into(),
+                resource_iri: "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into(),
+                specification_id: "GN020".into(),
+            }),
+        };
+
+        let page = page_from_bytes(
+            &bytes,
+            capture.capture_binding.as_ref().expect("binding"),
+            0,
+            1,
+            &capture,
+        )
+        .expect("recorded document projection");
+
+        assert_eq!(
+            page.criteria[0].citations,
+            [
+                "https://pubmed.ncbi.nlm.nih.gov/29543229",
+                "https://pubmed.ncbi.nlm.nih.gov/25741868",
+            ]
         );
     }
 

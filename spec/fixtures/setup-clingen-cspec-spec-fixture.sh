@@ -17,39 +17,36 @@ ready="$fixture_root/origin"
 requests="$fixture_root/requests.jsonl"
 : >"$requests"
 
-READY="$ready" REQUESTS="$requests" setsid python3 - "$owner_arg" 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
-import json, os
+CAPTURES="$root/testdata/sources/clingen_cspec" READY="$ready" REQUESTS="$requests" setsid python3 - "$owner_arg" 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+CAPTURES = Path(os.environ['CAPTURES'])
 READY, REQUESTS = Path(os.environ['READY']), Path(os.environ['REQUESTS'])
-SERIES = {'APC': [('GN089','1.0')], 'ATM': [('GN020','1.5.1')], 'BRCA1': [('GN092','1.0')], 'MLH1': [('GN115','1.0')], 'PALB2': [('GN077','1.0')], 'PTEN': [('GN003','1.0')], 'TP53': [('GN009','1.0')], 'BRAF': [('GN004','1.0'), ('GN049','2.0')]}
-def iri(spec, version): return f'https://cspec.clinicalgenome.org/cspec/SequenceVariantInterpretation/id/{spec}/version/{version}'
-def envelope(data): return {'status': {'code': 200}, 'metadata': {'fixture': 'cspec-618'}, 'data': data}
-def doc(spec, version, gene):
-    return envelope({'@id': iri(spec, version), 'entType': 'SequenceVariantInterpretation', 'entId': spec,
-      'entContent': {'namespace': spec, 'version': '1.5' if spec == 'GN020' else version, 'states': [{'current': True, 'name': 'current'}]},
-      'ldFor': {'Organization': [{'entContent': {'shortTitle': f'{gene} VCEP'}}]},
-      'ld': {'CriteriaCode': [
-        {'entType':'CriteriaCode','entId':f'{spec}-PS3','entContent':{'sepioID':'SEPIO:0000006','label':'PS3','instructionsToUse':'Use the source criterion as supplied.','references':[{'source':'PubMed','url':'https://pubmed.ncbi.nlm.nih.gov/123456/','id':'123456'}, {'source':'PubMed','url':'https://pubmed.ncbi.nlm.nih.gov/123456/'}]}},
-        {'entType':'CriteriaCode','entId':f'{spec}-PM2','entContent':{'sepioID':'SEPIO:0000007','label':'PM2','references':[{'source':'PubMed','url':'https://pubmed.ncbi.nlm.nih.gov/789012/'}]}}
-      ]}})
+MANIFESTS = {
+    gene: (CAPTURES / f'{gene.lower()}-manifest.json').read_bytes()
+    for gene in ('APC', 'ATM', 'BRCA1', 'MLH1', 'PALB2', 'PTEN', 'TP53', 'BRAF')
+}
+DOCUMENT = (CAPTURES / 'atm-gn020-1.5.1.json').read_bytes()
+
 class Handler(BaseHTTPRequestHandler):
   def log_message(self, *_): pass
-  def send(self, value):
-    body=json.dumps(value,separators=(',',':')).encode(); self.send_response(200); self.send_header('Content-Type','application/json'); self.send_header('Content-Length',str(len(body))); self.end_headers(); self.wfile.write(body)
+  def send(self, body):
+    self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Content-Length', str(len(body))); self.end_headers(); self.wfile.write(body)
   def do_GET(self):
-    path=self.path.split('?',1)[0]
-    with REQUESTS.open('a') as f: f.write(path+'\n')
-    parts=[p for p in path.split('/') if p]
-    if len(parts)==6 and parts[:3]==['cspec','Gene','id']:
-      gene=parts[3]; self.send(envelope([{'@id':iri(spec, version)} for spec,version in SERIES.get(gene, [])])); return
-    if len(parts)==6 and parts[:3]==['cspec','SequenceVariantInterpretation','id']:
-      spec, version=parts[3],parts[5]
-      for gene, rows in SERIES.items():
-        if (spec,version) in rows: self.send(doc(spec,version,gene)); return
+    path = self.path.split('?', 1)[0]
+    with REQUESTS.open('a') as f: f.write(path + '\n')
+    parts = [part for part in path.split('/') if part]
+    if len(parts) == 6 and parts[:3] == ['cspec', 'Gene', 'id']:
+      body = MANIFESTS.get(parts[3])
+      if body is not None:
+        self.send(body); return
+    if parts == ['cspec', 'SequenceVariantInterpretation', 'id', 'GN020', 'version', '1.5.1']:
+      self.send(DOCUMENT); return
     self.send_response(404); self.end_headers()
-server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+
+server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
 READY.write_text(f'http://127.0.0.1:{server.server_port}')
 server.serve_forever()
 PY

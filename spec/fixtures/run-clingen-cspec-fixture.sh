@@ -4,7 +4,7 @@
 set -euo pipefail
 root="$(cd "${1:-../..}" && pwd)"
 bin="${BIOMCP_BIN:?run through scripts/run-specs.sh}"
-official='https://cspec.clinicalgenome.org/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
+official='https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
@@ -31,11 +31,15 @@ open(os.environ['OUT'],'w').write(reply['result']['content'][0]['text'])
 proc.terminate(); proc.wait()
 PY
 
-uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" "$requests_before_raw" <<'PY'
+uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" "$requests_before_raw" "$root" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
 work, request_log = map(Path, sys.argv[1:3])
 requests_before_raw = int(sys.argv[3])
+repo_root = Path(sys.argv[4])
+recorded_document = (repo_root / 'testdata/sources/clingen_cspec/atm-gn020-1.5.1.json').read_bytes()
+manifest_path = '/cspec/Gene/id/ATM/SequenceVariantInterpretation/version'
+document_path = '/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
 def load(name): return json.loads((work/name).read_text())
 selected, second, mcp = load('selected.json'), load('page-two.json'), load('mcp.json')
 series = {'APC':'GN089','ATM':'GN020','BRCA1':'GN092','MLH1':'GN115','PALB2':'GN077','PTEN':'GN003','TP53':'GN009','BRAF':'GN049'}
@@ -47,8 +51,11 @@ report={
  'braf_keeps_gn004_and_gn049': manifest_has('BRAF','GN004') and manifest_has('BRAF','GN049'),
  'atm_uses_literal_full_iri_not_display_version': selected['resource_iri'].endswith('/GN020/version/1.5.1') and selected['display_version']=='1.5',
  'literal_selector_returns_matching_gene_and_specification': selected['gene']=='ATM' and selected['specification_id']=='GN020',
- 'criteria_are_deterministic_and_paged': selected['criteria'][0]['label']=='PS3' and second['criteria'][0]['label']=='PM2',
- 'supported_reference_objects_preserve_ordered_deduplicated_urls': selected['criteria'][0]['citations']==['https://pubmed.ncbi.nlm.nih.gov/123456/'],
+ 'criteria_are_deterministic_and_paged': selected['criteria'][0]['label']=='BP6' and second['criteria'][0]['label']=='PM5',
+ 'supported_reference_objects_preserve_ordered_deduplicated_urls': selected['criteria'][0]['citations']==['https://pubmed.ncbi.nlm.nih.gov/29543229'],
+ 'receipt_backed_manifest_plan_is_consumed': manifest_path in requests and document_path in requests,
+ 'receipted_manifest_and_version_page_drive_cli': selected['resource_iri']=='https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1' and selected['source_sha256']==hashlib.sha256(recorded_document).hexdigest(),
+ 'paged_capture_keeps_provider_criterion_order': selected['criteria'][0]['label']=='BP6' and second['criteria'][0]['label']=='PM5',
  'disease_is_null': selected['disease'] is None,
  'semantic_subset_is_page_independent': selected['semantic_subset_version']=='cspec-semantic-v1' and selected['semantic_subset_sha256']==second['semantic_subset_sha256'],
  'capture_binds_requested_gene_and_selected_iri': selected['capture_binding']['normalized_gene']=='ATM' and selected['capture_binding']['resource_iri']==selected['resource_iri'],

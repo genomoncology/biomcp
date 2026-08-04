@@ -82,6 +82,7 @@ pub(crate) struct ERepoDetail {
     pub source_url: String,
     pub assertion_uuid: String,
     pub provider_entity_id: Option<String>,
+    pub provider_at_id: Option<String>,
     pub body_sha256: String,
     pub body_bytes: usize,
     pub response_version: Option<String>,
@@ -135,7 +136,16 @@ pub(crate) async fn retrieve(
             "variant erepo --detail is only available for one CAid".into(),
         ));
     }
-    let client = ERepoClient::new()?;
+    retrieve_with_client(caids, detail, assertion_id, version, ERepoClient::new()?).await
+}
+
+async fn retrieve_with_client(
+    caids: Vec<String>,
+    detail: bool,
+    assertion_id: Option<&str>,
+    version: Option<&str>,
+    client: ERepoClient,
+) -> Result<ERepoResponse, BioMcpError> {
     let mut items = Vec::with_capacity(caids.len());
     for caid in caids {
         let envelope = client.summary(&caid).await?;
@@ -278,6 +288,7 @@ fn detail_projection(
     bytes: &[u8],
 ) -> ERepoDetail {
     let provider_entity_id = data.get("id").and_then(Value::as_str).map(str::to_owned);
+    let provider_at_id = data.get("@id").and_then(Value::as_str).map(str::to_owned);
     let mut criteria = Vec::new();
     for (line_index, line) in data
         .get("evidenceLine")
@@ -339,6 +350,7 @@ fn detail_projection(
         source_url: url.into(),
         assertion_uuid: uuid.into(),
         provider_entity_id,
+        provider_at_id,
         body_sha256: format!("{:x}", Sha256::digest(bytes)),
         body_bytes: bytes.len(),
         response_version: metadata
@@ -546,6 +558,7 @@ fn invalid(_message: &str) -> BioMcpError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     #[tokio::test]
     async fn selectors_require_detail() {
@@ -571,6 +584,99 @@ mod tests {
 
         assert_eq!(row.doc_version, "2.0.0");
         assert!(select(&[row], None, Some("1.0.0")).is_ok());
+    }
+
+    #[test]
+    fn receipted_apc_detail_preserves_the_provider_at_id() {
+        let bytes = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/apc-detail.json"
+        ));
+        let envelope: Value = serde_json::from_slice(bytes).expect("receipt JSON");
+        let data = envelope["data"].as_object().expect("receipt detail data");
+        let uuid = "34ea9707-51d8-44df-818d-f69b075295c5";
+        let requested_url = "https://erepo.clinicalgenome.org/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0";
+
+        validate_detail_identity(data, uuid, requested_url).expect("receipt identity");
+        let detail = detail_projection(data, uuid, requested_url, bytes);
+
+        assert_eq!(
+            detail.provider_at_id.as_deref(),
+            data.get("@id").and_then(Value::as_str)
+        );
+        assert_eq!(
+            detail.body_sha256,
+            "f6b1e4bfd2359a4d648626a87d487c4d92e5f2cc723de9347139218c03abad46"
+        );
+        assert!(detail.body_bytes > 0);
+        assert!(
+            detail
+                .criteria
+                .iter()
+                .any(|criterion| criterion.pmids.iter().any(|pmid| pmid.pmid == 12_901_799))
+        );
+    }
+
+    #[tokio::test]
+    async fn detail_retrieval_consumes_the_summary_selected_plan() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind ERepo fixture");
+        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+        let summary = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/apc-summary.json"
+        ));
+        let detail = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/apc-detail.json"
+        ));
+        let server = tokio::spawn(async move {
+            let mut requests = Vec::new();
+            for body in [summary, detail] {
+                let (mut stream, _) = listener.accept().await.expect("accept ERepo request");
+                let mut request = Vec::new();
+                loop {
+                    let mut chunk = [0_u8; 4096];
+                    let read = stream.read(&mut chunk).await.expect("read ERepo request");
+                    if read == 0 {
+                        break;
+                    }
+                    request.extend_from_slice(&chunk[..read]);
+                    if request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
+                        break;
+                    }
+                }
+                requests.push(String::from_utf8_lossy(&request).into_owned());
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body,
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .expect("write response");
+            }
+            requests
+        });
+        let client = ERepoClient::with_test_client(
+            crate::sources::test_client().expect("test client"),
+            base,
+        );
+
+        let response = retrieve_with_client(vec!["CA015543".into()], true, None, None, client)
+            .await
+            .expect("receipt-backed detail retrieval");
+        assert!(response.items[0].assertions[0].detail.is_some());
+
+        let requests = server.await.expect("ERepo fixture server");
+        assert!(requests[0].starts_with(
+            "GET /evrepo/api/summary/classifications?columns=caId&values=CA015543&matchTypes=exact&pgSize=25&pg=1 "
+        ));
+        assert!(requests[1].starts_with(
+            "GET /evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0 "
+        ));
     }
 
     #[test]
