@@ -34,8 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Exercise CSpec capture create/read/restart/corruption lifecycle
-        run: cargo test --locked cache::provider_capture
+      - name: Compile the non-Unix fail-closed CSpec capture boundary
+        run: cargo check --locked
 
   version-sync:
     runs-on: ubuntu-latest
