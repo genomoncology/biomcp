@@ -593,7 +593,7 @@ mod tests {
     }
 
     #[test]
-    fn captured_atm_document_without_data_iri_pages_from_manifest_binding() {
+    fn receipted_atm_document_without_data_iri_pages_from_manifest_binding() {
         let bytes = include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/clingen_cspec/atm-gn020-1.5.1.json"
@@ -602,9 +602,9 @@ mod tests {
             capture_id: "capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
             provider: ProviderCaptureProvider::Cspec,
             media_type: "application/json".into(),
-            byte_length: bytes.len() as u64,
-            sha256: "a".repeat(64),
-            captured_at: 0,
+            byte_length: 6_830,
+            sha256: "6235f874611fffa3d9543bc8f161f3b9184a84824f766e3f0ba04763bd017785".into(),
+            captured_at: 1_753_936_000,
             expires_at: 1,
             schema_version: 1,
             capture_binding: Some(CspecCaptureBinding {
@@ -641,6 +641,12 @@ mod tests {
         );
         assert_eq!(page.specification_id, "GN020");
         assert_eq!(page.display_version, "1.5");
+        assert_eq!(page.capture.source_sha256, capture.sha256);
+        assert!(
+            page.criteria
+                .iter()
+                .all(|criterion| criterion.capture_hash == capture.sha256)
+        );
         assert!(page.total > 0, "the captured document must yield criteria");
         assert!(
             page.criteria

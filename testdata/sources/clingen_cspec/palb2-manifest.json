@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN077/version/1.2.1"
+    },
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN077/version/1.2.0"
+    },
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN077/version/1.1.1"
+    },
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN077/version/1.1.0"
+    },
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN077/version/1.0.1"
+    },
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN077/version/1.0.0"
+    }
+  ],
+  "metadata": {
+    "rendered": {
+      "by": "https://cspec.genome.network/cspec/srvc",
+      "when": "2026-08-04T13:41:09.942Z"
+    }
+  },
+  "status": {
+    "code": 200,
+    "name": "OK"
+  }
+}

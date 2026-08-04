@@ -1,9 +1,12 @@
+use std::borrow::Cow;
+
 use reqwest::{StatusCode, Url};
 use serde_json::Value;
 
 use crate::error::{BioMcpError, SourceContext, SourceProvider};
 use crate::sources::{
-    RequestBuilderSourceContextExt, ensure_json_content_type, read_limited_source_body_with_limit,
+    RequestBuilderSourceContextExt, RequestPlan, ensure_json_content_type,
+    read_limited_source_body_with_limit, request_from_plan,
 };
 
 pub(crate) const CSPEC_BASE: &str = "https://cspec.clinicalgenome.org";
@@ -12,6 +15,7 @@ const DOCUMENT_LIMIT: usize = 4 * 1024 * 1024;
 
 pub(crate) struct CspecClient {
     client: reqwest_middleware::ClientWithMiddleware,
+    base: Cow<'static, str>,
     fixture_origin: Option<Url>,
 }
 
@@ -25,6 +29,7 @@ impl CspecClient {
             .map_err(BioMcpError::from)?;
         Ok(Self {
             client: reqwest_middleware::ClientBuilder::new(client).build(),
+            base: Cow::Borrowed(CSPEC_BASE),
             fixture_origin: crate::sources::provider_url_policy::cspec_fixture_origin()?,
         })
     }
@@ -33,53 +38,78 @@ impl CspecClient {
     pub(crate) fn with_test_client(client: reqwest_middleware::ClientWithMiddleware) -> Self {
         Self {
             client,
+            base: Cow::Borrowed(CSPEC_BASE),
             fixture_origin: None,
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_test_client_at(
+        client: reqwest_middleware::ClientWithMiddleware,
+        base: String,
+    ) -> Self {
+        Self {
+            client,
+            base: Cow::Owned(base),
+            fixture_origin: None,
+        }
+    }
+
+    pub(crate) fn manifest_plan(gene: &str) -> RequestPlan {
+        RequestPlan::get(format!(
+            "cspec/Gene/id/{gene}/SequenceVariantInterpretation/version"
+        ))
+        .query("detail", "low")
+    }
+
+    pub(crate) fn document_plan(iri: &Url) -> RequestPlan {
+        RequestPlan::get(iri.path())
+    }
+
     pub(crate) async fn manifest(&self, gene: &str) -> Result<Value, BioMcpError> {
-        let mut url = self.fetch_url(Url::parse(CSPEC_BASE).expect("static CSpec origin is valid"));
-        url.path_segments_mut()
-            .expect("static origin accepts path segments")
-            .extend([
-                "cspec",
-                "Gene",
-                "id",
-                gene,
-                "SequenceVariantInterpretation",
-                "version",
-            ]);
-        url.query_pairs_mut().append_pair("detail", "low");
-        self.get(url, MANIFEST_LIMIT)
+        let base = self.fetch_base(&Url::parse(self.base.as_ref()).expect("CSpec base is valid"));
+        self.get(Self::manifest_plan(gene), base.as_str(), MANIFEST_LIMIT)
             .await
             .map(|(_, body)| decode_envelope(&body))?
     }
 
     pub(crate) async fn document(&self, iri: &Url) -> Result<Vec<u8>, BioMcpError> {
         crate::sources::provider_url_policy::ProviderUrlPolicy::cspec()?.validate_url(iri)?;
+        let base = self.fetch_base(iri);
         let (_, bytes) = self
-            .get(self.fetch_url(iri.clone()), DOCUMENT_LIMIT)
+            .get(Self::document_plan(iri), base.as_str(), DOCUMENT_LIMIT)
             .await?;
         decode_envelope(&bytes)?;
         Ok(bytes)
     }
 
-    fn fetch_url(&self, mut url: Url) -> Url {
+    fn fetch_base(&self, iri: &Url) -> Url {
+        let mut base = iri.clone();
+        base.set_path("");
+        base.set_query(None);
+        base.set_fragment(None);
         if let Some(origin) = &self.fixture_origin {
-            url.set_scheme(origin.scheme())
+            base.set_scheme(origin.scheme())
                 .expect("fixture origin has scheme");
-            url.set_host(origin.host_str())
+            base.set_host(origin.host_str())
                 .expect("fixture origin has host");
-            url.set_port(origin.port())
+            base.set_port(origin.port())
                 .expect("fixture origin has valid port");
         }
-        url
+        #[cfg(test)]
+        if self.fixture_origin.is_none() && self.base != CSPEC_BASE {
+            return Url::parse(self.base.as_ref()).expect("test CSpec base is valid");
+        }
+        base
     }
 
-    async fn get(&self, url: Url, limit: usize) -> Result<(StatusCode, Vec<u8>), BioMcpError> {
-        let response = self
-            .client
-            .get(url)
+    async fn get(
+        &self,
+        plan: RequestPlan,
+        base: &str,
+        limit: usize,
+    ) -> Result<(StatusCode, Vec<u8>), BioMcpError> {
+        let response = request_from_plan(&self.client, base, &plan)
             .send_with_source_context(SourceContext::retry(SourceProvider::CLINGEN_CSPEC))
             .await?;
         let status = response.status();
@@ -116,3 +146,6 @@ fn decode_envelope(bytes: &[u8]) -> Result<Value, BioMcpError> {
     }
     Ok(value)
 }
+
+#[cfg(test)]
+mod tests;
