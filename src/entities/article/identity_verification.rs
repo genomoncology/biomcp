@@ -573,6 +573,7 @@ pub(crate) fn verify_ldh_annotation(
             };
             let items = annotation.pointer("/body/items").and_then(Value::as_array);
             let Some(items) = items else {
+                incomplete = true;
                 continue;
             };
             let caid_matches = items.iter().any(|item| {
@@ -1333,7 +1334,6 @@ mod tests {
             &response,
         );
 
-        assert!(!identity.incomplete);
         let linkage = identity
             .observations
             .iter()
@@ -1355,6 +1355,31 @@ mod tests {
         assert_eq!(pmcid, "PMC8710334");
         assert_eq!(selector_type, "TextQuoteSelector");
         assert_eq!(selector_value, "rs555607708");
+    }
+
+    #[test]
+    fn receipt_backed_ldh_malformed_capture_is_incomplete_without_a_linkage() {
+        let bytes = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_ldh/ca288251-pmc8710334-direct-malformed.json"
+        ))
+        .expect("ticket 662 must add the recorded malformed LDH direct response");
+        let response = serde_json::from_slice(&bytes)
+            .expect("ticket 662 LDH malformed capture must remain provider JSON");
+        let requested = RequestedVariantIdentity::from_variant_input("CHEK2 c.1100del")
+            .expect("CHEK2 identity");
+
+        let identity = verify_ldh_annotation(
+            &requested,
+            "CA288251",
+            &["rs555607708".into()],
+            "PMC8710334",
+            "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
+            &response,
+        );
+
+        assert!(identity.incomplete);
+        assert!(identity.observations.is_empty());
     }
 
     #[test]

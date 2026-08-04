@@ -660,5 +660,26 @@ mod tests {
             item.provenance.car_version.as_deref(),
             Some("captured-car-version")
         );
+
+        let empty = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_allele_registry/tp53-nm_000546.6-c.215c-g-empty.json"
+        ))
+        .expect("ticket 662 must add the recorded CAR empty response");
+        let empty = decode_normalize_response(input, StatusCode::OK, None, &empty);
+        assert_eq!(empty.status, CarNormalizationStatus::Indeterminate);
+        assert!(!empty.exhaustive);
+        assert!(empty.caid.is_none());
+
+        let malformed = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_allele_registry/tp53-nm_000546.6-c.215c-g-malformed.json"
+        ))
+        .expect("ticket 662 must add the recorded CAR malformed response");
+        let malformed =
+            decode_normalize_response("not-hgvs", StatusCode::BAD_REQUEST, None, &malformed);
+        assert_eq!(malformed.status, CarNormalizationStatus::Invalid);
+        assert!(malformed.exhaustive);
+        assert!(malformed.caid.is_none());
     }
 }
