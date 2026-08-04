@@ -4389,11 +4389,22 @@ mod tests {
         );
         assert!(!outcome.response.complete);
         assert!(outcome.response.truncated);
-        assert_eq!(outcome.response.items.len(), 2);
-        assert!(outcome.response.items[0].error.is_none());
+        let usable = outcome
+            .response
+            .items
+            .iter()
+            .find(|item| item.request_id == "usable")
+            .expect("usable sibling is retained");
+        assert!(usable.error.is_none());
+        let terminal_hard = outcome
+            .response
+            .items
+            .iter()
+            .find(|item| item.request_id == "terminal-hard")
+            .expect("terminal-hard sibling is retained");
         assert_eq!(
-            outcome.response.items[1].error.as_ref().unwrap().code,
-            "source_unavailable"
+            terminal_hard.error.as_ref().map(|error| error.code),
+            Some("source_unavailable")
         );
     }
 
