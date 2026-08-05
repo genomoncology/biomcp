@@ -103,7 +103,7 @@ fn parses_s3_version_listing_to_metadata_route() {
 
     assert_eq!(
         manifest.tgz_url,
-        "https://pmc-oa-opendata.s3.amazonaws.com/metadata/PMC9984800.1.json"
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.json"
     );
     assert_eq!(manifest.package_url, manifest.tgz_url);
 }
@@ -123,7 +123,7 @@ fn parses_receipted_s3_metadata_to_xml_object() {
     );
     assert_eq!(
         manifest.package_url,
-        "https://pmc-oa-opendata.s3.amazonaws.com/metadata/PMC9984800.1.json"
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.json"
     );
     assert_eq!(manifest.license.as_deref(), Some("CC BY-NC-ND"));
     assert_eq!(manifest.retracted, Some(false));

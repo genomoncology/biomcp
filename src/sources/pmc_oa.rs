@@ -76,12 +76,15 @@ impl PmcOaClient {
         &self,
         req: reqwest_middleware::RequestBuilder,
     ) -> Result<String, BioMcpError> {
-        let resp = req
-            .with_extension(CacheMode::NoStore)
-            .send_with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::PMC_OPEN_ACCESS,
-            ))
-            .await?;
+        let resp = crate::sources::with_response_body_limit(
+            req.with_extension(CacheMode::NoStore),
+            MAX_ARCHIVE_ENTRY_BYTES as usize,
+            PMC_OA_API,
+        )
+        .send_with_source_context(crate::error::SourceContext::retry(
+            crate::error::SourceProvider::PMC_OPEN_ACCESS,
+        ))
+        .await?;
         let status = resp.status();
         let bytes = crate::sources::read_limited_source_body(
             resp,
@@ -167,7 +170,7 @@ impl PmcOaClient {
         }
         let mut total = 0_u64;
         let mut entries = Vec::new();
-        for media_url in &manifest.media_urls {
+        for media_url in std::iter::once(&manifest.tgz_url).chain(&manifest.media_urls) {
             let bytes = self.object_bytes(media_url).await?;
             total = total.saturating_add(bytes.len() as u64);
             if total > MAX_ARCHIVE_EXPANDED_BYTES {
@@ -215,6 +218,9 @@ fn parse_archive_manifest_xml(body: &str) -> Result<Option<PmcOaArchiveManifest>
     if body.trim_start().starts_with('<') {
         let document = roxmltree::Document::parse(body)
             .map_err(|_| route_error("invalid S3 version listing"))?;
+        if document.root_element().tag_name().name() != "ListBucketResult" {
+            return Err(route_error("invalid S3 version listing"));
+        }
         let prefixes = document
             .descendants()
             .filter(|node| node.is_element() && node.tag_name().name() == "Prefix")
@@ -241,15 +247,15 @@ fn parse_archive_manifest_xml(body: &str) -> Result<Option<PmcOaArchiveManifest>
                 .parse::<u64>()
                 .expect("validated numeric version")
         }) else {
-            return Err(route_error("version listing had no valid package prefix"));
+            return Ok(None);
         };
         return Ok(Some(PmcOaArchiveManifest {
             tgz_url: format!(
-                "https://pmc-oa-opendata.s3.amazonaws.com/metadata/{}.json",
+                "https://pmc-oa-opendata.s3.amazonaws.com/{0}/{0}.json",
                 &prefix[..prefix.len() - 1]
             ),
             package_url: format!(
-                "https://pmc-oa-opendata.s3.amazonaws.com/metadata/{}.json",
+                "https://pmc-oa-opendata.s3.amazonaws.com/{0}/{0}.json",
                 &prefix[..prefix.len() - 1]
             ),
             media_urls: Vec::new(),
@@ -303,8 +309,9 @@ fn parse_archive_manifest_xml(body: &str) -> Result<Option<PmcOaArchiveManifest>
     let version = metadata["version"]
         .as_u64()
         .ok_or_else(|| route_error("metadata omitted numeric version"))?;
-    let package_url =
-        format!("https://pmc-oa-opendata.s3.amazonaws.com/metadata/{pmcid}.{version}.json");
+    let package_url = format!(
+        "https://pmc-oa-opendata.s3.amazonaws.com/{pmcid}.{version}/{pmcid}.{version}.json"
+    );
     Ok(Some(PmcOaArchiveManifest {
         tgz_url: xml_url,
         package_url,

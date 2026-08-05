@@ -736,7 +736,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123456.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
             return
 
-        if decoded_path == "/metadata/PMC123456.1.json":
+        if decoded_path == "/PMC123456.1/PMC123456.1.json":
             send_text(self, 200, json.dumps({"pmcid": "PMC123456", "version": 1, "is_retracted": False, "license_code": "CC BY", "xml_url": "s3://pmc-oa-opendata/PMC123456.1/article.nxml", "media_urls": ["s3://pmc-oa-opendata/PMC123456.1/figure-inline.png", "s3://pmc-oa-opendata/PMC123456.1/figure-floats.png", "s3://pmc-oa-opendata/PMC123456.1/traces-s1.csv", "s3://pmc-oa-opendata/PMC123456.1/readme.txt"]}), "application/json")
             return
 
@@ -766,7 +766,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123460.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
             return
 
-        if decoded_path == "/metadata/PMC123460.1.json":
+        if decoded_path == "/PMC123460.1/PMC123460.1.json":
             send_text(self, 200, json.dumps({"pmcid": "PMC123460", "version": 1, "is_retracted": False, "license_code": "CC BY-NC", "xml_url": "s3://pmc-oa-opendata/PMC123460.1/pmc-oa-only.nxml", "media_urls": []}), "application/json")
             return
 
@@ -778,7 +778,11 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123461.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
             return
 
-        if decoded_path == "/metadata/PMC123461.1.json":
+        if decoded_path == "/PMC123461.1/PMC123461.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123461", "version": 1, "is_retracted": False, "license_code": "CC BY", "xml_url": "s3://pmc-oa-opendata/PMC123461.1/PMC123461.1.xml", "media_urls": []}), "application/json")
+            return
+
+        if decoded_path == "/PMC123461.1/PMC123461.1.xml":
             send_text(self, 404, "not found", "text/plain")
             return
 

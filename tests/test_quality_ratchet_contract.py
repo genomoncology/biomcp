@@ -1116,7 +1116,7 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
         encoding="utf-8",
     )
     (sources / "pmc_oa.rs").write_text(
-        "with_response_body_limit(request, MAX_TGZ_BYTES, PMC_OA_API);\n"
+        "with_response_body_limit(request, MAX_ARCHIVE_ENTRY_BYTES as usize, PMC_OA_API);\n"
         "max_entries: MAX_ARCHIVE_ENTRIES,\n"
         "max_member_bytes: MAX_ARCHIVE_ENTRY_BYTES,\n"
         "max_total_bytes: MAX_ARCHIVE_EXPANDED_BYTES,\n"

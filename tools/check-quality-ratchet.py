@@ -1511,7 +1511,7 @@ def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
         ),
         (
             "src/sources/pmc_oa.rs",
-            "with_response_body_limit(request,MAX_TGZ_BYTES,PMC_OA_API",
+            "with_response_body_limit(request,MAX_ARCHIVE_ENTRY_BYTESasusize,PMC_OA_API",
         ),
         (
             "src/sources/wikipathways.rs",

@@ -72,8 +72,8 @@ Returns a full-text section with a `Saved to:` cache path.
 XML, PMC HTML, or explicitly opted-in PDF sources can resolve. JATS Markdown can
 render references, figure captions, supplementary-material metadata, and complex-table
 omission markers. Semantic Scholar PDF is attempted only when the caller passes `--pdf`.
-PMC OA resolves a versioned S3 prefix listing to a metadata object, then downloads
-only metadata-declared XML and media objects from
+PMC OA resolves a versioned S3 prefix listing to its flat `<version>/<version>.json`
+metadata object, then downloads only metadata-declared XML and media objects from
 `https://pmc-oa-opendata.s3.amazonaws.com`. The retired FTP/archive route is not
 used: NLM removes its legacy files in August 2026. Scheme, origin, port, DNS
 answers, and every redirect are checked before contact without exposing a rejected

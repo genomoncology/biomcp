@@ -625,7 +625,7 @@
       "classification": "real_and_receipted",
       "receipt": {
         "provider": "PMC Article Datasets AWS Open Data",
-        "request": "https://pmc-oa-opendata.s3.amazonaws.com/metadata/PMC9984800.1.json",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.json",
         "captured_at": "2026-08-05T08:41:04Z",
         "minimization_or_redaction": "Raw public metadata response retained without minimization or redaction.",
         "provider_origin_statement": "Bytes were recorded from the public PMC Article Datasets AWS Open Data bucket before permitted minimization.",
