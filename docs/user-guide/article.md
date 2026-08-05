@@ -302,7 +302,10 @@ recognized JATS/PMC HTML supplement links, and eligible Figshare/AACR metadata. 
 the retired FTP/archive route, whose legacy files are removed in August 2026. Figshare
 manifests can include same-paper sibling records discovered by DOI/title, while
 excluding records that do not match the paper. Linked provider URLs stay internal;
-coverage reports named files that are absent, denied, unsupported, or unavailable.
+coverage reports named files that are absent, denied, unsupported, unavailable, or gated.
+PMC's `pmc_proof_of_work` outcome means PMC returned a proof-of-work challenge
+instead of the named file; it has no `asset_key` or handle. A linked binary
+received as HTML or XHTML is rejected rather than exposed as asset bytes.
 `get article <id> asset <asset-key>`
 returns the selected member as raw bytes with no conversion; downstream tools
 parse CSV, XLSX, DOC, PDF, or images. Manifest handles remain BioMCP commands,

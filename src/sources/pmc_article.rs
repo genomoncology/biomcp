@@ -54,6 +54,7 @@ pub(crate) enum PmcLinkedFetch {
     },
     HealthyAbsent,
     AccessOrLicenceDenied,
+    ProofOfWork,
     SourceUnavailable,
 }
 
@@ -167,10 +168,31 @@ impl PmcArticleClient {
         )
         .await
         {
-            Ok(bytes) => PmcLinkedFetch::Bytes {
-                bytes: bytes.to_vec(),
-                media_type,
-            },
+            Ok(bytes) => {
+                let proof_of_work = (0..bytes.len()).any(|start| {
+                    bytes
+                        .get(start..start + b"cloudpmc-viewer-pow".len())
+                        .is_some_and(|value| value.eq_ignore_ascii_case(b"cloudpmc-viewer-pow"))
+                        || bytes
+                            .get(start..start + b"POW_CHALLENGE".len())
+                            .is_some_and(|value| value.eq_ignore_ascii_case(b"POW_CHALLENGE"))
+                });
+                if proof_of_work {
+                    PmcLinkedFetch::ProofOfWork
+                } else if matches!(
+                    media_type.as_deref(),
+                    Some(value)
+                        if value.eq_ignore_ascii_case("text/html")
+                            || value.eq_ignore_ascii_case("application/xhtml+xml")
+                ) {
+                    PmcLinkedFetch::SourceUnavailable
+                } else {
+                    PmcLinkedFetch::Bytes {
+                        bytes: bytes.to_vec(),
+                        media_type,
+                    }
+                }
+            }
             Err(_) => PmcLinkedFetch::SourceUnavailable,
         }
     }
@@ -193,15 +215,25 @@ impl PmcArticleClient {
         for target in targets {
             match self.fetch_with_limit(target, body_limit).await {
                 bytes @ PmcLinkedFetch::Bytes { .. } => return bytes,
-                PmcLinkedFetch::SourceUnavailable => {
+                PmcLinkedFetch::ProofOfWork => {
+                    strongest_failure = PmcLinkedFetch::ProofOfWork;
+                }
+                PmcLinkedFetch::SourceUnavailable
+                    if !matches!(strongest_failure, PmcLinkedFetch::ProofOfWork) =>
+                {
                     strongest_failure = PmcLinkedFetch::SourceUnavailable;
                 }
                 PmcLinkedFetch::AccessOrLicenceDenied
-                    if !matches!(strongest_failure, PmcLinkedFetch::SourceUnavailable) =>
+                    if !matches!(
+                        strongest_failure,
+                        PmcLinkedFetch::ProofOfWork | PmcLinkedFetch::SourceUnavailable
+                    ) =>
                 {
                     strongest_failure = PmcLinkedFetch::AccessOrLicenceDenied;
                 }
-                PmcLinkedFetch::HealthyAbsent | PmcLinkedFetch::AccessOrLicenceDenied => {}
+                PmcLinkedFetch::HealthyAbsent
+                | PmcLinkedFetch::AccessOrLicenceDenied
+                | PmcLinkedFetch::SourceUnavailable => {}
             }
         }
         strongest_failure

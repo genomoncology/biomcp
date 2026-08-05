@@ -585,6 +585,10 @@ async fn resolve_linked_candidates(
                         ),
                     });
                 }
+                PmcLinkedFetch::ProofOfWork => nonretrievable.push(PendingCoverage {
+                    canonical_identity: identity,
+                    row: named_coverage(&candidate, ArticleAssetNamedOutcome::PmcProofOfWork),
+                }),
                 PmcLinkedFetch::HealthyAbsent => nonretrievable.push(PendingCoverage {
                     canonical_identity: identity,
                     row: named_coverage(&candidate, ArticleAssetNamedOutcome::HealthyAbsent),
@@ -1007,7 +1011,8 @@ fn source_document_precedence(source: ArticleAssetSourceDocument) -> u8 {
 
 fn named_outcome_priority(outcome: ArticleAssetNamedOutcome) -> u8 {
     match outcome {
-        ArticleAssetNamedOutcome::Retrievable => 5,
+        ArticleAssetNamedOutcome::Retrievable => 6,
+        ArticleAssetNamedOutcome::PmcProofOfWork => 5,
         ArticleAssetNamedOutcome::SourceUnavailable => 4,
         ArticleAssetNamedOutcome::AccessOrLicenceDenied => 3,
         ArticleAssetNamedOutcome::UnsupportedOrigin => 2,

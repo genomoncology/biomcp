@@ -442,6 +442,7 @@ pub enum ArticleAssetNamedOutcome {
     Retrievable,
     HealthyAbsent,
     AccessOrLicenceDenied,
+    PmcProofOfWork,
     UnsupportedOrigin,
     SourceUnavailable,
 }

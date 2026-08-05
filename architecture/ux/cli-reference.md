@@ -103,8 +103,10 @@ PubMed record from unavailable metadata. Unavailable indexing preserves the
 base article and exposes only a stable failure code and static message in JSON
 and Markdown, never raw provider or parser details. Article `assets` is JSON-only and provider-labelled. It merges PMC OA, Europe PMC
 supplementary ZIP, recognized JATS/PMC HTML links, and eligible Figshare metadata;
-named linked files retain typed coverage when bytes are unavailable. `asset
-<asset-key>` streams exact raw bytes with no conversion for downstream parsers. A
+named linked files retain typed coverage when bytes are unavailable. PMC's
+`pmc_proof_of_work` coverage names a provider gate and has neither asset key nor
+handle; linked binaries received as HTML/XHTML are rejected. `asset <asset-key>`
+streams exact raw bytes with no conversion for downstream parsers. A
 failed source with no usable fallback is unavailable rather than a confirmed miss.
 Asset handles remain BioMCP commands rather than provider download URLs.
 
