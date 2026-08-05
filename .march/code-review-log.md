@@ -1,35 +1,33 @@
-# Code Review — ticket 678
+# Code Review — ticket 679
 
 ## Scope and traceability
 
-Reviewed `main..HEAD`, the design draft/final, red-check record, code log, fixtures, captures, docs, and all changed runtime paths.
+Reviewed `main..HEAD`, ticket/design artifacts, receipt record, code log, full runtime and documentation diffs, capture, fixtures, and changed lifecycle tests.
 
-- Design completeness: every named implementation, documentation, fixture, capture, policy, and health item has a landed change.
-- Forward traceability: all five proof-matrix assertions land at their named unit, mustmatch, or ignored-live locations.
-- Reverse traceability: `git diff main..HEAD -- 'spec/*'` changed only the two package URL assertions. The full-text assertion is in the proof matrix; the assets assertion replacement is expressly authorized by the operator ruling in `.march/ticket.md`. No shipped assertion was invented, weakened, or silently removed.
-- Edit discipline: 538 additions / 460 deletions include the design-named tar-to-object migration and capture-receipt ordering. No excess runtime edit remained.
+- Design completeness: every named classifier, fallback, projection, capture, fixture, documentation, and test change landed.
+- Forward traceability: all six proof-matrix entries land at their stated locations.
+- Reverse traceability: `git diff main..HEAD -- 'spec/*'` contains only the designed routine PoW assertion and live HTML/XHTML strengthening. No shipped assertion was invented, removed, relaxed, or made trivia-only.
+- Edit discipline: the implementation is within the designed source-classifier/projection slice. Fixture-workspace capture copies are required consequences of the fixture now loading the receipted capture. No over-edit found.
+- Independent review noted that a PoW coverage row can coexist with a differently identified successful asset. This is not a defect: reconciliation is by canonical provider identity, and different identities may legitimately name different same-filename objects. Within a canonical identity, `fetch_first_available_with_limit` returns bytes immediately and suppresses the PoW pending coverage.
 
-## Repairs
+## Repair
 
-- Routed list/metadata HTTP failures and provider-policy rejections through the PMC OA package-route failure path, and made that path project as a specific public error rather than generic PMC API/provider failure.
-- Required S3 listing and metadata identities to match the requested PMCID and each other, preventing a valid-but-wrong provider object from becoming article provenance.
-- Added bounded native regression coverage for the public error projection and PMCID identity check; updated the affected source documentation.
+Added a small `is_pmc_proof_of_work` classifier and a native unit test proving both required markers are case-insensitive. The pre-review capture-only test used their observed casing, so it would not detect a regression from case-insensitive matching to exact matching. No mustmatch spec was changed.
+
+Collateral scan after the repair found no dead branches/imports, cleanup conflicts, stale errors, or shadowed variables.
 
 ## Validation
 
-- `cargo test --locked sources::pmc_oa::tests --no-fail-fast`: passed (16 passed, 1 ignored)
-- `make lint`: passed
-- `make test`: passed (448 Python contracts; Rust tests; strict MkDocs build)
-- `make spec`: passed (90 passed/3 skipped, 220 passed/2 skipped, 7 passed, 10 static passed)
-- `git diff --check`: passed
+- Before repair: `make lint`, `make test` (Rust suite, 448 Python contracts, strict MkDocs), and `make spec`: passed.
+- After repair: `cargo test --locked sources::pmc_article::tests --no-fail-fast` (9 passed), `make spec`, `make lint`, and `git diff --check`: passed.
+- `make verify` remains intentionally operator-pending, as recorded by the final design; it calls real PMC and is outside the routine gate.
 
 ## Defect Register
 
 | # | Category | Lintable | Description |
 |---|----------|----------|-------------|
-| 1 | error-classification | no | S3 listing and metadata HTTP failures were generic `Api` errors, and the existing route error was publicly projected as a generic PMC provider failure, contrary to the required package-route attribution. Repaired. |
-| 2 | validation-gap | no | A syntactically valid S3 listing or metadata object could identify a different PMCID than the request; the client would fetch and expose that other article's provenance. Repaired with identity checks. |
+| 1 | weak-assertion | no | The source-classification proof used only the receipted markers' original casing, leaving the required case-insensitive detection behavior unprotected. Repaired with direct native coverage for both markers. |
 
 ## Residual concerns
 
-None. No out-of-scope issue was identified.
+No out-of-scope issue filed.
