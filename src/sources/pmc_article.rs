@@ -636,6 +636,55 @@ mod tests {
 
     #[tokio::test]
     #[serial_test::serial(article_resolver_env)]
+    async fn proof_of_work_is_retained_when_a_later_linked_target_fails() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut request = [0_u8; 2048];
+                let read = stream.read(&mut request).await.unwrap();
+                let request = String::from_utf8_lossy(&request[..read]);
+                if request.contains("pow.xls") {
+                    let body = include_bytes!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
+                    ));
+                    let response = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    );
+                    stream.write_all(response.as_bytes()).await.unwrap();
+                    stream.write_all(body).await.unwrap();
+                } else {
+                    stream
+                        .write_all(b"HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                        .await
+                        .unwrap();
+                }
+            }
+        });
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set(PMC_ARTICLE_BASE_ENV, &base);
+        let client = PmcArticleClient::new("PMC3040717").unwrap();
+        let pow = client
+            .linked_target("/articles/instance/3040717/bin/pow.xls", false)
+            .unwrap();
+        let unavailable = client
+            .linked_target("/articles/instance/3040717/bin/unavailable.xls", false)
+            .unwrap();
+
+        let outcome = client.fetch_first_available(&[pow, unavailable]).await;
+        assert!(
+            format!("{outcome:?}").contains("ProofOfWork"),
+            "a known PMC gate must not be hidden by a later generic source failure"
+        );
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
     async fn equal_identity_routes_continue_until_one_returns_bytes() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());
