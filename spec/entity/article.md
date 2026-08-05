@@ -829,7 +829,7 @@ upstream binary route is unavailable; positive-byte retrievability remains in
 the operator live contract.
 
 ```bash
-../../tools/biomcp-ci --json get article 20516115 assets | jq '(.pmid == "20516115") and any(.coverage[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0)) and any(.coverage[]?; (.filename | endswith("Supplementary_Tables.xls")) and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0))' | mustmatch 'true'
+../../tools/biomcp-ci --json get article 20516115 assets | jq 'def named_from_article_documents($suffix): any(.coverage[]?; (.filename | endswith($suffix)) and (.provider.source | type == "string" and length > 0) and (.discovery_routes | any(.source_document == "jats_xml") and any(.source_document == "pmc_html"))); (.pmid == "20516115") and named_from_article_documents("Supplementary_Methods__Figures__Tables.pdf") and named_from_article_documents("Supplementary_Tables.xls")' | mustmatch 'true'
 ```
 
 ## JATS and PMC HTML Supplement Links Resolve Through Stable Handles
@@ -1078,11 +1078,11 @@ contains a usable paper identity and title.
 ```
 
 ```bash
-../../tools/biomcp-ci article recommendations 20516115 --limit 1 | mustmatch like "| Identifier | Title | Journal | Year |"
+../../tools/biomcp-ci article recommendations 20516115 --limit 10 | mustmatch like "| Identifier | Title | Journal | Year |"
 ```
 
 ```bash
-../../tools/biomcp-ci --json article recommendations 20516115 --limit 1 | jq 'any(.recommendations[]?; (.paper_id | type == "string" and length > 0) and (.title | type == "string" and length > 0))' | mustmatch 'true'
+../../tools/biomcp-ci --json article recommendations 20516115 --limit 10 | jq '(.recommendations | length == 10) and all(.recommendations[]?; (.paper_id | type == "string" and length > 0) and (.title | type == "string" and length > 0))' | mustmatch 'true'
 ```
 
 ## Semantic Scholar Degrades Truthfully Without a Key
