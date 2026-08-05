@@ -54,6 +54,7 @@ pub(crate) enum PmcLinkedFetch {
     },
     HealthyAbsent,
     AccessOrLicenceDenied,
+    ProofOfWork,
     SourceUnavailable,
 }
 
@@ -167,10 +168,23 @@ impl PmcArticleClient {
         )
         .await
         {
-            Ok(bytes) => PmcLinkedFetch::Bytes {
-                bytes: bytes.to_vec(),
-                media_type,
-            },
+            Ok(bytes) => {
+                if is_pmc_proof_of_work(&bytes) {
+                    PmcLinkedFetch::ProofOfWork
+                } else if matches!(
+                    media_type.as_deref(),
+                    Some(value)
+                        if value.eq_ignore_ascii_case("text/html")
+                            || value.eq_ignore_ascii_case("application/xhtml+xml")
+                ) {
+                    PmcLinkedFetch::SourceUnavailable
+                } else {
+                    PmcLinkedFetch::Bytes {
+                        bytes: bytes.to_vec(),
+                        media_type,
+                    }
+                }
+            }
             Err(_) => PmcLinkedFetch::SourceUnavailable,
         }
     }
@@ -193,19 +207,42 @@ impl PmcArticleClient {
         for target in targets {
             match self.fetch_with_limit(target, body_limit).await {
                 bytes @ PmcLinkedFetch::Bytes { .. } => return bytes,
-                PmcLinkedFetch::SourceUnavailable => {
+                PmcLinkedFetch::ProofOfWork => {
+                    strongest_failure = PmcLinkedFetch::ProofOfWork;
+                }
+                PmcLinkedFetch::SourceUnavailable
+                    if !matches!(strongest_failure, PmcLinkedFetch::ProofOfWork) =>
+                {
                     strongest_failure = PmcLinkedFetch::SourceUnavailable;
                 }
                 PmcLinkedFetch::AccessOrLicenceDenied
-                    if !matches!(strongest_failure, PmcLinkedFetch::SourceUnavailable) =>
+                    if !matches!(
+                        strongest_failure,
+                        PmcLinkedFetch::ProofOfWork | PmcLinkedFetch::SourceUnavailable
+                    ) =>
                 {
                     strongest_failure = PmcLinkedFetch::AccessOrLicenceDenied;
                 }
-                PmcLinkedFetch::HealthyAbsent | PmcLinkedFetch::AccessOrLicenceDenied => {}
+                PmcLinkedFetch::HealthyAbsent
+                | PmcLinkedFetch::AccessOrLicenceDenied
+                | PmcLinkedFetch::SourceUnavailable => {}
             }
         }
         strongest_failure
     }
+}
+
+fn is_pmc_proof_of_work(bytes: &[u8]) -> bool {
+    [
+        b"cloudpmc-viewer-pow".as_slice(),
+        b"POW_CHALLENGE".as_slice(),
+    ]
+    .into_iter()
+    .any(|marker| {
+        bytes
+            .windows(marker.len())
+            .any(|window| window.eq_ignore_ascii_case(marker))
+    })
 }
 
 fn classify_linked_status(status: StatusCode) -> Option<PmcLinkedFetch> {
@@ -557,6 +594,134 @@ mod tests {
             );
         }
         assert_eq!(classify_linked_status(StatusCode::OK), None);
+    }
+
+    #[test]
+    fn pow_markers_are_case_insensitive() {
+        assert!(is_pmc_proof_of_work(b"prefix CLOUDPMC-VIEWER-POW suffix"));
+        assert!(is_pmc_proof_of_work(b"prefix pow_challenge suffix"));
+        assert!(!is_pmc_proof_of_work(b"ordinary binary content"));
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
+    async fn recorded_pow_interstitial_is_not_returned_as_bytes() {
+        let body = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
+        ));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request).await.unwrap();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+            stream.write_all(body).await.unwrap();
+        });
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set(PMC_ARTICLE_BASE_ENV, &base);
+        let client = PmcArticleClient::new("PMC3040717").unwrap();
+        let target = client
+            .linked_target(
+                "/articles/instance/3040717/bin/NIHMS265402-supplement-Supplementary_Tables.xls",
+                false,
+            )
+            .unwrap();
+
+        assert_eq!(
+            client.fetch(&target).await,
+            PmcLinkedFetch::ProofOfWork,
+            "the named PMC gate outcome must survive source classification without publishing bytes"
+        );
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
+    async fn declared_binary_html_is_not_returned_as_bytes() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request).await.unwrap();
+            let body = b"<!doctype html><title>Unexpected response</title>";
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+            stream.write_all(body).await.unwrap();
+        });
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set(PMC_ARTICLE_BASE_ENV, &base);
+        let client = PmcArticleClient::new("PMC3040717").unwrap();
+        let target = client
+            .linked_target("/articles/instance/3040717/bin/supplement.xls", false)
+            .unwrap();
+
+        assert_eq!(
+            client.fetch(&target).await,
+            PmcLinkedFetch::SourceUnavailable,
+            "a declared binary delivered as HTML must be rejected even without a known PoW marker"
+        );
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
+    async fn proof_of_work_is_retained_when_a_later_linked_target_fails() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            for _ in 0..2 {
+                let (mut stream, _) = listener.accept().await.unwrap();
+                let mut request = [0_u8; 2048];
+                let read = stream.read(&mut request).await.unwrap();
+                let request = String::from_utf8_lossy(&request[..read]);
+                if request.contains("pow.xls") {
+                    let body = include_bytes!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
+                    ));
+                    let response = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    );
+                    stream.write_all(response.as_bytes()).await.unwrap();
+                    stream.write_all(body).await.unwrap();
+                } else {
+                    stream
+                        .write_all(b"HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                        .await
+                        .unwrap();
+                }
+            }
+        });
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set(PMC_ARTICLE_BASE_ENV, &base);
+        let client = PmcArticleClient::new("PMC3040717").unwrap();
+        let pow = client
+            .linked_target("/articles/instance/3040717/bin/pow.xls", false)
+            .unwrap();
+        let unavailable = client
+            .linked_target("/articles/instance/3040717/bin/unavailable.xls", false)
+            .unwrap();
+
+        assert_eq!(
+            client.fetch_first_available(&[pow, unavailable]).await,
+            PmcLinkedFetch::ProofOfWork,
+            "a known PMC gate must not be hidden by a later generic source failure"
+        );
+        server.await.unwrap();
     }
 
     #[tokio::test]

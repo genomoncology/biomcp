@@ -15,7 +15,9 @@ DOI.
 Article assets are a separate on-demand surface. `get article <id> assets`
 fans in PMC OA, Europe PMC supplementary files, JATS XML, PMC HTML, and eligible
 Figshare discoveries for a validated PMCID. Provider-relative JATS/HTML links
-become stable BioMCP handles only after bounded, allowlisted retrieval. Europe PMC ZIPs are validated under compressed, per-member,
+become stable BioMCP handles only after bounded, allowlisted retrieval. A linked
+binary received as HTML or XHTML is rejected; PMC proof-of-work responses remain
+named `pmc_proof_of_work` coverage with no asset key or handle. Europe PMC ZIPs are validated under compressed, per-member,
 expanded-total, count, and normalized-name bounds entirely in memory. Figshare
 uses the same collection resolver as raw-byte retrieval: it starts from the
 linked record, adds same-paper sibling records found by DOI/title, filters out

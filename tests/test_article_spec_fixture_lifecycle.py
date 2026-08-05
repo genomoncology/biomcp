@@ -48,6 +48,16 @@ def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None
         "cleanup-article-fulltext-source-fixture.sh",
     ):
         shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
+    source_capture = workspace / "testdata" / "sources" / "pmc_article"
+    source_capture.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(
+        REPO_ROOT
+        / "testdata"
+        / "sources"
+        / "pmc_article"
+        / "pmc3040717-supplementary-tables-pow.html",
+        source_capture / "pmc3040717-supplementary-tables-pow.html",
+    )
     if include_data:
         shutil.copytree(
             REPO_ROOT / "tests" / "fixtures" / "article" / "fulltext",

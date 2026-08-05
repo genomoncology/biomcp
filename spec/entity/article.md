@@ -849,6 +849,19 @@ same stable article-asset grammar, even when no package contains the linked file
   | sha256sum | mustmatch 'db9f09a4e801943defc5187ca88d685e1bff170602ae8cba8d2539699ae60cdb  -'
 ```
 
+## PMC Proof-of-Work Challenges Remain Named Coverage, Not Downloadable Assets
+
+A linked PMC supplement can be visible without being retrievable: when PMC returns
+its proof-of-work HTML challenge instead of the declared workbook, BioMCP keeps
+the named file as typed coverage so an operator can see the gate, but never
+advertises the challenge as raw scientific bytes.
+
+```bash
+../../tools/biomcp-ci --json get article 22663023 assets \
+  | jq '(.assets | all(.filename != "NIHMS265402-supplement-Supplementary_Tables.xls")) and (.coverage | any(.filename == "NIHMS265402-supplement-Supplementary_Tables.xls" and .source_document == "pmc_html" and .outcome == "pmc_proof_of_work" and .asset_key == null and .handle == null))' \
+  | mustmatch 'true'
+```
+
 ## Europe PMC Recovers Assets After a PMC Archive Failure
 
 An advertised PMC OA archive can disappear without proving that the article has

@@ -23,7 +23,7 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request-log.txt"
 : > "$request_log"
 
-setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$owner_arg" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
+setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html" "$owner_arg" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -38,6 +38,7 @@ import zipfile
 
 FIXTURE_DIR = Path(sys.argv[2])
 REQUEST_LOG = Path(sys.argv[3])
+POW_INTERSTITIAL = Path(sys.argv[4]).read_bytes()
 REQUEST_LOG_LOCK = threading.Lock()
 HTML_FALLBACK = (
     FIXTURE_DIR / "html" / "pmc_article_page.html"
@@ -52,6 +53,11 @@ FIGSHARE_UNRELATED_TABLE = b"PK\x03\x04\nUnrelated workbook fixture bytes\n"
 FIGSHARE_COLD_STORAGE = b"%PDF-1.4\nFigshare cold-storage fixture bytes\n%%EOF\n"
 LINKED_JATS_SUPPLEMENT = b"linked JATS supplement fixture bytes\n"
 LINKED_HTML_SUPPLEMENT = b"PK\x03\x04\nlinked PMC HTML supplement fixture bytes\n"
+POW_LINKED_HTML = """<!doctype html>
+<html><body><main><article><h1>PMC proof-of-work fixture</h1>
+<section class="sm xbox font-sm" id="SD1"><div class="media p"><div class="caption">
+<a href="/articles/instance/123466/bin/NIHMS265402-supplement-Supplementary_Tables.xls" data-ga-action="click_feat_suppl">NIHMS265402-supplement-Supplementary_Tables.xls</a>
+</div></div></section></article></main></body></html>"""
 COLD_STORAGE_LOCK = threading.Lock()
 COLD_STORAGE_HITS = {}
 
@@ -336,6 +342,12 @@ ARTICLES = {
         "title": "Abstract-only HTML fixture",
         "abstract": "",
         "paper_id": "paper-12",
+    },
+    "22663023": {
+        "pmcid": "PMC123466",
+        "title": "PMC proof-of-work linked supplement fixture",
+        "abstract": "Abstract text.",
+        "paper_id": "paper-13",
     },
 }
 
@@ -728,7 +740,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path in {"/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML"}:
+        if decoded_path in {"/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/PMC123466/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML", "/22663023/fullTextXML"}:
             send_text(self, 404, "not found", "text/plain")
             return
 
@@ -751,6 +763,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/articles/instance/123456/bin/linked-jats-s2.csv":
             send_bytes(self, 200, LINKED_JATS_SUPPLEMENT, "text/csv")
+            return
+
+        if decoded_path == "/articles/instance/123466/bin/NIHMS265402-supplement-Supplementary_Tables.xls":
+            send_bytes(self, 200, POW_INTERSTITIAL, "text/html; charset=utf-8")
             return
 
         if decoded_path == "/articles/instance/123457/bin/linked-html-s1.xlsx":
@@ -786,13 +802,17 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") in (["PMC123457."], ["PMC123458."], ["PMC123459."], ["PMC123462."], ["PMC123463."], ["PMC123464."], ["PMC123465."]):
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") in (["PMC123457."], ["PMC123458."], ["PMC123459."], ["PMC123462."], ["PMC123463."], ["PMC123464."], ["PMC123465."], ["PMC123466."]):
             append_request_log("fulltext:xml:pmc-oa-archive")
             send_text(self, 200, "<ListBucketResult></ListBucketResult>", "application/xml")
             return
 
         if decoded_path == "/articles/PMC123457/":
             send_text(self, 200, HTML_FALLBACK, "text/html; charset=utf-8")
+            return
+
+        if decoded_path == "/articles/PMC123466/":
+            send_text(self, 200, POW_LINKED_HTML, "text/html; charset=utf-8")
             return
 
         if decoded_path == "/articles/PMC123458/":
