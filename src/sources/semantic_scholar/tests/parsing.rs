@@ -113,6 +113,50 @@ fn parses_graph_and_recommendation_fixtures() {
 }
 
 #[test]
+fn receipted_20516115_graph_captures_keep_provider_identity_and_all_recommendations() {
+    let citations: SemanticScholarGraphResponse<SemanticScholarCitationEdge> =
+        SemanticScholarClient::decode_json_response(
+            StatusCode::OK,
+            fixture!("pmid20516115-citations.json"),
+            false,
+        )
+        .unwrap();
+    let provider_only = citations
+        .data
+        .iter()
+        .find(|edge| {
+            edge.citing_paper.paper_id.as_deref()
+                == Some("bdb7239fd58ab8fee22b211f96073a3c58dad53d")
+        })
+        .expect("captured provider-only citation");
+    assert!(
+        provider_only
+            .citing_paper
+            .external_ids
+            .as_ref()
+            .is_some_and(|ids| {
+                ids.pubmed.is_none() && ids.doi.is_none() && ids.arxiv.is_none()
+            })
+    );
+
+    let recommendations: SemanticScholarRecommendationsResponse =
+        SemanticScholarClient::decode_json_response(
+            StatusCode::OK,
+            fixture!("pmid20516115-recommendations.json"),
+            false,
+        )
+        .unwrap();
+    assert_eq!(recommendations.recommended_papers.len(), 10);
+    assert!(recommendations.recommended_papers.iter().all(|paper| {
+        paper.paper_id.as_deref().is_some_and(|id| !id.is_empty())
+            && paper
+                .title
+                .as_deref()
+                .is_some_and(|title| !title.is_empty())
+    }));
+}
+
+#[test]
 fn parses_author_detail_and_search_fixtures_without_inventing_identity() {
     let detail: SemanticScholarAuthor = SemanticScholarClient::decode_json_response(
         StatusCode::OK,

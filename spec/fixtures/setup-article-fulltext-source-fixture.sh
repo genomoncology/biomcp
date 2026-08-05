@@ -23,7 +23,7 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request-log.txt"
 : > "$request_log"
 
-setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html" "$owner_arg" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
+setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources" "$owner_arg" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -38,8 +38,26 @@ import zipfile
 
 FIXTURE_DIR = Path(sys.argv[2])
 REQUEST_LOG = Path(sys.argv[3])
-POW_INTERSTITIAL = Path(sys.argv[4]).read_bytes()
+SOURCES_DIR = Path(sys.argv[4])
 REQUEST_LOG_LOCK = threading.Lock()
+
+
+def source_bytes(path):
+    return (SOURCES_DIR / path).read_bytes()
+
+
+POW_INTERSTITIAL = source_bytes("pmc_article/pmc3040717-supplementary-tables-pow.html")
+PUBTATOR_20516115 = source_bytes("pubtator/export_20516115.json")
+EUROPEPMC_20516115 = source_bytes("europepmc/search_pmid_20516115.json")
+PMC_OA_3040717_VERSIONS = source_bytes("pmc_oa/pmc3040717-versions.xml")
+PMC_OA_3040717_METADATA = source_bytes("pmc_oa/pmc3040717.1.json")
+PMC_OA_3040717_XML = source_bytes("pmc_oa/pmc3040717.1.xml")
+PMC_3040717_HTML = source_bytes("pmc_article/pmc3040717.html")
+NCBI_EFETCH_3040717 = source_bytes("ncbi_efetch/pmc3040717.xml")
+SEMANTIC_SCHOLAR_20516115_BATCH = source_bytes("semantic_scholar/pmid20516115-batch.json")
+SEMANTIC_SCHOLAR_20516115_CITATIONS = source_bytes("semantic_scholar/pmid20516115-citations.json")
+SEMANTIC_SCHOLAR_20516115_REFERENCES = source_bytes("semantic_scholar/pmid20516115-references.json")
+SEMANTIC_SCHOLAR_20516115_RECOMMENDATIONS = source_bytes("semantic_scholar/pmid20516115-recommendations.json")
 HTML_FALLBACK = (
     FIXTURE_DIR / "html" / "pmc_article_page.html"
 ).read_text(encoding="utf-8")
@@ -504,8 +522,14 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         decoded_path = unquote(parsed.path)
         length = int(self.headers.get("Content-Length") or 0)
-        if length:
-            self.rfile.read(length)
+        body = self.rfile.read(length) if length else b""
+
+        if decoded_path == "/graph/v1/paper/batch" and body == b'{"ids":["PMID:20516115"]}':
+            append_request_log(
+                "s2:x-api-key:" + ("present" if self.headers.get("x-api-key") else "absent")
+            )
+            send_bytes(self, 200, SEMANTIC_SCHOLAR_20516115_BATCH, "application/json")
+            return
 
         if decoded_path == "/v2/articles/search":
             send_json(self, 200, [
@@ -548,8 +572,62 @@ class Handler(BaseHTTPRequestHandler):
         query = parse_qs(parsed.query)
 
         pmids = query.get("pmids")
+        if decoded_path == "/publications/export/biocjson" and pmids == ["20516115"]:
+            send_bytes(self, 200, PUBTATOR_20516115, "application/json")
+            return
         if decoded_path == "/publications/export/biocjson" and pmids and pmids[0] in ARTICLES:
             send_json(self, 200, pubtator_payload(pmids[0]))
+            return
+
+        if (
+            decoded_path == "/search"
+            and query.get("query") == ["EXT_ID:20516115 AND SRC:MED"]
+            and query.get("format") == ["json"]
+            and query.get("page") == ["1"]
+            and query.get("pageSize") == ["1"]
+        ):
+            send_bytes(self, 200, EUROPEPMC_20516115, "application/json")
+            return
+
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC3040717."]:
+            send_bytes(self, 200, PMC_OA_3040717_VERSIONS, "application/xml")
+            return
+
+        if decoded_path == "/PMC3040717.1/PMC3040717.1.json":
+            send_bytes(self, 200, PMC_OA_3040717_METADATA, "application/json")
+            return
+
+        if decoded_path == "/PMC3040717.1/PMC3040717.1.xml":
+            send_bytes(self, 200, PMC_OA_3040717_XML, "application/xml")
+            return
+
+        if decoded_path == "/articles/PMC3040717/":
+            send_bytes(self, 200, PMC_3040717_HTML, "text/html; charset=utf-8")
+            return
+
+        if (
+            decoded_path == "/efetch.fcgi"
+            and query.get("db") == ["pmc"]
+            and query.get("id") == ["3040717"]
+            and query.get("rettype") == ["xml"]
+        ):
+            send_bytes(self, 200, NCBI_EFETCH_3040717, "application/xml")
+            return
+
+        if decoded_path in {
+            "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/citations",
+            "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/references",
+            "/recommendations/v1/papers/forpaper/059f780c07b87339c275192f1b82662747c28ccd",
+        }:
+            append_request_log(
+                "s2:x-api-key:" + ("present" if self.headers.get("x-api-key") else "absent")
+            )
+            body = {
+                "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/citations": SEMANTIC_SCHOLAR_20516115_CITATIONS,
+                "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/references": SEMANTIC_SCHOLAR_20516115_REFERENCES,
+                "/recommendations/v1/papers/forpaper/059f780c07b87339c275192f1b82662747c28ccd": SEMANTIC_SCHOLAR_20516115_RECOMMENDATIONS,
+            }[decoded_path]
+            send_bytes(self, 200, body, "application/json")
             return
 
         if decoded_path == "/search/" and query.get("text") == ["Williams LS"]:

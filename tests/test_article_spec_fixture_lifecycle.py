@@ -48,16 +48,24 @@ def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None
         "cleanup-article-fulltext-source-fixture.sh",
     ):
         shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
-    source_capture = workspace / "testdata" / "sources" / "pmc_article"
-    source_capture.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(
-        REPO_ROOT
-        / "testdata"
-        / "sources"
-        / "pmc_article"
-        / "pmc3040717-supplementary-tables-pow.html",
-        source_capture / "pmc3040717-supplementary-tables-pow.html",
-    )
+    source_root = REPO_ROOT / "testdata" / "sources"
+    for path in (
+        "europepmc/search_pmid_20516115.json",
+        "ncbi_efetch/pmc3040717.xml",
+        "pmc_article/pmc3040717-supplementary-tables-pow.html",
+        "pmc_article/pmc3040717.html",
+        "pmc_oa/pmc3040717-versions.xml",
+        "pmc_oa/pmc3040717.1.json",
+        "pmc_oa/pmc3040717.1.xml",
+        "pubtator/export_20516115.json",
+        "semantic_scholar/pmid20516115-batch.json",
+        "semantic_scholar/pmid20516115-citations.json",
+        "semantic_scholar/pmid20516115-recommendations.json",
+        "semantic_scholar/pmid20516115-references.json",
+    ):
+        destination = workspace / "testdata" / "sources" / path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_root / path, destination)
     if include_data:
         shutil.copytree(
             REPO_ROOT / "tests" / "fixtures" / "article" / "fulltext",
@@ -433,6 +441,41 @@ def test_metadata_resets_only_cold_storage_download_state(tmp_path: Path) -> Non
                 "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
                 str(workspace),
             ],
+            cwd=workspace,
+            check=True,
+        )
+
+
+def test_article_graph_fixture_records_only_semantic_scholar_header_presence(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    _copy_article_fixture(workspace)
+    subprocess.run(
+        ["bash", "spec/fixtures/setup-article-fulltext-source-fixture.sh", str(workspace)],
+        cwd=workspace,
+        check=True,
+    )
+    exports = _read_exports(workspace / ".cache" / "spec-article-fulltext-source-env")
+    request_log = Path(exports["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"])
+    sentinel = "fixture-secret-key-663"
+    try:
+        result = subprocess.run(
+            [Path(os.environ["BIOMCP_BIN"]), "--json", "article", "citations", "20516115", "--limit", "100"],
+            env=os.environ | exports | {"BIOMCP_CACHE_DIR": str(tmp_path / "cache"), "S2_API_KEY": sentinel},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert request_log.read_text().splitlines() == [
+            "s2:x-api-key:present",
+            "s2:x-api-key:present",
+        ]
+        assert sentinel not in result.stdout
+        assert sentinel not in result.stderr
+    finally:
+        subprocess.run(
+            ["bash", "spec/fixtures/cleanup-article-fulltext-source-fixture.sh", str(workspace)],
             cwd=workspace,
             check=True,
         )
