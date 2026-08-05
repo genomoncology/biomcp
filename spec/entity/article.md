@@ -755,7 +755,7 @@ assert provider.get("source") == "PMC OA"
 provenance = manifest.get("provenance") or {}
 assert provenance.get("open_access") is True
 assert provenance.get("retracted") is False
-assert "oa-assets-22663016.tgz" in str(provenance.get("package_url", ""))
+assert "/metadata/PMC123460.1.json" in str(provenance.get("package_url", ""))
 reuse = manifest.get("reuse") or {}
 assert reuse.get("license_present") is True
 assert "CC BY-NC" in str(reuse.get("license", ""))
