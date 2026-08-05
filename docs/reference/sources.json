@@ -905,8 +905,8 @@
     "redistribution_summary": "full text is reusable only according to each article's specific PMC Open Access license",
     "terms_url": "https://pmc.ncbi.nlm.nih.gov/tools/openftlist/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
-    "reviewed_on": "2026-03-20",
-    "notes": "BioMCP queries PMC OA on demand as one XML full-text rung and as the preferred article-asset provider; it does not ship the article corpus. When Europe PMC recovers bytes after an advertised PMC archive fails, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
+    "reviewed_on": "2026-08-05",
+    "notes": "BioMCP resolves a PMC OA version-prefix listing through the public pmc-oa-opendata S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
   },
   {
     "id": "pubtator3",

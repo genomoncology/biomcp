@@ -297,8 +297,9 @@ biomcp get article <id> asset <asset-key>
 ```
 
 `get article <id> assets` returns a JSON-only provider-labelled manifest. BioMCP
-merges the canonical PMC OA package, a validated Europe PMC supplementary ZIP,
-recognized JATS/PMC HTML supplement links, and eligible Figshare/AACR metadata. Figshare
+merges PMC OA's versioned S3 metadata-declared media objects, a validated Europe PMC supplementary ZIP,
+recognized JATS/PMC HTML supplement links, and eligible Figshare/AACR metadata. PMC OA no longer uses
+the retired FTP/archive route, whose legacy files are removed in August 2026. Figshare
 manifests can include same-paper sibling records discovered by DOI/title, while
 excluding records that do not match the paper. Linked provider URLs stay internal;
 coverage reports named files that are absent, denied, unsupported, or unavailable.

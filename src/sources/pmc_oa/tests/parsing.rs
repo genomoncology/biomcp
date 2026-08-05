@@ -3,8 +3,8 @@
 
 use super::super::{
     MAX_ARCHIVE_ENTRIES, MAX_ARCHIVE_ENTRY_BYTES, MAX_ARCHIVE_METADATA_BYTES, MAX_TGZ_BYTES,
-    PmcOaArchivePackage, decode_archive_bytes, decode_text, extract_archive_entries,
-    extract_first_nxml, parse_archive_manifest_xml, safe_archive_name,
+    decode_archive_bytes, decode_text, extract_archive_entries, extract_first_nxml,
+    parse_archive_manifest_xml, safe_archive_name,
 };
 use crate::error::BioMcpError;
 use flate2::Compression;
@@ -121,36 +121,12 @@ fn parses_receipted_s3_metadata_to_xml_object() {
         manifest.tgz_url,
         "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.xml?md5=ca72ed62a792cc584d96f49666288a78"
     );
-    assert_eq!(manifest.package_url, manifest.tgz_url);
+    assert_eq!(
+        manifest.package_url,
+        "https://pmc-oa-opendata.s3.amazonaws.com/metadata/PMC9984800.1.json"
+    );
     assert_eq!(manifest.license.as_deref(), Some("CC BY-NC-ND"));
     assert_eq!(manifest.retracted, Some(false));
-}
-
-#[test]
-fn parses_manifest_attributes_independent_of_order_and_quote_style() {
-    let manifest = parse_archive_manifest_xml(
-        "<records><record retracted='yes' license='CC0'><link href='https://example.test/archive.tgz' format='tgz'/></record></records>",
-    )
-    .unwrap()
-    .expect("manifest");
-
-    assert_eq!(manifest.tgz_url, "https://example.test/archive.tgz");
-    assert_eq!(manifest.license.as_deref(), Some("CC0"));
-    assert_eq!(manifest.retracted, Some(true));
-}
-
-#[test]
-fn parses_manifest_returns_none_without_tgz_link() {
-    assert_eq!(
-        parse_archive_manifest_xml("<records><record /></records>").unwrap(),
-        None
-    );
-}
-
-#[test]
-fn documented_not_open_access_response_is_healthy_absence() {
-    let xml = r#"<OA><responseDate>2026-07-14 16:01:49</responseDate><request>https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC145899</request><error code="idIsNotOpenAccess">identifier 'PMC145899' is not Open Access</error></OA>"#;
-    assert_eq!(parse_archive_manifest_xml(xml).unwrap(), None);
 }
 
 #[test]
@@ -170,41 +146,6 @@ fn extract_first_nxml_reads_xml_entry() {
 
     let xml = extract_first_nxml(&tgz).unwrap().unwrap();
     assert!(xml.contains("<article>"));
-}
-
-#[test]
-fn archive_package_enumerates_non_xml_and_preserves_binary_bytes() {
-    let image_bytes = b"\x89PNG\r\n\x1a\n\0\xfffixture";
-    let tgz = tgz_with_entries(&[
-        ("article.nxml", b"<article><body>ok</body></article>"),
-        ("figures/panel.png", image_bytes),
-        ("supplement/traces.csv", b"time,value\n0,1\n"),
-    ]);
-    let manifest = parse_archive_manifest_xml(
-        r#"<records><record license="CC BY" retracted="no"><link format="tgz" href="https://example.test/archive.tgz"/></record></records>"#,
-    )
-    .unwrap()
-    .expect("manifest");
-    let package = PmcOaArchivePackage {
-        manifest,
-        entries: extract_archive_entries(&tgz).expect("archive should parse"),
-    };
-
-    assert_eq!(package.manifest.license.as_deref(), Some("CC BY"));
-    assert_eq!(package.manifest.retracted, Some(false));
-    let image = package
-        .entries
-        .iter()
-        .find(|entry| entry.filename == "figures/panel.png")
-        .expect("image entry should be listed");
-    assert!(!image.is_xml);
-    assert_eq!(image.bytes, image_bytes);
-    assert!(
-        package
-            .entries
-            .iter()
-            .any(|entry| entry.filename == "article.nxml" && entry.is_xml)
-    );
 }
 
 #[test]

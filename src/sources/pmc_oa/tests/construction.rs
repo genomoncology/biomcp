@@ -21,14 +21,6 @@ fn oa_archive_manifest_plan_lists_versioned_s3_prefix() {
 }
 
 #[test]
-fn oa_archive_manifest_plan_adds_api_key_when_configured() {
-    let plan = PmcOaClient::oa_archive_manifest_plan("PMC123", Some(" test-key "))
-        .unwrap()
-        .expect("plan");
-    assert_eq!(plan.query_value("api_key"), Some("test-key"));
-}
-
-#[test]
 fn oa_archive_manifest_plan_empty_input_returns_none() {
     assert!(
         PmcOaClient::oa_archive_manifest_plan("   ", None)

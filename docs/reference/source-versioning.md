@@ -58,7 +58,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | OLS4 | `https://www.ebi.ac.uk/ols4` | Versioned-by-product (`ols4`) | Version identity is in the product namespace | 2026-06-11 |
 | PharmGKB | `https://api.pharmgkb.org/v1` | Versioned (`v1`) | Endpoint already pinned | 2026-06-11 |
 | PMC HTML | `https://pmc.ncbi.nlm.nih.gov/articles` | Unversioned | NCBI article HTML route is stable and not API-versioned | 2026-06-11 |
-| PMC OA | `https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi` | Unversioned | Legacy utility endpoint; no version path available | 2026-02-15 |
+| PMC OA | `https://pmc-oa-opendata.s3.amazonaws.com` | Versioned metadata objects | A version-prefix listing selects a versioned metadata object, which names durable XML/media objects; the retired FTP/archive files are removed in August 2026 | 2026-08-05 |
 | PubMed | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | Unversioned | PubMed search still uses legacy E-utilities endpoints without explicit path versioning | 2026-04-10 |
 | PubTator3 | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api` | Versioned-by-product (`pubtator3`) | Version identity is in product namespace | 2026-02-15 |
 | QuickGO | `https://www.ebi.ac.uk/QuickGO/services` | Unversioned | Service endpoint is canonical and not path-versioned | 2026-02-15 |
