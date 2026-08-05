@@ -3,8 +3,8 @@
 
 use super::super::{
     MAX_ARCHIVE_ENTRIES, MAX_ARCHIVE_ENTRY_BYTES, MAX_ARCHIVE_METADATA_BYTES, MAX_TGZ_BYTES,
-    PmcOaArchivePackage, decode_archive_bytes, decode_text, extract_archive_entries,
-    extract_first_nxml, parse_archive_manifest_xml, safe_archive_name,
+    decode_archive_bytes, decode_text, extract_archive_entries, extract_first_nxml,
+    manifest_matches_pmcid, parse_archive_manifest_xml, safe_archive_name,
 };
 use crate::error::BioMcpError;
 use flate2::Compression;
@@ -93,47 +93,49 @@ fn tgz_with_long_name(name_size: usize) -> Vec<u8> {
 }
 
 #[test]
-fn parses_manifest_and_rewrites_ftp_to_https() {
-    let manifest = parse_archive_manifest_xml(
-        r#"<records><record license="CC BY" retracted="no"><link format="tgz" href="ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/file.tar.gz"/></record></records>"#,
-    )
+fn parses_s3_version_listing_to_metadata_route() {
+    let manifest = parse_archive_manifest_xml(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pmc_oa/pmc9984800-versions.xml"
+    )))
     .unwrap()
-    .expect("manifest");
+    .expect("S3 version listing should resolve a metadata route");
 
     assert_eq!(
         manifest.tgz_url,
-        "https://ftp.ncbi.nlm.nih.gov/pub/pmc/file.tar.gz"
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.json"
     );
     assert_eq!(manifest.package_url, manifest.tgz_url);
-    assert_eq!(manifest.license.as_deref(), Some("CC BY"));
+    assert!(manifest_matches_pmcid(&manifest, "PMC9984800"));
+    assert!(!manifest_matches_pmcid(&manifest, "PMC9984801"));
+}
+
+#[test]
+fn parses_receipted_s3_metadata_to_xml_object() {
+    let manifest = parse_archive_manifest_xml(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pmc_oa/pmc9984800.1.json"
+    )))
+    .unwrap()
+    .expect("S3 metadata should resolve the declared XML object");
+
+    assert_eq!(
+        manifest.tgz_url,
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.xml?md5=ca72ed62a792cc584d96f49666288a78"
+    );
+    assert_eq!(
+        manifest.package_url,
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.json"
+    );
+    assert_eq!(manifest.license.as_deref(), Some("CC BY-NC-ND"));
     assert_eq!(manifest.retracted, Some(false));
 }
 
 #[test]
-fn parses_manifest_attributes_independent_of_order_and_quote_style() {
-    let manifest = parse_archive_manifest_xml(
-        "<records><record retracted='yes' license='CC0'><link href='https://example.test/archive.tgz' format='tgz'/></record></records>",
-    )
-    .unwrap()
-    .expect("manifest");
+fn empty_s3_version_listing_is_healthy_package_absence() {
+    let listing = r#"<?xml version="1.0"?><ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>pmc-oa-opendata</Name><Prefix>PMC3040717.</Prefix><KeyCount>0</KeyCount><Delimiter>/</Delimiter></ListBucketResult>"#;
 
-    assert_eq!(manifest.tgz_url, "https://example.test/archive.tgz");
-    assert_eq!(manifest.license.as_deref(), Some("CC0"));
-    assert_eq!(manifest.retracted, Some(true));
-}
-
-#[test]
-fn parses_manifest_returns_none_without_tgz_link() {
-    assert_eq!(
-        parse_archive_manifest_xml("<records><record /></records>").unwrap(),
-        None
-    );
-}
-
-#[test]
-fn documented_not_open_access_response_is_healthy_absence() {
-    let xml = r#"<OA><responseDate>2026-07-14 16:01:49</responseDate><request>https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC145899</request><error code="idIsNotOpenAccess">identifier 'PMC145899' is not Open Access</error></OA>"#;
-    assert_eq!(parse_archive_manifest_xml(xml).unwrap(), None);
+    assert_eq!(parse_archive_manifest_xml(listing).unwrap(), None);
 }
 
 #[test]
@@ -153,41 +155,6 @@ fn extract_first_nxml_reads_xml_entry() {
 
     let xml = extract_first_nxml(&tgz).unwrap().unwrap();
     assert!(xml.contains("<article>"));
-}
-
-#[test]
-fn archive_package_enumerates_non_xml_and_preserves_binary_bytes() {
-    let image_bytes = b"\x89PNG\r\n\x1a\n\0\xfffixture";
-    let tgz = tgz_with_entries(&[
-        ("article.nxml", b"<article><body>ok</body></article>"),
-        ("figures/panel.png", image_bytes),
-        ("supplement/traces.csv", b"time,value\n0,1\n"),
-    ]);
-    let manifest = parse_archive_manifest_xml(
-        r#"<records><record license="CC BY" retracted="no"><link format="tgz" href="https://example.test/archive.tgz"/></record></records>"#,
-    )
-    .unwrap()
-    .expect("manifest");
-    let package = PmcOaArchivePackage {
-        manifest,
-        entries: extract_archive_entries(&tgz).expect("archive should parse"),
-    };
-
-    assert_eq!(package.manifest.license.as_deref(), Some("CC BY"));
-    assert_eq!(package.manifest.retracted, Some(false));
-    let image = package
-        .entries
-        .iter()
-        .find(|entry| entry.filename == "figures/panel.png")
-        .expect("image entry should be listed");
-    assert!(!image.is_xml);
-    assert_eq!(image.bytes, image_bytes);
-    assert!(
-        package
-            .entries
-            .iter()
-            .any(|entry| entry.filename == "article.nxml" && entry.is_xml)
-    );
 }
 
 #[test]
@@ -272,12 +239,16 @@ fn direct_buffered_archive_limit_is_sanitized() {
 }
 
 #[test]
-fn decode_text_maps_http_error_status_with_excerpt() {
+fn decode_text_projects_http_errors_as_package_route_failures() {
     let err = decode_text(StatusCode::INTERNAL_SERVER_ERROR, b"upstream failure").unwrap_err();
-    let msg = format!("{err:?}");
+    let debug = format!("{err:?}");
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("pmc-oa"), "got: {msg}");
-    assert!(msg.contains("500"), "got: {msg}");
+    assert!(debug.contains("pmc-oa"), "got: {debug}");
+    assert!(debug.contains("500"), "got: {debug}");
+    assert_eq!(
+        err.public_projection().message,
+        "PMC Open Access package-route resolution failed."
+    );
 }
 
 #[test]

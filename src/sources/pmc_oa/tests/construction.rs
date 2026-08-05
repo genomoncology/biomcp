@@ -6,23 +6,18 @@ use crate::sources::HttpMethod;
 use crate::sources::pmc_oa::PmcOaClient;
 
 #[test]
-fn oa_archive_manifest_plan_sets_id_query() {
-    let plan = PmcOaClient::oa_archive_manifest_plan(" PMC123 ", None)
+fn oa_archive_manifest_plan_lists_versioned_s3_prefix() {
+    let plan = PmcOaClient::oa_archive_manifest_plan(" PMC9984800 ", None)
         .unwrap()
         .expect("plan");
 
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "");
-    assert_eq!(plan.query_value("id"), Some("PMC123"));
+    assert_eq!(plan.query_value("list-type"), Some("2"));
+    assert_eq!(plan.query_value("prefix"), Some("PMC9984800."));
+    assert_eq!(plan.query_value("delimiter"), Some("/"));
+    assert!(!plan.has_query("id"));
     assert!(!plan.has_query("api_key"));
-}
-
-#[test]
-fn oa_archive_manifest_plan_adds_api_key_when_configured() {
-    let plan = PmcOaClient::oa_archive_manifest_plan("PMC123", Some(" test-key "))
-        .unwrap()
-        .expect("plan");
-    assert_eq!(plan.query_value("api_key"), Some("test-key"));
 }
 
 #[test]

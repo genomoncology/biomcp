@@ -1,33 +1,34 @@
-# Code Review — ticket 662
+# Code Review — ticket 678
 
 ## Scope and traceability
 
-Reviewed the complete `main..HEAD` diff (17 files; 810 additions / 85 deletions before review repairs), the final design, red-check record, and code log. The data-heavy diff is proportionate to seven raw captured responses plus receipts. The only runtime edit not named by the design was reverted.
+Reviewed `main..HEAD`, the design draft/final, red-check record, code log, fixtures, captures, docs, and all changed runtime paths.
 
-Forward traceability: all four proof-matrix entries landed at their named locations. Reverse traceability used `git diff main..HEAD -- 'spec/*'`: the new live-lane ratchet is explicitly named in the matrix, and deletion of exactly the two named live pages is authorized. No invented, relaxed, or silently removed shipped assertion remains.
+- Design completeness: every named implementation, documentation, fixture, capture, policy, and health item has a landed change.
+- Forward traceability: all five proof-matrix assertions land at their named unit, mustmatch, or ignored-live locations.
+- Reverse traceability: `git diff main..HEAD -- 'spec/*'` changed only the two package URL assertions. The full-text assertion is in the proof matrix; the assets assertion replacement is expressly authorized by the operator ruling in `.march/ticket.md`. No shipped assertion was invented, weakened, or silently removed.
+- Edit discipline: 538 additions / 460 deletions include the design-named tar-to-object migration and capture-receipt ordering. No excess runtime edit remained.
 
 ## Repairs
 
-- Extended CAR’s receipt-backed decoder test to consume the recorded empty and malformed response bytes, pinning their distinct non-resolved outcomes.
-- Added LDH raw-capture coverage through the production medium and direct clients, plus the malformed direct verification outcome.
-- Reverted the undesigned change that treated an LDH annotation with no body as complete. The real direct capture legitimately contains an unrelated body-less annotation; it may still yield the required linkage while the overall result remains incomplete.
+- Routed list/metadata HTTP failures and provider-policy rejections through the PMC OA package-route failure path, and made that path project as a specific public error rather than generic PMC API/provider failure.
+- Required S3 listing and metadata identities to match the requested PMCID and each other, preventing a valid-but-wrong provider object from becoming article provenance.
+- Added bounded native regression coverage for the public error projection and PMCID identity check; updated the affected source documentation.
 
 ## Validation
 
-- Focused CAR/LDH receipt-backed tests: passed
-- `uv run --no-sync pytest tests/test_capture_receipts.py -k clingen_car_and_ldh_live_replacements_have_receipted_captures -v`: passed
-- `uv run --no-sync python tools/check-source-capture-receipts.py --root testdata/sources --json`: passed (107 classified, 0 byte-unfaithful)
-- `make spec`: passed
+- `cargo test --locked sources::pmc_oa::tests --no-fail-fast`: passed (16 passed, 1 ignored)
 - `make lint`: passed
-- `make test`: passed (448 Python contracts; strict MkDocs build)
+- `make test`: passed (448 Python contracts; Rust tests; strict MkDocs build)
+- `make spec`: passed (90 passed/3 skipped, 220 passed/2 skipped, 7 passed, 10 static passed)
 - `git diff --check`: passed
 
 ## Defect Register
 
 | # | Category | Lintable | Description |
 |---|----------|----------|-------------|
-| 1 | missing-assertion | no | CAR empty/malformed and LDH medium/empty/malformed captures were receipt-admitted but not consumed by production-path tests, leaving required captured-outcome coverage absent. Repaired with bounded native tests. |
-| 2 | over-edit | no | `verify_ldh_annotation` stopped marking body-less annotations incomplete solely so the positive capture could assert completeness. This was an undesigned runtime behavior change. Reverted; the linkage assertion remains. |
+| 1 | error-classification | no | S3 listing and metadata HTTP failures were generic `Api` errors, and the existing route error was publicly projected as a generic PMC provider failure, contrary to the required package-route attribution. Repaired. |
+| 2 | validation-gap | no | A syntactically valid S3 listing or metadata object could identify a different PMCID than the request; the client would fetch and expose that other article's provenance. Repaired with identity checks. |
 
 ## Residual concerns
 

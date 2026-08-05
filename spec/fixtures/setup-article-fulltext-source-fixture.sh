@@ -732,13 +732,22 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/" and query.get("id") == ["PMC123456"]:
-            send_text(self, 200, f"""<records><record license=\"CC BY\" retracted=\"no\"><link format=\"tgz\" href=\"http://127.0.0.1:{self.server.server_port}/oa-assets-22663011.tgz\" /></record></records>""", "application/xml")
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC123456."]:
+            send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123456.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
             return
 
-        if decoded_path == "/oa-assets-22663011.tgz":
-            send_bytes(self, 200, OA_ASSETS_TGZ, "application/gzip")
+        if decoded_path == "/PMC123456.1/PMC123456.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123456", "version": 1, "is_retracted": False, "license_code": "CC BY", "xml_url": "s3://pmc-oa-opendata/PMC123456.1/article.nxml", "media_urls": ["s3://pmc-oa-opendata/PMC123456.1/figure-inline.png", "s3://pmc-oa-opendata/PMC123456.1/figure-floats.png", "s3://pmc-oa-opendata/PMC123456.1/traces-s1.csv", "s3://pmc-oa-opendata/PMC123456.1/readme.txt"]}), "application/json")
             return
+
+        if decoded_path == "/PMC123456.1/article.nxml":
+            send_text(self, 200, ARTICLE_XML, "application/xml")
+            return
+
+        for name, body in {"figure-inline.png": b"fixture-inline-figure-bytes\n", "figure-floats.png": b"fixture-floats-figure-bytes\n", "traces-s1.csv": b"time,value\n0,1\n", "readme.txt": b"package sidecar\n"}.items():
+            if decoded_path == f"/PMC123456.1/{name}":
+                send_bytes(self, 200, body, "application/octet-stream")
+                return
 
         if decoded_path == "/articles/instance/123456/bin/linked-jats-s2.csv":
             send_bytes(self, 200, LINKED_JATS_SUPPLEMENT, "text/csv")
@@ -753,29 +762,33 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
 
-        if decoded_path == "/" and query.get("id") == ["PMC123460"]:
-            send_text(self, 200, f"""<records><record license=\"CC BY-NC\" retracted=\"no\"><link format=\"tgz\" href=\"http://127.0.0.1:{self.server.server_port}/oa-assets-22663016.tgz\" /></record></records>""", "application/xml")
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC123460."]:
+            send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123460.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
             return
 
-        if decoded_path == "/oa-assets-22663016.tgz":
-            send_bytes(self, 200, PMC_OA_ONLY_TGZ, "application/gzip")
+        if decoded_path == "/PMC123460.1/PMC123460.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123460", "version": 1, "is_retracted": False, "license_code": "CC BY-NC", "xml_url": "s3://pmc-oa-opendata/PMC123460.1/pmc-oa-only.nxml", "media_urls": []}), "application/json")
             return
 
-        if decoded_path == "/" and query.get("id") == ["PMC123461"]:
-            send_text(self, 200, f"""<records><record license=\"CC BY\" retracted=\"no\"><link format=\"tgz\" href=\"http://127.0.0.1:{self.server.server_port}/stale-oa-assets-22663018.tgz\" /></record></records>""", "application/xml")
+        if decoded_path == "/PMC123460.1/pmc-oa-only.nxml":
+            send_text(self, 200, PMC_OA_ONLY_XML, "application/xml")
             return
 
-        if decoded_path == "/stale-oa-assets-22663018.tgz":
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") == ["PMC123461."]:
+            send_text(self, 200, "<ListBucketResult><CommonPrefixes><Prefix>PMC123461.1/</Prefix></CommonPrefixes></ListBucketResult>", "application/xml")
+            return
+
+        if decoded_path == "/PMC123461.1/PMC123461.1.json":
+            send_text(self, 200, json.dumps({"pmcid": "PMC123461", "version": 1, "is_retracted": False, "license_code": "CC BY", "xml_url": "s3://pmc-oa-opendata/PMC123461.1/PMC123461.1.xml", "media_urls": []}), "application/json")
+            return
+
+        if decoded_path == "/PMC123461.1/PMC123461.1.xml":
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path == "/" and query.get("id") in (["PMC123459"], ["PMC123462"], ["PMC123463"], ["PMC123464"], ["PMC123465"]):
+        if decoded_path == "/" and query.get("list-type") == ["2"] and query.get("prefix") in (["PMC123457."], ["PMC123458."], ["PMC123459."], ["PMC123462."], ["PMC123463."], ["PMC123464."], ["PMC123465."]):
             append_request_log("fulltext:xml:pmc-oa-archive")
-            send_text(self, 200, "<records></records>", "application/xml")
-            return
-
-        if decoded_path == "/" and query.get("id") in (["PMC123457"], ["PMC123458"]):
-            send_text(self, 200, "<records></records>", "application/xml")
+            send_text(self, 200, "<ListBucketResult></ListBucketResult>", "application/xml")
             return
 
         if decoded_path == "/articles/PMC123457/":

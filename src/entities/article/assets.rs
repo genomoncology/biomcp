@@ -2003,6 +2003,7 @@ mod tests {
             manifest: PmcOaArchiveManifest {
                 package_url: "https://example.test/archive.tgz".to_string(),
                 tgz_url: "https://example.test/archive.tgz".to_string(),
+                media_urls: Vec::new(),
                 license: Some("CC BY".to_string()),
                 retracted: Some(false),
             },
@@ -2142,6 +2143,7 @@ mod tests {
         let pmc_manifest = PmcOaArchiveManifest {
             package_url: "https://example.test/stale.tgz".to_string(),
             tgz_url: "https://example.test/stale.tgz".to_string(),
+            media_urls: Vec::new(),
             license: Some("CC BY".to_string()),
             retracted: Some(false),
         };

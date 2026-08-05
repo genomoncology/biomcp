@@ -25,9 +25,9 @@ the selected asset bytes without conversion. A successful manifest makes an unkn
 true asset miss; without a winner, any source failure produces
 `source_unavailable`, while all-healthy absence produces `not_found`.
 
-PMC OA TGZ processing is bounded at the compressed body, entry count,
-per-member size, aggregate expanded size, and archive metadata levels. Checked
-accounting and safe path normalization run before member allocation/read;
+PMC OA resolves a versioned S3 metadata object, then downloads only its
+declared XML and media objects. Each object is bounded at 8 MiB; media is
+bounded to 256 objects and 64 MiB aggregate payload. Unsafe provider paths and
 over-limit results cross the provider boundary only as sanitized source
 unavailability.
 
@@ -206,8 +206,8 @@ because local delivery, not provider availability, failed.
 - `src/sources/europepmc.rs`, `src/sources/ncbi_efetch.rs`,
   `src/sources/pmc_oa.rs`, `src/sources/pmc_article.rs`, and
   `src/sources/ncbi_idconv.rs`: upstream transport for direct source APIs,
-  including bounded Europe PMC ZIP, PMC OA archive, PMC HTML, and linked-asset
-  acquisition behind provider URL policy.
+  including bounded Europe PMC ZIP, PMC OA metadata-declared objects, PMC HTML,
+  and linked-asset acquisition behind provider URL policy.
 - `src/sources/figshare.rs`: Figshare/AACR Figshare URL parsing, article search
   and article API metadata normalization, safe file filtering, and bounded
   file-byte downloads including `202 Accepted` cold-storage staging retries.

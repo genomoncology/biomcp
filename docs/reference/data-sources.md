@@ -34,7 +34,7 @@ variables, test-only override seams, cache settings, and release/install knobs.
 | Article enrichment and graph helpers | Semantic Scholar | `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Search-leg metadata, TLDR, influential citations, citation/reference graph, recommendations |
 | Article annotations | PubTator3 | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api` | No | Entity annotations |
 | Article indexing | PubMed citation EFetch XML | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | Optional (`NCBI_API_KEY`) | Opt-in associated author affiliations/ORCID and structured MeSH; explicit available/unavailable status; included by `all` |
-| Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata | `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi`, `https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles`, `https://pmc.ncbi.nlm.nih.gov/articles`, `https://api.semanticscholar.org` | Optional (`NCBI_API_KEY`, `S2_API_KEY`) | NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available |
+| Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata | `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://pmc-oa-opendata.s3.amazonaws.com`, `https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles`, `https://pmc.ncbi.nlm.nih.gov/articles`, `https://api.semanticscholar.org` | Optional (`NCBI_API_KEY`, `S2_API_KEY`) | NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available |
 | Drug | MyChem.info | `https://mychem.info/v1` | No | Drug metadata, targets, synonyms, and default U.S. search/get normalization |
 | Drug EU regional context | EMA website JSON batch (local human-medicines download) | `https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format` | No | Supports canonical `search/get drug --region eu|all` for regulatory, safety, and shortage, accepts `ema` as an input alias for `eu`, and auto-downloads into `BIOMCP_EMA_DIR` or the platform data directory on first use; `biomcp ema sync` force-refreshes the local files and omitting `--region` on `get drug <name> regulatory` checks U.S. and EU regulatory data |
 | Drug WHO regional context | WHO finished-pharmaceutical-products CSV + WHO active-pharmaceutical-ingredients CSV + WHO vaccine CSV (local downloads) | `https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&_format=csv`, `https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&_format=csv`, `https://extranet.who.int/prequal/vaccines/prequalified/export` | No | Supports `search/get drug --region who|all`, WHO-filtered structured `search drug --region who` for finished-pharma/API, and WHO-only `--product-type <finished_pharma|api|vaccine>` filters; WHO vaccine support is explicit search-only; auto-downloads all three files into `BIOMCP_WHO_DIR` or the platform data directory on first use and `biomcp who sync` force-refreshes the local exports |
@@ -82,7 +82,7 @@ HTTP-cache epoch migration. It clears entries written before pre-cache body
 limits existed and fails closed if that migration cannot complete.
 
 Provider-returned URL fetches share one outbound policy across Semantic Scholar
-PDFs, PMC OA archives, Figshare files, and ClinicalTrials.gov documents. Before
+PDFs, PMC OA objects, Figshare files, and ClinicalTrials.gov documents. Before
 contact, it requires an explicit HTTPS origin/port, rejects URL credentials and
 forbidden IP/DNS classes (including loopback, private, link-local, and metadata
 addresses), and revalidates every redirect target. Public failures identify the
@@ -106,10 +106,10 @@ API client:
 Run `biomcp cache path` to print the managed HTTP cache directory on the current
 machine without creating or migrating cache directories.
 
-PMC OA packages retain their 64 MiB compressed and 8 MiB per-member limits and
-also cap expansion at 256 physical tar entries, 64 MiB aggregate payload, and
-1 MiB of path metadata. Archive resource failures are reported without provider
-payload or member-path leakage.
+PMC OA resolves versioned S3 metadata and downloads declared XML/media objects;
+the retired FTP/archive route is removed in August 2026. Each object is capped at
+8 MiB, with 256 media objects and 64 MiB aggregate payload. Resource failures are
+reported without provider payload or object-path leakage.
 
 For freshness-sensitive workflows, use `--no-cache`.
 

@@ -119,7 +119,7 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         api: "PMC OA",
         affects: Some("article fulltext resolution"),
         probe: ProbeKind::Get {
-            url: "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC9984800",
+            url: "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC9984800.&delimiter=/",
         },
     },
     SourceDescriptor {

@@ -18,10 +18,7 @@ const S2_PDF_ORIGINS: &[&str] = &[
     "https://pdfs.semanticscholar.org",
     "https://www.semanticscholar.org",
 ];
-const PMC_OA_ORIGINS: &[&str] = &[
-    "https://www.ncbi.nlm.nih.gov",
-    "https://ftp.ncbi.nlm.nih.gov",
-];
+const PMC_OA_ORIGINS: &[&str] = &["https://pmc-oa-opendata.s3.amazonaws.com"];
 const PMC_LINKED_ASSET_ORIGINS: &[&str] = &[
     "https://pmc.ncbi.nlm.nih.gov",
     "https://www.ncbi.nlm.nih.gov",
@@ -736,7 +733,7 @@ mod tests {
                     "Semantic Scholar",
                 ),
                 ProviderUrlConsumer::PmcOaArchive => (
-                    "https://ftp.ncbi.nlm.nih.gov/pub/pmc/archive.tgz",
+                    "https://pmc-oa-opendata.s3.amazonaws.com/PMC123.1/article.xml",
                     "PMC Open Access",
                 ),
                 ProviderUrlConsumer::PmcLinkedArticleAsset => (

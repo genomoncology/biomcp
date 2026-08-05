@@ -755,7 +755,7 @@ assert provider.get("source") == "PMC OA"
 provenance = manifest.get("provenance") or {}
 assert provenance.get("open_access") is True
 assert provenance.get("retracted") is False
-assert "oa-assets-22663016.tgz" in str(provenance.get("package_url", ""))
+assert "/PMC123460.1/PMC123460.1.json" in str(provenance.get("package_url", ""))
 reuse = manifest.get("reuse") or {}
 assert reuse.get("license_present") is True
 assert "CC BY-NC" in str(reuse.get("license", ""))
@@ -765,10 +765,10 @@ print("pmc oa archive fulltext manifest ok")
 
 ## OA Package Assets Manifest
 
-Article assets are resolved from the canonical PMC OA package on demand, even
-when another XML rung supplied the saved full text. The JSON-only manifest keeps
-byte-level grounding and retrieval handles for downstream converters without
-parsing or inlining the assets.
+Article assets are resolved from canonical PMC OA metadata-declared objects on
+demand, even when another XML rung supplied the saved full text. The JSON-only
+manifest keeps byte-level grounding and retrieval handles for downstream
+converters without parsing or inlining the assets.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663011 assets | uv run --no-sync python3 -c '
@@ -796,7 +796,7 @@ assert reuse.get("license_present") is True
 assert "CC BY" in str(reuse.get("license", ""))
 provenance = fig.get("provenance") or {}
 assert provenance.get("retracted") is False
-assert "oa-assets-22663011.tgz" in str(provenance.get("package_url", ""))
+assert "/PMC123456.1/PMC123456.1.json" in str(provenance.get("package_url", ""))
 jats = fig.get("jats") or {}
 assert jats.get("label"), "JATS figure label is missing"
 assert "measurement bar" in str(jats.get("caption", ""))
@@ -812,7 +812,7 @@ print("article assets manifest ok")
 
 ## OA Package Asset Retrieval Returns Bytes
 
-The retrieval handle returns the selected archive member bytes as-is. BioMCP is
+The retrieval handle returns the selected PMC OA object bytes as-is. BioMCP is
 the canonical fetcher here; conversion of CSV, XLSX, DOC, PDF, or image assets
 belongs downstream.
 

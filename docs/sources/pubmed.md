@@ -72,12 +72,14 @@ Returns a full-text section with a `Saved to:` cache path.
 XML, PMC HTML, or explicitly opted-in PDF sources can resolve. JATS Markdown can
 render references, figure captions, supplementary-material metadata, and complex-table
 omission markers. Semantic Scholar PDF is attempted only when the caller passes `--pdf`.
-Provider-returned PMC OA archive links are accepted only from reviewed NCBI HTTPS
-origins; scheme, origin, port, DNS answers, and every redirect are checked before
-contact without exposing a rejected URL in the public error. PMC OA packages are
-capped at 64 MiB compressed, 256 physical tar entries, 8 MiB per regular member,
-64 MiB aggregate payload, and 1 MiB of path extension metadata. Archive resource
-or metadata-policy failures are sanitized as source unavailable.
+PMC OA resolves a versioned S3 prefix listing to its flat `<version>/<version>.json`
+metadata object, then downloads only metadata-declared XML and media objects from
+`https://pmc-oa-opendata.s3.amazonaws.com`. The retired FTP/archive route is not
+used: NLM removes its legacy files in August 2026. Scheme, origin, port, DNS
+answers, and every redirect are checked before contact without exposing a rejected
+URL in the public error. Each object is capped at 8 MiB; media is capped at 256
+objects and 64 MiB aggregate payload. Route-resolution failures identify the
+PMC OA package route; resource failures are sanitized as source unavailable.
 
 ## API access
 
