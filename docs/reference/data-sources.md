@@ -82,7 +82,7 @@ HTTP-cache epoch migration. It clears entries written before pre-cache body
 limits existed and fails closed if that migration cannot complete.
 
 Provider-returned URL fetches share one outbound policy across Semantic Scholar
-PDFs, PMC OA archives, Figshare files, and ClinicalTrials.gov documents. Before
+PDFs, PMC OA objects, Figshare files, and ClinicalTrials.gov documents. Before
 contact, it requires an explicit HTTPS origin/port, rejects URL credentials and
 forbidden IP/DNS classes (including loopback, private, link-local, and metadata
 addresses), and revalidates every redirect target. Public failures identify the

@@ -132,6 +132,13 @@ fn parses_receipted_s3_metadata_to_xml_object() {
 }
 
 #[test]
+fn empty_s3_version_listing_is_healthy_package_absence() {
+    let listing = r#"<?xml version="1.0"?><ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>pmc-oa-opendata</Name><Prefix>PMC3040717.</Prefix><KeyCount>0</KeyCount><Delimiter>/</Delimiter></ListBucketResult>"#;
+
+    assert_eq!(parse_archive_manifest_xml(listing).unwrap(), None);
+}
+
+#[test]
 fn malformed_or_unexpected_manifest_is_failure_not_absence() {
     assert!(parse_archive_manifest_xml("<records>").is_err());
     assert!(parse_archive_manifest_xml("<html><body>error</body></html>").is_err());
