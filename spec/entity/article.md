@@ -821,15 +821,15 @@ belongs downstream.
 0,1"
 ```
 
-## Receipted PMC Assets Retain Named Retrieval Handles
+## Receipted PMC Asset Discovery Retains Named Coverage
 
-The captured article asset response names each supplement as a separate,
-provider-labelled coverage result and provides a stable BioMCP retrieval command.
-This local fixture contract protects the PubTator-to-OA resolution path without
-asking NCBI or PMC to serve the record during routine checks.
+The captured JATS and PMC HTML documents name each supplement independently.
+The local fixture keeps that provider-labelled discovery visible even when the
+upstream binary route is unavailable; positive-byte retrievability remains in
+the operator live contract.
 
 ```bash
-../../tools/biomcp-ci --json get article 20516115 assets | jq '(.pmid == "20516115") and any(.coverage[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and .outcome == "retrievable" and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0)) and any(.coverage[]?; (.filename | endswith("Supplementary_Tables.xls")) and .outcome == "retrievable" and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0)) and any(.assets[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and (.size_bytes > 0) and (.sha256 | test("^[0-9a-f]{64}$")) and (.handle | startswith("biomcp get article 20516115 asset "))) and any(.assets[]?; (.filename | endswith("Supplementary_Tables.xls")) and (.size_bytes > 0) and (.sha256 | test("^[0-9a-f]{64}$")) and (.handle | startswith("biomcp get article 20516115 asset ")))' | mustmatch 'true'
+../../tools/biomcp-ci --json get article 20516115 assets | jq '(.pmid == "20516115") and any(.coverage[]?; (.filename | endswith("Supplementary_Methods__Figures__Tables.pdf")) and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0)) and any(.coverage[]?; (.filename | endswith("Supplementary_Tables.xls")) and (.provider.source | type == "string" and length > 0) and (.source_document | type == "string" and length > 0))' | mustmatch 'true'
 ```
 
 ## JATS and PMC HTML Supplement Links Resolve Through Stable Handles
@@ -1070,15 +1070,15 @@ citation row keeps a provider-only identifier, and a successful empty
 recommendation result still has an iterable JSON collection.
 
 ```bash
-../../tools/biomcp-ci article citations 22663011 --limit 1 | mustmatch like "| Identifier | Title | Intents | Influential | Context |"
+../../tools/biomcp-ci article citations 20516115 | mustmatch like "| Identifier | Title | Intents | Influential | Context |"
 ```
 
 ```bash
-../../tools/biomcp-ci --json article citations 22663011 --limit 1 | jq 'any(.edges[]?.paper; (.paper_id | type == "string" and length > 0) and (.pmid == null) and (.doi == null) and (.arxiv_id == null))' | mustmatch 'true'
+../../tools/biomcp-ci --json article citations 20516115 | jq 'any(.edges[]?.paper; .paper_id == "bdb7239fd58ab8fee22b211f96073a3c58dad53d" and .pmid == null and .doi == null and .arxiv_id == null)' | mustmatch 'true'
 ```
 
 ```bash
-../../tools/biomcp-ci article recommendations 22663011 --limit 1 | mustmatch like "| Identifier | Title | Journal | Year |"
+../../tools/biomcp-ci article recommendations 20516115 --limit 1 | mustmatch like "| Identifier | Title | Journal | Year |"
 ```
 
 ```bash

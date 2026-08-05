@@ -62,14 +62,16 @@ def test_article_live_replacements_have_receipted_captures() -> None:
 
     expected_paths = {
         "pubtator/export_20516115.json",
-        "europepmc/search_pmid_20516115.json",
-        "pmc_oa/oa_package_20516115.tar.gz",
-        "semantic_scholar/paper_batch_22663011.json",
-        "semantic_scholar/citations_22663011.json",
-        "semantic_scholar/references_22663011.json",
-        "semantic_scholar/recommendations_22663011.json",
+        "ncbi_efetch/pmc3040717.xml",
+        "pmc_article/pmc3040717.html",
+        "pmc_oa/pmc3040717-not-open-access.xml",
+        "pmc_article/pmc3040717-supplementary-tables-pow.html",
+        "europepmc/pmc3040717-supplementary-files.xml",
+        "semantic_scholar/paper_batch_20516115.json",
+        "semantic_scholar/citations_20516115.json",
+        "semantic_scholar/references_20516115.json",
+        "semantic_scholar/recommendations_20516115.json",
         "semantic_scholar/recommendations_23450558_empty.json",
-        "semantic_scholar/citations_identifier_only.json",
     }
 
     assert {
