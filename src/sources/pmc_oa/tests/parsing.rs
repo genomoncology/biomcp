@@ -93,19 +93,36 @@ fn tgz_with_long_name(name_size: usize) -> Vec<u8> {
 }
 
 #[test]
-fn parses_manifest_and_rewrites_ftp_to_https() {
-    let manifest = parse_archive_manifest_xml(
-        r#"<records><record license="CC BY" retracted="no"><link format="tgz" href="ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/file.tar.gz"/></record></records>"#,
-    )
+fn parses_s3_version_listing_to_metadata_route() {
+    let manifest = parse_archive_manifest_xml(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pmc_oa/pmc9984800-versions.xml"
+    )))
     .unwrap()
-    .expect("manifest");
+    .expect("S3 version listing should resolve a metadata route");
 
     assert_eq!(
         manifest.tgz_url,
-        "https://ftp.ncbi.nlm.nih.gov/pub/pmc/file.tar.gz"
+        "https://pmc-oa-opendata.s3.amazonaws.com/metadata/PMC9984800.1.json"
     );
     assert_eq!(manifest.package_url, manifest.tgz_url);
-    assert_eq!(manifest.license.as_deref(), Some("CC BY"));
+}
+
+#[test]
+fn parses_receipted_s3_metadata_to_xml_object() {
+    let manifest = parse_archive_manifest_xml(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pmc_oa/pmc9984800.1.json"
+    )))
+    .unwrap()
+    .expect("S3 metadata should resolve the declared XML object");
+
+    assert_eq!(
+        manifest.tgz_url,
+        "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.xml?md5=ca72ed62a792cc584d96f49666288a78"
+    );
+    assert_eq!(manifest.package_url, manifest.tgz_url);
+    assert_eq!(manifest.license.as_deref(), Some("CC BY-NC-ND"));
     assert_eq!(manifest.retracted, Some(false));
 }
 

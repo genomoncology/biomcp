@@ -72,9 +72,57 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-empty.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Allele Registry",
+        "request": "https://reg.genome.network/allele?hgvs=NC_000001.11%3Ag.1A%3EG&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "3b097b049fc9f2a4b02c045f3df4b2f086635c50602e415834e5b80da255d3e5",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
+      }
+    },
+    {
+      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-malformed.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Allele Registry",
+        "request": "https://reg.genome.network/allele?hgvs=not-hgvs&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "dfab66a134daa579f1c9b0453b46d07a397775016305c510e40806a437b61fa8",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
+      }
+    },
+    {
+      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Allele Registry",
+        "request": "https://reg.genome.network/allele?hgvs=NM_000546.6%3Ac.215C%3EG&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "454b2fb812d8bac6cd9ff8cb3b1fca4dc4d993faee454e2bbeb35ebea549c367",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
+      }
+    },
+    {
       "path": "clingen_cspec/README.md",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen_cspec/apc-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/APC/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "eb05468ef0f804bf6f918a99b0970d5cbe3162a9636345ffa3eeb5da7a45c4d4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
+      }
     },
     {
       "path": "clingen_cspec/atm-gn020-1.5.1.json",
@@ -86,6 +134,90 @@
         "minimization_or_redaction": "Minimized to the envelope, document identity fields, and first two criteria needed by the paging contract.",
         "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before permitted minimization.",
         "sha256": "6235f874611fffa3d9543bc8f161f3b9184a84824f766e3f0ba04763bd017785"
+      }
+    },
+    {
+      "path": "clingen_cspec/atm-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/ATM/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "e305cc80ea6aba98c53604e94182f97329c49378acd099462d78fc1677079379",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
+      }
+    },
+    {
+      "path": "clingen_cspec/braf-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/BRAF/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "66b4aff966813bf3b6ff14740407ba418aae172bba6e3ddda08702fd8b8c9f46",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
+      }
+    },
+    {
+      "path": "clingen_cspec/brca1-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/BRCA1/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "d682339a867cca1b534261c31e2f1fba5859e9d95ee3232fc8667c22f10aa5a6",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
+      }
+    },
+    {
+      "path": "clingen_cspec/mlh1-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/MLH1/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "f56f8551ebebae371d2816ffc2edd926e81415715b839aee265c893292a1aaa9",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
+      }
+    },
+    {
+      "path": "clingen_cspec/palb2-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/PALB2/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "03490c4773b0ee9e849a187d6e4a70d246e488587c69ebe7034d340215fecabc",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
+      }
+    },
+    {
+      "path": "clingen_cspec/pten-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/PTEN/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "346b3b981325733ff918f8552d5b90dca4fc91f0b6190df8c2cf5443ecf21a47",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
+      }
+    },
+    {
+      "path": "clingen_cspec/tp53-manifest.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/TP53/SequenceVariantInterpretation/version?detail=low",
+        "captured_at": "2026-08-04T13:40:03Z",
+        "sha256": "febd0692e63f427f8e6e9dca8c8b286412a33f4643ec1c3c6138040f4b62bd18",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
       }
     },
     {
@@ -153,6 +285,54 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "clingen_ldh/ca288251-medium-empty.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/Variant/id/CA999999/ld?detail=med",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "a1b1c33e6642f86f32534649856cb5731340ae40d55b703280dbc931e0e09fd1",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca288251-medium.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/Variant/id/CA288251/ld?detail=med",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "0dfab4e43cde49a7fe5e4b5e4ec98e566f7c18f9bbd4618b2c34089e742d28c5",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca288251-pmc8710334-direct-malformed.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "28cf64153c2437a313fd9e29ad4d7694aeb24f3efa215d9f797c87d9d17bafaf",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca288251-pmc8710334-direct.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
+        "captured_at": "2026-08-04T18:27:25Z",
+        "sha256": "34b8827a6240d6d23e36eadece96403a3e3b41fcb044fc10ccb9d603d0d9b4bb",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
+      }
+    },
+    {
       "path": "clinicaltrials/search.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
@@ -168,21 +348,6 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
-      "path": "cpic/guideline_cyp2d6.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
-    },
-    {
-      "path": "cpic/pair_view_cyp2d6.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
-    },
-    {
-      "path": "cpic/recommendations_codeine.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
-    },
-    {
       "path": "cpic/frequency_cyp2d6_20260803.json",
       "classification": "real_and_receipted",
       "receipt": {
@@ -193,6 +358,11 @@
         "minimization_or_redaction": "Raw public response bytes retained without edits.",
         "provider_origin_statement": "Captured directly from CPIC's public API."
       }
+    },
+    {
+      "path": "cpic/guideline_cyp2d6.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
       "path": "cpic/guideline_cyp2d6_20260803.json",
@@ -243,6 +413,11 @@
       }
     },
     {
+      "path": "cpic/pair_view_cyp2d6.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
       "path": "cpic/recommendation_cyp2d6_20260803.json",
       "classification": "real_and_receipted",
       "receipt": {
@@ -253,6 +428,11 @@
         "minimization_or_redaction": "Raw public response bytes retained without edits.",
         "provider_origin_statement": "Captured directly from CPIC's public API."
       }
+    },
+    {
+      "path": "cpic/recommendations_codeine.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
       "path": "dgidb/gene_braf_interactions.json",
@@ -430,6 +610,30 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PMC Article Datasets AWS Open Data",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC9984800.&delimiter=/",
+        "captured_at": "2026-08-05T08:41:04Z",
+        "minimization_or_redaction": "Raw public ListObjectsV2 response retained without minimization or redaction.",
+        "provider_origin_statement": "Bytes were recorded from the public PMC Article Datasets AWS Open Data bucket before permitted minimization.",
+        "sha256": "6641db6313746270ebb03d2990c9e2d508848f9c8ab8b9805c2711d4dc5e39c2"
+      },
+      "path": "pmc_oa/pmc9984800-versions.xml"
+    },
+    {
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PMC Article Datasets AWS Open Data",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/metadata/PMC9984800.1.json",
+        "captured_at": "2026-08-05T08:41:04Z",
+        "minimization_or_redaction": "Raw public metadata response retained without minimization or redaction.",
+        "provider_origin_statement": "Bytes were recorded from the public PMC Article Datasets AWS Open Data bucket before permitted minimization.",
+        "sha256": "82cb09000eab8e839de28d798ff1706724860793168a2341a262a094fa0a445e"
+      },
+      "path": "pmc_oa/pmc9984800.1.json"
+    },
+    {
       "path": "pubmed/efetch_citation_22663011.xml",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
@@ -530,186 +734,6 @@
       "path": "variantvalidator/normalize_erbb2.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
-    },
-    {
-      "path": "clingen_cspec/atm-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/ATM/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "e305cc80ea6aba98c53604e94182f97329c49378acd099462d78fc1677079379",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_cspec/apc-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/APC/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "eb05468ef0f804bf6f918a99b0970d5cbe3162a9636345ffa3eeb5da7a45c4d4",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_cspec/brca1-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/BRCA1/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "d682339a867cca1b534261c31e2f1fba5859e9d95ee3232fc8667c22f10aa5a6",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_cspec/mlh1-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/MLH1/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "f56f8551ebebae371d2816ffc2edd926e81415715b839aee265c893292a1aaa9",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_cspec/palb2-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/PALB2/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "03490c4773b0ee9e849a187d6e4a70d246e488587c69ebe7034d340215fecabc",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_cspec/pten-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/PTEN/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "346b3b981325733ff918f8552d5b90dca4fc91f0b6190df8c2cf5443ecf21a47",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_cspec/tp53-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/TP53/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "febd0692e63f427f8e6e9dca8c8b286412a33f4643ec1c3c6138040f4b62bd18",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_cspec/braf-manifest.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Criteria Specification Registry",
-        "request": "https://cspec.clinicalgenome.org/cspec/Gene/id/BRAF/SequenceVariantInterpretation/version?detail=low",
-        "captured_at": "2026-08-04T13:40:03Z",
-        "sha256": "66b4aff966813bf3b6ff14740407ba418aae172bba6e3ddda08702fd8b8c9f46",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the ClinGen Criteria Specification Registry before minimization."
-      }
-    },
-    {
-      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Allele Registry",
-        "request": "https://reg.genome.network/allele?hgvs=NM_000546.6%3Ac.215C%3EG&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
-        "captured_at": "2026-08-04T18:27:25Z",
-        "sha256": "454b2fb812d8bac6cd9ff8cb3b1fca4dc4d993faee454e2bbeb35ebea549c367",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
-      }
-    },
-    {
-      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-empty.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Allele Registry",
-        "request": "https://reg.genome.network/allele?hgvs=NC_000001.11%3Ag.1A%3EG&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
-        "captured_at": "2026-08-04T18:27:25Z",
-        "sha256": "3b097b049fc9f2a4b02c045f3df4b2f086635c50602e415834e5b80da255d3e5",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
-      }
-    },
-    {
-      "path": "clingen_allele_registry/tp53-nm_000546.6-c.215c-g-malformed.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Allele Registry",
-        "request": "https://reg.genome.network/allele?hgvs=not-hgvs&fields=none+%40id+communityStandardTitle+genomicAlleles+transcriptAlleles.MANE+externalRecords.dbSNP+externalRecords.ClinVarVariations",
-        "captured_at": "2026-08-04T18:27:25Z",
-        "sha256": "dfab66a134daa579f1c9b0453b46d07a397775016305c510e40806a437b61fa8",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the public ClinGen Allele Registry response."
-      }
-    },
-    {
-      "path": "clingen_ldh/ca288251-medium.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Linked Data Hub",
-        "request": "https://ldh.genome.network/ldh/Variant/id/CA288251/ld?detail=med",
-        "captured_at": "2026-08-04T18:27:25Z",
-        "sha256": "0dfab4e43cde49a7fe5e4b5e4ec98e566f7c18f9bbd4618b2c34089e742d28c5",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
-      }
-    },
-    {
-      "path": "clingen_ldh/ca288251-medium-empty.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Linked Data Hub",
-        "request": "https://ldh.genome.network/ldh/Variant/id/CA999999/ld?detail=med",
-        "captured_at": "2026-08-04T18:27:25Z",
-        "sha256": "a1b1c33e6642f86f32534649856cb5731340ae40d55b703280dbc931e0e09fd1",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
-      }
-    },
-    {
-      "path": "clingen_ldh/ca288251-pmc8710334-direct.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Linked Data Hub",
-        "request": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334/data",
-        "captured_at": "2026-08-04T18:27:25Z",
-        "sha256": "34b8827a6240d6d23e36eadece96403a3e3b41fcb044fc10ccb9d603d0d9b4bb",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
-      }
-    },
-    {
-      "path": "clingen_ldh/ca288251-pmc8710334-direct-malformed.json",
-      "classification": "real_and_receipted",
-      "receipt": {
-        "provider": "ClinGen Linked Data Hub",
-        "request": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8710334",
-        "captured_at": "2026-08-04T18:27:25Z",
-        "sha256": "28cf64153c2437a313fd9e29ad4d7694aeb24f3efa215d9f797c87d9d17bafaf",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
-        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response."
-      }
     }
   ],
   "confirmed_byte_unfaithful": 0,
