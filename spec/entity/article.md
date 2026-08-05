@@ -1062,12 +1062,12 @@ sha256
 size_bytes"
 ```
 
-## Semantic Scholar Graph Collections Use Neutral Identifiers
+## Captured Semantic Scholar Graph Rows Keep Usable Identity
 
-Fixture-backed graph calls retain neutral identifier columns because a related
-paper may have a PMID, DOI, arXiv ID, or only a provider ID. The captured
-citation row keeps a provider-only identifier, and a successful empty
-recommendation result still has an iterable JSON collection.
+A related paper can have a PMID, DOI, arXiv ID, or only a Semantic Scholar
+identifier. The local source capture retains those identifier-only citations
+instead of silently dropping them, and a successful recommendation response
+contains a usable paper identity and title.
 
 ```bash
 ../../tools/biomcp-ci article citations 20516115 | mustmatch like "| Identifier | Title | Intents | Influential | Context |"
@@ -1082,7 +1082,7 @@ recommendation result still has an iterable JSON collection.
 ```
 
 ```bash
-../../tools/biomcp-ci --json article recommendations 23450558 --limit 5 | mustmatch like '{"recommendations": []}'
+../../tools/biomcp-ci --json article recommendations 20516115 --limit 1 | jq 'any(.recommendations[]?; (.paper_id | type == "string" and length > 0) and (.title | type == "string" and length > 0))' | mustmatch 'true'
 ```
 
 ## Semantic Scholar Degrades Truthfully Without a Key

@@ -75,8 +75,8 @@ All 17 remaining live paths are **convert**. None is **keep** (provider-only smo
 
 | Path | Tier 2 and Tier 3 replacement before removal |
 |---|---|
-| `article-assets-live.md` | **Partial conversion:** PubTator/OA/asset plans; dated PMID 20516115 JATS/PMC HTML discovery and negative-provider responses. The linked supplement byte-retrievability assertion remains live because public binary bytes are currently proof-of-work-gated. |
-| `article-graph-live.md` | Semantic Scholar graph plans and redacted header-presence test; dated PMID 20516115 paper/citation/recommendation captures including observed identifier-only and empty cases. Remove only collection blocks once all layers pass; leave the separate search-heading smoke until it has its own replacement. |
+| `article-assets-live.md` | PubTator/OA/asset plans; dated PubTator export and PMID 20516115 asset responses. |
+| `article-graph-live.md` | Semantic Scholar graph plans and redacted header-presence test; dated paper/citation/recommendation captures including empty and identifier-only cases. |
 | `diagnostic.md` | GTR, WHO IVD, and OpenFDA dispatch plans; dated GTR/WHO IVD/OpenFDA captures. |
 | `disease.md` | MyDisease/Monarch/NIH/SEER plans and fallback; dated Monarch plus existing-source receipts. |
 | `drug.md` | MyChem/OpenFDA/EMA/WHO/ChEMBL/DDInter selection plans; dated MyChem, EMA, WHO, and local-bundle provenance. |
