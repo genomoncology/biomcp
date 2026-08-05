@@ -169,15 +169,7 @@ impl PmcArticleClient {
         .await
         {
             Ok(bytes) => {
-                let proof_of_work = (0..bytes.len()).any(|start| {
-                    bytes
-                        .get(start..start + b"cloudpmc-viewer-pow".len())
-                        .is_some_and(|value| value.eq_ignore_ascii_case(b"cloudpmc-viewer-pow"))
-                        || bytes
-                            .get(start..start + b"POW_CHALLENGE".len())
-                            .is_some_and(|value| value.eq_ignore_ascii_case(b"POW_CHALLENGE"))
-                });
-                if proof_of_work {
+                if is_pmc_proof_of_work(&bytes) {
                     PmcLinkedFetch::ProofOfWork
                 } else if matches!(
                     media_type.as_deref(),
@@ -238,6 +230,19 @@ impl PmcArticleClient {
         }
         strongest_failure
     }
+}
+
+fn is_pmc_proof_of_work(bytes: &[u8]) -> bool {
+    [
+        b"cloudpmc-viewer-pow".as_slice(),
+        b"POW_CHALLENGE".as_slice(),
+    ]
+    .into_iter()
+    .any(|marker| {
+        bytes
+            .windows(marker.len())
+            .any(|window| window.eq_ignore_ascii_case(marker))
+    })
 }
 
 fn classify_linked_status(status: StatusCode) -> Option<PmcLinkedFetch> {
@@ -589,6 +594,13 @@ mod tests {
             );
         }
         assert_eq!(classify_linked_status(StatusCode::OK), None);
+    }
+
+    #[test]
+    fn pow_markers_are_case_insensitive() {
+        assert!(is_pmc_proof_of_work(b"prefix CLOUDPMC-VIEWER-POW suffix"));
+        assert!(is_pmc_proof_of_work(b"prefix pow_challenge suffix"));
+        assert!(!is_pmc_proof_of_work(b"ordinary binary content"));
     }
 
     #[tokio::test]
