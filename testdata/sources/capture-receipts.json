@@ -610,6 +610,18 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "pmc_article/pmc3040717-supplementary-tables-pow.html",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubMed Central linked article asset route",
+        "request": "https://pmc.ncbi.nlm.nih.gov/articles/instance/3040717/bin/NIHMS265402-supplement-Supplementary_Tables.xls",
+        "captured_at": "2026-08-05T12:44:42Z",
+        "sha256": "4522d25c91b2934d6258d144bcf153ca301e7bf92c9c4a99a05a4890ee6c67f1",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public PMC linked article asset response before permitted minimization."
+      }
+    },
+    {
       "classification": "real_and_receipted",
       "receipt": {
         "provider": "PMC Article Datasets AWS Open Data",

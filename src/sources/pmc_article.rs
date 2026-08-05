@@ -561,6 +561,81 @@ mod tests {
 
     #[tokio::test]
     #[serial_test::serial(article_resolver_env)]
+    async fn recorded_pow_interstitial_is_not_returned_as_bytes() {
+        let body = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
+        ));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request).await.unwrap();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+            stream.write_all(body).await.unwrap();
+        });
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set(PMC_ARTICLE_BASE_ENV, &base);
+        let client = PmcArticleClient::new("PMC3040717").unwrap();
+        let target = client
+            .linked_target(
+                "/articles/instance/3040717/bin/NIHMS265402-supplement-Supplementary_Tables.xls",
+                false,
+            )
+            .unwrap();
+
+        let outcome = client.fetch(&target).await;
+        assert!(
+            !matches!(outcome, PmcLinkedFetch::Bytes { .. }),
+            "PMC proof-of-work HTML must not be published as supplement bytes"
+        );
+        assert!(
+            format!("{outcome:?}").contains("ProofOfWork"),
+            "the named PMC gate outcome must survive source classification"
+        );
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
+    async fn declared_binary_html_is_not_returned_as_bytes() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request).await.unwrap();
+            let body = b"<!doctype html><title>Unexpected response</title>";
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+            stream.write_all(body).await.unwrap();
+        });
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &base);
+        env.set(PMC_ARTICLE_BASE_ENV, &base);
+        let client = PmcArticleClient::new("PMC3040717").unwrap();
+        let target = client
+            .linked_target("/articles/instance/3040717/bin/supplement.xls", false)
+            .unwrap();
+
+        assert!(
+            !matches!(client.fetch(&target).await, PmcLinkedFetch::Bytes { .. }),
+            "a declared binary delivered as HTML must be rejected even without a known PoW marker"
+        );
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
     async fn equal_identity_routes_continue_until_one_returns_bytes() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let base = format!("http://{}", listener.local_addr().unwrap());

@@ -2131,6 +2131,72 @@ mod tests {
         assert!(matches!(bytes_err, BioMcpError::SourceUnavailable { .. }));
     }
 
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
+    async fn pow_capture_projects_named_pmc_gate_coverage_without_an_asset() {
+        let fixture = TestHttpFixture::spawn(|request| {
+            let body = include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/testdata/sources/pmc_article/pmc3040717-supplementary-tables-pow.html"
+            ));
+            assert!(
+                request.starts_with(
+                    "GET /articles/instance/3040717/bin/NIHMS265402-supplement-Supplementary_Tables.xls"
+                ),
+                "unexpected linked-asset request: {request}"
+            );
+            TestHttpReply::Bytes(test_http_response("200 OK", "text/html; charset=utf-8", body))
+        })
+        .await;
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set(
+            crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV,
+            &fixture.base,
+        );
+        let candidate = LinkedCandidate {
+            href: "/articles/instance/3040717/bin/NIHMS265402-supplement-Supplementary_Tables.xls"
+                .to_string(),
+            filename: "NIHMS265402-supplement-Supplementary_Tables.xls".to_string(),
+            label: Some("Supplementary Tables".to_string()),
+            media_type: Some("application/vnd.ms-excel".to_string()),
+            route: ArticleAssetDiscoveryRoute {
+                provider: linked_provider(),
+                source_document: ArticleAssetSourceDocument::PmcHtml,
+            },
+            additional_routes: Vec::new(),
+            relative_to_bin: false,
+        };
+        let mut assets = Vec::new();
+        let mut pending = Vec::new();
+
+        resolve_linked_candidates(
+            "20516115",
+            &sample_article(),
+            "PMC3040717",
+            vec![candidate],
+            &mut assets,
+            &mut pending,
+        )
+        .await;
+
+        assert!(
+            assets.is_empty(),
+            "a PoW page must not receive an advertised raw-byte asset handle"
+        );
+        let coverage = pending
+            .pop()
+            .expect("named linked file remains visible")
+            .row;
+        assert_eq!(
+            serde_json::to_value(coverage.outcome).unwrap(),
+            serde_json::json!("pmc_proof_of_work"),
+            "the assets surface must name PMC's gate distinctly"
+        );
+        assert!(coverage.asset_key.is_none());
+        assert!(coverage.handle.is_none());
+    }
+
     #[test]
     fn europe_pmc_manifest_retains_pmc_license_source_and_exact_member_facts() {
         let bytes = b"exact supplementary bytes".to_vec();
