@@ -346,6 +346,11 @@ impl BioMcpError {
             Self::Http(_) | Self::HttpMiddleware(_) => {
                 format!("HTTP request to {source} failed.")
             }
+            Self::Api { message, .. }
+                if message.starts_with("PMC OA package-route resolution failed:") =>
+            {
+                "PMC Open Access package-route resolution failed.".to_string()
+            }
             Self::Api { .. } => format!("API request to {source} failed."),
             Self::ApiJson { .. } => format!("API response from {source} could not be decoded."),
             Self::BodyLimit { max_bytes, .. } => {

@@ -130,6 +130,9 @@ impl PmcOaClient {
         let Some(metadata_manifest) = parse_archive_manifest_xml(&listing)? else {
             return Ok(None);
         };
+        if !manifest_matches_pmcid(&metadata_manifest, pmcid) {
+            return Err(route_error("S3 listing named a different PMCID"));
+        }
         let metadata_url = self.object_url(&metadata_manifest.package_url)?;
         let metadata = self
             .get_text(
@@ -138,11 +141,20 @@ impl PmcOaClient {
                     .with_extension(CacheMode::NoStore),
             )
             .await?;
-        parse_archive_manifest_xml(&metadata).map_err(|error| {
+        let manifest = parse_archive_manifest_xml(&metadata).map_err(|error| {
             error.with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::PMC_OPEN_ACCESS,
             ))
-        })
+        })?;
+        if manifest
+            .as_ref()
+            .is_some_and(|manifest| manifest.package_url != metadata_manifest.package_url)
+        {
+            return Err(route_error(
+                "metadata identity did not match its S3 listing",
+            ));
+        }
+        Ok(manifest)
     }
 
     pub async fn get_full_text_xml_with_manifest(
@@ -200,11 +212,7 @@ impl PmcOaClient {
 
 fn decode_text(status: reqwest::StatusCode, bytes: &[u8]) -> Result<String, BioMcpError> {
     if !status.is_success() {
-        let excerpt = crate::sources::body_excerpt(bytes);
-        return Err(BioMcpError::Api {
-            api: PMC_OA_API.to_string(),
-            message: format!("HTTP {status}: {excerpt}"),
-        });
+        return Err(route_error(&format!("route returned HTTP {status}")));
     }
     std::str::from_utf8(bytes)
         .map(str::to_string)
@@ -325,7 +333,9 @@ impl PmcOaClient {
     fn object_url(&self, raw: &str) -> Result<reqwest::Url, BioMcpError> {
         let canonical = reqwest::Url::parse(raw)
             .map_err(|_| route_error("metadata named an invalid object URL"))?;
-        self.provider_policy.validate_url(&canonical)?;
+        self.provider_policy
+            .validate_url(&canonical)
+            .map_err(|_| route_error("metadata named a URL rejected by provider policy"))?;
         if self.base.as_ref() == PMC_OA_BASE {
             return Ok(canonical);
         }
@@ -333,7 +343,9 @@ impl PmcOaClient {
             .map_err(|_| route_error("configured PMC OA base was invalid"))?;
         fixture.set_path(canonical.path());
         fixture.set_query(canonical.query());
-        self.provider_policy.validate_url(&fixture)?;
+        self.provider_policy
+            .validate_url(&fixture)
+            .map_err(|_| route_error("configured fixture URL was rejected by provider policy"))?;
         Ok(fixture)
     }
 
@@ -366,6 +378,12 @@ impl PmcOaClient {
         }
         Ok(bytes)
     }
+}
+
+fn manifest_matches_pmcid(manifest: &PmcOaArchiveManifest, pmcid: &str) -> bool {
+    manifest
+        .package_url
+        .starts_with(&format!("{PMC_OA_BASE}/{}.", pmcid.trim()))
 }
 
 fn route_error(reason: &str) -> BioMcpError {

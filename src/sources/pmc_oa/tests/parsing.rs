@@ -4,7 +4,7 @@
 use super::super::{
     MAX_ARCHIVE_ENTRIES, MAX_ARCHIVE_ENTRY_BYTES, MAX_ARCHIVE_METADATA_BYTES, MAX_TGZ_BYTES,
     decode_archive_bytes, decode_text, extract_archive_entries, extract_first_nxml,
-    parse_archive_manifest_xml, safe_archive_name,
+    manifest_matches_pmcid, parse_archive_manifest_xml, safe_archive_name,
 };
 use crate::error::BioMcpError;
 use flate2::Compression;
@@ -106,6 +106,8 @@ fn parses_s3_version_listing_to_metadata_route() {
         "https://pmc-oa-opendata.s3.amazonaws.com/PMC9984800.1/PMC9984800.1.json"
     );
     assert_eq!(manifest.package_url, manifest.tgz_url);
+    assert!(manifest_matches_pmcid(&manifest, "PMC9984800"));
+    assert!(!manifest_matches_pmcid(&manifest, "PMC9984801"));
 }
 
 #[test]
@@ -230,12 +232,16 @@ fn direct_buffered_archive_limit_is_sanitized() {
 }
 
 #[test]
-fn decode_text_maps_http_error_status_with_excerpt() {
+fn decode_text_projects_http_errors_as_package_route_failures() {
     let err = decode_text(StatusCode::INTERNAL_SERVER_ERROR, b"upstream failure").unwrap_err();
-    let msg = format!("{err:?}");
+    let debug = format!("{err:?}");
     assert!(matches!(err, BioMcpError::Api { .. }));
-    assert!(msg.contains("pmc-oa"), "got: {msg}");
-    assert!(msg.contains("500"), "got: {msg}");
+    assert!(debug.contains("pmc-oa"), "got: {debug}");
+    assert!(debug.contains("500"), "got: {debug}");
+    assert_eq!(
+        err.public_projection().message,
+        "PMC Open Access package-route resolution failed."
+    );
 }
 
 #[test]

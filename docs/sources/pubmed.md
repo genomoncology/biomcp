@@ -78,8 +78,8 @@ metadata object, then downloads only metadata-declared XML and media objects fro
 used: NLM removes its legacy files in August 2026. Scheme, origin, port, DNS
 answers, and every redirect are checked before contact without exposing a rejected
 URL in the public error. Each object is capped at 8 MiB; media is capped at 256
-objects and 64 MiB aggregate payload. Route-resolution and resource failures are
-sanitized as source unavailable.
+objects and 64 MiB aggregate payload. Route-resolution failures identify the
+PMC OA package route; resource failures are sanitized as source unavailable.
 
 ## API access
 
