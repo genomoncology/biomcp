@@ -634,14 +634,10 @@ mod tests {
             )
             .unwrap();
 
-        let outcome = client.fetch(&target).await;
-        assert!(
-            !matches!(outcome, PmcLinkedFetch::Bytes { .. }),
-            "PMC proof-of-work HTML must not be published as supplement bytes"
-        );
-        assert!(
-            format!("{outcome:?}").contains("ProofOfWork"),
-            "the named PMC gate outcome must survive source classification"
+        assert_eq!(
+            client.fetch(&target).await,
+            PmcLinkedFetch::ProofOfWork,
+            "the named PMC gate outcome must survive source classification without publishing bytes"
         );
         server.await.unwrap();
     }
@@ -671,8 +667,9 @@ mod tests {
             .linked_target("/articles/instance/3040717/bin/supplement.xls", false)
             .unwrap();
 
-        assert!(
-            !matches!(client.fetch(&target).await, PmcLinkedFetch::Bytes { .. }),
+        assert_eq!(
+            client.fetch(&target).await,
+            PmcLinkedFetch::SourceUnavailable,
             "a declared binary delivered as HTML must be rejected even without a known PoW marker"
         );
         server.await.unwrap();
@@ -719,9 +716,9 @@ mod tests {
             .linked_target("/articles/instance/3040717/bin/unavailable.xls", false)
             .unwrap();
 
-        let outcome = client.fetch_first_available(&[pow, unavailable]).await;
-        assert!(
-            format!("{outcome:?}").contains("ProofOfWork"),
+        assert_eq!(
+            client.fetch_first_available(&[pow, unavailable]).await,
+            PmcLinkedFetch::ProofOfWork,
             "a known PMC gate must not be hidden by a later generic source failure"
         );
         server.await.unwrap();
