@@ -874,27 +874,43 @@ async fn lookup_vaccine_candidates(
     }
 }
 
+fn resolve_vaers_vaccine_candidates(
+    query: &str,
+    candidates: Vec<CvxVaccineCandidate>,
+) -> ResolvedVaersVaccine {
+    let normalized_query = normalize_vaccine_match_key(query).unwrap_or_default();
+
+    if let Some(matched) = matched_vaccine_from_bridge(&normalized_query, &candidates) {
+        return ResolvedVaersVaccine::Matched(matched);
+    }
+
+    if query_looks_like_vaccine(&normalized_query, &candidates) {
+        ResolvedVaersVaccine::Unmapped(
+            "VAERS aggregate search does not yet map this vaccine family to a CDC WONDER code."
+                .to_string(),
+        )
+    } else {
+        ResolvedVaersVaccine::QueryNotVaccine(
+            "VAERS is vaccine-only; this query did not resolve to a vaccine identity.".to_string(),
+        )
+    }
+}
+
 async fn resolve_vaers_vaccine(
     query: &str,
     cvx_lookup_mode: CvxLookupMode,
 ) -> Result<ResolvedVaersVaccine, BioMcpError> {
-    let normalized_query = normalize_vaccine_match_key(query).unwrap_or_default();
     let candidates = lookup_vaccine_candidates(query, cvx_lookup_mode).await?;
+    Ok(resolve_vaers_vaccine_candidates(query, candidates))
+}
 
-    if let Some(matched) = matched_vaccine_from_bridge(&normalized_query, &candidates) {
-        return Ok(ResolvedVaersVaccine::Matched(matched));
-    }
-
-    if query_looks_like_vaccine(&normalized_query, &candidates) {
-        Ok(ResolvedVaersVaccine::Unmapped(
-            "VAERS aggregate search does not yet map this vaccine family to a CDC WONDER code."
-                .to_string(),
-        ))
-    } else {
-        Ok(ResolvedVaersVaccine::QueryNotVaccine(
-            "VAERS is vaccine-only; this query did not resolve to a vaccine identity.".to_string(),
-        ))
-    }
+#[cfg(test)]
+async fn resolve_vaers_vaccine_from_root(
+    query: &str,
+    root: &std::path::Path,
+) -> Result<ResolvedVaersVaccine, BioMcpError> {
+    let candidates = CvxClient::from_root(root.to_path_buf()).lookup_vaccine_candidates(query)?;
+    Ok(resolve_vaers_vaccine_candidates(query, candidates))
 }
 
 fn vaers_summary_from_tables(
@@ -2004,6 +2020,40 @@ pub fn recall_query_summary(filters: &RecallSearchFilters) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TempDirGuard;
+
+    fn cvx_fixture_root() -> TempDirGuard {
+        let root = TempDirGuard::new("adverse-event-cvx");
+        for (name, bytes) in [
+            (
+                "cvx.txt",
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/spec/fixtures/cvx/cvx.txt"
+                ))
+                .as_slice(),
+            ),
+            (
+                "TRADENAME.txt",
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/spec/fixtures/cvx/TRADENAME.txt"
+                ))
+                .as_slice(),
+            ),
+            (
+                "mvx.txt",
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/spec/fixtures/cvx/mvx.txt"
+                ))
+                .as_slice(),
+            ),
+        ] {
+            std::fs::write(root.path().join(name), bytes).expect("write CVX fixture");
+        }
+        root
+    }
 
     fn ctgov_study(value: serde_json::Value) -> CtGovStudy {
         serde_json::from_value(value).expect("valid CTGov study")
@@ -2268,7 +2318,8 @@ mod tests {
 
     #[tokio::test]
     async fn vaers_resolver_returns_query_not_vaccine_without_upstream_call() {
-        let resolved = resolve_vaers_vaccine("ibuprofen", CvxLookupMode::LocalOnly).await;
+        let root = cvx_fixture_root();
+        let resolved = resolve_vaers_vaccine_from_root("ibuprofen", root.path()).await;
 
         match resolved {
             Ok(ResolvedVaersVaccine::QueryNotVaccine(message)) => {
@@ -2344,7 +2395,8 @@ mod tests {
 
     #[tokio::test]
     async fn search_with_source_all_non_vaccine_uses_local_only_vaers_result() {
-        let vaers = match resolve_vaers_vaccine("ibuprofen", CvxLookupMode::LocalOnly).await {
+        let root = cvx_fixture_root();
+        let vaers = match resolve_vaers_vaccine_from_root("ibuprofen", root.path()).await {
             Ok(ResolvedVaersVaccine::QueryNotVaccine(message)) => {
                 VaersSearchPayload::status_only(VaersSearchStatus::QueryNotVaccine, message)
             }
@@ -2361,11 +2413,12 @@ mod tests {
 
     #[tokio::test]
     async fn vaers_resolver_matches_influenza_family_queries() {
-        let matched =
-            match resolve_vaers_vaccine("influenza vaccine", CvxLookupMode::LocalOnly).await {
-                Ok(ResolvedVaersVaccine::Matched(matched)) => matched,
-                _ => panic!("expected influenza vaccine match"),
-            };
+        let root = cvx_fixture_root();
+        let matched = match resolve_vaers_vaccine_from_root("influenza vaccine", root.path()).await
+        {
+            Ok(ResolvedVaersVaccine::Matched(matched)) => matched,
+            _ => panic!("expected influenza vaccine match"),
+        };
 
         assert_eq!(matched.display_name, "Influenza vaccine");
         assert_eq!(matched.wonder_code, "FLU");
