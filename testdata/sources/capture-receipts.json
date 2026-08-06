@@ -998,6 +998,131 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
       }
+    },
+    {
+      "path": "variant_articles_683/pubmed/4c7a563ff50997b399a3e8b43ea5d68ab1e676093e6d46e92ab47268c4636995.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=APC+p.E1317Q+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+        "captured_at": "2026-08-06T13:48:12Z",
+        "sha256": "1038a59a103bbe6f78ca7b6f67b21c846946ea7264e06ea3bac809e9b5a7b775",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real NCBI PubMed E-utilities response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/europepmc/ba037a15794e19c79a4f3d9a4a8495d1730e3f0f43e0544b59d9b881a1bec6b7.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=APC+c.6965A%3EG+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+        "captured_at": "2026-08-06T13:48:47Z",
+        "sha256": "7726232c24332735d1d157c67697ed1f79b2bde5dd3f1a9b13592c7de2733d1c",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real Europe PMC response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/europepmc/20614e48e1a47c8776601207a94922f3a2268a834d36ad4e6c33422c03d0bf46.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ATM+c.7390T%3EC+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+        "captured_at": "2026-08-06T13:49:37Z",
+        "sha256": "618639abc67eabd415f90eaae9187a1b02a70c8d0b47d06fa420f1a5e2871e2c",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real Europe PMC response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/europepmc/3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+M1783I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+        "captured_at": "2026-08-06T13:50:12Z",
+        "sha256": "e8674fc1c416c3bfaf9b8031d9c1e0cd887726677599a6bfb1217cd4ac4f3b54",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real Europe PMC response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/pubmed/a7c2c7880e6d99a892dc8beb6531cbaa26d71bda98bbce01a64d46b34a9e11a8.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22MLH1%22%5BTitle%2FAbstract%5D+AND+%22G67E%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+        "captured_at": "2026-08-06T13:50:35Z",
+        "sha256": "548b05d43e5e9594fec778b3c676f78da5830f96dd98e9adf5c58510c56d40e7",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real NCBI PubMed E-utilities response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/europepmc/7beaf0a48632abc91021bd2018ac838a499529b7b91e010744c01a655badc74f.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=MLH1+p.Gly67Glu+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+        "captured_at": "2026-08-06T13:50:44Z",
+        "sha256": "e1aa49b0e8e3199b6a91a5ef0907604ac0b0b3612887f7cf415baf9457b14439",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real Europe PMC response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/europepmc/961f20e7efdd91c93557c890856e69aeabe3b8ab624f5063f6166a021c667120.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=MSH2+L341P+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+        "captured_at": "2026-08-06T13:50:59Z",
+        "sha256": "b1fc6233cd93d299469985fd26560ae0a83b68f7de7fccd5891100894bd756b7",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real Europe PMC response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/europepmc/87a89806f519ffaea179c329dbdc6b0b2ab372800badfa84d2a96cfec9858f3f.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=MSH2+c.1022T%3EC+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+        "captured_at": "2026-08-06T13:51:00Z",
+        "sha256": "a1597e2191ca2b44dafd7aeb903b8e1c67f214c042095448908a9d55a70b6688",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real Europe PMC response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/pubmed/2ebc125ce85e958951e46ab078cf6ff28d34e7db4ea65482745eb2822de16ebc.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22PTEN%22%5BTitle%2FAbstract%5D+AND+%22D326N%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+        "captured_at": "2026-08-06T13:51:15Z",
+        "sha256": "0d4c030e75b828cca1bb30dba3e9a014fdece4a3839f91002d0e98aebe90e2da",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real NCBI PubMed E-utilities response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/pubmed/25d2878202364a3ed7e3c45a166f42121f8d49e5552be6951a87fa54d126f548.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI PubMed E-utilities",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=32087273%2C26863316%2C26394139%2C26314409%2C23846443%2C23576677%2C23354304%2C21287799%2C19474113%2C18612690%2C18343606%2C17920230%2C17119068%2C15929773%2C15520370%2C15507235%2C15266213%2C15122587%2C20233475%2C14578138%2C12537656%2C12173026%2C11606402%2C11506490%2C11267860%2C11001924%2C10737725%2C9724771",
+        "captured_at": "2026-08-06T13:48:13Z",
+        "sha256": "7d4d40b58f3fa973116b5351ae06e1a2bc3c3f1807fc17bb263f7740f3cea267",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the real NCBI PubMed E-utilities response during the seven-panel capture."
+      }
+    },
+    {
+      "path": "variant_articles_683/panel-landmark-map.json",
+      "classification": "synthetic_and_ineligible",
+      "ineligible_reason": "Data documentation that correlates receipt-backed provider bodies; it is not a provider response fixture."
     }
   ],
   "confirmed_byte_unfaithful": 0,
