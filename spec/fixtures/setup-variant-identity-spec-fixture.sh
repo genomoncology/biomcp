@@ -35,10 +35,19 @@ SEARCH_RESPONSE = json.loads(
         encoding="utf-8"
     )
 )
+BRAF_MISSENSE_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_missense_20260805.json").read_bytes()
+BRAF_REVEL_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_bytes()
+BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_v600e_20260806.json").read_bytes()
+MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
+CANCERHOTSPOTS_RESPONSES = {
+    "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
+    "/api/hotspots/single/byGene/MYD88": (ROOT / "testdata/sources/cancerhotspots/by_gene_myd88_20260805.json").read_bytes(),
+    "/api/hotspots/single/byGene/NOTAREALGENE664": (ROOT / "testdata/sources/cancerhotspots/by_gene_empty_20260805.json").read_bytes(),
+}
 
 
 def send_json(handler, status, payload):
-    body = json.dumps(payload).encode("utf-8")
+    body = payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json")
     handler.send_header("Content-Length", str(len(body)))
@@ -58,12 +67,31 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
             expected_proteins = ('dbnsfp.hgvsp:"p.M1783I"', 'dbnsfp.hgvsp:"p.M16I"')
-            if "dbnsfp.genename:BRCA1" not in query or not any(
+            if "dbnsfp.genename:BRCA1" in query and any(
                 protein in query for protein in expected_proteins
             ):
-                send_json(self, 400, {"error": "unexpected fixture query"})
+                send_json(self, 200, SEARCH_RESPONSE)
                 return
-            send_json(self, 200, SEARCH_RESPONSE)
+            if (
+                "dbnsfp.genename:BRAF" in query
+                and "snpeff.ann.effect:*missense_variant*" in query
+            ):
+                send_json(self, 200, BRAF_MISSENSE_RESPONSE)
+                return
+            if "dbnsfp.genename:BRAF" in query and "_exists_:dbnsfp.revel.score" in query:
+                send_json(self, 200, BRAF_REVEL_RESPONSE)
+                return
+            if "dbnsfp.genename:BRAF" in query and 'dbnsfp.hgvsp:"p.V600E"' in query:
+                send_json(self, 200, BRAF_V600E_RESPONSE)
+                return
+            if "dbnsfp.genename:MYD88" in query and 'dbnsfp.hgvsp:"p.L265P"' in query:
+                send_json(self, 200, MYD88_L265P_RESPONSE)
+                return
+            send_json(self, 400, {"error": "unexpected fixture query"})
+            return
+
+        if parsed.path in CANCERHOTSPOTS_RESPONSES:
+            send_json(self, 200, CANCERHOTSPOTS_RESPONSES[parsed.path])
             return
 
         send_json(self, 404, {"error": "fixture path not found"})
@@ -131,6 +159,7 @@ PY
 
 {
   printf 'export BIOMCP_MYVARIANT_BASE=%q\n' "$base_url/v1"
+  printf 'export BIOMCP_CANCERHOTSPOTS_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
 } >"$env_file"

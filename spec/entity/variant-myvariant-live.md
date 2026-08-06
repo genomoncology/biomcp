@@ -1,8 +1,9 @@
 # Live MyVariant Variant Contracts
 
 These operator-run canaries exercise BioMCP against the real MyVariant service.
-They protect source paths that can fail silently when MyVariant's indexed schema
-changes.
+The captured consequence and REVEL-present contracts are routine coverage in
+[Variant Queries](variant.md); these remaining checks protect source paths that
+need a live provider.
 
 ## BayesDel prediction flavors
 
@@ -34,19 +35,6 @@ filter into a successful but empty response.
 ```bash
 biomcp --json --no-cache search variant --gerp-min 4 --limit 5 \
   | jq '(.results | length > 0) and (.results | all((.gerp | type == "number") and (.gerp >= 4)))' \
-  | mustmatch 'true'
-```
-
-## Consequence-filtered variant search
-
-Sequence Ontology consequence names are translated to MyVariant's indexed
-annotations. The common BRAF V600E missense path must return a variant instead
-of a successful empty result.
-
-```bash
-biomcp --json --no-cache search variant -g BRAF --hgvsp V600E \
-  --consequence missense_variant --limit 5 \
-  | jq '(.results | length > 0)' \
   | mustmatch 'true'
 ```
 
@@ -123,14 +111,9 @@ biomcp --json --no-cache search variant -g BRCA1 --review-status 2 \
 
 ## Field presence and absence filtering
 
-Field aliases represent fields BioMCP actually returns. Requiring REVEL yields
-scored rows, while requiring it to be missing yields rows without a score.
-
-```bash
-biomcp --json --no-cache search variant -g BRAF --has revel --limit 5 \
-  | jq '(.results | length > 0) and (.results | all(.revel | type == "number"))' \
-  | mustmatch 'true'
-```
+Field aliases represent fields BioMCP actually returns. The captured REVEL-present
+contract is routine coverage in [Variant Queries](variant.md); this live check
+covers the complementary missing-field path.
 
 ```bash
 biomcp --json --no-cache search variant -g BRAF --missing revel --limit 5 \

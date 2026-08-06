@@ -48,6 +48,118 @@ fn parses_search_response_total_and_hits_from_real_fixture() {
 }
 
 #[test]
+fn parses_receipted_braf_filter_searches() {
+    let missense: MyVariantSearchResponse = decode_json(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+        StatusCode::OK,
+        Some(&json_ct()),
+        fixture!("search_braf_missense_20260805.json"),
+        true,
+    )
+    .unwrap();
+    assert!(missense.hits.iter().any(|hit| {
+        hit.dbnsfp
+            .as_ref()
+            .and_then(|dbnsfp| dbnsfp.genename.first())
+            == Some("BRAF")
+            && hit
+                .cadd
+                .as_ref()
+                .and_then(|cadd| cadd.consequence.as_ref())
+                .and_then(crate::utils::serde::StringOrVec::first)
+                == Some("NON_SYNONYMOUS")
+    }));
+
+    let revel: MyVariantSearchResponse = decode_json(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+        StatusCode::OK,
+        Some(&json_ct()),
+        fixture!("search_braf_revel_20260805.json"),
+        true,
+    )
+    .unwrap();
+    assert!(revel.hits.iter().any(|hit| {
+        hit.dbnsfp
+            .as_ref()
+            .and_then(|dbnsfp| dbnsfp.genename.first())
+            == Some("BRAF")
+            && hit
+                .dbnsfp
+                .as_ref()
+                .and_then(|dbnsfp| dbnsfp.revel.as_ref())
+                .and_then(|revel| revel.score.as_ref())
+                .and_then(FloatOrVec::first)
+                .is_some()
+    }));
+}
+
+#[test]
+fn parses_receipted_variant_identity_searches() {
+    for (bytes, gene, protein_change) in [
+        (
+            &fixture!("search_braf_v600e_20260806.json")[..],
+            "BRAF",
+            "p.V600E",
+        ),
+        (
+            &fixture!("search_myd88_l265p_20260806.json")[..],
+            "MYD88",
+            "p.L265P",
+        ),
+    ] {
+        let response: MyVariantSearchResponse = decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+            StatusCode::OK,
+            Some(&json_ct()),
+            bytes,
+            true,
+        )
+        .unwrap();
+
+        assert!(response.hits.iter().any(|hit| {
+            hit.dbnsfp
+                .as_ref()
+                .and_then(|dbnsfp| dbnsfp.genename.first())
+                == Some(gene)
+                && hit.dbnsfp.as_ref().is_some_and(|dbnsfp| {
+                    matches!(
+                        &dbnsfp.hgvsp,
+                        crate::utils::serde::StringOrVec::Multiple(values)
+                            if values.iter().any(|value| value == protein_change)
+                    )
+                })
+        }));
+    }
+}
+
+#[test]
+fn parses_receipted_braf_get_hit() {
+    let hit: MyVariantHit = decode_json(
+        crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+        StatusCode::OK,
+        Some(&json_ct()),
+        fixture!("get_braf_v600e_20260805.json"),
+        true,
+    )
+    .unwrap();
+
+    assert_eq!(hit.id, "chr7:g.140453136A>T");
+    assert_eq!(
+        hit.dbnsfp
+            .as_ref()
+            .and_then(|dbnsfp| dbnsfp.genename.first()),
+        Some("BRAF")
+    );
+    assert!(hit.dbnsfp.as_ref().is_some_and(|dbnsfp| {
+        matches!(
+            &dbnsfp.hgvsp,
+            crate::utils::serde::StringOrVec::Multiple(values)
+                if values.iter().any(|hgvsp| hgvsp == "p.V600E")
+        )
+    }));
+}
+
+#[test]
 fn parses_get_hit_nested_fields_from_real_fixture() {
     let hit: MyVariantHit = decode_json(
         crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
