@@ -59,15 +59,9 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
         REPO_ROOT / "tests" / "fixtures" / "article" / "fulltext",
         workspace / "tests" / "fixtures" / "article" / "fulltext",
     )
-    source_capture = workspace / "testdata" / "sources" / "pmc_article"
-    source_capture.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(
-        REPO_ROOT
-        / "testdata"
-        / "sources"
-        / "pmc_article"
-        / "pmc3040717-supplementary-tables-pow.html",
-        source_capture / "pmc3040717-supplementary-tables-pow.html",
+    shutil.copytree(
+        REPO_ROOT / "testdata" / "sources",
+        workspace / "testdata" / "sources",
     )
 
     for name in (
