@@ -1114,8 +1114,8 @@
         "provider": "NCBI PubMed E-utilities",
         "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=32087273%2C26863316%2C26394139%2C26314409%2C23846443%2C23576677%2C23354304%2C21287799%2C19474113%2C18612690%2C18343606%2C17920230%2C17119068%2C15929773%2C15520370%2C15507235%2C15266213%2C15122587%2C20233475%2C14578138%2C12537656%2C12173026%2C11606402%2C11506490%2C11267860%2C11001924%2C10737725%2C9724771",
         "captured_at": "2026-08-06T13:48:13Z",
-        "sha256": "7d4d40b58f3fa973116b5351ae06e1a2bc3c3f1807fc17bb263f7740f3cea267",
-        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "sha256": "829e2b80e775c74ff010c34ae9b5c17a697af52fbf5ed5a985708f3110c14bb4",
+        "minimization_or_redaction": "redacted the provider's api-key field because it echoed the capture host's public IP; error, count, and limit are otherwise byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the real NCBI PubMed E-utilities response during the seven-panel capture."
       }
     },
