@@ -122,6 +122,18 @@ biomcp --json --no-cache search variant -g BRAF --has revel --limit 3 \
   | mustmatch 'true'
 ```
 
+## Captured GRCh38 MyVariant lookup
+
+A coordinate supplied in GRCh38 must be sent to MyVariant with that build and
+keep the answering coordinate space in its public provenance. The routine
+fixture replays the recorded BRAF V600E response only for the GRCh38 request.
+
+```bash
+biomcp --json --no-cache get variant 'chr7:g.140753336A>T' \
+  | jq '{gene, id, genome_build}' \
+  | mustmatch like '{"gene":"BRAF","id":"chr7:g.140753336A>T","genome_build":"GRCh38"}'
+```
+
 ## Captured CancerHotspots Recurrence
 
 The same routine fixture replays observed MyVariant identity searches and
