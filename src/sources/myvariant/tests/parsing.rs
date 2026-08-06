@@ -94,6 +94,45 @@ fn parses_receipted_braf_filter_searches() {
 }
 
 #[test]
+fn parses_receipted_variant_identity_searches() {
+    for (bytes, gene, protein_change) in [
+        (
+            &fixture!("search_braf_v600e_20260806.json")[..],
+            "BRAF",
+            "p.V600E",
+        ),
+        (
+            &fixture!("search_myd88_l265p_20260806.json")[..],
+            "MYD88",
+            "p.L265P",
+        ),
+    ] {
+        let response: MyVariantSearchResponse = decode_json(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
+            StatusCode::OK,
+            Some(&json_ct()),
+            bytes,
+            true,
+        )
+        .unwrap();
+
+        assert!(response.hits.iter().any(|hit| {
+            hit.dbnsfp
+                .as_ref()
+                .and_then(|dbnsfp| dbnsfp.genename.first())
+                == Some(gene)
+                && hit.dbnsfp.as_ref().is_some_and(|dbnsfp| {
+                    matches!(
+                        &dbnsfp.hgvsp,
+                        crate::utils::serde::StringOrVec::Multiple(values)
+                            if values.iter().any(|value| value == protein_change)
+                    )
+                })
+        }));
+    }
+}
+
+#[test]
 fn parses_receipted_braf_get_hit() {
     let hit: MyVariantHit = decode_json(
         crate::error::SourceContext::retry(crate::error::SourceProvider::MYVARIANT),
