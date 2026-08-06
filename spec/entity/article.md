@@ -821,6 +821,17 @@ belongs downstream.
 0,1"
 ```
 
+## Receipted PMC Asset Discovery Retains Named Coverage
+
+The captured JATS and PMC HTML documents name each supplement independently.
+The local fixture keeps that provider-labelled discovery visible even when the
+upstream binary route is unavailable; positive-byte retrievability remains in
+the operator live contract.
+
+```bash
+../../tools/biomcp-ci --json get article 20516115 assets | jq 'def named_from_article_documents($suffix): any(.coverage[]?; (.filename | endswith($suffix)) and (.provider.source | type == "string" and length > 0) and (.discovery_routes | any(.source_document == "jats_xml") and any(.source_document == "pmc_html"))); (.pmid == "20516115") and named_from_article_documents("Supplementary_Methods__Figures__Tables.pdf") and named_from_article_documents("Supplementary_Tables.xls")' | mustmatch 'true'
+```
+
 ## JATS and PMC HTML Supplement Links Resolve Through Stable Handles
 
 An article document can be the only provider surface that names a supplement.
@@ -1049,6 +1060,29 @@ JSON manifest or listing individual package members.
 traces-s1.csv
 sha256
 size_bytes"
+```
+
+## Captured Semantic Scholar Graph Rows Keep Usable Identity
+
+A related paper can have a PMID, DOI, arXiv ID, or only a Semantic Scholar
+identifier. The local source capture retains those identifier-only citations
+instead of silently dropping them, and a successful recommendation response
+contains a usable paper identity and title.
+
+```bash
+../../tools/biomcp-ci article citations 20516115 | mustmatch like "| Identifier | Title | Intents | Influential | Context |"
+```
+
+```bash
+../../tools/biomcp-ci --json article citations 20516115 | jq 'any(.edges[]?.paper; .paper_id == "bdb7239fd58ab8fee22b211f96073a3c58dad53d" and .pmid == null and .doi == null and .arxiv_id == null)' | mustmatch 'true'
+```
+
+```bash
+../../tools/biomcp-ci article recommendations 20516115 --limit 10 | mustmatch like "| Identifier | Title | Journal | Year |"
+```
+
+```bash
+../../tools/biomcp-ci --json article recommendations 20516115 --limit 10 | jq '(.recommendations | length > 0) and all(.recommendations[]?; (.paper_id | type == "string" and length > 0) and (.title | type == "string" and length > 0))' | mustmatch 'true'
 ```
 
 ## Semantic Scholar Degrades Truthfully Without a Key

@@ -445,6 +445,7 @@ fn citation_reference_and_recommendation_plans_set_paths() {
     assert_eq!(citation.path, "graph/v1/paper/PMID:22663011/citations");
     assert_eq!(citation.query_value("fields"), Some(CITATION_EDGE_FIELDS));
     assert_eq!(citation.query_value("limit"), Some("10"));
+    assert_eq!(citation.query_value("from"), None);
     assert_eq!(citation.header_value("x-api-key"), None);
 
     let reference = SemanticScholarClient::paper_subresource_plan(
@@ -462,6 +463,8 @@ fn citation_reference_and_recommendation_plans_set_paths() {
         SemanticScholarClient::recommendations_for_paper_plan("paper-1", 2, Some("key")).unwrap();
     assert_eq!(for_paper.path, "recommendations/v1/papers/forpaper/paper-1");
     assert_eq!(for_paper.query_value("fields"), Some(RECOMMENDATION_FIELDS));
+    assert_eq!(for_paper.query_value("limit"), Some("2"));
+    assert_eq!(for_paper.query_value("from"), None);
     assert_eq!(for_paper.header_value("x-api-key"), Some("key"));
 }
 

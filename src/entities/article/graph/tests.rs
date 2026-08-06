@@ -2,9 +2,11 @@
 use super::super::test_support::*;
 use super::*;
 use crate::sources::semantic_scholar::{
-    SemanticScholarCitationEdge, SemanticScholarExternalIds, SemanticScholarGraphResponse,
-    SemanticScholarPaper, SemanticScholarRecommendationsResponse, SemanticScholarReferenceEdge,
+    SemanticScholarCitationEdge, SemanticScholarClient, SemanticScholarExternalIds,
+    SemanticScholarGraphResponse, SemanticScholarPaper, SemanticScholarRecommendationsResponse,
+    SemanticScholarReferenceEdge,
 };
+use reqwest::StatusCode;
 
 fn semantic_paper(
     paper_id: &str,
@@ -71,6 +73,39 @@ fn citations_map_semantic_scholar_edges() {
     assert_eq!(result.edges[0].contexts, ["Example context"]);
     assert_eq!(result.edges[0].intents, ["Background"]);
     assert!(!result.edges[0].is_influential);
+}
+
+#[test]
+fn receipted_provider_only_citation_survives_article_graph_mapping() {
+    let response: SemanticScholarGraphResponse<SemanticScholarCitationEdge> =
+        SemanticScholarClient::decode_json_response(
+            StatusCode::OK,
+            include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/testdata/sources/semantic_scholar/pmid20516115-citations.json"
+            )),
+            false,
+        )
+        .unwrap();
+    let result = article_graph_from_citations(
+        related_paper_from_semantic_scholar(&semantic_paper(
+            "059f780c07b87339c275192f1b82662747c28ccd",
+            "20516115",
+            "Seed paper",
+            "Cancer Research",
+            2010,
+        )),
+        response,
+    );
+    let paper = result
+        .edges
+        .iter()
+        .map(|edge| &edge.paper)
+        .find(|paper| paper.paper_id.as_deref() == Some("bdb7239fd58ab8fee22b211f96073a3c58dad53d"))
+        .expect("captured provider-only citation");
+    assert_eq!(paper.pmid, None);
+    assert_eq!(paper.doi, None);
+    assert_eq!(paper.arxiv_id, None);
 }
 
 #[test]

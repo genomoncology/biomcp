@@ -842,6 +842,162 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
       }
+    },
+    {
+      "path": "europepmc/pmc3040717-supplementary-not-open-access.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC3040717/supplementaryFiles",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "698f4e99f52bb45162e1ed99076cb2aa04a906a6fb404346c2625d58d5506619",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "ncbi_efetch/pmc3040717.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI EFetch PMC",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=3040717&rettype=xml",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "0e288c01f81023f544e09896988a0c3d7f108dc0a6c260a62c93726e9a941346",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "pmc_article/pmc3040717.html",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubMed Central article HTML",
+        "request": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3040717/",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "e4a82ea37a9ce6cdbb05ce7f14dbb0ffc2ceaa95246c24bb219e76ece1cfa733",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "pmc_oa/pmc3040717-not-open-access.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubMed Central Open Access service",
+        "request": "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC3040717",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "7e4d3dc39447c6fe955ef297ce0d024c0da10fcec5ded9e71b9362678ca586d9",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "pubtator/export_20516115.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PubTator3",
+        "request": "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=20516115",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "df4b97b3a5dbcf7ba359261ff2f97d1d0746eda021370772f7c8d9d2cc2a52d4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "semantic_scholar/pmid20516115-batch.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Semantic Scholar",
+        "request": "https://api.semanticscholar.org/graph/v1/paper/batch?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "cb20cc58600c2555a09dc450a47a1ca134555b3b28fcfa6ab7493395a6103dad",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response to POST body {\"ids\":[\"PMID:20516115\"]} before permitted minimization."
+      }
+    },
+    {
+      "path": "semantic_scholar/pmid20516115-citations.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Semantic Scholar",
+        "request": "https://api.semanticscholar.org/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/citations?fields=contexts%2Cintents%2CisInfluential%2CcitingPaper.paperId%2CcitingPaper.externalIds%2CcitingPaper.title%2CcitingPaper.venue%2CcitingPaper.year&limit=100",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "c393ebde3160dc557506bf79886ec258e1d0b6abf6b23d6cab371b36db88a3e7",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "semantic_scholar/pmid20516115-references.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Semantic Scholar",
+        "request": "https://api.semanticscholar.org/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/references?fields=contexts%2Cintents%2CisInfluential%2CcitedPaper.paperId%2CcitedPaper.externalIds%2CcitedPaper.title%2CcitedPaper.venue%2CcitedPaper.year&limit=100",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "d37ccb363d6c0c1bbb6f797b37aaabc182054b7da8d0e227d079bb4bb63749b4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "semantic_scholar/pmid20516115-recommendations.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Semantic Scholar",
+        "request": "https://api.semanticscholar.org/recommendations/v1/papers/forpaper/059f780c07b87339c275192f1b82662747c28ccd?fields=paperId%2CexternalIds%2Ctitle%2Cvenue%2Cyear&limit=10",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "e7471e6b9b06a53018302fa62904af98bf5a719e1aeb5d8bae04dbcae6a5fb16",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "europepmc/search_pmid_20516115.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Europe PMC",
+        "request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID%3A20516115%20AND%20SRC%3AMED&format=json&page=1&pageSize=1",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "bc3fd8b5847f7f050d9f61d8255865eb07bc0d9686b354ba5b58a0f782dd52d0",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "pmc_oa/pmc3040717-versions.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PMC Article Datasets AWS Open Data",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/?list-type=2&prefix=PMC3040717.&delimiter=/",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "4f3574d351116986eb7653392ff3240068046938e5dd4a914025831057772bbe",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "pmc_oa/pmc3040717.1.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PMC Article Datasets AWS Open Data",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3040717.1/PMC3040717.1.json",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "a3d34c85ed54b88fb613bab63bf683e6faa91b19d7073bbc51160b85f5092304",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "pmc_oa/pmc3040717.1.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "PMC Article Datasets AWS Open Data",
+        "request": "https://pmc-oa-opendata.s3.amazonaws.com/PMC3040717.1/PMC3040717.1.xml",
+        "captured_at": "2026-08-05T20:42:28Z",
+        "sha256": "1025e5980811b51599e451d4a2ff2dfad52a24cca4cef54fcc15450f3d44b4e5",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,

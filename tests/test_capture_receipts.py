@@ -54,6 +54,31 @@ def test_clingen_car_and_ldh_live_replacements_have_receipted_captures() -> None
     assert {path for path in expected_paths if classifications.get(path) == "real_and_receipted"} == expected_paths
 
 
+def test_article_663_source_contract_captures_are_receipted() -> None:
+    manifest = json.loads((SOURCES_ROOT / "capture-receipts.json").read_text(encoding="utf-8"))
+    classifications = {
+        entry["path"]: entry["classification"] for entry in manifest["entries"]
+    }
+    expected_paths = {
+        "europepmc/pmc3040717-supplementary-not-open-access.xml",
+        "europepmc/search_pmid_20516115.json",
+        "ncbi_efetch/pmc3040717.xml",
+        "pmc_article/pmc3040717-supplementary-tables-pow.html",
+        "pmc_article/pmc3040717.html",
+        "pmc_oa/pmc3040717-not-open-access.xml",
+        "pmc_oa/pmc3040717-versions.xml",
+        "pmc_oa/pmc3040717.1.json",
+        "pmc_oa/pmc3040717.1.xml",
+        "pubtator/export_20516115.json",
+        "semantic_scholar/pmid20516115-batch.json",
+        "semantic_scholar/pmid20516115-citations.json",
+        "semantic_scholar/pmid20516115-recommendations.json",
+        "semantic_scholar/pmid20516115-references.json",
+    }
+
+    assert {path for path in expected_paths if classifications.get(path) == "real_and_receipted"} == expected_paths
+
+
 def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> None:
     result = _audit(SOURCES_ROOT)
 

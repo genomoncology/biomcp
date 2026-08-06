@@ -354,15 +354,9 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
     ):
         shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
     (workspace / "tests").symlink_to(REPO_ROOT / "tests", target_is_directory=True)
-    source_capture = workspace / "testdata" / "sources" / "pmc_article"
-    source_capture.mkdir(parents=True)
-    shutil.copy2(
-        REPO_ROOT
-        / "testdata"
-        / "sources"
-        / "pmc_article"
-        / "pmc3040717-supplementary-tables-pow.html",
-        source_capture / "pmc3040717-supplementary-tables-pow.html",
+    shutil.copytree(
+        REPO_ROOT / "testdata" / "sources",
+        workspace / "testdata" / "sources",
     )
     for name in ("setup-study-spec-fixture.sh", "setup-ddinter-spec-fixture.sh"):
         script = fixtures / name
