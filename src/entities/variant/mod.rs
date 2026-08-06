@@ -67,6 +67,35 @@ where
     Ok(outcomes)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GenomeBuild {
+    #[serde(rename = "GRCh37")]
+    Grch37,
+    #[serde(rename = "GRCh38")]
+    Grch38,
+}
+
+impl GenomeBuild {
+    pub(crate) fn provider_value(self) -> &'static str {
+        match self {
+            Self::Grch37 => "hg19",
+            Self::Grch38 => "hg38",
+        }
+    }
+}
+
+impl std::str::FromStr for GenomeBuild {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.to_ascii_lowercase().as_str() {
+            "hg19" | "grch37" => Ok(Self::Grch37),
+            "hg38" | "grch38" => Ok(Self::Grch38),
+            _ => Err("assembly must be hg19 or hg38 (GRCh37 and GRCh38 are aliases)".into()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Variant {
     #[serde(
@@ -76,6 +105,8 @@ pub struct Variant {
     pub section_outcomes: SectionOutcomes,
     pub gene: String,
     pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub genome_build: Option<GenomeBuild>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hgvs_p: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

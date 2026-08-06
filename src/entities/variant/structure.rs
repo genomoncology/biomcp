@@ -109,7 +109,7 @@ pub struct VariantStructureMeta {
 }
 
 pub async fn structure(id: &str) -> Result<VariantStructureResult, BioMcpError> {
-    let (variant, id_format, hit) = super::get::resolve_base_with_hit(id).await?;
+    let (variant, id_format, hit) = super::get::resolve_base_with_hit(id, None).await?;
     let gene = variant.gene.trim();
     if gene.is_empty() {
         return Err(BioMcpError::InvalidArgument(

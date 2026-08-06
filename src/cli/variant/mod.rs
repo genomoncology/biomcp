@@ -70,6 +70,9 @@ pub struct VariantSearchArgs {
 
 #[derive(Args, Debug)]
 pub struct VariantGetArgs {
+    /// Declare the genome build for a chromosome-prefixed genomic SNV (hg19/hg38; GRCh37/GRCh38 aliases)
+    #[arg(long, value_name = "hg19|hg38")]
+    pub assembly: Option<crate::entities::variant::GenomeBuild>,
     /// Exact rsID, HGVS, or "GENE CHANGE" (e.g., rs113488022, "BRAF V600E", "BRAF p.Val600Glu")
     pub id: String,
     /// Sections to include (predict, predictions, clinvar, population, conservation, cosmic, cgi, civic, cbioportal, gwas, all)

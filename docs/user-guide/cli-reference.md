@@ -559,6 +559,7 @@ outside ordinary `all`.
 
 ```bash
 biomcp get variant "BRAF V600E"
+biomcp get variant --assembly hg38 'chr7:g.140753336A>T'
 biomcp get variant 'NM_004333.6:c.1799T>A'
 biomcp get variant "BRAF V600E" predictions
 biomcp get variant "BRAF V600E" predict
@@ -571,6 +572,10 @@ SIFT, MetaRNN, `BayesDel add-AF`, and `BayesDel no-AF`.
 The BayesDel entries are separate source scores; BioMCP does not assign a
 clinical threshold or pathogenicity classification to either flavor. The
 `predict` section is the separate, credentialed AlphaGenome integration.
+
+For a chromosome-prefixed genomic SNV, use `--assembly hg19` or `--assembly hg38`
+(`GRCh37` and `GRCh38` are aliases) to declare its coordinate space. The returned
+card and JSON response then include the answering genome build.
 
 Default `get variant` output includes a one-line CIViC actionability pointer from
 cached MyVariant data when present, or a `get variant <id> civic` next-command

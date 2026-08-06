@@ -705,7 +705,10 @@ impl MyVariantClient {
     }
 
     /// Build the outbound single-variant lookup request (pure — Tier-2 testable).
-    pub(crate) fn get_plan(id: &str) -> Result<RequestPlan, BioMcpError> {
+    pub(crate) fn get_plan(
+        id: &str,
+        genome_build: Option<crate::entities::variant::GenomeBuild>,
+    ) -> Result<RequestPlan, BioMcpError> {
         let id = id.trim();
         if id.is_empty() {
             return Err(BioMcpError::InvalidArgument(
@@ -718,7 +721,11 @@ impl MyVariantClient {
             ));
         }
 
-        Ok(RequestPlan::get(format!("variant/{id}")).query("fields", MYVARIANT_FIELDS_GET))
+        let plan = RequestPlan::get(format!("variant/{id}")).query("fields", MYVARIANT_FIELDS_GET);
+        Ok(match genome_build {
+            Some(build) => plan.query("assembly", build.provider_value()),
+            None => plan,
+        })
     }
 
     /// Reduce a `/variant/{id}` response to every returned hit value (pure — Tier-3 testable).
@@ -752,9 +759,13 @@ impl MyVariantClient {
             })
     }
 
-    pub async fn get(&self, id: &str) -> Result<MyVariantHit, BioMcpError> {
+    pub async fn get(
+        &self,
+        id: &str,
+        genome_build: Option<crate::entities::variant::GenomeBuild>,
+    ) -> Result<MyVariantHit, BioMcpError> {
         let id = id.trim();
-        let plan = Self::get_plan(id)?;
+        let plan = Self::get_plan(id, genome_build)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let value: serde_json::Value = self.get_json(req).await?;
         let hit_value = Self::select_get_hit_value(value, id)?;
@@ -766,7 +777,7 @@ impl MyVariantClient {
 
     pub(crate) async fn get_all(&self, id: &str) -> Result<Vec<MyVariantHit>, BioMcpError> {
         let id = id.trim();
-        let plan = Self::get_plan(id)?;
+        let plan = Self::get_plan(id, None)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let response = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(

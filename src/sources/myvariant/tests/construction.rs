@@ -646,7 +646,7 @@ fn query_plan_matches_captured_variant_identity_requests() {
 
 #[test]
 fn get_plan_builds_variant_path_with_get_fields() {
-    let plan = MyVariantClient::get_plan("rs113488022").unwrap();
+    let plan = MyVariantClient::get_plan("rs113488022", None).unwrap();
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "variant/rs113488022");
     assert_eq!(plan.query_value("fields"), Some(MYVARIANT_FIELDS_GET));
@@ -660,14 +660,14 @@ fn get_plan_builds_variant_path_with_get_fields() {
 
 #[test]
 fn get_plan_trims_and_rejects_empty_id() {
-    let err = MyVariantClient::get_plan("   ").unwrap_err();
+    let err = MyVariantClient::get_plan("   ", None).unwrap_err();
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
     assert!(err.to_string().contains("Variant ID is required"));
 }
 
 #[test]
 fn get_plan_rejects_overlong_id() {
-    let err = MyVariantClient::get_plan(&"a".repeat(513)).unwrap_err();
+    let err = MyVariantClient::get_plan(&"a".repeat(513), None).unwrap_err();
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
     assert!(err.to_string().contains("too long"));
 }
