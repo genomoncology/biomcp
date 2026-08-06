@@ -35,6 +35,16 @@ SEARCH_RESPONSE = json.loads(
         encoding="utf-8"
     )
 )
+BRAF_MISSENSE_RESPONSE = json.loads(
+    (ROOT / "testdata/sources/myvariant/search_braf_missense_20260805.json").read_text(
+        encoding="utf-8"
+    )
+)
+BRAF_REVEL_RESPONSE = json.loads(
+    (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_text(
+        encoding="utf-8"
+    )
+)
 
 
 def send_json(handler, status, payload):
@@ -58,12 +68,21 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
             expected_proteins = ('dbnsfp.hgvsp:"p.M1783I"', 'dbnsfp.hgvsp:"p.M16I"')
-            if "dbnsfp.genename:BRCA1" not in query or not any(
+            if "dbnsfp.genename:BRCA1" in query and any(
                 protein in query for protein in expected_proteins
             ):
-                send_json(self, 400, {"error": "unexpected fixture query"})
+                send_json(self, 200, SEARCH_RESPONSE)
                 return
-            send_json(self, 200, SEARCH_RESPONSE)
+            if (
+                "dbnsfp.genename:BRAF" in query
+                and "snpeff.ann.effect:*missense_variant*" in query
+            ):
+                send_json(self, 200, BRAF_MISSENSE_RESPONSE)
+                return
+            if "dbnsfp.genename:BRAF" in query and "_exists_:dbnsfp.revel.score" in query:
+                send_json(self, 200, BRAF_REVEL_RESPONSE)
+                return
+            send_json(self, 400, {"error": "unexpected fixture query"})
             return
 
         send_json(self, 404, {"error": "fixture path not found"})

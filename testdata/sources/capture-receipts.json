@@ -746,6 +746,78 @@
       "path": "variantvalidator/normalize_erbb2.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "myvariant/get_braf_v600e_20260805.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr7:g.140453136A%3ET?fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Cdbnsfp.bayesdel.add_af.score%2Cdbnsfp.bayesdel.no_af.score%2Ccadd.consequence",
+        "captured_at": "2026-08-05T20:30:00Z",
+        "sha256": "bba12795c6fbb52f9ddd04540de1bb1971532a9fa59d06be34b983ec18ddf6ca",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "myvariant/search_braf_missense_20260805.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF%20AND%20snpeff.ann.effect%3A%2Amissense_variant%2A&size=3&from=0&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.hgvsp%2Ccadd.consequence",
+        "captured_at": "2026-08-05T20:30:00Z",
+        "sha256": "df87cc67ced7a2144e3c05d2c66be91f69e4750ae20995a047eb525a39024ec7",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "myvariant/search_braf_revel_20260805.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/query?q=dbnsfp.genename%3ABRAF%20AND%20_exists_%3Adbnsfp.revel.score&size=3&from=0&fields=_id%2Cdbnsfp.genename%2Cdbnsfp.revel.score",
+        "captured_at": "2026-08-05T20:30:00Z",
+        "sha256": "ac1124339651f9f363d140334962634441cc2eae9eb94b1e7dfb86733cba03c6",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "cancerhotspots/by_gene_braf_20260805.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CancerHotspots",
+        "request": "https://www.cancerhotspots.org/api/hotspots/single/byGene/BRAF",
+        "captured_at": "2026-08-05T20:30:00Z",
+        "sha256": "9d21bb9cd0b950b127ca0bbbe5b761ad027fd51f4eaa7bdea8016e45be77b812",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "cancerhotspots/by_gene_myd88_20260805.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CancerHotspots",
+        "request": "https://www.cancerhotspots.org/api/hotspots/single/byGene/MYD88",
+        "captured_at": "2026-08-05T20:30:00Z",
+        "sha256": "44bde61581085210dac56ee2a888d5000e1c2cbbec5872f56bc54acf10139601",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
+      "path": "cancerhotspots/by_gene_empty_20260805.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "CancerHotspots",
+        "request": "https://www.cancerhotspots.org/api/hotspots/single/byGene/NOTAREALGENE664",
+        "captured_at": "2026-08-05T20:30:00Z",
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,

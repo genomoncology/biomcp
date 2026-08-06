@@ -1,0 +1,29 @@
+{
+  "baseline_green": true,
+  "entries": [
+    {
+      "assertion": "spec/entity/variant.md::Captured MyVariant Filters and Consequences (consequence)",
+      "location": "spec/entity/variant.md",
+      "class": "semantic",
+      "lane": "check",
+      "red_command": "make spec",
+      "expected_kind": "already-implemented",
+      "expected_observation": "green ratchet",
+      "observed_status": "green, ratchet",
+      "expected_green_after": "runtime already sends the normalized MyVariant missense query and renders decoded BRAF identity from the captured response",
+      "user_visible_regression_caught": "a consequence-filtered BRAF search becomes a successful empty response or loses its decoded variant identity"
+    },
+    {
+      "assertion": "spec/entity/variant.md::Captured MyVariant Filters and Consequences (REVEL presence)",
+      "location": "spec/entity/variant.md",
+      "class": "semantic",
+      "lane": "check",
+      "red_command": "make spec",
+      "expected_kind": "already-implemented",
+      "expected_observation": "green ratchet",
+      "observed_status": "green, ratchet",
+      "expected_green_after": "runtime already sends the MyVariant REVEL presence query and renders numeric REVEL values from the captured response",
+      "user_visible_regression_caught": "a field-presence BRAF search returns no decoded rows or drops the requested numeric REVEL value"
+    }
+  ]
+}
