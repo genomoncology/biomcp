@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "selection_rule": "one retained real response per unique provider/request needed by a landmark or state-evidence record; duplicate requests are retained once",
+  "capture_count": 10,
+  "derived_internal_routes": [
+    "strict",
+    "pubtator_variant",
+    "exact_lexical",
+    "source_citation",
+    "best_effort_free_text"
+  ],
+  "excluded_routes": [
+    {
+      "route": "car",
+      "reason": "No seven-panel bare-protein input supplied an eligible independently supplied CAR HGVS identity; zero CAR calls."
+    },
+    {
+      "route": "ldh",
+      "reason": "No CAR observation resolved an eligible CAid for the seven-panel inputs; zero LDH calls."
+    }
+  ],
+  "absence_route_observations": {
+    "count": 3,
+    "landmarks": [
+      "32461654",
+      "11410501",
+      "21990146"
+    ],
+    "reason": "These landmarks were absent from decoded results and had no debug_plan.candidate_trace attribution; internal_route is null and absence_evidence names the decoded stored body."
+  },
+  "landmarks": [
+    {
+      "variant": "APC p.E1317Q",
+      "landmark_pmid": "32461654",
+      "internal_route": null,
+      "provider": "pubmed",
+      "safe_request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=APC+p.E1317Q+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+      "request_sha256": "4c7a563ff50997b399a3e8b43ea5d68ab1e676093e6d46e92ab47268c4636995",
+      "capture_path": "variant_articles_683/pubmed/4c7a563ff50997b399a3e8b43ea5d68ab1e676093e6d46e92ab47268c4636995.json",
+      "present": false,
+      "absence_evidence": {
+        "capture_path": "variant_articles_683/pubmed/4c7a563ff50997b399a3e8b43ea5d68ab1e676093e6d46e92ab47268c4636995.json",
+        "decoder": "production PubMed search decoder"
+      }
+    },
+    {
+      "variant": "APC p.Q2322R",
+      "landmark_pmid": "22799487",
+      "internal_route": "exact_lexical",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=APC+c.6965A%3EG+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "ba037a15794e19c79a4f3d9a4a8495d1730e3f0f43e0544b59d9b881a1bec6b7",
+      "capture_path": "variant_articles_683/europepmc/ba037a15794e19c79a4f3d9a4a8495d1730e3f0f43e0544b59d9b881a1bec6b7.json",
+      "present": true
+    },
+    {
+      "variant": "ATM p.C2464R",
+      "landmark_pmid": "11805335",
+      "internal_route": "exact_lexical",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=ATM+c.7390T%3EC+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "20614e48e1a47c8776601207a94922f3a2268a834d36ad4e6c33422c03d0bf46",
+      "capture_path": "variant_articles_683/europepmc/20614e48e1a47c8776601207a94922f3a2268a834d36ad4e6c33422c03d0bf46.json",
+      "present": true
+    },
+    {
+      "variant": "BRCA1 p.M1783I",
+      "landmark_pmid": "11410501",
+      "internal_route": null,
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+M1783I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f",
+      "capture_path": "variant_articles_683/europepmc/3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f.json",
+      "present": false,
+      "absence_evidence": {
+        "capture_path": "variant_articles_683/europepmc/3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f.json",
+        "decoder": "production Europe PMC search decoder"
+      }
+    },
+    {
+      "variant": "BRCA1 p.M1783I",
+      "landmark_pmid": "20516115",
+      "internal_route": "best_effort_free_text",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+M1783I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f",
+      "capture_path": "variant_articles_683/europepmc/3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f.json",
+      "present": true
+    },
+    {
+      "variant": "BRCA1 p.M1783I",
+      "landmark_pmid": "21990146",
+      "internal_route": null,
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=BRCA1+M1783I+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f",
+      "capture_path": "variant_articles_683/europepmc/3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f.json",
+      "present": false,
+      "absence_evidence": {
+        "capture_path": "variant_articles_683/europepmc/3b4da36e4f15d030ab656985583a5726148457bd0a39e1fdbc4610811546a74f.json",
+        "decoder": "production Europe PMC search decoder"
+      }
+    },
+    {
+      "variant": "MLH1 p.G67E",
+      "landmark_pmid": "18033691",
+      "internal_route": "strict",
+      "provider": "pubmed",
+      "safe_request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22MLH1%22%5BTitle%2FAbstract%5D+AND+%22G67E%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+      "request_sha256": "a7c2c7880e6d99a892dc8beb6531cbaa26d71bda98bbce01a64d46b34a9e11a8",
+      "capture_path": "variant_articles_683/pubmed/a7c2c7880e6d99a892dc8beb6531cbaa26d71bda98bbce01a64d46b34a9e11a8.json",
+      "present": true
+    },
+    {
+      "variant": "MLH1 p.G67E",
+      "landmark_pmid": "19142183",
+      "internal_route": "exact_lexical",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=MLH1+p.Gly67Glu+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "7beaf0a48632abc91021bd2018ac838a499529b7b91e010744c01a655badc74f",
+      "capture_path": "variant_articles_683/europepmc/7beaf0a48632abc91021bd2018ac838a499529b7b91e010744c01a655badc74f.json",
+      "present": true
+    },
+    {
+      "variant": "MLH1 p.G67E",
+      "landmark_pmid": "19493351",
+      "internal_route": "exact_lexical",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=MLH1+p.Gly67Glu+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "7beaf0a48632abc91021bd2018ac838a499529b7b91e010744c01a655badc74f",
+      "capture_path": "variant_articles_683/europepmc/7beaf0a48632abc91021bd2018ac838a499529b7b91e010744c01a655badc74f.json",
+      "present": true
+    },
+    {
+      "variant": "MSH2 p.L341P",
+      "landmark_pmid": "26951660",
+      "internal_route": "best_effort_free_text",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=MSH2+L341P+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "961f20e7efdd91c93557c890856e69aeabe3b8ab624f5063f6166a021c667120",
+      "capture_path": "variant_articles_683/europepmc/961f20e7efdd91c93557c890856e69aeabe3b8ab624f5063f6166a021c667120.json",
+      "present": true
+    },
+    {
+      "variant": "MSH2 p.L341P",
+      "landmark_pmid": "31433521",
+      "internal_route": "best_effort_free_text",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=MSH2+c.1022T%3EC+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "87a89806f519ffaea179c329dbdc6b0b2ab372800badfa84d2a96cfec9858f3f",
+      "capture_path": "variant_articles_683/europepmc/87a89806f519ffaea179c329dbdc6b0b2ab372800badfa84d2a96cfec9858f3f.json",
+      "present": true
+    },
+    {
+      "variant": "PTEN p.D326N",
+      "landmark_pmid": "17427195",
+      "internal_route": "strict",
+      "provider": "pubmed",
+      "safe_request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=%28%22PTEN%22%5BTitle%2FAbstract%5D+AND+%22D326N%22%5BTitle%2FAbstract%5D%29&retstart=0&retmax=100",
+      "request_sha256": "2ebc125ce85e958951e46ab078cf6ff28d34e7db4ea65482745eb2822de16ebc",
+      "capture_path": "variant_articles_683/pubmed/2ebc125ce85e958951e46ab078cf6ff28d34e7db4ea65482745eb2822de16ebc.json",
+      "present": true
+    }
+  ],
+  "state_evidence": [
+    {
+      "state": "positive",
+      "provider": "europepmc",
+      "safe_request": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=APC+c.6965A%3EG+AND+NOT+PUB_TYPE%3A%22retracted+publication%22&format=json&page=1&pageSize=25",
+      "request_sha256": "ba037a15794e19c79a4f3d9a4a8495d1730e3f0f43e0544b59d9b881a1bec6b7",
+      "capture_path": "variant_articles_683/europepmc/ba037a15794e19c79a4f3d9a4a8495d1730e3f0f43e0544b59d9b881a1bec6b7.json",
+      "observation": "Production Europe PMC search decoder returned PMID 22799487."
+    },
+    {
+      "state": "empty",
+      "provider": "pubmed",
+      "safe_request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&term=APC+p.E1317Q+NOT+retracted+publication%5Bpt%5D&retstart=0&retmax=100",
+      "request_sha256": "4c7a563ff50997b399a3e8b43ea5d68ab1e676093e6d46e92ab47268c4636995",
+      "capture_path": "variant_articles_683/pubmed/4c7a563ff50997b399a3e8b43ea5d68ab1e676093e6d46e92ab47268c4636995.json",
+      "observation": "Production PubMed search decoder returned no declared landmark PMID for APC p.E1317Q."
+    },
+    {
+      "state": "degraded",
+      "provider": "pubmed",
+      "safe_request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=32087273%2C26863316%2C26394139%2C26314409%2C23846443%2C23576677%2C23354304%2C21287799%2C19474113%2C18612690%2C18343606%2C17920230%2C17119068%2C15929773%2C15520370%2C15507235%2C15266213%2C15122587%2C20233475%2C14578138%2C12537656%2C12173026%2C11606402%2C11506490%2C11267860%2C11001924%2C10737725%2C9724771",
+      "request_sha256": "25d2878202364a3ed7e3c45a166f42121f8d49e5552be6951a87fa54d126f548",
+      "capture_path": "variant_articles_683/pubmed/25d2878202364a3ed7e3c45a166f42121f8d49e5552be6951a87fa54d126f548.json",
+      "observation": "A real PubMed HTTP 429 response was naturally received during the bounded capture."
+    },
+    {
+      "state": "not_attempted",
+      "route": "car",
+      "observation": "The seven bare protein inputs supplied no transcript/coding or authoritative genomic RefSeq identity, so canonical_equivalence_queries made zero CAR calls."
+    },
+    {
+      "state": "not_attempted",
+      "route": "ldh",
+      "observation": "CAR had zero eligible identities on the seven bare protein inputs, so add_ldh_observations made zero LDH calls."
+    }
+  ]
+}
