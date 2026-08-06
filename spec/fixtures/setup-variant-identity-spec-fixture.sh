@@ -35,21 +35,14 @@ SEARCH_RESPONSE = json.loads(
         encoding="utf-8"
     )
 )
-BRAF_MISSENSE_RESPONSE = json.loads(
-    (ROOT / "testdata/sources/myvariant/search_braf_missense_20260805.json").read_text(
-        encoding="utf-8"
-    )
-)
-BRAF_REVEL_RESPONSE = json.loads(
-    (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_text(
-        encoding="utf-8"
-    )
-)
+BRAF_MISSENSE_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_missense_20260805.json").read_bytes()
+BRAF_REVEL_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_bytes()
 BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_v600e_20260806.json").read_bytes()
 MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
 CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
     "/api/hotspots/single/byGene/MYD88": (ROOT / "testdata/sources/cancerhotspots/by_gene_myd88_20260805.json").read_bytes(),
+    "/api/hotspots/single/byGene/NOTAREALGENE664": (ROOT / "testdata/sources/cancerhotspots/by_gene_empty_20260805.json").read_bytes(),
 }
 
 

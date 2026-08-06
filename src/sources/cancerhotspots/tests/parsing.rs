@@ -32,6 +32,60 @@ fn parses_by_gene_fixture() {
 }
 
 #[test]
+fn receipted_recurrence_preserves_braf_and_myd88_landmarks() {
+    for (fixture_name, bytes, change, position_count, same_aa_count, transcript) in [
+        (
+            "by_gene_braf_20260805.json",
+            &fixture!("by_gene_braf_20260805.json")[..],
+            "V600E",
+            Some(897),
+            Some(833),
+            Some("ENST00000288602"),
+        ),
+        (
+            "by_gene_myd88_20260805.json",
+            &fixture!("by_gene_myd88_20260805.json")[..],
+            "L265P",
+            Some(37),
+            Some(37),
+            Some("ENST00000396334"),
+        ),
+    ] {
+        let rows = CancerHotspotsClient::decode_by_gene_response(
+            StatusCode::OK,
+            Some(&HeaderValue::from_static("application/json")),
+            bytes,
+        )
+        .unwrap();
+
+        let recurrence = recurrence_for_change(&rows, change);
+        assert_eq!(recurrence.position_count, position_count, "{fixture_name}");
+        assert_eq!(recurrence.same_aa_count, same_aa_count, "{fixture_name}");
+        assert_eq!(
+            recurrence.matched_transcript.as_deref(),
+            transcript,
+            "{fixture_name}"
+        );
+    }
+}
+
+#[test]
+fn receipted_empty_response_is_checked_absence() {
+    let rows = CancerHotspotsClient::decode_by_gene_response(
+        StatusCode::OK,
+        Some(&HeaderValue::from_static("application/json")),
+        fixture!("by_gene_empty_20260805.json"),
+    )
+    .unwrap();
+
+    assert!(rows.is_empty());
+    let recurrence = recurrence_for_change(&rows, "V600E");
+    assert_eq!(recurrence.position_count, None);
+    assert_eq!(recurrence.same_aa_count, None);
+    assert_eq!(recurrence.matched_transcript, None);
+}
+
+#[test]
 fn decode_by_gene_maps_http_and_html_errors() {
     let err = CancerHotspotsClient::decode_by_gene_response(
         StatusCode::INTERNAL_SERVER_ERROR,

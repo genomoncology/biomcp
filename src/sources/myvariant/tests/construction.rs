@@ -298,6 +298,42 @@ fn search_plan_rejects_non_finite_min_cadd() {
 }
 
 #[test]
+fn search_plan_matches_captured_braf_filter_requests() {
+    let consequence = MyVariantClient::search_plan(&VariantSearchParams {
+        gene: Some("BRAF".into()),
+        consequence: Some("missense_variant".into()),
+        limit: 3,
+        ..params()
+    })
+    .unwrap();
+    assert_eq!(
+        q(&consequence),
+        "dbnsfp.genename:BRAF AND snpeff.ann.effect:*missense_variant*"
+    );
+    assert_eq!(consequence.query_value("size"), Some("3"));
+    assert_eq!(consequence.query_value("from"), Some("0"));
+    assert_eq!(
+        consequence.query_value("fields"),
+        Some(MYVARIANT_FIELDS_SEARCH)
+    );
+
+    let revel = MyVariantClient::search_plan(&VariantSearchParams {
+        gene: Some("BRAF".into()),
+        has: Some("revel".into()),
+        limit: 3,
+        ..params()
+    })
+    .unwrap();
+    assert_eq!(
+        q(&revel),
+        "dbnsfp.genename:BRAF AND _exists_:dbnsfp.revel.score"
+    );
+    assert_eq!(revel.query_value("size"), Some("3"));
+    assert_eq!(revel.query_value("from"), Some("0"));
+    assert_eq!(revel.query_value("fields"), Some(MYVARIANT_FIELDS_SEARCH));
+}
+
+#[test]
 fn search_plan_consequence_clause_uses_snpeff_effect_for_every_supported_term() {
     for (input, provider_term) in [
         ("missense_variant", "missense_variant"),
@@ -583,6 +619,30 @@ fn search_plan_rejects_offset_plus_limit_overflow() {
 }
 
 // ---- get_plan (single-variant lookup) ----
+
+#[test]
+fn query_plan_matches_captured_variant_identity_requests() {
+    for (query, gene, change) in [
+        (
+            "dbnsfp.genename:BRAF AND dbnsfp.hgvsp:\"p.V600E\"",
+            "BRAF",
+            "V600E",
+        ),
+        (
+            "dbnsfp.genename:MYD88 AND dbnsfp.hgvsp:\"p.L265P\"",
+            "MYD88",
+            "L265P",
+        ),
+    ] {
+        let plan = MyVariantClient::query_plan(query, 5, 0, MYVARIANT_FIELDS_GET).unwrap();
+        assert_eq!(plan.method, HttpMethod::Get);
+        assert_eq!(plan.path, "query");
+        assert_eq!(plan.query_value("q"), Some(query), "{gene} {change}");
+        assert_eq!(plan.query_value("size"), Some("5"));
+        assert_eq!(plan.query_value("from"), Some("0"));
+        assert_eq!(plan.query_value("fields"), Some(MYVARIANT_FIELDS_GET));
+    }
+}
 
 #[test]
 fn get_plan_builds_variant_path_with_get_fields() {
