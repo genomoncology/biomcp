@@ -122,6 +122,25 @@ biomcp --json --no-cache search variant -g BRAF --has revel --limit 3 \
   | mustmatch 'true'
 ```
 
+## Captured CancerHotspots Recurrence
+
+The same routine fixture replays observed MyVariant identity searches and
+CancerHotspots by-gene rows. The returned card keeps each source-labelled
+recurrence and its matched transcript, so callers do not mistake a different
+cohort or transcript for the requested amino-acid change.
+
+```bash
+biomcp --json --no-cache get variant 'BRAF V600E' all \
+  | jq '{source: .cancerhotspots.source, transcript: .cancerhotspots.matched_transcript, position_count: .cancerhotspots.position_count, same_aa_count: .cancerhotspots.same_aa_count}' \
+  | mustmatch like '{"source":"cancerhotspots.org","transcript":"ENST00000288602","position_count":897,"same_aa_count":833}'
+```
+
+```bash
+biomcp --json --no-cache get variant 'MYD88 L265P' all \
+  | jq '{source: .cancerhotspots.source, transcript: .cancerhotspots.matched_transcript, position_count: .cancerhotspots.position_count, same_aa_count: .cancerhotspots.same_aa_count}' \
+  | mustmatch like '{"source":"cancerhotspots.org","transcript":"ENST00000396334","position_count":37,"same_aa_count":37}'
+```
+
 ## Coordinate Genome-Build Context
 
 <!-- mustmatch-lint: skip -->
