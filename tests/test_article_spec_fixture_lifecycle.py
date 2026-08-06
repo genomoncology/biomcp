@@ -467,9 +467,10 @@ def test_article_graph_fixture_records_only_semantic_scholar_header_presence(
             text=True,
             check=True,
         )
-        request_lines = request_log.read_text().splitlines()
-        assert request_lines
-        assert all(line == "s2:x-api-key:present" for line in request_lines)
+        assert request_log.read_text().splitlines() == [
+            "s2:x-api-key:present",
+            "s2:x-api-key:present",
+        ]
         assert sentinel not in result.stdout
         assert sentinel not in result.stderr
     finally:

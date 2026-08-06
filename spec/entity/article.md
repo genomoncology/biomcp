@@ -1082,7 +1082,7 @@ contains a usable paper identity and title.
 ```
 
 ```bash
-../../tools/biomcp-ci --json article recommendations 20516115 --limit 10 | jq '(.recommendations | length > 0) and all(.recommendations[]?; (.paper_id | type == "string" and length > 0) and (.title | type == "string" and length > 0))' | mustmatch 'true'
+../../tools/biomcp-ci --json article recommendations 20516115 --limit 10 | jq '(.recommendations | length == 10) and all(.recommendations[]?; (.paper_id | type == "string" and length > 0) and (.title | type == "string" and length > 0))' | mustmatch 'true'
 ```
 
 ## Semantic Scholar Degrades Truthfully Without a Key
