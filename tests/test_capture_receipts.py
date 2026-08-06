@@ -79,6 +79,56 @@ def test_article_663_source_contract_captures_are_receipted() -> None:
     assert {path for path in expected_paths if classifications.get(path) == "real_and_receipted"} == expected_paths
 
 
+def test_seven_variant_article_corpus_maps_each_landmark_to_receipted_decoded_evidence() -> None:
+    manifest = json.loads((SOURCES_ROOT / "capture-receipts.json").read_text(encoding="utf-8"))
+    receipts = {
+        entry["path"]: entry["receipt"]
+        for entry in manifest["entries"]
+        if entry["path"].startswith("variant_articles_683/")
+        and entry["classification"] == "real_and_receipted"
+    }
+    map_data = json.loads(
+        (SOURCES_ROOT / "variant_articles_683/panel-landmark-map.json").read_text(encoding="utf-8")
+    )
+    expected_landmarks = {
+        "32461654", "22799487", "11805335", "11410501", "20516115", "21990146",
+        "18033691", "19142183", "19493351", "26951660", "31433521", "17427195",
+    }
+
+    assert {record["landmark_pmid"] for record in map_data["landmarks"]} == expected_landmarks
+    assert set(map_data["derived_internal_routes"]) == {
+        "strict", "pubtator_variant", "exact_lexical", "source_citation", "best_effort_free_text",
+    }
+
+    for record in map_data["landmarks"]:
+        path = record["capture_path"]
+        assert receipts[path]["request"] == record["safe_request"]
+        assert hashlib.sha256(record["safe_request"].encode()).hexdigest() == record["request_sha256"]
+
+        body = json.loads((SOURCES_ROOT / path).read_text(encoding="utf-8"))
+        if record["provider"] == "pubmed":
+            observed_pmids = set(body.get("esearchresult", {}).get("idlist", []))
+        else:
+            observed_pmids = {
+                result["pmid"] for result in body["resultList"]["result"] if "pmid" in result
+            }
+
+        assert (record["landmark_pmid"] in observed_pmids) is record["present"]
+        if record["present"]:
+            assert record["internal_route"] is not None
+        else:
+            assert record["internal_route"] is None
+            assert record["absence_evidence"]["capture_path"] == path
+
+    states = {evidence["state"] for evidence in map_data["state_evidence"]}
+    assert {"positive", "empty", "degraded", "not_attempted"} <= states
+    degraded = next(evidence for evidence in map_data["state_evidence"] if evidence["state"] == "degraded")
+    assert "error" in json.loads((SOURCES_ROOT / degraded["capture_path"]).read_text(encoding="utf-8"))
+    assert {
+        evidence["route"] for evidence in map_data["state_evidence"] if evidence["state"] == "not_attempted"
+    } == {"car", "ldh"}
+
+
 def test_repository_audit_classifies_every_source_file_and_preserves_erepo_history() -> None:
     result = _audit(SOURCES_ROOT)
 
