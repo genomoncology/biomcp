@@ -45,6 +45,8 @@ fn braf_variant_stub() -> Variant {
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         genome_build: None,
+        build_ambiguous: None,
+        build_candidates: Vec::new(),
         hgvs_p: Some("p.X999Y".into()),
         legacy_name: None,
         hgvs_c: None,
@@ -127,6 +129,24 @@ fn transcript_hgvs_get_and_normalize_share_normalized_genomic_identity() {
         normalized_get_variant_id(&response).expect("normalization should yield gettable ID"),
         "chr7:g.140753336A>T"
     );
+}
+
+#[test]
+fn known_build_not_found_names_the_build_and_upstream_status() {
+    let message = build_aware_not_found(
+        "chr1:g.1A>T",
+        GenomeBuild::Grch38,
+        BioMcpError::NotFound {
+            entity: "variant".into(),
+            id: "chr1:g.1A>T".into(),
+            suggestion: "Try searching".into(),
+        },
+    )
+    .to_string();
+
+    assert!(message.contains("GRCh38"));
+    assert!(message.contains("upstream HTTP 404"));
+    assert!(!message.contains("Retry the remote source"));
 }
 
 #[test]
@@ -286,6 +306,8 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         genome_build: None,
+        build_ambiguous: None,
+        build_candidates: Vec::new(),
         hgvs_p: Some("p.V600E".into()),
         legacy_name: None,
         hgvs_c: None,

@@ -923,6 +923,16 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
             .filter(|s| !s.is_empty());
     }
 
+    if gene.is_empty() {
+        gene = hit
+            .clinvar
+            .as_ref()
+            .and_then(|clinvar| clinvar.gene.as_ref())
+            .and_then(|gene| gene.symbol.as_deref())
+            .unwrap_or_default()
+            .to_string();
+    }
+
     let legacy_name = derive_legacy_name(hit, &gene);
 
     let rsid = hit
@@ -983,6 +993,8 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         section_outcomes: crate::entities::variant::default_variant_section_outcomes(),
         id: hit.id.clone(),
         genome_build: None,
+        build_ambiguous: None,
+        build_candidates: Vec::new(),
         gene,
         hgvs_p,
         legacy_name,

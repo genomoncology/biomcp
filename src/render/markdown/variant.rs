@@ -48,6 +48,8 @@ pub fn variant_markdown(
         section_header => section_header(&variant_label, requested_sections),
         id => &variant.id,
         genome_build => &variant.genome_build,
+        build_ambiguous => &variant.build_ambiguous,
+        build_candidates => &variant.build_candidates,
         variant_command_arg => variant_command_arg,
         gene => &variant.gene,
         gene_command_arg => gene_command_arg,

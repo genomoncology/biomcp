@@ -135,6 +135,84 @@ biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140753336A>T' \
   | mustmatch like '{"gene":"BRAF","id":"chr7:g.140753336A>T","genome_build":"GRCh38"}'
 ```
 
+## Inferred genome builds for genomic variants
+
+Genome-qualified coordinates do not require a separate `--assembly` flag. BioMCP
+accepts the documented build aliases and versioned RefSeq forms, rewrites them to
+the chromosome HGVS identifier MyVariant accepts, and reports the build that
+answered. The routine fixture replays captured GRCh37 BRAF and GRCh38 PTEN
+responses, so this remains a deterministic contract rather than a live-provider
+canary.
+
+### Explicit build prefixes
+
+| str:input | str:id | str:rsid | str:build | str:label |
+|---|---|---|---|---|
+| GRCh37:chr7:g.140453136A>T | chr7:g.140453136A>T | rs113488022 | GRCh37 | GRCh37 prefix |
+| hg19:chr7:g.140453136A>T | chr7:g.140453136A>T | rs113488022 | GRCh37 | hg19 prefix |
+| GRCh38:chr7:g.140753336A>T | chr7:g.140753336A>T | rs113488022 | GRCh38 | GRCh38 prefix |
+| hg38:chr7:g.140753336A>T | chr7:g.140753336A>T | rs113488022 | GRCh38 | hg38 prefix |
+
+```bash each_row="Explicit build prefixes"
+biomcp --json --no-cache get variant '{{input}}' \
+  | jq '{id, rsid, genome_build}' \
+  | mustmatch like '{"id":"{{id}}","rsid":"{{rsid}}","genome_build":"{{build}}"}'
+```
+
+Versioned RefSeq accessions identify their build from the accession version.
+VCF-like and SPDI forms name the same single-nucleotide substitution. A
+versioned RefSeq deletion remains an accepted deletion spelling and is rewritten
+to the captured provider identity.
+
+### Versioned and alternate coordinate grammars
+
+| str:input | str:id | str:gene | str:label |
+|---|---|---|---|
+| NC_000010.11:g.87925512G>A | chr10:g.87925512G>A | PTEN | versioned RefSeq HGVS |
+| chr10:87925512:G:A | chr10:g.87925512G>A | PTEN | VCF-like |
+| NC_000010.11:87925511:G:A | chr10:g.87925512G>A | PTEN | SPDI |
+| NC_000010.11:g.87925512del | chr10:g.87925512del | PTEN | versioned RefSeq deletion |
+
+```bash each_row="Versioned and alternate coordinate grammars"
+biomcp --json --no-cache get variant '{{input}}' \
+  | jq '{id, gene, genome_build}' \
+  | mustmatch like '{"id":"{{id}}","gene":"{{gene}}","genome_build":"GRCh38"}'
+```
+
+### Bare-coordinate build disambiguation
+
+A bare coordinate is probed in both builds only when needed. A GRCh38-only
+coordinate resolves as GRCh38. When both builds have different records,
+BioMCP preserves the GRCh37-compatible default and makes the competing
+identity explicit instead of silently selecting a build.
+
+```bash
+biomcp --json --no-cache get variant 'chr7:g.140753336A>T' \
+  | jq '{id, rsid, genome_build}' \
+  | mustmatch like '{"id":"chr7:g.140753336A>T","rsid":"rs113488022","genome_build":"GRCh38"}'
+```
+
+```bash
+biomcp --json --no-cache get variant 'chr10:g.87933119A>C' \
+  | jq '{id, rsid, genome_build, build_ambiguous, build_candidates: [.build_candidates[]? | {genome_build, id, rsid}] | sort_by(.genome_build)}' \
+  | mustmatch like '{"id":"chr10:g.87933119A>C","rsid":"rs1212585646","genome_build":"GRCh37","build_ambiguous":true,"build_candidates":[{"genome_build":"GRCh37","id":"chr10:g.87933119A>C","rsid":"rs1212585646"},{"genome_build":"GRCh38","id":"chr10:g.87933119A>C","rsid":"rs759485888"}]}'
+```
+
+## Documented coordinate grammar
+
+The user guide lists the build-qualified and alternate genomic forms accepted by
+`get variant`, so callers can choose a known build instead of relying on a bare
+coordinate.
+
+```bash
+grep -E 'GRCh38:chr|NC_000010\.11:g\.|chr10:87925512:G:A|NC_000010\.11:87925511:G:A|NC_000010\.11:g\.87925512del' ../../docs/user-guide/variant.md \
+  | mustmatch like 'GRCh38:chr
+NC_000010.11:g.
+chr10:87925512:G:A
+NC_000010.11:87925511:G:A
+NC_000010.11:g.87925512del'
+```
+
 ## Captured CancerHotspots Recurrence
 
 The same routine fixture replays observed MyVariant identity searches and

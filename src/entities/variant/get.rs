@@ -320,6 +320,21 @@ async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, 
     parse_variant_id(&normalized_id)
 }
 
+fn build_aware_not_found(id: &str, build: GenomeBuild, error: BioMcpError) -> BioMcpError {
+    if !error.is_not_found() {
+        return error;
+    }
+    let build = match build {
+        GenomeBuild::Grch37 => "GRCh37",
+        GenomeBuild::Grch38 => "GRCh38",
+    };
+    BioMcpError::NotFound {
+        entity: "variant".into(),
+        id: format!("{id} (attempted {build}; upstream HTTP 404)"),
+        suggestion: "Try searching: biomcp search variant".into(),
+    }
+}
+
 pub(super) async fn resolve_base_with_hit(
     id: &str,
     genome_build: Option<GenomeBuild>,
@@ -339,9 +354,16 @@ pub(super) async fn resolve_base_with_hit(
     }
 
     let input_kind = classify_variant_input(id);
-    let mut requested = super::RequestedVariantIdentity::from_variant_input(id)?;
-    let id_format = match input_kind {
-        VariantInputKind::TranscriptCodingHgvs(_) => normalize_transcript_hgvs_for_get(id).await?,
+    let normalized_coordinate = super::normalize_genomic_coordinate(id)?;
+    let mut requested = match normalized_coordinate.as_ref() {
+        Some(coordinate) => super::RequestedVariantIdentity::from_variant_input(&coordinate.id)?,
+        None => super::RequestedVariantIdentity::from_variant_input(id)?,
+    };
+    let id_format = match (input_kind.clone(), normalized_coordinate.as_ref()) {
+        (_, Some(coordinate)) => VariantIdFormat::HgvsGenomic(coordinate.id.clone()),
+        (VariantInputKind::TranscriptCodingHgvs(_), None) => {
+            normalize_transcript_hgvs_for_get(id).await?
+        }
         _ => parse_variant_id(id)?,
     };
     if let VariantIdFormat::HgvsGenomic(hgvs) = &id_format
@@ -349,41 +371,123 @@ pub(super) async fn resolve_base_with_hit(
     {
         requested.populate_genomic(hgvs);
     }
+    let inferred_build = normalized_coordinate
+        .as_ref()
+        .and_then(|coordinate| coordinate.genome_build);
+    if let (Some(declared), Some(inferred)) = (genome_build, inferred_build)
+        && declared != inferred
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--assembly conflicts with the genomic coordinate's genome build".into(),
+        ));
+    }
+    let effective_build = inferred_build.or(genome_build);
 
     let compatible = |hit: &crate::sources::myvariant::MyVariantHit| {
         candidate_matches_requested_identity(&requested, hit)
     };
     let myvariant = MyVariantClient::new()?;
-    let hit = match &id_format {
+    let (hit, answering_build, build_candidates) = match &id_format {
         VariantIdFormat::HgvsGenomic(hgvs) => {
-            let direct = myvariant.get(hgvs, genome_build).await;
-            if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_)) && direct.is_err() {
-                let q = transcript_hgvs_clinvar_query(id);
-                let resp = myvariant
-                    .query_with_fields(&q, 10, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
-                    .await?;
-                let compatible_hits = resp
-                    .hits
-                    .into_iter()
-                    .filter(&compatible)
-                    .collect::<Vec<_>>();
-                best_hit(&compatible_hits)
-                    .cloned()
-                    .ok_or_else(|| BioMcpError::NotFound {
-                        entity: "variant".into(),
-                        id: id.to_string(),
-                        suggestion: format!("Try first: biomcp variant normalize all {id}"),
-                    })?
-            } else {
-                let hit = direct?;
-                if !compatible(&hit) {
-                    return Err(BioMcpError::NotFound {
-                        entity: "variant".into(),
-                        id: id.to_string(),
-                        suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
-                    });
+            if normalized_coordinate
+                .as_ref()
+                .is_some_and(|coordinate| coordinate.requires_comparison)
+                && effective_build.is_none()
+            {
+                match myvariant.get(hgvs, Some(GenomeBuild::Grch37)).await {
+                    Ok(grch37) => match myvariant.get(hgvs, Some(GenomeBuild::Grch38)).await {
+                        Ok(grch38) => {
+                            let candidates =
+                                if super::SourceVariantIdentity::from_myvariant_hit(&grch37)
+                                    .normalized_key()
+                                    != super::SourceVariantIdentity::from_myvariant_hit(&grch38)
+                                        .normalized_key()
+                                {
+                                    vec![
+                                        super::VariantBuildCandidate {
+                                            genome_build: GenomeBuild::Grch37,
+                                            id: grch37.id.clone(),
+                                            rsid: transform::variant::from_myvariant_hit(&grch37)
+                                                .rsid,
+                                        },
+                                        super::VariantBuildCandidate {
+                                            genome_build: GenomeBuild::Grch38,
+                                            id: grch38.id.clone(),
+                                            rsid: transform::variant::from_myvariant_hit(&grch38)
+                                                .rsid,
+                                        },
+                                    ]
+                                } else {
+                                    Vec::new()
+                                };
+                            (grch37, Some(GenomeBuild::Grch37), candidates)
+                        }
+                        Err(error) if error.is_not_found() => {
+                            (grch37, Some(GenomeBuild::Grch37), Vec::new())
+                        }
+                        Err(error) => return Err(error),
+                    },
+                    Err(error) if error.is_not_found() => {
+                        match myvariant.get(hgvs, Some(GenomeBuild::Grch38)).await {
+                            Ok(grch38) => (grch38, Some(GenomeBuild::Grch38), Vec::new()),
+                            Err(error) if error.is_not_found() => {
+                                return Err(BioMcpError::NotFound {
+                                    entity: "variant".into(),
+                                    id: format!(
+                                        "{hgvs} (tried GRCh37 and GRCh38; upstream HTTP 404)"
+                                    ),
+                                    suggestion: "Try searching: biomcp search variant".into(),
+                                });
+                            }
+                            Err(error) => return Err(error),
+                        }
+                    }
+                    Err(error) => return Err(error),
                 }
-                hit
+            } else {
+                let direct = myvariant.get(hgvs, effective_build).await;
+                if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_))
+                    && direct.is_err()
+                {
+                    let q = transcript_hgvs_clinvar_query(id);
+                    let resp = myvariant
+                        .query_with_fields(
+                            &q,
+                            10,
+                            0,
+                            crate::sources::myvariant::MYVARIANT_FIELDS_GET,
+                        )
+                        .await?;
+                    let compatible_hits = resp
+                        .hits
+                        .into_iter()
+                        .filter(&compatible)
+                        .collect::<Vec<_>>();
+                    (
+                        best_hit(&compatible_hits).cloned().ok_or_else(|| {
+                            BioMcpError::NotFound {
+                                entity: "variant".into(),
+                                id: id.to_string(),
+                                suggestion: format!("Try first: biomcp variant normalize all {id}"),
+                            }
+                        })?,
+                        effective_build,
+                        Vec::new(),
+                    )
+                } else {
+                    let hit = direct.map_err(|error| match effective_build {
+                        Some(build) => build_aware_not_found(hgvs, build, error),
+                        None => error,
+                    })?;
+                    if !compatible(&hit) {
+                        return Err(BioMcpError::NotFound {
+                            entity: "variant".into(),
+                            id: id.to_string(),
+                            suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
+                        });
+                    }
+                    (hit, effective_build, Vec::new())
+                }
             }
         }
         VariantIdFormat::RsId(rsid) => {
@@ -396,13 +500,17 @@ pub(super) async fn resolve_base_with_hit(
                 .into_iter()
                 .filter(&compatible)
                 .collect::<Vec<_>>();
-            best_hit(&compatible_hits)
-                .cloned()
-                .ok_or_else(|| BioMcpError::NotFound {
-                    entity: "variant".into(),
-                    id: rsid.to_string(),
-                    suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
-                })?
+            (
+                best_hit(&compatible_hits)
+                    .cloned()
+                    .ok_or_else(|| BioMcpError::NotFound {
+                        entity: "variant".into(),
+                        id: rsid.to_string(),
+                        suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
+                    })?,
+                None,
+                Vec::new(),
+            )
         }
         VariantIdFormat::GeneProteinChange { gene, change } => {
             let q = format!(
@@ -413,21 +521,27 @@ pub(super) async fn resolve_base_with_hit(
             let resp = myvariant
                 .query_with_fields(&q, 5, 0, crate::sources::myvariant::MYVARIANT_FIELDS_GET)
                 .await?;
-            resp.hits
-                .into_iter()
-                .find(&compatible)
-                .ok_or_else(|| BioMcpError::NotFound {
-                    entity: "variant".into(),
-                    id: id.to_string(),
-                    suggestion: format!(
-                        "Try searching: biomcp search variant -g {gene} --hgvsp {change}"
-                    ),
-                })?
+            (
+                resp.hits
+                    .into_iter()
+                    .find(&compatible)
+                    .ok_or_else(|| BioMcpError::NotFound {
+                        entity: "variant".into(),
+                        id: id.to_string(),
+                        suggestion: format!(
+                            "Try searching: biomcp search variant -g {gene} --hgvsp {change}"
+                        ),
+                    })?,
+                None,
+                Vec::new(),
+            )
         }
     };
 
     let mut variant = transform::variant::from_myvariant_hit(&hit);
-    variant.genome_build = genome_build;
+    variant.genome_build = answering_build;
+    variant.build_ambiguous = (!build_candidates.is_empty()).then_some(true);
+    variant.build_candidates = build_candidates;
     Ok((variant, id_format, hit))
 }
 
@@ -768,6 +882,8 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         gene: String::new(),
         id: rsid.to_string(),
         genome_build: None,
+        build_ambiguous: None,
+        build_candidates: Vec::new(),
         hgvs_p: None,
         legacy_name: None,
         hgvs_c: None,

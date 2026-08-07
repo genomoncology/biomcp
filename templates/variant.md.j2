@@ -6,6 +6,7 @@
 rsID: {% if rsid %}{{ rsid }}{% else %}Not reported{% endif %}
 ID: {{ id }}
 {% if genome_build %}Genome build: {{ genome_build }}{% endif %}
+{% if build_ambiguous %}Warning: this coordinate resolves to a different record on GRCh38{% if build_candidates[1].rsid %} (rsID: {{ build_candidates[1].rsid }}){% endif %}.{% endif %}
 {% if hgvs_p %}Protein: {{ hgvs_p }}{% endif %}
 {% if legacy_name %}Legacy Name: {{ legacy_name }}{% endif %}
 {% if hgvs_c %}cDNA: {{ hgvs_c }}{% endif %}

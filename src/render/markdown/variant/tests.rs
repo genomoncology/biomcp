@@ -22,6 +22,26 @@ fn markdown_render_variant_entity() {
 }
 
 #[test]
+fn variant_markdown_names_the_competing_build_identity() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr10:g.87933119A>C",
+        "gene": "GRID1",
+        "rsid": "rs1212585646",
+        "genome_build": "GRCh37",
+        "build_ambiguous": true,
+        "build_candidates": [
+            {"genome_build": "GRCh37", "id": "chr10:g.87933119A>C", "rsid": "rs1212585646"},
+            {"genome_build": "GRCh38", "id": "chr10:g.87933119A>C", "rsid": "rs759485888"}
+        ]
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &[]).expect("rendered markdown");
+    assert!(markdown.contains("different record on GRCh38"));
+    assert!(markdown.contains("rsID: rs759485888"));
+}
+
+#[test]
 fn variant_markdown_default_card_renders_cached_civic_actionability_pointer() {
     let variant: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr1:g.100A>T",
