@@ -6,8 +6,8 @@ priority: 5
 
 Every spec-gated biomcp ticket is blocked because the routine/design baseline is red, and ticket 385 is paused on it. Root cause is two unrelated defects, neither in any feature's scope:
 
-Completed under March on 2026-06-03, as March ticket 389. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-03, as March ticket 389. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

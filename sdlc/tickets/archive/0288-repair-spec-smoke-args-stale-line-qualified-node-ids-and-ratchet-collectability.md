@@ -6,8 +6,8 @@ priority: 9
 
 `make spec-smoke` fails during pytest collection because `SPEC_SMOKE_ARGS` in the Makefile pins markdown node IDs with literal line-number suffixes that no longer match `spec/06-article.md`:
 
-Completed under March on 2026-04-23, as March ticket 288. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-04-23, as March ticket 288. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

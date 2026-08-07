@@ -6,8 +6,8 @@ priority: 8
 
 Successful JSON entity searches are supposed to teach the next executable step through `_meta.next_commands`. The review found `search protein --json` and `search phenotype --json` returning only `pagination`, `count`, and `results` because they use a bare generic search JSON helper. That is an agent-facing correctness gap: scripts get a valid JSON object but no follow-up contract.
 
-Completed under March on 2026-06-29, as March ticket 460. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-29, as March ticket 460. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

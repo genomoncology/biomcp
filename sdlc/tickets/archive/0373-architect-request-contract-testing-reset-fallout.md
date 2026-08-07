@@ -6,8 +6,8 @@ priority: 9
 
 The immediate quickfix removes the worst live-heavy routine spec blockers, but BioMCP still needs a durable migration plan that converts coverage safely instead of simply deleting tests.
 
-Completed under March on 2026-05-23, as March ticket 373. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-05-23, as March ticket 373. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

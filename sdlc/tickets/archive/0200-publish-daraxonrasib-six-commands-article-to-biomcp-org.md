@@ -6,8 +6,8 @@ priority: 10
 
 Ship the daraxonrasib breaking-news blog article (six BioMCP commands exploring Revolution Medicines' RASolute 302 readout) to the biomcp.org blog.
 
-Completed under March on 2026-04-14, as March ticket 200. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-04-14, as March ticket 200. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

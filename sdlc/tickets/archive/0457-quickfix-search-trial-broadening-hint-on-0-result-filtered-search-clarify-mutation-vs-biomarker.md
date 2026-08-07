@@ -6,8 +6,8 @@ priority: 5
 
 `biomcp search trial` silently returns 0 results for a reasonable, well-formed query and gives the agent no way to recover, producing a false "no trials exist" conclusion.
 
-Completed under March on 2026-06-29, as March ticket 457. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-29, as March ticket 457. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

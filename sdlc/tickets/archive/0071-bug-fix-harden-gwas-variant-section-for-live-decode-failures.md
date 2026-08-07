@@ -6,8 +6,8 @@ priority: 7
 
 `make spec-pr` currently fails the `spec/03-variant.md::GWAS Supporting PMIDs` heading. The underlying command `biomcp --json get variant rs7903146 gwas` fails with `Error: HTTP request failed: error decoding response body`. The GWAS REST API is returning a response that cannot be decoded by the current deserializer.
 
-Completed under March on 2026-03-27, as March ticket 071. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-03-27, as March ticket 071. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

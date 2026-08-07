@@ -6,8 +6,8 @@ priority: 10
 
 `biomcp get variant "chr10:g.87931071G>A"` returns `Error: API request to MyVariant.info failed. Retry the remote source.`
 
-Completed under March on 2026-08-06, as March ticket 685. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-06, as March ticket 685. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

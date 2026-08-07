@@ -6,8 +6,8 @@ priority: 10
 
 Repair CSpec version paging, which fails after a successful fetch and capture, and stop attributing the internal failure to ClinGen
 
-Completed under March on 2026-07-30, as March ticket 633. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-07-30, as March ticket 633. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

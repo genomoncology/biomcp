@@ -6,8 +6,8 @@ priority: 9
 
 variant erepo --detail fails for every record because we require the provider's @id to equal a URL we build on our own host, and we report that self-inflicted failure as a generic ClinGen ERepo API error.
 
-Completed under March on 2026-08-02, as March ticket 650. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-02, as March ticket 650. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

@@ -6,8 +6,8 @@ priority: 8
 
 BioMCP's routine spec lane is still too heavy and too mixed.
 
-Completed under March on 2026-06-17, as March ticket 427. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-17, as March ticket 427. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

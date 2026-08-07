@@ -6,8 +6,8 @@ priority: 5
 
 The architecture review found that the written system map no longer matches the shipped product in several places: local EMA data, BioASQ benchmark docs, Semantic Scholar article federation, `get`-command modifiers, and tag-driven version rewriting.
 
-Completed under March on 2026-03-25, as March ticket 053. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-03-25, as March ticket 053. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

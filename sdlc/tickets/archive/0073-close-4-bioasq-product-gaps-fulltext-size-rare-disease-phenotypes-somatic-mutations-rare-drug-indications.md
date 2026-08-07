@@ -6,8 +6,8 @@ priority: 3
 
 Investigate and close 4 BioASQ product gaps found by research 005 solution cookbook tracing
 
-Completed under March on 2026-03-28, as March ticket 073. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-03-28, as March ticket 073. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

@@ -6,8 +6,8 @@ priority: 7
 
 BioMCP 118 design-review split: after child 1 lands the CLI entrypoint, all public contract surfaces need updating — docs, executable specs, and Python contract tests.
 
-Completed under March on 2026-04-03, as March ticket 122. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-04-03, as March ticket 122. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

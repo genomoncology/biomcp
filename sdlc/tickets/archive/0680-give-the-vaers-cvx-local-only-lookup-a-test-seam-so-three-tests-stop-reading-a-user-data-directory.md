@@ -6,8 +6,8 @@ priority: 10
 
 Three VAERS tests read a machine-local CVX data directory and block make test for every other ticket.
 
-Completed under March on 2026-08-05, as March ticket 680. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-05, as March ticket 680. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

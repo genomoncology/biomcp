@@ -6,8 +6,8 @@ priority: 10
 
 Verify weakened three exact-count assertions to length>0 against deterministic captures, with no reason recorded.
 
-Completed under March on 2026-08-06, as March ticket 681. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-06, as March ticket 681. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

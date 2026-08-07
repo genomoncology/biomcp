@@ -6,8 +6,8 @@ priority: 9
 
 article-graph-live.md runs through tools/biomcp-ci, which unsets S2_API_KEY, so a credentialed verify page hits the anonymous Semantic Scholar rate limit and fails.
 
-Completed under March on 2026-08-01, as March ticket 636. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-01, as March ticket 636. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

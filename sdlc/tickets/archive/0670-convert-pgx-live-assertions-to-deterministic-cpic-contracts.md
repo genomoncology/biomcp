@@ -6,8 +6,8 @@ priority: 9
 
 What is IN scope: - `src/entities/pgx.rs`, `src/sources/cpic.rs`, CPIC tests/captures, and `spec/entity/pgx.md`.
 
-Completed under March on 2026-08-03, as March ticket 670. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-03, as March ticket 670. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

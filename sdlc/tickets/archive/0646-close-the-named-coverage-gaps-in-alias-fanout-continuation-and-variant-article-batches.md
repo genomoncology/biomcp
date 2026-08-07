@@ -6,8 +6,8 @@ priority: 5
 
 Two prior tickets approved test matrices they did not finish \u2014\ \ alias-fanout continuation after a fully post-filter-rejected page, and several\ \ variant-article batch combinations.
 
-Completed under March on 2026-08-04, as March ticket 646. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-04, as March ticket 646. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

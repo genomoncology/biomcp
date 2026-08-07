@@ -6,8 +6,8 @@ priority: 5
 
 BioMCP tells the story of cancer science — genes, drugs, trials, literature — but cannot tell the story of cancer funding. NIH Reporter has a free, public, no-auth-required API that exposes research grants by disease, gene, institution, and year. Adding it lets BioMCP answer "how much did NIH invest in CML research?" and connects funding data to the clinical outcomes already in the tool.
 
-Completed under March on 2026-04-11, as March ticket 174. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-04-11, as March ticket 174. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

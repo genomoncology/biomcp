@@ -6,8 +6,8 @@ priority: 10
 
 Bound exact-variant discovery so requested-page candidates retain work for deterministic article identity verification
 
-Completed under March on 2026-07-27, as March ticket 629. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-07-27, as March ticket 629. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

@@ -6,8 +6,8 @@ priority: 10
 
 Repair CAR source facts that can be reported incorrectly and add the offline CLI/MCP contract that ticket 612 promised but did not land
 
-Completed under March on 2026-07-25, as March ticket 617. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-07-25, as March ticket 617. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

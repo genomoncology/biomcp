@@ -6,8 +6,8 @@ priority: 8
 
 Project 38 BioASQ benchmark rounds repeatedly hit Semantic Scholar rate-limit timeouts during BioMCP article search. This materially degrades answer recall on list questions and makes it hard to distinguish BioMCP product retrieval gaps from benchmark harness/environment gaps.
 
-Completed under March on 2026-04-30, as March ticket 364. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-04-30, as March ticket 364. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

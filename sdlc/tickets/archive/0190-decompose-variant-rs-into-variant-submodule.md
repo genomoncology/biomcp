@@ -6,8 +6,8 @@ priority: 5
 
 `src/entities/variant.rs` is 2,534 lines — a hot surface handling variant search, detail retrieval, population frequencies, and ClinVar/CIViC enrichment. After article/drug/disease/trial decompositions, variant is the next remaining god-file on the entity tier. Shrink it into `src/entities/variant/` following the established submodule pattern.
 
-Completed under March on 2026-04-14, as March ticket 190. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-04-14, as March ticket 190. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

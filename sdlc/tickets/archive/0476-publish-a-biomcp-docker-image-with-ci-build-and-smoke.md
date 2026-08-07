@@ -6,8 +6,8 @@ priority: 5
 
 A published BioMCP Docker image lets users run the CLI / stdio MCP server with `docker run` and no local toolchain, and it is the prerequisite for submitting to the Docker MCP Catalog ("reach millions of developers"). It is a one-time image with no hosting cost.
 
-Completed under March on 2026-07-01, as March ticket 476. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-07-01, as March ticket 476. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

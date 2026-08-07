@@ -6,8 +6,8 @@ priority: 5
 
 Hand-writing MCP client config (JSON blocks, command lines) is a common adoption failure point. A `biomcp mcp-config --client <name>` command that prints the exact, correct config block for a given client removes that friction and keeps the snippets always-correct against the installed binary.
 
-Completed under March on 2026-07-01, as March ticket 477. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-07-01, as March ticket 477. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

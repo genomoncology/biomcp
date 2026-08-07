@@ -6,8 +6,8 @@ priority: 8
 
 Harden article identity confirmation against same-passage gene/allele collisions
 
-Completed under March on 2026-07-23, as March ticket 609. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-07-23, as March ticket 609. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

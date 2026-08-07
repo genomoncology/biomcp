@@ -6,8 +6,8 @@ priority: 9
 
 The Seven-Variant Recall canary returns PMID 11805335 in results while debug_plan.candidate_trace has no row for it, so a returned article carries no route-stage receipt.
 
-Completed under March on 2026-08-01, as March ticket 638. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-08-01, as March ticket 638. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

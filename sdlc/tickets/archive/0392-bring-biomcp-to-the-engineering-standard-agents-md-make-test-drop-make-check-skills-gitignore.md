@@ -6,8 +6,8 @@ priority: 5
 
 biomcp has the workspace's strongest spec corpus but is the least compliant with the engineering standard, and several gaps bite silently. None of this depends on the mustmatch binary cutover, so it can land now to bring biomcp to the standard:
 
-Completed under March on 2026-06-04, as March ticket 392. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-04, as March ticket 392. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

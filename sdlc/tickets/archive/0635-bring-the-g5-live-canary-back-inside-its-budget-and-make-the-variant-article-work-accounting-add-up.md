@@ -6,8 +6,8 @@ priority: 10
 
 Ticket 634 un-starved the exact route, which more than doubled the G5 canary's runtime past its 180s budget; the exact pool is also too small to finish, so every live result is incomplete, and the debug plan's work accounting contradicts its own recorded calls.
 
-Completed under March on 2026-07-31, as March ticket 635. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-07-31, as March ticket 635. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

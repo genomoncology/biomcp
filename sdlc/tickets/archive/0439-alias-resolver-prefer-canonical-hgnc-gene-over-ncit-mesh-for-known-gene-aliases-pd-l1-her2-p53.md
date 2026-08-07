@@ -6,8 +6,8 @@ priority: 5
 
 Prefer the canonical HGNC gene for a known gene alias over NCIT/MESH drug/symptom entities (PD-L1 returns drugs, omits CD274); fold in HER2/P53 hint + alias-set audit. Verified high-severity data bug on 0.8.24.
 
-Completed under March on 2026-06-24, as March ticket 439. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-24, as March ticket 439. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

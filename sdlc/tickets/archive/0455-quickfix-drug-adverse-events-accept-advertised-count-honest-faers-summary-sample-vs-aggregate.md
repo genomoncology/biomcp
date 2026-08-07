@@ -6,8 +6,8 @@ priority: 5
 
 `biomcp drug adverse-events <name>` has two related problems that together let an agent report a fabricated safety signal:
 
-Completed under March on 2026-06-29, as March ticket 455. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-29, as March ticket 455. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

@@ -6,8 +6,8 @@ priority: 9
 
 Absorbs issues: `383-pmc-oa-archive-manifest-spec-gap`, `384-pmc-fulltext-retrieval-fails-for-open-access-articles`, `386-asset-routes-standalone-contract-gap`, `386-markdown-asset-inline-negative-contract-gap`, `399-non-tty-tracing-keeps-ansi-and-internal-asset-warnings`. (Plus the figshare-sibling gap and the fulltext-rung gap from the 407 spike.)
 
-Completed under March on 2026-06-09, as March ticket 409. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-09, as March ticket 409. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

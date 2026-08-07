@@ -6,8 +6,8 @@ priority: 10
 
 Bump memmap2 0.9.10->0.9.11 and document-ignore RUSTSEC-2026-0186 (cacache-pinned 0.5.10) to green make lint repo-wide.
 
-Completed under March on 2026-06-22, as March ticket 431. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-22, as March ticket 431. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 

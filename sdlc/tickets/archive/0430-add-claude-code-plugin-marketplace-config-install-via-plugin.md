@@ -6,8 +6,8 @@ priority: 5
 
 A contributor (renato-umeton) prototyped this on a fork but can't open a PR. This ticket lands a correct, schema-current version in-repo. Note: BioMCP **already** has a "skill" system (`biomcp skill install`, the `skills/` directory) — that is unrelated to this. The actual gap is the Claude Code **plugin marketplace** packaging so the `/plugin` flow works.
 
-Completed under March on 2026-06-22, as March ticket 430. Imported as history when BioMCP
-moved to the sdlc factory; it was never run by this factory.
+Completed under March on 2026-06-22, as March ticket 430. Imported as history when this
+repo moved to the sdlc factory; it was never run by this factory.
 
 Work products from the run — design, reviews, dev log, verify:
 
