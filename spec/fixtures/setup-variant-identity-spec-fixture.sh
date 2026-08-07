@@ -39,6 +39,11 @@ BRAF_MISSENSE_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_missens
 BRAF_REVEL_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_revel_20260805.json").read_bytes()
 BRAF_V600E_RESPONSE = (ROOT / "testdata/sources/myvariant/search_braf_v600e_20260806.json").read_bytes()
 BRAF_V600E_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e_grch38_20260806.json").read_bytes()
+BRAF_V600E_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_braf_v600e.json").read_bytes()
+GRID1_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch37_20260806.json").read_bytes()
+GRID1_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch38_20260806.json").read_bytes()
+PTEN_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_pten_grch38_20260806.json").read_bytes()
+PTEN_DELETION_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_pten_deletion_grch38_20260806.json").read_bytes()
 MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
 CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
@@ -68,6 +73,33 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/v1/variant/chr7:g.140753336A%3ET":
             if parse_qs(parsed.query).get("assembly") == ["hg38"]:
                 send_json(self, 200, BRAF_V600E_GRCH38_RESPONSE)
+                return
+            send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
+            return
+        if parsed.path == "/v1/variant/chr7:g.140453136A%3ET":
+            if parse_qs(parsed.query).get("assembly") == ["hg19"]:
+                send_json(self, 200, BRAF_V600E_GRCH37_RESPONSE)
+                return
+            send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
+            return
+        if parsed.path == "/v1/variant/chr10:g.87933119A%3EC":
+            if parse_qs(parsed.query).get("assembly") == ["hg19"]:
+                send_json(self, 200, GRID1_GRCH37_RESPONSE)
+                return
+            if parse_qs(parsed.query).get("assembly") == ["hg38"]:
+                send_json(self, 200, GRID1_GRCH38_RESPONSE)
+                return
+            send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
+            return
+        if parsed.path == "/v1/variant/chr10:g.87925512G%3EA":
+            if parse_qs(parsed.query).get("assembly") == ["hg38"]:
+                send_json(self, 200, PTEN_GRCH38_RESPONSE)
+                return
+            send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
+            return
+        if parsed.path == "/v1/variant/chr10:g.87925512del":
+            if parse_qs(parsed.query).get("assembly") == ["hg38"]:
+                send_json(self, 200, PTEN_DELETION_GRCH38_RESPONSE)
                 return
             send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
             return
