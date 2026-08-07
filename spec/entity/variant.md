@@ -160,9 +160,9 @@ biomcp --json --no-cache get variant '{{input}}' \
 ```
 
 Versioned RefSeq accessions identify their build from the accession version.
-VCF-like and SPDI forms name the same single-nucleotide substitution, and a
-versioned RefSeq deletion retains its indel semantics rather than being reduced
-to an SNV.
+VCF-like and SPDI forms name the same single-nucleotide substitution. A
+versioned RefSeq deletion remains an accepted deletion spelling and is rewritten
+to the captured provider identity.
 
 ### Versioned and alternate coordinate grammars
 
@@ -179,6 +179,8 @@ biomcp --json --no-cache get variant '{{input}}' \
   | mustmatch like '{"id":"{{id}}","gene":"{{gene}}","genome_build":"GRCh38"}'
 ```
 
+### Bare-coordinate build disambiguation
+
 A bare coordinate is probed in both builds only when needed. A GRCh38-only
 coordinate resolves as GRCh38. When both builds have different records,
 BioMCP preserves the GRCh37-compatible default and makes the competing
@@ -192,15 +194,22 @@ biomcp --json --no-cache get variant 'chr7:g.140753336A>T' \
 
 ```bash
 biomcp --json --no-cache get variant 'chr10:g.87933119A>C' \
-  | jq '{id, rsid, genome_build, build_ambiguous, build_candidates}' \
-  | mustmatch like '"id":"chr10:g.87933119A>C"
-"rsid":"rs1212585646"
-"genome_build":"GRCh37"
-"build_ambiguous":true
-"GRCh37"
-"rs1212585646"
-"GRCh38"
-"rs759485888"'
+  | jq '{id, rsid, genome_build, build_ambiguous, build_candidates: [.build_candidates[]? | {genome_build, id, rsid}] | sort_by(.genome_build)}' \
+  | mustmatch like '{"id":"chr10:g.87933119A>C","rsid":"rs1212585646","genome_build":"GRCh37","build_ambiguous":true,"build_candidates":[{"genome_build":"GRCh37","id":"chr10:g.87933119A>C","rsid":"rs1212585646"},{"genome_build":"GRCh38","id":"chr10:g.87933119A>C","rsid":"rs759485888"}]}'
+```
+
+## Documented coordinate grammar
+
+The user guide lists the build-qualified and alternate genomic forms accepted by
+`get variant`, so callers can choose a known build instead of relying on a bare
+coordinate.
+
+```bash
+grep -E 'GRCh38:chr|NC_000010\.11:g\.|chr10:87925512:G:A|NC_000010\.11:87925511:G:A' ../../docs/user-guide/variant.md \
+  | mustmatch like 'GRCh38:chr
+NC_000010.11:g.
+chr10:87925512:G:A
+NC_000010.11:87925511:G:A'
 ```
 
 ## Captured CancerHotspots Recurrence
