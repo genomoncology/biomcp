@@ -1,6 +1,27 @@
 use clap::Parser;
 
 use crate::cli::{Cli, Commands, VariantCommand};
+use crate::entities::variant::GenomeBuild;
+
+#[tokio::test]
+async fn rejects_assembly_for_transcript_hgvs() {
+    let err = crate::cli::variant::handle_get(
+        crate::cli::variant::VariantGetArgs {
+            assembly: Some(GenomeBuild::Grch38),
+            id: "NM_004333.6:c.1799T>A".into(),
+            sections: Vec::new(),
+        },
+        false,
+        false,
+    )
+    .await
+    .expect_err("assembly should reject transcript HGVS before lookup");
+
+    assert_eq!(
+        err.to_string(),
+        "Invalid argument: --assembly only applies to chromosome-prefixed genomic SNVs"
+    );
+}
 
 #[test]
 fn preserves_positional_syntax_and_accepts_structured_input() {

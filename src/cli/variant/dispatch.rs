@@ -6,6 +6,7 @@ use crate::cli::{
     PaginationMeta, empty_sections, normalize_cli_query, pagination_footer_offset,
     search_json_with_meta,
 };
+use crate::entities::variant::{VariantIdFormat, VariantInputKind};
 use crate::error::BioMcpError;
 
 pub(crate) async fn handle_get(
@@ -498,8 +499,8 @@ async fn render_variant_card_outcome(
     let json_output = json || json_override;
     if args.assembly.is_some()
         && !matches!(
-            crate::entities::variant::parse_variant_id(&args.id)?,
-            crate::entities::variant::VariantIdFormat::HgvsGenomic(_)
+            crate::entities::variant::classify_variant_input(&args.id),
+            VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(_))
         )
     {
         return Err(BioMcpError::InvalidArgument(
