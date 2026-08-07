@@ -1,0 +1,18 @@
+---
+flow: build
+priority: 8
+---
+# Expand operator proof surfaces for new sources
+
+The source-addition checklist says new integrations should deliberately evaluate `biomcp health` and `scripts/contract-smoke.sh`, but the KEGG, HPA, ComplexPortal, and g:Profiler surfaces are still only partially represented in operator checks. Several docs currently describe `health` as a stronger readiness signal than the code actually provides.
+
+Completed under March on 2026-03-19, as March ticket 018. Imported as history when BioMCP
+moved to the sdlc factory; it was never run by this factory.
+
+Work products from the run — design, reviews, dev log, verify:
+
+    /home/ian/workspace/planning/biomcp/artifacts/018-source-operator-proof-surfaces
+
+The landed commit range could not be recovered from git, so no
+record accompanies this entry. That is a known gap for the
+earliest tickets, not a sign the work is missing.
