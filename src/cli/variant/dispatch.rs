@@ -500,7 +500,7 @@ async fn render_variant_card_outcome(
         && crate::entities::variant::normalize_genomic_coordinate(&args.id)?.is_none()
     {
         return Err(BioMcpError::InvalidArgument(
-            "--assembly only applies to chromosome-prefixed genomic SNVs".into(),
+            "--assembly only applies to chromosome-prefixed genomic coordinates".into(),
         )
         .into());
     }

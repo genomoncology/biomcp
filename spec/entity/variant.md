@@ -205,11 +205,12 @@ The user guide lists the build-qualified and alternate genomic forms accepted by
 coordinate.
 
 ```bash
-grep -E 'GRCh38:chr|NC_000010\.11:g\.|chr10:87925512:G:A|NC_000010\.11:87925511:G:A' ../../docs/user-guide/variant.md \
+grep -E 'GRCh38:chr|NC_000010\.11:g\.|chr10:87925512:G:A|NC_000010\.11:87925511:G:A|NC_000010\.11:g\.87925512del' ../../docs/user-guide/variant.md \
   | mustmatch like 'GRCh38:chr
 NC_000010.11:g.
 chr10:87925512:G:A
-NC_000010.11:87925511:G:A'
+NC_000010.11:87925511:G:A
+NC_000010.11:g.87925512del'
 ```
 
 ## Captured CancerHotspots Recurrence

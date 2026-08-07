@@ -73,7 +73,7 @@ pub struct VariantGetArgs {
     /// Declare the genome build for a genomic coordinate (hg19/hg38; GRCh37/GRCh38 aliases)
     #[arg(long, value_name = "hg19|hg38")]
     pub assembly: Option<crate::entities::variant::GenomeBuild>,
-    /// Exact rsID, genomic coordinate, or "GENE CHANGE" (e.g., rs113488022, GRCh38:chr7:g.140753336A>T, NC_000010.11:g.87925512G>A, chr10:87925512:G:A, NC_000010.11:87925511:G:A, "BRAF V600E")
+    /// Exact rsID, genomic coordinate, or "GENE CHANGE" (e.g., rs113488022, GRCh38:chr7:g.140753336A>T, NC_000010.11:g.87925512G>A, chr10:87925512:G:A, NC_000010.11:87925511:G:A, NC_000010.11:g.87925512del, "BRAF V600E")
     pub id: String,
     /// Sections to include (predict, predictions, clinvar, population, conservation, cosmic, cgi, civic, cbioportal, gwas, all)
     #[arg(trailing_var_arg = true)]

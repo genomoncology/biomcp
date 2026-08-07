@@ -19,7 +19,7 @@ async fn rejects_assembly_for_transcript_hgvs() {
 
     assert_eq!(
         err.to_string(),
-        "Invalid argument: --assembly only applies to chromosome-prefixed genomic SNVs"
+        "Invalid argument: --assembly only applies to chromosome-prefixed genomic coordinates"
     );
 }
 

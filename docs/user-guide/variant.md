@@ -13,10 +13,16 @@ BioMCP supports multiple input forms:
 - versioned RefSeq HGVS: `NC_000010.11:g.87925512G>A`
 - VCF-like: `chr10:87925512:G:A`
 - SPDI: `NC_000010.11:87925511:G:A`
+- versioned RefSeq deletion: `NC_000010.11:g.87925512del`
 - gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`
 
 These exact formats are accepted by `biomcp get variant` and the exact-ID
-helper commands.
+helper commands. Use `--assembly hg19` or `--assembly hg38` to declare the
+build for a chromosome-prefixed coordinate; build-qualified and versioned RefSeq
+inputs already establish it. For a bare coordinate, BioMCP checks GRCh37 first
+and checks GRCh38 when needed. If the same spelling identifies different records,
+it returns the GRCh37-compatible record and reports the competing identity in
+`build_candidates` JSON and a Markdown warning.
 
 ## ClinGen Allele Registry normalization
 
