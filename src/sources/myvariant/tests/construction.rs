@@ -2,7 +2,7 @@
 //! method / path / query that would be sent, plus every validation error and the
 //! filter-normalization helpers. Nothing is sent.
 
-use crate::entities::variant::VariantProteinAlias;
+use crate::entities::variant::{GenomeBuild, VariantProteinAlias};
 use crate::error::BioMcpError;
 use crate::sources::HttpMethod;
 use crate::sources::myvariant::{
@@ -650,12 +650,20 @@ fn get_plan_builds_variant_path_with_get_fields() {
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "variant/rs113488022");
     assert_eq!(plan.query_value("fields"), Some(MYVARIANT_FIELDS_GET));
+    assert_eq!(plan.query_value("assembly"), None);
     let fields = plan.query_value("fields").unwrap();
     assert!(fields.contains("dbnsfp.bayesdel.add_af.score"));
     assert!(fields.contains("dbnsfp.bayesdel.add_af.pred"));
     assert!(fields.contains("dbnsfp.bayesdel.no_af.score"));
     assert!(fields.contains("dbnsfp.bayesdel.no_af.pred"));
     assert!(!fields.contains("bayesdel_addaf"));
+}
+
+#[test]
+fn get_plan_serializes_explicit_genome_build() {
+    let plan = MyVariantClient::get_plan("chr7:g.140753336A>T", Some(GenomeBuild::Grch38)).unwrap();
+
+    assert_eq!(plan.query_value("assembly"), Some("hg38"));
 }
 
 #[test]
