@@ -43,7 +43,7 @@ fn search_params() -> VariantSearchParams {
 #[ignore = "live network"]
 async fn live_get_braf_v600e_returns_hit() {
     let hit = client()
-        .get("chr7:g.140453136A>T")
+        .get("chr7:g.140453136A>T", None)
         .await
         .expect("live get BRAF V600E");
     assert_eq!(hit.id, "chr7:g.140453136A>T");
@@ -56,7 +56,10 @@ async fn live_get_braf_v600e_returns_hit() {
 #[tokio::test]
 #[ignore = "live network"]
 async fn live_get_unknown_variant_is_not_found() {
-    let err = client().get("chr1:g.999999999999A>T").await.unwrap_err();
+    let err = client()
+        .get("chr1:g.999999999999A>T", None)
+        .await
+        .unwrap_err();
     assert!(matches!(
         err,
         BioMcpError::NotFound { .. } | BioMcpError::Api { .. }

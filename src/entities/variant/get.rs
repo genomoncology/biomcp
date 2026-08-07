@@ -22,9 +22,9 @@ use super::gwas::mark_gwas_unavailable;
 use super::resolution::hgvs_coords_re;
 use super::resolution::parse_variant_id;
 use super::{
-    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
-    VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
-    classify_variant_input, normalize_variant,
+    GenomeBuild, TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat,
+    VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
+    VariantOncoKbResult, classify_variant_input, normalize_variant,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -322,6 +322,7 @@ async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, 
 
 pub(super) async fn resolve_base_with_hit(
     id: &str,
+    genome_build: Option<GenomeBuild>,
 ) -> Result<
     (
         Variant,
@@ -355,7 +356,7 @@ pub(super) async fn resolve_base_with_hit(
     let myvariant = MyVariantClient::new()?;
     let hit = match &id_format {
         VariantIdFormat::HgvsGenomic(hgvs) => {
-            let direct = myvariant.get(hgvs).await;
+            let direct = myvariant.get(hgvs, genome_build).await;
             if matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_)) && direct.is_err() {
                 let q = transcript_hgvs_clinvar_query(id);
                 let resp = myvariant
@@ -425,17 +426,21 @@ pub(super) async fn resolve_base_with_hit(
         }
     };
 
-    let variant = transform::variant::from_myvariant_hit(&hit);
+    let mut variant = transform::variant::from_myvariant_hit(&hit);
+    variant.genome_build = genome_build;
     Ok((variant, id_format, hit))
 }
 
-async fn resolve_base(id: &str) -> Result<(Variant, VariantIdFormat), BioMcpError> {
-    let (variant, id_format, _) = resolve_base_with_hit(id).await?;
+async fn resolve_base(
+    id: &str,
+    genome_build: Option<GenomeBuild>,
+) -> Result<(Variant, VariantIdFormat), BioMcpError> {
+    let (variant, id_format, _) = resolve_base_with_hit(id, genome_build).await?;
     Ok((variant, id_format))
 }
 
 pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
-    let (variant, id_format) = resolve_base(id).await?;
+    let (variant, id_format) = resolve_base(id, None).await?;
     let gene = variant.gene.trim();
     if gene.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -762,6 +767,7 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         section_outcomes: super::default_variant_section_outcomes(),
         gene: String::new(),
         id: rsid.to_string(),
+        genome_build: None,
         hgvs_p: None,
         legacy_name: None,
         hgvs_c: None,
@@ -819,7 +825,7 @@ fn strip_civic_live_details(variant: &mut Variant) {
 }
 
 pub async fn get(id: &str, sections: &[String]) -> Result<Variant, BioMcpError> {
-    Ok(get_with_workflow_signals(id, sections).await?.0)
+    Ok(get_with_workflow_signals(id, sections, None).await?.0)
 }
 
 fn has_clinvar_workflow_signal(variant: &Variant) -> bool {
@@ -839,6 +845,7 @@ fn has_clinvar_workflow_signal(variant: &Variant) -> bool {
 pub async fn get_with_workflow_signals(
     id: &str,
     sections: &[String],
+    genome_build: Option<GenomeBuild>,
 ) -> Result<(Variant, VariantWorkflowSignals), BioMcpError> {
     let section_flags = parse_sections(sections)?;
     if is_gwas_only_request(&section_flags)
@@ -849,7 +856,7 @@ pub async fn get_with_workflow_signals(
         return Ok((variant, VariantWorkflowSignals::default()));
     }
 
-    let (mut variant, id_format) = resolve_base(id).await?;
+    let (mut variant, id_format) = resolve_base(id, genome_build).await?;
     let signals = VariantWorkflowSignals {
         has_clinvar_signal: has_clinvar_workflow_signal(&variant),
     };

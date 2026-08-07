@@ -47,6 +47,7 @@ pub fn variant_markdown(
         section_only => section_only,
         section_header => section_header(&variant_label, requested_sections),
         id => &variant.id,
+        genome_build => &variant.genome_build,
         variant_command_arg => variant_command_arg,
         gene => &variant.gene,
         gene_command_arg => gene_command_arg,

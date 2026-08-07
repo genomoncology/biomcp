@@ -6,6 +6,7 @@ use crate::cli::{
     PaginationMeta, empty_sections, normalize_cli_query, pagination_footer_offset,
     search_json_with_meta,
 };
+use crate::entities::variant::{VariantIdFormat, VariantInputKind};
 use crate::error::BioMcpError;
 
 pub(crate) async fn handle_get(
@@ -13,9 +14,7 @@ pub(crate) async fn handle_get(
     json: bool,
     alias_suggestions_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
-    let json_output = json || json_override;
-    render_variant_card_outcome(&args.id, &sections, json_output, alias_suggestions_as_json).await
+    render_variant_card_outcome(args, json, alias_suggestions_as_json).await
 }
 
 pub(crate) async fn handle_search(
@@ -492,16 +491,30 @@ pub(super) fn resolve_variant_query(
 }
 
 async fn render_variant_card_outcome(
-    id: &str,
-    sections: &[String],
-    json_output: bool,
+    args: VariantGetArgs,
+    json: bool,
     guidance_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    if let Some(guidance) = crate::entities::variant::variant_guidance(id) {
+    let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
+    let json_output = json || json_override;
+    if args.assembly.is_some()
+        && !matches!(
+            crate::entities::variant::classify_variant_input(&args.id),
+            VariantInputKind::Exact(VariantIdFormat::HgvsGenomic(_))
+        )
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "--assembly only applies to chromosome-prefixed genomic SNVs".into(),
+        )
+        .into());
+    }
+    if let Some(guidance) = crate::entities::variant::variant_guidance(&args.id) {
         return variant_guidance_outcome(&guidance, json_output || guidance_as_json);
     }
 
-    match crate::entities::variant::get_with_workflow_signals(id, sections).await {
+    match crate::entities::variant::get_with_workflow_signals(&args.id, &sections, args.assembly)
+        .await
+    {
         Ok((variant, signals)) => {
             let text = if json_output {
                 let workflow = signals
@@ -520,7 +533,7 @@ async fn render_variant_card_outcome(
                     workflow,
                 )?
             } else {
-                crate::render::markdown::variant_markdown(&variant, sections)?
+                crate::render::markdown::variant_markdown(&variant, &sections)?
             };
             Ok(CommandOutcome::stdout(text))
         }

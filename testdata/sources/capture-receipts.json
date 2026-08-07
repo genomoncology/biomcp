@@ -760,6 +760,18 @@
       }
     },
     {
+      "path": "myvariant/get_braf_v600e_grch38_20260806.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr7%3Ag.140753336A%3ET?assembly=hg38",
+        "captured_at": "2026-08-06T17:00:00Z",
+        "sha256": "78f7159bf545e417740ddf3781643c267b18cef2e21da9e7c34aa5e2830f1aed",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public provider response before permitted minimization."
+      }
+    },
+    {
       "path": "myvariant/search_braf_missense_20260805.json",
       "classification": "real_and_receipted",
       "receipt": {

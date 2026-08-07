@@ -982,6 +982,7 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
     Variant {
         section_outcomes: crate::entities::variant::default_variant_section_outcomes(),
         id: hit.id.clone(),
+        genome_build: None,
         gene,
         hgvs_p,
         legacy_name,

@@ -585,6 +585,7 @@ See also: biomcp list trial")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp get variant rs113488022
+  biomcp get variant --assembly hg38 'chr7:g.140753336A>T'
   biomcp get variant \"BRAF V600E\" clinvar
   biomcp get variant \"BRAF p.Val600Glu\"
   biomcp get variant 'NM_004333.6:c.1799T>A'
