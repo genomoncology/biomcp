@@ -1,0 +1,26 @@
+#!/bin/sh
+# integrate — teardown after a landed run.
+#
+# Environment: QUEUE_ID; optional QUEUE_REPO.
+# The landing already happened inside the run: the final stage rebased onto
+# origin/main and pushed --ff-only, and its gate verified the result (sdlc
+# ADR 0008). So there is nothing to merge here. This removes the worktree and
+# the branch, locally and on origin. It never touches main.
+set -eu
+
+: "${QUEUE_ID:?integrate: QUEUE_ID is required}"
+
+if [ -n "${QUEUE_REPO-}" ]; then
+	REPO=$QUEUE_REPO
+else
+	REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+fi
+NAME=$(basename "$REPO")
+BRANCH="ticket/$QUEUE_ID"
+WORKTREES=${SDLC_WORKTREES:-$HOME/workspace/worktrees}
+TREE="$WORKTREES/$NAME/$QUEUE_ID"
+
+git -C "$REPO" worktree remove --force "$TREE" >/dev/null 2>&1 || rm -rf "$TREE"
+git -C "$REPO" worktree prune >/dev/null 2>&1 || true
+git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
+git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1 || true

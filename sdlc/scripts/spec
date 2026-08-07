@@ -1,0 +1,33 @@
+#!/bin/sh
+# spec — the top rung of the gate ladder: does the work match what was asked?
+#
+# BioMCP: `make spec` — the mustmatch pages under SPEC_ROUTINE_PATHS, run
+# against a freshly built binary, plus the static surface pages. These are
+# the deterministic, fixture-backed assertions only.
+#
+# The live lane (`make verify`) is deliberately NOT a rung here. It calls
+# real external services, so it fails for reasons no agent caused, and an
+# unattended flight must not be judged on someone else's uptime. It is an
+# operator-run check — see sdlc/planning/verify-lane.md.
+set -eu
+
+# The repo is this script's own home when invoked as a file — prepare and
+# the template tests run it from arbitrary working directories, and cwd
+# resolution here once made a test suite run itself recursively (the
+# 2026-08-06 storm). Only a gate piping it into sh ($0 names no file)
+# falls back to the working tree, which is exactly the tree it judges.
+case $0 in
+*/spec) REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd) ;;
+*) REPO=$(git rev-parse --show-toplevel) ;;
+esac
+
+# Reentrancy sentinel, scoped to the repo: a check for THIS repo already
+# running above us means some path is recursive — fail loudly instead of
+# forking a storm (2026-08-06). A different repo (a test fixture) is fine.
+if [ "${SDLC_IN_CHECK-}" = "$REPO" ]; then
+	echo "refusing: a check for $REPO is already running above us (recursion)" >&2
+	exit 2
+fi
+export SDLC_IN_CHECK="$REPO"
+
+exec make -C "$REPO" spec

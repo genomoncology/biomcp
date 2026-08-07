@@ -1,0 +1,42 @@
+#!/bin/sh
+# discard — tear down after a run that did not land.
+#
+# Environment: QUEUE_ID, QUEUE_OUTCOME; optional QUEUE_REPO.
+# Only `blocked` lingers (sdlc ADR 0005):
+#   blocked        nothing is touched — the tree AND the branch are what a
+#                  human opens
+#   failed         the tree goes; the branch is kept, locally and on origin,
+#                  for reading
+#   anything else  the tree goes, and so do the local branch and the origin
+#                  claim branch
+# Exits 0 on a clean teardown.
+set -eu
+
+: "${QUEUE_ID:?discard: QUEUE_ID is required}"
+
+if [ -n "${QUEUE_REPO-}" ]; then
+	REPO=$QUEUE_REPO
+else
+	REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+fi
+NAME=$(basename "$REPO")
+BRANCH="ticket/$QUEUE_ID"
+WORKTREES=${SDLC_WORKTREES:-$HOME/workspace/worktrees}
+TREE="$WORKTREES/$NAME/$QUEUE_ID"
+OUTCOME=${QUEUE_OUTCOME-}
+
+if [ "$OUTCOME" = "blocked" ]; then
+	echo "discard: $QUEUE_ID is blocked — keeping $TREE and $BRANCH for a human" >&2
+	exit 0
+fi
+
+git -C "$REPO" worktree remove --force "$TREE" >/dev/null 2>&1 || rm -rf "$TREE"
+git -C "$REPO" worktree prune >/dev/null 2>&1 || true
+
+if [ "$OUTCOME" = "failed" ]; then
+	echo "discard: $QUEUE_ID failed — removed $TREE, keeping $BRANCH for reading" >&2
+	exit 0
+fi
+
+git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
+git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1 || true

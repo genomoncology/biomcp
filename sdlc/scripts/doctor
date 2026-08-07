@@ -1,0 +1,50 @@
+#!/bin/sh
+# doctor — report on this project's SDLC health. Plain text on stdout, exit 0.
+#
+# It reports; it never deletes (sdlc ADR 0005). Removal is a flag passed by
+# someone who agrees with the report. Three lists: the worktrees on disk, the
+# ticket branches here, and the claims on origin.
+set -eu
+
+REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+NAME=$(basename "$REPO")
+WORKTREES=${SDLC_WORKTREES:-$HOME/workspace/worktrees}
+ROOT="$WORKTREES/$NAME"
+
+echo "doctor: $NAME ($REPO)"
+echo
+
+echo "worktrees under $ROOT"
+if [ -d "$ROOT" ]; then
+	found=0
+	for d in "$ROOT"/*; do
+		[ -d "$d" ] || continue
+		found=1
+		echo "  $(basename "$d") — tree on disk at $d"
+	done
+	[ "$found" = 1 ] || echo "  (none)"
+else
+	echo "  (none — $ROOT does not exist)"
+fi
+echo
+
+echo "local ticket branches"
+locals=$(git -C "$REPO" for-each-ref --format='%(refname:short)' 'refs/heads/ticket/*' || true)
+if [ -n "$locals" ]; then
+	echo "$locals" | while read -r b; do
+		echo "  $b — local branch, last commit: $(git -C "$REPO" log -1 --format='%s (%cr)' "$b")"
+	done
+else
+	echo "  (none)"
+fi
+echo
+
+echo "ticket branches on origin"
+remotes=$(git -C "$REPO" ls-remote --heads origin 'refs/heads/ticket/*' 2>/dev/null || true)
+if [ -n "$remotes" ]; then
+	echo "$remotes" | while read -r _sha ref; do
+		echo "  ${ref#refs/heads/} — claimed on origin"
+	done
+else
+	echo "  (none)"
+fi

@@ -1,0 +1,128 @@
+#!/bin/sh
+# prepare — verify main is green, claim the ticket branch on origin, make a
+# worktree, print its absolute path on stdout.
+#
+# Environment (queue ADR 0009): QUEUE_ID, QUEUE_REF, QUEUE_FLOW, QUEUE_CHANNEL;
+# optional QUEUE_REPO.
+# Exit vocabulary (queue ADR 0009):
+#   0  tree ready, path on stdout
+#   3  claimed elsewhere — another machine holds the branch on origin
+#   4  environment refuses — main is not green (sdlc ADR 0006)
+#   *  fault
+# Nothing but the worktree path ever goes to stdout.
+set -eu
+
+# stdout is reserved for the one line this script owes its caller. Everything
+# else a git or a gate prints is chatter and belongs on stderr.
+exec 3>&1 1>&2
+
+: "${QUEUE_ID:?prepare: QUEUE_ID is required}"
+
+if [ -n "${QUEUE_REPO-}" ]; then
+	REPO=$QUEUE_REPO
+else
+	REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+fi
+NAME=$(basename "$REPO")
+BRANCH="ticket/$QUEUE_ID"
+WORKTREES=${SDLC_WORKTREES:-$HOME/workspace/worktrees}
+TREE="$WORKTREES/$NAME/$QUEUE_ID"
+
+# Remove the tree and the local branch. Called on every refusal, so a refused
+# prepare leaves nothing behind on this machine.
+undo() {
+	git -C "$REPO" worktree remove --force "$TREE" >/dev/null 2>&1 || rm -rf "$TREE"
+	git -C "$REPO" worktree prune >/dev/null 2>&1 || true
+	git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
+}
+
+# 1. Fetch. Everything below reads origin/main, so it has to be current.
+if ! git -C "$REPO" fetch --quiet --prune origin; then
+	echo "prepare: git fetch origin failed" >&2
+	exit 1
+fi
+
+# 2. The tree branches from origin/main, NEVER from local main. A local main
+# may be stale, may carry uncommitted state, and differs between machines
+# (sdlc ADR 0006). This is deliberate — do not simplify it to `main`.
+mkdir -p "$WORKTREES/$NAME"
+if ! git -C "$REPO" worktree add --quiet -b "$BRANCH" "$TREE" origin/main; then
+	echo "prepare: could not create worktree $TREE on $BRANCH" >&2
+	exit 1
+fi
+
+# 3. Green check, in that tree, using this project's own gate ladder.
+# It runs BEFORE the claim push, deliberately: a red main must not leave an
+# orphan claim branch on origin for every ticket that tried and was refused.
+gate() {
+	script="$TREE/sdlc/scripts/$1"
+	if [ ! -x "$script" ]; then
+		echo "prepare: $REPO has no executable sdlc/scripts/$1" >&2
+		return 2
+	fi
+	( cd "$TREE" && "$script" ) || return 1
+}
+
+# quickfix is exempt: repairing a red main is the whole job (sdlc ADR 0006).
+if [ "${QUEUE_FLOW-}" != "quickfix" ]; then
+	for g in lint test; do
+		status=0
+		gate "$g" || status=$?
+		if [ "$status" -eq 0 ]; then
+			continue
+		fi
+		undo
+		if [ "$status" = 2 ]; then
+			exit 1 # a missing gate is a fault, not a refusal
+		fi
+		echo "prepare: origin/main is not green — sdlc/scripts/$g failed" >&2
+		exit 4
+	done
+fi
+
+# 4. Claim. The branch on origin is the lock, and the commit says who holds it
+# and since when so the doctor can report staleness (queue ADR 0008).
+
+# Whoever holds the claim, said in their own words — or empty if it is free.
+held() {
+	git -C "$REPO" ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1 || return 1
+	git -C "$REPO" fetch --quiet origin "refs/heads/$BRANCH" >/dev/null 2>&1 || return 0
+	git -C "$REPO" log -1 --format=%s FETCH_HEAD 2>/dev/null || return 0
+}
+
+# Look before pushing. A rejected push is the atomic guard, but it is not
+# sufficient on its own: two clones of one repo can build a byte-identical
+# empty claim commit in the same second, and git reports pushing an identical
+# ref as "up to date" rather than rejecting it. Across machines the hostname
+# in the message differs, so the commits differ and the push does reject; on
+# one machine the lease is the exclusion that applies (queue ADR 0008's two
+# scopes). This check closes the gap in between.
+if who=$(held); then
+	undo
+	echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+	exit 3
+fi
+
+HOST=$(hostname 2>/dev/null || uname -n)
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+if ! git -C "$TREE" commit --quiet --allow-empty -m "claim: $HOST $NOW"; then
+	undo
+	echo "prepare: could not write the claim commit" >&2
+	exit 1
+fi
+
+if ! git -C "$REPO" push --quiet origin "refs/heads/$BRANCH:refs/heads/$BRANCH"; then
+	# Rejected because someone got there first, or because the push broke.
+	# Only the first is a claim held elsewhere; the second is a fault.
+	if who=$(held); then
+		undo
+		echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+		exit 3
+	fi
+	undo
+	echo "prepare: pushing the claim $BRANCH failed" >&2
+	exit 1
+fi
+
+# 5. The path, and only the path.
+printf '%s\n' "$TREE" >&3
