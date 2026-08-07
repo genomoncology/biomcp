@@ -1055,6 +1055,8 @@ mod tests {
             gene: String::new(),
             id: "rs7903146".to_string(),
             genome_build: None,
+            build_ambiguous: None,
+            build_candidates: Vec::new(),
             hgvs_p: None,
             legacy_name: None,
             hgvs_c: None,

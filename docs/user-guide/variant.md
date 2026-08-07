@@ -9,6 +9,10 @@ BioMCP supports multiple input forms:
 
 - rsID: `rs113488022`
 - HGVS genomic: `chr7:g.140453136A>T`
+- build-qualified genomic: `GRCh38:chr7:g.140753336A>T` or `hg19:chr7:g.140453136A>T`
+- versioned RefSeq HGVS: `NC_000010.11:g.87925512G>A`
+- VCF-like: `chr10:87925512:G:A`
+- SPDI: `NC_000010.11:87925511:G:A`
 - gene-protein form: `BRAF V600E`, `BRAF p.Val600Glu`
 
 These exact formats are accepted by `biomcp get variant` and the exact-ID

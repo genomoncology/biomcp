@@ -15,7 +15,7 @@ const MYVARIANT_BASE_ENV: &str = "BIOMCP_MYVARIANT_BASE";
 
 pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "_id,cadd.phred,cadd.consequence,",
-    "clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.variant_id,",
+    "clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.variant_id,",
     "dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,",
     "dbnsfp.sift.pred,dbnsfp.sift.score,",
     "dbnsfp.polyphen2.hdiv.pred,",
@@ -767,7 +767,17 @@ impl MyVariantClient {
         let id = id.trim();
         let plan = Self::get_plan(id, genome_build)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let value: serde_json::Value = self.get_json(req).await?;
+        let value: serde_json::Value = self.get_json(req).await.map_err(|error| {
+            if error.is_not_found() {
+                BioMcpError::NotFound {
+                    entity: "variant".into(),
+                    id: id.to_string(),
+                    suggestion: "Try searching: biomcp search variant".into(),
+                }
+            } else {
+                error
+            }
+        })?;
         let hit_value = Self::select_get_hit_value(value, id)?;
         serde_json::from_value(hit_value).map_err(|source| BioMcpError::ApiJson {
             api: MYVARIANT_API.to_string(),
@@ -983,8 +993,14 @@ pub struct MyVariantGerp {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyVariantClinVar {
     pub variant_id: Option<u64>,
+    pub gene: Option<MyVariantClinVarGene>,
     #[serde(default, deserialize_with = "de_vec_or_single")]
     pub rcv: Vec<MyVariantClinVarRcv>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MyVariantClinVarGene {
+    pub symbol: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

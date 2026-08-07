@@ -511,6 +511,7 @@ impl BioMcpError {
         match self {
             Self::WithSourceContext { source, .. } => source.is_not_found(),
             Self::NotFound { .. } => true,
+            Self::Api { message, .. } => message.starts_with("HTTP 404"),
             _ => false,
         }
     }

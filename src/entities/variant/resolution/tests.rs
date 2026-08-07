@@ -1,6 +1,54 @@
 //! Sidecar tests for variant resolution helpers.
 
 use super::*;
+use crate::entities::variant::GenomeBuild;
+
+#[test]
+fn versioned_refseq_rows_normalize_to_their_chromosome_and_build() {
+    for (accession, chromosome, genome_build) in REFSEQ_GENOMIC_BUILDS {
+        let coordinate = normalize_genomic_coordinate(&format!("{accession}:g.1A>T"))
+            .expect("valid RefSeq coordinate")
+            .expect("recognized RefSeq coordinate");
+        assert_eq!(coordinate.id, format!("{chromosome}:g.1A>T"));
+        assert_eq!(coordinate.genome_build, Some(*genome_build));
+        assert!(!coordinate.requires_comparison);
+    }
+}
+
+#[test]
+fn coordinate_normalizer_handles_aliases_and_alternate_spellings() {
+    let rows = [
+        (
+            "GRCh37:chr7:g.140453136A>T",
+            "chr7:g.140453136A>T",
+            Some(GenomeBuild::Grch37),
+        ),
+        (
+            "hg38:chr7:g.140753336A>T",
+            "chr7:g.140753336A>T",
+            Some(GenomeBuild::Grch38),
+        ),
+        ("chr10:87925512:G:A", "chr10:g.87925512G>A", None),
+        (
+            "NC_000010.11:87925511:G:A",
+            "chr10:g.87925512G>A",
+            Some(GenomeBuild::Grch38),
+        ),
+        (
+            "NC_000010.11:g.87925512del",
+            "chr10:g.87925512del",
+            Some(GenomeBuild::Grch38),
+        ),
+    ];
+    for (input, id, build) in rows {
+        let coordinate = normalize_genomic_coordinate(input).unwrap().unwrap();
+        assert_eq!(coordinate.id, id);
+        assert_eq!(coordinate.genome_build, build);
+    }
+    assert!(normalize_genomic_coordinate("NC_000010:g.1A>T").is_err());
+    assert!(normalize_genomic_coordinate("NC_000010.99:g.1A>T").is_err());
+    assert!(normalize_genomic_coordinate("chr10:g.0A>T").is_err());
+}
 
 #[test]
 fn parse_variant_id_examples() {

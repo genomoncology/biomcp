@@ -1135,6 +1135,26 @@
       "path": "variant_articles_683/panel-landmark-map.json",
       "classification": "synthetic_and_ineligible",
       "ineligible_reason": "Data documentation that correlates receipt-backed provider bodies; it is not a provider response fixture."
+    },
+    {
+      "path": "myvariant/get_grid1_grch37_20260806.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "myvariant/get_grid1_grch38_20260806.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "myvariant/get_pten_deletion_grch38_20260806.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "myvariant/get_pten_grch38_20260806.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
     }
   ],
   "confirmed_byte_unfaithful": 0,

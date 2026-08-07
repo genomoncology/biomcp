@@ -24,7 +24,180 @@ pub(crate) fn is_rsid(value: &str) -> bool {
 
 fn hgvs_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^(chr[0-9XYM]+:g\.\d+[ACGT]>[ACGT])$").expect("valid regex"))
+    RE.get_or_init(|| {
+        Regex::new(r"^(chr(?:[1-9]|1[0-9]|2[0-2]|X|Y):g\.\d+(?:[ACGT]>[ACGT]|del))$")
+            .expect("valid regex")
+    })
+}
+
+fn coordinate_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(
+            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?(chr(?:[1-9]|1[0-9]|2[0-2]|X|Y)):g\.(\d+)([ACGT]>[ACGT]|del)$",
+        )
+        .expect("valid regex")
+    })
+}
+
+fn vcf_coordinate_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"(?i)^(chr(?:[1-9]|1[0-9]|2[0-2]|X|Y)):(\d+):([ACGT]):([ACGT])$")
+            .expect("valid regex")
+    })
+}
+
+fn refseq_coordinate_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"(?i)^(NC_\d+\.\d+):g\.(\d+)([ACGT]>[ACGT]|del)$").expect("valid regex")
+    })
+}
+
+fn spdi_coordinate_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"(?i)^(NC_\d+\.\d+):(\d+):([ACGT]):([ACGT])$").expect("valid regex")
+    })
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct NormalizedGenomicCoordinate {
+    pub id: String,
+    pub genome_build: Option<super::GenomeBuild>,
+    pub requires_comparison: bool,
+}
+
+const REFSEQ_GENOMIC_BUILDS: &[(&str, &str, super::GenomeBuild)] = &[
+    ("NC_000001.10", "chr1", super::GenomeBuild::Grch37),
+    ("NC_000001.11", "chr1", super::GenomeBuild::Grch38),
+    ("NC_000002.11", "chr2", super::GenomeBuild::Grch37),
+    ("NC_000002.12", "chr2", super::GenomeBuild::Grch38),
+    ("NC_000003.11", "chr3", super::GenomeBuild::Grch37),
+    ("NC_000003.12", "chr3", super::GenomeBuild::Grch38),
+    ("NC_000004.11", "chr4", super::GenomeBuild::Grch37),
+    ("NC_000004.12", "chr4", super::GenomeBuild::Grch38),
+    ("NC_000005.9", "chr5", super::GenomeBuild::Grch37),
+    ("NC_000005.10", "chr5", super::GenomeBuild::Grch38),
+    ("NC_000006.11", "chr6", super::GenomeBuild::Grch37),
+    ("NC_000006.12", "chr6", super::GenomeBuild::Grch38),
+    ("NC_000007.13", "chr7", super::GenomeBuild::Grch37),
+    ("NC_000007.14", "chr7", super::GenomeBuild::Grch38),
+    ("NC_000008.10", "chr8", super::GenomeBuild::Grch37),
+    ("NC_000008.11", "chr8", super::GenomeBuild::Grch38),
+    ("NC_000009.11", "chr9", super::GenomeBuild::Grch37),
+    ("NC_000009.12", "chr9", super::GenomeBuild::Grch38),
+    ("NC_000010.10", "chr10", super::GenomeBuild::Grch37),
+    ("NC_000010.11", "chr10", super::GenomeBuild::Grch38),
+    ("NC_000011.9", "chr11", super::GenomeBuild::Grch37),
+    ("NC_000011.10", "chr11", super::GenomeBuild::Grch38),
+    ("NC_000012.11", "chr12", super::GenomeBuild::Grch37),
+    ("NC_000012.12", "chr12", super::GenomeBuild::Grch38),
+    ("NC_000013.10", "chr13", super::GenomeBuild::Grch37),
+    ("NC_000013.11", "chr13", super::GenomeBuild::Grch38),
+    ("NC_000014.8", "chr14", super::GenomeBuild::Grch37),
+    ("NC_000014.9", "chr14", super::GenomeBuild::Grch38),
+    ("NC_000015.9", "chr15", super::GenomeBuild::Grch37),
+    ("NC_000015.10", "chr15", super::GenomeBuild::Grch38),
+    ("NC_000016.9", "chr16", super::GenomeBuild::Grch37),
+    ("NC_000016.10", "chr16", super::GenomeBuild::Grch38),
+    ("NC_000017.10", "chr17", super::GenomeBuild::Grch37),
+    ("NC_000017.11", "chr17", super::GenomeBuild::Grch38),
+    ("NC_000018.9", "chr18", super::GenomeBuild::Grch37),
+    ("NC_000018.10", "chr18", super::GenomeBuild::Grch38),
+    ("NC_000019.9", "chr19", super::GenomeBuild::Grch37),
+    ("NC_000019.10", "chr19", super::GenomeBuild::Grch38),
+    ("NC_000020.10", "chr20", super::GenomeBuild::Grch37),
+    ("NC_000020.11", "chr20", super::GenomeBuild::Grch38),
+    ("NC_000021.8", "chr21", super::GenomeBuild::Grch37),
+    ("NC_000021.9", "chr21", super::GenomeBuild::Grch38),
+    ("NC_000022.10", "chr22", super::GenomeBuild::Grch37),
+    ("NC_000022.11", "chr22", super::GenomeBuild::Grch38),
+    ("NC_000023.10", "chrX", super::GenomeBuild::Grch37),
+    ("NC_000023.11", "chrX", super::GenomeBuild::Grch38),
+    ("NC_000024.9", "chrY", super::GenomeBuild::Grch37),
+    ("NC_000024.10", "chrY", super::GenomeBuild::Grch38),
+];
+
+pub(crate) fn normalize_genomic_coordinate(
+    input: &str,
+) -> Result<Option<NormalizedGenomicCoordinate>, BioMcpError> {
+    let input = input.trim();
+    let normalized = |chromosome: &str,
+                      position: &str,
+                      change: &str,
+                      genome_build: Option<super::GenomeBuild>| {
+        let position = position.parse::<u64>().map_err(|_| {
+            BioMcpError::InvalidArgument("genomic coordinate position must be positive".into())
+        })?;
+        if position == 0 {
+            return Err(BioMcpError::InvalidArgument(
+                "genomic coordinate position must be positive".into(),
+            ));
+        }
+        Ok(Some(NormalizedGenomicCoordinate {
+            id: format!("{chromosome}:g.{position}{change}"),
+            requires_comparison: genome_build.is_none(),
+            genome_build,
+        }))
+    };
+    if let Some(caps) = coordinate_re().captures(input) {
+        let build = caps
+            .get(1)
+            .map(|value| value.as_str().parse())
+            .transpose()
+            .map_err(BioMcpError::InvalidArgument)?;
+        return normalized(&caps[2], &caps[3], &caps[4], build);
+    }
+    if let Some(caps) = vcf_coordinate_re().captures(input) {
+        return normalized(
+            &caps[1],
+            &caps[2],
+            &format!("{}>{}", &caps[3], &caps[4]),
+            None,
+        );
+    }
+    let refseq = refseq_coordinate_re()
+        .captures(input)
+        .or_else(|| spdi_coordinate_re().captures(input));
+    if let Some(caps) = refseq {
+        let Some((_, chromosome, build)) = REFSEQ_GENOMIC_BUILDS
+            .iter()
+            .find(|(accession, _, _)| accession.eq_ignore_ascii_case(&caps[1]))
+        else {
+            return Err(BioMcpError::InvalidArgument(format!(
+                "unsupported RefSeq genomic accession: {}",
+                &caps[1]
+            )));
+        };
+        let position = if spdi_coordinate_re().is_match(input) {
+            caps[2]
+                .parse::<u64>()
+                .ok()
+                .and_then(|value| value.checked_add(1))
+                .ok_or_else(|| {
+                    BioMcpError::InvalidArgument(
+                        "genomic coordinate position must be positive".into(),
+                    )
+                })?
+                .to_string()
+        } else {
+            caps[2].to_string()
+        };
+        let change = if spdi_coordinate_re().is_match(input) {
+            format!("{}>{}", &caps[3], &caps[4])
+        } else {
+            caps[3].to_string()
+        };
+        return normalized(chromosome, &position, &change, Some(*build));
+    }
+    if input.to_ascii_uppercase().starts_with("NC_") {
+        return Err(BioMcpError::InvalidArgument(
+            "RefSeq genomic accessions must include a supported version".into(),
+        ));
+    }
+    Ok(None)
 }
 
 pub(in crate::entities::variant) fn hgvs_coords_re() -> &'static Regex {

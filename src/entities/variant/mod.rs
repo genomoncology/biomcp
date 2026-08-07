@@ -41,12 +41,12 @@ pub(crate) use self::gwas::validate_p_value as validate_gwas_p_value;
 pub(crate) use self::normalization::{transcript_coding_hgvs_re, validate_car_hgvs_input};
 #[allow(unused_imports)]
 pub(crate) use self::resolution::{
-    NormalizedVariantAliases, RequestedVariantIdentity, SourceVariantIdentity,
-    VariantArticleRequest, VariantArticleResolution, VariantArticleResolutionBasis,
-    VariantArticleResolutionContext, VariantIdentityComparison, VariantProviderValidation,
-    VariantProviderValidationStatus, VariantResolutionStatus, VariantSearchResolution,
-    compare_variant_identity, gnomad_variant_slug, is_rsid, normalize_protein_change,
-    protein_change_segment,
+    NormalizedGenomicCoordinate, NormalizedVariantAliases, RequestedVariantIdentity,
+    SourceVariantIdentity, VariantArticleRequest, VariantArticleResolution,
+    VariantArticleResolutionBasis, VariantArticleResolutionContext, VariantIdentityComparison,
+    VariantProviderValidation, VariantProviderValidationStatus, VariantResolutionStatus,
+    VariantSearchResolution, compare_variant_identity, gnomad_variant_slug, is_rsid,
+    normalize_genomic_coordinate, normalize_protein_change, protein_change_segment,
 };
 pub(crate) use self::search::resolve_article_variant_identity;
 
@@ -107,6 +107,10 @@ pub struct Variant {
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub genome_build: Option<GenomeBuild>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build_ambiguous: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub build_candidates: Vec<VariantBuildCandidate>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hgvs_p: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -179,6 +183,14 @@ pub struct Variant {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prediction: Option<VariantPrediction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VariantBuildCandidate {
+    pub genome_build: GenomeBuild,
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rsid: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
