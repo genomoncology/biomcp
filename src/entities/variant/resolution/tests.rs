@@ -24,7 +24,7 @@ fn coordinate_normalizer_handles_aliases_and_alternate_spellings() {
             Some(GenomeBuild::Grch37),
         ),
         (
-            "hg38:chr7:g.140753336A>T",
+            "hg38:CHR7:g.140753336a>t",
             "chr7:g.140753336A>T",
             Some(GenomeBuild::Grch38),
         ),

@@ -320,6 +320,21 @@ async fn normalize_transcript_hgvs_for_get(id: &str) -> Result<VariantIdFormat, 
     parse_variant_id(&normalized_id)
 }
 
+fn build_aware_not_found(id: &str, build: GenomeBuild, error: BioMcpError) -> BioMcpError {
+    if !error.is_not_found() {
+        return error;
+    }
+    let build = match build {
+        GenomeBuild::Grch37 => "GRCh37",
+        GenomeBuild::Grch38 => "GRCh38",
+    };
+    BioMcpError::NotFound {
+        entity: "variant".into(),
+        id: format!("{id} (attempted {build}; upstream HTTP 404)"),
+        suggestion: "Try searching: biomcp search variant".into(),
+    }
+}
+
 pub(super) async fn resolve_base_with_hit(
     id: &str,
     genome_build: Option<GenomeBuild>,
@@ -460,7 +475,10 @@ pub(super) async fn resolve_base_with_hit(
                         Vec::new(),
                     )
                 } else {
-                    let hit = direct?;
+                    let hit = direct.map_err(|error| match effective_build {
+                        Some(build) => build_aware_not_found(hgvs, build, error),
+                        None => error,
+                    })?;
                     if !compatible(&hit) {
                         return Err(BioMcpError::NotFound {
                             entity: "variant".into(),

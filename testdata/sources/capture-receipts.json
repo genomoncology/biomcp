@@ -1138,23 +1138,51 @@
     },
     {
       "path": "myvariant/get_grid1_grch37_20260806.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr10%3Ag.87933119A%3EC?assembly=hg19",
+        "captured_at": "2026-08-07T14:02:20Z",
+        "sha256": "78685154e328152f4482930f7d53737e77aff8f4dd54c0373b949f79708cdab9",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public MyVariant.info response."
+      }
     },
     {
       "path": "myvariant/get_grid1_grch38_20260806.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr10%3Ag.87933119A%3EC?assembly=hg38",
+        "captured_at": "2026-08-07T14:02:20Z",
+        "sha256": "adf6dfce1a578d5d523ed81635fcd9b91092df8d3d5ab6cbcd51f9723480d4ce",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public MyVariant.info response."
+      }
     },
     {
       "path": "myvariant/get_pten_deletion_grch38_20260806.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr10%3Ag.87925512del?assembly=hg38",
+        "captured_at": "2026-08-07T14:02:20Z",
+        "sha256": "355127cf909d4b2cc563a6699f35c6f9948297c8ff330de5198faa75b91af697",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public MyVariant.info response."
+      }
     },
     {
       "path": "myvariant/get_pten_grch38_20260806.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing deterministic fixture has no receipt-backed provider provenance."
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyVariant.info",
+        "request": "https://myvariant.info/v1/variant/chr10%3Ag.87925512G%3EA?assembly=hg38",
+        "captured_at": "2026-08-07T14:02:20Z",
+        "sha256": "9fbc6a17ae31bd7ed40fa03bbada3854324cc1b4abee5d081c3eed91a9a31aa0",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public MyVariant.info response."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,

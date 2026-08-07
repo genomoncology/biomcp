@@ -136,8 +136,17 @@ pub(crate) fn normalize_genomic_coordinate(
                 "genomic coordinate position must be positive".into(),
             ));
         }
+        let change = if change.eq_ignore_ascii_case("del") {
+            "del".to_string()
+        } else {
+            change.to_ascii_uppercase()
+        };
         Ok(Some(NormalizedGenomicCoordinate {
-            id: format!("{chromosome}:g.{position}{change}"),
+            id: format!(
+                "chr{}:g.{position}{}",
+                chromosome[3..].to_ascii_uppercase(),
+                change
+            ),
             requires_comparison: genome_build.is_none(),
             genome_build,
         }))

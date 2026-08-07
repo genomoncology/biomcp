@@ -132,6 +132,24 @@ fn transcript_hgvs_get_and_normalize_share_normalized_genomic_identity() {
 }
 
 #[test]
+fn known_build_not_found_names_the_build_and_upstream_status() {
+    let message = build_aware_not_found(
+        "chr1:g.1A>T",
+        GenomeBuild::Grch38,
+        BioMcpError::NotFound {
+            entity: "variant".into(),
+            id: "chr1:g.1A>T".into(),
+            suggestion: "Try searching".into(),
+        },
+    )
+    .to_string();
+
+    assert!(message.contains("GRCh38"));
+    assert!(message.contains("upstream HTTP 404"));
+    assert!(!message.contains("Retry the remote source"));
+}
+
+#[test]
 fn transcript_hgvs_fallback_queries_clinvar_coding_identity() {
     assert_eq!(
         transcript_hgvs_clinvar_query("NM_004333.6:c.1799T>A"),
