@@ -27,7 +27,7 @@ What is OUT of scope:
 - Changing CLI grammar, help/list behavior, health semantics, or removing an unconverted source assertion.
 
 ## Dependencies
-- All source conversion tickets listed in frontmatter must be shipped first.
+- All source conversion tickets must be shipped first: 0669, 0671, 0672, 0674, 0675, 0676, 0677.
 
 ## Success Checklist
 - [ ] Each converted assertion has a consumed Tier 2 plan, receipt-backed real Tier 3 production decoder/orchestration proof, and fixture-backed CLI proof where it claims presentation.
