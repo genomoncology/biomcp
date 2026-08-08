@@ -12,3 +12,7 @@ repo moved to the sdlc factory; it was never run by this factory.
 Work products from the run — design, reviews, dev log, verify:
 
     /home/ian/workspace/planning/biomcp/artifacts/043-ema-human-drug-command-surface
+
+Numbered 0843 rather than 0043: March issued 0043
+to two tickets that both completed, and ticket identity here has to
+be unique. The earlier completion kept the original number.

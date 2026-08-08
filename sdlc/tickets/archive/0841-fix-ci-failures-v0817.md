@@ -13,6 +13,10 @@ Work products from the run — design, reviews, dev log, verify:
 
     /home/ian/workspace/planning/biomcp/artifacts/041-fix-ci-failures-v0817
 
+Numbered 0841 rather than 0041: March issued 0041
+to two tickets that both completed, and ticket identity here has to
+be unique. The earlier completion kept the original number.
+
 The landed commit range could not be recovered from git, so no
 record accompanies this entry. The work products above are the
 evidence that survives; the absence of a record is a gap in what
