@@ -14,9 +14,14 @@ its step. A test feeds the 200/`errorBean` response and asserts absent.
 
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
 
+<!-- from europe-pmc-not-open-access-is-reported-as-a-failure.md -->
+
+# Europe PMC "not open access" arrives as HTTP 200 and is recorded as a failure
+
+Severity: should-fix. Root cause is diagnosed; this is ready to
 become a ticket.
 
 Running `biomcp get article 30311380 fulltext` emits:

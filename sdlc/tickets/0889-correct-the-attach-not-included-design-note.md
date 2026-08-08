@@ -4,6 +4,18 @@ priority: 4
 ---
 # Correct the `attach_not_included` design note to match what shipped
 
+## A note on `.march/` paths below
+
+March gave each run a `.march/` directory inside its worktree for design
+notes, review records and proof files. The sdlc factory has no equivalent:
+those files were never committed and are not in this repo.
+
+Read every `.march/...` reference below as **intent, not a path**. Where the
+text says to write, amend or delete something in `.march/design-final.md` or
+`.march/contract-red-check.json`, do the equivalent in the artefact this
+flow's own design stage produces, and record the reasoning in the ticket's
+record when it lands. Do not create a `.march/` directory.
+
 ## Done when
 
 Ticket 600's design note and `spec/entity/article.md` agree: ordinary
@@ -24,7 +36,10 @@ So this ticket makes the *design note* right, not the code.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
+
+<!-- from 600-align-linked-assets-with-fulltext-not-included-spec.md -->
 
 ## Summary
 

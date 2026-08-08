@@ -14,7 +14,12 @@ removed.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
+
+<!-- from 590-post-filter-rejected-fanout-page-needs-continuation-proof.md -->
+
+## Summary
 
 Ticket 590 updates alias-union worker state before shared detail filtering, but no integration test proves search continues when a page contributes no surviving candidates and a later page contains a qualifying trial.
 

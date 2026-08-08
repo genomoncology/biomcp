@@ -13,8 +13,14 @@ same asset as a coverage outcome rather than offering a working handle.
 
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
+
+<!-- from article-asset-download-returns-the-ncbi-interstitial-page.md -->
+
+# Downloading an article asset can return NCBI's interstitial page as the asset
+
+Severity: should-fix. Wrong bytes handed over as if they were right.
 
     biomcp --json get article 30311380 asset \
       "NIHMS987696-supplement-Supp_Tables.xlsx"

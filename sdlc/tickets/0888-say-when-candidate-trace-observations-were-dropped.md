@@ -19,7 +19,12 @@ truncation that reads as a complete answer.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
+
+<!-- from 623-candidate-trace-omission-transparency.md -->
+
+## Summary
 
 `candidate_trace` is capped at `ITEM_WORK_LIMIT`, but merged candidates can retain
 more than that many route observations. The current debug schema states that it is

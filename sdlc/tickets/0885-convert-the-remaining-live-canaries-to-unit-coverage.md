@@ -26,9 +26,10 @@ priority band.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
 
-### From `2026-07-27-convert-remaining-live-canaries-to-unit-coverage.md`
+<!-- from 2026-07-27-convert-remaining-live-canaries-to-unit-coverage.md -->
 
 ## Summary
 
@@ -129,7 +130,7 @@ A synthesized fixture can only confirm that a parser agrees with itself. Ticket
 expected, so four defects survived the whole ticket lifetime with a green gate.
 Anchoring each provider to at least one real capture is the cheap defence.
 
-### From `605-seven-variant-recall-canary-live-provider-drift.md`
+<!-- from 605-seven-variant-recall-canary-live-provider-drift.md -->
 
 ## Summary
 
@@ -145,7 +146,7 @@ The new authoritative-identity canary passed directly and inside the same live l
 
 Destination: **verify-group / experiment-harness**. Re-run the legacy canary in a credentialed release environment. If it remains red, capture each variant's route-level `source_status`, matched aliases, and terminal fields in the canary artifact, then repair the failing provider route rather than weakening PMID or coverage thresholds. Keep release promotion blocked until the existing canary is green or the provider failure is concretely triaged.
 
-### From `606-live-verify-monarch-and-citation-canaries-unavailable.md`
+<!-- from 606-live-verify-monarch-and-citation-canaries-unavailable.md -->
 
 ## Summary
 
@@ -159,7 +160,7 @@ The ticket's real-provider strict-query canary passed independently with the rel
 
 Investigate the two provider failures and either repair the live integrations or classify expected upstream unavailability through the existing `verify-group`/operator policy. Add a `verify-group` test or harness check that preserves red failures for unexpected response shapes while reporting known transient availability explicitly.
 
-### From `612-live-verify-unrelated-diagnostics.md`
+<!-- from 612-live-verify-unrelated-diagnostics.md -->
 
 ## Summary
 
@@ -189,7 +190,7 @@ Investigate each failing upstream diagnostic and either repair its runtime behav
 Ticket 623 owns the final grouped reconciliation and must not weaken any threshold or
 convert a required provider outage into healthy emptiness.
 
-### From `614-live-verify-canary-drift.md`
+<!-- from 614-live-verify-canary-drift.md -->
 
 ## Summary
 
@@ -240,7 +241,9 @@ today), `article-assets-live.md`, `article-graph-live.md`.
 `spec/entity/variant-hotspots.md` is listed above but is **not** covered by the
 conversion issue and still needs its own look.
 
-### From `636-make-semantic-scholar-canary-credential-routing-deterministic.md`
+<!-- from 636-make-semantic-scholar-canary-credential-routing-deterministic.md -->
+
+The live article-graph page cannot reliably prove its stated `S2_API_KEY` dependency: during verification, its unauthenticated Semantic Scholar detail and recommendations requests both returned HTTP 200 and the entire page passed 11/11 with `S2_API_KEY` unset.
 
 The live provider receipts were `GET /graph/v1/paper/PMID:23450558?...` → 200 and `GET /recommendations/v1/papers/forpaper/97ae9501d5f7f5ddc2d38ea98abdca2dc4939d42?...` → 200 for both authenticated and unauthenticated requests. The ticket's historical 429 is therefore a transient provider state, not a reproducible contract.
 

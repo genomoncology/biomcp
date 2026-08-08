@@ -14,7 +14,12 @@ body says which and why, and the allowlist keeps only those.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
+
+<!-- from 2026-07-30-drain-the-source-status-typing-allowlist.md -->
+
+## Summary
 
 Ticket 634 adds `check_source_attributed_status_is_typed` to
 `tools/check-quality-ratchet.py`, which stops any *new* `Serialize` struct from

@@ -11,10 +11,21 @@ attachments with label, filename, media type, size and resolved URL,
 and the criteria output states how many attachments exist. The listing
 carries the same capture provenance the criteria already carry.
 
+## Raise allowance
+
+The attachment manifest reuses the capture machinery `gene cspec`
+already has. The `src` line ceiling may rise by at most 150 lines.
+
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
+
+<!-- from feature-clingen-criteria-specifications-as-an-entity.md -->
+
+# Feature: `gene cspec` does not surface a specification's attachments
+
+Severity: should-fix.
 
 **Correction, 2026-08-08.** An earlier version of this file asked
 for CSpec support as if it did not exist. It does —

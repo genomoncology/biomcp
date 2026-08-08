@@ -10,11 +10,22 @@ priority: 3
 tables rather than six omission notices. Merged-cell structure may be
 reported rather than reproduced, but no content is discarded.
 
+## Raise allowance
+
+Table rendering is genuinely new work in the JATS path. The `src` line
+ceiling may rise by at most 250 lines. Prefer the cheapest option in
+the body — a raw row dump — before spending the whole allowance.
+
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
 
+<!-- from feature-full-text-tables-are-dropped.md -->
+
+# Feature: full text drops complex tables entirely
+
+Severity: should-fix. The dropped content is often the reason the
 article was fetched.
 
 `biomcp get article 30311380 fulltext` renders the body and then, in

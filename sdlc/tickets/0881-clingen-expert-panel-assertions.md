@@ -12,10 +12,21 @@ sweep returns every assertion for a gene in one call, so PTEN's PM2
 strengths can be counted per specification version without enumerating
 CAIDs first.
 
+## Raise allowance
+
+Two changes: one field carried through an existing parser, and one new
+query shape. The `src` line ceiling may rise by at most 200 lines.
+
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
+
+<!-- from feature-clingen-expert-panel-assertions.md -->
+
+# Feature: `variant erepo` has no gene-wide sweep and drops the guideline version
+
+Severity: should-fix.
 
 **Correction, 2026-08-08.** An earlier version of this file asked
 for expert-panel assertions as if they were absent. They are not —

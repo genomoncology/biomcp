@@ -11,11 +11,22 @@ beside the cached path, and an opt-in flag returns the section outline
 with line ranges. The default output stays the same size it is today,
 whatever the length of the paper.
 
+## Raise allowance
+
+Size and section counting is small; the outline is the bulk. The `src`
+line ceiling may rise by at most 180 lines, and the default output must
+not grow with the length of the paper.
+
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
 
+<!-- from feature-reading-cached-full-text-without-flooding-context.md -->
+
+# Feature: let an agent read cached full text without swallowing it whole
+
+Severity: nice-to-have. A design question, not a defect — the
 current behaviour is deliberate and the reason for it is sound.
 
 ## The current behaviour and why it exists

@@ -13,9 +13,14 @@ against its `hgvsc` array, so indexing element zero fails the test.
 
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
 
+<!-- from protein-annotation-can-come-from-a-different-transcript.md -->
+
+# A variant's protein change can come from a different transcript than its cDNA
+
+Severity: blocking. This one reports a wrong clinical fact, not a
 missing one.
 
 `biomcp get variant "chr10:g.89720808T>G"` prints:

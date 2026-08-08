@@ -9,6 +9,18 @@ factory. The body below is March's, unchanged; it was already written to
 stand alone. Work products from any earlier attempt:
 
     /home/ian/workspace/planning/biomcp/artifacts/666-convert-disease-phenotype-and-discover-live-assertions-to-ontology-contracts
+## A note on `.march/` paths below
+
+March gave each run a `.march/` directory inside its worktree for design
+notes, review records and proof files. The sdlc factory has no equivalent:
+those files were never committed and are not in this repo.
+
+Read every `.march/...` reference below as **intent, not a path**. Where the
+text says to write, amend or delete something in `.march/design-final.md` or
+`.march/contract-red-check.json`, do the equivalent in the artefact this
+flow's own design stage produces, and record the reasoning in the ticket's
+record when it lands. Do not create a `.march/` directory.
+
 ## Read this first — four prior attempts, four distinct causes
 
 This ticket has aborted four times. Each abort had a *different* correct root cause, so this
@@ -69,7 +81,12 @@ What is OUT of scope:
 - [ ] A live test may be replaced by unit tests **only if** those unit tests fully cover the CLI-to-API-call transition and the parsing of a locally captured response. Everything on our side of the socket stays covered; only "does the provider serve this today" is dropped.
 - [ ] Tier 2 and Tier 3 coverage lands **before** the live assertion is removed. Retiring a canary for a source with no unit tests reduces coverage rather than relocating it.
 - [ ] Captures are real recorded responses with their capture date. A synthesised or edited fixture proves only that a parser agrees with itself — ticket 614's lesson, and the mechanism behind 650.
-- [ ] Issues `605`, `606`, `612`, `614` and `636-make-semantic-scholar-canary-credential-routing-deterministic` close as the coverage that replaces them lands — not before, and not on the strength of the 2026-08-01 green run. A green run proves the provider is up today, which is exactly the property these canaries should stop asserting.
+- [ ] Nothing here closes an issue. The five live-canary reports that used
+  to be listed at this point were folded into ticket 0885 and their files
+  deleted; 0885 owns them now. Do not go looking for them, and do not treat
+  a green live run as evidence — a green run proves the provider is up
+  today, which is exactly the property those canaries should stop
+  asserting.
 - [ ] The Semantic Scholar credential dependency is proven by capturing the outgoing header. It cannot be proven by an anonymous 429 — measured intermittent at 2 of 4 attempts.
 - [ ] `make lint`, `make test`, and `make spec` pass.
 

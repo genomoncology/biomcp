@@ -20,7 +20,13 @@ that a race can step around.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
+
+<!-- from 616-capture-store-symlink-toctou.md -->
+
+## Summary
+The capture store now rejects pre-existing symlinked staging and derived shard directories before publishing a capture, but its check-then-create/write sequence can still be raced by a local filesystem attacker.
 
 ## Detail
 `ProviderCaptureStore` validates derived directory components with `symlink_metadata`, then creates or writes using path-based standard-library calls. A process that can modify the managed cache root between those operations could replace a component with a symlink and redirect a staging/blob/metadata write outside the capture namespace. The ticket's direct pre-existing-symlink case is covered; closing the race needs descriptor-relative no-follow operations rather than another path check.

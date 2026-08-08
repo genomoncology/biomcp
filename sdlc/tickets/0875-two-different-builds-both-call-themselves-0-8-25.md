@@ -12,9 +12,14 @@ builds from different commits never report the same string.
 
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
 
+<!-- from two-different-builds-both-call-themselves-0-8-25.md -->
+
+# Two different builds both report version 0.8.25
+
+Severity: should-fix. It caused two wrong issue reports in one
 sitting.
 
 The binary on PATH and the binary built from this repo report the

@@ -11,11 +11,21 @@ type, so a variant AC0 in exomes and PASS in genomes shows both. Each
 flag is expanded to its meaning in the readable output and kept as a
 bare name in `--json`.
 
+## Raise allowance
+
+Filter flags ride alongside the frequency work and reuse its response
+parsing. The `src` line ceiling may rise by at most 120 lines.
+
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
 
+<!-- from feature-gnomad-quality-filter-flags.md -->
+
+# Feature: surface gnomAD's quality-filter flags, per data type
+
+Severity: should-fix. Pairs with
 `feature-gnomad-v4-and-filtering-allele-frequency.md`; either alone
 is half an answer.
 

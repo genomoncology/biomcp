@@ -13,7 +13,16 @@ live-spec lane no longer serialises against the shared `target/` lock.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
+
+<!-- from 643-live-spec-invokes-cargo.md -->
+
+# Move the build-profile live spec off `cargo run`
+
+`spec/surface/build-profile-live.md` invokes `cargo run` inside its mustmatch
+block. That duplicates build responsibility and serializes the live-spec lane
+against Cargo's shared `target/` lock.
 
 Ticket 643 was authorized to update its assertion but not to change the harness.
 

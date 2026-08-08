@@ -21,9 +21,14 @@ two agents in the same validation path.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
 
-### From `595-reject-zero-trial-distance-before-provider-work.md`
+<!-- from 595-reject-zero-trial-distance-before-provider-work.md -->
+
+# Reject zero trial distance before provider work
+
+## Summary
 
 `biomcp --json search trial -c melanoma --lat=1 --lon=2 --distance=0` reaches ClinicalTrials.gov and returns an `api` error instead of rejecting the non-positive radius as client input.
 
@@ -35,7 +40,11 @@ Ticket 595's numeric-validation exercise confirmed latitude and longitude now fa
 
 Validate `--distance` as positive at the shared trial filter boundary before alias/client work. Add a routine `spec/entity/trial-numeric-filters.md` scenario asserting exit 2, `invalid_argument`, and a `--distance` message anchor; add a native boundary test that accepts 1 and rejects 0. Intended improved-test destination: `spec` plus `test`.
 
-### From `595-validate-ctgov-pagination-before-client-construction.md`
+<!-- from 595-validate-ctgov-pagination-before-client-construction.md -->
+
+# Validate CTGov pagination before client construction
+
+## Summary
 
 The public CTGov `search_page` path constructs `ClinicalTrialsClient` before its
 injected-client helper validates `--limit`, `--offset`, and `--next-page`.

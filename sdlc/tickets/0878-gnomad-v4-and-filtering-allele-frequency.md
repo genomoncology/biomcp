@@ -11,11 +11,23 @@ frequency alongside the raw per-population frequencies, states which
 gnomAD release the numbers come from, and states that FAF excludes the
 bottlenecked groups. Raw AF is kept, not replaced.
 
+## Raise allowance
+
+Reading a second gnomAD field set and rendering it is a new source path
+plus a renderer change. The `src` line ceiling may rise by at most 250
+lines. If it will not fit, say so in the design rather than deleting
+the raw per-population output to make room.
+
 ## The finding
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded in
-here and the issue file removed. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded
+in here and the issue file removed. Reproduced in full below.
 
+<!-- from feature-gnomad-v4-and-filtering-allele-frequency.md -->
+
+# Feature: gnomAD v4 frequencies, and filtering allele frequency
+
+Severity: should-fix. Not a defect — BioMCP reports what its source
 gives it. But it puts variant classification work out of reach.
 
 ## The question it blocks

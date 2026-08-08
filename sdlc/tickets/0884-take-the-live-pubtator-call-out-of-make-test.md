@@ -20,7 +20,10 @@ cannot fix, which is the exact thing the gate ladder exists to prevent.
 ## The finding
 
 Raised under March and carried over when BioMCP moved to the sdlc
-factory. The text below is as filed.
+factory. Reproduced in full below; `severity` is March's word, and
+this ticket's priority is the one that counts.
+
+<!-- from 593-live-pubtator-contract-still-blocks-make-test.md -->
 
 ## Summary
 
