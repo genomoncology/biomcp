@@ -1,12 +1,27 @@
-# Live PubTator contract still blocks the deterministic make-test gate
+---
+flow: quickfix
+priority: 9
+---
+# Take the live PubTator call out of `make test`
 
-Severity: should-fix.
+## Done when
 
-March marked this as blocking the next ticket in its area.
+`make test` performs no external network call. The no-secret logging
+assertion still runs, against an ephemeral local fixture that returns a
+representative provider failure. A ratchet fails the gate if a routine
+test reaches the network, so this cannot come back indirectly.
 
-Carried over from March, where it was raised against ticket 593
-on 2026-07-19 and left open. The text
-below is as filed.
+## Why here, why now
+
+This sits at priority 9 because it is inside a gate rung. A live call in
+`make test` can fail any flight for reasons the agent did not cause and
+cannot fix, which is the exact thing the gate ladder exists to prevent.
+
+## The finding
+
+Raised under March and carried over when BioMCP moved to the sdlc
+factory. The text below is as filed.
+
 ## Summary
 
 `make test` still contains a contract that calls live PubTator. During ticket 593's single authoritative `full-blocking` run, `swallowed_source_failures_do_not_log_credentials` timed out after 10 seconds while running `biomcp --no-cache variant articles "BRAF V600E" --limit 1`, failing an otherwise-green gate. The same test passed immediately in isolation in 7.0 seconds.

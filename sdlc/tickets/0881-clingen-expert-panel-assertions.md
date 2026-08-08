@@ -14,8 +14,8 @@ CAIDs first.
 
 ## The finding
 
-Raised as `sdlc/issues/feature-clingen-expert-panel-assertions.md`; that file is deleted when this
-lands. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded in
+here and the issue file removed. The text below is the issue as filed.
 
 **Correction, 2026-08-08.** An earlier version of this file asked
 for expert-panel assertions as if they were absent. They are not —

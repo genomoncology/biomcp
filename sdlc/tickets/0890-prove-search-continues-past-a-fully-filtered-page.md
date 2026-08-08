@@ -1,11 +1,20 @@
-# Prove alias fanout continues after a post-filter-rejected page
+---
+flow: build
+priority: 3
+---
+# Prove search continues past a fully filtered page
 
-Severity: nice-to-have.
+## Done when
 
-Carried over from March, where it was raised against ticket 590
-on 2026-07-19 and left open. The text
-below is as filed.
-## Summary
+An integration test covers an alias-union fanout where one page
+contributes no surviving result, and shows the search continuing to the
+next page rather than stopping. The test fails if continuation is
+removed.
+
+## The finding
+
+Raised under March and carried over when BioMCP moved to the sdlc
+factory. The text below is as filed.
 
 Ticket 590 updates alias-union worker state before shared detail filtering, but no integration test proves search continues when a page contributes no surviving candidates and a later page contains a qualifying trial.
 

@@ -1,11 +1,20 @@
-# Drain the source-status typing allowlist: three structs still assert a provider judgement as a free-form String
+---
+flow: build
+priority: 3
+---
+# Drain the source-status typing allowlist
 
-Severity: nice-to-have.
+## Done when
 
-Carried over from March, where it was raised against ticket 634
-on 2026-07-30 and left open. The text
-below is as filed.
-## Summary
+`tools/source-status-typing-allowlist.json` is empty and the ratchet
+still passes, so no struct pairs a source-attributing field with a
+free-form `status: String`. If draining an entry is not worth it, the
+body says which and why, and the allowlist keeps only those.
+
+## The finding
+
+Raised under March and carried over when BioMCP moved to the sdlc
+factory. The text below is as filed.
 
 Ticket 634 adds `check_source_attributed_status_is_typed` to
 `tools/check-quality-ratchet.py`, which stops any *new* `Serialize` struct from

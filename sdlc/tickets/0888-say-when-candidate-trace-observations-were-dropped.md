@@ -1,11 +1,25 @@
-# Make bounded candidate-route trace omissions observable
+---
+flow: build
+priority: 4
+---
+# Say when candidate-trace observations were dropped
 
-Severity: should-fix.
+## Done when
 
-Carried over from March, where it was raised against ticket 623
-on 2026-07-29 and left open. The text
-below is as filed.
-## Summary
+When `candidate_trace` omits route observations because the merged set
+exceeded `ITEM_WORK_LIMIT`, the output says so and says how many were
+dropped. A trace that reports nothing omitted really had nothing
+omitted.
+
+## Why here, why now
+
+Same class as the article-asset issues already in this backlog: a
+truncation that reads as a complete answer.
+
+## The finding
+
+Raised under March and carried over when BioMCP moved to the sdlc
+factory. The text below is as filed.
 
 `candidate_trace` is capped at `ITEM_WORK_LIMIT`, but merged candidates can retain
 more than that many route observations. The current debug schema states that it is

@@ -13,8 +13,8 @@ bottlenecked groups. Raw AF is kept, not replaced.
 
 ## The finding
 
-Raised as `sdlc/issues/feature-gnomad-v4-and-filtering-allele-frequency.md`; that file is deleted when this
-lands. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded in
+here and the issue file removed. The text below is the issue as filed.
 
 gives it. But it puts variant classification work out of reach.
 

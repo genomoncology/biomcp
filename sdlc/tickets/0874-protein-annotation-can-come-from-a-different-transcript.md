@@ -13,8 +13,8 @@ against its `hgvsc` array, so indexing element zero fails the test.
 
 ## The finding
 
-Raised as `sdlc/issues/protein-annotation-can-come-from-a-different-transcript.md`; that file is deleted when this
-lands. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded in
+here and the issue file removed. The text below is the issue as filed.
 
 missing one.
 

@@ -13,8 +13,8 @@ carries the same capture provenance the criteria already carry.
 
 ## The finding
 
-Raised as `sdlc/issues/feature-clingen-criteria-specifications-as-an-entity.md`; that file is deleted when this
-lands. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded in
+here and the issue file removed. The text below is the issue as filed.
 
 **Correction, 2026-08-08.** An earlier version of this file asked
 for CSpec support as if it did not exist. It does —

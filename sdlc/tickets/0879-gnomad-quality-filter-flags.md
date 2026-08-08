@@ -13,8 +13,8 @@ bare name in `--json`.
 
 ## The finding
 
-Raised as `sdlc/issues/feature-gnomad-quality-filter-flags.md`; that file is deleted when this
-lands. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded in
+here and the issue file removed. The text below is the issue as filed.
 
 `feature-gnomad-v4-and-filtering-allele-frequency.md`; either alone
 is half an answer.

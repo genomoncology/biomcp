@@ -13,8 +13,8 @@ same asset as a coverage outcome rather than offering a working handle.
 
 ## The finding
 
-Raised as `sdlc/issues/article-asset-download-returns-the-ncbi-interstitial-page.md`; that file is deleted when this
-lands. The text below is the issue as filed.
+Raised as an issue during BioMCP research on 2026-08-08, then folded in
+here and the issue file removed. The text below is the issue as filed.
 
     biomcp --json get article 30311380 asset \
       "NIHMS987696-supplement-Supp_Tables.xlsx"

@@ -1,12 +1,31 @@
-# Align linked assets with the fulltext not-included contract
+---
+flow: quickfix
+priority: 4
+---
+# Correct the `attach_not_included` design note to match what shipped
 
-Severity: should-fix.
+## Done when
 
-March marked this as blocking the next ticket in its area.
+Ticket 600's design note and `spec/entity/article.md` agree: ordinary
+fulltext `not_included` reports package supplementary files only. No
+public contract or fixture changes; the note changes.
 
-Carried over from March, where it was raised against ticket 600
-on 2026-07-20 and left open. The text
-below is as filed.
+## Why here, why now
+
+**The decision is made — do not reopen it.** Ian chose, on 2026-08-08,
+to keep ordinary fulltext `not_included` package-only rather than route
+it through the shared linked-asset resolver. Reason: routing it through
+would add linked-asset acquisition to every ordinary fulltext request,
+which is extra network on a common path for a benefit callers can
+already get from `get article <id> assets`.
+
+So this ticket makes the *design note* right, not the code.
+
+## The finding
+
+Raised under March and carried over when BioMCP moved to the sdlc
+factory. The text below is as filed.
+
 ## Summary
 
 Ticket 600's final design says `attach_not_included` should consume the shared
