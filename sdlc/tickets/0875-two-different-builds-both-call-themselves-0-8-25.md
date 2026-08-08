@@ -1,6 +1,6 @@
 ---
 flow: quickfix
-priority: 7
+priority: 10
 ---
 # Make an unreleased build distinguishable from the release it followed
 
