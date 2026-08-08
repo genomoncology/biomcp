@@ -256,7 +256,10 @@ fi
 if [ -f Cargo.toml ]; then
   run_required 'Rust lint (cargo fmt --check)' cargo fmt --check
   run_required 'Rust lint (cargo clippy -- -D warnings)' cargo clippy -- -D warnings
-  if command -v cargo-deny >/dev/null 2>&1; then
+  # Ask cargo, not PATH. Cargo finds its own subcommands in ~/.cargo/bin
+  # whatever PATH says, so `command -v cargo-deny` reports missing on any
+  # caller with a trimmed PATH — which is how the factory runs us.
+  if cargo deny --version >/dev/null 2>&1; then
     run_required 'Rust license lint (cargo deny check licenses)' cargo deny check licenses
     run_required 'Rust advisory lint (cargo deny check advisories)' cargo deny check advisories
   else
