@@ -114,3 +114,21 @@ the ticket orphaned-active; `march doctor --fix` then auto-failed it.
 Nothing here reflects on the work. When this ticket is next run, start it clean — the
 preserved worktree state is from an interrupted run, not a considered one, and the recovery
 plan already reports its evidence as incomplete.
+
+## Also covered here: interruption leaves the lock held
+
+March issue 611 recorded the same defect from the other direction and is
+folded in rather than filed twice. Interrupting `make spec` left CTGov and
+article fixture servers orphaned with PPID 1; the CTGov child kept an open
+descriptor on `.cache/spec-routine-fixtures.lock`, so the next routine run
+blocked at `flock` before reaching its own cleanup, and only manual killing
+freed it.
+
+The runner has cleanup traps; a parent interruption does not reach all
+children. Fixing the leak without fixing this leaves the same stall one
+Ctrl-C away.
+
+Done when, for this part: each fixture server runs in a tracked process
+group, startup reaps stale worktree-owned fixture children before taking
+the routine lock, and a harness test interrupts a routine run and shows a
+second run reaching the runner with no manual cleanup.
