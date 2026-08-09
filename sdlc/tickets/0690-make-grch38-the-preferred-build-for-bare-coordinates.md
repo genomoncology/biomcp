@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 8
+deps: ["0689"]
 ---
 # Make GRCh38 the preferred build for bare coordinates
 

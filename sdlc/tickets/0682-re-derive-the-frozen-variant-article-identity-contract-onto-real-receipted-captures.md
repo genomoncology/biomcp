@@ -58,9 +58,11 @@ None.
 
 ## Dependencies
 
-None strictly, but sequence **after** 665 lands. 665 is building the real-capture corpus and
-strict-replay fixture pattern for the same providers; this ticket should reuse that corpus
-and that pattern rather than inventing a second approach.
+None. The real-capture corpus and strict-replay fixture pattern this ticket should reuse
+already landed as ticket 0683 (`sdlc/records/0683-capture-and-map-the-seven-variant-article-
+panel-corpus.md`) — reuse that corpus and pattern rather than inventing a second approach.
+(An earlier revision sequenced this after "665", a ticket id that does not exist in this
+repo; corrected 2026-08-09 during the review triage.)
 
 ## Notes
 

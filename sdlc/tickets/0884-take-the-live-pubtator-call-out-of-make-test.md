@@ -4,12 +4,21 @@ priority: 9
 ---
 # Take the live PubTator call out of `make test`
 
+## Narrowed 2026-08-09 during review triage
+
+The fixture conversion already landed: the no-secret logging assertion
+now runs against `CredentialRedactionFixture` (tests/json_error_contract.rs:608),
+a local ephemeral fixture, not live PubTator. What remains of this
+ticket is ONLY the ratchet — the fail-closed guarantee that no routine
+test can reach the network, so a live call cannot come back indirectly.
+Do not redo the fixture work.
+
 ## Done when
 
-`make test` performs no external network call. The no-secret logging
-assertion still runs, against an ephemeral local fixture that returns a
-representative provider failure. A ratchet fails the gate if a routine
-test reaches the network, so this cannot come back indirectly.
+A ratchet fails the gate if any routine test (`make test`) reaches the
+external network — fail-closed, covering the whole routine suite, not a
+per-test allowlist that new tests can silently skip. The landed
+fixture-backed credential assertion keeps passing unchanged.
 
 ## Why here, why now
 

@@ -4,12 +4,25 @@ priority: 6
 ---
 # Refuse an article asset that arrives as NCBI's interstitial page
 
+## Narrowed 2026-08-09 during review triage
+
+The byte refusal and the manifest proof already landed as ticket 0679
+(`sdlc/records/0679-reject-the-pmc-proof-of-work-interstitial-instead-of-
+publishing-it-as-supplement-bytes.md`): `is_pmc_proof_of_work` classifies
+the challenge page and `PmcLinkedFetch::ProofOfWork` survives source
+classification without publishing bytes (src/sources/pmc_article.rs).
+What remains of this ticket is ONLY the direct-retrieval error
+reporting: the "Done when" below is reduced to the typed error. Do not
+re-implement the detection or the manifest handling; build the error on
+the landed classification.
+
 ## Done when
 
 `biomcp --json get article 30311380 asset "NIHMS987696-supplement-Supp_Tables.xlsx"`
 returns a typed error naming the interstitial and pointing at the PMC
-URL, instead of HTML wearing an `.xlsx` name. The manifest marks the
-same asset as a coverage outcome rather than offering a working handle.
+URL a browser can complete the challenge at, instead of a generic
+failure. (The bytes are already refused and the manifest already marks
+the asset as a coverage outcome — landed in 0679.)
 
 ## The finding
 

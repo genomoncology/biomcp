@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 3
+deps: ["0669", "0671", "0672", "0674", "0675", "0676", "0677"]
 ---
 # Finish mixed CLI live-block conversion after source contracts land
 

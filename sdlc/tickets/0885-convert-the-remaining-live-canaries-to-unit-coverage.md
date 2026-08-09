@@ -58,6 +58,33 @@ The hand-written citation XML test was kept alongside it: the real capture
 proves fidelity, the synthetic one covers ORCID, collective-name and unicode
 edges the capture does not contain.
 
+## Inventory rebuilt 2026-08-09 during review triage
+
+The lists below are July's and have gone stale; the executable
+registry is the truth. Verified against `scripts/run-specs.sh`
+(`SPEC_LIVE_PATHS`) and the records on this date:
+
+- Both owning tickets named in the STOP block have LANDED: 0632
+  (PubTator normalized_id) and 0633 (CSpec version paging). The
+  conversion holds they imposed are released — but per the STOP
+  block's lesson, re-run each canary by hand and see it pass before
+  converting it.
+- Item 1 (`clingen-cspec-live.md`) is OBSOLETE: it is no longer in
+  `SPEC_LIVE_PATHS` and `testdata/sources/clingen_cspec/` now exists.
+  Nothing to do.
+- The live canaries actually in the registry today and owned by THIS
+  ticket: `article-assets-live.md`, `article-graph-live.md`,
+  `variant-myvariant-live.md`, `variant-articles-live.md`. The mixed
+  entity and surface files also listed there belong to the conversion
+  program (0666, 0669, 0671-0677, 0673), not here.
+- `spec/entity/ddinter-live.md` exists on disk but is NOT in the
+  registry — classify it during the work (stale file, or coverage
+  that moved) and record the answer.
+
+Derive the working inventory from `SPEC_LIVE_PATHS` at flight time,
+not from the historical lists below, which stay for their reasoning
+and lessons.
+
 ## STOP — read this before converting anything (2026-07-30)
 
 **Two of the canaries listed below are catching real product defects, not
