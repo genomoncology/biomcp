@@ -136,9 +136,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     write_shell_description()?;
 
+    let cargo_version = env!("CARGO_PKG_VERSION");
     let git_sha = command_output("git", &["rev-parse", "--short=8", "HEAD"])
         .unwrap_or_else(|| "unknown".into());
     let git_tag = command_output("git", &["describe", "--tags", "--always"]);
+    let git_release_tag = command_output("git", &["describe", "--tags", "--exact-match"]);
+    let build_version = match git_release_tag.as_deref() {
+        Some(tag) if tag == format!("v{cargo_version}") => cargo_version.to_string(),
+        _ if git_sha != "unknown" => format!("{cargo_version}+g{git_sha}"),
+        _ => cargo_version.to_string(),
+    };
     // Stamp the HEAD commit date (deterministic), not the wall-clock build time.
     // A wall-clock timestamp is a fresh value on every build-script run, i.e. a
     // changed compile input that forces a full crate recompile on every build —
@@ -147,6 +154,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let build_date =
         command_output("git", &["log", "-1", "--format=%cI"]).unwrap_or_else(|| "unknown".into());
     println!("cargo:rustc-env=BIOMCP_BUILD_GIT_SHA={git_sha}");
+    println!("cargo:rustc-env=BIOMCP_BUILD_VERSION={build_version}");
     if let Some(tag) = &git_tag {
         println!("cargo:rustc-env=BIOMCP_BUILD_GIT_TAG={tag}");
     }

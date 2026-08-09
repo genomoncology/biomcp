@@ -10,7 +10,7 @@ use crate::entities::drug::DrugRegion;
 #[command(
     name = "biomcp",
     about = "Query genes, variants, trials, articles, drugs, diseases, and more from leading public biomedical data sources",
-    version,
+    version = env!("BIOMCP_BUILD_VERSION"),
     after_help = "Note: flags marked (best-effort) are applied client-side or via imprecise API matching; results may include false positives."
 )]
 pub struct Cli {

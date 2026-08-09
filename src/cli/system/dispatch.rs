@@ -507,12 +507,7 @@ pub(super) struct VersionIdentity {
 }
 
 pub(super) fn version_identity() -> VersionIdentity {
-    let cargo_version = env!("CARGO_PKG_VERSION");
-    let git_tag = option_env!("BIOMCP_BUILD_GIT_TAG");
-    let version = git_tag
-        .filter(|t| t.starts_with('v') && !t.contains('-'))
-        .map(|t| &t[1..])
-        .unwrap_or(cargo_version);
+    let version = env!("BIOMCP_BUILD_VERSION");
     VersionIdentity {
         version,
         git_revision: option_env!("BIOMCP_BUILD_GIT_SHA").unwrap_or("unknown"),

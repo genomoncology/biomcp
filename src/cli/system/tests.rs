@@ -410,6 +410,16 @@ fn version_command_parses_verbose_flag() {
     ));
 }
 
+#[test]
+fn clap_version_includes_the_build_version() {
+    let command = Cli::command();
+
+    assert_eq!(
+        command.render_version().to_string(),
+        format!("biomcp {}\n", env!("BIOMCP_BUILD_VERSION"))
+    );
+}
+
 #[tokio::test]
 async fn version_json_contract_has_identity_fields() {
     let output = execute(vec![
@@ -423,6 +433,7 @@ async fn version_json_contract_has_identity_fields() {
     let object = value.as_object().expect("version json should be an object");
 
     assert_eq!(object.len(), 3);
+    assert_eq!(object["version"], env!("BIOMCP_BUILD_VERSION"));
     for field in ["version", "git_revision", "build_timestamp"] {
         assert!(
             object
