@@ -142,7 +142,14 @@ def test_lint_requires_cargo_deny_for_rust_repos(tmp_path: Path) -> None:
     )
     tool_dir = tmp_path / "tools"
     tool_dir.mkdir()
-    _write_executable(tool_dir / "cargo", "#!/usr/bin/env bash\nexit 0\n")
+    # lint asks cargo whether it can run the subcommand, because cargo finds
+    # its own subcommands whatever PATH says. "Missing" therefore means cargo
+    # refusing it, which is what real cargo does: exit 101, no such command.
+    _write_executable(
+        tool_dir / "cargo",
+        '#!/usr/bin/env bash\nif [ "$1" = "deny" ]; then\n'
+        '  echo "error: no such command: \\`deny\\`" >&2\n  exit 101\nfi\nexit 0\n',
+    )
 
     result = _run_lint(
         repo_root,
@@ -173,7 +180,11 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
     )
     _write_executable(
         tool_dir / "cargo-deny",
-        "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\n",
+        # The probe is a --version call, not a check. Answer it, but keep it
+        # out of the log so the log still says exactly which checks ran.
+        '#!/usr/bin/env bash\nif [ "$1" = "--version" ]; then\n'
+        '  echo "cargo-deny 0.0.0-fixture"\n  exit 0\nfi\n'
+        "printf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\n",
     )
 
     result = _run_lint(
@@ -207,7 +218,10 @@ def test_lint_fails_when_cargo_deny_advisory_check_fails(tmp_path: Path) -> None
     )
     _write_executable(
         tool_dir / "cargo-deny",
-        "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\nif [ \"$*\" = \"check advisories\" ]; then\n  exit 1\nfi\n",
+        '#!/usr/bin/env bash\nif [ "$1" = "--version" ]; then\n'
+        '  echo "cargo-deny 0.0.0-fixture"\n  exit 0\nfi\n'
+        "printf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\n"
+        'if [ "$*" = "check advisories" ]; then\n  exit 1\nfi\n',
     )
 
     result = _run_lint(
