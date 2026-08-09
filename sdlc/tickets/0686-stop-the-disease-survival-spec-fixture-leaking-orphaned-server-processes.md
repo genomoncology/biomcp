@@ -163,3 +163,41 @@ refusal's behaviorally-proven findings bind the next attempt:
 The six owner-death test cases and the marker-orphan case were run
 and fail against current code — the red tests exist; the next design
 starts from them.
+
+## Bound by the fourth attempt's design review (2026-08-09, run 18-22-39-0bff)
+
+The fourth design was refused for scope and wiring gaps, not for its
+core. The reviewer reran all 15 authored cases (red as claimed),
+accepted the supervisor/pidfd core, and set four conditions the next
+design MUST close before code starts. They are the specification now:
+
+1. Cover EVERY background server in `spec/fixtures/`, including the
+   five server-starting `run-*` wrappers
+   (`run-article-semanticscholar-source-search.sh`,
+   `run-clingen-erepo-fixture.sh`, `run-section-outcome-mcp.sh`,
+   `run-variant-article-entity-fixture.sh`,
+   `run-variant-article-identity-fixture.sh`). Each starts a
+   background server behind an `EXIT` trap, and SIGKILL skips those
+   traps exactly as it skips the setup-fixture traps. Either route
+   them through the common lifecycle mechanism with owner-death
+   tests, or provide behavioral proof that killing their owner cannot
+   leave their server alive. "They run foreground" is not proof.
+2. Add the ticket-required timeout proof: run the relevant spec path
+   under a real bounded timeout and assert the fixture process and
+   owned root are gone afterward.
+3. Wire the coordinator identity into the REAL runner:
+   `scripts/run-specs.sh` must capture/export its PID and procfs
+   start identity (`ROUTINE_FIXTURE_OWNER_PID` today exists only in
+   tests), state how nested mustmatch fixture scripts inherit it, and
+   define standalone-setup behavior when no coordinator identity is
+   supplied.
+4. Keep the accepted core unchanged in intent: one standard-library
+   supervisor, pidfd owner observation with a start-identity-validated
+   fallback, isolated process groups, bounded canonical-root deletion,
+   existing authenticated ownership-record validation, and
+   disease-survival PPID-1 marker recovery with identity revalidation
+   before signaling.
+
+The review committed one repair on the claim branch (2cb3a241,
+whole-token stale-reaper count). Tag the branch tip before teardown;
+biomcp's discard lacks the retry tag.
