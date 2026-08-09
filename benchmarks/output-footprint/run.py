@@ -174,6 +174,14 @@ def _benchmark_env(base_url: str) -> dict[str, str]:
             "BIOMCP_CTGOV_BASE": f"{base_url}/ctgov",
             "BIOMCP_OPENTARGETS_BASE": f"{base_url}/opentargets",
             "BIOMCP_REACTOME_BASE": f"{base_url}/reactome",
+            # Article rows are enriched from Semantic Scholar even though the
+            # corpus runs with it disabled, and the proxy variables below do
+            # not stop it -- the client does not read them. Left unpinned it
+            # reached the live API, so the same fixtures measured differently
+            # depending on whether that call beat its deadline. Loopback is
+            # outside the provider's allowed origin, so the source declines
+            # cleanly and every number traces to a committed fixture.
+            "BIOMCP_S2_BASE": f"{base_url}/s2",
             "HTTP_PROXY": "http://127.0.0.1:9",
             "HTTPS_PROXY": "http://127.0.0.1:9",
             "ALL_PROXY": "http://127.0.0.1:9",

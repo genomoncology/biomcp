@@ -49,6 +49,23 @@ def test_tokenizer_vocabulary_is_available_offline(
     assert runner._encoding().name == runner.TOKENIZER
 
 
+def test_benchmark_env_points_every_provider_base_at_the_replay_server() -> None:
+    """A provider base the corpus reaches but does not pin is a live call.
+
+    Semantic Scholar was that gap. Article rows are enriched from it, so two
+    runs of the same committed corpus disagreed whenever the live API answered
+    one and timed out the other -- 31 and 1 are the real citation counts for
+    PMIDs 123 and 456. The proxy variables here do not stop it: the client
+    does not read them.
+    """
+    runner = _load_runner()
+    env = runner._benchmark_env("http://127.0.0.1:9999")
+
+    bases = {key: value for key, value in env.items() if key.endswith("_BASE")}
+    assert "BIOMCP_S2_BASE" in bases
+    assert all(value.startswith("http://127.0.0.1:9999/") for value in bases.values())
+
+
 def test_offline_corpus_is_deterministic_and_reports_real_token_counts() -> None:
     runner = _load_runner()
     binary = Path(os.environ["BIOMCP_BIN"])

@@ -1,39 +1,65 @@
-# Output-footprint replay corpus is nondeterministic under load
+# The benchmark calls itself offline but nothing enforces it
 
-Severity: should-fix. It sits inside the `test` gate rung, so it can fail any
-flight for reasons the ticket did not cause.
+**The specific flake is fixed** (`BIOMCP_S2_BASE` is now pinned to the replay
+server). This issue is what remains: the corpus is offline by convention, and
+convention did not hold.
 
-`tests/test_output_footprint_benchmark.py::test_offline_corpus_is_
-deterministic_and_reports_real_token_counts` calls `collect()` twice and
-asserts equality. Under CPU contention the two runs disagree -- 2,851 versus
-2,924 bytes for the full article search was one observed pair.
+## What happened
 
-It is load-dependent, not simply broken: 13 consecutive passes on an idle
-machine, and a reproducible failure inside a flight running alongside three
-other builds. First seen by the agent flying ticket 0875; that agent filed it
-in its worktree and the report was nearly lost when the run was discarded.
+`benchmarks/output-footprint/run.py` pins eight provider base URLs at a
+loopback replay server and sets `HTTP_PROXY`/`HTTPS_PROXY` to a dead port. It
+missed one — Semantic Scholar. Article rows are enriched from it, so the
+"offline" corpus was quietly calling `api.semanticscholar.org` on every run.
 
-Likely shape: concurrent fanout merged in completion order. Either pin the
-order or drop the byte-exact assertion and assert what is actually invariant.
-This will get worse now that channels genuinely fly in parallel.
+The proxy variables did not stop it: the client does not read them.
 
-## Exact failure, captured 2026-08-08 23:50 in ticket 0875's flight
+The two variants differed by whether that live call beat its deadline:
 
-Only `article_search_compact` drifts. Everything else is byte-identical
-between the two `collect()` calls:
+    citation_count 31 and 1     <- live Semantic Scholar, PMIDs 123 and 456
+    citation_count 1594         <- the committed Europe PMC fixture
 
-    article_search_compact   output_bytes 1434 vs 1439
-                             token_estimate 403 vs 405
+31 and 1 are the real citation counts of two real 1970s papers. Confirmed
+against the live API. `influential_citation_count` appeared only in the
+leaked variant, because only Semantic Scholar supplies that field.
 
-`article_search_full`, `variant_search`, `gene_get_sections` and
-`trial_search` all match exactly, and the ratchet passes in both. So the
-instability is in the compact article-search surface alone, not the harness
-or the tokenizer -- a small unpinned field or ordering in that one path.
+## What it cost
 
-**This blocks every biomcp flight, not just 0875.** The test sits in the
-`test` gate rung, so it is a coin flip in front of the whole backlog.
+`test_offline_corpus_is_deterministic_and_reports_real_token_counts` sits in
+the `test` gate, which is also what `prepare` runs to decide whether
+`origin/main` is green. From 22:11 on 2026-08-08 to 07:53 on 2026-08-09 the
+biomcp channel completed nothing: fourteen refusals, no attempts spent, about
+half the machine's CPU. Ten hours lost to one unpinned URL.
 
-Recommended fix, for review: compare everything except the two drifting
-numbers and keep asserting the ratchet ceilings. The test's job is guarding
-output size; byte-exact equality is stricter than that job needs. Fixing the
-underlying field is better if it is cheap to find.
+## The finding
+
+The benchmark's offline guarantee was three separate things that each looked
+sufficient and none of which was: an explicit list of base URLs (incomplete by
+construction — nothing checks it against the binary), proxy variables (ignored
+by the client), and a replay server that 404s unknown routes (never consulted,
+because an unpinned provider does not route through it).
+
+There are 57 `BIOMCP_*_BASE` variables in the source. The benchmark pins nine.
+The other 48 are fine today only because this corpus does not reach them.
+
+## Ask
+
+Make the offline claim enforceable rather than aspirational. Options, cheapest
+first:
+
+1. **Pin every base.** Point all 57 at the replay server; unknown routes
+    already 404, which turns a leak into a loud failure instead of a drift.
+    Simple, and the list can be generated from the source so it cannot rot.
+2. **Run the corpus in a network namespace with only loopback.** A real
+    guarantee rather than a list, but it needs user namespaces available on
+    every machine that runs the gate, including the factory.
+3. Leave it and fix leaks as they are found. This is what we were doing.
+
+Recommend 1, with the list derived from `grep BIOMCP_.*_BASE src/` in a test
+so a new provider cannot be added without appearing in the corpus env.
+
+## Separate, smaller finding
+
+The corpus runs with `semantic_scholar_enabled: false` in its own output, and
+Semantic Scholar was still called. Whatever that flag governs, it is not
+"do not contact Semantic Scholar." Worth a look on its own terms — a user who
+turns a source off probably expects no traffic to it.
