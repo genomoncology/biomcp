@@ -132,3 +132,34 @@ Done when, for this part: each fixture server runs in a tracked process
 group, startup reaps stale worktree-owned fixture children before taking
 the routine lock, and a harness test interrupts a routine run and shows a
 second run reaching the runner with no manual cleanup.
+
+## Bound by the 2026-08-09 factory flight's design review
+
+The first factory attempt's design was refused, correctly, and the
+refusal's behaviorally-proven findings bind the next attempt:
+
+- EXIT traps and local PID/env cleanup are NOT SIGKILL-safe and are
+  not evidence a fixture is excluded. The refused design deferred
+  `complexportal`, `drug-ae-fallback`, `mychem-empty`,
+  `section-outcomes`, `study-download-error`, and `vaers` because they
+  have local PID/env cleanup, and `article-federated-timeout` because
+  it has a wrapper trap. The reviewer probed the complexportal path:
+  started it under an owner shell with the real cleanup script on
+  EXIT, SIGKILLed the shell, and both server and root survived. All
+  seven need the same owner-death fix or behavioral proof of safety.
+- The file-only fixtures (`cvx`, `ddinter`, `ema`, `gtr`, `study`,
+  `who-ivd`, `who-pq`) start no server and are correctly excluded.
+- The autonomous owner-death mechanism plus authenticated PPID-1
+  marker recovery for the six routine ownership-helper fixtures was
+  accepted in principle; keep it. The design must additionally state
+  race-safe owner identity — pidfd with a validated fallback, not
+  polling a reusable PID — and keep deletion restricted to canonical
+  fixture roots.
+- The review stage committed one repair on the old claim branch
+  (1cc32958, loosening the stale-reaper log-wording assertion to
+  count/kind/semantics). That branch's tip should be tagged before any
+  teardown so the repair survives.
+
+The six owner-death test cases and the marker-orphan case were run
+and fail against current code — the red tests exist; the next design
+starts from them.
