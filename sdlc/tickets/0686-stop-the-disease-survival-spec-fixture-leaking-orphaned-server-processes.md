@@ -201,3 +201,29 @@ design MUST close before code starts. They are the specification now:
 The review committed one repair on the claim branch (2cb3a241,
 whole-token stale-reaper count). Tag the branch tip before teardown;
 biomcp's discard lacks the retry tag.
+
+## Scope cut after the fifth refusal (2026-08-09, run 20-09-06-f609)
+
+Five attempts have proven this scope exceeds one flight. This section
+OVERRIDES the coverage demands above. This ticket now delivers ONLY
+slice one:
+
+- ONE standard-library supervisor module (single implementation — the
+  fifth refusal was for duplicating it), pidfd owner observation with
+  start-identity-validated fallback, isolated process groups, cleanup
+  bounded to the canonical fixture-root parent, no BIOMCP_BIN
+  precedence changes.
+- The coordinator identity exported by the REAL runner
+  (scripts/run-specs.sh), inherited by nested fixture scripts, with
+  defined standalone behavior.
+- Adopted by exactly ONE fixture: disease-survival (this ticket's
+  namesake), including its owner-death test, the PPID-1
+  marker-orphan recovery, and the real bounded-timeout proof.
+- The other authored red tests (six routine ownership-helper
+  fixtures, seven direct setup fixtures, run-* wrappers) move OUT:
+  design commits this flight may relocate or defer those tests to
+  tickets 0896 and 0897 — authorized.
+
+Tickets 0896 (remaining setup fixtures adopt the supervisor) and
+0897 (the five run-* wrappers) carry the rest; both depend on this
+landing.
