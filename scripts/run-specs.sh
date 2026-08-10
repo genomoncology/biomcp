@@ -4,6 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+routine_owner_stat="$(<"/proc/$$/stat")"
+routine_owner_rest="${routine_owner_stat#*) }"
+read -r -a routine_owner_fields <<<"$routine_owner_rest"
+export ROUTINE_FIXTURE_OWNER_PID="$$"
+export ROUTINE_FIXTURE_OWNER_START_ID="${routine_owner_fields[19]}"
+
 SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
   spec/entity/author.md
