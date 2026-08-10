@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import re
 import shutil
 import signal
 import subprocess
 import time
+from pathlib import Path
 
 import pytest
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.skipif(
@@ -29,6 +28,18 @@ def _wait_until(predicate, timeout: float = 10.0) -> None:
 
 def _read_record(path: Path) -> dict[str, str]:
     return dict(line.split("=", 1) for line in path.read_text().splitlines())
+
+
+def _processes_with_marker(marker: str) -> list[int]:
+    matches: list[int] = []
+    for proc_dir in Path("/proc").glob("[0-9]*"):
+        try:
+            cmdline = proc_dir.joinpath("cmdline").read_bytes().replace(b"\0", b" ")
+            if marker.encode() in cmdline:
+                matches.append(int(proc_dir.name))
+        except (FileNotFoundError, PermissionError):
+            continue
+    return matches
 
 
 def _disease_workspace(tmp_path: Path) -> Path:
@@ -83,6 +94,7 @@ def test_disease_survival_server_and_root_die_with_sigkilled_owner(
         assert owner.wait(timeout=10) == -signal.SIGKILL
 
         _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())
+        _wait_until(lambda: not _processes_with_marker(str(fixture_root)))
         _wait_until(lambda: not fixture_root.exists())
     finally:
         if owner.poll() is None:
@@ -100,35 +112,55 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
     )
     stale_root = workspace / ".cache" / "spec-disease-survival.orphan"
     stale_root.mkdir(parents=True)
+    stale_owner_arg = (
+        f"routine-fixture-owner:disease-survival:{'a' * 32}:{stale_root.resolve()}"
+    )
+    decoy_root = workspace / ".cache" / "spec-disease-survival.decoy"
+    decoy_root.mkdir()
     stale_pid_file = workspace / "stale-server-pid"
+    decoy_pid_file = workspace / "decoy-server-pid"
     owner = subprocess.Popen(
         [
             "bash",
             "-c",
             (
-                'setsid python3 -c "import time; time.sleep(60)" "$1/base-url" & '
-                'server="$!"; printf "%s\\n" "$server" >"$2"; wait "$server"'
+                'setsid python3 -c "import time; time.sleep(60)" '
+                '"$1/base-url" "$2" & stale="$!"; '
+                'setsid python3 -c "import time; time.sleep(60)" '
+                '"$3/base-url" & decoy="$!"; '
+                'printf "%s\\n" "$stale" >"$4"; '
+                'printf "%s\\n" "$decoy" >"$5"; wait'
             ),
             "fixture-owner",
             str(stale_root),
+            stale_owner_arg,
+            str(decoy_root),
             str(stale_pid_file),
+            str(decoy_pid_file),
         ],
         start_new_session=True,
     )
     stale_pid: int | None = None
+    decoy_pid: int | None = None
     try:
-        _wait_until(stale_pid_file.exists)
+        _wait_until(lambda: stale_pid_file.exists() and decoy_pid_file.exists())
         stale_pid = int(stale_pid_file.read_text().strip())
+        decoy_pid = int(decoy_pid_file.read_text().strip())
         owner.kill()
         assert owner.wait(timeout=10) == -signal.SIGKILL
-        _wait_until(
-            lambda: Path(f"/proc/{stale_pid}/status")
-            .read_text()
-            .split("PPid:\t", 1)[1]
-            .splitlines()[0]
-            .strip()
-            == "1"
-        )
+
+        def is_ppid_one(pid: int) -> bool:
+            return (
+                Path(f"/proc/{pid}/status")
+                .read_text()
+                .split("PPid:\t", 1)[1]
+                .splitlines()[0]
+                .strip()
+                == "1"
+            )
+
+        _wait_until(lambda: is_ppid_one(stale_pid))
+        _wait_until(lambda: is_ppid_one(decoy_pid))
 
         result = subprocess.run(
             ["bash", str(setup), str(workspace)],
@@ -139,10 +171,15 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
 
         assert result.returncode == 0
         _wait_until(lambda: not Path(f"/proc/{stale_pid}").exists())
-        assert not stale_root.exists()
+        _wait_until(lambda: not stale_root.exists())
+        assert Path(f"/proc/{decoy_pid}").exists(), (
+            "a PPID-1 process with only a similarly named path is not an authenticated "
+            "disease-survival fixture"
+        )
+        assert decoy_root.exists()
         assert any(
             re.search(r"\b1\b", line)
-            and "disease-survival" in line
+            and re.search(r"disease\W+survival", line)
             and ("reap" in line or "collect" in line)
             for line in result.stderr.lower().splitlines()
         ), "one log event must identify the collected disease-survival orphan count"
@@ -150,9 +187,11 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
         if owner.poll() is None:
             owner.kill()
             owner.wait()
-        if stale_pid is not None and Path(f"/proc/{stale_pid}").exists():
-            os.killpg(os.getpgid(stale_pid), signal.SIGKILL)
+        for pid in (stale_pid, decoy_pid):
+            if pid is not None and Path(f"/proc/{pid}").exists():
+                os.killpg(os.getpgid(pid), signal.SIGKILL)
         shutil.rmtree(stale_root, ignore_errors=True)
+        shutil.rmtree(decoy_root, ignore_errors=True)
         subprocess.run(["bash", str(cleanup), str(workspace)], check=False)
 
 
@@ -226,11 +265,15 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
     (workspace / "scripts").mkdir()
     shutil.copy2(REPO_ROOT / "scripts" / "run-specs.sh", workspace / "scripts")
     for name in (
+        "fixture-supervisor.py",
+        "fixture-supervisor.sh",
         "routine-fixture-ownership.sh",
         "setup-disease-survival-spec-fixture.sh",
         "cleanup-disease-survival-spec-fixture.sh",
     ):
-        shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
+        source = REPO_ROOT / "spec" / "fixtures" / name
+        if source.exists():
+            shutil.copy2(source, fixtures / name)
     shutil.copytree(
         REPO_ROOT / "testdata" / "sources", workspace / "testdata" / "sources"
     )
@@ -292,8 +335,9 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
         server_pid = int(record["BIOMCP_DISEASE_SURVIVAL_PID"])
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
 
-        assert timed_run.wait(timeout=10) != 0
+        assert timed_run.wait(timeout=10) == -signal.SIGKILL
         _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())
+        _wait_until(lambda: not _processes_with_marker(str(fixture_root)))
         _wait_until(lambda: not fixture_root.exists())
     finally:
         if timed_run.poll() is None:
