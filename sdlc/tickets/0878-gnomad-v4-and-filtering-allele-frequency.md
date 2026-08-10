@@ -22,9 +22,11 @@ resolved GRCh38 coordinate and returns:
 - explicit missing, absent, and provider-failure outcomes;
 - the gnomAD FAF exclusion caveat for bottlenecked groups.
 
-The existing MyVariant/legacy gnomAD or ExAC data may remain only if it is
-clearly labeled as a separate older source. It must not be merged into the
-v4 fields or used as a silent fallback.
+Keep the existing MyVariant/legacy gnomAD and ExAC data for one compatibility
+cycle under a separate `legacy_population` object with its own provider and
+release labels. Mark that object deprecated in the schema and documentation.
+It must not be merged into the v4 fields or used as a fallback when direct
+gnomAD data is absent or unavailable.
 
 If the resolved variant has no trustworthy GRCh38 coordinate, the section
 states that requirement instead of querying gnomAD with a GRCh37 coordinate.

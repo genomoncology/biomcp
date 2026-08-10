@@ -1,12 +1,13 @@
 ---
 flow: build
 priority: 6
-deps: ["0686"]
+deps: ["0686", "0896"]
 ---
 # The server-starting run wrappers adopt the supervisor
 
-Ticket 0686 landed one owner-identity-aware fixture supervisor. Reuse it for
-exactly these five wrappers:
+Ticket 0686 landed one owner-identity-aware fixture supervisor and ticket 0896
+generalizes its fixture-kind and recovery dispatch. Reuse that same generalized
+supervisor for exactly these five wrappers:
 
 - run-article-semanticscholar-source-search.sh
 - run-clingen-erepo-fixture.sh
@@ -22,8 +23,8 @@ exit and timeout cleanup also work. Recovery validates fixture kind,
 worktree/root prefix, owner token, PID start identity, and process group
 before signaling.
 
-Generalize 0686's disease-specific marker/recovery dispatch only as needed to
-reuse the same supervisor. Do not create wrapper-specific supervisors.
+Do not create wrapper-specific supervisors or weaken the generalized identity
+and path checks established by 0896.
 
 ## Authorized test changes
 

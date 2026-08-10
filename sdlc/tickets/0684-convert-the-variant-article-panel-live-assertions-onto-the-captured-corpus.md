@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 9
-deps: ["0683"]
+deps: ["0683", "0914", "0915"]
 ---
 # Convert the variant-article panel live assertions onto the captured corpus
 

@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 8
-deps: ["0651", "0906"]
+deps: ["0651", "0906", "0924"]
 ---
 # Convert gene enrichment live assertions to receipted contracts
 

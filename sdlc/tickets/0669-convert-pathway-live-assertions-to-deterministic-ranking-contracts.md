@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 6
-deps: ["0651"]
+deps: ["0651", "0914", "0915"]
 ---
 # Convert pathway live assertions to deterministic ranking contracts
 

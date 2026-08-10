@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 7
-deps: ["0651"]
+deps: ["0651", "0914", "0915"]
 ---
 # Convert discover live assertions to receipted contracts
 

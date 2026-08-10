@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 8
-deps: ["0651"]
+deps: ["0651", "0914", "0915"]
 ---
 # Convert drug regulatory live assertions to receipted contracts
 

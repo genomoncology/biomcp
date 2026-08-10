@@ -10,7 +10,7 @@ bytes, and records the coverage outcome. Do not reimplement that work.
 ## Lookup contract
 
 The asset command prefers the opaque asset_key returned by the manifest.
-For backward compatibility it may also resolve an exact displayed filename.
+For backward compatibility it also resolves an exact displayed filename.
 
 - A key or filename matching a coverage record marked non-retrievable returns
   article_asset_not_retrievable.

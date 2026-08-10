@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 9
-deps: ["0651"]
+deps: ["0651", "0914", "0915", "0921", "0922", "0924"]
 ---
 # Convert protein live assertions to deterministic source contracts
 

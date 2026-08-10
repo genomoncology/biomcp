@@ -1,6 +1,7 @@
 ---
 flow: publish
 priority: 1
+deps: ["0689", "0874", "0884", "0899", "0900", "0909", "0910", "0911", "0912", "0913", "0914", "0915", "0916", "0917", "0918", "0919", "0920", "0921", "0922", "0923", "0924", "0925"]
 ---
 # Release v0.8.26 from one verified commit across every distribution channel
 
@@ -34,8 +35,8 @@ post-publish install. MCP Registry and MCPB metadata exist, but BioMCP is not ye
 official MCP Registry and no installable `.mcpb` asset is released.
 
 This ticket makes v0.8.26 the complete, current release: all work since v0.8.25,
-including the completed exact-variant and literature chain 598-609, ClinGen chain
-610-616, and audited release repairs 617-623, comes from one pinned commit and is proven
+including the completed exact-variant and literature chain 598-609, ClinGen work
+610-614 and 616, and audited release repairs 617-623, comes from one pinned commit and is proven
 through every supported distribution path. It remains a draft until Ian explicitly
 approves the release cut.
 
@@ -43,7 +44,7 @@ approves the release cut.
 
 ### 1. Freeze the complete v0.8.26 source boundary
 
-- Begin only after every frontmatter dependency, including repairs 617-623, is complete
+- Begin only after every current frontmatter dependency is complete
   and merged to a clean, up-to-date `main`. Do not cherry-pick a subset of the ClinGen
   or release-repair chain.
 - Review the entire commit range from `v0.8.25` through the proposed release commit.
@@ -290,8 +291,8 @@ corresponding unit suite.
 
 ## Success Checklist
 
-- [ ] Every frontmatter dependency through 623 is complete, merged, and green; 615
-  proves offline composition and 623 proves the unchanged final live release gates.
+- [ ] Every current frontmatter dependency is complete, merged, and green; 0884
+  proves offline routine composition after 0673 reconciles the live registry.
 - [ ] The release notes cover the complete `v0.8.25..release-commit` range, including
   598-609 and 610-616, without claiming fixture-only behavior.
 - [ ] The changelog has truthful v0.8.25, v0.8.26, and restored Unreleased boundaries,
@@ -455,9 +456,12 @@ evaluation.
 
 ## Dependencies
 
-- Tickets 610-623 are the release code/quality prerequisites and are explicit in the
-  frontmatter. Ticket 615 is the final offline ClinGen composition gate and 623 is the
-  final live candidate gate; their presence does not make source repairs optional.
+- Completed records 610-614 and 616-623 are part of the release source baseline,
+  not active queue blockers. The migrated repository contains no 0615 ticket or
+  completion record, so this release does not cite it as proof. Current offline
+  composition is owned by 0884 after registry reconciliation in 0673.
+- The active audit repairs and current clinical-correctness chain are explicit in
+  frontmatter. Their presence does not make completed-source non-regressions optional.
 - Tickets 598-609 are completed and already form part of the release source history. They
   are release non-regressions, not queue blockers.
 - The separate `genomoncology/homebrew-biomcp` tap already exists. Creating it is not a

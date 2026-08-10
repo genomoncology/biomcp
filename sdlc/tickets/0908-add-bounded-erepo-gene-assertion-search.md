@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 4
+deps: ["0915"]
 ---
 # Add bounded ERepo gene assertion search
 
