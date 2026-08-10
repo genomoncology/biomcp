@@ -1,16 +1,25 @@
 #!/bin/sh
-# integrate — build lands its sealed candidate here; other flows only tear down.
+# integrate — build, quickfix, and review land sealed candidates here; other flows only tear down.
 #
 # Environment: QUEUE_ID, QUEUE_FLOW; optional QUEUE_REPO.
 set -eu
 
-: "${QUEUE_ID:?integrate: QUEUE_ID is required}"
 : "${QUEUE_FLOW:?integrate: QUEUE_FLOW is required}"
+case "$QUEUE_FLOW" in
+build|quickfix|review) LANDING=true ;;
+*) LANDING=false ;;
+esac
+
+if [ -z "${QUEUE_ID-}" ]; then
+	echo "integrate: QUEUE_ID is required" >&2
+	if "$LANDING"; then exit 3; fi
+	exit 1
+fi
 case "$QUEUE_ID" in
 [0-9][0-9][0-9][0-9]) ;;
 *)
 	echo "integrate: QUEUE_ID must be exactly four digits" >&2
-	if [ "$QUEUE_FLOW" = "build" ]; then exit 3; fi
+	if "$LANDING"; then exit 3; fi
 	exit 1
 	;;
 esac
@@ -34,11 +43,13 @@ origin_namespace() {
 
 if ! NAMESPACE=$(origin_namespace) || [ -z "$NAMESPACE" ]; then
 	echo "integrate: cannot derive owner/repository from origin" >&2
+	if "$LANDING"; then exit 3; fi
 	exit 1
 fi
 if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
 	|| ! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
 	echo "integrate: cannot determine Git common directory for $REPO" >&2
+	if "$LANDING"; then exit 3; fi
 	exit 1
 fi
 TREE="$WORKTREES/$NAMESPACE/$QUEUE_ID"
@@ -81,23 +92,23 @@ for candidate in "$TREE" "$LEGACY_TREE"; do
 	[ -e "$candidate" ] || continue
 	if ! candidate_owned "$candidate"; then
 		echo "integrate: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
-		if [ "$QUEUE_FLOW" = "build" ]; then exit 3; fi
+		if "$LANDING"; then exit 3; fi
 		exit 1
 	fi
 done
 
-if [ "$QUEUE_FLOW" = "build" ]; then
+if "$LANDING"; then
 	CANDIDATE=
 	for candidate in "$TREE" "$LEGACY_TREE"; do
 		[ -e "$candidate" ] || continue
 		if [ -n "$CANDIDATE" ]; then
-			echo "integrate: ambiguous build candidates" >&2
+			echo "integrate: ambiguous candidates" >&2
 			exit 3
 		fi
 		CANDIDATE=$candidate
 	done
 	if [ -z "$CANDIDATE" ]; then
-		echo "integrate: build candidate is absent" >&2
+		echo "integrate: candidate is absent" >&2
 		exit 3
 	fi
 
@@ -111,7 +122,10 @@ if [ "$QUEUE_FLOW" = "build" ]; then
 		exit 3
 	fi
 
-	witness_text=$(cat "$WITNESS_PATH")
+	if ! witness_text=$(cat "$WITNESS_PATH"); then
+		echo "integrate: could not read verified witness" >&2
+		exit 3
+	fi
 	if ! WITNESS=$(git -C "$CANDIDATE" rev-parse --verify "${witness_text}^{commit}" 2>/dev/null) \
 		|| [ "$witness_text" != "$WITNESS" ] \
 		|| ! printf '%s\n' "$WITNESS" | cmp -s - "$WITNESS_PATH"; then
@@ -121,7 +135,7 @@ if [ "$QUEUE_FLOW" = "build" ]; then
 	if ! TICKET=$(git -C "$REPO" rev-parse --verify "${BRANCH}^{commit}" 2>/dev/null) \
 		|| ! HEAD=$(git -C "$CANDIDATE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) \
 		|| [ "$WITNESS" != "$TICKET" ] || [ "$WITNESS" != "$HEAD" ]; then
-		echo "integrate: verified witness does not match the build candidate" >&2
+		echo "integrate: verified witness does not match the candidate" >&2
 		exit 3
 	fi
 	if ! git -C "$REPO" push --quiet origin "$WITNESS:main"; then
