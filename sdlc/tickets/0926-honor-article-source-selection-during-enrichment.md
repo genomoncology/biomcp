@@ -41,6 +41,9 @@ traffic.
   protected by ticket 0909's logging boundary.
 - Article help, source documentation, the Semantic Scholar key guidance, and
   output-footprint fixtures describe the same source behavior.
+- `RUN.md` and the canonical API-key guide both state that Semantic Scholar
+  TLDR can run anonymously and that `S2_API_KEY` raises quota; neither calls
+  the key mandatory.
 - No routine test reaches a public provider.
 
 ## Authorized test changes

@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 10
+deps: ["0951"]
 ---
 # Require a safe Host boundary for serve-http
 

@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 9
+deps: ["0951"]
 ---
 # Run canonical gates on main and pull requests
 

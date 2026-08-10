@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 10
+deps: ["0951"]
 ---
 # Let self-update download current release archives
 
@@ -22,18 +23,27 @@ Changing only one boundary is not complete. Release metadata and checksum
 sidecars keep their smaller normal limits. The GitHub release base and asset
 transport are injectable in tests; routine tests never call GitHub.
 
-A local HTTP fixture proves:
+A local HTTP fixture uses an injectable decoder/body ceiling for exact-boundary
+and boundary-plus-one cases. Routine tests use a small ceiling; they do not
+allocate or stream a body larger than 256 MiB merely to exercise arithmetic.
+The production constant remains pinned at exactly 256 MiB, and one modest
+archive larger than 8 MiB preserves the original regression. The fixture
+proves:
 
-- declared-content-length and chunked archives larger than 8 MiB and no larger
-  than 256 MiB reach checksum and extraction;
-- declared and chunked bodies over 256 MiB fail before installation;
+- declared-content-length and chunked archives larger than 8 MiB and within
+  the effective ceiling reach checksum and extraction;
+- declared and chunked bodies one byte over the injected ceiling fail before
+  installation, while a constant assertion pins the real ceiling at 256 MiB;
 - a truncated archive, missing checksum, malformed checksum, and mismatch all
   fail closed; and
 - a successful verified archive invokes the replacement seam exactly once.
 
-The release ticket owns a post-publication smoke in which the previous
-published CLI checks and downloads the new published asset. This ticket owns
-the deterministic local contract.
+Ticket 0957 owns the post-publication transition. Because v0.8.25 cannot read
+its already-over-8-MiB release archives, that ticket gives exactly the first
+repaired release a recorded installer fallback and requires normal
+previous-public self-update thereafter. This ticket owns the deterministic
+local proof that the repaired updater reads a checksum-valid over-8-MiB
+next-version archive.
 
 ## Authorized test changes
 

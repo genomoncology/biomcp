@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 9
-deps: ["0935"]
+deps: ["0934", "0935"]
 ---
 # Keep managed local state private
 
@@ -22,6 +22,14 @@ using the platform-supported user-private mechanism. If BioMCP cannot establish
 or verify that boundary, return a typed local-storage error before writing
 query or response content; do not silently continue with broad access.
 
+On every platform, an existing managed regular file with a link count other
+than one is rejected before read, chmod, truncate, write, rename-over, or
+delete. Do not try to repair its mode: another pathname may reference the
+same inode. New atomic temporary files must begin with one link and are
+revalidated immediately before rename. Directories use the platform's normal
+directory identity checks; this rule does not invent directory hard-link
+support.
+
 ## Done when
 
 - Permission tests cover initial directory, metadata, blob, session, lock, and
@@ -32,6 +40,10 @@ query or response content; do not silently continue with broad access.
   existing valid store.
 - Unix and Windows CI exercise their platform contract; unsupported permission
   APIs do not become silent skips on a supported release target.
+- The flight requires local Unix permission proof plus committed Unix/Windows
+  CI jobs and contract tests. A green cross-platform release-candidate run is
+  an explicit pre-publication requirement in ticket 0953; workflow text alone
+  is not represented as completed platform execution.
 - Policy and cache/session documentation state that local access controls do
   not govern upstream provider retention.
 

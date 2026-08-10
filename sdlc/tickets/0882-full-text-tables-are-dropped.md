@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 5
+deps: ["0951"]
 ---
 # Preserve complex table cells in saved article full text
 

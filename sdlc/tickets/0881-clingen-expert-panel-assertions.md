@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 6
+deps: ["0951"]
 ---
 # Carry the guideline identity on ERepo assertions
 

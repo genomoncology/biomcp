@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 6
-deps: ["0686"]
+deps: ["0686", "0951", "0957"]
 ---
 # The remaining setup fixtures adopt the supervisor
 

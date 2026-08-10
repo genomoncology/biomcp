@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 6
 deps: ["0949"]
 ---
@@ -25,7 +25,7 @@ platforms retain their current explicit test behavior.
 
 ## Authorized test changes
 
-The quickfix may change the affected cache-clear fixture and shared temporary
+Design and code commits may change the affected cache-clear fixture and shared temporary
 helper only where needed for bounded Unix socket paths. Existing special-file,
 symlink, regular-file, cleanup, and parallel-isolation assertions remain.
 

@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 5
+deps: ["0951"]
 ---
 # Build routine specification artifacts once
 
@@ -42,15 +43,18 @@ fixture-helper execution, forbid build-inducing `cargo run`, `cargo build`,
 - one runner test proves missing or stale artifact paths fail clearly rather
   than falling back to cargo or an installed biomcp;
 - routine spec results remain unchanged.
+- `RUN.md` and spec operator documentation derive or check the routine page
+  inventory from the runner; they do not preserve a stale hand-written subset.
 
 Live provider smoke pages may consume the same prebuilt release artifact but
 must not build it themselves.
 
 ## Authorized test changes
 
-Design commits may restate scripts/run-specs.sh, Makefile, the named spec
-pages/helpers, filtered-test invocation, artifact/evidence path environment
-contracts, and runner tests. Existing assertions that actually prove Cargo
+Design commits may restate scripts/run-specs.sh, Makefile, `RUN.md`, spec
+operator documentation, the named spec pages/helpers, filtered-test invocation,
+artifact/evidence path environment contracts, and runner tests. Existing
+assertions that actually prove Cargo
 metadata, dependency-tree, and filtered-test behavior may be restated to
 consume preparation output; they must not be deleted. No product src change
 belongs here.

@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 7
+deps: ["0951"]
 ---
 # Report a complete gnomAD v4 population result
 
@@ -25,15 +26,12 @@ to `gnomad_r3`, `gnomad_r2_1`, or a future dataset enum. The response returns:
 - explicit missing, absent, and provider-failure outcomes;
 - the gnomAD FAF exclusion caveat for bottlenecked groups.
 
-Keep the existing MyVariant/legacy gnomAD and ExAC data through the first
-BioMCP release containing this ticket under a separate `legacy_population`
-object with its own provider and release labels. That compatibility release is
-v0.8.26 if this ticket lands before that cut; otherwise it is the first later
-release containing the change. Mark the object deprecated in the schema and
-documentation and name the exact removal release there. Draft ticket 0946 owns
-removal in the following minor release. The legacy object must not be merged
-into the v4 fields or used as a fallback when direct gnomAD data is absent or
-unavailable.
+Replace the existing MyVariant/legacy gnomAD and ExAC population output in one
+clean pre-1.0 breaking change. Do not add a temporary `legacy_population`
+object, duplicate the old retrieval, or copy any legacy value into the v4
+model as a fallback. The first public release containing this ticket must be a
+new minor version, and its migration notes name the removed legacy fields and
+the direct gnomAD v4 replacements. No later removal ticket is required.
 
 If the resolved variant has no trustworthy GRCh38 coordinate, the section
 states that requirement instead of querying gnomAD with a GRCh37 coordinate.
@@ -53,8 +51,9 @@ states that requirement instead of querying gnomAD with a GRCh37 coordinate.
 
 ## Authorized test changes
 
-Design commits may restate the population model, MyVariant legacy population
-fixtures, gnomAD source tests, variant population JSON/Markdown tests, skill
+Design commits may restate the population model, remove MyVariant legacy
+population fixtures that have no other owner, update gnomAD source tests,
+variant population JSON/Markdown tests, skill
 schemas/examples, and related specs. Mechanical construction fixes may land
 with implementation while unrelated assertions remain unchanged.
 

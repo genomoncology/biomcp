@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 2
-deps: ["0934"]
+deps: ["0934", "0957"]
 ---
 # Route doc-only pre-commit checks through a tracked hook
 

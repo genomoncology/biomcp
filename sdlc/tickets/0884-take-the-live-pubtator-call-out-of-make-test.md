@@ -9,6 +9,10 @@ The PubTator fixture conversion already landed. This ticket is the
 fail-closed whole-suite boundary, after the source conversion and registry
 reconciliation program finishes.
 
+Its P9 label reflects the importance of the invariant, not early execution.
+Dependencies deliberately make it the final routine-test enforcement gate
+after lower-priority provider conversions and reconciliation have landed.
+
 Offline-enforcement issue owned by this ticket:
 sdlc/issues/output-footprint-corpus-is-nondeterministic.md
 

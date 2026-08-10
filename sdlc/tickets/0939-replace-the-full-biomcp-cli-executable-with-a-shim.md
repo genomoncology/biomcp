@@ -11,30 +11,30 @@ The PyPI package is correctly named `biomcp-cli`, but the wheel installs both
 
 ## Compatibility contract
 
-Keep the PyPI distribution name `biomcp-cli`. For one compatibility release,
-retain its command as a small forwarding executable that locates the sibling
-`biomcp`, passes every argument and standard stream through, and returns the
-same exit status. It writes one plain deprecation notice to stderr naming
-`biomcp`; stdout remains byte-for-byte the real command output, including JSON
-and binary redirection.
+Keep the PyPI distribution name `biomcp-cli` and retain the `biomcp-cli`
+command indefinitely as a supported, small forwarding alias. It locates the
+sibling `biomcp`, passes every argument and standard stream through, and
+returns the same exit status. It writes no routine warning, so stdout and
+stderr remain byte-for-byte the real command output, including JSON, errors,
+and binary redirection. There is no scheduled removal ticket or deprecation
+promise.
 
 The shim must not link the BioMCP application library or contain a second copy
 of its providers, templates, or embedded assets. Its stripped installed size
 is at most 1 MiB on every supported platform. A missing or non-executable
-sibling fails clearly without searching arbitrary PATH entries. Draft ticket
-0947 owns removal after the compatibility release.
+sibling fails clearly without searching arbitrary PATH entries.
 
 ## Done when
 
 - Fresh Linux, macOS, and Windows wheel inspections contain one full `biomcp`
   and a shim no larger than 1 MiB, not two full executables.
 - Version, help, JSON success/error, nonzero exit, signal/interruption where
-  supported, and a local binary-output redirection behave like direct `biomcp`
-  except for the stderr deprecation notice.
+  supported, and a local binary-output redirection behave exactly like direct
+  `biomcp`.
 - Updater/uninstaller ownership from 0916 recognizes the package-managed shim
   without attempting to self-mutate it.
-- Public installation docs distinguish the `biomcp-cli` package name from the
-  deprecated command name and direct all examples to `biomcp`.
+- Public installation docs distinguish the `biomcp-cli` package name from its
+  supported compatibility command and use `biomcp` in primary examples.
 - Release and wheel-size contracts fail if the full duplicate returns.
 
 ## Authorized test changes

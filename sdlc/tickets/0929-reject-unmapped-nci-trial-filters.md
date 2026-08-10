@@ -1,23 +1,30 @@
 ---
-flow: quickfix
+flow: build
 priority: 10
+deps: ["0951"]
 ---
 # Reject unmapped NCI trial filters
 
-NCI trial search currently accepts study type, sponsor, and update-date
-filters without putting them in the request. When biomarker, mutation, and
-criteria are supplied together, it silently chooses the first one.
+NCI trial search currently accepts study type and sponsor without putting them
+in the request. When biomarker, mutation, and criteria are supplied together,
+it silently chooses the first one. Update-date filters are already rejected
+before client construction; preserve and test that correct behavior rather
+than treating it as a newly discovered mapping defect.
 
 ## Provider contract
 
 For `--source nci`, continue to support condition, intervention, facility,
 mapped status, mapped phase, and a complete latitude/longitude/distance tuple.
-Support exactly one of `--biomarker`, `--mutation`, or `--criteria` through the
-NCI combined biomarker query field.
+Support at most one value total across `--biomarker`, `--mutation`, and
+`--criteria` through the NCI combined biomarker query field. One selected field
+with one value is valid. Multiple fields, a repeated flag, or multiple values
+inside one field are rejected before transport; no join/dedup/first-value rule
+is permitted.
 
-Reject `--study-type`, `--sponsor`, `--date-from`, and `--date-to` before
-transport. Reject any request containing more than one of biomarker, mutation,
-and criteria; do not concatenate them or choose one. Existing NCI rejections
+Reject `--study-type` and `--sponsor` before transport. Keep the existing
+pre-client rejection for `--date-from` and `--date-to`. Reject any request
+containing more than one total biomarker/mutation/criteria value; do not
+concatenate, deduplicate, or choose one. Existing NCI rejections
 for age, sex, sponsor type, results availability, unsupported phase/status, and
 CTGov-only eligibility filters remain in force. A filter may become accepted
 later only with a request-construction fixture proving its exact NCI mapping.
@@ -35,7 +42,7 @@ later only with a request-construction fixture proving its exact NCI mapping.
 
 ## Authorized test changes
 
-The quickfix may restate NCI validation and construction expectations in
+Design and code commits may restate NCI validation and construction expectations in
 `src/entities/trial/search/mod.rs`, `src/entities/trial/search/nci.rs`,
 `src/sources/nci_cts`, trial CLI tests, specs, and trial/source documentation.
 Existing mapped status, phase, disease grounding, pagination, and CTGov tests

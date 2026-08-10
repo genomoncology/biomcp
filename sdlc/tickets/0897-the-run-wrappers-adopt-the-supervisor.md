@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 6
-deps: ["0686", "0896"]
+deps: ["0686", "0896", "0957"]
 ---
 # The server-starting run wrappers adopt the supervisor
 

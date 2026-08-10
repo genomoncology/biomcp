@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 5
+deps: ["0951", "0957"]
 ---
 # Surface a criteria specification's file attachments
 
@@ -59,6 +60,8 @@ gene-cspec rendering tests, schemas/examples, and the selected real capture.
 Mechanical construction fixes may land with implementation while existing
 criteria assertions remain unchanged.
 
-Cross-specification search remains out of scope and stays in draft 0894.
+Cross-specification search remains out of scope. It has no ticket until a
+complete, versioned corpus and its redistribution/index policy are approved;
+the current one-document capture cannot support an honest negative search.
 
 The src line ceiling may rise by at most 180 lines.

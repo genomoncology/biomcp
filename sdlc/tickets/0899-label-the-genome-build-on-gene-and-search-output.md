@@ -1,11 +1,11 @@
 ---
 flow: build
 priority: 9
-deps: ["0689"]
+deps: ["0950"]
 ---
 # Label genome builds on gene, search, and normalization JSON
 
-This is slice two of the coordinate-label sequence. It follows 0689's detail
+This is slice two of the coordinate-label sequence. It follows 0950's detail
 shape and precedes 0900's rendering.
 
 ## Model contract

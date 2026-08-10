@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 8
 deps: ["0937"]
 ---
@@ -12,6 +12,11 @@ Issue owned by this ticket:
 `testdata/`. They are valuable repository tests but are not needed to run the
 published binary, and their redistribution status has not been established for
 every provider.
+
+This is a precautionary package-boundary decision, not a finding that public
+repository hosting is unlawful. The ticket does not settle source-by-source
+licensing for the public Git repository. Any repository-removal decision
+requires a qualified source/licensing review with provider-specific evidence.
 
 ## Package contract
 
@@ -34,7 +39,7 @@ separate ticket; silence is not permission.
 
 ## Authorized test changes
 
-The quickfix may add Cargo package include/exclude and artifact-content tests,
+Design and code commits may add Cargo package include/exclude and artifact-content tests,
 adjust source-package documentation, and restate an existing expectation only
 where it assumed repository testdata was published. Runtime fixtures and
 biomedical behavior must not change.

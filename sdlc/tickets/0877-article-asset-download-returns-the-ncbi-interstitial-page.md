@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 6
+deps: ["0951"]
 ---
 # Return a typed error for a non-retrievable article asset
 

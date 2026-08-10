@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 10
+deps: ["0951"]
 ---
 # Keep coding and protein changes on the same transcript
 

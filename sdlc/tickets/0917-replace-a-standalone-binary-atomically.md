@@ -9,8 +9,8 @@ The updater writes a predictable `.biomcp.new` path with `File::create`, which
 can follow a pre-planted symlink. It flushes user-space buffers but does not
 sync the new file and containing directory before reporting success. Ticket
 0916 establishes that the installation is owned; this ticket makes the owned
-Unix replacement durable and race-safe. A running Windows executable needs a
-separate helper transaction; draft ticket 0945 owns that design.
+Unix replacement durable and race-safe. Windows self-update is deliberately
+unsupported: the verified standalone installer is the supported upgrade path.
 
 ## Replacement contract
 
@@ -54,7 +54,7 @@ Design commits may restate the replacement-seam and successful-update tests in
 `src/cli/update.rs` and related release/update contract tests. Existing archive
 size, extraction, and checksum failures stay fail closed. They may restate
 Windows update expectations and public update documentation to say that
-self-update is unavailable there until draft 0945 is deliberately promoted
-and completed.
+self-update is unavailable there and that the verified installer is the
+supported upgrade path. Do not promise a later helper transaction.
 
 The src line ceiling may rise by at most 240 lines.

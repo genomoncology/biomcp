@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 8
+deps: ["0951"]
 ---
 # Render list output from a typed command catalog
 

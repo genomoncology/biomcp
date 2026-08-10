@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 8
+deps: ["0934"]
 ---
 # Ship the advertised PNG chart support
 
@@ -29,6 +30,10 @@ describes the shipped behavior, not that expert opt-out.
   agree that public artifacts include PNG.
 - Feature-disabled source-build tests retain the clear unavailable-feature
   error without being mistaken for the public artifact contract.
+- The flight must pass the local native artifact smoke and commit the
+  push-to-main platform jobs and artifact-smoke contract. Cross-platform
+  release-candidate execution is not inferred from workflow text; ticket 0953
+  owns the actual Linux/macOS/Windows candidate proof before publication.
 - All proof uses local fixtures and no public cBioPortal request.
 
 ## Authorized test changes

@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 6
 deps: ["0911", "0938"]
 ---
@@ -33,7 +33,7 @@ and marker-block machinery.
 
 ## Authorized test changes
 
-The quickfix may remove startup-file mutation from canonical `install.sh` and
+Design and code commits may remove startup-file mutation from canonical `install.sh` and
 restate installer/output/documentation tests that currently preserve it. Shell
 startup files must not become part of the installer ownership receipt. No
 product Rust source change belongs here.

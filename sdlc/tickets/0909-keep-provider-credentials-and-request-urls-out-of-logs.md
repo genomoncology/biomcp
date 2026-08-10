@@ -1,13 +1,16 @@
 ---
 flow: build
 priority: 10
+deps: ["0951"]
 ---
 # Keep provider credentials and request URLs out of logs
 
-BioMCP currently depends on choosing `Display` rather than `Debug` at every
-logging call. That is not a safe credential boundary. `BioMcpError` has a
-scrubbed public display, but its derived debug form can contain a nested HTTP
-error with the complete request URL and query credentials.
+BioMCP's public `BioMcpError` display already scrubs major HTTP/provider
+failures, so this is not a claim that every current `%err` site leaks. The
+confirmed boundary failure is raw debug projection: the derived debug form can
+contain a nested HTTP error with the complete request URL and query
+credentials. Relying on every future call site to choose a safe formatter is
+still too fragile for a credential boundary.
 
 Federated article search logs a swallowed provider error with `?err` at warning
 level. The same path is used by ordinary article search and `search all`.
@@ -42,11 +45,12 @@ source-attributed.
 - The same assertions pass with debug logging enabled and cover the PMC and
   full-text raw-debug sites.
 - Safe provider, operation, class, and status diagnostics remain visible.
-- A source audit rejects every raw external-error projection, including
-  `?err`, `?error`, `%err`, `error = %err`, `Debug`/`Display` interpolation, and
-  formatted `{err}` strings, unless the value has first been converted to the
-  approved safe projection. The audit is based on the value's source/type and
-  approved helper, not a short variable-name list or one tracing sigil.
+- A source audit rejects raw `Debug` projection of external errors and any
+  `Display` projection whose error type is not ratcheted to the approved safe
+  public projection. Safe `BioMcpError::Display` use may remain. The audit is
+  based on the value's source/type and approved helper, not a short
+  variable-name list or one tracing sigil; it treats the broader type rule as
+  defense in depth rather than evidence that every existing display site leaks.
 - Exact-boundary and boundary-plus-one fixtures prove the scrubbed message is
   at most 512 UTF-8 bytes and ends at a valid character boundary.
 - No routine test uses a real credential or public network.

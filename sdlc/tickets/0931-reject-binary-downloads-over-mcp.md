@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 9
 deps: ["0930"]
 ---
@@ -37,7 +37,7 @@ ticket with byte, media-type, lifetime, and client-capability bounds.
 
 ## Authorized test changes
 
-The quickfix may add MCP allowlist, outcome, and process tests in
+Design and code commits may add MCP allowlist, outcome, and process tests in
 `src/mcp/shell.rs`, `src/cli/outcome.rs`, trial-document and article-asset local
 fixtures, and `spec/surface/mcp.md`. Existing CLI byte-for-byte downloads and
 MCP text/JSON outcomes remain covered.
