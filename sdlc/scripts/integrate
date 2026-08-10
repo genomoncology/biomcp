@@ -1,14 +1,11 @@
 #!/bin/sh
-# integrate — teardown after a landed run.
+# integrate — build lands its sealed candidate here; other flows only tear down.
 #
-# Environment: QUEUE_ID; optional QUEUE_REPO.
-# The landing already happened inside the run: the final stage rebased onto
-# origin/main and pushed --ff-only, and its gate verified the result (sdlc
-# ADR 0008). So there is nothing to merge here. This removes the worktree and
-# the branch, locally and on origin. It never touches main.
+# Environment: QUEUE_ID, QUEUE_FLOW; optional QUEUE_REPO.
 set -eu
 
 : "${QUEUE_ID:?integrate: QUEUE_ID is required}"
+: "${QUEUE_FLOW:?integrate: QUEUE_FLOW is required}"
 
 if [ -n "${QUEUE_REPO-}" ]; then
 	REPO=$QUEUE_REPO
@@ -18,9 +15,118 @@ fi
 NAME=$(basename "$REPO")
 BRANCH="ticket/$QUEUE_ID"
 WORKTREES=${SDLC_WORKTREES:-$HOME/workspace/worktrees}
-TREE="$WORKTREES/$NAME/$QUEUE_ID"
 
-git -C "$REPO" worktree remove --force "$TREE" >/dev/null 2>&1 || rm -rf "$TREE"
-git -C "$REPO" worktree prune >/dev/null 2>&1 || true
+origin_namespace() {
+	origin=$(git -C "$REPO" remote get-url origin 2>/dev/null) || return 1
+	namespace=$(printf '%s\n' "$origin" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/\.git$//; s/:/\//g' | awk -F/ '{ for (i = 1; i <= NF; i++) if ($i != "") part[++n] = $i } END { if (n >= 2) print part[n - 1] "/" part[n] }')
+	# The namespace becomes a path below WORKTREES; traversal components are not identities.
+	case "$namespace" in ./*|../*|*/.|*/..) return 1 ;; esac
+	printf '%s\n' "$namespace"
+}
+
+if ! NAMESPACE=$(origin_namespace) || [ -z "$NAMESPACE" ]; then
+	echo "integrate: cannot derive owner/repository from origin" >&2
+	exit 1
+fi
+if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+	|| ! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
+	echo "integrate: cannot determine Git common directory for $REPO" >&2
+	exit 1
+fi
+TREE="$WORKTREES/$NAMESPACE/$QUEUE_ID"
+LEGACY_TREE="$WORKTREES/$NAME/$QUEUE_ID"
+
+# A candidate is ours only if Git identifies that path itself as a worktree
+# top-level and both trees share this local repository's common directory.
+candidate_owned() {
+	candidate=$1
+	top=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null) || return 1
+	candidate_path=$(CDPATH= cd -- "$candidate" && pwd -P) || return 1
+	top_path=$(CDPATH= cd -- "$top" && pwd -P) || return 1
+	[ "$candidate_path" = "$top_path" ] || return 1
+	candidate_common=$(git -C "$candidate" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+	candidate_common=$(CDPATH= cd -- "$candidate_common" && pwd -P) || return 1
+	[ "$candidate_common" = "$REPO_COMMON" ]
+}
+
+# Git is the normal remover. Recursive removal is only for its known stale
+# metadata case, after ownership has been proved again at the point of use.
+remove_tree() {
+	candidate=$1
+	if git -C "$REPO" worktree remove --force "$candidate" >/dev/null 2>&1; then
+		return 0
+	fi
+	[ -e "$candidate" ] || return 0
+	if ! candidate_owned "$candidate"; then
+		echo "integrate: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
+		return 1
+	fi
+	if ! rm -rf "$candidate"; then
+		echo "integrate: could not remove worktree $candidate" >&2
+		return 1
+	fi
+}
+
+# Refuse before changing either tree or branch. This avoids a partial teardown
+# when a primary tree is ours but a legacy path belongs to someone else.
+for candidate in "$TREE" "$LEGACY_TREE"; do
+	[ -e "$candidate" ] || continue
+	if ! candidate_owned "$candidate"; then
+		echo "integrate: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
+		if [ "$QUEUE_FLOW" = "build" ]; then exit 3; fi
+		exit 1
+	fi
+done
+
+if [ "$QUEUE_FLOW" = "build" ]; then
+	CANDIDATE=
+	for candidate in "$TREE" "$LEGACY_TREE"; do
+		[ -e "$candidate" ] || continue
+		if [ -n "$CANDIDATE" ]; then
+			echo "integrate: ambiguous build candidates" >&2
+			exit 3
+		fi
+		CANDIDATE=$candidate
+	done
+	if [ -z "$CANDIDATE" ]; then
+		echo "integrate: build candidate is absent" >&2
+		exit 3
+	fi
+
+	SDLC="$CANDIDATE/sdlc"
+	RECORDS="$SDLC/records"
+	WITNESS_PATH="$RECORDS/$QUEUE_ID-verified"
+	if [ -L "$SDLC" ] || [ ! -d "$SDLC" ] \
+		|| [ -L "$RECORDS" ] || [ ! -d "$RECORDS" ] \
+		|| [ -L "$WITNESS_PATH" ] || [ ! -f "$WITNESS_PATH" ]; then
+		echo "integrate: verified witness must be reached through regular, non-symlink paths" >&2
+		exit 3
+	fi
+
+	witness_text=$(cat "$WITNESS_PATH")
+	if ! WITNESS=$(git -C "$CANDIDATE" rev-parse --verify "${witness_text}^{commit}" 2>/dev/null) \
+		|| [ "$witness_text" != "$WITNESS" ] \
+		|| ! printf '%s\n' "$WITNESS" | cmp -s - "$WITNESS_PATH"; then
+		echo "integrate: verified witness must name exactly one full commit" >&2
+		exit 3
+	fi
+	if ! TICKET=$(git -C "$REPO" rev-parse --verify "${BRANCH}^{commit}" 2>/dev/null) \
+		|| ! HEAD=$(git -C "$CANDIDATE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) \
+		|| [ "$WITNESS" != "$TICKET" ] || [ "$WITNESS" != "$HEAD" ]; then
+		echo "integrate: verified witness does not match the build candidate" >&2
+		exit 3
+	fi
+	if ! git -C "$REPO" push --quiet origin "$WITNESS:main"; then
+		echo "integrate: verified candidate could not fast-forward main" >&2
+		exit 3
+	fi
+	printf 'landed %s\n' "$WITNESS"
+fi
+
+for candidate in "$TREE" "$LEGACY_TREE"; do
+	[ -e "$candidate" ] || continue
+	remove_tree "$candidate"
+done
+git -C "$REPO" worktree prune >/dev/null 2>&1 || exit 1
 git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
 git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1 || true
