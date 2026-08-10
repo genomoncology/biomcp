@@ -6,6 +6,14 @@ set -eu
 
 : "${QUEUE_ID:?integrate: QUEUE_ID is required}"
 : "${QUEUE_FLOW:?integrate: QUEUE_FLOW is required}"
+case "$QUEUE_ID" in
+[0-9][0-9][0-9][0-9]) ;;
+*)
+	echo "integrate: QUEUE_ID must be exactly four digits" >&2
+	if [ "$QUEUE_FLOW" = "build" ]; then exit 3; fi
+	exit 1
+	;;
+esac
 
 if [ -n "${QUEUE_REPO-}" ]; then
 	REPO=$QUEUE_REPO
@@ -127,6 +135,9 @@ for candidate in "$TREE" "$LEGACY_TREE"; do
 	[ -e "$candidate" ] || continue
 	remove_tree "$candidate"
 done
-git -C "$REPO" worktree prune >/dev/null 2>&1 || exit 1
+git -C "$REPO" worktree prune >/dev/null 2>&1 || {
+	echo "integrate: teardown failed: worktree prune" >&2
+	exit 1
+}
 git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
 git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1 || true
