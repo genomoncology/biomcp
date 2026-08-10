@@ -74,6 +74,14 @@ def process_marker_root(pid: int, parent: Path, prefix: str) -> Path | None:
         argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
     except (FileNotFoundError, PermissionError, OSError):
         return None
+    # The detached supervisor also carries the server's marker in its argv and
+    # normally has PPID 1. Recovery targets its separately sessioned child.
+    if len(argv) > 2 and argv[2] == b"launch":
+        try:
+            if Path(os.fsdecode(argv[1])).resolve() == Path(__file__).resolve():
+                return None
+        except OSError:
+            return None
     return marker_root(argv, parent, prefix)
 
 
@@ -162,12 +170,12 @@ def launch(args: argparse.Namespace) -> int:
             raise ValueError("server PID file must be directly inside fixture root")
         pid_file.write_text(f"{child.pid}\n", encoding="utf-8")
         wait_for_owner_or_child(args.owner_pid, args.owner_start_id, pidfd, child)
-        stop_group(child.pid, child)
         return 0
     finally:
         if pidfd is not None:
             os.close(pidfd)
         if child is not None:
+            stop_group(child.pid, child)
             remove_root(root, parent, args.prefix)
 
 
