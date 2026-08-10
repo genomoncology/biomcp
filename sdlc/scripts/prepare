@@ -18,22 +18,91 @@ exec 3>&1 1>&2
 
 : "${QUEUE_ID:?prepare: QUEUE_ID is required}"
 
+case "$QUEUE_ID" in
+[0-9][0-9][0-9][0-9]) ;;
+*)
+	echo "prepare: QUEUE_ID must be exactly four digits" >&2
+	exit 1
+	;;
+esac
+
 if [ -n "${QUEUE_REPO-}" ]; then
 	REPO=$QUEUE_REPO
 else
 	REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 fi
-NAME=$(basename "$REPO")
 BRANCH="ticket/$QUEUE_ID"
 WORKTREES=${SDLC_WORKTREES:-$HOME/workspace/worktrees}
-TREE="$WORKTREES/$NAME/$QUEUE_ID"
+
+origin_namespace() {
+	origin=$(git -C "$REPO" remote get-url origin 2>/dev/null) || return 1
+	namespace=$(printf '%s\n' "$origin" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/\.git$//; s/:/\//g' | awk -F/ '{ for (i = 1; i <= NF; i++) if ($i != "") part[++n] = $i } END { if (n >= 2) print part[n - 1] "/" part[n] }')
+	# The namespace becomes a path below WORKTREES; traversal components are not identities.
+	case "$namespace" in ./*|../*|*/.|*/..) return 1 ;; esac
+	printf '%s\n' "$namespace"
+}
+
+if ! NAMESPACE=$(origin_namespace) || [ -z "$NAMESPACE" ]; then
+	echo "prepare: cannot derive owner/repository from origin" >&2
+	exit 1
+fi
+if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+	|| ! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
+	echo "prepare: cannot determine Git common directory for $REPO" >&2
+	exit 1
+fi
+TREE="$WORKTREES/$NAMESPACE/$QUEUE_ID"
+
+# A candidate is ours only if Git identifies that path itself as a worktree
+# top-level and both trees share this local repository's common directory.
+candidate_owned() {
+	candidate=$1
+	top=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null) || return 1
+	candidate_path=$(CDPATH= cd -- "$candidate" && pwd -P) || return 1
+	top_path=$(CDPATH= cd -- "$top" && pwd -P) || return 1
+	[ "$candidate_path" = "$top_path" ] || return 1
+	candidate_common=$(git -C "$candidate" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+	candidate_common=$(CDPATH= cd -- "$candidate_common" && pwd -P) || return 1
+	[ "$candidate_common" = "$REPO_COMMON" ]
+}
+
+# Git is the normal remover. Recursive removal is only for its known stale
+# metadata case, after ownership has been proved again at the point of use.
+remove_tree() {
+	candidate=$1
+	if git -C "$REPO" worktree remove --force "$candidate" >/dev/null 2>&1; then
+		return 0
+	fi
+	[ -e "$candidate" ] || return 0
+	if ! candidate_owned "$candidate"; then
+		echo "prepare: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
+		return 1
+	fi
+	if ! rm -rf "$candidate"; then
+		echo "prepare: could not remove worktree $candidate" >&2
+		return 1
+	fi
+}
 
 # Remove the tree and the local branch. Called on every refusal, so a refused
 # prepare leaves nothing behind on this machine.
 undo() {
-	git -C "$REPO" worktree remove --force "$TREE" >/dev/null 2>&1 || rm -rf "$TREE"
-	git -C "$REPO" worktree prune >/dev/null 2>&1 || true
+	if [ -e "$TREE" ]; then
+		if ! candidate_owned "$TREE"; then
+			echo "prepare: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+			return 1
+		fi
+		remove_tree "$TREE" || return 1
+	fi
+	git -C "$REPO" worktree prune >/dev/null 2>&1 || return 1
 	git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
+}
+
+# Whoever holds the claim, said in their own words — or empty if it is free.
+held() {
+	git -C "$REPO" ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1 || return 1
+	git -C "$REPO" fetch --quiet origin "refs/heads/$BRANCH" >/dev/null 2>&1 || return 0
+	git -C "$REPO" log -1 --format=%s FETCH_HEAD 2>/dev/null || return 0
 }
 
 # 1. Fetch. Everything below reads origin/main, so it has to be current.
@@ -42,11 +111,28 @@ if ! git -C "$REPO" fetch --quiet --prune origin; then
 	exit 1
 fi
 
+# An existing path may be another clone's live worktree. Its remote claim is
+# enough to report the lease without touching either the path or local branch.
+if [ -e "$TREE" ]; then
+	if who=$(held); then
+		echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+		exit 3
+	fi
+	echo "prepare: worktree path already exists: $TREE" >&2
+	exit 1
+fi
+
 # 2. The tree branches from origin/main, NEVER from local main. A local main
 # may be stale, may carry uncommitted state, and differs between machines
 # (sdlc ADR 0006). This is deliberate — do not simplify it to `main`.
-mkdir -p "$WORKTREES/$NAME"
+mkdir -p "$WORKTREES/$NAMESPACE"
 if ! git -C "$REPO" worktree add --quiet -b "$BRANCH" "$TREE" origin/main; then
+	# A competing prepare can claim the ticket between the check above and this
+	# add. Preserve the occupied path and report a now-held remote claim.
+	if who=$(held); then
+		echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+		exit 3
+	fi
 	echo "prepare: could not create worktree $TREE on $BRANCH" >&2
 	exit 1
 fi
@@ -71,7 +157,10 @@ if [ "${QUEUE_FLOW-}" != "quickfix" ]; then
 		if [ "$status" -eq 0 ]; then
 			continue
 		fi
-		undo
+		if ! undo; then
+			echo "prepare: cleanup after failed $g gate failed" >&2
+			exit 1
+		fi
 		if [ "$status" = 2 ]; then
 			exit 1 # a missing gate is a fault, not a refusal
 		fi
@@ -83,13 +172,6 @@ fi
 # 4. Claim. The branch on origin is the lock, and the commit says who holds it
 # and since when so the doctor can report staleness (queue ADR 0008).
 
-# Whoever holds the claim, said in their own words — or empty if it is free.
-held() {
-	git -C "$REPO" ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1 || return 1
-	git -C "$REPO" fetch --quiet origin "refs/heads/$BRANCH" >/dev/null 2>&1 || return 0
-	git -C "$REPO" log -1 --format=%s FETCH_HEAD 2>/dev/null || return 0
-}
-
 # Look before pushing. A rejected push is the atomic guard, but it is not
 # sufficient on its own: two clones of one repo can build a byte-identical
 # empty claim commit in the same second, and git reports pushing an identical
@@ -98,7 +180,10 @@ held() {
 # one machine the lease is the exclusion that applies (queue ADR 0008's two
 # scopes). This check closes the gap in between.
 if who=$(held); then
-	undo
+	if ! undo; then
+		echo "prepare: cleanup after finding a held claim failed" >&2
+		exit 1
+	fi
 	echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
 	exit 3
 fi
@@ -106,7 +191,9 @@ fi
 HOST=$(hostname 2>/dev/null || uname -n)
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 if ! git -C "$TREE" commit --quiet --allow-empty -m "claim: $HOST $NOW"; then
-	undo
+	if ! undo; then
+		echo "prepare: cleanup after a failed claim commit failed" >&2
+	fi
 	echo "prepare: could not write the claim commit" >&2
 	exit 1
 fi
@@ -115,11 +202,16 @@ if ! git -C "$REPO" push --quiet origin "refs/heads/$BRANCH:refs/heads/$BRANCH";
 	# Rejected because someone got there first, or because the push broke.
 	# Only the first is a claim held elsewhere; the second is a fault.
 	if who=$(held); then
-		undo
+		if ! undo; then
+			echo "prepare: cleanup after finding a held claim failed" >&2
+			exit 1
+		fi
 		echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
 		exit 3
 	fi
-	undo
+	if ! undo; then
+		echo "prepare: cleanup after a failed claim push failed" >&2
+	fi
 	echo "prepare: pushing the claim $BRANCH failed" >&2
 	exit 1
 fi

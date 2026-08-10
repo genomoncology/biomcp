@@ -145,13 +145,47 @@ if "$LANDING"; then
 	printf 'landed %s\n' "$WITNESS"
 fi
 
+prune_worktrees() {
+	git -C "$REPO" worktree prune >/dev/null 2>&1
+}
+
+remove_local_branch() {
+	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+		git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1
+	else
+		status=$?
+		[ "$status" -eq 1 ]
+	fi
+}
+
+remove_origin_branch() {
+	if git -C "$REPO" ls-remote --exit-code --heads origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+		git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1
+	else
+		status=$?
+		[ "$status" -eq 2 ]
+	fi
+}
+
+cleanup_failures=
+cleanup() {
+	name=$1
+	shift
+	if "$@"; then
+		return
+	fi
+	cleanup_failures="${cleanup_failures}${cleanup_failures:+, }$name"
+}
+
 for candidate in "$TREE" "$LEGACY_TREE"; do
 	[ -e "$candidate" ] || continue
-	remove_tree "$candidate"
+	cleanup "worktree removal $candidate" remove_tree "$candidate"
 done
-git -C "$REPO" worktree prune >/dev/null 2>&1 || {
-	echo "integrate: teardown failed: worktree prune" >&2
+cleanup "worktree prune" prune_worktrees
+cleanup "local branch $BRANCH" remove_local_branch
+cleanup "origin branch $BRANCH" remove_origin_branch
+
+if [ -n "$cleanup_failures" ]; then
+	echo "integrate: teardown failed: $cleanup_failures" >&2
 	exit 1
-}
-git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
-git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1 || true
+fi
