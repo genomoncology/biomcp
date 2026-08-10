@@ -52,6 +52,7 @@ if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2
 	exit 1
 fi
 TREE="$WORKTREES/$NAMESPACE/$QUEUE_ID"
+HOST=$(hostname 2>/dev/null || uname -n)
 
 # A candidate is ours only if Git identifies that path itself as a worktree
 # top-level and both trees share this local repository's common directory.
@@ -95,14 +96,92 @@ undo() {
 		remove_tree "$TREE" || return 1
 	fi
 	git -C "$REPO" worktree prune >/dev/null 2>&1 || return 1
-	git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || true
+	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+		git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || return 1
+	fi
 }
 
-# Whoever holds the claim, said in their own words — or empty if it is free.
-held() {
-	git -C "$REPO" ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1 || return 1
-	git -C "$REPO" fetch --quiet origin "refs/heads/$BRANCH" >/dev/null 2>&1 || return 0
-	git -C "$REPO" log -1 --format=%s FETCH_HEAD 2>/dev/null || return 0
+# Read one remote claim coherently. An unparseable or moved claim remains a
+# collision; only a fetched, exact-tip claim with our hostname is reclaimable.
+observe_claim() {
+	CLAIM_SHA=
+	CLAIM_SUBJECT=
+	CLAIM_OWN=0
+	if ! claim=$(git -C "$REPO" ls-remote --heads origin "refs/heads/$BRANCH" 2>/dev/null); then
+		return 1
+	fi
+	CLAIM_SHA=$(printf '%s\n' "$claim" | awk 'NR == 1 { print $1 }')
+	[ -n "$CLAIM_SHA" ] || return 1
+	if ! git -C "$REPO" fetch --quiet origin "refs/heads/$BRANCH"; then
+		return 0
+	fi
+	if ! fetched=$(git -C "$REPO" rev-parse --verify FETCH_HEAD 2>/dev/null); then
+		return 0
+	fi
+	[ "$fetched" = "$CLAIM_SHA" ] || return 0
+	if ! CLAIM_SUBJECT=$(git -C "$REPO" log -1 --format=%s FETCH_HEAD 2>/dev/null); then
+		return 0
+	fi
+	if ! claimant=$(printf '%s\n' "$CLAIM_SUBJECT" | sed -n 's/^claim: \([^[:space:]]\{1,\}\) [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}T[0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}Z$/\1/p'); then
+		return 0
+	fi
+	[ -n "$claimant" ] && [ "$claimant" = "$HOST" ] && CLAIM_OWN=1
+	return 0
+}
+
+report_claim() {
+	echo "prepare: $BRANCH is claimed on origin (${CLAIM_SUBJECT:-claim unreadable}) — check that machine" >&2
+}
+
+stale_claim_fault() {
+	echo "prepare: our stale claim $BRANCH cannot be reclaimed: $1" >&2
+}
+
+reclaim_own_claim() {
+	if [ ! -e "$TREE" ]; then
+		stale_claim_fault "worktree is missing"
+		return 1
+	fi
+	if ! candidate_owned "$TREE"; then
+		stale_claim_fault "worktree is not owned by $REPO"
+		return 1
+	fi
+	if ! tree_sha=$(git -C "$TREE" rev-parse --verify HEAD 2>/dev/null); then
+		stale_claim_fault "worktree HEAD is unreadable"
+		return 1
+	fi
+	if [ "$tree_sha" != "$CLAIM_SHA" ]; then
+		stale_claim_fault "worktree HEAD differs from the claim"
+		return 1
+	fi
+	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+		if ! branch_sha=$(git -C "$REPO" rev-parse --verify "refs/heads/$BRANCH"); then
+			stale_claim_fault "local branch is unreadable"
+			return 1
+		fi
+		if [ "$branch_sha" != "$CLAIM_SHA" ]; then
+			stale_claim_fault "local branch differs from the claim"
+			return 1
+		fi
+	fi
+	if ! git -C "$REPO" push --quiet --force-with-lease="refs/heads/$BRANCH:$CLAIM_SHA" origin ":refs/heads/$BRANCH"; then
+		stale_claim_fault "origin moved or refused deletion"
+		return 1
+	fi
+	if ! undo; then
+		stale_claim_fault "local teardown failed"
+		return 1
+	fi
+}
+
+# Every collision point has the same settlement: foreign claims continue to
+# the exit-3 path, while an owned exact-tip claim is reclaimed and retried.
+restart_if_own_claim() {
+	[ "$CLAIM_OWN" = 1 ] || return 0
+	if ! reclaim_own_claim; then
+		exit 1
+	fi
+	exec 1>&3 "$0"
 }
 
 # 1. Fetch. Everything below reads origin/main, so it has to be current.
@@ -111,11 +190,12 @@ if ! git -C "$REPO" fetch --quiet --prune origin; then
 	exit 1
 fi
 
-# An existing path may be another clone's live worktree. Its remote claim is
-# enough to report the lease without touching either the path or local branch.
+# An existing path may be another clone's live worktree. A claim recorded by
+# this host is recoverable only when this checkout owns the exact claimed tip.
 if [ -e "$TREE" ]; then
-	if who=$(held); then
-		echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+	if observe_claim; then
+		restart_if_own_claim
+		report_claim
 		exit 3
 	fi
 	echo "prepare: worktree path already exists: $TREE" >&2
@@ -128,9 +208,11 @@ fi
 mkdir -p "$WORKTREES/$NAMESPACE"
 if ! git -C "$REPO" worktree add --quiet -b "$BRANCH" "$TREE" origin/main; then
 	# A competing prepare can claim the ticket between the check above and this
-	# add. Preserve the occupied path and report a now-held remote claim.
-	if who=$(held); then
-		echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+	# add. Preserve the occupied path for a foreign claim, but recover an exact
+	# stale claim owned by this checkout.
+	if observe_claim; then
+		restart_if_own_claim
+		report_claim
 		exit 3
 	fi
 	echo "prepare: could not create worktree $TREE on $BRANCH" >&2
@@ -179,16 +261,16 @@ fi
 # in the message differs, so the commits differ and the push does reject; on
 # one machine the lease is the exclusion that applies (queue ADR 0008's two
 # scopes). This check closes the gap in between.
-if who=$(held); then
+if observe_claim; then
+	restart_if_own_claim
 	if ! undo; then
 		echo "prepare: cleanup after finding a held claim failed" >&2
 		exit 1
 	fi
-	echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+	report_claim
 	exit 3
 fi
 
-HOST=$(hostname 2>/dev/null || uname -n)
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 if ! git -C "$TREE" commit --quiet --allow-empty -m "claim: $HOST $NOW"; then
 	if ! undo; then
@@ -201,12 +283,13 @@ fi
 if ! git -C "$REPO" push --quiet origin "refs/heads/$BRANCH:refs/heads/$BRANCH"; then
 	# Rejected because someone got there first, or because the push broke.
 	# Only the first is a claim held elsewhere; the second is a fault.
-	if who=$(held); then
+	if observe_claim; then
+		restart_if_own_claim
 		if ! undo; then
 			echo "prepare: cleanup after finding a held claim failed" >&2
 			exit 1
 		fi
-		echo "prepare: $BRANCH is claimed on origin (${who:-claim unreadable}) — check that machine" >&2
+		report_claim
 		exit 3
 	fi
 	if ! undo; then
