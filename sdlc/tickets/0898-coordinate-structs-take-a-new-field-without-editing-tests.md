@@ -45,6 +45,13 @@ If a struct in that list genuinely cannot have a sensible `Default` — a field
 with no meaningful empty value — say so in the design and leave it out with
 the reason. Do not invent a misleading default to satisfy the checklist.
 
+**Only those structs.** The pattern is repo-wide — 29 test files build entity
+structs with exhaustive literals, and most serializable entities in
+`src/entities/` lack `Default` — but converting all of them is a much larger
+change than this ticket, and only the coordinate-carrying ones block work
+that is queued today. Do not widen the scope. If the ratchet is easy to point
+at more types later, say so in the record and leave it for its own ticket.
+
 ## Tests you are authorized to restate
 
 This ticket is a test refactor, so the design stage rewrites these files and
