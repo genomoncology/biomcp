@@ -145,9 +145,50 @@ if "$LANDING"; then
 	# Let Git select forbidden paths so names containing newlines cannot evade policy.
 	case "$QUEUE_FLOW" in
 	build|quickfix)
-		if ! changed=$(git -C "$REPO" diff --no-ext-diff --no-renames --name-only "origin/main...$WITNESS" -- \
-			sdlc/tickets sdlc/scripts assembly skills sdlc/records \
-			":(exclude,glob)sdlc/records/${QUEUE_ID}-?*.md"); then
+		# A ticket may open exact file paths under sdlc/scripts/ or assembly/
+		# for its own flight: one frontmatter line, `opens: <path> [<path>...]`.
+		# The declaration is read from origin/main — never the candidate — so a
+		# flight cannot widen its own authorization.
+		opens=
+		ticket=
+		case "${QUEUE_REF-}" in
+		sdlc/tickets/*) ticket=$(git -C "$REPO" show "origin/main:$QUEUE_REF" 2>/dev/null) || ticket= ;;
+		esac
+		if [ -n "$ticket" ]; then
+			declared=$(printf '%s\n' "$ticket" | awk '/^---$/ { fence++; next } fence == 1 && /^opens:/')
+			if [ "$(printf '%s\n' "$declared" | grep -c '^opens:')" -gt 1 ]; then
+				echo "integrate: the ticket declares opens more than once" >&2
+				exit 3
+			fi
+			if [ -n "$declared" ]; then
+				opens=${declared#opens:}
+				if [ -z "$(printf '%s' "$opens" | tr -d '[:space:]')" ]; then
+					echo "integrate: malformed opens declaration: $declared" >&2
+					exit 3
+				fi
+				for path in $opens; do
+					case "$path" in
+					*..*|*'*'*|*'?'*|*'['*|*/)
+						echo "integrate: opens must name exact file paths: $path" >&2
+						exit 3
+						;;
+					esac
+					case "$path" in
+					sdlc/scripts/*|assembly/*) ;;
+					*)
+						echo "integrate: opens may not name $path: only sdlc/scripts/ and assembly/ accept openings" >&2
+						exit 3
+						;;
+					esac
+				done
+			fi
+		fi
+		set -- sdlc/tickets sdlc/scripts assembly skills sdlc/records \
+			":(exclude,glob)sdlc/records/${QUEUE_ID}-?*.md"
+		for path in $opens; do
+			set -- "$@" ":(exclude,literal)$path"
+		done
+		if ! changed=$(git -C "$REPO" diff --no-ext-diff --no-renames --name-only "origin/main...$WITNESS" -- "$@"); then
 			echo "integrate: could not inspect the candidate diff for path policy" >&2
 			exit 3
 		fi
