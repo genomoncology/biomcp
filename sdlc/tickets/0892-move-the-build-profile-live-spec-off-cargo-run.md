@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 3
 ---
 # Move the build-profile live spec off `cargo run`

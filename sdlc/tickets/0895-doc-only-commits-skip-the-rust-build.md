@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 2
 ---
 # Doc-only commits skip the Rust build

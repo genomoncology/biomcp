@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 9
 ---
 # Pair a variant's protein change with its own transcript

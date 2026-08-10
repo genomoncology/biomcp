@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 6
 ---
 # Refuse an article asset that arrives as NCBI's interstitial page

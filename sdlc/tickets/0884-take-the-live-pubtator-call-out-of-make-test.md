@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 9
 ---
 # Take the live PubTator call out of `make test`

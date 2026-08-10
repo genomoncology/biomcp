@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 6
 ---
 # Read Europe PMC's not-open-access answer as absent, not failed
