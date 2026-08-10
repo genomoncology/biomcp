@@ -1,21 +1,27 @@
 ---
 flow: build
 priority: 9
+deps: [0898]
 ---
-# Label the genome build on every output that carries a coordinate
+# Label the genome build on variant detail output
 
-Carried over from March ticket 689 when BioMCP moved to the sdlc
-factory. The body below is March's, unchanged; it was already written to
-stand alone. Work products from any earlier attempt:
+**Rescoped 2026-08-10 after eight refusals.** This ticket was "label every
+emitted coordinate on every route in both JSON and Markdown." That is three
+tickets, and the design stage was refused for saying so. It is now slice one
+of three:
 
-    /home/ian/workspace/planning/biomcp/artifacts/689-label-the-genome-build-on-every-output-that-carries-a-coordinate
+- **0689 (this one)** — `get variant` detail routes, JSON only.
+- **0899** — gene and search surfaces, JSON only.
+- **0900** — rendered/Markdown output, across all of them.
+
+Do not widen this ticket back out. Coverage of the other surfaces is not
+missing; it is scheduled.
+
 ## Why
 
-Ticket 687 made the *input* side build-aware: if you hand BioMCP a coordinate, it now tells
-you which build it resolved against. The *output* side was not covered, and every route that
-emits a coordinate without having been given one still emits it unlabeled.
-
-Measured against the merged binary (`268ea626`):
+Ticket 687 made the *input* side build-aware: hand BioMCP a coordinate and it
+tells you which build it resolved against. The *output* side was never
+covered. Measured against the merged binary (`268ea626`):
 
 | input | emitted coordinate | `genome_build` |
 |---|---|---|
@@ -23,69 +29,78 @@ Measured against the merged binary (`268ea626`):
 | `rs113488022` | `chr7:g.140453136A>T` | **`null`** |
 | `rs121913529` | `chr12:g.25398284C>T` | **`null`** |
 | `BRAF V600E` | `chr7:g.140453136A>T` | **`null`** |
-| `search variant --gene PTEN` | coordinates in results | **no build field at all** |
 
-Every one of those unlabeled coordinates is GRCh37, because MyVariant's default is hg19.
-They are correct values wearing no label.
+Every unlabeled coordinate there is GRCh37, because MyVariant defaults to
+hg19. They are correct values wearing no label.
 
-This is the same failure this whole effort exists to remove. A caller looks up `rs113488022`,
-gets `chr7:g.140453136A>T`, and carries that coordinate somewhere else — a report, a
-pipeline, a spreadsheet, another tool that assumes GRCh38. Nothing in our output said which
-map it came from. That is exactly how the original bug propagated, and `search variant` is
-the more dangerous of the two because search is how people *discover* variants they do not
-already have coordinates for.
+A caller looks up `rs113488022`, gets `chr7:g.140453136A>T`, and carries it
+into a report or a pipeline that assumes GRCh38. Nothing in our output said
+which map it came from. That is how the original bug propagated.
 
 ## Scope
 
-- Label the build on every emitted genomic coordinate, whatever route produced it: rsID,
-  gene+protein, search results, and any renderer or JSON field carrying a coordinate.
-- Cover both `--json` and rendered/markdown output. A field that only appears in JSON leaves
-  the human-facing path unlabeled.
-- Where a route's build is fixed by the provider default rather than chosen by the caller,
-  say so explicitly rather than leaving the field absent.
+In scope — `get variant`, `--json` only:
 
-Out of scope: changing which build any route resolves against. This ticket adds labels; it
-does not move defaults. Whether GRCh38 should become the default is an open operator
-question and is not decided here.
+- The rsID route.
+- The gene+protein route (`BRAF V600E`).
+- The unqualified transcript-HGVS detail branch, which can still return
+  `answering_build = None`. Named by the 2026-08-09 design review after
+  reading the code; do not rediscover it.
 
-## Success Checklist
+Out of scope, and not a gap:
 
-- [ ] `get variant rs113488022 --json` reports `genome_build: "GRCh37"`, not null.
+- `search variant`, `Gene`, `GeneSearchResult`,
+  `VariantNormalizationServiceResult` — those are 0899.
+- Rendered/Markdown output — that is 0900.
+- **Changing which build any route resolves against.** This ticket adds a
+  label and moves nothing. Whether GRCh38 should become the default is an
+  open operator question, decided elsewhere.
+
+## Done when
+
+- [ ] `get variant rs113488022 --json` reports `genome_build: "GRCh37"`, not
+      null.
 - [ ] `get variant 'BRAF V600E' --json` reports the build.
-- [ ] `search variant --gene PTEN --json` carries a build on every result row that has a
-      coordinate.
-- [ ] The rendered (non-JSON) output names the build wherever it shows a coordinate.
-- [ ] No route silently omits the field. If a route genuinely cannot know the build, it says
-      so in the output rather than emitting an absent field.
-- [ ] Every assertion is backed by a receipted capture, not a synthesized fixture.
-- [ ] The coordinate values themselves are unchanged from `main` — this ticket adds a label
-      and moves nothing. Prove it with a before/after comparison on at least the four inputs
-      in the table above.
+- [ ] The unqualified transcript-HGVS branch reports a build, or states in
+      the output why it cannot. An absent field is not an acceptable answer.
+- [ ] Every assertion is backed by a receipted capture, not a synthesized
+      fixture.
+- [ ] Coordinate values are byte-identical to `main` for the four inputs in
+      the table above. Prove it with a before/after comparison. This ticket
+      adds a label and moves nothing.
 - [ ] `make lint`, `make test`, and `make spec` pass.
 
+## Tests you are authorized to restate
+
+These files assert today's unlabeled output. The design stage must update
+them, and doing so is expected rather than a traceability violation:
+
+    src/cli/variant/tests.rs
+    src/entities/variant/get/tests.rs
+    src/cli/tests/outcome.rs
+    skills/examples/get-variant-rs113488022-all.json
+    skills/schemas/variant.json
+
+Change only what the new label requires. Every other assertion in those files
+keeps checking exactly what it checks today.
+
+If the implementation needs a test file **not** on this list, that is a
+signal the ticket is wrong — stop and say so in the design rather than
+editing it.
+
 ## Dependencies
-None. 687 has merged; this builds on the `GenomeBuild` plumbing it landed.
 
-## Notes
-Found during post-merge verification of 687, not by a failing test — nothing in the suite
-asserts that an emitted coordinate carries a build.
+0898 must land first. It makes these structs constructible without naming
+every field; without it a `code:` commit here cannot compile and cannot
+legally fix itself. That is what refused attempts two through eight.
 
-## Bound by the 2026-08-09 design review (run 23-16-51-010d)
+## History worth keeping
 
-The refused design covered selected MyVariant routes and deferred the
-rest — a scope cut this ticket does not permit. Actual code
-inspection named the surfaces the next design MUST cover; do not
-rediscover them:
+Six attempts' design evidence is preserved under `attempt/0689-*` tags. The
+2026-08-09 review repaired the authored PTEN assertions (commit `18d64f77` on
+that claim branch): coordinate stability pinned, meaningful label required,
+receipted request matched. Those repairs are worth reading before designing
+again — but note they span all three slices, so only the variant-detail parts
+belong here.
 
-- `Gene` and `GeneSearchResult` serialize `genomic_coordinates`
-  without a build.
-- `VariantNormalizationServiceResult` serializes
-  `genomic_descriptions` without a build.
-- The unqualified transcript-HGVS detail branch can still return
-  `answering_build = None`.
-
-The review repaired the authored PTEN assertions (commit 18d64f77 on
-the claim branch, preserved under attempt tags): coordinate
-stability pinned, meaningful Markdown label required, receipted
-request matched. The repaired suite is red only on the six stated
-missing-label failures — the next design starts from those tests.
+The src line ceiling may rise by at most 60 lines.
