@@ -138,6 +138,36 @@ if "$LANDING"; then
 		echo "integrate: verified witness does not match the candidate" >&2
 		exit 3
 	fi
+	if ! git -C "$REPO" fetch --quiet origin; then
+		echo "integrate: could not refresh origin/main for path policy" >&2
+		exit 3
+	fi
+	# Let Git select forbidden paths so names containing newlines cannot evade policy.
+	case "$QUEUE_FLOW" in
+	build|quickfix)
+		if ! changed=$(git -C "$REPO" diff --no-ext-diff --no-renames --name-only "origin/main...$WITNESS" -- \
+			sdlc/tickets sdlc/scripts assembly skills sdlc/records \
+			":(exclude,glob)sdlc/records/${QUEUE_ID}-?*.md"); then
+			echo "integrate: could not inspect the candidate diff for path policy" >&2
+			exit 3
+		fi
+		policy_error="integrate: $QUEUE_FLOW may not land that path"
+		;;
+	review)
+		if ! changed=$(git -C "$REPO" diff --no-ext-diff --no-renames --name-only "origin/main...$WITNESS" -- . \
+			':(exclude,glob)sdlc/issues/**' \
+			":(exclude,glob)sdlc/records/${QUEUE_ID}-?*.md"); then
+			echo "integrate: could not inspect the candidate diff for path policy" >&2
+			exit 3
+		fi
+		policy_error="integrate: review may only land issue descendants and its direct completion record"
+		;;
+	esac
+	if [ -n "$changed" ]; then
+		printf '%s\n' "$changed" | sed 's/^/integrate: forbidden candidate path: /' >&2
+		echo "$policy_error" >&2
+		exit 3
+	fi
 	if ! git -C "$REPO" push --quiet origin "$WITNESS:main"; then
 		echo "integrate: verified candidate could not fast-forward main" >&2
 		exit 3
