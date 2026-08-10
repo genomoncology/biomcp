@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 7
-deps: ["0914", "0915"]
+deps: ["0914", "0915", "0926"]
 ---
 # Re-derive variant-article identity onto real receipted captures
 

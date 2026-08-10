@@ -22,12 +22,17 @@ parameterized templates. Each entry distinguishes:
 
 The typed catalog is the source for root/entity `list` JSON and Markdown,
 gettable/searchable classification, skill command lists, and the public command
-inventory checked by documentation tests. `list --json` serializes the model
-directly; it never parses rendered Markdown.
+inventory checked by documentation tests. Public projections include README
+and docs landing entity tables, the user-guide CLI reference, study
+subcommands, and whether each `get` entity actually supports named sections.
+`list --json` serializes the model directly; it never parses rendered Markdown.
 
-Remove the false `get study` claim, fill the skill commands, remove duplicates,
+Remove the false `get study` claim, include the shipped `author` entity and
+`study top-mutated`, stop claiming every `get` supports sections, reconcile the
+contradictory skill-catalog wording, fill the skill commands, remove duplicates,
 and represent filters such as `--region` only as part of a complete command
-template.
+template. MCP runtime tool inventory and schemas are separate contracts owned
+by tickets 0932 and 0933.
 
 ## Done when
 
@@ -36,14 +41,18 @@ template.
 - JSON and Markdown are projections of the same entries and preserve stable
   ordering.
 - Root and per-entity classifications agree with the actual Clap tree.
+- README/docs entity tables contain every shipped search/get entity, and every
+  public study subcommand and section-capability claim matches the catalog.
 - A negative contract fails when a catalog command is removed or made invalid.
 
 ## Authorized test changes
 
 Design commits may restate catalog and rendering expectations in
 `src/cli/list/tests/*.rs`, `src/cli/tests/next_commands_validity.rs`,
-`tests/test_cli_surface_contract_ratchet.py`, and documentation consistency
-tests. They may replace static prose in `src/cli/list_reference.md` only where
+`tests/test_cli_surface_contract_ratchet.py`,
+`tests/test_author_surface_docs.py`, public landing/CLI documentation tests,
+and documentation consistency tests. They may replace static prose in
+`src/cli/list_reference.md` only where
 the typed catalog becomes authoritative. Existing useful narrative guidance
 may remain outside command arrays.
 

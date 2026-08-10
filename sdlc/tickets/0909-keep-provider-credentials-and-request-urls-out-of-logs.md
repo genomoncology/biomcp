@@ -23,8 +23,8 @@ Define one structured, safe projection for an external failure. It carries only:
 - a stable class such as timeout, connection, HTTP status, decode, unavailable,
   or internal;
 - an HTTP status when one is safe and available; and
-- a bounded scrubbed message that contains no scheme, host, path, query string,
-  header value, token, or nested HTTP error debug output.
+- a scrubbed message of at most 512 UTF-8 bytes that contains no scheme, host,
+  path, query string, header value, token, or nested HTTP error debug output.
 
 All warning, info, and debug logs for provider or transport errors use that
 projection. No safety property may depend on a tracing format sigil. The user
@@ -42,15 +42,21 @@ source-attributed.
 - The same assertions pass with debug logging enabled and cover the PMC and
   full-text raw-debug sites.
 - Safe provider, operation, class, and status diagnostics remain visible.
-- A source audit rejects raw `?err` or `?error` tracing fields for external
-  errors unless the value is the approved safe projection.
+- A source audit rejects every raw external-error projection, including
+  `?err`, `?error`, `%err`, `error = %err`, `Debug`/`Display` interpolation, and
+  formatted `{err}` strings, unless the value has first been converted to the
+  approved safe projection. The audit is based on the value's source/type and
+  approved helper, not a short variable-name list or one tracing sigil.
+- Exact-boundary and boundary-plus-one fixtures prove the scrubbed message is
+  at most 512 UTF-8 bytes and ends at a valid character boundary.
 - No routine test uses a real credential or public network.
 
 ## Authorized test changes
 
 Design commits may restate logging assertions and provider-error fixtures in
 `tests/json_error_contract.rs`, `src/entities/article/search/tests.rs`,
-`src/entities/article/fulltext.rs`, and `src/sources/pmc_article.rs`. They may
+`src/entities/article/fulltext.rs`, `src/entities/article/batch.rs`,
+`src/entities/pathway.rs`, and `src/sources/pmc_article.rs`. They may
 also extend `tests/test_quality_ratchet_contract.py` and
 `tools/check-quality-ratchet.py` with the source audit. Existing public JSON
 error fields and degraded-search assertions must not be weakened.

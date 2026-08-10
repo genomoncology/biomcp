@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 8
-deps: ["0917", "0918", "0919"]
+deps: ["0917", "0918", "0919", "0923", "0930", "0931"]
 ---
 # Honor the global JSON flag on every command
 
@@ -29,11 +29,14 @@ ticket does not create a generic JSON wrapper around already rendered text.
 
 ## Done when
 
-- A process-level table exercises every top-level command with `--json`, using
-  local fixtures and harmless temporary paths.
+- A process-level table generated from ticket 0919's finite leaf-command
+  catalog exercises every leaf with `--json`, using local fixtures and harmless
+  temporary paths. The only exclusions are the explicitly enumerated
+  long-running server leaves described above; a new leaf without a decision
+  fails the table.
 - Each allowed success parses as one JSON value and has no trailing bytes.
-- Each disallowed combination fails before side effects with the JSON error
-  shape when error rendering is available.
+- Each disallowed combination fails before side effects with the stable JSON
+  error envelope. There is no plain-text-error exception once `--json` parses.
 - Update and uninstall tests never mutate a package-managed or development
   installation.
 - Author-validation errors include the documented empty collection fields.

@@ -30,7 +30,15 @@ This ticket lists metadata only; it does not download attachments.
 - Parse only File entities actually linked from the selected specification.
 - Reject or mark non-public, cross-origin, malformed, duplicate, or
   unsupported file URLs.
-- Bound file count and every string field.
+- Accept at most 100 linked File entities. A label, filename, declared media
+  type, or stable attachment identifier may contain at most 512 UTF-8 bytes;
+  a resolved download URL may contain at most 4,096 UTF-8 bytes. Check these
+  limits before cloning the value into the response.
+- An excess count or oversized string fails the files view with a typed,
+  source-attributed provider-response-limit error. Do not truncate an
+  identifier or URL, return a partial manifest, or silently omit the excess
+  attachment. Normal criteria output may still report the exact linked
+  `attachment_count` without materializing the manifest.
 - Preserve capture_id, sha256, resource IRI, and capture binding in JSON and
   human output.
 - A --capture-id request must not refetch or silently select another version.
@@ -40,6 +48,9 @@ This ticket lists metadata only; it does not download attachments.
 Use a real receipted PTEN GN003 payload that contains the attachment entities,
 plus synthetic malformed-edge fixtures. Pin Clap grammar, production parsing,
 no-refetch capture reuse, URL validation, compact JSON, and readable output.
+Synthetic cases cover exactly 100 and 101 attachments, every exact string
+boundary and boundary plus one, and prove that a rejected manifest contains no
+partial rows.
 
 ## Authorized test changes
 

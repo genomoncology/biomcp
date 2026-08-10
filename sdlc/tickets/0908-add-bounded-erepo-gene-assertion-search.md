@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 4
-deps: ["0915"]
+deps: ["0881", "0915"]
 ---
 # Add bounded ERepo gene assertion search
 
@@ -23,8 +23,10 @@ must report total as null rather than turning returned rows into a false
 total.
 
 Each compact result carries CAID, gene, condition, classification outcome,
-guideline label, expert-panel identity, publication date, a bounded HGVS
-preview with a full count, and met evidence-code names. Human output uses the
+guideline label, expert-panel identity, publication date, at most three HGVS
+strings with a full count, and met evidence-code names. Each preview string is
+limited to 256 UTF-8 bytes and is omitted with a typed per-item truncation
+marker rather than cut into a different HGVS expression. Human output uses the
 same bounded page. Full assertion detail remains available through the
 existing CAID command.
 
@@ -39,8 +41,9 @@ need their own paging/work-budget design if later justified.
 - A dated receipted PTEN response passes through the production decoder.
 - A local HTTP test proves the executor sends the plan and a second page is
   reachable.
-- JSON and Markdown prove compact fields, total null, returned, offset,
-  limit, and truthful has_more.
+- JSON and Markdown prove compact fields, the three-item/256-byte HGVS preview
+  bounds and full count, total null, returned, offset, limit, and truthful
+  has_more.
 - Empty and provider-failure outcomes are typed and source-attributed.
 - No routine test reaches ERepo.
 

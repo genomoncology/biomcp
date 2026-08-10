@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 9
-deps: ["0673"]
+deps: ["0673", "0926", "0934", "0942"]
 ---
 # Enforce no public network access in routine gates
 
@@ -9,8 +9,12 @@ The PubTator fixture conversion already landed. This ticket is the
 fail-closed whole-suite boundary, after the source conversion and registry
 reconciliation program finishes.
 
-Issue owned by this ticket:
+Offline-enforcement issue owned by this ticket:
 sdlc/issues/output-footprint-corpus-is-nondeterministic.md
+
+Ticket 0926 exclusively owns the separate defect in which disabled Semantic
+Scholar still receives traffic. This ticket must not claim or delete ticket
+0926's issue.
 
 ## Done when
 

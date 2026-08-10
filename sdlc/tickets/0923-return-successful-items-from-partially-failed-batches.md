@@ -31,13 +31,15 @@ failure in order, followed by the same summary.
 All success exits zero. Any item failure exits one after writing the complete
 result. Whole-command validation errors such as an unknown entity, an invalid
 batch size, or invalid shared sections still fail before item requests begin.
-The separate `biomcp article batch` surface is out of scope unless it adopts
-this exact envelope through the same helper.
+The separate `biomcp article batch` surface adopts this exact envelope and exit
+contract through the same helper. It must not retain its independent
+`try_join_all` fail-fast path.
 
 ## Done when
 
 All-success, mixed, and all-failure local cases pass for each supported
-top-level batch entity. A slow first item and fast later item prove concurrency
+top-level batch entity and for `biomcp article batch`. A slow first item and
+fast later item prove concurrency
 does not reorder output. One failure never cancels or hides another completed
 item. JSON and human exit behavior agree and no routine test uses public
 network.
@@ -48,7 +50,8 @@ Design commits may replace fail-fast and JSON-array expectations in
 `src/cli/system/dispatch.rs`, `src/cli/shared.rs`,
 `src/cli/tests/outcome.rs`,
 `src/cli/tests/next_commands_json_property/*.rs`,
-`src/cli/response_contract.rs`, and system CLI tests. Existing per-entity
-rendering and batch-size validation remain covered.
+`src/cli/response_contract.rs`, `src/entities/article/batch.rs`,
+`src/cli/article/dispatch.rs`, and system/article CLI tests. Existing
+per-entity rendering and batch-size validation remain covered.
 
-The src line ceiling may rise by at most 240 lines.
+The src line ceiling may rise by at most 300 lines.

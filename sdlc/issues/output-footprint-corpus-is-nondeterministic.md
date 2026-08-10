@@ -57,9 +57,6 @@ first:
 Recommend 1, with the list derived from `grep BIOMCP_.*_BASE src/` in a test
 so a new provider cannot be added without appearing in the corpus env.
 
-## Separate, smaller finding
-
-The corpus runs with `semantic_scholar_enabled: false` in its own output, and
-Semantic Scholar was still called. Whatever that flag governs, it is not
-"do not contact Semantic Scholar." Worth a look on its own terms — a user who
-turns a source off probably expects no traffic to it.
+The separate provider-control defect observed during this incident now lives
+in `sdlc/issues/semantic-scholar-enrichment-ignores-source-selection.md` so this
+issue can close when the offline enforcement boundary lands.

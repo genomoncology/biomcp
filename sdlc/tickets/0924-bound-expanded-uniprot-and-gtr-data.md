@@ -32,12 +32,16 @@ must not silently clamp or partially index the file.
 
 ## Done when
 
-Small local high-compression fixtures exceed each byte or row boundary. An
-instrumented reader proves rejection after at most limit plus one expanded byte
-or row, rather than after consuming the complete payload. Exact-limit fixtures
-succeed. Existing recorded UniProt and GTR fixtures parse byte-for-byte as
-before. A rejected GTR refresh leaves the last complete local bundle usable and
-never promotes a partial index.
+The decoder/resource-budget seams accept test-only limit values while the
+production call sites always pass the constants above. Routine tests use small
+limits and small local high-compression fixtures to cover exact limit and limit
+plus one; they must not construct 32 MiB, 512 MiB, or million-row fixtures. A
+static/constant contract pins the production values so a small test limit
+cannot leak into production. An instrumented reader proves rejection after at
+most configured limit plus one expanded byte or row, rather than after
+consuming the complete payload. Existing recorded UniProt and GTR fixtures
+parse byte-for-byte as before. A rejected GTR refresh leaves the last complete
+local bundle usable and never promotes a partial index.
 
 ## Authorized test changes
 

@@ -19,7 +19,11 @@ and `--full` on `get pgx`:
 - a named section returns identity/provenance plus only that section unless
   more sections are explicitly named;
 - `--limit` defaults to 10 and is limited to 1-50 per requested list section;
-- `--offset` applies to every requested list section and defaults to zero;
+- `--offset` defaults to zero and may be nonzero only when exactly one list
+  section is selected. Default no-section output counts as the single
+  `interactions` section. A nonzero offset with multiple sections or `--full`
+  fails before transport; to follow one continuation from a multi-section
+  response, request that named section alone with its advertised offset;
 - each section has its own `returned`, `total` when exact, `has_more`, and
   `next_offset` metadata; and
 - `--full` selects all sections and raises their per-section limit to 50. It
@@ -35,11 +39,13 @@ render no more than limit.
 ## Done when
 
 - Clap accepts flags in documented positions and rejects zero/oversized limits
-  before transport.
+  and nonzero multi-section/full offsets before transport.
 - Local request observations prove a recommendations-only gene call performs
   no 100-row pair request and emits no interactions.
-- Default, one-section, multi-section, offset, and full cases stay within the
-  stated request and output budgets.
+- Default, one-section offset, initial multi-section, and full cases stay within
+  the stated request and output budgets. Following each continuation from an
+  initial multi-section response through a one-section request produces the
+  next distinct row without gaps or duplicates.
 - Recorded CPIC and PharmGKB bytes pass through production decoders.
 - JSON and Markdown expose the same per-section continuation and source state.
 

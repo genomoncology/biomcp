@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 8
-deps: ["0651", "0914", "0915"]
+deps: ["0651", "0914", "0915", "0929"]
 ---
 # Convert trial live assertions to deterministic CT.gov and NCI contracts
 

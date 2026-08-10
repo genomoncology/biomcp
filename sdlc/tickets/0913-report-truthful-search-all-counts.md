@@ -20,9 +20,12 @@ Each section carries:
 - `total_lower_bound`: null for an exact total, otherwise the number of rows
   proven to exist so far.
 
-A provider-reported exact total or a successful, proven exhausted page may set
-an exact total. A fetch cap is never an exact total. A successful zero-result
-response is exact zero; an unavailable or failed source has no total.
+A provider-reported exact total or a successful, proven exhausted result set
+may set an exact total. A fetch cap is never an exact total. A zero-row current
+page is exact zero only when the provider reports exact zero or BioMCP proves
+the entire result set is exhausted. If continuation remains possible, it is a
+lower bound of zero with a null total. An unavailable or failed source has no
+total.
 
 Human output says `N`, `at least N`, or `unknown` as appropriate. Existing
 source-outcome text remains visible. `--debug-plan` may add diagnostics but uses
@@ -30,8 +33,8 @@ the same fetch plan and leaves every count field byte-identical.
 
 ## Done when
 
-- Local provider fixtures cover exact, lower-bound, exhausted, zero, and failed
-  sections.
+- Local provider fixtures cover exact, lower-bound, exhausted, proven exact
+  zero, a zero-row page with continuation, and failed sections.
 - Changing `--limit` changes `returned` and perhaps the lower bound, never a
   guessed exact total.
 - Adding `--debug-plan` changes only the debug projection.

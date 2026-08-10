@@ -11,10 +11,13 @@ misleading.
 
 ## Done when
 
-biomcp get variant <id> population queries gnomAD v4 directly for the
-resolved GRCh38 coordinate and returns:
+biomcp get variant <id> population queries the gnomAD GraphQL dataset enum
+`gnomad_r4` directly for the resolved GRCh38 coordinate. Do not silently move
+to `gnomad_r3`, `gnomad_r2_1`, or a future dataset enum. The response returns:
 
-- the exact gnomAD release and dataset;
+- dataset `gnomad_r4` and the most precise release identity the provider
+  actually supplies; when the API supplies no point-release identity, report
+  `gnomAD v4` and do not invent a patch version;
 - exome and genome results as separate objects;
 - raw allele frequency and allele counts by ancestry;
 - grpmax filtering allele frequency, including faf95 and the selected group;
@@ -22,19 +25,23 @@ resolved GRCh38 coordinate and returns:
 - explicit missing, absent, and provider-failure outcomes;
 - the gnomAD FAF exclusion caveat for bottlenecked groups.
 
-Keep the existing MyVariant/legacy gnomAD and ExAC data for one compatibility
-cycle under a separate `legacy_population` object with its own provider and
-release labels. Mark that object deprecated in the schema and documentation.
-It must not be merged into the v4 fields or used as a fallback when direct
-gnomAD data is absent or unavailable.
+Keep the existing MyVariant/legacy gnomAD and ExAC data through the first
+BioMCP release containing this ticket under a separate `legacy_population`
+object with its own provider and release labels. That compatibility release is
+v0.8.26 if this ticket lands before that cut; otherwise it is the first later
+release containing the change. Mark the object deprecated in the schema and
+documentation and name the exact removal release there. Draft ticket 0946 owns
+removal in the following minor release. The legacy object must not be merged
+into the v4 fields or used as a fallback when direct gnomAD data is absent or
+unavailable.
 
 If the resolved variant has no trustworthy GRCh38 coordinate, the section
 states that requirement instead of querying gnomAD with a GRCh37 coordinate.
 
 ## Proof required
 
-- A RequestPlan test pins the GraphQL operation, variables, coordinate,
-  release/dataset fields, and response-size limits.
+- A RequestPlan test pins the GraphQL operation, `dataset: gnomad_r4`,
+  variables, coordinate, selected fields, and response-size limits.
 - A real receipted v4 response exercises grpmax FAF and one response
   exercises discordant exome/genome filters.
 - Production decoding keeps each data type separate.
