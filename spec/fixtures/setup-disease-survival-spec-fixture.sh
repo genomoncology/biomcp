@@ -3,27 +3,33 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 
-workspace_root="${1:-$PWD}"
+workspace_root="$(realpath -e "${1:-$PWD}")"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-disease-survival-env"
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cleanup_script="$script_dir/cleanup-disease-survival-spec-fixture.sh"
 
 mkdir -p "$cache_dir"
+cache_dir="$(realpath -e "$cache_dir")"
 
 if [[ -x "$cleanup_script" ]]; then
   bash "$cleanup_script" "$workspace_root"
 fi
+recover_disease_survival_orphans "$cache_dir"
 
 fixture_root="$(mktemp -d "$cache_dir/spec-disease-survival.XXXXXX")"
 owner_arg="$(bash "$ownership_helper" new-owner "disease-survival" "$fixture_root")"
 ready_file="$fixture_root/base-url"
+server_pid_file="$fixture_root/server-pid"
 server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
 : >"$request_log"
+prepare_fixture_supervisor_owner
 
-setsid python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
+start_fixture_supervisor "$cache_dir" "$fixture_root" "spec-disease-survival." "$server_pid_file" \
+  python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -98,11 +104,18 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 READY.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
-server_pid=$!
+supervisor_pid=$!
+server_pid=""
 cleanup_incomplete_setup() {
-  kill -TERM -- "-$server_pid" 2>/dev/null || true
-  wait "$server_pid" 2>/dev/null || true
-  rm -rf "$fixture_root"
+  if [[ -s "$server_pid_file" ]]; then
+    server_pid="$(cat "$server_pid_file")"
+    [[ "$server_pid" =~ ^[1-9][0-9]*$ ]] && kill -TERM -- "-$server_pid" 2>/dev/null || true
+    wait "$supervisor_pid" 2>/dev/null || true
+  else
+    kill -TERM "$supervisor_pid" 2>/dev/null || true
+    wait "$supervisor_pid" 2>/dev/null || true
+    rm -rf "$fixture_root"
+  fi
 }
 trap cleanup_incomplete_setup EXIT
 trap 'exit 130' INT
@@ -110,10 +123,13 @@ trap 'exit 143' TERM
 trap 'exit 129' HUP
 
 for _ in $(seq 1 50); do
-  if [[ -s "$ready_file" ]]; then
+  if [[ -s "$server_pid_file" ]]; then
+    server_pid="$(cat "$server_pid_file")"
+  fi
+  if [[ -s "$ready_file" && "$server_pid" =~ ^[1-9][0-9]*$ ]]; then
     break
   fi
-  if ! kill -0 "$server_pid" 2>/dev/null; then
+  if ! kill -0 "$supervisor_pid" 2>/dev/null; then
     cat "$server_log" >&2
     exit 1
   fi
@@ -121,6 +137,7 @@ for _ in $(seq 1 50); do
 done
 
 test -s "$ready_file"
+[[ "$server_pid" =~ ^[1-9][0-9]*$ ]]
 base_url="$(cat "$ready_file")"
 
 for _ in $(seq 1 50); do
