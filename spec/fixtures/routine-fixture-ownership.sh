@@ -79,7 +79,9 @@ record_value() {
 root_is_owned() {
   local workspace="$1" kind="$2" root="$3" cache canonical_workspace canonical_root
   canonical_workspace="$(canonical_dir "$workspace")" || return 1
-  canonical_root="$(canonical_dir "$root")" || return 1
+  # The supervisor may already have removed a root after owner death. This is
+  # an expected stale-record path, not an error worth printing during cleanup.
+  canonical_root="$(canonical_dir "$root" 2>/dev/null)" || return 1
   cache="$canonical_workspace/.cache"
   [[ "$(dirname "$canonical_root")" == "$cache" && "$(basename "$canonical_root")" == "spec-$kind".* ]]
 }
