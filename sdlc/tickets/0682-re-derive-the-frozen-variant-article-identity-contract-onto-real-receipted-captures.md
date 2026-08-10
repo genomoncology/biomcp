@@ -1,75 +1,42 @@
 ---
 flow: build
-priority: 4
+priority: 7
 ---
-# Re-derive the frozen variant-article identity contract onto real receipted captures
+# Re-derive variant-article identity onto real receipted captures
 
-Carried over from March ticket 682 when BioMCP moved to the sdlc
-factory. The body below is March's, unchanged; it was already written to
-stand alone. Work products from any earlier attempt:
+## Done when
 
-    /home/ian/workspace/planning/biomcp/artifacts/682-re-derive-the-frozen-variant-article-identity-contract-onto-real-receipted-captures
-## Why
+The frozen exact-variant article identity contract uses real receipted
+provider observations for successful identity, route, passage, and CAR/CAID
+claims. The routine CLI fixture passes those bytes through the production
+decoders and identity orchestration instead of inventing rows, passages, or
+opaque identifiers inline.
 
-`spec/entity/variant-article-identity.md` is a frozen shipped contract whose assertions are
-proved entirely against a **synthesized** fixture. `spec/fixtures/run-variant-article-identity-fixture.sh`
-constructs its rows, PubTator documents, ClinGen CAR identifiers, LDH annotations and
-scenario modes inline rather than replaying recorded provider bytes.
+Keep explicit synthetic fixtures for degraded, malformed, timeout, and other
+edge outcomes a real provider cannot reliably produce. Label them synthetic;
+they supplement rather than replace the real anchors.
 
-A contract asserted against invented bytes proves only that our code agrees with itself.
-This is the defect the whole live-conversion effort exists to remove — the same family as
-614 (synthesized fixture), 650 (hand-edited ERepo `@id`), 652 (manufactured CSpec criteria
-with invented PMIDs) and 665's first attempt.
+## Proof required
 
-This is **pre-existing debt**, not created by ticket 665. It surfaced when 665 needed the
-same shared fixture and could not replace its bytes without breaking these assertions.
-Ticket 665 was ruled to split fixture ownership and leave this contract untouched, which
-unblocked 665 but deliberately left this unaddressed. Filing it so the split is not mistaken
-for an endorsement.
+- Each real anchor is captured through the production RequestPlan and has a
+  receipt binding request and response.
+- A local executor fixture proves the production request is consumed.
+- The production decoders, identity merge, route status, terminal state, and
+  work accounting run over those bytes.
+- Process-level JSON and Markdown assertions pin the identity fields and
+  provenance without depending on public availability.
+- Unknown or mismatched fixture routes fail rather than falling back to a
+  convenient response.
 
-## Scope
+Do not change identity thresholds, route priority, work budgets, or provider
+semantics to fit a capture.
 
-Re-derive the identity contract's evidence onto real, receipted captures, or record with
-justification which scenarios cannot be.
+## Authorized test changes
 
-Out of scope: ticket 665's new seven-variant orchestration contract and its separate
-fixture; any change to what the identity contract *means*.
+Design commits may restate
+spec/fixtures/run-variant-article-identity-fixture.sh, its owning spec blocks,
+the identity fixture corpus/receipts, and relevant production-path tests.
+Mechanical construction fixes may land with implementation while assertions
+stay unchanged.
 
-## Intermediate State
-
-None.
-
-## Success Checklist
-
-- [ ] Every identity scenario that a real provider response can exhibit is proved against
-      committed `real_and_receipted` captures, replayed byte-for-byte.
-- [ ] Captures pass `tools/check-source-capture-receipts.py` and carry their capture date.
-- [ ] The fixture serves recorded bytes through an explicit expected-request dispatch table
-      that **rejects** unrecognized paths. A fixture that answers everything cannot prove
-      the request was right.
-- [ ] Scenarios that real data genuinely cannot exhibit — deliberately degraded, empty, or
-      error states with no natural analogue — are enumerated with the reason each one
-      resists capture. This list is the deliverable for the remainder, not a silent gap.
-- [ ] The contract's asserted behavior does not change. If a real capture contradicts a
-      current assertion, that is a finding to report, not an assertion to edit.
-- [ ] No production behavior is changed to make a capture assert cleanly. Ticket 662's
-      review caught exactly that and reverted it.
-- [ ] `make lint`, `make test`, and `make spec` pass.
-
-## Dependencies
-
-None. The real-capture corpus and strict-replay fixture pattern this ticket should reuse
-already landed as ticket 0683 (`sdlc/records/0683-capture-and-map-the-seven-variant-article-
-panel-corpus.md`) — reuse that corpus and pattern rather than inventing a second approach.
-(An earlier revision sequenced this after "665", a ticket id that does not exist in this
-repo; corrected 2026-08-09 during the review triage.)
-
-## Notes
-
-- Capture route precedent, including the Semantic Scholar case that has no loopback
-  recording path: ticket 663's `testdata/sources/semantic_scholar/pmid20516115-*.json`,
-  served via `BIOMCP_S2_BASE` (`src/sources/semantic_scholar.rs:14`).
-- Bound the corpus by what the assertions exercise, not by what a request inventory happens
-  to record.
-- Green gates are not evidence. 665's first attempt passed `make lint`, `make test` and
-  `make spec` — 225 spec assertions — entirely on invented data.
+The src line ceiling may rise by at most 120 lines.

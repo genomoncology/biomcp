@@ -3,16 +3,32 @@ flow: build
 priority: 6
 deps: ["0686"]
 ---
-# The run-* wrappers adopt the supervisor
+# The server-starting run wrappers adopt the supervisor
 
-Slice three of the 0686 sequence. Five server-starting run-*
-wrappers (run-article-semanticscholar-source-search.sh,
-run-clingen-erepo-fixture.sh, run-section-outcome-mcp.sh,
-run-variant-article-entity-fixture.sh,
-run-variant-article-identity-fixture.sh) depend on EXIT traps that
-SIGKILL skips. Route them through 0686's supervisor — the same
-single implementation, self-supervising in the real exported-owner
-path — or land behavioral proof that killing their owner cannot
-leave a server alive. Owner-death tests for each; restating tests
-authored in earlier 0686 attempts is authorized through design
-commits.
+Ticket 0686 landed one owner-identity-aware fixture supervisor. Reuse it for
+exactly these five wrappers:
+
+- run-article-semanticscholar-source-search.sh
+- run-clingen-erepo-fixture.sh
+- run-section-outcome-mcp.sh
+- run-variant-article-entity-fixture.sh
+- run-variant-article-identity-fixture.sh
+
+## Done when
+
+Killing each wrapper's real exported owner with SIGKILL cannot leave its
+server, process group, socket, port, or owned temporary root behind. Normal
+exit and timeout cleanup also work. Recovery validates fixture kind,
+worktree/root prefix, owner token, PID start identity, and process group
+before signaling.
+
+Generalize 0686's disease-specific marker/recovery dispatch only as needed to
+reuse the same supervisor. Do not create wrapper-specific supervisors.
+
+## Authorized test changes
+
+Design commits may restate the five wrappers, shared supervisor scripts, and
+their lifecycle tests. Every wrapper gets a real exported-owner path plus
+SIGKILL proof; a source-text assertion is not sufficient.
+
+The src line ceiling may not rise.

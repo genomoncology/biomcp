@@ -1,85 +1,50 @@
 ---
 flow: build
 priority: 3
-deps: ["0669", "0671", "0672", "0674", "0675", "0676", "0677"]
+deps: ["0669", "0671", "0672", "0674", "0677", "0682", "0684", "0901", "0902", "0903", "0904", "0905", "0906", "0907"]
 ---
-# Finish mixed CLI live-block conversion after source contracts land
+# Reconcile the final live-spec registry after source conversions
 
-Carried over from March ticket 673 when BioMCP moved to the sdlc
-factory. The body below is March's, unchanged; it was already written to
-stand alone. Work products from any earlier attempt:
+This is the single final registry owner. Superseded ticket 0885 must not
+rebuild a competing inventory.
 
-    /home/ian/workspace/planning/biomcp/artifacts/673-finish-mixed-cli-live-block-conversion-after-source-contracts-land
-## Why
-Ticket 645 found `spec/surface/cli.md` to be mixed: its help, list, and static blocks are already routine proof, while each source-backed health or command block belongs to its source-specific deterministic replacement.
+## Done when
 
-## What
-Inventory source-backed blocks in `spec/surface/cli.md`, reuse the landed source contracts and receipts from all predecessor slices, and remove or split only those replaced live blocks so `SPEC_LIVE_PATHS` is accurate at assertion granularity. Preserve all local CLI help/list/rendering assertions in their current routine document.
+After every dependency lands, BioMCP has one truthful answer to which specs
+are routine and which are live:
 
-## Intermediate State
-The registry contains no CLI page solely because of source availability; the mixed CLI document remains a routine user-surface contract.
+- scripts/run-specs.sh is the canonical registry.
+- Makefile targets ask the runner for the registry instead of keeping a
+  second hand-written list.
+- The runner's declaration and verification paths consume the same data.
+- Architecture documentation is checked against the canonical list rather
+  than carrying an unchecked count.
+- The separate NIH disease/gene lane is either represented in that source of
+  truth or explicitly named as a distinct lane with no duplicate execution.
 
-## Scope
+The current 16-, 17-, and 18-path answers must collapse to one exact set.
 
-What is IN scope:
-- `spec/surface/cli.md`, `scripts/run-specs.sh::SPEC_LIVE_PATHS`, and any local fixture wiring required only to route converted CLI blocks.
+## Work
 
-What is OUT of scope:
-- Changing CLI grammar, help/list behavior, health semantics, or removing an unconverted source assertion.
+Re-inventory the repository at flight time. For every path:
 
-## Dependencies
-- All source conversion tickets must be shipped first: 0669, 0671, 0672, 0674, 0675, 0676, 0677.
+1. identify its owning conversion record;
+2. prove its routine blocks cover CLI parsing, request construction, response
+   decoding, and rendering;
+3. leave genuinely mutable provider availability only in the live verify
+   lane;
+4. classify stale files such as ddinter-live.md from evidence, not filename.
 
-## Success Checklist
-- [ ] Each converted assertion has a consumed Tier 2 plan, receipt-backed real Tier 3 production decoder/orchestration proof, and fixture-backed CLI proof where it claims presentation.
-- [ ] Only replaced live blocks leave `SPEC_LIVE_PATHS`; all retained local proof remains routine.
-- [ ] A live test may be replaced by unit tests **only if** those unit tests fully cover the CLI-to-API-call transition and the parsing of a locally captured response. Everything on our side of the socket stays covered; only "does the provider serve this today" is dropped.
-- [ ] Tier 2 and Tier 3 coverage lands **before** the live assertion is removed. Retiring a canary for a source with no unit tests reduces coverage rather than relocating it.
-- [ ] Captures are real recorded responses with their capture date. A synthesised or edited fixture proves only that a parser agrees with itself — ticket 614's lesson, and the mechanism behind 650.
-- [ ] Nothing here closes an issue. The five live-canary reports that used
-  to be listed at this point were folded into ticket 0885 and their files
-  deleted; 0885 owns them now. Do not go looking for them, and do not treat
-  a green live run as evidence — a green run proves the provider is up
-  today, which is exactly the property those canaries should stop
-  asserting.
-- [ ] The Semantic Scholar credential dependency is proven by capturing the outgoing header. It cannot be proven by an anonymous 429 — measured intermittent at 2 of 4 attempts.
-- [ ] `make lint`, `make test`, and `make spec` pass.
+Convert the remaining mixed blocks in spec/surface/cli.md only when their
+source owner has landed. Do not reimplement article graph/assets,
+MyVariant/hotspots, or variant-article conversion work already owned by
+completed records or 0684.
 
-## Notes
-- See `architecture/technical/live-spec-conversion-target.md` for the target boundary and per-path prerequisites.
-- No FAQ entry is currently `watching`; FAQ #17's standard gates remain the proof lane.
+## Authorized test changes
 
-## Operator addendum — 2026-08-05: observe the provider's shape before asserting against it
+Design commits may restate spec/surface/cli.md, scripts/run-specs.sh,
+Makefile, architecture/technical/live-spec-conversion-target.md, and tests
+that assert the registry. No biomedical behavior, CLI grammar, or provider
+code changes belong here.
 
-Two tickets landed assertions against provider data shapes that do not exist:
-
-- **678** asserted a package at `.../PMC<id>.<v>/metadata/<v>.json`. That path 404s. The
-  real layout is flat: `.../PMC7382263.1/PMC7382263.1.json`.
-- **663** asserted that the first citing paper for PMID 22663011 has no PubMed ID, no DOI
-  and no arXiv ID. That record has 100 citation rows and **zero** such papers.
-
-Neither was a bad capture. In both cases a design imagined what the provider returns, a
-local fixture was built to match the imagination, and the assertion confirmed the fixture.
-The loop closed cleanly and proved nothing.
-
-Note this is **not** covered by "captures are real recorded responses". Both failures were
-in hand-built fixtures, which that constraint does not reach. A real capture sitting beside
-an invented fixture still yields a green run that means nothing.
-
-### Requirements
-
-- [ ] Every assertion about a provider's data shape names the request that was issued and
-      the value that came back, recorded in the design. No assertion is authored from an
-      assumed schema, an API doc, or a remembered shape.
-- [ ] Any locally-built fixture is derived from an observed real response. If the fixture
-      serves a shape no real response produced, say why in the design and expect challenge.
-- [ ] If the design's chosen record cannot exhibit the behavior being pinned, **change the
-      record, not the assertion**. 663's provider-only citation row was real; the seed was
-      wrong. A bounded search across a handful of candidate records found it.
-- [ ] Where an assertion depends on a row's position in a response, do not rely on it.
-      663's target rows sat at indexes 74, 88 and 96 — never first.
-- [ ] No production behavior is changed to make a capture assert cleanly. Ticket 662's
-      review caught exactly that: `verify_ldh_annotation` was altered so a capture could
-      assert completeness, and the review reverted it.
-- [ ] No fixture is synthesized, hand-edited, or reshaped to match our code. Tickets 614,
-      650 and 652 each did this; 652's fixture carried invented PMIDs.
+The src line ceiling may not rise.

@@ -1,101 +1,46 @@
 ---
 flow: build
-priority: 4
+priority: 6
 ---
-# Carry the guideline version on expert assertions, and sweep by gene
+# Carry the guideline identity on ERepo assertions
+
+This is only the guideline-identity slice. Bounded gene search moved to 0908.
 
 ## Done when
 
-`biomcp variant erepo <CAid> --detail --json` carries the guideline
-label and a parsed guideline version alongside `doc_version`. A gene
-sweep returns every assertion for a gene in one call, so PTEN's PM2
-strengths can be counted per specification version without enumerating
-CAIDs first.
+biomcp variant erepo <CAID> --detail --json carries:
 
-## Raise allowance
+- guideline_label exactly as ERepo supplied it;
+- guideline_version as a parsed semantic version when the label contains one,
+  otherwise null;
+- doc_version separately, with no suggestion that it is the guideline
+  version.
 
-Two changes: one field carried through an existing parser, and one new
-query shape. The `src` line ceiling may rise by at most 200 lines.
+Human output names the same guideline label/version near the assertion
+classification. Older labels such as ACMG-PTEN Variant Curation Guideline are
+preserved even when no semantic version can be parsed.
 
-## The finding
+## Proof required
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded
-in here and the issue file removed. Reproduced in full below.
+The current client uses summary/detail shapes that do not retain guidelines.
+Add the provider field/request needed to preserve the association; do not
+infer a guideline from VCEP name or document version.
 
-<!-- from feature-clingen-expert-panel-assertions.md -->
+- Pin the exact production RequestPlan.
+- Record a dated real response with a versioned guideline and one legacy
+  unversioned label.
+- Decode through the production parser and assertion model.
+- Prove JSON and Markdown, including null parsed version with raw label kept.
+- Keep all routine tests local and body-bounded.
 
-# Feature: `variant erepo` has no gene-wide sweep and drops the guideline version
+Gene-wide enumeration, criterion filtering, CSpec document search, and
+unbounded downloads are out of scope.
 
-Severity: should-fix.
+## Authorized test changes
 
-**Correction, 2026-08-08.** An earlier version of this file asked
-for expert-panel assertions as if they were absent. They are not —
-`biomcp variant erepo <CAid>` returns classification, condition,
-MOI, VCEP, HGVS set, dates, summary text, and the met criteria at
-their applied strength (`met: PM2`, `met: PS2_Very`). Two narrower
-gaps remain, and together they block the analysis that made this
-worth filing.
+Design commits may restate ERepo request/parser captures, assertion model
+fixtures, CLI JSON/Markdown tests, and schemas/examples that currently omit
+the field. Mechanical construction fixes may land with implementation while
+unrelated assertions remain unchanged.
 
-## Gap 1 — the guideline version is dropped
-
-`variant erepo CA000559 --detail --json` reports
-`"doc_version": "1.0.0"` and `"vcep": "PTEN VCEP"`. That is the
-*assertion document's* version, not the specification version the
-curators worked under.
-
-The upstream record carries it. In the raw API response, each
-assertion's `guidelines[].label` reads e.g. *"ClinGen PTEN Expert
-Panel Specifications … Version 3.2.0"*, and older ones read
-*"ACMG-PTEN Variant Curation Guideline"*. BioMCP parses the block
-and discards the label.
-
-That field is the whole analysis. The PTEN specification contradicts
-itself on PM2 — Moderate approved but Not Applicable, Supporting
-Applicable but not approved, no strength both. Unanswerable from the
-document. Cut the assertions by guideline version and it resolves:
-
-| Spec version | PM2 (Moderate) | PM2_Supporting |
-|---|---|---|
-| v1 | 44 | 0 |
-| v2 | 9 | 0 |
-| 3.0.0 | 0 | 53 |
-| 3.1.0 | 16 | 34 |
-| 3.2.0 | 4 | 28 |
-
-The switch lands at 3.0.0, unanimously — and the residual bare-PM2
-records are not stale carry-overs, since both strengths appear in
-the same publication batches. So the honest answer includes a known
-inconsistency rate. Without the version field the same data is an
-undifferentiated 73-against-115 and says almost nothing.
-
-Fix shape: carry `guideline_label` and a parsed `guideline_version`
-alongside `doc_version`. Small change, large payoff.
-
-## Gap 2 — no way to ask for a gene's assertions
-
-`variant erepo` takes a CAID, or a batch of CAIDs via `--input`.
-Both require already knowing which variants to ask about. There is
-no `--gene`.
-
-The upstream endpoint supports it directly:
-
-    https://erepo.genome.network/evrepo/api/classifications?gene=PTEN&matchLimit=500
-
-229 PTEN interpretations in one call. That is how the table above
-was built, and there is no path to it through BioMCP today short of
-enumerating CAIDs from somewhere else first.
-
-Shape: `biomcp search assertion --gene PTEN [--code PM2]`, returning
-the same per-assertion shape `variant erepo` already produces.
-
-## What it also settles
-
-The same sweep answers scope questions the specifications leave
-open. `?gene=KLLN` returns six assertions under the PTEN panel's
-guideline, all of them PTEN promoter variants, two curated within
-the last year — though the PTEN specification's declared gene scope
-is PTEN alone and the string `KLLN` appears nowhere in it. The gene
-symbol is a downstream annotation, not the membership key. One
-query; unreachable any other way.
-
-Raised 2026-08-08 from PTEN GN003 research for varclassify2.
+The src line ceiling may rise by at most 150 lines.

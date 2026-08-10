@@ -123,6 +123,11 @@ approves the release cut.
   private staging area; a draft release may be populated only if it does not create or
   require the public tag. Record every staged artifact hash and source SHA in a signed
   or workflow-attested candidate manifest.
+- Keep one canonical installer source. docs/install.sh, packaged copies, and the bytes
+  served from https://biomcp.org/install.sh must be generated from or byte-identical to
+  that source. Installation aborts when no supported SHA-256 tool exists, when the
+  checksum sidecar is unavailable or malformed, or when the checksum mismatches. A test
+  of a repository-only copy is not deployment proof.
 - After all pre-publication gates pass and Ian approves, create the immutable tag at
   the staged SHA as the first public write. Then perform the remaining public writes in a dependency-ordered
   promotion phase without rebuilding: publish immutable PyPI and the versioned GHCR manifest; publish the
@@ -233,6 +238,10 @@ approves the release cut.
   binary. Preserve provider outages as explicit incomplete/unavailable results.
 - Verify `biomcp.org`, `install.sh`, self-update discovery, README install commands,
   checksums, release notes, and all mutable latest pointers identify v0.8.26.
+- From an isolated installation of the immediately previous public version, run the real
+  self-update download against the new public archive and verify the installed binary's
+  version and source SHA. An updater that can discover an asset but cannot download it is
+  a release blocker.
 - Produce and attach exactly `release-record-v0.8.26.json` and
   `release-record-v0.8.26.json.sha256` after all public smokes. The record contains the
   tag, full source SHA, artifact hashes, wheel targets, OCI manifest
@@ -332,6 +341,12 @@ corresponding unit suite.
   and the release-smoke report derives v0.8.26 rather than a stale hard-coded version.
 - [ ] The public binary passes the frozen variant identity and ClinGen release gates
   without false provider credit or hidden incompleteness.
+- [ ] The deployed installer bytes equal the canonical tested installer, and a
+  post-deploy smoke proves the public URL aborts when checksum proof is missing,
+  malformed, or mismatched.
+- [ ] The immediately previous public binary downloads, verifies, installs, and reports
+  the new public release through self-update; the smoke uses the published archive rather
+  than a private build artifact.
 - [ ] v0.8.25 remains byte-for-byte immutable and its provenance defect is documented.
 - [ ] Final evidence is attached as `release-record-v0.8.26.json` plus checksum; partial
   attempts use unique partial names and never overwrite the final record.

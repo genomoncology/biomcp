@@ -1,92 +1,52 @@
 ---
 flow: build
-priority: 5
+priority: 7
 ---
-# Report gnomAD filtering allele frequency, and name the dataset version
+# Report a complete gnomAD v4 population result
+
+This ticket absorbs superseded 0879. Filtering allele frequency, raw allele
+frequency, release identity, exome/genome separation, and quality flags are
+one source response and one user decision; shipping only half would remain
+misleading.
 
 ## Done when
 
-`biomcp get variant <id> population` reports the grpmax filtering allele
-frequency alongside the raw per-population frequencies, states which
-gnomAD release the numbers come from, and states that FAF excludes the
-bottlenecked groups. Raw AF is kept, not replaced.
+biomcp get variant <id> population queries gnomAD v4 directly for the
+resolved GRCh38 coordinate and returns:
 
-## Raise allowance
+- the exact gnomAD release and dataset;
+- exome and genome results as separate objects;
+- raw allele frequency and allele counts by ancestry;
+- grpmax filtering allele frequency, including faf95 and the selected group;
+- quality filter flags separately for exomes and genomes;
+- explicit missing, absent, and provider-failure outcomes;
+- the gnomAD FAF exclusion caveat for bottlenecked groups.
 
-Reading a second gnomAD field set and rendering it is a new source path
-plus a renderer change. The `src` line ceiling may rise by at most 250
-lines. If it will not fit, say so in the design rather than deleting
-the raw per-population output to make room.
+The existing MyVariant/legacy gnomAD or ExAC data may remain only if it is
+clearly labeled as a separate older source. It must not be merged into the
+v4 fields or used as a silent fallback.
 
-## The finding
+If the resolved variant has no trustworthy GRCh38 coordinate, the section
+states that requirement instead of querying gnomAD with a GRCh37 coordinate.
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded
-in here and the issue file removed. Reproduced in full below.
+## Proof required
 
-<!-- from feature-gnomad-v4-and-filtering-allele-frequency.md -->
+- A RequestPlan test pins the GraphQL operation, variables, coordinate,
+  release/dataset fields, and response-size limits.
+- A real receipted v4 response exercises grpmax FAF and one response
+  exercises discordant exome/genome filters.
+- Production decoding keeps each data type separate.
+- JSON preserves raw flag names and machine-readable numeric values.
+- Markdown expands common flags in plain language and keeps the dataset next
+  to every number.
+- Missing/error/status and compact-output cases are covered locally.
+- No routine test reaches gnomAD.
 
-# Feature: gnomAD v4 frequencies, and filtering allele frequency
+## Authorized test changes
 
-Severity: should-fix. Not a defect — BioMCP reports what its source
-gives it. But it puts variant classification work out of reach.
+Design commits may restate the population model, MyVariant legacy population
+fixtures, gnomAD source tests, variant population JSON/Markdown tests, skill
+schemas/examples, and related specs. Mechanical construction fixes may land
+with implementation while unrelated assertions remain unchanged.
 
-## The question it blocks
-
-Every ACMG/AMP frequency criterion — BA1, BS1, PM2 — is defined on
-the **filtering allele frequency** (FAF), the lower bound of the 95%
-confidence interval on the highest non-bottlenecked ancestry group's
-frequency. Not on the raw allele frequency. Current ClinGen expert
-panel specifications say so in as many words. The PTEN panel's BA1
-reads:
-
-> "gnomAD Filtering allele frequency >0.00056 (0.056%)"
-
-`biomcp get variant … population` cannot answer that question. It
-returns raw per-population AF and no FAF, no confidence interval,
-and no grpmax.
-
-## What is actually being served today
-
-    gnomAD AF: 0.000012 (< 0.01%)
-    African/African American: 0
-      African/African American (female): 0
-      African/African American (male): 0
-    …
-    ExAC AF: 0.000008
-
-Sex-split subpopulation fields (`af_afr_female`, `af_afr_male`) and
-an ExAC line are gnomAD **v2.1** shape. Confirmed against
-MyVariant directly: `gnomad_exome` carries `af_afr_female` and no
-`filter` key, and `gnomad_genome` comes back empty for the variant
-tested. v2.1 is a 2019 dataset built on GRCh37. gnomAD v4.1 has
-roughly five times the samples and a different ancestry grouping.
-
-So a caller doing frequency work gets old numbers, in the wrong
-statistic, with no signal that either is the case.
-
-## Shape
-
-- Source FAF from gnomAD directly rather than through MyVariant.
-  gnomAD's GraphQL API returns `faf95` per ancestry group and the
-  grpmax selection, which is exactly the quantity the criteria name.
-- Report the dataset version in the output. `gnomAD v4.1 (exomes)`
-  on the line is worth as much as the number, because a reader
-  currently has no way to tell which release they are looking at.
-- Keep the raw per-population AF; it is still useful. Add FAF, do
-  not replace.
-- Carry the FAF caveat that gnomAD documents: the calculation
-  excludes Amish (`ami`), Ashkenazi Jewish (`asj`), European Finnish
-  (`fin`) and Remaining Individuals (`rmi`). Anyone applying BA1 to
-  a founder variant needs that on the same screen.
-
-## Why it is worth the work
-
-This is the single field that separates "interesting genomics
-lookup" from "usable in a variant classification pipeline". It is
-also the field with the least ambiguity about what is wanted — the
-expert panels have already written the thresholds down, in FAF, with
-numbers.
-
-Raised 2026-08-08 from PTEN GN003 research for varclassify2, where
-BioMCP could not be used as the frequency source and gnomAD had to
-be consulted separately.
+The src line ceiling may rise by at most 360 lines.

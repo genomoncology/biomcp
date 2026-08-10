@@ -1,81 +1,47 @@
 ---
 flow: build
-priority: 3
+priority: 5
 ---
-# Stop dropping complex tables out of article full text
+# Preserve complex table cells in saved article full text
 
 ## Done when
 
-`biomcp get article 30311380 fulltext` yields the cell text of all six
-tables rather than six omission notices. Merged-cell structure may be
-reported rather than reproduced, but no content is discarded.
+The saved Markdown produced for PMID 30311380 contains the cell text from all
+six complex JATS tables instead of omission notices. Merged-cell structure may
+be represented as row/column span annotations rather than a perfect visual
+grid, but no cell text is discarded.
 
-## Raise allowance
+The CLI may continue returning only the saved path and bounded metadata. This
+ticket changes the saved file, not the default stdout context size.
 
-Table rendering is genuinely new work in the JATS path. The `src` line
-ceiling may rise by at most 250 lines. Prefer the cheapest option in
-the body — a raw row dump — before spending the whole allowance.
+## Simplest acceptable rendering
 
-## The finding
+Render a clearly labeled raw row sequence:
 
-Raised as an issue during BioMCP research on 2026-08-08, then folded
-in here and the issue file removed. Reproduced in full below.
+- retain caption and table identifier;
+- emit cells in source row order;
+- mark rowspan/colspan when present;
+- preserve nested text and links as plain content;
+- keep an explicit warning when visual reconstruction is lossy.
 
-<!-- from feature-full-text-tables-are-dropped.md -->
+Do not build a general table-layout engine when a complete row dump satisfies
+the behavior.
 
-# Feature: full text drops complex tables entirely
+## Proof required
 
-Severity: should-fix. The dropped content is often the reason the
-article was fetched.
+- A real receipted JATS capture for PMID 30311380 passes through the production
+  parser.
+- Parser tests prove every source cell survives with span metadata.
+- A saved-file assertion proves the six tables contain expected sentinel cells
+  and no complex-table-omitted marker.
+- Small ordinary tables render unchanged.
+- Malformed tables fail locally or render an honest bounded warning without
+  dropping the surrounding article.
 
-`biomcp get article 30311380 fulltext` renders the body and then, in
-place of every table, writes:
+## Authorized test changes
 
-    **Table 1:.** Summary of Gene-Specific Criteria for PTEN Variant Classification
+Design commits may restate the JATS parser fixtures, article full-text saved
+file assertions, and rendering tests. Mechanical construction fixes may land
+with implementation while unrelated article output remains unchanged.
 
-    *[complex table omitted: 42×4, merged cells]*
-
-Six tables in that one article, all omitted. Table 1 is the entire
-criteria summary — the reason a reader opens this paper. Table 2 is
-a phenotype scoring sheet whose eleven rows are a scoring function
-someone is going to implement. Both had to be recovered from
-elsewhere.
-
-The omission notice is honest, which is worth keeping. But it is a
-dead end: nothing in the output says how to get the table, and there
-is no verb that will.
-
-## Why this is hard, and why partial is still worth it
-
-Merged cells are genuinely awkward — a `42×4` JATS table with
-`rowspan` on the criterion column does not become a clean markdown
-grid. That is presumably why the guard exists. But the current
-behaviour trades all of the content for all of the fidelity, and the
-content is what the reader wants.
-
-Ranked, cheapest first:
-
-1. **A raw row dump.** Emit the cell text row by row, marked as
-   unstructured, with the merge information stated rather than
-   applied. Ugly and complete beats absent. Even a reader who has to
-   re-derive the layout has the numbers.
-2. **A table verb.** `biomcp get article <id> table 1` returning one
-   table, so the cost of an awkward render is paid only when asked
-   for. Fits the existing sub-verb pattern (`fulltext`,
-   `annotations`, `assets`) and keeps the default output small.
-3. **`--json` structured cells.** Rows and cells with their spans,
-   letting a caller lay it out themselves. Most work, most useful
-   for anything programmatic.
-
-(1) alone would have closed the gap in the case that raised this.
-
-## Related
-
-Supplementary files are a separate route to the same content and
-they have their own problems — see
-`article-asset-download-returns-the-ncbi-interstitial-page.md`. When
-a table is omitted *and* the supplementary download returns a
-placeholder, an article that is fully open access still yields
-nothing usable.
-
-Raised 2026-08-08 from PTEN GN003 research for varclassify2.
+The src line ceiling may rise by at most 250 lines.

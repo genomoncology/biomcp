@@ -5,14 +5,49 @@ deps: ["0686"]
 ---
 # The remaining setup fixtures adopt the supervisor
 
-Slice two of the 0686 sequence (scope cut 2026-08-09 after five
-refusals; see 0686's record for the mechanism). The single
-supervisor, coordinator-identity wiring, and disease-survival
-adoption land in 0686. This ticket adopts the SAME supervisor — no
-second implementation — for the six routine ownership-helper
-fixtures and the seven direct setup fixtures the fourth design
-review enumerated (complexportal, drug-ae-fallback, mychem-empty,
-section-outcomes, study-download-error, vaers,
-article-federated-timeout). Each gets an owner-death (SIGKILL) test;
-the red tests authored during 0686's attempts may be restated
-through design commits. File-only fixtures stay excluded.
+Ticket 0686 landed the owner-identity-aware supervisor for disease-survival.
+This ticket reuses that implementation for twelve setup fixtures: five
+remaining routine ownership helpers and seven direct setup fixtures.
+
+## Exact scope
+
+Routine helpers:
+
+- article-fulltext-source
+- ctgov-intervention-alias
+- variant-identity
+- clingen-cspec
+- cpic
+
+Direct setup fixtures:
+
+- complexportal
+- drug-ae-fallback
+- mychem-empty
+- section-outcomes
+- study-download-error
+- vaers
+- article-federated-timeout
+
+File-only fixtures are excluded.
+
+## Done when
+
+Each fixture launches through one generalized supervisor, exports the same
+versioned owner record, and is reaped after normal exit, SIGTERM, SIGKILL,
+timeout, stale-owner recovery, and PID reuse. Root-prefix, worktree, owner
+token, process start identity, and process-group checks remain at least as
+strict as 0686.
+
+The current helper is hard-coded to disease marker names and recover-disease.
+Generalize fixture kind and recovery dispatch without adding a second
+supervisor or weakening path/identity validation.
+
+## Authorized test changes
+
+Design commits may restate tests/test_routine_fixture_recovery.py, the twelve
+named setup/cleanup scripts, shared supervisor tests, and runner setup calls.
+Earlier construction/lifecycle assertions may be reused, but every fixture
+gets an owner-death test through its real exported-owner path.
+
+The src line ceiling may not rise.
