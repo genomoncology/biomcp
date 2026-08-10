@@ -69,3 +69,23 @@ None. 687 has merged; this builds on the `GenomeBuild` plumbing it landed.
 ## Notes
 Found during post-merge verification of 687, not by a failing test — nothing in the suite
 asserts that an emitted coordinate carries a build.
+
+## Bound by the 2026-08-09 design review (run 23-16-51-010d)
+
+The refused design covered selected MyVariant routes and deferred the
+rest — a scope cut this ticket does not permit. Actual code
+inspection named the surfaces the next design MUST cover; do not
+rediscover them:
+
+- `Gene` and `GeneSearchResult` serialize `genomic_coordinates`
+  without a build.
+- `VariantNormalizationServiceResult` serializes
+  `genomic_descriptions` without a build.
+- The unqualified transcript-HGVS detail branch can still return
+  `answering_build = None`.
+
+The review repaired the authored PTEN assertions (commit 18d64f77 on
+the claim branch, preserved under attempt tags): coordinate
+stability pinned, meaningful Markdown label required, receipted
+request matched. The repaired suite is red only on the six stated
+missing-label failures — the next design starts from those tests.
