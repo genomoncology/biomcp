@@ -121,6 +121,15 @@ def _copy_release_smoke_fixture(tmp_path: Path) -> Path:
     fixture_root = tmp_path / "repo"
     (fixture_root / "scripts").mkdir(parents=True)
     shutil.copy2(REPO_ROOT / "scripts" / "release-smoke.sh", fixture_root / "scripts" / "release-smoke.sh")
+    (fixture_root / "tools").mkdir()
+    shutil.copy2(
+        REPO_ROOT / "tools" / "with-build-identity",
+        fixture_root / "tools" / "with-build-identity",
+    )
+    (fixture_root / "Cargo.toml").write_text(
+        '[package]\nname = "biomcp-cli"\nversion = "0.8.25"\n',
+        encoding="utf-8",
+    )
     (fixture_root / ".claude-plugin").mkdir()
     (fixture_root / ".claude-plugin" / "marketplace.json").write_text(
         '{"plugins":[{"mcpServers":{"biomcp":{"command":"biomcp","args":["serve"]}}}]}\n',

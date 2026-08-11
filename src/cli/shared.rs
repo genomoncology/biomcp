@@ -21,7 +21,7 @@ fn hide_runtime_help_globals(
 }
 
 pub fn build_cli() -> clap::Command {
-    let mut command = Cli::command();
+    let mut command = Cli::command().version(crate::build_identity::current().version);
     let json_arg = command
         .get_arguments()
         .find(|arg| arg.get_id() == "json")

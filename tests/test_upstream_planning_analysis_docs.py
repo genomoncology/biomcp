@@ -1107,7 +1107,7 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     contracts_smoke = _read_repo(".github/workflows/contracts.yml")
     spec_smoke = REPO_ROOT / ".github/workflows/spec-smoke.yml"
     expected_ci_contract_runs = [
-        "cargo build --release --locked",
+        "tools/with-build-identity cargo build --release --locked",
         "uv sync --extra dev --no-install-project",
         'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
@@ -1128,7 +1128,7 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     assert "uses: actions/setup-python@v5" in ci_spec
     assert "uses: astral-sh/setup-uv@v4" in ci_spec
     assert _workflow_run_steps(ci_spec)[-2:] == [
-        "cargo build --release --locked",
+        "tools/with-build-identity cargo build --release --locked",
         "make spec-pr",
     ]
     for marker in (
@@ -1217,7 +1217,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "RUST_LOG=error" not in makefile
     assert re.search(
         r"^test:\n"
-        r"\tcargo nextest run \$\(ROUTINE_CARGO_FEATURES\)\n"
+        r"\t\$\(CARGO_WITH_IDENTITY\) nextest run \$\(ROUTINE_CARGO_FEATURES\)\n"
         r"\t\$\(MAKE\) test-contracts$",
         makefile,
         flags=re.MULTILINE,
@@ -1241,7 +1241,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp" in makefile
     assert 'SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)' in makefile
     assert "SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))" in makefile
-    assert "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)" in makefile
+    assert "CARGO_WITH_IDENTITY = tools/with-build-identity cargo" in makefile
+    assert "SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,$(CARGO_WITH_IDENTITY) build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)" in makefile
     assert re.search(
         r"^release-gate: lint\n"
         r'\t\$\(MAKE\) test SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp" ROUTINE_CARGO_FEATURES=\n'
@@ -1254,7 +1255,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert re.search(
         r"^install:\n"
         r'\tmkdir -p "\$\(HOME\)/\.local/bin"\n'
-        r"\tcargo build --release --locked\n"
+        r"\t\$\(CARGO_WITH_IDENTITY\) build --release --locked\n"
         r'\tinstall -m 755 target/release/biomcp "\$\(HOME\)/\.local/bin/biomcp"$',
         makefile,
         flags=re.MULTILINE,

@@ -26,8 +26,8 @@ jobs:
           components: rustfmt, clippy
 
       - run: cargo fmt --check
-      - run: cargo clippy -- -D warnings
-      - run: cargo test
+      - run: tools/with-build-identity cargo clippy -- -D warnings
+      - run: tools/with-build-identity cargo test
 
   windows-cspec-capture:
     runs-on: windows-latest
@@ -93,7 +93,7 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/mustmatch" --version
 
-      - run: cargo build --release --locked
+      - run: tools/with-build-identity cargo build --release --locked
       - run: uv sync --extra dev --no-install-project
       - name: Enforce compact output-footprint ratchet
         run: make output-footprint SPEC_PROFILE=release SPEC_BIN="$PWD/target/release/biomcp"
@@ -161,5 +161,5 @@ jobs:
 
       # Build the release binary first so make spec exercises target/release/biomcp,
       # not a stale editable install from .venv/bin.
-      - run: cargo build --release --locked
+      - run: tools/with-build-identity cargo build --release --locked
       - run: make spec-pr

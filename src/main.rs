@@ -2,6 +2,19 @@ use std::io::{IsTerminal, Write};
 
 use tracing_subscriber::EnvFilter;
 
+const BUILD_VERSION: &str = match option_env!("BIOMCP_BUILD_VERSION") {
+    Some(value) => value,
+    None => env!("CARGO_PKG_VERSION"),
+};
+const BUILD_GIT_SHA: &str = match option_env!("BIOMCP_BUILD_GIT_SHA") {
+    Some(value) => value,
+    None => "unknown",
+};
+const BUILD_DATE: &str = match option_env!("BIOMCP_BUILD_DATE") {
+    Some(value) => value,
+    None => "unknown",
+};
+
 fn human_error(error: &dyn std::fmt::Display) -> String {
     biomcp_cli::cli::sanitize_human_diagnostic(&error.to_string())
 }
@@ -18,6 +31,11 @@ fn init_tracing() {
 
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
+    biomcp_cli::build_identity::install(biomcp_cli::build_identity::BuildIdentity {
+        version: BUILD_VERSION,
+        git_revision: BUILD_GIT_SHA,
+        build_date: BUILD_DATE,
+    });
     init_tracing();
 
     let cli = biomcp_cli::cli::parse_cli_from_env();

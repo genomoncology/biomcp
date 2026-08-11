@@ -507,11 +507,11 @@ pub(super) struct VersionIdentity {
 }
 
 pub(super) fn version_identity() -> VersionIdentity {
-    let version = env!("BIOMCP_BUILD_VERSION");
+    let identity = crate::build_identity::current();
     VersionIdentity {
-        version,
-        git_revision: option_env!("BIOMCP_BUILD_GIT_SHA").unwrap_or("unknown"),
-        build_timestamp: option_env!("BIOMCP_BUILD_DATE").unwrap_or("unknown"),
+        version: identity.version,
+        git_revision: identity.git_revision,
+        build_timestamp: identity.build_date,
     }
 }
 

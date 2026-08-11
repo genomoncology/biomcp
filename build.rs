@@ -1,10 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
-
-mod build_git_watch;
-
-use build_git_watch::git_ref_watch_paths;
+use std::path::PathBuf;
 
 const MCP_SHELL_INTRO: &str = "BioMCP is a read-only biomedical MCP tool for \
 search, detail retrieval, discovery, enrichment, and study analytics across \
@@ -23,52 +18,6 @@ const STUDY_PATTERN_LINE: &str = "- `study list|download|query|co-occurrence|coh
 const MCP_SAFE_STUDY_PATTERN_LINE: &str = "- `study list|download --list|query|filter|co-occurrence|cohort|survival|compare` - local cBioPortal study analytics";
 const STUDY_DOWNLOAD_LINE: &str = "- `study download [--list] [<study_id>]`";
 const MCP_SAFE_STUDY_DOWNLOAD_LINE: &str = "- `study download --list`";
-
-fn command_output(command: &str, args: &[&str]) -> Option<String> {
-    let output = Command::new(command).args(args).output().ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    let value = String::from_utf8(output.stdout).ok()?;
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        None
-    } else {
-        Some(trimmed.to_string())
-    }
-}
-
-fn emit_rerun_if_changed_if_exists(path: &Path) {
-    if path.exists() {
-        println!("cargo:rerun-if-changed={}", path.display());
-    }
-}
-
-fn emit_git_ref_rerun_paths() {
-    let Some(git_dir) =
-        command_output("git", &["rev-parse", "--path-format=absolute", "--git-dir"])
-    else {
-        return;
-    };
-    let Some(git_common_dir) = command_output(
-        "git",
-        &["rev-parse", "--path-format=absolute", "--git-common-dir"],
-    ) else {
-        return;
-    };
-
-    let paths = git_ref_watch_paths(
-        &git_dir,
-        &git_common_dir,
-        &fs::read_to_string(Path::new(&git_dir).join("HEAD")).unwrap_or_default(),
-    );
-
-    emit_rerun_if_changed_if_exists(&paths.head);
-    if let Some(current_ref) = &paths.current_ref {
-        emit_rerun_if_changed_if_exists(current_ref);
-    }
-    emit_rerun_if_changed_if_exists(&paths.packed_refs);
-}
 
 fn is_blocked_mcp_description_line(line: &str) -> bool {
     // Cache-family commands stay CLI-only because they reveal workstation-local paths.
@@ -110,7 +59,10 @@ fn write_shell_description() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);
-    fs::write(out_dir.join("mcp_shell_description.txt"), description)?;
+    let output = out_dir.join("mcp_shell_description.txt");
+    if fs::read(&output).ok().as_deref() != Some(description.as_bytes()) {
+        fs::write(output, description)?;
+    }
     Ok(())
 }
 
@@ -127,39 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // crate — on EVERY build. Watch the current directory instead.
     println!("cargo:rerun-if-changed=src/cli/list");
     println!("cargo:rerun-if-changed=src/cli/list_reference.md");
-    // Stamp git identity below, so watch the real git metadata files that move
-    // when HEAD moves. Worktrees store `.git` as a pointer file, so resolve the
-    // per-worktree git dir for HEAD and the common git dir for refs/packed-refs.
-    // Missing git metadata is ignored so non-git package builds keep the existing
-    // `unknown` fallback instead of failing or watching permanently-missing paths.
-    emit_git_ref_rerun_paths();
-
     write_shell_description()?;
-
-    let cargo_version = env!("CARGO_PKG_VERSION");
-    let git_sha = command_output("git", &["rev-parse", "--short=8", "HEAD"])
-        .unwrap_or_else(|| "unknown".into());
-    let git_tag = command_output("git", &["describe", "--tags", "--always"]);
-    let git_release_tag = command_output("git", &["describe", "--tags", "--exact-match"]);
-    let build_version = match git_release_tag.as_deref() {
-        Some(tag) if tag == format!("v{cargo_version}") => cargo_version.to_string(),
-        _ if git_sha != "unknown" => format!("{cargo_version}+g{git_sha}"),
-        _ => cargo_version.to_string(),
-    };
-    // Stamp the HEAD commit date (deterministic), not the wall-clock build time.
-    // A wall-clock timestamp is a fresh value on every build-script run, i.e. a
-    // changed compile input that forces a full crate recompile on every build —
-    // the cache can never go warm. The commit date is stable for a given commit
-    // and is the more reproducible thing to record anyway.
-    let build_date =
-        command_output("git", &["log", "-1", "--format=%cI"]).unwrap_or_else(|| "unknown".into());
-    println!("cargo:rustc-env=BIOMCP_BUILD_GIT_SHA={git_sha}");
-    println!("cargo:rustc-env=BIOMCP_BUILD_VERSION={build_version}");
-    if let Some(tag) = &git_tag {
-        println!("cargo:rustc-env=BIOMCP_BUILD_GIT_TAG={tag}");
-    }
-    println!("cargo:rustc-env=BIOMCP_BUILD_DATE={build_date}");
-
     #[cfg(feature = "alphagenome")]
     {
         let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);

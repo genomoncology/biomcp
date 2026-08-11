@@ -50,16 +50,17 @@ ROUTINE_CARGO_FEATURES ?= --no-default-features
 SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
-SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,cargo build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)
+CARGO_WITH_IDENTITY = tools/with-build-identity cargo
+SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,$(CARGO_WITH_IDENTITY) build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)
 
 sync-python-dev:
 	uv sync --extra dev --no-install-project
 
 build:
-	cargo build --release
+	$(CARGO_WITH_IDENTITY) build --release
 
 test:
-	cargo nextest run $(ROUTINE_CARGO_FEATURES)
+	$(CARGO_WITH_IDENTITY) nextest run $(ROUTINE_CARGO_FEATURES)
 	$(MAKE) test-contracts
 
 test-contracts:
@@ -85,14 +86,14 @@ output-footprint:
 	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync python benchmarks/output-footprint/run.py
 
 run:
-	cargo run --
+	$(CARGO_WITH_IDENTITY) run --
 
 clean:
 	cargo clean
 
 install:
 	mkdir -p "$(HOME)/.local/bin"
-	cargo build --release --locked
+	$(CARGO_WITH_IDENTITY) build --release --locked
 	install -m 755 target/release/biomcp "$(HOME)/.local/bin/biomcp"
 
 spec:
@@ -112,8 +113,8 @@ spec-contracts:
 	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec-contracts
 
 verify:
-	cargo build --release --locked
-	cargo nextest run --release --test rmcp_client_contract --run-ignored only
+	$(CARGO_WITH_IDENTITY) build --release --locked
+	$(CARGO_WITH_IDENTITY) nextest run --release --test rmcp_client_contract --run-ignored only
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci discover ERBB1
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci search disease melanoma --limit 3
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci search article -g BRAF --limit 3

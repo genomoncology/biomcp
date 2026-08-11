@@ -48,7 +48,7 @@ refresh_binary_metadata() {
 }
 
 build_default_release_binary() {
-  cargo build --release --locked || exit 2
+  tools/with-build-identity cargo build --release --locked || exit 2
   BIN="target/release/biomcp"
 }
 

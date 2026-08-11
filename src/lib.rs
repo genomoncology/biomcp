@@ -4,6 +4,7 @@
 #![deny(clippy::todo)]
 #![deny(clippy::unimplemented)]
 
+pub mod build_identity;
 pub mod cli;
 pub mod error;
 mod gene;

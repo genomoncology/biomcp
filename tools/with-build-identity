@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""Run a build command with reproducible BioMCP executable identity inputs."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+
+def git(root: Path, *args: str) -> str | None:
+    result = subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    value = result.stdout.strip()
+    return value if result.returncode == 0 and value else None
+
+
+def owned_git_root(root: Path) -> Path | None:
+    value = git(root, "rev-parse", "--show-toplevel")
+    if value is None:
+        return None
+    candidate = Path(value).resolve()
+    return candidate if candidate == root.resolve() else None
+
+
+def identity_environment(root: Path) -> dict[str, str]:
+    environment = dict(os.environ)
+    repository = owned_git_root(root)
+    if repository is None:
+        return environment
+
+    package_version = environment.get("CARGO_PKG_VERSION")
+    if package_version is None:
+        import tomllib
+
+        package_version = tomllib.loads((root / "Cargo.toml").read_text())["package"][
+            "version"
+        ]
+    base_sha = git(repository, "rev-parse", "--short=8", "HEAD") or "unknown"
+    dirty = git(
+        repository,
+        "status",
+        "--porcelain",
+        "--untracked-files=no",
+        "--",
+        ".",
+    ) is not None
+    exact_tag = git(repository, "describe", "--tags", "--exact-match")
+    revision = f"{base_sha}-dirty" if dirty and base_sha != "unknown" else base_sha
+    if exact_tag == f"v{package_version}" and not dirty:
+        version = package_version
+    elif base_sha != "unknown":
+        version = f"{package_version}+g{base_sha}{'.dirty' if dirty else ''}"
+    else:
+        version = package_version
+
+    environment.setdefault("BIOMCP_BUILD_GIT_SHA", revision)
+    environment.setdefault("BIOMCP_BUILD_VERSION", version)
+    environment.setdefault(
+        "BIOMCP_BUILD_DATE",
+        git(repository, "log", "-1", "--format=%cI") or "unknown",
+    )
+    return environment
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        raise SystemExit("usage: tools/with-build-identity <command> [args ...]")
+    root = Path.cwd()
+    os.execvpe(sys.argv[1], sys.argv[1:], identity_environment(root))
+
+
+if __name__ == "__main__":
+    main()

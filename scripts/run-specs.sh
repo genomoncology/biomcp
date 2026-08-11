@@ -395,7 +395,7 @@ run_python_contracts() {
 
 prebuild_cargo_test_targets() {
   echo "run-specs: pre-building cargo test binaries ($*) for live specs" >&2
-  cargo test --locked --no-run "$@"
+  tools/with-build-identity cargo test --locked --no-run "$@"
 }
 
 mode="${1:-}"
