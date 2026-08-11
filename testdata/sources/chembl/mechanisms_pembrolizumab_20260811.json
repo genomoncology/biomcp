@@ -1,0 +1,36 @@
+{
+  "mechanisms": [
+    {
+      "action_type": "INHIBITOR",
+      "binding_site_comment": null,
+      "direct_interaction": 1,
+      "disease_efficacy": 1,
+      "max_phase": 4,
+      "mec_id": 2300,
+      "mechanism_comment": null,
+      "mechanism_of_action": "Programmed cell death protein 1 inhibitor",
+      "mechanism_refs": [
+        {
+          "ref_id": "label/2014/125514lbl.pdf",
+          "ref_type": "FDA",
+          "ref_url": "http://www.accessdata.fda.gov/drugsatfda_docs/label/2014/125514lbl.pdf"
+        }
+      ],
+      "molecular_mechanism": 1,
+      "molecule_chembl_id": "CHEMBL3137343",
+      "parent_molecule_chembl_id": "CHEMBL3137343",
+      "record_id": 1976818,
+      "selectivity_comment": null,
+      "site_id": null,
+      "target_chembl_id": "CHEMBL3307223",
+      "variant_sequence": null
+    }
+  ],
+  "page_meta": {
+    "limit": 15,
+    "next": null,
+    "offset": 0,
+    "previous": null,
+    "total_count": 1
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "took": 6,
+  "total": 2,
+  "max_score": 9.578564,
+  "hits": [
+    {
+      "_id": "C6022696",
+      "_score": 9.578564
+    },
+    {
+      "_id": "FVICRBSEYSHKFY-JYQNNKODSA-N",
+      "_score": 5.7720757,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "daraxonrasib"
+      },
+      "drugbank": {
+        "_license": "https://bit.ly/3Hikpvm",
+        "id": "DB22308",
+        "name": "Daraxonrasib",
+        "synonyms": [
+          "daraxonrasib",
+          "RMC-6236"
+        ]
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "name": "daraxonrasib"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "DARAXONRASIB",
+        "unii": "B6T47Y2UAP"
+      }
+    }
+  ]
+}

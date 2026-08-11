@@ -1,0 +1,1620 @@
+{
+  "data": {
+    "drug": {
+      "id": "CHEMBL3137343",
+      "name": "PEMBROLIZUMAB",
+      "indications": {
+        "rows": [
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "chronic myelogenous leukemia, BCR-ABL1 positive"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "pancreatic adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "urogenital neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "metastatic neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "basal cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "bladder carcinoma in situ"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "myxoid/round cell liposarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "endocrine gland neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "urothelial carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "T-cell non-Hodgkin lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "head and neck carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "mycosis fungoides"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "salivary gland carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "B-cell non-Hodgkin lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "Portal vein thrombosis"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "ovarian carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "undifferentiated (embryonal) sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "urinary bladder carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2_3",
+            "disease": {
+              "name": "head and neck cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2_3",
+            "disease": {
+              "name": "cutaneous squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "cervical adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "pleomorphic rhabdomyosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "pancreatic neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "acute lymphoblastic leukemia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "hepatitis C virus infection"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2_3",
+            "disease": {
+              "name": "hilar cholangiocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "alveolar soft part sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "clear cell renal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "ovarian squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "diffuse intrinsic pontine glioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "small intestine adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "urinary bladder small cell neuroendocrine carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "Merkel cell skin cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "nasopharyngeal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "lung adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "neuroendocrine neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "malignant mesothelioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "mature T-cell and NK-cell non-Hodgkin lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "primary peritoneal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "papilloma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "gallbladder cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "cervical carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "in situ carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "small cell lung carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "allergic rhinitis"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "testicular germ cell tumor"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "thyroid gland papillary carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "renal cell adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "inflammatory breast carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "synovial sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "undifferentiated pleomorphic sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "poorly differentiated thyroid gland carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "larynx cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "anal squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "malignant germ cell tumor"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "ependymoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "lymphoid leukemia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "ovarian carcinosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "renal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "gastric neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "adrenal cortex carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "fallopian tube carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2_3",
+            "disease": {
+              "name": "hepatoblastoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "germ cell tumor"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "glioblastoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "mucosal melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "cervical intraepithelial neoplasia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "renal pelvis/ureter urothelial carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "neuroendocrine carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "gastroesophageal junction adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "vulvar squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "malignant glioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "leptomeningeal metastasis"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "histiocytic neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "UNKNOWN",
+            "disease": {
+              "name": "migraine disorder"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "oropharynx cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "non-small cell lung carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "Kaposi's sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "brain neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "cardiomyopathy"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "Hodgkins lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "gastric adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "dendritic cell tumor"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "glioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "pancreatic ductal adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "acral lentiginous melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2_3",
+            "disease": {
+              "name": "progressive multifocal leukoencephalopathy"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "soft tissue sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "prostate cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "transitional cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "astrocytoma (excluding glioblastoma)"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "Waldenstrom macroglobulinemia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "seasonal allergic rhinitis"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "intrahepatic cholangiocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "peritoneum cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "hypopharynx cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "anaplastic large cell lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "malignant peripheral nerve sheath tumor"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "rectal cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "Sezary syndrome"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "ovarian serous adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "uveal melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "thyroid cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "pleomorphic liposarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "salivary gland cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "cervical cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "UNKNOWN",
+            "disease": {
+              "name": "cardiotoxicity"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "malignant pleural mesothelioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "medullary thyroid gland carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "endometrium adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "medulloblastoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "diffuse large B-cell lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "lymphoid neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "UNKNOWN",
+            "disease": {
+              "name": "lip and oral cavity carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "colorectal cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "leukoplakia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "gastrointestinal stromal tumor"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "gliosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "peripheral T-cell lymphoma, not otherwise specified"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "sinonasal undifferentiated carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "meningioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "mantle cell lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "urinary bladder cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "Richter syndrome"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "thyroid gland undifferentiated (anaplastic) carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "colorectal adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "esophageal adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "malignant colon neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "neoplasm of thorax"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "kidney cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "gastric cardia adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "oropharynx squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "susceptibility to familial cutaneous melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "carcinoma of esophagus"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "malignant peritoneal mesothelioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "hemangiopericytoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "malignant endocrine neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "carcinosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "papillary renal cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "leiomyosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "non-small cell squamous lung carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "colorectal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "laryngeal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "pneumonia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "digestive system neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "thymoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "desmoid tumor"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "angiosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "collecting duct carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "EARLY_PHASE_1",
+            "disease": {
+              "name": "large cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "nasal cavity and paranasal sinus carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "squamous cell carcinoma of rectum"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "pleural mesothelioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "myelofibrosis"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "fallopian tube cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "dedifferentiated liposarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "anus cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "cervical squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "osteosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "endometrial carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "Ewing sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "COVID-19"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "extranodal nasal NK/T cell lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "primary cutaneous T-cell non-Hodgkin lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "adenoid cystic carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "skin sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "digestive system neuroendocrine neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "ovarian endometrioid adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "classic Hodgkin lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "renal cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "oropharyngeal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "vulva cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "thymic carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "anal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "squamous cell lung carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "chronic hepatitis B virus infection"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "neuroblastoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "rhinitis"
+            }
+          },
+          {
+            "maxClinicalStage": "EARLY_PHASE_1",
+            "disease": {
+              "name": "Burkitt lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "lung cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "primary cutaneous T-cell lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "prostate adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "esophageal squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "breast cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "laryngeal squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "biliary tract cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "AIDS"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "peritoneal carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "bladder transitional cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "squamous cell carcinoma of penis"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "asthma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "bone sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "UNKNOWN",
+            "disease": {
+              "name": "HIV infectious disease"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "chordoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "myelodysplastic syndrome"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "oral cavity squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "UNKNOWN",
+            "disease": {
+              "name": "large cell neuroendocrine carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "skin cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "B-cell chronic lymphocytic leukemia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "non-Hodgkin lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "liposarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "uterine cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "hematopoietic and lymphoid cell neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "paraganglioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "mesothelioma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "uterine carcinosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "triple-negative breast carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "hepatocellular carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "liver cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "ovarian small cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "malignant pancreatic neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "non-small cell lung adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "myxofibrosarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1",
+            "disease": {
+              "name": "appendix adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "endometrial cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "EARLY_PHASE_1",
+            "disease": {
+              "name": "ductal breast carcinoma in situ"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "plasma cell myeloma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "chronic obstructive pulmonary disease"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "gestational trophoblastic neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "endometrium neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "metastatic colorectal cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "tumor of salivary gland"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "leukemia"
+            }
+          },
+          {
+            "maxClinicalStage": "UNKNOWN",
+            "disease": {
+              "name": "acute kidney injury"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "ovarian cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "hypopharynx squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "cutaneous melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "metastatic malignant neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "uterine corpus cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "thyroid gland carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "penile cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "metastatic melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "kidney neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "myeloproliferative neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "nasopharyngeal neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "malignant epithelial tumor of ovary"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "fallopian tube adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "neoplasm of esophagus"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "rectum adenocarcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "marginal zone lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "follicular lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "ovarian clear cell cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "angioimmunoblastic T-cell lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "differentiated thyroid carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "APPROVAL",
+            "disease": {
+              "name": "head and neck squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "esophageal cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_1_2",
+            "disease": {
+              "name": "hematopoietic and lymphoid system neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "skin squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "thymic epithelial neoplasm"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "nasal cavity squamous cell carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_3",
+            "disease": {
+              "name": "gastric cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "desmoplastic melanoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "exocrine pancreatic carcinoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "acute myeloid leukemia"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "primary central nervous system lymphoma"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "uterine corpus sarcoma"
+            }
+          },
+          {
+            "maxClinicalStage": "UNKNOWN",
+            "disease": {
+              "name": "oral cavity cancer"
+            }
+          },
+          {
+            "maxClinicalStage": "PHASE_2",
+            "disease": {
+              "name": "cholangiocarcinoma"
+            }
+          }
+        ]
+      },
+      "mechanismsOfAction": {
+        "rows": [
+          {
+            "targets": [
+              {
+                "approvedSymbol": "PDCD1",
+                "approvedName": "programmed cell death 1"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

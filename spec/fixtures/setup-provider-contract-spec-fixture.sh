@@ -56,9 +56,13 @@ MYCHEM = {
     ),
     "imatinib": fixture("mychem/query_imatinib_get_20260811.json"),
     "warfarin": fixture("mychem/query_warfarin_get_20260811.json"),
+    "daraxonrasib": fixture("mychem/query_daraxonrasib_get_20260811.json"),
+    "dabigatran": fixture("mychem/query_dabigatran_get_20260811.json"),
 }
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
+CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
+OPENTARGETS_DRUG = fixture("opentargets/drug_pembrolizumab_20260811.json")
 
 
 def send(handler, status, body):
@@ -95,7 +99,25 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/openfda/drug/drugsfda.json":
             send(self, 200, OPENFDA_DRUGSFDA)
             return
+        if parsed.path == "/chembl/mechanism.json":
+            query = parse_qs(parsed.query)
+            if query == {"molecule_chembl_id": ["CHEMBL3137343"], "limit": ["15"]}:
+                send(self, 200, CHEMBL_MECHANISMS)
+                return
 
+        send(self, 404, b'{"error":"fixture route not found"}')
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        length = int(self.headers.get("Content-Length", "0"))
+        body = self.rfile.read(length)
+        with REQUEST_LOG.open("a", encoding="utf-8") as log:
+            log.write(f"POST {self.path} {body.decode('utf-8')}\n")
+        if parsed.path == "/opentargets/api/v4/graphql":
+            request = json.loads(body)
+            if request.get("variables") == {"chemblId": "CHEMBL3137343"}:
+                send(self, 200, OPENTARGETS_DRUG)
+                return
         send(self, 404, b'{"error":"fixture route not found"}')
 
     def log_message(self, _format, *_args):
@@ -143,6 +165,8 @@ curl --fail --silent "$base_url/healthz" >/dev/null
 {
   printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/mychem/v1"
   printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url/openfda"
+  printf 'export BIOMCP_CHEMBL_BASE=%q\n' "$base_url/chembl"
+  printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/opentargets/api/v4"
   printf 'export BIOMCP_EMA_DIR=%q\n' "$ema_dir"
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"
   printf 'export BIOMCP_CACHE_MODE=off\n'

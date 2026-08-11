@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import pytest
 
@@ -46,12 +46,33 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
             body = json.load(response)
         assert body["hits"][0]["_id"] == "C3855203"
 
+        chembl = values["BIOMCP_CHEMBL_BASE"]
+        with urlopen(
+            f"{chembl}/mechanism.json?molecule_chembl_id=CHEMBL3137343&limit=15",
+            timeout=2,
+        ) as response:
+            mechanisms = json.load(response)
+        assert mechanisms["mechanisms"][0]["target_chembl_id"] == "CHEMBL3307223"
+
+        opentargets = values["BIOMCP_OPENTARGETS_BASE"]
+        request = Request(
+            f"{opentargets}/graphql",
+            data=json.dumps(
+                {"query": "query fixture", "variables": {"chemblId": "CHEMBL3137343"}}
+            ).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urlopen(request, timeout=2) as response:
+            target = json.load(response)
+        assert target["data"]["drug"]["id"] == "CHEMBL3137343"
+
         with pytest.raises(HTTPError) as error:
             urlopen(f"{base}/unknown", timeout=2)
         assert error.value.code == 404
 
         request_log = Path(values["BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"])
         assert "GET /mychem/v1/query?q=Keytruda" in request_log.read_text()
+        assert "POST /opentargets/api/v4/graphql" in request_log.read_text()
         assert values["BIOMCP_CACHE_MODE"] == "off"
         assert Path(values["BIOMCP_EMA_DIR"]).is_dir()
         assert Path(values["BIOMCP_WHO_DIR"]).is_dir()

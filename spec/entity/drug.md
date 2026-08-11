@@ -109,3 +109,39 @@ checks keep method, route, query, paging, and requested field contracts visible.
 grep -F 'GET /mychem/v1/query?q=trastuzumab&size=6&from=0&fields=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'chembl.molecule_chembl_id'
 grep -F 'GET /openfda/drug/drugsfda.json?search=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&limit=8&skip=0'
 ```
+
+## Targets & Trial Pivots
+
+Regional regulatory detail should not crowd out targetability or the related
+trial/adverse-event pivots that a clinician uses from the same card.
+
+```bash
+../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch like '## Regulatory (EU - EMA)
+## Targets (ChEMBL / Open Targets)
+biomcp drug trials pembrolizumab'
+../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch '/PDCD1\nMore:/'
+grep -F 'GET /chembl/mechanism.json?molecule_chembl_id=CHEMBL3137343&limit=15' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'CHEMBL3137343'
+grep -F 'POST /opentargets/api/v4/graphql' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '"chemblId":"CHEMBL3137343"'
+```
+
+## Truthful Source-Empty Interaction State
+
+DDInter empty states should be phrased as source empties. BioMCP must never
+turn a missing DDInter row into a claim that the anchor drug has no clinical
+interactions.
+
+```bash
+../../tools/biomcp-ci drug interactions daraxonrasib | mustmatch like 'current DDInter download bundle has no matching rows'
+../../tools/biomcp-ci drug interactions daraxonrasib | mustmatch not like 'no clinical interactions'
+```
+
+Uncovered drugs should also carry a structured coverage status so agents can
+branch on a source-coverage miss instead of treating an empty table as safety
+evidence.
+
+```bash
+../../tools/biomcp-ci --json drug interactions dabigatran | mustmatch like '"coverage_status": "not_in_ddinter_coverage"'
+../../tools/biomcp-ci drug interactions dabigatran | mustmatch like 'current DDInter download bundle has no matching rows
+not_in_ddinter_coverage
+source coverage miss'
+```

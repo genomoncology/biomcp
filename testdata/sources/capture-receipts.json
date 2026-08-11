@@ -42,6 +42,18 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "chembl/mechanisms_pembrolizumab_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ChEMBL",
+        "request": "https://www.ebi.ac.uk/chembl/api/data/mechanism.json?molecule_chembl_id=CHEMBL3137343&limit=15",
+        "captured_at": "2026-08-11T22:17:00Z",
+        "sha256": "0d0e4dccbf2ed6fe8b2dc4e50706085d57651c353474bf2fe554aa497ef2d82e",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public ChEMBL response through BioMCP's production request path."
+      }
+    },
+    {
       "path": "civic/context_braf_v600e.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
@@ -608,6 +620,18 @@
       "path": "pharmgkb/warfarin_annotations.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "opentargets/drug_pembrolizumab_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:17:00Z",
+        "sha256": "38cffc8e7e6fa0fe77508874e8ac046693d57826bb941d0f1d93b31281f25987",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production DrugSections POST request for CHEMBL3137343."
+      }
     },
     {
       "path": "pmc_article/pmc3040717-supplementary-tables-pow.html",
@@ -1180,6 +1204,30 @@
         "request": "https://mychem.info/v1/query?q=Keytruda&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
         "captured_at": "2026-08-11T22:01:20Z",
         "sha256": "487e07bd6cdd84bd3fad81c346858b7cdd785d51e3bb3b94de7c189349ab927b",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_dabigatran_get_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=dabigatran&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:19:00Z",
+        "sha256": "516b62b85cf1aac94265a528c22dfa2a2cdd8c5b7080ddd3a1a72d48797dc601",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_daraxonrasib_get_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=daraxonrasib&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:19:00Z",
+        "sha256": "3ac89cf51f6ae3262f929dfa8029f52d9082198ca73143f2e42fc3f081ea6d5c",
         "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
         "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
       }

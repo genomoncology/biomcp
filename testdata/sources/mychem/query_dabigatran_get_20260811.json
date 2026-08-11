@@ -1,0 +1,316 @@
+{
+  "took": 9,
+  "total": 45,
+  "max_score": 11.088575,
+  "hits": [
+    {
+      "_id": "PA165110351",
+      "_score": 11.088575
+    },
+    {
+      "_id": "YBSJFWOBGCMAKL-UHFFFAOYSA-N",
+      "_score": 10.100264,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "dabigatran"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Prothrombin"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL48361",
+        "molecule_type": "Small molecule",
+        "pref_name": "DABIGATRAN"
+      },
+      "drugbank": {
+        "_license": "https://bit.ly/3Hikpvm",
+        "id": "DB14726",
+        "name": "Dabigatran",
+        "synonyms": [
+          "Dabigatran"
+        ]
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "name": "dabigatran"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "DABIGATRAN",
+        "unii": "I0VM4M70GC"
+      }
+    },
+    {
+      "_id": "42291-033",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "72205-202",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "72205-203",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "50268-200",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "0378-0266",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "50090-7530",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "50090-7656",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "50090-7657",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "59651-974",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "59651-975",
+      "_score": 8.651062,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "43598-453",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "31722-666",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "62332-635",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "62332-636",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "50090-7531",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "59651-973",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "46708-634",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "46708-635",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "46708-636",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "0904-7255",
+      "_score": 8.56571,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "C2348066",
+      "_score": 8.56571
+    },
+    {
+      "_id": "42291-034",
+      "_score": 8.394838,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "DABIGATRAN ETEXILATE",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "62332-634",
+      "_score": 8.394838,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Dabigatran Etexilate",
+        "pharm_classes": [
+          "Direct Thrombin Inhibitor [EPC]",
+          "Thrombin Inhibitors [MoA]"
+        ]
+      }
+    }
+  ]
+}

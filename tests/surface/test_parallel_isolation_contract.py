@@ -894,7 +894,6 @@ LIVE_SPEC_PATHS = (
     "spec/entity/ddinter-live.md",
     "spec/entity/diagnostic.md",
     "spec/entity/disease.md",
-    "spec/entity/drug-live.md",
     "spec/entity/gene.md",
     "spec/entity/pathway.md",
     "spec/entity/phenotype.md",
