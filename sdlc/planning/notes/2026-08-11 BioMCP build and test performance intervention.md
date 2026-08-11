@@ -347,3 +347,37 @@ sequentially. Two complete canonical runs passed 502 tests in 44.26s and
 44.47s; the warm lane took 47.09s including preparation, synchronization, and
 strict documentation. On exact implementation commit `961e42b9`, 503 tests
 and strict documentation passed in 45.07s, with pytest itself taking 39.91s.
+
+## Final sealed result
+
+After incorporating current `origin/main`, retiring the six stale runnable
+ticket copies that already had completion records, and leaving the worktree
+clean, commit `c720b05a` passed the complete optimized validation sequence:
+
+| Gate | Baseline | Final | Result |
+|---|---:|---:|---:|
+| `make lint` | 84.35s warm | 42.22s | 2.0x faster |
+| `make test` | 884.19s cold | 59.13s | 15.0x faster |
+| `make spec` | 592.42s warm-binary | 207.22s | 2.9x faster |
+| Ordinary three-gate loop | 1,606s | 308.57s | 5.2x faster |
+
+The final test gate retained all 2,838 Rust tests, 503 Python contracts, and
+strict documentation. The executable specification gate retained its complete
+routine page set. The separate all-feature proof passed Clippy, all six
+AlphaGenome behavior tests, and an optimized release build. Because 0964 had
+changed Rust product code since the previous all-feature proof, its first
+sealed run rebuilt the release artifact and took 490.19s; the immediate warm
+repeat took 1.45s.
+
+This is the recommended future ticket flow: run focused red/green checks during
+design and implementation; share exact-commit results rather than rerunning a
+complete gate at every handoff; run the ordinary three-gate loop once on the
+merge candidate; and run the distinct full-feature/release proof only when its
+inputs or release readiness require it.
+
+Tickets 0895 and 0965 remain intentionally open. Ticket 0895 speeds only the
+developer pre-commit hook, not factory setup or the canonical gates. Profiling
+found no evidence that the module/dead-code cleanup in 0965 would reduce build
+time; doing it now would add structural churn without a measured performance
+benefit. Tickets 0896, 0897, and 0941 were not pulled forward because bounded
+parallel execution exposed no fixture-lifecycle or socket-path failure.
