@@ -65,4 +65,11 @@ and locks, version-sync/changelog/citation tests, `.github/workflows/release.yml
 release guard tests, and release workflow steps that mutate versions. They
 must not change product behavior or rewrite v0.8.25 history.
 
+Refusal addendum (2026-08-10, first flight): `spec/surface/docker-image.md`
+and `spec/surface/homebrew.md` are also named. Their executable mustmatch
+assertions may be restated exactly where the fail-closed release contract
+above requires it, in a `design:` or `design-review:` commit — never an
+ordinary `code:` commit. Every other assertion in both files keeps its
+exact strength.
+
 The src line ceiling may not rise.
