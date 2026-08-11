@@ -1,8 +1,9 @@
 # Trial Queries
 
 Trial search is where BioMCP turns disease, intervention, and eligibility intent
-into a shortlist a human can actually triage. These batch-A canaries keep the
-search table, alias handling, count transparency, and detail-card sections honest.
+into a shortlist a human can actually triage. These routine contracts replay
+captured CT.gov responses and the established NCI source fixture through the
+public CLI.
 
 ## Condition-First Search
 
@@ -23,7 +24,7 @@ This live query deliberately requests 50 rows so its modest condition result set
 is exhausted in one bounded request.
 
 ```bash
-../../target/release/biomcp --json search trial -c "Phelan-McDermid Syndrome" --limit 50 \
+../../tools/biomcp-ci --json search trial -c "Phelan-McDermid Syndrome" --limit 50 \
   | jq -e '.pagination.total != null and .pagination.returned > 0 and .pagination.returned == .pagination.total and .pagination.has_more == false and .pagination.next_page_token == null' \
   | mustmatch 'true'
 ```
@@ -37,7 +38,7 @@ later cursor request. The opaque token must remain usable in that case rather
 than treating the size of the returned page as a terminal total.
 
 ```bash run id=trial-cursor-first
-../../target/release/biomcp --json search trial -c "Phelan-McDermid Syndrome" --limit 5
+../../tools/biomcp-ci --json search trial -c "Phelan-McDermid Syndrome" --limit 5
 ```
 
 ```json expect=trial-cursor-first contains
@@ -47,7 +48,7 @@ than treating the size of the returned page as a terminal total.
 ```
 
 ```bash run id=trial-cursor-next uses=trial-cursor-first
-../../target/release/biomcp --json search trial -c "Phelan-McDermid Syndrome" --limit 5 \
+../../tools/biomcp-ci --json search trial -c "Phelan-McDermid Syndrome" --limit 5 \
   --next-page '{{trial-cursor-first.pagination.next_page_token}}' \
   | jq '.pagination.has_more and (.pagination.next_page_token != null)'
 ```
@@ -77,7 +78,7 @@ A bounded melanoma search should return an NCI trial rather than entering any
 condition-planning path.
 
 ```bash
-../../target/release/biomcp --json search trial -c melanoma --source nci --limit 1 \
+"$BIOMCP_BIN" --json search trial -c melanoma --source nci --limit 1 \
   | jq -r '(.count >= 1) and (.results[0].nct_id | startswith("NCT")) and (.results[0].title | length > 0)' \
   | mustmatch 'true'
 ```
@@ -101,9 +102,6 @@ trials exist. BioMCP keeps the original filters honest but prints concrete
 broadening guidance.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci search trial -c melanoma --facility "University of Michigan" --mutation "EGFR L858R" --status recruiting --lat 42.36 --lon -71.06 --distance 100 --limit 3 | mustmatch like 'No trials found matching the filters.
 Try broadening the filtered search:
 - loosen or drop `--mutation`; it is an exact free-text boolean search
@@ -116,9 +114,6 @@ The same empty filtered search should give JSON callers machine-readable next
 commands rather than a bare `results: []`.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci --json search trial -c melanoma --facility "University of Michigan" --mutation "EGFR L858R" --status recruiting --lat 42.36 --lon -71.06 --distance 100 --limit 3 \
   | jq -r '.count, (.results | length), ._meta.next_commands[]?' \
   | mustmatch like '0
@@ -157,9 +152,6 @@ should show the action-critical central contact, site email, structured sex/age
 eligibility, and full criteria without requiring raw ClinicalTrials.gov JSON.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci get trial NCT41300001 contacts eligibility locations | mustmatch like '## Contacts (ClinicalTrials.gov)
 Central Contact
 Central Coordinator
@@ -176,9 +168,6 @@ The `contacts` section needs site context to label site contacts, but JSON shoul
 not expose the full locations section unless the user asks for it.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci --json get trial NCT41300001 contacts \
   | jq -r '[.contacts[]? | select(.level == "site") | .facility][0], has("locations"), has("eligibility")' \
   | mustmatch like 'Rare Disease Center
@@ -208,9 +197,6 @@ should preserve that source evidence in JSON instead of leaving agents with only
 the investigational code.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci --json get trial NCT02136914 \
   | jq -r '.intervention_details[]? | select(.name == "ADS-5102") | .other_names[]?' \
   | mustmatch like "amantadine HCl extended release"
@@ -222,9 +208,6 @@ The same alias belongs in the human-readable intervention card so a clinician or
 agent can see the source-provided follow-up name without inspecting raw CTGov.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci get trial NCT02136914 \
   | awk '/^## Interventions / {capture=1} capture && /^## / && !/^## Interventions / {exit} capture {print}' \
   | mustmatch like '## Interventions (ClinicalTrials.gov)'
@@ -241,9 +224,6 @@ alternate name, BioMCP should not advertise a drug-card lookup for the raw code
 unless that identity is known to resolve.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci --json get trial NCT02136914 \
   | jq -r '._meta.next_commands[]?' \
   | mustmatch not like "biomcp get drug ADS-5102"
@@ -255,9 +235,6 @@ A safe next step can still use the intervention evidence, but it should stay in
 a search or article context and carry the source-provided alias forward.
 
 ```bash
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci --json get trial NCT02136914 \
   | jq -r '._meta.next_commands[]? | select((startswith("biomcp search drug ") or startswith("biomcp search article ")) and contains("amantadine HCl extended release"))' \
   | mustmatch like "amantadine HCl extended release"
@@ -272,9 +249,6 @@ be escaped in the emitted commands while preserving the visible source strings.
 <!-- mustmatch-lint: skip -->
 
 ```bash run id=ctgov-shell-safe-next-commands
-bash ../fixtures/setup-ctgov-intervention-alias-spec-fixture.sh ../..
-. ../../.cache/spec-ctgov-intervention-alias-env
-trap 'bash ../fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh ../..' EXIT
 rm -f /tmp/biomcp-357-pwned
 json_out="$(../../tools/biomcp-ci --json get trial NCT35700001)"
 condition_cmd="$(printf '%s\n' "$json_out" | jq -r '._meta.next_commands[]? | select(startswith("biomcp search disease --query "))')"
@@ -290,4 +264,16 @@ biomcp search disease --query "quoted \$(touch /tmp/biomcp-357-pwned) \"conditio
 biomcp search drug -q "alias \$(touch /tmp/biomcp-357-pwned) \"dose\""
 condition=quoted $(touch /tmp/biomcp-357-pwned) "condition"
 alias=alias $(touch /tmp/biomcp-357-pwned) "dose"
+```
+
+## Observed Trial Provider Requests
+
+The shared fixtures record the production requests consumed by the cursor,
+detail, mutation, and NCI routes.
+
+```bash
+grep -F 'query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=50' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like 'fields=NCTId%2CBriefTitle'
+grep -F 'query.cond=non-small+cell+lung+cancer' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | grep -F 'pageSize=50' | mustmatch like 'EGFR+L858R'
+grep -F '/api/v2/studies/NCT02576665?fields=' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | grep -F 'LocationFacility' | mustmatch like 'EligibilityCriteria'
+grep -F 'GET /nci/api/v2/trials?keyword=melanoma&size=1&from=0' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'keyword=melanoma'
 ```

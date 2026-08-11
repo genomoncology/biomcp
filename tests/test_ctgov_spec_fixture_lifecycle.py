@@ -67,9 +67,11 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
     for name in (
         "setup-study-spec-fixture.sh",
         "setup-ddinter-spec-fixture.sh",
-        "setup-disease-survival-spec-fixture.sh",
-        "cleanup-disease-survival-spec-fixture.sh",
-        "setup-variant-identity-spec-fixture.sh",
+            "setup-disease-survival-spec-fixture.sh",
+            "cleanup-disease-survival-spec-fixture.sh",
+            "setup-vaers-spec-fixture.sh",
+            "cleanup-vaers-spec-fixture.sh",
+            "setup-variant-identity-spec-fixture.sh",
         "cleanup-variant-identity-spec-fixture.sh",
     ):
         script = fixtures / name

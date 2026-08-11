@@ -1,0 +1,49 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT06604689",
+      "briefTitle": "AI-guided Prognostication and Cranial Radiotherapy Optimization in EGFR-TKI-treated Non-small Cell Lung Cancer Patients With Baseline Brain Metastases"
+    },
+    "statusModule": {
+      "overallStatus": "RECRUITING",
+      "startDateStruct": {
+        "date": "2024-09-30"
+      },
+      "completionDateStruct": {
+        "date": "2025-10-01"
+      }
+    },
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {
+        "name": "Fudan University"
+      }
+    },
+    "descriptionModule": {
+      "briefSummary": "The goal of this observational study is to extract the imaging features of brain lesions and primary lung lesions in NSCLC patients with brain metastases by deep learning, as well as common clinicopathological parameters, which are used to construct a multimode model that can accurately predict the treatment efficacy and survival of the third-generation EGFR-TKI treatment, and to use the model to assist in screening high-risk populations suitable for upfront cranial radiotherapy.\n\nParticipants receiving third-generation EGFR-TKI treatment will be enrolled in our study and we will collect their regular contrast-enhanced chest CT and contrast-enhanced brain MRI for model construction."
+    },
+    "conditionsModule": {
+      "conditions": [
+        "NSCLC (Advanced Non-small Cell Lung Cancer)",
+        "Brain Metastasases"
+      ]
+    },
+    "designModule": {
+      "studyType": "OBSERVATIONAL",
+      "enrollmentInfo": {
+        "count": 800
+      }
+    },
+    "armsInterventionsModule": {
+      "interventions": [
+        {
+          "name": "third-generation EGFR TKIs (Almonertinib/Furmonertinib/Osimertinib)"
+        }
+      ]
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "Inclusion Criteria:\n\n* Pathologically confirmed non-small cell lung cancer;\n* clinical stage IV (AJCC, 8th edition, 2017);\n* EGFR sensitive mutations: EGFR L858R, EGFR exon 19 deletion;\n* age≥18 years old;\n* KPS score≥70;\n* brain metastases at diagnosis;\n* complete systemic imaging (including brain MRI) before third-generation EGFR-TKI treatment;\n* received standard third-generation EGFR-TKI therapy (monotherapy or combined with brain radiotherapy);\n* willing to cooperate with the follow-up after third-generation EGFR-TKI treatment;\n* informed consent of the patient.\n\nExclusion Criteria:\n\n* Multiple primary or metastatic tumors (except early skin cancer, cervical carcinoma in situ that has been treated radically, with no recurrence or progression for more than 5 years);\n* Pregnant or lactating women who, as judged by the investigator, were not candidates for brain MRI;\n* EGFR sensitive mutations were negative or EGFR mutation status was not detected.\n* Uncontrolled epilepsy, central nervous system disease, or history of mental disorders, judged by the researcher to potentially interfere with the signing of the informed consent form or affect patient compliance.",
+      "sex": "ALL",
+      "minimumAge": "18 Years"
+    }
+  }
+}

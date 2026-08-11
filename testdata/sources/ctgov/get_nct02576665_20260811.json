@@ -1,0 +1,113 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT02576665",
+      "briefTitle": "A Study of Toca 511, a Retroviral Replicating Vector, Combined With Toca FC in Patients With Solid Tumors or Lymphoma (Toca 6)"
+    },
+    "statusModule": {
+      "overallStatus": "TERMINATED",
+      "startDateStruct": {
+        "date": "2016-07"
+      },
+      "completionDateStruct": {
+        "date": "2019-12-20"
+      }
+    },
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {
+        "name": "Tocagen Inc."
+      }
+    },
+    "descriptionModule": {
+      "briefSummary": "The purpose of this trial is to evaluate changes in immune activity relative to baseline following treatment with Toca 511 and Toca FC in patients with solid tumors (including recurrent high grade glioma \\[rHGG\\]) or lymphoma. This is a multicenter, open-label study of Toca 511 and Toca FC. Patients with advanced solid tumors or lymphoma, for whom curative options are not available, will be enrolled into the study, subject to all entry criteria. Tumors must be accessible to biopsy and/or resection. Patients will be qualified based on the presence of specific molecular characteristics, documented by Foundation Medicine (or equivalent) genomic profile report, and specific tumor types.\n\nToca 511 will be administered by IV injection followed by (1) intratumoral injection following biopsy or (2) injection into the resection cavity wall following planned resection in the case of rHGG or brain metastases. Toca FC will be administered orally in cycles of therapy.\n\nPatients not undergoing resection of brain tumors will undergo 2 biopsies to allow assessment of baseline and follow-up immune activity in the tumor. Changes in immune activity in peripheral blood will be measured in all patients."
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Colorectal Cancer",
+        "Triple Negative Breast Cancer",
+        "Pancreatic Cancer",
+        "Non-Small Cell Lung Cancer",
+        "Head and Neck Cancer",
+        "Ovarian Cancer",
+        "Lymphoma",
+        "Sarcoma",
+        "Bladder Cancer",
+        "Melanoma",
+        "IDH1 Mutated Solid Tumors",
+        "IDH1 Mutated or MGMT Methylated Recurrent HGG (Not Recruiting)"
+      ]
+    },
+    "designModule": {
+      "studyType": "INTERVENTIONAL",
+      "phases": [
+        "PHASE1"
+      ],
+      "enrollmentInfo": {
+        "count": 21
+      }
+    },
+    "armsInterventionsModule": {
+      "interventions": [
+        {
+          "name": "Toca 511",
+          "otherNames": [
+            "vocimagene amiretrorepvec",
+            "RRV",
+            "retroviral replicating viral"
+          ]
+        },
+        {
+          "name": "Toca FC",
+          "otherNames": [
+            "Flucytosine",
+            "5-FC",
+            "5-Fluorocytosine"
+          ]
+        }
+      ]
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "Inclusion Criteria:\n\n1. Patient has given written informed consent.\n2. Patient is between 18 and 75 years of age, inclusive.\n3. Patient has an advanced malignancy that has progressed or recurred following standard therapy for advanced disease, and for which no curative therapies are available.\n4. Patient has histologically confirmed (1) colorectal cancer, triple negative breast cancer, pancreatic cancer, non-small cell lung cancer, head and neck cancer, ovarian cancer, lymphoma, sarcoma, bladder cancer, or melanoma with defects in one or more of the following genes: ABL2, ACVR1B, APC, ASXL1, ATM, ATR, BLM, BRCA1, BRCA2, CDK12, CDKN1A, CDKN1B, CDKN2A, CHD4, CYLD, DICER1, DNMT3A, ERBB3, EZH2, FGFR2, FLT3, GATA3, HGF, KDM6A, KDR, KEAP1, KIT, KMT2D, KRAS, MAGI2, MAP3K1, MED12, MET, MSH-2, MSH-6, MYC, NA, NF1, NF2, NOTCH1, NOTCH2, NRAS, NSD1, PIK3C2B, PIK3CA, PIK3CB, PIK3R1, PTCH1, PTPN11, RB1, RUNX1, SETD2, SMARCA4, SOX9, STAG2, TAF1, TBX3, TET2, TP53, XPO1; (2) documented IDH1 mutated solid tumor (other than glioma); or (3) documented IDH1 mutated or MGMT promoter methylation positive glioblastoma multiforme (GBM) or anaplastic astrocytoma. Note: Genetic abnormalities must be documented by Foundation Medicine (or equivalent) genomic profile report.\n5. Patient has an estimated life expectancy of at least 6 months.\n6. Patient has adequate organ function, as indicated by the following laboratory values\n\n   * Bone marrow: hemoglobin ≥ 10 g/dL, platelet count ≥ 100,000/mm3, absolute neutrophil count ≥ 1,500/ mm3, absolute lymphocyte count ≥ 500/ mm3.\n   * Liver: total bilirubin ≤ 1.5 x the upper limit of normal (ULN; unless known Gilbert's syndrome); alanine aminotransferase ≤ 2.5 x ULN (≤ 5.0 x ULN in patients with liver metastases).\n   * Kidney: estimated glomerular filtration rate (Cockcroft-Gault) ≥ 50 mL/min.\n7. Women of childbearing potential (defined as not postmenopausal \\[ie, ≥ 12 months of non-therapy-induced amenorrhea\\] or not surgically sterile) must have a negative serum pregnancy test within 21 days prior to initiation of Toca 511, and be willing to use an effective means of contraception in addition to barrier methods (condoms).\n8. Patient and partner are willing to use condoms for 12 months after receiving Toca 511 or until there is no evidence of the virus in his/her blood, whichever is longer.\n9. Patients with solid tumors or lymphoma must have 1 or more tumors accessible to biopsy or resection, including biopsy allowing multiple cores from at least 1 lesion (fine needle aspiration is excluded), incisional or excisional biopsy, and/or resection. Note: Patients with resectable brain metastases must be undergoing planned resection. Patients with rHGG must be undergoing planned subtotal or gross total resection.\n10. Patient has a tumor amenable to injection of Toca 511 (ie, ≥ 2 cm and not close to or invading major vessels).\n11. Patient has an ECOG Performance Status score of 0 or 1 (solid tumors) or KPS score ≥ 70 (rHGG).\n12. Patient has measurable disease by RECIST version 1.1 (solid tumors) or Lugano (lymphoma) criteria or evaluable or measureable disease by Macdonald criteria (rHGG).\n13. Patients with GBM or anaplastic astrocytoma must be at first or second recurrence (including this recurrence) or have progressed following initial definitive multimodal therapy with surgery, temozolomide, and radiation (confirmed by diagnostic biopsy with local pathology review or contrast-enhanced magnetic resonance imaging \\[MRI\\]). If first recurrence is documented by MRI, an interval of at least 12 weeks after the end of prior radiation therapy is required, unless there is either histopathologic confirmation of recurrent tumor or new enhancement on MRI outside the radiotherapy treatment field.\n\nExclusion Criteria:\n\n1. Patient has a history of other malignancy, unless the patient has been disease free for at least 5 years. Adequately treated basal cell carcinoma or squamous cell skin cancer is acceptable regardless of time, as well as localized prostate carcinoma or cervical carcinoma in situ, after curative treatment.\n2. Patient has or had any active infection requiring antibiotic, antifungal, or antiviral therapy within the 2 weeks prior to administration of Toca 511.\n3. Patient received chemotherapy within 2 weeks prior to initiation of treatment with Toca 511 (6 weeks for nitrosoureas).\n4. Patient received investigational treatment within 2 weeks or immunotherapy or antibody therapy within 28 days prior to initiation of treatment with Toca 511, and/or has not recovered from toxicities associated with such treatment.\n5. For patients with rHGG, the patient intends to undergo treatment with the Gliadel® wafer at the time of planned resection (ie, on-study surgery) or has received the Gliadel wafer \\< 30 days from the date of planned resection.\n6. Patient has any bleeding diathesis, or must take anticoagulants or antiplatelet agents, including nonsteroidal anti inflammatory drugs, that cannot be stopped for biopsy or surgery.\n7. Patient has severe pulmonary, cardiac, or other systemic disease, specifically:\n\n   * New York Heart Association \\> Class II congestive heart failure that is not controlled on standard therapy within 6 months prior to initiation of treatment with Toca 511.\n   * Uncontrolled or significant cardiovascular disease, clinically significant ventricular arrhythmia (such as ventricular tachycardia, ventricular fibrillation, or Torsades de pointes), clinically significant pulmonary disease (such as ≥ Grade 2 dyspnea, according to CTCAE 4.03).\n   * Any other disease, either metabolic or psychological, that as per Investigator assessment may affect the patient's compliance or place the patient at an increased risk of potential treatment complications.\n8. Patient has a history of allergy or intolerance to flucytosine.\n9. Patient has a condition that would prevent him or her from being able to swallow Toca FC tablets or absorb flucytosine.\n10. Patient is human immunodeficiency virus seropositive.\n11. Patient is breast feeding.\n12. Patient has previously participated in the Toca 5 trial (Tg 511-15-01).",
+      "sex": "ALL",
+      "minimumAge": "18 Years",
+      "maximumAge": "75 Years"
+    },
+    "contactsLocationsModule": {
+      "locations": [
+        {
+          "facility": "Sarah Cannon Research Institute",
+          "city": "Denver",
+          "state": "Colorado",
+          "zip": "80218",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 39.73915,
+            "lon": -104.9847
+          }
+        },
+        {
+          "facility": "University of Miami",
+          "city": "Miami",
+          "state": "Florida",
+          "zip": "33136",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 25.77427,
+            "lon": -80.19366
+          }
+        },
+        {
+          "facility": "MD Anderson Cancer Center",
+          "city": "Houston",
+          "state": "Texas",
+          "zip": "77030",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 29.76328,
+            "lon": -95.36327
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT05431270",
+          "briefTitle": "Dose Escalation/Expansion Study of Mavrostobart (PT199), an Anti-CD73 mAb, Administered Alone and in Combination With a PD-1 Inhibitor or Chemotherapy (the MORNINGSTAR Study)"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2022-08-11"
+          },
+          "completionDateStruct": {
+            "date": "2028-08"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Phanes Therapeutics"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This is a first-in-human, Phase 1/2, open-label, study designed to evaluate the safety, tolerability, pharmacokinetics, pharmacodynamics, and preliminary efficacy of Mavrostobart (PT199) alone and in combination with a PD-1 inhibitor or chemotherapy."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Non Small Cell Lung Cancer",
+            "Pancreatic Ductal Adenocarcinoma"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1",
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 40
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Mavrostobart (PT199)"
+            },
+            {
+              "name": "Tislelizumab"
+            },
+            {
+              "name": "Gemcitabine + nab-Paclitaxel"
+            },
+            {
+              "name": "Docetaxel"
+            },
+            {
+              "name": "Pemetrexed"
+            },
+            {
+              "name": "Gemcitabine"
+            },
+            {
+              "name": "Carboplatin + Pemetrexed"
+            },
+            {
+              "name": "Pembrolizumab + Carboplatin + Pemetrexed"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT03590054",
+          "briefTitle": "Abexinostat in Combination With Pembrolizumab in Patients With Advanced Solid Tumor Malignancies"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2018-08-20"
+          },
+          "completionDateStruct": {
+            "date": "2023-11-30"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Rahul Aggarwal"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This phase I trial studies the best dose and side effects of abexinostat and how well it works with given together with pembrolizumab in treating participants with microsatellite instability (MSI) solid tumors that have spread to other places in the body. Abexinostat may stop the growth of tumor cells by blocking some of the enzymes needed for cell growth. Monoclonal antibodies, such as pembrolizumab, may interfere with the ability of tumor cells to grow and spread. Giving abexinostat and pembrolizumab may work better in treating participants with solid tumors."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Stage III Cutaneous Melanoma",
+            "Stage IV Cutaneous Melanoma",
+            "Locally Advanced Melanoma",
+            "Locally Advanced Solid Neoplasm",
+            "Metastatic Head and Neck Squamous Cell Carcinoma",
+            "Metastatic Malignant Solid Neoplasm",
+            "Metastatic Melanoma",
+            "Metastatic Urothelial Carcinoma",
+            "Non-Small Cell Lung Carcinoma",
+            "Stage IB Lung Cancer AJCC v7",
+            "Stage III Cutaneous Squamous Cell Carcinoma of the Head and Neck AJCC v8",
+            "Stage III Lung Cancer AJCC v8",
+            "Stage III Ureter Cancer AJCC v8",
+            "Stage IIIA Lung Cancer AJCC v8",
+            "Stage IIIB Lung Cancer AJCC v8",
+            "Stage IIIC Lung Cancer AJCC v8",
+            "Stage IV Cutaneous Squamous Cell Carcinoma of the Head and Neck AJCC v8",
+            "Stage IV Lung Cancer AJCC v8",
+            "Stage IV Ureter Cancer AJCC v8",
+            "Stage IVA Lung Cancer AJCC v8",
+            "Stage IVB Lung Cancer AJCC v8"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1"
+          ],
+          "enrollmentInfo": {
+            "count": 35
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Abexinostat"
+            },
+            {
+              "name": "Pembrolizumab"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT04795661",
+          "briefTitle": "Immunotherapy in MSI/dMMR Tumors in Perioperative Setting."
+        },
+        "statusModule": {
+          "overallStatus": "ACTIVE_NOT_RECRUITING",
+          "startDateStruct": {
+            "date": "2021-10-18"
+          },
+          "completionDateStruct": {
+            "date": "2029-10"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Centre Leon Berard"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This trial is a multicenter, 3-cohort, prospective, Phase II trial conducted in patients with untreated resectable MSI/dMMR carcinomas and aiming to evaluate the safety and the efficacy of ICI (immune checkpoint inhibitor) as neoadjuvant treatment in these patients.\n\nWe hypothesize that immune checkpoint inhibitors (ICPi) will benefit to MSI/dMMR tumors from the early stages, whatever their anatomical origin. We assume that this neoadjuvant treatment would improve the response rate, providing even high rate of pathological complete responses and prolong patients survival.\n\nWe anticipated colorectal and gastric cancers to be the most frequent recruited and constructed our statistical hypothesis with results in those 2 cancers. However patients with other localized MSI/dMMR tumors could be included."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Localized Resectable Tumor",
+            "MSI/dMMR"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 240
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Pembrolizumab"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    }
+  ],
+  "totalCount": 2924,
+  "nextPageToken": "ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd7KrgP4YnzmVtA"
+}

@@ -1879,6 +1879,126 @@
         "minimization_or_redaction": "No fields removed; the captured HTTP 404 body is byte-faithful.",
         "provider_origin_statement": "Bytes were recorded from the public WikiPathways response through BioMCP production request path before the stated minimization."
       }
+    },
+    {
+      "path": "ctgov/search_melanoma_recruiting_limit3_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies?query.cond=melanoma&filter.overallStatus=RECRUITING&countTotal=true&pageSize=3&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "e2895daa89a2df1835b31a94307e786054e71ffa5dd8d9bde3af725723efbaff",
+        "minimization_or_redaction": "Reduced to the first three studies and pagination fields.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/search_phelan_limit50_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies?query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=50&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "88de7108b735de8ac25969ba2f190d9b54976f5513d1f8a33883ca1184ea0163",
+        "minimization_or_redaction": "Reduced to three studies and a matching terminal total.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/search_phelan_limit5_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies?query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=5&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "146f285b4f51c0bb95522bd6f0a70d56a7d8b004303b1224aab8d81416f2f52a",
+        "minimization_or_redaction": "Reduced to the first five studies and pagination fields.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/search_phelan_next_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies?query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageToken=ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd7KrgP4dnDeTsPkw&pageSize=5&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "7cfc14e8ff4bbb97531dea0ab938c740ed7112aff1be047dea81d9592e352b82",
+        "minimization_or_redaction": "Reduced to the five returned studies and cursor while preserving the omitted later-page total.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/search_nsclc_egfr_l858r_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies?query.cond=non-small+cell+lung+cancer&query.term=%28AREA%5BEligibilityCriteria%5D%28%22EGFR+L858R%22%29+OR+AREA%5BBriefTitle%5D%28%22EGFR+L858R%22%29+OR+AREA%5BOfficialTitle%5D%28%22EGFR+L858R%22%29+OR+AREA%5BBriefSummary%5D%28%22EGFR+L858R%22%29+OR+AREA%5BKeyword%5D%28%22EGFR+L858R%22%29%29&countTotal=true&pageSize=50&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "f2faf02c5c0bf44181b7583f88f7243742cdfd828123a168fd88aab430ca1f6a",
+        "minimization_or_redaction": "Reduced to the recorded positive-inclusion and exclusion-only studies used by the mutation filter contract.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/get_nct06604689_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies/NCT06604689?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEligibilityCriteria%2CEnrollmentCount%2CInterventionName%2CInterventionOtherName%2CLargeDocumentModule%2CLeadSponsorName%2CMaximumAge%2CMinimumAge%2CNCTId%2COverallStatus%2CPhase%2CSex%2CStartDate%2CStudyType",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "c7a4d13d7e4122bf311d1bc7d732ea1ab1bb3ee5efe48878bb1bd6e504aa5780",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/get_nct06382129_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies/NCT06382129?fields=BriefSummary%2CBriefTitle%2CCompletionDate%2CCondition%2CEligibilityCriteria%2CEnrollmentCount%2CInterventionName%2CInterventionOtherName%2CLargeDocumentModule%2CLeadSponsorName%2CMaximumAge%2CMinimumAge%2CNCTId%2COverallStatus%2CPhase%2CSex%2CStartDate%2CStudyType",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "0bdff18182f61e8711344cb44ec353e2ad2df0cc0b781d078de668722133f480",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/search_keytruda_limit3_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies?query.intr=%22Keytruda%22&countTotal=true&pageSize=3&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "19d1d7cf8cbd512caa3409183bb8e954241f841696ec5c8b2d3a2358b1cd3a15",
+        "minimization_or_redaction": "Reduced to the first three studies and pagination fields.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/get_nct02576665_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies/NCT02576665?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEligibilityCriteria%2CEnrollmentCount%2CInterventionName%2CInterventionOtherName%2CLargeDocumentModule%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CMaximumAge%2CMinimumAge%2CNCTId%2COverallStatus%2CPhase%2CSex%2CStartDate%2CStudyType",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "3a353fcd343e43bddf079c3bff8bae59d7127fe54f66e0c9ec7c834008f81c23",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ctgov/search_age_count_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies?countTotal=true&pageSize=1&fields=NCTId%2CBriefTitle%2COverallStatus%2CPhase%2CStudyType%2CCondition%2CInterventionName%2CLeadSponsorName%2CEnrollmentCount%2CBriefSummary%2CStartDate%2CCompletionDate%2CMinimumAge%2CMaximumAge",
+        "captured_at": "2026-08-11T23:00:00Z",
+        "sha256": "f811eb53abcaf7490e36ebb8121a31ef6c83a2d982b04ebec2237defbfc8a16f",
+        "minimization_or_redaction": "Reduced to the first study and total-count pagination fields.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov response through BioMCP production request path before the stated minimization."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,

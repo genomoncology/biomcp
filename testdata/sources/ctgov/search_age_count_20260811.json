@@ -1,0 +1,56 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT01595035",
+          "briefTitle": "A Clinical Trial of a Psycho-educational Intervention to Improve Pain Management After Day Surgery"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2012-05"
+          },
+          "completionDateStruct": {
+            "date": "2021-02"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Oslo Metropolitan University"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "Evidence indicates that postoperative pain after day surgery is inadequately controlled. Patients have different experiences and knowledge about how to deal with pain, and the need for information and clarification may vary. The aim of this study is to enhance pain management by academic detailing (patients' current knowledge and motivations are the basis for information) and nurse coaching (frequent and individualized support). The study consists of 4 phases; (1) a pilot study about patients experience with pain after surgery by a structured telephone interview; (2) development of an intervention to improve pain management; (3) implement and evaluate the intervention; (4) evaluate the incidence of chronic pain after day surgery. Even if patients are prescribed sufficient doses of analgesics, pain relief is dependent on patients' adherence with the analgesic regimen. Psychological factors, such as catastrophizing may also contribute to patients' experience of postoperative pain. Strategies that may be more effective than general information concerning surgery and pain management is academic detailing and nurse coaching, and will be used as frame for the intervention.\n\nHypothesis:\n\nOver the seven days after surgery patients in the intervention group report;\n\n* higher adherence with the analgesic regimen,\n* have less pain intensity and pain interference with function and\n* lower severity of side effects compared to the control group."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Postoperative Pain",
+            "Chronic Pain"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "NA"
+          ],
+          "enrollmentInfo": {
+            "count": 200
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "psychoeducational"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    }
+  ],
+  "totalCount": 598101,
+  "nextPageToken": "ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd6-r3_cfnzeRvfE"
+}

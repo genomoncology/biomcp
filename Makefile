@@ -11,6 +11,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/entity/diagnostic.md \
 	spec/entity/vaers.md \
 	spec/entity/pathway.md \
+	spec/entity/trial.md \
 	spec/entity/drug.md \
 	spec/entity/gene.md \
 	spec/entity/drug-interactions.md \
@@ -39,7 +40,6 @@ SPEC_LIVE_PATHS = \
 	spec/entity/ddinter-live.md \
 	spec/entity/disease-live.md \
 	spec/entity/protein.md \
-	spec/entity/trial.md \
 	spec/entity/variant-hotspots.md \
 	spec/entity/variant-myvariant-live.md \
 	spec/entity/variant-articles-live.md \

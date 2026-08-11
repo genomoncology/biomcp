@@ -70,7 +70,7 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/entity/disease-survival-fixture.md` | deterministic disease-survival canary for MyDisease grounding, SEER fixture rendering, and bounded CLI exit |
 | `spec/entity/disease.md` | routine, receipt-backed disease contracts for MyDisease identity, Monarch clinical features, NIH funding, and SEER survival |
 | `spec/entity/disease-live.md` | remaining operator-run disease search and broad default-card checks |
-| `spec/entity/trial.md` | trial canary for condition/status search, alias normalization, age-count transparency, and eligibility/location detail |
+| `spec/entity/trial.md` | routine CT.gov/NCI contracts for search, cursor and terminal pagination, mutation inclusion, aliases, contacts, eligibility, locations, and empty-result guidance |
 | `spec/entity/drug.md` | routine, receipt-backed drug canary for multi-region search, brand bridging, regulatory output, ChEMBL/Open Targets target evidence, and bounded DDInter states |
 | `spec/entity/protein.md` | protein canary for reviewed search defaults, UniProt identity, complexes/structures, and JSON follow-up contracts |
 | `spec/entity/pathway.md` | routine, receipt-backed KEGG/Reactome/WikiPathways contracts for ranking, source cards, optional outcomes, and source-aware rejection |

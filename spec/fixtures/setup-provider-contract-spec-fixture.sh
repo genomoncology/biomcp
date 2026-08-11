@@ -102,6 +102,7 @@ REACTOME_DETAIL = fixture("reactome/get_r_hsa_5673001_20260811.json")
 REACTOME_PARTICIPANTS = fixture("reactome/participants_r_hsa_5673001_20260811.json")
 REACTOME_EVENTS = fixture("reactome/events_r_hsa_5673001_20260811.json")
 WIKIPATHWAYS_UNAVAILABLE = fixture("wikipathways/search_unavailable_20260811.html")
+NCI_MELANOMA = fixture("nci_cts/search_melanoma.json")
 
 
 def send(handler, status, body, content_type="application/json"):
@@ -200,6 +201,11 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/wikipathways/findPathwaysByText.json":
             send(self, 404, WIKIPATHWAYS_UNAVAILABLE, "text/html; charset=utf-8")
             return
+        if parsed.path == "/nci/api/v2/trials":
+            query = parse_qs(parsed.query)
+            if query == {"keyword": ["melanoma"], "size": ["1"], "from": ["0"]}:
+                send(self, 200, NCI_MELANOMA)
+                return
 
         send(self, 404, b'{"error":"fixture route not found"}')
 
@@ -290,6 +296,8 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_KEGG_BASE=%q\n' "$base_url/kegg"
   printf 'export BIOMCP_REACTOME_BASE=%q\n' "$base_url/reactome/ContentService"
   printf 'export BIOMCP_WIKIPATHWAYS_BASE=%q\n' "$base_url/wikipathways"
+  printf 'export BIOMCP_NCI_CTS_BASE=%q\n' "$base_url/nci/api/v2"
+  printf 'export NCI_API_KEY=%q\n' 'fixture-nci-key'
   printf 'export BIOMCP_EMA_DIR=%q\n' "$ema_dir"
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"
   printf 'export BIOMCP_WHO_IVD_DIR=%q\n' "$who_ivd_dir"

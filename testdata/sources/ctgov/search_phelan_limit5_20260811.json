@@ -1,0 +1,269 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT02710084",
+          "briefTitle": "Piloting Treatment With Intranasal Oxytocin in Phelan-McDermid Syndrome"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2016-04-29"
+          },
+          "completionDateStruct": {
+            "date": "2020-07-29"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Alexander Kolevzon"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This is a pilot study examining the efficacy, safety and tolerability of intranasal oxytocin as a novel treatment in Phelan-McDermid syndrome (PMS). This study will utilize a randomized, placebo-controlled design for 12 weeks (phase 1), followed by an open-label extension for 12 weeks (phase 2). The purpose is to evaluate the effect of intranasal oxytocin on impairments in attention, social memory, socialization, language, and repetitive behaviors."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 18
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Oxytocin"
+            },
+            {
+              "name": "Saline"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "5 Years",
+          "maximumAge": "17 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT05105685",
+          "briefTitle": "Effectiveness of Recombinant Human Growth Hormone Therapy for Children With PMS"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2020-06-14"
+          },
+          "completionDateStruct": {
+            "date": "2021-06-08"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Affiliated Hospital of Jiangnan University"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "In summary, this piot study with 6 participants shown that recombinant human growth hormone (rhGH) has a positive effect on the treatment with PMS. In addition, This study indicated that rhGH can improve PMS symptoms via increase the level of serum insulin-like growth factor-1 (IGF-1) and insulin-like growth factor binding protein 3 (IGFBP-3). RhGH may be low cost, more accessible, alternative treatment for PMS."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome",
+            "Growth Hormone Treatment"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1",
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 6
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "recombinant human growth hormone"
+            },
+            {
+              "name": "Saline"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "1 Year",
+          "maximumAge": "5 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT01525901",
+          "briefTitle": "Clinical Trial in 22q13 Deletion Syndrome(Phelan-McDermid Syndrome)"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2012-02"
+          },
+          "completionDateStruct": {
+            "date": "2016-08-23"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Icahn School of Medicine at Mount Sinai"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "The purpose of this study is to pilot the use of Insulin-Like Growth Factor-1 (IGF-1) treatment in 22q13 Deletion Syndrome (Phelan-McDermid Syndrome) caused by SHANK3 gene deficiency in order to evaluate safety, tolerability, and efficacy. IGF-1 is an injection under the skin that contains human IGF-1. IGF-1 is approved by the FDA under the brand name Increlex for the treatment of children with short stature due to primary IGF-1 deficiency. It is being used off-label in the current study and is not FDA approved, nor has it yet been studied in humans for the treatment of SHANK3 deficiency."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "22q13 Deletion Syndrome",
+            "Phelan-McDermid Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 19
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Insulin-Like Growth Factor-1 (IGF-1)"
+            },
+            {
+              "name": "Normal saline"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "5 Years",
+          "maximumAge": "12 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT03493607",
+          "briefTitle": "AMO-01 to Treat Adolescents and Adults With Phelan-McDermid Syndrome (PMS) and Co-morbid Epilepsy"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2018-05-30"
+          },
+          "completionDateStruct": {
+            "date": "2020-03-31"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Alexander Kolevzon"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "The purpose of this study is to investigate the safety, tolerability and efficacy of a single 6-hour intravenous infusion of AMO-01 to treat adolescents and adults with PMS and co-morbid epilepsy. Phelan-McDermid Syndrome (PMS) is a neurodevelopmental disorder characterized by a chromosomal deletion or mutation at 22q13.3 that contains the SHANK3/ProSAP2 gene. A key co-morbidity in PMS is the presence of epilepsy. Currently there are no approved treatments for PMS. Furthermore, there has been relatively little clinical study of pharmacological interventions for PMS. AMO-01 may provide benefit to PMS patients exhibiting behavioral abnormalities and seizures."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome",
+            "Epilepsy"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 6
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "AMO-01"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "12 Years",
+          "maximumAge": "45 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT07119606",
+          "briefTitle": "Multicenter Study of Patients With SHANK3 Mutations: Identification of Genes Modificators in Phelan-McDermid Syndrome (EUQ13)"
+        },
+        "statusModule": {
+          "overallStatus": "NOT_YET_RECRUITING",
+          "startDateStruct": {
+            "date": "2025-09-01"
+          },
+          "completionDateStruct": {
+            "date": "2027-03-01"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Assistance Publique - Hôpitaux de Paris"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "Phelan-McDermid syndrome (PMS) is a neurodevelopmental disorder with extensive clinical and genetic heterogeneity that is still poorly understood. The phenotype includes hypotonia, delayed psychomotor development, intellectual disability of varying severity, and consistent language impairment ranging from delayed to absent speech. Autism spectrum disorders are present in 60-80% of patients, and other comorbidities may be present. The major candidate gene for PMS is SHANK3, which encodes a scaffolding protein in the dense postsynaptic region of glutamatergic synapses. Its loss of function is caused by deletions in the distal region of chromosome 22, 22q13.3, or by intragenic genomic variants. Several studies, including the one conducted by our team, have shown that part of the variability in the phenotype is related to the size of the 22q13.3 deletion. However, two patients with a deletion of similar size or an identical point variation in SHANK3 can have phenotypes of very variable severity.\n\nThe existence of additional genomic variants not identified by standard diagnostic techniques, particularly DNA chip chromosomal analysis (ACPA), which may act as modulating elements of the phenotype, has been suggested.\n\nThe limitations of the proposed studies are the highly heterogeneous genomic tools used (variable DNA chip design in terms of probe distribution and resolution) and the often imprecise phenotypes. Our study will bring together a large number of SPM patients (related to a 22q13.3 deletion or a variation of the SHANK3 gene) as well as their parents and possible relatives (first or second degree of the patient), very well phenotyped and explored by complete genome sequencing on the same sequencing platform."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Genetic Disease"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "NA"
+          ],
+          "enrollmentInfo": {
+            "count": 650
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "SHANK3 mutation"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "3 Months",
+          "maximumAge": "99 Years"
+        }
+      }
+    }
+  ],
+  "totalCount": 21,
+  "nextPageToken": "ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd7KrgP4dnDeTsPkw"
+}

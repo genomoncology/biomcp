@@ -1,0 +1,104 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT06382129",
+          "briefTitle": "A Study Comparing BL-B01D1 With Docetaxel in Patients With Unresectable Locally Advanced or Metastatic EGFR Wild-type Non-small Cell Lung Cancer(PANKU-Lung02)"
+        },
+        "statusModule": {
+          "overallStatus": "ACTIVE_NOT_RECRUITING",
+          "startDateStruct": {
+            "date": "2024-05-17"
+          },
+          "completionDateStruct": {
+            "date": "2026-12"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Sichuan Baili Pharmaceutical Co., Ltd."
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This trial is a registered phase III, randomized, open-label, multicenter study to evaluate the efficacy and safety of BL-B01D1 in patients with locally advanced or metastatic EGFR wild-type non-small cell lung cancer after failure of anti-PD-1/PD-L1 monoclonal antibodies and platinum-based chemotherapy."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Non-small Cell Lung Cancer"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE3"
+          ],
+          "enrollmentInfo": {
+            "count": 698
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "BL-B01D1"
+            },
+            {
+              "name": "Docetaxel"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT06604689",
+          "briefTitle": "AI-guided Prognostication and Cranial Radiotherapy Optimization in EGFR-TKI-treated Non-small Cell Lung Cancer Patients With Baseline Brain Metastases"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2024-09-30"
+          },
+          "completionDateStruct": {
+            "date": "2025-10-01"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Fudan University"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "The goal of this observational study is to extract the imaging features of brain lesions and primary lung lesions in NSCLC patients with brain metastases by deep learning, as well as common clinicopathological parameters, which are used to construct a multimode model that can accurately predict the treatment efficacy and survival of the third-generation EGFR-TKI treatment, and to use the model to assist in screening high-risk populations suitable for upfront cranial radiotherapy.\n\nParticipants receiving third-generation EGFR-TKI treatment will be enrolled in our study and we will collect their regular contrast-enhanced chest CT and contrast-enhanced brain MRI for model construction."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "NSCLC (Advanced Non-small Cell Lung Cancer)",
+            "Brain Metastasases"
+          ]
+        },
+        "designModule": {
+          "studyType": "OBSERVATIONAL",
+          "enrollmentInfo": {
+            "count": 800
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "third-generation EGFR TKIs (Almonertinib/Furmonertinib/Osimertinib)"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "18 Years"
+        }
+      }
+    }
+  ],
+  "totalCount": 2
+}

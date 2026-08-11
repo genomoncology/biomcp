@@ -1,0 +1,167 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT02710084",
+          "briefTitle": "Piloting Treatment With Intranasal Oxytocin in Phelan-McDermid Syndrome"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2016-04-29"
+          },
+          "completionDateStruct": {
+            "date": "2020-07-29"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Alexander Kolevzon"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This is a pilot study examining the efficacy, safety and tolerability of intranasal oxytocin as a novel treatment in Phelan-McDermid syndrome (PMS). This study will utilize a randomized, placebo-controlled design for 12 weeks (phase 1), followed by an open-label extension for 12 weeks (phase 2). The purpose is to evaluate the effect of intranasal oxytocin on impairments in attention, social memory, socialization, language, and repetitive behaviors."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 18
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Oxytocin"
+            },
+            {
+              "name": "Saline"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "5 Years",
+          "maximumAge": "17 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT05105685",
+          "briefTitle": "Effectiveness of Recombinant Human Growth Hormone Therapy for Children With PMS"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2020-06-14"
+          },
+          "completionDateStruct": {
+            "date": "2021-06-08"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Affiliated Hospital of Jiangnan University"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "In summary, this piot study with 6 participants shown that recombinant human growth hormone (rhGH) has a positive effect on the treatment with PMS. In addition, This study indicated that rhGH can improve PMS symptoms via increase the level of serum insulin-like growth factor-1 (IGF-1) and insulin-like growth factor binding protein 3 (IGFBP-3). RhGH may be low cost, more accessible, alternative treatment for PMS."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome",
+            "Growth Hormone Treatment"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1",
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 6
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "recombinant human growth hormone"
+            },
+            {
+              "name": "Saline"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "1 Year",
+          "maximumAge": "5 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT01525901",
+          "briefTitle": "Clinical Trial in 22q13 Deletion Syndrome(Phelan-McDermid Syndrome)"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2012-02"
+          },
+          "completionDateStruct": {
+            "date": "2016-08-23"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Icahn School of Medicine at Mount Sinai"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "The purpose of this study is to pilot the use of Insulin-Like Growth Factor-1 (IGF-1) treatment in 22q13 Deletion Syndrome (Phelan-McDermid Syndrome) caused by SHANK3 gene deficiency in order to evaluate safety, tolerability, and efficacy. IGF-1 is an injection under the skin that contains human IGF-1. IGF-1 is approved by the FDA under the brand name Increlex for the treatment of children with short stature due to primary IGF-1 deficiency. It is being used off-label in the current study and is not FDA approved, nor has it yet been studied in humans for the treatment of SHANK3 deficiency."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "22q13 Deletion Syndrome",
+            "Phelan-McDermid Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 19
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Insulin-Like Growth Factor-1 (IGF-1)"
+            },
+            {
+              "name": "Normal saline"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "5 Years",
+          "maximumAge": "12 Years"
+        }
+      }
+    }
+  ],
+  "totalCount": 3
+}

@@ -1,0 +1,59 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT06382129",
+      "briefTitle": "A Study Comparing BL-B01D1 With Docetaxel in Patients With Unresectable Locally Advanced or Metastatic EGFR Wild-type Non-small Cell Lung Cancer(PANKU-Lung02)"
+    },
+    "statusModule": {
+      "overallStatus": "ACTIVE_NOT_RECRUITING",
+      "startDateStruct": {
+        "date": "2024-05-17"
+      },
+      "completionDateStruct": {
+        "date": "2026-12"
+      }
+    },
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {
+        "name": "Sichuan Baili Pharmaceutical Co., Ltd."
+      }
+    },
+    "descriptionModule": {
+      "briefSummary": "This trial is a registered phase III, randomized, open-label, multicenter study to evaluate the efficacy and safety of BL-B01D1 in patients with locally advanced or metastatic EGFR wild-type non-small cell lung cancer after failure of anti-PD-1/PD-L1 monoclonal antibodies and platinum-based chemotherapy."
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Non-small Cell Lung Cancer"
+      ]
+    },
+    "designModule": {
+      "studyType": "INTERVENTIONAL",
+      "phases": [
+        "PHASE3"
+      ],
+      "enrollmentInfo": {
+        "count": 698
+      }
+    },
+    "armsInterventionsModule": {
+      "interventions": [
+        {
+          "name": "BL-B01D1",
+          "otherNames": [
+            "iza-bren",
+            "izalontamab brengitecan",
+            "BMS-986507"
+          ]
+        },
+        {
+          "name": "Docetaxel"
+        }
+      ]
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "Inclusion Criteria:\n\n1. Voluntarily sign the informed consent and follow the requirements of the protocol;\n2. Age ≥18 years old;\n3. Expected survival time ≥3 months;\n4. Patients with histologically or cytologically confirmed locally advanced or metastatic EGFR wild-type non-small cell lung cancer;\n5. Consent to provide archival tumor tissue samples or fresh tissue samples of primary or metastatic lesions within 3 years;\n6. Must have at least one measurable lesion according to RECIST v1.1 definition;\n7. ECOG 0 or 1;\n8. Toxicity of previous antineoplastic therapy has returned to ≤ grade 1 defined by NCI-CTCAE v5.0;\n9. No severe cardiac dysfunction, left ventricular ejection fraction ≥50%;\n10. The organ function level must meet the requirements on the premise that blood transfusion is not allowed within 14 days before the screening period, and no cell growth factor drugs are allowed;\n11. Urine protein ≤2+ or \\< 1000mg/24h;\n12. For premenopausal women with childbearing potential, a pregnancy test must be performed within 7 days before the initiation of treatment, serum pregnancy must be negative, and must be non-lactating; All enrolled patients (male or female) were advised to use adequate barrier contraception throughout the treatment cycle and for 6 months after the end of treatment.\n\nExclusion Criteria:\n\n1. Previous histological or cytological evidence of small cell or mixed small/non-small cell components;\n2. Patients with EGFR L858R mutation, EGFR 19DEL mutation or EGFR T790M positive;\n3. Chemotherapy, targeted therapy, biological therapy, etc., and palliative radiotherapy or antineoplastic therapy within 2 weeks before randomization;\n4. Previous ADCs with TOPI inhibitors as toxins, antibodies/ADCs targeting EGFR and/or HER3;\n5. History of severe heart disease or cerebrovascular disease;\n6. Unstable thrombotic events requiring therapeutic intervention within 6 months before screening;\n7. QT prolongation, complete left bundle branch block, III degree atrioventricular block, frequent and uncontrollable arrhythmia;\n8. Active malignancy diagnosed within 3 years before randomization;\n9. Hypertension poorly controlled by two antihypertensive drugs;\n10. Patients with poor glycemic control;\n11. A history of interstitial lung disease (ILD) requiring steroid therapy, or current ILD or grade ≥2 radiation pneumonitis, or suspicion of such disease on imaging during screening;\n12. Complicated pulmonary diseases leading to clinically severe respiratory function impairment;\n13. Patients with active central nervous system metastases;\n14. Severe infection within 4 weeks before randomization; evidence of pulmonary infection or active pulmonary inflammation within 2 weeks before randomization;\n15. Patients with massive or symptomatic effusions or poorly controlled effusions;\n16. Imaging examination showed that the tumor had invaded or wrapped around the large blood vessels in the abdomen, chest, neck, and pharynx;\n17. Severe unhealed wound, ulcer, or fracture within 4 weeks before signing the informed consent;\n18. Subjects with clinically significant bleeding or obvious bleeding tendency within 4 weeks before signing the informed consent;\n19. Patients with inflammatory bowel disease, extensive bowel resection history, immune enteritis history, intestinal obstruction or chronic diarrhea;\n20. Have a history of allergy to recombinant humanized antibodies or any of the ingredients of BL-B01D1;\n21. A history of autologous or allogeneic stem cell transplantation;\n22. Human immunodeficiency virus antibody positive, active hepatitis B virus infection or hepatitis C virus infection;\n23. A history of severe neurological or psychiatric illness;\n24. Received other unmarketed investigational drug or treatment within 4 weeks before randomization;\n25. Subjects who were scheduled to receive live vaccine or received live vaccine within 28 days before study randomization;\n26. Any other circumstances in which the investigator considered it inappropriate to participate in the trial because of complications or other circumstances.",
+      "sex": "ALL",
+      "minimumAge": "18 Years"
+    }
+  }
+}

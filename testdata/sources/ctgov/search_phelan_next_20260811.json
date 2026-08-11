@@ -1,0 +1,275 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT05187377",
+          "briefTitle": "A Controlled Trial of Growth Hormone in Phelan-McDermid Syndrome and Idiopathic Autism"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2022-01-19"
+          },
+          "completionDateStruct": {
+            "date": "2025-02-05"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Icahn School of Medicine at Mount Sinai"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This clinical trial will use growth hormone as a novel treatment for Phelan-McDermid syndrome (PMS) and idiopathic autism. A double-blind, placebo-controlled crossover trial design will be used in 30 children with idiopathic autism and 15 children with PMS to evaluate the the effects of growth hormone on visual evoked potentials (VEPs), socialization, language, and repetitive behaviors. The researchers expect to provide evidence for the feasibility of using VEPs in PMS, and to show support for growth hormone in ameliorating clinical symptoms of ASD."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome",
+            "Autism Spectrum Disorder (ASD)"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 32
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Growth Hormone"
+            },
+            {
+              "name": "Saline"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "2 Years",
+          "maximumAge": "12 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT03836300",
+          "briefTitle": "Parent and Infant Inter(X)Action Intervention (PIXI)"
+        },
+        "statusModule": {
+          "overallStatus": "ENROLLING_BY_INVITATION",
+          "startDateStruct": {
+            "date": "2018-11-30"
+          },
+          "completionDateStruct": {
+            "date": "2026-12-31"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "RTI International"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "The objective is to develop and test, through an iterative process, an intervention to address and support the development of infants with a confirmed diagnosis of a neurogenetic disorder with associated developmental delays or intellectual and developmental disabilities. The proposed project will capitalize and expand upon existing empirically based interventions designed to improve outcomes for infants with suspected developmental delays.\n\nParticipants will be infants with a confirmed diagnosis of a neurogenetic disorder (e.g., fragile X, Angelman, Prader-Willi, Dup15q, Phelan-McDermid, Rhett, Smith Magenis, Williams, Turner, Kleinfelter, Down syndromes, Duchenne muscular dystrophy) within the first year of life and their parents/caregivers.\n\nThe intervention, called the Parent and Infant Inter(X)action Intervention (PIXI) is a comprehensive program inclusive of parent education about early infant development and the neurogenetic disorder for which they were diagnosed, direct parent coaching around parent-child interaction, and family/parent well-being support. The protocol includes repeated comprehensive assessments of family and child functioning, along with an examination of feasibility and acceptability of the program."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Fragile X Syndrome",
+            "Angelman Syndrome",
+            "Prader-Willi Syndrome",
+            "Dup15Q Syndrome",
+            "Duchenne Muscular Dystrophy",
+            "Phelan-McDermid Syndrome",
+            "Rett Syndrome",
+            "Smith Magenis Syndrome",
+            "Williams Syndrome",
+            "Turner Syndrome",
+            "Klinefelter Syndrome",
+            "Chromosome 22q11.2 Deletion Syndrome",
+            "Tuberous Sclerosis",
+            "Down Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "NA"
+          ],
+          "enrollmentInfo": {
+            "count": 120
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "Parent-Infant Inter(X)action Intervention (PIXI)"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "maximumAge": "99 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT07014020",
+          "briefTitle": "RB001 Gene Therapy Study in Children With SHANK3-related Phelan-McDermid Syndrome (PMS)"
+        },
+        "statusModule": {
+          "overallStatus": "ACTIVE_NOT_RECRUITING",
+          "startDateStruct": {
+            "date": "2025-06-16"
+          },
+          "completionDateStruct": {
+            "date": "2027-12-31"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Peking University First Hospital"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This is an open-label, dose-escalation study to evaluate the safety, tolerability, and clinical activity of a single dose of RB001 administered via intracerebroventricular (ICV) injection in pediatric with SHANK3 related Phelan-McDermid Syndrome. Clinical data will be evaluated for safety, tolerability, and preliminary efficacy of RB001 in participants with SHANK3 related PMS."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome",
+            "SHANK3 Haploinsufficiency"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE1"
+          ],
+          "enrollmentInfo": {
+            "count": 8
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "RB001"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "3 Years",
+          "maximumAge": "18 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT05025241",
+          "briefTitle": "An Open-Label Study of Oral NNZ-2591 in Phelan-McDermid Syndrome (PMS-001)"
+        },
+        "statusModule": {
+          "overallStatus": "COMPLETED",
+          "startDateStruct": {
+            "date": "2022-08-08"
+          },
+          "completionDateStruct": {
+            "date": "2023-11-17"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Neuren Pharmaceuticals Limited"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "A study of the safety, tolerability and pharmacokinetics of NNZ-2591 and measures of efficacy in children and adolescents with Phelan-McDermid Syndrome."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE2"
+          ],
+          "enrollmentInfo": {
+            "count": 18
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "NNZ-2591"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "3 Years",
+          "maximumAge": "12 Years"
+        }
+      }
+    },
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT07281079",
+          "briefTitle": "A Study of NNZ-2591 in Pediatric Participants With Phelan-McDermid Syndrome"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "startDateStruct": {
+            "date": "2025-11-12"
+          },
+          "completionDateStruct": {
+            "date": "2027-11-15"
+          }
+        },
+        "sponsorCollaboratorsModule": {
+          "leadSponsor": {
+            "name": "Neuren Pharmaceuticals Limited"
+          }
+        },
+        "descriptionModule": {
+          "briefSummary": "This Phase 3, randomized, double-blind, parallel-group (2-arm), placebo-controlled, multicenter study will evaluate the efficacy and safety of NNZ-2591 compared to placebo in pediatric participants with Phelan- McDermid Syndrome."
+        },
+        "conditionsModule": {
+          "conditions": [
+            "Phelan-McDermid Syndrome"
+          ]
+        },
+        "designModule": {
+          "studyType": "INTERVENTIONAL",
+          "phases": [
+            "PHASE3"
+          ],
+          "enrollmentInfo": {
+            "count": 160
+          }
+        },
+        "armsInterventionsModule": {
+          "interventions": [
+            {
+              "name": "NNZ-2591"
+            },
+            {
+              "name": "Placebo"
+            }
+          ]
+        },
+        "eligibilityModule": {
+          "minimumAge": "3 Years",
+          "maximumAge": "12 Years"
+        }
+      }
+    }
+  ],
+  "nextPageToken": "ZVt07cGHkvI2wRk2CJf6_LLq14bEL8swd7KrgP4bmjeauvk_IQ"
+}

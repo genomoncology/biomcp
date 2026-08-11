@@ -37,13 +37,19 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
 
-setsid python3 - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
+setsid python3 - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" "$workspace_root" 8>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 import json
 import os
 import sys
+
+SOURCES = Path(sys.argv[5]) / "testdata/sources"
+
+
+def source_bytes(path):
+    return (SOURCES / path).read_bytes()
 
 
 def send_json(handler, status, payload):
@@ -337,6 +343,20 @@ STUDIES = {
     "nct51000003": CONTINUATION_REJECTED_STUDY,
     "nct51000004": CONTINUATION_QUALIFYING_STUDY,
 }
+CTGOV_SEARCH = {
+    "melanoma": source_bytes("ctgov/search_melanoma_recruiting_limit3_20260811.json"),
+    "phelan-50": source_bytes("ctgov/search_phelan_limit50_20260811.json"),
+    "phelan-5": source_bytes("ctgov/search_phelan_limit5_20260811.json"),
+    "phelan-next": source_bytes("ctgov/search_phelan_next_20260811.json"),
+    "mutation": source_bytes("ctgov/search_nsclc_egfr_l858r_20260811.json"),
+    "keytruda": source_bytes("ctgov/search_keytruda_limit3_20260811.json"),
+    "age-count": source_bytes("ctgov/search_age_count_20260811.json"),
+}
+CTGOV_DETAIL = {
+    "nct02576665": source_bytes("ctgov/get_nct02576665_20260811.json"),
+    "nct06382129": source_bytes("ctgov/get_nct06382129_20260811.json"),
+    "nct06604689": source_bytes("ctgov/get_nct06604689_20260811.json"),
+}
 
 
 def study_payload_for_request(parsed, study):
@@ -374,6 +394,26 @@ class Handler(BaseHTTPRequestHandler):
             with REQUEST_LOG.open("a", encoding="utf-8") as log:
                 log.write(f"{self.path}\n")
             intervention = " ".join(query.get("query.intr", [])).strip()
+            condition = " ".join(query.get("query.cond", [])).strip()
+            page_size = query.get("pageSize", [""])[0]
+            requested_facility = " ".join(query.get("query.locn", [])).lower()
+            if "university of michigan" in requested_facility:
+                send_json(self, 200, {"studies": [], "totalCount": 0})
+                return
+            if condition == "melanoma" and query.get("filter.overallStatus") == ["RECRUITING"]:
+                send_bytes(self, 200, CTGOV_SEARCH["melanoma"], "application/json")
+                return
+            if condition == "Phelan-McDermid Syndrome":
+                if query.get("pageToken"):
+                    send_bytes(self, 200, CTGOV_SEARCH["phelan-next"], "application/json")
+                elif page_size == "50":
+                    send_bytes(self, 200, CTGOV_SEARCH["phelan-50"], "application/json")
+                else:
+                    send_bytes(self, 200, CTGOV_SEARCH["phelan-5"], "application/json")
+                return
+            if condition == "non-small cell lung cancer" and "EGFR L858R" in " ".join(query.get("query.term", [])):
+                send_bytes(self, 200, CTGOV_SEARCH["mutation"], "application/json")
+                return
             is_quoted_literal = (
                 len(intervention) >= 2
                 and intervention.startswith('"')
@@ -414,6 +454,15 @@ class Handler(BaseHTTPRequestHandler):
                         },
                     )
                 return
+            if is_quoted_literal and literal_intervention in {
+                "Keytruda",
+                "pembrolizumab",
+                "ABP 234",
+                "GME751",
+                "Lambrolizumab",
+            }:
+                send_bytes(self, 200, CTGOV_SEARCH["keytruda"], "application/json")
+                return
             if intervention:
                 send_text(
                     self,
@@ -421,9 +470,8 @@ class Handler(BaseHTTPRequestHandler):
                     "Error parsing query in Intervention / treatment: invalid expression",
                 )
                 return
-            requested_facility = " ".join(query.get("query.locn", [])).lower()
-            if "university of michigan" in requested_facility:
-                send_json(self, 200, {"studies": [], "totalCount": 0})
+            if page_size == "1" and not condition:
+                send_bytes(self, 200, CTGOV_SEARCH["age-count"], "application/json")
                 return
             send_json(self, 200, {"studies": [study_payload_for_request(parsed, CONTACTS_ELIGIBILITY_STUDY)], "totalCount": 1})
             return
@@ -431,6 +479,9 @@ class Handler(BaseHTTPRequestHandler):
             with REQUEST_LOG.open("a", encoding="utf-8") as log:
                 log.write(f"{self.path}\n")
             nct_id = parsed.path.rsplit("/", 1)[-1].lower()
+            if nct_id in CTGOV_DETAIL:
+                send_bytes(self, 200, CTGOV_DETAIL[nct_id], "application/json")
+                return
             if nct_id in STUDIES:
                 send_json(self, 200, study_payload_for_request(parsed, STUDIES[nct_id]))
                 return
