@@ -244,3 +244,32 @@ Recount the backlog and inspect the diff concentration before selecting the
 next group. The default next choice is the four-ticket MCP execution/catalog
 session. If the provider work reveals substantial article-fixture reuse, the
 seven-ticket article session may be more efficient immediately afterward.
+
+## Implementation result
+
+The 14-ticket session completed on 2026-08-11 in one persistent worktree.
+Every scoped ticket now has a separate implementation commit and completion
+record, and no scoped ticket remains runnable.
+
+The consolidation produced three shared test boundaries:
+
+- one production `RequestPlan` loopback transport contract;
+- one supervised provider server for drug, gene, diagnostic, pathway, and NCI
+  routes; and
+- one supervised ontology server for disease, phenotype, and discover routes.
+
+The existing CT.gov and VAERS servers were promoted to routine ownership.
+Trial page blocks no longer start and stop CT.gov repeatedly. Unknown HTTP
+routes fail closed. The receipt audit now recognizes 133 real, dated anchors;
+synthetic data remains limited to three explicitly ineligible edge fixtures.
+
+Nine formerly live provider pages now run routinely: drug, gene, disease,
+phenotype, discover, diagnostic, VAERS, pathway, and trial. Their focused
+executable pages passed 85 blocks in aggregate. The final batch review found
+no added `src/` lines in the provider conversions; runtime source changes
+were limited to the shared transport proof, bounded UniProt/GTR readers, and
+the NCI filter correction.
+
+Before the final repository gates, the top-level unfinished ticket count is
+67 including the stale completed 0951 copy. Removing that stale copy leaves
+66, exactly matching the planned reduction from 81.
