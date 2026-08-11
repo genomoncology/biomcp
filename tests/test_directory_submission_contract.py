@@ -382,12 +382,10 @@ def test_policies_page_covers_directory_privacy_requirements() -> None:
     assert "clinical" in lowered
 
 
-def test_release_workflow_updates_manifest_version_for_release_builds() -> None:
+def test_release_workflow_uses_committed_registry_metadata_without_rewriting_it() -> None:
     release = _read(".github/workflows/release.yml")
 
-    assert "Sync Cargo.toml and manifest.json version from release tag" in release
-    assert (
-        "Sync Cargo.toml, pyproject.toml, and manifest.json version from release tag"
-        in release
-    )
-    assert release.count("manifest.json") >= 4
+    assert "server.json" not in release
+    assert "manifest.json" not in release
+    assert 'sed "s/^version' not in release
+    assert 'VERSION="$VER"' not in release

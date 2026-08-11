@@ -46,21 +46,18 @@ if "__" not in formula:
 PY
 ```
 
-## Release Workflow Updates Or Emits The Tap Formula
+## Release Publication Is Disabled
 
-Publishing a BioMCP release should also update the separate Homebrew tap. When
-the tap token is unavailable, the workflow should still leave operators with the
-exact rendered formula to commit manually instead of silently skipping the
-Homebrew channel.
+Until ticket 0957 installs the public-artifact gate, the manually callable
+release workflow must fail closed rather than update the Homebrew tap or render
+publication artifacts.
 
 ```bash
-awk '/homebrew|Homebrew|brew|tap|biomcp.rb|HOMEBREW|formula|darwin|sha256|artifact|manual/{print}' ../../.github/workflows/release.yml | mustmatch like 'genomoncology/homebrew-biomcp
-HOMEBREW_TAP_TOKEN
-biomcp.rb
-biomcp-darwin-arm64.tar.gz.sha256
-biomcp-darwin-x86_64.tar.gz.sha256
-formula
-manual'
+cat ../../.github/workflows/release.yml | mustmatch like 'workflow_dispatch
+contents: read
+release-disabled
+bash scripts/release-disabled.sh'
+! rg -i 'homebrew-biomcp|HOMEBREW_TAP_TOKEN|git push|biomcp.rb|upload-artifact' ../../.github/workflows/release.yml
 ```
 
 ## Installation Docs Show The Brew Tap Path

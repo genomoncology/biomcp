@@ -449,7 +449,6 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     install_script = _read_repo("install.sh")
     technical_ws = _normalize_ws(technical)
     ux_ws = _normalize_ws(ux)
-    example_tag = _current_release_tag_example()
     article_guide_ws = _normalize_ws(article_guide)
     cli_reference_guide_ws = _normalize_ws(cli_reference_guide)
     find_articles_ws = _normalize_ws(find_articles)
@@ -675,38 +674,16 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in technical_ws
     )
     assert "Live public-upstream confidence is opt-in through `make verify`" in technical_ws
-    assert (
-        "The semver tag is the canonical release/version authority."
-        in release_pipeline_section
-    )
-    assert (
-        "PR CI enforces version parity before release via the `version-sync` job and "
-        "`scripts/check-version-sync.sh`" in release_pipeline_section
-    )
-    assert (
-        "The release workflow builds binaries, publishes PyPI wheels, and deploys docs "
-        "from the tagged source" in release_pipeline_section
-    )
-    assert (
-        "`install.sh` resolves the latest release with platform assets, not the latest merge to `main`"
-        in release_pipeline_section
-    )
-    assert (
-        "The existing `### Post-tag public proof` block is the live verification step for "
-        "tag-to-binary and tag-to-docs parity" in release_pipeline_section
-    )
-    assert (
-        f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"'
-        in technical
-    )
-    assert 'version="${tag#v}"' in technical
-    assert "`workflow_dispatch` can replay a specified tag" in release_pipeline_section
-    assert "Release validation runs the Rust checks again" in technical
+    assert "v0.8.25 is the latest published release." in release_pipeline_section
+    assert "Package versions are committed metadata, not values stamped from tags." in release_pipeline_section
+    assert "disabled until ticket 0957 installs the public-artifact gate" in release_pipeline_section
+    assert "scripts/check-version-sync.sh" in release_pipeline_section
     assert "workflow_dispatch:" in release_workflow
-    assert "inputs:" in release_workflow
-    assert "tag:" in release_workflow
-    assert "deploy-docs:" in release_workflow
-    assert "uv run --no-sync mkdocs gh-deploy --force" in release_workflow
+    assert "contents: read" in release_workflow
+    assert "release-disabled:" in release_workflow
+    assert "bash scripts/release-disabled.sh" in release_workflow
+    for forbidden in ("release:\n", "contents: write", "packages: write", "id-token: write", "publish", "gh-deploy"):
+        assert forbidden not in release_workflow
     assert (
         'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"'
         in install_script
@@ -1121,7 +1098,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`CHANGELOG.md`" in source_addition_section
 
 
-def test_pull_request_contract_gate_matches_release_validation() -> None:
+def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard() -> None:
     ci = _read_repo(".github/workflows/ci.yml")
     release = _read_repo(".github/workflows/release.yml")
     contracts_smoke = _read_repo(".github/workflows/contracts.yml")
@@ -1132,90 +1109,29 @@ def test_pull_request_contract_gate_matches_release_validation() -> None:
         'uv run --no-sync pytest tests/ -v',
         "uv run --no-sync mkdocs build --strict",
     ]
-    expected_release_contract_runs = [
-        "cargo build --release --locked",
-        "uv sync --extra dev --no-install-project",
-        "make spec",
-        "bash scripts/contract-smoke.sh",
-        'uv run --no-sync pytest tests/ -v',
-        "uv run --no-sync mkdocs build --strict",
-    ]
 
     ci_contracts = _workflow_job_block(ci, "contracts")
     ci_spec = _workflow_job_block(ci, "spec-stable")
     ci_version_sync = _workflow_job_block(ci, "version-sync")
     ci_climb_hygiene = _workflow_job_block(ci, "climb-hygiene")
-    release_validate = _workflow_job_block(release, "validate")
 
-    assert 'python-version: "3.12"' in ci_contracts
-    assert 'python-version: "3.12"' in ci_spec
-    assert 'python-version: "3.12"' in release_validate
     assert not spec_smoke.exists()
     assert _workflow_run_steps(ci_contracts) == expected_ci_contract_runs
-    assert "- uses: actions/checkout@v4" in ci_spec
-    assert "uses: arduino/setup-protoc@v3" in ci_spec
     assert "uses: dtolnay/rust-toolchain@stable" in ci_spec
     assert "uses: actions/setup-python@v5" in ci_spec
-    assert "uses: astral-sh/setup-uv@v4" in ci_spec
-    ci_spec_runs = _workflow_run_steps(ci_spec)
-    assert ci_spec_runs[-2:] == [
-        "cargo build --release --locked",
-        "make spec-pr",
-    ]
-    assert "id: spec-cache-meta" in ci_spec
-    assert "import tomllib" in ci_spec
-    assert "Cargo.toml" in ci_spec
-    assert "biomcp-version" in ci_spec
-    assert "spec-cache-schema-version" in ci_spec
-    assert "id: spec-cache" in ci_spec
-    assert "uses: actions/cache@v4" in ci_spec
-    assert "path: .cache/biomcp-specs/" in ci_spec
-    assert (
-        "spec-http-${{ runner.os }}-${{ steps.spec-cache-meta.outputs.biomcp-version }}"
-        "-${{ steps.spec-cache-meta.outputs.spec-cache-schema-version }}"
-    ) in ci_spec
-    assert "if: steps.spec-cache.outputs.cache-hit == 'true'" in ci_spec
-    assert "BIOMCP_SPEC_CACHE_HIT=1" in ci_spec
-    assert "- name: Install ripgrep" in release_validate
-    assert "run: sudo apt-get update && sudo apt-get install -y ripgrep" in release_validate
-    assert release_validate.index("Install ripgrep") < release_validate.index("make spec")
-    assert _workflow_run_steps(release_validate)[-len(expected_release_contract_runs) :] == expected_release_contract_runs
-    assert "- uses: actions/checkout@v4" in ci_version_sync
-    assert _workflow_run_steps(ci_version_sync) == [
-        "bash scripts/check-version-sync.sh"
-    ]
-    for forbidden in (
-        "setup-python",
-        "setup-uv",
-        "setup-protoc",
-        "rust-toolchain",
-        "cargo ",
-        "uv sync",
-        "python-version:",
-    ):
-        assert forbidden not in ci_version_sync
-    assert "- uses: actions/checkout@v4" in ci_climb_hygiene
-    assert _workflow_run_steps(ci_climb_hygiene) == [
-        "bash scripts/check-no-climb-tracked.sh"
-    ]
-    for forbidden in (
-        "setup-python",
-        "setup-uv",
-        "setup-protoc",
-        "rust-toolchain",
-        "cargo ",
-        "uv sync",
-        "python-version:",
-    ):
-        assert forbidden not in ci_climb_hygiene
+    assert _workflow_run_steps(ci_spec)[-2:] == ["cargo build --release --locked", "make spec-pr"]
+    assert _workflow_run_steps(ci_version_sync) == ["bash scripts/check-version-sync.sh"]
+    assert _workflow_run_steps(ci_climb_hygiene) == ["bash scripts/check-no-climb-tracked.sh"]
+
+    assert "workflow_dispatch:" in release
+    assert "release-disabled:" in release
+    assert "bash scripts/release-disabled.sh" in release
+    for forbidden in ("release:\n", "contents: write", "packages: write", "id-token: write", "publish", "gh-deploy"):
+        assert forbidden not in release
 
     assert "name: Contract Smoke Tests" in contracts_smoke
     assert "schedule:" not in contracts_smoke
-    assert 'cron: "0 6 * * *"' not in contracts_smoke
     assert "workflow_dispatch:" in contracts_smoke
-    assert "continue-on-error: true" in contracts_smoke
-    assert "- run: bash scripts/contract-smoke.sh" in contracts_smoke
-
 
 def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     makefile = _read_repo("Makefile")

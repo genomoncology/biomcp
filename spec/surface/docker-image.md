@@ -43,26 +43,17 @@ docker run --rm
 list'
 ```
 
-## Release Publishes GHCR Image Tags
+## Release Publication Is Disabled
 
-The release workflow should publish the official image to GHCR with both the
-release version tag and `latest`. Versioned tags give users a stable pin, while
-`latest` keeps the simplest getting-started command current.
-
-```bash
-awk '/^  docker-publish:/{seen=1} seen && /^  [A-Za-z0-9_-]+:/{if ($1 != "docker-publish:") exit} seen {print}' ../../.github/workflows/release.yml | mustmatch like 'Sync Docker image version from release tag
-Cargo.toml
-ghcr.io/genomoncology/biomcp
-type=semver
-type=raw,value=latest
-docker/build-push-action'
-```
-
-The workflow also grants package publishing permission at the top level so the
-GHCR push can succeed when the release job runs.
+Until ticket 0957 installs the public-artifact gate, the manually callable
+release workflow must fail closed rather than build or publish a GHCR image.
 
 ```bash
-sed -n '1,30p' ../../.github/workflows/release.yml | mustmatch like 'packages: write'
+cat ../../.github/workflows/release.yml | mustmatch like 'workflow_dispatch
+contents: read
+release-disabled
+bash scripts/release-disabled.sh'
+! rg -i 'docker/build-push-action|docker push|push: true|packages: write' ../../.github/workflows/release.yml
 ```
 
 ## Documentation Shows Docker CLI And Stdio MCP Use

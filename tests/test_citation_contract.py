@@ -51,11 +51,10 @@ def test_citation_cff_exists_and_has_expected_cff_keys() -> None:
     assert "family-names: Yeakley" in citation
     assert "given-names: Anibee" in citation
     assert "family-names: Zingalis" in citation
-    software_metadata, preferred = citation.split("preferred-citation:", maxsplit=1)
-    assert "doi:" not in software_metadata
-    assert "publisher: Zenodo" in preferred
-    assert "doi: 10.5281/zenodo.XXXXXXX" in preferred
-    assert "version: 0.9.0" in preferred
+    assert "doi:" not in citation.lower()
+    assert "preferred-citation:" not in citation
+    assert "0.9.0" not in citation
+    assert "placeholder" not in citation.lower()
 
 
 def test_citation_cff_release_metadata_matches_repo_metadata() -> None:
@@ -74,6 +73,17 @@ def test_citation_cff_release_metadata_matches_repo_metadata() -> None:
     assert citation_version == pyproject["project"]["version"]
     assert citation_version == changelog_match.group("version")
     assert citation_date == changelog_match.group("date")
+
+
+def test_citation_guidance_does_not_claim_an_unreleased_paper_or_version() -> None:
+    for path, heading, next_heading in (
+        ("README.md", "## Citation", "\n## License"),
+        ("docs/index.md", "## Citation", "\n## License"),
+    ):
+        guidance = _markdown_section_block(_read(path), heading, next_heading).lower()
+        assert "0.9.0" not in guidance
+        assert "doi" not in guidance
+        assert "paper" not in guidance
 
 
 def test_readme_citation_section_points_to_root_citation_file() -> None:

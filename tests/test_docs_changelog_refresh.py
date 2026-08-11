@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 import tomllib
 
@@ -381,7 +382,7 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         previous_release_block, "### New features"
     )
 
-    assert "## [Unreleased]" not in changelog
+    assert changelog.startswith("# Changelog\n\n## Unreleased\n")
     assert current_release_heading in changelog
     assert "## 0.8.21 — 2026-04-16" in changelog
     assert changelog.index(current_release_heading) < changelog.index("## 0.8.21 — 2026-04-16")
@@ -441,6 +442,26 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         header = f"## {version} — {date}"
         assert header in changelog
         assert "\n- " in _markdown_section_block(changelog, header)
+
+
+def test_v0_8_25_release_block_matches_the_published_tag_boundary() -> None:
+    result = subprocess.run(
+        ["git", "show", "v0.8.25:CHANGELOG.md"],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    tagged_changelog = result.stdout
+    current_changelog = _read("CHANGELOG.md")
+    header = "## 0.8.25 — 2026-07-07"
+
+    assert _markdown_section_block(current_changelog, header) == _markdown_section_block(
+        tagged_changelog, header
+    )
+    unreleased = _markdown_section_block(current_changelog, "## Unreleased")
+    assert "ClinGen Allele Registry" in unreleased
+    assert "ClinGen Allele Registry" not in _markdown_section_block(current_changelog, header)
 
 
 def test_remote_http_docs_are_promoted_for_newcomers() -> None:
@@ -767,67 +788,17 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
     assert "MCP chart responses can now return SVG inline" in v0_8_17_block
 
 
-def test_release_overview_uses_manifest_reference_for_current_version_and_release_files() -> (
-    None
-):
+def test_release_overview_describes_committed_metadata_and_the_disabled_guard() -> None:
     overview = _read("architecture/technical/overview.md")
-    example_tag = _current_release_tag_example()
 
     assert "**Current version:** see `Cargo.toml`" in overview
-    assert "`scripts/check-version-sync.sh` keeps" in overview
-    assert "Release checklist" in overview
-    for required_file in [
-        "`Cargo.toml`",
-        "`Cargo.lock`",
-        "`pyproject.toml`",
-        "`manifest.json`",
-        "`CITATION.cff`",
-        "`CHANGELOG.md`",
-    ]:
-        assert required_file in overview
-
-    assert (
-        f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"'
-        in overview
-    )
-    assert 'version="${tag#v}"' in overview
-    assert 'BIOMCP_VERSION="$tag" bash install.sh' in overview
-    assert "https://biomcp.org/reference/bioasq-benchmark/" in overview
-    assert "https://biomcp.org/getting-started/api-keys/" in overview
-    assert "https://biomcp.org/user-guide/drug/" in overview
-
-
-def test_release_overview_post_tag_public_proof_requires_all_markers() -> None:
-    overview = _read("architecture/technical/overview.md")
-    post_tag_block = _markdown_section_block(overview, "### Post-tag public proof")
-    example_tag = _current_release_tag_example()
-
-    assert (
-        f'tag="${{BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. {example_tag}}}"'
-        in post_tag_block
-    )
-    assert 'version="${tag#v}"' in post_tag_block
-    assert 'BIOMCP_VERSION="$tag" bash install.sh' in post_tag_block
-    assert 'bioasq_page="$(mktemp)"' in post_tag_block
-    assert "rg -q 'hf-public-pre2026'" in post_tag_block
-    assert "rg -q 'Phase A\\+'" in post_tag_block
-    assert "rg -q 'Phase B'" in post_tag_block
-    assert 'api_keys_page="$(mktemp)"' in post_tag_block
-    assert "rg -q 'shared Semantic Scholar pool at 1 req/2sec'" in post_tag_block
-    assert "rg -q 'authenticated quota at 1 req/sec'" in post_tag_block
-    assert 'drug_page="$(mktemp)"' in post_tag_block
-    assert "rg -q 'trastuzumab regulatory --region who'" in post_tag_block
-    assert "rg -q 'WHO Prequalification local data setup'" in post_tag_block
-    assert "rg -q 'available \\(default path\\)'" in post_tag_block
-    assert "| rg 'hf-public-pre2026|Phase A\\+|Phase B'" not in post_tag_block
-    assert (
-        "| rg 'shared Semantic Scholar pool at 1 req/2sec|authenticated quota at 1 req/sec'"
-        not in post_tag_block
-    )
-    assert (
-        "| rg -- 'trastuzumab regulatory --region who|WHO Prequalification local data setup|available \\(default path\\)'"
-        not in post_tag_block
-    )
+    assert "committed `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, root `uv.lock`" in overview
+    assert "both `server.json` version fields" in overview
+    assert "`CITATION.cff`" in overview
+    assert "v0.8.25 is the latest published release." in overview
+    assert "Package versions are committed metadata, not values stamped from tags." in overview
+    assert "disabled until ticket 0957 installs the public-artifact gate" in overview
+    assert "Post-tag public proof" not in overview
 
 
 def test_gene_guide_includes_new_sections_and_positional_search() -> None:
