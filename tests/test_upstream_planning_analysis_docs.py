@@ -678,6 +678,9 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "Package versions are committed metadata, not values stamped from tags." in release_pipeline_section
     assert "disabled until ticket 0957 installs the public-artifact gate" in release_pipeline_section
     assert "scripts/check-version-sync.sh" in release_pipeline_section
+    assert "release workflow builds and publishes" not in technical_ws
+    assert "release workflow builds binaries, publishes" not in technical_ws
+    assert "release workflow stamps" not in technical_ws
     assert "workflow_dispatch:" in release_workflow
     assert "contents: read" in release_workflow
     assert "release-disabled:" in release_workflow
@@ -1115,23 +1118,85 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     ci_version_sync = _workflow_job_block(ci, "version-sync")
     ci_climb_hygiene = _workflow_job_block(ci, "climb-hygiene")
 
+    assert 'python-version: "3.12"' in ci_contracts
+    assert 'python-version: "3.12"' in ci_spec
     assert not spec_smoke.exists()
     assert _workflow_run_steps(ci_contracts) == expected_ci_contract_runs
+    assert "- uses: actions/checkout@v4" in ci_spec
+    assert "uses: arduino/setup-protoc@v3" in ci_spec
     assert "uses: dtolnay/rust-toolchain@stable" in ci_spec
     assert "uses: actions/setup-python@v5" in ci_spec
-    assert _workflow_run_steps(ci_spec)[-2:] == ["cargo build --release --locked", "make spec-pr"]
+    assert "uses: astral-sh/setup-uv@v4" in ci_spec
+    assert _workflow_run_steps(ci_spec)[-2:] == [
+        "cargo build --release --locked",
+        "make spec-pr",
+    ]
+    for marker in (
+        "id: spec-cache-meta",
+        "import tomllib",
+        "Cargo.toml",
+        "biomcp-version",
+        "spec-cache-schema-version",
+        "id: spec-cache",
+        "uses: actions/cache@v4",
+        "path: .cache/biomcp-specs/",
+        "if: steps.spec-cache.outputs.cache-hit == 'true'",
+        "BIOMCP_SPEC_CACHE_HIT=1",
+    ):
+        assert marker in ci_spec
+    assert (
+        "spec-http-${{ runner.os }}-${{ steps.spec-cache-meta.outputs.biomcp-version }}"
+        "-${{ steps.spec-cache-meta.outputs.spec-cache-schema-version }}"
+    ) in ci_spec
+
+    assert "- uses: actions/checkout@v4" in ci_version_sync
+    assert "fetch-depth: 0" in ci_version_sync
     assert _workflow_run_steps(ci_version_sync) == ["bash scripts/check-version-sync.sh"]
-    assert _workflow_run_steps(ci_climb_hygiene) == ["bash scripts/check-no-climb-tracked.sh"]
+    for forbidden in (
+        "setup-python",
+        "setup-uv",
+        "setup-protoc",
+        "rust-toolchain",
+        "cargo ",
+        "uv sync",
+        "python-version:",
+    ):
+        assert forbidden not in ci_version_sync
+
+    assert "- uses: actions/checkout@v4" in ci_climb_hygiene
+    assert _workflow_run_steps(ci_climb_hygiene) == [
+        "bash scripts/check-no-climb-tracked.sh"
+    ]
+    for forbidden in (
+        "setup-python",
+        "setup-uv",
+        "setup-protoc",
+        "rust-toolchain",
+        "cargo ",
+        "uv sync",
+        "python-version:",
+    ):
+        assert forbidden not in ci_climb_hygiene
 
     assert "workflow_dispatch:" in release
     assert "release-disabled:" in release
     assert "bash scripts/release-disabled.sh" in release
-    for forbidden in ("release:\n", "contents: write", "packages: write", "id-token: write", "publish", "gh-deploy"):
+    for forbidden in (
+        "release:\n",
+        "contents: write",
+        "packages: write",
+        "id-token: write",
+        "publish",
+        "gh-deploy",
+    ):
         assert forbidden not in release
 
     assert "name: Contract Smoke Tests" in contracts_smoke
     assert "schedule:" not in contracts_smoke
+    assert 'cron: "0 6 * * *"' not in contracts_smoke
     assert "workflow_dispatch:" in contracts_smoke
+    assert "continue-on-error: true" in contracts_smoke
+    assert "- run: bash scripts/contract-smoke.sh" in contracts_smoke
 
 def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     makefile = _read_repo("Makefile")

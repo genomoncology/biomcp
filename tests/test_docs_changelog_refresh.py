@@ -163,6 +163,32 @@ EXPECTED_RELEASE_TICKETS = {
         370,
     }
 }
+POST_TAG_CHANGELOG_MARKERS = (
+    "`variant_normalize_car`",
+    "content-addressed handles",
+    "`variant_erepo`",
+    "`gene_cspec`",
+    "JATS- and PMC-HTML-linked article supplements",
+    "one-pass pagination",
+    "`canonical_equivalence`",
+    "ClinGen LDH article identity",
+    "`variant articles --input <path|->`",
+    "article-search JSON compact by default",
+    "PMID/PMCID/DOI/arXiv/Semantic Scholar identifiers",
+    "provider-exact `search author`",
+    "opt-in PubMed article indexing",
+    "consequence-dropping fallback",
+    "disease survival `data`/`empty`/`unavailable` outcomes",
+    "`inapplicable` lookup state",
+    "invisible bidi markers",
+    "`BayesDel add-AF`",
+    "complex-table omission metadata",
+    "command-owned JSON collection paths",
+    "standard structured JSON errors",
+    "Europe PMC supplementary ZIPs",
+    "normal DTD-bearing citation XML",
+)
+
 EXPECTED_RELEASE_MARKERS = {
     "0.8.25": {
         "fixes": [
@@ -460,8 +486,10 @@ def test_v0_8_25_release_block_matches_the_published_tag_boundary() -> None:
         tagged_changelog, header
     )
     unreleased = _markdown_section_block(current_changelog, "## Unreleased")
-    assert "ClinGen Allele Registry" in unreleased
-    assert "ClinGen Allele Registry" not in _markdown_section_block(current_changelog, header)
+    published = _markdown_section_block(current_changelog, header)
+    for marker in POST_TAG_CHANGELOG_MARKERS:
+        assert marker in unreleased, f"post-tag changelog fact was lost: {marker}"
+        assert marker not in published, f"post-tag changelog fact remained published: {marker}"
 
 
 def test_remote_http_docs_are_promoted_for_newcomers() -> None:

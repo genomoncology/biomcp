@@ -384,8 +384,11 @@ def test_policies_page_covers_directory_privacy_requirements() -> None:
 
 def test_release_workflow_uses_committed_registry_metadata_without_rewriting_it() -> None:
     release = _read(".github/workflows/release.yml")
+    operator_docs = _read("docs/reference/mcp-server.md")
 
     assert "server.json" not in release
     assert "manifest.json" not in release
-    assert 'sed "s/^version' not in release
-    assert 'VERSION="$VER"' not in release
+    assert "committed `server.json`" in operator_docs
+    assert "never stamps registry metadata from a tag" in operator_docs
+    assert "release disabled until ticket 0957 installs the public-artifact gate" in operator_docs
+    assert "release workflow stamps `server.json` from the tag" not in operator_docs

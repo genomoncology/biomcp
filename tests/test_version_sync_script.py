@@ -25,15 +25,30 @@ def _copy_version_sync_fixture(tmp_path: Path) -> Path:
         "Cargo.toml",
         "Cargo.lock",
         "CITATION.cff",
+        "CHANGELOG.md",
+        "Formula/biomcp.rb",
         "manifest.json",
         "pyproject.toml",
         "server.json",
+        "uv.lock",
         "scripts/check-version-sync.sh",
     ):
         source = REPO_ROOT / relative_path
         target = fixture_root / relative_path
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
+    subprocess.run(["git", "init", "-q"], cwd=fixture_root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"], cwd=fixture_root, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"], cwd=fixture_root, check=True
+    )
+    subprocess.run(["git", "add", "."], cwd=fixture_root, check=True)
+    subprocess.run(
+        ["git", "commit", "-qm", "published release"], cwd=fixture_root, check=True
+    )
+    subprocess.run(["git", "tag", "v0.8.25"], cwd=fixture_root, check=True)
     return fixture_root
 
 

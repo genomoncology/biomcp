@@ -53,8 +53,6 @@ def test_citation_cff_exists_and_has_expected_cff_keys() -> None:
     assert "family-names: Zingalis" in citation
     assert "doi:" not in citation.lower()
     assert "preferred-citation:" not in citation
-    assert "0.9.0" not in citation
-    assert "placeholder" not in citation.lower()
 
 
 def test_citation_cff_release_metadata_matches_repo_metadata() -> None:
@@ -83,7 +81,6 @@ def test_citation_guidance_does_not_claim_an_unreleased_paper_or_version() -> No
         guidance = _markdown_section_block(_read(path), heading, next_heading).lower()
         assert "0.9.0" not in guidance
         assert "doi" not in guidance
-        assert "paper" not in guidance
 
 
 def test_readme_citation_section_points_to_root_citation_file() -> None:

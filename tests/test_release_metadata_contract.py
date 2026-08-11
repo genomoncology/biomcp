@@ -93,12 +93,14 @@ def _set_every_concrete_version(repo: Path, version: str) -> None:
         encoding="utf-8",
     )
     formula = repo / "Formula/biomcp.rb"
-    formula.write_text(
-        formula.read_text(encoding="utf-8").replace(
-            'version "__VERSION__"', f'version "{version}"'
-        ),
-        encoding="utf-8",
+    updated, replacements = re.subn(
+        r'(?m)^  version "(?:__VERSION__|[^"]+)"$',
+        f'  version "{version}"',
+        formula.read_text(encoding="utf-8"),
+        count=1,
     )
+    assert replacements == 1
+    formula.write_text(updated, encoding="utf-8")
 
 
 def test_version_lock_rejects_root_uv_lock_drift(tmp_path: Path) -> None:
@@ -114,12 +116,14 @@ def test_version_lock_rejects_root_uv_lock_drift(tmp_path: Path) -> None:
 def test_version_lock_rejects_formula_version_drift(tmp_path: Path) -> None:
     repo = _copy_release_metadata_fixture(tmp_path)
     formula = repo / "Formula/biomcp.rb"
-    formula.write_text(
-        formula.read_text(encoding="utf-8").replace(
-            'version "__VERSION__"', 'version "0.8.24"'
-        ),
-        encoding="utf-8",
+    updated, replacements = re.subn(
+        r'(?m)^  version "(?:__VERSION__|[^"]+)"$',
+        '  version "0.8.24"',
+        formula.read_text(encoding="utf-8"),
+        count=1,
     )
+    assert replacements == 1
+    formula.write_text(updated, encoding="utf-8")
 
     result = _run_version_lock(repo)
 
