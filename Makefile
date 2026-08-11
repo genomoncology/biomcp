@@ -1,4 +1,4 @@
-.PHONY: build test lint check-quality-ratchet release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
+.PHONY: build test lint check-quality-ratchet full-feature-check release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
 .PHONY: output-footprint
 
 SPEC_ROUTINE_PATHS = \
@@ -47,6 +47,7 @@ SPEC_LIVE_PATHS = \
 
 SPEC_PROFILE ?= spec
 ROUTINE_CARGO_FEATURES ?= --no-default-features
+export ROUTINE_CARGO_FEATURES
 SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
@@ -70,12 +71,18 @@ test-contracts:
 	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
-	./bin/lint
+	ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-quality-ratchet.sh
 
+full-feature-check:
+	$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features -- -D warnings
+	$(CARGO_WITH_IDENTITY) test --locked --all-features --lib sources::alphagenome::tests
+	$(CARGO_WITH_IDENTITY) build --release --locked --all-features --bin biomcp
+
 release-gate: lint
-	$(MAKE) test SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp" ROUTINE_CARGO_FEATURES=
-	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp" ROUTINE_CARGO_FEATURES=
+	$(MAKE) test
+	$(MAKE) full-feature-check
+	$(MAKE) spec SPEC_PROFILE=release SPEC_BIN="$(CURDIR)/target/release/biomcp"
 
 check-quality-ratchet:
 	@bash tools/check-quality-ratchet.sh

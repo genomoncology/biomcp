@@ -645,9 +645,9 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert "missing_article_filters_is_clean_usage_error" in article_usage
 
-    assert "CI (`.github/workflows/ci.yml`) runs five parallel jobs" in technical
+    assert "CI (`.github/workflows/ci.yml`) runs parallel jobs" in technical
     assert (
-        "`check` (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`)"
+        "`check` (`cargo fmt --check`, routine-feature Clippy/test, and `make full-feature-check`)"
         in technical_ws
     )
     assert (
@@ -686,7 +686,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         in technical_ws
     )
     assert (
-        "`make release-gate` is the single local routine release-blocking signal; it runs `make lint`, `make test`, and `make spec` directly."
+        "`make release-gate` is the single local release-blocking signal; it runs routine lint/test, `make full-feature-check`, and release-profile specs."
         in technical_ws
     )
     assert (
@@ -1254,7 +1254,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     runner = _read_repo("scripts/run-specs.sh")
     cargo_toml = _read_repo("Cargo.toml")
     assert (
-        ".PHONY: build test lint check-quality-ratchet release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
+        ".PHONY: build test lint check-quality-ratchet full-feature-check release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
         in makefile
     )
     assert "SPEC_PR_DESELECT_ARGS" not in makefile
@@ -1305,8 +1305,9 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     )
     assert re.search(
         r"^release-gate: lint\n"
-        r'\t\$\(MAKE\) test SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp" ROUTINE_CARGO_FEATURES=\n'
-        r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp" ROUTINE_CARGO_FEATURES=$',
+        r"\t\$\(MAKE\) test\n"
+        r"\t\$\(MAKE\) full-feature-check\n"
+        r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
         makefile,
         flags=re.MULTILINE,
     )
@@ -1397,7 +1398,7 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
         in contributing_ws
     )
     assert (
-        "`make release-gate` is the single routine release-readiness command"
+            "`make release-gate` is the single release-readiness command"
         in contributing_ws
     )
     assert (
@@ -1420,7 +1421,8 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "2026-04-23" in contributing
     assert "/usr/bin/time -p" in contributing
     assert "warm-cache steady-state" in contributing_ws
-    assert "`make release-gate` composes `lint test spec` directly" in contributing_ws
+    assert "`make release-gate` composes the routine gates" in contributing_ws
+    assert "named full-feature proof" in contributing_ws
     assert "| Command | Observed warm-cache | Notes |" in contributing
     assert "".join(("T", "BD")) not in contributing
     assert re.search(
@@ -1448,8 +1450,8 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
     assert "`make spec-pr`" in runbook_ws
     assert "`make spec`" in runbook_ws
     assert "`mustmatch test`" in runbook_ws
-    assert "single routine release-readiness signal" in runbook_ws
-    assert "it runs `lint test spec` directly" in runbook_ws
+    assert "single release-readiness signal" in runbook_ws
+    assert "named full-feature proof" in runbook_ws
     assert (
         "`make release-live-smoke` is a compatibility alias for that operator lane"
         in runbook_ws
@@ -1464,7 +1466,7 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
         "run the standard gates directly: `make lint`, `make test`, and `make spec`"
         in readme_source
     )
-    assert "`make release-gate` composes `lint test spec`" in readme_source
+    assert "`make release-gate` adds the named full-feature proof" in readme_source
     assert "There is no supported `make check` command" in readme_source
     assert "`cargo nextest run`" in technical_gate_section
     assert "`cargo test`" in technical_gate_section
@@ -1677,7 +1679,7 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "pre-commit hook" in runbook_premerge
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in runbook_premerge
     assert "`cargo fmt --check`" in runbook_premerge
-    assert "`cargo clippy --lib --tests -- -D warnings`" in runbook_premerge
+    assert "`cargo clippy --no-default-features --lib --tests -- -D warnings`" in runbook_premerge
     assert (
         "`cargo-deny` for the repo-local license and advisory policy checks in "
         "`make lint`" in runbook_prerequisites
@@ -1701,7 +1703,7 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`$(git rev-parse --git-path hooks/pre-commit)`" in contributing_hook
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in contributing_hook
     assert "`cargo fmt --check`" in contributing_hook
-    assert "`cargo clippy --lib --tests -- -D warnings`" in contributing_hook
+    assert "`cargo clippy --no-default-features --lib --tests -- -D warnings`" in contributing_hook
     assert "staged deletions" in contributing_hook
 
     assert "March validation profiles are retired" in march_profiles

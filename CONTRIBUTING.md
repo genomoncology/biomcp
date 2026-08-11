@@ -50,11 +50,18 @@ and run through `make test`. The executable docs themselves call
 `BIOMCP_CACHE_MODE=infinite` replay when CI sets `BIOMCP_SPEC_CACHE_HIT=1`.
 Use `make lint`, `make test`, and `make spec` as the canonical local gates;
 there is no supported `make check` command. `make release-gate` is the single
-routine release-readiness command; it runs `lint test spec` directly. The GitHub
+release-readiness command; it runs the routine gates, the named full-feature
+proof, and release-profile specs. The GitHub
 Release workflow additionally hard-runs the live contract and release smokes in
 `validate` before publishing assets; the contract smoke workflow is manual-only
 and does not run on a daily schedule. Use `make test-contracts` to rerun just
 the release-critical Python/docs lane.
+
+Routine gates use `--no-default-features` for one reusable lint/test/spec Cargo
+graph and therefore do not exercise AlphaGenome. `make full-feature-check`
+lints all targets with all shipped features, runs the AlphaGenome behavior
+tests, and builds the all-feature release CLI. `make release-gate` runs the
+routine gates plus that full-feature proof.
 
 ### Local Pre-Commit Hook
 
@@ -63,7 +70,8 @@ Developers who opt in to the repo-local pre-commit hook should install it at
 the repo does not install it automatically.
 
 Use this shape so `scripts/pre-commit-reject-march-artifacts.sh` runs before
-`cargo fmt --check` and `cargo clippy --lib --tests -- -D warnings`:
+`cargo fmt --check` and
+`cargo clippy --no-default-features --lib --tests -- -D warnings`:
 
 ```bash
 hook_path="$(git rev-parse --git-path hooks/pre-commit)"
@@ -77,7 +85,7 @@ cd "$ROOT"
 
 scripts/pre-commit-reject-march-artifacts.sh
 cargo fmt --check
-cargo clippy --lib --tests -- -D warnings
+cargo clippy --no-default-features --lib --tests -- -D warnings
 HOOK
 chmod +x "$hook_path"
 ```
@@ -92,7 +100,8 @@ Measured on beelink on 2026-04-23 with `/usr/bin/time -p` using warm-cache
 steady-state runs. Each command was run once untimed to warm build artifacts and
 the repo-owned spec cache under `.cache/biomcp-specs/`, then once with timing
 enabled. The `make spec-pr` row was refreshed on 2026-04-24 after the spec-v2
-canary cutover. `make release-gate` composes `lint test spec` directly, so its
+canary cutover. `make release-gate` composes the routine gates, the named
+full-feature proof, and release-profile specs, so its
 warm timing tracks the current sum of those warmed routine component lanes.
 
 | Command | Observed warm-cache | Notes |

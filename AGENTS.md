@@ -47,6 +47,11 @@ There is intentionally no `make check` convention. `make lint` includes the
 quality ratchet, `make test` includes both Rust and Python contract tests, and
 `make spec` is the routine mustmatch contract gate.
 
+Routine gates use `--no-default-features` so lint, test, and spec share one
+small Cargo graph; that graph does not exercise AlphaGenome. Run `make
+full-feature-check` for all shipped features and the AlphaGenome behavior tests.
+`make release-gate` includes both lanes.
+
 ## Skill rail
 
 Use this hybrid repo rail for dispatched work:

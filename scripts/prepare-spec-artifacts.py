@@ -87,6 +87,7 @@ def main() -> int:
     parser.add_argument("--mode", required=True)
     parser.add_argument("--profile", default="spec")
     parser.add_argument("--feature-on-bin")
+    parser.add_argument("--cargo-feature-arg", action="append", default=[])
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
@@ -115,12 +116,14 @@ def main() -> int:
         )
 
     if needs_feature_off:
+        if not args.cargo_feature_arg:
+            raise SystemExit("spec preparation requires the declared routine Cargo features")
         off_arguments = [
             "build",
             "--locked",
             "--profile",
             args.profile,
-            "--no-default-features",
+            *args.cargo_feature_arg,
             "--bin",
             "biomcp",
             "--example",
@@ -165,7 +168,7 @@ def main() -> int:
             [
                 "tree",
                 "--locked",
-                "--no-default-features",
+                *args.cargo_feature_arg,
                 "--edges",
                 "normal,build",
             ],

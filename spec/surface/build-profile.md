@@ -27,10 +27,8 @@ Cargo with a smaller feature set by hand is not enough if either routine gate
 silently restores the default client.
 
 This is a claim about the targets' own defaults, so the probe clears every
-build variable an outer gate may have overridden. `release-gate` re-enters
-`make` with `ROUTINE_CARGO_FEATURES=` and `SPEC_PROFILE=release`, and a
-command-line override reaches recipes as an environment variable that `?=`
-will not replace.
+build variable an outer gate may have overridden. The release gate keeps this
+routine graph intact, then adds a separate named full-feature proof.
 
 ```bash
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
@@ -39,8 +37,8 @@ env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
     -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \
   make -C ../.. -n spec | mustmatch like 'scripts/run-specs.sh spec'
-rg --fixed-strings '"--no-default-features"' ../../scripts/prepare-spec-artifacts.py \
-  | mustmatch like '"--no-default-features"'
+rg --fixed-strings 'ROUTINE_CARGO_FEATURES' ../../Makefile ../../bin/lint \
+  ../../scripts/run-specs.sh | mustmatch like 'ROUTINE_CARGO_FEATURES'
 ```
 
 The matching claim about what each binary *says* — that a feature-off build

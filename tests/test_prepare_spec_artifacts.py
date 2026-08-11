@@ -64,7 +64,7 @@ def test_runner_rejects_a_missing_prepared_artifact(tmp_path: Path) -> None:
     preparer.write_text(
         "import argparse\n"
         "p=argparse.ArgumentParser()\n"
-        "p.add_argument('--mode'); p.add_argument('--profile'); p.add_argument('--output')\n"
+        "p.add_argument('--mode'); p.add_argument('--profile'); p.add_argument('--output'); p.add_argument('--cargo-feature-arg', action='append')\n"
         "a=p.parse_args()\n"
         "names=['BIOMCP_BIN','BIOMCP_SPEC_FEATURE_OFF_BIN','BIOMCP_SPEC_MCP_EXAMPLE_BIN','BIOMCP_SPEC_CARGO_TREE','BIOMCP_SPEC_CARGO_METADATA']\n"
         "open(a.output, 'w').write(''.join(f'export {name}=/missing/{name}\\n' for name in names))\n",
@@ -83,7 +83,11 @@ def test_runner_rejects_a_missing_prepared_artifact(tmp_path: Path) -> None:
     completed = subprocess.run(
         ["bash", "scripts/run-specs.sh", "spec"],
         cwd=workspace,
-        env=os.environ | {"MUSTMATCH_BIN": str(mustmatch)},
+        env=os.environ
+        | {
+            "MUSTMATCH_BIN": str(mustmatch),
+            "ROUTINE_CARGO_FEATURES": "--no-default-features",
+        },
         text=True,
         capture_output=True,
         check=False,

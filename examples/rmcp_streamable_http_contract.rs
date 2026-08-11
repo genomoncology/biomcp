@@ -109,13 +109,12 @@ fn json_property_contains(value: &serde_json::Value, property: &str, needle: &st
 fn json_refs_contain(root: &serde_json::Value, value: &serde_json::Value, needle: &str) -> bool {
     match value {
         serde_json::Value::Object(map) => {
-            if let Some(reference) = map.get("$ref").and_then(serde_json::Value::as_str) {
-                if let Some(target) = reference
+            if let Some(reference) = map.get("$ref").and_then(serde_json::Value::as_str)
+                && let Some(target) = reference
                     .strip_prefix('#')
                     .and_then(|pointer| root.pointer(pointer))
-                {
-                    return json_contains(target, needle);
-                }
+            {
+                return json_contains(target, needle);
             }
             map.values()
                 .any(|child| json_refs_contain(root, child, needle))

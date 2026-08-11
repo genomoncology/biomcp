@@ -71,8 +71,9 @@ else
 fi
 
 if [ -f Cargo.toml ]; then
+  read -r -a routine_cargo_features <<< "${ROUTINE_CARGO_FEATURES:---no-default-features}"
   run_required 'Rust lint (cargo fmt --check)' cargo fmt --check
-  run_required 'Rust lint (cargo clippy -- -D warnings)' tools/with-build-identity cargo clippy -- -D warnings
+  run_required 'Rust lint (cargo clippy -- -D warnings)' tools/with-build-identity cargo clippy "${routine_cargo_features[@]}" -- -D warnings
   # Ask cargo, not PATH. Cargo finds its own subcommands in ~/.cargo/bin
   # whatever PATH says, so `command -v cargo-deny` reports missing on any
   # caller with a trimmed PATH — which is how the factory runs us.

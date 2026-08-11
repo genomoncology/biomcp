@@ -276,8 +276,10 @@ or public asset. Existing installation documentation continues to describe the
 already published v0.8.25 channels; `install.sh` resolves the latest release
 with platform assets rather than the latest merge to `main`.
 
-CI (`.github/workflows/ci.yml`) runs five parallel jobs: `check`
-(`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`),
+CI (`.github/workflows/ci.yml`) runs parallel jobs including `check`
+(`cargo fmt --check`, routine-feature Clippy/test, and `make
+full-feature-check`), `generated-sources` (the pinned non-writing protobuf
+regeneration check),
 `version-sync` (`bash scripts/check-version-sync.sh`),
 `climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`),
 `contracts` (`cargo build --release --locked`,
@@ -287,7 +289,8 @@ CI (`.github/workflows/ci.yml`) runs five parallel jobs: `check`
 (release build, spec-cache metadata/restore, then `make spec-pr`). The
 `version-sync` checkout fetches full tag history so its pre-1.0 changelog
 boundary check is reliable. Routine release proof uses `make release-gate`,
-which composes `make lint`, `make test`, and `make spec`; opt-in live
+which composes the routine lint/test graph, the named full-feature check, and
+release-profile specs; opt-in live
 confidence uses `make verify` (`make release-live-smoke` aliases it).
 `spec-stable` restores `.cache/biomcp-specs/`, exports
 `BIOMCP_SPEC_CACHE_HIT=1` only on cache hits, and relies on
@@ -310,18 +313,23 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   quality ratchet; the lint script runs `cargo deny check licenses` plus
   `cargo deny check advisories`, and still rejects deprecated install strings
   in `README.md` and `docs/`.
+- Routine gates use `--no-default-features` so Clippy, nextest, and spec
+  preparation share one small graph; this lane does not exercise AlphaGenome.
+  `make full-feature-check` lints all targets with all shipped features, runs
+  the AlphaGenome behavior tests with `cargo test`, and builds the all-feature
+  release CLI.
 - Repo-local `make test` runs `cargo nextest run` plus the Python/docs contract
   lane against `target/spec/biomcp`. Routine `make spec` shares that selected
-  binary; the CI `check` job still uses the raw `cargo fmt --check`,
-  `cargo clippy -- -D warnings`, and `cargo test` sequence directly.
+  binary; the CI `check` job uses the same no-default-feature Cargo graph and
+  then invokes the named full-feature proof.
 - CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
   `check`, `version-sync`, `climb-hygiene`, `contracts`, and `spec-stable`.
 - Docs-site validation and Python contract tests now run under `make test`;
   CI still keeps that lane in the separate `contracts` job for parallelism.
-- `make release-gate` is the single local routine release-blocking signal; it
-  runs `make lint`, `make test`, and `make spec` directly. Both
-  executable-contract consumers are explicitly routed to
-  `target/release/biomcp`. Live public-upstream
+- `make release-gate` is the single local release-blocking signal; it runs
+  routine lint/test, `make full-feature-check`, and release-profile specs. The
+  spec preparation phase receives the all-feature `target/release/biomcp` and
+  also keeps its distinct routine feature-off artifact. Live public-upstream
   confidence is opt-in through `make verify` (`make release-live-smoke` aliases it).
 - The grounding implementation surfaces for this split are `Makefile`,
   `.github/workflows/ci.yml`, and `.github/workflows/contracts.yml`.

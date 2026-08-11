@@ -167,7 +167,8 @@ make install
 
 For repo-local verification, run the standard gates directly: `make lint`,
 `make test`, and `make spec`. `make test` includes both Rust nextest and the
-Python/docs contract lane, while `make release-gate` composes `lint test spec`.
+Python/docs contract lane, while `make release-gate` adds the named full-feature
+proof and runs specs against the all-feature release binary.
 There is no supported `make check` command. Use `make verify` only for opt-in
 live public-upstream confidence; `make release-live-smoke` remains a
 compatibility alias.

@@ -1075,11 +1075,12 @@ def test_ticket_378_release_gate_routes_routine_specs_to_standard_gates() -> Non
     assert "lint" in release_gate_deps, "release-gate must compose the standard lint gate directly"
     assert re.search(
         r"^release-gate: lint\n"
-        r'\t\$\(MAKE\) test SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp" ROUTINE_CARGO_FEATURES=\n'
-        r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp" ROUTINE_CARGO_FEATURES=$',
+        r"\t\$\(MAKE\) test\n"
+        r"\t\$\(MAKE\) full-feature-check\n"
+        r'\t\$\(MAKE\) spec SPEC_PROFILE=release SPEC_BIN="\$\(CURDIR\)/target/release/biomcp"$',
         makefile,
         flags=re.MULTILINE,
-    ), "release-gate must run the standard test and spec gates against the release binary"
+    ), "release-gate must run routine gates, full-feature proof, and release specs"
     assert "spec-pr" not in release_gate_deps and "verify" not in release_gate_deps, (
         "release-gate must not keep live/cache-backed lanes as routine proof"
     )

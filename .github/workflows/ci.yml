@@ -14,8 +14,9 @@ jobs:
           components: rustfmt, clippy
 
       - run: cargo fmt --check
-      - run: tools/with-build-identity cargo clippy -- -D warnings
-      - run: tools/with-build-identity cargo test
+      - run: tools/with-build-identity cargo clippy --no-default-features -- -D warnings
+      - run: tools/with-build-identity cargo test --no-default-features
+      - run: make full-feature-check
 
   generated-sources:
     runs-on: ubuntu-latest

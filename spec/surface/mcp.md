@@ -306,19 +306,21 @@ make -C ../.. -n lint 2>&1 | mustmatch like "./bin/lint
 tools/check-quality-ratchet.sh"
 ```
 
-## Repository Release Gate Uses The Three Standard Gates
+## Repository Release Gate Adds One Full-Feature Proof
 
-The routine release gate should compose the workspace-standard commands
-directly, while overriding the spec profile back to the release binary for final
-artifact proof. Keeping the recipe visible prevents an obsolete shim or narrow
-spec subset from replacing the standard `lint`, `test`, and release-profile
-`spec` gate.
+The release gate should run the small routine lint/test graph, add the named
+all-feature check, and then run specs against the release binary. Keeping the
+recipe visible prevents an obsolete shim or narrow spec subset from replacing
+either the fast routine proof or the shipped-feature proof.
 
 ```bash
 env -u BIOMCP_BIN -u SPEC_PROFILE -u MAKEFLAGS -u MAKEOVERRIDES \
   make -C ../.. -n release-gate \
   2>&1 | mustmatch like 'cargo nextest run
-cargo build --locked --profile release
+make full-feature-check
+cargo clippy --locked --all-targets --all-features
+cargo test --locked --all-features --lib sources::alphagenome::tests
+cargo build --release --locked --all-features --bin biomcp
 /target/release/biomcp" uv run --no-sync pytest tests/ -v
 /target/release/biomcp" uv run --no-sync mkdocs build --strict
 make spec SPEC_PROFILE=release SPEC_BIN='

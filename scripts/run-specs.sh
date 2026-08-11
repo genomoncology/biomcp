@@ -400,11 +400,22 @@ prepare_spec_artifacts() {
 
   local env_file="$ROOT/.cache/spec-artifacts.env"
   mkdir -p "$ROOT/.cache"
+  : "${ROUTINE_CARGO_FEATURES:?run specification modes through a Make target that declares the routine Cargo features}"
+  local -a routine_cargo_features=()
+  read -r -a routine_cargo_features <<< "$ROUTINE_CARGO_FEATURES"
+  ((${#routine_cargo_features[@]})) || {
+    echo "ROUTINE_CARGO_FEATURES must select the routine Cargo graph" >&2
+    return 1
+  }
   local -a arguments=(
     --mode "$mode"
     --profile "${SPEC_PROFILE:-spec}"
     --output "$env_file"
   )
+  local cargo_feature_arg
+  for cargo_feature_arg in "${routine_cargo_features[@]}"; do
+    arguments+=("--cargo-feature-arg=$cargo_feature_arg")
+  done
   if [[ -n "${BIOMCP_FEATURE_ON_BIN:-}" ]]; then
     arguments+=(--feature-on-bin "$BIOMCP_FEATURE_ON_BIN")
   fi

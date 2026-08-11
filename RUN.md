@@ -104,27 +104,33 @@ Run the heavier local ticket proofs explicitly:
 make lint               # repo lint plus quality ratchet
 make test               # Rust nextest plus Python/docs contract lane
 make spec               # offline deterministic routine spec gate
-make release-gate       # full routine release-readiness: lint + test + spec
+make release-gate       # routine gates + full-feature proof + release specs
 make verify             # opt-in live public-upstream confidence
 make test-contracts     # rerun just Python/docs contract lane
 ```
 
 The installed pre-commit hook is the fast local gate. It should run
 `scripts/pre-commit-reject-march-artifacts.sh` before `cargo fmt --check` and
-`cargo clippy --lib --tests -- -D warnings`. The March helper rejects staged
+`cargo clippy --no-default-features --lib --tests -- -D warnings`. The March helper rejects staged
 non-deletion `.march/*` paths outside the exhaustive allowlist:
 `.march/code-review-log.md`. The hook does not run `cargo nextest run`,
 `make lint`, `make test`, `make spec`,
 `make spec-pr`, `make release-gate`, or `make test-contracts`.
 
 Use `make lint`, `make test`, and `make spec` for the canonical local gates.
+Routine gates use `--no-default-features`, so Clippy, nextest, and spec
+preparation reuse one small Cargo graph and do not exercise AlphaGenome. Run
+`make full-feature-check` to lint all targets with all shipped features, run
+the AlphaGenome behavior tests, and build the all-feature release CLI. The
+release gate includes this full-feature proof after the routine lint and test
+lanes and before release-profile specs.
 `make lint` runs the repo lint script, `cargo deny check licenses`,
 `cargo deny check advisories`, and the quality ratchet. `make test` runs
 `cargo nextest run` plus the Python/docs contract lane, so landing-copy,
 Python, and strict-docs regressions fail the same local test gate. Use
-`make release-gate` for the single routine release-readiness signal; it runs
-`lint test spec` directly, with the release profile selected for both
-executable-contract consumers. There is no supported `make check` command. Use
+`make release-gate` for the single release-readiness signal; it runs routine
+lint and test, the named full-feature proof, then specs against the all-feature
+release binary. There is no supported `make check` command. Use
 `make verify` only as an explicit opt-in live public-upstream confidence lane;
 `make release-live-smoke` is a compatibility alias for that operator lane.
 `make spec-pr` remains available for the offline executable-spec corpus by
@@ -198,7 +204,7 @@ make spec-pr
 
 `make spec` is the offline deterministic routine spec gate. `make
 spec-contracts` is a deterministic legacy subset kept for profile compatibility;
-`make release-gate` now runs the full `make spec` gate directly. `make verify` is the explicit opt-in live lane for
+`make release-gate` runs the routine gates, full-feature proof, and release-profile `make spec` gate. `make verify` is the explicit opt-in live lane for
 discover/OLS4, disease, article source-status, variant-normalization,
 phenotype, protein, pathway, and the other public-upstream specs through
 `tools/biomcp-ci`; `make release-live-smoke` delegates to `make verify` for old
