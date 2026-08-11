@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import shutil
 import subprocess
 import tomllib
@@ -10,6 +11,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LINT_SCRIPT = REPO_ROOT / "bin" / "lint"
+TEXT_LINT_SCRIPT = REPO_ROOT / "tools" / "check-tracked-text"
 PYPROJECT_FILE = REPO_ROOT / "pyproject.toml"
 RUFF_GATE_PROBE = (
     REPO_ROOT
@@ -23,8 +25,10 @@ RUFF_GATE_PROBE = (
 def _copy_lint_fixture(tmp_path: Path) -> Path:
     fixture_root = tmp_path / "repo"
     (fixture_root / "bin").mkdir(parents=True)
+    (fixture_root / "tools").mkdir()
     (fixture_root / "docs").mkdir()
     shutil.copy2(LINT_SCRIPT, fixture_root / "bin" / "lint")
+    shutil.copy2(TEXT_LINT_SCRIPT, fixture_root / "tools" / "check-tracked-text")
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
     return fixture_root
 
@@ -99,6 +103,77 @@ def test_lint_reports_each_offending_public_doc_line_once(tmp_path: Path) -> Non
     offending_line = "README.md:1:pip install biomcp-python"
     assert result.returncode == 1
     assert result.stdout.count(offending_line) == 1
+
+
+def test_lint_rejects_credentials_tbd_and_tracked_pycache_in_one_pass(
+    tmp_path: Path,
+) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    stats_path = tmp_path / "text-lint-stats.json"
+    _track_files(
+        repo_root,
+        {
+            "src/unsafe.rs": "const API_KEY = \"fixture-secret\";\nfn work() { TBD(); }\n",
+            "src/comment.rs": "// TBD: comments are allowed\n",
+            "tests/fixtures/allowed.py": "TBD = 'fixture marker'\n",
+            "pkg/__pycache__/stale.pyc": "tracked stale bytecode\n",
+        },
+    )
+    subprocess.run(
+        ["git", "add", "-f", "pkg/__pycache__/stale.pyc"], cwd=repo_root, check=True
+    )
+
+    result = _run_lint(
+        repo_root,
+        env={
+            "PATH": os.environ.get("PATH", ""),
+            "BIOMCP_TEXT_LINT_STATS": str(stats_path),
+        },
+    )
+
+    assert result.returncode == 1
+    assert "src/unsafe.rs:1:" in result.stdout
+    assert "src/unsafe.rs:2:" in result.stdout
+    assert "src/comment.rs" not in result.stdout
+    assert "tests/fixtures/allowed.py" not in result.stdout
+    assert "pkg/__pycache__/stale.pyc" in result.stdout
+    stats = json.loads(stats_path.read_text(encoding="utf-8"))
+    assert stats["tracked_file_collections"] == 1
+    assert stats["max_reads_per_file"] == 1
+
+
+@pytest.mark.parametrize(
+    "credential",
+    [
+        "DATABASE_URL=postgres://fixture-user:fixture-password@example.test/db",
+        "DSN=https://fixture-user:fixture-password@example.test/ingest",
+        "ACCESS_KEY=fixture-access-key",
+    ],
+)
+def test_lint_retains_each_credential_pattern(
+    tmp_path: Path, credential: str
+) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(repo_root, {"config.txt": f"{credential}\n"})
+
+    result = _run_lint(repo_root)
+
+    assert result.returncode == 1
+    assert f"config.txt:1:{credential}" in result.stdout
+    assert "[FAIL] credential scan" in result.stdout
+
+
+def test_lint_allows_deferred_credential_environment_references(tmp_path: Path) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(
+        repo_root,
+        {"config.txt": "DSN=$SENTRY_DSN\nAPI_KEY=$BIOMCP_API_KEY\n"},
+    )
+
+    result = _run_lint(repo_root)
+
+    assert result.returncode == 0
+    assert "[PASS] credential scan" in result.stdout
 
 
 def test_lint_rejects_docs_code_block_with_test_code_leak_signature(

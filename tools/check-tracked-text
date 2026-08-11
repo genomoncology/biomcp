@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+from collections import Counter
+from pathlib import Path
+
+CHECK_LABELS = {
+    "credentials": "credential scan",
+    "tbd": "TBD scan",
+    "pycache": "stale __pycache__ scan",
+    "deprecated_docs": "deprecated public-doc install string scan",
+    "docs_test_code": "docs test-code leak scan",
+}
+TBD_SUFFIXES = {".py", ".sh", ".bash", ".zsh", ".rs", ".zig", ".js", ".ts", ".tsx", ".jsx"}
+CREDENTIAL_PATTERNS = [
+    re.compile(r"postgres://[^\s\"']+:[^\s\"']+@"),
+    re.compile(r"(?:^|[^A-Za-z0-9_])DSN\s*=\s*[\"']?[^$\"'\s][^\s]*"),
+    re.compile(
+        r"(?:^|[^A-Za-z0-9_])(?:API_KEY|SECRET_KEY|API_SECRET|ACCESS_KEY)"
+        r"\s*=\s*[\"']?[A-Za-z0-9][^\s]*"
+    ),
+]
+
+
+def tracked_paths(root: Path) -> list[str]:
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z"],
+        check=True,
+        capture_output=True,
+    )
+    return sorted(path.decode("utf-8") for path in result.stdout.split(b"\0") if path)
+
+
+def is_tbd_target(relative: str) -> bool:
+    if relative == "tests/test_lint.py":
+        return False
+    if relative.startswith(("tests/fixtures/", "testdata/", "spec/fixtures/")):
+        return False
+    path = Path(relative)
+    return path.name in {"Makefile", "Dockerfile"} or path.suffix in TBD_SUFFIXES
+
+
+def is_tbd_comment(relative: str, line: str) -> bool:
+    suffix = Path(relative).suffix
+    if Path(relative).name in {"Makefile", "Dockerfile"} or suffix in {
+        ".py",
+        ".sh",
+        ".bash",
+        ".zsh",
+    }:
+        return bool(re.match(r"^\s*#", line))
+    if suffix in {".rs", ".zig", ".js", ".ts", ".tsx", ".jsx"}:
+        return bool(re.match(r"^\s*//", line))
+    return False
+
+
+def docs_code_leaks(relative: str, lines: list[str]) -> list[str]:
+    findings: list[str] = []
+    inside_fence = False
+    fence_start = 0
+    signatures: set[str] = set()
+
+    def close_fence() -> None:
+        nonlocal signatures
+        if {"pathlib", "read_text", "assert"}.issubset(signatures):
+            findings.append(
+                f"{relative}:{fence_start}: code block contains from pathlib import Path, "
+                ".read_text(), and assert"
+            )
+        signatures = set()
+
+    for line_number, line in enumerate(lines, start=1):
+        if line.startswith("```"):
+            if inside_fence:
+                close_fence()
+            else:
+                fence_start = line_number
+            inside_fence = not inside_fence
+            continue
+        if not inside_fence:
+            continue
+        if "from pathlib import Path" in line:
+            signatures.add("pathlib")
+        if ".read_text()" in line:
+            signatures.add("read_text")
+        if re.search(r"(?:^|[^A-Za-z0-9_])assert(?:[^A-Za-z0-9_]|$)", line):
+            signatures.add("assert")
+    if inside_fence:
+        close_fence()
+    return findings
+
+
+def run(root: Path) -> tuple[dict[str, list[str]], Counter[str]]:
+    findings = {name: [] for name in CHECK_LABELS}
+    reads: Counter[str] = Counter()
+    paths = tracked_paths(root)
+
+    for relative in paths:
+        if "/__pycache__/" in f"/{relative}":
+            findings["pycache"].append(relative)
+
+        path = root / relative
+        if not path.is_file():
+            continue
+        data = path.read_bytes()
+        reads[relative] += 1
+        if b"\0" in data:
+            continue
+        text = data.decode("utf-8", errors="replace")
+        lines = text.splitlines()
+
+        if relative != "tests/test_lint.py":
+            for line_number, line in enumerate(lines, start=1):
+                if any(pattern.search(line) for pattern in CREDENTIAL_PATTERNS):
+                    findings["credentials"].append(f"{relative}:{line_number}:{line}")
+
+        if is_tbd_target(relative):
+            for line_number, line in enumerate(lines, start=1):
+                if "TBD" in line and not is_tbd_comment(relative, line) and not re.match(
+                    r"^\s*--", line
+                ):
+                    findings["tbd"].append(f"{relative}:{line_number}:{line}")
+
+        if relative == "README.md" or relative.startswith("docs/"):
+            for line_number, line in enumerate(lines, start=1):
+                if "biomcp-python" in line:
+                    findings["deprecated_docs"].append(
+                        f"{relative}:{line_number}:{line}"
+                    )
+
+        if relative.startswith("docs/") and relative.endswith(".md"):
+            findings["docs_test_code"].extend(docs_code_leaks(relative, lines))
+
+    stats_path = os.environ.get("BIOMCP_TEXT_LINT_STATS")
+    if stats_path:
+        Path(stats_path).write_text(
+            json.dumps(
+                {
+                    "tracked_file_collections": 1,
+                    "tracked_files": len(paths),
+                    "files_read": sum(reads.values()),
+                    "max_reads_per_file": max(reads.values(), default=0),
+                },
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    return findings, reads
+
+
+def main() -> int:
+    root = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path.cwd().resolve()
+    findings, _ = run(root)
+    headings = {
+        "credentials": "Credential-like patterns found in tracked files:",
+        "tbd": "TBD markers found in shipped code:",
+        "pycache": "Tracked __pycache__ paths found (add __pycache__/ to .gitignore):",
+        "deprecated_docs": "Deprecated public-doc install strings found:",
+        "docs_test_code": "Docs code blocks contain leaked test-code signatures:",
+    }
+    failed = False
+    for name, label in CHECK_LABELS.items():
+        rows = findings[name]
+        if rows:
+            print(headings[name])
+            print("\n".join(rows))
+            print(f"[FAIL] {label}")
+            failed = True
+        else:
+            print(f"[PASS] {label}")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
