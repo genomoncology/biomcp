@@ -524,8 +524,10 @@ case "$mode" in
       require_ctgov_fixture_env
     fi
     run_disease_survival_fixture
-    run_provider_contract_fixture
     run_vaers_fixture
+    # The provider fixture owns the shared OpenFDA base in the combined suite;
+    # the standalone VAERS fixture still exports its self-contained base.
+    run_provider_contract_fixture
     run_variant_identity_fixture
     run_clingen_cspec_fixture
     run_cpic_fixture

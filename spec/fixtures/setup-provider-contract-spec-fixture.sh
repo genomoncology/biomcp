@@ -77,6 +77,10 @@ OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
 OPENFDA_DEVICE_510K = fixture("openfda/device_510k_brca1_20260811.json")
 OPENFDA_DEVICE_PMA = fixture("openfda/device_pma_brca1_20260811.json")
+OPENFDA_FAERS_EVENT = fixture("openfda/faers_event.json")
+OPENFDA_FAERS_COUNT = fixture(
+    "openfda/faers_count_pembrolizumab_reaction_20260811.json"
+)
 CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
 OPENTARGETS_DRUG = fixture("opentargets/drug_pembrolizumab_20260811.json")
 QUICKGO_ANNOTATIONS = fixture("quickgo/annotations_braf_20260811.json")
@@ -145,6 +149,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
         if parsed.path == "/openfda/drug/drugsfda.json":
             send(self, 200, OPENFDA_DRUGSFDA)
+            return
+        if parsed.path == "/openfda/drug/event.json":
+            query = parse_qs(parsed.query)
+            if query.get("count") == ["patient.reaction.reactionmeddrapt.exact"]:
+                send(self, 200, OPENFDA_FAERS_COUNT)
+            else:
+                send(self, 200, OPENFDA_FAERS_EVENT)
             return
         if parsed.path == "/openfda/device/510k.json":
             query = parse_qs(parsed.query)
