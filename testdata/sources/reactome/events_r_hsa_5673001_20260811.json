@@ -1,0 +1,32 @@
+[
+  {
+    "displayName": "RAF activation"
+  },
+  {
+    "displayName": "Phosphorylation of RAF"
+  },
+  {
+    "displayName": "MRAS:SHOC2:PPP1CC dephosphorylates inactive RAFs"
+  },
+  {
+    "displayName": "p-S311,S406 KSR1:MARK3 binds YWHAB dimer"
+  },
+  {
+    "displayName": "PP2A dephosphorylates KSR1"
+  },
+  {
+    "displayName": "YWHAB dimer dissociates from KSR1:MARK3"
+  },
+  {
+    "displayName": "Raf dimer inhibitors bind RAF heterodimers"
+  },
+  {
+    "displayName": "PP2A dephosphorylates inactive RAFs"
+  },
+  {
+    "displayName": "YWHAB dimer dissociates from dephosphorylated RAF"
+  },
+  {
+    "displayName": "MARK3 phosphorylates KSR1"
+  }
+]

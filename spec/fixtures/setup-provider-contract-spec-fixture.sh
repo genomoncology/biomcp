@@ -92,6 +92,16 @@ OPENTARGETS = {
     ("ENSG00000141736", False): fixture("opentargets/clinical_erbb2_20260811.json"),
     ("ENSG00000012048", False): fixture("opentargets/clinical_brca1_20260811.json"),
 }
+KEGG_SEARCH = fixture("kegg/search_mapk_20260811.txt")
+KEGG_DETAIL = fixture("kegg/get_hsa05200_20260811.txt")
+REACTOME_SEARCH = {
+    "3": fixture("reactome/search_mapk_limit3_20260811.json"),
+    "5": fixture("reactome/search_mapk_limit5_20260811.json"),
+}
+REACTOME_DETAIL = fixture("reactome/get_r_hsa_5673001_20260811.json")
+REACTOME_PARTICIPANTS = fixture("reactome/participants_r_hsa_5673001_20260811.json")
+REACTOME_EVENTS = fixture("reactome/events_r_hsa_5673001_20260811.json")
+WIKIPATHWAYS_UNAVAILABLE = fixture("wikipathways/search_unavailable_20260811.html")
 
 
 def send(handler, status, body, content_type="application/json"):
@@ -162,6 +172,33 @@ class Handler(BaseHTTPRequestHandler):
                 return
         if parsed.path == "/hpa/ENSG00000157764.xml":
             send(self, 200, HPA_BRAF, "application/xml")
+            return
+        if parsed.path == "/kegg/find/pathway/MAPK%20signaling%20pathway":
+            send(self, 200, KEGG_SEARCH, "text/plain")
+            return
+        if parsed.path == "/kegg/get/hsa05200":
+            send(self, 200, KEGG_DETAIL, "text/plain")
+            return
+        if parsed.path == "/reactome/ContentService/search/query":
+            query = parse_qs(parsed.query)
+            if (
+                query.get("query") == ["MAPK signaling pathway"]
+                and query.get("species") == ["Homo sapiens"]
+                and query.get("pageSize", [""])[0] in REACTOME_SEARCH
+            ):
+                send(self, 200, REACTOME_SEARCH[query["pageSize"][0]])
+                return
+        if parsed.path == "/reactome/ContentService/data/query/R-HSA-5673001":
+            send(self, 200, REACTOME_DETAIL)
+            return
+        if parsed.path == "/reactome/ContentService/data/participants/R-HSA-5673001":
+            send(self, 200, REACTOME_PARTICIPANTS)
+            return
+        if parsed.path == "/reactome/ContentService/data/pathway/R-HSA-5673001/containedEvents":
+            send(self, 200, REACTOME_EVENTS)
+            return
+        if parsed.path == "/wikipathways/findPathwaysByText.json":
+            send(self, 404, WIKIPATHWAYS_UNAVAILABLE, "text/html; charset=utf-8")
             return
 
         send(self, 404, b'{"error":"fixture route not found"}')
@@ -250,6 +287,9 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_HPA_BASE=%q\n' "$base_url/hpa"
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/dgidb/api"
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih/v2"
+  printf 'export BIOMCP_KEGG_BASE=%q\n' "$base_url/kegg"
+  printf 'export BIOMCP_REACTOME_BASE=%q\n' "$base_url/reactome/ContentService"
+  printf 'export BIOMCP_WIKIPATHWAYS_BASE=%q\n' "$base_url/wikipathways"
   printf 'export BIOMCP_EMA_DIR=%q\n' "$ema_dir"
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"
   printf 'export BIOMCP_WHO_IVD_DIR=%q\n' "$who_ivd_dir"

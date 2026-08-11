@@ -1783,6 +1783,102 @@
         "minimization_or_redaction": "none; the committed bytes are byte-faithful",
         "provider_origin_statement": "Bytes were recorded from the public MyVariant.info response."
       }
+    },
+    {
+      "path": "kegg/search_mapk_20260811.txt",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "KEGG",
+        "request": "https://rest.kegg.jp/find/pathway/MAPK%20signaling%20pathway",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "001a20edafa0815bdc6931a52e30e28020ccc35803b83a9421378d1ff1a87afd",
+        "minimization_or_redaction": "No fields removed; text bytes are byte-faithful.",
+        "provider_origin_statement": "Bytes were recorded from the public KEGG response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "kegg/get_hsa05200_20260811.txt",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "KEGG",
+        "request": "https://rest.kegg.jp/get/hsa05200",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "a702ae2abae96bde87d2e56bf82d5e370e7f81e226f01fce6b90a6b8fee8fb9b",
+        "minimization_or_redaction": "Reduced to ENTRY, NAME, and DESCRIPTION fields consumed by the default pathway card.",
+        "provider_origin_statement": "Bytes were recorded from the public KEGG response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "reactome/search_mapk_limit3_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Reactome",
+        "request": "https://reactome.org/ContentService/search/query?query=MAPK+signaling+pathway&species=Homo+sapiens&pageSize=3",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "1555f84431651aff092b3491901a301ec2488225b6117aa75cad6223bb6c1ca1",
+        "minimization_or_redaction": "Reduced to totalResults and the first ten entry IDs and names.",
+        "provider_origin_statement": "Bytes were recorded from the public Reactome response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "reactome/search_mapk_limit5_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Reactome",
+        "request": "https://reactome.org/ContentService/search/query?query=MAPK+signaling+pathway&species=Homo+sapiens&pageSize=5",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "1555f84431651aff092b3491901a301ec2488225b6117aa75cad6223bb6c1ca1",
+        "minimization_or_redaction": "Reduced to totalResults and the first ten entry IDs and names.",
+        "provider_origin_statement": "Bytes were recorded from the public Reactome response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "reactome/get_r_hsa_5673001_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Reactome",
+        "request": "https://reactome.org/ContentService/data/query/R-HSA-5673001",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "ce40b010bb35e2031a4578f1e31b00a1626d8c6167d43a6adc862e7199477cf0",
+        "minimization_or_redaction": "Reduced to stable ID, display name, species, and the first summary.",
+        "provider_origin_statement": "Bytes were recorded from the public Reactome response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "reactome/participants_r_hsa_5673001_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Reactome",
+        "request": "https://reactome.org/ContentService/data/participants/R-HSA-5673001",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "c460ba1d4b3c26af6132760d7103d59c0f73d8e8fdf7cf0299dffa2431f19f6d",
+        "minimization_or_redaction": "Reduced to the first ten participant display names.",
+        "provider_origin_statement": "Bytes were recorded from the public Reactome response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "reactome/events_r_hsa_5673001_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Reactome",
+        "request": "https://reactome.org/ContentService/data/pathway/R-HSA-5673001/containedEvents",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "0ffe5f60120c615d9d17120001d624de23ab7968e0c41ba2741da515476d9a96",
+        "minimization_or_redaction": "Reduced to the first ten contained-event display names or numeric IDs.",
+        "provider_origin_statement": "Bytes were recorded from the public Reactome response through BioMCP production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "wikipathways/search_unavailable_20260811.html",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "WikiPathways",
+        "request": "https://webservice.wikipathways.org/findPathwaysByText.json",
+        "captured_at": "2026-08-11T22:56:41Z",
+        "sha256": "b620507312c5e97566a3c6cfaf99144fefc18a0da7d941401dfa0f5f58fb0368",
+        "minimization_or_redaction": "No fields removed; the captured HTTP 404 body is byte-faithful.",
+        "provider_origin_statement": "Bytes were recorded from the public WikiPathways response through BioMCP production request path before the stated minimization."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,

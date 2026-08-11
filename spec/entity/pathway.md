@@ -2,8 +2,8 @@
 
 Pathway search and detail calls are where BioMCP has to normalize the same
 biological idea across KEGG, Reactome, and WikiPathways without hiding
-source-specific limits. These batch-B canaries keep alias handling, ranking,
-default cards, and rejection guidance honest.
+source-specific limits. These routine contracts replay fresh provider
+responses through one fail-closed local server.
 
 ## Long-Form Alias Normalization
 
@@ -39,7 +39,7 @@ source-identified pathway rows visible instead of returning an empty card.
 ## Exact KEGG Title Participation
 
 The same exact title is also the stable KEGG pathway label for `hsa04010`.
-When the live KEGG source participates, search should expose that exact-title
+When the captured KEGG source participates, search should expose that exact-title
 row instead of silently returning only non-KEGG matches.
 
 ```bash

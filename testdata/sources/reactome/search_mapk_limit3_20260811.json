@@ -1,0 +1,59 @@
+{
+  "totalResults": null,
+  "results": [
+    {
+      "entries": [
+        {
+          "stId": "R-HSA-9652817",
+          "id": "R-HSA-9652817",
+          "name": "<span class=\"highlighting\" >Signaling</span> by <span class=\"highlighting\" >MAPK</span> mutants"
+        },
+        {
+          "stId": "R-HSA-6802957",
+          "id": "R-HSA-6802957",
+          "name": "Oncogenic <span class=\"highlighting\" >MAPK</span> <span class=\"highlighting\" >signaling</span>"
+        },
+        {
+          "stId": "R-HSA-168638",
+          "id": "R-HSA-168638",
+          "name": "NOD1/2 <span class=\"highlighting\" >Signaling</span> <span class=\"highlighting\" >Pathway</span>"
+        },
+        {
+          "stId": "R-HSA-381753",
+          "id": "R-HSA-381753",
+          "name": "Olfactory <span class=\"highlighting\" >Signaling</span> <span class=\"highlighting\" >Pathway</span>"
+        },
+        {
+          "stId": "R-HSA-5675221",
+          "id": "R-HSA-5675221",
+          "name": "Negative regulation of <span class=\"highlighting\" >MAPK</span> <span class=\"highlighting\" >pathway</span>"
+        },
+        {
+          "stId": "R-HSA-5683057",
+          "id": "R-HSA-5683057",
+          "name": "<span class=\"highlighting\" >MAPK</span> family <span class=\"highlighting\" >signaling</span> cascades"
+        },
+        {
+          "stId": "R-HSA-5357956",
+          "id": "R-HSA-5357956",
+          "name": "TNFR1-induced NF-kappa-B <span class=\"highlighting\" >signaling</span> <span class=\"highlighting\" >pathway</span>"
+        },
+        {
+          "stId": "R-HSA-5674499",
+          "id": "R-HSA-5674499",
+          "name": "Negative feedback regulation of <span class=\"highlighting\" >MAPK</span> <span class=\"highlighting\" >pathway</span>"
+        },
+        {
+          "stId": "R-HSA-881907",
+          "id": "R-HSA-881907",
+          "name": "Gastrin-CREB signalling <span class=\"highlighting\" >pathway</span> via PKC and <span class=\"highlighting\" >MAPK</span>"
+        },
+        {
+          "stId": "R-HSA-372708",
+          "id": "R-HSA-372708",
+          "name": "p130Cas linkage to <span class=\"highlighting\" >MAPK</span> <span class=\"highlighting\" >signaling</span> for integrins"
+        }
+      ]
+    }
+  ]
+}

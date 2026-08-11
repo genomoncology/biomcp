@@ -1,0 +1,4 @@
+map04010	MAPK signaling pathway
+map04011	MAPK signaling pathway - yeast
+map04013	MAPK signaling pathway - fly
+map04016	MAPK signaling pathway - plant

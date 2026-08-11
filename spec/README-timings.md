@@ -73,7 +73,7 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/entity/trial.md` | trial canary for condition/status search, alias normalization, age-count transparency, and eligibility/location detail |
 | `spec/entity/drug.md` | routine, receipt-backed drug canary for multi-region search, brand bridging, regulatory output, ChEMBL/Open Targets target evidence, and bounded DDInter states |
 | `spec/entity/protein.md` | protein canary for reviewed search defaults, UniProt identity, complexes/structures, and JSON follow-up contracts |
-| `spec/entity/pathway.md` | live-smoke-only pathway canary for alias normalization, exact-title ranking, concise KEGG defaults, and source-aware section rejection |
+| `spec/entity/pathway.md` | routine, receipt-backed KEGG/Reactome/WikiPathways contracts for ranking, source cards, optional outcomes, and source-aware rejection |
 | `spec/entity/study.md` | study canary for local cBioPortal discovery, typed analytics validation, comparison summaries, and chart output |
 | `spec/entity/pgx.md` | receipt-backed routine fixture contract for gene/drug CPIC interaction search, opt-in recommendations, guidelines, and population-frequency detail |
 | `spec/entity/phenotype.md` | routine, receipt-backed phenotype contracts for HPO phrase resolution, direct IDs, similarity-ranked disease output, and typed disease follow-ups |
