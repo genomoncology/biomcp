@@ -102,5 +102,8 @@ biomcp search gene -q BRAF --limit 1
 
 - Command not found: ensure install location is on `PATH`.
 - Checksum verification fails: retry the download; the installer intentionally refuses to install an archive without a valid checksum and a local `sha256sum`, `shasum`, or `openssl` SHA-256 tool.
-- Build fails at protobuf step: install `protoc`.
+- Normal source builds do not run or require `protoc`; they consume committed
+  AlphaGenome generated Rust. Maintainers regenerating that source need pinned
+  `protoc` 28.3 and can verify it without writing with
+  `scripts/regenerate-alphagenome-proto --check`.
 - Network-related health failures: retry and inspect upstream API status.

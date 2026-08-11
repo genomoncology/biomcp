@@ -10,6 +10,11 @@ license = "MIT"
 readme = "README.md"
 keywords = ["bioinformatics", "mcp", "genomics", "clinical-trials", "pubmed"]
 categories = ["command-line-utilities", "science"]
+exclude = [
+    "protos/",
+    "scripts/regenerate-alphagenome-proto",
+    "tools/alphagenome-proto-generator/",
+]
 
 [[bin]]
 name = "biomcp"
@@ -106,7 +111,7 @@ unpdf = "0.4.5"
 
 [features]
 default = ["alphagenome"]
-alphagenome = ["dep:tonic", "dep:prost", "dep:zstd", "dep:tonic-build"]
+alphagenome = ["dep:tonic", "dep:prost", "dep:zstd"]
 charts-png = ["kuva/png"]
 
 [dev-dependencies]
@@ -116,9 +121,6 @@ tempfile = "3"
 
 [target.'cfg(unix)'.dev-dependencies]
 rexpect = "0.7.0"
-
-[build-dependencies]
-tonic-build = { version = "0.12", optional = true }
 
 [profile.release]
 lto = "thin"

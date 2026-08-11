@@ -26,6 +26,11 @@ Install `cargo-nextest` before running repo-local Rust verification:
 cargo install cargo-nextest --locked
 ```
 
+Normal builds do not run or require `protoc`; they compile the committed
+AlphaGenome generated Rust source. Maintainers changing the protobuf inputs use
+pinned `protoc` 28.3 and run `scripts/regenerate-alphagenome-proto`, while CI
+runs `scripts/regenerate-alphagenome-proto --check` without editing the tree.
+
 `make test` uses `cargo nextest run` plus the Python/docs contract lane.
 `make lint` runs the repo lint script and the quality ratchet. `make spec` is
 the offline deterministic routine executable-spec gate. `make spec-contracts`

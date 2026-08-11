@@ -9,18 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache protoc
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.tool_cache }}/protoc
-          key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
-
-      - uses: arduino/setup-protoc@v3
-        continue-on-error: true
-        with:
-          version: "28.3"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -28,6 +16,17 @@ jobs:
       - run: cargo fmt --check
       - run: tools/with-build-identity cargo clippy -- -D warnings
       - run: tools/with-build-identity cargo test
+
+  generated-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: "28.3"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: dtolnay/rust-toolchain@stable
+      - run: scripts/regenerate-alphagenome-proto --check
 
   windows-cspec-capture:
     runs-on: windows-latest
@@ -67,18 +66,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache protoc
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.tool_cache }}/protoc
-          key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
-
-      - uses: arduino/setup-protoc@v3
-        continue-on-error: true
-        with:
-          version: "28.3"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: actions/setup-python@v5
@@ -106,18 +93,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache protoc
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.tool_cache }}/protoc
-          key: protoc-${{ runner.os }}-${{ runner.arch }}-v28.3
-
-      - uses: arduino/setup-protoc@v3
-        continue-on-error: true
-        with:
-          version: "28.3"
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: dtolnay/rust-toolchain@stable
 

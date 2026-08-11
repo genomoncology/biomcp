@@ -541,7 +541,10 @@ fn f16_to_f32(bits: u16) -> f32 {
 }
 
 pub(crate) mod alphagenome_proto {
-    tonic::include_proto!("google.gdm.gdmscience.alphagenome.v1main");
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/generated/google.gdm.gdmscience.alphagenome.v1main.rs"
+    ));
 }
 
 #[cfg(test)]

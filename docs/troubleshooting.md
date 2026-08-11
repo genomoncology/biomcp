@@ -185,12 +185,16 @@ re-run the installer:
 curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
-## 11) Local build missing protoc
+## 11) AlphaGenome protobuf regeneration needs protoc
 
-The project includes gRPC clients and requires `protoc` to build from source.
+Normal builds do not run or require `protoc`; they consume the committed
+AlphaGenome generated Rust source. Only maintainers changing the protobuf inputs
+need pinned `protoc` 28.3. After installing that exact version, run
+`scripts/regenerate-alphagenome-proto`; use
+`scripts/regenerate-alphagenome-proto --check` to report drift without writing.
 
-- macOS: `brew install protobuf`
-- Ubuntu/Debian: `apt-get install protobuf-compiler`
+If `protoc --version` reports anything other than `libprotoc 28.3`, the
+regeneration command fails before generating a candidate.
 
 ## 12) Still blocked
 

@@ -91,6 +91,13 @@ Owned routes:
 
 ## Pre-Merge Checks
 
+Normal builds do not run or require `protoc`. The AlphaGenome client consumes
+committed generated Rust bytes. When its protobuf inputs deliberately change,
+a maintainer installs pinned `protoc` 28.3, runs
+`scripts/regenerate-alphagenome-proto`, and reviews the one generated-file
+diff. `scripts/regenerate-alphagenome-proto --check` is the non-writing CI
+proof.
+
 Run the heavier local ticket proofs explicitly:
 
 ```bash

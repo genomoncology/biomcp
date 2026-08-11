@@ -267,3 +267,25 @@ in 185.30s, versus the 205.42s post-0968 median and 592.42s intervention
 baseline. The first full run also caught and corrected an artifact naming bug:
 distinct directories now each contain a normally named `biomcp`, so PATH-based
 pages cannot fall through to an older installed executable.
+
+### 0936 — maintainer-only AlphaGenome protobuf regeneration
+
+Normal builds now include the committed AlphaGenome generated Rust file
+directly. The package build script no longer invokes `protoc`, generates a
+candidate, copies a fallback, or writes a tracked source path. `tonic-build`
+and six generator-only transitive crates left the main dependency lock and are
+isolated in a small maintainer-only tool with its own lockfile.
+
+`scripts/regenerate-alphagenome-proto` requires exact `protoc` 28.3, generates
+into a temporary target directory, applies the reviewed dead-code annotation,
+validates the client, and atomically replaces only the tracked generated file.
+Its `--check` mode emits a unified diff without writing. CI installs protoc in
+one dedicated generated-source job; normal check, contract, and spec jobs no
+longer install it.
+
+Six AlphaGenome tests passed with a fail-on-call fake generator configured,
+and no-feature checks passed with a missing generator. The pinned-command
+harness reproduced the committed bytes. Full `cargo package --locked`
+verification succeeded in 74.65s with the fail-on-call generator configured;
+the package includes the committed Rust and excludes proto/generator inputs.
+All 31 focused Python/documentation contracts and full lint passed.

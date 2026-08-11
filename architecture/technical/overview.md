@@ -71,6 +71,13 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
   workflow is disabled until ticket 0957 installs the public-artifact gate.
 - **Metadata changes:** Commit synchronized metadata and changelog updates;
   package versions are never stamped from tags.
+- **Generated AlphaGenome client:** Normal builds do not run or require
+  `protoc`; they include the committed generated Rust source directly. The
+  explicit `scripts/regenerate-alphagenome-proto` maintainer command requires
+  pinned `protoc` 28.3, applies the reviewed dead-code annotation, validates a
+  temporary candidate, and atomically replaces only that generated file. CI
+  uses `scripts/regenerate-alphagenome-proto --check` so drift is reported
+  without modifying the checkout.
 
 ## Source Integration Patterns
 

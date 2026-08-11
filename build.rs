@@ -67,12 +67,6 @@ fn write_shell_description() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    #[cfg(feature = "alphagenome")]
-    {
-        println!("cargo:rerun-if-changed=protos/dna_model_service.proto");
-        println!("cargo:rerun-if-changed=protos/dna_model.proto");
-        println!("cargo:rerun-if-changed=protos/tensor.proto");
-    }
     // `src/cli/list.rs` was decomposed into the `src/cli/list/` module dir; the
     // old path no longer exists. cargo treats a missing rerun-if-changed file as
     // permanently stale, so it re-ran this build script — and recompiled the whole
@@ -80,50 +74,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=src/cli/list");
     println!("cargo:rerun-if-changed=src/cli/list_reference.md");
     write_shell_description()?;
-    #[cfg(feature = "alphagenome")]
-    {
-        let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);
-        let proto_out = out_dir.join("google.gdm.gdmscience.alphagenome.v1main.rs");
-        let vendored = PathBuf::from("src/generated/google.gdm.gdmscience.alphagenome.v1main.rs");
-
-        let compiled = tonic_build::configure()
-            .build_client(true)
-            .build_server(false)
-            .compile_protos(&["protos/dna_model_service.proto"], &["protos"]);
-
-        match compiled {
-            Ok(()) => {
-                // Refresh the vendored fallback only when the generated output actually
-                // changed. Copying on every build rewrites this tracked source-tree file,
-                // which bumps its mtime and makes cargo treat the package as dirty —
-                // forcing a full recompile on every "warm" build (cargo build, make spec,
-                // make test, focused). Compare bytes and write only on a real change so
-                // the package stays clean and the build cache works.
-                if proto_out.exists() {
-                    let generated = fs::read_to_string(&proto_out)?.replace(
-                    "pub mod dna_model_service_client {\n    #![allow(",
-                    "pub mod dna_model_service_client {\n    // dead-code reason: generated provider client includes members unused by this runtime\n    #![allow(",
-                );
-                    let new_bytes = generated.as_bytes();
-                    let current = fs::read(&vendored).ok();
-                    if current.as_deref() != Some(new_bytes) {
-                        fs::write(&vendored, new_bytes)?;
-                    }
-                    fs::write(&proto_out, new_bytes)?;
-                }
-            }
-            Err(e) => {
-                if vendored.exists() {
-                    eprintln!(
-                        "cargo:warning=protoc unavailable ({e}), using vendored protobuf output"
-                    );
-                    fs::copy(&vendored, &proto_out)?;
-                } else {
-                    return Err(e.into());
-                }
-            }
-        }
-    }
-
     Ok(())
 }

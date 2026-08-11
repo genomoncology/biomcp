@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""Explicitly regenerate the committed AlphaGenome Rust client."""
+
+from __future__ import annotations
+
+import argparse
+from difflib import unified_diff
+import os
+from pathlib import Path
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
+
+
+PINNED_PROTOC_VERSION = "28.3"
+GENERATED_NAME = "google.gdm.gdmscience.alphagenome.v1main.rs"
+CLIENT_MODULE = "pub mod dna_model_service_client {\n    #![allow("
+ANNOTATED_CLIENT_MODULE = (
+    "pub mod dna_model_service_client {\n"
+    "    // dead-code reason: generated provider client includes members unused by this runtime\n"
+    "    #![allow("
+)
+
+
+def transform_generated(generated: str) -> str:
+    if generated.count(CLIENT_MODULE) != 1:
+        raise SystemExit(
+            "generated client module did not match the reviewed annotation seam"
+        )
+    generated = generated.replace(CLIENT_MODULE, ANNOTATED_CLIENT_MODULE, 1)
+    if "pub struct DnaModelServiceClient" not in generated:
+        raise SystemExit("generated client is missing DnaModelServiceClient")
+    return generated
+
+
+def install_or_check(tracked: Path, candidate: Path, *, check: bool) -> int:
+    generated = candidate.read_text(encoding="utf-8")
+    current = tracked.read_text(encoding="utf-8")
+    if current == generated:
+        return 0
+
+    difference = "".join(
+        unified_diff(
+            current.splitlines(keepends=True),
+            generated.splitlines(keepends=True),
+            fromfile=str(tracked),
+            tofile=f"regenerated/{GENERATED_NAME}",
+        )
+    )
+    if check:
+        sys.stderr.write(difference)
+        return 1
+
+    os.replace(candidate, tracked)
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args()
+
+    root = Path(__file__).resolve().parents[1]
+    tracked = root / "src" / "generated" / GENERATED_NAME
+    version = subprocess.run(
+        ["protoc", "--version"],
+        check=True,
+        text=True,
+        capture_output=True,
+    ).stdout.strip()
+    expected_version = f"libprotoc {PINNED_PROTOC_VERSION}"
+    if version != expected_version:
+        print(
+            f"expected pinned protoc {PINNED_PROTOC_VERSION}, got {version!r}",
+            file=sys.stderr,
+        )
+        return 2
+
+    target_root = root / "target"
+    target_root.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(prefix="alphagenome-proto.", dir=target_root) as temporary:
+        temporary_root = Path(temporary)
+        subprocess.run(
+            [
+                "cargo",
+                "run",
+                "--locked",
+                "--quiet",
+                "--manifest-path",
+                str(root / "tools" / "alphagenome-proto-generator" / "Cargo.toml"),
+                "--",
+                str(root / "protos"),
+                str(temporary_root),
+            ],
+            cwd=root,
+            check=True,
+        )
+        candidate = temporary_root / GENERATED_NAME
+        candidate.write_text(
+            transform_generated(candidate.read_text(encoding="utf-8")),
+            encoding="utf-8",
+        )
+        result = install_or_check(tracked, candidate, check=args.check)
+        if result == 0 and candidate.exists():
+            print(f"AlphaGenome generated Rust is current ({expected_version})")
+        elif result == 0:
+            print(f"updated {tracked}")
+        return result
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

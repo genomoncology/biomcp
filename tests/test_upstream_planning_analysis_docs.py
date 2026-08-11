@@ -1157,13 +1157,14 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     ci_spec = _workflow_job_block(ci, "spec-stable")
     ci_version_sync = _workflow_job_block(ci, "version-sync")
     ci_climb_hygiene = _workflow_job_block(ci, "climb-hygiene")
+    ci_generated_sources = _workflow_job_block(ci, "generated-sources")
 
     assert 'python-version: "3.12"' in ci_contracts
     assert 'python-version: "3.12"' in ci_spec
     assert not spec_smoke.exists()
     assert _workflow_run_steps(ci_contracts) == expected_ci_contract_runs
     assert "- uses: actions/checkout@v4" in ci_spec
-    assert "uses: arduino/setup-protoc@v3" in ci_spec
+    assert "setup-protoc" not in ci_spec
     assert "uses: dtolnay/rust-toolchain@stable" in ci_spec
     assert "uses: actions/setup-python@v5" in ci_spec
     assert "uses: astral-sh/setup-uv@v4" in ci_spec
@@ -1188,6 +1189,13 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
         "spec-http-${{ runner.os }}-${{ steps.spec-cache-meta.outputs.biomcp-version }}"
         "-${{ steps.spec-cache-meta.outputs.spec-cache-schema-version }}"
     ) in ci_spec
+
+    assert "uses: arduino/setup-protoc@v3" in ci_generated_sources
+    assert 'version: "28.3"' in ci_generated_sources
+    assert "uses: dtolnay/rust-toolchain@stable" in ci_generated_sources
+    assert _workflow_run_steps(ci_generated_sources) == [
+        "scripts/regenerate-alphagenome-proto --check"
+    ]
 
     assert "- uses: actions/checkout@v4" in ci_version_sync
     assert "fetch-depth: 0" in ci_version_sync

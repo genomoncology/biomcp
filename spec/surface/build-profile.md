@@ -52,10 +52,11 @@ release binary. It is proven natively for both builds by
 
 ## Release artifacts retain the AlphaGenome feature
 
-The default package feature keeps the shipped client and all of its runtime and
-build-time dependencies together. This metadata check distinguishes a real
-optional feature from an unconditional dependency that only happens to compile.
+The default package feature keeps the shipped client's runtime dependencies
+together. Protobuf generation is maintainer-only and must not return to the
+normal AlphaGenome feature graph. This metadata check distinguishes a real
+optional runtime feature from unconditional or generator-only dependencies.
 
 ```bash
-cat "${BIOMCP_SPEC_CARGO_METADATA:?spec preparation did not export package metadata}" | jq '[.packages[] | select(.name == "biomcp-cli") | .features][0] | ((.default | index("alphagenome")) != null and (.alphagenome | index("dep:tonic")) != null and (.alphagenome | index("dep:prost")) != null and (.alphagenome | index("dep:zstd")) != null and (.alphagenome | index("dep:tonic-build")) != null)' | mustmatch 'true'
+cat "${BIOMCP_SPEC_CARGO_METADATA:?spec preparation did not export package metadata}" | jq '[.packages[] | select(.name == "biomcp-cli") | .features][0] | ((.default | index("alphagenome")) != null and (.alphagenome | index("dep:tonic")) != null and (.alphagenome | index("dep:prost")) != null and (.alphagenome | index("dep:zstd")) != null and (.alphagenome | index("dep:tonic-build")) == null)' | mustmatch 'true'
 ```
