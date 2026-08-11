@@ -4,6 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 from urllib.error import HTTPError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import pytest
@@ -46,6 +47,12 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
             body = json.load(response)
         assert body["hits"][0]["_id"] == "C3855203"
 
+        mygene = values["BIOMCP_MYGENE_BASE"]
+        query = urlencode({"q": 'symbol:"BRAF"'})
+        with urlopen(f"{mygene}/query?{query}", timeout=2) as response:
+            gene = json.load(response)
+        assert gene["hits"][0]["symbol"] == "BRAF"
+
         chembl = values["BIOMCP_CHEMBL_BASE"]
         with urlopen(
             f"{chembl}/mechanism.json?molecule_chembl_id=CHEMBL3137343&limit=15",
@@ -72,6 +79,7 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
 
         request_log = Path(values["BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"])
         assert "GET /mychem/v1/query?q=Keytruda" in request_log.read_text()
+        assert "GET /mygene/v3/query?q=symbol%3A%22BRAF%22" in request_log.read_text()
         assert "POST /opentargets/api/v4/graphql" in request_log.read_text()
         assert values["BIOMCP_CACHE_MODE"] == "off"
         assert Path(values["BIOMCP_EMA_DIR"]).is_dir()

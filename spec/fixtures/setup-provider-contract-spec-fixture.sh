@@ -59,6 +59,14 @@ MYCHEM = {
     "daraxonrasib": fixture("mychem/query_daraxonrasib_get_20260811.json"),
     "dabigatran": fixture("mychem/query_dabigatran_get_20260811.json"),
 }
+MYGENE = {
+    "(symbol:BRAF OR alias:BRAF)": fixture("mygene/search_braf_20260811.json"),
+    'symbol:"BRAF"': fixture("mygene/get_braf_20260811.json"),
+    'symbol:"PD\\-L1"': fixture("mygene/get_pdl1_empty_20260811.json"),
+    "(symbol:PD\\-L1 OR alias:PD\\-L1)": fixture("mygene/search_pdl1_20260811.json"),
+    'symbol:"CD274"': fixture("mygene/get_cd274_20260811.json"),
+    'symbol:"BRCA1"': fixture("mygene/get_brca1_20260811.json"),
+}
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
 CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
@@ -88,6 +96,12 @@ class Handler(BaseHTTPRequestHandler):
                 send(self, 503, b'{"error":"synthetic provider failure"}')
                 return
             body = MYCHEM.get(query)
+            if body is not None:
+                send(self, 200, body)
+                return
+        if parsed.path == "/mygene/v3/query":
+            query = parse_qs(parsed.query).get("q", [""])[0]
+            body = MYGENE.get(query)
             if body is not None:
                 send(self, 200, body)
                 return
@@ -164,6 +178,7 @@ curl --fail --silent "$base_url/healthz" >/dev/null
 
 {
   printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/mychem/v1"
+  printf 'export BIOMCP_MYGENE_BASE=%q\n' "$base_url/mygene/v3"
   printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url/openfda"
   printf 'export BIOMCP_CHEMBL_BASE=%q\n' "$base_url/chembl"
   printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/opentargets/api/v4"

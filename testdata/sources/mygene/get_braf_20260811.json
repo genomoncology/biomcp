@@ -1,0 +1,223 @@
+{
+  "took": 4,
+  "total": 1,
+  "max_score": 17.51687,
+  "hits": [
+    {
+      "MIM": "164757",
+      "_id": "673",
+      "_score": 17.51687,
+      "alias": [
+        "B-RAF1",
+        "B-raf",
+        "BRAF-1",
+        "BRAF1",
+        "NS7",
+        "RAFB1"
+      ],
+      "ensembl": {
+        "gene": "ENSG00000157764"
+      },
+      "entrezgene": "673",
+      "genomic_pos": {
+        "chr": "7",
+        "end": 140925199,
+        "start": 140719327,
+        "strand": -1
+      },
+      "name": "B-Raf proto-oncogene, serine/threonine kinase",
+      "pathway": {
+        "kegg": [
+          {
+            "id": "hsa04010",
+            "name": "MAPK signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04012",
+            "name": "ErbB signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04015",
+            "name": "Rap1 signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04024",
+            "name": "cAMP signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04062",
+            "name": "Chemokine signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04068",
+            "name": "FoxO signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04150",
+            "name": "mTOR signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04270",
+            "name": "Vascular smooth muscle contraction - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04510",
+            "name": "Focal adhesion - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04650",
+            "name": "Natural killer cell mediated cytotoxicity - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04720",
+            "name": "Long-term potentiation - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04722",
+            "name": "Neurotrophin signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04726",
+            "name": "Serotonergic synapse - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04730",
+            "name": "Long-term depression - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04810",
+            "name": "Regulation of actin cytoskeleton - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04910",
+            "name": "Insulin signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04914",
+            "name": "Progesterone-mediated oocyte maturation - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04928",
+            "name": "Parathyroid hormone synthesis, secretion and action - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04934",
+            "name": "Cushing syndrome - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05010",
+            "name": "Alzheimer disease - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05022",
+            "name": "Pathways of neurodegeneration - multiple diseases - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05034",
+            "name": "Alcoholism - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05160",
+            "name": "Hepatitis C - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05161",
+            "name": "Hepatitis B - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05200",
+            "name": "Pathways in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05205",
+            "name": "Proteoglycans in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05210",
+            "name": "Colorectal cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05211",
+            "name": "Renal cell carcinoma - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05212",
+            "name": "Pancreatic cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05213",
+            "name": "Endometrial cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05214",
+            "name": "Glioma - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05215",
+            "name": "Prostate cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05216",
+            "name": "Thyroid cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05218",
+            "name": "Melanoma - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05219",
+            "name": "Bladder cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05220",
+            "name": "Chronic myeloid leukemia - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05221",
+            "name": "Acute myeloid leukemia - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05223",
+            "name": "Non-small cell lung cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05224",
+            "name": "Breast cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05225",
+            "name": "Hepatocellular carcinoma - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05226",
+            "name": "Gastric cancer - Homo sapiens (human)"
+          }
+        ]
+      },
+      "summary": "This gene encodes a protein belonging to the RAF family of serine/threonine protein kinases. This protein plays a role in regulating the MAP kinase/ERK signaling pathway, which affects cell division, differentiation, and secretion. Mutations in this gene, most commonly the V600E mutation, are the most frequently identified cancer-causing mutations in melanoma, and have been identified in various other cancers as well, including non-Hodgkin lymphoma, colorectal cancer, thyroid carcinoma, non-small cell lung carcinoma, hairy cell leukemia and adenocarcinoma of lung. Mutations in this gene are also associated with cardiofaciocutaneous, Noonan, and Costello syndromes, which exhibit overlapping phenotypes. A pseudogene of this gene has been identified on the X chromosome. [provided by RefSeq, Aug 2017].",
+      "symbol": "BRAF",
+      "type_of_gene": "protein-coding",
+      "uniprot": {
+        "Swiss-Prot": "P15056",
+        "TrEMBL": [
+          "H7C560",
+          "A0A2U3TZI2",
+          "A0A2R8Y8E0",
+          "A0A2R8Y679",
+          "A0ACI8R7V9",
+          "A0ACI8SLG3",
+          "A0A2R8Y492",
+          "A0ACI8SLF6",
+          "H7C4S5",
+          "H7C5K3",
+          "A0A2R8Y467",
+          "A0A2R8YDP5",
+          "A0ACI8U9Q3",
+          "A0ACI8PUS3",
+          "A0ACI8RM22",
+          "A0A2R8YES9"
+        ]
+      }
+    }
+  ]
+}

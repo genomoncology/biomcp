@@ -1,0 +1,52 @@
+{
+  "took": 5,
+  "total": 1,
+  "max_score": 18.71564,
+  "hits": [
+    {
+      "MIM": "605402",
+      "_id": "29126",
+      "_score": 18.71564,
+      "alias": [
+        "ADMIO5",
+        "B7-H",
+        "B7H1",
+        "PD-L1",
+        "PDCD1L1",
+        "PDCD1LG1",
+        "PDL1",
+        "hPD-L1"
+      ],
+      "ensembl": {
+        "gene": "ENSG00000120217"
+      },
+      "entrezgene": "29126",
+      "genomic_pos": {
+        "chr": "9",
+        "end": 5470566,
+        "start": 5450503,
+        "strand": 1
+      },
+      "name": "CD274 molecule",
+      "pathway": {
+        "kegg": [
+          {
+            "id": "hsa04514",
+            "name": "Cell adhesion molecules - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05235",
+            "name": "PD-L1 expression and PD-1 checkpoint pathway in cancer - Homo sapiens (human)"
+          }
+        ]
+      },
+      "summary": "This gene encodes an immune inhibitory receptor ligand that is expressed by hematopoietic and non-hematopoietic cells, such as T cells and B cells and various types of tumor cells. The encoded protein is a type I transmembrane protein that has immunoglobulin V-like and C-like domains. Interaction of this ligand with its receptor inhibits T-cell activation and cytokine production. During infection or inflammation of normal tissue, this interaction is important for preventing autoimmunity by maintaining homeostasis of the immune response. In tumor microenvironments, this interaction provides an immune escape for tumor cells through cytotoxic T-cell inactivation. Expression of this gene in tumor cells is considered to be prognostic in many types of human malignancies, including colon cancer and renal cell carcinoma. Alternative splicing results in multiple transcript variants. [provided by RefSeq, Sep 2015].",
+      "symbol": "CD274",
+      "type_of_gene": "protein-coding",
+      "uniprot": {
+        "Swiss-Prot": "Q9NZQ7",
+        "TrEMBL": "Q0GN75"
+      }
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "took": 5,
+  "total": 1,
+  "max_score": 18.128927,
+  "hits": [
+    {
+      "MIM": "113705",
+      "_id": "672",
+      "_score": 18.128927,
+      "alias": [
+        "BRCAI",
+        "BRCC1",
+        "BROVCA1",
+        "FANCS",
+        "IRIS",
+        "PNCA4",
+        "PPP1R53",
+        "PSCP",
+        "RNF53"
+      ],
+      "ensembl": {
+        "gene": "ENSG00000012048"
+      },
+      "entrezgene": "672",
+      "genomic_pos": {
+        "chr": "17",
+        "end": 43170245,
+        "start": 43044292,
+        "strand": -1
+      },
+      "name": "BRCA1 DNA repair associated",
+      "pathway": {
+        "kegg": [
+          {
+            "id": "hsa03440",
+            "name": "Homologous recombination - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa03460",
+            "name": "Fanconi anemia pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04120",
+            "name": "Ubiquitin mediated proteolysis - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04151",
+            "name": "PI3K-Akt signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05206",
+            "name": "MicroRNAs in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05224",
+            "name": "Breast cancer - Homo sapiens (human)"
+          }
+        ]
+      },
+      "summary": "This gene encodes a 190 kD nuclear phosphoprotein that plays a role in maintaining genomic stability, and it also acts as a tumor suppressor. The BRCA1 gene contains 22 exons spanning about 110 kb of DNA. The encoded protein combines with other tumor suppressors, DNA damage sensors, and signal transducers to form a large multi-subunit protein complex known as the BRCA1-associated genome surveillance complex (BASC). This gene product associates with RNA polymerase II, and through the C-terminal domain, also interacts with histone deacetylase complexes. This protein thus plays a role in transcription, DNA repair of double-stranded breaks, and recombination. Mutations in this gene are responsible for approximately 40% of inherited breast cancers and more than 80% of inherited breast and ovarian cancers. Alternative splicing plays a role in modulating the subcellular localization and physiological function of this gene. Many alternatively spliced transcript variants, some of which are disease-associated mutations, have been described for this gene, but the full-length natures of only some of these variants has been described. A related pseudogene, which is also located on chromosome 17, has been identified. [provided by RefSeq, May 2020].",
+      "symbol": "BRCA1",
+      "type_of_gene": "protein-coding",
+      "uniprot": {
+        "Swiss-Prot": "P38398",
+        "TrEMBL": [
+          "A0A9Y1QPT7",
+          "A0ACM8QT95",
+          "H0Y850",
+          "E7ENB7",
+          "E7EUM2",
+          "B4DES0",
+          "A0A9Y1VR53",
+          "E7EQW4",
+          "A0A2R8Y7V5",
+          "A0A9Y1VVD0",
+          "H0Y8D8",
+          "A0A9Y1VVE2",
+          "A0A0U1RRA9",
+          "A0A9Y1QPY6",
+          "A0A9Y1QQK3",
+          "A0A9Y1QQF1",
+          "C9IZW4",
+          "A0A9Y1QQJ6",
+          "A0A9Y1QPR4",
+          "A0A9Y1QQ47",
+          "A0A9Y1QQK7",
+          "A0A9Y1QQD3",
+          "H0Y8B8",
+          "E9PC22",
+          "K7EJW3",
+          "A0A8V8TPY7",
+          "K7EKW8",
+          "K7EPC7",
+          "A0A2R8Y6Y9"
+        ]
+      }
+    }
+  ]
+}

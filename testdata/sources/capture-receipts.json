@@ -1317,6 +1317,78 @@
       }
     },
     {
+      "path": "mygene/search_braf_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29&species=human&fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&size=3&from=0",
+        "captured_at": "2026-08-11T22:23:00Z",
+        "sha256": "b180e713dffc626b3a6f7c501367e01ac150c854e017810ffe4870adf5f640d3",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mygene/get_braf_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22BRAF%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:23:00Z",
+        "sha256": "b7d0b5fbba54efe693d0e7c3e06792a7779b7a267c9c75bc3a69669eda5911ae",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mygene/get_pdl1_empty_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22PD%5C-L1%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:23:00Z",
+        "sha256": "08a4aa51c9e23e7fb48e6252562660437aa222e878f2bf58d159a1a0775f8059",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mygene/search_pdl1_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=%28symbol%3APD%5C-L1+OR+alias%3APD%5C-L1%29&species=human&fields=symbol%2Cname%2Centrezgene%2Calias%2Ctype_of_gene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2CMIM%2Cuniprot%2Cpathway.kegg.id%2Cpathway.reactome.id%2Cgo.BP.id%2Cgo.CC.id%2Cgo.MF.id&size=10&from=0",
+        "captured_at": "2026-08-11T22:23:00Z",
+        "sha256": "97abe8e0d89e37565b1e4da2e7a7a81fda0ffb7333ab0c51e2d77bb32422e89f",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mygene/get_cd274_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22CD274%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:23:00Z",
+        "sha256": "0408c4a102a7ed783cdd7838e7550310f90cef3b10b1c94432503bff7c24855d",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mygene/get_brca1_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22BRCA1%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:23:00Z",
+        "sha256": "08091b90748b54e2058cd6b092fff57cbf5bf02e1de264278e7888d5765c0812",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path."
+      }
+    },
+    {
       "path": "myvariant/get_pten_grch38_20260806.json",
       "classification": "real_and_receipted",
       "receipt": {
