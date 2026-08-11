@@ -178,3 +178,13 @@ exact-commit green preflight and should be promoted in the SDLC repository.
   crate rebuild solely because Git HEAD moved.
 - The recommended factory flow performs one complete final validation per
   candidate commit, not one per conversational stage.
+
+## Completed results
+
+### 0914 — named quality audits
+
+Commit `5175790c` added named audit selection, kept one full wrapper integration,
+and shared one Rust source snapshot between the two whole-tree Rust audits. The
+complete sequential Python contract lane fell from 593.65s to 93.77s on the
+same loaded machine: 6.3x faster, saving 499.88s per `make test`. All 465 tests
+passed.
