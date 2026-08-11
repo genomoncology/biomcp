@@ -999,6 +999,59 @@ def test_wrapper_reports_invalid_shell_syntax(tmp_path: Path) -> None:
     assert findings[0]["rule"] == "invalid-shell-syntax"
 
 
+def test_spec_lint_rejects_nested_test_gates_without_matching_prose_or_literals(
+    tmp_path: Path,
+) -> None:
+    spec_path = _write_h2_bash_spec(
+        tmp_path / "spec",
+        "nested-test-gate",
+        "# Nested Gate Fixture\n\n"
+        "Prose may explain that pytest owns the source contract.\n\n"
+        "## Product behavior\n\n"
+        "```bash\n"
+        "cd ../.. && uv run --no-sync pytest tests/test_contract.py -v\n"
+        "```\n\n"
+        "```text\n"
+        "pytest is expected prose, not an executable command\n"
+        "```\n",
+    )
+    output_dir = tmp_path / "out"
+
+    result = _run_wrapper(
+        {
+            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
+            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+        }
+    )
+
+    assert result.returncode == 1
+    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    findings = summary["lint"]["results"][0]["findings"]
+    nested = [finding for finding in findings if finding["rule"] == "nested-test-gate"]
+    assert len(nested) == 1
+    assert nested[0]["line"] == 8
+    assert "pytest" in nested[0]["text"]
+
+
+def test_nested_gate_ratchet_checks_fixture_helpers_without_matching_arguments(
+    tmp_path: Path,
+) -> None:
+    helper = tmp_path / "helper.sh"
+    helper.write_text(
+        "#!/usr/bin/env bash\n"
+        "printf '%s\\n' 'pytest is documentation'\n"
+        "cargo nextest run --no-default-features\n",
+        encoding="utf-8",
+    )
+    ratchet = _load_ratchet_module()
+
+    findings = ratchet.make_nested_test_gate_script_findings(helper)
+
+    assert len(findings) == 1
+    assert findings[0]["line"] == 3
+    assert findings[0]["text"] == "cargo nextest run --no-default-features"
+
+
 def test_wrapper_reports_missing_bash_mustmatch(tmp_path: Path) -> None:
     spec_path = _write_h2_bash_spec(
         tmp_path / "spec",

@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import argparse
 import glob
+import io
 import json
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -1267,6 +1269,143 @@ def make_captured_output_mustmatch_findings(spec_path: Path) -> list[dict[str, o
     return findings
 
 
+def _shell_segment_starts_nested_test_gate(tokens: list[str]) -> bool:
+    command_index = 0
+    while command_index < len(tokens) and re.match(
+        r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[command_index]
+    ):
+        command_index += 1
+    if command_index >= len(tokens):
+        return False
+
+    command = Path(tokens[command_index]).name
+    args = tokens[command_index + 1 :]
+    if command == "env":
+        nested_index = 0
+        while nested_index < len(args) and (
+            args[nested_index].startswith("-")
+            or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", args[nested_index])
+        ):
+            nested_index += 1
+        return _shell_segment_starts_nested_test_gate(args[nested_index:])
+    if command == "pytest":
+        return True
+    if command == "uv":
+        return any(Path(token).name == "pytest" for token in args)
+    if command == "cargo":
+        return "nextest" in args
+    if command in {"make", "gmake"}:
+        if "-n" in args or "--dry-run" in args:
+            return False
+        return any(token in {"test", "lint"} for token in args)
+    return command == "check-quality-ratchet.sh"
+
+
+def _nested_test_gate_findings_for_lines(
+    lines: list[str], *, first_line: int
+) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    if not lines:
+        return findings
+    lexer = shlex.shlex(
+        io.StringIO("\n".join(lines)), posix=True, punctuation_chars=";&|"
+    )
+    lexer.whitespace_split = True
+    segment: list[str] = []
+    segment_line = first_line
+    try:
+        while True:
+            token = lexer.get_token()
+            at_end = token == lexer.eof
+            if at_end:
+                token = ";"
+            if token and all(character in ";|&" for character in token):
+                if _shell_segment_starts_nested_test_gate(segment):
+                    relative_line = max(
+                        0, min(len(lines) - 1, segment_line - first_line)
+                    )
+                    findings.append(
+                        {
+                            "line": segment_line,
+                            "rule": "nested-test-gate",
+                            "message": (
+                                "routine specs must not launch test or lint gates "
+                                "owned by the canonical test lane"
+                            ),
+                            "text": lines[relative_line].strip(),
+                        }
+                    )
+                segment = []
+                segment_line = first_line + lexer.lineno - 1
+            else:
+                if not segment:
+                    segment_line = first_line + lexer.lineno - 1
+                segment.append(token)
+            if at_end:
+                break
+    except ValueError:
+        return []
+    return findings
+
+
+def make_nested_test_gate_findings(spec_path: Path) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    block_lines: list[str] = []
+    block_start = 0
+
+    inside_bash = False
+    for line_number, line in enumerate(spec_path.read_text(encoding="utf-8").splitlines(), start=1):
+        if line.startswith("```"):
+            if inside_bash:
+                findings.extend(
+                    _nested_test_gate_findings_for_lines(
+                        block_lines, first_line=block_start
+                    )
+                )
+                inside_bash = False
+                block_lines = []
+            else:
+                fence_tokens = line[3:].strip().split()
+                inside_bash = bool(fence_tokens) and fence_tokens[0] == "bash"
+                if inside_bash:
+                    block_start = line_number + 1
+            continue
+        if inside_bash:
+            block_lines.append(line)
+    if inside_bash:
+        findings.extend(
+            _nested_test_gate_findings_for_lines(block_lines, first_line=block_start)
+        )
+    return findings
+
+
+def make_nested_test_gate_script_findings(script_path: Path) -> list[dict[str, object]]:
+    findings: list[dict[str, object]] = []
+    command_lines: list[str] = []
+    command_start = 1
+    for line_number, line in enumerate(
+        script_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        if not command_lines:
+            command_start = line_number
+        command_lines.append(line)
+        if line.rstrip().endswith("\\"):
+            continue
+        findings.extend(
+            _nested_test_gate_findings_for_lines(
+                command_lines, first_line=command_start
+            )
+        )
+        command_lines = []
+    if command_lines:
+        findings.extend(
+            _nested_test_gate_findings_for_lines(
+                command_lines, first_line=command_start
+            )
+        )
+    return findings
+
+
 def make_missing_bash_mustmatch_findings(spec_path: Path) -> list[dict[str, object]]:
     findings: list[dict[str, object]] = []
     text = spec_path.read_text(encoding="utf-8")
@@ -1387,6 +1526,11 @@ def lint_spec_file(spec_path: Path) -> dict[str, object]:
         if key not in seen:
             findings.append(finding)
             seen.add(key)
+    for finding in make_nested_test_gate_findings(spec_path):
+        key = (finding["line"], finding["rule"], finding["text"])
+        if key not in seen:
+            findings.append(finding)
+            seen.add(key)
 
     payload["finding_count"] = len(findings)
     payload["status"] = "fail" if findings else "pass"
@@ -1401,7 +1545,9 @@ def resolve_spec_paths(spec_glob: str) -> list[Path]:
     )
 
 
-def lint_specs(spec_paths: list[Path], spec_glob: str) -> dict[str, object]:
+def lint_specs(
+    spec_paths: list[Path], spec_glob: str, root_dir: Path
+) -> dict[str, object]:
     lint_results: list[dict[str, object]] = []
     lint_errors: list[str] = []
 
@@ -1426,6 +1572,19 @@ def lint_specs(spec_paths: list[Path], spec_glob: str) -> dict[str, object]:
 
         lint_results.append(payload)
 
+    helper_paths = sorted((root_dir / "spec" / "fixtures").glob("**/*.sh"))
+    for helper_path in helper_paths:
+        findings = make_nested_test_gate_script_findings(helper_path)
+        if findings:
+            lint_results.append(
+                {
+                    "status": "fail",
+                    "spec": str(helper_path),
+                    "finding_count": len(findings),
+                    "findings": findings,
+                }
+            )
+
     finding_count = sum(
         payload.get("finding_count", 0)
         for payload in lint_results
@@ -1447,6 +1606,7 @@ def lint_specs(spec_paths: list[Path], spec_glob: str) -> dict[str, object]:
         "baseline_count": 0,
         "finding_count": finding_count,
         "files_checked": len(spec_paths),
+        "helpers_checked": len(helper_paths),
         "results": lint_results,
         "errors": lint_errors,
     }
@@ -1865,7 +2025,7 @@ def main() -> int:
 
     if "spec_lint" in selected_audits:
         payloads["spec_lint"] = lint_specs(
-            resolve_spec_paths(args.spec_glob), args.spec_glob
+            resolve_spec_paths(args.spec_glob), args.spec_glob, args.root_dir
         )
         write_json(args.output_dir / "quality-ratchet-lint.json", payloads["spec_lint"])
 
