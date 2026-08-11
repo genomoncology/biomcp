@@ -32,7 +32,7 @@ infores:orphanet'
 
 ## Captured NIH Funding Context
 
-The local ontology fixture replays the receipted NIH Reporter search for Marfan syndrome. A funding card must retain the funding table and a non-empty grants collection, so callers do not mistake a dropped response for an empty research landscape.
+The local provider fixture replays the receipted NIH Reporter search for Marfan syndrome. A funding card must retain the funding table and a non-empty grants collection, so callers do not mistake a dropped response for an empty research landscape.
 
 ```bash
 ../../tools/biomcp-ci --json get disease "Marfan syndrome" funding | jq '.funding.grants | length > 0' | mustmatch 'true'
@@ -63,7 +63,7 @@ phenotype, funding, and survival data.
 ```bash
 grep -F 'GET /mydisease/query?q=%28disease_ontology.name%3Achronic+myeloid+leukemia' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'size=15&from=0'
 grep -F 'GET /monarch/v3/api/association?subject=MONDO%3A0011996' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | grep -F 'limit=80' | mustmatch like 'object_category=biolink%3APhenotypicFeature'
-grep -F 'POST /nih/projects/search' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like '"search_text":"\"Marfan syndrome\""'
+grep -F 'POST /nih/v2/projects/search' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '"search_text":"\"Marfan syndrome\""'
 grep -F 'GET /seer/render_region_5.php' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'site=97&data_type=4'
 ```
 

@@ -85,6 +85,7 @@ STRING_NETWORK = fixture("string/network_braf_20260811.json")
 HPA_BRAF = fixture("hpa/braf_20260811.xml")
 DGIDB_EGFR = fixture("dgidb/gene_egfr_20260811.json")
 NIH_ERBB2 = fixture("nih_reporter/funding_erbb2_20260811.json")
+NIH_MARFAN = fixture("nih_reporter/funding_marfan_syndrome.json")
 OPENTARGETS = {
     ("ENSG00000157764", False): fixture("opentargets/clinical_braf_20260811.json"),
     ("ENSG00000146648", False): fixture("opentargets/clinical_egfr_20260811.json"),
@@ -237,6 +238,9 @@ class Handler(BaseHTTPRequestHandler):
             search = request.get("criteria", {}).get("advanced_text_search", {})
             if search.get("search_text") == '"ERBB2"':
                 send(self, 200, NIH_ERBB2)
+                return
+            if search.get("search_text") == '"Marfan syndrome"':
+                send(self, 200, NIH_MARFAN)
                 return
         send(self, 404, b'{"error":"fixture route not found"}')
 
