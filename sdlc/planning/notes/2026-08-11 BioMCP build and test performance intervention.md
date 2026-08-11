@@ -195,3 +195,11 @@ Commit `b408f23c` replaced shell subprocess loops with one tracked-file
 collection and at most one read per file. All 16 lint-contract tests pass.
 Warm `bin/lint` fell from 40.22s to 8.82s (4.6x), and complete warm `make lint`
 fell from 84.35s to 26.35s (3.2x).
+
+### 0969 — no nested test gates in routine specs
+
+Commit `df0dce06` removed the duplicate CLI-surface pytest launch from
+`make spec` while retaining its direct `make test` ownership. A shell-aware
+source ratchet now rejects nested test/lint gates in executable Markdown and
+fixture helpers without matching prose, quoted output, or `make -n`. All 49
+focused tests and the complete named spec-lint audit pass.
