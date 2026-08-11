@@ -1,0 +1,461 @@
+{
+  "meta": {
+    "search_id": "kO7NbK-rykSCQ0qQNl6Xgw",
+    "total": 104,
+    "offset": 0,
+    "limit": 50,
+    "sort_field": "award_amount",
+    "sort_order": "desc",
+    "sorted_by_relevance": true,
+    "properties": {
+      "URL": "https:/reporter.nih.gov/search/kO7NbK-rykSCQ0qQNl6Xgw/projects"
+    }
+  },
+  "results": [
+    {
+      "fiscal_year": 2025,
+      "project_num": "1P01HL169168-01A1",
+      "organization": {
+        "org_name": "YALE UNIVERSITY",
+        "city": null,
+        "country": null,
+        "org_city": "NEW HAVEN",
+        "org_country": "UNITED STATES",
+        "org_state": "CT",
+        "org_state_name": null,
+        "dept_type": "ENGINEERING (ALL TYPES)",
+        "fips_country_code": null,
+        "org_duns": [
+          "043207562"
+        ],
+        "org_ueis": [
+          "FL6GV84CKN57"
+        ],
+        "primary_duns": "043207562",
+        "primary_uei": "FL6GV84CKN57",
+        "org_fips": "US",
+        "org_ipf_code": "9420201",
+        "org_zipcode": "065208327",
+        "external_org_id": 9420201
+      },
+      "award_amount": 2508095,
+      "principal_investigators": [
+        {
+          "profile_id": 1950356,
+          "first_name": "Jay",
+          "middle_name": "D.",
+          "last_name": "Humphrey",
+          "is_contact_pi": true,
+          "full_name": "Jay D. Humphrey",
+          "title": "PROFESSOR"
+        }
+      ],
+      "contact_pi_name": "HUMPHREY, JAY D.",
+      "core_project_num": "P01HL169168",
+      "project_title": "Dynamic Cell-Matrix Interactions Dictate Thoracic Aortopathy",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11015428"
+    },
+    {
+      "fiscal_year": 2026,
+      "project_num": "5P01HL169168-02",
+      "organization": {
+        "org_name": "YALE UNIVERSITY",
+        "city": null,
+        "country": null,
+        "org_city": "NEW HAVEN",
+        "org_country": "UNITED STATES",
+        "org_state": "CT",
+        "org_state_name": null,
+        "dept_type": "ENGINEERING (ALL TYPES)",
+        "fips_country_code": null,
+        "org_duns": [
+          "043207562"
+        ],
+        "org_ueis": [
+          "FL6GV84CKN57"
+        ],
+        "primary_duns": "043207562",
+        "primary_uei": "FL6GV84CKN57",
+        "org_fips": "US",
+        "org_ipf_code": "9420201",
+        "org_zipcode": "065208327",
+        "external_org_id": 9420201
+      },
+      "award_amount": 2441396,
+      "principal_investigators": [
+        {
+          "profile_id": 1950356,
+          "first_name": "Jay",
+          "middle_name": "D.",
+          "last_name": "Humphrey",
+          "is_contact_pi": true,
+          "full_name": "Jay D. Humphrey",
+          "title": "PROFESSOR"
+        }
+      ],
+      "contact_pi_name": "HUMPHREY, JAY D.",
+      "core_project_num": "P01HL169168",
+      "project_title": "Dynamic Cell-Matrix Interactions Dictate Thoracic Aortopathy",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11259529"
+    },
+    {
+      "fiscal_year": 2026,
+      "project_num": "1R35HL183558-01",
+      "organization": {
+        "org_name": "UNIVERSITY OF PENNSYLVANIA",
+        "city": null,
+        "country": null,
+        "org_city": "PHILADELPHIA",
+        "org_country": "UNITED STATES",
+        "org_state": "PA",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "042250712"
+        ],
+        "org_ueis": [
+          "GM1XX56LEP58",
+          " Z75RRBRSNRW4"
+        ],
+        "primary_duns": "042250712",
+        "primary_uei": "GM1XX56LEP58",
+        "org_fips": "US",
+        "org_ipf_code": "6463801",
+        "org_zipcode": "191046205",
+        "external_org_id": 6463801
+      },
+      "award_amount": 1137435,
+      "principal_investigators": [
+        {
+          "profile_id": 9758860,
+          "first_name": "Kiran",
+          "middle_name": "",
+          "last_name": "Musunuru",
+          "is_contact_pi": true,
+          "full_name": "Kiran  Musunuru",
+          "title": "PROFESSOR"
+        }
+      ],
+      "contact_pi_name": "MUSUNURU, KIRAN ",
+      "core_project_num": "R35HL183558",
+      "project_title": "Therapeutic editing for cardiovascular diseases",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11289876"
+    },
+    {
+      "fiscal_year": 2025,
+      "project_num": "1R01HL175424-01A1",
+      "organization": {
+        "org_name": "BOSTON UNIVERSITY MEDICAL CAMPUS",
+        "city": null,
+        "country": null,
+        "org_city": "BOSTON",
+        "org_country": "UNITED STATES",
+        "org_state": "MA",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "604483045"
+        ],
+        "org_ueis": [
+          "FBYMGMHW4X95"
+        ],
+        "primary_duns": "604483045",
+        "primary_uei": "FBYMGMHW4X95",
+        "org_fips": "US",
+        "org_ipf_code": "894901",
+        "org_zipcode": "021182340",
+        "external_org_id": 894901
+      },
+      "award_amount": 817498,
+      "principal_investigators": [
+        {
+          "profile_id": 10366655,
+          "first_name": "JINGYAN",
+          "middle_name": "",
+          "last_name": "HAN",
+          "is_contact_pi": false,
+          "full_name": "JINGYAN  HAN",
+          "title": "ASSOCIATE PROFESSOR"
+        },
+        {
+          "profile_id": 10771028,
+          "first_name": "Francesca",
+          "middle_name": "",
+          "last_name": "Seta",
+          "is_contact_pi": true,
+          "full_name": "Francesca  Seta",
+          "title": "ASSOCIATE PROFESSOR"
+        }
+      ],
+      "contact_pi_name": "SETA, FRANCESCA ",
+      "core_project_num": "R01HL175424",
+      "project_title": "Thiol redox signaling in aortic aneurysm",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11133210"
+    },
+    {
+      "fiscal_year": 2026,
+      "project_num": "5R01HL175424-02",
+      "organization": {
+        "org_name": "BOSTON UNIVERSITY MEDICAL CAMPUS",
+        "city": null,
+        "country": null,
+        "org_city": "BOSTON",
+        "org_country": "UNITED STATES",
+        "org_state": "MA",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "604483045"
+        ],
+        "org_ueis": [
+          "FBYMGMHW4X95"
+        ],
+        "primary_duns": "604483045",
+        "primary_uei": "FBYMGMHW4X95",
+        "org_fips": "US",
+        "org_ipf_code": "894901",
+        "org_zipcode": "021182340",
+        "external_org_id": 894901
+      },
+      "award_amount": 782413,
+      "principal_investigators": [
+        {
+          "profile_id": 10366655,
+          "first_name": "JINGYAN",
+          "middle_name": "",
+          "last_name": "HAN",
+          "is_contact_pi": false,
+          "full_name": "JINGYAN  HAN",
+          "title": "ASSOCIATE PROFESSOR"
+        },
+        {
+          "profile_id": 10771028,
+          "first_name": "Francesca",
+          "middle_name": "",
+          "last_name": "Seta",
+          "is_contact_pi": true,
+          "full_name": "Francesca  Seta",
+          "title": "ASSOCIATE PROFESSOR"
+        }
+      ],
+      "contact_pi_name": "SETA, FRANCESCA ",
+      "core_project_num": "R01HL175424",
+      "project_title": "Thiol redox signaling in aortic aneurysm",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11328829"
+    },
+    {
+      "fiscal_year": 2025,
+      "project_num": "1ZICHG200420-03",
+      "organization": {
+        "org_name": "NATIONAL HUMAN GENOME RESEARCH INSTITUTE",
+        "city": null,
+        "country": null,
+        "org_city": null,
+        "org_country": "UNITED STATES",
+        "org_state": null,
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": null,
+        "org_ueis": null,
+        "primary_duns": null,
+        "primary_uei": null,
+        "org_fips": null,
+        "org_ipf_code": null,
+        "org_zipcode": null,
+        "external_org_id": null
+      },
+      "award_amount": 772313,
+      "principal_investigators": [
+        {
+          "profile_id": 78377287,
+          "first_name": "Joshua",
+          "middle_name": "",
+          "last_name": "Denny",
+          "is_contact_pi": true,
+          "full_name": "Joshua  Denny",
+          "title": ""
+        }
+      ],
+      "contact_pi_name": "DENNY, JOSHUA ",
+      "core_project_num": "ZICHG200420",
+      "project_title": "Cohort Analytics Core",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11415357"
+    },
+    {
+      "fiscal_year": 2023,
+      "project_num": "5R01HL132141-06",
+      "organization": {
+        "org_name": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+        "city": null,
+        "country": null,
+        "org_city": "LA JOLLA",
+        "org_country": "UNITED STATES",
+        "org_state": "CA",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "804355790"
+        ],
+        "org_ueis": [
+          "UYTTZT6G9DT1"
+        ],
+        "primary_duns": "804355790",
+        "primary_uei": "UYTTZT6G9DT1",
+        "org_fips": "US",
+        "org_ipf_code": "577507",
+        "org_zipcode": "920930621",
+        "external_org_id": 577507
+      },
+      "award_amount": 731621,
+      "principal_investigators": [
+        {
+          "profile_id": 1858029,
+          "first_name": "RENATE",
+          "middle_name": "B",
+          "last_name": "PILZ",
+          "is_contact_pi": true,
+          "full_name": "RENATE B PILZ",
+          "title": "PROFESSOR OF MEDICINE"
+        }
+      ],
+      "contact_pi_name": "PILZ, RENATE B",
+      "core_project_num": "R01HL132141",
+      "project_title": "A novel treatment of aortic disease in Marfan Syndrome targeting oxidative stress and PKG dysregulation",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10588164"
+    },
+    {
+      "fiscal_year": 2025,
+      "project_num": "5R01HL132141-08",
+      "organization": {
+        "org_name": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+        "city": null,
+        "country": null,
+        "org_city": "LA JOLLA",
+        "org_country": "UNITED STATES",
+        "org_state": "CA",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "804355790"
+        ],
+        "org_ueis": [
+          "UYTTZT6G9DT1"
+        ],
+        "primary_duns": "804355790",
+        "primary_uei": "UYTTZT6G9DT1",
+        "org_fips": "US",
+        "org_ipf_code": "577507",
+        "org_zipcode": "920930621",
+        "external_org_id": 577507
+      },
+      "award_amount": 731621,
+      "principal_investigators": [
+        {
+          "profile_id": 1858029,
+          "first_name": "RENATE",
+          "middle_name": "B",
+          "last_name": "PILZ",
+          "is_contact_pi": true,
+          "full_name": "RENATE B PILZ",
+          "title": "PROFESSOR OF MEDICINE"
+        }
+      ],
+      "contact_pi_name": "PILZ, RENATE B",
+      "core_project_num": "R01HL132141",
+      "project_title": "A novel treatment of aortic disease in Marfan Syndrome targeting oxidative stress and PKG dysregulation",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11049191"
+    },
+    {
+      "fiscal_year": 2022,
+      "project_num": "2R01HL132141-05",
+      "organization": {
+        "org_name": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+        "city": null,
+        "country": null,
+        "org_city": "LA JOLLA",
+        "org_country": "UNITED STATES",
+        "org_state": "CA",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "804355790"
+        ],
+        "org_ueis": [
+          "UYTTZT6G9DT1"
+        ],
+        "primary_duns": "804355790",
+        "primary_uei": "UYTTZT6G9DT1",
+        "org_fips": "US",
+        "org_ipf_code": "577507",
+        "org_zipcode": "920930621",
+        "external_org_id": 577507
+      },
+      "award_amount": 731621,
+      "principal_investigators": [
+        {
+          "profile_id": 1858029,
+          "first_name": "RENATE",
+          "middle_name": "B",
+          "last_name": "PILZ",
+          "is_contact_pi": true,
+          "full_name": "RENATE B PILZ",
+          "title": "PROFESSOR OF MEDICINE"
+        }
+      ],
+      "contact_pi_name": "PILZ, RENATE B",
+      "core_project_num": "R01HL132141",
+      "project_title": "A novel treatment of aortic disease in Marfan Syndrome targeting oxidative stress and PKG dysregulation",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10453951"
+    },
+    {
+      "fiscal_year": 2024,
+      "project_num": "5R01HL132141-07",
+      "organization": {
+        "org_name": "UNIVERSITY OF CALIFORNIA, SAN DIEGO",
+        "city": null,
+        "country": null,
+        "org_city": "LA JOLLA",
+        "org_country": "UNITED STATES",
+        "org_state": "CA",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "804355790"
+        ],
+        "org_ueis": [
+          "UYTTZT6G9DT1"
+        ],
+        "primary_duns": "804355790",
+        "primary_uei": "UYTTZT6G9DT1",
+        "org_fips": "US",
+        "org_ipf_code": "577507",
+        "org_zipcode": "920930621",
+        "external_org_id": 577507
+      },
+      "award_amount": 716987,
+      "principal_investigators": [
+        {
+          "profile_id": 1858029,
+          "first_name": "RENATE",
+          "middle_name": "B",
+          "last_name": "PILZ",
+          "is_contact_pi": true,
+          "full_name": "RENATE B PILZ",
+          "title": "PROFESSOR OF MEDICINE"
+        }
+      ],
+      "contact_pi_name": "PILZ, RENATE B",
+      "core_project_num": "R01HL132141",
+      "project_title": "A novel treatment of aortic disease in Marfan Syndrome targeting oxidative stress and PKG dysregulation",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10805486"
+    }
+  ]
+}

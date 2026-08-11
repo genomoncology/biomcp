@@ -1,9 +1,6 @@
 # Disease Queries
 
-Disease workflows are where BioMCP has to normalize human language onto stable
-ontology IDs while still keeping treatment and diagnostic pivots close at hand.
-These batch-A canaries focus on MONDO grounding, synonym rescue, section gating,
-and executable follow-up guidance.
+Disease workflows normalize human language onto stable ontology IDs while keeping treatment and diagnostic pivots close at hand. These captured contracts replay recorded provider responses through the shipped CLI rather than treating current upstream availability as product behavior.
 
 ## Disease Request Planning Happens Before MyDisease Calls
 
@@ -20,30 +17,54 @@ contracts. The deterministic tests should cover disease JSON `_meta.next_command
 source provenance, markdown table/card anchors, and follow-up guidance without
 making live MyDisease, OLS4, Open Targets, GTR, or trial calls.
 
+
+## Captured Ontology Clinical Features
+
+The routine ontology fixture grounds chronic myeloid leukemia and serves the recorded Monarch association response locally. This proves that the public card carries a decoded HPO feature and its provenance, rather than merely rendering an empty clinical-features shell.
+
 ```bash
-"${BIOMCP_SPEC_TEST_LIB:?spec preparation did not export library tests}" ticket_377_disease_renderer_envelope_contracts --nocapture \
-  | mustmatch like 'ticket_377_disease_renderer_envelope_contracts'
+../../tools/biomcp-ci get disease "chronic myeloid leukemia" clinical_features | mustmatch like '## Clinical Features (Monarch / HPO)
+| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
+HP:0005547
+Myeloproliferative disorder
+infores:orphanet'
 ```
 
-## Disease Normalization & Search
+## Captured NIH Funding Context
 
-Direct disease search should still surface the canonical melanoma row with its
-MONDO identifier visible in the result table. Supported inheritance and onset
-filters remain accepted when narrowing that search; a live provider may
-legitimately return an empty filtered page.
+The local ontology fixture replays the receipted NIH Reporter search for Marfan syndrome. A funding card must retain the funding table and a non-empty grants collection, so callers do not mistake a dropped response for an empty research landscape.
 
 ```bash
-set -o pipefail
-../../tools/biomcp-ci --json search disease -q melanoma --inheritance "autosomal dominant" --limit 1 --no-fallback \
-  | jq 'has("results") and (.results | type == "array")' \
-  | mustmatch 'true'
+../../tools/biomcp-ci --json get disease "Marfan syndrome" funding | jq '.funding.grants | length > 0' | mustmatch 'true'
 ```
 
+## Captured Survival Card
+
+The ontology fixture also joins the captured CML identity to the recorded SEER catalog and survival payload. This disease-page contract keeps the named lookup form on the public rendering path and catches a regression that loses the survival card or fails to exit.
+
+<!-- mustmatch-lint: skip -->
+
+```bash run id=captured-disease-survival exit=0 timeout=25
+timeout 20s ../../tools/biomcp-ci get disease --name "chronic myeloid leukemia" survival
+```
+
+```text expect=captured-disease-survival contains
+## Survival (SEER Explorer)
+Source: Chronic Myeloid Leukemia (CML)
+| Sex | Latest observed year | 5-year relative survival | 95% CI | Cases | Latest modeled |
+Both Sexes
+```
+
+## Observed Disease Provider Requests
+
+The fixture records the requests emitted by production clients for identity,
+phenotype, funding, and survival data.
+
 ```bash
-set -o pipefail
-../../tools/biomcp-ci --json search disease -q melanoma --onset adult --limit 1 --no-fallback \
-  | jq 'has("results") and (.results | type == "array")' \
-  | mustmatch 'true'
+grep -F 'GET /mydisease/query?q=%28disease_ontology.name%3Achronic+myeloid+leukemia' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'size=15'
+grep -F 'GET /monarch/v3/api/association?subject=MONDO%3A0011996' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | grep -F 'limit=80' | mustmatch like 'object_category=biolink%3APhenotypicFeature'
+grep -F 'POST /nih/projects/search' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like '"search_text":"\"Marfan syndrome\""'
+grep -F 'GET /seer/render_region_5.php' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'site=97'
 ```
 
 ## Synonym Rescue
@@ -57,70 +78,14 @@ ranking is fixture-backed, OLS4 search construction is asserted by
 `MyDiseaseXrefLookupRequestPlan`. Any live OLS4/MyDisease upstream probe belongs
 in a release/live-smoke lane, not routine `make spec-pr`.
 
-## Canonical Disease Card
-
-The default card should expose the persistent ID, top cross-entity summaries,
-and the executable next steps for trials, articles, diagnostics, and drugs.
-
-```bash
-../../tools/biomcp-ci get disease melanoma | mustmatch like 'ID: MONDO:0005105
-Recruiting Trials (ClinicalTrials.gov):
-biomcp search trial -c "melanoma"
-biomcp search drug --indication "melanoma"'
-```
 
 ## Genes & Diagnostics
 
 `genes` and `diagnostics` stay opt-in sections, but when requested they should
 render as explicit tables and admit that the diagnostic list is truncated.
 
-## Clinical Features
-
-Clinical features are a separate opt-in Monarch/HPO-backed section. A disease
-outside the old curated answer-key set, such as melanoma, should render the
-backend phenotype rows directly instead of a MedlinePlus clinical-summary table
-or a blank curated fallback.
-
-```bash
-../../tools/biomcp-ci get disease melanoma clinical_features | mustmatch like '## Clinical Features (Monarch / HPO)
-| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
-HP:
-infores:'
-```
-
-## NIH Funding Context
-
-Funding belongs in its own section. The card should keep that view truthful and
-bounded instead of implying the first page is the whole research landscape.
-
-```bash
-../../tools/biomcp-ci get disease 'Marfan syndrome' funding | mustmatch like '## Funding (NIH Reporter)
-| Project | PI | Organization | FY | Amount |'
-```
 
 ## JSON Pivots
 
 The JSON card should keep the same executable disease follow-ups that the
 markdown card teaches to humans.
-
-## Disease Survival Commands Exit After Rendering (Live SEER)
-
-Relocated from the routine `cli-contract-ratchet.md` into the live lane: the
-survival card is sourced live from SEER Explorer, so this bounded-exit check must
-run in the live `verify` lane, not the deterministic routine gate. Disease
-survival cards are useful to agents only when the process exits after printing
-them; both command forms share the same disease-survival execution path, so each
-is bounded by `timeout` and asserts survival-card landmarks rather than exact
-percentages.
-
-```bash
-set -o pipefail
-timeout 20s ../../tools/biomcp-ci get disease --name "chronic myeloid leukemia" survival | mustmatch like '## Survival (SEER Explorer)
-Source: Chronic Myeloid Leukemia (CML)'
-```
-
-```bash
-set -o pipefail
-timeout 20s ../../tools/biomcp-ci get disease "chronic myeloid leukemia" survival | mustmatch like '## Survival (SEER Explorer)
-Source: Chronic Myeloid Leukemia (CML)'
-```

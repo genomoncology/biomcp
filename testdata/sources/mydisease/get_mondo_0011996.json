@@ -1,0 +1,254 @@
+{
+  "_id": "MONDO:0011996",
+  "_version": 1,
+  "disease_ontology": [
+    {
+      "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+      "def": "\"A chronic myeloid leukemia that is characterized by an abnormally high number of neutrophils and the expression of the BCR-ABL1 fusion gene.\" [url:https\\://pubmed.ncbi.nlm.nih.gov/32239758/]",
+      "doid": "DOID:0081088",
+      "name": "chronic myelogenous leukemia, BCR-ABL1 positive",
+      "parents": [
+        "DOID:8552"
+      ],
+      "synonyms": {
+        "exact": [
+          "Chronic myelogenous leukemia, BCR/ABL positive"
+        ]
+      },
+      "xrefs": {
+        "icd9": "205.1",
+        "icdo": "9875/3",
+        "mesh": "D015464",
+        "ncit": "C9128",
+        "snomedct_us_2025_09_01": "92818009"
+      }
+    },
+    {
+      "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+      "def": "\"A myeloid leukemia that is characterized by over production of white blood cells.\" [url:http\\://www.cancer.gov/dictionary?CdrID=46755]",
+      "doid": "DOID:8552",
+      "name": "chronic myeloid leukemia",
+      "parents": [
+        "DOID:8692"
+      ],
+      "synonyms": {
+        "exact": [
+          "chronic granulocytic leukaemia",
+          "chronic granulocytic leukemia",
+          "chronic myelogenous leukaemia",
+          "chronic myelogenous leukemia",
+          "chronic myeloid leukaemia",
+          "CML",
+          "CML - chronic Myelogenous Leukemia",
+          "Myeloid Leukemia, chronic"
+        ]
+      },
+      "xrefs": {
+        "efo": "0000339",
+        "gard": "6105",
+        "icd9": "205.1",
+        "icdo": "9863/3",
+        "kegg": "05220",
+        "mesh": "D015464",
+        "mim": "608232",
+        "ncit": "C9128",
+        "ordo": "521",
+        "snomedct_us_2025_09_01": "92818009"
+      }
+    }
+  ],
+  "hpo": [
+    {
+      "inheritance": {
+        "hpo_id": "HP:0001442"
+      },
+      "phenotype_related_to_disease": [
+        {
+          "evidence": "TAS",
+          "hpo_id": "HP:0004852"
+        },
+        {
+          "evidence": "TAS",
+          "hpo_id": "HP:0004848"
+        },
+        {
+          "evidence": "TAS",
+          "hpo_id": "HP:0005506"
+        }
+      ]
+    },
+    {
+      "phenotype_related_to_disease": [
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040280",
+          "hpo_id": "HP:0005547"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001744"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001871"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001873"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001894"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001911"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001912"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001945"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001974"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0004396"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0012378"
+        }
+      ]
+    }
+  ],
+  "mondo": {
+    "definition": "A chronic myeloproliferative neoplasm characterized by the expression of the BCR-ABL1 fusion gene. It presents with neutrophilic leukocytosis. It can appear at any age, but it mostly affects middle aged and older individuals. Patients usually present with fatigue, weight loss, anemia, night sweats, and splenomegaly. If untreated, it follows a biphasic or triphasic natural course; an initial indolent chronic phase which is followed by an accelerated phase, a blast phase, or both. Allogeneic stem cell transplantation and tyrosine kinase inhibitors delay disease progression and prolong overall survival. [NCIT:C3174]",
+    "parents": [
+      "MONDO:0004643",
+      "MONDO:0023603"
+    ],
+    "synonym": {
+      "exact": [
+        "BCR-ABL Positive chronic myelogenous leukaemia",
+        "BCR-ABL Positive chronic myelogenous leukemia",
+        "chronic granulocytic leukemia",
+        "chronic myelocytic leukaemia",
+        "chronic myelocytic leukemia",
+        "chronic myelogenous leukaemia (CML)",
+        "chronic myelogenous leukemia",
+        "chronic myelogenous leukemia (CML)",
+        "chronic myelogenous leukemia, BCR-ABL1 Positive",
+        "chronic myelogenous leukemias",
+        "chronic myeloid leukemia",
+        "CML",
+        "CML - chronic myelogenous leukaemia",
+        "CML - chronic myelogenous leukemia",
+        "hematopoeitic - chronic myelocytic leukaemia (CML)",
+        "hematopoeitic - chronic myelocytic leukemia (CML)",
+        "leukimia, chronic myeloid",
+        "myeloid leukemia, chronic"
+      ]
+    },
+    "xrefs": {
+      "doid": [
+        "DOID:0081088",
+        "DOID:8552"
+      ],
+      "efo": [
+        "EFO:0000339"
+      ],
+      "gard": [
+        "0006105"
+      ],
+      "icd9": [
+        "205.1"
+      ],
+      "icdo": [
+        "9875/3",
+        "9863/3"
+      ],
+      "meddra": [
+        "10009013"
+      ],
+      "medgen": [
+        "75993"
+      ],
+      "nando": [
+        "2200013"
+      ],
+      "ncit": [
+        "C3174"
+      ],
+      "omim": [
+        "608232"
+      ],
+      "oncotree": [
+        "CML"
+      ],
+      "orphanet": [
+        "521"
+      ],
+      "umls": [
+        "C0279543"
+      ]
+    }
+  },
+  "umls": [
+    {
+      "_license": "https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/license_agreement.html",
+      "nci": {
+        "non-preferred": "C3174",
+        "preferred": "C3174"
+      },
+      "snomed": {
+        "non-preferred": "128825002"
+      }
+    },
+    {
+      "_license": "https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/license_agreement.html",
+      "icd10am": {
+        "non-preferred": [
+          "C92.1",
+          "M9863/3"
+        ]
+      },
+      "mesh": {
+        "non-preferred": "D015464"
+      },
+      "nci": {
+        "non-preferred": "C9128",
+        "preferred": "C9128"
+      },
+      "snomed": {
+        "non-preferred": [
+          "449108003",
+          "63364005",
+          "1162588009",
+          "92818009",
+          "154592009",
+          "188735005"
+        ],
+        "preferred": [
+          "92818009",
+          "449108003"
+        ]
+      }
+    }
+  ]
+}

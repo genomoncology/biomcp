@@ -1,0 +1,769 @@
+{
+  "_id": "MONDO:0007947",
+  "_version": 1,
+  "disease_ontology": {
+    "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+    "def": "\"A connective tissue disease that is characterized by tall stature, elongated extremities, mitral valve prolapse, aortic dilatation, aortic dissection, and subluxation of the lens.\" [url:https\\://ghr.nlm.nih.gov/condition/marfan-syndrome#inheritance, url:https\\://ncit.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&version=16.12d&ns=NCI_Thesaurus&code=C34807, url:https\\://rarediseases.org/rare-diseases/marfan-syndrome/]",
+    "doid": "DOID:14323",
+    "name": "Marfan syndrome",
+    "parents": [
+      "DOID:520",
+      "DOID:5614",
+      "DOID:65"
+    ],
+    "synonyms": {
+      "exact": [
+        "Marfan's syndrome"
+      ]
+    },
+    "xrefs": {
+      "gard": "6975",
+      "icd10": "Q87.4",
+      "icd9": "759.82",
+      "mesh": "D008382",
+      "mim": "154700",
+      "ncit": "C34807",
+      "snomedct_us_2025_09_01": "19346006",
+      "umls_cui": "C0024796"
+    }
+  },
+  "hpo": [
+    {
+      "inheritance": {
+        "hpo_id": "HP:0000006"
+      },
+      "phenotype_related_to_disease": [
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0430043"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000483"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001377"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000486"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0005136"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0001371"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0003199"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0025586"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000518"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0008132"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0002816"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0002616"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001647"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000678"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0008138"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001840"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001763"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0000278"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0007800"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0001765"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0002751"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000494"
+        },
+        {
+          "evidence": "TAS",
+          "hpo_id": "HP:0000098"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0004970"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001382"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0003088"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000490"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001065"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0005180"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0012385"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0100775"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000767"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0004927"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0003758"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001659"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0007676"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000768"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000565"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001653"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0002107"
+        },
+        {
+          "evidence": "PCS",
+          "hp_freq": "HP:0040284",
+          "hpo_id": "HP:0032934"
+        },
+        {
+          "evidence": "TAS",
+          "hpo_id": "HP:0000189"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0000541"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0003179"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0012773"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001704"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000218"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001786"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000577"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001166"
+        },
+        {
+          "evidence": "TAS",
+          "hpo_id": "HP:0000275"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0003302"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0002650"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001883"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0004872"
+        },
+        {
+          "evidence": "TAS",
+          "hpo_id": "HP:0000276"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0030961"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001761"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0025599"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0002097"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000272"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001083"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001519"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0001635"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0002647"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000268"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000501"
+        },
+        {
+          "evidence": "IEA",
+          "hpo_id": "HP:0000347"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0001634"
+        },
+        {
+          "evidence": "PCS",
+          "hpo_id": "HP:0000545"
+        }
+      ]
+    },
+    {
+      "phenotype_related_to_disease": [
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0001519"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0001533"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0001763"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0002108"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0002616"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0004942"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0012432"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0000275"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0000505"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0000545"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0000678"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0000767"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001083"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001132"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001382"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001634"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001653"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001659"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0001704"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0002360"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0002647"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0002650"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0002705"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0003179"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0004970"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0005059"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0007800"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0010535"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0010668"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0012019"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040282",
+          "hpo_id": "HP:0100775"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000023"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000175"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000268"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000278"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000347"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000494"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000501"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000541"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000938"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0000939"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0001252"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0001635"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0002097"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0002105"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0002435"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0002636"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0002808"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0002996"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0003202"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0003302"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0003326"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0004326"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0004349"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0004382"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0004756"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0004927"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0005162"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0005294"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0006687"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0007018"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0007676"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0007720"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0010807"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040283",
+          "hpo_id": "HP:0100785"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0000768"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0001065"
+        },
+        {
+          "evidence": "TAS",
+          "hp_freq": "HP:0040281",
+          "hpo_id": "HP:0001166"
+        }
+      ]
+    }
+  ],
+  "mondo": {
+    "definition": "A disorder of the connective tissue. Connective tissue provides strength and flexibility to structures throughout the body such as bones, ligaments, muscles, walls of blood vessels, and heart valves. Marfan syndrome affects most organs and tissues, especially the skeleton, lungs, eyes, heart, and the large blood vessel that distributes blood from the heart to the rest of the body (the aorta). It is caused by mutations in the FBN1 gene, which provides instructions for making a protein called fibrillin-1. Marfan syndrome is inherited in an autosomal dominant pattern. At least 25% of cases are due to a new (de novo) mutation. Treatment is based on the signs and symptoms in each person. [https://rarediseases.info.nih.gov/diseases/6975/marfan-syndrome]",
+    "parents": [
+      "MONDO:0000426",
+      "MONDO:0002254",
+      "MONDO:0005172",
+      "MONDO:0017310"
+    ],
+    "synonym": {
+      "exact": [
+        "Marfan syndrome",
+        "Marfan syndrome type 1",
+        "Marfan syndrome, type 1",
+        "Marfan's syndrome",
+        "MFS",
+        "MFS1"
+      ]
+    },
+    "xrefs": {
+      "doid": [
+        "DOID:14323"
+      ],
+      "gard": [
+        "0016535"
+      ],
+      "icd10cm": [
+        "Q87.4"
+      ],
+      "icd11": [
+        "foundation:236564145"
+      ],
+      "icd9": [
+        "759.82"
+      ],
+      "meddra": [
+        "10026829"
+      ],
+      "medgen": [
+        "44287"
+      ],
+      "mesh": [
+        "D008382"
+      ],
+      "nando": [
+        "2200968",
+        "1200644"
+      ],
+      "ncit": [
+        "C34807"
+      ],
+      "nord": [
+        "1403"
+      ],
+      "omim": [
+        "154700"
+      ],
+      "orphanet": [
+        "284963",
+        "558"
+      ],
+      "sctid": [
+        "19346006"
+      ],
+      "umls": [
+        "C0024796"
+      ]
+    }
+  },
+  "umls": [
+    {
+      "_license": "https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/license_agreement.html",
+      "icd10am": {
+        "preferred": "Q87.4"
+      },
+      "mesh": {
+        "preferred": "D008382"
+      },
+      "nci": {
+        "preferred": "C34807"
+      },
+      "snomed": {
+        "non-preferred": [
+          "157024004",
+          "19346006"
+        ],
+        "preferred": [
+          "268359006",
+          "157033002",
+          "157024004",
+          "19346006"
+        ]
+      }
+    },
+    {
+      "_license": "https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/release/license_agreement.html",
+      "mesh": {
+        "non-preferred": "D008382",
+        "preferred": "D008382"
+      },
+      "snomed": {
+        "non-preferred": "1003407000"
+      }
+    }
+  ]
+}

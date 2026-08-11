@@ -825,7 +825,7 @@ def test_ticket_377_renderer_envelope_specs_document_deterministic_coverage() ->
         assert "without" in lower and "live" in lower and "calls" in lower, (
             f"{path} must state the contract runs without live source calls"
         )
-        if path in {"spec/entity/article.md", "spec/entity/variant.md"}:
+        if path in {"spec/entity/article.md", "spec/entity/disease.md", "spec/entity/variant.md"}:
             assert marker not in section, f"{path} must not relaunch cargo marker {marker} from routine specs"
             assert "cargo test" not in section, f"{path} must keep renderer/envelope proof in make test"
         else:
@@ -835,6 +835,7 @@ def test_ticket_377_renderer_envelope_specs_document_deterministic_coverage() ->
 ROUTINE_SPEC_PATHS = (
     "spec/entity/article.md",
     "spec/entity/author.md",
+    "spec/entity/disease.md",
     "spec/entity/disease-survival-fixture.md",
     "spec/entity/drug.md",
     "spec/entity/gene.md",
@@ -894,7 +895,7 @@ LIVE_SPEC_PATHS = (
     "spec/entity/article-graph-live.md",
     "spec/entity/ddinter-live.md",
     "spec/entity/diagnostic.md",
-    "spec/entity/disease.md",
+    "spec/entity/disease-live.md",
     "spec/entity/pathway.md",
     "spec/entity/phenotype.md",
     "spec/entity/protein.md",
@@ -928,7 +929,8 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     skills_index = routine.index("spec/surface/skills.md")
     assert routine[skills_index + 1] == "tests/surface/test_parallel_isolation_contract.py"
     assert "spec/surface/cli-contract-ratchet.md" in routine
-    assert "spec/entity/disease.md" not in routine
+    assert "spec/entity/disease.md" in routine
+    assert "spec/entity/disease-live.md" not in routine
     assert "spec/surface/discover.md" not in routine
 
 
@@ -1248,7 +1250,7 @@ def test_ticket_379_target_specs_drop_count_prose_trivia() -> None:
         (
             "spec/entity/disease.md",
             2,
-            "NIH Funding Context",
+            "Captured NIH Funding Context",
             ("grant",),
         ),
     )

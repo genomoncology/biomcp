@@ -1,0 +1,631 @@
+{
+  "VariableFormats": {
+    "age_range": {
+      "1": "All Ages",
+      "9": "Ages < 50",
+      "6": "Ages < 65",
+      "141": "Ages 50-64",
+      "157": "Ages 65+",
+      "16": "Ages <15",
+      "11": "Ages <40",
+      "62": "Ages 15-39",
+      "122": "Ages 40-64",
+      "160": "Ages 65-74",
+      "166": "Ages 75+",
+      "15": "Ages < 20",
+      "200": "<1",
+      "201": "1-4",
+      "202": "5-9",
+      "203": "10-14",
+      "204": "15-19",
+      "205": "20-24",
+      "206": "25-29",
+      "207": "30-34",
+      "208": "35-39",
+      "209": "40-44",
+      "210": "45-49",
+      "211": "50-54",
+      "212": "55-59",
+      "213": "60-64",
+      "214": "65-69",
+      "215": "70-74",
+      "216": "75-79",
+      "217": "80-84",
+      "218": "85-89",
+      "219": "90+",
+      "300": "Age 0",
+      "301": "Age 5",
+      "302": "Age 10",
+      "303": "Age 15",
+      "304": "Age 20",
+      "305": "Age 25",
+      "306": "Age 30",
+      "307": "Age 35",
+      "308": "Age 40",
+      "309": "Age 45",
+      "310": "Age 50",
+      "311": "Age 55",
+      "312": "Age 60",
+      "313": "Age 65",
+      "314": "Age 70",
+      "315": "Age 75",
+      "316": "Age 80",
+      "317": "Age 85",
+      "318": "Age 90",
+      "319": "Age 95",
+      "320": "Age 95+",
+      "999": "Age NA"
+    },
+    "subtype": {
+      "76": "Brain and ONS (All Types)",
+      "500": "Non-malignant Brain and ONS (All Types)",
+      "55": "Breast (All Types)",
+      "622": "HR+/HER2-",
+      "623": "HR-/HER2-",
+      "620": "HR+/HER2+",
+      "621": "HR-/HER2+",
+      "17": "Esophagus (All Types)",
+      "600": "Adenocarcinoma",
+      "601": "Squamous Cell Carcinoma",
+      "72": "Kidney and Renal Pelvis",
+      "630": "Kidney",
+      "640": "Renal Pelvis",
+      "90": "Leukemia (All Types)",
+      "92": "Acute Lymphocytic Leukemia (ALL)",
+      "93": "Chronic Lymphocytic Leukemia (CLL)",
+      "96": "Acute Myeloid Leukemia (AML)",
+      "97": "Chronic Myeloid Leukemia (CML)",
+      "100": "Acute Monocytic Leukemia (AML-M5)",
+      "660": "Diffuse Astrocytoma and Anaplastic Astrocytoma",
+      "661": "Glioblastoma",
+      "47": "Lung and Bronchus (All Types)",
+      "662": "Other Glioma",
+      "612": "Adenocarcinoma",
+      "663": "Embryonal Tumors",
+      "664": "Meningioma",
+      "613": "Large Cell Carcinoma",
+      "611": "Small Cell Carcinoma",
+      "665": "Other Tumors of Brain and ONS",
+      "610": "Squamous Cell Carcinoma",
+      "501": "Non-malignant Meningioma",
+      "502": "Non-malignant Tumors of the Cranial and Paraspinal Nerves",
+      "80": "Thyroid (All Types)",
+      "651": "Follicular Subtype Carcinomas",
+      "650": "Papillary Subtype Carcinomas"
+    },
+    "site": {
+      "1": "All Cancer Sites Combined",
+      "34": "Anus, Anal Canal & Anorectum",
+      "50": "Bones and Joints",
+      "76": "Brain and Other Nervous System",
+      "660": "Diffuse Astrocytoma and Anaplastic Astrocytoma of the Brain and ONS",
+      "661": "Glioblastoma of the Brain and ONS",
+      "662": "Other Glioma of the Brain and ONS",
+      "663": "Embryonal Tumors of the Brain and ONS",
+      "664": "Meningioma of the Brain and ONS",
+      "500": "Non-malignant Brain and Other Nervous System",
+      "501": "Non-malignant Meningioma of the Brain and ONS",
+      "502": "Non-malignant Tumors of the Cranial and Paraspinal Nerves",
+      "55": "Breast",
+      "622": "HR+/HER2- Breast Cancer (Female only)",
+      "623": "HR-/HER2- Breast Cancer (Female only)",
+      "620": "HR+/HER2+ Breast Cancer (Female only)",
+      "621": "HR-/HER2+ Breast Cancer (Female only)",
+      "57": "Cervix Uteri",
+      "402": "Chronic myeloproliferative disorders (CMD)",
+      "20": "Colon and Rectum (including Appendix)",
+      "21": "Colon (including Appendix)",
+      "31": "Rectum",
+      "670": "Colon and Rectum (excluding Appendix)",
+      "58": "Corpus and Uterus, NOS",
+      "17": "Esophagus",
+      "600": "Adenocarcinoma of the Esophagus",
+      "601": "Squamous Cell Carcinoma of the Esophagus",
+      "75": "Eye and Orbit",
+      "38": "Gallbladder",
+      "83": "Hodgkin Lymphoma",
+      "110": "Kaposi Sarcoma",
+      "72": "Kidney and Renal Pelvis",
+      "630": "Kidney",
+      "640": "Renal Pelvis",
+      "46": "Larynx",
+      "90": "Leukemia",
+      "92": "Acute Lymphocytic Leukemia (ALL)",
+      "93": "Chronic Lymphocytic Leukemia (CLL)",
+      "96": "Acute Myeloid Leukemia (AML)",
+      "97": "Chronic Myeloid Leukemia (CML)",
+      "100": "Acute Monocytic Leukemia (AML-M5)",
+      "418": "Chronic Myelomonocytic Leukemia (CMML)",
+      "35": "Liver and Intrahepatic Bile Duct",
+      "47": "Lung and Bronchus",
+      "612": "Adenocarcinoma of the Lung and Bronchus",
+      "613": "Large Cell Carcinoma of the Lung and Bronchus",
+      "611": "Small cell carcinoma of the Lung and Bronchus",
+      "610": "Squamous Cell Carcinoma of the Lung and Bronchus",
+      "53": "Melanoma of the Skin",
+      "111": "Mesothelioma",
+      "409": "Myelodysplastic syndromes (MDS)",
+      "89": "Myeloma",
+      "86": "Non-Hodgkin Lymphoma",
+      "3": "Oral Cavity and Pharynx",
+      "5": "Lip",
+      "6": "Tongue",
+      "7": "Salivary Gland",
+      "8": "Floor of Mouth",
+      "9": "Gum & other mouth",
+      "12": "Oropharynx & Tonsil",
+      "61": "Ovary",
+      "40": "Pancreas",
+      "66": "Prostate",
+      "19": "Small Intestine",
+      "51": "Soft Tissue including Heart",
+      "18": "Stomach",
+      "67": "Testis",
+      "80": "Thyroid",
+      "651": "Follicular Subtype of the Thyroid",
+      "650": "Papillary Subtype of the Thyroid",
+      "71": "Urinary Bladder (Invasive & In Situ)",
+      "62": "Vagina",
+      "63": "Vulva"
+    },
+    "data_model": {
+      "3": "Preliminary Estimates (Selected Registries 2000-2024)",
+      "1": "Selected Registries (2000-2023)",
+      "4": "SEER 21 Registries (2000-2023) - NCI Official Statistics"
+    },
+    "data_type": {
+      "1": "SEER Incidence",
+      "2": "U.S. Mortality",
+      "9": "Incidence and Mortality Comparison",
+      "4": "Survival",
+      "5": "Prevalence",
+      "6": "Risk of Diagnosis/Dying",
+      "3": "Preliminary Incidence Rates"
+    },
+    "footnote_type": {
+      "1": "Data Source",
+      "2": "Methodology",
+      "3": "Race/Ethnicity Coding",
+      "4": "Cancer Site Coding"
+    },
+    "graph_type": {
+      "2": "Recent Trends",
+      "10": "Recent Rates",
+      "5": "5-Year Survival",
+      "1": "Long-Term Trends",
+      "3": "Rates by Age",
+      "4": "Stage Distribution",
+      "6": "By Time Since Diagnosis",
+      "8": "Risk Intervals",
+      "7": "Risk Comparisons",
+      "11": "Complete",
+      "12": "Limited Duration",
+      "13": "Conditional Survival",
+      "14": "Median Age",
+      "15": "Rural/Urban Trends",
+      "16": "Rural/Urban Rates"
+    },
+    "prev_duration": {
+      "1": "<= 31 Years",
+      "2": "<= 22 Years",
+      "3": "<= 13 Years",
+      "10": "<= 5 Years",
+      "11": ">5-10 Years",
+      "12": ">10-15 Years",
+      "13": ">15-20 Years",
+      "14": ">20-25 Years",
+      "15": ">25-30 Years"
+    },
+    "race": {
+      "1": "All Races / Ethnicities",
+      "6": "Hispanic (any race)",
+      "5": "Non-Hispanic American Indian / Alaska Native",
+      "4": "Non-Hispanic Asian / Pacific Islander",
+      "9": "Non-Hispanic Black",
+      "8": "Non-Hispanic White",
+      "3": "Black (includes Hispanic)",
+      "2": "White (includes Hispanic)"
+    },
+    "rate_type": {
+      "1": "Observed SEER Incidence Rate",
+      "2": "Delay-adjusted SEER Incidence Rate",
+      "3": "U.S. Mortality Rate"
+    },
+    "rucc": {
+      "3": "Rural Areas",
+      "2": "Urban Areas"
+    },
+    "sex": {
+      "1": "Both Sexes",
+      "3": "Female",
+      "2": "Male"
+    },
+    "stage": {
+      "101": "All Stages",
+      "102": "In Situ",
+      "103": "All Invasive Stages",
+      "104": "Localized",
+      "105": "Regional",
+      "106": "Distant",
+      "107": "Unstaged"
+    },
+    "stat_type": {
+      "10": "Being Diagnosed with Cancer (2021-2023)",
+      "11": "Dying from Cancer (2022-2024)"
+    },
+    "relative_survival_interval": {
+      "1": "1-year Relative Survival",
+      "2": "2-year Relative Survival",
+      "3": "3-year Relative Survival",
+      "5": "5-year Relative Survival",
+      "10": "10-year Relative Survival"
+    },
+    "survival_interval": [
+      "Diagnosis",
+      "1 year",
+      "2 years",
+      "3 years",
+      "4 years",
+      "5 years",
+      "6 years",
+      "7 years",
+      "8 years",
+      "9 years",
+      "10 years"
+    ],
+    "risk_interval": {
+      "99": "Remaining Life",
+      "5": "Next 5 Years",
+      "10": "Next 10 Years",
+      "15": "Next 15 Years",
+      "20": "Next 20 Years",
+      "25": "Next 25 Years",
+      "30": "Next 30 Years",
+      "35": "Next 35 Years",
+      "40": "Next 40 Years",
+      "45": "Next 45 Years",
+      "50": "Next 50 Years",
+      "55": "Next 55 Years",
+      "60": "Next 60 Years",
+      "65": "Next 65 Years",
+      "70": "Next 70 Years",
+      "75": "Next 75 Years",
+      "80": "Next 80 Years",
+      "85": "Next 85 Years",
+      "90": "Next 90 Years",
+      "95": "Next 95 Years",
+      "999": "Not Applicable"
+    },
+    "suppression_type": {
+      "1": "Estimates based on less than 16 cases are suppressed and not shown.",
+      "4": "Estimates based on less than 25 cases are suppressed and not shown.",
+      "5": "Prevalence estimates based on less than 16 cases are suppressed and not shown.",
+      "6": "Delay-adjusted estimates are not available for male breast cancer."
+    },
+    "trend_type": {
+      "1": "Average Annual Percent Change",
+      "2": "Annual Percent Change"
+    },
+    "years_since_dx": {
+      "0": "From Time of Diagnosis",
+      "1": "From 1 Year Since Diagnosis",
+      "3": "From 3 Years Since Diagnosis",
+      "5": "From 5 Years Since Diagnosis"
+    },
+    "year_range": {
+      "31": "1975-2022",
+      "21": "1975-2024",
+      "1": "1975-2023",
+      "23": "2000-2024",
+      "13": "2000-2022",
+      "3": "2000-2023",
+      "33": "2000-2022",
+      "14": "2001-2023",
+      "15": "2004-2023",
+      "35": "2004-2022",
+      "36": "2010-2022",
+      "16": "2010-2023",
+      "4": "2014-2023",
+      "9": "2016-2022",
+      "5": "2019-2023",
+      "25": "2020-2024",
+      "8": "2021-2023",
+      "28": "2022-2024",
+      "12": "January 1, 2023"
+    }
+  },
+  "CancerSites": [
+    {
+      "value": 1,
+      "active": true
+    },
+    {
+      "value": 34,
+      "active": true
+    },
+    {
+      "value": 50,
+      "active": true
+    },
+    {
+      "value": 76,
+      "active": true
+    },
+    {
+      "value": 660,
+      "active": true
+    },
+    {
+      "value": 661,
+      "active": true
+    },
+    {
+      "value": 662,
+      "active": true
+    },
+    {
+      "value": 663,
+      "active": true
+    },
+    {
+      "value": 664,
+      "active": true
+    },
+    {
+      "value": 500,
+      "active": true
+    },
+    {
+      "value": 501,
+      "active": true
+    },
+    {
+      "value": 502,
+      "active": true
+    },
+    {
+      "value": 55,
+      "active": true
+    },
+    {
+      "value": 622,
+      "active": true
+    },
+    {
+      "value": 623,
+      "active": true
+    },
+    {
+      "value": 620,
+      "active": true
+    },
+    {
+      "value": 621,
+      "active": true
+    },
+    {
+      "value": 57,
+      "active": true
+    },
+    {
+      "value": 402,
+      "active": true
+    },
+    {
+      "value": 20,
+      "active": true
+    },
+    {
+      "value": 21,
+      "active": true
+    },
+    {
+      "value": 31,
+      "active": true
+    },
+    {
+      "value": 670,
+      "active": true
+    },
+    {
+      "value": 58,
+      "active": true
+    },
+    {
+      "value": 17,
+      "active": true
+    },
+    {
+      "value": 600,
+      "active": true
+    },
+    {
+      "value": 601,
+      "active": true
+    },
+    {
+      "value": 75,
+      "active": true
+    },
+    {
+      "value": 38,
+      "active": true
+    },
+    {
+      "value": 83,
+      "active": true
+    },
+    {
+      "value": 110,
+      "active": true
+    },
+    {
+      "value": 72,
+      "active": true
+    },
+    {
+      "value": 630,
+      "active": true
+    },
+    {
+      "value": 640,
+      "active": true
+    },
+    {
+      "value": 46,
+      "active": true
+    },
+    {
+      "value": 90,
+      "active": true
+    },
+    {
+      "value": 92,
+      "active": true
+    },
+    {
+      "value": 93,
+      "active": true
+    },
+    {
+      "value": 96,
+      "active": true
+    },
+    {
+      "value": 97,
+      "active": true
+    },
+    {
+      "value": 100,
+      "active": true
+    },
+    {
+      "value": 418,
+      "active": true
+    },
+    {
+      "value": 35,
+      "active": true
+    },
+    {
+      "value": 47,
+      "active": true
+    },
+    {
+      "value": 612,
+      "active": true
+    },
+    {
+      "value": 613,
+      "active": true
+    },
+    {
+      "value": 611,
+      "active": true
+    },
+    {
+      "value": 610,
+      "active": true
+    },
+    {
+      "value": 53,
+      "active": true
+    },
+    {
+      "value": 111,
+      "active": true
+    },
+    {
+      "value": 409,
+      "active": true
+    },
+    {
+      "value": 89,
+      "active": true
+    },
+    {
+      "value": 86,
+      "active": true
+    },
+    {
+      "value": 3,
+      "active": true
+    },
+    {
+      "value": 5,
+      "active": true
+    },
+    {
+      "value": 6,
+      "active": true
+    },
+    {
+      "value": 7,
+      "active": true
+    },
+    {
+      "value": 8,
+      "active": true
+    },
+    {
+      "value": 9,
+      "active": true
+    },
+    {
+      "value": 12,
+      "active": true
+    },
+    {
+      "value": 61,
+      "active": true
+    },
+    {
+      "value": 40,
+      "active": true
+    },
+    {
+      "value": 66,
+      "active": true
+    },
+    {
+      "value": 19,
+      "active": true
+    },
+    {
+      "value": 51,
+      "active": true
+    },
+    {
+      "value": 18,
+      "active": true
+    },
+    {
+      "value": 67,
+      "active": true
+    },
+    {
+      "value": 80,
+      "active": true
+    },
+    {
+      "value": 651,
+      "active": true
+    },
+    {
+      "value": 650,
+      "active": true
+    },
+    {
+      "value": 71,
+      "active": true
+    },
+    {
+      "value": 62,
+      "active": true
+    },
+    {
+      "value": 63,
+      "active": true
+    }
+  ]
+}

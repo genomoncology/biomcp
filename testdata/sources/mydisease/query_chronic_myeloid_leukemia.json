@@ -1,0 +1,153 @@
+{
+  "took": 2,
+  "total": 2,
+  "max_score": 50.69998,
+  "hits": [
+    {
+      "_id": "MONDO:0004653",
+      "_score": 50.69998,
+      "disease_ontology": {
+        "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+        "name": "atypical chronic myeloid leukemia, BCR-ABL1 negative",
+        "synonyms": {
+          "exact": [
+            "aCML",
+            "atypical chronic myeloid leukaemia",
+            "atypical chronic myeloid leukaemia BCR-ABL1 negative",
+            "atypical chronic myeloid leukemia BCR-ABL1 negative",
+            "atypical CML",
+            "subacute myeloid leukemia"
+          ]
+        }
+      },
+      "mondo": {
+        "synonym": {
+          "exact": [
+            "aCML",
+            "atypical chronic myeloid leukaemia",
+            "atypical chronic myeloid leukemia",
+            "atypical chronic myeloid leukemia, BCR-ABL1 Negative",
+            "atypical CML",
+            "subacute granulocytic leukaemia",
+            "subacute granulocytic leukemia",
+            "subacute myelogenous leukaemia",
+            "subacute myelogenous leukemia",
+            "subacute myeloid leukaemia",
+            "subacute myeloid leukemia"
+          ]
+        }
+      }
+    },
+    {
+      "_id": "MONDO:0011996",
+      "_score": 48.019978,
+      "disease_ontology": [
+        {
+          "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+          "name": "chronic myelogenous leukemia, BCR-ABL1 positive",
+          "synonyms": {
+            "exact": [
+              "Chronic myelogenous leukemia, BCR/ABL positive"
+            ]
+          }
+        },
+        {
+          "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+          "name": "chronic myeloid leukemia",
+          "synonyms": {
+            "exact": [
+              "chronic granulocytic leukaemia",
+              "chronic granulocytic leukemia",
+              "chronic myelogenous leukaemia",
+              "chronic myelogenous leukemia",
+              "chronic myeloid leukaemia",
+              "CML",
+              "CML - chronic Myelogenous Leukemia",
+              "Myeloid Leukemia, chronic"
+            ]
+          }
+        }
+      ],
+      "hpo": [
+        {
+          "inheritance": {
+            "hpo_id": "HP:0001442",
+            "hpo_name": "Typified by somatic mosaicism"
+          },
+          "phenotype_related_to_disease": [
+            {
+              "hpo_id": "HP:0004852"
+            },
+            {
+              "hpo_id": "HP:0004848"
+            },
+            {
+              "hpo_id": "HP:0005506"
+            }
+          ]
+        },
+        {
+          "phenotype_related_to_disease": [
+            {
+              "hpo_id": "HP:0005547"
+            },
+            {
+              "hpo_id": "HP:0001744"
+            },
+            {
+              "hpo_id": "HP:0001871"
+            },
+            {
+              "hpo_id": "HP:0001873"
+            },
+            {
+              "hpo_id": "HP:0001894"
+            },
+            {
+              "hpo_id": "HP:0001911"
+            },
+            {
+              "hpo_id": "HP:0001912"
+            },
+            {
+              "hpo_id": "HP:0001945"
+            },
+            {
+              "hpo_id": "HP:0001974"
+            },
+            {
+              "hpo_id": "HP:0004396"
+            },
+            {
+              "hpo_id": "HP:0012378"
+            }
+          ]
+        }
+      ],
+      "mondo": {
+        "synonym": {
+          "exact": [
+            "BCR-ABL Positive chronic myelogenous leukaemia",
+            "BCR-ABL Positive chronic myelogenous leukemia",
+            "chronic granulocytic leukemia",
+            "chronic myelocytic leukaemia",
+            "chronic myelocytic leukemia",
+            "chronic myelogenous leukaemia (CML)",
+            "chronic myelogenous leukemia",
+            "chronic myelogenous leukemia (CML)",
+            "chronic myelogenous leukemia, BCR-ABL1 Positive",
+            "chronic myelogenous leukemias",
+            "chronic myeloid leukemia",
+            "CML",
+            "CML - chronic myelogenous leukaemia",
+            "CML - chronic myelogenous leukemia",
+            "hematopoeitic - chronic myelocytic leukaemia (CML)",
+            "hematopoeitic - chronic myelocytic leukemia (CML)",
+            "leukimia, chronic myeloid",
+            "myeloid leukemia, chronic"
+          ]
+        }
+      }
+    }
+  ]
+}

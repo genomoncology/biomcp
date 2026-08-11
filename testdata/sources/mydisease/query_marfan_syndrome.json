@@ -1,0 +1,460 @@
+{
+  "took": 2,
+  "total": 1,
+  "max_score": 28.000715,
+  "hits": [
+    {
+      "_id": "MONDO:0007947",
+      "_score": 28.000715,
+      "disease_ontology": {
+        "_license": "https://github.com/DiseaseOntology/HumanDiseaseOntology/blob/master/DO_LICENSE.txt",
+        "name": "Marfan syndrome",
+        "synonyms": {
+          "exact": [
+            "Marfan's syndrome"
+          ]
+        }
+      },
+      "hpo": [
+        {
+          "inheritance": {
+            "hpo_id": "HP:0000006",
+            "hpo_name": "Autosomal dominant inheritance"
+          },
+          "phenotype_related_to_disease": [
+            {
+              "hpo_id": "HP:0430043"
+            },
+            {
+              "hpo_id": "HP:0000483"
+            },
+            {
+              "hpo_id": "HP:0001377"
+            },
+            {
+              "hpo_id": "HP:0000486"
+            },
+            {
+              "hpo_id": "HP:0005136"
+            },
+            {
+              "hpo_id": "HP:0001371"
+            },
+            {
+              "hpo_id": "HP:0003199"
+            },
+            {
+              "hpo_id": "HP:0025586"
+            },
+            {
+              "hpo_id": "HP:0000518"
+            },
+            {
+              "hpo_id": "HP:0008132"
+            },
+            {
+              "hpo_id": "HP:0002816"
+            },
+            {
+              "hpo_id": "HP:0002616"
+            },
+            {
+              "hpo_id": "HP:0001647"
+            },
+            {
+              "hpo_id": "HP:0000678"
+            },
+            {
+              "hpo_id": "HP:0008138"
+            },
+            {
+              "hpo_id": "HP:0001840"
+            },
+            {
+              "hpo_id": "HP:0001763"
+            },
+            {
+              "hpo_id": "HP:0000278"
+            },
+            {
+              "hpo_id": "HP:0007800"
+            },
+            {
+              "hpo_id": "HP:0001765"
+            },
+            {
+              "hpo_id": "HP:0002751"
+            },
+            {
+              "hpo_id": "HP:0000494"
+            },
+            {
+              "hpo_id": "HP:0000098"
+            },
+            {
+              "hpo_id": "HP:0004970"
+            },
+            {
+              "hpo_id": "HP:0001382"
+            },
+            {
+              "hpo_id": "HP:0003088"
+            },
+            {
+              "hpo_id": "HP:0000490"
+            },
+            {
+              "hpo_id": "HP:0001065"
+            },
+            {
+              "hpo_id": "HP:0005180"
+            },
+            {
+              "hpo_id": "HP:0012385"
+            },
+            {
+              "hpo_id": "HP:0100775"
+            },
+            {
+              "hpo_id": "HP:0000767"
+            },
+            {
+              "hpo_id": "HP:0004927"
+            },
+            {
+              "hpo_id": "HP:0003758"
+            },
+            {
+              "hpo_id": "HP:0001659"
+            },
+            {
+              "hpo_id": "HP:0007676"
+            },
+            {
+              "hpo_id": "HP:0000768"
+            },
+            {
+              "hpo_id": "HP:0000565"
+            },
+            {
+              "hpo_id": "HP:0001653"
+            },
+            {
+              "hpo_id": "HP:0002107"
+            },
+            {
+              "hpo_id": "HP:0032934"
+            },
+            {
+              "hpo_id": "HP:0000189"
+            },
+            {
+              "hpo_id": "HP:0000541"
+            },
+            {
+              "hpo_id": "HP:0003179"
+            },
+            {
+              "hpo_id": "HP:0012773"
+            },
+            {
+              "hpo_id": "HP:0001704"
+            },
+            {
+              "hpo_id": "HP:0000218"
+            },
+            {
+              "hpo_id": "HP:0001786"
+            },
+            {
+              "hpo_id": "HP:0000577"
+            },
+            {
+              "hpo_id": "HP:0001166"
+            },
+            {
+              "hpo_id": "HP:0000275"
+            },
+            {
+              "hpo_id": "HP:0003302"
+            },
+            {
+              "hpo_id": "HP:0002650"
+            },
+            {
+              "hpo_id": "HP:0001883"
+            },
+            {
+              "hpo_id": "HP:0004872"
+            },
+            {
+              "hpo_id": "HP:0000276"
+            },
+            {
+              "hpo_id": "HP:0030961"
+            },
+            {
+              "hpo_id": "HP:0001761"
+            },
+            {
+              "hpo_id": "HP:0025599"
+            },
+            {
+              "hpo_id": "HP:0002097"
+            },
+            {
+              "hpo_id": "HP:0000272"
+            },
+            {
+              "hpo_id": "HP:0001083"
+            },
+            {
+              "hpo_id": "HP:0001519"
+            },
+            {
+              "hpo_id": "HP:0001635"
+            },
+            {
+              "hpo_id": "HP:0002647"
+            },
+            {
+              "hpo_id": "HP:0000268"
+            },
+            {
+              "hpo_id": "HP:0000501"
+            },
+            {
+              "hpo_id": "HP:0000347"
+            },
+            {
+              "hpo_id": "HP:0001634"
+            },
+            {
+              "hpo_id": "HP:0000545"
+            }
+          ]
+        },
+        {
+          "phenotype_related_to_disease": [
+            {
+              "hpo_id": "HP:0001519"
+            },
+            {
+              "hpo_id": "HP:0001533"
+            },
+            {
+              "hpo_id": "HP:0001763"
+            },
+            {
+              "hpo_id": "HP:0002108"
+            },
+            {
+              "hpo_id": "HP:0002616"
+            },
+            {
+              "hpo_id": "HP:0004942"
+            },
+            {
+              "hpo_id": "HP:0012432"
+            },
+            {
+              "hpo_id": "HP:0000275"
+            },
+            {
+              "hpo_id": "HP:0000505"
+            },
+            {
+              "hpo_id": "HP:0000545"
+            },
+            {
+              "hpo_id": "HP:0000678"
+            },
+            {
+              "hpo_id": "HP:0000767"
+            },
+            {
+              "hpo_id": "HP:0001083"
+            },
+            {
+              "hpo_id": "HP:0001132"
+            },
+            {
+              "hpo_id": "HP:0001382"
+            },
+            {
+              "hpo_id": "HP:0001634"
+            },
+            {
+              "hpo_id": "HP:0001653"
+            },
+            {
+              "hpo_id": "HP:0001659"
+            },
+            {
+              "hpo_id": "HP:0001704"
+            },
+            {
+              "hpo_id": "HP:0002360"
+            },
+            {
+              "hpo_id": "HP:0002647"
+            },
+            {
+              "hpo_id": "HP:0002650"
+            },
+            {
+              "hpo_id": "HP:0002705"
+            },
+            {
+              "hpo_id": "HP:0003179"
+            },
+            {
+              "hpo_id": "HP:0004970"
+            },
+            {
+              "hpo_id": "HP:0005059"
+            },
+            {
+              "hpo_id": "HP:0007800"
+            },
+            {
+              "hpo_id": "HP:0010535"
+            },
+            {
+              "hpo_id": "HP:0010668"
+            },
+            {
+              "hpo_id": "HP:0012019"
+            },
+            {
+              "hpo_id": "HP:0100775"
+            },
+            {
+              "hpo_id": "HP:0000023"
+            },
+            {
+              "hpo_id": "HP:0000175"
+            },
+            {
+              "hpo_id": "HP:0000268"
+            },
+            {
+              "hpo_id": "HP:0000278"
+            },
+            {
+              "hpo_id": "HP:0000347"
+            },
+            {
+              "hpo_id": "HP:0000494"
+            },
+            {
+              "hpo_id": "HP:0000501"
+            },
+            {
+              "hpo_id": "HP:0000541"
+            },
+            {
+              "hpo_id": "HP:0000938"
+            },
+            {
+              "hpo_id": "HP:0000939"
+            },
+            {
+              "hpo_id": "HP:0001252"
+            },
+            {
+              "hpo_id": "HP:0001635"
+            },
+            {
+              "hpo_id": "HP:0002097"
+            },
+            {
+              "hpo_id": "HP:0002105"
+            },
+            {
+              "hpo_id": "HP:0002435"
+            },
+            {
+              "hpo_id": "HP:0002636"
+            },
+            {
+              "hpo_id": "HP:0002808"
+            },
+            {
+              "hpo_id": "HP:0002996"
+            },
+            {
+              "hpo_id": "HP:0003202"
+            },
+            {
+              "hpo_id": "HP:0003302"
+            },
+            {
+              "hpo_id": "HP:0003326"
+            },
+            {
+              "hpo_id": "HP:0004326"
+            },
+            {
+              "hpo_id": "HP:0004349"
+            },
+            {
+              "hpo_id": "HP:0004382"
+            },
+            {
+              "hpo_id": "HP:0004756"
+            },
+            {
+              "hpo_id": "HP:0004927"
+            },
+            {
+              "hpo_id": "HP:0005162"
+            },
+            {
+              "hpo_id": "HP:0005294"
+            },
+            {
+              "hpo_id": "HP:0006687"
+            },
+            {
+              "hpo_id": "HP:0007018"
+            },
+            {
+              "hpo_id": "HP:0007676"
+            },
+            {
+              "hpo_id": "HP:0007720"
+            },
+            {
+              "hpo_id": "HP:0010807"
+            },
+            {
+              "hpo_id": "HP:0100785"
+            },
+            {
+              "hpo_id": "HP:0000768"
+            },
+            {
+              "hpo_id": "HP:0001065"
+            },
+            {
+              "hpo_id": "HP:0001166"
+            }
+          ]
+        }
+      ],
+      "mondo": {
+        "synonym": {
+          "exact": [
+            "Marfan syndrome",
+            "Marfan syndrome type 1",
+            "Marfan syndrome, type 1",
+            "Marfan's syndrome",
+            "MFS",
+            "MFS1"
+          ]
+        }
+      }
+    }
+  ]
+}

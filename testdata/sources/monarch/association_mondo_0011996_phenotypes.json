@@ -1,0 +1,19 @@
+{
+  "total": 1,
+  "items": [
+    {
+      "subject": "MONDO:0011996",
+      "subject_label": "chronic myeloid leukemia",
+      "predicate": "biolink:has_phenotype",
+      "object": "HP:0005547",
+      "object_label": "Myeloproliferative disorder",
+      "primary_knowledge_source": "infores:orphanet",
+      "provided_by": "hpoa_disease_to_phenotype_edges",
+      "evidence_count": 1,
+      "frequency_qualifier_label": "Obligate",
+      "onset_qualifier_label": null,
+      "sex_qualifier_label": null,
+      "stage_qualifier_label": null
+    }
+  ]
+}

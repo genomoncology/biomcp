@@ -32,7 +32,7 @@ start_fixture_supervisor "$cache_dir" "$fixture_root" "spec-disease-survival." "
   python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 import json
 import sys
 
@@ -40,31 +40,28 @@ ROOT = Path(sys.argv[1])
 READY = Path(sys.argv[2])
 REQUEST_LOG = Path(sys.argv[3])
 
-SITE_CATALOG = json.loads((ROOT / "testdata/sources/seer/site_catalog.json").read_text(encoding="utf-8"))
-SURVIVAL_PAYLOAD_TEXT = (ROOT / "testdata/sources/seer/survival_payload_97.json").read_text(encoding="utf-8")
+SOURCES = ROOT / "testdata/sources"
 
-CML_HIT = {
-    "_id": "MONDO:0011996",
-    "mondo": {
-        "name": "chronic myeloid leukemia",
-        "definition": "A myeloid leukemia fixture for deterministic disease survival specs.",
-        "synonym": ["CML", "chronic myelogenous leukemia"],
-        "parents": [],
-        "xrefs": {"ncit": "C3174"},
-    },
-    "disease_ontology": {
-        "xrefs": {"ncit": "C3174"},
-    },
-    "hpo": {
-        "phenotype_related_to_disease": [
-            {"hpo_id": "HP:0001878", "evidence": "IEA", "hp_freq": "Occasional"}
-        ]
-    },
+
+def source_bytes(path):
+    return (SOURCES / path).read_bytes()
+
+
+SITE_CATALOG = source_bytes("seer/site_catalog_cml.json")
+SURVIVAL_PAYLOAD = source_bytes("seer/survival_payload_97_cml.json")
+MONARCH_CML_PHENOTYPES_QUERY = {
+    "subject": ["MONDO:0011996"],
+    "object_category": ["biolink:PhenotypicFeature"],
+    "limit": ["80"],
 }
 
 
 def send_json(handler, status, payload):
     body = json.dumps(payload).encode("utf-8")
+    send_bytes(handler, status, body)
+
+
+def send_bytes(handler, status, body):
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json")
     handler.send_header("Content-Length", str(len(body)))
@@ -75,6 +72,7 @@ def send_json(handler, status, payload):
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
         with REQUEST_LOG.open("a", encoding="utf-8") as log:
             log.write(f"GET {self.path}\n")
 
@@ -82,18 +80,48 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, {"status": "ok"})
             return
         if parsed.path == "/mydisease/query":
-            send_json(self, 200, {"total": 1, "hits": [CML_HIT]})
-            return
+            disease_query = query.get("q", [""])[0]
+            if "Marfan syndrome" in disease_query:
+                send_bytes(self, 200, source_bytes("mydisease/query_marfan_syndrome.json"))
+                return
+            if (
+                "chronic myeloid leukemia" in disease_query
+                or "chronic myelogenous leukemia" in disease_query
+            ):
+                send_bytes(
+                    self,
+                    200,
+                    source_bytes("mydisease/query_chronic_myeloid_leukemia.json"),
+                )
+                return
         if parsed.path == "/mydisease/disease/MONDO:0011996":
-            send_json(self, 200, CML_HIT)
+            send_bytes(self, 200, source_bytes("mydisease/get_mondo_0011996.json"))
+            return
+        if parsed.path == "/mydisease/disease/MONDO:0007947":
+            send_bytes(self, 200, source_bytes("mydisease/get_mondo_0007947.json"))
+            return
+        if parsed.path == "/monarch/v3/api/association" and query == MONARCH_CML_PHENOTYPES_QUERY:
+            send_bytes(self, 200, source_bytes("monarch/association_mondo_0011996_phenotypes.json"))
             return
         if parsed.path == "/seer/get_var_formats.php":
-            send_json(self, 200, SITE_CATALOG)
+            send_bytes(self, 200, SITE_CATALOG)
             return
         if parsed.path == "/seer/render_region_5.php":
-            send_json(self, 200, SURVIVAL_PAYLOAD_TEXT)
+            send_bytes(self, 200, SURVIVAL_PAYLOAD)
             return
 
+        send_json(self, 404, {"error": "fixture path not found"})
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        length = int(self.headers.get("Content-Length", "0"))
+        body = json.loads(self.rfile.read(length) or b"{}")
+        with REQUEST_LOG.open("a", encoding="utf-8") as log:
+            log.write(f"POST {self.path} {json.dumps(body, separators=(',', ':'))}\n")
+        search_text = body.get("criteria", {}).get("advanced_text_search", {}).get("search_text")
+        if parsed.path == "/nih/projects/search" and search_text == '"Marfan syndrome"':
+            send_bytes(self, 200, source_bytes("nih_reporter/funding_marfan_syndrome.json"))
+            return
         send_json(self, 404, {"error": "fixture path not found"})
 
     def log_message(self, format, *args):
@@ -170,6 +198,8 @@ PY
 
 {
   printf 'export BIOMCP_MYDISEASE_BASE=%q\n' "$base_url/mydisease"
+  printf 'export BIOMCP_MONARCH_BASE=%q\n' "$base_url/monarch"
+  printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih"
   printf 'export BIOMCP_SEER_BASE=%q\n' "$base_url/seer"
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/unused-dgidb"
   printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/unused-opentargets"
