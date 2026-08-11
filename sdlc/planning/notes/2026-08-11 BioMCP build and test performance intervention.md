@@ -188,3 +188,10 @@ and shared one Rust source snapshot between the two whole-tree Rust audits. The
 complete sequential Python contract lane fell from 593.65s to 93.77s on the
 same loaded machine: 6.3x faster, saving 499.88s per `make test`. All 465 tests
 passed.
+
+### 0966 — one-pass tracked-text lint
+
+Commit `b408f23c` replaced shell subprocess loops with one tracked-file
+collection and at most one read per file. All 16 lint-contract tests pass.
+Warm `bin/lint` fell from 40.22s to 8.82s (4.6x), and complete warm `make lint`
+fell from 84.35s to 26.35s (3.2x).
