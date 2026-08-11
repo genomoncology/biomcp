@@ -14,6 +14,7 @@ use crate::sources::RequestPlan;
 const UNIPROT_BASE: &str = "https://rest.uniprot.org";
 const UNIPROT_API: &str = "uniprot";
 const UNIPROT_BASE_ENV: &str = "BIOMCP_UNIPROT_BASE";
+const UNIPROT_MAX_EXPANDED_BYTES: usize = 32 * 1024 * 1024;
 
 pub struct UniProtClient {
     client: reqwest::Client,
@@ -232,19 +233,36 @@ impl UniProtClient {
 }
 
 fn decode_uniprot_payload(bytes: &[u8]) -> Result<Vec<u8>, BioMcpError> {
-    let mut payload = bytes.to_vec();
-    if payload.starts_with(&[0x1f, 0x8b]) {
-        let mut decoder = GzDecoder::new(payload.as_slice());
-        let mut decoded = Vec::new();
-        decoder
-            .read_to_end(&mut decoded)
-            .map_err(|err| BioMcpError::Api {
-                api: UNIPROT_API.to_string(),
-                message: format!("Failed to decode gzip response: {err}"),
-            })?;
-        payload = decoded;
+    decode_uniprot_payload_with_limit(bytes, UNIPROT_MAX_EXPANDED_BYTES)
+}
+
+fn read_uniprot_expanded<R: Read>(reader: R, limit: usize) -> Result<Vec<u8>, BioMcpError> {
+    let mut reader = reader.take(limit.saturating_add(1) as u64);
+    let mut decoded = Vec::new();
+    reader
+        .read_to_end(&mut decoded)
+        .map_err(|err| BioMcpError::Api {
+            api: UNIPROT_API.to_string(),
+            message: format!("Failed to decode gzip response: {err}"),
+        })?;
+    if decoded.len() > limit {
+        return Err(BioMcpError::Api {
+            api: UNIPROT_API.to_string(),
+            message: format!("Expanded response exceeds {limit} bytes"),
+        }
+        .with_source_context(crate::error::SourceContext::narrow(
+            crate::error::SourceProvider::UNIPROT,
+        )));
     }
-    Ok(payload)
+    Ok(decoded)
+}
+
+fn decode_uniprot_payload_with_limit(bytes: &[u8], limit: usize) -> Result<Vec<u8>, BioMcpError> {
+    if bytes.starts_with(&[0x1f, 0x8b]) {
+        read_uniprot_expanded(GzDecoder::new(bytes), limit)
+    } else {
+        read_uniprot_expanded(bytes, limit)
+    }
 }
 
 fn parse_uniprot_next_link(value: Option<&reqwest::header::HeaderValue>) -> Option<String> {

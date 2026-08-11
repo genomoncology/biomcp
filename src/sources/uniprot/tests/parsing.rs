@@ -70,6 +70,24 @@ fn decode_json_response_accepts_gzip_payload() {
 }
 
 #[test]
+fn expanded_payload_limit_reads_only_limit_plus_one() {
+    assert_eq!(UNIPROT_MAX_EXPANDED_BYTES, 32 * 1024 * 1024);
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(b"12345").unwrap();
+    let gzip = encoder.finish().unwrap();
+    assert_eq!(
+        decode_uniprot_payload_with_limit(&gzip, 5).unwrap(),
+        b"12345"
+    );
+    let err = decode_uniprot_payload_with_limit(&gzip, 4).unwrap_err();
+    assert_eq!(err.public_projection().source, Some("UniProt"));
+
+    let mut reader = std::io::Cursor::new(vec![b'x'; 100]);
+    read_uniprot_expanded(&mut reader, 4).unwrap_err();
+    assert_eq!(reader.position(), 5);
+}
+
+#[test]
 fn record_helpers_extract_display_function_and_structures() {
     let record: UniProtRecord = serde_json::from_value(serde_json::json!({
         "primaryAccession": "P15056",

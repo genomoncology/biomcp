@@ -24,6 +24,8 @@ pub(crate) const GTR_REQUIRED_FILES: [&str; 2] = [GTR_TEST_VERSION_FILE, GTR_CON
 pub(crate) const GTR_STALE_AFTER: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const GTR_TEST_VERSION_MAX_BODY_BYTES: usize = 100 * 1024 * 1024;
 const GTR_CONDITION_GENE_MAX_BODY_BYTES: usize = 50 * 1024 * 1024;
+const GTR_TEST_VERSION_MAX_EXPANDED_BYTES: usize = 512 * 1024 * 1024;
+const GTR_MAX_ROWS: usize = 1_000_000;
 
 const TEST_VERSION_REQUIRED_HEADERS: &[&str] = &[
     "test_accession_ver",
@@ -354,10 +356,27 @@ async fn write_validated_pair(
     test_version_body: &[u8],
     condition_gene_body: &[u8],
 ) -> Result<(), BioMcpError> {
+    write_validated_pair_with_limits(
+        root,
+        test_version_body,
+        condition_gene_body,
+        GTR_TEST_VERSION_MAX_EXPANDED_BYTES,
+        GTR_MAX_ROWS,
+    )
+    .await
+}
+
+async fn write_validated_pair_with_limits(
+    root: &Path,
+    test_version_body: &[u8],
+    condition_gene_body: &[u8],
+    max_expanded_bytes: usize,
+    max_rows: usize,
+) -> Result<(), BioMcpError> {
     let context = crate::error::SourceContext::retry(crate::error::SourceProvider::GTR);
-    validate_test_version_payload(test_version_body)
+    validate_test_version_payload_with_limits(test_version_body, max_expanded_bytes, max_rows)
         .map_err(|error| error.with_source_context(context))?;
-    validate_condition_gene_payload(condition_gene_body)
+    parse_condition_gene_links_with_limit(condition_gene_body, max_rows)
         .map_err(|error| error.with_source_context(context))?;
 
     let test_version_path = root.join(GTR_TEST_VERSION_FILE);
@@ -397,14 +416,6 @@ async fn write_validated_pair(
     Ok(())
 }
 
-fn validate_test_version_payload(body: &[u8]) -> Result<(), BioMcpError> {
-    parse_test_version_records_from_gzip_bytes(body).map(|_| ())
-}
-
-fn validate_condition_gene_payload(body: &[u8]) -> Result<(), BioMcpError> {
-    parse_condition_gene_links_bytes(body).map(|_| ())
-}
-
 fn read_test_version_records(path: &Path) -> Result<HashMap<String, GtrRecord>, BioMcpError> {
     let file = File::open(path).map_err(|err| BioMcpError::SourceUnavailable {
         source_name: SOURCE_NAME.to_string(),
@@ -417,17 +428,48 @@ fn read_test_version_records(path: &Path) -> Result<HashMap<String, GtrRecord>, 
 fn parse_test_version_records<R: Read>(
     reader: R,
 ) -> Result<HashMap<String, GtrRecord>, BioMcpError> {
-    let decoder = GzDecoder::new(reader);
-    parse_test_version_tsv(BufReader::new(decoder))
+    parse_test_version_records_with_limits(
+        reader,
+        GTR_TEST_VERSION_MAX_EXPANDED_BYTES,
+        GTR_MAX_ROWS,
+    )
 }
 
+fn parse_test_version_records_with_limits<R: Read>(
+    reader: R,
+    max_expanded_bytes: usize,
+    max_rows: usize,
+) -> Result<HashMap<String, GtrRecord>, BioMcpError> {
+    let decoder = GzDecoder::new(reader);
+    let mut expanded = decoder.take(max_expanded_bytes.saturating_add(1) as u64);
+    let parsed = parse_test_version_tsv_with_limit(BufReader::new(&mut expanded), max_rows);
+    if expanded.limit() == 0 {
+        return Err(gtr_limit_error(format!(
+            "{GTR_TEST_VERSION_FILE} exceeds {max_expanded_bytes} expanded bytes"
+        )));
+    }
+    parsed
+}
+
+fn validate_test_version_payload_with_limits(
+    body: &[u8],
+    max_expanded_bytes: usize,
+    max_rows: usize,
+) -> Result<(), BioMcpError> {
+    parse_test_version_records_with_limits(body, max_expanded_bytes, max_rows).map(|_| ())
+}
+
+#[cfg(test)]
 fn parse_test_version_records_from_gzip_bytes(
     body: &[u8],
 ) -> Result<HashMap<String, GtrRecord>, BioMcpError> {
     parse_test_version_records(body)
 }
 
-fn parse_test_version_tsv<R: Read>(reader: R) -> Result<HashMap<String, GtrRecord>, BioMcpError> {
+fn parse_test_version_tsv_with_limit<R: Read>(
+    reader: R,
+    max_rows: usize,
+) -> Result<HashMap<String, GtrRecord>, BioMcpError> {
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(b'\t')
         .flexible(true)
@@ -447,7 +489,12 @@ fn parse_test_version_tsv<R: Read>(reader: R) -> Result<HashMap<String, GtrRecor
     }
 
     let mut out = HashMap::new();
-    for record in reader.records() {
+    for (row, record) in reader.records().enumerate() {
+        if row >= max_rows {
+            return Err(gtr_limit_error(format!(
+                "{GTR_TEST_VERSION_FILE} exceeds {max_rows} data rows"
+            )));
+        }
         let record = record.map_err(|err| BioMcpError::Api {
             api: GTR_API.to_string(),
             message: format!("Failed to parse {GTR_TEST_VERSION_FILE}: {err}"),
@@ -499,6 +546,13 @@ fn read_condition_gene_links(path: &Path) -> Result<(LinkMap, LinkMap, LinkMap),
 fn parse_condition_gene_links<R: Read>(
     reader: R,
 ) -> Result<(LinkMap, LinkMap, LinkMap), BioMcpError> {
+    parse_condition_gene_links_with_limit(reader, GTR_MAX_ROWS)
+}
+
+fn parse_condition_gene_links_with_limit<R: Read>(
+    reader: R,
+    max_rows: usize,
+) -> Result<(LinkMap, LinkMap, LinkMap), BioMcpError> {
     let mut reader = csv::ReaderBuilder::new()
         .delimiter(b'\t')
         .flexible(true)
@@ -522,7 +576,12 @@ fn parse_condition_gene_links<R: Read>(
     let mut genes_by_id = HashMap::new();
     let mut conditions_by_id = HashMap::new();
     let mut test_types_by_id = HashMap::new();
-    for record in reader.records() {
+    for (row, record) in reader.records().enumerate() {
+        if row >= max_rows {
+            return Err(gtr_limit_error(format!(
+                "{GTR_CONDITION_GENE_FILE} exceeds {max_rows} data rows"
+            )));
+        }
         let record = record.map_err(|err| BioMcpError::Api {
             api: GTR_API.to_string(),
             message: format!("Failed to parse {GTR_CONDITION_GENE_FILE}: {err}"),
@@ -552,10 +611,21 @@ fn parse_condition_gene_links<R: Read>(
     Ok((genes_by_id, conditions_by_id, test_types_by_id))
 }
 
+#[cfg(test)]
 fn parse_condition_gene_links_bytes(
     body: &[u8],
 ) -> Result<(LinkMap, LinkMap, LinkMap), BioMcpError> {
     parse_condition_gene_links(body)
+}
+
+fn gtr_limit_error(message: String) -> BioMcpError {
+    BioMcpError::Api {
+        api: GTR_API.to_string(),
+        message,
+    }
+    .with_source_context(crate::error::SourceContext::narrow(
+        crate::error::SourceProvider::GTR,
+    ))
 }
 
 fn header_positions(headers: &csv::StringRecord) -> HashMap<String, usize> {

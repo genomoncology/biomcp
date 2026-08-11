@@ -8,6 +8,19 @@ use flate2::write::GzEncoder;
 use std::io::Write;
 use std::path::Path;
 
+struct ByteReader<'a>(&'a [u8], usize);
+
+impl Read for ByteReader<'_> {
+    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+        let Some(byte) = self.0.get(self.1) else {
+            return Ok(0);
+        };
+        out[0] = *byte;
+        self.1 += 1;
+        Ok(1)
+    }
+}
+
 pub(super) fn gzip_bytes(payload: &str) -> Vec<u8> {
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
     encoder
@@ -109,6 +122,29 @@ fn parse_condition_gene_joins_correctly() {
 }
 
 #[test]
+fn production_budgets_and_small_exact_boundaries_are_enforced() {
+    assert_eq!(GTR_TEST_VERSION_MAX_EXPANDED_BYTES, 512 * 1024 * 1024);
+    assert_eq!(GTR_MAX_ROWS, 1_000_000);
+
+    let gzip = test_version_gz_bytes();
+    let mut expanded = Vec::new();
+    GzDecoder::new(gzip.as_slice())
+        .read_to_end(&mut expanded)
+        .unwrap();
+    parse_test_version_records_with_limits(gzip.as_slice(), expanded.len(), 3).unwrap();
+    let err =
+        parse_test_version_records_with_limits(gzip.as_slice(), expanded.len() - 1, 3).unwrap_err();
+    assert!(format!("{err:?}").contains("expanded bytes"));
+
+    let bytes = condition_gene_bytes();
+    parse_condition_gene_links_with_limit(bytes.as_slice(), 8).unwrap();
+    let mut reader = ByteReader(&bytes, 0);
+    let err = parse_condition_gene_links_with_limit(&mut reader, 1).unwrap_err();
+    assert!(format!("{err:?}").contains("data rows"));
+    assert!(reader.1 < bytes.len(), "must stop at the first excess row");
+}
+
+#[test]
 fn load_index_unions_linked_and_inline_genes() {
     let root = TempDirGuard::new("gtr-load-index");
     write_valid_fixture_pair(root.path());
@@ -198,7 +234,8 @@ fn validate_test_version_rejects_missing_header() {
     let payload = "test_accession_ver\tlab_test_name\nGTR000000001.1\tPanel\n";
     let invalid = gzip_bytes(payload);
 
-    let err = validate_test_version_payload(&invalid).expect_err("missing header should fail");
+    let err = validate_test_version_payload_with_limits(&invalid, 1024, 10)
+        .expect_err("missing header should fail");
     assert!(format!("{err:?}").contains("now_current"));
 }
 
@@ -206,7 +243,8 @@ fn validate_test_version_rejects_missing_header() {
 fn validate_condition_gene_rejects_missing_header() {
     let invalid = b"accession_version\tobject\tobject_name\nGTR1\tgene\tBRCA1\n";
 
-    let err = validate_condition_gene_payload(invalid).expect_err("missing header should fail");
+    let err = parse_condition_gene_links_with_limit(&invalid[..], 10)
+        .expect_err("missing header should fail");
     assert!(format!("{err:?}").contains("#accession_version"));
 }
 
@@ -219,11 +257,12 @@ async fn write_validated_pair_preserves_existing_files_when_validation_fails() {
     let original_condition_gene =
         std::fs::read(root.path().join(GTR_CONDITION_GENE_FILE)).expect("read original tsv");
 
-    let invalid = b"not-a-gzip-payload".to_vec();
-    let err = write_validated_pair(root.path(), &invalid, &condition_gene_bytes())
-        .await
-        .expect_err("invalid pair should fail");
-    assert!(format!("{err:?}").contains(GTR_TEST_VERSION_FILE));
+    let invalid = test_version_gz_bytes();
+    let err =
+        write_validated_pair_with_limits(root.path(), &invalid, &condition_gene_bytes(), 10, 10)
+            .await
+            .expect_err("oversized pair should fail");
+    assert!(format!("{err:?}").contains("expanded bytes"));
 
     assert_eq!(
         std::fs::read(root.path().join(GTR_TEST_VERSION_FILE)).expect("gzip unchanged"),
