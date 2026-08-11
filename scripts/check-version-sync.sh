@@ -117,7 +117,7 @@ if [[ "$formula_version" != "__VERSION__" ]]; then
     check_version "Formula/biomcp.rb" "$formula_version"
 fi
 
-if grep -qiE '^\s*doi:\s*.*(placeholder|xxxxxxx)' "$repo_root/CITATION.cff"; then
+if grep -qiE '^[[:space:]]*doi:[[:space:]]*.*(placeholder|xxxxxxx)' "$repo_root/CITATION.cff"; then
     echo "CITATION.cff contains a placeholder DOI" >&2
     ok=false
 fi
@@ -129,7 +129,7 @@ if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         ok=false
     fi
 
-    latest_tag="$(git -C "$repo_root" tag --merged HEAD --format='%(refname:short)' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)"
+    latest_tag="$(git -C "$repo_root" tag --merged HEAD --sort=version:refname --format='%(refname:short)' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | tail -n1 || true)"
     if [[ -z "$latest_tag" ]]; then
         echo "a reachable release tag is required for the pre-1.0 boundary check" >&2
         ok=false
