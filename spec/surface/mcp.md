@@ -314,7 +314,7 @@ recipe visible prevents an obsolete shim or narrow spec subset from replacing
 either the fast routine proof or the shipped-feature proof.
 
 ```bash
-env -u BIOMCP_BIN -u SPEC_PROFILE -u MAKEFLAGS -u MAKEOVERRIDES \
+env -u BIOMCP_BIN -u SPEC_BIN -u SPEC_PROFILE -u MAKEFLAGS -u MAKEOVERRIDES \
   make -C ../.. -n release-gate \
   2>&1 | mustmatch like 'cargo nextest run
 make full-feature-check
