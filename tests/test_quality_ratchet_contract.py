@@ -1115,6 +1115,61 @@ def test_wrapper_allows_h2_section_with_bash_mustmatch(tmp_path: Path) -> None:
     assert summary["lint"]["finding_count"] == 0
 
 
+def test_wrapper_allows_named_run_with_matching_expectation(tmp_path: Path) -> None:
+    spec_path = _write_h2_bash_spec(
+        tmp_path / "spec",
+        "section-with-named-expectation",
+        "# Quality Ratchet Named Expectation Fixture\n\n"
+        "## Collected Section\n\n"
+        "```bash run id=collected-output exit=0\n"
+        "printf 'status: ok\\n'\n"
+        "```\n\n"
+        "```text expect=collected-output contains\n"
+        "status: ok\n"
+        "```\n",
+    )
+    output_dir = tmp_path / "out"
+
+    result = _run_wrapper(
+        {
+            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
+            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+        }
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    assert summary["lint"]["finding_count"] == 0
+
+
+def test_wrapper_rejects_named_run_without_matching_expectation(tmp_path: Path) -> None:
+    spec_path = _write_h2_bash_spec(
+        tmp_path / "spec",
+        "section-with-unmatched-named-run",
+        "# Quality Ratchet Unmatched Named Run Fixture\n\n"
+        "## Unchecked Section\n\n"
+        "```bash run id=unchecked-output exit=0\n"
+        "printf 'status: ok\\n'\n"
+        "```\n\n"
+        "```text expect=different-output contains\n"
+        "status: ok\n"
+        "```\n",
+    )
+    output_dir = tmp_path / "out"
+
+    result = _run_wrapper(
+        {
+            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
+            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+        }
+    )
+
+    assert result.returncode == 1
+    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    findings = summary["lint"]["results"][0]["findings"]
+    assert [finding["rule"] for finding in findings] == ["missing-bash-mustmatch"]
+
+
 def test_wrapper_allows_h2_section_with_mustmatch_opt_out(tmp_path: Path) -> None:
     spec_path = _write_h2_bash_spec(
         tmp_path / "spec",

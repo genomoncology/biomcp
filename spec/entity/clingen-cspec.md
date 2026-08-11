@@ -10,10 +10,6 @@ The routine fixture contains the named source series, including BRAF's separate 
 bash ../fixtures/run-clingen-cspec-fixture.sh ../..
 ```
 
-## Receipt-backed captured pages keep the selected identity
-
-A capture binds the selected ATM document and gene rather than trusting a later label. Its raw bytes match reported provenance, raw retrieval does not fetch the provider again, and the typed MCP page is the same public projection as the CLI page. The routine fixture must replay receipt-admitted ClinGen manifest and version-page bytes through the shipped command. This proves the manifest request selects the exact resource IRI, the selected page remains capture-backed, and paging preserves provider criterion order without making current provider availability part of the routine gate.
-
 ```text expect=clingen-cspec-capture-contract contains
 "all_named_gene_series_are_available": true
 "braf_keeps_gn004_and_gn049": true
@@ -23,6 +19,13 @@ A capture binds the selected ATM document and gene rather than trusting a later 
 "supported_reference_objects_preserve_ordered_deduplicated_urls": true
 "disease_is_null": true
 "semantic_subset_is_page_independent": true
+```
+
+## Receipt-backed captured pages keep the selected identity
+
+A capture binds the selected ATM document and gene rather than trusting a later label. Its raw bytes match reported provenance, raw retrieval does not fetch the provider again, and the typed MCP page is the same public projection as the CLI page. The routine fixture must replay receipt-admitted ClinGen manifest and version-page bytes through the shipped command. This proves the manifest request selects the exact resource IRI, the selected page remains capture-backed, and paging preserves provider criterion order without making current provider availability part of the routine gate.
+
+```text expect=clingen-cspec-capture-contract contains
 "capture_binds_requested_gene_and_selected_iri": true
 "cli_capture_page_matches_typed_mcp": true
 "caller_gene_cannot_relabel_capture": true

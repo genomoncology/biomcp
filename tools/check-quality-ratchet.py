@@ -1419,6 +1419,12 @@ def make_missing_bash_mustmatch_findings(spec_path: Path) -> list[dict[str, obje
         nonlocal current_section
         if current_section is None:
             return
+        named_runs = current_section["named_runs"]
+        named_expectations = current_section["named_expectations"]
+        assert isinstance(named_runs, set)
+        assert isinstance(named_expectations, set)
+        if named_runs & named_expectations:
+            current_section["has_mustmatch"] = True
         if (
             current_section["has_non_skipped_bash"]
             and not current_section["has_mustmatch"]
@@ -1464,6 +1470,8 @@ def make_missing_bash_mustmatch_findings(spec_path: Path) -> list[dict[str, obje
                 "has_non_skipped_bash": False,
                 "has_mustmatch": False,
                 "opted_out": False,
+                "named_runs": set(),
+                "named_expectations": set(),
             }
             continue
 
@@ -1474,6 +1482,22 @@ def make_missing_bash_mustmatch_findings(spec_path: Path) -> list[dict[str, obje
             skipped_bash = inside_bash and "skip" in fence_tokens[1:]
             if current_section is not None and inside_bash and not skipped_bash:
                 current_section["has_non_skipped_bash"] = True
+                if "run" in fence_tokens[1:]:
+                    for token in fence_tokens[1:]:
+                        if token.startswith("id="):
+                            named_runs = current_section["named_runs"]
+                            assert isinstance(named_runs, set)
+                            named_runs.add(token.removeprefix("id="))
+            if (
+                current_section is not None
+                and fence_tokens
+                and fence_tokens[0] == "text"
+            ):
+                for token in fence_tokens[1:]:
+                    if token.startswith("expect="):
+                        named_expectations = current_section["named_expectations"]
+                        assert isinstance(named_expectations, set)
+                        named_expectations.add(token.removeprefix("expect="))
             continue
 
         if current_section is not None and MUSTMATCH_LINT_SKIP in line:
