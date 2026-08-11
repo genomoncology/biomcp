@@ -289,3 +289,25 @@ harness reproduced the committed bytes. Full `cargo package --locked`
 verification succeeded in 74.65s with the fail-on-call generator configured;
 the package includes the committed Rust and excludes proto/generator inputs.
 All 31 focused Python/documentation contracts and full lint passed.
+
+### 0971 — one small routine Cargo graph
+
+Routine Clippy, nextest, and spec preparation now share the one declared
+`--no-default-features` graph. A separate `make full-feature-check` lints all
+targets and features, runs the six AlphaGenome behavior tests, and builds the
+all-feature release CLI; `make release-gate` adds that proof between the routine
+test lane and release-profile executable specs. CI and developer docs state the
+split explicitly.
+
+The first full-feature proof found and fixed an existing Clippy warning in the
+MCP example. Its cold run took 532.93s, including the first all-feature test and
+optimized release builds; the immediate repeat took 1.41s. A fresh-target
+routine sequence measured lint at 99.38s and test at 440.36s. Its following
+spec run took 197.89s and exposed one stale self-documentation assertion after
+the other spec groups passed. The assertion and two synthetic identity tests
+were fixed to ignore outer target overrides.
+
+On exact final commit `8ab4969c`, sealed warm lint/test/spec runs all passed in
+26.94s, 162.40s, and 186.42s. The 375.76s total is 4.27x faster than the
+1,606s intervention baseline, crossing the intervention's 3x goal before the
+remaining performance tickets.
