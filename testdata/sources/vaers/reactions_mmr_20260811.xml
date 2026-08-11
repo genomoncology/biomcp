@@ -315,10 +315,10 @@ Total output lines: 5432
                         <b> About VAERS and the Collected Data </b>
                         </p>
                         <p>
-                        The VAERS database contains information on <u>unverified</u> 
-                        reports of adverse events (illnesses, health problems and/or symptoms) following immunization with US-licensed vaccines. 
-						Reports are accepted from anyone and can be submitted electronically at 
-                        <a href="http://vaers.hhs.gov">www.vaers.hhs.gov</a>.  
+                        The VAERS database contains information on <u>unverified</u>
+                        reports of adverse events (illnesses, health problems and/or symptoms) following immunization with US-licensed vaccines.
+						Reports are accepted from anyone and can be submitted electronically at
+                        <a href="http://vaers.hhs.gov">www.vaers.hhs.gov</a>.
                         </p>
 
 
@@ -329,7 +329,7 @@ Total output lines: 5432
 						<tr style="height:20px; color:#FFFFFF !important; font-size:17px; text-align:left; vertical-align:middle; background-color:#75a9ed; font-weight:bold; margin-top:20px;">
 						<td> &#xA0; Search Current VAERS Data</td>
 						</tr>
-						</table> 
+						</table>
 
 
 
@@ -346,40 +346,40 @@ Total output lines: 5432
                         <td style="vertical-align:top; padding-right:40px; width:50%;">
 						<p>
                         </p>
-						
-						
-                       
-						
+
+
+
+
                         <div id="vaers-buttons1" class="displayon" style="margin:20px 0 10px 0;">
                                 <input class="button2 disabled" style="display:block; margin-left:auto; margin-right:auto;" onclick="('Click the I Agree button to gain access to the dataset and signify that you have read and understood the disclaimer.')" title="Click the I Agree button to gain access to the dataset and signify that you have read and understood the disclaimer." value="VAERS Data Search" name="tab-request" type="button" />
-                              
+
             </div>
                         <div id="vaers-buttons2" class="displayoff" style="margin:20px 0 10px 0;">
                                 <input class="button2" style="display:block; margin-left:auto; margin-right:auto;" onclick="submitSet(this); sendTab()" title="Click to see the request page" value="VAERS Data Search" name="tab-request" type="submit" />
-                               
+
                         </div>
                         <p> The VAERS Data Search allows you to search information from reports collected from 1990 to the present.
 Instructions on how to search are listed in next section.</p>
                 </td>
                         <td style="vertical-align:top">
  	<p>
-                        
+
                         </p>
 
                         <div style="margin:20px 0 10px 0;">
-              
+
                                 <input class="button2" style="display:block; margin-left:auto; margin-right:auto; margin-top:15px;" onclick="window.location.href='https://wonder.cdc.gov/controller/datarequest/D8;jsessionid=FC3814FFFE433FE766F0697B139E';" title="Click to see the report page" value="VAERS Report Details" name="tab-report" type="submit" />
                         </div>
-						
 
-                        <p> This allows you to search for  details on a specific VAERS report. 
+
+                        <p> This allows you to search for  details on a specific VAERS report.
 							Enter the VAERS ID number assigned to view report information.</p>
 
 
                         </td>
                         </tr>
                         </table>
-                               
+
 
 
 
@@ -387,37 +387,37 @@ Instructions on how to search are listed in next section.</p>
 						<tr style="height:20px; color:#FFFFFF !important; font-size:17px; text-align:left; vertical-align:middle; background-color:#75a9ed; font-weight:bold; margin-top:20px;">
 						<td> &#xA0; Written and Video Instructions on How to Search VAERS Data</td>
 						</tr>
-						</table> 
+						</table>
 
 
 
 
 
 						<p>
-                        Below are written and video instructions on how to search VAERS data shared on CDC WONDER.  
+                        Below are written and video instructions on how to search VAERS data shared on CDC WONDER.
                         </p>
 
 						<p>
-                        The <B>written instructions</B> are on the <a href= "https://www.cdc.gov/vaccinesafety/ensuringsafety/monitoring/vaers/access-VAERS-data.html" > How to Access VAERS Data through VAERS WONDER System page. </a> 
- 
+                        The <B>written instructions</B> are on the <a href= "https://www.cdc.gov/vaccinesafety/ensuringsafety/monitoring/vaers/access-VAERS-data.html" > How to Access VAERS Data through VAERS WONDER System page. </a>
+
                         </p>
 
 
 
 						<p>
-                        The <B>video instructions</B> are posted on the CDC YouTube page: <a href= "https://www.youtube.com/watch?v=cOH7cFWS7o4" > How to Access VAERS Data shared on WONDER - YouTube. </a> 
- 
+                        The <B>video instructions</B> are posted on the CDC YouTube page: <a href= "https://www.youtube.com/watch?v=cOH7cFWS7o4" > How to Access VAERS Data shared on WONDER - YouTube. </a>
+
                         </p>
 
 
 						<p>
                         The video instructions explain how to search VAERS data shared on CDC WONDER, the purpose of VAERS, and the strengths and limitations of the data the system collects.
- 
+
                         </p>
 
 						<p>
                         The video is also sectioned to jump to specific information:
- 
+
                         </p>
 
 
@@ -438,7 +438,7 @@ Instructions on how to search are listed in next section.</p>
 						<tr style="height:20px; color:#FFFFFF !important; font-size:17px; text-align:left; vertical-align:middle; background-color:#75a9ed; font-weight:bold; margin-top:20px;">
 						<td>&#xA0; Disclaimer</td>
 						</tr>
-						</table> 
+						</table>
 
 
 
@@ -449,110 +449,110 @@ Instructions on how to search are listed in next section.</p>
 
 
                        <p>
-                                                
-						VAERS accepts reports of adverse events that occur following vaccination. 
-						<B>Anyone, including healthcare providers, vaccine manufacturers, and the public, can submit reports to the system. 
-						While very important in monitoring vaccine safety, VAERS reports alone cannot be used to determine if a vaccine 
+
+						VAERS accepts reports of adverse events that occur following vaccination.
+						<B>Anyone, including healthcare providers, vaccine manufacturers, and the public, can submit reports to the system.
+						While very important in monitoring vaccine safety, VAERS reports alone cannot be used to determine if a vaccine
 						caused or contributed to an adverse event or illness.</B>
-						Vaccine providers are encouraged to report any clinically 
-						significant health problem following vaccination to VAERS even if they are not sure if the vaccine was the cause. 
+						Vaccine providers are encouraged to report any clinically
+						significant health problem following vaccination to VAERS even if they are not sure if the vaccine was the cause.
 						In some situations, reporting to VAERS is required of healthcare providers and vaccine manufacturers.
 						</p>
 						<p>
 						<b>
 						VAERS reports may contain information that is incomplete, inaccurate, coincidental, or unverifiable.
 						</b>
-						Reports to VAERS can also be biased. As a result, there are limitations on how the data can be used scientifically. 
+						Reports to VAERS can also be biased. As a result, there are limitations on how the data can be used scientifically.
 						Data from VAERS reports should always be interpreted with these limitations in mind.
 						</p>
 						<p>
-						The strengths of VAERS are that it is national in scope and can often quickly detect an early hint or warning 
-						of a safety problem with a vaccine. VAERS is one component of CDC's and FDA's multifaceted approach to 
-						monitoring safety after vaccines are licensed or authorized for use. There are multiple, complementary systems 
-						that CDC and FDA use to capture and validate data from different sources. 
-						VAERS is designed to rapidly detect unusual or unexpected patterns of adverse events, also referred to as 
-						"safety signals." If a possible safety signal is found in VAERS, further analysis is performed with other 
-						safety systems, such as the CDC's Vaccine Safety Datalink (VSD) and Clinical Immunization Safety Assessment 
-						(CISA) Project, or in the FDA BEST (Biologics Effectiveness and Safety) system. These systems are less 
-						impacted by the limitations of spontaneous and voluntary reporting in VAERS and can better assess possible 
-						links between vaccination and adverse events. Additionally, CDC and FDA cannot provide individual 
+						The strengths of VAERS are that it is national in scope and can often quickly detect an early hint or warning
+						of a safety problem with a vaccine. VAERS is one component of CDC's and FDA's multifaceted approach to
+						monitoring safety after vaccines are licensed or authorized for use. There are multiple, complementary systems
+						that CDC and FDA use to capture and validate data from different sources.
+						VAERS is designed to rapidly detect unusual or unexpected patterns of adverse events, also referred to as
+						"safety signals." If a possible safety signal is found in VAERS, further analysis is performed with other
+						safety systems, such as the CDC's Vaccine Safety Datalink (VSD) and Clinical Immunization Safety Assessment
+						(CISA) Project, or in the FDA BEST (Biologics Effectiveness and Safety) system. These systems are less
+						impacted by the limitations of spontaneous and voluntary reporting in VAERS and can better assess possible
+						links between vaccination and adverse events. Additionally, CDC and FDA cannot provide individual
 						medical advice regarding any report to VAERS.
                                                 </p> <p>
                                                 Key considerations and limitations of VAERS data:
                                                 <ul><li>
 						<b>
-						The number of reports alone cannot be interpreted as evidence of a causal association 
+						The number of reports alone cannot be interpreted as evidence of a causal association
 						between a vaccine and an adverse event,
-						</b> 
+						</b>
 						or as evidence about the existence, severity, frequency, or rates of problems associated with vaccines.
 						</li><li>
 						Reports may include incomplete, inaccurate, coincidental, and unverified information.
 						</li><li>
-						VAERS does not obtain follow up records on every report. 
-						If a report is classified as serious, VAERS requests additional information, 
-						such as health records, to further evaluate the report. 
+						VAERS does not obtain follow up records on every report.
+						If a report is classified as serious, VAERS requests additional information,
+						such as health records, to further evaluate the report.
 						</li><li>
-						VAERS data are limited to vaccine adverse event reports received between 1990 
+						VAERS data are limited to vaccine adverse event reports received between 1990
 						and the most recent date for which data are available.
 						</li><li>
-						VAERS data do not represent all known safety information for a vaccine and 
+						VAERS data do not represent all known safety information for a vaccine and
 						should be interpreted in the context of other scientific information.
 						</li></ul>
 						</p><p>
-						<b>VAERS data available to the public include only the initial report data to VAERS. 
-						Updated data which contains data from medical records and corrections reported during follow up 
-						are used by the government for analysis. However, for numerous reasons including data consistency, 
+						<b>VAERS data available to the public include only the initial report data to VAERS.
+						Updated data which contains data from medical records and corrections reported during follow up
+						are used by the government for analysis. However, for numerous reasons including data consistency,
 						these amended data are not available to the public.</b>
 						</p><p>
-						Additionally, reports to VAERS that appear to be false or fabricated with the intent to mislead CDC and FDA 
+						Additionally, reports to VAERS that appear to be false or fabricated with the intent to mislead CDC and FDA
 						may be reviewed before they are added to the VAERS database.
 						<b>
-						Knowingly filing a false VAERS report is a violation of Federal law (18 U.S. Code section 1001) 
+						Knowingly filing a false VAERS report is a violation of Federal law (18 U.S. Code section 1001)
 						punishable by fine and imprisonment.
 						</b>
 						</p>
-						<p> 
-						At the request of European regulators, CDC and FDA have removed certain data fields 
-						(country codes; reported symptom case narrative free text; 
-						diagnostic laboratory data free text field; illness at time of vaccination free text field; 
-						chronic conditions free text medical history field; allergies free text field) 
-						from foreign VAERS reports which were submitted to VAERS and may not comply with European regulations.  
-						Domestic (U.S.) VAERS reports are not affected by this process. 
+						<p>
+						At the request of European regulators, CDC and FDA have removed certain data fields
+						(country codes; reported symptom case narrative free text;
+						diagnostic laboratory data free text field; illness at time of vaccination free text field;
+						chronic conditions free text medical history field; allergies free text field)
+						from foreign VAERS reports which were submitted to VAERS and may not comply with European regulations.
+						Domestic (U.S.) VAERS reports are not affected by this process.
 						</p></about>
 	<dataurl>https://vaers.hhs.gov/data.html</dataurl>
 	<part2citation>, CDC WONDER On-line Database.</part2citation>
 	<part1citation>United States Department of Health and Human Services (DHHS), Public Health Service (PHS),  Centers for Disease Control (CDC) / Food and Drug Administration (FDA), Vaccine Adverse Event Reporting System (VAERS) 1990 -</part1citation>
 	<caveat code="D8.C13">
-		<text evaluate="false"><![CDATA[<p>  
-                                VAERS accepts reports of adverse events and reactions that occur following vaccination. Healthcare providers, vaccine manufacturers, 
-                                and the public can submit reports to VAERS. While very important in monitoring vaccine safety, VAERS reports alone cannot be used to 
-                                determine if a vaccine caused or contributed to an adverse event or illness. The reports may contain information that is incomplete, 
-                                inaccurate, coincidental, or unverifiable. Most reports to VAERS are voluntary, which means they are subject to biases. This creates 
-                                specific limitations on how the data can be used scientifically. Data from VAERS reports should always be interpreted with these 
-                                limitations in mind. 
-                                </p>  
-                                <p>  
-                                The strengths of VAERS are that it is national in scope and can quickly provide an early warning of a safety problem with a vaccine. 
-                                As part of CDC and FDA's multi-system approach to post-licensure vaccine safety monitoring, VAERS is designed to rapidly detect 
-                                unusual or unexpected patterns of adverse events, also known as "safety signals." If a safety signal is found in VAERS, further 
-                                studies can be done in safety systems such as the CDC's Vaccine Safety Datalink (VSD) or the Clinical Immunization Safety 
-                                Assessment (CISA) project. These systems do not have the same limitations as VAERS, and can better assess health risks and 
-                                possible connections between adverse events and a vaccine. 
-                                </p> 
+		<text evaluate="false"><![CDATA[<p>
+                                VAERS accepts reports of adverse events and reactions that occur following vaccination. Healthcare providers, vaccine manufacturers,
+                                and the public can submit reports to VAERS. While very important in monitoring vaccine safety, VAERS reports alone cannot be used to
+                                determine if a vaccine caused or contributed to an adverse event or illness. The reports may contain information that is incomplete,
+                                inaccurate, coincidental, or unverifiable. Most reports to VAERS are voluntary, which means they are subject to biases. This creates
+                                specific limitations on how the data can be used scientifically. Data from VAERS reports should always be interpreted with these
+                                limitations in mind.
+                                </p>
+                                <p>
+                                The strengths of VAERS are that it is national in scope and can quickly provide an early warning of a safety problem with a vaccine.
+                                As part of CDC and FDA's multi-system approach to post-licensure vaccine safety monitoring, VAERS is designed to rapidly detect
+                                unusual or unexpected patterns of adverse events, also known as "safety signals." If a safety signal is found in VAERS, further
+                                studies can be done in safety systems such as the CDC's Vaccine Safety Datalink (VSD) or the Clinical Immunization Safety
+                                Assessment (CISA) project. These systems do not have the same limitations as VAERS, and can better assess health risks and
+                                possible connections between adverse events and a vaccine.
+                                </p>
                                 <p>
                                 Key considerations and limitations of VAERS data:
                                 <ul><li>
-                                Vaccine providers are encouraged to report any clinically significant health problem following vaccination to VAERS, 
+                                Vaccine providers are encouraged to report any clinically significant health problem following vaccination to VAERS,
                                 whether or not they believe the vaccine was the cause.
                                 </li><li>
-                                Reports may include incomplete, inaccurate, coincidental and unverified information. 
+                                Reports may include incomplete, inaccurate, coincidental and unverified information.
                                 </li><li>
-                                The number of reports alone cannot be interpreted or used to reach conclusions about the existence, severity, frequency, 
+                                The number of reports alone cannot be interpreted or used to reach conclusions about the existence, severity, frequency,
                                 or rates of problems associated with vaccines.
                                 </li><li>
                                 VAERS data are limited to vaccine adverse event reports received between 1990 and the most recent date for which data are available.
                                 </li><li>
-                                VAERS data do not represent all known safety information for a vaccine and should be interpreted in the context of other 
+                                VAERS data do not represent all known safety information for a vaccine and should be interpreted in the context of other
                                 scientific information.
                                 </li></ul>
                                 </p>]]></text>
@@ -568,13 +568,13 @@ Instructions on how to search are listed in next section.</p>
 		<rule>true()</rule>
 	</caveat>
 	<caveat code="D8.C1">
-		<text evaluate="false"><![CDATA[Some items may have more than 1 occurrence in any single event report, 
+		<text evaluate="false"><![CDATA[Some items may have more than 1 occurrence in any single event report,
                                 such as Symptoms, Vaccine Products,  Manufacturers, and Event Categories.
                                 If data are grouped by any of these items, then
                                 the number in the Events Reported column may exceed the total number of unique events.
                                 If percentages are shown, then the associated percentage of total unique event reports will exceed 100% in such cases.
                                 For example, the number of Symptoms mentioned is likely to exceed the number of events reported,
-                                because many reports include more than 1 Symptom. 
+                                because many reports include more than 1 Symptom.
                                 When more than 1 Symptom occurs in a single report, then the percentage of Symptoms to unique events is more than 100%.
                                 #Suppress#]
                                 ></text>
@@ -608,35 +608,35 @@ Instructions on how to search are listed in next section.</p>
 		<rule>true()</rule>
 	</caveat>
 	<caveat code="D8.C9">
-		<text evaluate="false"><![CDATA[Under <a href="/wonder/help/vaers/21CFR600-80.htm">Title 21, Code of Federal Regulations Section 600.80</a>, 
-                                a serious event is defined with any 
-                                of the following outcomes:  Death, a life-threatening adverse experience, inpatient hospitalization or 
-                                prolongation of existing hospitalization, a persistent or significant disability/incapacity, or a congenital 
+		<text evaluate="false"><![CDATA[Under <a href="/wonder/help/vaers/21CFR600-80.htm">Title 21, Code of Federal Regulations Section 600.80</a>,
+                                a serious event is defined with any
+                                of the following outcomes:  Death, a life-threatening adverse experience, inpatient hospitalization or
+                                prolongation of existing hospitalization, a persistent or significant disability/incapacity, or a congenital
                                 anomaly/birth defect.]]></text>
 		<rule>wonder:vaers-serious()</rule>
 	</caveat>
 	<caveat code="D8.C10">
-		<text evaluate="false"><![CDATA[Vaccine Purchased By data are only available for events reported using the VAERS-1 form, active 07/01/1990 to 06/29/2017.  
+		<text evaluate="false"><![CDATA[Vaccine Purchased By data are only available for events reported using the VAERS-1 form, active 07/01/1990 to 06/29/2017.
                                 Events reported using the VAERS 2.0 form are assigned the "Not Available" value for Vaccine Purchased By.]]></text>
 		<rule>wonder:vaers-purchasedby()</rule>
 	</caveat>
 	<caveat code="D8.C11">
 		<text evaluate="false"><![CDATA[Values of Event Category field vary in their availability over time due to changes in the reporting form.
-                                The "Emergency Room/Office Visit" value was avaliable only for events reported using the VAERS-1 form, active 07/01/1990 to 06/29/2017.  
-                                The "Congenital Anomaly/Birth Defect", "Emergency Room", and "Office Visit" values are available only for events reported using the VAERS 2.0 form, active 06/30/2017 to present. 
+                                The "Emergency Room/Office Visit" value was avaliable only for events reported using the VAERS-1 form, active 07/01/1990 to 06/29/2017.
+                                The "Congenital Anomaly/Birth Defect", "Emergency Room", and "Office Visit" values are available only for events reported using the VAERS 2.0 form, active 06/30/2017 to present.
                                 These changes must be considered when evaluating count of events for these categories.]]></text>
 		<rule>wonder:vaers-eventcategory()</rule>
 	</caveat>
 	<caveat code="D8.C12">
 		<text evaluate="false"><![CDATA[Values of Vaccine Administered By field vary in their availability over time due to changes in the reporting form.
-                                The "Work", "Pharmacy", "Senior Living", and "School" values are available only for events reported using the VAERS 2.0 form, active 06/30/2017 to present. 
+                                The "Work", "Pharmacy", "Senior Living", and "School" values are available only for events reported using the VAERS 2.0 form, active 06/30/2017 to present.
                                 These changes must be considered when evaluating count of events for these categories.]]></text>
 		<rule>wonder:vaers-administeredby()</rule>
 	</caveat>
 	<caveat code="D8.C14">
 		<text evaluate="false"><![CDATA[About COVID19 vaccines:
 					<UL><LI>
-						For more information on how many persons have been vaccinated in the US for COVID19 to date, see 
+						For more information on how many persons have been vaccinated in the US for COVID19 to date, see
 						<a target= "_blank" href=https://covid.cdc.gov/covid-data-tracker/#vaccinations/>https://covid.cdc.gov/covid-data-tracker/#vaccinations/</a>.
 					</LI><LI>
 						One report may state that the patient received more than one brand of COVID-19 vaccine on the same visit.  This is a reporting error, but explains why the total number of reports may not equal the total number of COVID-19 vaccine doses.
@@ -4205,47 +4205,47 @@ Instructions on how to search are listed in next section.</p>
 </footnote>
 </footnotes>
 <caveats>
-<caveat><![CDATA[<p>  
-                                VAERS accepts reports of adverse events and reactions that occur following vaccination. Healthcare providers, vaccine manufacturers, 
-                                and the public can submit reports to VAERS. While very important in monitoring vaccine safety, VAERS reports alone cannot be used to 
-                                determine if a vaccine caused or contributed to an adverse event or illness. The reports may contain information that is incomplete, 
-                                inaccurate, coincidental, or unverifiable. Most reports to VAERS are voluntary, which means they are subject to biases. This creates 
-                                specific limitations on how the data can be used scientifically. Data from VAERS reports should always be interpreted with these 
-                                limitations in mind. 
-                                </p>  
-                                <p>  
-                                The strengths of VAERS are that it is national in scope and can quickly provide an early warning of a safety problem with a vaccine. 
-                                As part of CDC and FDA's multi-system approach to post-licensure vaccine safety monitoring, VAERS is designed to rapidly detect 
-                                unusual or unexpected patterns of adverse events, also known as "safety signals." If a safety signal is found in VAERS, further 
-                                studies can be done in safety systems such as the CDC's Vaccine Safety Datalink (VSD) or the Clinical Immunization Safety 
-                                Assessment (CISA) project. These systems do not have the same limitations as VAERS, and can better assess health risks and 
-                                possible connections between adverse events and a vaccine. 
-                                </p> 
+<caveat><![CDATA[<p>
+                                VAERS accepts reports of adverse events and reactions that occur following vaccination. Healthcare providers, vaccine manufacturers,
+                                and the public can submit reports to VAERS. While very important in monitoring vaccine safety, VAERS reports alone cannot be used to
+                                determine if a vaccine caused or contributed to an adverse event or illness. The reports may contain information that is incomplete,
+                                inaccurate, coincidental, or unverifiable. Most reports to VAERS are voluntary, which means they are subject to biases. This creates
+                                specific limitations on how the data can be used scientifically. Data from VAERS reports should always be interpreted with these
+                                limitations in mind.
+                                </p>
+                                <p>
+                                The strengths of VAERS are that it is national in scope and can quickly provide an early warning of a safety problem with a vaccine.
+                                As part of CDC and FDA's multi-system approach to post-licensure vaccine safety monitoring, VAERS is designed to rapidly detect
+                                unusual or unexpected patterns of adverse events, also known as "safety signals." If a safety signal is found in VAERS, further
+                                studies can be done in safety systems such as the CDC's Vaccine Safety Datalink (VSD) or the Clinical Immunization Safety
+                                Assessment (CISA) project. These systems do not have the same limitations as VAERS, and can better assess health risks and
+                                possible connections between adverse events and a vaccine.
+                                </p>
                                 <p>
                                 Key considerations and limitations of VAERS data:
                                 <ul><li>
-                                Vaccine providers are encouraged to report any clinically significant health problem following vaccination to VAERS, 
+                                Vaccine providers are encouraged to report any clinically significant health problem following vaccination to VAERS,
                                 whether or not they believe the vaccine was the cause.
                                 </li><li>
-                                Reports may include incomplete, inaccurate, coincidental and unverified information. 
+                                Reports may include incomplete, inaccurate, coincidental and unverified information.
                                 </li><li>
-                                The number of reports alone cannot be interpreted or used to reach conclusions about the existence, severity, frequency, 
+                                The number of reports alone cannot be interpreted or used to reach conclusions about the existence, severity, frequency,
                                 or rates of problems associated with vaccines.
                                 </li><li>
                                 VAERS data are limited to vaccine adverse event reports received between 1990 and the most recent date for which data are available.
                                 </li><li>
-                                VAERS data do not represent all known safety information for a vaccine and should be interpreted in the context of other 
+                                VAERS data do not represent all known safety information for a vaccine and should be interpreted in the context of other
                                 scientific information.
                                 </li></ul>
                                 </p>]]></caveat>
 <caveat><![CDATA[]]></caveat>
-<caveat><![CDATA[Some items may have more than 1 occurrence in any single event report, 
+<caveat><![CDATA[Some items may have more than 1 occurrence in any single event report,
                                 such as Symptoms, Vaccine Products,  Manufacturers, and Event Categories.
                                 If data are grouped by any of these items, then
                                 the number in the Events Reported column may exceed the total number of unique events.
                                 If percentages are shown, then the associated percentage of total unique event reports will exceed 100% in such cases.
                                 For example, the number of Symptoms mentioned is likely to exceed the number of events reported,
-                                because many reports include more than 1 Symptom. 
+                                because many reports include more than 1 Symptom.
                                 When more than 1 Symptom occurs in a single report, then the percentage of Symptoms to unique events is more than 100%.
                                 <a href="/wonder/help/vaers.html#Suppress" target="WONDER_Help" onclick="setfocus('WONDER_Help')">More information.</a>]]></caveat>
 <caveat><![CDATA[Data contains VAERS reports processed as

@@ -1755,8 +1755,8 @@
         "provider": "CDC WONDER VAERS",
         "request": "https://wonder.cdc.gov/controller/datarequest/D8 (POST; MMR reactions aggregate; production form body built by VaersClient)",
         "captured_at": "2026-08-11T22:54:14Z",
-        "sha256": "6b8fc1ef5167fd3b7463e252fd6137ad065316ece4b568b3ac3cb12e63c01972",
-        "minimization_or_redaction": "None; the committed XML bytes are byte-faithful.",
+        "sha256": "49e99da52c60da5fc2e2e6e682e80914f50be08e6cd42816a486b8a4c9025f3c",
+        "minimization_or_redaction": "No fields removed; trailing horizontal whitespace was normalized after capture.",
         "provider_origin_statement": "Bytes were recorded from the public CDC WONDER response through BioMCP's production request path."
       }
     },
