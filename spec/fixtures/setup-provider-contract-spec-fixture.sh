@@ -102,7 +102,7 @@ REACTOME_DETAIL = fixture("reactome/get_r_hsa_5673001_20260811.json")
 REACTOME_PARTICIPANTS = fixture("reactome/participants_r_hsa_5673001_20260811.json")
 REACTOME_EVENTS = fixture("reactome/events_r_hsa_5673001_20260811.json")
 WIKIPATHWAYS_UNAVAILABLE = fixture("wikipathways/search_unavailable_20260811.html")
-NCI_MELANOMA = fixture("nci_cts/search_melanoma.json")
+NCI_MELANOMA = fixture("nci_cts/search_melanoma_20260811.json")
 
 
 def send(handler, status, body, content_type="application/json"):
