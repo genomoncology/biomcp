@@ -17,6 +17,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/disease-survival-fixture.md
   spec/entity/phenotype.md
   spec/surface/discover.md
+  spec/entity/diagnostic.md
   spec/entity/drug.md
   spec/entity/gene.md
   spec/entity/drug-interactions.md
@@ -52,7 +53,6 @@ SPEC_CTGOV_FIXTURE_PATHS=(
 SPEC_LIVE_PATHS=(
   spec/entity/article-assets-live.md
   spec/entity/article-graph-live.md
-  spec/entity/diagnostic.md
   spec/entity/disease-live.md
   spec/entity/pathway.md
   spec/entity/protein.md
@@ -546,7 +546,6 @@ case "$mode" in
     paths=(
       spec/entity/article-assets-live.md
       spec/entity/article-graph-live.md
-      spec/entity/diagnostic.md
       spec/entity/disease-live.md
       spec/entity/ddinter-live.md
       spec/entity/pathway.md

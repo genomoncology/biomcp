@@ -3,7 +3,8 @@
 Diagnostic search has to stay source-aware: GTR and WHO IVD share one command
 surface, but they do not support the same filters or detail sections. These
 canaries keep that provenance, rejection guidance, and compact discovery-table
-behavior visible.
+behavior visible. Routine execution uses the shared local provider fixture,
+including dated OpenFDA responses captured through the production request path.
 
 ## Filter-Required Search
 

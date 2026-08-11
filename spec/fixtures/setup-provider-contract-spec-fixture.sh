@@ -23,12 +23,14 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
 ema_dir="$fixture_root/ema-human"
 who_dir="$fixture_root/who-pq"
+who_ivd_dir="$fixture_root/who-ivd"
 gtr_dir="$fixture_root/gtr"
 : >"$request_log"
 cp -R "$script_dir/ema-human" "$ema_dir"
 cp -R "$script_dir/who-pq" "$who_dir"
 cp -R "$script_dir/gtr" "$gtr_dir"
-find "$ema_dir" "$who_dir" "$gtr_dir" -type f -exec touch {} +
+cp -R "$script_dir/who-ivd" "$who_ivd_dir"
+find "$ema_dir" "$who_dir" "$who_ivd_dir" "$gtr_dir" -type f -exec touch {} +
 prepare_fixture_supervisor_owner
 
 start_fixture_supervisor "$cache_dir" "$fixture_root" "spec-provider-contract." "$server_pid_file" \
@@ -73,6 +75,8 @@ MYGENE = {
 }
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
+OPENFDA_DEVICE_510K = fixture("openfda/device_510k_brca1_20260811.json")
+OPENFDA_DEVICE_PMA = fixture("openfda/device_pma_brca1_20260811.json")
 CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
 OPENTARGETS_DRUG = fixture("opentargets/drug_pembrolizumab_20260811.json")
 QUICKGO_ANNOTATIONS = fixture("quickgo/annotations_braf_20260811.json")
@@ -130,6 +134,16 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/openfda/drug/drugsfda.json":
             send(self, 200, OPENFDA_DRUGSFDA)
             return
+        if parsed.path == "/openfda/device/510k.json":
+            query = parse_qs(parsed.query)
+            if query.get("limit") == ["25"] and "BRCA1 Hereditary Cancer Panel" in query.get("search", [""])[0]:
+                send(self, 404, OPENFDA_DEVICE_510K)
+                return
+        if parsed.path == "/openfda/device/pma.json":
+            query = parse_qs(parsed.query)
+            if query.get("limit") == ["25"] and "BRCA1 Hereditary Cancer Panel" in query.get("search", [""])[0]:
+                send(self, 404, OPENFDA_DEVICE_PMA)
+                return
         if parsed.path == "/chembl/mechanism.json":
             query = parse_qs(parsed.query)
             if query == {"molecule_chembl_id": ["CHEMBL3137343"], "limit": ["15"]}:
@@ -238,6 +252,7 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih/v2"
   printf 'export BIOMCP_EMA_DIR=%q\n' "$ema_dir"
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"
+  printf 'export BIOMCP_WHO_IVD_DIR=%q\n' "$who_ivd_dir"
   printf 'export BIOMCP_GTR_DIR=%q\n' "$gtr_dir"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_PROVIDER_CONTRACT_READY_FILE=%q\n' "$ready_file"

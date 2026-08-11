@@ -77,7 +77,7 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/entity/study.md` | study canary for local cBioPortal discovery, typed analytics validation, comparison summaries, and chart output |
 | `spec/entity/pgx.md` | receipt-backed routine fixture contract for gene/drug CPIC interaction search, opt-in recommendations, guidelines, and population-frequency detail |
 | `spec/entity/phenotype.md` | routine, receipt-backed phenotype contracts for HPO phrase resolution, direct IDs, similarity-ranked disease output, and typed disease follow-ups |
-| `spec/entity/diagnostic.md` | diagnostic canary for source-aware search, gene-first GTR guidance, compact discovery rows, and WHO detail paths |
+| `spec/entity/diagnostic.md` | routine diagnostic contracts for local GTR/WHO IVD data, compact source-aware rows, and receipted OpenFDA regulatory requests |
 | `spec/entity/vaers.md` | vaers canary for vaccine-first CDC aggregation, aggregate-only reporting, and explicit source limitations/combined output |
 | `spec/surface/cli.md` | CLI surface canary for top-level help/list discovery, operator commands, cache-mode exceptions, and health/admin guidance |
 | `spec/surface/mcp.md` | MCP surface canary for stdio/HTTP entrypoints, probe routes, and streamable-HTTP tool execution |
