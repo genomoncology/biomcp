@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -10,9 +11,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _run(*args: str | Path, cwd: Path) -> subprocess.CompletedProcess[str]:
+    fixture_env = os.environ.copy()
+    fixture_env.pop("CARGO_TARGET_DIR", None)
     return subprocess.run(
         [str(arg) for arg in args],
         cwd=cwd,
+        env=fixture_env,
         check=True,
         capture_output=True,
         text=True,
