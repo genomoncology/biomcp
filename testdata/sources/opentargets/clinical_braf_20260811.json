@@ -1,0 +1,157 @@
+{
+  "data": {
+    "target": {
+      "associatedDiseases": {
+        "rows": [
+          {
+            "score": 0.8769922233616118,
+            "disease": {
+              "id": "MONDO_0015280",
+              "name": "cardiofaciocutaneous syndrome"
+            }
+          },
+          {
+            "score": 0.8380641899091844,
+            "disease": {
+              "id": "MONDO_0018997",
+              "name": "Noonan syndrome"
+            }
+          },
+          {
+            "score": 0.819548256089721,
+            "disease": {
+              "id": "MONDO_0005105",
+              "name": "melanoma"
+            }
+          },
+          {
+            "score": 0.7639605113176462,
+            "disease": {
+              "id": "MONDO_0007265",
+              "name": "cardiofaciocutaneous syndrome 1"
+            }
+          },
+          {
+            "score": 0.7587662323717277,
+            "disease": {
+              "id": "MONDO_0013379",
+              "name": "Noonan syndrome 7"
+            }
+          }
+        ]
+      },
+      "drugAndClinicalCandidates": {
+        "rows": [
+          {
+            "drug": {
+              "id": "CHEMBL3977543",
+              "name": "BELVARAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4303729",
+              "name": "PLIXORAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1336",
+              "name": "SORAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1946170",
+              "name": "REGORAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3348923",
+              "name": "TOVORAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2105729",
+              "name": "DABRAFENIB MESYLATE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3545027",
+              "name": "XL-281"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2028663",
+              "name": "DABRAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3545080",
+              "name": "RG-7256"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4209157",
+              "name": "LIFIRAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL4583691",
+              "name": "NAPORAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3301612",
+              "name": "ENCORAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL2029988",
+              "name": "CEP-32496"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1200485",
+              "name": "SORAFENIB TOSYLATE"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL1229517",
+              "name": "VEMURAFENIB"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL558752",
+              "name": "RAF-265"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL5314407",
+              "name": "ARQ-736"
+            }
+          },
+          {
+            "drug": {
+              "id": "CHEMBL3577124",
+              "name": "LY-3009120"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

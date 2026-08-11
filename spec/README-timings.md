@@ -63,8 +63,7 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 
 | Path | Purpose |
 |---|---|
-| `spec/entity/gene.md` | routine, receipt-backed MyGene identity canary for search, aliases, stable cards, and diagnostics/pathway pivots |
-| `spec/entity/gene-live.md` | temporary live-only optional gene enrichment checks awaiting ticket 0907 |
+| `spec/entity/gene.md` | routine, receipt-backed gene canary for MyGene identity, QuickGO/STRING function, HPA expression, DGIdb/Open Targets druggability, NIH funding, and local GTR diagnostics |
 | `spec/entity/variant.md` | variant canary for gene-scoped search, protein-filter normalization, residue aliases, and clinical/population context |
 | `spec/entity/variant-article-identity.md` | frozen G5 v2 release gate for verified variant-article positives, collision rejection, pagination, outage truthfulness, audit facts, and bounded candidate-route diagnostics |
 | `spec/entity/article.md` | article canary for typed vs keyword search, source-aware result structure, annotations, and fulltext fallback |

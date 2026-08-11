@@ -1,0 +1,232 @@
+{
+  "took": 7,
+  "total": 1,
+  "max_score": 17.397142,
+  "hits": [
+    {
+      "MIM": "131550",
+      "_id": "1956",
+      "_score": 17.397142,
+      "alias": [
+        "ERBB",
+        "ERBB1",
+        "ERRP",
+        "HER1",
+        "NISBD2",
+        "NNCIS",
+        "PIG61",
+        "mENA"
+      ],
+      "ensembl": {
+        "gene": "ENSG00000146648"
+      },
+      "entrezgene": "1956",
+      "genomic_pos": {
+        "chr": "7",
+        "end": 55211628,
+        "start": 55018820,
+        "strand": 1
+      },
+      "name": "epidermal growth factor receptor",
+      "pathway": {
+        "kegg": [
+          {
+            "id": "hsa04010",
+            "name": "MAPK signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04012",
+            "name": "ErbB signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04014",
+            "name": "Ras signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04015",
+            "name": "Rap1 signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04020",
+            "name": "Calcium signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04066",
+            "name": "HIF-1 signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04068",
+            "name": "FoxO signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04072",
+            "name": "Phospholipase D signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04144",
+            "name": "Endocytosis - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04151",
+            "name": "PI3K-Akt signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04510",
+            "name": "Focal adhesion - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04520",
+            "name": "Adherens junction - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04540",
+            "name": "Gap junction - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04630",
+            "name": "JAK-STAT signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04810",
+            "name": "Regulation of actin cytoskeleton - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04912",
+            "name": "GnRH signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04915",
+            "name": "Estrogen signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04921",
+            "name": "Oxytocin signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04926",
+            "name": "Relaxin signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04928",
+            "name": "Parathyroid hormone synthesis, secretion and action - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04934",
+            "name": "Cushing syndrome - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05120",
+            "name": "Epithelial cell signaling in Helicobacter pylori infection - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05131",
+            "name": "Shigellosis - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05160",
+            "name": "Hepatitis C - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05163",
+            "name": "Human cytomegalovirus infection - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05165",
+            "name": "Human papillomavirus infection - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05171",
+            "name": "Coronavirus disease - COVID-19 - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05200",
+            "name": "Pathways in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05205",
+            "name": "Proteoglycans in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05206",
+            "name": "MicroRNAs in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05210",
+            "name": "Colorectal cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05212",
+            "name": "Pancreatic cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05213",
+            "name": "Endometrial cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05214",
+            "name": "Glioma - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05215",
+            "name": "Prostate cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05218",
+            "name": "Melanoma - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05219",
+            "name": "Bladder cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05223",
+            "name": "Non-small cell lung cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05224",
+            "name": "Breast cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05225",
+            "name": "Hepatocellular carcinoma - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05226",
+            "name": "Gastric cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05230",
+            "name": "Central carbon metabolism in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05231",
+            "name": "Choline metabolism in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05235",
+            "name": "PD-L1 expression and PD-1 checkpoint pathway in cancer - Homo sapiens (human)"
+          }
+        ]
+      },
+      "summary": "The protein encoded by this gene is a transmembrane glycoprotein that is a member of the protein kinase superfamily. This protein is a receptor for members of the epidermal growth factor family. EGFR is a cell surface protein that binds to epidermal growth factor, thus inducing receptor dimerization and tyrosine autophosphorylation leading to cell proliferation. Mutations in this gene are associated with lung cancer. EGFR is a component of the cytokine storm which contributes to a severe form of Coronavirus Disease 2019 (COVID-19) resulting from infection with severe acute respiratory syndrome coronavirus-2 (SARS-CoV-2). [provided by RefSeq, Jul 2020].",
+      "symbol": "EGFR",
+      "type_of_gene": "protein-coding",
+      "uniprot": {
+        "Swiss-Prot": "P00533",
+        "TrEMBL": [
+          "Q504U8",
+          "C9JYS6",
+          "F6QWY5",
+          "B7Z2I3",
+          "E7BSV0",
+          "F2YGG7",
+          "A0ACI8QRB8",
+          "A0ACI8QNQ2",
+          "A0A8V8TPW8",
+          "A0ACI8SEU0",
+          "A0ACI8RE99"
+        ]
+      }
+    }
+  ]
+}

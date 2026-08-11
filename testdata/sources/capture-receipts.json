@@ -1389,6 +1389,162 @@
       }
     },
     {
+      "path": "quickgo/annotations_braf_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "QuickGO",
+        "request": "https://www.ebi.ac.uk/QuickGO/services/annotation/search?geneProductId=P15056&limit=20",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "b91715e9aca0f4f471539db6ff02d9d38785dfa592d07ca03aa84db4297e7a10",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public QuickGO response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "quickgo/terms_braf_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "QuickGO",
+        "request": "https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "a4ea85061d60cdecdb4c91656f0cb82aa18b51c1bdbc14131bfa7f525807698e",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public QuickGO response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "string/network_braf_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "STRING",
+        "request": "https://string-db.org/api/json/network?identifiers=BRAF&species=9606&limit=15",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "3a7d5d22cc78750c0514dd5b321eb5c4ee94cd24a6b823121727817e92d02232",
+        "minimization_or_redaction": "Reduced to the first five real interaction rows consumed by the bounded renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public STRING response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "mygene/get_egfr_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22EGFR%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "749dc54f58ac3a2ed73466823163368bb9edb1d9b2d82b5c0345a53e1ada0c41",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "mygene/get_erbb2_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyGene.info",
+        "request": "https://mygene.info/v3/query?q=symbol%3A%22ERBB2%22&species=human&fields=symbol%2Cname%2Csummary%2Calias%2Ctype_of_gene%2Censembl.gene%2Centrezgene%2Cgenomic_pos.chr%2Cgenomic_pos.start%2Cgenomic_pos.end%2Cgenomic_pos.strand%2CMIM%2Cuniprot%2Cpathway.kegg&size=1",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "c30c679f4077447aae130493f958903fe5520789e51df5f5e8a1311cbe0c7aaa",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyGene.info response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "dgidb/gene_egfr_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "DGIdb",
+        "request": "https://dgidb.org/api/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "388b392c03f3f28bc0e32d30d6daeb9a3299c22816ff7ae60a303a3331f7fb84",
+        "minimization_or_redaction": "Reduced to the real EGFR categories and three approved antibody interaction rows consumed by the renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public DGIdb response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "nih_reporter/funding_erbb2_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NIH RePORTER",
+        "request": "https://api.reporter.nih.gov/v2/projects/search",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "42b9726437dd07a22d2426ecaf3bdc9fe68aff86c9c478e48b8cf6af91ae792f",
+        "minimization_or_redaction": "Reduced to response metadata and the first ten real project-year results consumed by the bounded renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public NIH RePORTER response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "opentargets/clinical_braf_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "71d07b543946cc9088929dcfa51f3c68433cac1c6a088442fc5f99af456d4382",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "opentargets/clinical_egfr_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "db4efc2c98675b3ab03788a0254e51d790f8d9a2b3e123007afce9f1e114cd9c",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "opentargets/druggability_egfr_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "82ff30aa7379fcb0f4ce12e846fc94240a982c2c0e138c8b6fb232b8a31286f1",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "opentargets/clinical_erbb2_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "796aa0ce178d1eaed8662132ca5bcf30dfa73e94c3a0991f0756523b1e54e6dc",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "opentargets/clinical_brca1_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Open Targets",
+        "request": "https://api.platform.opentargets.org/api/v4/graphql",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "d566b9b85d482734a2bfc1bd50066a2aee3f745bb25a22c0a3497f3a086858bc",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public Open Targets response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
+      "path": "hpa/braf_20260811.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Human Protein Atlas",
+        "request": "https://www.proteinatlas.org/ENSG00000157764.xml",
+        "captured_at": "2026-08-11T22:27:00Z",
+        "sha256": "c82c1d85b5c6d9f6acb886cd2b78ef71d3424d00a54782c62ed6cb59a33897ec",
+        "minimization_or_redaction": "Reduced to one real tissue row and the consumed reliability, subcellular-location, and RNA-summary elements.",
+        "provider_origin_statement": "Bytes were recorded from the public Human Protein Atlas response through BioMCP's production request path before any stated minimization."
+      }
+    },
+    {
       "path": "myvariant/get_pten_grch38_20260806.json",
       "classification": "real_and_receipted",
       "receipt": {

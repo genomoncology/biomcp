@@ -1,0 +1,48 @@
+{
+  "data": {
+    "target": {
+      "associatedDiseases": {
+        "rows": [
+          {
+            "score": 0.8390422150884005,
+            "disease": {
+              "id": "MONDO_0007254",
+              "name": "breast cancer"
+            }
+          },
+          {
+            "score": 0.8278129212540785,
+            "disease": {
+              "id": "Orphanet_145",
+              "name": "Hereditary breast and ovarian cancer syndrome"
+            }
+          },
+          {
+            "score": 0.8173531116391729,
+            "disease": {
+              "id": "MONDO_0054748",
+              "name": "Fanconi anemia, complementation group S"
+            }
+          },
+          {
+            "score": 0.8106717678060035,
+            "disease": {
+              "id": "MONDO_0008170",
+              "name": "ovarian cancer"
+            }
+          },
+          {
+            "score": 0.7998733941854641,
+            "disease": {
+              "id": "MONDO_0021100",
+              "name": "breast neoplasm"
+            }
+          }
+        ]
+      },
+      "drugAndClinicalCandidates": {
+        "rows": []
+      }
+    }
+  }
+}

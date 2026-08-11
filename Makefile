@@ -33,7 +33,6 @@ SPEC_LIVE_PATHS = \
 	spec/entity/ddinter-live.md \
 	spec/entity/diagnostic.md \
 	spec/entity/disease.md \
-	spec/entity/gene-live.md \
 	spec/entity/pathway.md \
 	spec/entity/phenotype.md \
 	spec/entity/protein.md \

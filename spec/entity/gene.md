@@ -68,3 +68,73 @@ the bounded search and exact-symbol identity plans.
 grep -F 'GET /mygene/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=3&from=0'
 grep -F 'GET /mygene/v3/query?q=symbol%3A%22BRCA1%22' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=1'
 ```
+
+## Typed optional-section outcomes
+
+Requested sections keep a bounded state even when providers return no rows or
+are temporarily unavailable. Provenance carries the same state rather than
+inferring success from an empty collection.
+
+```bash
+../../tools/biomcp-ci --json get gene BRAF go interactions \
+  | jq '. as $root | ["go", "interactions"] | all(.[]; . as $key | $root.section_outcomes[$key] as $outcome | ($outcome.outcome | IN("data", "empty", "unavailable")) and ($root._meta.section_sources | any(.key == $key and .outcome == $outcome.outcome and .sources == $outcome.sources)) and ($root._meta.section_sources | all(.key != $key or (.outcome == $outcome.outcome and .sources == $outcome.sources))))' \
+  | mustmatch 'true'
+grep -F 'GET /quickgo/QuickGO/services/annotation/search?geneProductId=P15056&limit=20' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'P15056'
+grep -F 'GET /string/api/json/network?identifiers=BRAF&species=9606&limit=15' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'species=9606'
+```
+
+## All-Section Warm Budget
+
+Quarantined from routine executable specs by ticket 372 because this timing-only
+canary failed twice during routine `make spec-pr` at 45599ms and 43332ms against
+a 12000ms ceiling. Ticket 371's request-contract strategy keeps performance
+canaries out of the default gate; restore this only as a deterministic
+benchmark/ratchet or explicit performance lane.
+
+## Tissue-Expression Context
+
+Human Protein Atlas data belongs in an opt-in deepen path and retains its
+source reliability and subcellular context.
+
+```bash
+../../tools/biomcp-ci get gene BRAF hpa | mustmatch like '## Human Protein Atlas
+| Adipose tissue | Low |
+Reliability: Supported
+Subcellular main locations: cytosol, vesicles'
+grep -F 'GET /hpa/ENSG00000157764.xml' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'ENSG00000157764.xml'
+```
+
+## Druggability & Targets
+
+Targetability context stays separate from the default card while combining
+Open Targets tractability and DGIdb interaction evidence.
+
+```bash
+../../tools/biomcp-ci get gene EGFR druggability | mustmatch like '## Druggability
+OpenTargets tractability
+| antibody | yes | Approved Drug'
+grep -F 'POST /dgidb/api/graphql' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '"gene":"EGFR"'
+grep -F 'POST /opentargets/api/v4/graphql' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '"ensemblId":"ENSG00000146648"'
+```
+
+## Funding
+
+Funding remains opt-in and retains its source-attributed bounded table.
+
+```bash
+../../tools/biomcp-ci get gene ERBB2 funding | mustmatch like '## Funding (NIH Reporter)
+| Project | PI | Organization | FY | Amount |
+Showing top 8 unique grants from 187 matching NIH project-year records'
+grep -F 'POST /nih/v2/projects/search' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '"search_text":"\"ERBB2\""'
+```
+
+## Diagnostic Local Data
+
+The diagnostic deepen path consumes the bounded local GTR bundle rather than
+downloading provider data during the routine gate.
+
+```bash
+../../tools/biomcp-ci get gene BRCA1 diagnostics | mustmatch like '## Diagnostics
+GTR000000001.1
+NCBI Genetic Testing Registry'
+```

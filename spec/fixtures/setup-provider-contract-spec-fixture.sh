@@ -23,10 +23,12 @@ server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
 ema_dir="$fixture_root/ema-human"
 who_dir="$fixture_root/who-pq"
+gtr_dir="$fixture_root/gtr"
 : >"$request_log"
 cp -R "$script_dir/ema-human" "$ema_dir"
 cp -R "$script_dir/who-pq" "$who_dir"
-find "$ema_dir" "$who_dir" -type f -exec touch {} +
+cp -R "$script_dir/gtr" "$gtr_dir"
+find "$ema_dir" "$who_dir" "$gtr_dir" -type f -exec touch {} +
 prepare_fixture_supervisor_owner
 
 start_fixture_supervisor "$cache_dir" "$fixture_root" "spec-provider-contract." "$server_pid_file" \
@@ -66,16 +68,31 @@ MYGENE = {
     "(symbol:PD\\-L1 OR alias:PD\\-L1)": fixture("mygene/search_pdl1_20260811.json"),
     'symbol:"CD274"': fixture("mygene/get_cd274_20260811.json"),
     'symbol:"BRCA1"': fixture("mygene/get_brca1_20260811.json"),
+    'symbol:"EGFR"': fixture("mygene/get_egfr_20260811.json"),
+    'symbol:"ERBB2"': fixture("mygene/get_erbb2_20260811.json"),
 }
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
 CHEMBL_MECHANISMS = fixture("chembl/mechanisms_pembrolizumab_20260811.json")
 OPENTARGETS_DRUG = fixture("opentargets/drug_pembrolizumab_20260811.json")
+QUICKGO_ANNOTATIONS = fixture("quickgo/annotations_braf_20260811.json")
+QUICKGO_TERMS = fixture("quickgo/terms_braf_20260811.json")
+STRING_NETWORK = fixture("string/network_braf_20260811.json")
+HPA_BRAF = fixture("hpa/braf_20260811.xml")
+DGIDB_EGFR = fixture("dgidb/gene_egfr_20260811.json")
+NIH_ERBB2 = fixture("nih_reporter/funding_erbb2_20260811.json")
+OPENTARGETS = {
+    ("ENSG00000157764", False): fixture("opentargets/clinical_braf_20260811.json"),
+    ("ENSG00000146648", False): fixture("opentargets/clinical_egfr_20260811.json"),
+    ("ENSG00000146648", True): fixture("opentargets/druggability_egfr_20260811.json"),
+    ("ENSG00000141736", False): fixture("opentargets/clinical_erbb2_20260811.json"),
+    ("ENSG00000012048", False): fixture("opentargets/clinical_brca1_20260811.json"),
+}
 
 
-def send(handler, status, body):
+def send(handler, status, body, content_type="application/json"):
     handler.send_response(status)
-    handler.send_header("Content-Type", "application/json")
+    handler.send_header("Content-Type", content_type)
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)
@@ -118,6 +135,20 @@ class Handler(BaseHTTPRequestHandler):
             if query == {"molecule_chembl_id": ["CHEMBL3137343"], "limit": ["15"]}:
                 send(self, 200, CHEMBL_MECHANISMS)
                 return
+        if parsed.path == "/quickgo/QuickGO/services/annotation/search":
+            if parse_qs(parsed.query) == {"geneProductId": ["P15056"], "limit": ["20"]}:
+                send(self, 200, QUICKGO_ANNOTATIONS)
+                return
+        if parsed.path == "/quickgo/QuickGO/services/ontology/go/terms/GO:0004672,GO:0004674,GO:0004708,GO:0004709,GO:0005509,GO:0005515,GO:0031267":
+            send(self, 200, QUICKGO_TERMS)
+            return
+        if parsed.path == "/string/api/json/network":
+            if parse_qs(parsed.query) == {"identifiers": ["BRAF"], "species": ["9606"], "limit": ["15"]}:
+                send(self, 200, STRING_NETWORK)
+                return
+        if parsed.path == "/hpa/ENSG00000157764.xml":
+            send(self, 200, HPA_BRAF, "application/xml")
+            return
 
         send(self, 404, b'{"error":"fixture route not found"}')
 
@@ -131,6 +162,24 @@ class Handler(BaseHTTPRequestHandler):
             request = json.loads(body)
             if request.get("variables") == {"chemblId": "CHEMBL3137343"}:
                 send(self, 200, OPENTARGETS_DRUG)
+                return
+            variables = request.get("variables", {})
+            ensembl_id = variables.get("ensemblId")
+            is_druggability = "tractability" in request.get("query", "")
+            response = OPENTARGETS.get((ensembl_id, is_druggability))
+            if response is not None:
+                send(self, 200, response)
+                return
+        if parsed.path == "/dgidb/api/graphql":
+            request = json.loads(body)
+            if request.get("variables") == {"gene": "EGFR", "first": 1}:
+                send(self, 200, DGIDB_EGFR)
+                return
+        if parsed.path == "/nih/v2/projects/search":
+            request = json.loads(body)
+            search = request.get("criteria", {}).get("advanced_text_search", {})
+            if search.get("search_text") == '"ERBB2"':
+                send(self, 200, NIH_ERBB2)
                 return
         send(self, 404, b'{"error":"fixture route not found"}')
 
@@ -182,8 +231,14 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url/openfda"
   printf 'export BIOMCP_CHEMBL_BASE=%q\n' "$base_url/chembl"
   printf 'export BIOMCP_OPENTARGETS_BASE=%q\n' "$base_url/opentargets/api/v4"
+  printf 'export BIOMCP_QUICKGO_BASE=%q\n' "$base_url/quickgo/QuickGO/services"
+  printf 'export BIOMCP_STRING_BASE=%q\n' "$base_url/string/api"
+  printf 'export BIOMCP_HPA_BASE=%q\n' "$base_url/hpa"
+  printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/dgidb/api"
+  printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih/v2"
   printf 'export BIOMCP_EMA_DIR=%q\n' "$ema_dir"
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"
+  printf 'export BIOMCP_GTR_DIR=%q\n' "$gtr_dir"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_PROVIDER_CONTRACT_READY_FILE=%q\n' "$ready_file"
   printf 'export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG=%q\n' "$request_log"

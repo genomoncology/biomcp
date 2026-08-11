@@ -1,0 +1,151 @@
+{
+  "took": 5,
+  "total": 1,
+  "max_score": 17.568974,
+  "hits": [
+    {
+      "MIM": "164870",
+      "_id": "2064",
+      "_score": 17.568974,
+      "alias": [
+        "CD340",
+        "HER-2",
+        "HER-2/neu",
+        "HER2",
+        "MLN 19",
+        "MLN-19",
+        "NEU",
+        "NGL",
+        "TKR1",
+        "VSCN2",
+        "c-ERB-2",
+        "c-ERB2",
+        "p185(erbB2)"
+      ],
+      "ensembl": {
+        "gene": "ENSG00000141736"
+      },
+      "entrezgene": "2064",
+      "genomic_pos": {
+        "chr": "17",
+        "end": 39730426,
+        "start": 39687914,
+        "strand": 1
+      },
+      "name": "erb-b2 receptor tyrosine kinase 2",
+      "pathway": {
+        "kegg": [
+          {
+            "id": "hsa04010",
+            "name": "MAPK signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04012",
+            "name": "ErbB signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04020",
+            "name": "Calcium signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04066",
+            "name": "HIF-1 signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04151",
+            "name": "PI3K-Akt signaling pathway - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04510",
+            "name": "Focal adhesion - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04520",
+            "name": "Adherens junction - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa04530",
+            "name": "Tight junction - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05200",
+            "name": "Pathways in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05205",
+            "name": "Proteoglycans in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05206",
+            "name": "MicroRNAs in cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05212",
+            "name": "Pancreatic cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05213",
+            "name": "Endometrial cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05215",
+            "name": "Prostate cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05219",
+            "name": "Bladder cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05223",
+            "name": "Non-small cell lung cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05224",
+            "name": "Breast cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05226",
+            "name": "Gastric cancer - Homo sapiens (human)"
+          },
+          {
+            "id": "hsa05230",
+            "name": "Central carbon metabolism in cancer - Homo sapiens (human)"
+          }
+        ]
+      },
+      "summary": "This gene encodes a member of the epidermal growth factor (EGF) receptor family of receptor tyrosine kinases. This protein has no ligand binding domain of its own and therefore cannot bind growth factors. However, it does bind tightly to other ligand-bound EGF receptor family members to form a heterodimer, stabilizing ligand binding and enhancing kinase-mediated activation of downstream signalling pathways, such as those involving mitogen-activated protein kinase and phosphatidylinositol-3 kinase. Allelic variations at amino acid positions 654 and 655 of isoform a (positions 624 and 625 of isoform b) have been reported, with the most common allele, Ile654/Ile655, shown here. Amplification and/or overexpression of this gene has been reported in numerous cancers, including breast and ovarian tumors. Alternative splicing results in several additional transcript variants, some encoding different isoforms and others that have not been fully characterized. [provided by RefSeq, Jul 2008].",
+      "symbol": "ERBB2",
+      "type_of_gene": "protein-coding",
+      "uniprot": {
+        "Swiss-Prot": "P04626",
+        "TrEMBL": [
+          "X5DNK3",
+          "F5H1T4",
+          "F6QU44",
+          "B4DTR1",
+          "J3QLU9",
+          "A0ACI8RXY7",
+          "A0ACI8U2V1",
+          "A0ACI8V1N1",
+          "A0ACI8QFK1",
+          "A0ACI8V1P7",
+          "J3KTI5",
+          "A0ACI8R235",
+          "J3KRI9",
+          "A0ACI8PFW9",
+          "A0ACI8Q458",
+          "A0ACI8U2V0",
+          "J3QRX1",
+          "A0ACI8RI78",
+          "A0ACI8R7E4",
+          "J3QRJ7",
+          "J3QL83",
+          "A0ACI8U2Y4",
+          "J3QLV2",
+          "A0ACI8PWJ3",
+          "A0ACI8PQP9"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,473 @@
+{
+  "meta": {
+    "search_id": "_Njve7MePEGM5Rmuv2GkxQ",
+    "total": 187,
+    "offset": 0,
+    "limit": 50,
+    "sort_field": "award_amount",
+    "sort_order": "desc",
+    "sorted_by_relevance": true,
+    "properties": {
+      "URL": "https:/reporter.nih.gov/search/_Njve7MePEGM5Rmuv2GkxQ/projects"
+    }
+  },
+  "results": [
+    {
+      "fiscal_year": 2022,
+      "project_num": "1ZIAAR041124-23",
+      "organization": {
+        "org_name": "NATIONAL INSTITUTE OF ARTHRITIS AND MUSCULOSKELETAL AND SKIN DISEASES",
+        "city": null,
+        "country": null,
+        "org_city": null,
+        "org_country": "UNITED STATES",
+        "org_state": null,
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": null,
+        "org_ueis": null,
+        "primary_duns": null,
+        "primary_uei": null,
+        "org_fips": null,
+        "org_ipf_code": null,
+        "org_zipcode": null,
+        "external_org_id": null
+      },
+      "award_amount": 2219287,
+      "principal_investigators": [
+        {
+          "profile_id": 9691698,
+          "first_name": "Maria",
+          "middle_name": "",
+          "last_name": "Morasso",
+          "is_contact_pi": true,
+          "full_name": "Maria  Morasso",
+          "title": ""
+        }
+      ],
+      "contact_pi_name": "MORASSO, MARIA ",
+      "core_project_num": "ZIAAR041124",
+      "project_title": "Regulation Of Epidermal Differentiation",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10697688"
+    },
+    {
+      "fiscal_year": 2023,
+      "project_num": "1ZIASC004020-46",
+      "organization": {
+        "org_name": "DIVISION OF CLINICAL SCIENCES - NCI",
+        "city": null,
+        "country": null,
+        "org_city": null,
+        "org_country": "UNITED STATES",
+        "org_state": null,
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": null,
+        "org_ueis": null,
+        "primary_duns": null,
+        "primary_uei": null,
+        "org_fips": null,
+        "org_ipf_code": null,
+        "org_zipcode": null,
+        "external_org_id": null
+      },
+      "award_amount": 2147209,
+      "principal_investigators": [
+        {
+          "profile_id": 6572144,
+          "first_name": "JAY",
+          "middle_name": "A",
+          "last_name": "BERZOFSKY",
+          "is_contact_pi": true,
+          "full_name": "JAY A BERZOFSKY",
+          "title": ""
+        }
+      ],
+      "contact_pi_name": "BERZOFSKY, JAY A",
+      "core_project_num": "ZIASC004020",
+      "project_title": "Vaccine and immunotherapy strategies for cancer and viruses causing cancer",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10926563"
+    },
+    {
+      "fiscal_year": 2024,
+      "project_num": "1ZIASC004020-47",
+      "organization": {
+        "org_name": "DIVISION OF CLINICAL SCIENCES - NCI",
+        "city": null,
+        "country": null,
+        "org_city": null,
+        "org_country": "UNITED STATES",
+        "org_state": null,
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": null,
+        "org_ueis": null,
+        "primary_duns": null,
+        "primary_uei": null,
+        "org_fips": null,
+        "org_ipf_code": null,
+        "org_zipcode": null,
+        "external_org_id": null
+      },
+      "award_amount": 1733876,
+      "principal_investigators": [
+        {
+          "profile_id": 6572144,
+          "first_name": "JAY",
+          "middle_name": "A",
+          "last_name": "BERZOFSKY",
+          "is_contact_pi": true,
+          "full_name": "JAY A BERZOFSKY",
+          "title": ""
+        }
+      ],
+      "contact_pi_name": "BERZOFSKY, JAY A",
+      "core_project_num": "ZIASC004020",
+      "project_title": "Vaccine and immunotherapy strategies for cancer and viruses causing cancer",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11188696"
+    },
+    {
+      "fiscal_year": 2026,
+      "project_num": "4R01CA287486-03",
+      "organization": {
+        "org_name": "CINCINNATI CHILDRENS HOSP MED CTR",
+        "city": null,
+        "country": null,
+        "org_city": "CINCINNATI",
+        "org_country": "UNITED STATES",
+        "org_state": "OH",
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": [
+          "071284913"
+        ],
+        "org_ueis": [
+          "JZD1HLM2ZU83"
+        ],
+        "primary_duns": "071284913",
+        "primary_uei": "JZD1HLM2ZU83",
+        "org_fips": "US",
+        "org_ipf_code": "615001",
+        "org_zipcode": "452293039",
+        "external_org_id": 615001
+      },
+      "award_amount": 1340183,
+      "principal_investigators": [
+        {
+          "profile_id": 14651896,
+          "first_name": "David",
+          "middle_name": "F",
+          "last_name": "Smith",
+          "is_contact_pi": false,
+          "full_name": "David F Smith",
+          "title": ""
+        },
+        {
+          "profile_id": 6436782,
+          "first_name": "Susanne",
+          "middle_name": "I",
+          "last_name": "Wells",
+          "is_contact_pi": true,
+          "full_name": "Susanne I Wells",
+          "title": "PROFESSOR OF PEDIATRICS"
+        }
+      ],
+      "contact_pi_name": "WELLS, SUSANNE I",
+      "core_project_num": "R01CA287486",
+      "project_title": "HPV and host factors in juvenile onset recurrent respiratory papillomatosis",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11359721"
+    },
+    {
+      "fiscal_year": 2025,
+      "project_num": "1R44DK143865-01",
+      "organization": {
+        "org_name": "IN VIVO MICROSYSTEMS TECHNOLOGIES, LLC",
+        "city": null,
+        "country": null,
+        "org_city": "ANN ARBOR",
+        "org_country": "UNITED STATES",
+        "org_state": "MI",
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": null,
+        "org_ueis": [
+          "SHGHMMQJMUT6"
+        ],
+        "primary_duns": null,
+        "primary_uei": "SHGHMMQJMUT6",
+        "org_fips": "US",
+        "org_ipf_code": "10072852",
+        "org_zipcode": "481039486",
+        "external_org_id": 10072852
+      },
+      "award_amount": 1022055,
+      "principal_investigators": [
+        {
+          "profile_id": 79028682,
+          "first_name": "Elaine",
+          "middle_name": "",
+          "last_name": "Brady",
+          "is_contact_pi": true,
+          "full_name": "Elaine  Brady",
+          "title": ""
+        }
+      ],
+      "contact_pi_name": "BRADY, ELAINE ",
+      "core_project_num": "R44DK143865",
+      "project_title": "In-vivo study of KSP/QRH heptapeptide dimer for detection of biliary intra-epithelial neoplasia",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11185304"
+    },
+    {
+      "fiscal_year": 2022,
+      "project_num": "5R44CA261318-02",
+      "organization": {
+        "org_name": "VERAVANTI, INC.",
+        "city": null,
+        "country": null,
+        "org_city": "REDMOND",
+        "org_country": "UNITED STATES",
+        "org_state": "WA",
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": [
+          "036683117"
+        ],
+        "org_ueis": [
+          "QCKNV6BL8B23"
+        ],
+        "primary_duns": "036683117",
+        "primary_uei": "QCKNV6BL8B23",
+        "org_fips": "US",
+        "org_ipf_code": "10040566",
+        "org_zipcode": "980525519",
+        "external_org_id": 10040566
+      },
+      "award_amount": 1002190,
+      "principal_investigators": [
+        {
+          "profile_id": 14361952,
+          "first_name": "Gerald",
+          "middle_name": "",
+          "last_name": "McMorrow",
+          "is_contact_pi": true,
+          "full_name": "Gerald  McMorrow",
+          "title": "CEO & FOUNDER"
+        }
+      ],
+      "contact_pi_name": "MCMORROW, GERALD ",
+      "core_project_num": "R44CA261318",
+      "project_title": "Endoscope development for the clinical use of near infrared fluorescence molecular probes in the GI tract",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10493360"
+    },
+    {
+      "fiscal_year": 2022,
+      "project_num": "1ZIASC004020-45",
+      "organization": {
+        "org_name": "DIVISION OF CLINICAL SCIENCES - NCI",
+        "city": null,
+        "country": null,
+        "org_city": null,
+        "org_country": "UNITED STATES",
+        "org_state": null,
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": null,
+        "org_ueis": null,
+        "primary_duns": null,
+        "primary_uei": null,
+        "org_fips": null,
+        "org_ipf_code": null,
+        "org_zipcode": null,
+        "external_org_id": null
+      },
+      "award_amount": 960045,
+      "principal_investigators": [
+        {
+          "profile_id": 6572144,
+          "first_name": "JAY",
+          "middle_name": "A",
+          "last_name": "BERZOFSKY",
+          "is_contact_pi": true,
+          "full_name": "JAY A BERZOFSKY",
+          "title": ""
+        }
+      ],
+      "contact_pi_name": "BERZOFSKY, JAY A",
+      "core_project_num": "ZIASC004020",
+      "project_title": "Vaccine and immunotherapy strategies for cancer and viruses causing cancer",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10702986"
+    },
+    {
+      "fiscal_year": 2026,
+      "project_num": "1R01HL180354-01A1",
+      "organization": {
+        "org_name": "UT SOUTHWESTERN MEDICAL CENTER",
+        "city": null,
+        "country": null,
+        "org_city": "DALLAS",
+        "org_country": "UNITED STATES",
+        "org_state": "TX",
+        "org_state_name": null,
+        "dept_type": "INTERNAL MEDICINE/MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "800771545"
+        ],
+        "org_ueis": [
+          "YZJ6DKPM4W63"
+        ],
+        "primary_duns": "800771545",
+        "primary_uei": "YZJ6DKPM4W63",
+        "org_fips": "US",
+        "org_ipf_code": "578404",
+        "org_zipcode": "753909105",
+        "external_org_id": 578404
+      },
+      "award_amount": 718548,
+      "principal_investigators": [
+        {
+          "profile_id": 1929282,
+          "first_name": "THOMAS",
+          "middle_name": "G",
+          "last_name": "GILLETTE",
+          "is_contact_pi": false,
+          "full_name": "THOMAS G GILLETTE",
+          "title": "ASSOCIATE PROFESSSOR"
+        },
+        {
+          "profile_id": 1898163,
+          "first_name": "JOSEPH",
+          "middle_name": "A",
+          "last_name": "HILL",
+          "is_contact_pi": true,
+          "full_name": "JOSEPH A HILL",
+          "title": "PROFESSOR"
+        }
+      ],
+      "contact_pi_name": "HILL, JOSEPH A",
+      "core_project_num": "R01HL180354",
+      "project_title": "Endothelial Fli1 In Ischemic Heart Disease",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11365606"
+    },
+    {
+      "fiscal_year": 2026,
+      "project_num": "1R01CA309345-01",
+      "organization": {
+        "org_name": "SLOAN-KETTERING INST CAN RESEARCH",
+        "city": null,
+        "country": null,
+        "org_city": "NEW YORK",
+        "org_country": "UNITED STATES",
+        "org_state": "NY",
+        "org_state_name": null,
+        "dept_type": null,
+        "fips_country_code": null,
+        "org_duns": [
+          "064931884"
+        ],
+        "org_ueis": [
+          "KUKXRCZ6NZC2"
+        ],
+        "primary_duns": "064931884",
+        "primary_uei": "KUKXRCZ6NZC2",
+        "org_fips": "US",
+        "org_ipf_code": "5079202",
+        "org_zipcode": "100656007",
+        "external_org_id": 5079202
+      },
+      "award_amount": 715002,
+      "principal_investigators": [
+        {
+          "profile_id": 8649650,
+          "first_name": "Mark",
+          "middle_name": "P.",
+          "last_name": "Dunphy",
+          "is_contact_pi": false,
+          "full_name": "Mark P. Dunphy",
+          "title": ""
+        },
+        {
+          "profile_id": 10910674,
+          "first_name": "James",
+          "middle_name": "J",
+          "last_name": "Harding",
+          "is_contact_pi": true,
+          "full_name": "James J Harding",
+          "title": "FELLOW"
+        },
+        {
+          "profile_id": 6266361,
+          "first_name": "David",
+          "middle_name": "B.",
+          "last_name": "Solit",
+          "is_contact_pi": false,
+          "full_name": "David B. Solit",
+          "title": "DIRECTOR, CENTER FOR MOLECULAR ONCOLOGY"
+        }
+      ],
+      "contact_pi_name": "HARDING, JAMES J",
+      "core_project_num": "R01CA309345",
+      "project_title": "HER2 PET imaging to assess HER2 heterogeneity and predict response to HER2-targeted therapy in biliary tract cancer",
+      "project_detail_url": "https://reporter.nih.gov/project-details/11275885"
+    },
+    {
+      "fiscal_year": 2022,
+      "project_num": "5R01HL153058-03",
+      "organization": {
+        "org_name": "UNIVERSITY OF PITTSBURGH AT PITTSBURGH",
+        "city": null,
+        "country": null,
+        "org_city": "PITTSBURGH",
+        "org_country": "UNITED STATES",
+        "org_state": "PA",
+        "org_state_name": null,
+        "dept_type": "PUBLIC HEALTH & PREV MEDICINE",
+        "fips_country_code": null,
+        "org_duns": [
+          "004514360"
+        ],
+        "org_ueis": [
+          "MKAGLD59JRL1"
+        ],
+        "primary_duns": "004514360",
+        "primary_uei": "MKAGLD59JRL1",
+        "org_fips": "US",
+        "org_ipf_code": "2059802",
+        "org_zipcode": "152133320",
+        "external_org_id": 2059802
+      },
+      "award_amount": 695967,
+      "principal_investigators": [
+        {
+          "profile_id": 1860172,
+          "first_name": "Richard",
+          "middle_name": "Charles",
+          "last_name": "Boucher",
+          "is_contact_pi": false,
+          "full_name": "Richard Charles Boucher",
+          "title": ""
+        },
+        {
+          "profile_id": 1864105,
+          "first_name": "Sally",
+          "middle_name": "E",
+          "last_name": "Wenzel",
+          "is_contact_pi": true,
+          "full_name": "Sally E Wenzel",
+          "title": "PROFESSOR"
+        }
+      ],
+      "contact_pi_name": "WENZEL, SALLY E",
+      "core_project_num": "R01HL153058",
+      "project_title": "Mucin sialylation drives epithelial cell senescence and severe asthma",
+      "project_detail_url": "https://reporter.nih.gov/project-details/10434719"
+    }
+  ]
+}

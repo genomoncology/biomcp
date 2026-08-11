@@ -84,6 +84,7 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
         assert values["BIOMCP_CACHE_MODE"] == "off"
         assert Path(values["BIOMCP_EMA_DIR"]).is_dir()
         assert Path(values["BIOMCP_WHO_DIR"]).is_dir()
+        assert Path(values["BIOMCP_GTR_DIR"], "test_version.gz").is_file()
     finally:
         subprocess.run(["bash", str(CLEANUP), str(workspace)], check=False)
 

@@ -51,7 +51,6 @@ SPEC_LIVE_PATHS=(
   spec/entity/article-graph-live.md
   spec/entity/diagnostic.md
   spec/entity/disease.md
-  spec/entity/gene-live.md
   spec/entity/pathway.md
   spec/entity/phenotype.md
   spec/entity/protein.md
@@ -547,7 +546,6 @@ case "$mode" in
       spec/entity/article-graph-live.md
       spec/entity/diagnostic.md
       spec/entity/ddinter-live.md
-      spec/entity/gene-live.md
       spec/entity/pathway.md
       spec/entity/phenotype.md
       spec/entity/protein.md
@@ -567,7 +565,7 @@ case "$mode" in
     ;;
   verify-nih-reporter)
     timeout_args=(--timeout 180)
-    paths=(spec/entity/disease.md spec/entity/gene.md)
+    paths=(spec/entity/disease.md)
     mustmatch_path_dir="$(mustmatch_dir)"
     BIOMCP_FEATURE_ON_BIN="${BIOMCP_FEATURE_ON_BIN:-${BIOMCP_BIN:-}}"
     prepare_spec_artifacts
