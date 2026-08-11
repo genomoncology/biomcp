@@ -203,3 +203,10 @@ Commit `df0dce06` removed the duplicate CLI-surface pytest launch from
 source ratchet now rejects nested test/lint gates in executable Markdown and
 fixture helpers without matching prose, quoted output, or `make -n`. All 49
 focused tests and the complete named spec-lint audit pass.
+
+### 0967 — reuse exact fixture results
+
+Commit `dbc37664` changed the variant identity, saved JATS, and ClinGen CSpec
+pages from 6/10/2 identical helper executions to one each. All 32 runner tests
+and spec lint pass. The variant identity page is 46.87s. Comparable warm-binary
+`make spec` execution fell from about 592.1s to 279.5s, roughly 2.1x faster.
