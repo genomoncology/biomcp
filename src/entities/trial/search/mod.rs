@@ -48,6 +48,28 @@ pub(super) struct CtGovSearchContext {
     pub(super) has_explicit_status: bool,
 }
 
+pub(super) fn nci_biomarker_value(
+    filters: &TrialSearchFilters,
+) -> Result<Option<String>, BioMcpError> {
+    let values: Vec<&str> = [
+        filters.biomarker.as_deref(),
+        filters.mutation.as_deref(),
+        filters.criteria.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+    .map(str::trim)
+    .filter(|value| !value.is_empty())
+    .collect();
+    if values.len() > 1 {
+        return Err(BioMcpError::InvalidArgument(
+            "--source nci accepts one total value across --biomarker, --mutation, and --criteria"
+                .into(),
+        ));
+    }
+    Ok(values.first().map(|value| (*value).to_string()))
+}
+
 fn has_any_query(filters: &TrialSearchFilters) -> bool {
     filters
         .condition
@@ -212,6 +234,33 @@ pub(super) fn validate_trial_search(
             "--status accepts one mapped status at a time for --source nci; comma-separated status lists are not supported".into(),
         ));
     }
+
+    if matches!(filters.source, TrialSource::NciCts) {
+        nci_biomarker_value(filters)?;
+        if filters
+            .study_type
+            .as_deref()
+            .is_some_and(|v| !v.trim().is_empty())
+        {
+            return Err(BioMcpError::InvalidArgument(
+                "--study-type is only supported for --source ctgov".into(),
+            ));
+        }
+        if filters
+            .sponsor
+            .as_deref()
+            .is_some_and(|v| !v.trim().is_empty())
+        {
+            return Err(BioMcpError::InvalidArgument(
+                "--sponsor is only supported for --source ctgov".into(),
+            ));
+        }
+        if filters.date_from.is_some() || filters.date_to.is_some() {
+            return Err(BioMcpError::InvalidArgument(
+                "--date-from/--date-to is only supported for --source ctgov".into(),
+            ));
+        }
+    }
     if matches!(filters.source, TrialSource::NciCts)
         && normalized_phase
             .as_ref()
@@ -341,11 +390,6 @@ pub async fn search_page(
         TrialSource::NciCts => {
             let normalized = validate_trial_search(filters)?;
 
-            if filters.date_from.is_some() || filters.date_to.is_some() {
-                return Err(BioMcpError::InvalidArgument(
-                    "--date-from/--date-to is only supported for --source ctgov".into(),
-                ));
-            }
             if next_page
                 .as_deref()
                 .map(str::trim)

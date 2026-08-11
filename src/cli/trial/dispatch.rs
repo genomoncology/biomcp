@@ -109,6 +109,16 @@ pub(in crate::cli) async fn handle_search(
         args.positional_query,
         "--condition",
     )?;
+    let trial_source = crate::entities::trial::TrialSource::from_flag(&args.source)?;
+    if matches!(trial_source, crate::entities::trial::TrialSource::NciCts)
+        && args.mutation.len() + args.criteria.len() + args.biomarker.len() > 1
+    {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--source nci accepts one quoted value total across --biomarker, --mutation, and --criteria"
+                .into(),
+        )
+        .into());
+    }
     let intervention = super::super::normalize_cli_tokens(args.intervention);
     let facility = super::super::normalize_cli_tokens(args.facility);
     let mutation = super::super::normalize_cli_tokens(args.mutation);
@@ -117,7 +127,6 @@ pub(in crate::cli) async fn handle_search(
     let prior_therapies = super::super::normalize_cli_tokens(args.prior_therapies);
     let progression_on = super::super::normalize_cli_tokens(args.progression_on);
     let sponsor = super::super::normalize_cli_tokens(args.sponsor);
-    let trial_source = crate::entities::trial::TrialSource::from_flag(&args.source)?;
     let filters = crate::entities::trial::TrialSearchFilters {
         condition,
         intervention,

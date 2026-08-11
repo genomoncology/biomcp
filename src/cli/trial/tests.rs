@@ -62,6 +62,31 @@ fn trial_help_documents_nci_source_specific_notes() {
     assert!(help.contains("early_phase1"));
     assert!(help.contains("sites.org_coordinates"));
     assert!(help.contains("no separate NCI keyword flag"));
+    assert!(help.contains("one quoted value total"));
+    assert!(help.contains("rejected rather than ignored"));
+}
+
+#[tokio::test]
+async fn nci_repeated_biomarker_like_values_fail_before_dispatch() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "search",
+        "trial",
+        "--source",
+        "nci",
+        "--biomarker",
+        "BRAF",
+        "V600E",
+    ])
+    .unwrap();
+    let Commands::Search {
+        entity: SearchEntity::Trial(args),
+    } = cli.command
+    else {
+        panic!("expected trial search");
+    };
+    let err = super::handle_search(args, false).await.unwrap_err();
+    assert!(err.to_string().contains("one quoted value total"));
 }
 
 #[test]

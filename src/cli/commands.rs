@@ -396,6 +396,8 @@ Source-specific notes:
   - NCI: `--status` accepts one mapped status at a time; comma-separated status lists are rejected.
   - NCI: `--phase 1/2` maps to CTS `I_II`; `early_phase1` is not supported on `--source nci`.
   - NCI: `--lat`/`--lon`/`--distance` use direct `sites.org_coordinates_*` CTS filters.
+  - NCI: use one quoted value total across `--biomarker`, `--mutation`, and `--criteria`.
+  - NCI: `--study-type`, `--sponsor`, and update-date filters are rejected rather than ignored.
   - NCI: there is no separate NCI keyword flag in this ticket.
 See also: biomcp list trial")]
     Trial(trial::TrialSearchArgs),

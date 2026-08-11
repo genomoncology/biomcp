@@ -63,6 +63,8 @@ pub(super) fn list_trial() -> String {
 - `--source nci --status <status>` accepts one normalized status at a time and maps it to CTS recruitment or lifecycle filters.
 - `--source nci --phase 1/2` maps to CTS `I_II`; `--phase early_phase1` is not supported.
 - `--source nci --lat/--lon/--distance` uses direct `sites.org_coordinates_*` CTS filters and serializes distance with the required `mi` suffix.
+- NCI accepts one quoted value total across `--biomarker`, `--mutation`, and `--criteria`; it rejects repeated or combined values.
+- NCI rejects CTGov-only `--study-type`, `--sponsor`, and update-date filters before making a request.
 
 ## JSON Output
 

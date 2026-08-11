@@ -3,18 +3,10 @@
 use super::super::validate_trial_search;
 use super::*;
 use crate::entities::trial::TrialSource;
-use crate::error::BioMcpError;
 use crate::sources::nci_cts::NciCtsClient;
 
 fn mydisease_hit(value: serde_json::Value) -> crate::sources::mydisease::MyDiseaseHit {
     serde_json::from_value(value).expect("valid MyDisease hit")
-}
-
-fn validation_error(filters: &TrialSearchFilters) -> BioMcpError {
-    match validate_trial_search(filters) {
-        Ok(_) => panic!("expected validation to fail"),
-        Err(err) => err,
-    }
 }
 
 #[test]
@@ -189,64 +181,92 @@ fn nci_source_rejects_early_phase1() {
 }
 
 #[test]
-fn nci_source_rejects_essie_filters() {
-    let filters = TrialSearchFilters {
+fn nci_public_filter_table_is_explicit() {
+    let mut cases = Vec::new();
+    macro_rules! case {
+        ($name:literal, $field:ident, $value:expr, $mapped:literal) => {{
+            let mut filters = TrialSearchFilters {
+                source: TrialSource::NciCts,
+                ..Default::default()
+            };
+            filters.$field = $value;
+            cases.push(($name, filters, $mapped));
+        }};
+    }
+    case!("condition", condition, Some("melanoma".into()), true);
+    case!("intervention", intervention, Some("drug".into()), true);
+    case!("facility", facility, Some("clinic".into()), true);
+    case!("status", status, Some("recruiting".into()), true);
+    case!("phase", phase, Some("2".into()), true);
+    case!("biomarker", biomarker, Some("BRAF".into()), true);
+    case!("mutation", mutation, Some("V600E".into()), true);
+    case!("criteria", criteria, Some("ECOG 0".into()), true);
+    case!(
+        "study type",
+        study_type,
+        Some("interventional".into()),
+        false
+    );
+    case!("age", age, Some(67.0), false);
+    case!("sex", sex, Some("female".into()), false);
+    case!("sponsor", sponsor, Some("NCI".into()), false);
+    case!("sponsor type", sponsor_type, Some("nih".into()), false);
+    case!("date from", date_from, Some("2026-01-01".into()), false);
+    case!("date to", date_to, Some("2026-01-01".into()), false);
+    case!(
+        "prior therapies",
+        prior_therapies,
+        Some("platinum".into()),
+        false
+    );
+    case!("progression on", progression_on, Some("drug".into()), false);
+    case!("line of therapy", line_of_therapy, Some("2L".into()), false);
+    case!("results", results_available, true, false);
+    let mut geo = TrialSearchFilters {
         source: TrialSource::NciCts,
-        prior_therapies: Some("platinum".into()),
+        lat: Some(42.0),
+        lon: Some(-71.0),
+        distance: Some(50),
         ..Default::default()
     };
+    cases.push(("complete geo", geo.clone(), true));
+    geo.no_alias_expand = true;
+    cases.push(("no alias expansion", geo, false));
 
-    let err = validation_error(&filters);
-    assert!(
-        format!("{err}").contains("--prior-therapies, --progression-on, and --line-of-therapy"),
-        "unexpected error: {err}"
-    );
+    for (name, filters, mapped) in cases {
+        assert_eq!(validate_trial_search(&filters).is_ok(), mapped, "{name}");
+    }
 }
 
 #[test]
-fn nci_source_rejects_age_filter() {
+fn nci_biomarker_like_fields_never_choose_or_duplicate_a_value() {
+    for field in ["biomarker", "mutation", "criteria"] {
+        let mut filters = TrialSearchFilters::default();
+        match field {
+            "biomarker" => filters.biomarker = Some("BRAF".into()),
+            "mutation" => filters.mutation = Some("BRAF".into()),
+            _ => filters.criteria = Some("BRAF".into()),
+        }
+        let value = nci_biomarker_value(&filters).unwrap();
+        let plan = NciCtsClient::search_plan(
+            "key",
+            &NciSearchParams {
+                biomarkers: value,
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            plan.query
+                .iter()
+                .filter(|(key, _)| key == "biomarkers")
+                .count(),
+            1
+        );
+    }
     let filters = TrialSearchFilters {
-        source: TrialSource::NciCts,
-        condition: Some("melanoma".into()),
-        age: Some(67.0),
+        biomarker: Some("BRAF".into()),
+        mutation: Some("V600E".into()),
         ..Default::default()
     };
-
-    let err = validation_error(&filters);
-    assert!(
-        format!("{err}").contains("--age is only supported for --source ctgov"),
-        "unexpected error: {err}"
-    );
-}
-
-#[test]
-fn nci_source_rejects_sex_filter() {
-    let filters = TrialSearchFilters {
-        source: TrialSource::NciCts,
-        condition: Some("melanoma".into()),
-        sex: Some("female".into()),
-        ..Default::default()
-    };
-
-    let err = validation_error(&filters);
-    assert!(
-        format!("{err}").contains("--sex is only supported for --source ctgov"),
-        "unexpected error: {err}"
-    );
-}
-
-#[test]
-fn nci_source_rejects_sponsor_type_filter() {
-    let filters = TrialSearchFilters {
-        source: TrialSource::NciCts,
-        condition: Some("melanoma".into()),
-        sponsor_type: Some("nih".into()),
-        ..Default::default()
-    };
-
-    let err = validation_error(&filters);
-    assert!(
-        format!("{err}").contains("--sponsor-type is only supported for --source ctgov"),
-        "unexpected error: {err}"
-    );
+    assert!(nci_biomarker_value(&filters).is_err());
 }

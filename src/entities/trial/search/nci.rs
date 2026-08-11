@@ -11,7 +11,7 @@ use crate::transform;
 use tracing::warn;
 
 use super::super::{TrialSearchFilters, TrialSearchResult};
-use super::{NormalizedTrialSearch, normalized_facility_filter};
+use super::{NormalizedTrialSearch, nci_biomarker_value, normalized_facility_filter};
 
 async fn resolve_nci_disease_filter_with_client(
     client: &MyDiseaseClient,
@@ -70,11 +70,7 @@ pub(super) async fn search_page_with_nci_clients(
         status: nci_status_filter(normalized.normalized_status.as_deref())?,
         phases: nci_phase_filters(normalized.normalized_phase.as_deref())?,
         geo: nci_geo_filter(filters),
-        biomarkers: filters
-            .biomarker
-            .clone()
-            .or_else(|| filters.mutation.clone())
-            .or_else(|| filters.criteria.clone()),
+        biomarkers: nci_biomarker_value(filters)?,
         size: limit,
         from: offset,
     };

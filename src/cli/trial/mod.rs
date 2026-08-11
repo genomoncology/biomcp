@@ -38,7 +38,7 @@ pub struct TrialSearchArgs {
     /// (studies tagged as both phases), not Phase 1 OR Phase 2.
     #[arg(short = 'p', long)]
     pub phase: Option<String>,
-    /// Study type (e.g., interventional, observational)
+    /// CTGov-only study type (e.g., interventional, observational)
     #[arg(long = "study-type")]
     pub study_type: Option<String>,
     /// Finite patient age from 0 through 150 years (decimals accepted, e.g. 0.5 for 6 months).
@@ -58,17 +58,17 @@ pub struct TrialSearchArgs {
     /// Filter by trial status [values: recruiting, not_yet_recruiting, enrolling_by_invitation, active_not_recruiting, completed, suspended, terminated, withdrawn]
     #[arg(short = 's', long)]
     pub status: Option<String>,
-    /// CTGov exact free-text boolean over title, summary, eligibility, and keywords.
+    /// CTGov exact free-text boolean; on NCI, one quoted mutation/criteria/biomarker value total.
     ///
     /// After broad discovery, simple mutation text is checked against registry
     /// eligibility to remove exclusion-only matches; trials where the term is
     /// absent remain discoverable, while boolean expressions are discovery-only.
     #[arg(long, num_args = 1..)]
     pub mutation: Vec<String>,
-    /// Search eligibility criteria with free-text terms (best-effort)
+    /// Eligibility text; on NCI, one quoted mutation/criteria/biomarker value total.
     #[arg(long, num_args = 1..)]
     pub criteria: Vec<String>,
-    /// Biomarker phrase search: NCI CTS native; CTGov keyword/intervention/condition. Prefer for gene-level trial broadening.
+    /// Biomarker phrase; on NCI, one quoted mutation/criteria/biomarker value total.
     #[arg(long, num_args = 1..)]
     pub biomarker: Vec<String>,
     /// Prior therapy mentioned in eligibility
@@ -80,7 +80,7 @@ pub struct TrialSearchArgs {
     /// Line of therapy: 1L, 2L, 3L+
     #[arg(long)]
     pub line_of_therapy: Option<String>,
-    /// Filter by sponsor (best-effort)
+    /// CTGov-only sponsor filter (best-effort)
     #[arg(long, num_args = 1..)]
     pub sponsor: Vec<String>,
     /// Sponsor/funder category [values: nih, industry, fed, other]

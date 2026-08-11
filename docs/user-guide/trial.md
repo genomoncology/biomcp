@@ -129,6 +129,12 @@ BioMCP sends `sites.org_coordinates_lat`, `sites.org_coordinates_lon`, and
 biomcp search trial -c melanoma --source nci --lat 42.36 --lon -71.06 --distance 50 --limit 5
 ```
 
+NCI accepts one quoted value total across `--biomarker`, `--mutation`, and
+`--criteria`, sending it once as the CTS `biomarkers` field. Repeated values or
+combining those flags is rejected. NCI also rejects the CTGov-only
+`--study-type`, `--sponsor`, `--date-from`, and `--date-to` filters before any
+request rather than silently ignoring them.
+
 For higher limits and reliable authenticated access, set `NCI_API_KEY`.
 
 ## Get a trial by NCT ID
