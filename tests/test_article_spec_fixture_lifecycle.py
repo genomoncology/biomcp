@@ -188,7 +188,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == (4 if mode == "spec-contracts" else 18)
+    assert len(invocations) == (4 if mode == "spec-contracts" else 28)
     article_args, article_base, article_origin = invocations[0]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args
@@ -687,10 +687,7 @@ def test_failing_parallel_pages_are_aggregated_and_stop_new_batches(
     tmp_path: Path,
 ) -> None:
     workspace, env = _runner_workspace(tmp_path)
-    failed_pages = (
-        "spec/entity/disease-survival-fixture.md",
-        "spec/entity/drug-interactions.md",
-    )
+    failed_pages = ("spec/entity/disease.md", "spec/entity/disease-survival-fixture.md")
     env |= {
         "BIOMCP_SPEC_WORKERS": "2",
         "FAIL_MUSTMATCH_PATTERNS": ",".join(failed_pages),

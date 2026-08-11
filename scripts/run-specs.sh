@@ -248,6 +248,8 @@ cleanup_vaers_fixture() {
 }
 
 run_vaers_fixture() {
+  # Small runner-lifecycle tests copy only the fixture subset they exercise.
+  [[ -x spec/fixtures/setup-vaers-spec-fixture.sh ]] || return 0
   bash spec/fixtures/setup-vaers-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-vaers-env"
   register_cleanup cleanup_vaers_fixture

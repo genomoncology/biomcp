@@ -470,7 +470,13 @@ class Handler(BaseHTTPRequestHandler):
                     "Error parsing query in Intervention / treatment: invalid expression",
                 )
                 return
-            if page_size == "1" and not condition:
+            if (
+                page_size == "1"
+                and not condition
+                and not query.get("query.term")
+                and not requested_facility
+                and not query.get("filter.geo")
+            ):
                 send_bytes(self, 200, CTGOV_SEARCH["age-count"], "application/json")
                 return
             send_json(self, 200, {"studies": [study_payload_for_request(parsed, CONTACTS_ELIGIBILITY_STUDY)], "totalCount": 1})

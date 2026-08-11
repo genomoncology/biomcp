@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+import fcntl
 import json
 import os
 from pathlib import Path
 import shlex
 import subprocess
+from typing import Iterator
 from urllib.parse import parse_qs, urlparse
 
 
@@ -16,6 +19,15 @@ FIXTURE_CLEANUP = (
     REPO_ROOT / "spec/fixtures/cleanup-ctgov-intervention-alias-spec-fixture.sh"
 )
 FIXTURE_ENV = REPO_ROOT / ".cache/spec-ctgov-intervention-alias-env"
+FIXTURE_LOCK = REPO_ROOT / ".cache/spec-routine-fixtures.lock"
+
+
+@contextmanager
+def _routine_fixture_lock() -> Iterator[None]:
+    FIXTURE_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    with FIXTURE_LOCK.open("w", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        yield
 
 
 def _read_exports(path: Path) -> dict[str, str]:
@@ -27,100 +39,108 @@ def _read_exports(path: Path) -> dict[str, str]:
 
 
 def test_combined_geo_and_eligibility_filters_fetch_one_detail_projection() -> None:
-    subprocess.run(["bash", str(FIXTURE_SETUP), str(REPO_ROOT)], check=True)
-    try:
-        fixture_env = _read_exports(FIXTURE_ENV)
-        env = os.environ | fixture_env
-        biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp"))
-        completed = subprocess.run(
-            [
-                biomcp_bin,
-                "--json",
-                "search",
-                "trial",
-                "--mutation",
-                "SHANK3",
-                "--criteria",
-                "SHANK3-related",
-                "--facility",
-                "Rare Disease Center",
-                "--lat",
-                "42.2808",
-                "--lon",
-                "-83.7430",
-                "--distance",
-                "10",
-                "--limit",
-                "1",
-            ],
-            check=True,
-            capture_output=True,
-            env=env,
-            text=True,
-        )
-        payload = json.loads(completed.stdout)
-        assert [row["nct_id"] for row in payload["results"]] == ["NCT41300001"]
+    with _routine_fixture_lock():
+        subprocess.run(["bash", str(FIXTURE_SETUP), str(REPO_ROOT)], check=True)
+        try:
+            fixture_env = _read_exports(FIXTURE_ENV)
+            env = os.environ | fixture_env
+            biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp"))
+            completed = subprocess.run(
+                [
+                    biomcp_bin,
+                    "--json",
+                    "search",
+                    "trial",
+                    "--mutation",
+                    "SHANK3",
+                    "--criteria",
+                    "SHANK3-related",
+                    "--facility",
+                    "Rare Disease Center",
+                    "--lat",
+                    "42.2808",
+                    "--lon",
+                    "-83.7430",
+                    "--distance",
+                    "10",
+                    "--limit",
+                    "1",
+                ],
+                check=True,
+                capture_output=True,
+                env=env,
+                text=True,
+            )
+            payload = json.loads(completed.stdout)
+            assert [row["nct_id"] for row in payload["results"]] == ["NCT41300001"]
 
-        request_log = Path(fixture_env["BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"])
-        detail_requests = [
-            line
-            for line in request_log.read_text(encoding="utf-8").splitlines()
-            if urlparse(line).path == "/api/v2/studies/NCT41300001"
-        ]
-        assert len(detail_requests) == 1, detail_requests
+            request_log = Path(
+                fixture_env["BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"]
+            )
+            detail_requests = [
+                line
+                for line in request_log.read_text(encoding="utf-8").splitlines()
+                if urlparse(line).path == "/api/v2/studies/NCT41300001"
+            ]
+            assert len(detail_requests) == 1, detail_requests
 
-        fields = parse_qs(urlparse(detail_requests[0]).query)["fields"][0].split(",")
-        assert "EligibilityCriteria" in fields
-        assert "LocationFacility" in fields
-        assert "LocationGeoPoint" in fields
-    finally:
-        subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
+            fields = parse_qs(urlparse(detail_requests[0]).query)["fields"][0].split(",")
+            assert "EligibilityCriteria" in fields
+            assert "LocationFacility" in fields
+            assert "LocationGeoPoint" in fields
+        finally:
+            subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
 
 
 def _run_alias_search_with_detail_log(
     extra_args: list[str],
 ) -> tuple[dict[str, object], list[str], bool]:
-    subprocess.run(["bash", str(FIXTURE_SETUP), str(REPO_ROOT)], check=True)
-    try:
-        fixture_env = _read_exports(FIXTURE_ENV)
-        env = os.environ | fixture_env
-        env["BIOMCP_MYCHEM_BASE"] = fixture_env[
-            "BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE"
-        ]
-        biomcp_bin = env.get("BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp"))
-        completed = subprocess.run(
-            [
-                biomcp_bin,
-                "--json",
-                "search",
-                "trial",
-                "--intervention",
-                "venetoclax",
-                "--criteria",
-                "eligible adults",
-                "--source",
-                "ctgov",
-                *extra_args,
-            ],
-            check=True,
-            capture_output=True,
-            env=env,
-            text=True,
-        )
+    with _routine_fixture_lock():
+        subprocess.run(["bash", str(FIXTURE_SETUP), str(REPO_ROOT)], check=True)
+        try:
+            fixture_env = _read_exports(FIXTURE_ENV)
+            env = os.environ | fixture_env
+            env["BIOMCP_MYCHEM_BASE"] = fixture_env[
+                "BIOMCP_CTGOV_INTERVENTION_ALIAS_MYCHEM_BASE"
+            ]
+            biomcp_bin = env.get(
+                "BIOMCP_BIN", str(REPO_ROOT / "target/spec/biomcp")
+            )
+            completed = subprocess.run(
+                [
+                    biomcp_bin,
+                    "--json",
+                    "search",
+                    "trial",
+                    "--intervention",
+                    "venetoclax",
+                    "--criteria",
+                    "eligible adults",
+                    "--source",
+                    "ctgov",
+                    *extra_args,
+                ],
+                check=True,
+                capture_output=True,
+                env=env,
+                text=True,
+            )
 
-        request_log = Path(fixture_env["BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"])
-        request_urls = request_log.read_text(encoding="utf-8").splitlines()
-        detail_paths = [
-            urlparse(url).path
-            for url in request_urls
-            if urlparse(url).path.startswith("/api/v2/studies/NCT")
-        ]
-        traversed_later_page = any(
-            "pageToken" in parse_qs(urlparse(url).query) for url in request_urls
-        )
-        return json.loads(completed.stdout), detail_paths, traversed_later_page
-    finally:
-        subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
+            request_log = Path(
+                fixture_env["BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"]
+            )
+            request_urls = request_log.read_text(encoding="utf-8").splitlines()
+            detail_paths = [
+                urlparse(url).path
+                for url in request_urls
+                if urlparse(url).path.startswith("/api/v2/studies/NCT")
+            ]
+            traversed_later_page = any(
+                "pageToken" in parse_qs(urlparse(url).query) for url in request_urls
+            )
+            return json.loads(completed.stdout), detail_paths, traversed_later_page
+        finally:
+            subprocess.run(["bash", str(FIXTURE_CLEANUP), str(REPO_ROOT)], check=False)
 
 
 def test_alias_fanout_deduplicates_candidates_before_detail_verification() -> None:
