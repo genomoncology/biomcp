@@ -274,3 +274,22 @@ was `real 9.29s`. Per-test cold/warm call durations were `1.37–1.38s` for each
 article signal case and `1.68–1.69s` for each CTGov signal case. These are
 observations, not a timing SLA. The unchanged `python3` fixture paths avoid
 `uv` during setup and readiness, so clearing the uv cache did not affect them.
+
+## Ticket 967 fixture-result reuse — 2026-08-11
+
+Routine pages had three exact repeated computations. The variant-article
+identity report ran six times, the same saved JATS rendering ran ten times, and
+the same ClinGen CSpec capture report ran twice. Each page now runs its helper
+once and applies all of its existing expectations to that named result.
+
+The remaining repeated `run-variant-article-entity-fixture.sh` calls in
+`spec/entity/variant.md` have distinct mode arguments and assert distinct human,
+JSON, pagination, fallback, and debug-plan scenarios. They are not duplicate
+results. Their repeated server setup is a page-level fixture-lifetime and
+parallel-runner concern, not something this ticket can cache as one output.
+
+On the loaded intervention worktree, the consolidated variant-article identity
+page took 46.87s. The complete `make spec` run fell from the 592.42s baseline to
+352.51s even though the post-commit build-identity invalidation added 73s of
+compilation to the latter run. The comparable warm-binary spec execution is
+therefore about 279.5s, versus 592.1s before: roughly 2.1x faster.

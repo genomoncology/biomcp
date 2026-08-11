@@ -602,48 +602,28 @@ present in the XML. Figures in the body and floats group, declared supplement
 files, and unflattened merged-cell tables must be visible to an agent reading
 the saved article.
 
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "Europe PMC body text with callout (Figure 2) and B-RAF^V600E^. PLX4032 boundary text."
-```
-
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "> **Figure 1.** Inline figure caption preserves n=10 cell counts."
-```
-
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "> **Figure 2.** Floats-group figure reports measurement bar is 70 μm."
+```bash run id=rendered-jats-fulltext exit=0
+bash ../fixtures/render-article-fulltext-jats-markdown.sh ../..
 ```
 
 Provider-shaped JATS can include an XML declaration and multiline external
 DOCTYPE. The parser accepts that prolog without fetching its system identifier
 and preserves numeric character references in the saved evidence text.
 
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch "/evidence.*70 µm/"
+```text expect=rendered-jats-fulltext contains
+Europe PMC body text with callout (Figure 2) and B-RAF^V600E^. PLX4032 boundary text.
+> **Figure 1.** Inline figure caption preserves n=10 cell counts.
+> **Figure 2.** Floats-group figure reports measurement bar is 70 μm.
+External DTD numeric-reference evidence measures 70 µm.
+Supplementary Data S1
+Measurement traces for the treatment cohort.
+traces-s1.csv
+**Table 2.** Merged treatment table.
+*[complex table omitted: 2×3, merged cells]*
 ```
 
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "Supplementary Data S1"
-```
-
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "Measurement traces for the treatment cohort."
-```
-
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "traces-s1.csv"
-```
-
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "**Table 2.** Merged treatment table."
-```
-
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch like "*[complex table omitted: 2×3, merged cells]*"
-```
-
-```bash
-bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.. | mustmatch not like "((Figure 2))"
+```text expect=rendered-jats-fulltext not-contains
+((Figure 2))
 ```
 
 ## Fulltext Provenance, Reuse, and Quality Metadata

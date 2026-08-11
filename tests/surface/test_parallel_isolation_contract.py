@@ -854,6 +854,34 @@ ROUTINE_SPEC_PATHS = (
     "spec/surface/trial-retirement.md",
 )
 
+
+def test_expensive_fixture_results_are_shared_across_page_assertions() -> None:
+    identity_page = (REPO_ROOT / "spec/entity/variant-article-identity.md").read_text(
+        encoding="utf-8"
+    )
+    article_page = (REPO_ROOT / "spec/entity/article.md").read_text(encoding="utf-8")
+    cspec_page = (REPO_ROOT / "spec/entity/clingen-cspec.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert identity_page.count(
+        "bash ../fixtures/run-variant-article-identity-fixture.sh ../.."
+    ) == 1
+    assert article_page.count(
+        "bash ../fixtures/render-article-fulltext-jats-markdown.sh ../.."
+    ) == 1
+    assert cspec_page.count("bash ../fixtures/run-clingen-cspec-fixture.sh ../..") == 1
+    for assertion in (
+        "canonical_observation_statuses_are_closed",
+        "debug_plan_provider_statuses_are_closed",
+        "atm_exact_annotation_confirmed",
+        "deep_discovery_keeps_structured_braf_for_identity_verification",
+        "candidate_route_trace_is_versioned_bounded_and_stage_attributed",
+        "typed_corresponding_gene_proof_is_pmid_bound",
+        "expected_pmid_aggregation_is_order_independent",
+    ):
+        assert f'"{assertion}": true' in identity_page
+
 STATIC_SPEC_PATHS = (
     "spec/surface/docker-image.md",
     "spec/surface/homebrew.md",
