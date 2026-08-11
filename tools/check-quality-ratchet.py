@@ -1301,6 +1301,36 @@ def _shell_segment_starts_nested_test_gate(tokens: list[str]) -> bool:
     return command == "check-quality-ratchet.sh"
 
 
+def _shell_segment_preparation_owned_cargo(tokens: list[str]) -> str | None:
+    command_index = 0
+    while command_index < len(tokens) and re.match(
+        r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[command_index]
+    ):
+        command_index += 1
+    if command_index >= len(tokens):
+        return None
+
+    command = Path(tokens[command_index]).name
+    args = tokens[command_index + 1 :]
+    if command == "env":
+        nested_index = 0
+        while nested_index < len(args) and (
+            args[nested_index].startswith("-")
+            or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", args[nested_index])
+        ):
+            nested_index += 1
+        return _shell_segment_preparation_owned_cargo(args[nested_index:])
+    if command == "with-build-identity":
+        return _shell_segment_preparation_owned_cargo(args)
+    if command != "cargo":
+        return None
+
+    subcommand = next((arg for arg in args if not arg.startswith("-")), None)
+    if subcommand in {"run", "build", "rustc", "test", "tree", "metadata"}:
+        return subcommand
+    return None
+
+
 def _nested_test_gate_findings_for_lines(
     lines: list[str], *, first_line: int
 ) -> list[dict[str, object]]:
@@ -1320,6 +1350,22 @@ def _nested_test_gate_findings_for_lines(
             if at_end:
                 token = ";"
             if token and all(character in ";|&" for character in token):
+                cargo_subcommand = _shell_segment_preparation_owned_cargo(segment)
+                if cargo_subcommand is not None:
+                    relative_line = max(
+                        0, min(len(lines) - 1, segment_line - first_line)
+                    )
+                    findings.append(
+                        {
+                            "line": segment_line,
+                            "rule": "nested-cargo-command",
+                            "message": (
+                                f"spec pages and fixture helpers must use prepared "
+                                f"artifacts instead of running `cargo {cargo_subcommand}`"
+                            ),
+                            "text": lines[relative_line].strip(),
+                        }
+                    )
                 if _shell_segment_starts_nested_test_gate(segment):
                     relative_line = max(
                         0, min(len(lines) - 1, segment_line - first_line)
@@ -1345,6 +1391,31 @@ def _nested_test_gate_findings_for_lines(
                 break
     except ValueError:
         return []
+    cargo_command_re = re.compile(
+        r"\$\([^)]*(?:\S*/)?(?:with-build-identity\s+)?cargo\s+"
+        r"(?P<subcommand>run|build|rustc|test|tree|metadata)\b"
+    )
+    existing_cargo_lines = {
+        finding["line"]
+        for finding in findings
+        if finding["rule"] == "nested-cargo-command"
+    }
+    for offset, line in enumerate(lines):
+        match = cargo_command_re.search(line)
+        line_number = first_line + offset
+        if match is None or line_number in existing_cargo_lines:
+            continue
+        findings.append(
+            {
+                "line": line_number,
+                "rule": "nested-cargo-command",
+                "message": (
+                    "spec pages and fixture helpers must use prepared artifacts "
+                    f"instead of running `cargo {match.group('subcommand')}`"
+                ),
+                "text": line.strip(),
+            }
+        )
     return findings
 
 

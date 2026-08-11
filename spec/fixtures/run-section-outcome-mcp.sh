@@ -30,5 +30,5 @@ for _ in $(seq 1 40); do
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null
 
-cargo run --quiet --profile "${SPEC_PROFILE:-spec}" \
-  --example rmcp_streamable_http_contract -- section-outcome "$port"
+"${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" \
+  section-outcome "$port"

@@ -9,7 +9,7 @@
 | `make release-live-smoke` | compatibility alias for operators that still use the old live-lane name | n/a | delegates to `make verify` | not part of routine gates |
 | `make spec-pr` | PR CI canary and repo-local debugging of the offline executable corpus | `180s` per heading | explicit `SPEC_ROUTINE_PATHS`: local/fixture-backed CLI/MCP Markdown specs plus the parallel-isolation pytest canary | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
 | `make spec` | repo-local routine spec gate and spec debugging | `180s` per heading | the same offline `SPEC_ROUTINE_PATHS` set as `make spec-pr` | uses the same wrapper/cache root; it should pass with external network blocked while local mock servers remain reachable |
-| `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | selected contract build plus Python/docs contract checks | routine runs share `target/spec/biomcp` with `make spec`; `release-gate` selects `target/release/biomcp` for both consumers |
+| `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | selected contract build plus Python/docs contract checks | owns its selected contract build; the spec runner separately prepares stable artifact paths and a release gate supplies its already-built feature-on CLI |
 
 Routine validation now uses offline/deterministic lanes: `make spec` and
 `make spec-pr` run only explicit `SPEC_ROUTINE_PATHS`, and `make spec-contracts`
@@ -31,29 +31,33 @@ renderer contracts own routine proof, while `make verify` owns live confidence
 and `make release-live-smoke` remains the compatibility name for that operator
 lane.
 The executable docs themselves call `tools/biomcp-ci`; `make spec` and
-`make spec-pr` choose timeout over the same offline path set. `scripts/run-specs.sh`
-sets up the local fixtures, defaults routine modes to `target/spec/biomcp`,
-keeps the caller-selected biomcp binary directory on `PATH` and the same binary
-in `BIOMCP_BIN`, runs Markdown specs with the standalone `mustmatch test`
+`make spec-pr` choose timeout over the same offline path set. Before fixture
+standup, `scripts/run-specs.sh` invokes one artifact-preparation phase. Routine
+modes build the feature-off CLI and MCP example together once, copy them to
+stable paths under `.cache/spec-artifacts/`, and capture Cargo tree and metadata
+evidence once. Live verification additionally prepares a distinct feature-on
+CLI and compiles filtered Rust tests once with `cargo test --no-run`. The runner
+puts the selected prepared CLI directory on `PATH`, keeps the same path in
+`BIOMCP_BIN`, runs Markdown specs with the standalone `mustmatch test`
 binary, and runs the lone `tests/surface/test_parallel_isolation_contract.py`
 pytest canary. Other Python static contracts live under `tests/surface/` and
 run through `make test`, not the Markdown runner.
 
-After the spec artifact exists, the complete caller-provided-binary proof is:
+The routine artifact preparation is exercised through:
 
 ```console
-make spec BIOMCP_BIN="$(pwd)/target/spec/biomcp"
+make spec
 ```
 
-After a release artifact exists, the stronger distinct-path reuse proof is:
+After a release artifact exists, its feature-on reuse proof is:
 
 ```console
-make spec BIOMCP_BIN="$(pwd)/target/release/biomcp"
+make spec SPEC_PROFILE=release SPEC_BIN="$(pwd)/target/release/biomcp"
 ```
 
 `spec/surface/mcp.md` owns the nested dry-run contracts that inspect default
 profile selection. Those dry runs clear recursive Make command-line propagation
-locally; the outer routine keeps and executes the caller-provided artifact.
+locally; the runner remains the only routine owner of Cargo artifact creation.
 
 ## Active Corpus
 
@@ -123,6 +127,16 @@ comment immediately after the `##` heading.
   layouts stay explicit in review.
 
 ## Warm Timing Record
+
+Ticket 0892 moved all build-inducing Cargo calls out of executable pages and
+fixture helpers. On 2026-08-11, warm routine preparation took `0.77s`, including
+one Cargo freshness check, stable artifact copies, and one capture each for
+`cargo tree --locked` and `cargo metadata --no-deps`. A complete four-worker
+`make spec` then passed in `185.30s` (`5.23s` user, `9.65s` system), compared
+with the post-0968 median of `205.42s` and the intervention baseline of
+`592.42s`. Live preparation also proved direct discovery and execution of the
+library test binary plus all six filtered integration-test binaries; their
+focused executions completed without invoking Cargo.
 
 Warm timing records before ticket 395 included the old live/cache-backed
 `make spec-pr` corpus. After ticket 427, `make spec`/`make spec-pr` are offline

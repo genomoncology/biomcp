@@ -127,8 +127,15 @@ itself; it runs explicit local/fixture-backed `SPEC_ROUTINE_PATHS` through
 should pass with external network blocked.
 
 The executable docs do not hand-roll env setup inside bash blocks anymore.
-`scripts/run-specs.sh` owns fixture standup, binary-runner routing, and the
-standalone mustmatch PATH guard. `tools/biomcp-ci` remains the command wrapper:
+`scripts/run-specs.sh` owns one explicit artifact-preparation phase, fixture
+standup, binary-runner routing, and the standalone mustmatch PATH guard.
+`scripts/prepare-spec-artifacts.py` builds the feature-off CLI and MCP helper
+once for routine specs, captures Cargo tree and package metadata once, and
+passes stable paths to every page. Live verification additionally prepares a
+distinct feature-on CLI and compiles Rust test executables once with
+`cargo test --no-run`; pages execute those files directly. No spec page or
+fixture helper may invoke a build-inducing Cargo command. `tools/biomcp-ci`
+remains the command wrapper:
 it resolves the repo root from
 its own path, points `BIOMCP_CACHE_DIR` and `XDG_*` under
 `.cache/biomcp-specs/`, defaults `RUST_LOG=error`, unsets optional auth keys,
@@ -140,7 +147,7 @@ to rerun just the Python/docs contract lane. Repo-root Ruff still runs through
 scratch experiment scripts do not block the production Python lint gate. Use
 `git commit --no-verify` to skip the hook for a one-off commit.
 
-`make test-contracts` builds the selected contract profile, then runs `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, and `uv run --no-sync mkdocs build --strict` with its absolute binary path in `BIOMCP_BIN`. Routine `make test` and `make spec` therefore share `target/spec/biomcp`; `make release-gate` explicitly selects `target/release/biomcp` for both lanes. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the selected binary instead of rebuilding the maturin package into `.venv`. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
+`make test-contracts` builds the selected contract profile, then runs `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, and `uv run --no-sync mkdocs build --strict` with its absolute binary path in `BIOMCP_BIN`. `make spec` delegates compilation only to its preparation phase and uses stable copies under `.cache/spec-artifacts/`; `make release-gate` passes its already-built release CLI into that phase. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the selected binary instead of rebuilding the maturin package into `.venv`. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
 
 ## Smoke Checks
 
@@ -203,6 +210,12 @@ lanes should call `tools/biomcp-ci`, which owns release-binary resolution,
 repo-owned cache roots, optional-key stripping, and warm-cache replay on CI
 cache hits; `scripts/run-specs.sh` invokes the Markdown files with the
 standalone `mustmatch test` binary.
+
+The path arrays in `scripts/run-specs.sh` are the operator inventory. The
+matching `SPEC_ROUTINE_PATHS`, `SPEC_STATIC_PATHS`, and `SPEC_LIVE_PATHS` lists
+in `Makefile` are checked by the contract suite. Add a page to both inventories
+and declare any new Rust executable in `scripts/prepare-spec-artifacts.py`;
+pages consume only the exported prepared path.
 
 Use `spec/README-timings.md` as the current validation-lane audit/reference for
 the offline deterministic routine lane, the opt-in live verify lane, the active

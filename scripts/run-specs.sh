@@ -393,9 +393,78 @@ run_python_contracts() {
   fi
 }
 
-prebuild_cargo_test_targets() {
-  echo "run-specs: pre-building cargo test binaries ($*) for live specs" >&2
-  tools/with-build-identity cargo test --locked --no-run "$@"
+prepare_spec_artifacts() {
+  # Small copied workspaces in runner lifecycle tests intentionally contain no
+  # Cargo project. A real BioMCP checkout always has this manifest.
+  [[ -f "$ROOT/Cargo.toml" ]] || return 0
+
+  local env_file="$ROOT/.cache/spec-artifacts.env"
+  mkdir -p "$ROOT/.cache"
+  local -a arguments=(
+    --mode "$mode"
+    --profile "${SPEC_PROFILE:-spec}"
+    --output "$env_file"
+  )
+  if [[ -n "${BIOMCP_FEATURE_ON_BIN:-}" ]]; then
+    arguments+=(--feature-on-bin "$BIOMCP_FEATURE_ON_BIN")
+  fi
+  python3 scripts/prepare-spec-artifacts.py "${arguments[@]}"
+  [[ -s "$env_file" ]] || {
+    echo "spec preparation did not create $env_file" >&2
+    return 1
+  }
+  unset BIOMCP_SPEC_FEATURE_OFF_BIN BIOMCP_SPEC_FEATURE_ON_BIN
+  unset BIOMCP_SPEC_MCP_EXAMPLE_BIN BIOMCP_SPEC_CARGO_TREE
+  unset BIOMCP_SPEC_CARGO_METADATA BIOMCP_SPEC_TEST_LIB
+  unset BIOMCP_SPEC_TEST_ARTICLE_CLI_TESTS_STRUCTURE
+  unset BIOMCP_SPEC_TEST_BENCHMARK_CLI_STRUCTURE
+  unset BIOMCP_SPEC_TEST_CLI_LINE_CAP_ABSORPTION
+  unset BIOMCP_SPEC_TEST_HEALTH_CLI_STRUCTURE BIOMCP_SPEC_TEST_LIST_CLI_STRUCTURE
+  unset BIOMCP_SPEC_TEST_SKILL_CLI_STRUCTURE
+  # shellcheck source=/dev/null
+  . "$env_file"
+  local -a required_paths=()
+  case "$mode" in
+    spec|spec-pr|spec-contracts)
+      required_paths=(
+        "$BIOMCP_SPEC_FEATURE_OFF_BIN"
+        "$BIOMCP_SPEC_MCP_EXAMPLE_BIN"
+        "$BIOMCP_SPEC_CARGO_TREE"
+        "$BIOMCP_SPEC_CARGO_METADATA"
+      )
+      ;;
+    verify)
+      required_paths=(
+        "$BIOMCP_SPEC_FEATURE_OFF_BIN"
+        "$BIOMCP_SPEC_FEATURE_ON_BIN"
+        "$BIOMCP_SPEC_TEST_LIB"
+        "$BIOMCP_SPEC_TEST_ARTICLE_CLI_TESTS_STRUCTURE"
+        "$BIOMCP_SPEC_TEST_BENCHMARK_CLI_STRUCTURE"
+        "$BIOMCP_SPEC_TEST_CLI_LINE_CAP_ABSORPTION"
+        "$BIOMCP_SPEC_TEST_HEALTH_CLI_STRUCTURE"
+        "$BIOMCP_SPEC_TEST_LIST_CLI_STRUCTURE"
+        "$BIOMCP_SPEC_TEST_SKILL_CLI_STRUCTURE"
+      )
+      ;;
+    verify-nih-reporter)
+      required_paths=("$BIOMCP_SPEC_FEATURE_ON_BIN" "$BIOMCP_SPEC_TEST_LIB")
+      ;;
+  esac
+  local required
+  for required in "${required_paths[@]}"; do
+    [[ -s "$required" ]] || {
+      echo "prepared spec artifact is missing or empty: $required" >&2
+      return 1
+    }
+  done
+  export BIOMCP_BIN BIOMCP_SPEC_FEATURE_OFF_BIN BIOMCP_SPEC_FEATURE_ON_BIN
+  export BIOMCP_SPEC_MCP_EXAMPLE_BIN BIOMCP_SPEC_CARGO_TREE
+  export BIOMCP_SPEC_CARGO_METADATA BIOMCP_SPEC_ARTIFACT_MODE
+  export BIOMCP_SPEC_TEST_LIB BIOMCP_SPEC_TEST_ARTICLE_CLI_TESTS_STRUCTURE
+  export BIOMCP_SPEC_TEST_BENCHMARK_CLI_STRUCTURE
+  export BIOMCP_SPEC_TEST_CLI_LINE_CAP_ABSORPTION
+  export BIOMCP_SPEC_TEST_HEALTH_CLI_STRUCTURE BIOMCP_SPEC_TEST_LIST_CLI_STRUCTURE
+  export BIOMCP_SPEC_TEST_SKILL_CLI_STRUCTURE
 }
 
 mode="${1:-}"
@@ -405,6 +474,7 @@ case "$mode" in
     paths=("${SPEC_ROUTINE_PATHS[@]}")
     validate_routine_spec_workers
     mustmatch_path_dir="$(mustmatch_dir)"
+    prepare_spec_artifacts
     reap_stale_routine_fixtures
     lock_routine_fixtures
     run_article_fixture
@@ -435,6 +505,7 @@ case "$mode" in
     )
     validate_routine_spec_workers
     mustmatch_path_dir="$(mustmatch_dir)"
+    prepare_spec_artifacts
     reap_stale_routine_fixtures
     lock_routine_fixtures
     run_article_fixture
@@ -465,12 +536,16 @@ case "$mode" in
       spec/surface/discover.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
+    BIOMCP_FEATURE_ON_BIN="${BIOMCP_FEATURE_ON_BIN:-${BIOMCP_BIN:-}}"
+    prepare_spec_artifacts
     run_live_ddinter_root
     ;;
   verify-nih-reporter)
     timeout_args=(--timeout 180)
     paths=(spec/entity/disease.md spec/entity/gene.md)
     mustmatch_path_dir="$(mustmatch_dir)"
+    BIOMCP_FEATURE_ON_BIN="${BIOMCP_FEATURE_ON_BIN:-${BIOMCP_BIN:-}}"
+    prepare_spec_artifacts
     ;;
   *)
     usage
@@ -503,10 +578,6 @@ else
   BIOMCP_BIN_DIR="$(cd "$(dirname "$BIOMCP_BIN")" && pwd)"
   export BIOMCP_BIN
   export PATH="$BIOMCP_BIN_DIR:$mustmatch_path_dir:$PATH"
-fi
-
-if [[ "$mode" == verify* ]]; then
-  prebuild_cargo_test_targets
 fi
 
 partition_paths "${paths[@]}"

@@ -12,7 +12,7 @@ older web-stack versions that stack requires; otherwise a routine gate pays to
 compile code it cannot exercise.
 
 ```bash
-cargo tree --locked --no-default-features --edges normal,build | mustmatch not like 'tonic v
+cat "${BIOMCP_SPEC_CARGO_TREE:?spec preparation did not export dependency evidence}" | mustmatch not like 'tonic v
 tonic-build v
 prost v
 prost-build v
@@ -38,7 +38,9 @@ env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
   make -C ../.. -n test | mustmatch like 'cargo nextest run --no-default-features'
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
     -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \
-  make -C ../.. -n spec | mustmatch like 'cargo build --locked --profile spec --no-default-features'
+  make -C ../.. -n spec | mustmatch like 'scripts/run-specs.sh spec'
+rg --fixed-strings '"--no-default-features"' ../../scripts/prepare-spec-artifacts.py \
+  | mustmatch like '"--no-default-features"'
 ```
 
 The matching claim about what each binary *says* — that a feature-off build
@@ -55,5 +57,5 @@ build-time dependencies together. This metadata check distinguishes a real
 optional feature from an unconditional dependency that only happens to compile.
 
 ```bash
-cargo metadata --locked --no-deps --format-version 1 | jq '[.packages[] | select(.name == "biomcp-cli") | .features][0] | ((.default | index("alphagenome")) != null and (.alphagenome | index("dep:tonic")) != null and (.alphagenome | index("dep:prost")) != null and (.alphagenome | index("dep:zstd")) != null and (.alphagenome | index("dep:tonic-build")) != null)' | mustmatch 'true'
+cat "${BIOMCP_SPEC_CARGO_METADATA:?spec preparation did not export package metadata}" | jq '[.packages[] | select(.name == "biomcp-cli") | .features][0] | ((.default | index("alphagenome")) != null and (.alphagenome | index("dep:tonic")) != null and (.alphagenome | index("dep:prost")) != null and (.alphagenome | index("dep:zstd")) != null and (.alphagenome | index("dep:tonic-build")) != null)' | mustmatch 'true'
 ```

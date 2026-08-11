@@ -244,3 +244,26 @@ warm build was 0.38s and a fresh-target build was 102.76s. This removes the
 65.26s full optimized rebuild observed after the preceding record commit—a
 roughly 25–36x faster HEAD-only path. The complete Rust lane passed 2,835 tests;
 the corrected Python lane passed 484 tests in 105.41s.
+
+### 0892 — one explicit specification artifact preparation phase
+
+All build-inducing Cargo work now belongs to
+`scripts/prepare-spec-artifacts.py`. Routine preparation builds the feature-off
+CLI and MCP example in one Cargo invocation, copies them to stable executable
+paths, and captures dependency-tree and package-metadata evidence once. Live
+preparation keeps feature-on and feature-off CLIs in distinct directories and
+discovers the library test plus six filtered integration-test executables from
+Cargo JSON after one `cargo test --no-run`.
+
+MCP pages, the section-outcome helper, build-profile pages, and all filtered
+Rust-test blocks now execute prepared paths. The spec-lint audit rejects
+`cargo run`, `build`, `rustc`, `test`, `tree`, and `metadata` in executable
+pages or fixture helpers, including command substitutions. A synthetic runner
+test proves a missing prepared path fails clearly instead of falling through to
+Cargo or an installed `biomcp`.
+
+Warm routine preparation took 0.77s. A complete four-worker `make spec` passed
+in 185.30s, versus the 205.42s post-0968 median and 592.42s intervention
+baseline. The first full run also caught and corrected an artifact naming bug:
+distinct directories now each contain a normally named `biomcp`, so PATH-based
+pages cannot fall through to an older installed executable.

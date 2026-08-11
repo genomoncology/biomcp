@@ -23,7 +23,7 @@ anchors, and truthful degraded guidance without live OLS4, UMLS, or MedlinePlus
 calls.
 
 ```bash
-cargo test --lib ticket_377_discover_renderer_envelope_contracts -- --nocapture \
+"${BIOMCP_SPEC_TEST_LIB:?spec preparation did not export library tests}" ticket_377_discover_renderer_envelope_contracts --nocapture \
   | mustmatch like 'ticket_377_discover_renderer_envelope_contracts'
 ```
 
@@ -152,7 +152,7 @@ reads and filesystem installation do not collapse back into one over-cap module.
 <!-- mustmatch-lint: skip -->
 
 ```bash run id=skill-structure-contract
-cd ../.. && cargo test --test skill_cli_structure -- --nocapture 2>&1
+"${BIOMCP_SPEC_TEST_SKILL_CLI_STRUCTURE:?spec preparation did not export skill CLI tests}" --nocapture 2>&1
 ```
 
 ```text expect=skill-structure-contract contains

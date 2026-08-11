@@ -508,7 +508,9 @@ def test_dead_code_allowance_audit_does_not_match_deny_group(tmp_path: Path) -> 
     assert payload["allowances_checked"] == 0
 
 
-def test_full_rust_audits_share_one_source_snapshot(tmp_path: Path, monkeypatch) -> None:
+def test_full_rust_audits_share_one_source_snapshot(
+    tmp_path: Path, monkeypatch
+) -> None:
     fixture_root = tmp_path / "rust-snapshot"
     _write_dead_code_fixture(
         fixture_root,
@@ -1052,6 +1054,46 @@ def test_nested_gate_ratchet_checks_fixture_helpers_without_matching_arguments(
     assert findings[0]["text"] == "cargo nextest run --no-default-features"
 
 
+def test_spec_lint_rejects_preparation_owned_cargo_commands(tmp_path: Path) -> None:
+    commands = [
+        "cargo run --bin biomcp",
+        "cargo build --bin biomcp",
+        "cargo rustc --bin biomcp",
+        "cargo test --lib one_test -- --nocapture",
+        "cargo tree --locked",
+        "cargo metadata --no-deps --format-version 1",
+        "tools/with-build-identity cargo build --bin biomcp",
+        'output="$(cd ../.. && cargo test --lib one_test -- --nocapture)"',
+    ]
+    for index, command in enumerate(commands):
+        spec_path = _write_h2_bash_spec(
+            tmp_path / f"spec-{index}",
+            "nested-cargo-command",
+            "# Nested Cargo Fixture\n\n"
+            "## Product behavior\n\n"
+            "```bash\n"
+            f"{command}\n"
+            "```\n",
+        )
+        output_dir = tmp_path / f"out-{index}"
+
+        result = _run_wrapper(
+            {
+                "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
+                "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            }
+        )
+
+        assert result.returncode == 1
+        summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+        findings = summary["lint"]["results"][0]["findings"]
+        nested = [
+            finding for finding in findings if finding["rule"] == "nested-cargo-command"
+        ]
+        assert len(nested) == 1
+        assert nested[0]["text"] == command
+
+
 def test_wrapper_reports_missing_bash_mustmatch(tmp_path: Path) -> None:
     spec_path = _write_h2_bash_spec(
         tmp_path / "spec",
@@ -1552,14 +1594,14 @@ def test_profile_independence_audit_flags_a_build_specific_spec_assertion(
     quality_ratchet = _load_ratchet_module()
     (root / "src" / "cli").mkdir(parents=True)
     (root / "src" / "cli" / "list.rs").write_text(
-        'pub fn page() -> String {\n'
+        "pub fn page() -> String {\n"
         '    let line = if cfg!(feature = "alphagenome") {\n'
         '        "AlphaGenome prediction (requires `ALPHAGENOME_API_KEY`)"\n'
-        '    } else {\n'
+        "    } else {\n"
         '        "AlphaGenome support was not built into this binary"\n'
-        '    };\n'
-        '    line.to_string()\n'
-        '}\n',
+        "    };\n"
+        "    line.to_string()\n"
+        "}\n",
         encoding="utf-8",
     )
     (root / "scripts").mkdir()

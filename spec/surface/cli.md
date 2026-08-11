@@ -293,7 +293,7 @@ large catch-all module.
 
 ```bash
 set +e
-structure_out="$(cd ../.. && cargo test --test health_cli_structure -- --nocapture 2>&1)"
+structure_out="$("${BIOMCP_SPEC_TEST_HEALTH_CLI_STRUCTURE:?spec preparation did not export health CLI tests}" --nocapture 2>&1)"
 structure_status=$?
 set -e
 mustmatch like "health_split_files_exist_with_doc_headers" <<<"$structure_out"
@@ -308,7 +308,7 @@ catch-all module.
 
 ```bash
 set +e
-list_structure_out="$(cd ../.. && cargo test --test list_cli_structure -- --nocapture 2>&1)"
+list_structure_out="$("${BIOMCP_SPEC_TEST_LIST_CLI_STRUCTURE:?spec preparation did not export list CLI tests}" --nocapture 2>&1)"
 list_structure_status=$?
 set -e
 mustmatch like "list_split_files_exist_with_doc_headers" <<<"$list_structure_out"
@@ -322,7 +322,7 @@ sidecar tree with named domains, module headers, and the CLI 700-line cap.
 
 ```bash
 set +e
-structure_out="$(cd ../.. && cargo test --test article_cli_tests_structure -- --nocapture 2>&1)"
+structure_out="$("${BIOMCP_SPEC_TEST_ARTICLE_CLI_TESTS_STRUCTURE:?spec preparation did not export article CLI tests}" --nocapture 2>&1)"
 structure_status=$?
 set -e
 mustmatch like "article_cli_test_split_files_exist_with_doc_headers" <<<"$structure_out"
@@ -338,7 +338,7 @@ under the cap.
 
 ```bash
 set +e
-structure_out="$(cd ../.. && cargo test --test cli_line_cap_absorption -- --nocapture 2>&1)"
+structure_out="$("${BIOMCP_SPEC_TEST_CLI_LINE_CAP_ABSORPTION:?spec preparation did not export CLI line-cap tests}" --nocapture 2>&1)"
 structure_status=$?
 set -e
 mustmatch like "ticket_347_residual_allowlist_entries_are_absorbed" <<<"$structure_out"
@@ -399,7 +399,7 @@ printf '%s\n' "$allow_block" | grep -Eiq "SHA-?256"
 
 ```bash
 set +e
-update_out="$(cd ../.. && cargo test --lib enforce_checksum_policy_missing_sidecar_without_override_fails_closed -- --nocapture 2>&1)"
+update_out="$("${BIOMCP_SPEC_TEST_LIB:?spec preparation did not export library tests}" enforce_checksum_policy_missing_sidecar_without_override_fails_closed --nocapture 2>&1)"
 update_status=$?
 set -e
 mustmatch like "enforce_checksum_policy_missing_sidecar_without_override_fails_closed" <<<"$update_out"
@@ -431,7 +431,7 @@ score rendering, and the non-public CLI contract cannot drift.
 
 ```bash
 set +e
-benchmark_structure_out="$(cd ../.. && cargo test --test benchmark_cli_structure -- --nocapture 2>&1)"
+benchmark_structure_out="$("${BIOMCP_SPEC_TEST_BENCHMARK_CLI_STRUCTURE:?spec preparation did not export benchmark CLI tests}" --nocapture 2>&1)"
 benchmark_structure_status=$?
 set -e
 mustmatch like "benchmark_internal_harness_split_files_exist_with_doc_headers" <<<"$benchmark_structure_out"

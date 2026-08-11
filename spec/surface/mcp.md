@@ -112,7 +112,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get, variant_articles
+"${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get, variant_articles
 ClinGen typed tools: variant_normalize_car, variant_erepo, gene_cspec, variant_articles
 ClinGen schemas validate their named root properties
 all listed MCP tools are read-only annotated
@@ -243,7 +243,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- remote-workflow "$port" | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
+"${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" remote-workflow "$port" | mustmatch like 'Command: biomcp study query --study msk_impact_2017 --gene TP53 --type mutations
 # Study Mutation Frequency: TP53 (msk_impact_2017)'
 ```
 
@@ -263,7 +263,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-cargo run --quiet --profile "${SPEC_PROFILE:-spec}" --example rmcp_streamable_http_contract -- boundaries "$port" | mustmatch like 'CLI-only over MCP
+"${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" boundaries "$port" | mustmatch like 'CLI-only over MCP
 workstation-local filesystem paths
 BioMCP allows read-only commands only
 # Study Mutation Frequency: TP53 (msk_impact_2017)
@@ -411,32 +411,32 @@ default_biomcp_bin="$ROOT/target/spec/biomcp"
 BIOMCP_BIN="${BIOMCP_BIN:-$default_biomcp_bin}"'
 ```
 
-## Caller-Provided Spec Binary Skips Rebuild
+## Release Specs Reuse The Already-Built Feature-On Binary
 
-When March or a release gate already built BioMCP, the routine spec target
-should reuse that binary instead of rebuilding `target/spec/biomcp`. The dry-run
-recipe keeps this contract visible without executing the binary.
+Routine specs always prepare their feature-off CLI because an arbitrary caller
+binary cannot prove its feature set. When the release gate already built the
+feature-on CLI, it passes that artifact explicitly and preparation copies it
+instead of rebuilding it. The dry-run recipe keeps this distinction visible.
 
-```bash run id=caller-provided-spec-binary
-make -C ../.. -n spec BIOMCP_BIN=/bin/true 2>&1
+```bash run id=caller-provided-feature-on-binary
+make -C ../.. -n spec SPEC_PROFILE=release SPEC_BIN=/bin/true 2>&1
 ```
 
-```text expect=caller-provided-spec-binary contains
-BIOMCP_BIN="/bin/true" bash scripts/run-specs.sh spec
+```text expect=caller-provided-feature-on-binary contains
+BIOMCP_FEATURE_ON_BIN="/bin/true" bash scripts/run-specs.sh spec
 ```
 
-```text expect=caller-provided-spec-binary not-contains
+```text expect=caller-provided-feature-on-binary not-contains
 cargo build --locked --profile
 ```
 
-If the provided value is missing or not executable, `make spec` should keep the
-standalone local path safe by building the spec-profile binary instead of trying
-to run a bad caller value.
+The routine recipe deliberately passes no feature-on artifact and delegates its
+single feature-off build to the runner's preparation phase.
 
 ```bash
 env -u SPEC_PROFILE -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
-  BIOMCP_BIN=/tmp/biomcp-missing-for-spec-contract make -C ../.. -n spec \
-  2>&1 | mustmatch like "cargo build --locked --profile spec"
+  make -C ../.. -n spec 2>&1 \
+  | mustmatch like 'BIOMCP_FEATURE_ON_BIN="" bash scripts/run-specs.sh spec'
 ```
 
 ## Routine Spec Runner Keeps One Python Canary

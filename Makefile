@@ -97,20 +97,17 @@ install:
 	install -m 755 target/release/biomcp "$(HOME)/.local/bin/biomcp"
 
 spec:
-	$(SPEC_BUILD)
-	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec
+	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec
 	$(MAKE) spec-static
 
 spec-static:
 	bash scripts/run-specs.sh spec-static
 
 spec-pr:
-	$(SPEC_BUILD)
-	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec-pr
+	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec-pr
 
 spec-contracts:
-	$(SPEC_BUILD)
-	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_BIN="$(SPEC_RUN_BIN)" bash scripts/run-specs.sh spec-contracts
+	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec-contracts
 
 verify:
 	$(CARGO_WITH_IDENTITY) build --release --locked
@@ -119,8 +116,8 @@ verify:
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci search disease melanoma --limit 3
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci search article -g BRAF --limit 3
 	PATH="$${PWD}/target/release:$$PATH" BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-ci variant normalize all 'NM_000248.3:c.135del'
-	BIOMCP_BIN="$${PWD}/target/release/biomcp" bash scripts/run-specs.sh verify
-	BIOMCP_BIN="$${PWD}/target/release/biomcp" tools/biomcp-verify-live nih-reporter -- bash scripts/run-specs.sh verify-nih-reporter
+	BIOMCP_BIN="$${PWD}/target/release/biomcp" BIOMCP_FEATURE_ON_BIN="$${PWD}/target/release/biomcp" bash scripts/run-specs.sh verify
+	BIOMCP_BIN="$${PWD}/target/release/biomcp" BIOMCP_FEATURE_ON_BIN="$${PWD}/target/release/biomcp" tools/biomcp-verify-live nih-reporter -- bash scripts/run-specs.sh verify-nih-reporter
 
 release-live-smoke:
 	$(MAKE) verify

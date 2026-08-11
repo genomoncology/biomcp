@@ -13,8 +13,11 @@ contracts exercise the shipped CLI/MCP surface.
   ```
 
   Run them with `make spec`. The spec gates use the standalone `mustmatch test`
-  binary through `scripts/run-specs.sh`; standup belongs in that helper script,
-  not in ad hoc docs.
+  binary through `scripts/run-specs.sh`. Cargo artifact preparation and fixture
+  standup belong in the runner and `scripts/prepare-spec-artifacts.py`, not in
+  ad hoc docs. Specification pages execute prepared paths and must not invoke
+  `cargo run`, `cargo build`, `cargo rustc`, `cargo test`, `cargo tree`, or
+  `cargo metadata`.
 - Unit/static layers run with `make test`: Rust nextest first, then the Python
   CLI/MCP/docs contract lane.
 
