@@ -333,3 +333,17 @@ classification runs now take 0.14s and 0.65s. On exact commit `892260d8`, all
 2,838 Rust tests passed in 9.465s of nextest execution, versus 36.474s before
 the change: 3.85x faster. Complete lint passed, and the implementation is +139
 net source lines against the authorized +140 ceiling.
+
+### 0972 — bounded Python contract workers
+
+The complete Python contract corpus now runs through four bounded pytest-xdist
+workers with file-based distribution. `PYTEST_WORKERS=1` remains available for
+a deterministic one-worker diagnosis. CI reuses the same `make test-contracts`
+target with its prepared release executable instead of maintaining a separate
+sequential command sequence.
+
+A prepared-binary run passed 500 tests in 43.28s versus about 105s
+sequentially. Two complete canonical runs passed 502 tests in 44.26s and
+44.47s; the warm lane took 47.09s including preparation, synchronization, and
+strict documentation. On exact implementation commit `961e42b9`, 503 tests
+and strict documentation passed in 45.07s, with pytest itself taking 39.91s.
