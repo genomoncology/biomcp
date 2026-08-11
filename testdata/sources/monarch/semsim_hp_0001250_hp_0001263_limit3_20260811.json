@@ -1,0 +1,23 @@
+[
+  {
+    "subject": {
+      "id": "MONDO:0010450",
+      "name": "intellectual disability, X-linked 89"
+    },
+    "score": 13.333213399159908
+  },
+  {
+    "subject": {
+      "id": "MONDO:0007366",
+      "name": "seizures, benign familial neonatal, 2"
+    },
+    "score": 12.891725742038691
+  },
+  {
+    "subject": {
+      "id": "MONDO:0010451",
+      "name": "intellectual disability, X-linked 41"
+    },
+    "score": 12.6674246491274
+  }
+]

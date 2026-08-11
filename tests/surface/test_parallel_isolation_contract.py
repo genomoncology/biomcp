@@ -837,6 +837,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/author.md",
     "spec/entity/disease.md",
     "spec/entity/disease-survival-fixture.md",
+    "spec/entity/phenotype.md",
     "spec/entity/drug.md",
     "spec/entity/gene.md",
     "spec/entity/drug-interactions.md",
@@ -897,7 +898,6 @@ LIVE_SPEC_PATHS = (
     "spec/entity/diagnostic.md",
     "spec/entity/disease-live.md",
     "spec/entity/pathway.md",
-    "spec/entity/phenotype.md",
     "spec/entity/protein.md",
     "spec/entity/trial.md",
     "spec/entity/vaers.md",
@@ -931,6 +931,7 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     assert "spec/surface/cli-contract-ratchet.md" in routine
     assert "spec/entity/disease.md" in routine
     assert "spec/entity/disease-live.md" not in routine
+    assert "spec/entity/phenotype.md" in routine
     assert "spec/surface/discover.md" not in routine
 
 

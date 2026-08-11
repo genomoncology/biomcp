@@ -1,0 +1,23 @@
+[
+  {
+    "subject": {
+      "id": "MONDO:0007367",
+      "name": "febrile seizures, familial, 1"
+    },
+    "score": 14.166901264019927
+  },
+  {
+    "subject": {
+      "id": "MONDO:0011443",
+      "name": "febrile seizures, familial, 4"
+    },
+    "score": 14.166901264019927
+  },
+  {
+    "subject": {
+      "id": "MONDO:0012224",
+      "name": "febrile seizures, familial, 6"
+    },
+    "score": 14.166901264019927
+  }
+]

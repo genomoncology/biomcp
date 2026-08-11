@@ -54,6 +54,20 @@ MONARCH_CML_PHENOTYPES_QUERY = {
     "object_category": ["biolink:PhenotypicFeature"],
     "limit": ["80"],
 }
+PHENOTYPE_PAYLOADS = {
+    (
+        "/monarch/v3/api/semsim/search/HP:0001250,HP:0033349,HP:0002069,HP:0002373,HP:0002199,HP:0007359,HP:0007207,HP:0033259,HP:0002123,HP:0010819/Human%20Diseases",
+        "3",
+    ): "monarch/semsim_phrase_seizure_developmental_delay_20260811.json",
+    (
+        "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases",
+        "3",
+    ): "monarch/semsim_hp_0001250_hp_0001263_limit3_20260811.json",
+    (
+        "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases",
+        "1",
+    ): "monarch/semsim_hp_0001250_hp_0001263_limit1_20260811.json",
+}
 
 
 def send_json(handler, status, payload):
@@ -78,6 +92,15 @@ class Handler(BaseHTTPRequestHandler):
 
         if parsed.path == "/healthz":
             send_json(self, 200, {"status": "ok"})
+            return
+        if parsed.path == "/hpo/search" and query == {"q": ["seizure"]}:
+            send_bytes(self, 200, source_bytes("hpo/search_seizure_20260811.json"))
+            return
+        phenotype_payload = PHENOTYPE_PAYLOADS.get(
+            (parsed.path, query.get("limit", [""])[0])
+        )
+        if phenotype_payload is not None:
+            send_bytes(self, 200, source_bytes(phenotype_payload))
             return
         if parsed.path == "/mydisease/query":
             disease_query = query.get("q", [""])[0]
@@ -199,6 +222,7 @@ PY
 {
   printf 'export BIOMCP_MYDISEASE_BASE=%q\n' "$base_url/mydisease"
   printf 'export BIOMCP_MONARCH_BASE=%q\n' "$base_url/monarch"
+  printf 'export BIOMCP_HPO_BASE=%q\n' "$base_url/hpo"
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih"
   printf 'export BIOMCP_SEER_BASE=%q\n' "$base_url/seer"
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/unused-dgidb"

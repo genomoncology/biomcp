@@ -6,6 +6,7 @@ SPEC_ROUTINE_PATHS = \
 	spec/entity/author.md \
 	spec/entity/disease.md \
 	spec/entity/disease-survival-fixture.md \
+	spec/entity/phenotype.md \
 	spec/entity/drug.md \
 	spec/entity/gene.md \
 	spec/entity/drug-interactions.md \
@@ -35,7 +36,6 @@ SPEC_LIVE_PATHS = \
 	spec/entity/diagnostic.md \
 	spec/entity/disease-live.md \
 	spec/entity/pathway.md \
-	spec/entity/phenotype.md \
 	spec/entity/protein.md \
 	spec/entity/trial.md \
 	spec/entity/vaers.md \
