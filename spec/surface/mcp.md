@@ -321,8 +321,8 @@ make full-feature-check
 cargo clippy --locked --all-targets --all-features
 cargo test --locked --all-features --lib sources::alphagenome::tests
 cargo build --release --locked --all-features --bin biomcp
-/target/release/biomcp" uv run --no-sync pytest tests/ -v
-/target/release/biomcp" uv run --no-sync mkdocs build --strict
+/target/spec/biomcp" uv run --no-sync pytest tests/ -v
+/target/spec/biomcp" uv run --no-sync mkdocs build --strict
 make spec SPEC_PROFILE=release SPEC_BIN='
 ```
 
