@@ -825,11 +825,8 @@ def test_ticket_377_renderer_envelope_specs_document_deterministic_coverage() ->
         assert "without" in lower and "live" in lower and "calls" in lower, (
             f"{path} must state the contract runs without live source calls"
         )
-        if path in {"spec/entity/article.md", "spec/entity/disease.md", "spec/entity/variant.md"}:
-            assert marker not in section, f"{path} must not relaunch cargo marker {marker} from routine specs"
-            assert "cargo test" not in section, f"{path} must keep renderer/envelope proof in make test"
-        else:
-            assert marker in section, f"{path} must expose the executable cargo marker {marker}"
+        assert marker not in section, f"{path} must not relaunch cargo marker {marker} from routine specs"
+        assert "cargo test" not in section, f"{path} must keep renderer/envelope proof in make test"
 
 
 ROUTINE_SPEC_PATHS = (
@@ -838,6 +835,7 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/disease.md",
     "spec/entity/disease-survival-fixture.md",
     "spec/entity/phenotype.md",
+    "spec/surface/discover.md",
     "spec/entity/drug.md",
     "spec/entity/gene.md",
     "spec/entity/drug-interactions.md",
@@ -906,7 +904,7 @@ LIVE_SPEC_PATHS = (
     "spec/entity/variant-articles-live.md",
     "spec/surface/build-profile-live.md",
     "spec/surface/cli.md",
-    "spec/surface/discover.md",
+    "spec/surface/discover-live.md",
 )
 
 
@@ -932,7 +930,8 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     assert "spec/entity/disease.md" in routine
     assert "spec/entity/disease-live.md" not in routine
     assert "spec/entity/phenotype.md" in routine
-    assert "spec/surface/discover.md" not in routine
+    assert "spec/surface/discover.md" in routine
+    assert "spec/surface/discover-live.md" not in routine
 
 
 def test_article_cache_transition_fixture_owns_disk_floor_precondition() -> None:

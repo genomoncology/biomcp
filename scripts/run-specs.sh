@@ -16,6 +16,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/disease.md
   spec/entity/disease-survival-fixture.md
   spec/entity/phenotype.md
+  spec/surface/discover.md
   spec/entity/drug.md
   spec/entity/gene.md
   spec/entity/drug-interactions.md
@@ -61,7 +62,7 @@ SPEC_LIVE_PATHS=(
   spec/entity/variant-myvariant-live.md
   spec/entity/variant-articles-live.md
   spec/surface/cli.md
-  spec/surface/discover.md
+  spec/surface/discover-live.md
 )
 
 usage() {
@@ -557,7 +558,7 @@ case "$mode" in
       spec/entity/variant-articles-live.md
       spec/surface/build-profile-live.md
       spec/surface/cli.md
-      spec/surface/discover.md
+      spec/surface/discover-live.md
     )
     mustmatch_path_dir="$(mustmatch_dir)"
     BIOMCP_FEATURE_ON_BIN="${BIOMCP_FEATURE_ON_BIN:-${BIOMCP_BIN:-}}"

@@ -68,6 +68,12 @@ PHENOTYPE_PAYLOADS = {
         "1",
     ): "monarch/semsim_hp_0001250_hp_0001263_limit1_20260811.json",
 }
+OLS_ONTOLOGIES = "hgnc,mesh,mondo,doid,hp,go,chebi,dron,ncit,ordo,wikipathways,so"
+OLS_PAYLOADS = {
+    "type 2 diabetes mellitus": "ols4/search_type_2_diabetes_mellitus_20260811.json",
+    "SCENAR therapy": "ols4/search_scenar_therapy_20260811.json",
+    "genes regulated by MEF2 in the heart": "ols4/search_relational_mef2_20260811.json",
+}
 
 
 def send_json(handler, status, payload):
@@ -96,6 +102,17 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/hpo/search" and query == {"q": ["seizure"]}:
             send_bytes(self, 200, source_bytes("hpo/search_seizure_20260811.json"))
             return
+        if parsed.path == "/ols4/api/search":
+            ols_query = query.get("q", [""])[0]
+            expected = {
+                "q": [ols_query],
+                "rows": ["10"],
+                "groupField": ["iri"],
+                "ontology": [OLS_ONTOLOGIES],
+            }
+            if ols_query in OLS_PAYLOADS and query == expected:
+                send_bytes(self, 200, source_bytes(OLS_PAYLOADS[ols_query]))
+                return
         phenotype_payload = PHENOTYPE_PAYLOADS.get(
             (parsed.path, query.get("limit", [""])[0])
         )
@@ -223,6 +240,9 @@ PY
   printf 'export BIOMCP_MYDISEASE_BASE=%q\n' "$base_url/mydisease"
   printf 'export BIOMCP_MONARCH_BASE=%q\n' "$base_url/monarch"
   printf 'export BIOMCP_HPO_BASE=%q\n' "$base_url/hpo"
+  printf 'export BIOMCP_OLS4_BASE=%q\n' "$base_url/ols4"
+  printf 'export BIOMCP_MEDLINEPLUS_BASE=%q\n' "$base_url/unused-medlineplus"
+  printf 'export UMLS_API_KEY=%q\n' ''
   printf 'export BIOMCP_NIH_REPORTER_BASE=%q\n' "$base_url/nih"
   printf 'export BIOMCP_SEER_BASE=%q\n' "$base_url/seer"
   printf 'export BIOMCP_DGIDB_BASE=%q\n' "$base_url/unused-dgidb"

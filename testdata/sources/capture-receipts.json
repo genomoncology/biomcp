@@ -1689,6 +1689,42 @@
       }
     },
     {
+      "path": "ols4/search_type_2_diabetes_mellitus_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "OLS4",
+        "request": "https://www.ebi.ac.uk/ols4/api/search?q=type+2+diabetes+mellitus&rows=10&groupField=iri&ontology=hgnc%2Cmesh%2Cmondo%2Cdoid%2Chp%2Cgo%2Cchebi%2Cdron%2Cncit%2Cordo%2Cwikipathways%2Cso",
+        "captured_at": "2026-08-11T22:47:00Z",
+        "sha256": "29d995786f9594da2265ceb164be93c789f59a10f599f200f1adda84820b9148",
+        "minimization_or_redaction": "Reduced to the response envelope and the ten returned documents with fields consumed by OLS decoding and discover ranking.",
+        "provider_origin_statement": "Bytes were recorded from the public OLS4 response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ols4/search_scenar_therapy_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "OLS4",
+        "request": "https://www.ebi.ac.uk/ols4/api/search?q=SCENAR+therapy&rows=10&groupField=iri&ontology=hgnc%2Cmesh%2Cmondo%2Cdoid%2Chp%2Cgo%2Cchebi%2Cdron%2Cncit%2Cordo%2Cwikipathways%2Cso",
+        "captured_at": "2026-08-11T22:47:00Z",
+        "sha256": "bdf818e301792c051dd39bf627b18fa323ebeb58ff9d21155c4f60f3d3368131",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public OLS4 response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
+      "path": "ols4/search_relational_mef2_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "OLS4",
+        "request": "https://www.ebi.ac.uk/ols4/api/search?q=genes+regulated+by+MEF2+in+the+heart&rows=10&groupField=iri&ontology=hgnc%2Cmesh%2Cmondo%2Cdoid%2Chp%2Cgo%2Cchebi%2Cdron%2Cncit%2Cordo%2Cwikipathways%2Cso",
+        "captured_at": "2026-08-11T22:47:00Z",
+        "sha256": "bdf818e301792c051dd39bf627b18fa323ebeb58ff9d21155c4f60f3d3368131",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public OLS4 response through BioMCP's production request path before the stated minimization."
+      }
+    },
+    {
       "path": "myvariant/get_pten_grch38_20260806.json",
       "classification": "real_and_receipted",
       "receipt": {

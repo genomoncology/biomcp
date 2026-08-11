@@ -1,10 +1,6 @@
 # Discover and Skill
 
-These commands form BioMCP's onboarding surface: `discover` is primarily
-the single-entity resolver for free text plus a small set of already-supported
-routed prompts, and `skill` opens the worked-example catalog and longer guide.
-The canaries here keep that first-move surface focused on real routing behavior
-instead of incidental copy.
+These routine contracts keep the discover onboarding surface focused on stable local behavior. Captured OLS4 responses are replayed through the public CLI; provider-health checks remain in the live companion page.
 
 ## Discover Request Planning Happens Before Source Calls
 
@@ -22,30 +18,6 @@ source provenance, discovery source labels, markdown Concepts/Suggested Commands
 anchors, and truthful degraded guidance without live OLS4, UMLS, or MedlinePlus
 calls.
 
-```bash
-"${BIOMCP_SPEC_TEST_LIB:?spec preparation did not export library tests}" ticket_377_discover_renderer_envelope_contracts --nocapture \
-  | mustmatch like 'ticket_377_discover_renderer_envelope_contracts'
-```
-
-## Trial Suggestions Preserve Resolved Gene Intent
-
-<!-- mustmatch-lint: skip -->
-
-When trial-oriented free text resolves to a gene, `discover` should suggest a
-literal biomarker trial search. It must not replace that gene with a curated
-disease condition.
-
-```bash run id=discover-gene-trial
-../../tools/biomcp-ci discover "SHANK3 clinical trials"
-```
-
-```text expect=discover-gene-trial contains
-biomcp search trial --biomarker SHANK3 --limit 5
-```
-
-```text expect=discover-gene-trial not-contains
-Phelan-McDermid
-```
 
 ## Alias-Like Free Text Still Resolves to Typed Follow-Ups
 
@@ -87,6 +59,43 @@ routine `make spec-pr`.
 Free text that does not resolve to a biomedical concept should still end with a
 next step rather than a dead end.
 
+## Captured Diabetes Identity
+
+The routine ontology fixture replays the recorded OLS4 diabetes result. The discover surface must expose the stable MONDO identity alongside the resolved label, rather than returning only a free-text suggestion.
+
+```bash
+../../tools/biomcp-ci --json discover "type 2 diabetes mellitus" | mustmatch like '"primary_id": "MONDO:0005148"
+"label": "type 2 diabetes mellitus"'
+```
+
+## Captured No-Match Article Guidance
+
+When the recorded OLS4 no-match response contains no concepts, discover must still give a usable article-search next step instead of ending at an empty result.
+
+```bash
+../../tools/biomcp-ci discover "SCENAR therapy" | mustmatch like 'No biomedical entities resolved
+biomcp search article -k "SCENAR therapy" --type review --limit 5'
+```
+
+## Captured Relational Redirect
+
+The recorded OLS4 response for the MEF2 relational query has no viable single-entity result. Discover must redirect that question to keyword search, preserving the full query instead of surfacing weak collocation noise.
+
+```bash
+../../tools/biomcp-ci discover "genes regulated by MEF2 in the heart" | mustmatch like 'biomcp search all --keyword "genes regulated by MEF2 in the heart"'
+```
+
+## Observed OLS4 Requests
+
+The fixture accepts only the exact production query shape for the three
+captured routes, including the row limit, grouping field, and ontology list.
+
+```bash
+grep -F 'GET /ols4/api/search?q=type+2+diabetes+mellitus&rows=10&groupField=iri&ontology=' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'mondo%2Cdoid%2Chp'
+grep -F 'GET /ols4/api/search?q=SCENAR+therapy&rows=10&groupField=iri&ontology=' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'hgnc%2Cmesh%2Cmondo'
+grep -F 'GET /ols4/api/search?q=genes+regulated+by+MEF2+in+the+heart&rows=10&groupField=iri&ontology=' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'wikipathways%2Cso'
+```
+
 ## Skill Still Opens the Longer Guide
 
 The user needs both the worked-example index and the canonical agent guide
@@ -110,51 +119,8 @@ biomcp search article -k "drug classes that interact with warfarin" --type revie
 biomcp get gene <symbol>'
 ```
 
-## Normalize-to-Codes Playbook Uses Live Discover Code Labels
-
-The normalize-to-codes worked example should teach a real `discover` workflow,
-not a copied table of canned codes. The playbook opens the command sequence, and
-the live JSON response keeps source-labelled ontology and clinical-code labels
-visible for downstream structuring agents. Routine operator verification must
-also prove the no-UMLS graceful-degradation path: without `UMLS_API_KEY`,
-`discover` still returns the MONDO concept and reports that UMLS enrichment is
-operator-pending instead of failing.
-
-```bash
-../../tools/biomcp-ci skill normalize-to-codes | mustmatch like "biomcp discover
-MONDO
-SNOMED
-ICD-10
-RxNorm"
-```
-
-```bash
-UMLS_API_KEY= "$BIOMCP_BIN" --json discover "type 2 diabetes mellitus" 2>&1 \
-  | mustmatch like '"primary_id": "MONDO:0005148"
-UMLS enrichment unavailable (set UMLS_API_KEY)'
-```
-
-```bash
-if [[ -n "${UMLS_API_KEY:-}" ]]; then
-  "$BIOMCP_BIN" --json discover "type 2 diabetes mellitus" | mustmatch like '"source": "SNOMEDCT"
-"source": "ICD10CM"'
-else
-  echo "operator-pending: set UMLS_API_KEY to run the SNOMEDCT + ICD10CM discover label canary"
-fi
-```
-
 ## Skill Decomposition Keeps Catalog and Install Ownership Separate
 
 The behavior checks above protect the public skill output. The implementation
 also needs separate asset, catalog, and install ownership zones so MCP resource
 reads and filesystem installation do not collapse back into one over-cap module.
-
-<!-- mustmatch-lint: skip -->
-
-```bash run id=skill-structure-contract
-"${BIOMCP_SPEC_TEST_SKILL_CLI_STRUCTURE:?spec preparation did not export skill CLI tests}" --nocapture 2>&1
-```
-
-```text expect=skill-structure-contract contains
-skill_split_files_exist_with_doc_headers
-```

@@ -1,0 +1,191 @@
+{
+  "response": {
+    "numFound": 224,
+    "start": 0,
+    "docs": [
+      {
+        "iri": "http://purl.obolibrary.org/obo/HP_0005978",
+        "ontology_name": "hp",
+        "ontology_prefix": "HP",
+        "short_form": "HP_0005978",
+        "obo_id": "HP:0005978",
+        "label": "Type II diabetes mellitus",
+        "exact_synonyms": [
+          "Diabetes mellitus Type II",
+          "Diabetes mellitus, noninsulin-dependent",
+          "NIDDM diabetes mellitus",
+          "Non-insulin dependent diabetes",
+          "Noninsulin dependent diabetes mellitus",
+          "NIDDM",
+          "Noninsulin-dependent diabetes",
+          "Type 2 diabetes",
+          "Type II diabetes"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/MONDO_0005148",
+        "ontology_name": "mondo",
+        "ontology_prefix": "MONDO",
+        "short_form": "MONDO_0005148",
+        "obo_id": "MONDO:0005148",
+        "label": "type 2 diabetes mellitus",
+        "exact_synonyms": [
+          "diabetes mellitis type 2",
+          "diabetes mellitis type II",
+          "diabetes mellitus, noninsulin-dependent, association with",
+          "diabetes mellitus, noninsulin-dependent, late onset",
+          "diabetes mellitus, type II",
+          "insulin resistance, severe, digenic",
+          "NIDDM",
+          "T2D",
+          "T2DM - type 2 diabetes mellitus",
+          "T2DM",
+          "adult onset diabetes",
+          "adult-onset diabetes",
+          "diabetes mellitus, noninsulin-dependent",
+          "diabetes mellitus, type 2",
+          "diabetes, type 2",
+          "non-insulin dependent diabetes mellitus",
+          "non-insulin dependent diabetes",
+          "noninsulin dependent diabetes",
+          "noninsulin-dependent diabetes mellitus",
+          "type 2 diabetes mellitus non-insulin dependent",
+          "type 2 diabetes mellitus",
+          "type 2 diabetes",
+          "type II diabetes mellitus",
+          "type II diabetes"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/NCIT_C26747",
+        "ontology_name": "ncit",
+        "ontology_prefix": "NCIT",
+        "short_form": "NCIT_C26747",
+        "obo_id": "NCIT:C26747",
+        "label": "Type 2 Diabetes Mellitus",
+        "exact_synonyms": [
+          "Adult Onset Diabetes",
+          "Adult-Onset Diabetes",
+          "Diabetes, Type 2",
+          "Diabetes, Type II",
+          "NIDDM",
+          "Non-Insulin Dependent Diabetes Mellitus",
+          "Non-Insulin Dependent Diabetes",
+          "Noninsulin Dependent Diabetes",
+          "T2DM - Type 2 Diabetes mellitus",
+          "Type 2 Diabetes Mellitus Non-Insulin Dependent",
+          "Type 2 Diabetes Mellitus",
+          "Type 2 Diabetes",
+          "Type II Diabetes Mellitus",
+          "Type II Diabetes mellitus",
+          "Type II Diabetes",
+          "Type II diabetes"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/DOID_9352",
+        "ontology_name": "doid",
+        "ontology_prefix": "DOID",
+        "short_form": "DOID_9352",
+        "obo_id": "DOID:9352",
+        "label": "type 2 diabetes mellitus",
+        "exact_synonyms": [
+          "insulin resistance",
+          "non-insulin-dependent diabetes mellitus",
+          "type 2 diabetes",
+          "type II diabetes mellitus",
+          "NIDDM"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/NCIT_C197656",
+        "ontology_name": "ncit",
+        "ontology_prefix": "NCIT",
+        "short_form": "NCIT_C197656",
+        "obo_id": "NCIT:C197656",
+        "label": "Pre-Existing Type 2 Diabetes Mellitus, Type 2, in Pregnancy, Unspecified Trimester",
+        "exact_synonyms": [
+          "Pre-Existing Type 2 Diabetes Mellitus, Type 2, in Pregnancy, Unspecified Trimester",
+          "Pre-existing type 2 diabetes mellitus, type 2, in pregnancy, unspecified trimester"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://id.nlm.nih.gov/mesh/D003924",
+        "ontology_name": "mesh",
+        "ontology_prefix": "mesh",
+        "short_form": "mesh_D003924",
+        "obo_id": "mesh:D003924",
+        "label": "Diabetes Mellitus, Type 2",
+        "exact_synonyms": [],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/NCIT_C195403",
+        "ontology_name": "ncit",
+        "ontology_prefix": "NCIT",
+        "short_form": "NCIT_C195403",
+        "obo_id": "NCIT:C195403",
+        "label": "Type 2 Diabetes Mellitus with Hyperglycemia",
+        "exact_synonyms": [
+          "Type 2 Diabetes Mellitus with Hyperglycemia",
+          "Type 2 diabetes mellitus with hyperglycemia"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/NCIT_C195406",
+        "ontology_name": "ncit",
+        "ontology_prefix": "NCIT",
+        "short_form": "NCIT_C195406",
+        "obo_id": "NCIT:C195406",
+        "label": "Type 2 Diabetes Mellitus without Complications",
+        "exact_synonyms": [
+          "Type 2 Diabetes Mellitus without Complications",
+          "Type 2 diabetes mellitus without complications"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/NCIT_C195396",
+        "ontology_name": "ncit",
+        "ontology_prefix": "NCIT",
+        "short_form": "NCIT_C195396",
+        "obo_id": "NCIT:C195396",
+        "label": "Type 2 Diabetes Mellitus with Foot Ulcer",
+        "exact_synonyms": [
+          "Type 2 Diabetes Mellitus with Foot Ulcer",
+          "Type 2 diabetes mellitus with foot ulcer"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      },
+      {
+        "iri": "http://purl.obolibrary.org/obo/NCIT_C195399",
+        "ontology_name": "ncit",
+        "ontology_prefix": "NCIT",
+        "short_form": "NCIT_C195399",
+        "obo_id": "NCIT:C195399",
+        "label": "Type 2 Diabetes Mellitus with Periodontal Disease",
+        "exact_synonyms": [
+          "Type 2 Diabetes Mellitus with Periodontal Disease",
+          "Type 2 diabetes mellitus with periodontal disease"
+        ],
+        "type": "class",
+        "is_defining_ontology": false
+      }
+    ]
+  }
+}

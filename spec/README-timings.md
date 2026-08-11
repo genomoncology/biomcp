@@ -81,7 +81,8 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/entity/vaers.md` | vaers canary for vaccine-first CDC aggregation, aggregate-only reporting, and explicit source limitations/combined output |
 | `spec/surface/cli.md` | CLI surface canary for top-level help/list discovery, operator commands, cache-mode exceptions, and health/admin guidance |
 | `spec/surface/mcp.md` | MCP surface canary for stdio/HTTP entrypoints, probe routes, and streamable-HTTP tool execution |
-| `spec/surface/discover.md` | onboarding-surface canary for discover resolution, skill guidance, and fallback behavior |
+| `spec/surface/discover.md` | routine, receipt-backed OLS4 identity, no-match, and relational redirect contracts plus local skill guidance |
+| `spec/surface/discover-live.md` | operator-run discover trial intent and credentialed UMLS code-label checks |
 
 The live `spec/entity/variant-articles-live.md` canaries are verify-only. G5
 remains useful as a focused diagnostic, but its existing identity, exact-route,

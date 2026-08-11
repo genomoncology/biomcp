@@ -1,0 +1,21 @@
+{
+  "response": {
+    "docs": [],
+    "numFound": 0,
+    "start": 0
+  },
+  "responseHeader": {
+    "QTime": 0,
+    "status": 0
+  },
+  "facet_counts": {
+    "facet_fields": {
+      "ontologyPreferredPrefix": [],
+      "isDefiningOntology": [],
+      "ontologyId": [],
+      "ontologyIri": [],
+      "isObsolete": [],
+      "type": []
+    }
+  }
+}
