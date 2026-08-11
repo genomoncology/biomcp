@@ -729,9 +729,12 @@ def test_interrupt_reaps_parallel_markdown_workers(tmp_path: Path) -> None:
     )
     try:
         _wait_until(lambda: active_dir.exists() and len(list(active_dir.iterdir())) >= 2)
+        worker_pids = [int(path.name) for path in active_dir.iterdir()]
         runner.terminate()
         assert runner.wait(timeout=10) == 128 + signal.SIGTERM
-        _wait_until(lambda: not active_dir.exists() or not list(active_dir.iterdir()))
+        _wait_until(
+            lambda: all(not Path(f"/proc/{worker_pid}").exists() for worker_pid in worker_pids)
+        )
     finally:
         if runner.poll() is None:
             runner.kill()

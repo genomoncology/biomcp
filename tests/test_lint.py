@@ -12,6 +12,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LINT_SCRIPT = REPO_ROOT / "bin" / "lint"
 TEXT_LINT_SCRIPT = REPO_ROOT / "tools" / "check-tracked-text"
+BUILD_IDENTITY_WRAPPER = REPO_ROOT / "tools" / "with-build-identity"
 PYPROJECT_FILE = REPO_ROOT / "pyproject.toml"
 RUFF_GATE_PROBE = (
     REPO_ROOT
@@ -29,6 +30,9 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
     (fixture_root / "docs").mkdir()
     shutil.copy2(LINT_SCRIPT, fixture_root / "bin" / "lint")
     shutil.copy2(TEXT_LINT_SCRIPT, fixture_root / "tools" / "check-tracked-text")
+    shutil.copy2(
+        BUILD_IDENTITY_WRAPPER, fixture_root / "tools" / "with-build-identity"
+    )
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
     return fixture_root
 
