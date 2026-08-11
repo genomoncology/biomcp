@@ -143,6 +143,11 @@ def test_version_lock_rejects_dirty_future_release_rewrite(tmp_path: Path) -> No
 
 def test_version_lock_rejects_placeholder_doi(tmp_path: Path) -> None:
     repo = _copy_release_metadata_fixture(tmp_path)
+    citation = repo / "CITATION.cff"
+    citation.write_text(
+        citation.read_text(encoding="utf-8") + "doi: 10.5281/zenodo.XXXXXXX\n",
+        encoding="utf-8",
+    )
 
     result = _run_version_lock(repo)
 
