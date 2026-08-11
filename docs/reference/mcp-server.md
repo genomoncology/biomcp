@@ -5,22 +5,15 @@ BioMCP can run as a local stdio MCP server or as a remote Streamable HTTP MCP se
 ## Official MCP Registry
 
 BioMCP's official MCP Registry name is `io.github.genomoncology/biomcp`. The
-repo-root `server.json` is the metadata source that points registry clients at
-the `biomcp-cli` PyPI package and the existing `biomcp serve` stdio command.
+committed `server.json` is the registry metadata source: it points
+clients at the `biomcp-cli` PyPI package and the existing `biomcp serve` stdio
+command. The workflow never stamps registry metadata from a tag.
 
-Release operators publish or refresh the registry entry with the official
-publisher CLI:
-
-```bash
-mcp-publisher init
-mcp-publisher login github
-mcp-publisher publish
-```
-
-Use GitHub namespace authentication for `io.github.genomoncology/biomcp`; it
-proves ownership through the `genomoncology/biomcp` repository. Each release
-must keep `server.json` on the release version before publishing. The release
-workflow stamps `server.json` from the tag alongside the other package manifests.
+Registry publication is disabled until ticket 0957 installs the public-artifact
+gate: `release disabled until ticket 0957 installs the public-artifact gate`.
+Operators must not run an active registry publication command while this guard
+is active. The committed metadata remains the truthful record for the already
+published v0.8.25 release.
 
 ## Which server mode should I use?
 

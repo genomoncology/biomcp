@@ -57,20 +57,20 @@ serde serialization. Parsing the output reproduces the original keys and values.
 
 ```
 cargo build --release --locked   # Rust binary
-uv build / uv publish            # PyPI wheel (biomcp-cli)
+uv tool install biomcp-cli       # existing PyPI package
 curl ... install.sh | bash       # binary installer (resolves latest release)
 ```
 
 - **Edition:** Rust 2024
-- **Current version:** see `Cargo.toml` (`scripts/check-version-sync.sh` keeps
-  `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, `manifest.json`, and
-  `CITATION.cff` aligned)
+- **Current version:** see `Cargo.toml`; `scripts/check-version-sync.sh` keeps
+  committed `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, root `uv.lock`,
+  `manifest.json`, both `server.json` version fields, `CITATION.cff`, and the
+  Homebrew formula aligned.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
-- **PyPI publishing:** GitHub Actions trusted publisher (no token needed)
-- **Release checklist:** Bump `Cargo.toml`, `Cargo.lock`, `pyproject.toml`,
-  `manifest.json`, and `CITATION.cff`, update `CHANGELOG.md`, verify version
-  sync, then cut a GitHub release tag — the release workflow builds and
-  publishes
+- **Release state:** v0.8.25 is the latest published release. The manual
+  workflow is disabled until ticket 0957 installs the public-artifact gate.
+- **Metadata changes:** Commit synchronized metadata and changelog updates;
+  package versions are never stamped from tags.
 
 ## Source Integration Patterns
 
@@ -259,73 +259,32 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 ## Release Pipeline
 
-The semver tag is the canonical release/version authority. PR CI enforces
-version parity before release via the `version-sync` job and
-`scripts/check-version-sync.sh`. The release workflow builds binaries,
-publishes PyPI wheels, and deploys docs from the tagged source. It resolves
-that tag once and pins every source-consuming job to the resulting commit, so
-native binaries, PyPI wheels, Homebrew inputs, the Docker context, and deployed
-docs all originate from one revision. Before packaging, each native binary's
-embedded eight-character git SHA is checked against that commit. `install.sh`
-resolves the latest release with platform assets, not the latest merge to
-`main`. The existing `### Post-tag public proof` block is the live verification
-step for tag-to-binary and tag-to-docs parity. `workflow_dispatch` can replay a
-specified tag, but only as an explicit-tag rebuild path, not a second source of
-release truth.
+v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. `scripts/check-version-sync.sh` uses
+`Cargo.toml` as the canonical comparison value and keeps committed `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, root `uv.lock`, `manifest.json`, both `server.json` version fields, `CITATION.cff`, and the Homebrew formula version synchronized.
 
-1. Update version in `Cargo.toml`, `Cargo.lock`, `pyproject.toml`,
-   `manifest.json`, `CITATION.cff`, and `CHANGELOG.md`
-2. Commit and push to `main`
-3. Cut a GitHub release with a semver tag
-4. GitHub Actions validates and publishes:
-   - CI (`.github/workflows/ci.yml`) runs five parallel jobs: `check`
-     (`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`),
-     `version-sync` (`bash scripts/check-version-sync.sh`),
-     `climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`),
-     `contracts` (`cargo build --release --locked`,
-     `uv sync --extra dev --no-install-project`,
-     `uv run --no-sync pytest tests/ -v`,
-     `uv run --no-sync mkdocs build --strict`), and `spec-stable`
-     (release build, spec-cache metadata/restore, then `make spec-pr`).
-   - Routine release proof uses `make release-gate`, which composes `make lint`,
-     `make test`, and `make spec`; opt-in live confidence uses `make verify`
-     (`make release-live-smoke` aliases it).
-     `spec-stable` restores
-     `.cache/biomcp-specs/`, exports `BIOMCP_SPEC_CACHE_HIT=1` only on cache
-     hits, and relies on `tools/biomcp-ci` to flip warm-cache replay on for the
-     canary docs.
-   - Release validation runs the Rust checks again, builds the release binary,
-     syncs Python dev dependencies with `uv sync --extra dev --no-install-project`,
-     then runs `uv run --no-sync pytest tests/ -v`
-     and `uv run --no-sync mkdocs build --strict`.
-   - Release build jobs package cross-platform binaries, publish PyPI wheels,
-     and deploy docs.
-5. `install.sh` resolves the latest tagged release with downloadable assets
+The manual release workflow is disabled until ticket 0957 installs the
+public-artifact gate. It is a read-only manual guard and intentionally creates
+no release, registry update, image, wheel, tap update, documentation deployment,
+or public asset. Existing installation documentation continues to describe the
+already published v0.8.25 channels; `install.sh` resolves the latest release
+with platform assets rather than the latest merge to `main`.
 
-### Post-tag public proof
-
-After the new tag is published, hand these commands to the verify/devops pass
-so release-visible version identity and docs parity are checked against the
-live surfaces:
-
-```bash
-tag="${BIOMCP_TAG:?set BIOMCP_TAG to the published release tag, e.g. v0.8.24}"
-version="${tag#v}"
-tmpdir="$(mktemp -d)" && BIOMCP_INSTALL_DIR="$tmpdir" BIOMCP_VERSION="$tag" bash install.sh >/tmp/biomcp-install.log && "$tmpdir/biomcp" version | head -n 1
-bioasq_page="$(mktemp)" && curl -fsSL -A 'Mozilla/5.0' https://biomcp.org/reference/bioasq-benchmark/ >"$bioasq_page" && rg -q 'hf-public-pre2026' "$bioasq_page" && rg -q 'Phase A\+' "$bioasq_page" && rg -q 'Phase B' "$bioasq_page"
-api_keys_page="$(mktemp)" && curl -fsSL -A 'Mozilla/5.0' https://biomcp.org/getting-started/api-keys/ >"$api_keys_page" && rg -q 'shared Semantic Scholar pool at 1 req/2sec' "$api_keys_page" && rg -q 'authenticated quota at 1 req/sec' "$api_keys_page"
-drug_page="$(mktemp)" && curl -fsSL -A 'Mozilla/5.0' https://biomcp.org/user-guide/drug/ >"$drug_page" && rg -q 'trastuzumab regulatory --region who' "$drug_page" && rg -q 'WHO Prequalification local data setup' "$drug_page" && rg -q 'available \(default path\)' "$drug_page"
-```
-
-Expected markers:
-
-- published tag matches `$tag`
-- installed binary starts with `biomcp $version`
-- BioASQ route returns all shipped benchmark page markers
-- live API Keys docs show both shared-pool and authenticated Semantic Scholar
-  guidance
-- live Drug docs show the WHO `--region` workflow and WHO local-data setup copy
-  together with the local-data path marker
+CI (`.github/workflows/ci.yml`) runs five parallel jobs: `check`
+(`cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test`),
+`version-sync` (`bash scripts/check-version-sync.sh`),
+`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`),
+`contracts` (`cargo build --release --locked`,
+`uv sync --extra dev --no-install-project`,
+`uv run --no-sync pytest tests/ -v`,
+`uv run --no-sync mkdocs build --strict`), and `spec-stable`
+(release build, spec-cache metadata/restore, then `make spec-pr`). The
+`version-sync` checkout fetches full tag history so its pre-1.0 changelog
+boundary check is reliable. Routine release proof uses `make release-gate`,
+which composes `make lint`, `make test`, and `make spec`; opt-in live
+confidence uses `make verify` (`make release-live-smoke` aliases it).
+`spec-stable` restores `.cache/biomcp-specs/`, exports
+`BIOMCP_SPEC_CACHE_HIT=1` only on cache hits, and relies on
+`tools/biomcp-ci` to flip warm-cache replay on for the canary docs.
 
 Python/docs/spec gate lanes intentionally use `uv sync --extra dev --no-install-project`
 followed by `uv run --no-sync ...`. They install Python tooling only and do not

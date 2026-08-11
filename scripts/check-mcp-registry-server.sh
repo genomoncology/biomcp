@@ -6,7 +6,6 @@ python_bin="${PYTHON:-python3}"
 
 "$python_bin" - "$repo_root" <<'PY'
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -25,13 +24,6 @@ def read_text(relative: str) -> str:
     if not path.exists():
         fail(f"missing {relative}")
     return path.read_text(encoding="utf-8")
-
-
-def first_regex(relative: str, pattern: str) -> str:
-    match = re.search(pattern, read_text(relative), re.MULTILINE)
-    if not match:
-        fail(f"missing version in {relative}")
-    return match.group(1)
 
 
 def json_file(relative: str):
@@ -80,25 +72,6 @@ if not isinstance(package_arguments, list):
 if {"type": "positional", "value": "serve"} not in package_arguments:
     fail("server.json biomcp-cli package must pass positional serve")
 
-versions = {
-    "server.json": server.get("version"),
-    "server.json packages[biomcp-cli]": package.get("version"),
-    "Cargo.toml": first_regex("Cargo.toml", r'^version\s*=\s*"([^"]+)"'),
-    "pyproject.toml": first_regex("pyproject.toml", r'^version\s*=\s*"([^"]+)"'),
-    "Cargo.lock": first_regex(
-        "Cargo.lock", r'name = "biomcp-cli"\nversion = "([^"]+)"'
-    ),
-    "manifest.json": json_file("manifest.json").get("version"),
-    "CITATION.cff": first_regex("CITATION.cff", r'^version:\s*"?([^"\n]+)"?\s*$'),
-}
-expected_version = versions["Cargo.toml"]
-missing = [name for name, value in versions.items() if not value]
-if missing:
-    fail("missing version in " + ", ".join(missing))
-for name, version in versions.items():
-    if version != expected_version:
-        fail(f"Version mismatch: Cargo.toml={expected_version}, {name}={version}")
-
 readme = read_text("README.md")
 require_contains("README.md", "mcp-name: io.github.genomoncology/biomcp")
 if "not `biomcp`" not in readme or "unrelated" not in readme:
@@ -118,14 +91,15 @@ if "biomcp-cli" not in manifest_text or "unrelated biomcp" not in manifest_text:
 
 mcp_docs = read_text("docs/reference/mcp-server.md")
 for needle in (
-    "mcp-publisher init",
-    "mcp-publisher login github",
-    "mcp-publisher publish",
+    "committed `server.json`",
+    "never stamps registry metadata from a tag",
+    "release disabled until ticket 0957 installs the public-artifact gate",
     "io.github.genomoncology/biomcp",
-    "server.json",
 ):
     if needle not in mcp_docs:
         fail(f"docs/reference/mcp-server.md missing {needle}")
+if "mcp-publisher publish" in mcp_docs:
+    fail("docs/reference/mcp-server.md must not instruct registry publication while disabled")
 PY
 
 printf 'MCP registry metadata ok\n'

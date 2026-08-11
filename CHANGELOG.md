@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.25 — 2026-07-07
+## Unreleased
 
 ### New features
 
@@ -44,18 +44,6 @@
 - Added opt-in PubMed article indexing with associated author affiliations,
   ORCID, structured MeSH descriptors/qualifiers, explicit availability, and
   inclusion under `get article <id> all`.
-- Added Homebrew formula and tap release automation so macOS/Linuxbrew users can
-  install BioMCP from the project tap after release publication. (478)
-- Added a `biomcp mcp-config` generator and unified MCP-client setup docs so
-  users can copy local stdio config snippets for supported clients. (477)
-- Added Docker image publication with CI build and smoke coverage so releases can
-  publish `ghcr.io/genomoncology/biomcp` images. (476)
-- Published official MCP Registry metadata for `biomcp-cli`, including the PyPI
-  package distinction from the unrelated `biomcp` package. (473)
-- Annotated MCP tools with read-only hints and human-readable titles for safer
-  client presentation. (474)
-- Added opt-in variant structure annotation for residue, domain, PDB, AlphaFold,
-  and hotspot context without ddG prediction claims. (452)
 
 ### Fixes
 
@@ -85,6 +73,26 @@
 - Restored live PubMed article indexing for normal DTD-bearing citation XML with
   finite body/node bounds, and added sanitized failure codes/messages while
   preserving the base article when indexing degrades.
+
+## 0.8.25 — 2026-07-07
+
+### New features
+
+- Added Homebrew formula and tap release automation so macOS/Linuxbrew users can
+  install BioMCP from the project tap after release publication. (478)
+- Added a `biomcp mcp-config` generator and unified MCP-client setup docs so
+  users can copy local stdio config snippets for supported clients. (477)
+- Added Docker image publication with CI build and smoke coverage so releases can
+  publish `ghcr.io/genomoncology/biomcp` images. (476)
+- Published official MCP Registry metadata for `biomcp-cli`, including the PyPI
+  package distinction from the unrelated `biomcp` package. (473)
+- Annotated MCP tools with read-only hints and human-readable titles for safer
+  client presentation. (474)
+- Added opt-in variant structure annotation for residue, domain, PDB, AlphaFold,
+  and hotspot context without ddG prediction claims. (452)
+
+### Fixes
+
 - Emitted JSON usage errors for clap parse failures under `--json`, keeping CLI
   error output machine-readable on parse errors. (466)
 - Fixed `variant normalize` JSON output so failures no longer look like silent

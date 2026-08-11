@@ -40,22 +40,18 @@ extract_citation_version() {
 }
 
 extract_server_version() {
-    local file="$1"
-    python3 - "$file" <<'PY'
+    python3 - "$1" <<'PY'
 import json
 import sys
-
 with open(sys.argv[1], encoding="utf-8") as handle:
     print(json.load(handle).get("version", ""))
 PY
 }
 
 extract_server_package_version() {
-    local file="$1"
-    python3 - "$file" <<'PY'
+    python3 - "$1" <<'PY'
 import json
 import sys
-
 with open(sys.argv[1], encoding="utf-8") as handle:
     server = json.load(handle)
 for package in server.get("packages", []):
@@ -67,56 +63,97 @@ else:
 PY
 }
 
+extract_formula_version() {
+    local line
+    line="$(grep -m1 -E '^  version "' "$1" || true)"
+    if [[ -z "$line" ]]; then
+        echo "" && return
+    fi
+    sed -E 's/^  version "([^"]+)".*$/\1/' <<<"$line"
+}
+
 cargo_version="$(extract_version "$repo_root/Cargo.toml")"
 python_version="$(extract_version "$repo_root/pyproject.toml")"
 lock_version="$(extract_lock_version "$repo_root/Cargo.lock")"
+uv_lock_version="$(extract_lock_version "$repo_root/uv.lock")"
 manifest_version="$(extract_manifest_version "$repo_root/manifest.json")"
 citation_version="$(extract_citation_version "$repo_root/CITATION.cff")"
 server_version="$(extract_server_version "$repo_root/server.json")"
 server_package_version="$(extract_server_package_version "$repo_root/server.json")"
+formula_version="$(extract_formula_version "$repo_root/Formula/biomcp.rb")"
 
-if [[ -z "$cargo_version" || -z "$python_version" || -z "$lock_version" || -z "$manifest_version" || -z "$citation_version" || -z "$server_version" || -z "$server_package_version" ]]; then
+if [[ -z "$cargo_version" || -z "$python_version" || -z "$lock_version" || -z "$uv_lock_version" || -z "$manifest_version" || -z "$citation_version" || -z "$server_version" || -z "$server_package_version" || -z "$formula_version" ]]; then
     echo "Unable to read version from one or more manifests:" >&2
     echo "  Cargo.toml:              '$cargo_version'" >&2
     echo "  pyproject.toml:          '$python_version'" >&2
     echo "  Cargo.lock:              '$lock_version'" >&2
+    echo "  uv.lock:                 '$uv_lock_version'" >&2
     echo "  manifest.json:           '$manifest_version'" >&2
     echo "  CITATION.cff:            '$citation_version'" >&2
     echo "  server.json:             '$server_version'" >&2
     echo "  server.json biomcp-cli:  '$server_package_version'" >&2
+    echo "  Formula/biomcp.rb:       '$formula_version'" >&2
     exit 1
 fi
 
 ok=true
+check_version() {
+    local name="$1"
+    local version="$2"
+    if [[ "$cargo_version" != "$version" ]]; then
+        echo "Version mismatch: Cargo.toml=$cargo_version, $name=$version" >&2
+        ok=false
+    fi
+}
 
-if [[ "$cargo_version" != "$python_version" ]]; then
-    echo "Version mismatch: Cargo.toml=$cargo_version, pyproject.toml=$python_version" >&2
+check_version "pyproject.toml" "$python_version"
+check_version "Cargo.lock" "$lock_version"
+check_version "uv.lock" "$uv_lock_version"
+check_version "manifest.json" "$manifest_version"
+check_version "CITATION.cff" "$citation_version"
+check_version "server.json" "$server_version"
+check_version "server.json biomcp-cli" "$server_package_version"
+if [[ "$formula_version" != "__VERSION__" ]]; then
+    check_version "Formula/biomcp.rb" "$formula_version"
+fi
+
+if grep -qiE '^\s*doi:\s*.*(placeholder|xxxxxxx)' "$repo_root/CITATION.cff"; then
+    echo "CITATION.cff contains a placeholder DOI" >&2
     ok=false
 fi
 
-if [[ "$cargo_version" != "$lock_version" ]]; then
-    echo "Version mismatch: Cargo.toml=$cargo_version, Cargo.lock=$lock_version" >&2
-    ok=false
-fi
+if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    head_cargo_version="$(git -C "$repo_root" show HEAD:Cargo.toml 2>/dev/null | grep -m1 -E '^version\s*=\s*"' | sed -E 's/^[^"]*"([^"]+)".*$/\1/' || true)"
+    if [[ "$cargo_version" != "$head_cargo_version" ]]; then
+        echo "release version changes must be committed" >&2
+        ok=false
+    fi
 
-if [[ "$cargo_version" != "$manifest_version" ]]; then
-    echo "Version mismatch: Cargo.toml=$cargo_version, manifest.json=$manifest_version" >&2
-    ok=false
-fi
-
-if [[ "$cargo_version" != "$citation_version" ]]; then
-    echo "Version mismatch: Cargo.toml=$cargo_version, CITATION.cff=$citation_version" >&2
-    ok=false
-fi
-
-if [[ "$cargo_version" != "$server_version" ]]; then
-    echo "Version mismatch: Cargo.toml=$cargo_version, server.json=$server_version" >&2
-    ok=false
-fi
-
-if [[ "$cargo_version" != "$server_package_version" ]]; then
-    echo "Version mismatch: Cargo.toml=$cargo_version, server.json biomcp-cli=$server_package_version" >&2
-    ok=false
+    latest_tag="$(git -C "$repo_root" tag --merged HEAD --format='%(refname:short)' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)"
+    if [[ -z "$latest_tag" ]]; then
+        echo "a reachable release tag is required for the pre-1.0 boundary check" >&2
+        ok=false
+    else
+        breaking_changes="$(awk '
+            /^## Unreleased$/ { unreleased=1; next }
+            unreleased && /^## / { exit }
+            unreleased && /^### Breaking changes$/ { breaking=1; next }
+            breaking && /^### / { exit }
+            breaking && /^[[:space:]]*[-*][[:space:]]+[^[:space:]]/ { print; exit }
+        ' "$repo_root/CHANGELOG.md")"
+        if [[ -n "$breaking_changes" && "$cargo_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            proposed_major="${BASH_REMATCH[1]}"
+            proposed_minor="${BASH_REMATCH[2]}"
+            if [[ "$latest_tag" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+                published_major="${BASH_REMATCH[1]}"
+                published_minor="${BASH_REMATCH[2]}"
+                if [[ "$published_major" == 0 && "$proposed_major" == 0 && "$proposed_minor" -le "$published_minor" ]]; then
+                    echo "breaking changes require a minor version increase before 1.0" >&2
+                    ok=false
+                fi
+            fi
+        fi
+    fi
 fi
 
 if [[ "$ok" == false ]]; then
