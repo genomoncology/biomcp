@@ -1195,6 +1195,8 @@ pub(crate) async fn read_limited_source_body(
 mod tests {
     #[path = "clingen_runtime.rs"]
     mod clingen_runtime;
+    #[path = "../request_plan_transport.rs"]
+    mod request_plan_transport;
 
     use super::*;
     use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
