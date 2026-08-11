@@ -319,9 +319,11 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   the AlphaGenome behavior tests with `cargo test`, and builds the all-feature
   release CLI.
 - Repo-local `make test` runs `cargo nextest run` plus the Python/docs contract
-  lane against `target/spec/biomcp`. Routine `make spec` shares that selected
-  binary; the CI `check` job uses the same no-default-feature Cargo graph and
-  then invokes the named full-feature proof.
+  lane against `target/spec/biomcp`. Python contract files use four bounded
+  pytest workers with file-based distribution; `PYTEST_WORKERS=1` is the
+  diagnostic override. Routine `make spec` shares that selected binary; the CI
+  `check` job uses the same no-default-feature Cargo graph and then invokes the
+  named full-feature proof.
 - CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
   `check`, `version-sync`, `climb-hygiene`, `contracts`, and `spec-stable`.
 - Docs-site validation and Python contract tests now run under `make test`;

@@ -1148,9 +1148,7 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     spec_smoke = REPO_ROOT / ".github/workflows/spec-smoke.yml"
     expected_ci_contract_runs = [
         "tools/with-build-identity cargo build --release --locked",
-        "uv sync --extra dev --no-install-project",
-        "uv run --no-sync pytest tests/ -v",
-        "uv run --no-sync mkdocs build --strict",
+        'make test-contracts BIOMCP_BIN="$PWD/target/release/biomcp"',
     ]
 
     ci_contracts = _workflow_job_block(ci, "contracts")
@@ -1365,7 +1363,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         r"^test-contracts:\n"
         r"\t\$\(SPEC_BUILD\)\n"
         r"\t\$\(MAKE\) sync-python-dev\n"
-        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -v\n'
+        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -v \$\(PYTEST_XDIST_ARGS\)\n'
         r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync mkdocs build --strict$',
         makefile,
         flags=re.MULTILINE,

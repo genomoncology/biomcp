@@ -127,7 +127,9 @@ lanes and before release-profile specs.
 `make lint` runs the repo lint script, `cargo deny check licenses`,
 `cargo deny check advisories`, and the quality ratchet. `make test` runs
 `cargo nextest run` plus the Python/docs contract lane, so landing-copy,
-Python, and strict-docs regressions fail the same local test gate. Use
+Python, and strict-docs regressions fail the same local test gate. Python
+contracts use four bounded file-distributed workers; set `PYTEST_WORKERS=1`
+for a one-worker diagnostic run. Use
 `make release-gate` for the single release-readiness signal; it runs routine
 lint and test, the named full-feature proof, then specs against the all-feature
 release binary. There is no supported `make check` command. Use
@@ -160,7 +162,7 @@ to rerun just the Python/docs contract lane. Repo-root Ruff still runs through
 scratch experiment scripts do not block the production Python lint gate. Use
 `git commit --no-verify` to skip the hook for a one-off commit.
 
-`make test-contracts` builds the selected contract profile, then runs `uv sync --extra dev --no-install-project`, `uv run --no-sync pytest tests/ -v`, and `uv run --no-sync mkdocs build --strict` with its absolute binary path in `BIOMCP_BIN`. `make spec` delegates compilation only to its preparation phase and uses stable copies under `.cache/spec-artifacts/`; `make release-gate` passes its already-built release CLI into that phase. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the selected binary instead of rebuilding the maturin package into `.venv`. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
+`make test-contracts` builds the selected contract profile, then runs `uv sync --extra dev --no-install-project`, the complete Python corpus with four bounded file-distributed workers, and `uv run --no-sync mkdocs build --strict` with its absolute binary path in `BIOMCP_BIN`. `make spec` delegates compilation only to its preparation phase and uses stable copies under `.cache/spec-artifacts/`; `make release-gate` passes its already-built release CLI into that phase. The `--no-install-project`/`--no-sync` split is intentional: Python/docs lanes install only Python dev tooling and exercise the selected binary instead of rebuilding the maturin package into `.venv`. CI calls this same target with its release binary instead of maintaining a second Python/docs command sequence. `make test-contracts` remains the direct rerun command when only the Python/docs contract lane needs another pass.
 
 ## Smoke Checks
 

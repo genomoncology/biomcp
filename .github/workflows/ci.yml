@@ -82,11 +82,9 @@ jobs:
           "$HOME/.local/bin/mustmatch" --version
 
       - run: tools/with-build-identity cargo build --release --locked
-      - run: uv sync --extra dev --no-install-project
       - name: Enforce compact output-footprint ratchet
         run: make output-footprint SPEC_PROFILE=release SPEC_BIN="$PWD/target/release/biomcp"
-      - run: uv run --no-sync pytest tests/ -v
-      - run: uv run --no-sync mkdocs build --strict
+      - run: make test-contracts BIOMCP_BIN="$PWD/target/release/biomcp"
 
   # Stable PR-blocking executable spec gate. Volatile live-network specs
   # stay out of this routine lane and run only through make verify.

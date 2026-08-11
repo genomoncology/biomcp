@@ -48,8 +48,10 @@ and run through `make test`. The executable docs themselves call
 `tools/biomcp-ci`, which owns release-binary resolution, the repo-owned
 `.cache/biomcp-specs/` cache/XDG roots, optional-key stripping, and warm-hit
 `BIOMCP_CACHE_MODE=infinite` replay when CI sets `BIOMCP_SPEC_CACHE_HIT=1`.
-Use `make lint`, `make test`, and `make spec` as the canonical local gates;
-there is no supported `make check` command. `make release-gate` is the single
+Use `make lint`, `make test`, and `make spec` as the canonical local gates.
+The Python portion of `make test` uses four bounded file-distributed workers;
+use `make test PYTEST_WORKERS=1` for a one-worker diagnostic run. There is no
+supported `make check` command. `make release-gate` is the single
 release-readiness command; it runs the routine gates, the named full-feature
 proof, and release-profile specs. The GitHub
 Release workflow additionally hard-runs the live contract and release smokes in

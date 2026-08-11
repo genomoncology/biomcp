@@ -48,6 +48,8 @@ SPEC_LIVE_PATHS = \
 SPEC_PROFILE ?= spec
 ROUTINE_CARGO_FEATURES ?= --no-default-features
 export ROUTINE_CARGO_FEATURES
+PYTEST_WORKERS ?= 4
+PYTEST_XDIST_ARGS = -n $(PYTEST_WORKERS) --dist loadfile
 SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
@@ -67,7 +69,7 @@ test:
 test-contracts:
 	$(SPEC_BUILD)
 	$(MAKE) sync-python-dev
-	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v
+	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS)
 	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
