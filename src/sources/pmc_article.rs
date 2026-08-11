@@ -257,16 +257,29 @@ fn classify_linked_status(status: StatusCode) -> Option<PmcLinkedFetch> {
 }
 
 pub(crate) async fn fetch_html(pmcid: &str, requested_id: &str) -> PmcHtmlFetch {
+    let client = match crate::sources::shared_client() {
+        Ok(client) => client,
+        Err(err) => {
+            return PmcHtmlFetch {
+                outcome: PmcHtmlFetchOutcome::Failed(err),
+                cache_state: PmcHtmlCacheState::Bypass,
+            };
+        }
+    };
+    fetch_html_with_client(&client, pmcid, requested_id).await
+}
+
+pub(crate) async fn fetch_html_with_client(
+    client: &reqwest_middleware::ClientWithMiddleware,
+    pmcid: &str,
+    requested_id: &str,
+) -> PmcHtmlFetch {
     let failed = |err| PmcHtmlFetch {
         outcome: PmcHtmlFetchOutcome::Failed(err),
         cache_state: PmcHtmlCacheState::Bypass,
     };
     let url = match pmc_article_url(pmcid) {
         Ok(url) => url,
-        Err(err) => return failed(err),
-    };
-    let client = match crate::sources::shared_client() {
-        Ok(client) => client,
         Err(err) => return failed(err),
     };
     let cache_bypassed = crate::sources::cache_is_bypassed();

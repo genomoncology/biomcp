@@ -162,7 +162,7 @@ fn record_success_and_suggestions_inner(
 
     let now = search.now_epoch_secs;
     let mut store = read_store(&store_path(cache_root))?;
-    prune_expired(&mut store, now);
+    prune_sessions(&mut store, now, MAX_ACTIVE_SESSIONS);
 
     let raw_keyword = search.keyword.unwrap_or_default().trim();
     let current_terms = normalized_terms(raw_keyword);
@@ -194,7 +194,7 @@ fn record_success_and_suggestions_inner(
             pmids,
         },
     );
-    prune_capacity(&mut store);
+    prune_sessions(&mut store, now, MAX_ACTIVE_SESSIONS);
     write_store_atomic(cache_root, &store)?;
 
     Ok(suggestions)
@@ -260,18 +260,15 @@ fn create_temp_path(dir: &Path) -> Result<PathBuf, StoreError> {
     .into())
 }
 
-fn prune_expired(store: &mut Store, now_epoch_secs: u64) {
+fn prune_sessions(store: &mut Store, now_epoch_secs: u64, max_active_sessions: usize) {
     store.sessions.retain(|_, entry| {
         now_epoch_secs.saturating_sub(entry.updated_at_epoch_secs) <= SESSION_TTL_SECS
     });
-}
-
-fn prune_capacity(store: &mut Store) {
-    if store.sessions.len() <= MAX_ACTIVE_SESSIONS {
+    if store.sessions.len() <= max_active_sessions {
         return;
     }
 
-    let remove_count = store.sessions.len() - MAX_ACTIVE_SESSIONS;
+    let remove_count = store.sessions.len() - max_active_sessions;
     let mut oldest = store
         .sessions
         .iter()

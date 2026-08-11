@@ -72,6 +72,7 @@ pub(crate) enum ProviderCaptureError {
 #[derive(Debug, Clone)]
 pub(crate) struct ProviderCaptureStore {
     root: PathBuf,
+    max_retained_bytes: u64,
     #[cfg(test)]
     pause_after_blob_parent_ready: Option<std::sync::Arc<TestPublicationPause>>,
 }
@@ -93,9 +94,17 @@ impl ProviderCaptureStore {
     pub(crate) fn new(cache_root: impl AsRef<Path>) -> Self {
         Self {
             root: cache_root.as_ref().to_path_buf(),
+            max_retained_bytes: MAX_RETAINED_BYTES,
             #[cfg(test)]
             pause_after_blob_parent_ready: None,
         }
+    }
+
+    #[cfg(test)]
+    fn with_max_retained_bytes(mut self, max_retained_bytes: u64) -> Self {
+        assert!(max_retained_bytes > 0, "capture capacity must be nonzero");
+        self.max_retained_bytes = max_retained_bytes;
+        self
     }
 
     #[cfg(test)]
@@ -398,18 +407,10 @@ impl ProviderCaptureStore {
                 freed += blob.size;
             }
         }
-        records.sort_by_key(|record| {
-            (
-                record.metadata.last_access_at,
-                record.provider.as_str(),
-                record.metadata.manifest.capture_id.clone(),
-            )
-        });
-        for record in records {
-            if tree.retained_regular_file_bytes()? <= MAX_RETAINED_BYTES {
-                break;
-            }
-            freed += self.remove_record_at(tree, &record)?;
+        let capacity_entries = self.capacity_entries_at(tree, &records)?;
+        let retained = tree.retained_regular_file_bytes()?;
+        for index in plan_capacity_evictions(&capacity_entries, retained, self.max_retained_bytes) {
+            freed += self.remove_record_at(tree, &records[index])?;
         }
         Ok(freed)
     }
@@ -438,22 +439,13 @@ impl ProviderCaptureStore {
                 freed += blob.size;
             }
         }
-        retained_records.sort_by_key(|record| {
-            (
-                record.metadata.last_access_at,
-                record.provider.as_str(),
-                record.metadata.manifest.capture_id.clone(),
-            )
-        });
         let mut retained = tree
             .retained_regular_file_bytes()?
             .checked_sub(freed)
             .ok_or(ProviderCaptureError::Corrupt)?;
-        for record in retained_records {
-            if retained <= MAX_RETAINED_BYTES {
-                break;
-            }
-            let bytes = self.record_regular_file_bytes_at(tree, &record)?;
+        let capacity_entries = self.capacity_entries_at(tree, &retained_records)?;
+        for index in plan_capacity_evictions(&capacity_entries, retained, self.max_retained_bytes) {
+            let bytes = capacity_entries[index].2;
             retained = retained
                 .checked_sub(bytes)
                 .ok_or(ProviderCaptureError::Corrupt)?;
@@ -525,6 +517,24 @@ impl ProviderCaptureStore {
         metadata
             .checked_add(blob)
             .ok_or(ProviderCaptureError::Corrupt)
+    }
+
+    #[cfg(unix)]
+    fn capacity_entries_at(
+        &self,
+        tree: &CaptureTree,
+        records: &[MetadataEntry],
+    ) -> Result<Vec<CapacityEntry>, ProviderCaptureError> {
+        records
+            .iter()
+            .map(|record| {
+                Ok((
+                    record.metadata.last_access_at,
+                    record.metadata.manifest.capture_id.clone(),
+                    self.record_regular_file_bytes_at(tree, record)?,
+                ))
+            })
+            .collect()
     }
 
     #[cfg(unix)]
@@ -1014,6 +1024,31 @@ struct MetadataEntry {
     provider: ProviderCaptureProvider,
     metadata: Metadata,
 }
+
+type CapacityEntry = (u64, String, u64);
+
+fn plan_capacity_evictions(
+    entries: &[CapacityEntry],
+    mut retained_bytes: u64,
+    max_retained_bytes: u64,
+) -> Vec<usize> {
+    let mut oldest = (0..entries.len()).collect::<Vec<_>>();
+    oldest.sort_by_key(|index| {
+        let entry = &entries[*index];
+        (entry.0, entry.1.as_str())
+    });
+
+    oldest
+        .into_iter()
+        .take_while(|index| {
+            if retained_bytes <= max_retained_bytes {
+                return false;
+            }
+            retained_bytes = retained_bytes.saturating_sub(entries[*index].2);
+            true
+        })
+        .collect()
+}
 struct BlobEntry {
     digest: String,
     shard: String,
@@ -1054,8 +1089,8 @@ mod tests {
     use std::time::Duration;
 
     use super::{
-        MAX_CAPTURE_BYTES, MAX_RETAINED_BYTES, Metadata, ProviderCaptureError,
-        ProviderCaptureProvider, ProviderCaptureStore, TestPublicationPause,
+        MAX_CAPTURE_BYTES, Metadata, ProviderCaptureError, ProviderCaptureProvider,
+        ProviderCaptureStore, TestPublicationPause, plan_capacity_evictions,
     };
     use crate::test_support::TempDirGuard;
 
@@ -1220,8 +1255,8 @@ mod tests {
     #[test]
     fn enforces_namespace_capacity_with_deterministic_lru_eviction() {
         let root = TempDirGuard::new("provider-capture-capacity");
-        let store = ProviderCaptureStore::new(root.path());
-        let body = vec![0; MAX_CAPTURE_BYTES as usize];
+        let store = ProviderCaptureStore::new(root.path()).with_max_retained_bytes(64 * 1024);
+        let body = vec![0; 1024];
         let oldest = store
             .capture_bytes(
                 ProviderCaptureProvider::Cspec,
@@ -1243,8 +1278,8 @@ mod tests {
             serde_json::to_vec(&metadata).expect("encode metadata"),
         )
         .expect("age metadata");
-        for marker in 1..17u8 {
-            let mut body = vec![0; MAX_CAPTURE_BYTES as usize];
+        for marker in 1..8u8 {
+            let mut body = vec![0; 1024];
             body[0] = marker;
             store
                 .capture_bytes(
@@ -1255,11 +1290,22 @@ mod tests {
                 .expect("capture");
         }
 
-        assert!(store.retained_bytes().expect("retained bytes") <= MAX_RETAINED_BYTES);
+        let restarted = ProviderCaptureStore::new(root.path()).with_max_retained_bytes(6 * 1024);
+        restarted.maintain().expect("maintain after restart");
+        assert!(restarted.retained_bytes().expect("retained bytes") <= 6 * 1024);
         assert_eq!(
-            store.read(&oldest.capture_id),
+            restarted.read(&oldest.capture_id),
             Err(ProviderCaptureError::Unavailable)
         );
+    }
+
+    #[test]
+    fn capacity_planner_covers_exact_plus_one_and_stable_ties() {
+        let entries = [(1, "capture-b".into(), 4), (1, "capture-a".into(), 4)];
+
+        assert!(plan_capacity_evictions(&entries, 8, 8).is_empty());
+        assert_eq!(plan_capacity_evictions(&entries, 9, 8), vec![1]);
+        assert_eq!(plan_capacity_evictions(&entries, 12, 4), vec![1, 0]);
     }
 
     #[test]

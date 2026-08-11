@@ -334,6 +334,25 @@ pub(super) fn pdf_discovery_attempt(
 
 async fn try_resolve_html(pmcid: &str, requested_id: &str) -> HtmlResolution {
     let fetched = crate::sources::pmc_article::fetch_html(pmcid, requested_id).await;
+    classify_html_fetch(fetched, pmcid, requested_id)
+}
+
+#[cfg(test)]
+async fn html_with_client(
+    client: &reqwest_middleware::ClientWithMiddleware,
+    pmcid: &str,
+    requested_id: &str,
+) -> HtmlResolution {
+    let fetched =
+        crate::sources::pmc_article::fetch_html_with_client(client, pmcid, requested_id).await;
+    classify_html_fetch(fetched, pmcid, requested_id)
+}
+
+fn classify_html_fetch(
+    fetched: crate::sources::pmc_article::PmcHtmlFetch,
+    pmcid: &str,
+    requested_id: &str,
+) -> HtmlResolution {
     let cache_state = match fetched.cache_state {
         PmcHtmlCacheState::Hit => ArticleFulltextCacheState::Hit,
         PmcHtmlCacheState::Miss => ArticleFulltextCacheState::Miss,
@@ -363,26 +382,48 @@ async fn try_resolve_html(pmcid: &str, requested_id: &str) -> HtmlResolution {
 }
 
 async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepOutcome<String> {
-    let Some(url) = parse_pdf_url(raw_pdf_url) else {
-        return FulltextStepOutcome::Failed(BioMcpError::Api {
-            api: ARTICLE_FULLTEXT_API.to_string(),
-            message:
-                "Semantic Scholar PDF source unavailable: outbound policy rejected invalid URL"
-                    .to_string(),
-        });
+    let (url, policy) = match validated_pdf_url(raw_pdf_url) {
+        Ok(validated) => validated,
+        Err(err) => return FulltextStepOutcome::Failed(err),
     };
-    let policy =
-        match crate::sources::provider_url_policy::ProviderUrlPolicy::semantic_scholar_pdf() {
-            Ok(policy) => policy,
-            Err(err) => return FulltextStepOutcome::Failed(err),
-        };
-    if let Err(err) = policy.validate_url(&url) {
-        return FulltextStepOutcome::Failed(err);
-    }
     let client = match crate::sources::provider_url_client(&policy) {
         Ok(client) => client,
         Err(err) => return FulltextStepOutcome::Failed(err),
     };
+    resolve_pdf_url_with_client(&client, url, requested_id).await
+}
+
+#[cfg(test)]
+async fn pdf_with_client(
+    client: &reqwest_middleware::ClientWithMiddleware,
+    raw_pdf_url: &str,
+    requested_id: &str,
+) -> FulltextStepOutcome<String> {
+    let url = match validated_pdf_url(raw_pdf_url) {
+        Ok((url, _)) => url,
+        Err(err) => return FulltextStepOutcome::Failed(err),
+    };
+    resolve_pdf_url_with_client(client, url, requested_id).await
+}
+
+fn validated_pdf_url(
+    raw_pdf_url: &str,
+) -> Result<(Url, crate::sources::provider_url_policy::ProviderUrlPolicy), BioMcpError> {
+    let url = parse_pdf_url(raw_pdf_url).ok_or_else(|| BioMcpError::Api {
+        api: ARTICLE_FULLTEXT_API.to_string(),
+        message: "Semantic Scholar PDF source unavailable: outbound policy rejected invalid URL"
+            .to_string(),
+    })?;
+    let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::semantic_scholar_pdf()?;
+    policy.validate_url(&url)?;
+    Ok((url, policy))
+}
+
+async fn resolve_pdf_url_with_client(
+    client: &reqwest_middleware::ClientWithMiddleware,
+    url: Url,
+    requested_id: &str,
+) -> FulltextStepOutcome<String> {
     let request = crate::sources::apply_no_store(client.get(url.clone()));
     let response = match crate::sources::with_response_body_limit(
         request,
@@ -989,6 +1030,8 @@ mod tests {
     };
     use crate::entities::article::{ArticleSemanticScholar, ArticleSemanticScholarPdf};
     use crate::test_support::TempDirGuard;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     fn configure_attempt_env(env: &mut TestEnv, fixture: &TestHttpFixture) {
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
@@ -1228,6 +1271,7 @@ mod tests {
         let mut env = TestEnv::new();
         let cache = TempDirGuard::new("article-fulltext-attempt-matrix");
         env.set("BIOMCP_CACHE_DIR", cache.path());
+        let client = crate::sources::test_client().expect("no-retry classification client");
 
         let not_found = TestHttpFixture::spawn(|_| {
             TestHttpReply::Bytes(test_http_response(
@@ -1239,26 +1283,40 @@ mod tests {
         .await;
         configure_attempt_env(&mut env, &not_found);
         assert!(matches!(
-            try_resolve_html("PMC1", "1").await.outcome,
+            html_with_client(&client, "PMC1", "1").await.outcome,
             FulltextStepOutcome::Empty
         ));
         assert!(matches!(
-            try_resolve_pdf(&format!("{}/missing.pdf", not_found.base), "1").await,
+            pdf_with_client(&client, &format!("{}/missing.pdf", not_found.base), "1").await,
             FulltextStepOutcome::Empty
         ));
         drop(not_found);
 
-        let status_failure = TestHttpFixture::spawn(|_| {
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let fixture_attempts = attempts.clone();
+        let status_failure = TestHttpFixture::spawn(move |request| {
+            let status = if request.contains("/failed.pdf")
+                || fixture_attempts.fetch_add(1, Ordering::SeqCst) < 2
+            {
+                "500 Internal Server Error"
+            } else {
+                "200 OK"
+            };
             TestHttpReply::Bytes(test_http_response(
-                "500 Internal Server Error",
-                "text/plain",
-                b"failed",
+                status,
+                "text/html",
+                b"<article>ok</article>",
             ))
         })
         .await;
         configure_attempt_env(&mut env, &status_failure);
-        failed_html(try_resolve_html("PMC1", "1").await);
-        failed(try_resolve_pdf(&format!("{}/failed.pdf", status_failure.base), "1").await);
+        failed_html(html_with_client(&client, "PMC1", "1").await);
+        failed(pdf_with_client(&client, &format!("{}/failed.pdf", status_failure.base), "1").await);
+        assert!(matches!(
+            try_resolve_html("PMC1", "1").await.outcome,
+            FulltextStepOutcome::Data(_)
+        ));
+        assert_eq!(attempts.load(Ordering::SeqCst), 3);
         drop(status_failure);
 
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -1268,8 +1326,8 @@ mod tests {
         drop(listener);
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &refused);
         env.set(crate::sources::pmc_article::PMC_ARTICLE_BASE_ENV, &refused);
-        failed_html(try_resolve_html("PMC1", "1").await);
-        failed(try_resolve_pdf(&format!("{refused}/missing.pdf"), "1").await);
+        failed_html(html_with_client(&client, "PMC1", "1").await);
+        failed(pdf_with_client(&client, &format!("{refused}/missing.pdf"), "1").await);
 
         let oversized = TestHttpFixture::spawn(|request| {
             TestHttpReply::Bytes(
@@ -1291,11 +1349,12 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &oversized);
-        let html_error = failed_html(try_resolve_html("PMC1", "1").await);
+        let html_error = failed_html(html_with_client(&client, "PMC1", "1").await);
         assert_eq!(html_error.code(), "api");
         assert!(format!("{html_error:?}").contains("BodyLimit"));
-        let pdf_error =
-            failed(try_resolve_pdf(&format!("{}/oversized.pdf", oversized.base), "1").await);
+        let pdf_error = failed(
+            pdf_with_client(&client, &format!("{}/oversized.pdf", oversized.base), "1").await,
+        );
         assert_eq!(pdf_error.code(), "api");
         assert!(format!("{pdf_error:?}").contains("BodyLimit"));
         drop(oversized);
@@ -1305,8 +1364,15 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &unsupported);
-        failed_html(try_resolve_html("PMC1", "1").await);
-        failed(try_resolve_pdf(&format!("{}/unsupported.pdf", unsupported.base), "1").await);
+        failed_html(html_with_client(&client, "PMC1", "1").await);
+        failed(
+            pdf_with_client(
+                &client,
+                &format!("{}/unsupported.pdf", unsupported.base),
+                "1",
+            )
+            .await,
+        );
         drop(unsupported);
 
         let invalid_utf8 = TestHttpFixture::spawn(|_| {
@@ -1314,7 +1380,7 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &invalid_utf8);
-        failed_html(try_resolve_html("PMC1", "1").await);
+        failed_html(html_with_client(&client, "PMC1", "1").await);
         drop(invalid_utf8);
 
         let empty_conversion = TestHttpFixture::spawn(|_| {
@@ -1326,7 +1392,7 @@ mod tests {
         })
         .await;
         configure_attempt_env(&mut env, &empty_conversion);
-        failed_html(try_resolve_html("PMC1", "1").await);
+        failed_html(html_with_client(&client, "PMC1", "1").await);
         drop(empty_conversion);
 
         let invalid_pdf = TestHttpFixture::spawn(|_| {
@@ -1338,7 +1404,7 @@ mod tests {
         })
         .await;
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &invalid_pdf.base);
-        failed(try_resolve_pdf(&format!("{}/invalid.pdf", invalid_pdf.base), "1").await);
+        failed(pdf_with_client(&client, &format!("{}/invalid.pdf", invalid_pdf.base), "1").await);
         drop(invalid_pdf);
     }
 

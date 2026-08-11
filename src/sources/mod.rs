@@ -809,7 +809,9 @@ pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(BioMcpError::HttpClientInit)?;
-    Ok(reqwest_middleware::ClientBuilder::new(base_client).build())
+    Ok(reqwest_middleware::ClientBuilder::new(base_client)
+        .with(ResponseBodyLimitMiddleware)
+        .build())
 }
 
 pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
@@ -1685,6 +1687,18 @@ mod tests {
                 MAX_RETRY_AFTER_SLEEP
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn retry_sleep_can_be_cancelled() {
+        let retry = retry_send_with_sleep(
+            SourceContext::retry(crate::error::SourceProvider::OLS4),
+            1,
+            || async { Ok(test_response(StatusCode::TOO_MANY_REQUESTS, &[], "")) },
+            |_| std::future::pending(),
+        );
+        let cancelled = tokio::time::timeout(Duration::from_millis(1), retry).await;
+        assert!(cancelled.is_err());
     }
 
     #[tokio::test]

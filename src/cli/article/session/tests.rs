@@ -353,36 +353,39 @@ fn malformed_store_recovers_as_empty_and_writes_valid_json() {
     assert!(value["sessions"]["lit-review-1"].is_object());
 }
 
-#[test]
-fn capacity_pruning_keeps_newest_1024_sessions() {
-    let root = crate::test_support::TempDirGuard::new("article-session-capacity");
-    let pmids = strings(&["22663011"]);
+fn session_entry(updated_at_epoch_secs: u64) -> SessionEntry {
+    SessionEntry {
+        updated_at_epoch_secs,
+        keyword: "Oncotype DX review paper".into(),
+        terms: strings(&["dx", "oncotype"]),
+        pmids: strings(&["22663011"]),
+    }
+}
 
-    for index in 0..1_030 {
-        let token = format!("loop-{index:04}");
-        assert!(
-            record_success_and_suggestions(
-                root.path(),
-                search(
-                    &token,
-                    Some("Oncotype DX review paper"),
-                    &pmids,
-                    &[],
-                    1_000 + index / 4,
-                ),
-            )
-            .is_empty()
-        );
+#[test]
+fn capacity_pruning_covers_exact_and_plus_one_limits() {
+    let mut exact = Store::default();
+    exact.sessions.insert("newer".into(), session_entry(1_001));
+    exact.sessions.insert("oldest".into(), session_entry(1_000));
+    prune_sessions(&mut exact, 1_001, 2);
+    assert_eq!(exact.sessions.len(), 2);
+
+    exact.sessions.insert("newest".into(), session_entry(1_002));
+    prune_sessions(&mut exact, 1_002, 2);
+    assert_eq!(exact.sessions.len(), 2);
+    assert!(!exact.sessions.contains_key("oldest"));
+    assert!(exact.sessions.contains_key("newer") && exact.sessions.contains_key("newest"));
+}
+
+#[test]
+fn capacity_pruning_resolves_ties_stably_in_memory() {
+    let mut store = Store::default();
+    for token in ["loop-0005", "loop-0000", "loop-0006", "loop-1029"] {
+        store.sessions.insert(token.into(), session_entry(1_000));
     }
 
-    let contents = std::fs::read_to_string(store_path(root.path())).expect("store should exist");
-    let value: serde_json::Value = serde_json::from_str(&contents).expect("store should parse");
-    let sessions = value["sessions"]
-        .as_object()
-        .expect("sessions should be an object");
-    assert_eq!(sessions.len(), 1_024);
-    assert!(!sessions.contains_key("loop-0000"));
-    assert!(!sessions.contains_key("loop-0005"));
-    assert!(sessions.contains_key("loop-0006"));
-    assert!(sessions.contains_key("loop-1029"));
+    prune_sessions(&mut store, 1_000, 2);
+    assert_eq!(store.sessions.len(), 2);
+    assert!(store.sessions.contains_key("loop-0006"));
+    assert!(store.sessions.contains_key("loop-1029"));
 }
