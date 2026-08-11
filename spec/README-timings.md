@@ -293,3 +293,31 @@ page took 46.87s. The complete `make spec` run fell from the 592.42s baseline to
 352.51s even though the post-commit build-identity invalidation added 73s of
 compilation to the latter run. The comparable warm-binary spec execution is
 therefore about 279.5s, versus 592.1s before: roughly 2.1x faster.
+
+## Ticket 968 bounded routine-page workers — 2026-08-11
+
+The routine runner now gives each independent Markdown page to a bounded
+runner-level worker. The default is four workers; set
+`BIOMCP_SPEC_WORKERS=1` to reproduce pages serially during diagnosis. Commands
+inside one page remain ordered by one Mustmatch process. Article and author
+remain together because they share the article server and its mutable request
+log. Section outcomes remains in its existing setup/cleanup subshell because it
+owns generated inputs. Static and live verification modes retain their former
+single Mustmatch invocation.
+
+Each worker has its own process group. An interrupt terminates the group, and a
+failure waits for and reports every page in the active batch, prints captured
+output in path order, and does not start the next batch. Synthetic lifecycle
+tests cover four-worker concurrency, one-worker diagnosis, two simultaneous
+failures, deterministic attribution, interruption, and invalid configuration.
+The 32-test parallel-isolation contract passed three consecutive runs at the
+four-worker default on the loaded intervention machine.
+
+After an explicit prewarm, two complete four-worker `make spec` runs took
+216.47s and 194.37s wall time; both passed. Their median is 205.42s, 1.36x
+faster than the 279.5s post-ticket-967 serial comparison and 2.88x faster than
+the 592.1s intervention baseline. The first run used `11.33s` user CPU,
+`8.31s` system CPU, and 350200 KiB peak RSS; the repeat used `5.32s`, `8.41s`,
+and 106784 KiB. The Cargo build check was 0.23s in both runs. The prewarm itself
+took 65.26s after a record-only commit moved Git `HEAD`, further confirming the
+separate build-identity invalidation measured for ticket 970.

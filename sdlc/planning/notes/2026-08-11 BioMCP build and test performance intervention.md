@@ -210,3 +210,20 @@ Commit `dbc37664` changed the variant identity, saved JATS, and ClinGen CSpec
 pages from 6/10/2 identical helper executions to one each. All 32 runner tests
 and spec lint pass. The variant identity page is 46.87s. Comparable warm-binary
 `make spec` execution fell from about 592.1s to 279.5s, roughly 2.1x faster.
+
+### 0968 — bounded parallel routine pages
+
+The runner now executes independent Markdown pages with four bounded workers,
+while article/author and section outcomes retain their explicit shared-state
+serial boundaries. Static and live modes are unchanged. Synthetic tests prove
+concurrency, a one-worker diagnostic mode, aggregate and path-ordered failure
+output, no next batch after failure, invalid-setting rejection, and interrupt
+cleanup of each page's process group. The 32-test isolation contract passed
+three consecutive runs at four workers.
+
+After an explicit binary prewarm, two complete `make spec` runs took 216.47s
+and 194.37s. Both passed; the 205.42s median is 1.36x faster than the post-0967
+serial comparison and 2.88x faster than the 592.1s intervention baseline.
+Moving Git `HEAD` for the preceding record-only commit made the prewarm cost
+65.26s despite no product-source change; implement 0970 next so the remaining
+intervention commits stop paying that invalidation.

@@ -100,7 +100,10 @@ partition_paths() {
   local path
   for path in "$@"; do
     case "$path" in
+      # These pages share one article server and its mutable request log, so
+      # Mustmatch retains their declared order in one serial invocation.
       spec/entity/article.md|spec/entity/author.md) ARTICLE_MD_PATHS+=("$path") ;;
+      # This page owns a separate setup/cleanup subshell and generated inputs.
       spec/entity/section-outcomes.md) SECTION_OUTCOME_MD_PATHS+=("$path") ;;
       *.md) MD_PATHS+=("$path") ;;
       *.py) PY_PATHS+=("$path") ;;
@@ -118,10 +121,35 @@ source_if_present() {
 }
 
 CLEANUP_FUNCTIONS=()
+PARALLEL_SPEC_PIDS=()
+PARALLEL_SPEC_OUTPUT_DIR=""
 
 register_cleanup() {
   CLEANUP_FUNCTIONS+=("$1")
 }
+
+cleanup_parallel_spec_workers() {
+  local pid
+  for pid in "${PARALLEL_SPEC_PIDS[@]}"; do
+    kill -TERM -- "-$pid" 2>/dev/null || true
+  done
+  if ((${#PARALLEL_SPEC_PIDS[@]})); then
+    sleep 0.2
+  fi
+  for pid in "${PARALLEL_SPEC_PIDS[@]}"; do
+    kill -KILL -- "-$pid" 2>/dev/null || true
+  done
+  for pid in "${PARALLEL_SPEC_PIDS[@]}"; do
+    wait "$pid" 2>/dev/null || true
+  done
+  PARALLEL_SPEC_PIDS=()
+  if [[ -n "$PARALLEL_SPEC_OUTPUT_DIR" && -d "$PARALLEL_SPEC_OUTPUT_DIR" ]]; then
+    rm -r "$PARALLEL_SPEC_OUTPUT_DIR"
+  fi
+  PARALLEL_SPEC_OUTPUT_DIR=""
+}
+
+register_cleanup cleanup_parallel_spec_workers
 
 cleanup_all() {
   local exit_status=$?
@@ -292,10 +320,71 @@ run_article_markdown_specs() {
   fi
 }
 
-run_markdown_specs() {
-  if ((${#MD_PATHS[@]})); then
-    8>&- mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"
+validate_routine_spec_workers() {
+  SPEC_WORKER_COUNT="${BIOMCP_SPEC_WORKERS:-4}"
+  if [[ ! "$SPEC_WORKER_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+    echo "BIOMCP_SPEC_WORKERS must be a positive integer, got: $SPEC_WORKER_COUNT" >&2
+    return 2
   fi
+}
+
+run_markdown_specs() {
+  ((${#MD_PATHS[@]})) || return 0
+
+  case "$mode" in
+    spec|spec-pr|spec-contracts) ;;
+    *) 8>&- mustmatch test "${MD_PATHS[@]}" --lang bash "${timeout_args[@]}"; return ;;
+  esac
+
+  local worker_count="$SPEC_WORKER_COUNT"
+
+  mkdir -p "$ROOT/.cache"
+  PARALLEL_SPEC_OUTPUT_DIR="$(mktemp -d "$ROOT/.cache/spec-parallel.XXXXXX")"
+
+  local path log_path pid page_index=0 wait_index batch_size=0
+  local -a batch_paths=() batch_logs=()
+  local batch_failed=0 exit_status=0
+  for path in "${MD_PATHS[@]}"; do
+    log_path="$PARALLEL_SPEC_OUTPUT_DIR/$page_index.log"
+    # Monitor mode gives each background page its own process group. That lets
+    # interruption reap Mustmatch and any command it currently owns.
+    set -m
+    (8>&- exec mustmatch test "$path" --lang bash "${timeout_args[@]}") >"$log_path" 2>&1 &
+    pid=$!
+    set +m
+    PARALLEL_SPEC_PIDS+=("$pid")
+    batch_paths+=("$path")
+    batch_logs+=("$log_path")
+    page_index=$((page_index + 1))
+    batch_size=$((batch_size + 1))
+
+    if ((batch_size < worker_count && page_index < ${#MD_PATHS[@]})); then
+      continue
+    fi
+
+    batch_failed=0
+    for wait_index in "${!PARALLEL_SPEC_PIDS[@]}"; do
+      if wait "${PARALLEL_SPEC_PIDS[$wait_index]}"; then
+        exit_status=0
+      else
+        exit_status=$?
+        batch_failed=1
+      fi
+      cat "${batch_logs[$wait_index]}"
+      if ((exit_status != 0)); then
+        printf 'spec page failed: %s (exit %s)\n' \
+          "${batch_paths[$wait_index]}" "$exit_status" >&2
+      fi
+    done
+    PARALLEL_SPEC_PIDS=()
+    batch_paths=()
+    batch_logs=()
+    batch_size=0
+    ((batch_failed == 0)) || return 1
+  done
+
+  rm -r "$PARALLEL_SPEC_OUTPUT_DIR"
+  PARALLEL_SPEC_OUTPUT_DIR=""
 }
 
 run_python_contracts() {
@@ -314,6 +403,7 @@ case "$mode" in
   spec|spec-pr)
     timeout_args=(--timeout 180)
     paths=("${SPEC_ROUTINE_PATHS[@]}")
+    validate_routine_spec_workers
     mustmatch_path_dir="$(mustmatch_dir)"
     reap_stale_routine_fixtures
     lock_routine_fixtures
@@ -343,6 +433,7 @@ case "$mode" in
       spec/surface/skills.md
       spec/surface/trial-retirement.md
     )
+    validate_routine_spec_workers
     mustmatch_path_dir="$(mustmatch_dir)"
     reap_stale_routine_fixtures
     lock_routine_fixtures

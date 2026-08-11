@@ -131,11 +131,28 @@ def _runner_workspace(
         'if [ -e /proc/$$/fd/8 ]; then printf "inherited-fd-8\\n" >>"$MUSTMATCH_FD_LOG"; fi\n'
         'printf "%s|%s|%s\\n" "$*" "${BIOMCP_PUBTATOR_BASE-}" '
         '"${BIOMCP_TEST_UNPACED_ORIGIN-}" >>"$MUSTMATCH_INVOCATION_LOG"\n'
+        'if [ -n "${MUSTMATCH_ACTIVE_DIR:-}" ]; then\n'
+        '  mkdir -p "$MUSTMATCH_ACTIVE_DIR"\n'
+        '  touch "$MUSTMATCH_ACTIVE_DIR/$$"\n'
+        "  trap 'rm -f \"$MUSTMATCH_ACTIVE_DIR/$$\"' EXIT\n"
+        "  trap 'exit 143' TERM\n"
+        "  trap 'exit 130' INT\n"
+        "  trap 'exit 129' HUP\n"
+        '  find "$MUSTMATCH_ACTIVE_DIR" -type f | wc -l >>"$MUSTMATCH_CONCURRENCY_LOG"\n'
+        '  delay="${MUSTMATCH_DELAY:-0}"\n'
+        '  if [[ -n "${MUSTMATCH_SKIP_DELAY_PATTERN:-}" && "$*" == *"$MUSTMATCH_SKIP_DELAY_PATTERN"* ]]; then delay=0; fi\n'
+        '  sleep "$delay"\n'
+        '  rm -f "$MUSTMATCH_ACTIVE_DIR/$$"\n'
+        "fi\n"
+        'printf "mustmatch-output:%s\\n" "$*"\n'
         'if [[ "$*" == *"spec/entity/article.md"* ]] && [ -f .cache/spec-article-fulltext-source-ownership ]; then\n'
         "  awk -F= '$1 == \"BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID\" { print $2 }' "
         '    .cache/spec-article-fulltext-source-ownership >>"$ARTICLE_SETUP_LOG"\n'
         "fi\n"
         'call="$(wc -l <"$MUSTMATCH_INVOCATION_LOG")"\n'
+        'for failure_pattern in ${FAIL_MUSTMATCH_PATTERNS//,/ }; do\n'
+        '  if [[ "$*" == *"$failure_pattern"* ]]; then exit 7; fi\n'
+        'done\n'
         'if [ "$call" -eq "${FAIL_MUSTMATCH_CALL:-0}" ]; then exit 7; fi\n'
         "exit 0\n"
     )
@@ -147,6 +164,7 @@ def _runner_workspace(
         "MUSTMATCH_INVOCATION_LOG": str(workspace / "mustmatch-invocation-log"),
         "MUSTMATCH_FD_LOG": str(workspace / "mustmatch-fd-log"),
         "FAIL_MUSTMATCH_CALL": str(fail_mustmatch_call),
+        "BIOMCP_SPEC_WORKERS": "1",
         "BIOMCP_PUBTATOR_BASE": "caller-pubtator",
         "BIOMCP_TEST_UNPACED_ORIGIN": "http://127.0.0.1:9999",
     }
@@ -170,7 +188,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == (2 if mode == "spec-contracts" else 3)
+    assert len(invocations) == (4 if mode == "spec-contracts" else 18)
     article_args, article_base, article_origin = invocations[0]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args
@@ -590,6 +608,134 @@ def test_concurrent_routine_runners_serialize_shared_fixtures(tmp_path: Path) ->
 
     assert all(process.wait(timeout=30) == 0 for process in runners)
     assert not (workspace / "fixture-collision").exists()
+
+
+def test_runner_defaults_to_four_independent_markdown_workers(tmp_path: Path) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    env.pop("BIOMCP_SPEC_WORKERS")
+    concurrency_log = workspace / "mustmatch-concurrency-log"
+    env |= {
+        "MUSTMATCH_ACTIVE_DIR": str(workspace / "mustmatch-active"),
+        "MUSTMATCH_CONCURRENCY_LOG": str(concurrency_log),
+        "MUSTMATCH_DELAY": "0.1",
+    }
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"], cwd=workspace, env=env, check=False
+    )
+
+    assert result.returncode == 0
+    assert max(map(int, concurrency_log.read_text().splitlines())) == 4
+
+
+def test_runner_can_force_one_markdown_worker_for_diagnosis(tmp_path: Path) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    concurrency_log = workspace / "mustmatch-concurrency-log"
+    env |= {
+        "BIOMCP_SPEC_WORKERS": "1",
+        "MUSTMATCH_ACTIVE_DIR": str(workspace / "mustmatch-active"),
+        "MUSTMATCH_CONCURRENCY_LOG": str(concurrency_log),
+        "MUSTMATCH_DELAY": "0.01",
+    }
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"], cwd=workspace, env=env, check=False
+    )
+
+    assert result.returncode == 0
+    assert max(map(int, concurrency_log.read_text().splitlines())) == 1
+
+
+def test_runner_rejects_invalid_routine_worker_count_before_fixture_setup(
+    tmp_path: Path,
+) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    env["BIOMCP_SPEC_WORKERS"] = "unbounded"
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"],
+        cwd=workspace,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "BIOMCP_SPEC_WORKERS must be a positive integer" in result.stderr
+    assert not (workspace / "article-setup-log").exists()
+
+
+def test_static_pages_keep_their_single_serial_invocation(tmp_path: Path) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    env["BIOMCP_SPEC_WORKERS"] = "unbounded"
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec-static"],
+        cwd=workspace,
+        env=env,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    invocations = (workspace / "mustmatch-invocation-log").read_text().splitlines()
+    assert len(invocations) == 1
+    assert "spec/surface/docker-image.md spec/surface/homebrew.md" in invocations[0]
+
+
+def test_failing_parallel_pages_are_aggregated_and_stop_new_batches(
+    tmp_path: Path,
+) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    failed_pages = (
+        "spec/entity/disease-survival-fixture.md",
+        "spec/entity/drug-interactions.md",
+    )
+    env |= {
+        "BIOMCP_SPEC_WORKERS": "2",
+        "FAIL_MUSTMATCH_PATTERNS": ",".join(failed_pages),
+    }
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"],
+        cwd=workspace,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    for failed_page in failed_pages:
+        assert f"spec page failed: {failed_page} (exit 7)" in result.stderr
+        assert f"mustmatch-output:test {failed_page}" in result.stdout
+    invocations = (workspace / "mustmatch-invocation-log").read_text()
+    assert "spec/entity/pgx.md" not in invocations
+    assert result.stdout.index(failed_pages[0]) < result.stdout.index(failed_pages[1])
+
+
+def test_interrupt_reaps_parallel_markdown_workers(tmp_path: Path) -> None:
+    workspace, env = _runner_workspace(tmp_path)
+    active_dir = workspace / "mustmatch-active"
+    env |= {
+        "BIOMCP_SPEC_WORKERS": "4",
+        "MUSTMATCH_ACTIVE_DIR": str(active_dir),
+        "MUSTMATCH_CONCURRENCY_LOG": str(workspace / "mustmatch-concurrency-log"),
+        "MUSTMATCH_DELAY": "30",
+        "MUSTMATCH_SKIP_DELAY_PATTERN": "spec/entity/article.md",
+    }
+    runner = subprocess.Popen(
+        ["bash", "scripts/run-specs.sh", "spec"], cwd=workspace, env=env
+    )
+    try:
+        _wait_until(lambda: active_dir.exists() and len(list(active_dir.iterdir())) >= 2)
+        runner.terminate()
+        assert runner.wait(timeout=10) == 128 + signal.SIGTERM
+        _wait_until(lambda: not active_dir.exists() or not list(active_dir.iterdir()))
+    finally:
+        if runner.poll() is None:
+            runner.kill()
+            runner.wait()
 
 
 def test_only_owned_article_fixtures_export_unpaced_origin() -> None:
