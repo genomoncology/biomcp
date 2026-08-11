@@ -18,6 +18,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/phenotype.md
   spec/surface/discover.md
   spec/entity/diagnostic.md
+  spec/entity/vaers.md
   spec/entity/drug.md
   spec/entity/gene.md
   spec/entity/drug-interactions.md
@@ -57,7 +58,6 @@ SPEC_LIVE_PATHS=(
   spec/entity/pathway.md
   spec/entity/protein.md
   spec/entity/trial.md
-  spec/entity/vaers.md
   spec/entity/variant-hotspots.md
   spec/entity/variant-myvariant-live.md
   spec/entity/variant-articles-live.md
@@ -242,6 +242,16 @@ run_provider_contract_fixture() {
   register_cleanup cleanup_provider_contract_fixture
 }
 
+cleanup_vaers_fixture() {
+  bash spec/fixtures/cleanup-vaers-spec-fixture.sh "$ROOT"
+}
+
+run_vaers_fixture() {
+  bash spec/fixtures/setup-vaers-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-vaers-env"
+  register_cleanup cleanup_vaers_fixture
+}
+
 cleanup_variant_identity_fixture() {
   bash spec/fixtures/cleanup-variant-identity-spec-fixture.sh "$ROOT"
 }
@@ -288,6 +298,7 @@ reap_stale_routine_fixtures() {
     cleanup-ctgov-intervention-alias-spec-fixture.sh \
     cleanup-disease-survival-spec-fixture.sh \
     cleanup-provider-contract-spec-fixture.sh \
+    cleanup-vaers-spec-fixture.sh \
     cleanup-variant-identity-spec-fixture.sh \
     cleanup-clingen-cspec-spec-fixture.sh \
     cleanup-cpic-spec-fixture.sh; do
@@ -511,6 +522,7 @@ case "$mode" in
     fi
     run_disease_survival_fixture
     run_provider_contract_fixture
+    run_vaers_fixture
     run_variant_identity_fixture
     run_clingen_cspec_fixture
     run_cpic_fixture
@@ -551,7 +563,6 @@ case "$mode" in
       spec/entity/pathway.md
       spec/entity/protein.md
       spec/entity/trial.md
-      spec/entity/vaers.md
       spec/entity/variant-hotspots.md
       spec/entity/variant-myvariant-live.md
       spec/entity/variant-articles-live.md

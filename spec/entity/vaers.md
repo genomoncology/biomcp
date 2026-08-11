@@ -10,7 +10,7 @@ The adverse-event surface should keep the VAERS source switch visible in help so
 users can tell when they are asking for FAERS, VAERS, or the combined path.
 
 ```bash
-../../target/release/biomcp search adverse-event --help | mustmatch like '--source <faers|vaers|all>
+../../tools/biomcp-ci search adverse-event --help | mustmatch like '--source <faers|vaers|all>
 biomcp search adverse-event "COVID-19 vaccine" --source all --limit 5
 biomcp search adverse-event "MMR vaccine" --source vaers --limit 5'
 ```
@@ -25,12 +25,12 @@ that plainly instead of pretending the source searched nothing.
 VAERS is vaccine-only; this query did not resolve to a vaccine identity.'
 ```
 
-## Positive VAERS Aggregate Live Canary
+## Positive VAERS Aggregate Contract
 <!-- mustmatch-lint: skip -->
 
-VAERS is a live CDC WONDER aggregate source. The verify lane must prove at least
-one realistic vaccine query reaches the positive aggregate path; negative and
-help-only assertions are not enough to support a release claim.
+The routine fixture replays a real CDC WONDER aggregate response through the
+production decoder. One realistic vaccine query must reach the positive path;
+negative and help-only assertions are not enough.
 
 ```bash run id=mmr-vaers-positive-live exit=0 timeout=180
 ../../tools/biomcp-ci search adverse-event "MMR vaccine" --source vaers --limit 5 | mustmatch like 'CDC VAERS Summary

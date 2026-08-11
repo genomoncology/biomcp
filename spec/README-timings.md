@@ -78,7 +78,7 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/entity/pgx.md` | receipt-backed routine fixture contract for gene/drug CPIC interaction search, opt-in recommendations, guidelines, and population-frequency detail |
 | `spec/entity/phenotype.md` | routine, receipt-backed phenotype contracts for HPO phrase resolution, direct IDs, similarity-ranked disease output, and typed disease follow-ups |
 | `spec/entity/diagnostic.md` | routine diagnostic contracts for local GTR/WHO IVD data, compact source-aware rows, and receipted OpenFDA regulatory requests |
-| `spec/entity/vaers.md` | vaers canary for vaccine-first CDC aggregation, aggregate-only reporting, and explicit source limitations/combined output |
+| `spec/entity/vaers.md` | routine VAERS/OpenFDA aggregate contracts for vaccine eligibility, positive CDC output, combined outcomes, and explicit source limitations |
 | `spec/surface/cli.md` | CLI surface canary for top-level help/list discovery, operator commands, cache-mode exceptions, and health/admin guidance |
 | `spec/surface/mcp.md` | MCP surface canary for stdio/HTTP entrypoints, probe routes, and streamable-HTTP tool execution |
 | `spec/surface/discover.md` | routine, receipt-backed OLS4 identity, no-match, and relational redirect contracts plus local skill guidance |

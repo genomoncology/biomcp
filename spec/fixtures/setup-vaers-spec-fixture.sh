@@ -23,7 +23,7 @@ fixture_root="$(mktemp -d "$cache_dir/spec-vaers.XXXXXX")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
 
-python3 - "$ready_file" "$script_dir/vaers" <<'PY' >"$server_log" 2>&1 8>&- &
+python3 - "$ready_file" "$script_dir/vaers" "$workspace_root/testdata/sources" <<'PY' >"$server_log" 2>&1 8>&- &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -57,10 +57,14 @@ def load_bytes(path: Path) -> bytes:
 
 
 fixture_dir = Path(sys.argv[2])
+source_dir = Path(sys.argv[3])
 reactions_response = load_bytes(fixture_dir / "reactions-response.xml")
 serious_response = load_bytes(fixture_dir / "serious-response.xml")
 age_response = load_bytes(fixture_dir / "age-response.xml")
 covid_reactions_response = load_bytes(fixture_dir / "covid-reactions-response.xml")
+faers_count_response = load_bytes(
+    source_dir / "openfda/faers_count_pembrolizumab_reaction_20260811.json"
+)
 
 FAERS_RESULTS = [
     {
@@ -110,6 +114,9 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/drug/event.json":
             query = parse_qs(parsed.query)
+            if query.get("count") == ["patient.reaction.reactionmeddrapt.exact"]:
+                send_json(self, 200, json.loads(faers_count_response))
+                return
             limit = int(query.get("limit", ["5"])[0])
             skip = int(query.get("skip", ["0"])[0])
             results = FAERS_RESULTS[skip : skip + limit]
