@@ -311,3 +311,21 @@ On exact final commit `8ab4969c`, sealed warm lint/test/spec runs all passed in
 26.94s, 162.40s, and 186.42s. The 375.76s total is 4.27x faster than the
 1,606s intervention baseline, crossing the intervention's 3x goal before the
 remaining performance tickets.
+
+### 0964 — small persistence and retry test boundaries
+
+The remaining dominant Rust tests now exercise decisions through small local
+seams. Provider-capture capacity uses an injected nonzero byte limit plus a
+pure deterministic planner; its one real persistence smoke writes kilobytes,
+reopens, and evicts. Article-session expiry and capacity pruning operate on
+four in-memory entries for exact, plus-one, expiry, and stable-tie cases, while
+the existing atomic-write/fsync/reopen tests retain filesystem proof. The
+full-text failure matrix uses a no-retry client with the production body
+limiter, while one loopback response proves the production retry adapter and a
+pending recording sleeper proves cancellation.
+
+The old three tests took 36.369s, 14.425s, and 13.335s. Focused capacity and
+classification runs now take 0.14s and 0.65s. On exact commit `892260d8`, all
+2,838 Rust tests passed in 9.465s of nextest execution, versus 36.474s before
+the change: 3.85x faster. Complete lint passed, and the implementation is +139
+net source lines against the authorized +140 ceiling.
