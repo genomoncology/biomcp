@@ -48,6 +48,20 @@ CLI_SURFACE_STATIC_TEXT_GLOBS = [
     "docs/**/*.md",
     "spec/**/*.md",
 ]
+AUDIT_NAMES = [
+    "spec_lint",
+    "mcp_allowlist",
+    "source_registry",
+    "dead_code_allowances",
+    "cli_line_cap",
+    "section_outcome_policy_line_cap",
+    "experiment_results",
+    "terminal_output_boundaries",
+    "cli_surface_contract",
+    "remote_resource_bounds",
+    "source_state_registry",
+    "source_attributed_status_typing",
+]
 TERMINAL_OUTPUT_BOUNDARY_SEAMS = {
     "src/render/human.rs": [
         "fn sanitize_document(value: &str)",
@@ -88,6 +102,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sources-mod", type=Path, required=True)
     parser.add_argument("--health-file", type=Path, required=True)
     parser.add_argument("--cli-line-cap-allowlist", type=Path)
+    parser.add_argument(
+        "--audit",
+        action="append",
+        choices=AUDIT_NAMES,
+        help="Run only this named audit; repeat to select more than one.",
+    )
     return parser.parse_args()
 
 
@@ -157,6 +177,32 @@ def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     if proc.returncode != 0:
         return [], [proc.stderr.strip() or "git ls-files failed"]
     return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
+class RustSourceSnapshot:
+    def __init__(
+        self,
+        sources: dict[str, str],
+        masked_sources: dict[str, str],
+        errors: list[str],
+    ) -> None:
+        self.sources = sources
+        self.masked_sources = masked_sources
+        self.errors = errors
+
+
+def load_rust_source_snapshot(root_dir: Path) -> RustSourceSnapshot:
+    tracked_files, errors = tracked_rust_files(root_dir)
+    sources: dict[str, str] = {}
+    masked_sources: dict[str, str] = {}
+    for relative_path in tracked_files:
+        path = root_dir / relative_path
+        if not path.is_file():
+            continue
+        source = path.read_text(encoding="utf-8")
+        sources[relative_path] = source
+        masked_sources[relative_path] = _mask_rust_non_code(source)
+    return RustSourceSnapshot(sources, masked_sources, errors)
 
 
 def _mask_rust_non_code(source: str) -> str:
@@ -235,8 +281,10 @@ def _mask_rust_non_code(source: str) -> str:
     return "".join(masked)
 
 
-def _rust_attribute_spans(source: str) -> list[tuple[int, str]]:
-    masked = _mask_rust_non_code(source)
+def _rust_attribute_spans(
+    source: str, *, masked_source: str | None = None
+) -> list[tuple[int, str]]:
+    masked = masked_source if masked_source is not None else _mask_rust_non_code(source)
     spans: list[tuple[int, str]] = []
     index = 0
     while match := re.search(r"#(?:!)?\[", masked[index:]):
@@ -271,21 +319,21 @@ def _allows_dead_code(attribute: str) -> bool:
     return False
 
 
-def check_dead_code_allowances(root_dir: Path) -> dict[str, object]:
-    tracked_files, errors = tracked_rust_files(root_dir)
-    if errors:
-        return {"status": "error", "findings": [], "errors": errors}
+def check_dead_code_allowances(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None
+) -> dict[str, object]:
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    if snapshot.errors:
+        return {"status": "error", "findings": [], "errors": snapshot.errors}
 
     findings: list[dict[str, object]] = []
     spans_checked = 0
     reason_re = re.compile(r"^\s*//.*dead-code reason:\s*\S")
-    for relative_path in tracked_files:
-        path = root_dir / relative_path
-        if not path.is_file():
-            continue
-        source = path.read_text(encoding="utf-8")
+    for relative_path, source in snapshot.sources.items():
         lines = source.splitlines()
-        for opening, attribute in _rust_attribute_spans(source):
+        for opening, attribute in _rust_attribute_spans(
+            source, masked_source=snapshot.masked_sources[relative_path]
+        ):
             if not _allows_dead_code(attribute):
                 continue
             spans_checked += 1
@@ -305,7 +353,7 @@ def check_dead_code_allowances(root_dir: Path) -> dict[str, object]:
 
     return {
         "status": "fail" if findings else "pass",
-        "files_checked": len(tracked_files),
+        "files_checked": len(snapshot.sources),
         "allowances_checked": spans_checked,
         "finding_count": len(findings),
         "findings": findings,
@@ -1758,16 +1806,21 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
     }
 
 
-def check_source_attributed_status_is_typed(root_dir: Path) -> dict[str, object]:
+def check_source_attributed_status_is_typed(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None
+) -> dict[str, object]:
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    if snapshot.errors:
+        return {"status": "error", "findings": [], "errors": snapshot.errors}
     allowlist_path = root_dir / "tools" / "source-status-typing-allowlist.json"
     try:
         allowlist = set(json.loads(allowlist_path.read_text(encoding="utf-8")).get("entries", []))
     except (OSError, json.JSONDecodeError):
         allowlist = set()
     findings: list[dict[str, object]] = []
-    for path in sorted((root_dir / "src").rglob("*.rs")) if (root_dir / "src").is_dir() else []:
-        relative = path.relative_to(root_dir).as_posix()
-        source = _mask_rust_non_code(path.read_text(encoding="utf-8"))
+    for relative, source in snapshot.masked_sources.items():
+        if not relative.startswith("src/"):
+            continue
         pattern = re.compile(
             r"#\s*\[\s*derive\s*\((?P<derive>[^]]*)\)\s*\]\s*"
             r"(?:#\s*\[[^]]*\]\s*)*struct\s+(?P<name>\w+)\s*\{(?P<body>[^}]*)\}",
@@ -1796,125 +1849,130 @@ def check_source_attributed_status_is_typed(root_dir: Path) -> dict[str, object]
 def main() -> int:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    selected_audits = list(dict.fromkeys(args.audit or AUDIT_NAMES))
+    payloads: dict[str, dict[str, object]] = {}
     cli_line_cap_allowlist = args.cli_line_cap_allowlist or (
         args.root_dir / "tools" / "cli-line-cap-allowlist.json"
     )
-
-    spec_paths = resolve_spec_paths(args.spec_glob)
-    lint_payload = lint_specs(spec_paths, args.spec_glob)
-    write_json(args.output_dir / "quality-ratchet-lint.json", lint_payload)
-
-    mcp_payload = run_json_command(
-        [
-            sys.executable,
-            str(args.root_dir / "tools" / "check-mcp-allowlist.py"),
-            "--cli-file",
-            str(args.cli_file),
-            "--shell-file",
-            str(args.shell_file),
-            "--build-file",
-            str(args.build_file),
-            "--json",
-        ],
-        allowed_exit_codes={0, 1},
-    )
-    write_json(args.output_dir / "quality-ratchet-mcp-allowlist.json", mcp_payload)
-
-    source_payload = run_json_command(
-        [
-            sys.executable,
-            str(args.root_dir / "tools" / "check-source-registry.py"),
-            "--sources-dir",
-            str(args.sources_dir),
-            "--sources-mod",
-            str(args.sources_mod),
-            "--health-file",
-            str(args.health_file),
-            "--json",
-        ],
-        allowed_exit_codes={0, 1},
-    )
-    write_json(args.output_dir / "quality-ratchet-source-registry.json", source_payload)
-
-    dead_code_payload = check_dead_code_allowances(args.root_dir)
-    write_json(
-        args.output_dir / "quality-ratchet-dead-code-allowances.json",
-        dead_code_payload,
+    rust_snapshot = (
+        load_rust_source_snapshot(args.root_dir)
+        if {
+            "dead_code_allowances",
+            "source_attributed_status_typing",
+        }.intersection(selected_audits)
+        else None
     )
 
-    cli_line_cap_payload = check_cli_line_cap(args.root_dir, cli_line_cap_allowlist)
-    write_json(args.output_dir / "quality-ratchet-cli-line-cap.json", cli_line_cap_payload)
+    if "spec_lint" in selected_audits:
+        payloads["spec_lint"] = lint_specs(
+            resolve_spec_paths(args.spec_glob), args.spec_glob
+        )
+        write_json(args.output_dir / "quality-ratchet-lint.json", payloads["spec_lint"])
 
-    policy_module_lines = {
-        relative: len((args.root_dir / relative).read_text(encoding="utf-8").splitlines())
-        for relative in SECTION_OUTCOME_POLICY_MODULES
+    if "mcp_allowlist" in selected_audits:
+        payloads["mcp_allowlist"] = run_json_command(
+            [
+                sys.executable,
+                str(args.root_dir / "tools" / "check-mcp-allowlist.py"),
+                "--cli-file",
+                str(args.cli_file),
+                "--shell-file",
+                str(args.shell_file),
+                "--build-file",
+                str(args.build_file),
+                "--json",
+            ],
+            allowed_exit_codes={0, 1},
+        )
+        write_json(
+            args.output_dir / "quality-ratchet-mcp-allowlist.json",
+            payloads["mcp_allowlist"],
+        )
+
+    if "source_registry" in selected_audits:
+        payloads["source_registry"] = run_json_command(
+            [
+                sys.executable,
+                str(args.root_dir / "tools" / "check-source-registry.py"),
+                "--sources-dir",
+                str(args.sources_dir),
+                "--sources-mod",
+                str(args.sources_mod),
+                "--health-file",
+                str(args.health_file),
+                "--json",
+            ],
+            allowed_exit_codes={0, 1},
+        )
+        write_json(
+            args.output_dir / "quality-ratchet-source-registry.json",
+            payloads["source_registry"],
+        )
+
+    simple_audits = {
+        "dead_code_allowances": (
+            "quality-ratchet-dead-code-allowances.json",
+            lambda: check_dead_code_allowances(args.root_dir, rust_snapshot),
+        ),
+        "cli_line_cap": (
+            "quality-ratchet-cli-line-cap.json",
+            lambda: check_cli_line_cap(args.root_dir, cli_line_cap_allowlist),
+        ),
+        "experiment_results": (
+            "quality-ratchet-experiment-results.json",
+            lambda: check_architecture_experiment_results(args.root_dir),
+        ),
+        "terminal_output_boundaries": (
+            "quality-ratchet-terminal-output-boundaries.json",
+            lambda: check_terminal_output_boundaries(args.root_dir),
+        ),
+        "cli_surface_contract": (
+            "quality-ratchet-cli-surface-contract.json",
+            lambda: check_cli_surface_contract(args.root_dir),
+        ),
+        "remote_resource_bounds": (
+            "quality-ratchet-remote-resource-bounds.json",
+            lambda: check_remote_resource_bounds(args.root_dir),
+        ),
+        "source_state_registry": (
+            "quality-ratchet-source-state-registry.json",
+            lambda: check_source_state_registry(args.root_dir),
+        ),
+        "source_attributed_status_typing": (
+            "quality-ratchet-source-status-typing.json",
+            lambda: check_source_attributed_status_is_typed(args.root_dir, rust_snapshot),
+        ),
     }
-    oversized_policy_modules = [
-        {"path": path, "lines": lines, "cap": SECTION_OUTCOME_POLICY_LINE_CAP}
-        for path, lines in policy_module_lines.items()
-        if lines > SECTION_OUTCOME_POLICY_LINE_CAP
-    ]
-    section_outcome_policy_payload = {
-        "status": "fail" if oversized_policy_modules else "pass",
-        "cap": SECTION_OUTCOME_POLICY_LINE_CAP,
-        "files": policy_module_lines,
-        "oversized_files": oversized_policy_modules,
-    }
-    write_json(
-        args.output_dir / "quality-ratchet-section-outcome-policy-line-cap.json",
-        section_outcome_policy_payload,
-    )
+    for audit_name, (artifact_name, check) in simple_audits.items():
+        if audit_name not in selected_audits:
+            continue
+        payloads[audit_name] = check()
+        write_json(args.output_dir / artifact_name, payloads[audit_name])
 
-    experiment_results_payload = check_architecture_experiment_results(args.root_dir)
-    write_json(
-        args.output_dir / "quality-ratchet-experiment-results.json",
-        experiment_results_payload,
-    )
+    if "section_outcome_policy_line_cap" in selected_audits:
+        policy_module_lines = {
+            relative: len(
+                (args.root_dir / relative).read_text(encoding="utf-8").splitlines()
+            )
+            for relative in SECTION_OUTCOME_POLICY_MODULES
+        }
+        oversized_policy_modules = [
+            {"path": path, "lines": lines, "cap": SECTION_OUTCOME_POLICY_LINE_CAP}
+            for path, lines in policy_module_lines.items()
+            if lines > SECTION_OUTCOME_POLICY_LINE_CAP
+        ]
+        payloads["section_outcome_policy_line_cap"] = {
+            "status": "fail" if oversized_policy_modules else "pass",
+            "cap": SECTION_OUTCOME_POLICY_LINE_CAP,
+            "files": policy_module_lines,
+            "oversized_files": oversized_policy_modules,
+        }
+        write_json(
+            args.output_dir / "quality-ratchet-section-outcome-policy-line-cap.json",
+            payloads["section_outcome_policy_line_cap"],
+        )
 
-    terminal_output_payload = check_terminal_output_boundaries(args.root_dir)
-    write_json(
-        args.output_dir / "quality-ratchet-terminal-output-boundaries.json",
-        terminal_output_payload,
-    )
-
-    cli_surface_payload = check_cli_surface_contract(args.root_dir)
-    write_json(
-        args.output_dir / "quality-ratchet-cli-surface-contract.json",
-        cli_surface_payload,
-    )
-
-    remote_resource_payload = check_remote_resource_bounds(args.root_dir)
-    write_json(
-        args.output_dir / "quality-ratchet-remote-resource-bounds.json",
-        remote_resource_payload,
-    )
-
-    source_state_payload = check_source_state_registry(args.root_dir)
-    write_json(
-        args.output_dir / "quality-ratchet-source-state-registry.json",
-        source_state_payload,
-    )
-
-    source_status_typing_payload = check_source_attributed_status_is_typed(args.root_dir)
-    write_json(
-        args.output_dir / "quality-ratchet-source-status-typing.json",
-        source_status_typing_payload,
-    )
-
-    statuses = [
-        lint_payload["status"],
-        mcp_payload.get("status"),
-        source_payload.get("status"),
-        dead_code_payload.get("status"),
-        cli_line_cap_payload.get("status"),
-        section_outcome_policy_payload.get("status"),
-        experiment_results_payload.get("status"),
-        terminal_output_payload.get("status"),
-        cli_surface_payload.get("status"),
-        remote_resource_payload.get("status"),
-        source_state_payload.get("status"),
-        source_status_typing_payload.get("status"),
-    ]
+    statuses = [payload.get("status") for payload in payloads.values()]
     if "error" in statuses:
         summary_status = "error"
     elif all(status == "pass" for status in statuses):
@@ -1924,23 +1982,13 @@ def main() -> int:
 
     summary_payload = {
         "status": summary_status,
-        "lint": lint_payload,
-        "mcp_allowlist": {"status": mcp_payload.get("status")},
-        "source_registry": {"status": source_payload.get("status")},
-        "dead_code_allowances": {"status": dead_code_payload.get("status")},
-        "cli_line_cap": {"status": cli_line_cap_payload.get("status")},
-        "section_outcome_policy_line_cap": {
-            "status": section_outcome_policy_payload.get("status")
-        },
-        "experiment_results": {"status": experiment_results_payload.get("status")},
-        "terminal_output_boundaries": {"status": terminal_output_payload.get("status")},
-        "cli_surface_contract": {"status": cli_surface_payload.get("status")},
-        "remote_resource_bounds": {"status": remote_resource_payload.get("status")},
-        "source_state_registry": {"status": source_state_payload.get("status")},
-        "source_attributed_status_typing": {
-            "status": source_status_typing_payload.get("status")
-        },
+        "audits": selected_audits,
     }
+    for audit_name, payload in payloads.items():
+        summary_name = "lint" if audit_name == "spec_lint" else audit_name
+        summary_payload[summary_name] = (
+            payload if audit_name == "spec_lint" else {"status": payload.get("status")}
+        )
     write_json(args.output_dir / "quality-ratchet-summary.json", summary_payload)
     return 0 if summary_status == "pass" else 1
 

@@ -25,6 +25,7 @@ def test_quality_ratchet_runs_whole_surface_cli_contract(tmp_path: Path) -> None
     output_dir = tmp_path / "ratchet-output"
     env = os.environ.copy()
     env["QUALITY_RATCHET_OUTPUT_DIR"] = str(output_dir)
+    env["QUALITY_RATCHET_AUDITS"] = "cli_surface_contract"
 
     result = subprocess.run(
         ["bash", str(WRAPPER_SCRIPT)],

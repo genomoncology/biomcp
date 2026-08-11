@@ -33,9 +33,13 @@ def _run_python_script(
     )
 
 
-def _run_wrapper(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+def _run_wrapper(
+    env: dict[str, str], *, audits: str | None = "spec_lint"
+) -> subprocess.CompletedProcess[str]:
     wrapper_env = os.environ.copy()
     wrapper_env.update(env)
+    if audits is not None:
+        wrapper_env["QUALITY_RATCHET_AUDITS"] = audits
     return subprocess.run(
         ["bash", str(WRAPPER_SCRIPT)],
         cwd=REPO_ROOT,
@@ -504,6 +508,34 @@ def test_dead_code_allowance_audit_does_not_match_deny_group(tmp_path: Path) -> 
     assert payload["allowances_checked"] == 0
 
 
+def test_full_rust_audits_share_one_source_snapshot(tmp_path: Path, monkeypatch) -> None:
+    fixture_root = tmp_path / "rust-snapshot"
+    _write_dead_code_fixture(
+        fixture_root,
+        "// dead-code reason: fixture-only helper\n"
+        "#[allow(dead_code)]\n"
+        "fn helper() {}\n"
+        "#[derive(Serialize)]\n"
+        "struct ProviderState { source: String, status: String }\n",
+    )
+    ratchet = _load_ratchet_module()
+    original_mask = ratchet._mask_rust_non_code
+    mask_calls = 0
+
+    def recording_mask(source: str) -> str:
+        nonlocal mask_calls
+        mask_calls += 1
+        return original_mask(source)
+
+    monkeypatch.setattr(ratchet, "_mask_rust_non_code", recording_mask)
+    snapshot = ratchet.load_rust_source_snapshot(fixture_root)
+
+    ratchet.check_dead_code_allowances(fixture_root, snapshot)
+    ratchet.check_source_attributed_status_is_typed(fixture_root, snapshot)
+
+    assert mask_calls == len(snapshot.sources) == 1
+
+
 def test_source_registry_audit_passes_for_repo() -> None:
     result = _run_python_script(SOURCE_SCRIPT, "--json")
 
@@ -565,7 +597,8 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
         {
             "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
             "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
-        }
+        },
+        audits=None,
     )
 
     assert result.returncode == 0, result.stderr
@@ -589,6 +622,30 @@ def test_wrapper_writes_summary_artifacts_for_pass_fixture(tmp_path: Path) -> No
     assert summary["dead_code_allowances"]["status"] == "pass"
     assert summary["terminal_output_boundaries"]["status"] == "pass"
     assert "smoke_lane" not in summary
+
+
+def test_wrapper_can_run_only_the_named_spec_lint_audit(tmp_path: Path) -> None:
+    spec_path = _write_clean_spec(tmp_path / "spec")
+    output_dir = tmp_path / "out"
+
+    result = _run_wrapper(
+        {
+            "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
+            "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
+            "QUALITY_RATCHET_AUDITS": "spec_lint",
+        }
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (output_dir / "quality-ratchet-lint.json").exists()
+    assert not (output_dir / "quality-ratchet-mcp-allowlist.json").exists()
+    assert not (output_dir / "quality-ratchet-source-registry.json").exists()
+
+    summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
+    assert summary["status"] == "pass"
+    assert summary["audits"] == ["spec_lint"]
+    assert summary["lint"]["status"] == "pass"
+    assert "mcp_allowlist" not in summary
 
 
 def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypass(
@@ -798,6 +855,8 @@ def test_wrapper_is_thin_shell_around_committed_python_tool() -> None:
     assert "tools/check-quality-ratchet.py" in wrapper
     assert "spec/**/*.md" in wrapper
     assert "QUALITY_RATCHET_CLI_LINE_CAP_ALLOWLIST" in wrapper
+    assert "QUALITY_RATCHET_AUDITS" in wrapper
+    assert "--audit" in wrapper
     assert "tools/spec_smoke_args.py" not in wrapper
 
 
@@ -895,13 +954,14 @@ def test_wrapper_propagates_mcp_failures_from_override_paths(tmp_path: Path) -> 
             "QUALITY_RATCHET_CLI_FILE": str(fixture_root / "src/cli/mod.rs"),
             "QUALITY_RATCHET_SHELL_FILE": str(fixture_root / "src/mcp/shell.rs"),
             "QUALITY_RATCHET_BUILD_FILE": str(fixture_root / "build.rs"),
-        }
+        },
+        audits="mcp_allowlist",
     )
 
     assert result.returncode == 1
     summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
     assert summary["status"] == "fail"
-    assert summary["lint"]["status"] == "pass"
+    assert summary["audits"] == ["mcp_allowlist"]
     assert summary["mcp_allowlist"]["status"] == "fail"
 
 
@@ -1192,7 +1252,8 @@ def test_remote_resource_bound_ratchet_detects_buffer_and_archive_regressions(
         {
             "QUALITY_RATCHET_OUTPUT_DIR": str(output_dir),
             "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
-        }
+        },
+        audits="remote_resource_bounds",
     )
     assert result.returncode == 0, result.stderr
     summary = json.loads((output_dir / "quality-ratchet-summary.json").read_text())
