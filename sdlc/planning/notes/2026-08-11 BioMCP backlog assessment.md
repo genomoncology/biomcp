@@ -273,3 +273,10 @@ the NCI filter correction.
 Before the final repository gates, the top-level unfinished ticket count is
 67 including the stale completed 0951 copy. Removing that stale copy leaves
 66, exactly matching the planned reduction from 81.
+
+The sealed candidate passed `make lint`, `make test`, `make spec`, and
+`make full-feature-check`. Batch integration also removed shared-fixture
+collisions for NIH Reporter and OpenFDA and serialized standalone CT.gov tests
+against the routine fixture lock. The all-feature optimized build took 7m28s
+from a cold release target; that release-only compile/link remains the largest
+single measured build cost after the routine provider setup was consolidated.
