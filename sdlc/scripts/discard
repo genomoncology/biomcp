@@ -114,12 +114,39 @@ remove_local_branch() {
 }
 
 remove_origin_branch() {
-	if git -C "$REPO" ls-remote --exit-code --heads origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
-		git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1
-	else
-		status=$?
-		[ "$status" -eq 2 ]
-	fi
+	attempt_tip=
+	failed=0
+	round=1
+	while [ "$round" -le 3 ]; do
+		if observed=$(timeout -k 10 60 git -C "$REPO" ls-remote --exit-code --heads origin "refs/heads/$BRANCH" 2>/dev/null); then
+			tip=$(printf '%s\n' "$observed" | awk '{print $1}')
+			# This run's remote claim is an ancestor of its local branch. Refuse a
+			# replacement claim seen before deletion as well as one moved mid-retry.
+			if ! git -C "$REPO" merge-base --is-ancestor "$tip" "refs/heads/$BRANCH" >/dev/null 2>&1; then
+				return 1
+			fi
+			if [ -z "$attempt_tip" ]; then
+				attempt_tip=$tip
+			elif [ "$attempt_tip" != "$tip" ]; then
+				return 1
+			fi
+			if timeout -k 10 60 git -C "$REPO" push --quiet --force-with-lease="refs/heads/$BRANCH:$attempt_tip" origin --delete "$BRANCH" >/dev/null 2>&1; then
+				return "$failed"
+			fi
+			failed=1
+		else
+			status=$?
+			if [ "$status" -eq 2 ]; then
+				return "$failed"
+			fi
+			failed=1
+		fi
+		if [ "$round" -lt 3 ]; then
+			sleep 1
+		fi
+		round=$((round + 1))
+	done
+	return 1
 }
 
 preserve_attempt_tip() {
@@ -164,8 +191,8 @@ fi
 if [ "$OUTCOME" = "failed" ]; then
 	echo "discard: $QUEUE_ID failed — removed $TREE, keeping $BRANCH for reading" >&2
 elif "$DELETE_BRANCHES"; then
-	cleanup "local branch $BRANCH" remove_local_branch
 	cleanup "origin branch $BRANCH" remove_origin_branch
+	cleanup "local branch $BRANCH" remove_local_branch
 fi
 
 if [ -n "$cleanup_failures" ]; then
