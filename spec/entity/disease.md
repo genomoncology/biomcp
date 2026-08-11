@@ -61,10 +61,10 @@ The fixture records the requests emitted by production clients for identity,
 phenotype, funding, and survival data.
 
 ```bash
-grep -F 'GET /mydisease/query?q=%28disease_ontology.name%3Achronic+myeloid+leukemia' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'size=15'
+grep -F 'GET /mydisease/query?q=%28disease_ontology.name%3Achronic+myeloid+leukemia' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'size=15&from=0'
 grep -F 'GET /monarch/v3/api/association?subject=MONDO%3A0011996' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | grep -F 'limit=80' | mustmatch like 'object_category=biolink%3APhenotypicFeature'
 grep -F 'POST /nih/projects/search' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like '"search_text":"\"Marfan syndrome\""'
-grep -F 'GET /seer/render_region_5.php' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'site=97'
+grep -F 'GET /seer/render_region_5.php' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'site=97&data_type=4'
 ```
 
 ## Synonym Rescue

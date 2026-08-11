@@ -46,7 +46,7 @@ JSON callers receive the same typed disease follow-up without an unsupported phe
 The fixture fails closed outside the recorded HPO query and the exact Monarch term sets and limits.
 
 ```bash
-grep -F 'GET /hpo/search?q=seizure' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'q=seizure'
-grep -F 'GET /monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=3' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'limit=3'
-grep -F 'GET /monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=1' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'limit=1'
+grep -F 'GET /hpo/search?q=seizure' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'search?q=seizure'
+grep -F 'GET /monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=3' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'Diseases?limit=3'
+grep -F 'GET /monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases?limit=1' "$BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG" | mustmatch like 'Diseases?limit=1'
 ```

@@ -14,6 +14,7 @@ HELPER_MODULES = {
     "pmc_article",
     "provider_url_policy",
     "rate_limit",
+    "request_plan_transport",
 }
 EXEMPT_MODULES = {
     "cvx",

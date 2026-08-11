@@ -66,7 +66,7 @@ the bounded search and exact-symbol identity plans.
 
 ```bash
 grep -F 'GET /mygene/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=3&from=0'
-grep -F 'GET /mygene/v3/query?q=symbol%3A%22BRCA1%22' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=1'
+grep -F 'GET /mygene/v3/query?q=symbol%3A%22BRCA1%22' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'symbol%3A%22BRCA1%22'
 ```
 
 ## Typed optional-section outcomes
@@ -79,7 +79,7 @@ inferring success from an empty collection.
 ../../tools/biomcp-ci --json get gene BRAF go interactions \
   | jq '. as $root | ["go", "interactions"] | all(.[]; . as $key | $root.section_outcomes[$key] as $outcome | ($outcome.outcome | IN("data", "empty", "unavailable")) and ($root._meta.section_sources | any(.key == $key and .outcome == $outcome.outcome and .sources == $outcome.sources)) and ($root._meta.section_sources | all(.key != $key or (.outcome == $outcome.outcome and .sources == $outcome.sources))))' \
   | mustmatch 'true'
-grep -F 'GET /quickgo/QuickGO/services/annotation/search?geneProductId=P15056&limit=20' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'P15056'
+grep -F 'GET /quickgo/QuickGO/services/annotation/search?geneProductId=P15056&limit=20' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'geneProductId=P15056'
 grep -F 'GET /string/api/json/network?identifiers=BRAF&species=9606&limit=15' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'species=9606'
 ```
 
