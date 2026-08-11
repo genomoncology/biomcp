@@ -1173,6 +1173,102 @@
       }
     },
     {
+      "path": "mychem/query_keytruda_get_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=Keytruda&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:01:20Z",
+        "sha256": "487e07bd6cdd84bd3fad81c346858b7cdd785d51e3bb3b94de7c189349ab927b",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_imatinib_get_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=imatinib&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:01:20Z",
+        "sha256": "3b5e2a9e498da8fa5d7dd2551d83a7ff8372ba8aa8dd22b0730086da232202e5",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_marfan_indication_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=drugcentral.drug_use.indication.concept_name%3A%22Marfan+syndrome%22&size=6&from=0&fields=drugbank.id%2Cdrugbank.name%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:01:20Z",
+        "sha256": "9bd780cb0a05d5e500968575213074bfec6381d8c6c5373c1d7b0d67097f699a",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_pembrolizumab_get_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=pembrolizumab&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:01:20Z",
+        "sha256": "17e4e556d3c9f42b5abb79f28f5af4e1903a5df1ebebac34f53db8e4708e9fcc",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "mychem/query_trastuzumab_search_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=trastuzumab&size=6&from=0&fields=drugbank.id%2Cdrugbank.name%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cchembl.atc_classifications%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cunii.unii%2Cunii.display_name%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:01:20Z",
+        "sha256": "27031767896f35863fcbdf44b3808ad5d308094325004150876bcfe86a2bf95e",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
+      "path": "openfda/drugsfda_imatinib_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "openFDA",
+        "request": "https://api.fda.gov/drug/drugsfda.json?search=openfda.generic_name%3A%22imatinib+mesylate%22+OR+openfda.brand_name%3A%22imatinib+mesylate%22+OR+products.brand_name%3A%22imatinib+mesylate%22&limit=8&skip=0",
+        "captured_at": "2026-08-11T22:01:20Z",
+        "sha256": "fb1f33734d49928efa74061b49055bfe6e9b1fb9e834d859e11f791624d15f1c",
+        "minimization_or_redaction": "Reduced to the NDA021588 identity, first product, first original submission, and openFDA names consumed by the regulatory renderer.",
+        "provider_origin_statement": "Bytes were recorded from the public openFDA response through BioMCP's production request path before permitted minimization."
+      }
+    },
+    {
+      "path": "openfda/label_keytruda_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "openFDA",
+        "request": "https://api.fda.gov/drug/label.json?search=openfda.generic_name%3A%22Keytruda%22+OR+openfda.brand_name%3A%22Keytruda%22&limit=5&sort=effective_time%3Adesc",
+        "captured_at": "2026-08-11T22:01:20Z",
+        "sha256": "fc3b77178946921dae0d4585195f3add42c886d93d237ee6d0a516b2d9790f98",
+        "minimization_or_redaction": "Reduced to result metadata, set identifiers, and openFDA brand and generic names consumed by canonicalization.",
+        "provider_origin_statement": "Bytes were recorded from the public openFDA response through BioMCP's production request path before permitted minimization."
+      }
+    },
+    {
+      "path": "mychem/query_warfarin_get_20260811.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "MyChem.info",
+        "request": "https://mychem.info/v1/query?q=warfarin&size=25&from=0&fields=drugbank.id%2Cdrugbank.name%2Cdrugbank.synonyms%2Cdrugbank.drug_interactions%2Cchembl.molecule_chembl_id%2Cchembl.molecule_type%2Cchembl.pref_name%2Cchembl.drug_mechanisms.action_type%2Cchembl.drug_mechanisms.target_name%2Cchembl.drug_mechanisms.mechanism_of_action%2Cgtopdb.name%2Cgtopdb.interaction_targets.symbol%2Cdrugcentral.drug_use.indication.concept_name%2Cdrugcentral.approval.agency%2Cdrugcentral.approval.date%2Cndc.nonproprietaryname%2Cndc.pharm_classes%2Cunii.unii%2Cunii.display_name%2Cchebi.name%2Copenfda.generic_name%2Copenfda.brand_name",
+        "captured_at": "2026-08-11T22:12:00Z",
+        "sha256": "706ef83fb0581f470cab0663285f2f3c8b8d32b231a6c4ad21a73e76fd16b4fb",
+        "minimization_or_redaction": "No fields removed; JSON whitespace was normalized after capture.",
+        "provider_origin_statement": "Bytes were recorded from the public MyChem.info response through BioMCP's production request path."
+      }
+    },
+    {
       "path": "myvariant/get_pten_grch38_20260806.json",
       "classification": "real_and_receipted",
       "receipt": {

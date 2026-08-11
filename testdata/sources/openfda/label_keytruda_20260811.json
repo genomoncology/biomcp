@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "results": {
+      "skip": 0,
+      "limit": 5,
+      "total": 2
+    }
+  },
+  "results": [
+    {
+      "set_id": "097d166f-b73b-41d3-9b37-7653cd2a0c41",
+      "openfda": {
+        "brand_name": [
+          "KEYTRUDA QLEX"
+        ],
+        "generic_name": [
+          "PEMBROLIZUMAB AND BERAHYALURONIDASE ALFA-PMPH"
+        ],
+        "spl_set_id": [
+          "097d166f-b73b-41d3-9b37-7653cd2a0c41"
+        ]
+      }
+    },
+    {
+      "set_id": "9333c79b-d487-4538-a9f0-71b91a02b287",
+      "openfda": {
+        "brand_name": [
+          "KEYTRUDA"
+        ],
+        "generic_name": [
+          "PEMBROLIZUMAB"
+        ],
+        "spl_set_id": [
+          "9333c79b-d487-4538-a9f0-71b91a02b287"
+        ]
+      }
+    }
+  ]
+}

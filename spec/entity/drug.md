@@ -87,36 +87,25 @@ columns operators need for procurement and regulatory review.
 Samsung Bioepis NL B.V.'
 ```
 
-## Targets & Trial Pivots
+## US Regulatory Detail
 
-Regional regulatory detail should not crowd out targetability or the related
-trial/adverse-event pivots that a clinician uses from the same card.
+The U.S. overlay must decode the Drugs@FDA response and preserve its source,
+application, product, and submission fields.
 
 ```bash
-../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch like '## Regulatory (EU - EMA)
-## Targets (ChEMBL / Open Targets)
-biomcp drug trials pembrolizumab'
-../../tools/biomcp-ci get drug pembrolizumab targets regulatory --region eu | mustmatch '/PDCD1\nMore:/'
+../../tools/biomcp-ci get drug imatinib regulatory --region us | mustmatch like '## Regulatory (US - Drugs@FDA)
+### NDA021588
+- Sponsor: NOVARTIS
+| GLEEVEC | TABLET | oral | Prescription |
+| ORIG | 1 | AP | 2003-04-18 |'
 ```
 
-## Truthful Source-Empty Interaction State
+## Observed Provider Requests
 
-DDInter empty states should be phrased as source empties. BioMCP must never
-turn a missing DDInter row into a claim that the anchor drug has no clinical
-interactions.
-
-```bash
-../../tools/biomcp-ci drug interactions daraxonrasib | mustmatch like 'current DDInter download bundle has no matching rows'
-../../tools/biomcp-ci drug interactions daraxonrasib | mustmatch not like 'no clinical interactions'
-```
-
-Uncovered drugs should also carry a structured coverage status so agents can
-branch on a source-coverage miss instead of treating an empty table as safety
-evidence.
+The routine fixture records the requests emitted by production clients. These
+checks keep method, route, query, paging, and requested field contracts visible.
 
 ```bash
-../../tools/biomcp-ci --json drug interactions dabigatran | mustmatch like '"coverage_status": "not_in_ddinter_coverage"'
-../../tools/biomcp-ci drug interactions dabigatran | mustmatch like 'current DDInter download bundle has no matching rows
-not_in_ddinter_coverage
-source coverage miss'
+grep -F 'GET /mychem/v1/query?q=trastuzumab&size=6&from=0&fields=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'chembl.molecule_chembl_id'
+grep -F 'GET /openfda/drug/drugsfda.json?search=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&limit=8&skip=0'
 ```

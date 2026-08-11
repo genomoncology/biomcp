@@ -1,0 +1,1386 @@
+{
+  "took": 28,
+  "total": 47,
+  "max_score": 15.152992,
+  "hits": [
+    {
+      "_id": "5Q7ZVV76EI",
+      "_score": 15.152992
+    },
+    {
+      "_id": "PJVWKTKQMONHTI-UHFFFAOYSA-N",
+      "_score": 11.929108,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "4-hydroxy-3-(3-oxo-1-phenylbutyl)-1-benzopyran-2-one"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "molecule_chembl_id": "CHEMBL1464",
+        "molecule_type": "Small molecule",
+        "pref_name": "WARFARIN"
+      },
+      "drugbank": {
+        "_license": "https://bit.ly/3Hikpvm",
+        "id": "DB00682",
+        "name": "Warfarin",
+        "synonyms": [
+          "4-Hydroxy-3-(3-oxo-1-phenylbutyl)coumarin",
+          "Coumafene",
+          "Warfarin",
+          "Warfarina",
+          "Zoocoumarin"
+        ]
+      },
+      "drugcentral": {
+        "_license": "http://bit.ly/2SeEhUy",
+        "approval": {
+          "agency": "FDA",
+          "date": "1954-06-08"
+        },
+        "drug_use": {
+          "indication": [
+            {
+              "concept_name": "Thromboembolism due to Prosthetic Heart Valves"
+            },
+            {
+              "concept_name": "Pulmonary thromboembolism"
+            },
+            {
+              "concept_name": "Thrombosis"
+            },
+            {
+              "concept_name": "Deep Vein Thrombosis with Pulmonary Embolism"
+            },
+            {
+              "concept_name": "Thromboembolic disorder"
+            },
+            {
+              "concept_name": "Pulmonary Thromboembolism Prevention"
+            },
+            {
+              "concept_name": "Cerebral embolism"
+            },
+            {
+              "concept_name": "Deep venous thrombosis"
+            },
+            {
+              "concept_name": "Myocardial Reinfarction Prevention"
+            },
+            {
+              "concept_name": "Prevention of Thromboembolism with Chronic Atrial Fibrillation"
+            },
+            {
+              "concept_name": "Prevention of deep vein thrombosis"
+            }
+          ]
+        }
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "interaction_targets": [
+          {
+            "symbol": "VKORC1"
+          }
+        ],
+        "name": "warfarin"
+      },
+      "ndc": [
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "WARFARIN SODIUM",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "WARFARIN SODIUM",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "warfarin sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "warfarin sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "warfarin sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "warfarin sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Warfarin Sodium",
+          "pharm_classes": [
+            "Vitamin K Inhibitors [MoA]",
+            "Vitamin K Antagonist [EPC]"
+          ]
+        }
+      ],
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "WARFARIN",
+        "unii": "5Q7ZVV76EI"
+      }
+    },
+    {
+      "_id": "67046-1525",
+      "_score": 11.031942,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "70518-4634",
+      "_score": 11.031942,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin Sodium",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "67046-1067",
+      "_score": 10.883501,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "70518-4368",
+      "_score": 10.883501,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin Sodium",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "70518-4635",
+      "_score": 10.883501,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin Sodium",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "70518-4636",
+      "_score": 10.883501,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin Sodium",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "70518-4637",
+      "_score": 10.883501,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin Sodium",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "50090-7229",
+      "_score": 10.7990265,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin Sodium",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "50090-7464",
+      "_score": 10.7990265,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin Sodium",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "71335-2563",
+      "_score": 10.7990265,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "67046-1463",
+      "_score": 10.7990265,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Warfarin",
+        "pharm_classes": [
+          "Vitamin K Inhibitors [MoA]",
+          "Vitamin K Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "ASZ12CF9OS",
+      "_score": 8.60689,
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "WARFARIN ALCOHOL",
+        "unii": "ASZ12CF9OS"
+      }
+    },
+    {
+      "_id": "CHEBI:10033",
+      "_score": 8.425177,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "warfarin"
+      }
+    },
+    {
+      "_id": "WSHYKIAQCMIPTB-UHFFFAOYSA-M",
+      "_score": 8.039183,
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Vitamin K epoxide reductase complex subunit 1"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL1200772",
+        "molecule_type": "Small molecule",
+        "pref_name": "WARFARIN POTASSIUM"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "WARFARIN POTASSIUM",
+        "unii": "I47IU4FOCO"
+      }
+    },
+    {
+      "_id": "KYITYFHKDODNCQ-UHFFFAOYSA-M",
+      "_score": 7.8694534,
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Vitamin K epoxide reductase complex subunit 1"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL1200879",
+        "molecule_type": "Small molecule",
+        "pref_name": "WARFARIN SODIUM"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "WARFARIN SODIUM",
+        "unii": "6153CWM0CL"
+      }
+    },
+    {
+      "_id": "C0376218",
+      "_score": 7.1367855
+    },
+    {
+      "_id": "C0282378",
+      "_score": 7.1367855
+    },
+    {
+      "_id": "CHEBI:50393",
+      "_score": 7.0558643,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "warfarin(1-)"
+      }
+    },
+    {
+      "_id": "CHEBI:32301",
+      "_score": 7.0558643,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "warfarin potassium"
+      }
+    },
+    {
+      "_id": "C0148684",
+      "_score": 7.0558643
+    },
+    {
+      "_id": "4D7D987PGU",
+      "_score": 6.960907
+    },
+    {
+      "_id": "DDCYHYKUMVMBKS-UHFFFAOYSA-N",
+      "_score": 6.960907,
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "molecule_chembl_id": "CHEMBL232232",
+        "molecule_type": "Small molecule",
+        "pref_name": "WARFARIN TRIFLATE"
+      }
+    },
+    {
+      "_id": "CHEBI:10034",
+      "_score": 6.9068966,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "warfarin sodium"
+      }
+    }
+  ]
+}

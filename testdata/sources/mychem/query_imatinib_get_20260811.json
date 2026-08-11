@@ -1,0 +1,638 @@
+{
+  "took": 16,
+  "total": 15,
+  "max_score": 11.843231,
+  "hits": [
+    {
+      "_id": "68001-623",
+      "_score": 11.843231,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Imatinib Mesylate",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "0832-0532",
+      "_score": 11.843231,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "imatinib mesylate",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "31722-297",
+      "_score": 11.695049,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "IMATINIB MESYLATE",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "60687-882",
+      "_score": 11.695049,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Imatinib Mesylate",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "0078-1490",
+      "_score": 11.695049,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "imatinib mesylate",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "68001-622",
+      "_score": 11.695049,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "Imatinib Mesylate",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "81927-201",
+      "_score": 11.571827,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "imatinib oral",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "31722-296",
+      "_score": 11.571827,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "IMATINIB MESYLATE",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "0832-0533",
+      "_score": 11.571827,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "imatinib mesylate",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "48433-049",
+      "_score": 11.571827,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "imatinib",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "48433-050",
+      "_score": 11.571827,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "imatinib",
+        "pharm_classes": [
+          "Kinase Inhibitor [EPC]",
+          "Cytochrome P450 3A4 Inhibitors [MoA]",
+          "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+          "Cytochrome P450 2D6 Inhibitors [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "KTUFNOKKBVMGRW-UHFFFAOYSA-N",
+      "_score": 9.627935,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "imatinib"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "molecule_chembl_id": "CHEMBL941",
+        "molecule_type": "Small molecule",
+        "pref_name": "IMATINIB"
+      },
+      "drugbank": {
+        "_license": "https://bit.ly/3Hikpvm",
+        "id": "DB00619",
+        "name": "Imatinib",
+        "synonyms": [
+          "Imatinib",
+          "Imatinibum",
+          "α-(4-methyl-1-piperazinyl)-3'-((4-(3-pyridyl)-2-pyrimidinyl)amino)-p-toluidide"
+        ]
+      },
+      "drugcentral": {
+        "_license": "http://bit.ly/2SeEhUy",
+        "approval": [
+          {
+            "agency": "EMA",
+            "date": "2001-11-07"
+          },
+          {
+            "agency": "FDA",
+            "date": "2001-05-10"
+          }
+        ],
+        "drug_use": {
+          "indication": [
+            {
+              "concept_name": "Chronic Myelocytic Leukemia Accelerated Phase"
+            },
+            {
+              "concept_name": "Systemic mast cell disease"
+            },
+            {
+              "concept_name": "Chronic phase chronic myeloid leukemia"
+            },
+            {
+              "concept_name": "Blastic phase chronic myeloid leukemia"
+            },
+            {
+              "concept_name": "Philadelphia Chromosome Positive Chronic Myelocytic Leukemia"
+            },
+            {
+              "concept_name": "Chronic eosinophilic leukemia"
+            },
+            {
+              "concept_name": "Philadelphia chromosome-positive acute lymphoblastic leukemia"
+            },
+            {
+              "concept_name": "Myelodysplastic/myeloproliferative diseases with re-arrangements of the gene for platelet-derived growth factor receptor (PDGFR)"
+            },
+            {
+              "concept_name": "Dermatofibrosarcoma protuberans"
+            },
+            {
+              "concept_name": "Idiopathic hypereosinophilic syndrome"
+            },
+            {
+              "concept_name": "Gastrointestinal stromal tumor"
+            }
+          ]
+        }
+      },
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "interaction_targets": [
+          {
+            "symbol": "DDR1"
+          },
+          {
+            "symbol": "DDR2"
+          },
+          {
+            "symbol": "ABL1"
+          }
+        ],
+        "name": "imatinib"
+      },
+      "ndc": [
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Protein Kinase Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Protein Kinase Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Protein Kinase Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Protein Kinase Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "Imatinib Mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        },
+        {
+          "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+          "nonproprietaryname": "imatinib mesylate",
+          "pharm_classes": [
+            "Kinase Inhibitor [EPC]",
+            "Cytochrome P450 3A4 Inhibitors [MoA]",
+            "Bcr-Abl Tyrosine Kinase Inhibitors [MoA]",
+            "Cytochrome P450 2D6 Inhibitors [MoA]"
+          ]
+        }
+      ],
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "IMATINIB",
+        "unii": "BKJ8M8G5HI"
+      }
+    },
+    {
+      "_id": "C0939537",
+      "_score": 7.728941
+    },
+    {
+      "_id": "GYQHZALGPJRESJ-UHFFFAOYSA-N",
+      "_score": 6.9961452,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "linkable imatinib analogue"
+      }
+    },
+    {
+      "_id": "YLMAHDNUQAMNNX-UHFFFAOYSA-N",
+      "_score": 3.464304,
+      "chebi": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "name": "imatinib methanesulfonate"
+      },
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Tyrosine-protein kinase ABL1"
+          },
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Platelet-derived growth factor receptor beta"
+          },
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Mast/stem cell growth factor receptor Kit"
+          },
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Bcr/Abl fusion protein"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL1642",
+        "molecule_type": "Small molecule",
+        "pref_name": "IMATINIB MESYLATE"
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "IMATINIB MESYLATE",
+        "unii": "8A1O1M485B"
+      }
+    }
+  ]
+}

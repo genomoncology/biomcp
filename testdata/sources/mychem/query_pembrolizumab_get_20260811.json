@@ -1,0 +1,242 @@
+{
+  "took": 6,
+  "total": 14,
+  "max_score": 16.28284,
+  "hits": [
+    {
+      "_id": "0006-3026",
+      "_score": 16.28284,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "pembrolizumab",
+        "pharm_classes": [
+          "Programmed Death Receptor-1 Blocking Antibody [EPC]",
+          "Programmed Death Receptor-1-directed Antibody Interactions [MoA]"
+        ]
+      }
+    },
+    {
+      "_id": "DPT0O3T46P",
+      "_score": 11.5347,
+      "drugbank": {
+        "_license": "https://bit.ly/3Hikpvm",
+        "id": "DB09037",
+        "name": "Pembrolizumab",
+        "synonyms": [
+          "ABP 234",
+          "GME751",
+          "Lambrolizumab",
+          "Pembrolizumab"
+        ]
+      },
+      "drugcentral": {
+        "_license": "http://bit.ly/2SeEhUy",
+        "approval": [
+          {
+            "agency": "PMDA",
+            "date": "2016-09-28"
+          },
+          {
+            "agency": "EMA",
+            "date": "2015-07-17"
+          },
+          {
+            "agency": "FDA",
+            "date": "2014-09-04"
+          }
+        ],
+        "drug_use": {
+          "indication": [
+            {
+              "concept_name": "Non-small cell lung cancer"
+            },
+            {
+              "concept_name": "Metastatic malignant melanoma"
+            },
+            {
+              "concept_name": "Metastatic renal cell carcinoma"
+            },
+            {
+              "concept_name": "Malignant tumor of head and/or neck"
+            },
+            {
+              "concept_name": "Microsatellite instability-high colorectal cancer"
+            },
+            {
+              "concept_name": "Triple negative breast neoplasms"
+            },
+            {
+              "concept_name": "Classical Hodgkin lymphoma"
+            },
+            {
+              "concept_name": "Unresectable urothelial carcinoma"
+            },
+            {
+              "concept_name": "Squamous cell carcinoma of esophagus"
+            },
+            {
+              "concept_name": "Endometrial carcinoma progressing after chemotherapy"
+            },
+            {
+              "concept_name": "Advanced or recurrent cervical cancer"
+            },
+            {
+              "concept_name": "HER2-negative breast cancer"
+            }
+          ]
+        }
+      },
+      "unii": {
+        "_license": "http://bit.ly/2Pg8Oo9",
+        "display_name": "PEMBROLIZUMAB",
+        "unii": "DPT0O3T46P"
+      }
+    },
+    {
+      "_id": "CHEMBL3137343",
+      "_score": 11.390108,
+      "chembl": {
+        "_license": "http://bit.ly/2KAUCAm",
+        "drug_mechanisms": [
+          {
+            "action_type": "INHIBITOR",
+            "target_name": "Programmed cell death protein 1"
+          }
+        ],
+        "molecule_chembl_id": "CHEMBL3137343",
+        "molecule_type": "Antibody",
+        "pref_name": "PEMBROLIZUMAB"
+      },
+      "drugcentral": {
+        "_license": "http://bit.ly/2SeEhUy",
+        "approval": [
+          {
+            "agency": "PMDA",
+            "date": "2016-09-28"
+          },
+          {
+            "agency": "EMA",
+            "date": "2015-07-17"
+          },
+          {
+            "agency": "FDA",
+            "date": "2014-09-04"
+          }
+        ],
+        "drug_use": {
+          "indication": [
+            {
+              "concept_name": "Non-small cell lung cancer"
+            },
+            {
+              "concept_name": "Metastatic malignant melanoma"
+            },
+            {
+              "concept_name": "Metastatic renal cell carcinoma"
+            },
+            {
+              "concept_name": "Malignant tumor of head and/or neck"
+            },
+            {
+              "concept_name": "Microsatellite instability-high colorectal cancer"
+            },
+            {
+              "concept_name": "Triple negative breast neoplasms"
+            },
+            {
+              "concept_name": "Classical Hodgkin lymphoma"
+            },
+            {
+              "concept_name": "Unresectable urothelial carcinoma"
+            },
+            {
+              "concept_name": "Squamous cell carcinoma of esophagus"
+            },
+            {
+              "concept_name": "Endometrial carcinoma progressing after chemotherapy"
+            },
+            {
+              "concept_name": "Advanced or recurrent cervical cancer"
+            },
+            {
+              "concept_name": "HER2-negative breast cancer"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "_id": "PA166124615",
+      "_score": 10.860426
+    },
+    {
+      "_id": "0006-5083",
+      "_score": 9.240013,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "pembrolizumab and berahyaluronidase alfa-pmph",
+        "pharm_classes": [
+          "Programmed Death Receptor-1 Blocking Antibody [EPC]",
+          "Endoglycosidase [EPC]",
+          "Programmed Death Receptor-1-directed Antibody Interactions [MoA]",
+          "Glycoside Hydrolases [CS]"
+        ]
+      }
+    },
+    {
+      "_id": "0006-3083",
+      "_score": 9.124233,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "pembrolizumab and berahyaluronidase alfa-pmph",
+        "pharm_classes": [
+          "Programmed Death Receptor-1 Blocking Antibody [EPC]",
+          "Endoglycosidase [EPC]",
+          "Programmed Death Receptor-1-directed Antibody Interactions [MoA]",
+          "Glycoside Hydrolases [CS]"
+        ]
+      }
+    },
+    {
+      "_id": "354355033",
+      "_score": 3.65423
+    },
+    {
+      "_id": "187051801",
+      "_score": 3.6084442,
+      "gtopdb": {
+        "_license": "https://www.guidetopharmacology.org/download.jsp",
+        "interaction_targets": [
+          {
+            "symbol": "PDCD1"
+          }
+        ],
+        "name": "pembrolizumab"
+      }
+    },
+    {
+      "_id": "377483934",
+      "_score": 3.6084442
+    },
+    {
+      "_id": "384647091",
+      "_score": 3.6084442
+    },
+    {
+      "_id": "385327548",
+      "_score": 3.6084442
+    },
+    {
+      "_id": "347910395",
+      "_score": 3.60841
+    },
+    {
+      "_id": "387061105",
+      "_score": 3.60841
+    },
+    {
+      "_id": "194140938",
+      "_score": 3.60841
+    }
+  ]
+}

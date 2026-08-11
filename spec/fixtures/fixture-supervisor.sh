@@ -53,3 +53,9 @@ recover_disease_survival_orphans() {
   python3 "$_fixture_supervisor_dir/fixture-supervisor.py" recover-disease \
     "$parent" "spec-disease-survival."
 }
+
+recover_provider_contract_orphans() {
+  local parent="$1"
+  python3 "$_fixture_supervisor_dir/fixture-supervisor.py" recover-disease \
+    "$parent" "spec-provider-contract."
+}

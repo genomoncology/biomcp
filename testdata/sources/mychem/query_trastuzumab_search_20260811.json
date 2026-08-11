@@ -1,0 +1,79 @@
+{
+  "took": 3,
+  "total": 92,
+  "max_score": 14.627644,
+  "hits": [
+    {
+      "_id": "55513-132",
+      "_score": 14.627644,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "trastuzumab-anns",
+        "pharm_classes": [
+          "HER2/Neu/cerbB2 Antagonists [MoA]",
+          "HER2/neu Receptor Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "78206-147",
+      "_score": 14.627644,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "trastuzumab",
+        "pharm_classes": [
+          "HER2/Neu/cerbB2 Antagonists [MoA]",
+          "HER2/neu Receptor Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "83257-003",
+      "_score": 14.627644,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "trastuzumab-dkst",
+        "pharm_classes": [
+          "HER2/Neu/cerbB2 Antagonists [MoA]",
+          "HER2/neu Receptor Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "67457-991",
+      "_score": 14.627644,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "trastuzumab",
+        "pharm_classes": [
+          "HER2/Neu/cerbB2 Antagonists [MoA]",
+          "HER2/neu Receptor Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "55513-141",
+      "_score": 14.488232,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "trastuzumab-anns",
+        "pharm_classes": [
+          "HER2/Neu/cerbB2 Antagonists [MoA]",
+          "HER2/neu Receptor Antagonist [EPC]"
+        ]
+      }
+    },
+    {
+      "_id": "83257-001",
+      "_score": 14.488232,
+      "ndc": {
+        "_license": "https://www.fda.gov/AboutFDA/AboutThisWebsite/WebsitePolicies/default.htm#linking",
+        "nonproprietaryname": "trastuzumab-dkst",
+        "pharm_classes": [
+          "HER2/Neu/cerbB2 Antagonists [MoA]",
+          "HER2/neu Receptor Antagonist [EPC]"
+        ]
+      }
+    }
+  ]
+}

@@ -14,6 +14,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/article.md
   spec/entity/author.md
   spec/entity/disease-survival-fixture.md
+  spec/entity/drug.md
   spec/entity/drug-interactions.md
   spec/entity/pgx.md
   spec/entity/section-outcomes.md
@@ -49,7 +50,7 @@ SPEC_LIVE_PATHS=(
   spec/entity/article-graph-live.md
   spec/entity/diagnostic.md
   spec/entity/disease.md
-  spec/entity/drug.md
+  spec/entity/drug-live.md
   spec/entity/gene.md
   spec/entity/pathway.md
   spec/entity/phenotype.md
@@ -229,6 +230,17 @@ run_disease_survival_fixture() {
   register_cleanup cleanup_disease_survival_fixture
 }
 
+cleanup_provider_contract_fixture() {
+  bash spec/fixtures/cleanup-provider-contract-spec-fixture.sh "$ROOT"
+}
+
+run_provider_contract_fixture() {
+  [[ -x spec/fixtures/setup-provider-contract-spec-fixture.sh ]] || return 0
+  bash spec/fixtures/setup-provider-contract-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-provider-contract-env"
+  register_cleanup cleanup_provider_contract_fixture
+}
+
 cleanup_variant_identity_fixture() {
   bash spec/fixtures/cleanup-variant-identity-spec-fixture.sh "$ROOT"
 }
@@ -274,6 +286,7 @@ reap_stale_routine_fixtures() {
     cleanup-article-fulltext-source-fixture.sh \
     cleanup-ctgov-intervention-alias-spec-fixture.sh \
     cleanup-disease-survival-spec-fixture.sh \
+    cleanup-provider-contract-spec-fixture.sh \
     cleanup-variant-identity-spec-fixture.sh \
     cleanup-clingen-cspec-spec-fixture.sh \
     cleanup-cpic-spec-fixture.sh; do
@@ -496,6 +509,7 @@ case "$mode" in
       require_ctgov_fixture_env
     fi
     run_disease_survival_fixture
+    run_provider_contract_fixture
     run_variant_identity_fixture
     run_clingen_cspec_fixture
     run_cpic_fixture
@@ -532,7 +546,7 @@ case "$mode" in
       spec/entity/article-assets-live.md
       spec/entity/article-graph-live.md
           spec/entity/diagnostic.md
-      spec/entity/drug.md
+      spec/entity/drug-live.md
       spec/entity/ddinter-live.md
       spec/entity/pathway.md
       spec/entity/phenotype.md

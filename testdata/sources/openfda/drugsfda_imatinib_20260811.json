@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+    "terms": "https://open.fda.gov/terms/",
+    "license": "https://open.fda.gov/license/",
+    "last_updated": "2026-08-11",
+    "results": {
+      "skip": 0,
+      "limit": 8,
+      "total": 17
+    }
+  },
+  "results": [
+    {
+      "application_number": "NDA021588",
+      "sponsor_name": "NOVARTIS",
+      "products": [
+        {
+          "product_number": "001",
+          "reference_drug": "Yes",
+          "brand_name": "GLEEVEC",
+          "active_ingredients": [
+            {
+              "name": "IMATINIB MESYLATE",
+              "strength": "EQ 100MG BASE"
+            }
+          ],
+          "reference_standard": "Yes",
+          "dosage_form": "TABLET",
+          "route": "ORAL",
+          "marketing_status": "Prescription",
+          "te_code": "AB"
+        }
+      ],
+      "submissions": [
+        {
+          "submission_type": "ORIG",
+          "submission_number": "1",
+          "submission_status": "AP",
+          "submission_status_date": "20030418",
+          "review_priority": "PRIORITY",
+          "submission_class_code": "TYPE 3",
+          "submission_class_code_description": "Type 3 - New Dosage Form",
+          "submission_property_type": [
+            {
+              "code": "Orphan"
+            }
+          ],
+          "application_docs": [
+            {
+              "id": "42219",
+              "url": "http://www.accessdata.fda.gov/drugsatfda_docs/nda/2003/021588s000_GleevecTOC.html",
+              "date": "20060607",
+              "type": "Review"
+            },
+            {
+              "id": "44136",
+              "url": "http://www.fda.gov/Drugs/DrugSafety/PostmarketDrugSafetyInformationforPatientsandProviders/ucm110502.htm",
+              "date": "20031209",
+              "type": "Other Important Information from FDA"
+            },
+            {
+              "id": "15827",
+              "url": "http://www.accessdata.fda.gov/drugsatfda_docs/label/2003/021588lbl.pdf",
+              "date": "20030428",
+              "type": "Label"
+            },
+            {
+              "id": "28185",
+              "url": "http://www.accessdata.fda.gov/drugsatfda_docs/appletter/2003/21588ltr.pdf",
+              "date": "20030529",
+              "type": "Letter"
+            }
+          ]
+        }
+      ],
+      "openfda": {
+        "brand_name": [
+          "GLEEVEC"
+        ],
+        "generic_name": [
+          "IMATINIB MESYLATE"
+        ]
+      }
+    }
+  ]
+}

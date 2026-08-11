@@ -69,7 +69,8 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/entity/article.md` | article canary for typed vs keyword search, source-aware result structure, annotations, and fulltext fallback |
 | `spec/entity/disease-survival-fixture.md` | deterministic disease-survival canary for MyDisease grounding, SEER fixture rendering, and bounded CLI exit |
 | `spec/entity/trial.md` | trial canary for condition/status search, alias normalization, age-count transparency, and eligibility/location detail |
-| `spec/entity/drug.md` | drug canary for multi-region search, brand bridging, structured-indication truthfulness, and regulatory/target pivots |
+| `spec/entity/drug.md` | routine, receipt-backed drug canary for multi-region search, brand bridging, structured-indication truthfulness, observed provider requests, and U.S./EU/WHO regulatory output |
+| `spec/entity/drug-live.md` | temporary live-only ChEMBL target and DDInter checks awaiting ticket 0905 |
 | `spec/entity/disease.md` | disease canary for MONDO grounding, synonym rescue, genes/diagnostics gating, funding, and executable pivots |
 | `spec/entity/protein.md` | protein canary for reviewed search defaults, UniProt identity, complexes/structures, and JSON follow-up contracts |
 | `spec/entity/pathway.md` | live-smoke-only pathway canary for alias normalization, exact-title ranking, concise KEGG defaults, and source-aware section rejection |
