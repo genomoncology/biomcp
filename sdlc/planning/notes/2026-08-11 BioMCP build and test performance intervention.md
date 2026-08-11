@@ -127,6 +127,10 @@ owns:
    change must not rebuild the entire library merely to update version output.
 6. **0971 — Use one small Cargo graph for routine lint, test, and spec.** Run a
    full-feature check in the release lane, not at every ordinary stage.
+7. **0972 — Run Python contract files with bounded workers.** A post-0964
+   four-worker probe passed all 500 tests in 43.28s versus about 105s
+   sequentially; retain the same corpus and assertions with file-based
+   distribution.
 
 ## Implementation order
 
