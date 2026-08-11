@@ -321,3 +321,27 @@ the 592.1s intervention baseline. The first run used `11.33s` user CPU,
 and 106784 KiB. The Cargo build check was 0.23s in both runs. The prewarm itself
 took 65.26s after a record-only commit moved Git `HEAD`, further confirming the
 separate build-identity invalidation measured for ticket 970.
+
+## Ticket 970 executable-only build identity — 2026-08-11
+
+Git-derived version, revision, and commit-date values are no longer emitted by
+the package build script. `tools/with-build-identity` computes them before a
+build command, and only the two thin executable entry points consume those
+compile inputs. The reusable library and its unit tests use stable package
+metadata. All routine, release, lint, install, and CI build entry points use the
+wrapper. A plain build from a Git-free package remains reproducible and reports
+the Cargo package version with `unknown` Git/date provenance.
+
+A synthetic Cargo package proves that a metadata-only commit keeps its library
+fresh and rebuilds its binary, an executable-source change rebuilds only that
+owner, and a library-source change rebuilds the library. It also proves exact
+release tags, tracked dirty source, and an archive nested inside an unrelated
+Git checkout. On the real BioMCP package, two clean `HEAD`-only rebuilds
+reported `biomcp_cli lib true` and `biomcp bin false` in Cargo diagnostics. They
+took 2.59s and 1.79s and both binaries reported the new eight-character commit.
+
+For the same no-default-feature development binary, a fresh target-directory
+build took 102.76s (`138.53s` user, `25.46s` system, 3488336 KiB peak RSS); a
+same-HEAD warm build took 0.38s. The previous record-only commit forced a
+65.26s optimized package rebuild. The new 1.79–2.59s HEAD-only path is roughly
+25–36x faster and does not recompile the product library or its unit tests.

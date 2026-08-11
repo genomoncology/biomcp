@@ -227,3 +227,20 @@ serial comparison and 2.88x faster than the 592.1s intervention baseline.
 Moving Git `HEAD` for the preceding record-only commit made the prewarm cost
 65.26s despite no product-source change; implement 0970 next so the remaining
 intervention commits stop paying that invalidation.
+
+### 0970 — executable-only build identity
+
+Commit `81e59beb` removed Git-derived compile inputs from the package build
+script. A small wrapper now computes truthful tag, commit, dirty-source, and
+commit-date values for the two executable entry points only. Git-free package
+builds use the committed Cargo version and explicit `unknown` provenance, and
+the wrapper rejects an arbitrary surrounding Git checkout as identity input.
+
+The synthetic artifact test proves ownership for metadata-only, executable,
+and library changes, plus tags, dirty source, and archives. On BioMCP itself,
+two clean HEAD-only builds kept `biomcp_cli` fresh, rebuilt only `biomcp`, and
+took 2.59s and 1.79s while reporting the new commit. The comparable same-HEAD
+warm build was 0.38s and a fresh-target build was 102.76s. This removes the
+65.26s full optimized rebuild observed after the preceding record commit—a
+roughly 25–36x faster HEAD-only path. The complete Rust lane passed 2,835 tests;
+the corrected Python lane passed 484 tests in 105.41s.
