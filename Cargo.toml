@@ -13,6 +13,7 @@ categories = ["command-line-utilities", "science"]
 exclude = [
     "protos/",
     "scripts/regenerate-alphagenome-proto",
+    "testdata/",
     "tools/alphagenome-proto-generator/",
 ]
 

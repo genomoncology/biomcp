@@ -2,6 +2,13 @@
 
 BioMCP itself is MIT-licensed, but the data providers it queries are not all licensed the same way.
 
+Captured provider responses under `testdata/` are repository-only verification
+inputs. BioMCP excludes them from crates.io source packages and public build
+artifacts because redistribution rights have not been established for every
+provider. This is a precautionary package boundary, not a claim that keeping
+the fixtures in the public source repository is improper. Redistributing any
+specific capture requires a separate source-by-source rights record.
+
 Three distinctions matter:
 
 - BioMCP does not vendor, mirror, or ship upstream datasets in the repository.

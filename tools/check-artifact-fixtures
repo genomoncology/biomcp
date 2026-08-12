@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import hashlib
+from pathlib import Path, PurePosixPath
+import sys
+import tarfile
+import zipfile
+
+
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE_ROOT = ROOT / "testdata"
+
+
+def digest(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
+
+def fixture_digests() -> set[str]:
+    return {digest(path.read_bytes()) for path in FIXTURE_ROOT.rglob("*") if path.is_file()}
+
+
+def check_member(name: str, payload: bytes | None, forbidden: set[str]) -> None:
+    parts = PurePosixPath(name.replace("\\", "/")).parts
+    if "testdata" in parts:
+        raise SystemExit(f"artifact contains repository fixture path: {name}")
+    if payload and digest(payload) in forbidden:
+        raise SystemExit(f"artifact contains captured fixture bytes: {name}")
+
+
+def inspect(path: Path, forbidden: set[str]) -> None:
+    if path.is_dir():
+        for member in path.rglob("*"):
+            if member.is_file():
+                check_member(member.relative_to(path).as_posix(), member.read_bytes(), forbidden)
+    elif zipfile.is_zipfile(path):
+        with zipfile.ZipFile(path) as archive:
+            for name in archive.namelist():
+                check_member(name, archive.read(name) if not name.endswith("/") else None, forbidden)
+    elif tarfile.is_tarfile(path):
+        with tarfile.open(path) as archive:
+            for member in archive.getmembers():
+                handle = archive.extractfile(member) if member.isfile() else None
+                check_member(member.name, handle.read() if handle else None, forbidden)
+    else:
+        check_member(path.name, path.read_bytes(), forbidden)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("artifacts", nargs="*", type=Path)
+    parser.add_argument("--manifest", action="store_true", help="read package paths from stdin")
+    args = parser.parse_args()
+    forbidden = fixture_digests()
+    if args.manifest:
+        for line in sys.stdin:
+            check_member(line.strip(), None, forbidden)
+    for artifact in args.artifacts:
+        inspect(artifact, forbidden)
+    print("artifact fixture boundary passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
