@@ -46,15 +46,18 @@ def expected(path, query):
     }:
         return "pair_gene_cyp2d6_20260803.json", "0-78/*"
     if path == "/recommendation_view" and query == {
-        "lookupkey->>CYP2D6": ["not.is.null"], "select": ["*"], "limit": ["50"],
+        "lookupkey->>CYP2D6": ["not.is.null"], "select": ["*"], "limit": ["11"],
+        "offset": ["0"], "order": ["drugname.asc,recommendationid.asc"],
     }:
         return "recommendation_cyp2d6_20260803.json", None
     if path == "/population_frequency_view" and query == {
-        "genesymbol": ["eq.CYP2D6"], "select": ["*"], "limit": ["30"],
+        "genesymbol": ["eq.CYP2D6"], "select": ["*"], "limit": ["11"],
+        "offset": ["0"], "order": ["genesymbol.asc,allele.asc"],
     }:
         return "frequency_cyp2d6_20260803.json", None
     if path == "/guideline_summary_view" and query == {
-        "genes": ['cs.[{"symbol":"CYP2D6"}]'], "select": ["*"], "limit": ["40"],
+        "genes": ['cs.[{"symbol":"CYP2D6"}]'], "select": ["*"], "limit": ["11"],
+        "offset": ["0"], "order": ["guidelinename.asc"],
     }:
         return "guideline_cyp2d6_20260803.json", None
     return None
