@@ -645,11 +645,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert "missing_article_filters_is_clean_usage_error" in article_usage
 
-    assert "CI (`.github/workflows/ci.yml`) runs parallel jobs" in technical
-    assert (
-        "`check` (`cargo fmt --check`, routine-feature Clippy/test, and `make full-feature-check`)"
-        in technical_ws
-    )
+    assert "CI (`.github/workflows/ci.yml`) runs for pull requests" in technical
     assert (
         "The canonical local gates are `make lint`, `make test`, and `make spec`"
         in technical_ws
@@ -660,29 +656,11 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert (
         "`cargo deny check licenses` plus `cargo deny check advisories`" in technical_ws
     )
-    assert "`version-sync` (`bash scripts/check-version-sync.sh`)" in technical
-    assert "`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`)" in technical
-    assert (
-        "`contracts` (`cargo build --release --locked`, `uv sync --extra dev --no-install-project`, "
-        "`uv run --no-sync pytest tests/ -v`, "
-        "`uv run --no-sync mkdocs build --strict`)" in technical_ws
-    )
-    assert (
-        "`spec-stable` (release build, spec-cache metadata/restore, then `make spec-pr`)"
-        in technical_ws
-    )
-    assert (
-        "PR CI runs `make spec-pr` via the `spec-stable` job in `.github/workflows/ci.yml`"
-        in technical_ws
-    )
-    assert "reads `Cargo.toml` via Python `tomllib`" in technical_ws
-    assert "exports `BIOMCP_SPEC_CACHE_HIT=1` only on cache hits" in technical_ws
+    assert "`repository-contracts`" in technical
+    assert "`generated-sources`" in technical
     assert ".github/workflows/spec-smoke.yml" not in technical_ws
     assert (
-        "Contract smoke checks run in `.github/workflows/contracts.yml`" in technical_ws
-    )
-    assert (
-        "Docs-site validation and Python contract tests now run under `make test`; CI still keeps that lane in the separate `contracts` job for parallelism."
+        "Docs-site validation and Python contract tests run under the canonical `make test`; CI does not maintain a second approximation of that lane."
         in technical_ws
     )
     assert (
@@ -1145,86 +1123,21 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     ci = _read_repo(".github/workflows/ci.yml")
     release = _read_repo(".github/workflows/release.yml")
     contracts_smoke = _read_repo(".github/workflows/contracts.yml")
-    spec_smoke = REPO_ROOT / ".github/workflows/spec-smoke.yml"
-    expected_ci_contract_runs = [
-        "tools/with-build-identity cargo build --release --locked",
-        'make test-contracts BIOMCP_BIN="$PWD/target/release/biomcp"',
-    ]
-
-    ci_contracts = _workflow_job_block(ci, "contracts")
-    ci_spec = _workflow_job_block(ci, "spec-stable")
-    ci_version_sync = _workflow_job_block(ci, "version-sync")
-    ci_climb_hygiene = _workflow_job_block(ci, "climb-hygiene")
+    canonical = _workflow_job_block(ci, "canonical-gates")
     ci_generated_sources = _workflow_job_block(ci, "generated-sources")
+    assert "pull_request:" in ci
+    assert "push:" in ci and "branches: [main]" in ci
+    for command in ("make lint", "make test", "make spec"):
+        assert f"run: {command}" in canonical
+    for version in ("1.93.1", "3.12.3", "0.8.0", "0.13.2", "0.9.132", "0.19.4", "0.1.0", "28.3"):
+        assert version in ci
+    assert "@v" not in canonical and "@stable" not in canonical
+    assert "secrets." not in canonical.replace("secrets.GITHUB_TOKEN", "")
 
-    assert 'python-version: "3.12"' in ci_contracts
-    assert 'python-version: "3.12"' in ci_spec
-    assert not spec_smoke.exists()
-    assert _workflow_run_steps(ci_contracts) == expected_ci_contract_runs
-    assert "- uses: actions/checkout@v4" in ci_spec
-    assert "setup-protoc" not in ci_spec
-    assert "uses: dtolnay/rust-toolchain@stable" in ci_spec
-    assert "uses: actions/setup-python@v5" in ci_spec
-    assert "uses: astral-sh/setup-uv@v4" in ci_spec
-    assert _workflow_run_steps(ci_spec)[-2:] == [
-        "tools/with-build-identity cargo build --release --locked",
-        "make spec-pr",
-    ]
-    for marker in (
-        "id: spec-cache-meta",
-        "import tomllib",
-        "Cargo.toml",
-        "biomcp-version",
-        "spec-cache-schema-version",
-        "id: spec-cache",
-        "uses: actions/cache@v4",
-        "path: .cache/biomcp-specs/",
-        "if: steps.spec-cache.outputs.cache-hit == 'true'",
-        "BIOMCP_SPEC_CACHE_HIT=1",
-    ):
-        assert marker in ci_spec
-    assert (
-        "spec-http-${{ runner.os }}-${{ steps.spec-cache-meta.outputs.biomcp-version }}"
-        "-${{ steps.spec-cache-meta.outputs.spec-cache-schema-version }}"
-    ) in ci_spec
-
-    assert "uses: arduino/setup-protoc@v3" in ci_generated_sources
     assert 'version: "28.3"' in ci_generated_sources
-    assert "uses: dtolnay/rust-toolchain@stable" in ci_generated_sources
     assert _workflow_run_steps(ci_generated_sources) == [
         "scripts/regenerate-alphagenome-proto --check"
     ]
-
-    assert "- uses: actions/checkout@v4" in ci_version_sync
-    assert "fetch-depth: 0" in ci_version_sync
-    assert _workflow_run_steps(ci_version_sync) == [
-        "bash scripts/check-version-sync.sh"
-    ]
-    for forbidden in (
-        "setup-python",
-        "setup-uv",
-        "setup-protoc",
-        "rust-toolchain",
-        "cargo ",
-        "uv sync",
-        "python-version:",
-    ):
-        assert forbidden not in ci_version_sync
-
-    assert "- uses: actions/checkout@v4" in ci_climb_hygiene
-    assert _workflow_run_steps(ci_climb_hygiene) == [
-        "bash scripts/check-no-climb-tracked.sh"
-    ]
-    for forbidden in (
-        "setup-python",
-        "setup-uv",
-        "setup-protoc",
-        "rust-toolchain",
-        "cargo ",
-        "uv sync",
-        "python-version:",
-    ):
-        assert forbidden not in ci_climb_hygiene
 
     assert "workflow_dispatch:" in release
     assert "release-disabled:" in release

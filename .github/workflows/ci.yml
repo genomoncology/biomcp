@@ -2,140 +2,119 @@ name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: 1.93.1
+  PYTHON_VERSION: 3.12.3
+  UV_VERSION: 0.8.0
+  RUFF_VERSION: 0.13.2
+  CARGO_NEXTEST_VERSION: 0.9.132
+  CARGO_DENY_VERSION: 0.19.4
+  MUSTMATCH_VERSION: 0.1.0
+  PROTOC_VERSION: 28.3
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
+  canonical-gates:
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Check out the exact revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install pinned Rust
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
         with:
+          toolchain: 1.93.1
           components: rustfmt, clippy
-
-      - run: cargo fmt --check
-      - run: tools/with-build-identity cargo clippy --no-default-features -- -D warnings
-      - run: tools/with-build-identity cargo test --no-default-features
-      - run: make full-feature-check
-
-  generated-sources:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: arduino/setup-protoc@v3
+      - name: Install pinned Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: 3.12.3
+      - name: Install pinned uv
+        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3 # v4
+        with:
+          version: 0.8.0
+      - name: Install pinned protoc
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
         with:
           version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install canonical gate tools
+        run: |
+          cargo install cargo-nextest --version "$CARGO_NEXTEST_VERSION" --locked
+          cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
+          uv tool install "ruff==$RUFF_VERSION"
+          uv tool install "mustmatch==$MUSTMATCH_VERSION"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Record exact tool versions
+        run: |
+          rustc --version
+          python --version
+          uv --version
+          ruff --version
+          cargo nextest --version
+          cargo deny --version
+          mustmatch --version
+          protoc --version
+      - name: Canonical lint gate
+        run: make lint
+      - name: Canonical test gate
+        run: make test
+      - name: Canonical specification gate
+        run: make spec
+
+  full-features:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.93.1
+          components: clippy
+      - run: make full-feature-check
+
+  generated-sources:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+        with:
+          version: "28.3"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.93.1
       - run: scripts/regenerate-alphagenome-proto --check
 
-  windows-cspec-capture:
-    runs-on: windows-latest
+  windows-contracts:
+    runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Compile the non-Unix fail-closed CSpec capture boundary
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.93.1
+      - name: Compile Windows CSpec and managed-state boundaries
         run: cargo check --locked
 
-  version-sync:
-    runs-on: ubuntu-latest
+  repository-contracts:
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
+      - run: cmp --silent install.sh docs/install.sh
       - run: bash scripts/check-version-sync.sh
-
-  climb-hygiene:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - run: bash scripts/check-no-climb-tracked.sh
 
   docker-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build --tag biomcp:ci .
-      - name: Smoke Docker image
-        run: |
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: docker build --tag biomcp:ci .
+      - run: |
           docker run --rm biomcp:ci --version
           docker run --rm biomcp:ci list
-
-  contracts:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - uses: astral-sh/setup-uv@v4
-
-      - name: Install mustmatch CLI
-        run: |
-          uv tool install mustmatch
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/mustmatch" --version
-
-      - run: tools/with-build-identity cargo build --release --locked
-      - name: Enforce compact output-footprint ratchet
-        run: make output-footprint SPEC_PROFILE=release SPEC_BIN="$PWD/target/release/biomcp"
-      - name: Verify canonical installer copy
-        run: cmp --silent install.sh docs/install.sh
-      - run: make test-contracts BIOMCP_BIN="$PWD/target/release/biomcp"
-
-  # Stable PR-blocking executable spec gate. Volatile live-network specs
-  # stay out of this routine lane and run only through make verify.
-  spec-stable:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - uses: astral-sh/setup-uv@v4
-
-      - name: Install mustmatch CLI
-        run: |
-          uv tool install mustmatch
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/mustmatch" --version
-
-      - name: Compute spec cache metadata
-        id: spec-cache-meta
-        run: |
-          python - <<'PY'
-          import os
-          import tomllib
-          from pathlib import Path
-
-          cargo = tomllib.loads(Path("Cargo.toml").read_text(encoding="utf-8"))
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
-              handle.write(f"biomcp-version={cargo['package']['version']}\n")
-              handle.write("spec-cache-schema-version=1\n")
-          PY
-
-      - name: Restore spec cache
-        id: spec-cache
-        uses: actions/cache@v4
-        with:
-          path: .cache/biomcp-specs/
-          key: >-
-            spec-http-${{ runner.os }}-${{ steps.spec-cache-meta.outputs.biomcp-version }}-${{ steps.spec-cache-meta.outputs.spec-cache-schema-version }}
-
-      - name: Mark warm cache hit
-        if: steps.spec-cache.outputs.cache-hit == 'true'
-        run: echo "BIOMCP_SPEC_CACHE_HIT=1" >> "$GITHUB_ENV"
-
-      # Build the release binary first so make spec exercises target/release/biomcp,
-      # not a stale editable install from .venv/bin.
-      - run: tools/with-build-identity cargo build --release --locked
-      - run: make spec-pr

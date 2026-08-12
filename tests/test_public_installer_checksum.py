@@ -26,7 +26,7 @@ def test_ci_and_release_gate_installer_identity_before_docs_or_release() -> None
     release = (REPO_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
     check = "cmp --silent install.sh docs/install.sh"
     assert check in ci
-    assert ci.index(check) < ci.index("make test-contracts")
+    assert ci.index(check) < ci.index("bash scripts/check-version-sync.sh")
     assert check in release
     assert release.index(check) < release.index("release-disabled.sh")
 

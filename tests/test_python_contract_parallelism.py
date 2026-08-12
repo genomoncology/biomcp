@@ -17,7 +17,7 @@ def test_python_contract_gate_uses_bounded_file_workers() -> None:
 def test_ci_reuses_the_canonical_python_contract_gate() -> None:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 
-    assert 'make test-contracts BIOMCP_BIN="$PWD/target/release/biomcp"' in workflow
+    assert "run: make test" in workflow
     assert "uv run --no-sync pytest tests/" not in workflow
 
 

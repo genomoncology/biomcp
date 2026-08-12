@@ -276,25 +276,16 @@ or public asset. Existing installation documentation continues to describe the
 already published v0.8.25 channels; `install.sh` resolves the latest release
 with platform assets rather than the latest merge to `main`.
 
-CI (`.github/workflows/ci.yml`) runs parallel jobs including `check`
-(`cargo fmt --check`, routine-feature Clippy/test, and `make
-full-feature-check`), `generated-sources` (the pinned non-writing protobuf
-regeneration check),
-`version-sync` (`bash scripts/check-version-sync.sh`),
-`climb-hygiene` (`bash scripts/check-no-climb-tracked.sh`),
-`contracts` (`cargo build --release --locked`,
-`uv sync --extra dev --no-install-project`,
-`uv run --no-sync pytest tests/ -v`,
-`uv run --no-sync mkdocs build --strict`), and `spec-stable`
-(release build, spec-cache metadata/restore, then `make spec-pr`). The
-`version-sync` checkout fetches full tag history so its pre-1.0 changelog
-boundary check is reliable. Routine release proof uses `make release-gate`,
+CI (`.github/workflows/ci.yml`) runs for pull requests and every push to
+`main`. Its `canonical-gates` job installs exact tool versions and invokes
+`make lint`, `make test`, and `make spec` without copying smaller command lists
+into YAML. Separate jobs retain full-feature, generated-source, Windows,
+repository-metadata, and container checks. The repository-contract checkout
+fetches full tag history so the pre-1.0 changelog boundary check is reliable.
+Routine release proof uses `make release-gate`,
 which composes the routine lint/test graph, the named full-feature check, and
 release-profile specs; opt-in live
 confidence uses `make verify` (`make release-live-smoke` aliases it).
-`spec-stable` restores `.cache/biomcp-specs/`, exports
-`BIOMCP_SPEC_CACHE_HIT=1` only on cache hits, and relies on
-`tools/biomcp-ci` to flip warm-cache replay on for the canary docs.
 
 Python/docs/spec gate lanes intentionally use `uv sync --extra dev --no-install-project`
 followed by `uv run --no-sync ...`. They install Python tooling only and do not
@@ -322,12 +313,13 @@ BioMCP has six distinct verification and operator-inspection surfaces.
   lane against `target/spec/biomcp`. Python contract files use four bounded
   pytest workers with file-based distribution; `PYTEST_WORKERS=1` is the
   diagnostic override. Routine `make spec` shares that selected binary; the CI
-  `check` job uses the same no-default-feature Cargo graph and then invokes the
-  named full-feature proof.
+  `canonical-gates` job invokes those same Make targets, while the
+  `full-features` job invokes the named full-feature proof.
 - CI in `.github/workflows/ci.yml` runs the broader repo baseline in parallel:
-  `check`, `version-sync`, `climb-hygiene`, `contracts`, and `spec-stable`.
-- Docs-site validation and Python contract tests now run under `make test`;
-  CI still keeps that lane in the separate `contracts` job for parallelism.
+  `canonical-gates`, `full-features`, `generated-sources`,
+  `windows-contracts`, `repository-contracts`, and `docker-image`.
+- Docs-site validation and Python contract tests run under the canonical
+  `make test`; CI does not maintain a second approximation of that lane.
 - `make release-gate` is the single local release-blocking signal; it runs
   routine lint/test, `make full-feature-check`, and release-profile specs. The
   spec preparation phase receives the all-feature `target/release/biomcp` and
@@ -366,16 +358,9 @@ alias), which uses `tools/biomcp-ci` for discover/OLS4, disease, article
 source-status, variant-normalization, phenotype, protein, pathway, and other
 live smoke commands.
 
-PR CI runs `make spec-pr` via the `spec-stable` job in
-`.github/workflows/ci.yml`. That job builds the release binary first, reads
-`Cargo.toml` via Python `tomllib` to emit a `biomcp-version` plus a
-workflow-local `spec-cache-schema-version`, restores `.cache/biomcp-specs/`
-with the key
-`spec-http-${runner.os}-${biomcp-version}-${spec-cache-schema-version}`, and
-exports `BIOMCP_SPEC_CACHE_HIT=1` only when the restore hit is warm. The bash
-blocks themselves then call `tools/biomcp-ci`, which keeps cache/XDG state
-under `.cache/biomcp-specs/`, defaults `RUST_LOG=error`, unsets optional auth
-keys, and flips `BIOMCP_CACHE_MODE=infinite` only for those warm CI replays.
+Pull requests and main pushes run `make spec` through the `canonical-gates`
+job in `.github/workflows/ci.yml`. The same target is the local authority;
+`make spec-pr` remains a compatibility alias for the same routine paths.
 
 Run locally with `make spec` for the offline routine executable-spec gate,
 `make spec-contracts` for the legacy deterministic subset, `make verify` for

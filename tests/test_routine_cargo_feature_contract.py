@@ -68,8 +68,8 @@ def test_ci_and_developer_docs_name_small_and_full_feature_lanes() -> None:
         )
     )
 
-    assert "cargo clippy --no-default-features -- -D warnings" in workflow
-    assert "cargo test --no-default-features" in workflow
+    assert "run: make lint" in workflow
+    assert "run: make test" in workflow
     assert "make full-feature-check" in workflow
     assert "Routine gates use `--no-default-features`" in docs
     assert "`make full-feature-check`" in docs
