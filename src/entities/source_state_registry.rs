@@ -393,6 +393,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
     ),
     state(
         "variant",
+        "population",
+        "Population",
+        &["gnomAD v4"],
+        Aggregation::Fallback,
+    ),
+    state(
+        "variant",
         "cancerhotspots",
         "Cancer Hotspots",
         &["cancerhotspots.org"],
@@ -651,7 +658,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
     ),
     selector("variant", "predictions", SelectorClass::Local, None),
     selector("variant", "clinvar", SelectorClass::Local, None),
-    selector("variant", "population", SelectorClass::Local, None),
+    selector(
+        "variant",
+        "population",
+        SelectorClass::Canonical,
+        Some("population"),
+    ),
     selector("variant", "conservation", SelectorClass::Local, None),
     selector("variant", "cosmic", SelectorClass::Local, None),
     selector("variant", "cgi", SelectorClass::Local, None),

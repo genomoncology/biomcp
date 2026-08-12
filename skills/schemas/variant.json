@@ -5,6 +5,8 @@
   "required": ["id", "gene"],
   "properties": {
     "id": { "type": "string" },
+    "genome_build": { "type": ["string", "null"], "enum": ["GRCh37", "GRCh38", null] },
+    "genome_build_provenance": { "type": ["string", "null"] },
     "gene": { "type": "string" },
     "hgvs_p": { "type": ["string", "null"] },
     "legacy_name": { "type": ["string", "null"] },
@@ -19,9 +21,6 @@
       "type": ["array", "null"],
       "items": { "type": "string" }
     },
-    "gnomad_af": { "type": ["number", "null"] },
-    "allele_frequency_raw": { "type": ["number", "null"] },
-    "allele_frequency_percent": { "type": ["string", "null"] },
     "consequence": { "type": ["string", "null"] },
     "cadd_score": { "type": ["number", "null"] },
     "polyphen_pred": { "type": ["string", "null"] },
@@ -31,7 +30,23 @@
       "type": ["array", "null"],
       "items": { "type": "object" }
     },
-    "population_breakdown": { "type": ["object", "null"] },
+    "population": {
+      "type": ["object", "null"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["data", "missing", "absent", "provider_failure"]
+        },
+        "dataset": { "const": "gnomad_r4" },
+        "release": { "const": "gnomAD v4" },
+        "message": { "type": ["string", "null"] },
+        "exome": { "$ref": "#/$defs/gnomadSequencingPopulation" },
+        "genome": { "$ref": "#/$defs/gnomadSequencingPopulation" },
+        "faf_caveat": { "type": "string" }
+      },
+      "required": ["status", "dataset", "release", "faf_caveat"],
+      "additionalProperties": false
+    },
     "cosmic_context": { "type": ["object", "null"] },
     "cgi_associations": {
       "type": ["array", "null"],
@@ -99,5 +114,22 @@
       "additionalProperties": true
     }
   },
-  "additionalProperties": true
+  "additionalProperties": true,
+  "$defs": {
+    "gnomadSequencingPopulation": {
+      "type": ["object", "null"],
+      "properties": {
+        "allele_frequency": { "type": ["number", "null"] },
+        "ac": { "type": "integer", "minimum": 0 },
+        "an": { "type": "integer", "minimum": 0 },
+        "homozygote_count": { "type": "integer", "minimum": 0 },
+        "hemizygote_count": { "type": "integer", "minimum": 0 },
+        "filters": { "type": "array", "items": { "type": "string" } },
+        "faf95": { "type": ["object", "null"] },
+        "populations": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["ac", "an", "homozygote_count", "hemizygote_count", "filters", "populations"],
+      "additionalProperties": false
+    }
+  }
 }

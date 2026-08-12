@@ -1,7 +1,7 @@
 # BRAF p.V600E (rs113488022)
 
 rsID: rs113488022
-ID: chr7:g.140453136A>T
+Genomic coordinate (GRCh38): chr7:g.140753336A>T
 Protein: p.V600E
 cDNA: c.620T>A
 Consequence: missense_variant
@@ -46,30 +46,16 @@ phastCons (470-way mammalian): 0.682
 | AlphaMissense | 0.985 | Pathogenic |
 | ClinPred | 0.993 | D |
 | MetaRNN | 0.883 | D |
-## Population
-gnomAD AF: 0.000004
-African/African American: 0
-  African/African American (female): 0
-  African/African American (male): 0
-Latino/Admixed American: 0
-  Latino/Admixed American (female): 0
-  Latino/Admixed American (male): 0
-East Asian: 0
-  East Asian (Japanese): 0
-  East Asian (Korean): 0
-Non-Finnish European: 0
-  Non-Finnish European (Bulgarian): 0
-  Non-Finnish European (Estonian): 0
-  Non-Finnish European (Northwestern): 0
-  Non-Finnish European (Other): 0
-  Non-Finnish European (Southeastern): 0
-  Non-Finnish European (Swedish): 0
-South Asian: 0.000033
-Ashkenazi Jewish: 0
-Finnish: 0
-Other: 0
-ExAC AF: 0.000016
-ExAC non-TCGA AF: 0.000019
+## Population (direct gnomAD v4)
+Dataset: `gnomad_r4` (gnomAD v4)
+### Exomes
+| Dataset | Ancestry | Raw allele frequency | Allele count | Allele number | Homozygotes | Hemizygotes |
+|---|---|---:|---:|---:|---:|---:|
+| gnomAD v4 | Overall | 0.000001 | 2 | 1460618 | 0 | 0 |
+Exome quality filters: PASS (no filter flags reported)
+### Genomes
+No genome result in gnomAD v4.
+gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF.
 ## COSMIC
 - COSMIC ID: COSM476
 - Mutation frequency: 2.830
@@ -137,8 +123,7 @@ No GWAS associations found for this variant.
 See also:
   biomcp get gene BRAF
   biomcp search drug --target BRAF
-  biomcp variant trials chr7:g.140453136A>T
-  biomcp variant articles chr7:g.140453136A>T
+  biomcp variant trials chr7:g.140753336A>T
+  biomcp variant articles chr7:g.140753336A>T
 
-[ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/variation/13961/) | [dbSNP](https://www.ncbi.nlm.nih.gov/snp/rs113488022) | [COSMIC](https://cancer.sanger.ac.uk/cosmic/mutation/overview?id=COSM476)
-
+[ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/variation/13961/) | [dbSNP](https://www.ncbi.nlm.nih.gov/snp/rs113488022) | [COSMIC](https://cancer.sanger.ac.uk/cosmic/mutation/overview?id=COSM476) | [gnomAD](https://gnomad.broadinstitute.org/variant/7-140753336-A-T?dataset=gnomad_r4)

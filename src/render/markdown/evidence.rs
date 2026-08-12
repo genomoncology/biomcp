@@ -1,6 +1,7 @@
 //! Evidence-link helpers and entity-specific evidence URL builders for markdown outputs.
 
 use super::*;
+use crate::entities::variant::GenomeBuild;
 
 pub(super) fn source_matches(source: Option<&str>, needle: &str) -> bool {
     source
@@ -191,18 +192,13 @@ pub(super) fn variant_evidence_urls(variant: &Variant) -> Vec<(&'static str, Str
             format!("https://cancer.sanger.ac.uk/cosmic/mutation/overview?id={cosmic_id}"),
         ));
     }
-    if (variant.gnomad_af.is_some() || variant.population_breakdown.is_some())
-        && let Some(variant_id) = variant
-            .rsid
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_string)
-            .or_else(|| gnomad_variant_slug(&variant.id))
+    if variant.population.is_some()
+        && variant.genome_build == Some(GenomeBuild::Grch38)
+        && let Some(variant_id) = gnomad_variant_slug(&variant.id)
     {
         urls.push((
             "gnomAD",
-            format!("https://gnomad.broadinstitute.org/variant/{variant_id}"),
+            format!("https://gnomad.broadinstitute.org/variant/{variant_id}?dataset=gnomad_r4"),
         ));
     }
     urls

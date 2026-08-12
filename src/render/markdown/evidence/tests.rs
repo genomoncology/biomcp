@@ -70,26 +70,12 @@ fn variant_evidence_urls_include_dbsnp_and_cosmic() {
 fn variant_evidence_urls_include_gnomad_for_population_data() {
     let variant: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr11:g.5227002A>T",
+        "genome_build": "GRCh38",
         "gene": "HBB",
         "rsid": "rs334",
-        "gnomad_af": 0.042
-    }))
-    .expect("variant should deserialize");
-
-    let urls = variant_evidence_urls(&variant);
-    assert!(urls.contains(&(
-        "gnomAD",
-        "https://gnomad.broadinstitute.org/variant/rs334".to_string()
-    )));
-}
-
-#[test]
-fn variant_evidence_urls_fall_back_to_hgvs_slug_for_population_data() {
-    let variant: Variant = serde_json::from_value(serde_json::json!({
-        "id": "chr7:g.140453136A>T",
-        "gene": "BRAF",
-        "population_breakdown": {
-            "populations": [{"population": "global", "af": 0.01}]
+        "population": {
+            "status": "absent", "dataset": "gnomad_r4", "release": "gnomAD v4",
+            "faf_caveat": "test"
         }
     }))
     .expect("variant should deserialize");
@@ -97,7 +83,27 @@ fn variant_evidence_urls_fall_back_to_hgvs_slug_for_population_data() {
     let urls = variant_evidence_urls(&variant);
     assert!(urls.contains(&(
         "gnomAD",
-        "https://gnomad.broadinstitute.org/variant/7-140453136-A-T".to_string()
+        "https://gnomad.broadinstitute.org/variant/11-5227002-A-T?dataset=gnomad_r4".to_string()
+    )));
+}
+
+#[test]
+fn variant_evidence_urls_fall_back_to_hgvs_slug_for_population_data() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr7:g.140453136A>T",
+        "genome_build": "GRCh38",
+        "gene": "BRAF",
+        "population": {
+            "status": "absent", "dataset": "gnomad_r4", "release": "gnomAD v4",
+            "faf_caveat": "test"
+        }
+    }))
+    .expect("variant should deserialize");
+
+    let urls = variant_evidence_urls(&variant);
+    assert!(urls.contains(&(
+        "gnomAD",
+        "https://gnomad.broadinstitute.org/variant/7-140453136-A-T?dataset=gnomad_r4".to_string()
     )));
 }
 

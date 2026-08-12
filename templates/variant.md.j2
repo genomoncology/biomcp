@@ -76,19 +76,46 @@ No expanded prediction scores reported.
 {% endif -%}
 {% endif -%}
 {% if show_population_section -%}
-## Population (gnomAD via MyVariant.info)
-{% if gnomad_af is defined and gnomad_af is not none %}gnomAD AF: {{ gnomad_af | af }}{% if allele_frequency_percent %} ({{ allele_frequency_percent }}){% endif %}{% else %}gnomAD AF: Not reported{% endif %}
-{% if population_breakdown and population_breakdown.populations -%}
-{% for p in population_breakdown.populations -%}
-{% if p.is_subgroup %}  {% endif %}{{ p.population }}: {{ p.af | af }}
+## Population (direct gnomAD v4)
+{% if population -%}
+Dataset: `{{ population.dataset }}` ({{ population.release }})
+{% if population.status != "data" -%}
+{{ population.message }}
+{% else -%}
+{% if population.exome -%}
+### Exomes
+| Dataset | Ancestry | Raw allele frequency | Allele count | Allele number | Homozygotes | Hemizygotes |
+|---|---|---:|---:|---:|---:|---:|
+| {{ population.release }} | Overall | {% if population.exome.allele_frequency is not none %}{{ population.exome.allele_frequency | af }}{% else %}-{% endif %} | {{ population.exome.ac }} | {{ population.exome.an }} | {{ population.exome.homozygote_count }} | {{ population.exome.hemizygote_count }} |
+{% for row in population.exome.populations -%}
+| {{ population.release }} | {{ row.id }} | {% if row.allele_frequency is not none %}{{ row.allele_frequency | af }}{% else %}-{% endif %} | {{ row.ac }} | {{ row.an }} | {{ row.homozygote_count }} | {{ row.hemizygote_count }} |
 {% endfor -%}
+{% if population.exome.faf95 %}{{ population.release }} exome grpmax FAF95: {% if population.exome.faf95.popmax is not none %}{{ population.exome.faf95.popmax | af }}{% else %}Not reported{% endif %}{% if population.exome.faf95.popmax_population %} ({{ population.exome.faf95.popmax_population }}){% endif %}
 {% endif -%}
-{% if population_breakdown and population_breakdown.exac_af is defined and population_breakdown.exac_af is not none %}ExAC AF: {{ population_breakdown.exac_af | af }}
+Exome quality filters: {% if exome_filters %}{{ exome_filters | join(", ") }}{% else %}PASS (no filter flags reported){% endif %}
+{% else -%}
+### Exomes
+No exome result in {{ population.release }}.
 {% endif -%}
-{% if population_breakdown and population_breakdown.exac_nontcga_af is defined and population_breakdown.exac_nontcga_af is not none %}ExAC non-TCGA AF: {{ population_breakdown.exac_nontcga_af | af }}
+{% if population.genome -%}
+### Genomes
+| Dataset | Ancestry | Raw allele frequency | Allele count | Allele number | Homozygotes | Hemizygotes |
+|---|---|---:|---:|---:|---:|---:|
+| {{ population.release }} | Overall | {% if population.genome.allele_frequency is not none %}{{ population.genome.allele_frequency | af }}{% else %}-{% endif %} | {{ population.genome.ac }} | {{ population.genome.an }} | {{ population.genome.homozygote_count }} | {{ population.genome.hemizygote_count }} |
+{% for row in population.genome.populations -%}
+| {{ population.release }} | {{ row.id }} | {% if row.allele_frequency is not none %}{{ row.allele_frequency | af }}{% else %}-{% endif %} | {{ row.ac }} | {{ row.an }} | {{ row.homozygote_count }} | {{ row.hemizygote_count }} |
+{% endfor -%}
+{% if population.genome.faf95 %}{{ population.release }} genome grpmax FAF95: {% if population.genome.faf95.popmax is not none %}{{ population.genome.faf95.popmax | af }}{% else %}Not reported{% endif %}{% if population.genome.faf95.popmax_population %} ({{ population.genome.faf95.popmax_population }}){% endif %}
 {% endif -%}
-{% if (not population_breakdown) and (gnomad_af is not defined or gnomad_af is none) -%}
-No population data reported.
+Genome quality filters: {% if genome_filters %}{{ genome_filters | join(", ") }}{% else %}PASS (no filter flags reported){% endif %}
+{% else -%}
+### Genomes
+No genome result in {{ population.release }}.
+{% endif -%}
+{{ population.faf_caveat }}
+{% endif -%}
+{% else -%}
+Population data was not requested.
 {% endif -%}
 {% endif -%}
 {% if show_cosmic_section -%}

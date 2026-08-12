@@ -16,7 +16,7 @@ use crate::entities::pgx::Pgx;
 use crate::entities::protein::Protein;
 use crate::entities::section_outcome::{SectionOutcomeState, SectionOutcomes};
 use crate::entities::trial::Trial;
-use crate::entities::variant::Variant;
+use crate::entities::variant::{GnomadPopulationStatus, Variant};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct SectionSource {
@@ -568,10 +568,13 @@ pub(crate) fn variant_section_sources(variant: &Variant) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        variant.gnomad_af.is_some() || variant.population_breakdown.is_some(),
+        variant
+            .population
+            .as_ref()
+            .is_some_and(|population| population.status == GnomadPopulationStatus::Data),
         "population",
         "Population",
-        ["gnomAD via MyVariant.info"],
+        ["gnomAD v4"],
     );
     push_section(
         &mut out,
@@ -1068,16 +1071,13 @@ mod tests {
             clinvar_review_status: None,
             clinvar_review_stars: None,
             conditions: Vec::new(),
-            gnomad_af: None,
-            allele_frequency_raw: None,
-            allele_frequency_percent: None,
             consequence: None,
             cadd_score: None,
             sift_pred: None,
             polyphen_pred: None,
             conservation: None,
             expanded_predictions: Vec::new(),
-            population_breakdown: None,
+            population: None,
             cosmic_context: None,
             cgi_associations: Vec::new(),
             civic: None,

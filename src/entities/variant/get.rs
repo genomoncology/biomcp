@@ -9,6 +9,7 @@ use crate::sources::alphagenome::AlphaGenomeClient;
 use crate::sources::cancerhotspots::CancerHotspotsClient;
 use crate::sources::cbioportal::CBioPortalClient;
 use crate::sources::civic::CivicClient;
+use crate::sources::gnomad::{GnomadClient, GnomadVariantPopulation};
 #[cfg(feature = "alphagenome")]
 use crate::sources::mygene::MyGeneClient;
 use crate::sources::myvariant::MyVariantClient;
@@ -22,9 +23,10 @@ use super::gwas::mark_gwas_unavailable;
 use super::resolution::hgvs_coords_re;
 use super::resolution::parse_variant_id;
 use super::{
-    GenomeBuild, TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat,
-    VariantInputKind, VariantNormalizationResponse, VariantNormalizationStatus,
-    VariantOncoKbResult, classify_variant_input, normalize_variant,
+    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, TreatmentImplication, Variant,
+    VariantCivicSection, VariantIdFormat, VariantInputKind, VariantNormalizationResponse,
+    VariantNormalizationStatus, VariantOncoKbResult, classify_variant_input, gnomad_variant_slug,
+    normalize_variant,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -54,6 +56,13 @@ pub const VARIANT_SECTION_NAMES: &[&str] = &[
 ];
 
 const OPTIONAL_ENRICHMENT_TIMEOUT: Duration = Duration::from_secs(8);
+const GNOMAD_DATASET: &str = "gnomad_r4";
+const GNOMAD_RELEASE: &str = "gnomAD v4";
+const GNOMAD_FAF_CAVEAT: &str =
+    "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF.";
+const GNOMAD_GRCH38_REQUIRED: &str =
+    "Direct gnomAD v4 population data requires a trustworthy GRCh38 coordinate.";
+const GNOMAD_PROVIDER_FAILURE: &str = "gnomAD population data is temporarily unavailable.";
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct VariantWorkflowSignals {
@@ -888,16 +897,13 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         clinvar_review_status: None,
         clinvar_review_stars: None,
         conditions: Vec::new(),
-        gnomad_af: None,
-        allele_frequency_raw: None,
-        allele_frequency_percent: None,
         consequence: None,
         cadd_score: None,
         sift_pred: None,
         polyphen_pred: None,
         conservation: None,
         expanded_predictions: Vec::new(),
-        population_breakdown: None,
+        population: None,
         cosmic_context: None,
         cgi_associations: Vec::new(),
         civic: None,
@@ -931,6 +937,98 @@ fn strip_civic_live_details(variant: &mut Variant) {
     civic.graphql = None;
     if civic.cached_evidence.is_empty() {
         variant.civic = None;
+    }
+}
+
+fn population_result(
+    status: GnomadPopulationStatus,
+    message: Option<&str>,
+    data: Option<GnomadVariantPopulation>,
+) -> GnomadPopulationResult {
+    let (exome, genome) = data
+        .map(|population| (population.exome, population.genome))
+        .unwrap_or_default();
+    GnomadPopulationResult {
+        status,
+        dataset: GNOMAD_DATASET.into(),
+        release: GNOMAD_RELEASE.into(),
+        message: message.map(str::to_string),
+        exome,
+        genome,
+        faf_caveat: GNOMAD_FAF_CAVEAT.into(),
+    }
+}
+
+fn population_variant_id(variant: &Variant) -> Option<String> {
+    (variant.genome_build == Some(GenomeBuild::Grch38))
+        .then(|| gnomad_variant_slug(&variant.id))
+        .flatten()
+}
+
+async fn add_population(variant: &mut Variant) {
+    let Some(variant_id) = population_variant_id(variant) else {
+        variant.population = Some(population_result(
+            GnomadPopulationStatus::Missing,
+            Some(GNOMAD_GRCH38_REQUIRED),
+            None,
+        ));
+        variant.section_outcomes.complete(
+            VARIANT_SECTION_POPULATION,
+            SectionOutcome::inapplicable(GNOMAD_GRCH38_REQUIRED),
+        );
+        return;
+    };
+
+    let response = match GnomadClient::new() {
+        Ok(client) => match tokio::time::timeout(
+            OPTIONAL_ENRICHMENT_TIMEOUT,
+            client.variant_population(&variant_id),
+        )
+        .await
+        {
+            Ok(result) => result.map_err(|_| ()),
+            Err(_) => Err(()),
+        },
+        Err(_) => Err(()),
+    };
+    let response = response.and_then(|data| match data {
+        Some(data) if data.variant_id != variant_id => Err(()),
+        data => Ok(data),
+    });
+    match response {
+        Ok(Some(data)) if data.exome.is_some() || data.genome.is_some() => {
+            variant.population = Some(population_result(
+                GnomadPopulationStatus::Data,
+                None,
+                Some(data),
+            ));
+            variant.section_outcomes.complete(
+                VARIANT_SECTION_POPULATION,
+                SectionOutcome::data("gnomAD v4"),
+            );
+        }
+        Ok(_) => {
+            variant.population = Some(population_result(
+                GnomadPopulationStatus::Absent,
+                Some("This variant is absent from gnomAD v4."),
+                None,
+            ));
+            variant.section_outcomes.complete(
+                VARIANT_SECTION_POPULATION,
+                SectionOutcome::empty("gnomAD v4"),
+            );
+        }
+        Err(_) => {
+            variant.population = Some(population_result(
+                GnomadPopulationStatus::ProviderFailure,
+                Some(GNOMAD_PROVIDER_FAILURE),
+                None,
+            ));
+            variant.section_outcomes.complete(
+                VARIANT_SECTION_POPULATION,
+                SectionOutcome::unavailable(GNOMAD_PROVIDER_FAILURE),
+            );
+        }
     }
 }
 
@@ -981,7 +1079,7 @@ pub async fn get_with_workflow_signals(
         variant.expanded_predictions.clear();
     }
     if !section_flags.include_population {
-        variant.population_breakdown = None;
+        variant.population = None;
     }
     if !section_flags.include_cosmic {
         variant.cosmic_context = None;
@@ -1005,6 +1103,9 @@ pub async fn get_with_workflow_signals(
     }
     if section_flags.include_prediction {
         add_prediction(&mut variant).await?;
+    }
+    if section_flags.include_population {
+        add_population(&mut variant).await;
     }
     if section_flags.include_cbioportal {
         add_cbioportal(&mut variant).await;

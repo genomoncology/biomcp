@@ -2013,6 +2013,18 @@
       }
     },
     {
+      "path": "gnomad/variant_7_140753125_t_c_v4_20260812.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "gnomAD",
+        "request": "https://gnomad.broadinstitute.org/api",
+        "captured_at": "2026-08-12T11:09:51Z",
+        "sha256": "582346a4a345cf4e30215c9e7d7b8e0963bf3c8ec149a3029b2c4d41450c58e0",
+        "minimization_or_redaction": "Reduced ancestry arrays to AFR and NFE rows while preserving exact overall counts, discordant exome/genome filters, and genome grpmax FAF95; JSON whitespace was normalized.",
+        "provider_origin_statement": "Bytes were recorded from the public gnomAD GraphQL response produced by BioMCP's pinned gnomad_r4 RequestPlan shape before the stated minimization."
+      }
+    },
+    {
       "path": "gwas/associations_gene_tcf7l2_v2_20260812.json",
       "classification": "real_and_receipted",
       "receipt": {

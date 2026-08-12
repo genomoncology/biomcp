@@ -397,7 +397,7 @@ fn markdown_detail_outputs_label_variant_protein_pgx_and_openfda_sources() {
     let variant_markdown = variant_markdown(&variant, &["all".to_string()]).expect("variant");
     assert!(variant_markdown.contains("Source: MyVariant.info / ClinVar"));
     assert!(variant_markdown.contains("## AlphaGenome Prediction"));
-    assert!(variant_markdown.contains("## Population (gnomAD via MyVariant.info)"));
+    assert!(variant_markdown.contains("## Population (direct gnomAD v4)"));
     assert!(variant_markdown.contains("## Conservation (MyVariant.info)"));
     assert!(variant_markdown.contains("## Expanded Predictions (MyVariant.info)"));
     assert!(variant_markdown.contains("## CGI Drug Associations (Cancer Genome Interpreter)"));

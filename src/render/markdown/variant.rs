@@ -47,6 +47,18 @@ pub fn variant_markdown(
         .genome_build_provenance
         .as_deref()
         .is_some_and(|value| value.contains("provider default"));
+    let exome_filters = variant
+        .population
+        .as_ref()
+        .and_then(|population| population.exome.as_ref())
+        .map(expanded_gnomad_filters)
+        .unwrap_or_default();
+    let genome_filters = variant
+        .population
+        .as_ref()
+        .and_then(|population| population.genome.as_ref())
+        .map(expanded_gnomad_filters)
+        .unwrap_or_default();
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&variant_label, requested_sections),
@@ -72,9 +84,9 @@ pub fn variant_markdown(
         clinvar_conditions => &variant.clinvar_conditions,
         clinvar_condition_reports => &variant.clinvar_condition_reports,
         top_disease => &variant.top_disease,
-        gnomad_af => &variant.gnomad_af,
-        allele_frequency_percent => &variant.allele_frequency_percent,
-        population_breakdown => &variant.population_breakdown,
+        population => &variant.population,
+        exome_filters => exome_filters,
+        genome_filters => genome_filters,
         cadd_score => &variant.cadd_score,
         sift_pred => &variant.sift_pred,
         polyphen_pred => &variant.polyphen_pred,
@@ -109,6 +121,29 @@ pub fn variant_markdown(
     })?;
     let body = append_source_state_messages(body, "variant", &variant.section_outcomes);
     Ok(append_evidence_urls(body, variant_evidence_urls(variant)))
+}
+
+fn expanded_gnomad_filters(
+    population: &crate::sources::gnomad::GnomadSequencingPopulation,
+) -> Vec<String> {
+    population
+        .filters
+        .iter()
+        .map(|flag| {
+            let meaning = match flag.as_str() {
+                "AC0" => "allele count is zero after filtering",
+                "InbreedingCoeff" => "inbreeding coefficient filter",
+                "RF" => "random forest quality filter",
+                "AS_VQSR" => "allele-specific variant quality score recalibration filter",
+                "EXCESS_HET" => "excess heterozygosity filter",
+                "LCR" => "low-complexity region",
+                "SEGDUP" => "segmental duplication",
+                "monoallelic" => "site is monoallelic after filtering",
+                _ => return flag.clone(),
+            };
+            format!("{flag} ({meaning})")
+        })
+        .collect()
 }
 
 fn civic_actionability_pointer(variant: &Variant) -> String {

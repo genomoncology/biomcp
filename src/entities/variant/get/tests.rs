@@ -58,16 +58,13 @@ fn braf_variant_stub() -> Variant {
         clinvar_review_status: None,
         clinvar_review_stars: None,
         conditions: Vec::new(),
-        gnomad_af: None,
-        allele_frequency_raw: None,
-        allele_frequency_percent: None,
         consequence: None,
         cadd_score: None,
         sift_pred: None,
         polyphen_pred: None,
         conservation: None,
         expanded_predictions: Vec::new(),
-        population_breakdown: None,
+        population: None,
         cosmic_context: None,
         cgi_associations: Vec::new(),
         civic: None,
@@ -339,16 +336,13 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
         clinvar_review_status: None,
         clinvar_review_stars: None,
         conditions: Vec::new(),
-        gnomad_af: None,
-        allele_frequency_raw: None,
-        allele_frequency_percent: None,
         consequence: None,
         cadd_score: None,
         sift_pred: None,
         polyphen_pred: None,
         conservation: None,
         expanded_predictions: Vec::new(),
-        population_breakdown: None,
+        population: None,
         cosmic_context: None,
         cgi_associations: Vec::new(),
         civic: None,
@@ -368,6 +362,68 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
         civic_molecular_profile_name(&variant).as_deref(),
         Some("BRAF V600E")
     );
+}
+
+#[test]
+fn population_request_requires_a_grch38_genomic_coordinate() {
+    let mut variant = braf_variant_stub();
+    assert_eq!(population_variant_id(&variant), None);
+
+    variant.genome_build = Some(GenomeBuild::Grch37);
+    assert_eq!(population_variant_id(&variant), None);
+
+    variant.genome_build = Some(GenomeBuild::Grch38);
+    assert_eq!(
+        population_variant_id(&variant).as_deref(),
+        Some("7-140453136-A-T")
+    );
+}
+
+#[test]
+fn population_result_names_the_pinned_dataset_and_keeps_sources_separate() {
+    let data = GnomadVariantPopulation {
+        variant_id: "7-140453136-A-T".into(),
+        exome: Some(crate::sources::gnomad::GnomadSequencingPopulation {
+            allele_frequency: Some(0.1),
+            ac: 1,
+            an: 10,
+            homozygote_count: 0,
+            hemizygote_count: 0,
+            filters: vec!["AC0".into()],
+            faf95: None,
+            populations: Vec::new(),
+        }),
+        genome: None,
+    };
+    let result = population_result(GnomadPopulationStatus::Data, None, Some(data));
+
+    assert_eq!(result.status, GnomadPopulationStatus::Data);
+    assert_eq!(result.dataset, "gnomad_r4");
+    assert_eq!(result.release, "gnomAD v4");
+    assert!(result.exome.is_some());
+    assert!(result.genome.is_none());
+    assert!(result.faf_caveat.contains("bottlenecked"));
+}
+
+#[test]
+fn population_status_json_keeps_explicit_null_exome_and_genome_results() {
+    for (status, message) in [
+        (GnomadPopulationStatus::Missing, GNOMAD_GRCH38_REQUIRED),
+        (
+            GnomadPopulationStatus::Absent,
+            "This variant is absent from gnomAD v4.",
+        ),
+        (
+            GnomadPopulationStatus::ProviderFailure,
+            GNOMAD_PROVIDER_FAILURE,
+        ),
+    ] {
+        let value = serde_json::to_value(population_result(status, Some(message), None)).unwrap();
+        assert_eq!(value["status"], serde_json::to_value(status).unwrap());
+        assert!(value["exome"].is_null());
+        assert!(value["genome"].is_null());
+        assert_eq!(value["message"], message);
+    }
 }
 
 #[test]

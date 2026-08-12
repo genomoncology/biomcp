@@ -3,9 +3,9 @@ use std::collections::HashMap;
 #[cfg(feature = "alphagenome")]
 use crate::entities::variant::VariantPrediction;
 use crate::entities::variant::{
-    ConditionReportCount, PopulationFrequency, Variant, VariantCgiAssociation, VariantCivicSection,
-    VariantConservationScores, VariantCosmicContext, VariantPopulationBreakdown,
-    VariantPredictionScore, VariantSearchResult, normalize_protein_change,
+    ConditionReportCount, Variant, VariantCgiAssociation, VariantCivicSection,
+    VariantConservationScores, VariantCosmicContext, VariantPredictionScore, VariantSearchResult,
+    normalize_protein_change,
 };
 use crate::sources::cbioportal::CBioMutationSummary;
 use crate::sources::civic::CivicEvidenceItem;
@@ -170,21 +170,6 @@ fn first_nonempty(values: &StringOrVec) -> Option<String> {
         .map(str::trim)
         .filter(|v| !v.is_empty())
         .map(str::to_string)
-}
-
-fn format_af_percent(af: f64) -> String {
-    if af == 0.0 {
-        return "0%".to_string();
-    }
-
-    let percent = af * 100.0;
-    if af < 0.0001 {
-        "< 0.01%".to_string()
-    } else if af < 0.01 {
-        format!("{percent:.4}%")
-    } else {
-        format!("{percent:.2}%")
-    }
 }
 
 fn extract_conservation(hit: &MyVariantHit) -> Option<VariantConservationScores> {
@@ -380,127 +365,6 @@ fn extract_expanded_predictions(hit: &MyVariantHit) -> Vec<VariantPredictionScor
     );
 
     out
-}
-
-fn push_population(
-    out: &mut Vec<PopulationFrequency>,
-    label: &str,
-    af: Option<f64>,
-    is_subgroup: bool,
-) {
-    let Some(af) = af else {
-        return;
-    };
-    out.push(PopulationFrequency {
-        population: label.to_string(),
-        af,
-        is_subgroup,
-    });
-}
-
-fn extract_population_breakdown(hit: &MyVariantHit) -> Option<VariantPopulationBreakdown> {
-    let af = best_gnomad_af(hit);
-    let mut populations: Vec<PopulationFrequency> = Vec::new();
-    if let Some(af) = af {
-        push_population(
-            &mut populations,
-            "African/African American",
-            af.af_afr,
-            false,
-        );
-        push_population(
-            &mut populations,
-            "African/African American (female)",
-            af.af_afr_female,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "African/African American (male)",
-            af.af_afr_male,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "Latino/Admixed American",
-            af.af_amr,
-            false,
-        );
-        push_population(
-            &mut populations,
-            "Latino/Admixed American (female)",
-            af.af_amr_female,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "Latino/Admixed American (male)",
-            af.af_amr_male,
-            true,
-        );
-        push_population(&mut populations, "East Asian", af.af_eas, false);
-        push_population(
-            &mut populations,
-            "East Asian (Japanese)",
-            af.af_eas_jpn,
-            true,
-        );
-        push_population(&mut populations, "East Asian (Korean)", af.af_eas_kor, true);
-        push_population(&mut populations, "Non-Finnish European", af.af_nfe, false);
-        push_population(
-            &mut populations,
-            "Non-Finnish European (Bulgarian)",
-            af.af_nfe_bgr,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "Non-Finnish European (Estonian)",
-            af.af_nfe_est,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "Non-Finnish European (Northwestern)",
-            af.af_nfe_nwe,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "Non-Finnish European (Other)",
-            af.af_nfe_onf,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "Non-Finnish European (Southeastern)",
-            af.af_nfe_seu,
-            true,
-        );
-        push_population(
-            &mut populations,
-            "Non-Finnish European (Swedish)",
-            af.af_nfe_swe,
-            true,
-        );
-        push_population(&mut populations, "South Asian", af.af_sas, false);
-        push_population(&mut populations, "Ashkenazi Jewish", af.af_asj, false);
-        push_population(&mut populations, "Finnish", af.af_fin, false);
-        push_population(&mut populations, "Other", af.af_oth, false);
-    }
-
-    let exac_af = hit.exac.as_ref().and_then(|e| e.af);
-    let exac_nontcga_af = hit.exac_nontcga.as_ref().and_then(|e| e.af);
-
-    if populations.is_empty() && exac_af.is_none() && exac_nontcga_af.is_none() {
-        return None;
-    }
-
-    Some(VariantPopulationBreakdown {
-        populations,
-        exac_af,
-        exac_nontcga_af,
-    })
 }
 
 fn extract_cosmic_details(hit: &MyVariantHit) -> Option<VariantCosmicContext> {
@@ -982,8 +846,6 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         })
         .unwrap_or((None, None, None, Vec::new(), Vec::new(), None));
 
-    let gnomad_af = best_gnomad_af(hit).and_then(|a| a.af);
-    let allele_frequency_percent = gnomad_af.map(format_af_percent);
     let cadd_score = hit.cadd.as_ref().and_then(|c| c.phred);
     let consequence = pick_consequence(hit);
     let cached_civic = extract_civic_cached_evidence(hit);
@@ -1009,16 +871,13 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         conditions,
         clinvar_conditions,
         clinvar_condition_reports,
-        gnomad_af,
-        allele_frequency_raw: gnomad_af,
-        allele_frequency_percent,
         consequence,
         cadd_score,
         sift_pred,
         polyphen_pred,
         conservation: extract_conservation(hit),
         expanded_predictions: extract_expanded_predictions(hit),
-        population_breakdown: extract_population_breakdown(hit),
+        population: None,
         cosmic_context: extract_cosmic_details(hit),
         cgi_associations: extract_cgi_associations(hit),
         civic: (!cached_civic.is_empty()).then_some(VariantCivicSection {
@@ -1267,7 +1126,7 @@ mod tests {
         let variant = from_myvariant_hit(&hit);
         assert!(variant.conservation.is_some());
         assert!(!variant.expanded_predictions.is_empty());
-        assert!(variant.population_breakdown.is_some());
+        assert!(variant.population.is_none());
         assert!(variant.cosmic_context.is_some());
         assert_eq!(variant.cgi_associations.len(), 1);
         assert_eq!(
@@ -1302,14 +1161,6 @@ mod tests {
             .expect("no-AF prediction should be present");
         assert_eq!(no_af.score, Some(0.335473));
         assert_eq!(no_af.prediction.as_deref(), Some("D"));
-    }
-
-    #[test]
-    fn format_af_percent_respects_thresholds() {
-        assert_eq!(format_af_percent(0.0), "0%");
-        assert_eq!(format_af_percent(0.00001), "< 0.01%");
-        assert_eq!(format_af_percent(0.0001), "0.0100%");
-        assert_eq!(format_af_percent(0.0123), "1.23%");
     }
 
     #[test]

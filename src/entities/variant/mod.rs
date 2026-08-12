@@ -159,12 +159,6 @@ pub struct Variant {
     pub conditions: Vec<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub gnomad_af: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub allele_frequency_raw: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub allele_frequency_percent: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub consequence: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -178,7 +172,7 @@ pub struct Variant {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub expanded_predictions: Vec<VariantPredictionScore>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub population_breakdown: Option<VariantPopulationBreakdown>,
+    pub population: Option<GnomadPopulationResult>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cosmic_context: Option<VariantCosmicContext>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -248,21 +242,24 @@ pub struct VariantGwasAssociation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PopulationFrequency {
-    pub population: String,
-    pub af: f64,
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub is_subgroup: bool,
+pub struct GnomadPopulationResult {
+    pub status: GnomadPopulationStatus,
+    pub dataset: String,
+    pub release: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    pub exome: Option<crate::sources::gnomad::GnomadSequencingPopulation>,
+    pub genome: Option<crate::sources::gnomad::GnomadSequencingPopulation>,
+    pub faf_caveat: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VariantPopulationBreakdown {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub populations: Vec<PopulationFrequency>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub exac_af: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub exac_nontcga_af: Option<f64>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GnomadPopulationStatus {
+    Data,
+    Missing,
+    Absent,
+    ProviderFailure,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

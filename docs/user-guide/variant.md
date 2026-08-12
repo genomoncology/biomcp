@@ -195,12 +195,15 @@ fallback.
 Population section:
 
 ```bash
-biomcp get variant "chr7:g.140453136A>T" population
+biomcp get variant "GRCh38:chr7:g.140753336A>T" population
 ```
 
-Population JSON exposes additive compact frequency fields:
-`allele_frequency_raw` and `allele_frequency_percent`. Markdown keeps the raw
-gnomAD AF line and appends the compact percent inline.
+Population JSON exposes a direct `gnomad_r4` result with separate `exome` and
+`genome` objects. Each object preserves raw numeric allele frequencies and
+counts by ancestry, quality flags, and grpmax FAF95 when available. The result
+distinguishes a missing trustworthy GRCh38 coordinate, a variant absent from
+gnomAD v4, and a provider failure. gnomAD excludes bottlenecked genetic ancestry
+groups when selecting grpmax FAF; BioMCP repeats that caveat in the result.
 
 CIViC section:
 

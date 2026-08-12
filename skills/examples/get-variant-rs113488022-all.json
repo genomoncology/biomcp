@@ -1,6 +1,8 @@
 {
   "gene": "BRAF",
-  "id": "chr7:g.140453136A>T",
+  "id": "chr7:g.140753336A>T",
+  "genome_build": "GRCh38",
+  "genome_build_provenance": "MyVariant.info requested GRCh38",
   "hgvs_p": "p.V600E",
   "hgvs_c": "c.620T>A",
   "rsid": "rs113488022",
@@ -19,7 +21,23 @@
     "Lymphangioma",
     "Malignant neoplastic disease"
   ],
-  "gnomad_af": 0.00000397994,
+  "population": {
+    "status": "data",
+    "dataset": "gnomad_r4",
+    "release": "gnomAD v4",
+    "exome": {
+      "allele_frequency": 0.0000013692829212026208,
+      "ac": 2,
+      "an": 1460618,
+      "homozygote_count": 0,
+      "hemizygote_count": 0,
+      "filters": [],
+      "faf95": null,
+      "populations": []
+    },
+    "genome": null,
+    "faf_caveat": "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
+  },
   "consequence": "missense_variant",
   "cadd_score": 32.0,
   "polyphen_pred": "Probably damaging",
@@ -57,13 +75,17 @@
       {
         "label": "COSMIC",
         "url": "https://cancer.sanger.ac.uk/cosmic/mutation/overview?id=COSM476"
+      },
+      {
+        "label": "gnomAD",
+        "url": "https://gnomad.broadinstitute.org/variant/7-140753336-A-T?dataset=gnomad_r4"
       }
     ],
     "next_commands": [
       "biomcp get gene BRAF",
       "biomcp search drug --target BRAF",
-      "biomcp variant trials chr7:g.140453136A>T",
-      "biomcp variant articles chr7:g.140453136A>T"
+      "biomcp variant trials chr7:g.140753336A>T",
+      "biomcp variant articles chr7:g.140753336A>T"
     ]
   }
 }

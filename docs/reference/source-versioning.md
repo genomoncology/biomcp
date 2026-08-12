@@ -79,4 +79,5 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 - CDC WONDER VAERS intentionally stays out of `./scripts/contract-smoke.sh`: the
   D8 contract is POST/XML, relatively volatile, and already covered by the
   real-query health row plus fixture-frozen unit/spec tests.
-- gnomAD versioning is handled by dataset selection in GraphQL variables and is verified by dataset fallback tests.
+- gnomAD versioning is pinned to the `gnomad_r4` dataset in the GraphQL operation;
+  BioMCP does not fall back to another dataset for variant population results.

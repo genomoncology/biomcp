@@ -135,9 +135,28 @@ fn variant_markdown_next_commands_quote_variant_ids_with_spaces() {
 fn variant_markdown_renders_compact_clinvar_and_population_fields() {
     let variant: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr7:g.140453136A>T",
+        "genome_build": "GRCh38",
         "gene": "BRAF",
-        "gnomad_af": 0.0001,
-        "allele_frequency_percent": "0.0100%",
+        "population": {
+            "status": "data",
+            "dataset": "gnomad_r4",
+            "release": "gnomAD v4",
+            "exome": {
+                "allele_frequency": 0.0001,
+                "ac": 2,
+                "an": 20000,
+                "homozygote_count": 0,
+                "hemizygote_count": 0,
+                "filters": ["RF"],
+                "faf95": {"popmax": 0.0002, "popmax_population": "nfe"},
+                "populations": [{
+                    "id": "nfe", "allele_frequency": 0.0001,
+                    "ac": 1, "an": 10000, "homozygote_count": 0,
+                    "hemizygote_count": 0
+                }]
+            },
+            "faf_caveat": "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
+        },
         "top_disease": {"condition": "Melanoma", "reports": 2},
         "clinvar_conditions": [{"condition": "Melanoma", "reports": 2}]
     }))
@@ -145,8 +164,38 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
 
     let markdown = variant_markdown(&variant, &["all".to_string()]).expect("rendered markdown");
     assert!(markdown.contains("Top disease (ClinVar): Melanoma (2 reports)"));
-    assert!(markdown.contains("gnomAD AF:"));
-    assert!(markdown.contains("(0.0100%)"));
+    assert!(markdown.contains("## Population (direct gnomAD v4)"));
+    assert!(
+        markdown.contains("gnomAD v4 | Overall | 0.0001"),
+        "{markdown}"
+    );
+    assert!(markdown.contains("gnomAD v4 exome grpmax FAF95: 0.0002 (nfe)"));
+    assert!(markdown.contains("RF (random forest quality filter)"));
+}
+
+#[test]
+fn variant_population_markdown_keeps_missing_status_compact() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr7:g.140453136A>T",
+        "genome_build": "GRCh37",
+        "gene": "BRAF",
+        "population": {
+            "status": "missing",
+            "dataset": "gnomad_r4",
+            "release": "gnomAD v4",
+            "message": "Direct gnomAD v4 population data requires a trustworthy GRCh38 coordinate.",
+            "exome": null,
+            "genome": null,
+            "faf_caveat": "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
+        }
+    }))
+    .expect("variant should deserialize");
+
+    let markdown = variant_markdown(&variant, &["population".to_string()]).unwrap();
+    assert!(markdown.starts_with("# BRAF - population"));
+    assert!(markdown.contains("requires a trustworthy GRCh38 coordinate"));
+    assert!(!markdown.contains("### Exomes"));
+    assert!(!markdown.contains("## ClinVar"));
 }
 
 #[test]

@@ -14,6 +14,7 @@ pub(crate) const GNOMAD_API: &str = "gnomAD";
 pub(crate) const GNOMAD_BASE_ENV: &str = "BIOMCP_GNOMAD_BASE";
 pub(crate) const GNOMAD_CONSTRAINT_VERSION: &str = "v4";
 pub(crate) const GNOMAD_CONSTRAINT_REFERENCE_GENOME: &str = "GRCh38";
+pub(crate) const GNOMAD_VARIANT_MAX_BODY_BYTES: usize = 512 * 1024;
 const GENE_CONSTRAINT_QUERY: &str = r#"
 query GeneConstraint($symbol: String!) {
   gene(gene_symbol: $symbol, reference_genome: GRCh38) {
@@ -24,6 +25,15 @@ query GeneConstraint($symbol: String!) {
       mis_z
       syn_z
     }
+  }
+}
+"#;
+const VARIANT_POPULATION_QUERY: &str = r#"
+query VariantPopulation($variantId: String!) {
+  variant(variantId: $variantId, dataset: gnomad_r4) {
+    variant_id
+    exome { ac an homozygote_count hemizygote_count filters faf95 { popmax popmax_population } populations { id ac an homozygote_count hemizygote_count } }
+    genome { ac an homozygote_count hemizygote_count filters faf95 { popmax popmax_population } populations { id ac an homozygote_count hemizygote_count } }
   }
 }
 "#;
@@ -75,6 +85,48 @@ struct ConstraintPayload {
     syn_z: Option<f64>,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct GnomadVariantPopulation {
+    pub variant_id: String,
+    pub exome: Option<GnomadSequencingPopulation>,
+    pub genome: Option<GnomadSequencingPopulation>,
+}
+
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
+pub struct GnomadSequencingPopulation {
+    #[serde(default)]
+    pub allele_frequency: Option<f64>,
+    pub ac: u64,
+    pub an: u64,
+    pub homozygote_count: u64,
+    pub hemizygote_count: u64,
+    pub filters: Vec<String>,
+    pub faf95: Option<GnomadFaf95>,
+    pub populations: Vec<GnomadAncestryPopulation>,
+}
+
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
+pub struct GnomadFaf95 {
+    pub popmax: Option<f64>,
+    pub popmax_population: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
+pub struct GnomadAncestryPopulation {
+    pub id: String,
+    #[serde(default)]
+    pub allele_frequency: Option<f64>,
+    pub ac: u64,
+    pub an: u64,
+    pub homozygote_count: u64,
+    pub hemizygote_count: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct VariantPopulationResponse {
+    variant: Option<GnomadVariantPopulation>,
+}
+
 impl GnomadClient {
     pub fn new() -> Result<Self, BioMcpError> {
         Ok(Self {
@@ -97,6 +149,19 @@ impl GnomadClient {
             "variables": { "symbol": symbol },
         }));
         Ok(plan)
+    }
+
+    pub(crate) fn variant_population_plan(variant_id: &str) -> Result<RequestPlan, BioMcpError> {
+        let variant_id = variant_id.trim();
+        if variant_id.is_empty() || variant_id.chars().count() > 256 {
+            return Err(BioMcpError::InvalidArgument(
+                "gnomAD variant ID is invalid".into(),
+            ));
+        }
+        Ok(RequestPlan::post("").json(serde_json::json!({
+            "query": VARIANT_POPULATION_QUERY,
+            "variables": { "variantId": variant_id },
+        })))
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
@@ -201,6 +266,50 @@ impl GnomadClient {
         }))
     }
 
+    fn parse_variant_population_response(
+        resp: GraphQlResponse<VariantPopulationResponse>,
+    ) -> Result<Option<GnomadVariantPopulation>, BioMcpError> {
+        if let Some(errors) = resp.errors.filter(|errors| !errors.is_empty()) {
+            let messages = errors
+                .into_iter()
+                .filter_map(|error| error.message)
+                .map(|message| message.trim().to_string())
+                .filter(|message| !message.is_empty())
+                .collect::<Vec<_>>();
+            if resp.data.as_ref().is_none_or(|data| data.variant.is_none())
+                && !messages.is_empty()
+                && messages
+                    .iter()
+                    .all(|message| message.eq_ignore_ascii_case("Variant not found"))
+            {
+                return Ok(None);
+            }
+            let message = messages.join("; ");
+            return Err(BioMcpError::Api {
+                api: GNOMAD_API.into(),
+                message: if message.is_empty() {
+                    "GraphQL request failed".into()
+                } else {
+                    message
+                },
+            });
+        }
+
+        let mut variant = resp.data.and_then(|data| data.variant);
+        if let Some(variant) = variant.as_mut() {
+            for sequencing in [&mut variant.exome, &mut variant.genome]
+                .into_iter()
+                .flatten()
+            {
+                sequencing.allele_frequency = frequency(sequencing.ac, sequencing.an);
+                for ancestry in &mut sequencing.populations {
+                    ancestry.allele_frequency = frequency(ancestry.ac, ancestry.an);
+                }
+            }
+        }
+        Ok(variant)
+    }
+
     pub async fn gene_constraint(
         &self,
         symbol: &str,
@@ -214,6 +323,36 @@ impl GnomadClient {
             ))
         })
     }
+
+    pub async fn variant_population(
+        &self,
+        variant_id: &str,
+    ) -> Result<Option<GnomadVariantPopulation>, BioMcpError> {
+        let plan = Self::variant_population_plan(variant_id)?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let response = crate::sources::apply_cache_mode(req)
+            .send_with_source_context(crate::error::SourceContext::retry(
+                crate::error::SourceProvider::GNOMAD,
+            ))
+            .await?;
+        let status = response.status();
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .cloned();
+        let bytes = crate::sources::read_limited_source_body_with_limit(
+            response,
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::GNOMAD),
+            GNOMAD_VARIANT_MAX_BODY_BYTES,
+        )
+        .await?;
+        let response = Self::decode_json_response(status, content_type.as_ref(), &bytes)?;
+        Self::parse_variant_population_response(response)
+    }
+}
+
+fn frequency(ac: u64, an: u64) -> Option<f64> {
+    (an > 0).then_some(ac as f64 / an as f64)
 }
 
 #[cfg(test)]
