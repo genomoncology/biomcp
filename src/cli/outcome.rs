@@ -11,13 +11,24 @@ fn bio_mcp_error_exit_code(error: &crate::error::BioMcpError) -> u8 {
 }
 fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {
     if outcome.exit_code == 0 {
-        if let Some(bytes) = outcome.bytes {
-            return Ok(String::from_utf8_lossy(&bytes).to_string());
+        if outcome.bytes.is_some() {
+            anyhow::bail!("binary output cannot be represented as text");
         }
         Ok(outcome.text)
     } else {
         anyhow::bail!("{}", outcome.text)
     }
+}
+
+fn outcome_to_mcp_output(outcome: CommandOutcome) -> anyhow::Result<CliOutput> {
+    if outcome.bytes.is_some() {
+        anyhow::bail!("binary downloads are CLI-only and cannot be returned as MCP text");
+    }
+    Ok(CliOutput {
+        text: outcome.text,
+        metadata_json: outcome.metadata_json,
+        svg: outcome.svg,
+    })
 }
 fn mcp_output_flag_error() -> crate::error::BioMcpError {
     crate::error::BioMcpError::InvalidArgument(
@@ -748,12 +759,19 @@ pub async fn execute_mcp(mut args: Vec<String>) -> anyhow::Result<CliOutput> {
     let mut cli = crate::cli::try_parse_cli(args)?;
     prepare_mcp_chart(&mut cli)?;
     let outcome = run_outcome_with_worker_stack(cli, true).await?;
-    Ok(CliOutput {
-        text: outcome
-            .bytes
-            .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
-            .unwrap_or(outcome.text),
-        metadata_json: outcome.metadata_json,
-        svg: outcome.svg,
-    })
+    outcome_to_mcp_output(outcome)
+}
+
+#[cfg(test)]
+mod mcp_binary_tests {
+    use super::outcome_to_mcp_output;
+    use crate::cli::CommandOutcome;
+
+    #[test]
+    fn non_utf8_binary_outcome_is_never_converted_to_mcp_text() {
+        let error = outcome_to_mcp_output(CommandOutcome::stdout_bytes(vec![0xff, 0xfe]))
+            .expect_err("MCP must reject binary output");
+        assert!(error.to_string().contains("binary downloads are CLI-only"));
+        assert!(!error.to_string().contains('\u{fffd}'));
+    }
 }

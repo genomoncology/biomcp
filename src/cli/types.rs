@@ -256,6 +256,7 @@ pub struct ChartArgs {
     pub mcp_inline: bool,
 }
 
+#[derive(Debug)]
 pub struct CliOutput {
     pub text: String,
     pub metadata_json: Option<String>,

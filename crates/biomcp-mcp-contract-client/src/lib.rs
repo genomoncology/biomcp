@@ -555,6 +555,7 @@ where
     assert_eq!(annotations.read_only_hint, Some(true));
 
     assert_version_call(client).await?;
+    assert_binary_download_rejections(client).await?;
 
     let resources = client.peer().list_resources(Default::default()).await?;
     assert!(
@@ -583,6 +584,46 @@ where
     assert!(
         help_text.is_some_and(|text| text.contains("## Routing rules")),
         "help resource returned markdown text with routing rules"
+    );
+    Ok(())
+}
+
+async fn assert_binary_download_rejections<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    for command in [
+        "biomcp get trial NCT03361748 document protocol.pdf",
+        "biomcp get article 22663011 asset supplement.xlsx",
+    ] {
+        let result = call_biomcp(client, command).await?;
+        assert_eq!(result.is_error, Some(true));
+        let text = first_text(&result.content);
+        assert!(text.contains("CLI-only"), "binary rejection: {text}");
+        assert!(text.contains("biomcp get"), "binary redirection: {text}");
+        assert!(!text.contains('\u{fffd}'), "lossy binary text: {text}");
+    }
+
+    let typed = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("get").with_arguments(
+                BTreeMap::from([
+                    ("entity".to_string(), json!("article")),
+                    ("id".to_string(), json!("22663011")),
+                    ("sections".to_string(), json!(["asset", "supplement.xlsx"])),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await
+        .expect_err("typed binary download must be rejected");
+    assert!(
+        typed.to_string().contains("CLI-only"),
+        "typed rejection: {typed}"
     );
     Ok(())
 }

@@ -195,6 +195,9 @@ impl BioMcpServer {
     }
 
     async fn execute_args(args: Vec<String>, json: bool) -> Result<CallToolResult, McpError> {
+        if let Some(message) = binary_download_rejection(&args) {
+            return Ok(Self::tool_error(message));
+        }
         match crate::cli::execute_mcp(args.clone()).await {
             Ok(output) => {
                 let text = if json || args_include_json(&args) {
@@ -245,6 +248,30 @@ impl BioMcpServer {
             Err(err) => Ok(Self::tool_error(format!("Error: {err}"))),
         }
     }
+}
+
+fn binary_download_rejection(args: &[String]) -> Option<String> {
+    if args.get(1).is_none_or(|value| value != "get") {
+        return None;
+    }
+    let entity = args.get(2)?.as_str();
+    let section = args.get(4)?.as_str();
+    let is_binary = matches!(
+        (entity, section),
+        ("trial", "document") | ("article", "asset")
+    );
+    if !is_binary {
+        return None;
+    }
+    let command = args
+        .iter()
+        .take_while(|arg| !matches!(arg.as_str(), "--json" | "-j"))
+        .map(|arg| shlex::try_quote(arg).unwrap_or_else(|_| "<value>".into()))
+        .collect::<Vec<_>>()
+        .join(" ");
+    Some(format!(
+        "Binary {entity} {section} downloads are CLI-only. Run `{command}` from a terminal."
+    ))
 }
 
 impl Default for BioMcpServer {
@@ -425,18 +452,20 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
 fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
     let get_entities = subcommand_names("get");
     let entity = normalize_token(&input.entity, &get_entities, "get entity")?;
-    let allowed_sections = all_get_sections();
-    for section in &input.sections {
-        normalize_token(&section.0, &allowed_sections, "get section")?;
-    }
-
     let mut args = vec![
         "biomcp".to_string(),
         "get".to_string(),
         entity.to_string(),
-        input.id,
+        input.id.clone(),
     ];
-    args.extend(input.sections.into_iter().map(|section| section.0));
+    args.extend(input.sections.iter().map(|section| section.0.clone()));
+    if let Some(message) = binary_download_rejection(&args) {
+        return Err(McpError::invalid_params(message, None));
+    }
+    let allowed_sections = all_get_sections();
+    for section in &input.sections {
+        normalize_token(&section.0, &allowed_sections, "get section")?;
+    }
     if input.json {
         args = args_with_json(&args);
     }
@@ -1098,8 +1127,8 @@ mod tests {
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
         TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles, TypedVariantCar,
-        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, all_get_sections, get_args,
-        get_section_groups, http_allowed_hosts, index_handler, is_allowed_mcp_command,
+        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, all_get_sections, binary_download_rejection,
+        get_args, get_section_groups, http_allowed_hosts, index_handler, is_allowed_mcp_command,
         mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
         subcommand_names, to_resource_result,
     };
@@ -1110,6 +1139,33 @@ mod tests {
             .iter()
             .flat_map(|group| group.iter().copied())
             .collect()
+    }
+
+    #[test]
+    fn binary_downloads_are_rejected_but_manifests_remain_allowed() {
+        for (args, label) in [
+            (
+                ["biomcp", "get", "trial", "NCT1", "document", "protocol.pdf"],
+                "trial document",
+            ),
+            (
+                ["biomcp", "get", "article", "1", "asset", "table.xlsx"],
+                "article asset",
+            ),
+        ] {
+            let args = args.into_iter().map(String::from).collect::<Vec<_>>();
+            let message = binary_download_rejection(&args).expect("binary route is rejected");
+            assert!(message.contains(label));
+            assert!(message.contains("CLI-only"));
+            assert!(message.contains("biomcp get"));
+        }
+        for args in [
+            ["biomcp", "get", "trial", "NCT1", "documents"],
+            ["biomcp", "get", "article", "1", "assets"],
+        ] {
+            let args = args.into_iter().map(String::from).collect::<Vec<_>>();
+            assert!(binary_download_rejection(&args).is_none());
+        }
     }
 
     #[test]
