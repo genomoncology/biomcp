@@ -4,7 +4,7 @@
 # {{ symbol }} ({{ name }})
 
 Entrez ID: {{ entrez_id }}
-{% if genomic_coordinates %}Chromosome (GRCh38): {{ genomic_coordinates }}{% elif location %}Location: {{ location }}{% endif %}
+{% if genomic_coordinates %}Genomic coordinate ({{ genomic_coordinates.genome_build }}{% if genomic_coordinates.provenance and "provider default" in genomic_coordinates.provenance %}, provider default{% endif %}): {{ genomic_coordinates.coordinate }}{% elif location %}Location: {{ location }}{% endif %}
 {% if uniprot_id %}UniProt: {{ uniprot_id }}{% endif %}
 {% if gene_type %}Type: {{ gene_type }}{% endif %}
 Source: NCBI Gene / MyGene.info

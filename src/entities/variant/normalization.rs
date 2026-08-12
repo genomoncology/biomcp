@@ -62,7 +62,7 @@ pub struct VariantNormalizationServiceResult {
     pub transcript_description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub protein: Option<serde_json::Value>,
-    pub genomic_descriptions: Vec<String>,
+    pub genomic_descriptions: Vec<crate::entities::GenomicCoordinate>,
     pub warnings: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,

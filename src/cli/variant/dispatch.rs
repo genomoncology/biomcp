@@ -637,7 +637,7 @@ async fn render_variant_search_outcome(
     let body = match (page.requested_variant, page.resolution) {
         (Some(requested), Some(resolution)) => format!(
             "Requested variant: {}\n\nResolution: {:?}\n\n{body}",
-            serde_json::to_string(&requested)?,
+            requested.human_label(),
             resolution.status
         ),
         _ => body,

@@ -17,6 +17,17 @@ pub(crate) mod study;
 pub(crate) mod trial;
 pub(crate) mod variant;
 
+/// A genomic coordinate together with the assembly and provider evidence that
+/// make the coordinate meaningful.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct GenomicCoordinate {
+    pub coordinate: String,
+    pub genome_build: String,
+    pub source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct SearchPage<T> {
     pub results: Vec<T>,

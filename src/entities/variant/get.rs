@@ -301,7 +301,7 @@ pub(crate) fn normalized_get_variant_id(
             _ => None,
         })
         .flatten()
-        .find_map(|candidate| normalized_genomic_hgvs_for_get(candidate))
+        .find_map(|candidate| normalized_genomic_hgvs_for_get(&candidate.coordinate))
         .ok_or_else(|| transcript_hgvs_normalization_error(&response.input, Some(response)))
 }
 
@@ -471,7 +471,7 @@ pub(super) async fn resolve_base_with_hit(
                                 suggestion: format!("Try first: biomcp variant normalize all {id}"),
                             }
                         })?,
-                        effective_build,
+                        effective_build.or(Some(GenomeBuild::Grch37)),
                         Vec::new(),
                     )
                 } else {
@@ -508,7 +508,7 @@ pub(super) async fn resolve_base_with_hit(
                         id: rsid.to_string(),
                         suggestion: format!("Try searching: biomcp search variant -g \"{id}\""),
                     })?,
-                None,
+                Some(GenomeBuild::Grch37),
                 Vec::new(),
             )
         }
@@ -532,7 +532,7 @@ pub(super) async fn resolve_base_with_hit(
                             "Try searching: biomcp search variant -g {gene} --hgvsp {change}"
                         ),
                     })?,
-                None,
+                Some(GenomeBuild::Grch37),
                 Vec::new(),
             )
         }
@@ -540,6 +540,11 @@ pub(super) async fn resolve_base_with_hit(
 
     let mut variant = transform::variant::from_myvariant_hit(&hit);
     variant.genome_build = answering_build;
+    variant.genome_build_provenance = (answering_build == Some(GenomeBuild::Grch37)
+        && effective_build.is_none()
+        && (!matches!(id_format, VariantIdFormat::HgvsGenomic(_))
+            || matches!(input_kind, VariantInputKind::TranscriptCodingHgvs(_))))
+    .then(|| "MyVariant.info provider default".into());
     variant.build_ambiguous = (!build_candidates.is_empty()).then_some(true);
     variant.build_candidates = build_candidates;
     Ok((variant, id_format, hit))
@@ -882,6 +887,7 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         gene: String::new(),
         id: rsid.to_string(),
         genome_build: None,
+        genome_build_provenance: None,
         build_ambiguous: None,
         build_candidates: Vec::new(),
         hgvs_p: None,

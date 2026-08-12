@@ -993,6 +993,7 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         section_outcomes: crate::entities::variant::default_variant_section_outcomes(),
         id: hit.id.clone(),
         genome_build: None,
+        genome_build_provenance: None,
         build_ambiguous: None,
         build_candidates: Vec::new(),
         gene,
@@ -1059,6 +1060,8 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
 
     VariantSearchResult {
         id: hit.id.clone(),
+        genome_build: crate::entities::variant::GenomeBuild::Grch37,
+        genome_build_provenance: "MyVariant.info provider default".into(),
         gene,
         hgvs_p,
         legacy_name,

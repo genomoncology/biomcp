@@ -45,6 +45,7 @@ fn braf_variant_stub() -> Variant {
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         genome_build: None,
+        genome_build_provenance: None,
         build_ambiguous: None,
         build_candidates: Vec::new(),
         hgvs_p: Some("p.X999Y".into()),
@@ -84,6 +85,20 @@ fn braf_variant_stub() -> Variant {
 }
 
 #[test]
+fn variant_detail_coordinate_serializes_with_its_answering_build() {
+    let mut variant = braf_variant_stub();
+    variant.genome_build = Some(GenomeBuild::Grch37);
+    variant.genome_build_provenance = Some("MyVariant.info provider default".into());
+    let value = serde_json::to_value(variant).expect("serialize variant detail");
+    assert_eq!(value["id"], "chr7:g.140453136A>T");
+    assert_eq!(value["genome_build"], "GRCh37");
+    assert_eq!(
+        value["genome_build_provenance"],
+        "MyVariant.info provider default"
+    );
+}
+
+#[test]
 fn transcript_hgvs_get_and_normalize_share_normalized_genomic_identity() {
     let input = "NM_004333.6:c.1799T>A";
     assert!(matches!(
@@ -117,7 +132,12 @@ fn transcript_hgvs_get_and_normalize_share_normalized_genomic_identity() {
                     corrected_description: None,
                     transcript_description: Some(input.to_string()),
                     protein: Some(json!("NP_004324.2:p.(Val600Glu)")),
-                    genomic_descriptions: vec!["NC_000007.14:g.140753336A>T".to_string()],
+                    genomic_descriptions: vec![crate::entities::GenomicCoordinate {
+                        coordinate: "NC_000007.14:g.140753336A>T".into(),
+                        genome_build: "GRCh38".into(),
+                        source: "test".into(),
+                        provenance: None,
+                    }],
                     warnings: Vec::new(),
                     message: None,
                 },
@@ -306,6 +326,7 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
         gene: "BRAF".into(),
         id: "chr7:g.140453136A>T".into(),
         genome_build: None,
+        genome_build_provenance: None,
         build_ambiguous: None,
         build_candidates: Vec::new(),
         hgvs_p: Some("p.V600E".into()),

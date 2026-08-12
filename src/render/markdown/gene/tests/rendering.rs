@@ -49,7 +49,12 @@ fn ticket_406_coordinate_outputs_carry_genome_build_context() {
         entrez_id: "673".to_string(),
         ensembl_id: Some("ENSG00000157764".to_string()),
         location: Some("7q34".to_string()),
-        genomic_coordinates: Some("7:140719327-140924976 (strand: -1)".to_string()),
+        genomic_coordinates: Some(crate::entities::GenomicCoordinate {
+            coordinate: "7:140719327-140924976 (strand: -1)".into(),
+            genome_build: "GRCh38".into(),
+            source: "test".into(),
+            provenance: Some("MyGene.info provider default".into()),
+        }),
         omim_id: None,
         uniprot_id: Some("P15056".to_string()),
         summary: Some("Kinase involved in MAPK signaling.".to_string()),
@@ -95,8 +100,9 @@ fn ticket_406_coordinate_outputs_carry_genome_build_context() {
         gene_search_markdown("BRAF", &[search_result]).expect("rendered search markdown");
 
     assert!(
-        search_markdown.contains("Coordinates (GRCh38)")
-            && search_markdown.contains("7:140719327-140924976"),
+        search_markdown.contains("| Coordinate | Build |")
+            && search_markdown.contains("7:140719327-140924976")
+            && search_markdown.contains("| GRCh38 |"),
         "gene search coordinate output must include explicit genome-build context with the position, got {search_markdown:?}"
     );
 }

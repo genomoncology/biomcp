@@ -31,6 +31,8 @@ fn search_query_summary_includes_residue_alias_marker() {
 fn quality_score_prioritizes_significance_and_frequency() {
     let rich = VariantSearchResult {
         id: "chr1:g.1A>T".into(),
+        genome_build: super::super::GenomeBuild::Grch37,
+        genome_build_provenance: "test".into(),
         gene: "TP53".into(),
         hgvs_p: Some("p.V1A".into()),
         legacy_name: None,
@@ -44,6 +46,8 @@ fn quality_score_prioritizes_significance_and_frequency() {
     };
     let sparse = VariantSearchResult {
         id: "chr1:g.2A>T".into(),
+        genome_build: super::super::GenomeBuild::Grch37,
+        genome_build_provenance: "test".into(),
         gene: "TP53".into(),
         hgvs_p: Some("p.V2A".into()),
         legacy_name: None,
@@ -95,6 +99,7 @@ fn candidate_scan_exhaustion_requires_empty_page_or_reaching_provider_total() {
 fn normalized_source_identity_key_deduplicates_alias_order_and_spelling() {
     let first = SourceVariantIdentity {
         genomic_id: "chr7:g.1A>T".into(),
+        genome_build: "GRCh37".into(),
         genes: vec!["BRAF".into()],
         protein_changes: vec!["p.Val600Glu".into(), "p.V600E".into()],
         coding_changes: vec!["NM_004333.6:c.1799T>A".into()],

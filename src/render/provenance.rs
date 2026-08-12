@@ -314,7 +314,7 @@ pub(crate) fn gene_section_sources(gene: &Gene) -> Vec<SectionSource> {
         || has_text(&gene.name)
         || has_text(&gene.entrez_id)
         || has_opt_text(&gene.location)
-        || has_opt_text(&gene.genomic_coordinates)
+        || gene.genomic_coordinates.is_some()
         || has_opt_text(&gene.uniprot_id)
         || has_opt_text(&gene.ensembl_id)
         || has_opt_text(&gene.omim_id)
@@ -1055,6 +1055,7 @@ mod tests {
             gene: String::new(),
             id: "rs7903146".to_string(),
             genome_build: None,
+            genome_build_provenance: None,
             build_ambiguous: None,
             build_candidates: Vec::new(),
             hgvs_p: None,

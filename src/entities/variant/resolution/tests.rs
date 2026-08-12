@@ -273,6 +273,7 @@ fn structured_article_identity_requires_refseq_build_and_rejects_duplicate_compo
 fn source_identity() -> SourceVariantIdentity {
     SourceVariantIdentity {
         genomic_id: "GRCh38:chr7:g.140453136A>T".into(),
+        genome_build: "GRCh38".into(),
         genes: vec!["BRAF".into()],
         protein_changes: vec!["NP_004324.2:p.Val600Glu".into(), "p.V600E".into()],
         coding_changes: vec!["NM_004333.6:c.1799T>A".into()],
@@ -308,6 +309,7 @@ fn identity_comparison_accepts_identical_complex_protein_hgvs() {
     );
     let source = SourceVariantIdentity {
         genomic_id: "chr7:g.55242465_55242479del".into(),
+        genome_build: "GRCh37".into(),
         genes: vec!["EGFR".into()],
         protein_changes: vec!["NP_005219.2:p.Glu746_Ala750del".into()],
         ..Default::default()

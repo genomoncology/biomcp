@@ -624,6 +624,8 @@ async fn variant_search_shorthand_json_returns_variant_guidance_metadata() {
 fn ticket_377_variant_renderer_envelope_contracts() {
     let results = vec![crate::entities::variant::VariantSearchResult {
         id: "rs113488022".to_string(),
+        genome_build: crate::entities::variant::GenomeBuild::Grch37,
+        genome_build_provenance: "test".into(),
         gene: "BRAF".to_string(),
         hgvs_p: Some("p.V600E".to_string()),
         legacy_name: Some("BRAF V600E".to_string()),
@@ -647,6 +649,8 @@ fn ticket_377_variant_renderer_envelope_contracts() {
     )
     .expect("variant search_json_with_meta");
     let value: serde_json::Value = serde_json::from_str(&json).expect("valid variant JSON");
+    assert_eq!(value["results"][0]["genome_build"], "GRCh37");
+    assert_eq!(value["results"][0]["genome_build_provenance"], "test");
     assert!(
         value["_meta"]["next_commands"]
             .as_array()
@@ -679,13 +683,26 @@ fn ticket_377_variant_renderer_envelope_contracts() {
                 corrected_description: None,
                 transcript_description: None,
                 protein: None,
-                genomic_descriptions: vec!["NC_000007.14:g.140753336A>T".to_string()],
+                genomic_descriptions: vec![crate::entities::GenomicCoordinate {
+                    coordinate: "NC_000007.14:g.140753336A>T".into(),
+                    genome_build: "GRCh38".into(),
+                    source: "test".into(),
+                    provenance: None,
+                }],
                 warnings: vec!["fixture warning from normalization service".to_string()],
                 message: Some("Invalid transcript HGVS".to_string()),
             },
         )],
     };
     let normalization_json = serde_json::to_value(&normalization).expect("normalization JSON");
+    assert_eq!(
+        normalization_json["services"][0]["genomic_descriptions"][0],
+        serde_json::json!({
+            "coordinate": "NC_000007.14:g.140753336A>T",
+            "genome_build": "GRCh38",
+            "source": "test"
+        })
+    );
     assert_eq!(normalization_json["services"][0]["status"], "invalid_input");
     assert_eq!(
         normalization_json["services"][0]["warnings"][0],

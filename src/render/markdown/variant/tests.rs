@@ -1,6 +1,6 @@
 use super::*;
 use crate::entities::variant::{
-    TreatmentImplication, VariantNormalizationAggregate, VariantNormalizationResponse,
+    GenomeBuild, TreatmentImplication, VariantNormalizationAggregate, VariantNormalizationResponse,
     VariantNormalizationServiceResult, VariantNormalizationStatus,
 };
 
@@ -194,6 +194,8 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
     let results = vec![
         VariantSearchResult {
             id: "chr6:g.118880200T>G".to_string(),
+            genome_build: GenomeBuild::Grch37,
+            genome_build_provenance: "test".into(),
             gene: "PLN".to_string(),
             hgvs_p: Some("p.L39X".to_string()),
             legacy_name: Some("PLN L39stop".to_string()),
@@ -207,6 +209,8 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
         },
         VariantSearchResult {
             id: "chr6:g.118880100A>G".to_string(),
+            genome_build: GenomeBuild::Grch37,
+            genome_build_provenance: "test".into(),
             gene: "PLN".to_string(),
             hgvs_p: Some("p.K3R".to_string()),
             legacy_name: None,
@@ -222,9 +226,9 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
 
     let markdown =
         variant_search_markdown("gene=PLN, hgvsp=L39X", &results).expect("rendered markdown");
-    assert!(markdown.contains("| ID | Gene | Protein | Legacy Name | Significance |"));
-    assert!(markdown.contains("| chr6:g.118880200T>G | PLN | p.L39X | PLN L39stop |"));
-    assert!(markdown.contains("| chr6:g.118880100A>G | PLN | p.K3R | - |"));
+    assert!(markdown.contains("| ID | Build | Gene | Protein | Legacy Name | Significance |"));
+    assert!(markdown.contains("| chr6:g.118880200T>G | GRCh37 | PLN | p.L39X | PLN L39stop |"));
+    assert!(markdown.contains("| chr6:g.118880100A>G | GRCh37 | PLN | p.K3R | - |"));
 }
 
 #[test]
@@ -232,6 +236,8 @@ fn variant_search_markdown_renders_related_commands_from_context() {
     let results = vec![
         VariantSearchResult {
             id: "rs199473688".to_string(),
+            genome_build: GenomeBuild::Grch37,
+            genome_build_provenance: "test".into(),
             gene: "SCN5A".to_string(),
             hgvs_p: Some("p.Arg282His".to_string()),
             legacy_name: None,
@@ -245,6 +251,8 @@ fn variant_search_markdown_renders_related_commands_from_context() {
         },
         VariantSearchResult {
             id: "rs7626962".to_string(),
+            genome_build: GenomeBuild::Grch37,
+            genome_build_provenance: "test".into(),
             gene: "SCN5A".to_string(),
             hgvs_p: Some("p.Gly514Cys".to_string()),
             legacy_name: None,
@@ -317,7 +325,12 @@ fn ticket_406_coordinate_outputs_carry_genome_build_context() {
                     corrected_description: None,
                     transcript_description: Some("NM_000248.3:c.135del".to_string()),
                     protein: None,
-                    genomic_descriptions: vec!["NC_000023.11:g.32389644del".to_string()],
+                    genomic_descriptions: vec![crate::entities::GenomicCoordinate {
+                        coordinate: "NC_000023.11:g.32389644del".into(),
+                        genome_build: "GRCh38".into(),
+                        source: "test".into(),
+                        provenance: None,
+                    }],
                     warnings: Vec::new(),
                     message: None,
                 },
@@ -477,7 +490,12 @@ fn normalization_markdown_keeps_legacy_collection_labels() {
                 corrected_description: None,
                 transcript_description: None,
                 protein: None,
-                genomic_descriptions: vec!["NC_000017.11:g.7674220C>G".into()],
+                genomic_descriptions: vec![crate::entities::GenomicCoordinate {
+                    coordinate: "NC_000017.11:g.7674220C>G".into(),
+                    genome_build: "GRCh38".into(),
+                    source: "test".into(),
+                    provenance: None,
+                }],
                 warnings: vec!["provider note".into()],
                 message: None,
             },
@@ -485,7 +503,9 @@ fn normalization_markdown_keeps_legacy_collection_labels() {
     };
 
     let markdown = variant_normalization_markdown(&result);
-    assert!(markdown.contains("Genomic descriptions:\n- GRCh38 NC_000017.11:g.7674220C>G"));
+    assert!(markdown.contains(
+        "Genomic descriptions:\n- Genomic coordinate (GRCh38): NC_000017.11:g.7674220C>G"
+    ));
     assert!(markdown.contains("Warnings:\n- provider note"));
 }
 

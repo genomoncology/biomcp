@@ -43,11 +43,16 @@ pub fn variant_markdown(
     let civic_actionability_pointer = civic_actionability_pointer(variant);
     let variant_command_arg = quote_arg(&variant.id);
     let gene_command_arg = quote_arg(&variant.gene);
+    let genome_build_provider_default = variant
+        .genome_build_provenance
+        .as_deref()
+        .is_some_and(|value| value.contains("provider default"));
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&variant_label, requested_sections),
         id => &variant.id,
         genome_build => &variant.genome_build,
+        genome_build_provider_default => genome_build_provider_default,
         build_ambiguous => &variant.build_ambiguous,
         build_candidates => &variant.build_candidates,
         variant_command_arg => variant_command_arg,
@@ -279,7 +284,16 @@ pub fn variant_normalization_markdown(result: &VariantNormalizationResponse) -> 
                 if !service.genomic_descriptions.is_empty() {
                     out.push_str("Genomic descriptions:\n");
                     for value in &service.genomic_descriptions {
-                        out.push_str(&format!("- GRCh38 {value}\n"));
+                        let provenance = value
+                            .provenance
+                            .as_deref()
+                            .filter(|text| text.contains("provider default"))
+                            .map(|_| ", provider default")
+                            .unwrap_or_default();
+                        out.push_str(&format!(
+                            "- Genomic coordinate ({}{provenance}): {}\n",
+                            value.genome_build, value.coordinate
+                        ));
                     }
                 }
                 if let Some(protein) = &service.protein {

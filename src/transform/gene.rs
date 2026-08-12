@@ -132,7 +132,9 @@ fn extract_kegg_pathways(value: Option<&serde_json::Value>) -> Option<Vec<GenePa
     if out.is_empty() { None } else { Some(out) }
 }
 
-fn format_genomic_coordinates(resp: &MyGeneGetResponse) -> Option<String> {
+fn format_genomic_coordinates(
+    resp: &MyGeneGetResponse,
+) -> Option<crate::entities::GenomicCoordinate> {
     let pos = resp.genomic_pos.as_ref()?;
     let chr = pos.chr()?.trim();
     let start = pos.start()?;
@@ -141,7 +143,12 @@ fn format_genomic_coordinates(resp: &MyGeneGetResponse) -> Option<String> {
     if chr.is_empty() {
         return None;
     }
-    Some(format!("{chr}:{start}-{end} (strand: {strand})"))
+    Some(crate::entities::GenomicCoordinate {
+        coordinate: format!("{chr}:{start}-{end} (strand: {strand})"),
+        genome_build: "GRCh38".into(),
+        source: "MyGene.info".into(),
+        provenance: Some("MyGene.info provider default".into()),
+    })
 }
 
 pub fn from_mygene_get(resp: MyGeneGetResponse) -> Gene {
@@ -198,7 +205,12 @@ pub fn from_mygene_hit(hit: &MyGeneHit) -> GeneSearchResult {
         if chr.is_empty() {
             return None;
         }
-        Some(format!("{chr}:{start}-{end}"))
+        Some(crate::entities::GenomicCoordinate {
+            coordinate: format!("{chr}:{start}-{end}"),
+            genome_build: "GRCh38".into(),
+            source: "MyGene.info".into(),
+            provenance: Some("MyGene.info provider default".into()),
+        })
     });
 
     GeneSearchResult {

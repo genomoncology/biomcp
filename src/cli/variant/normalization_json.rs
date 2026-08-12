@@ -23,7 +23,7 @@ pub(super) fn render(
         crate::entities::variant::VariantNormalizationAggregate::Legacy(service) => service
             .genomic_descriptions
             .iter()
-            .map(String::as_str)
+            .map(|value| value.coordinate.as_str())
             .chain(service.normalized_description.as_deref())
             .collect::<Vec<_>>(),
         crate::entities::variant::VariantNormalizationAggregate::Car(car) => {
@@ -93,7 +93,12 @@ mod tests {
                     corrected_description: None,
                     transcript_description: None,
                     protein: None,
-                    genomic_descriptions: vec!["NC_000001.11:g.1A>T".to_string()],
+                    genomic_descriptions: vec![crate::entities::GenomicCoordinate {
+                        coordinate: "NC_000001.11:g.1A>T".into(),
+                        genome_build: "GRCh38".into(),
+                        source: "test".into(),
+                        provenance: None,
+                    }],
                     warnings: Vec::new(),
                     message: None,
                 }),

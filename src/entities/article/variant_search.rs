@@ -3374,6 +3374,7 @@ mod tests {
             source_id: Some("chr7:g.140453136A>T".into()),
             source_identity: Some(SourceVariantIdentity {
                 genomic_id: "chr7:g.140453136A>T".into(),
+                genome_build: "GRCh37".into(),
                 genes: vec!["BRAF".into()],
                 protein_changes: vec!["p.V600E".into(), "p.Val600Glu".into()],
                 coding_changes: vec!["c.1799T>A".into()],
@@ -3676,6 +3677,7 @@ mod tests {
             source_id: None,
             source_identity: Some(SourceVariantIdentity {
                 genomic_id: "chr11:g.108248927T>G".into(),
+                genome_build: "GRCh37".into(),
                 genes: vec!["ATM".into()],
                 protein_changes: vec!["p.?".into()],
                 coding_changes: vec!["c.1A>T".into()],
@@ -3825,6 +3827,7 @@ mod tests {
             fallback_source_identities: vec![
                 SourceVariantIdentity {
                     genomic_id: "first".into(),
+                    genome_build: "unknown".into(),
                     genes: vec!["MSH2".into()],
                     protein_changes: vec!["p.L341P".into(), "p.Leu341Pro".into()],
                     coding_changes: vec!["c.1022T>C".into(), "c.824T>C".into()],
@@ -3832,6 +3835,7 @@ mod tests {
                 },
                 SourceVariantIdentity {
                     genomic_id: "second".into(),
+                    genome_build: "unknown".into(),
                     genes: vec!["MSH2".into()],
                     protein_changes: vec!["p.Leu341Pro".into(), "p.L341P".into()],
                     coding_changes: vec!["c.1022T>C".into(), "c.1220T>C".into()],

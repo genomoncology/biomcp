@@ -243,7 +243,7 @@ fn message_result(
     }
 }
 
-fn genomic_descriptions(result: &serde_json::Value) -> Vec<String> {
+fn genomic_descriptions(result: &serde_json::Value) -> Vec<crate::entities::GenomicCoordinate> {
     let mut values = result
         .get("primary_assembly_loci")
         .and_then(|v| v.get("grch38"))
@@ -251,10 +251,15 @@ fn genomic_descriptions(result: &serde_json::Value) -> Vec<String> {
         .filter_map(|locus| locus.get("hgvs_genomic_description"))
         .filter_map(|v| v.as_str())
         .filter(|v| !v.trim().is_empty())
-        .map(str::to_string)
+        .map(|coordinate| crate::entities::GenomicCoordinate {
+            coordinate: coordinate.to_string(),
+            genome_build: "GRCh38".into(),
+            source: "VariantValidator".into(),
+            provenance: Some("primary_assembly_loci.grch38".into()),
+        })
         .collect::<Vec<_>>();
-    values.sort();
-    values.dedup();
+    values.sort_by(|left, right| left.coordinate.cmp(&right.coordinate));
+    values.dedup_by(|left, right| left.coordinate == right.coordinate);
     values
 }
 

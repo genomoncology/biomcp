@@ -111,6 +111,8 @@ pub struct Variant {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub genome_build: Option<GenomeBuild>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub genome_build_provenance: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub build_ambiguous: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub build_candidates: Vec<VariantBuildCandidate>,
@@ -329,6 +331,8 @@ pub struct VariantPrediction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantSearchResult {
     pub id: String,
+    pub genome_build: GenomeBuild,
+    pub genome_build_provenance: String,
     pub gene: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hgvs_p: Option<String>,

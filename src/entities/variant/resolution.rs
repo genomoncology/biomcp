@@ -762,6 +762,22 @@ pub(crate) struct RequestedVariantIdentity {
 }
 
 impl RequestedVariantIdentity {
+    pub(crate) fn human_label(&self) -> String {
+        if let (Some(gene), Some(change)) = (&self.gene, &self.protein_change) {
+            return format!("{gene} {change}");
+        }
+        if let (Some(gene), Some(change)) = (&self.gene, &self.coding_change) {
+            return format!("{gene} {change}");
+        }
+        if let (Some(transcript), Some(change)) = (&self.transcript, &self.coding_change) {
+            return format!("{transcript}:{change}");
+        }
+        if let Some(rsid) = &self.rsid {
+            return rsid.clone();
+        }
+        genomic_alias(self).unwrap_or_else(|| "unknown variant".into())
+    }
+
     pub(crate) fn for_search(
         gene: Option<String>,
         protein_change: Option<String>,
@@ -968,6 +984,7 @@ pub(crate) struct NormalizedVariantAliases {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct SourceVariantIdentity {
     pub genomic_id: String,
+    pub genome_build: String,
     pub genes: Vec<String>,
     pub protein_changes: Vec<String>,
     pub coding_changes: Vec<String>,
@@ -995,6 +1012,7 @@ impl SourceVariantIdentity {
             .collect();
         Self {
             genomic_id: hit.id.clone(),
+            genome_build: "GRCh37".into(),
             genes,
             protein_changes,
             coding_changes,
@@ -1014,8 +1032,9 @@ impl SourceVariantIdentity {
         coding.sort();
         rsids.sort();
         format!(
-            "{}|{}|{}|{}|{}",
+            "{}|{}|{}|{}|{}|{}",
             self.genomic_id.to_ascii_uppercase(),
+            self.genome_build.to_ascii_uppercase(),
             genes.join(","),
             proteins.join(","),
             coding.join(","),

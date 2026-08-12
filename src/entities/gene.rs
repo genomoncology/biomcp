@@ -56,7 +56,7 @@ pub struct Gene {
     pub ensembl_id: Option<String>,
     pub location: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub genomic_coordinates: Option<String>,
+    pub genomic_coordinates: Option<super::GenomicCoordinate>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub omim_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -192,7 +192,7 @@ pub struct GeneSearchResult {
     pub symbol: String,
     pub name: String,
     pub entrez_id: String,
-    pub genomic_coordinates: Option<String>,
+    pub genomic_coordinates: Option<super::GenomicCoordinate>,
     pub uniprot_id: Option<String>,
     pub omim_id: Option<String>,
 }

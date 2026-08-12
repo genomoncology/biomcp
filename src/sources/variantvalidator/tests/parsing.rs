@@ -35,13 +35,13 @@ fn normalize_response_extracts_warnings_and_grch38_genomic_description() {
         result
             .genomic_descriptions
             .iter()
-            .any(|value| value == "NC_000017.11:g.39710409G>T")
+            .any(|value| value.coordinate == "NC_000017.11:g.39710409G>T")
     );
     assert!(
         result
             .genomic_descriptions
             .iter()
-            .all(|value| !value.contains("NC_000017.10")),
+            .all(|value| !value.coordinate.contains("NC_000017.10")),
         "GRCh37 genomic descriptions must not be labeled through the GRCh38 markdown surface"
     );
 }

@@ -406,6 +406,7 @@ fn autocomplete_source_identity(
         .unwrap_or_default();
     crate::entities::variant::SourceVariantIdentity {
         genomic_id,
+        genome_build: "unknown".into(),
         genes,
         protein_changes,
         coding_changes: Vec::new(),
