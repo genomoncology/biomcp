@@ -280,3 +280,114 @@ collisions for NIH Reporter and OpenFDA and serialized standalone CT.gov tests
 against the routine fixture lock. The all-feature optimized build took 7m28s
 from a cold release target; that release-only compile/link remains the largest
 single measured build cost after the routine provider setup was consolidated.
+
+## Next three focused sessions — decision recorded 2026-08-12
+
+After the 14-ticket provider session and five-ticket MCP session, the active
+backlog contains 61 genuinely unfinished tickets. No active ticket ID also has
+a completion record. Ian approved the following next three focused sessions,
+in this order. They contain 22 tickets and should reduce the active backlog
+from 61 to 39 when all three are complete.
+
+Do not reopen the batching analysis before each session. Revalidate that the
+named ticket files and dependencies still match the repository, then use this
+sequence unless intervening code changes create a concrete conflict.
+
+### Session 1: genome identity and typed access — eight tickets
+
+Tickets: **0927, 0928, 0950, 0899, 0900, 0933, 0690, and 0878**.
+
+Recommended dependency order:
+
+1. 0927 — make GWAS pagination fail safely.
+2. 0928 — make GWAS filter semantics truthful.
+3. 0950 — label the genome build on variant-detail JSON.
+4. 0899 — carry genome-build labels through gene, search, and normalization
+   JSON.
+5. 0900 — name the genome build in every human coordinate rendering.
+6. 0933 — generate entity-specific typed MCP search and get schemas from the
+   authoritative catalog.
+7. 0690 — prefer GRCh38 for ambiguous bare coordinates only after both the
+   labels and typed assembly control exist.
+8. 0878 — replace legacy population output with direct, explicit gnomAD v4
+   results using a trustworthy GRCh38 coordinate.
+
+The GWAS chain and coordinate-label chain can progress independently until
+0933 and 0900 converge at 0690. Keep 0878 last so it consumes the settled
+coordinate and assembly model instead of inventing another representation.
+
+These tickets share genomic identity models, GWAS/MyVariant fixtures,
+coordinate collision cases, JSON schemas, human renderers, command-catalog
+entries, and typed MCP contracts. Doing them together lets required model and
+constructor changes happen once. It also fixes the user-triggered GWAS abort
+and false filter behavior before changing the preferred assembly.
+
+### Session 2: installed-binary lifecycle — seven tickets
+
+Tickets: **0910, 0911, 0916, 0917, 0918, 0938, and 0943**.
+
+Recommended dependency order:
+
+1. 0911 — establish one canonical fail-closed installer.
+2. 0910 — let self-update read and verify current-sized release archives.
+3. 0916 — establish the installer-owned binary receipt and refuse mutation of
+   package-managed installations.
+4. 0938 — make canonical installation a recoverable same-directory atomic
+   transaction.
+5. 0917 — reuse the ownership and transaction contract for durable Unix
+   self-update; keep Windows self-update unsupported.
+6. 0918 — make receipt-owned uninstall report partial or failed removal
+   truthfully.
+7. 0943 — remove shell-startup-file mutation after the canonical installer
+   transaction is settled.
+
+The common boundary is the complete lifecycle of one installer-owned binary:
+download, checksum, ownership receipt, staging, smoke test, atomic replacement,
+recovery, uninstall, and PATH guidance. The receipt schema, filesystem failure
+fixtures, fake archive server, path/symlink defenses, and transaction-state
+tests should be designed once and reused by the shell installer and Rust
+commands. Keep separate commits and completion records for the seven behaviors.
+
+This session is the strongest release-graph unlock after the genome work:
+0911 and 0916 feed the updater, installer, packaging, candidate-staging, and
+promotion chains.
+
+### Session 3: article trust, retrieval, and receipted contracts — seven tickets
+
+Tickets: **0909, 0876, 0877, 0882, 0926, 0682, and 0684**.
+
+Recommended dependency and locality order:
+
+1. 0909 — establish the safe provider-error logging projection first.
+2. 0876 — classify Europe PMC's known not-open-access response as permanent
+   absence rather than failure.
+3. 0877 — preserve the typed non-retrievable article-asset outcome through
+   direct lookup.
+4. 0882 — preserve every complex JATS table cell in saved full text.
+5. 0926 — make article candidate and enrichment source plans explicit and
+   honor selected sources without hidden Semantic Scholar traffic.
+6. 0682 — re-derive frozen variant-article identity from real receipted
+   captures through production paths.
+7. 0684 — move the seven-variant panel onto the captured routine corpus.
+
+The first step protects every later provider failure path. Tickets 0876, 0877,
+and 0882 share the PMID 30311380 Europe PMC/PMC/JATS corpus and full-text asset
+orchestration. Ticket 0926 then settles actual article-provider planning before
+0682 and 0684 freeze identity and panel behavior onto real receipts. Reuse the
+existing supervised local transports, strict unknown-route rejection, article
+output projections, and MCP single-execution boundary from the previous
+sessions.
+
+### Shared execution rules for all three sessions
+
+- Use one persistent branch and worktree per session; do not use the paused
+  SDLC queue.
+- Preserve one red test, implementation commit, completion record, and removed
+  active ticket file per behavior.
+- Run focused tests while working and the complete repository gates once on
+  each final session candidate.
+- Do not weaken biomedical behavior to satisfy fixtures, and do not perform
+  public-network work in routine gates.
+- Recount the backlog after each merge. The expected counts are 53 after the
+  eight-ticket session, 46 after the installer session, and 39 after the
+  article session.
