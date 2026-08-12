@@ -348,53 +348,14 @@ test "$structure_status" -eq 0
 ## Update Verifies Release Checksum
 
 The self-update command must fail closed when the release `.sha256` sidecar
-is missing or mismatched. The unsafe override has to be opt-in per
-invocation, marked UNSAFE in `--help`, and the underlying policy must stay
-covered by named unit tests so the operator surface can never silently
-downgrade to TLS-only trust.
+is missing or mismatched. There is no command-line escape hatch that can
+downgrade release verification to TLS-only trust.
 
 ```bash
 help="$(../../tools/biomcp-ci update --help)"
 printf '%s\n' "$help" | grep -Eiq "SHA-?256"
 printf '%s\n' "$help" | grep -Eiq "checksum"
-mustmatch like "--allow-missing-checksum" <<<"$help"
-```
-
-The unsafe marker belongs on the override option itself. This block extracts the
-`--allow-missing-checksum` help stanza and checks the warning and checksum
-concept inside that stanza rather than matching a floating short token.
-
-```bash
-help="$(../../tools/biomcp-ci update --help)"
-allow_block="$(HELP_TEXT="$help" uv run --no-sync python3 - <<'PY'
-import os
-import re
-
-lines = os.environ["HELP_TEXT"].splitlines()
-options_start = next(
-    index for index, line in enumerate(lines)
-    if line.strip() == "Options:"
-)
-start = next(
-    index for index, line in enumerate(lines[options_start + 1 :], options_start + 1)
-    if line.strip().startswith("--allow-missing-checksum")
-)
-block = []
-for line in lines[start:]:
-    if block and re.match(r"\s*(?:-[A-Za-z],\s*)?--[A-Za-z0-9-]+\b", line):
-        break
-    block.append(line)
-text = "\n".join(block)
-assert "UNSAFE" in text, text
-assert "checksum" in text.lower(), text
-assert re.search(r"SHA-?256", text, flags=re.IGNORECASE), text
-print(text)
-PY
-)"
-mustmatch like "--allow-missing-checksum" <<<"$allow_block"
-printf '%s\n' "$allow_block" | grep -q "UNSAFE"
-printf '%s\n' "$allow_block" | grep -Eiq "checksum"
-printf '%s\n' "$allow_block" | grep -Eiq "SHA-?256"
+mustnotmatch like "--allow-missing-checksum" <<<"$help"
 ```
 
 ```bash

@@ -1,4 +1,6 @@
-use std::io::Read;
+use std::io::{Read, Write};
+use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use http_cache_reqwest::CacheMode;
 use serde::Deserialize;
@@ -157,52 +159,108 @@ fn extract_binary_from_zip(bytes: &[u8], binary_name: &str) -> Result<Vec<u8>, B
     })
 }
 
-fn replace_current_binary(new_bytes: &[u8]) -> Result<(), BioMcpError> {
-    let current = std::env::current_exe()?;
+static STAGE_NONCE: AtomicU64 = AtomicU64::new(0);
+
+#[cfg(unix)]
+fn replace_owned_binary_at(
+    current: &Path,
+    new_bytes: &[u8],
+    new_version: &str,
+) -> Result<(), BioMcpError> {
+    let owned = crate::cli::install::validate_owned(current)?;
     let Some(parent) = current.parent() else {
         return Err(BioMcpError::InvalidArgument(
             "Cannot determine current executable directory".into(),
         ));
     };
 
-    let tmp_path = parent.join(format!(
-        ".{}.new",
-        current
-            .file_name()
-            .and_then(|v| v.to_str())
-            .unwrap_or("biomcp")
-    ));
-
-    {
-        let mut file = std::fs::File::create(&tmp_path)?;
-        std::io::Write::write_all(&mut file, new_bytes).map_err(BioMcpError::Io)?;
-        std::io::Write::flush(&mut file).map_err(BioMcpError::Io)?;
+    use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+    let mut staged = None;
+    for _ in 0..32 {
+        let nonce = format!(
+            "{}-{}",
+            std::process::id(),
+            STAGE_NONCE.fetch_add(1, Ordering::Relaxed)
+        );
+        let path = parent.join(format!(".biomcp-stage-{nonce}"));
+        let opened = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o700)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open(&path);
+        match opened {
+            Ok(file) => {
+                staged = Some((path, nonce, file));
+                break;
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error.into()),
+        }
     }
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&tmp_path, std::fs::Permissions::from_mode(0o755))?;
-        std::fs::rename(&tmp_path, &current)?;
+    let (stage_path, nonce, mut stage_file) = staged.ok_or_else(|| {
+        BioMcpError::Io(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "could not create unique update staging file",
+        ))
+    })?;
+    let result = (|| {
+        stage_file.write_all(new_bytes)?;
+        stage_file.set_permissions(std::fs::Permissions::from_mode(0o755))?;
+        stage_file.sync_all()?;
+        drop(stage_file);
+        let smoke = std::process::Command::new(&stage_path)
+            .arg("version")
+            .output()?;
+        let reported = String::from_utf8_lossy(&smoke.stdout);
+        let requested = new_version.trim().trim_start_matches('v');
+        if !smoke.status.success()
+            || !reported
+                .split_whitespace()
+                .any(|word| word.trim_start_matches('v') == requested)
+        {
+            return Err(std::io::Error::other(format!(
+                "staged BioMCP did not report requested version {new_version}"
+            )));
+        }
+        let new_sha = sha256_hex(new_bytes);
+        let revalidated = crate::cli::install::validate_owned(current)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        if revalidated.receipt != owned.receipt {
+            return Err(std::io::Error::other(
+                "installer receipt changed during update",
+            ));
+        }
+        let pending =
+            crate::cli::install::pending_receipt(&revalidated, new_version, &new_sha, &nonce);
+        crate::cli::install::write_receipt_atomic(&revalidated.receipt_path, &pending)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        std::fs::rename(&stage_path, current)?;
+        std::fs::File::open(parent)?.sync_all()?;
+        let final_receipt = crate::cli::install::installed_receipt(&pending);
+        crate::cli::install::write_receipt_atomic(&revalidated.receipt_path, &final_receipt)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        Ok::<(), std::io::Error>(())
+    })();
+    if stage_path.exists() {
+        let _ = std::fs::remove_file(&stage_path);
     }
+    result.map_err(BioMcpError::Io)
+}
 
+fn replace_current_binary(new_bytes: &[u8], new_version: &str) -> Result<(), BioMcpError> {
     #[cfg(windows)]
     {
-        // Windows cannot overwrite a running executable directly.
-        // Rename the current binary out of the way first, then move
-        // the new one into place.  Clean up the old file best-effort.
-        let old_path = current.with_extension("old.exe");
-        let _ = std::fs::remove_file(&old_path);
-        std::fs::rename(&current, &old_path)?;
-        if let Err(err) = std::fs::rename(&tmp_path, &current) {
-            // Restore the original if the swap failed.
-            let _ = std::fs::rename(&old_path, &current);
-            return Err(err.into());
-        }
-        let _ = std::fs::remove_file(&old_path);
+        let _ = (new_bytes, new_version);
+        return Err(BioMcpError::InvalidArgument(
+            "Self-update is unsupported on Windows; use the verified standalone installer.".into(),
+        ));
     }
-
-    Ok(())
+    #[cfg(unix)]
+    {
+        let current = std::fs::canonicalize(std::env::current_exe()?)?;
+        replace_owned_binary_at(&current, new_bytes, new_version)
+    }
 }
 
 fn binary_name_for_platform() -> &'static str {
@@ -213,10 +271,10 @@ fn binary_name_for_platform() -> &'static str {
     }
 }
 
-async fn fetch_latest_release() -> Result<GithubRelease, BioMcpError> {
+async fn fetch_latest_release_from(url: &str) -> Result<GithubRelease, BioMcpError> {
     let client = crate::sources::shared_client()?;
     let resp = client
-        .get(GITHUB_API)
+        .get(url)
         .with_extension(CacheMode::NoStore)
         .header("Accept", "application/vnd.github+json")
         .send()
@@ -238,15 +296,19 @@ async fn fetch_latest_release() -> Result<GithubRelease, BioMcpError> {
     })
 }
 
-async fn download_asset(url: &str) -> Result<Vec<u8>, BioMcpError> {
+async fn fetch_latest_release() -> Result<GithubRelease, BioMcpError> {
+    fetch_latest_release_from(GITHUB_API).await
+}
+
+async fn download_asset_with_limit(url: &str, max_bytes: usize) -> Result<Vec<u8>, BioMcpError> {
     let client = crate::sources::shared_client()?;
-    let resp = client
-        .get(url)
-        .with_extension(CacheMode::NoStore)
+    let request = client.get(url).with_extension(CacheMode::NoStore);
+    let resp = crate::sources::with_response_body_limit(request, max_bytes, GITHUB_API_NAME)
         .send()
         .await?;
     let status = resp.status();
-    let bytes = crate::sources::read_limited_body(resp, GITHUB_API_NAME).await?;
+    let bytes =
+        crate::sources::read_limited_body_with_limit(resp, GITHUB_API_NAME, max_bytes).await?;
     if !status.is_success() {
         let excerpt = crate::sources::body_excerpt(&bytes);
         return Err(BioMcpError::Api {
@@ -257,13 +319,20 @@ async fn download_asset(url: &str) -> Result<Vec<u8>, BioMcpError> {
     Ok(bytes.to_vec())
 }
 
+async fn download_archive(url: &str) -> Result<Vec<u8>, BioMcpError> {
+    download_asset_with_limit(url, MAX_RELEASE_ARCHIVE_BYTES).await
+}
+
 async fn download_asset_optional(url: &str) -> Result<Option<Vec<u8>>, BioMcpError> {
     let client = crate::sources::shared_client()?;
-    let resp = client
-        .get(url)
-        .with_extension(CacheMode::NoStore)
-        .send()
-        .await?;
+    let request = client.get(url).with_extension(CacheMode::NoStore);
+    let resp = crate::sources::with_response_body_limit(
+        request,
+        crate::sources::DEFAULT_MAX_BODY_BYTES,
+        GITHUB_API_NAME,
+    )
+    .send()
+    .await?;
     let status = resp.status();
     let bytes = crate::sources::read_limited_body(resp, GITHUB_API_NAME).await?;
     if status == reqwest::StatusCode::NOT_FOUND {
@@ -315,20 +384,13 @@ enum ChecksumStatus {
     MissingSidecar,
 }
 
-fn enforce_checksum_policy(
-    status: ChecksumStatus,
-    allow_missing: bool,
-    asset_name: &str,
-) -> Result<Option<String>, BioMcpError> {
+fn enforce_checksum_policy(status: ChecksumStatus, asset_name: &str) -> Result<(), BioMcpError> {
     match status {
-        ChecksumStatus::Verified => Ok(None),
-        ChecksumStatus::MissingSidecar if allow_missing => Ok(Some(format!(
-            "UNSAFE: checksum sidecar missing for {asset_name}; installing without release SHA256 checksum verification."
-        ))),
+        ChecksumStatus::Verified => Ok(()),
         ChecksumStatus::MissingSidecar => Err(BioMcpError::Api {
             api: GITHUB_API_NAME.into(),
             message: format!(
-                "Release checksum verification failed for {asset_name}: SHA256 checksum sidecar is missing. Re-run with --allow-missing-checksum only if you accept installing an unverified release archive."
+                "Release checksum verification failed for {asset_name}: SHA256 checksum sidecar is missing. Use the verified standalone installer instead."
             ),
         }),
     }
@@ -359,17 +421,16 @@ fn verify_archive_against_checksum(
 
 fn install_binary_after_checksum_policy<F>(
     status: ChecksumStatus,
-    allow_missing: bool,
     asset_name: &str,
     new_binary: &[u8],
     replace_binary: F,
-) -> Result<Option<String>, BioMcpError>
+) -> Result<(), BioMcpError>
 where
     F: FnOnce(&[u8]) -> Result<(), BioMcpError>,
 {
-    let warning = enforce_checksum_policy(status, allow_missing, asset_name)?;
+    enforce_checksum_policy(status, asset_name)?;
     replace_binary(new_binary)?;
-    Ok(warning)
+    Ok(())
 }
 
 fn render_check_output(current: &str, latest_tag: &str, status_line: &str) -> String {
@@ -382,7 +443,7 @@ fn render_check_output(current: &str, latest_tag: &str, status_line: &str) -> St
 ///
 /// Returns an error if release metadata cannot be fetched, download verification
 /// fails, archive extraction fails, or the local binary cannot be replaced.
-pub async fn run(check_only: bool, allow_missing_checksum: bool) -> Result<String, BioMcpError> {
+pub async fn run(check_only: bool) -> Result<String, BioMcpError> {
     let current = env!("CARGO_PKG_VERSION").trim();
     let current_v = semver::Version::parse(current).ok();
 
@@ -404,6 +465,11 @@ pub async fn run(check_only: bool, allow_missing_checksum: bool) -> Result<Strin
         return Ok(render_check_output(current, &latest_tag, status_line));
     }
 
+    #[cfg(windows)]
+    return Err(BioMcpError::InvalidArgument(
+        "Self-update is unsupported on Windows; use the verified standalone installer.".into(),
+    ));
+
     if !update_available {
         return Ok(render_check_output(current, &latest_tag, "up to date"));
     }
@@ -419,7 +485,7 @@ pub async fn run(check_only: bool, allow_missing_checksum: bool) -> Result<Strin
             suggestion: "Check GitHub releases for a compatible platform build".into(),
         })?;
 
-    let archive_bytes = download_asset(&asset.browser_download_url).await?;
+    let archive_bytes = download_archive(&asset.browser_download_url).await?;
     let checksum_status =
         fetch_checksum_status(&asset.browser_download_url, &archive_bytes).await?;
     let bin_name = binary_name_for_platform();
@@ -434,226 +500,11 @@ pub async fn run(check_only: bool, allow_missing_checksum: bool) -> Result<Strin
         )));
     };
 
-    let checksum_warning = install_binary_after_checksum_policy(
-        checksum_status,
-        allow_missing_checksum,
-        asset_name,
-        &new_binary,
-        replace_current_binary,
-    )?;
-
-    let mut output = String::new();
-    if let Some(warning) = checksum_warning {
-        output.push_str(&warning);
-        output.push('\n');
-    }
-    output.push_str(&format!("Updated BioMCP to {latest_tag}\n"));
-    Ok(output)
+    install_binary_after_checksum_policy(checksum_status, asset_name, &new_binary, |bytes| {
+        replace_current_binary(bytes, &latest_tag)
+    })?;
+    Ok(format!("Updated BioMCP to {latest_tag}\n"))
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use flate2::Compression;
-    use flate2::write::GzEncoder;
-    use std::cell::Cell;
-    use std::io::Write;
-    use tar::{Builder, Header};
-
-    fn build_targz(entries: &[(&str, &[u8])]) -> Vec<u8> {
-        let mut tar_buf = Vec::new();
-        {
-            let mut builder = Builder::new(&mut tar_buf);
-            for (path, contents) in entries {
-                let mut header = Header::new_gnu();
-                header.set_size(contents.len() as u64);
-                header.set_mode(0o755);
-                header.set_cksum();
-                builder
-                    .append_data(&mut header, *path, *contents)
-                    .expect("test archive entry should append");
-            }
-            builder.finish().expect("test archive should finish");
-        }
-
-        let mut gz = GzEncoder::new(Vec::new(), Compression::default());
-        gz.write_all(&tar_buf)
-            .expect("test archive should gzip successfully");
-        gz.finish().expect("test archive should finalize")
-    }
-
-    #[test]
-    fn extract_binary_from_targz_returns_matching_binary_bytes() {
-        let expected = b"#!/bin/sh\necho biomcp\n";
-        let archive = build_targz(&[
-            ("release/README.txt", b"notes"),
-            ("release/bin/biomcp", expected.as_slice()),
-        ]);
-
-        let extracted =
-            extract_binary_from_targz(&archive, "biomcp").expect("binary should extract");
-
-        assert_eq!(extracted, expected);
-    }
-
-    #[test]
-    fn extract_binary_from_targz_rejects_empty_binary() {
-        let archive = build_targz(&[("release/bin/biomcp", b"")]);
-
-        let err = extract_binary_from_targz(&archive, "biomcp")
-            .expect_err("empty binary entry should be rejected");
-
-        assert!(matches!(
-            err,
-            BioMcpError::Api { api, message }
-                if api == "update" && message == "Downloaded archive contained an empty binary"
-        ));
-    }
-
-    #[test]
-    fn extract_binary_from_targz_reports_missing_binary_as_not_found() {
-        let archive = build_targz(&[("release/bin/other-binary", b"echo other\n")]);
-
-        let err = extract_binary_from_targz(&archive, "biomcp")
-            .expect_err("missing binary should be reported as not found");
-
-        assert!(matches!(
-            err,
-            BioMcpError::NotFound {
-                entity,
-                id,
-                suggestion,
-            } if entity == "release asset"
-                && id == "biomcp"
-                && suggestion == "Release archive did not contain expected biomcp binary"
-        ));
-    }
-
-    // ---- 331 fail-closed checksum policy assertions ----
-
-    #[test]
-    fn enforce_checksum_policy_missing_sidecar_without_override_fails_closed() {
-        let err = enforce_checksum_policy(
-            ChecksumStatus::MissingSidecar,
-            false,
-            "biomcp-linux-x86_64.tar.gz",
-        )
-        .expect_err("missing sidecar without override must fail closed");
-        let message = match err {
-            BioMcpError::Api { message, .. } => message,
-            other => panic!("expected BioMcpError::Api, got {other:?}"),
-        };
-        assert!(
-            message.to_lowercase().contains("checksum"),
-            "error message must name the checksum: {message}"
-        );
-        assert!(
-            message.contains("--allow-missing-checksum"),
-            "error message must point to the explicit override flag: {message}"
-        );
-        assert!(
-            message.contains("biomcp-linux-x86_64.tar.gz"),
-            "error message must name the asset: {message}"
-        );
-    }
-
-    #[test]
-    fn enforce_checksum_policy_missing_sidecar_with_override_warns_and_continues() {
-        let warning = enforce_checksum_policy(
-            ChecksumStatus::MissingSidecar,
-            true,
-            "biomcp-linux-x86_64.tar.gz",
-        )
-        .expect("override must allow continuation")
-        .expect("override path must produce a loud warning");
-        assert!(
-            warning.contains("UNSAFE"),
-            "override warning must mark itself UNSAFE: {warning}"
-        );
-        assert!(
-            warning.contains("biomcp-linux-x86_64.tar.gz"),
-            "override warning must name the asset: {warning}"
-        );
-    }
-
-    #[test]
-    fn enforce_checksum_policy_verified_returns_no_warning() {
-        assert!(
-            enforce_checksum_policy(
-                ChecksumStatus::Verified,
-                false,
-                "biomcp-linux-x86_64.tar.gz"
-            )
-            .expect("verified must succeed")
-            .is_none(),
-            "verified path must not emit a warning under default policy"
-        );
-        assert!(
-            enforce_checksum_policy(ChecksumStatus::Verified, true, "biomcp-linux-x86_64.tar.gz")
-                .expect("verified must succeed even with override flag set")
-                .is_none(),
-            "verified path must not emit a warning even when the override is set"
-        );
-    }
-
-    #[test]
-    fn install_binary_after_checksum_policy_missing_sidecar_without_override_does_not_replace() {
-        let replace_called = Cell::new(false);
-
-        let err = install_binary_after_checksum_policy(
-            ChecksumStatus::MissingSidecar,
-            false,
-            "biomcp-linux-x86_64.tar.gz",
-            b"new-binary",
-            |bytes| {
-                replace_called.set(true);
-                assert_eq!(bytes, b"new-binary");
-                Ok(())
-            },
-        )
-        .expect_err("missing sidecar without override must fail before replacement");
-
-        assert!(matches!(err, BioMcpError::Api { .. }));
-        assert!(
-            !replace_called.get(),
-            "missing checksum sidecar must not reach binary replacement"
-        );
-    }
-
-    #[test]
-    fn verify_archive_against_checksum_accepts_matching_sha256() {
-        let payload = b"archive bytes payload";
-        let expected = sha256_hex(payload);
-        verify_archive_against_checksum(&expected, payload).expect("matching sha256 must verify");
-    }
-
-    #[test]
-    fn verify_archive_against_checksum_rejects_mismatch() {
-        let payload = b"archive bytes payload";
-        let wrong = "0".repeat(64);
-        let err = verify_archive_against_checksum(&wrong, payload)
-            .expect_err("mismatched sha256 must fail closed");
-        let message = match err {
-            BioMcpError::Api { message, .. } => message,
-            other => panic!("expected BioMcpError::Api, got {other:?}"),
-        };
-        assert!(
-            message.to_lowercase().contains("mismatch"),
-            "error message must name mismatch: {message}"
-        );
-    }
-
-    #[test]
-    fn verify_archive_against_checksum_rejects_invalid_format() {
-        let err = verify_archive_against_checksum("not-a-hex-token", b"payload")
-            .expect_err("malformed sidecar must fail closed");
-        let message = match err {
-            BioMcpError::Api { message, .. } => message,
-            other => panic!("expected BioMcpError::Api, got {other:?}"),
-        };
-        assert!(
-            message.contains("Invalid checksum file format"),
-            "error message must call out invalid format: {message}"
-        );
-    }
-}
+mod tests;

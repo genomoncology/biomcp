@@ -1,20 +1,10 @@
-"""Docs contract for the fail-closed `biomcp update` checksum behavior.
-
-These assertions pin the docs surface for the self-update verification
-requirement and the explicit `--allow-missing-checksum` UNSAFE override.
-The runtime change lives in `src/cli/update.rs`; these tests catch
-docs/runtime drift where the runtime is fail-closed but a doc surface
-still describes the old fail-open behavior.
-"""
+"""Contracts for the fail-closed standalone updater surface."""
 
 from __future__ import annotations
 
 import os
-import re
 import subprocess
 from pathlib import Path
-
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,176 +15,40 @@ def _read(path: str) -> str:
 
 def _release_bin() -> Path:
     configured = os.environ.get("BIOMCP_BIN")
-    return Path(configured) if configured else REPO_ROOT / "target" / "release" / "biomcp"
+    return Path(configured) if configured else REPO_ROOT / "target/release/biomcp"
 
 
-def _render_list() -> str:
+def _run(*args: str) -> str:
     binary = _release_bin()
-    assert binary.exists(), f"missing release binary for rendered list contract: {binary}"
-    result = subprocess.run(
-        [str(binary), "list"],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout
+    assert binary.exists(), f"missing release binary: {binary}"
+    return subprocess.run(
+        [str(binary), *args], cwd=REPO_ROOT, check=True, capture_output=True, text=True
+    ).stdout
 
 
-def _render_update_help() -> str:
-    binary = _release_bin()
-    assert binary.exists(), f"missing release binary for update help contract: {binary}"
-    result = subprocess.run(
-        [str(binary), "update", "--help"],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout
+def test_update_help_has_no_unverified_install_escape_hatch() -> None:
+    help_text = _run("update", "--help")
+    assert "--check" in help_text
+    assert "SHA256" in help_text
+    assert "allow-missing-checksum" not in help_text
 
 
-def _option_stanza(help_text: str, option: str) -> str:
-    lines = help_text.splitlines()
-    options_start = next(
-        (index for index, line in enumerate(lines) if line.strip() == "Options:"),
-        None,
-    )
-    assert options_start is not None, "update help must include an Options: section"
-
-    for index, line in enumerate(lines[options_start + 1 :], options_start + 1):
-        if not line.strip().startswith(option):
-            continue
-        stanza = [line]
-        for following in lines[index + 1 :]:
-            stripped = following.strip()
-            if stripped.startswith("-"):
-                break
-            if stripped:
-                stanza.append(following)
-        return "\n".join(stanza)
-    raise AssertionError(f"update help must include {option}")
-
-
-def _update_ops_lines(text: str) -> list[str]:
-    return [
-        line.strip()
-        for line in text.splitlines()
-        if line.strip().startswith("- `update ")
-    ]
-
-
-def _assert_update_reference_contract(label: str, text: str) -> str:
-    lines = _update_ops_lines(text)
-    assert lines, f"{label} must include an update Ops command line"
-
-    for line in lines:
-        lower = line.lower()
-        has_checksum_concept = "checksum" in lower or re.search(
-            r"sha-?256", line, flags=re.IGNORECASE
-        )
-        if (
-            "update" in line
-            and "--check" in line
-            and "--allow-missing-checksum" in line
-            and has_checksum_concept
-            and "unsafe" in lower
-        ):
-            return line
-
-    joined = "\n".join(lines)
-    raise AssertionError(
-        f"{label} update Ops line must document --check, "
-        "--allow-missing-checksum, checksum/SHA256 verification, and unsafe "
-        f"override wording; saw:\n{joined}"
-    )
-
-
-def test_update_help_option_stanza_selector_ignores_long_help_mentions() -> None:
-    help_text = """Update help mentions --allow-missing-checksum UNSAFE checksum SHA256.
-
-Usage: biomcp update [OPTIONS]
-
-Options:
-      --allow-missing-checksum
-          option-stanza marker
-
-      --json
-          Output as JSON
-"""
-
-    assert "option-stanza marker" in _option_stanza(
-        help_text, "--allow-missing-checksum"
-    )
-
-
-def test_update_help_allow_missing_checksum_option_stanza_marks_unsafe_checksum_override() -> None:
-    stanza = _option_stanza(_render_update_help(), "--allow-missing-checksum")
-
-    assert "UNSAFE" in stanza
-    assert "checksum" in stanza.lower()
-    assert re.search(r"SHA-?256", stanza, flags=re.IGNORECASE), stanza
-
-
-def test_update_list_reference_and_rendered_list_describe_checksum_override() -> None:
-    source_line = _assert_update_reference_contract(
-        "src/cli/list_reference.md",
+def test_list_and_docs_describe_only_verified_standalone_updates() -> None:
+    surfaces = [
+        _run("list"),
         _read("src/cli/list_reference.md"),
-    )
-    rendered_line = _assert_update_reference_contract("biomcp list", _render_list())
-
-    assert "--allow-missing-checksum" in source_line
-    assert "--allow-missing-checksum" in rendered_line
-
-
-def test_update_list_reference_contract_rejects_stale_update_line() -> None:
-    stale_ops = "## Ops\n\n- `update [--check]` - self-update from GitHub releases\n"
-
-    with pytest.raises(AssertionError, match="--allow-missing-checksum"):
-        _assert_update_reference_contract("synthetic stale list reference", stale_ops)
+        _read("docs/user-guide/cli-reference.md"),
+        _read("docs/troubleshooting.md"),
+        _read("architecture/ux/cli-reference.md"),
+        _read("README.md"),
+    ]
+    for surface in surfaces:
+        assert "allow-missing-checksum" not in surface
+    assert all("checksum" in surface.lower() or "SHA256" in surface for surface in surfaces)
 
 
-def test_update_command_docs_describe_verification_requirement() -> None:
-    cli_reference = _read("docs/user-guide/cli-reference.md")
-
-    assert "biomcp update [--check] [--allow-missing-checksum]" in cli_reference, (
-        "docs/user-guide/cli-reference.md must list the new flag in the "
-        "command grammar so the docs match runtime"
-    )
-    assert re.search(r"SHA-?256", cli_reference, flags=re.IGNORECASE), (
-        "cli-reference.md must name SHA256 verification for biomcp update"
-    )
-    assert "checksum" in cli_reference.lower(), (
-        "cli-reference.md must describe checksum verification for biomcp update"
-    )
-    assert "--allow-missing-checksum" in cli_reference, (
-        "cli-reference.md must name the unsafe override flag in prose so "
-        "operators can find it from the docs surface"
-    )
-
-
-def test_update_troubleshooting_describes_failclosed_and_unsafe_override() -> None:
-    troubleshooting = _read("docs/troubleshooting.md")
-
-    assert "biomcp update" in troubleshooting
-    assert "--allow-missing-checksum" in troubleshooting, (
-        "troubleshooting.md must point operators at the unsafe override when "
-        "a legitimate release ships without a sidecar"
-    )
-    assert "UNSAFE" in troubleshooting, (
-        "troubleshooting.md must mark the override UNSAFE so operators "
-        "do not turn it on casually"
-    )
-    assert re.search(r"fail(?:s|ed|ing)?[- ]closed", troubleshooting, re.IGNORECASE), (
-        "troubleshooting.md must describe the new fail-closed behavior so "
-        "operators know an update can stop on missing sidecar"
-    )
-
-
-def test_architecture_cli_reference_lists_update_verification_flag() -> None:
-    architecture = _read("architecture/ux/cli-reference.md")
-
-    assert "biomcp update [--check] [--allow-missing-checksum]" in architecture, (
-        "architecture/ux/cli-reference.md ops grammar must track the new "
-        "flag so the durable architecture doc matches runtime"
-    )
+def test_update_architecture_names_ownership_and_windows_installer_path() -> None:
+    docs = _read("docs/user-guide/cli-reference.md") + _read("docs/troubleshooting.md")
+    assert "standalone installer" in docs.lower()
+    assert "Windows" in docs
+    assert "biomcp.install.json" in docs

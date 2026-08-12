@@ -561,3 +561,45 @@ async fn enrich_rejects_limit_above_max_before_api_call() {
     .expect_err("enrich should reject --limit > 50");
     assert!(err.to_string().contains("--limit must be between 1 and 50"));
 }
+
+#[cfg(unix)]
+#[test]
+fn uninstall_removes_exactly_the_owned_binary_and_receipt() {
+    use crate::cli::install::{
+        INSTALLER_IDENTITY, InstallReceipt, RECEIPT_SCHEMA_VERSION, ReceiptState, receipt_path,
+        sha256_file, write_receipt_atomic,
+    };
+    use crate::test_support::TempDirGuard;
+
+    let root = TempDirGuard::new("uninstall-owned");
+    let executable = root.path().join("biomcp");
+    std::fs::write(&executable, b"owned").unwrap();
+    let executable = std::fs::canonicalize(executable).unwrap();
+    let receipt_path = receipt_path(&executable).unwrap();
+    write_receipt_atomic(
+        &receipt_path,
+        &InstallReceipt {
+            schema_version: RECEIPT_SCHEMA_VERSION,
+            installer: INSTALLER_IDENTITY.into(),
+            state: ReceiptState::Installed,
+            executable_path: executable.clone(),
+            version: "1.0.0".into(),
+            sha256: sha256_file(&executable).unwrap(),
+            transaction_nonce: None,
+            old_version: None,
+            old_sha256: None,
+            new_version: None,
+            new_sha256: None,
+        },
+    )
+    .unwrap();
+
+    let message = super::dispatch::uninstall_owned_at(&executable).unwrap();
+    assert!(message.contains(executable.to_string_lossy().as_ref()));
+    assert!(!executable.exists());
+    assert!(!receipt_path.exists());
+    assert!(matches!(
+        super::dispatch::uninstall_owned_at(&executable),
+        Err(crate::error::BioMcpError::NotInstalled { .. })
+    ));
+}

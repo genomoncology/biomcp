@@ -597,14 +597,57 @@ pub(super) fn canonical_for_compare(path: &Path) -> Option<PathBuf> {
 }
 
 pub(super) fn uninstall_self() -> Result<String, crate::error::BioMcpError> {
-    let current = std::env::current_exe()?;
-    match std::fs::remove_file(&current) {
-        Ok(()) => Ok(format!("Uninstalled biomcp from {}", current.display())),
-        Err(err) => Ok(format!(
-            "Unable to remove running binary automatically ({err}).\nRemove manually:\n  rm {}",
-            current.display()
-        )),
+    let current = std::fs::canonicalize(std::env::current_exe()?)?;
+    #[cfg(windows)]
+    {
+        return Err(crate::error::BioMcpError::PackageManagedInstall {
+            guidance: format!(
+                "Automatic uninstall is unsupported on Windows. Remove this standalone installation manually: del \"{}\" && del \"{}\"",
+                current.display(),
+                crate::cli::install::receipt_path(&current)?.display()
+            ),
+        });
     }
+    #[cfg(unix)]
+    {
+        uninstall_owned_at(&current)
+    }
+}
+
+#[cfg(unix)]
+pub(super) fn uninstall_owned_at(current: &Path) -> Result<String, crate::error::BioMcpError> {
+    let owned = crate::cli::install::validate_owned(current)?;
+    let revalidated = crate::cli::install::validate_owned(current)?;
+    if owned.receipt != revalidated.receipt {
+        return Err(crate::error::BioMcpError::PackageManagedInstall {
+            guidance: "The installer receipt changed during uninstall; no files were removed."
+                .into(),
+        });
+    }
+    std::fs::remove_file(&owned.executable).map_err(|error| {
+        crate::error::BioMcpError::Io(std::io::Error::new(
+            error.kind(),
+            format!(
+                "could not remove owned executable {}; receipt remains at {}: {error}",
+                owned.executable.display(),
+                owned.receipt_path.display()
+            ),
+        ))
+    })?;
+    if let Err(error) = std::fs::remove_file(&owned.receipt_path) {
+        return Err(crate::error::BioMcpError::Io(std::io::Error::new(
+            error.kind(),
+            format!(
+                "executable was removed, but receipt remains at {}: {error}",
+                owned.receipt_path.display()
+            ),
+        )));
+    }
+    Ok(format!(
+        "Uninstalled biomcp from {} and removed {}",
+        owned.executable.display(),
+        owned.receipt_path.display()
+    ))
 }
 
 pub(super) fn enrich_markdown(

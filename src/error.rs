@@ -296,6 +296,12 @@ pub enum BioMcpError {
         id: String,
         suggestion: String,
     },
+    PackageManagedInstall {
+        guidance: String,
+    },
+    NotInstalled {
+        path: String,
+    },
     InvalidArgument(String),
     InternalProcessing,
     CaptureUnavailable,
@@ -363,6 +369,9 @@ impl BioMcpError {
                 format!("API request to {source} was rejected.")
             }
             Self::NotFound { .. } => format!("Requested item was not found in {source}."),
+            Self::PackageManagedInstall { .. } | Self::NotInstalled { .. } => {
+                format!("Local installation cannot be changed by {source}.")
+            }
             Self::InvalidArgument(_) => format!("Invalid request for {source}."),
             Self::InternalProcessing => "Internal processing failed.".to_string(),
             Self::CaptureUnavailable | Self::CaptureCorrupt | Self::BindingConflict => {
@@ -399,6 +408,10 @@ impl BioMcpError {
                 id,
                 suggestion,
             } => format!("{entity} '{id}' not found.\n\n{suggestion}"),
+            Self::PackageManagedInstall { guidance } => guidance.clone(),
+            Self::NotInstalled { path } => {
+                format!("BioMCP is not installed at {path}.")
+            }
             Self::InvalidArgument(message) => format!("Invalid argument: {message}"),
             Self::InternalProcessing => "Internal processing failed.".to_string(),
             Self::CaptureUnavailable => {
@@ -493,6 +506,8 @@ impl BioMcpError {
             | Self::CtGovInterventionQueryRejected { .. } => "api",
             Self::ApiJson { .. } => "api_json",
             Self::NotFound { .. } => "not_found",
+            Self::PackageManagedInstall { .. } => "package_managed_install",
+            Self::NotInstalled { .. } => "not_installed",
             Self::InvalidArgument(_) => "invalid_argument",
             Self::InternalProcessing => "internal_processing",
             Self::CaptureUnavailable => "capture_unavailable",
@@ -511,6 +526,7 @@ impl BioMcpError {
         match self {
             Self::WithSourceContext { source, .. } => source.is_not_found(),
             Self::NotFound { .. } => true,
+            Self::NotInstalled { .. } => true,
             Self::Api { message, .. } => message.starts_with("HTTP 404"),
             _ => false,
         }
@@ -556,6 +572,8 @@ impl fmt::Display for BioMcpError {
                 id,
                 suggestion,
             } => write!(formatter, "{entity} '{id}' not found.\n\n{suggestion}"),
+            Self::PackageManagedInstall { guidance } => formatter.write_str(guidance),
+            Self::NotInstalled { path } => write!(formatter, "BioMCP is not installed at {path}."),
             Self::InvalidArgument(message) => write!(formatter, "Invalid argument: {message}"),
             Self::InternalProcessing => formatter.write_str("Internal processing failed."),
             Self::CaptureUnavailable => {

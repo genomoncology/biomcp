@@ -20,6 +20,7 @@ mod drug;
 mod gene;
 mod gwas;
 pub mod health;
+pub(crate) mod install;
 pub mod list;
 mod mcp_config;
 mod outcome;

@@ -87,9 +87,6 @@ pub struct UpdateArgs {
     /// Check for updates, but do not install
     #[arg(long)]
     pub check: bool,
-    /// UNSAFE: install even when the release SHA256 checksum sidecar is missing
-    #[arg(long = "allow-missing-checksum")]
-    pub allow_missing_checksum: bool,
 }
 
 #[derive(Args, Debug)]

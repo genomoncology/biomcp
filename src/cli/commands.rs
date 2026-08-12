@@ -186,7 +186,7 @@ EXAMPLES:
     },
     /// Update the biomcp binary from GitHub releases with SHA256 checksum verification
     #[command(
-        long_about = "Update the biomcp binary from GitHub releases.\n\nRelease archives require SHA256 checksum verification by default. If a legitimate release is missing its checksum sidecar, --allow-missing-checksum is an UNSAFE per-invocation escape hatch."
+        long_about = "Update a standalone-installer-owned biomcp binary from GitHub releases.\n\nRelease archives always require SHA256 checksum verification. Windows users should rerun the verified standalone installer."
     )]
     Update(system::UpdateArgs),
     /// Uninstall biomcp from the current location

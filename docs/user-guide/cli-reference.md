@@ -102,7 +102,7 @@ biomcp mcp
 biomcp serve
 biomcp mcp-config [--client <client>] [--absolute-path]
 biomcp serve-http [--host 127.0.0.1] [--port 8080] [--allowed-hosts <hosts> | --unsafe-allow-any-host]
-biomcp update [--check] [--allow-missing-checksum]
+biomcp update [--check]
 biomcp uninstall
 biomcp version [--verbose]
 ```
@@ -158,9 +158,11 @@ TTY, and refuses non-interactive runs with plain stderr unless you pass
 "entries_removed": <number> }`.
 
 `biomcp update` downloads the matching GitHub release archive and requires
-SHA256 checksum verification before replacing the local binary. If a legitimate
-release is missing its checksum sidecar, `--allow-missing-checksum` is an
-UNSAFE per-invocation override.
+SHA256 checksum verification before atomically replacing a Unix binary owned by
+the standalone installer. Ownership is recorded next to the executable in
+`biomcp.install.json`; package-managed or unreceipted binaries are never changed.
+On Windows, rerun the verified standalone installer to upgrade. `--check` is
+read-only and remains available on every platform.
 
 ## Search command families
 
