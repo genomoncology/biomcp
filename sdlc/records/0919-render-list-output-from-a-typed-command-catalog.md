@@ -1,6 +1,6 @@
 ---
 base: b11602b2eb7310e4850d84ad48922a68f16784c8
-head: d95208a4
+head: f6f9d66a
 ---
 
 `biomcp list --json` now serializes a typed catalog instead of scraping the
