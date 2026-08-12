@@ -2,7 +2,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io;
 use std::path::Path;
 
-pub(crate) fn secure_managed_tree(root: &Path) -> io::Result<()> {
+pub(crate) fn secure_managed_tree(root: &Path, recurse: bool) -> io::Result<()> {
     match fs::symlink_metadata(root) {
         Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_dir() => {
             return Err(io::Error::new(
@@ -14,7 +14,7 @@ pub(crate) fn secure_managed_tree(root: &Path) -> io::Result<()> {
         Err(error) if error.kind() == io::ErrorKind::NotFound => create_private_dir(root)?,
         Err(error) => return Err(error),
     }
-    secure_entry(root)
+    secure_entry(root, recurse)
 }
 
 pub(crate) fn open_private(options: &mut OpenOptions, path: &Path) -> io::Result<File> {
@@ -39,7 +39,7 @@ fn create_private_dir(path: &Path) -> io::Result<()> {
 }
 
 #[cfg(unix)]
-fn secure_entry(path: &Path) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     let metadata = fs::symlink_metadata(path)?;
     if metadata.file_type().is_symlink() {
@@ -49,28 +49,30 @@ fn secure_entry(path: &Path) -> io::Result<()> {
         if metadata.nlink() != 1 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                format!(
-                    "managed file has {} links: {}",
-                    metadata.nlink(),
-                    path.display()
-                ),
+                format!("managed file has {} links: {path:?}", metadata.nlink()),
             ));
         }
-        fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
+        if metadata.permissions().mode() & 0o777 != 0o600 {
+            fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
+        }
         return Ok(());
     }
     if !metadata.is_dir() {
         return Err(io::Error::other("unsupported managed file type"));
     }
-    fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
-    for entry in fs::read_dir(path)? {
-        secure_entry(&entry?.path())?;
+    if metadata.permissions().mode() & 0o777 != 0o700 {
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
+    }
+    if recurse {
+        for entry in fs::read_dir(path)? {
+            secure_entry(&entry?.path(), true)?;
+        }
     }
     Ok(())
 }
 
 #[cfg(windows)]
-fn secure_entry(path: &Path) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
     let metadata = fs::symlink_metadata(path)?;
     if metadata.file_type().is_symlink() {
         return Ok(());
@@ -87,13 +89,15 @@ fn secure_entry(path: &Path) -> io::Result<()> {
             ));
         }
     } else if metadata.is_dir() {
-        for entry in fs::read_dir(path)? {
-            secure_entry(&entry?.path())?;
+        if recurse {
+            for entry in fs::read_dir(path)? {
+                secure_entry(&entry?.path(), true)?;
+            }
         }
     } else {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("unsupported managed file type: {}", path.display()),
+            format!("unsupported managed type: {}", path.display()),
         ));
     }
     let user = std::env::var("USERNAME").map_err(|_| io::Error::other("no USERNAME"))?;
@@ -107,12 +111,8 @@ fn secure_entry(path: &Path) -> io::Result<()> {
         .args(["/inheritance:r", "/grant:r"])
         .arg(&grant)
         .status()?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err(io::Error::other(format!(
-            "cannot secure: {}",
-            path.display()
-        )))
-    }
+    status
+        .success()
+        .then_some(())
+        .ok_or_else(|| io::Error::other(format!("cannot secure: {path:?}")))
 }

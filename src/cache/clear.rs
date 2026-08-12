@@ -47,7 +47,7 @@ pub(crate) fn execute_cache_clear(cache_path: &Path) -> Result<ClearReport, BioM
         )));
     }
 
-    super::secure_managed_tree(cache_path)
+    super::secure_managed_tree(cache_path, true)
         .map_err(|error| BioMcpError::InvalidArgument(error.to_string()))?;
     let mut plan = ClearPlan::default();
     scan_directory(cache_path, &mut plan)?;
