@@ -426,3 +426,20 @@ All seven completion records are present and the active ticket files are gone.
 The active backlog is now **39**, matching the planned 61 → 53 → 46 → 39
 reduction across the three focused sessions. Final combined repository gates
 are recorded in the batch integration commit.
+
+## Runtime truth and deterministic protein result — 2026-08-12
+
+The eight-ticket session completed in one persistent worktree: **0874, 0921,
+0922, 0677, 0913, 0923, 0920, and 0673**. Variant coding and protein identities
+now stay on one transcript; protein filters and pagination are independent and
+truthful; and protein source behavior runs locally from real receipts.
+
+Search-all counts distinguish exact totals from lower bounds. Batch commands
+retain every successful item when another item fails. Every finite command
+honors global JSON, while server commands reject it before startup. The
+specification runner is now the only complete page registry consumed by Make
+and verification.
+
+`make lint`, `make test` (2,891 Rust tests, 512 Python contracts, and strict
+documentation), `make spec`, and `make full-feature-check` passed. The active
+backlog is now **31**, completing the planned **39 → 31** reduction.
