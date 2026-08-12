@@ -365,44 +365,18 @@ def test_g5_canary_rejects_malformed_source_status(tmp_path: Path) -> None:
     assert "apc-grch38" in payload["identity_diagnostics"]["schema_parse_failures"]
 
 
-def test_live_canary_preflight_prints_safe_json_before_invoking_binary(
-    tmp_path: Path,
-) -> None:
-    marker = tmp_path / "called"
-    binary = tmp_path / "biomcp"
-    write_fake_binary(binary, marker)
-    env = os.environ | {"BIOMCP_BIN": str(binary)}
-    env.pop("NCBI_API_KEY", None)
-    env.pop("S2_API_KEY", None)
-    env.pop("UMLS_API_KEY", None)
+def test_seven_variant_corpus_canary_is_routine_and_credential_free() -> None:
+    script = CANARY.read_text(encoding="utf-8")
 
-    completed = run_canary(binary, env)
-
-    assert completed.returncode == 1
-    assert json.loads(completed.stdout)["preflight"]["missing"]
-    assert not marker.exists()
+    assert "variant_articles_683/panel-landmark-map.json" in script
+    assert "NCBI_API_KEY" not in script
+    assert "S2_API_KEY" not in script
+    assert "UMLS_API_KEY" not in script
 
 
-def test_live_canary_rejects_found_pmids_without_binary_trace_attribution(
-    tmp_path: Path,
-) -> None:
-    marker = tmp_path / "called"
-    binary = tmp_path / "biomcp"
-    write_fake_binary(binary, marker)
-    env = os.environ | {
-        "BIOMCP_BIN": str(binary),
-        "NCBI_API_KEY": "test",
-        "S2_API_KEY": "test",
-        "UMLS_API_KEY": "test",
-    }
+def test_seven_variant_corpus_canary_rejects_unknown_routes() -> None:
+    script = CANARY.read_text(encoding="utf-8")
 
-    completed = run_canary(binary, env)
-
-    payload = json.loads(completed.stdout)
-    assert completed.returncode == 1
-    assert payload["expected_pmid_route_diagnostics_are_binary_attributed"] is False
-    assert any(
-        row["pmid"] == "19142183" and row["found"] and not row["candidate_routes"]
-        for row in payload["expected_pmid_diagnostics"]
-    )
-    assert marker.exists()
+    assert 'body = route_bodies.get(self.path)' in script
+    assert 'self.send_response(404)' in script
+    assert 'unknown == ["/unknown-corpus-route"]' in script

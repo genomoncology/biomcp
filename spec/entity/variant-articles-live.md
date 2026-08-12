@@ -99,29 +99,3 @@ bash ../fixtures/run-variant-article-strict-live-canary.sh ../..
   "provenance_uses_query_aliases_only": true
 }
 ```
-
-## Seven-Variant Recall Canary
-
-<!-- mustmatch-lint: skip -->
-
-The union route should recover the predeclared readiness threshold, cover most
-panel variants, preserve the two MLH1 family papers, and retain every PMID for
-the same variant where an individual route had already demonstrated it, with
-route provenance. Its JSON attributes every expected PMID to binary-emitted
-route-stage evidence, so provider absence cannot be confused with a BioMCP
-pipeline loss. Provider drift must be reported rather than hidden by weakening
-the routine fixture contract.
-
-```bash run id=variant-article-live-canary exit=0 timeout=180
-bash ../fixtures/run-variant-articles-live-canary.sh ../..
-```
-
-```json expect=variant-article-live-canary contains
-{
-  "reference_recall_at_least_9_of_12": true,
-  "variant_coverage_at_least_6_of_7": true,
-  "mlh1_family_pmids_present": true,
-  "route_specific_pmids_present_for_expected_variants": true,
-  "expected_pmid_route_diagnostics_are_binary_attributed": true
-}
-```

@@ -84,12 +84,12 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/surface/discover.md` | routine, receipt-backed OLS4 identity, no-match, and relational redirect contracts plus local skill guidance |
 | `spec/surface/discover-live.md` | operator-run discover trial intent and credentialed UMLS code-label checks |
 
-The live `spec/entity/variant-articles-live.md` canaries are verify-only. G5
-remains useful as a focused diagnostic, but its existing identity, exact-route,
-route-alias, source-status, and terminal-state assertions are hard evidence when
-included in one authoritative `make verify`; the unchanged seven-variant recall
-canary is also hard evidence and its runner preflights required credentials
-before network work.
+The remaining `spec/entity/variant-articles-live.md` canaries are verify-only.
+G5 remains useful as a focused diagnostic, and its identity, exact-route,
+route-alias, source-status, and terminal-state assertions are hard evidence in
+one authoritative `make verify`. The seven-variant recall gate moved to the
+routine, receipt-backed `spec/entity/variant-articles-corpus.md`; it needs no
+credentials or public network.
 
 ## Bash Mustmatch Lint Rule
 

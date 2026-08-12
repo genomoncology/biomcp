@@ -35,6 +35,7 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/clingen-erepo.md
   spec/entity/clingen-cspec.md
   spec/entity/variant-article-identity.md
+  spec/entity/variant-articles-corpus.md
   spec/surface/mcp.md
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py

@@ -2,6 +2,60 @@
 //! No network, no server.
 
 use super::super::*;
+
+#[test]
+fn seven_variant_corpus_pubmed_requests_and_decoders_remain_production_exact() {
+    struct Case {
+        term: &'static str,
+        path: &'static str,
+        landmark: &'static str,
+        present: bool,
+    }
+    let cases = [
+        Case {
+            term: "APC p.E1317Q NOT retracted publication[pt]",
+            path: "testdata/sources/variant_articles_683/pubmed/4c7a563ff50997b399a3e8b43ea5d68ab1e676093e6d46e92ab47268c4636995.json",
+            landmark: "32461654",
+            present: false,
+        },
+        Case {
+            term: "(\"MLH1\"[Title/Abstract] AND \"G67E\"[Title/Abstract])",
+            path: "testdata/sources/variant_articles_683/pubmed/a7c2c7880e6d99a892dc8beb6531cbaa26d71bda98bbce01a64d46b34a9e11a8.json",
+            landmark: "18033691",
+            present: true,
+        },
+        Case {
+            term: "(\"PTEN\"[Title/Abstract] AND \"D326N\"[Title/Abstract])",
+            path: "testdata/sources/variant_articles_683/pubmed/2ebc125ce85e958951e46ab078cf6ff28d34e7db4ea65482745eb2822de16ebc.json",
+            landmark: "17427195",
+            present: true,
+        },
+    ];
+    let content_type = reqwest::header::HeaderValue::from_static("application/json");
+    for case in cases {
+        let params = PubMedESearchParams {
+            term: case.term.into(),
+            retstart: 0,
+            retmax: 100,
+            date_from: None,
+            date_to: None,
+        };
+        let plan = PubMedClient::esearch_plan(&params, None).expect("production request plan");
+        assert_eq!(plan.path, "esearch.fcgi");
+        assert_eq!(plan.query_value("term"), Some(case.term));
+        let bytes = std::fs::read(case.path).expect("receipted PubMed capture");
+        let decoded = PubMedClient::decode_esearch_response(
+            reqwest::StatusCode::OK,
+            Some(&content_type),
+            &bytes,
+        )
+        .expect("production PubMed decoder");
+        assert_eq!(
+            decoded.idlist.iter().any(|pmid| pmid == case.landmark),
+            case.present
+        );
+    }
+}
 use crate::error::BioMcpError;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;

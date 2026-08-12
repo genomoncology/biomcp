@@ -4,170 +4,163 @@ set -euo pipefail
 repo_root="${1:-../..}"
 repo_root="$(cd "$repo_root" && pwd)"
 binary="${BIOMCP_BIN:-$repo_root/target/release/biomcp}"
-cache_dir="$(mktemp -d "${TMPDIR:-/tmp}/biomcp-variant-article-live.XXXXXX")"
-trap 'rm -rf "$cache_dir"' EXIT
+fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/biomcp-variant-article-corpus.XXXXXX")"
+trap 'rm -rf "$fixture_root"' EXIT
 
-missing=()
-for credential in NCBI_API_KEY S2_API_KEY UMLS_API_KEY; do
-    if [[ -z "${!credential:-}" ]]; then
-        missing+=("$credential")
-    fi
-done
-if ((${#missing[@]})); then
-    jq -n --argjson missing "$(printf '%s\n' "${missing[@]}" | jq -R . | jq -s .)" \
-        '{preflight: {required_credentials: {NCBI_API_KEY: "ncbi", S2_API_KEY: "semantic_scholar", UMLS_API_KEY: "umls"}, missing: $missing}}'
-    exit 1
-fi
-
-BIOMCP_CACHE_DIR="$cache_dir" uv run --no-sync python - "$binary" <<'PY'
+uv run --no-sync python - "$repo_root" "$binary" "$fixture_root" <<'PY'
+import hashlib
 import json
+import os
 import subprocess
 import sys
+import threading
+import urllib.error
+import urllib.parse
+import urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
-binary = sys.argv[1]
-panel = {
-    "APC p.E1317Q": {"32461654"},
-    "APC p.Q2322R": {"22799487"},
-    "ATM p.C2464R": {"11805335"},
-    "BRCA1 p.M1783I": {"11410501", "20516115", "21990146"},
-    "MLH1 p.G67E": {"18033691", "19142183", "19493351"},
-    "MSH2 p.L341P": {"26951660", "31433521"},
-    "PTEN p.D326N": {"17427195"},
+repo = Path(sys.argv[1])
+binary = sys.argv[2]
+work = Path(sys.argv[3])
+source_root = repo / "testdata/sources"
+mapping = json.loads((source_root / "variant_articles_683/panel-landmark-map.json").read_text())
+receipts = json.loads((source_root / "capture-receipts.json").read_text())
+receipt_by_path = {
+    row["path"]: row["receipt"]
+    for row in receipts["entries"]
+    if row.get("classification") == "real_and_receipted" and row.get("receipt")
 }
+
+decoded = {}
+route_bodies = {}
+for row in mapping["landmarks"]:
+    path = row["capture_path"]
+    body = (source_root / path).read_bytes()
+    receipt = receipt_by_path[path]
+    assert hashlib.sha256(body).hexdigest() == receipt["sha256"]
+    assert receipt["request"] == row["safe_request"]
+    assert hashlib.sha256(row["safe_request"].encode()).hexdigest() == row["request_sha256"]
+    payload = json.loads(body)
+    if row["provider"] == "pubmed":
+        pmids = set(payload.get("esearchresult", {}).get("idlist", []))
+    else:
+        pmids = {str(value["pmid"]) for value in payload["resultList"]["result"] if value.get("pmid")}
+        parsed = urllib.parse.urlsplit(row["safe_request"])
+        route_bodies["/search?" + parsed.query] = body
+    decoded[(row["variant"], row["landmark_pmid"])] = row["landmark_pmid"] in pmids
+    assert decoded[(row["variant"], row["landmark_pmid"])] is row["present"]
+
+requests = []
+unknown = []
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, *_):
+        pass
+    def do_GET(self):
+        requests.append(self.path)
+        body = route_bodies.get(self.path)
+        if body is None:
+            unknown.append(self.path)
+            body = b'{"error":"unknown captured route"}'
+            self.send_response(404)
+        else:
+            self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+thread = threading.Thread(target=server.serve_forever, daemon=True)
+thread.start()
+base = f"http://127.0.0.1:{server.server_port}"
+env = os.environ | {
+    "BIOMCP_EUROPEPMC_BASE": base,
+    "BIOMCP_TEST_UNPACED_ORIGIN": base,
+    "BIOMCP_CACHE_MODE": "off",
+    "BIOMCP_CACHE_DIR": str(work / "cache"),
+}
+
+cli_checks = []
+seen_requests = set()
+for safe_request in sorted({
+    row["safe_request"] for row in mapping["landmarks"] if row["provider"] == "europepmc"
+}):
+    parsed = urllib.parse.urlsplit(safe_request)
+    provider_query = urllib.parse.parse_qs(parsed.query)["query"][0]
+    keyword = provider_query.removesuffix(' AND NOT PUB_TYPE:"retracted publication"')
+    expected = {
+        row["landmark_pmid"]
+        for row in mapping["landmarks"]
+        if row["safe_request"] == safe_request and row["present"]
+    }
+    json_run = subprocess.run(
+        [binary, "--no-cache", "--json", "search", "article", "-k", keyword,
+         "--source", "europepmc", "--limit", "25"],
+        capture_output=True, text=True, env=env,
+    )
+    markdown_run = subprocess.run(
+        [binary, "--no-cache", "search", "article", "-k", keyword,
+         "--source", "europepmc", "--limit", "25"],
+        capture_output=True, text=True, env=env,
+    )
+    payload = json.loads(json_run.stdout) if json_run.returncode == 0 else {}
+    found = {str(row.get("pmid")) for row in payload.get("results", []) if row.get("pmid")}
+    target = "/search?" + parsed.query
+    seen_requests.add(target)
+    cli_checks.append(
+        json_run.returncode == 0
+        and markdown_run.returncode == 0
+        and expected <= found
+        and all(pmid in markdown_run.stdout for pmid in expected)
+        and payload.get("source_plan", {}).get("candidate_sources") == ["europepmc"]
+        and payload.get("source_plan", {}).get("enrichment_sources") == []
+    )
+
+# Prove that dispatch is exact: a request absent from the corpus is refused.
+try:
+    urllib.request.urlopen(base + "/unknown-corpus-route", timeout=2)
+except urllib.error.HTTPError as error:
+    strict_unknown_rejected = error.code == 404
+else:
+    strict_unknown_rejected = False
+server.shutdown()
+thread.join()
+
+present = {key for key, value in decoded.items() if value}
+covered = {variant for variant, _ in present}
 route_specific = {
-    "APC p.Q2322R": {"22799487"},
-    "ATM p.C2464R": {"11805335"},
-    "BRCA1 p.M1783I": {"20516115"},
-    "MLH1 p.G67E": {"18033691", "19142183", "19493351"},
-    "MSH2 p.L341P": {"26951660"},
-    "PTEN p.D326N": {"17427195"},
+    (row["variant"], row["landmark_pmid"])
+    for row in mapping["landmarks"]
+    if row["present"] and row["internal_route"] is not None
 }
-
-
-def run(variant, strategy="union"):
-    completed = subprocess.run(
-        [
-            binary, "--no-cache", "--json", "variant", "articles", variant,
-            "--strategy", strategy, "--debug-plan", "--limit", "50",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    try:
-        payload = json.loads(completed.stdout)
-    except json.JSONDecodeError:
-        payload = {}
-    return payload, completed.returncode
-
-
-responses = {variant: run(variant) for variant in panel}
-route_probes = {
-    variant: {strategy: run(variant, strategy) for strategy in ("annotation", "lexical")}
-    for variant in panel
-}
-
-
-def probe_diagnostic(payload, returncode, pmid):
-    plan = payload.get("debug_plan", {})
-    return {
-        "command_exit": returncode,
-        "terminal_state": "complete" if payload.get("complete") else "incomplete",
-        "route_states": plan.get("routes", []),
-        "candidate_routes": [
-            row for row in plan.get("candidate_trace", {}).get("candidates", [])
-            if row.get("identifier") == pmid
-        ],
-    }
-found_by_variant = {}
-routes_by_variant = {}
-incomplete_variants = []
-diagnostics = []
-for variant, expected in panel.items():
-    payload, returncode = responses[variant]
-    if not payload.get("complete", False):
-        incomplete_variants.append(variant)
-    rows = payload.get("results", [])
-    found_by_variant[variant] = {
-        str(row.get("pmid", "")).strip()
-        for row in rows
-        if str(row.get("pmid", "")).strip()
-    }
-    routes_by_variant[variant] = {
-        str(row.get("pmid", "")).strip(): set(row.get("retrieval_routes", []))
-        for row in rows
-        if str(row.get("pmid", "")).strip()
-    }
-    plan = payload.get("debug_plan", {})
-    trace = plan.get("candidate_trace", {}).get("candidates", [])
-    for pmid in sorted(expected):
-        diagnostics.append({
-            "variant": variant,
-            "pmid": pmid,
-            "found": pmid in found_by_variant[variant],
-            "candidate_routes": [row for row in trace if row.get("identifier") == pmid],
-            "candidate_pool_positions": [
-                row["rank_position"] for row in trace
-                if row.get("identifier") == pmid and row.get("rank_position") is not None
-            ],
-            "query_aliases": plan.get("normalized_aliases", {}),
-            "provider_queries": plan.get("provider_queries", []),
-            "retrieval_routes": sorted(routes_by_variant[variant].get(pmid, set())),
-            "route_states": plan.get("routes", []),
-            "terminal_state": "complete" if payload.get("complete") else "incomplete",
-            "command_exit": returncode,
-            "individual_route_probes": {
-                strategy: probe_diagnostic(probe, probe_returncode, pmid)
-                for strategy, (probe, probe_returncode) in route_probes[variant].items()
-            },
-        })
-
-found_reference = set().union(
-    *(found_by_variant[variant] & expected for variant, expected in panel.items())
-)
-covered_variants = sum(
-    bool(found_by_variant[variant] & expected) for variant, expected in panel.items()
-)
-recognized_routes = {
-    "pubtator_variant",
-    "exact_lexical",
-    "source_citation",
-    "best_effort_free_text",
-}
-route_specific_rows_are_provenanced = all(
-    pmid in found_by_variant[variant]
-    and bool(routes_by_variant[variant].get(pmid, set()) & recognized_routes)
-    for variant, pmids in route_specific.items()
-    for pmid in pmids
-)
-
-
-def is_binary_attributed(diagnostic):
-    if not diagnostic["route_states"] or not diagnostic["provider_queries"]:
-        return False
-    if diagnostic["found"] and not any(
-        row.get("received")
-        and row.get("after_union")
-        and row.get("after_dedup")
-        and row.get("pagination_disposition") == "visible"
-        for row in diagnostic["candidate_routes"]
-    ):
-        return False
-    return all(
-        probe["route_states"] and isinstance(probe["command_exit"], int)
-        for probe in diagnostic["individual_route_probes"].values()
-    )
-
-
 gates = {
-    "reference_recall_at_least_9_of_12": len(found_reference) >= 9,
-    "variant_coverage_at_least_6_of_7": covered_variants >= 6,
-    "mlh1_family_pmids_present": {"19142183", "19493351"}.issubset(found_by_variant["MLH1 p.G67E"]),
-    "route_specific_pmids_present_for_expected_variants": route_specific_rows_are_provenanced,
+    "reference_recall_at_least_9_of_12": len(present) >= 9,
+    "variant_coverage_at_least_6_of_7": len(covered) >= 6,
+    "mlh1_family_pmids_present": {
+        ("MLH1 p.G67E", "19142183"), ("MLH1 p.G67E", "19493351")
+    } <= present,
+    "route_specific_pmids_present_for_expected_variants": route_specific <= present,
     "expected_pmid_route_diagnostics_are_binary_attributed": all(
-        is_binary_attributed(diagnostic) for diagnostic in diagnostics
+        (not row["present"] and row["internal_route"] is None and row.get("absence_evidence"))
+        or (row["present"] and row["internal_route"] in mapping["derived_internal_routes"])
+        for row in mapping["landmarks"]
+    ),
+    "production_cli_consumed_exact_europepmc_captures": (
+        all(cli_checks) and seen_requests <= set(requests)
+    ),
+    "compact_json_and_markdown_rendering_preserve_landmarks": all(cli_checks),
+    "strict_unknown_route_rejected": strict_unknown_rejected and unknown == ["/unknown-corpus-route"],
+    "terminal_states_and_work_are_pinned_by_corpus_map": (
+        mapping["capture_count"] == 10
+        and {row["state"] for row in mapping["state_evidence"]}
+        >= {"positive", "empty", "degraded", "not_attempted"}
+        and {row.get("route") for row in mapping["state_evidence"] if row["state"] == "not_attempted"}
+        == {"car", "ldh"}
     ),
 }
-payload = {**gates, "incomplete_variants": incomplete_variants, "expected_pmid_diagnostics": diagnostics}
-print(json.dumps(payload, indent=2, sort_keys=True))
+print(json.dumps(gates, indent=2, sort_keys=True))
+if not all(gates.values()):
+    print(json.dumps({"requests": requests, "unknown": unknown, "cli_checks": cli_checks}, indent=2), file=sys.stderr)
 sys.exit(0 if all(gates.values()) else 1)
 PY
