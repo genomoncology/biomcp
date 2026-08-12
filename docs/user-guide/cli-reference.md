@@ -132,7 +132,8 @@ behavior.
 HTTP cache path as plain text and ignores the global `--json` flag.
 
 `biomcp --json list` emits structured reference data for scripts and agents.
-The root object includes `entities`, `commands`, and `patterns`; `biomcp --json list <entity>` emits a per-surface object with `entity` and `commands`.
+The root object includes typed `entities` and ordered `entries`; `biomcp --json list <entity>` adds `entity`. Each entry is tagged as a literal command, a
+parameterized template with typed placeholders, or explanatory prose.
 
 `biomcp version` prints release identity as plain text by default. With
 `--json`, it emits `{ "version": "...", "git_revision": "...",

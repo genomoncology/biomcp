@@ -47,26 +47,7 @@ New to BioMCP? Try:
 | The same sections for several entities | `batch <entity> <id1,id2,...> --sections <s1,s2,...>` |
 | Enriched pathways or functions for a gene set | `enrich <GENE1,GENE2,...>` |
 
-## Gettable Entities
-
-- gene
-- variant
-- article
-- author
-- trial
-- diagnostic
-- drug
-- disease
-- pgx
-- pathway
-- protein
-- study
-- adverse-event
-
-## Search-Only Entities
-
-- `gwas` - GWAS Catalog; use `search gwas`
-- `phenotype` - Monarch/HPO disease similarity; use `search phenotype`
+{{ENTITY_CATALOG}}
 
 ## Patterns
 

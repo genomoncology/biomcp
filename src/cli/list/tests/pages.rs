@@ -48,12 +48,63 @@ fn list_root_json_includes_gettable_and_search_only_entities() {
         .expect("entities array");
     let entities: Vec<_> = entities
         .iter()
-        .filter_map(serde_json::Value::as_str)
+        .filter_map(|entry| entry.get("name").and_then(serde_json::Value::as_str))
         .collect();
     assert!(entities.contains(&"gene"));
     assert!(entities.contains(&"adverse-event"));
     assert!(entities.contains(&"gwas"));
     assert!(entities.contains(&"phenotype"));
+}
+
+#[test]
+fn list_json_is_a_typed_catalog_instead_of_rendered_markdown_fragments() {
+    let out = render_json(None).expect("list root JSON should render");
+    let value: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
+    let entities = value["entities"].as_array().expect("entities array");
+    let author = entities
+        .iter()
+        .find(|entry| entry["name"] == "author")
+        .expect("author entity");
+    assert_eq!(author["searchable"], true);
+    assert_eq!(author["gettable"], true);
+    let study = entities
+        .iter()
+        .find(|entry| entry["name"] == "study")
+        .expect("study catalog page");
+    assert_eq!(study["gettable"], false);
+
+    let entries = value["entries"].as_array().expect("typed entries");
+    assert!(entries.iter().any(|entry| entry["kind"] == "literal"));
+    assert!(entries.iter().any(|entry| entry["kind"] == "template"));
+    assert!(entries.iter().any(|entry| entry["kind"] == "prose"));
+    for entry in entries {
+        if entry["kind"] == "template" {
+            assert!(
+                entry["placeholders"]
+                    .as_array()
+                    .is_some_and(|values| !values.is_empty()),
+                "template lacks typed placeholders: {entry}"
+            );
+        }
+    }
+}
+
+#[test]
+fn list_skill_json_contains_real_commands_without_duplicates() {
+    let out = render_json(Some("skill")).expect("list skill JSON should render");
+    let value: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
+    let entries = value["entries"].as_array().expect("typed entries");
+    let commands = entries
+        .iter()
+        .filter_map(|entry| entry.get("command").and_then(serde_json::Value::as_str))
+        .collect::<Vec<_>>();
+    assert!(commands.contains(&"skill list"));
+    assert!(commands.contains(&"skill render"));
+    let unique = commands
+        .iter()
+        .copied()
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(unique.len(), commands.len());
 }
 
 #[test]

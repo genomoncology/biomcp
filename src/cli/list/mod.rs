@@ -2,6 +2,7 @@
 
 use crate::error::BioMcpError;
 
+mod catalog;
 mod clinical;
 mod helpers;
 mod literature;
@@ -35,45 +36,29 @@ pub fn render(entity: Option<&str>) -> Result<String, BioMcpError> {
 }
 
 pub fn render_json(entity: Option<&str>) -> Result<String, BioMcpError> {
-    match normalize_entity(entity)? {
-        None => {
-            #[derive(serde::Serialize)]
-            struct ListJson {
-                kind: &'static str,
-                entities: Vec<String>,
-                commands: Vec<String>,
-                patterns: Vec<String>,
-            }
-
-            let page = helpers::list_all();
-            let mut entities = section_plain_items(&page, "## Gettable Entities");
-            entities.extend(section_code_items(&page, "## Search-Only Entities"));
-            crate::render::json::to_pretty(&ListJson {
-                kind: "list",
-                entities,
-                commands: section_code_items(&page, "## Quickstart"),
-                patterns: section_code_items(&page, "## Patterns"),
-            })
-        }
-        Some(entity) => {
-            #[derive(serde::Serialize)]
-            struct EntityListJson {
-                kind: &'static str,
-                entity: &'static str,
-                commands: Vec<String>,
-            }
-
-            let page = render(Some(entity))?;
-            let mut commands = section_code_items(&page, "## Commands");
-            commands.extend(section_code_items(&page, "## Command"));
-            commands.extend(section_code_items(&page, "## Helpers"));
-            crate::render::json::to_pretty(&EntityListJson {
-                kind: "list_entity",
-                entity,
-                commands,
-            })
-        }
+    #[derive(serde::Serialize)]
+    struct ListJson {
+        kind: &'static str,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        entity: Option<&'static str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        entities: Option<Vec<catalog::EntityCapability>>,
+        entries: Vec<catalog::CatalogEntry>,
     }
+
+    let entity = normalize_entity(entity)?;
+    let entries = catalog::entries(entity);
+    catalog::validate(&entries)?;
+    crate::render::json::to_pretty(&ListJson {
+        kind: if entity.is_some() {
+            "list_entity"
+        } else {
+            "list"
+        },
+        entity,
+        entities: entity.is_none().then(catalog::entities),
+        entries,
+    })
 }
 
 fn normalize_entity(entity: Option<&str>) -> Result<Option<&'static str>, BioMcpError> {
@@ -106,38 +91,6 @@ fn normalize_entity(entity: Option<&str>) -> Result<Option<&'static str>, BioMcp
             "Unknown entity: {other}\n\nValid entities:\n- gene\n- variant\n- article\n- author\n- trial\n- diagnostic\n- drug\n- disease\n- phenotype\n- pgx\n- gwas\n- pathway\n- protein\n- study\n- adverse-event\n- search-all\n- discover\n- batch\n- enrich\n- skill"
         ))),
     }
-}
-
-fn section_plain_items(page: &str, heading: &str) -> Vec<String> {
-    section(page, heading)
-        .lines()
-        .filter_map(|line| line.trim().strip_prefix("- "))
-        .map(str::to_string)
-        .collect()
-}
-
-fn section_code_items(page: &str, heading: &str) -> Vec<String> {
-    section(page, heading)
-        .lines()
-        .filter_map(|line| {
-            let line = line.trim();
-            line.strip_prefix("- ")?;
-            let start = line.find('`')?;
-            let rest = &line[start + 1..];
-            let end = rest.find('`')?;
-            Some(rest[..end].to_string())
-        })
-        .collect()
-}
-
-fn section<'a>(page: &'a str, heading: &str) -> &'a str {
-    let marker = format!("{heading}\n");
-    let Some(start) = page.find(&marker) else {
-        return "";
-    };
-    let rest = &page[start + marker.len()..];
-    let end = rest.find("\n## ").unwrap_or(rest.len());
-    &rest[..end]
 }
 
 #[cfg(test)]

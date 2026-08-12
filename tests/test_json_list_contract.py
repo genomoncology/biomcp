@@ -37,15 +37,15 @@ def test_json_list_outputs_are_parseable_reference_objects() -> None:
     gene = _run_json("list", "gene")
     variant = _run_json("list", "variant")
 
-    assert "gene" in _entries(root.get("entities"))
-    root_refs = [*_entries(root.get("patterns")), *_entries(root.get("commands"))]
+    assert any(entity.get("name") == "gene" for entity in _entries(root.get("entities")))
+    root_refs = _entries(root.get("entries"))
     assert any("search all" in str(entry) for entry in root_refs)
     assert gene.get("entity") == "gene"
-    assert any("get gene <symbol>" in str(command) for command in _entries(gene.get("commands")))
+    assert any("get gene <symbol>" in str(command) for command in _entries(gene.get("entries")))
     assert any(
         "variant articles <id>" in str(command)
-        and "--strategy <union|annotation|lexical>" in str(command)
-        for command in _entries(variant.get("commands"))
+        and "enum:union|annotation|lexical" in str(command)
+        for command in _entries(variant.get("entries"))
     )
 
 
@@ -58,6 +58,6 @@ def test_public_docs_document_json_list_shape() -> None:
         assert "biomcp --json list <entity>" in content
         assert "`entities`" in content
         assert "`entity`" in content
-        assert "`commands`" in content
+        assert "`entries`" in content
         assert "biomcp cache path" in content
         assert "plain text" in content

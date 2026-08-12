@@ -456,8 +456,9 @@ These properties should be preserved across releases:
    produces valid JSON — scripts and agents depend on this. Parse/usage errors
    under `--json` exit 2 with a JSON `invalid_argument` envelope on stdout.
    `biomcp --json list` and `biomcp --json list <entity>` provide structured
-   command-reference data: the root object carries `entities`, `commands`, and
-   `patterns`, while entity pages carry `entity` and `commands`. `biomcp cache
+   command-reference data: the root object carries typed `entities` and ordered
+   `entries`, while entity pages add `entity`. Entries distinguish executable
+   literals, templates with typed placeholders, and prose. `biomcp cache
    path` is the documented operator-command exception: it stays plain text even
    under `--json`, while `biomcp cache stats` and `biomcp cache clean` keep their
    normal JSON contracts. After command identification, primary collection paths

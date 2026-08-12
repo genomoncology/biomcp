@@ -7,7 +7,10 @@ pub(super) fn list_all() -> String {
         .map(|v| !v.trim().is_empty())
         .unwrap_or(false);
 
-    let mut out = LIST_REFERENCE.to_string();
+    let mut out = LIST_REFERENCE.replace(
+        "{{ENTITY_CATALOG}}",
+        &super::catalog::render_entity_inventory(),
+    );
 
     if has_oncokb {
         out = out.replace(
