@@ -6,8 +6,6 @@ use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use biomcp_mcp_contract_client::start_ols4_stub;
-
 struct CommandResult {
     code: Option<i32>,
     stdout: String,
@@ -389,7 +387,11 @@ fn serve_mygene_request(mut stream: TcpStream) -> Result<String, String> {
         .ok_or_else(|| format!("unexpected fixture request line: {request:?}"))?
         .to_owned();
 
-    let body = r#"{"total":0,"hits":[]}"#;
+    let body = if request_target.starts_with("/api/search?") {
+        r#"{"response":{"numFound":0,"start":0,"docs":[]}}"#
+    } else {
+        r#"{"total":0,"hits":[]}"#
+    };
     write!(
         stream,
         "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
@@ -445,14 +447,12 @@ fn mygene_fixture_without_request_stops_on_drop() {
 #[test]
 fn json_mode_gene_not_found_error_writes_json_stdout_and_exit_1() {
     let fixture = MyGeneFixture::start();
-    let (_ols_thread, ols_url) = start_ols4_stub().expect("start OLS4 fixture");
     let result = run_biomcp_with_env(
-        &["--json", "get", "gene", "ZZZNOTAREALGENE"],
+        &["--json", "--no-cache", "get", "gene", "ZZZNOTAREALGENE"],
         &[
             ("BIOMCP_MYGENE_BASE", &fixture.base_url),
-            ("BIOMCP_OLS4_BASE", &ols_url),
-            ("BIOMCP_HPO_BASE", "http://127.0.0.1:9"),
-            ("UMLS_API_KEY", ""),
+            ("BIOMCP_OLS4_BASE", &fixture.base_url),
+            ("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base_url),
         ],
     );
     let request_target = fixture.received_request();
