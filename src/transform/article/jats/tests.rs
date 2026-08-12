@@ -227,7 +227,7 @@ fn extract_text_from_jats_merges_multiple_ref_lists() {
 }
 
 #[test]
-fn extract_text_from_jats_marks_complex_tables() {
+fn extract_text_from_jats_preserves_complex_table_cells_and_spans() {
     let xml = r#"
 <article>
   <front>
@@ -253,8 +253,31 @@ fn extract_text_from_jats_marks_complex_tables() {
     let out = extract_text_from_xml(xml);
     assert!(out.contains("Table 7"));
     assert!(out.contains("Irregular measurements"));
-    assert!(out.contains("*[complex table omitted: 2×2, merged cells]*"));
-    assert!(!out.contains("| Marker | Value |"));
+    assert!(out.contains("merged-cell layout may be lossy"));
+    assert!(out.contains("Row 1: Marker [rowspan=2] | Value"));
+    assert!(out.contains("Row 2: 42"));
+    assert!(!out.contains("complex table omitted"));
+}
+
+#[test]
+fn real_pmc6329583_capture_preserves_all_six_complex_tables() {
+    let xml = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/ncbi_efetch/pmc6329583.xml"
+    ));
+    let out = extract_text_from_xml(xml);
+    for sentinel in [
+        "Pathogenic Criteria",
+        "Macrocephaly of >2 SD to <4 SD",
+        "Supporting (PS4_P): 1-1.5 points",
+        "Round 1 review –criteria applied",
+        "Round 1 review – criteria applied",
+        "ClinVar Status (as of 10.29.17)",
+    ] {
+        assert!(out.contains(sentinel), "missing cell: {sentinel}");
+    }
+    assert_eq!(out.matches("merged-cell layout may be lossy").count(), 6);
+    assert!(!out.contains("complex table omitted"));
 }
 
 #[test]

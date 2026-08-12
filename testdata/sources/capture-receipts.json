@@ -904,6 +904,18 @@
       }
     },
     {
+      "path": "ncbi_efetch/pmc6329583.xml",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "NCBI EFetch PMC",
+        "request": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=6329583&rettype=xml",
+        "captured_at": "2026-08-12T14:06:33Z",
+        "sha256": "9c617ce21d1d11f10b706cf8596c68d11230cc0326968625b039cf9627f4558e",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public NCBI EFetch response through BioMCP's production request shape."
+      }
+    },
+    {
       "path": "pmc_article/pmc3040717.html",
       "classification": "real_and_receipted",
       "receipt": {
