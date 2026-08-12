@@ -383,17 +383,20 @@ opt-in live public-upstream confidence, or `make spec-pr` for
 the same offline corpus with the longer PR timeout.
 
 Repo-local `make spec` and `make spec-pr` use `scripts/run-specs.sh` over
-explicit `SPEC_ROUTINE_PATHS`: local or fixture-backed Markdown specs such as
+the explicit `SPEC_ROUTINE_PATHS` in the runner, which is the canonical registry:
+local or fixture-backed Markdown specs such as
 `spec/entity/article.md`, `spec/entity/study.md`, `spec/entity/variant.md`, and
 `spec/surface/mcp.md` run through `mustmatch test` with `--lang bash`; the lone Python
 entry is `tests/surface/test_parallel_isolation_contract.py`, a static canary
 that keeps disease/discover isolation from regressing. Python/static surface
 contracts live under `tests/surface/`; all others run in the `make test`
 contract lane, not in the Markdown spec runner. Live-upstream specs leave
-routine canaries entirely for `make verify`: phenotype/Monarch, protein/UniProt
-and ComplexPortal, disease/discover OLS4 paths, pathway Reactome/WikiPathways/KEGG,
-plus gene, drug, diagnostic, trial, PGx, VAERS, and CLI/discover surfaces that
-still exercise public APIs. There is no serialized live rerun leg in `make spec`
+routine canaries entirely for `make verify`: disease/discover OLS4 paths,
+pathway Reactome/WikiPathways/KEGG,
+plus the CLI/discover surfaces that still exercise public APIs. Protein identity,
+structure, and complex cards now use supervised local captures in `make spec`.
+The Makefile names only runner modes and carries no second path inventory. The
+NIH Reporter check remains an explicitly separate credentialed lane. There is no serialized live rerun leg in `make spec`
 or `make spec-pr`; public OLS4/pathway confidence belongs to `make verify`.
 
 Use `spec/README-timings.md` as the current validation-lane audit/reference for

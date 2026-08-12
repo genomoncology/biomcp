@@ -547,7 +547,9 @@ that keeps using the BioMCP spec wrapper.
 make -C ../.. -n spec 2>&1 | mustmatch like "scripts/run-specs.sh spec"
 awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/surface/mcp.md
 test_parallel_isolation_contract.py"
-awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch not like "spec/entity/phenotype.md
+awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/entity/phenotype.md
+spec/entity/protein.md"
+awk '/SPEC_LIVE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch not like "spec/entity/protein.md
 spec/surface/cli.md"
 ```
 
@@ -558,8 +560,8 @@ availability.
 ```bash
 make -C ../.. -n verify 2>&1 | mustmatch like "tools/biomcp-ci discover
 scripts/run-specs.sh verify"
-awk '/SPEC_LIVE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/entity/phenotype.md
-spec/surface/discover.md"
+awk '/SPEC_LIVE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/surface/cli.md
+spec/surface/discover-live.md"
 ```
 
 The smoke matrix should include article source-status and variant-normalization
@@ -568,5 +570,5 @@ confidence through the same wrapper instead of a second cache or replay system.
 ```bash
 make -C ../.. -n verify 2>&1 | mustmatch like "tools/biomcp-ci search article
 tools/biomcp-ci variant normalize"
-awk '/SPEC_LIVE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/entity/pathway.md"
+awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/entity/pathway.md"
 ```

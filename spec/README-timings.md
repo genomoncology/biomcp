@@ -7,19 +7,19 @@
 | `make spec-contracts` | profile-compatible deterministic subset | `180s` per heading | offline Markdown executable contracts, including local MCP transport proof | uses the spec-profile binary selected by `PATH` and `BIOMCP_BIN`; no live-smoke commands or Python pytest contracts run in this lane |
 | `make verify` | explicit opt-in operator confidence before releases or upstream checks | n/a | live public-upstream matrix for discover/OLS4, disease, article source status, variant normalization, protein, pathway, NIH Reporter funding, and other live entity/surface specs | commands go through `tools/biomcp-ci` for cache/XDG roots and optional-key stripping; NIH Reporter is additionally routed through `tools/biomcp-verify-live` so known source/auth unavailability is reported as operator-pending |
 | `make release-live-smoke` | compatibility alias for operators that still use the old live-lane name | n/a | delegates to `make verify` | not part of routine gates |
-| `make spec-pr` | PR CI canary and repo-local debugging of the offline executable corpus | `180s` per heading | explicit `SPEC_ROUTINE_PATHS`: local/fixture-backed CLI/MCP Markdown specs plus the parallel-isolation pytest canary | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
+| `make spec-pr` | PR CI canary and repo-local debugging of the offline executable corpus | `180s` per heading | the runner's explicit `SPEC_ROUTINE_PATHS`: local/fixture-backed CLI/MCP Markdown specs plus the parallel-isolation pytest canary | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
 | `make spec` | repo-local routine spec gate and spec debugging | `180s` per heading | the same offline `SPEC_ROUTINE_PATHS` set as `make spec-pr` | uses the same wrapper/cache root; it should pass with external network blocked while local mock servers remain reachable |
 | `make test-contracts` | PR contracts lane and local docs/Python validation | n/a | selected contract build plus Python/docs contract checks | owns its selected contract build; the spec runner separately prepares stable artifact paths and a release gate supplies its already-built feature-on CLI |
 
 Routine validation now uses offline/deterministic lanes: `make spec` and
-`make spec-pr` run only explicit `SPEC_ROUTINE_PATHS`, and `make spec-contracts`
+`make spec-pr` run only the runner's explicit `SPEC_ROUTINE_PATHS`, and `make spec-contracts`
 keeps a legacy deterministic subset available for profile compatibility. Public upstream confidence is
 live and opt-in through `make verify` (`make release-live-smoke` remains a
 compatibility alias). In that live lane, NIH Reporter funding-source/table
 unavailability is an explicit operator-pending outcome, not a silent skip;
 unexpected output shapes and other
 unclassified failures stay product-red. Ticket 395 moves every live public-upstream spec out of
-routine collection: phenotype/Monarch, protein/UniProt and ComplexPortal,
+routine collection: phenotype/Monarch,
 disease/discover OLS4 paths, pathway Reactome/WikiPathways/KEGG, plus the other
 entity/surface specs that still exercise public APIs. Deterministic request,
 source, fixture, renderer, local study, variant guardrail, and local MCP

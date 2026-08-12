@@ -1,6 +1,6 @@
 # Live-spec conversion target
 
-Ticket 645 records the target state for the 17 remaining paths in
+Ticket 645 recorded the original target state for the live paths in
 `scripts/run-specs.sh::SPEC_LIVE_PATHS`. ClinGen CAR and LDH completed their
 captured-response conversion in ticket 662 and no longer route through that
 live lane. It complements (and does not replace)
@@ -70,7 +70,7 @@ conversion may treat an undocumented fixture as a real capture.
 
 ## Classification
 
-All 17 remaining live paths are **convert**. None is **keep** (provider-only smoke) or
+The original live paths are **convert**. None is **keep** (provider-only smoke) or
 **retire** (no remaining product contract).
 
 | Path | Tier 2 and Tier 3 replacement before removal |
@@ -84,7 +84,7 @@ All 17 remaining live paths are **convert**. None is **keep** (provider-only smo
 | `pathway.md` | KEGG/Reactome/WikiPathways plans and alias normalization; dated search/detail captures. |
 | `pgx.md` | CPIC guideline/recommendation/frequency plans; dated captures for result and empty mapping. |
 | `phenotype.md` | Monarch/HPO plans and typed follow-ups; dated phrase and ID captures. |
-| `protein.md` | UniProt/ComplexPortal plans; dated identity, structure, and complex captures. |
+| `protein.md` | Converted in 0677: supervised UniProt/ComplexPortal identity, structure, and complex captures run routinely. |
 | `trial.md` | CT.gov/NCI plans and cursor handling; dated cursor/contact/eligibility and NCI captures. |
 | `vaers.md` | VAERS/OpenFDA plans and source eligibility; dated VAERS aggregate and unsupported/empty capture. |
 | `variant-hotspots.md` | CancerHotspots plan and structure join; dated BRAF/MYD88, empty, and recurrence captures. |

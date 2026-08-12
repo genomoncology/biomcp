@@ -854,8 +854,10 @@ ROUTINE_SPEC_PATHS = (
     "spec/entity/clingen-cspec.md",
     "spec/entity/variant-article-identity.md",
     "spec/entity/variant-articles-corpus.md",
+    "spec/entity/protein.md",
     "spec/surface/mcp.md",
     "spec/surface/skills.md",
+    "tests/surface/test_parallel_isolation_contract.py",
     "spec/surface/cli-contract-ratchet.md",
     "spec/surface/build-profile.md",
     "spec/surface/trial-retirement.md",
@@ -899,7 +901,6 @@ LIVE_SPEC_PATHS = (
     "spec/entity/article-graph-live.md",
     "spec/entity/ddinter-live.md",
     "spec/entity/disease-live.md",
-    "spec/entity/protein.md",
     "spec/entity/variant-hotspots.md",
     "spec/entity/variant-myvariant-live.md",
     "spec/entity/variant-articles-live.md",
@@ -907,13 +908,6 @@ LIVE_SPEC_PATHS = (
     "spec/surface/cli.md",
     "spec/surface/discover-live.md",
 )
-
-
-def _make_variable_paths(name: str) -> set[str]:
-    makefile = _read_repo("Makefile")
-    match = re.search(rf"(?ms)^{re.escape(name)} = \\\n(?P<body>.*?)(?=^[A-Z0-9_]+\s*=|^[A-Za-z0-9_.-]+:|\Z)", makefile)
-    assert match is not None, f"missing Makefile variable {name}"
-    return set(re.findall(r"spec/\S+", match.group("body")))
 
 
 def _runner_array_paths(name: str) -> list[str]:
@@ -970,7 +964,6 @@ def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
     assert "phenotype_search_json_next_commands_parse" in protein_phenotype
     assert static_paths == ["spec/surface/docker-image.md", "spec/surface/homebrew.md"]
     assert not set(static_paths) & set(_runner_array_paths("SPEC_ROUTINE_PATHS"))
-    assert not set(static_paths) & _make_variable_paths("SPEC_ROUTINE_PATHS")
     assert {
         "spec/entity/trial-intervention-aliases.md",
         "spec/entity/trial-numeric-filters.md",
@@ -982,7 +975,6 @@ def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
         "spec/surface/ctgov-helper-pivots.md",
     }
     assert not removed_duplicate_specs & set(_runner_array_paths("SPEC_ROUTINE_PATHS"))
-    assert not removed_duplicate_specs & _make_variable_paths("SPEC_ROUTINE_PATHS")
     assert "paths_include_any" in runner
     assert "require_ctgov_fixture_env" in runner
     assert runner.index("require_ctgov_fixture_env") < runner.index("run_markdown_specs")
@@ -991,24 +983,29 @@ def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
     assert "$(SPEC_BUILD)" not in static_target
     assert "scripts/run-specs.sh spec-static" in static_target
     assert "$(MAKE) spec-static" in routine_target
-    assert "SPEC_STATIC_PATHS" in makefile
+    assert "SPEC_STATIC_PATHS" not in makefile
 
 
-def test_ticket_395_routine_and_live_spec_variables_are_disjoint_and_complete() -> None:
-    routine = _make_variable_paths("SPEC_ROUTINE_PATHS")
-    static = _make_variable_paths("SPEC_STATIC_PATHS")
-    live = _make_variable_paths("SPEC_LIVE_PATHS")
+def test_ticket_673_runner_is_the_only_complete_spec_registry() -> None:
+    routine = set(_runner_array_paths("SPEC_ROUTINE_PATHS"))
+    static = set(_runner_array_paths("SPEC_STATIC_PATHS"))
+    live = set(_runner_array_paths("SPEC_LIVE_PATHS"))
+    makefile = _read_repo("Makefile")
     spec_files = {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/entity").glob("*.md")}
     spec_files |= {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/surface").glob("*.md")}
 
     assert routine == set(ROUTINE_SPEC_PATHS)
     assert static == set(STATIC_SPEC_PATHS)
     assert live == set(LIVE_SPEC_PATHS)
+    assert "SPEC_ROUTINE_PATHS" not in makefile
+    assert "SPEC_STATIC_PATHS" not in makefile
+    assert "SPEC_LIVE_PATHS" not in makefile
     assert not routine & static and not routine & live and not static & live, (
         "spec lanes must be disjoint"
     )
     retired = {"spec/surface/request-plan-ratchets.md"}
-    assert routine | static | live == spec_files - retired, (
+    routed_specs = {path for path in routine | static | live if path.startswith("spec/")}
+    assert routed_specs == spec_files - retired, (
         "every active entity/surface spec must be explicitly routed"
     )
 
@@ -1030,12 +1027,11 @@ def test_ticket_395_verify_owns_live_specs_and_release_live_smoke_delegates() ->
     verify = _make_target_block("verify")
     release_live_smoke = _make_target_block("release-live-smoke")
     runner = _read_repo("scripts/run-specs.sh")
-    runner_match = re.search(r"(?ms)^  verify\)\n.*?    paths=\(\n(?P<paths>.*?)^    \)", runner)
 
     assert "--mustmatch-" not in verify, "verify must not invoke the deleted pytest plugin"
     assert "scripts/run-specs.sh" in verify, "verify must run live specs through the shared runner"
-    assert runner_match is not None, "verify must declare its live spec paths in the shared runner"
-    runner_paths = re.findall(r"spec/\S+", runner_match.group("paths"))
+    assert 'paths=("${SPEC_LIVE_PATHS[@]}")' in runner
+    runner_paths = _runner_array_paths("SPEC_LIVE_PATHS")
     assert "spec/entity/clingen-car-live.md" not in runner_paths
     assert "spec/entity/clingen-ldh-live.md" not in runner_paths
     for fragment in (

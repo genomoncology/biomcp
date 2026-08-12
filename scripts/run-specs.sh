@@ -30,12 +30,12 @@ SPEC_ROUTINE_PATHS=(
   spec/entity/trial-intervention-aliases.md
   spec/entity/trial-numeric-filters.md
   spec/entity/trial-documents.md
-  spec/entity/trial.md
   spec/entity/variant.md
   spec/entity/clingen-erepo.md
   spec/entity/clingen-cspec.md
   spec/entity/variant-article-identity.md
   spec/entity/variant-articles-corpus.md
+  spec/entity/protein.md
   spec/surface/mcp.md
   spec/surface/skills.md
   tests/surface/test_parallel_isolation_contract.py
@@ -58,11 +58,12 @@ SPEC_CTGOV_FIXTURE_PATHS=(
 SPEC_LIVE_PATHS=(
   spec/entity/article-assets-live.md
   spec/entity/article-graph-live.md
+  spec/entity/ddinter-live.md
   spec/entity/disease-live.md
-  spec/entity/protein.md
   spec/entity/variant-hotspots.md
   spec/entity/variant-myvariant-live.md
   spec/entity/variant-articles-live.md
+  spec/surface/build-profile-live.md
   spec/surface/cli.md
   spec/surface/discover-live.md
 )
@@ -244,6 +245,16 @@ run_provider_contract_fixture() {
   register_cleanup cleanup_provider_contract_fixture
 }
 
+cleanup_protein_fixture() {
+  bash spec/fixtures/cleanup-complexportal-spec-fixture.sh "$ROOT"
+}
+
+run_protein_fixture() {
+  bash spec/fixtures/setup-complexportal-spec-fixture.sh "$ROOT"
+  source_if_present "$ROOT/.cache/spec-complexportal-env"
+  register_cleanup cleanup_protein_fixture
+}
+
 cleanup_vaers_fixture() {
   bash spec/fixtures/cleanup-vaers-spec-fixture.sh "$ROOT"
 }
@@ -305,7 +316,8 @@ reap_stale_routine_fixtures() {
     cleanup-vaers-spec-fixture.sh \
     cleanup-variant-identity-spec-fixture.sh \
     cleanup-clingen-cspec-spec-fixture.sh \
-    cleanup-cpic-spec-fixture.sh; do
+    cleanup-cpic-spec-fixture.sh \
+    cleanup-complexportal-spec-fixture.sh; do
     [[ -x "spec/fixtures/$cleanup" ]] || continue
     ROUTINE_FIXTURE_LOCK_PATH="$lock_path" bash "spec/fixtures/$cleanup" "$ROOT"
   done
@@ -532,6 +544,9 @@ case "$mode" in
     run_variant_identity_fixture
     run_clingen_cspec_fixture
     run_cpic_fixture
+    if paths_include_any spec/entity/protein.md; then
+      run_protein_fixture
+    fi
     ;;
   spec-static)
     timeout_args=(--timeout 180)
@@ -561,19 +576,7 @@ case "$mode" in
     ;;
   verify)
     timeout_args=(--timeout 180)
-    paths=(
-      spec/entity/article-assets-live.md
-      spec/entity/article-graph-live.md
-      spec/entity/disease-live.md
-      spec/entity/ddinter-live.md
-      spec/entity/protein.md
-      spec/entity/variant-hotspots.md
-      spec/entity/variant-myvariant-live.md
-      spec/entity/variant-articles-live.md
-      spec/surface/build-profile-live.md
-      spec/surface/cli.md
-      spec/surface/discover-live.md
-    )
+    paths=("${SPEC_LIVE_PATHS[@]}")
     mustmatch_path_dir="$(mustmatch_dir)"
     BIOMCP_FEATURE_ON_BIN="${BIOMCP_FEATURE_ON_BIN:-${BIOMCP_BIN:-}}"
     prepare_spec_artifacts
