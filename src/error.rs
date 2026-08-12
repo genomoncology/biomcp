@@ -270,6 +270,74 @@ pub struct PublicErrorProjection {
     pub recovery: Option<&'static str>,
 }
 
+const EXTERNAL_FAILURE_MESSAGE_MAX_BYTES: usize = 512;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ExternalFailureProjection {
+    pub(crate) provider: &'static str,
+    pub(crate) operation: &'static str,
+    pub(crate) class: &'static str,
+    pub(crate) status: Option<u16>,
+    pub(crate) message: String,
+}
+
+pub(crate) fn bounded_external_message(message: &str) -> String {
+    if message.len() <= EXTERNAL_FAILURE_MESSAGE_MAX_BYTES {
+        return message.to_string();
+    }
+    let mut end = EXTERNAL_FAILURE_MESSAGE_MAX_BYTES;
+    while !message.is_char_boundary(end) {
+        end -= 1;
+    }
+    message[..end].to_string()
+}
+
+fn classify_reqwest_error(error: &reqwest::Error) -> (&'static str, Option<u16>) {
+    if error.is_timeout() {
+        return ("timeout", error.status().map(|status| status.as_u16()));
+    }
+    if error.is_connect() {
+        return ("connection", None);
+    }
+    if let Some(status) = error.status() {
+        return ("http_status", Some(status.as_u16()));
+    }
+    if error.is_decode() {
+        return ("decode", None);
+    }
+    ("internal", None)
+}
+
+macro_rules! emit_external_failure {
+    ($level:ident, $error:expr, $provider:expr, $operation:expr) => {{
+        let failure = $error.external_failure($provider, $operation);
+        tracing::$level!(
+            provider = failure.provider,
+            operation = failure.operation,
+            class = failure.class,
+            status = failure.status,
+            message = failure.message,
+            "External provider operation failed"
+        );
+    }};
+}
+
+pub(crate) fn warn_external_failure(
+    error: &BioMcpError,
+    provider: SourceProvider,
+    operation: &'static str,
+) {
+    emit_external_failure!(warn, error, provider, operation);
+}
+
+pub(crate) fn debug_external_failure(
+    error: &BioMcpError,
+    provider: SourceProvider,
+    operation: &'static str,
+) {
+    emit_external_failure!(debug, error, provider, operation);
+}
+
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum BioMcpError {
@@ -336,6 +404,36 @@ impl BioMcpError {
         Self::WithSourceContext {
             context,
             source: Box::new(self),
+        }
+    }
+
+    pub(crate) fn external_failure(
+        &self,
+        provider: SourceProvider,
+        operation: &'static str,
+    ) -> ExternalFailureProjection {
+        let (class, status) = match self.underlying() {
+            Self::Http(error) | Self::HttpClientInit(error) => classify_reqwest_error(error),
+            Self::HttpMiddleware(reqwest_middleware::Error::Reqwest(error)) => {
+                classify_reqwest_error(error)
+            }
+            Self::Api { message, .. } => {
+                let status = message
+                    .strip_prefix("HTTP ")
+                    .and_then(|rest| rest.split_whitespace().next())
+                    .and_then(|value| value.parse::<u16>().ok());
+                (status.map(|_| "http_status").unwrap_or("internal"), status)
+            }
+            Self::ApiJson { .. } | Self::Json(_) => ("decode", None),
+            Self::SourceUnavailable { .. } => ("unavailable", None),
+            _ => ("internal", None),
+        };
+        ExternalFailureProjection {
+            provider: provider.label(),
+            operation,
+            class,
+            status,
+            message: bounded_external_message(&format!("{class} failure")),
         }
     }
 
@@ -691,8 +789,7 @@ impl From<reqwest_middleware::Error> for BioMcpError {
 #[cfg(test)]
 mod tests {
     use super::{
-        BioMcpError, ExternalFailureClass, RecoveryAction, SourceContext, SourceProvider,
-        bounded_external_message,
+        BioMcpError, RecoveryAction, SourceContext, SourceProvider, bounded_external_message,
     };
 
     fn reqwest_error() -> reqwest::Error {
@@ -714,12 +811,11 @@ mod tests {
 
         assert_eq!(projection.provider, "Europe PMC");
         assert_eq!(projection.operation, "article search");
-        assert_eq!(projection.class, ExternalFailureClass::Internal);
+        assert_eq!(projection.class, "internal");
         assert!(projection.message.len() <= 512);
         assert!(!format!("{projection:?}").contains(secret));
         assert!(!format!("{projection:?}").contains("http://"));
     }
-
     #[test]
     fn external_failure_message_bound_is_utf8_safe_at_and_after_512_bytes() {
         let exact = format!("{}aa", "é".repeat(255));

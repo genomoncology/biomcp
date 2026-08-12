@@ -2,8 +2,6 @@
 
 use std::collections::HashMap;
 
-use tracing::debug as warn;
-
 use crate::entities::SearchPage;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::pubtator::PubTatorClient;
@@ -118,7 +116,11 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
     let client = match SemanticScholarClient::new() {
         Ok(client) => client,
         Err(err) => {
-            warn!(%err, "Semantic Scholar search-row enrichment unavailable");
+            crate::error::warn_external_failure(
+                &err,
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+                "initialize article search enrichment",
+            );
             return Some(ArticleSourceStatus {
                 source: ArticleSource::SemanticScholar,
                 enabled: true,
@@ -137,12 +139,7 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
         message: None,
     };
 
-    for (chunk_idx, chunk) in lookup_ids
-        .chunks(SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS)
-        .enumerate()
-    {
-        let chunk_start = chunk_idx * SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS;
-        let chunk_end = chunk_start + chunk.len();
+    for chunk in lookup_ids.chunks(SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS) {
         let started = execution.and_then(|execution| execution.reserve("enrichment"));
         if execution.is_some() && started.is_none() {
             status.status = Some(ArticleSourceAvailability::Degraded);
@@ -174,11 +171,10 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
                 }
             }
             Err(err) => {
-                warn!(
-                    %err,
-                    chunk_start,
-                    chunk_end,
-                    "Semantic Scholar article-search batch enrichment failed",
+                crate::error::warn_external_failure(
+                    &err,
+                    crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+                    "batch article search enrichment",
                 );
                 status.status = Some(ArticleSourceAvailability::Unavailable);
                 status.message = Some("Semantic Scholar enrichment unavailable".to_string());
@@ -234,14 +230,22 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
     let pubtator = match PubTatorClient::new() {
         Ok(client) => client,
         Err(err) => {
-            warn!(%err, "PubTator visible-row metadata fallback unavailable");
+            crate::error::warn_external_failure(
+                &err,
+                crate::error::SourceProvider::PUBTATOR3,
+                "initialize visible article metadata fallback",
+            );
             return;
         }
     };
     let europe = match EuropePmcClient::new() {
         Ok(client) => client,
         Err(err) => {
-            warn!(%err, "Europe PMC visible-row metadata fallback unavailable");
+            crate::error::warn_external_failure(
+                &err,
+                crate::error::SourceProvider::EUROPE_PMC,
+                "initialize visible article metadata fallback",
+            );
             return;
         }
     };
@@ -254,10 +258,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         .await;
         match result {
             Ok(article) => merge_article_search_row_with_article_base(&mut rows[row_idx], &article),
-            Err(err) => warn!(
-                %err,
-                pmid = lookup_id,
-                "Visible article-search metadata fallback failed",
+            Err(err) => crate::error::warn_external_failure(
+                &err,
+                crate::error::SourceProvider::PUBTATOR3,
+                "visible article metadata fallback",
             ),
         }
     }

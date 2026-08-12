@@ -1454,6 +1454,43 @@ def test_source_attributed_status_typing_ratchet_rejects_owned_strings_and_allow
     assert accepted["status"] == "pass", accepted
 
 
+def test_external_error_logging_ratchet_tracks_the_caught_binding(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    fixture_root = tmp_path / "external-log-fixture"
+    _write_dead_code_fixture(
+        fixture_root,
+        """
+fn unsafe_boundary(result: Result<(), BioMcpError>) {
+    match result {
+        Ok(()) => {}
+        Err(problem) => tracing::warn!(?problem, "provider failed"),
+    }
+}
+""",
+        "src/sources/example.rs",
+    )
+    snapshot = ratchet.load_rust_source_snapshot(fixture_root)
+    failed = ratchet.check_external_error_logging(fixture_root, snapshot)
+    assert failed["status"] == "fail"
+    assert failed["findings"][0]["line"] == 5
+
+    (fixture_root / "src/sources/example.rs").write_text(
+        """
+fn safe_boundary(result: Result<(), BioMcpError>) {
+    if let Err(problem) = result {
+        crate::error::warn_external_failure(&problem, PROVIDER, "lookup");
+    }
+}
+""",
+        encoding="utf-8",
+    )
+    snapshot = ratchet.load_rust_source_snapshot(fixture_root)
+    clean = ratchet.check_external_error_logging(fixture_root, snapshot)
+    assert clean["status"] == "pass"
+
+
 def test_source_state_registry_rejects_unmapped_and_stale_sections(
     tmp_path: Path,
 ) -> None:

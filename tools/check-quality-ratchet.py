@@ -63,6 +63,7 @@ AUDIT_NAMES = [
     "remote_resource_bounds",
     "source_state_registry",
     "source_attributed_status_typing",
+    "external_error_logging",
 ]
 TERMINAL_OUTPUT_BOUNDARY_SEAMS = {
     "src/render/human.rs": [
@@ -2101,6 +2102,43 @@ def check_source_attributed_status_is_typed(
     }
 
 
+def check_external_error_logging(
+    root_dir: Path, snapshot: RustSourceSnapshot | None = None
+) -> dict[str, object]:
+    """Reject raw Debug projection of errors caught at external-source boundaries."""
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    if snapshot.errors:
+        return {"status": "error", "findings": [], "errors": snapshot.errors}
+    findings: list[dict[str, object]] = []
+    error_arm = re.compile(
+        r"Err\s*\(\s*(?P<binding>[A-Za-z_][A-Za-z0-9_]*)\s*\)\s*=>"
+        r"(?P<body>.{0,800}?)"
+        r"(?:trace|debug|info|warn|error)!\s*\((?P<fields>.{0,500}?)\)\s*[,;]",
+        re.S,
+    )
+    for relative, source in snapshot.masked_sources.items():
+        if not (
+            relative.startswith("src/sources/")
+            or relative.startswith("src/entities/article/")
+        ):
+            continue
+        for match in error_arm.finditer(source):
+            binding = re.escape(match.group("binding"))
+            if re.search(rf"(?:\?|=\s*\?)\s*{binding}\b", match.group("fields")):
+                findings.append(
+                    {
+                        "path": relative,
+                        "line": source.count("\n", 0, match.start()) + 1,
+                        "message": "external error uses raw Debug logging; project it through the approved safe helper",
+                    }
+                )
+    return {
+        "name": "external_error_logging",
+        "status": "fail" if findings else "pass",
+        "findings": findings,
+    }
+
+
 def main() -> int:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -2114,6 +2152,7 @@ def main() -> int:
         if {
             "dead_code_allowances",
             "source_attributed_status_typing",
+            "external_error_logging",
         }.intersection(selected_audits)
         else None
     )
@@ -2196,6 +2235,10 @@ def main() -> int:
         "source_attributed_status_typing": (
             "quality-ratchet-source-status-typing.json",
             lambda: check_source_attributed_status_is_typed(args.root_dir, rust_snapshot),
+        ),
+        "external_error_logging": (
+            "quality-ratchet-external-error-logging.json",
+            lambda: check_external_error_logging(args.root_dir, rust_snapshot),
         ),
     }
     for audit_name, (artifact_name, check) in simple_audits.items():

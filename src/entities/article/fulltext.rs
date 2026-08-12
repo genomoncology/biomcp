@@ -343,8 +343,7 @@ async fn html_with_client(
     pmcid: &str,
     requested_id: &str,
 ) -> HtmlResolution {
-    let fetched =
-        crate::sources::pmc_article::fetch_html_with_client(client, pmcid, requested_id).await;
+    let fetched = crate::sources::pmc_article::fetch_html_with_client(client, pmcid).await;
     classify_html_fetch(fetched, pmcid, requested_id)
 }
 
@@ -362,8 +361,13 @@ fn classify_html_fetch(
         PmcHtmlFetchOutcome::Data { html, url } => {
             match transform::article::classify_html_document(&html, url.as_str()) {
                 Ok(classified) => FulltextStepOutcome::Data(classified),
-                Err(err) => {
-                    debug!(?err, requested_id, pmcid, "PMC HTML classification failed");
+                Err(_) => {
+                    debug!(
+                        requested_id,
+                        pmcid,
+                        class = "decode",
+                        "PMC HTML classification failed"
+                    );
                     FulltextStepOutcome::Unusable(BioMcpError::Api {
                         api: ARTICLE_FULLTEXT_API.to_string(),
                         message: "PMC HTML content was unusable".to_string(),
@@ -381,7 +385,7 @@ fn classify_html_fetch(
     }
 }
 
-async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepOutcome<String> {
+async fn try_resolve_pdf(raw_pdf_url: &str, _requested_id: &str) -> FulltextStepOutcome<String> {
     let (url, policy) = match validated_pdf_url(raw_pdf_url) {
         Ok(validated) => validated,
         Err(err) => return FulltextStepOutcome::Failed(err),
@@ -390,20 +394,20 @@ async fn try_resolve_pdf(raw_pdf_url: &str, requested_id: &str) -> FulltextStepO
         Ok(client) => client,
         Err(err) => return FulltextStepOutcome::Failed(err),
     };
-    resolve_pdf_url_with_client(&client, url, requested_id).await
+    resolve_pdf_url_with_client(&client, url).await
 }
 
 #[cfg(test)]
 async fn pdf_with_client(
     client: &reqwest_middleware::ClientWithMiddleware,
     raw_pdf_url: &str,
-    requested_id: &str,
+    _requested_id: &str,
 ) -> FulltextStepOutcome<String> {
     let url = match validated_pdf_url(raw_pdf_url) {
         Ok((url, _)) => url,
         Err(err) => return FulltextStepOutcome::Failed(err),
     };
-    resolve_pdf_url_with_client(client, url, requested_id).await
+    resolve_pdf_url_with_client(client, url).await
 }
 
 fn validated_pdf_url(
@@ -422,7 +426,6 @@ fn validated_pdf_url(
 async fn resolve_pdf_url_with_client(
     client: &reqwest_middleware::ClientWithMiddleware,
     url: Url,
-    requested_id: &str,
 ) -> FulltextStepOutcome<String> {
     let request = crate::sources::apply_no_store(client.get(url.clone()));
     let response = match crate::sources::with_response_body_limit(
@@ -463,7 +466,11 @@ async fn resolve_pdf_url_with_client(
     {
         Ok(bytes) => bytes,
         Err(err) => {
-            debug!(?err, requested_id, "Semantic Scholar PDF body read failed");
+            crate::error::debug_external_failure(
+                &err,
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+                "read article PDF body",
+            );
             return FulltextStepOutcome::Failed(err);
         }
     };
@@ -483,7 +490,11 @@ async fn resolve_pdf_url_with_client(
     let markdown = match render_fulltext_pdf(bytes, PDF_PAGE_LIMIT).await {
         Ok(markdown) => markdown,
         Err(err) => {
-            debug!(?err, requested_id, "Semantic Scholar PDF conversion failed");
+            crate::error::debug_external_failure(
+                &err,
+                crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+                "convert article PDF",
+            );
             return FulltextStepOutcome::Unusable(err);
         }
     };

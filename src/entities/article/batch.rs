@@ -1,12 +1,10 @@
 //! Article batch lookup helpers and compact Semantic Scholar enrichment.
 
-use futures::future::try_join_all;
-use tracing::debug as warn;
-
 use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
+use futures::future::try_join_all;
 
 use super::detail::get_article_base_with_clients;
 use super::filters::parse_row_date;
@@ -143,7 +141,11 @@ async fn enrich_article_batch_with_semantic_scholar(
 
     match client.paper_batch_compact(&lookup_ids).await {
         Ok(rows) => merge_semantic_scholar_compact_rows(items, &item_positions, rows),
-        Err(err) => warn!(%err, "Semantic Scholar batch enrichment failed"),
+        Err(err) => crate::error::warn_external_failure(
+            &err,
+            crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+            "compact article batch enrichment",
+        ),
     }
 
     Ok(())

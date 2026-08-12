@@ -1,7 +1,5 @@
 //! Article query builders and query-side source helpers.
 
-use tracing::warn;
-
 use crate::error::BioMcpError;
 use crate::sources::pubmed::PubMedESearchParams;
 use crate::sources::pubtator::{PubTatorAutocompleteResult, PubTatorClient};
@@ -514,7 +512,11 @@ pub(crate) async fn resolve_variant_entity_token(
     match resolve_variant_entity_tokens(pubtator, &intent.original, &requested).await {
         Ok(tokens) => tokens.into_iter().next().map(|token| token.entity_id),
         Err(err) => {
-            warn!(%err, token = intent.original, "pubtator variant autocomplete failed");
+            crate::error::warn_external_failure(
+                &err,
+                crate::error::SourceProvider::PUBTATOR3,
+                "variant autocomplete",
+            );
             None
         }
     }
@@ -536,9 +538,10 @@ async fn normalize_entity_token(
             .map(|value| value.to_string())
             .or_else(|| Some(token.to_string())),
         Err(err) => {
-            warn!(
-                %err,
-                token, "pubtator autocomplete failed; falling back to raw token"
+            crate::error::warn_external_failure(
+                &err,
+                crate::error::SourceProvider::PUBTATOR3,
+                "article entity autocomplete",
             );
             Some(token.to_string())
         }

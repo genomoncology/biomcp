@@ -129,6 +129,16 @@ enum FederatedSourceOutcome<T> {
     },
 }
 
+fn source_provider(source: ArticleSource) -> crate::error::SourceProvider {
+    match source {
+        ArticleSource::PubTator => crate::error::SourceProvider::PUBTATOR3,
+        ArticleSource::EuropePmc => crate::error::SourceProvider::EUROPE_PMC,
+        ArticleSource::PubMed => crate::error::SourceProvider::PUBMED,
+        ArticleSource::SemanticScholar => crate::error::SourceProvider::SEMANTIC_SCHOLAR,
+        ArticleSource::LitSense2 => crate::error::SourceProvider::LITSENSE2,
+    }
+}
+
 fn source_degraded_status(source: ArticleSource, message: String) -> ArticleSourceStatus {
     ArticleSourceStatus {
         source,
@@ -160,10 +170,10 @@ where
     match timeout(FEDERATED_ARTICLE_SOURCE_TIMEOUT, future).await {
         Ok(Ok(value)) => FederatedSourceOutcome::Available(value),
         Ok(Err(err)) => {
-            warn!(
-                ?err,
-                source = source.display_name(),
-                "Federated article source failed"
+            crate::error::warn_external_failure(
+                &err,
+                source_provider(source),
+                "federated article search",
             );
             FederatedSourceOutcome::Unavailable {
                 error: Some(err),

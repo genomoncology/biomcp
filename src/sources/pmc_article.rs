@@ -1,11 +1,9 @@
 use std::borrow::Cow;
 
-use reqwest::{StatusCode, Url};
-use tracing::debug;
-
 use crate::error::{BioMcpError, SourceContext, SourceProvider};
 use crate::sources::RequestBuilderSourceContextExt;
 use crate::sources::provider_url_policy::{ProviderUrlPolicy, pmc_linked_asset_path};
+use reqwest::{StatusCode, Url};
 
 const ARTICLE_FULLTEXT_API: &str = "article";
 const PMC_ARTICLE_BASE: &str = "https://pmc.ncbi.nlm.nih.gov";
@@ -256,7 +254,7 @@ fn classify_linked_status(status: StatusCode) -> Option<PmcLinkedFetch> {
     }
 }
 
-pub(crate) async fn fetch_html(pmcid: &str, requested_id: &str) -> PmcHtmlFetch {
+pub(crate) async fn fetch_html(pmcid: &str, _requested_id: &str) -> PmcHtmlFetch {
     let client = match crate::sources::shared_client() {
         Ok(client) => client,
         Err(err) => {
@@ -266,13 +264,12 @@ pub(crate) async fn fetch_html(pmcid: &str, requested_id: &str) -> PmcHtmlFetch 
             };
         }
     };
-    fetch_html_with_client(&client, pmcid, requested_id).await
+    fetch_html_with_client(&client, pmcid).await
 }
 
 pub(crate) async fn fetch_html_with_client(
     client: &reqwest_middleware::ClientWithMiddleware,
     pmcid: &str,
-    requested_id: &str,
 ) -> PmcHtmlFetch {
     let failed = |err| PmcHtmlFetch {
         outcome: PmcHtmlFetchOutcome::Failed(err),
@@ -329,7 +326,11 @@ pub(crate) async fn fetch_html_with_client(
     {
         Ok(bytes) => bytes,
         Err(err) => {
-            debug!(?err, requested_id, pmcid, "PMC HTML body read failed");
+            crate::error::debug_external_failure(
+                &err,
+                SourceProvider::PMC_OPEN_ACCESS,
+                "read PMC HTML body",
+            );
             return PmcHtmlFetch {
                 outcome: PmcHtmlFetchOutcome::Failed(err),
                 cache_state,
