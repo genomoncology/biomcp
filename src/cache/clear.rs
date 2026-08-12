@@ -303,9 +303,16 @@ mod tests {
     fn clear_rejects_special_file_before_mutation() {
         use std::os::unix::net::UnixListener;
 
-        let root = TempDirGuard::new("special-file");
+        let root = tempfile::Builder::new()
+            .prefix("biomcp-sock-")
+            .tempdir_in("/tmp")
+            .expect("create short socket root");
         let http_dir = root.path().join("http");
         let socket_path = http_dir.join("special.sock");
+        assert!(
+            socket_path.as_os_str().len() < 100,
+            "socket fixture path is too long"
+        );
         let regular_file = http_dir.join("entry.bin");
         fs::create_dir_all(&http_dir).expect("create http dir");
         fs::write(&regular_file, b"abc").expect("seed file");
