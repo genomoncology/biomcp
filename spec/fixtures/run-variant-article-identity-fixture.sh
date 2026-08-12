@@ -9,7 +9,7 @@ ready="$fixture_root/ready"
 mode="$fixture_root/mode"
 printf 'normal\n' >"$mode"
 
-uv run --no-sync python - "$ready" "$mode" <<'PY' >"$fixture_root/server.log" 2>&1 8>&- &
+uv run --no-sync python - "$ready" "$mode" "$repo_root" <<'PY' >"$fixture_root/server.log" 2>&1 8>&- &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,6 +18,10 @@ from urllib.parse import parse_qs, urlparse
 
 ready = Path(sys.argv[1])
 mode = Path(sys.argv[2])
+repo_root = Path(sys.argv[3])
+real_car = (repo_root / "testdata/sources/clingen_allele_registry/tp53-nm_000546.6-c.215c-g.json").read_bytes()
+real_ldh_medium = (repo_root / "testdata/sources/clingen_ldh/ca000072-medium.json").read_bytes()
+real_ldh_direct = (repo_root / "testdata/sources/clingen_ldh/ca000072-pmc8372092-direct.json").read_bytes()
 # The frozen rows deliberately include a true positive and collision(s) for APC.
 # They are provider response fixtures, not clinical classifications.
 rows = {
@@ -27,7 +31,7 @@ rows = {
     "MLH1": [("20864636", "MLH1 positive")],
     "BRCA1": [("33656647", "BRCA1 retrieval collision"), ("90000003", "BRCA1 unlinked fixture article")],
     "PTEN": [("90000002", "PTEN unavailable verification")],
-    "TP53": [("24376681", "TP53 retrieval collision")],
+    "TP53": [("34050721", "Real receipted TP53 identity anchor"), ("24376681", "TP53 retrieval collision")],
 }
 # Minimized PubTator3-shaped captures. These are provider facts, not clinical classifications.
 # Each tuple is (gene symbol, exact provider HGVS, NCBI Gene ID).
@@ -53,7 +57,10 @@ def send(h, status, value):
     body = json.dumps(value).encode()
     h.send_response(status); h.send_header("Content-Type", "application/json"); h.send_header("Content-Length", str(len(body))); h.end_headers(); h.wfile.write(body)
 
-pmcids = {"32918381": "PMC9541484", "39999518": "PMC9582472"}
+def send_bytes(h, body):
+    h.send_response(200); h.send_header("Content-Type", "application/json"); h.send_header("Content-Length", str(len(body))); h.end_headers(); h.wfile.write(body)
+
+pmcids = {"32918381": "PMC9541484", "39999518": "PMC9582472", "34050721": "PMC8372092"}
 def article(pmid, title):
     return {"_id": pmid, "pmid": pmid, "pmcid": pmcids.get(pmid), "title": title, "journal": "Frozen fixture", "date": "2024-01-01", "score": 1}
 
@@ -73,6 +80,10 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
     def do_GET(self):
         parsed = urlparse(self.path); query = parse_qs(parsed.query); path = parsed.path
+        if path == "/ldh/Variant/id/CA000072/ld":
+            return send_bytes(self, real_ldh_medium)
+        if path == "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8372092/data":
+            return send_bytes(self, real_ldh_direct)
         if path == "/ldh/Variant/id/CA900000000002/ld":
             return send(self, 200, {"status": {"code": 200}, "metadata": {}, "data": {"VariantsInLiterature": [{"entDisposition": "external", "entType": "VariantsInLiterature", "entId": "PMC9541484", "entIri": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9541484/data"}]}})
         if path == "/ldh/Variant/id/CA900000000005/ld":
@@ -82,6 +93,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC9582472/data":
             return send(self, 200, {"annotations": [{"id": "palb2-annotation", "publicationId": "PMC9582472", "articleData": {"articleIDs": {"PMCID": "PMC9582472"}}, "variantMatch": "NM_024675.4:c.3350+5G>A", "created": "2026-01-01", "body": {"items": [{"type": "TextualBody", "value": "CA900000000005"}, {"type": "TextualBody", "value": "CA2731884673"}, {"type": "TextualBody", "value": "CA2838155028"}, {"type": "TextualBody", "value": "CA2213428726"}, {"type": "TextualBody", "value": "GeneData", "geneNCBI": [79728], "geneSymbol": ["PALB2"]}]}, "target": {"type": "List", "items": [{"source": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9582472", "selector": [{"type": "TableTextSelector", "exact": "NM_024675.4:c.3350+5G>A"}]}]}}]})
         if path == "/allele":
+            if query.get("hgvs", [""])[0] == "NM_000546.6:c.215C>G":
+                return send_bytes(self, real_car)
             caid = car_ids.get(query.get("hgvs", [""])[0])
             if caid:
                 return send(self, 200, {
@@ -197,6 +210,10 @@ printf 'deep-discovery\n' >"$mode"
 braf_panel="$repo_root/spec/fixtures/variant-article-braf-identity-input.json"
 reserved="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --confirmed-only --debug-plan --limit 3)"
 visible="$("$binary" --json variant articles --input "$braf_panel" --verify-identity --debug-plan --limit 3)"
+printf 'normal\n' >"$mode"
+printf '[{"request_id":"real-tp53-anchor","gene":"TP53","transcript":"NM_000546.6","coding":"c.215C>G"}]\n' >"$fixture_root/real-anchor.json"
+real_anchor="$("$binary" --json variant articles --input "$fixture_root/real-anchor.json" --verify-identity --debug-plan --limit 5)"
+real_markdown="$("$binary" variant articles "TP53 c.215C>G" --verify-identity --limit 5)"
 printf 'trace-overflow\n' >"$mode"
 trace_overflow="$("$binary" --json variant articles --input "$braf_panel" --debug-plan --limit 1 --offset 1)"
 printf 'reordered\n' >"$mode"
@@ -207,7 +224,8 @@ printf '%s' "$reserved" >"$fixture_root/reserved.json"
 printf '%s' "$visible" >"$fixture_root/visible.json"
 printf '%s' "$trace_overflow" >"$fixture_root/trace-overflow.json"
 printf '%s' "$reordered" >"$fixture_root/reordered.json"
-jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_root/confirmed.json" --slurpfile reserved "$fixture_root/reserved.json" --slurpfile visible "$fixture_root/visible.json" --slurpfile trace_overflow "$fixture_root/trace-overflow.json" --slurpfile reordered "$fixture_root/reordered.json" '
+printf '%s' "$real_anchor" >"$fixture_root/real-anchor-output.json"
+jq -n --arg real_markdown "$real_markdown" --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_root/confirmed.json" --slurpfile reserved "$fixture_root/reserved.json" --slurpfile visible "$fixture_root/visible.json" --slurpfile trace_overflow "$fixture_root/trace-overflow.json" --slurpfile reordered "$fixture_root/reordered.json" --slurpfile real "$fixture_root/real-anchor-output.json" '
   def item($id): $all[0].items[] | select(.request_id == $id);
   def reordered_item($id): $reordered[0].items[] | select(.request_id == $id);
   def reserved_item: $reserved[0].items[] | select(.request_id == "braf-refseq-grch37");
@@ -215,6 +233,28 @@ jq -n --slurpfile all "$fixture_root/all.json" --slurpfile confirmed "$fixture_r
   def trace_overflow_item: $trace_overflow[0].items[] | select(.request_id == "braf-refseq-grch37");
   def has($id; $pmid; $status): any(item($id).results[]; .pmid == $pmid and .identity.status == $status);
   {
+    real_receipted_identity_anchor: (
+      $real[0].items[0] as $item |
+      any($item.results[];
+        .pmid == "34050721" and .pmcid == "PMC8372092" and
+        .identity.status == "confirmed" and
+        any(.identity.observations[];
+          .source == "clingen_ldh" and
+          .provider_linkage.annotation_uuid == "c6e66874-536b-5b95-824a-5a37d4b2b787" and
+          .provider_linkage.caid == "CA000072" and
+          .provider_linkage.gene_id == 7157 and
+          .provider_linkage.selector_type == "TableTextSelector" and
+          .provider_linkage.selector_value == "rs1042522")) and
+      $item.canonical_equivalence.status == "single_identity" and
+      $item.canonical_equivalence.caid == "CA000072" and
+      ($item.canonical_equivalence.observations[0].provider_response_sha256 == "454b2fb812d8bac6cd9ff8cb3b1fca4dc4d993faee454e2bbeb35ebea549c367") and
+      ($item.debug_plan.work_allocation.identity_verification.consumed > 0) and
+      any($item.source_status[]; .route == "best_effort_free_text" and .source == "pubtator" and .status == "ok") and
+      any($item.debug_plan.candidate_trace.candidates[];
+        .identifier == "34050721" and .provider_terminal_state == "received" and
+        .verification_disposition == "confirmed" and .pagination_disposition == "visible") and
+      ($real_markdown | contains("Real receipted TP53 identity anchor") and contains("34050721"))
+    ),
     clingen_ldh: {atm_exact_annotation_confirmed: any(item("atm-grch38").results[]; .pmcid == "PMC9541484" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 472)), palb2_table_selector_confirmed: any(item("palb2-grch38").results[]; .pmcid == "PMC9582472" and any(.identity.observations[]; .provider_linkage.kind == "clingen_ldh_annotation" and .provider_linkage.gene_id == 79728 and .provider_linkage.selector_type == "TableTextSelector" and .provider_linkage.caid == "CA900000000005")), empty_coverage_preserves_candidates: (has("mlh1-grch38"; "20864636"; "confirmed") and all(item("mlh1-grch38").results[].identity.observations[]; .source != "clingen_ldh"))},
     frozen_positive_statuses: {apc: has("apc-grch38"; "12901799"; "confirmed"), atm: has("atm-grch38"; "32918381"; "confirmed"), palb2: has("palb2-grch38"; "39999518"; "confirmed"), mlh1: has("mlh1-grch38"; "20864636"; "confirmed")},
     collision_pmids_never_confirmed: (all(["31749828", "24376681", "33656647"][]; . as $pmid | any($all[0].items[].results[]; .pmid == $pmid and .identity.status != "confirmed"))),

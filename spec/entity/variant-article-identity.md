@@ -21,6 +21,7 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
 
 ```json expect=frozen-variant-article-identity contains
 {
+  "real_receipted_identity_anchor": true,
   "frozen_positive_statuses": {
     "apc": true,
     "atm": true,
@@ -59,6 +60,14 @@ bash ../fixtures/run-variant-article-identity-fixture.sh ../..
   "expected_pmid_aggregation_is_order_independent": true
 }
 ```
+
+The successful external identity anchor is the receipted TP53
+`NM_000546.6:c.215C>G` chain through CAR `CA000072` and the ClinGen LDH table
+annotation for `PMC8372092`. The fixture serves those byte-faithful responses
+through the normal provider clients and checks both JSON and Markdown output.
+The older opaque `CA900...` rows below remain explicitly synthetic tests of
+collisions, ordering, bounded work, and failure handling; they are not evidence
+about real variants or papers.
 
 Canonical-equivalence observations and debug-plan provider rows are separate
 machine interfaces, but both carry closed statuses. The frozen panel exercises

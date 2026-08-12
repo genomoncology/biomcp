@@ -3345,11 +3345,13 @@ pub(crate) async fn search_variant_article_batch_with_options(
 mod tests {
     use super::*;
     use std::sync::{
-        Arc,
+        Arc, Mutex,
         atomic::{AtomicUsize, Ordering as AtomicOrdering},
     };
 
-    use crate::entities::article::test_support::row;
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, row, test_http_response,
+    };
     use crate::entities::variant::{
         SourceVariantIdentity, VariantArticleResolutionBasis, VariantProviderValidation,
     };
@@ -3399,6 +3401,87 @@ mod tests {
             })
             .collect();
         candidate
+    }
+
+    #[serial_test::serial(article_resolver_env)]
+    #[tokio::test]
+    async fn real_car_and_ldh_captures_confirm_tp53_article_identity() {
+        const CAR: &[u8] = include_bytes!(
+            "../../../testdata/sources/clingen_allele_registry/tp53-nm_000546.6-c.215c-g.json"
+        );
+        const MEDIUM: &[u8] =
+            include_bytes!("../../../testdata/sources/clingen_ldh/ca000072-medium.json");
+        const DIRECT: &[u8] =
+            include_bytes!("../../../testdata/sources/clingen_ldh/ca000072-pmc8372092-direct.json");
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let observed = requests.clone();
+        let fixture = TestHttpFixture::spawn(move |request| {
+            let first_line = request.lines().next().unwrap_or_default().to_string();
+            observed
+                .lock()
+                .expect("request log")
+                .push(first_line.clone());
+            let body = if first_line.starts_with("GET /allele?") {
+                CAR
+            } else if first_line == "GET /ldh/Variant/id/CA000072/ld?detail=med HTTP/1.1" {
+                MEDIUM
+            } else if first_line
+                == "GET /ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8372092/data HTTP/1.1"
+            {
+                DIRECT
+            } else {
+                panic!("unexpected provider request: {first_line}");
+            };
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
+        })
+        .await;
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+        env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
+        env.set("BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN", &fixture.base);
+
+        let mut requested = RequestedVariantIdentity::from_variant_input("NM_000546.6:c.215C>G")
+            .expect("requested identity");
+        requested.gene = Some("TP53".into());
+        let execution = VariantArticleExecutionContext::single();
+        let equivalence = resolve_canonical_equivalence(&requested, &execution).await;
+        assert_eq!(equivalence.status, "single_identity");
+        assert_eq!(equivalence.caid.as_deref(), Some("CA000072"));
+        assert!(equivalence.aliases.iter().any(|alias| alias == "rs1042522"));
+        assert_eq!(
+            equivalence.observations[0]
+                .provider_response_sha256
+                .as_deref(),
+            Some("454b2fb812d8bac6cd9ff8cb3b1fca4dc4d993faee454e2bbeb35ebea549c367")
+        );
+
+        let mut candidate = lexical_candidate("34050721", &[0]);
+        candidate.row.pmcid = Some("PMC8372092".into());
+        assert!(
+            !add_ldh_observations(
+                std::slice::from_mut(&mut candidate),
+                &requested,
+                &equivalence,
+                &execution,
+            )
+            .await
+        );
+        let identity = candidate.identity.expect("verified identity");
+        assert_eq!(identity.status, "confirmed");
+        assert_eq!(identity.observations.len(), 1);
+        let rendered = serde_json::to_value(identity).expect("serialize identity");
+        let linkage = &rendered["observations"][0]["provider_linkage"];
+        assert_eq!(linkage["kind"], "clingen_ldh_annotation");
+        assert_eq!(
+            linkage["annotation_uuid"],
+            "c6e66874-536b-5b95-824a-5a37d4b2b787"
+        );
+        assert_eq!(linkage["caid"], "CA000072");
+        assert_eq!(linkage["gene_id"], 7157);
+        assert_eq!(linkage["pmcid"], "PMC8372092");
+        assert_eq!(linkage["selector_type"], "TableTextSelector");
+        assert_eq!(linkage["selector_value"], "rs1042522");
+        assert_eq!(requests.lock().expect("request log").len(), 3);
     }
 
     #[test]

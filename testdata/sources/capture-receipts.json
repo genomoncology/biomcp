@@ -297,6 +297,30 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "clingen_ldh/ca000072-medium.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/Variant/id/CA000072/ld?detail=med",
+        "captured_at": "2026-08-12T14:30:00Z",
+        "sha256": "8443e52c44d9547c44c006d4ddd4a3eaa339dcc45e93e617ce72cf1d7e5732f4",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response through BioMCP's production request shape."
+      }
+    },
+    {
+      "path": "clingen_ldh/ca000072-pmc8372092-direct.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Linked Data Hub",
+        "request": "https://ldh.genome.network/ldh/dss/cg/ns/ldh/set/variants_in_literature/id/PMC8372092/data",
+        "captured_at": "2026-08-12T14:31:00Z",
+        "sha256": "c49edd6fd5e5f6de04b0646869c9b65c3522736a8e5ab06cbaa8e537e839bbfe",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Linked Data Hub response through BioMCP's production request shape."
+      }
+    },
+    {
       "path": "clingen_ldh/ca288251-medium-empty.json",
       "classification": "real_and_receipted",
       "receipt": {
