@@ -44,6 +44,9 @@ writes, statistics, and maintenance physically remove entries older than
 Managed directories and files are private to the current OS user. BioMCP
 repairs overly broad permissions inside the managed root and refuses linked
 regular files rather than risking access through another pathname.
+The global `--no-cache` flag bypasses these HTTP and session stores completely
+for one invocation. It does not override explicit output paths or provider
+retention.
 `BIOMCP_CACHE_MAX_AGE` overrides `[cache].max_age_secs`; both values are
 positive integer seconds.
 

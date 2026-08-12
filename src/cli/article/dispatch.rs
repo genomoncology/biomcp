@@ -228,6 +228,12 @@ pub(in crate::cli) async fn handle_search(
     };
     let session_token = args.session.clone();
     if let Some(token) = session_token.as_deref() {
+        if crate::sources::is_no_cache_enabled() {
+            return Err(crate::error::BioMcpError::InvalidArgument(
+                "--no-cache cannot be combined with --session because sessions require managed local state".into(),
+            )
+            .into());
+        }
         super::session::validate_token(token)?;
     }
     let include_retracted = args.include_retracted;

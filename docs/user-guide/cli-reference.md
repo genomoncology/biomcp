@@ -5,7 +5,12 @@ BioMCP provides one command family with entity-oriented subcommands.
 ## Global options
 
 - `--json`: return structured JSON output
-- `--no-cache`: bypass HTTP cache for the current command
+- `--no-cache`: use no managed request state for this invocation; it neither
+  reads nor writes the HTTP cache or article-session store
+
+`--no-cache` cannot be combined with article `--session`. It does not suppress
+provider-side logging, and it does not reclassify explicit downloads, study
+datasets, CSpec captures, or other user-requested durable output.
 
 `--json` normally returns structured output, including JSON `error` objects on stdout for BioMCP command errors while preserving nonzero exit codes. Parse/usage errors under `--json` also exit 2 with a JSON `invalid_argument` error on stdout. `biomcp cache path` is a plain-text exception. `biomcp cache stats`, `biomcp cache clean`, and `biomcp cache clear` respect `--json` on success. `biomcp cache clear` still refuses non-TTY destructive runs with plain stderr unless you pass `--yes`.
 

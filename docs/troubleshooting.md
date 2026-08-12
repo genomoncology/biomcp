@@ -51,6 +51,10 @@ biomcp --no-cache search gene -q BRAF --limit 3
 biomcp --no-cache get variant rs113488022
 ```
 
+This mode makes no managed HTTP-cache or article-session reads or writes.
+Article `--session` is therefore incompatible with it. Explicit downloads and
+provider-side request logs are outside that promise.
+
 If `--no-cache` works while cached mode fails repeatedly, `biomcp cache clean`
 is the safe first step before any manual wipe. If you override the cache root
 with `BIOMCP_CACHE_DIR` or `cache.toml`, run `biomcp cache path` first to print

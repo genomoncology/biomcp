@@ -650,8 +650,48 @@ where
 }
 
 fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware, BioMcpError> {
+    if is_no_cache_enabled() {
+        return build_uncached_http_client(kind, None);
+    }
     let config = crate::cache::resolve_cache_config()?;
     build_http_client_with_config(kind, config, None)
+}
+
+fn build_uncached_http_client(
+    kind: SharedHttpClientKind,
+    provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    let mut headers = HeaderMap::new();
+    headers.insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    let mut base = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(10))
+        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
+        .default_headers(headers);
+    if let Some(policy) = provider_policy {
+        base = base
+            .no_proxy()
+            .dns_resolver(policy.dns_resolver())
+            .redirect(policy.redirect_policy());
+    } else {
+        base = base.redirect(rate_limit::redirect_policy());
+    }
+    let base = base.build().map_err(BioMcpError::HttpClientInit)?;
+    let retry = ExponentialBackoff::builder().build_with_max_retries(3);
+    let builder = ClientBuilder::new(base).with(
+        RetryTransientMiddleware::new_with_policy(retry)
+            .with_retry_log_level(tracing::Level::DEBUG),
+    );
+    let builder = match kind {
+        SharedHttpClientKind::Default => builder.with(RetryAfterTooManyRequestsMiddleware),
+        SharedHttpClientKind::SemanticScholarSharedPool => {
+            builder.with(SemanticScholarSharedPoolRateLimitMiddleware)
+        }
+    };
+    Ok(builder
+        .with(rate_limit::RateLimitMiddleware::new())
+        .with(ResponseBodyLimitMiddleware)
+        .build())
 }
 
 fn build_http_client_with_config(
@@ -817,6 +857,9 @@ pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
 }
 
 pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
+    if is_no_cache_enabled() {
+        return build_uncached_http_client(SharedHttpClientKind::Default, None);
+    }
     if let Some(client) = HTTP_CLIENT.get() {
         return Ok(client.clone());
     }
@@ -841,6 +884,9 @@ pub(crate) fn semantic_scholar_provider_client(
     } else {
         SharedHttpClientKind::SemanticScholarSharedPool
     };
+    if is_no_cache_enabled() {
+        return build_uncached_http_client(kind, Some(policy));
+    }
     let config = crate::cache::resolve_cache_config()?;
     build_http_client_with_config(kind, config, Some(policy))
 }
@@ -848,6 +894,9 @@ pub(crate) fn semantic_scholar_provider_client(
 pub(crate) fn provider_url_client(
     policy: &provider_url_policy::ProviderUrlPolicy,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    if is_no_cache_enabled() {
+        return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
+    }
     let config = crate::cache::resolve_cache_config()?;
     build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))
 }

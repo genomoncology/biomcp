@@ -20,7 +20,7 @@ pub struct Cli {
     #[arg(short, long, global = true)]
     pub json: bool,
 
-    /// Disable HTTP caching (always fetch fresh data)
+    /// Use no managed request state: bypass HTTP cache and article sessions
     #[arg(long, global = true)]
     pub no_cache: bool,
 }

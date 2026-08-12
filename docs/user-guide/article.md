@@ -118,6 +118,8 @@ the store removes expired records; upstream providers apply their own separate
 logging and retention policies.
 BioMCP keeps the session directory and records private to the current OS user
 and refuses linked files before reading or replacing them.
+Use `--no-cache` when the invocation must not read or write either managed
+request-state store; BioMCP rejects `--no-cache --session` before transport.
 
 Known anchor only:
 

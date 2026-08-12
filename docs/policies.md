@@ -51,6 +51,12 @@ paths without following links or changing unrelated ancestors, and linked
 regular files are rejected before access. These filesystem controls still do
 not govern copies retained by an upstream provider.
 
+For an invocation that should leave no managed request state, use
+`--no-cache`. It bypasses both HTTP cache reads/writes and article sessions;
+combining it with `--session` is rejected. Explicit downloads, local study
+datasets, and requested captures remain durable output, and providers can still
+log or retain the requests they receive.
+
 These local controls do not govern provider systems. Anthropic/Claude and upstream providers may retain
 request data according to their own privacy policies. Do not send protected
 health information (PHI) or other sensitive patient data to third-party APIs
