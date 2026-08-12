@@ -10,7 +10,11 @@ After installation, the `biomcp` command should be available in your shell.
 curl -fsSL https://biomcp.org/install.sh | bash
 ```
 
-The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA-256 checksum, and places `biomcp` in `~/.local/bin`. It fails closed: it does not extract or install the archive unless it can download a valid one-record checksum sidecar and verify it locally. Install `sha256sum`, `shasum -a 256`, or `openssl dgst -sha256` before running the installer.
+The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA-256 checksum, smokes a destination-directory staging file, and atomically places `biomcp` in `~/.local/bin`. It records standalone ownership in adjacent `biomcp.install.json` so update and uninstall cannot damage package-managed installs. It fails closed before replacement when verification fails, and a pending receipt makes interruption recovery deterministic.
+
+The installer never edits shell startup files. If `~/.local/bin` is missing from
+`PATH`, it prints one `export PATH=...` command for you to copy. Install
+`sha256sum`, `shasum -a 256`, or `openssl dgst -sha256` before running it.
 
 Pin a specific version:
 

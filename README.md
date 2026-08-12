@@ -68,7 +68,9 @@ uv tool install biomcp-cli
 
 MCP Registry ownership marker: `mcp-name: io.github.genomoncology/biomcp`.
 
-This installs the `biomcp` binary on your PATH.
+This installs the `biomcp` binary in `~/.local/bin`. If that directory is not
+already on `PATH`, the installer prints one command to add it; it never edits
+your shell startup files.
 
 ### Homebrew
 
@@ -442,7 +444,6 @@ biomcp version                            # show version and build info
 biomcp health                             # inspect API connectivity plus local DDInter/EMA/cache readiness
 biomcp update                             # self-update with release SHA256 checksum verification
 biomcp update --check                     # check for updates without installing
-biomcp update --allow-missing-checksum    # UNSAFE: install when a release checksum sidecar is missing
 biomcp uninstall                          # remove biomcp from ~/.local/bin
 ```
 

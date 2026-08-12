@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import shutil
 import stat
@@ -82,7 +83,7 @@ def _tools(tmp_path: Path, downloader: str, sha_tool: str) -> Path:
     tools = tmp_path / "tools"
     tools.mkdir()
     _fake_downloader(tools, downloader)
-    for name in ("bash", "uname", "mktemp", "rm", "basename", "tar", "gzip", "mkdir", "chmod", "mv", "head", "cp"):
+    for name in ("bash", "uname", "mktemp", "rm", "basename", "tar", "gzip", "mkdir", "chmod", "mv", "head", "cp", "sync"):
         target = shutil.which(name)
         assert target, name
         (tools / name).symlink_to(target)
@@ -147,6 +148,16 @@ def test_installer_accepts_one_valid_checksum_record(tmp_path: Path, sidecar: st
     assert "Checksum verified." in result.stdout
     assert (tmp_path / "install" / "biomcp").exists()
     assert "Verified installation: biomcp 0.0.0" in result.stdout
+    receipt = json.loads((tmp_path / "install" / "biomcp.install.json").read_text())
+    assert receipt == {
+        "schema_version": 1,
+        "installer": "biomcp-standalone-installer",
+        "state": "installed",
+        "executable_path": str((tmp_path / "install" / "biomcp").resolve()),
+        "version": "0.0.0",
+        "sha256": hashlib.sha256((tmp_path / "install" / "biomcp").read_bytes()).hexdigest(),
+    }
+    assert not list((tmp_path / "install").glob(".biomcp-stage.*"))
 
 
 @pytest.mark.parametrize(
@@ -238,3 +249,71 @@ def test_installer_handles_checksum_download_failures_for_both_downloaders(
     assert result.returncode != 0
     assert "Could not download release checksum" in result.stderr
     assert not (tmp_path / "install" / "biomcp").exists()
+
+
+def test_installer_smokes_destination_stage_before_replacing_existing_binary(tmp_path: Path) -> None:
+    fixture, digest = _fixture(tmp_path, None)
+    (fixture / "sidecar").write_text(f"{digest}\n")
+    binary = fixture / "biomcp"
+    _write_executable(binary, "#!/bin/sh\nprintf '%s\\n' \"$0\" >> \"$SMOKE_LOG\"\necho 'biomcp 0.0.0'\n")
+    archive = fixture / ASSET
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(binary, arcname="biomcp")
+    (fixture / "sidecar").write_text(f"{hashlib.sha256(archive.read_bytes()).hexdigest()}\n")
+    tools = _tools(tmp_path, "curl", "system")
+    install_dir = tmp_path / "install"
+    install_dir.mkdir()
+    old = install_dir / "biomcp"
+    _write_executable(old, "#!/bin/sh\necho 'biomcp old'\n")
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    smoke_log = tmp_path / "smoke.log"
+    result = subprocess.run(
+        ["bash", str(INSTALLER)], text=True, capture_output=True,
+        env=os.environ | {"BIOMCP_INSTALL_DIR": str(install_dir), "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture), "TMPDIR": str(scratch), "PATH": str(tools), "SMOKE_LOG": str(smoke_log)},
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "/.biomcp-stage." in smoke_log.read_text()
+    assert json.loads((install_dir / "biomcp.install.json").read_text())["state"] == "installed"
+
+
+def test_installer_never_edits_shell_startup_files(tmp_path: Path) -> None:
+    fixture, _ = _fixture(tmp_path, "{digest}\n")
+    tools = _tools(tmp_path, "curl", "system")
+    home = tmp_path / "home"
+    home.mkdir()
+    sentinels = [home / name for name in (".bashrc", ".bash_profile", ".zshrc", ".profile")]
+    for path in sentinels:
+        path.write_text("sentinel\n")
+        path.chmod(0o640)
+    before = [(path.read_bytes(), stat.S_IMODE(path.stat().st_mode)) for path in sentinels]
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    result = subprocess.run(
+        ["bash", str(INSTALLER)], text=True, capture_output=True,
+        env=os.environ | {"HOME": str(home), "SHELL": "/bin/zsh", "BIOMCP_INSTALL_DIR": str(home / ".local/bin"), "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture), "TMPDIR": str(scratch), "PATH": str(tools)},
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert before == [(path.read_bytes(), stat.S_IMODE(path.stat().st_mode)) for path in sentinels]
+    assert result.stderr.count("export PATH=") == 1
+
+
+def test_installer_refuses_symlink_destination_without_changing_target(tmp_path: Path) -> None:
+    fixture, _ = _fixture(tmp_path, "{digest}\n")
+    tools = _tools(tmp_path, "curl", "system")
+    install_dir = tmp_path / "install"
+    install_dir.mkdir()
+    target = tmp_path / "target"
+    target.write_text("untouched")
+    (install_dir / "biomcp").symlink_to(target)
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    result = subprocess.run(
+        ["bash", str(INSTALLER)], text=True, capture_output=True,
+        env=os.environ | {"BIOMCP_INSTALL_DIR": str(install_dir), "BIOMCP_VERSION": "0.0.0", "FIXTURE_DIR": str(fixture), "TMPDIR": str(scratch), "PATH": str(tools)},
+        check=False,
+    )
+    assert result.returncode != 0
+    assert target.read_text() == "untouched"
