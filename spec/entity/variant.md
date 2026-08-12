@@ -108,11 +108,13 @@ biomcp --json search variant --gene BRAF {{flag}} {{value}} --limit 1
 The routine fixture replays recorded MyVariant responses while preserving the
 real CLI-to-source request path. A BRAF consequence filter and a field-presence
 filter must each return decoded BRAF rows instead of reporting a successful
-empty result when their provider query is accepted.
+empty result when their provider query is accepted. The consequence receipt has
+only independently ordered dbNSFP protein arrays, so those rows must omit
+`hgvs_p` instead of inventing a transcript pairing.
 
 ```bash
 biomcp --json --no-cache search variant -g BRAF --consequence missense_variant --limit 3 \
-  | jq 'any(.results[]?; (.gene == "BRAF") and (.hgvs_p | type == "string" and length > 0))' \
+  | jq '(.results | length > 0) and all(.results[]; (.gene == "BRAF") and (.hgvs_p == null))' \
   | mustmatch 'true'
 ```
 
