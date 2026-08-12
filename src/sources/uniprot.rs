@@ -335,6 +335,7 @@ pub struct UniProtSearchResponse {
 pub struct UniProtRecord {
     #[serde(default)]
     pub primary_accession: String,
+    pub entry_type: Option<String>,
     #[serde(rename = "uniProtkbId")]
     pub uni_prot_kb_id: Option<String>,
     pub protein_description: Option<UniProtProteinDescription>,

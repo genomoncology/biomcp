@@ -5,10 +5,10 @@ No proteins found
 {% else -%}
 Found {{ count }} protein{% if count != 1 %}s{% endif %}
 
-| Accession | Name | Gene | Species |
-|---|---|---|---|
+| Accession | Name | Gene | Species | Reviewed |
+|---|---|---|---|---|
 {% for row in results -%}
-| {{ row.accession }} | {{ row.name | truncate(60) }} | {{ row.gene_symbol or "-" }} | {{ row.species or "-" }} |
+| {{ row.accession }} | {{ row.name | truncate(60) }} | {{ row.gene_symbol or "-" }} | {{ row.species or "-" }} | {% if row.reviewed %}yes{% else %}no (unreviewed){% endif %} |
 {% endfor %}
 
 Use `get protein <accession>` for details.

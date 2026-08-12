@@ -1,6 +1,5 @@
 use std::sync::OnceLock;
 
-use crate::entities::SearchPage;
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
 use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
@@ -99,6 +98,15 @@ pub struct ProteinSearchResult {
     pub gene_symbol: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub species: Option<String>,
+    pub reviewed: bool,
+}
+
+#[derive(Debug)]
+pub(crate) struct ProteinSearchPage {
+    pub results: Vec<ProteinSearchResult>,
+    pub total: Option<usize>,
+    pub next_page_token: Option<String>,
+    pub has_more: bool,
 }
 
 const PROTEIN_SECTION_DOMAINS: &str = "domains";
@@ -231,7 +239,7 @@ fn parse_sections(sections: &[String]) -> Result<ProteinSections, BioMcpError> {
 
 pub fn search_query_summary(
     query: &str,
-    reviewed: bool,
+    include_unreviewed: bool,
     disease: Option<&str>,
     existence: Option<u8>,
     all_species: bool,
@@ -242,9 +250,11 @@ pub fn search_query_summary(
         parts.push(query.to_string());
     }
     // Reviewed entries are the default safety mode.
-    if reviewed || !all_species {
-        parts.push("reviewed=true".to_string());
-    }
+    parts.push(format!(
+        "species={}",
+        if all_species { "all" } else { "human" }
+    ));
+    parts.push(format!("reviewed={}", !include_unreviewed));
     if let Some(disease) = disease.map(str::trim).filter(|v| !v.is_empty()) {
         parts.push(format!("disease={disease}"));
     }
@@ -257,6 +267,29 @@ pub fn search_query_summary(
     parts.join(", ")
 }
 
+fn scoped_search_query(
+    query: &str,
+    all_species: bool,
+    include_unreviewed: bool,
+    disease: Option<&str>,
+    existence: Option<u8>,
+) -> String {
+    let mut terms = vec![format!("({query})")];
+    if !all_species {
+        terms.push("organism_id:9606".to_string());
+    }
+    if !include_unreviewed {
+        terms.push("reviewed:true".to_string());
+    }
+    if let Some(disease) = disease.map(str::trim).filter(|value| !value.is_empty()) {
+        terms.push(format!("cc_disease:\"{}\"", disease.replace('"', "\\\"")));
+    }
+    if let Some(level) = existence {
+        terms.push(format!("existence:{level}"));
+    }
+    terms.join(" AND ")
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn search_page(
     query: &str,
@@ -264,10 +297,10 @@ pub async fn search_page(
     offset: usize,
     next_page: Option<String>,
     all_species: bool,
-    reviewed: bool,
+    include_unreviewed: bool,
     disease: Option<&str>,
     existence: Option<u8>,
-) -> Result<SearchPage<ProteinSearchResult>, BioMcpError> {
+) -> Result<ProteinSearchPage, BioMcpError> {
     let query = query.trim();
     if query.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -283,21 +316,8 @@ pub async fn search_page(
         ));
     }
 
-    let mut scoped_terms = vec![format!("({query})")];
-    if !all_species {
-        scoped_terms.push("organism_id:9606".to_string());
-    }
-    if reviewed || !all_species {
-        scoped_terms.push("reviewed:true".to_string());
-    }
-    if let Some(disease) = disease.map(str::trim).filter(|v| !v.is_empty()) {
-        let disease = disease.replace('"', "\\\"");
-        scoped_terms.push(format!("cc_disease:\"{disease}\""));
-    }
-    if let Some(level) = existence {
-        scoped_terms.push(format!("existence:{level}"));
-    }
-    let scoped_query = scoped_terms.join(" AND ");
+    let scoped_query =
+        scoped_search_query(query, all_species, include_unreviewed, disease, existence);
 
     let client = UniProtClient::new()?;
     if next_page
@@ -308,14 +328,19 @@ pub async fn search_page(
         let page = client
             .search(&scoped_query, limit.clamp(1, 25), 0, next_page.as_deref())
             .await?;
-        return Ok(SearchPage::cursor(
-            page.results
-                .into_iter()
-                .map(transform::protein::from_uniprot_search_record)
-                .collect(),
-            page.total,
-            page.next_page_token,
-        ));
+        let results = page
+            .results
+            .into_iter()
+            .map(transform::protein::from_uniprot_search_record)
+            .collect::<Vec<_>>();
+        let has_more =
+            page.next_page_token.is_some() || page.total.is_some_and(|total| results.len() < total);
+        return Ok(ProteinSearchPage {
+            results,
+            total: page.total,
+            next_page_token: page.next_page_token,
+            has_more,
+        });
     }
 
     let limit = limit.clamp(1, 100);
@@ -326,6 +351,7 @@ pub async fn search_page(
     let mut remaining_skip = offset;
     let mut page_token: Option<String> = None;
     let mut exhausted = false;
+    let mut more_reachable = false;
 
     for fetched_pages in 0..MAX_PAGE_FETCHES {
         if fetched_pages == 20 {
@@ -358,8 +384,11 @@ pub async fn search_page(
             }
             if rows.len() < limit {
                 rows.push(transform::protein::from_uniprot_search_record(row));
+            } else {
+                more_reachable = true;
             }
-            if rows.len() >= limit {
+            if rows.len() >= limit && consumed < page_count {
+                more_reachable = true;
                 break;
             }
         }
@@ -371,6 +400,7 @@ pub async fn search_page(
                 // Mid-page stops cannot be represented as a cursor.
                 page_token = None;
             }
+            more_reachable |= page_token.is_some();
             break;
         }
 
@@ -389,9 +419,17 @@ pub async fn search_page(
         )));
     }
 
-    let resolved_total = total.or_else(|| Some(offset.saturating_add(rows.len())));
+    let resolved_total = total;
     let next = if exhausted { None } else { page_token };
-    Ok(SearchPage::cursor(rows, resolved_total, next))
+    let has_more = resolved_total.is_some_and(|value| offset.saturating_add(rows.len()) < value)
+        || more_reachable
+        || next.is_some();
+    Ok(ProteinSearchPage {
+        results: rows,
+        total: resolved_total,
+        next_page_token: next,
+        has_more,
+    })
 }
 
 fn apply_domains_result(protein: &mut Protein, result: Result<Vec<ProteinDomain>, BioMcpError>) {
@@ -696,6 +734,26 @@ mod tests {
             .await
             .unwrap_err();
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+    }
+
+    #[test]
+    fn species_and_review_filters_form_an_independent_matrix() {
+        assert_eq!(
+            scoped_search_query("BRAF", false, false, None, None),
+            "(BRAF) AND organism_id:9606 AND reviewed:true"
+        );
+        assert_eq!(
+            scoped_search_query("BRAF", true, false, None, None),
+            "(BRAF) AND reviewed:true"
+        );
+        assert_eq!(
+            scoped_search_query("BRAF", false, true, None, None),
+            "(BRAF) AND organism_id:9606"
+        );
+        assert_eq!(
+            scoped_search_query("BRAF", true, true, None, None),
+            "(BRAF)"
+        );
     }
 
     #[test]

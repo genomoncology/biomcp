@@ -8,6 +8,12 @@ Use protein commands to query UniProt accessions and expand into domains, intera
 biomcp search protein -q kinase --limit 5
 ```
 
+Search is human-only and reviewed-only by default. Species and review scope are
+independent: add `--all-species` without changing review quality, or add
+`--include-unreviewed` without changing the human scope. The two flags may be
+combined. `--reviewed` remains an explicit spelling of the default and conflicts
+with `--include-unreviewed`.
+
 ## Get protein records
 
 ```bash
@@ -74,6 +80,7 @@ failure is `unavailable` and is also reported in Markdown.
 ## Practical tips
 
 - Use a UniProt accession when you need the most stable exact lookup.
+- Follow JSON `pagination.next_offset` while `has_more` is true; it is omitted at the end.
 - Request only the section you need first, especially for `interactions` and `complexes`.
 - Use `protein structures` when the next step is a structure handoff rather than a full protein card.
 

@@ -288,6 +288,7 @@ pub(super) fn list_protein() -> String {
 - `search protein <query>` - positional query form
 - `search protein -q <query> --all-species`
 - `search protein -q <query> --reviewed`
+- `search protein -q <query> --include-unreviewed`
 - `search protein -q <query> --disease <name>`
 - `search protein -q <query> --existence <1-5>`
 - `search protein ... --limit <N> --offset <N>`
@@ -304,6 +305,7 @@ pub(super) fn list_protein() -> String {
 - `search protein -q <query>`
 - `--all-species`
 - `--reviewed` (default behavior uses reviewed=true for safer results)
+- `--include-unreviewed` (independent of `--all-species`; conflicts with `--reviewed`)
 - `--disease <name>`
 - `--existence <1-5>`
 - `--limit <N> --offset <N>`

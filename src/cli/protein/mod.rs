@@ -10,12 +10,15 @@ pub struct ProteinSearchArgs {
     /// Optional positional query alias for -q/--query
     #[arg(value_name = "QUERY")]
     pub positional_query: Option<String>,
-    /// Include all species (default: off, human-only)
+    /// Include all species (reviewed entries remain the default)
     #[arg(long)]
     pub all_species: bool,
-    /// Restrict to reviewed entries
-    #[arg(long)]
+    /// Explicitly restrict to reviewed entries (the default)
+    #[arg(long, conflicts_with = "include_unreviewed")]
     pub reviewed: bool,
+    /// Include unreviewed entries without changing the species scope
+    #[arg(long)]
+    pub include_unreviewed: bool,
     /// Filter by disease text
     #[arg(long)]
     pub disease: Option<String>,

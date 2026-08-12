@@ -10,6 +10,7 @@ fn protein_search_json_next_commands_parse() {
         name: "Epidermal growth factor receptor".to_string(),
         gene_symbol: Some("EGFR".to_string()),
         species: Some("Homo sapiens".to_string()),
+        reviewed: true,
     }];
     let pagination = crate::cli::PaginationMeta::cursor(0, 1, results.len(), Some(1), None);
     let json = crate::cli::search_json_with_meta(

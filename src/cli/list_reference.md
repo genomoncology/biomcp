@@ -89,7 +89,7 @@ New to BioMCP? Try:
   - filters: `--gene`, `--disease`, `--type`, `--manufacturer`
   - `--disease` requires at least 3 alphanumeric characters
 - `search gene ... --region --pathway --go` (use GO IDs like `GO:0004672`; search output includes Coordinates (GRCh38)/UniProt/OMIM)
-- `search protein ... --reviewed --disease --existence` (default reviewed mode)
+- `search protein ... --reviewed|--include-unreviewed --all-species --disease --existence` (human and reviewed are independent defaults)
 - `search trial ... --mutation --criteria --study-type --has-results --date-from --date-to`
   - Broad discovery of simple mutation text gets a registry eligibility check.
   - It removes exclusion-only matches; absent terms remain discoverable.

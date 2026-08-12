@@ -22,6 +22,10 @@ pub fn from_uniprot_search_record(record: UniProtRecord) -> ProteinSearchResult 
             .map(str::trim)
             .map(str::to_string)
             .filter(|v| !v.is_empty()),
+        reviewed: record
+            .entry_type
+            .as_deref()
+            .is_some_and(|value| value.to_ascii_lowercase().contains("reviewed")),
     }
 }
 
@@ -70,6 +74,7 @@ mod tests {
     fn sample_record() -> UniProtRecord {
         UniProtRecord {
             primary_accession: "P15056".to_string(),
+            entry_type: Some("UniProtKB reviewed (Swiss-Prot)".to_string()),
             uni_prot_kb_id: Some("BRAF_HUMAN".to_string()),
             protein_description: Some(UniProtProteinDescription {
                 recommended_name: Some(UniProtNameContainer {
@@ -113,6 +118,7 @@ mod tests {
         assert_eq!(out.name, "Serine/threonine-protein kinase B-raf");
         assert_eq!(out.gene_symbol.as_deref(), Some("BRAF"));
         assert_eq!(out.species.as_deref(), Some("Homo sapiens"));
+        assert!(out.reviewed);
     }
 
     #[test]

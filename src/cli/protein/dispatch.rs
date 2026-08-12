@@ -67,7 +67,7 @@ pub(in crate::cli) async fn handle_search(
         .unwrap_or_default();
     let mut query_summary = crate::entities::protein::search_query_summary(
         &query,
-        args.reviewed,
+        args.include_unreviewed,
         args.disease.as_deref(),
         args.existence,
         args.all_species,
@@ -85,24 +85,51 @@ pub(in crate::cli) async fn handle_search(
         args.offset,
         args.next_page,
         args.all_species,
-        args.reviewed,
+        args.include_unreviewed,
         args.disease.as_deref(),
         args.existence,
     )
     .await?;
     let results = page.results;
-    let pagination = super::super::PaginationMeta::cursor(
-        args.offset,
-        args.limit,
-        results.len(),
-        page.total,
-        page.next_page_token,
-    );
+    #[derive(serde::Serialize)]
+    struct ProteinPagination {
+        offset: usize,
+        limit: usize,
+        returned: usize,
+        total: Option<usize>,
+        has_more: bool,
+        next_page_token: Option<String>,
+        next_offset: Option<usize>,
+    }
+    let pagination = ProteinPagination {
+        offset: args.offset,
+        limit: args.limit,
+        returned: results.len(),
+        total: page.total,
+        has_more: page.has_more,
+        next_page_token: page.next_page_token,
+        next_offset: page
+            .has_more
+            .then(|| args.offset.saturating_add(results.len())),
+    };
     let text = if json {
         let next_commands = crate::render::markdown::search_next_commands_protein(&results);
-        super::super::search_json_with_meta(results, pagination, next_commands)?
+        let count = results.len();
+        crate::render::json::to_pretty(&serde_json::json!({
+            "pagination": pagination,
+            "count": count,
+            "results": results,
+            "_meta": super::super::search_meta(next_commands),
+        }))?
     } else {
-        let footer = super::super::pagination_footer_cursor(&pagination);
+        let footer = crate::render::markdown::pagination_footer(
+            crate::render::markdown::PaginationFooterMode::Offset,
+            pagination.offset,
+            pagination.limit,
+            pagination.returned,
+            pagination.total,
+            None,
+        );
         crate::render::markdown::protein_search_markdown_with_footer(
             &query_summary,
             &results,

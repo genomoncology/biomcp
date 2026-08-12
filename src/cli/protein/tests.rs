@@ -111,3 +111,27 @@ fn search_args_reject_next_page_with_offset() {
             .contains("--next-page cannot be used together with --offset")
     );
 }
+
+#[test]
+fn review_flags_are_explicit_and_conflicting_spellings_fail() {
+    let default = Cli::try_parse_from(["biomcp", "search", "protein", "BRAF"])
+        .expect("default reviewed search");
+    let Commands::Search {
+        entity: SearchEntity::Protein(args),
+    } = default.command
+    else {
+        panic!("expected protein search")
+    };
+    assert!(!args.include_unreviewed);
+
+    let err = Cli::try_parse_from([
+        "biomcp",
+        "search",
+        "protein",
+        "BRAF",
+        "--reviewed",
+        "--include-unreviewed",
+    ])
+    .expect_err("conflicting review scopes must fail before transport");
+    assert!(err.to_string().contains("cannot be used with"));
+}
