@@ -24,7 +24,7 @@ def _make_target(name: str) -> str:
 
 def test_live_mcp_full_contracts_are_excluded_from_routine_test() -> None:
     routine = _make_target("test")
-    assert "$(CARGO_WITH_IDENTITY) nextest run" in routine
+    assert "cargo nextest run --archive-file" in routine
     assert "--run-ignored" not in routine
 
     for test_name in LIVE_FULL_CONTRACT_TESTS:

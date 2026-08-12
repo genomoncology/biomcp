@@ -15,8 +15,8 @@ WORKFLOW = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 
 
 def test_routine_gates_prepare_before_entering_offline_namespace() -> None:
-    assert "test: prepare-test" in MAKEFILE
-    assert "spec: prepare-spec" in MAKEFILE
+    assert "test:\n\t$(MAKE) prepare-test" in MAKEFILE
+    assert "spec:\n\t$(MAKE) prepare-spec" in MAKEFILE
     assert "tools/run-offline" in MAKEFILE
     assert "nextest archive --locked $(ROUTINE_CARGO_FEATURES)" in MAKEFILE
     assert 'nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)"' in MAKEFILE

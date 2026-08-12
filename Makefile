@@ -24,7 +24,8 @@ prepare-test: prepare-test-contracts
 	mkdir -p "$(CURDIR)/.cache"
 	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
 
-test: prepare-test
+test:
+	$(MAKE) prepare-test
 	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)"
 	$(MAKE) test-contracts-prepared
 
@@ -79,9 +80,10 @@ install:
 prepare-spec:
 	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh prepare-spec
 
-spec: prepare-spec
+spec:
+	$(MAKE) prepare-spec
 	tools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec
-	tools/run-offline -- bash scripts/run-specs.sh spec-static
+	tools/run-offline -- $(MAKE) spec-static
 
 spec-static:
 	bash scripts/run-specs.sh spec-static

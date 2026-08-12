@@ -1129,7 +1129,16 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     assert "push:" in ci and "branches: [main]" in ci
     for command in ("make lint", "make test", "make spec"):
         assert f"run: {command}" in canonical
-    for version in ("1.93.1", "3.12.3", "0.8.0", "0.13.2", "0.9.132", "0.19.4", "0.1.0", "28.3"):
+    for version in (
+        "1.93.1",
+        "3.12.3",
+        "0.8.0",
+        "0.13.2",
+        "0.9.132",
+        "0.19.4",
+        "0.1.0",
+        "28.3",
+    ):
         assert version in ci
     assert "@v" not in canonical and "@stable" not in canonical
     assert "tools/bootstrap-lint-tools" in canonical
@@ -1179,7 +1188,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "BIOMCP_CACHE_DIR" not in makefile
     assert "RUST_LOG=error" not in makefile
     assert re.search(
-        r"^test: prepare-test\n"
+        r"^test:\n"
+        r"\t\$\(MAKE\) prepare-test\n"
         r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)"\n'
         r"\t\$\(MAKE\) test-contracts-prepared$",
         makefile,
@@ -1234,7 +1244,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         flags=re.MULTILINE,
     )
     assert re.search(
-        r"^spec: prepare-spec\n"
+        r"^spec:\n"
+        r"\t\$\(MAKE\) prepare-spec\n"
         r'\ttools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_FEATURE_ON_BIN="\$\(if \$\(filter release,\$\(SPEC_PROFILE\)\),\$\(SPEC_BIN\),\)" bash scripts/run-specs\.sh spec$',
         makefile,
         flags=re.MULTILINE,
@@ -1307,8 +1318,7 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
         in contributing_ws
     )
     assert (
-            "`make release-gate` is the single release-readiness command"
-        in contributing_ws
+        "`make release-gate` is the single release-readiness command" in contributing_ws
     )
     assert (
         "`make spec-contracts` is a deterministic legacy subset kept for profile compatibility"
@@ -1587,7 +1597,10 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "pre-commit hook" in runbook_premerge
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in runbook_premerge
     assert "`cargo fmt --check`" in runbook_premerge
-    assert "`cargo clippy --no-default-features --lib --tests -- -D warnings`" in runbook_premerge
+    assert (
+        "`cargo clippy --no-default-features --lib --tests -- -D warnings`"
+        in runbook_premerge
+    )
     assert (
         "`cargo-deny` for the repo-local license and advisory policy checks in "
         "`make lint`" in runbook_prerequisites
@@ -1611,7 +1624,10 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
     assert "`$(git rev-parse --git-path hooks/pre-commit)`" in contributing_hook
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in contributing_hook
     assert "`cargo fmt --check`" in contributing_hook
-    assert "`cargo clippy --no-default-features --lib --tests -- -D warnings`" in contributing_hook
+    assert (
+        "`cargo clippy --no-default-features --lib --tests -- -D warnings`"
+        in contributing_hook
+    )
     assert "staged deletions" in contributing_hook
 
     assert "March validation profiles are retired" in march_profiles

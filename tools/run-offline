@@ -20,10 +20,15 @@ if (($# == 0)); then
 fi
 
 echo "offline network isolation: bubblewrap --unshare-net"
+if [[ "${BIOMCP_OFFLINE_NETWORK:-0}" == 1 ]]; then
+  echo "offline network isolation: reusing the verified enclosing namespace"
+  exec "$ROOT/tools/check-offline-network" "$@"
+fi
 exec bwrap \
   --unshare-net \
   --dev-bind / / \
   --proc /proc \
   --die-with-parent \
+  --setenv BIOMCP_OFFLINE_NETWORK 1 \
   --chdir "$PWD" \
   -- "$ROOT/tools/check-offline-network" "$@"

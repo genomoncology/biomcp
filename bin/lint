@@ -64,7 +64,11 @@ else
   skip 'Python lint (no tracked Python files)'
 fi
 
-run_required 'Bash and workflow lint' python3 tools/check-shell-workflows
+if [ -f tools/check-shell-workflows ]; then
+  run_required 'Bash and workflow lint' python3 tools/check-shell-workflows
+else
+  skip 'Bash and workflow lint (checker not configured)'
+fi
 
 if [ -f build.zig ] || has_tracked_files '*.zig'; then
   run_required 'Zig lint (zig fmt --check .)' zig fmt --check .

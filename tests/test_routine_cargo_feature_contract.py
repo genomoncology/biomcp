@@ -28,7 +28,10 @@ def test_routine_lint_test_and_spec_share_the_declared_feature_graph() -> None:
     assert 'ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint' in (
         _target(makefile, "lint")
     )
-    assert "nextest run $(ROUTINE_CARGO_FEATURES)" in _target(makefile, "test")
+    assert "nextest archive --locked $(ROUTINE_CARGO_FEATURES)" in _target(
+        makefile, "prepare-test"
+    )
+    assert "nextest run --archive-file" in _target(makefile, "test")
     assert "--cargo-feature-arg" in runner
     assert '"${routine_cargo_features[@]}"' in runner
     assert "args.cargo_feature_arg" in preparer
