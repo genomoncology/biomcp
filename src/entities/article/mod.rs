@@ -19,7 +19,7 @@ mod test_support;
 pub(crate) mod variant_search;
 
 pub use self::assets::{article_asset_bytes, article_assets_manifest};
-pub use self::batch::get_batch_compact;
+pub use self::batch::get_compact;
 pub use self::detail::get;
 pub use self::graph::{citations, recommendations, references};
 pub(crate) use self::identity_verification::VariantArticleVerificationOptions;

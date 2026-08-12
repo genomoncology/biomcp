@@ -412,12 +412,26 @@ pub(in crate::cli) async fn handle_command(
             }
         }
         ArticleCommand::Batch { ids } => {
-            let results = crate::entities::article::get_batch_compact(&ids).await?;
-            if json {
-                crate::render::json::to_pretty(&results)?
-            } else {
-                crate::render::markdown::article_batch_markdown(&results)?
+            if ids.len() > crate::entities::article::ARTICLE_BATCH_MAX_IDS {
+                return Err(crate::error::BioMcpError::InvalidArgument(format!(
+                    "Article batch is limited to {} IDs",
+                    crate::entities::article::ARTICLE_BATCH_MAX_IDS
+                ))
+                .into());
             }
+            let input_refs = ids.iter().map(String::as_str).collect::<Vec<_>>();
+            let futures = ids
+                .iter()
+                .map(|id| crate::entities::article::get_compact(id));
+            return crate::cli::system::settle_batch(
+                "article",
+                &input_refs,
+                futures,
+                json,
+                |item| serde_json::to_value(item).map_err(crate::error::BioMcpError::Json),
+                |item| crate::render::markdown::article_batch_markdown(std::slice::from_ref(item)),
+            )
+            .await;
         }
         ArticleCommand::Citations { id, limit } => {
             let limit = super::super::paged_fetch_limit(limit, 0, 100)?;

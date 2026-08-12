@@ -238,6 +238,18 @@ pub(super) fn alias_suggestion_outcome(
     ))
 }
 
+#[cfg(test)]
+pub(super) fn render_batch_json<T, F>(
+    results: &[T],
+    wrap: F,
+) -> Result<String, crate::error::BioMcpError>
+where
+    F: Fn(&T) -> Result<serde_json::Value, crate::error::BioMcpError>,
+{
+    let items = results.iter().map(wrap).collect::<Result<Vec<_>, _>>()?;
+    crate::render::json::to_pretty(&items)
+}
+
 pub(super) async fn try_alias_fallback_outcome(
     query: &str,
     requested_entity: crate::entities::discover::DiscoverType,
@@ -271,17 +283,6 @@ pub(super) async fn try_alias_fallback_outcome(
             Ok(None)
         }
     }
-}
-
-pub(super) fn render_batch_json<T, F>(
-    results: &[T],
-    wrap: F,
-) -> Result<String, crate::error::BioMcpError>
-where
-    F: Fn(&T) -> Result<serde_json::Value, crate::error::BioMcpError>,
-{
-    let items = results.iter().map(wrap).collect::<Result<Vec<_>, _>>()?;
-    crate::render::json::to_pretty(&items)
 }
 
 #[derive(Debug, Clone, serde::Serialize)]

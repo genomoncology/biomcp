@@ -493,10 +493,9 @@ canonical `--region eu` value on search and get drug regional sections. Parsed
 errors retain the applicable nested region result path or all three paths and do
 not gain a false flat `results` key.
 
-Legacy helper JSON shapes are documented, not silently normalized in this
-release. `article batch --json` remains a bare array of compact article cards in
-request order; the generic legacy batch success shape also remains a bare array.
-Neither is migrated to an object envelope in this release. Article detail and
+Batch helpers use one settlement envelope with an ordered `items` array and a
+`summary` of successes and failures. Every requested item appears exactly once;
+mixed success exits nonzero without discarding successful rows. Article detail and
 batch cards carry every author supplied by the
 selected source plus returned count, completeness, and source; Europe PMC
 display-string authorship is explicitly source-limited. Helper-specific JSON

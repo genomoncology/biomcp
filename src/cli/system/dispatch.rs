@@ -6,7 +6,75 @@ use super::{
     WhoCommand, WhoIvdCommand,
 };
 use crate::cli::CommandOutcome;
-use futures::future::try_join_all;
+use futures::future::join_all;
+
+pub(crate) async fn settle_batch<T, Fut, Project, Human>(
+    entity: &str,
+    inputs: &[&str],
+    futures: impl IntoIterator<Item = Fut>,
+    json: bool,
+    project: Project,
+    human: Human,
+) -> anyhow::Result<CommandOutcome>
+where
+    Fut: std::future::Future<Output = Result<T, crate::error::BioMcpError>>,
+    Project: Fn(&T) -> Result<serde_json::Value, crate::error::BioMcpError>,
+    Human: Fn(&T) -> Result<String, crate::error::BioMcpError>,
+{
+    let settled = join_all(futures).await;
+    let failed = settled.iter().filter(|result| result.is_err()).count();
+    let succeeded = settled.len().saturating_sub(failed);
+    let text = if json {
+        let items = inputs
+            .iter()
+            .zip(&settled)
+            .map(|(input, result)| match result {
+                Ok(value) => Ok(serde_json::json!({
+                    "input": input,
+                    "status": "ok",
+                    "result": project(value)?,
+                })),
+                Err(error) => {
+                    let error_value: serde_json::Value =
+                        serde_json::from_str(&crate::render::json::to_error_json(error)?)?;
+                    Ok(serde_json::json!({
+                        "input": input,
+                        "status": "error",
+                        "error": error_value["error"],
+                    }))
+                }
+            })
+            .collect::<Result<Vec<_>, crate::error::BioMcpError>>()?;
+        crate::render::json::to_pretty(&serde_json::json!({
+            "summary": {"total": settled.len(), "succeeded": succeeded, "failed": failed},
+            "items": items,
+        }))?
+    } else {
+        let mut out = format!("# Batch: {entity} ({})\n", settled.len());
+        for (input, result) in inputs.iter().zip(&settled) {
+            out.push_str("\n---\n\n");
+            match result {
+                Ok(value) => {
+                    out.push_str(&format!("## {input} — ok\n\n{}", human(value)?));
+                }
+                Err(error) => {
+                    out.push_str(&format!(
+                        "## {input} — error\n\n{}\n",
+                        error.public_projection().message
+                    ));
+                }
+            }
+        }
+        out.push_str(&format!(
+            "\n## Summary\n\nTotal: {}; succeeded: {}; failed: {}.\n",
+            settled.len(),
+            succeeded,
+            failed
+        ));
+        out
+    };
+    Ok(CommandOutcome::stdout_with_exit(text, u8::from(failed > 0)))
+}
 
 pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<CommandOutcome> {
     let entity = args.entity.trim().to_ascii_lowercase();
@@ -31,64 +99,48 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
         .into());
     }
 
-    let text = match entity.as_str() {
+    match entity.as_str() {
         "gene" => {
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::gene::get(id, &batch_sections));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "gene",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::gene_evidence_urls(item),
                         crate::render::markdown::related_gene(item),
                         crate::render::provenance::gene_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: gene ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::gene_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::gene_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "variant" => {
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::variant::get(id, &batch_sections));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "variant",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::variant_evidence_urls(item),
                         crate::render::markdown::related_variant(item),
                         crate::render::provenance::variant_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: variant ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::variant_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::variant_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "article" => {
             let futs = parsed_ids.iter().map(|id| {
@@ -98,205 +150,149 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
                     crate::entities::article::ArticleGetOptions::default(),
                 )
             });
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "article",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::article_evidence_urls(item),
                         crate::render::markdown::related_article(item),
                         crate::render::provenance::article_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: article ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::article_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::article_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "trial" => {
             let trial_source = crate::entities::trial::TrialSource::from_flag(&args.source)?;
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::trial::get(id, &batch_sections, trial_source));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "trial",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::trial_evidence_urls(item),
                         crate::render::markdown::related_trial(item),
                         crate::render::provenance::trial_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: trial ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::trial_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::trial_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "drug" => {
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::drug::get(id, &batch_sections));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "drug",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::drug_evidence_urls(item),
                         crate::render::markdown::related_drug(item),
                         crate::render::provenance::drug_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: drug ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::drug_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::drug_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "disease" => {
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::disease::get(id, &batch_sections));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "disease",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::disease_evidence_urls(item),
                         crate::render::markdown::related_disease(item),
                         crate::render::provenance::disease_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: disease ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::disease_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::disease_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "pgx" => {
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::pgx::get(id, &batch_sections));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "pgx",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::pgx_evidence_urls(item),
                         crate::render::markdown::related_pgx(item),
                         crate::render::provenance::pgx_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: pgx ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::pgx_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::pgx_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "pathway" => {
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::pathway::get(id, &batch_sections));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "pathway",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::pathway_evidence_urls(item),
                         crate::render::markdown::related_pathway(item),
                         crate::render::provenance::pathway_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: pathway ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::pathway_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::pathway_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "protein" => {
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::protein::get(id, &batch_sections));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| {
+            return settle_batch(
+                "protein",
+                &parsed_ids,
+                futs,
+                json,
+                |item| {
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::protein_evidence_urls(item),
                         crate::render::markdown::related_protein(item, &batch_sections),
                         crate::render::provenance::protein_section_sources(item),
                     )
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: protein ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
-                    }
-                    out.push_str(&crate::render::markdown::protein_markdown(
-                        item,
-                        &batch_sections,
-                    )?);
-                }
-                out
-            }
+                },
+                |item| crate::render::markdown::protein_markdown(item, &batch_sections),
+            )
+            .await;
         }
         "adverse-event" | "adverse_event" | "adverseevent" => {
             if !batch_sections.is_empty() {
@@ -308,9 +304,12 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::adverse_event::get(id));
-            let results = try_join_all(futs).await?;
-            if json {
-                super::super::render_batch_json(&results, |item| match item {
+            return settle_batch(
+                "adverse-event",
+                &parsed_ids,
+                futs,
+                json,
+                |item| match item {
                     crate::entities::adverse_event::AdverseEventReport::Faers(report) => {
                         crate::render::json::to_entity_json_value(
                             item,
@@ -327,51 +326,55 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
                             crate::render::provenance::adverse_event_report_section_sources(item),
                         )
                     }
-                })?
-            } else {
-                let mut out = String::new();
-                out.push_str(&format!("# Batch: adverse-event ({})\n\n", results.len()));
-                for (idx, item) in results.iter().enumerate() {
-                    if idx > 0 {
-                        out.push_str("\n\n---\n\n");
+                },
+                |item| match item {
+                    crate::entities::adverse_event::AdverseEventReport::Faers(report) => {
+                        crate::render::markdown::adverse_event_markdown(
+                            report,
+                            super::super::empty_sections(),
+                        )
                     }
-                    match item {
-                        crate::entities::adverse_event::AdverseEventReport::Faers(report) => {
-                            out.push_str(&crate::render::markdown::adverse_event_markdown(
-                                report,
-                                super::super::empty_sections(),
-                            )?);
-                        }
-                        crate::entities::adverse_event::AdverseEventReport::Device(report) => {
-                            out.push_str(&crate::render::markdown::device_event_markdown(report)?);
-                        }
+                    crate::entities::adverse_event::AdverseEventReport::Device(report) => {
+                        crate::render::markdown::device_event_markdown(report)
                     }
-                }
-                out
-            }
+                },
+            )
+            .await;
         }
         other => {
-            return Err(crate::error::BioMcpError::InvalidArgument(format!(
+            Err(crate::error::BioMcpError::InvalidArgument(format!(
                 "Unknown batch entity '{other}'. Expected one of: gene, variant, article, trial, drug, disease, pgx, pathway, protein, adverse-event"
             ))
-            .into());
+            .into())
         }
-    };
+    }
+}
 
+fn sync_outcome(source: &str, message: String, json: bool) -> anyhow::Result<CommandOutcome> {
+    let text = if json {
+        crate::render::json::to_pretty(&serde_json::json!({
+            "kind": "data_sync",
+            "source": source,
+            "status": "synchronized",
+            "changed": true,
+        }))?
+    } else {
+        message
+    };
     Ok(CommandOutcome::stdout(text))
 }
 
-pub(crate) async fn handle_ema(cmd: EmaCommand) -> anyhow::Result<CommandOutcome> {
+pub(crate) async fn handle_ema(cmd: EmaCommand, json: bool) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
         EmaCommand::Sync => {
             crate::sources::ema::EmaClient::sync(crate::sources::ema::EmaSyncMode::Force).await?;
             "EMA data synchronized successfully.\n".to_string()
         }
     };
-    Ok(CommandOutcome::stdout(text))
+    sync_outcome("ema", text, json)
 }
 
-pub(crate) async fn handle_who(cmd: WhoCommand) -> anyhow::Result<CommandOutcome> {
+pub(crate) async fn handle_who(cmd: WhoCommand, json: bool) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
         WhoCommand::Sync => {
             crate::sources::who_pq::WhoPqClient::sync(crate::sources::who_pq::WhoPqSyncMode::Force)
@@ -379,20 +382,23 @@ pub(crate) async fn handle_who(cmd: WhoCommand) -> anyhow::Result<CommandOutcome
             "WHO Prequalification data synchronized successfully.\n".to_string()
         }
     };
-    Ok(CommandOutcome::stdout(text))
+    sync_outcome("who", text, json)
 }
 
-pub(crate) async fn handle_cvx(cmd: CvxCommand) -> anyhow::Result<CommandOutcome> {
+pub(crate) async fn handle_cvx(cmd: CvxCommand, json: bool) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
         CvxCommand::Sync => {
             crate::sources::cvx::CvxClient::sync(crate::sources::cvx::CvxSyncMode::Force).await?;
             "CDC CVX/MVX local data bundle synchronized successfully.\n".to_string()
         }
     };
-    Ok(CommandOutcome::stdout(text))
+    sync_outcome("cvx", text, json)
 }
 
-pub(crate) async fn handle_ddinter(cmd: DdinterCommand) -> anyhow::Result<CommandOutcome> {
+pub(crate) async fn handle_ddinter(
+    cmd: DdinterCommand,
+    json: bool,
+) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
         DdinterCommand::Sync => {
             crate::sources::ddinter::DdinterClient::sync(
@@ -402,20 +408,23 @@ pub(crate) async fn handle_ddinter(cmd: DdinterCommand) -> anyhow::Result<Comman
             "DDInter local interaction data synchronized successfully.\n".to_string()
         }
     };
-    Ok(CommandOutcome::stdout(text))
+    sync_outcome("ddinter", text, json)
 }
 
-pub(crate) async fn handle_gtr(cmd: GtrCommand) -> anyhow::Result<CommandOutcome> {
+pub(crate) async fn handle_gtr(cmd: GtrCommand, json: bool) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
         GtrCommand::Sync => {
             crate::sources::gtr::GtrClient::sync(crate::sources::gtr::GtrSyncMode::Force).await?;
             "GTR local diagnostic data synchronized successfully.\n".to_string()
         }
     };
-    Ok(CommandOutcome::stdout(text))
+    sync_outcome("gtr", text, json)
 }
 
-pub(crate) async fn handle_who_ivd(cmd: WhoIvdCommand) -> anyhow::Result<CommandOutcome> {
+pub(crate) async fn handle_who_ivd(
+    cmd: WhoIvdCommand,
+    json: bool,
+) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
         WhoIvdCommand::Sync => {
             crate::sources::who_ivd::WhoIvdClient::sync(
@@ -425,7 +434,7 @@ pub(crate) async fn handle_who_ivd(cmd: WhoIvdCommand) -> anyhow::Result<Command
             "WHO IVD local diagnostic data synchronized successfully.\n".to_string()
         }
     };
-    Ok(CommandOutcome::stdout(text))
+    sync_outcome("who_ivd", text, json)
 }
 
 #[derive(serde::Serialize)]
@@ -473,8 +482,19 @@ pub(crate) async fn handle_enrich(args: EnrichArgs, json: bool) -> anyhow::Resul
     Ok(CommandOutcome::stdout(text))
 }
 
-pub(crate) async fn handle_uninstall() -> anyhow::Result<CommandOutcome> {
-    Ok(CommandOutcome::stdout(uninstall_self()?))
+pub(crate) async fn handle_uninstall(json: bool) -> anyhow::Result<CommandOutcome> {
+    let message = uninstall_self()?;
+    let text = if json {
+        crate::render::json::to_pretty(&serde_json::json!({
+            "kind": "uninstall",
+            "status": "uninstalled",
+            "changed": true,
+            "message": message,
+        }))?
+    } else {
+        message
+    };
+    Ok(CommandOutcome::stdout(text))
 }
 
 pub(crate) async fn handle_version(
@@ -681,4 +701,49 @@ pub(super) fn enrich_markdown(
         out.push_str(&format!("| {source} | {id} | {name} | {p} |\n"));
     }
     out
+}
+
+#[cfg(test)]
+mod batch_settlement_tests {
+    use super::*;
+    use futures::future::BoxFuture;
+
+    #[tokio::test]
+    async fn mixed_batch_preserves_input_order_and_emits_every_result() {
+        let inputs = ["slow", "bad", "fast"];
+        let futures: Vec<BoxFuture<'_, Result<&str, crate::error::BioMcpError>>> = vec![
+            Box::pin(async {
+                tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+                Ok("slow-result")
+            }),
+            Box::pin(async {
+                Err(crate::error::BioMcpError::NotFound {
+                    entity: "gene".into(),
+                    id: "bad".into(),
+                    suggestion: "check the identifier".into(),
+                })
+            }),
+            Box::pin(async { Ok("fast-result") }),
+        ];
+        let outcome = settle_batch(
+            "gene",
+            &inputs,
+            futures,
+            true,
+            |value| Ok(serde_json::json!({"value": value})),
+            |value| Ok((*value).to_string()),
+        )
+        .await
+        .expect("settled batch");
+
+        assert_eq!(outcome.exit_code, 1);
+        let value: serde_json::Value = serde_json::from_str(&outcome.text).expect("batch json");
+        assert_eq!(
+            value["summary"],
+            serde_json::json!({"total":3,"succeeded":2,"failed":1})
+        );
+        assert_eq!(value["items"][0]["input"], "slow");
+        assert_eq!(value["items"][1]["status"], "error");
+        assert_eq!(value["items"][2]["input"], "fast");
+    }
 }

@@ -85,11 +85,10 @@ keyless. Section-shaped `search all`, scalar trial `--count-only`, and VAERS-onl
 aggregate responses also retain their existing shapes without a false flat
 `results` key.
 
-BioMCP preserves existing response families rather than introducing a global
-`data` envelope in 0.8.x. Drug search therefore keeps nested
-`regions.<region>.results`, while article batch and the legacy generic batch keep
-their bare-array success shapes. A uniform versioned envelope remains a future
-breaking-change question rather than an additive 0.8.x change.
+BioMCP preserves entity response families rather than introducing a global
+`data` envelope. Drug search therefore keeps nested `regions.<region>.results`.
+Batch commands are the deliberate exception: they use an ordered settlement
+envelope so one failed lookup cannot erase the successful items.
 
 ## How do I inspect available commands quickly?
 

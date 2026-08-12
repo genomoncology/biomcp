@@ -372,16 +372,20 @@ not just the ordinary article card, was retrieved.
 ../../tools/biomcp-ci --json get article 22663011 all | mustmatch like '{"indexing":{"status":"available","authors":[{"name":"Jürgen Becker"}],"mesh_headings":[{"descriptor":{"ui":"D008545"}}]}}'
 ```
 
-## Article Batch Keeps Its Array and Carries Authorship
+## Article Batch Settles Every Item and Carries Authorship
 
-Batch retrieval keeps its compact bare-array response and input order while
+Batch retrieval keeps input order in one settlement envelope while
 including the same source-ordered authorship contract on each card. A caller can
 therefore confirm a middle author without making a second detail request.
 
 ```bash
-../../tools/biomcp-ci --json article batch 22663011 22663012 | mustmatch like '[
+../../tools/biomcp-ci --json article batch 22663011 22663012 | mustmatch like '{
+  "summary": {"total": 2, "succeeded": 2, "failed": 0},
+  "items": [
   {
-    "requested_id": "22663011",
+    "input": "22663011",
+    "status": "ok",
+    "result": {"requested_id": "22663011",
     "authors": [
       "Ada First",
       "Ben Second",
@@ -392,12 +396,14 @@ therefore confirm a middle author without making a second detail request.
     ],
     "author_count": 6,
     "author_completeness": "complete",
-    "author_source": "pubtator"
+    "author_source": "pubtator"}
   },
   {
-    "requested_id": "22663012"
+    "input": "22663012",
+    "status": "ok",
+    "result": {"requested_id": "22663012"}
   }
-]'
+]}'
 ```
 
 ## Article Batch Markdown Keeps Input Order and Authors
@@ -406,16 +412,25 @@ Human-readable batch cards remain in request order and include full authorship
 on the matching card without hiding middle collaborators.
 
 ```bash
-../../tools/biomcp-ci article batch 22663011 22663012 | mustmatch like '## 1. Europe full text winner
+../../tools/biomcp-ci article batch 22663011 22663012 | mustmatch like '# Batch: article (2)
+...
+## 22663011 — ok
+...
+# Europe full text winner
 ...
 PMID: 22663011
 ...
 Authors: Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last
 ...
-## 2. PMC HTML fallback winner
+## 22663012 — ok
+...
+# PMC HTML fallback winner
 ...
 PMID: 22663012
-...'
+...
+## Summary
+...
+Total: 2; succeeded: 2; failed: 0.'
 ```
 
 ## MYD88 Protein-Alias Article Precision

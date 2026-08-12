@@ -4,13 +4,15 @@ use crate::error::BioMcpError;
 use crate::sources::europepmc::EuropePmcClient;
 use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
+#[cfg(test)]
 use futures::future::try_join_all;
 
+#[cfg(test)]
+use super::ARTICLE_BATCH_MAX_IDS;
 use super::detail::get_article_base_with_clients;
 use super::filters::parse_row_date;
 use super::{
-    ARTICLE_BATCH_MAX_IDS, AnnotationCount, Article, ArticleAnnotations, ArticleBatchEntitySummary,
-    ArticleBatchItem,
+    AnnotationCount, Article, ArticleAnnotations, ArticleBatchEntitySummary, ArticleBatchItem,
 };
 
 fn trimmed_opt(value: Option<&str>) -> Option<String> {
@@ -151,6 +153,7 @@ async fn enrich_article_batch_with_semantic_scholar(
     Ok(())
 }
 
+#[cfg(test)]
 pub async fn get_batch_compact(ids: &[String]) -> Result<Vec<ArticleBatchItem>, BioMcpError> {
     if ids.len() > ARTICLE_BATCH_MAX_IDS {
         return Err(BioMcpError::InvalidArgument(format!(
@@ -173,6 +176,15 @@ pub async fn get_batch_compact(ids: &[String]) -> Result<Vec<ArticleBatchItem>, 
         .collect::<Vec<_>>();
     enrich_article_batch_with_semantic_scholar(&mut items).await?;
     Ok(items)
+}
+
+pub async fn get_compact(id: &str) -> Result<ArticleBatchItem, BioMcpError> {
+    let pubtator = PubTatorClient::new()?;
+    let europe = EuropePmcClient::new()?;
+    let article = get_article_base_with_clients(id, &pubtator, &europe).await?;
+    let mut items = vec![article_batch_item_from_article(id, &article)];
+    enrich_article_batch_with_semantic_scholar(&mut items).await?;
+    Ok(items.remove(0))
 }
 
 #[cfg(test)]
