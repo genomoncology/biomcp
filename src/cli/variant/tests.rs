@@ -1,97 +1,12 @@
 use clap::Parser;
 
 mod articles;
+mod parsing;
 
 use super::dispatch::{VariantSearchPlan, parse_simple_gene_change, resolve_variant_query};
 
-use crate::cli::{
-    Cli, Commands, GetEntity, OutputStream, SearchEntity, VariantCommand, run_outcome,
-};
+use crate::cli::{Cli, Commands, GetEntity, OutputStream, VariantCommand, run_outcome};
 use crate::entities::variant as entity;
-
-#[test]
-fn search_variant_parses_single_token_positional_query() {
-    let cli = Cli::try_parse_from(["biomcp", "search", "variant", "BRAF", "--limit", "2"])
-        .expect("search variant should parse");
-
-    let Cli {
-        command:
-            Commands::Search {
-                entity:
-                    SearchEntity::Variant(crate::cli::variant::VariantSearchArgs {
-                        gene,
-                        positional_query,
-                        limit,
-                        offset,
-                        ..
-                    }),
-            },
-        ..
-    } = cli
-    else {
-        panic!("expected search variant command");
-    };
-
-    assert_eq!(gene, None);
-    assert_eq!(positional_query, vec!["BRAF".to_string()]);
-    assert_eq!(limit, 2);
-    assert_eq!(offset, 0);
-}
-
-#[test]
-fn search_variant_parses_multi_token_positional_query_and_flag() {
-    let cli = Cli::try_parse_from([
-        "biomcp", "search", "variant", "-g", "PTPN22", "R620W", "--limit", "5",
-    ])
-    .expect("search variant should parse");
-
-    let Cli {
-        command:
-            Commands::Search {
-                entity:
-                    SearchEntity::Variant(crate::cli::variant::VariantSearchArgs {
-                        gene,
-                        positional_query,
-                        limit,
-                        ..
-                    }),
-            },
-        ..
-    } = cli
-    else {
-        panic!("expected search variant command");
-    };
-
-    assert_eq!(gene.as_deref(), Some("PTPN22"));
-    assert_eq!(positional_query, vec!["R620W".to_string()]);
-    assert_eq!(limit, 5);
-}
-
-#[test]
-fn search_variant_parses_quoted_gene_change_positional_query() {
-    let cli = Cli::try_parse_from(["biomcp", "search", "variant", "BRAF V600E", "--limit", "5"])
-        .expect("search variant should parse");
-
-    let Cli {
-        command:
-            Commands::Search {
-                entity:
-                    SearchEntity::Variant(crate::cli::variant::VariantSearchArgs {
-                        positional_query,
-                        limit,
-                        ..
-                    }),
-            },
-        ..
-    } = cli
-    else {
-        panic!("expected search variant command");
-    };
-
-    assert_eq!(positional_query, vec!["BRAF V600E".to_string()]);
-    assert_eq!(limit, 5);
-}
-
 #[test]
 fn search_variant_help_distinguishes_exact_identity_from_broad_discovery() {
     let help = Cli::try_parse_from(["biomcp", "search", "variant", "--help"])
@@ -622,9 +537,9 @@ async fn variant_search_shorthand_json_returns_variant_guidance_metadata() {
 
 #[test]
 fn ticket_377_variant_renderer_envelope_contracts() {
-    let results = vec![crate::entities::variant::VariantSearchResult {
+    let results = vec![entity::VariantSearchResult {
         id: "rs113488022".to_string(),
-        genome_build: crate::entities::variant::GenomeBuild::Grch37,
+        genome_build: entity::GenomeBuild::Grch37,
         genome_build_provenance: "test".into(),
         gene: "BRAF".to_string(),
         hgvs_p: Some("p.V600E".to_string()),
@@ -642,7 +557,7 @@ fn ticket_377_variant_renderer_envelope_contracts() {
         Some("BRAF"),
         Some("melanoma"),
     );
-    let json = super::super::search_json_with_meta(
+    let json = crate::cli::search_json_with_meta(
         results.clone(),
         crate::cli::PaginationMeta::offset(0, 1, 1, Some(1)),
         next_commands,

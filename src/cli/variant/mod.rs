@@ -264,6 +264,7 @@ mod dispatch;
 mod erepo;
 mod guidance;
 mod normalization_json;
+mod trial;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 
 #[cfg(test)]

@@ -25,6 +25,7 @@ internal fixture overrides and release/install variables.
 | `BIOMCP_CACHE_MAX_AGE` | Optional cache age limit, as a positive integer number of seconds |
 | `BIOMCP_CACHE_MAX_SIZE` | Optional cache size limit |
 | `BIOMCP_CACHE_MIN_DISK_FREE` | Minimum free disk budget before cache eviction |
+| `BIOMCP_DEFAULT_ASSEMBLY` | Preferred genome assembly when a source returns equally supported GRCh37 and GRCh38 identities; accepts `GRCh37` or `GRCh38` and defaults to `GRCh38` |
 | `BIOMCP_STUDY_DIR` | Local cBioPortal-style study dataset root |
 | `BIOMCP_DDINTER_DIR` | Local DDInter download bundle root |
 | `BIOMCP_EMA_DIR` | Local EMA human-medicines download root |

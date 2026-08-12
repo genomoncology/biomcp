@@ -713,10 +713,21 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
     if sections.len() > 16 {
         return Err(input_error("sections accepts at most 16 unique values"));
     }
+    let sections = sections
+        .iter()
+        .map(|section| checked_text(section, "section", 256))
+        .collect::<Result<Vec<_>, _>>()?;
+    if matches!(
+        (entity.as_str(), sections.first().map(String::as_str)),
+        ("trial", Some("document")) | ("article", Some("asset"))
+    ) {
+        args.extend(sections);
+        let message = binary_download_rejection(&args).expect("matched binary get route");
+        return Err(McpError::invalid_params(message, None));
+    }
     let allowed_sections = crate::cli::list::catalog::sections(&entity);
     let mut seen = BTreeSet::new();
     for section in sections {
-        let section = checked_text(&section, "section", 256)?;
         if !allowed_sections.contains(&section.as_str()) || !seen.insert(section.clone()) {
             return Err(input_error(format!(
                 "invalid or duplicate {entity} section: {section}"
@@ -1386,9 +1397,9 @@ mod tests {
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
         TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles, TypedVariantCar,
-        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, binary_download_rejection, http_allowed_hosts,
-        index_handler, is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text,
-        redact_mcp_text, search_args, to_resource_result,
+        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, binary_download_rejection, get_args,
+        http_allowed_hosts, index_handler, is_allowed_mcp_command, mcp_rejection_message,
+        redact_mcp_json_text, redact_mcp_text, search_args, to_resource_result,
     };
     use axum::Json;
     use serde_json::json;
@@ -1418,6 +1429,14 @@ mod tests {
             let args = args.into_iter().map(String::from).collect::<Vec<_>>();
             assert!(binary_download_rejection(&args).is_none());
         }
+
+        let error = get_args(TypedGet(json!({
+            "entity": "article",
+            "id": "22663011",
+            "sections": ["asset", "supplement.xlsx"]
+        })))
+        .expect_err("typed binary route is rejected before section validation");
+        assert!(error.to_string().contains("CLI-only"));
     }
 
     #[test]

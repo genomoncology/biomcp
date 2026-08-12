@@ -3,8 +3,7 @@ pub(super) use super::{ResolvedVariantQuery, VariantSearchPlan};
 use super::{VariantCommand, VariantGetArgs, VariantSearchArgs};
 use crate::cli::CommandOutcome;
 use crate::cli::{
-    PaginationMeta, empty_sections, normalize_cli_query, pagination_footer_offset,
-    search_json_with_meta,
+    PaginationMeta, normalize_cli_query, pagination_footer_offset, search_json_with_meta,
 };
 use crate::error::BioMcpError;
 
@@ -62,7 +61,7 @@ pub(crate) async fn handle_command(
             source,
         } => {
             let _ = crate::entities::variant::parse_variant_id(&id)?;
-            let mutation_query = variant_trial_mutation_query(&id).await;
+            let mutation_query = super::trial::variant_trial_mutation_query(&id).await;
             let trial_source = crate::entities::trial::TrialSource::from_flag(&source)?;
             let filters = crate::entities::trial::TrialSearchFilters {
                 mutation: Some(mutation_query.clone()),
@@ -666,38 +665,4 @@ pub(super) fn normalize_search_hgvsp(value: &str) -> String {
         .strip_suffix('*')
         .map(|prefix| format!("{prefix}X"))
         .unwrap_or(normalized)
-}
-
-async fn variant_trial_mutation_query(id: &str) -> String {
-    let id = id.trim();
-    if id.is_empty() {
-        return String::new();
-    }
-
-    if let Ok(crate::entities::variant::VariantIdFormat::GeneProteinChange { gene, change }) =
-        crate::entities::variant::parse_variant_id(id)
-    {
-        let normalized = crate::entities::variant::normalize_protein_change(&change)
-            .unwrap_or_else(|| trim_protein_change_prefix(&change).to_string());
-        if !normalized.is_empty() {
-            return format!("{gene} {normalized}");
-        }
-    }
-
-    if let Ok(variant) = crate::entities::variant::get(id, empty_sections()).await {
-        let gene = variant.gene.trim();
-        let protein = variant
-            .hgvs_p
-            .as_deref()
-            .map(|value| {
-                crate::entities::variant::normalize_protein_change(value)
-                    .unwrap_or_else(|| trim_protein_change_prefix(value).to_string())
-            })
-            .unwrap_or_default();
-        if !gene.is_empty() && !protein.is_empty() {
-            return format!("{gene} {protein}");
-        }
-    }
-
-    id.to_string()
 }

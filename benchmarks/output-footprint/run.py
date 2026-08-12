@@ -22,7 +22,9 @@ TOKENIZER = "cl100k_base"
 TOKENIZER_CACHE = Path(__file__).with_name("tokenizer-cache")
 COMPACT_BYTE_CEILINGS = {
     "article_search_compact": 1_600,
-    "variant_search": 700,
+    # Typed genome-build identity added 1 byte to the committed corpus. Keep a
+    # small explicit margin without relaxing the other compact surfaces.
+    "variant_search": 720,
     "gene_get_sections": 7_000,
     "trial_search": 500,
 }
