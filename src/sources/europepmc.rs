@@ -145,23 +145,24 @@ impl EuropePmcClient {
             MAX_SUPPLEMENTARY_ZIP_BYTES,
         )
         .await?;
-        let package = tokio::task::spawn_blocking(move || parse_supplementary_zip(&bytes))
-            .await
-            .map_err(|err| {
-                BioMcpError::Api {
-                    api: EUROPE_PMC_API.to_string(),
-                    message: format!("Task join error: {err}"),
-                }
-                .with_source_context(crate::error::SourceContext::retry(
-                    crate::error::SourceProvider::EUROPE_PMC,
-                ))
-            })?
-            .map_err(|error| {
-                error.with_source_context(crate::error::SourceContext::retry(
-                    crate::error::SourceProvider::EUROPE_PMC,
-                ))
-            })?;
-        Ok(Some(package))
+        let package =
+            tokio::task::spawn_blocking(move || parse_supplementary_response(status, &bytes))
+                .await
+                .map_err(|err| {
+                    BioMcpError::Api {
+                        api: EUROPE_PMC_API.to_string(),
+                        message: format!("Task join error: {err}"),
+                    }
+                    .with_source_context(crate::error::SourceContext::retry(
+                        crate::error::SourceProvider::EUROPE_PMC,
+                    ))
+                })?
+                .map_err(|error| {
+                    error.with_source_context(crate::error::SourceContext::retry(
+                        crate::error::SourceProvider::EUROPE_PMC,
+                    ))
+                })?;
+        Ok(package)
     }
 
     pub async fn search_by_pmid(&self, pmid: &str) -> Result<EuropePmcSearchResponse, BioMcpError> {
@@ -400,6 +401,39 @@ fn supplementary_archive_error(reason: &str) -> BioMcpError {
         api: EUROPE_PMC_API.to_string(),
         message: format!("invalid supplementary ZIP: {reason}"),
     }
+}
+
+fn parse_supplementary_response(
+    status: reqwest::StatusCode,
+    bytes: &[u8],
+) -> Result<Option<EuropePmcSupplementaryPackage>, BioMcpError> {
+    if !supplementary_status_has_package(status)? {
+        return Ok(None);
+    }
+    if let Ok(text) = std::str::from_utf8(bytes)
+        && let Ok(document) =
+            crate::xml::parse_external_xml(text, crate::xml::ARTICLE_XML_NODE_LIMIT)
+        && document.root_element().has_tag_name("errorBean")
+    {
+        let root = document.root_element();
+        let field = |name| {
+            root.children()
+                .find(|node| node.is_element() && node.has_tag_name(name))
+                .and_then(|node| node.text())
+                .map(str::trim)
+        };
+        let permanent_absence = field("errCode") == Some("0")
+            && field("errMsg")
+                .is_some_and(|message| message.to_ascii_lowercase().contains("not open access"));
+        return if permanent_absence {
+            Ok(None)
+        } else {
+            Err(supplementary_archive_error(
+                "provider returned an XML error",
+            ))
+        };
+    }
+    parse_supplementary_zip(bytes).map(Some)
 }
 
 fn normalize_supplementary_name(raw: &[u8]) -> Result<String, BioMcpError> {
