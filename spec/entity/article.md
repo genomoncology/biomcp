@@ -626,8 +626,8 @@ Measurement traces for the treatment cohort.
 traces-s1.csv
 **Table 2.** Merged treatment table.
 *[Complex table: 2×3; merged-cell layout may be lossy. Raw source rows follow.]*
-Row 1: Group [rowspan=2] | Dose [colspan=2]
-Row 2: Low | High
+Row 1: Cohort [rowspan=2] | Baseline | Week 8
+Row 2: 10 | 4
 ```
 
 ```text expect=rendered-jats-fulltext not-contains
@@ -878,19 +878,29 @@ advertises the challenge as raw scientific bytes.
   | mustmatch 'true'
 ```
 
-```bash run id=nonretrievable-asset-human exit=2
-../../tools/biomcp-ci get article 22663023 asset NIHMS265402-supplement-Supplementary_Tables.xls 2>&1 | mustmatch like "article_asset_not_retrievable
+```bash run id=nonretrievable-asset-human exit=1
+set +e
+output="$(../../tools/biomcp-ci get article 22663023 asset NIHMS265402-supplement-Supplementary_Tables.xls 2>&1)"
+code=$?
+set -e
+mustmatch like "article_asset_not_retrievable
 ncbi_interstitial
 NIHMS265402-supplement-Supplementary_Tables.xls
-https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/"
+https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/" <<<"$output"
+exit "$code"
 ```
 
-```bash run id=nonretrievable-asset-json exit=2
+```bash run id=nonretrievable-asset-json exit=1
 key="$(../../tools/biomcp-ci --json get article 22663023 assets | jq -r '.coverage[] | select(.outcome == "pmc_proof_of_work") | .asset_key')"
-../../tools/biomcp-ci --json get article 22663023 asset "$key" 2>/dev/null | jq -r '.error | [.code, .message] | join("\n")' | mustmatch like "article_asset_not_retrievable
+set +e
+output="$(../../tools/biomcp-ci --json get article 22663023 asset "$key" 2>/dev/null)"
+code=$?
+set -e
+jq -r '.error | [.code, .message] | join("\n")' <<<"$output" | mustmatch like "article_asset_not_retrievable
 ncbi_interstitial
 NIHMS265402-supplement-Supplementary_Tables.xls
 https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/"
+exit "$code"
 ```
 
 ## Europe PMC Recovers Assets After a PMC Archive Failure
