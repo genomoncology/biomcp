@@ -43,6 +43,9 @@ def test_offline_runner_proves_network_boundary_and_local_transports() -> None:
     if shutil.which("bwrap") is None:
         pytest.fail("Linux routine gates require bubblewrap")
 
+    child_env = {"PATH": os.environ["PATH"]}
+    if marker := os.environ.get("BIOMCP_OFFLINE_NETWORK"):
+        child_env["BIOMCP_OFFLINE_NETWORK"] = marker
     completed = subprocess.run(
         [
             str(ROOT / "tools/run-offline"),
@@ -56,7 +59,7 @@ def test_offline_runner_proves_network_boundary_and_local_transports() -> None:
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        env={"PATH": os.environ["PATH"]},
+        env=child_env,
         timeout=20,
     )
 
