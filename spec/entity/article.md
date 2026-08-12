@@ -595,7 +595,7 @@ mkdir -p ../../.cache/biomcp-specs/downloads
 test "$(find ../../.cache/biomcp-specs/downloads -maxdepth 1 -type f -name '*.txt' | wc -l)" -ge 1
 ```
 
-## JATS Converter Keeps Evidence-Carrying Floats, Supplements, and Complex Table Markers
+## JATS Converter Keeps Evidence-Carrying Floats, Supplements, and Complex Table Cells
 
 Saved Markdown should surface evidence-bearing JATS content that is already
 present in the XML. Figures in the body and floats group, declared supplement
@@ -619,11 +619,30 @@ Supplementary Data S1
 Measurement traces for the treatment cohort.
 traces-s1.csv
 **Table 2.** Merged treatment table.
-*[complex table omitted: 2×3, merged cells]*
+*[Complex table: 2×3; merged-cell layout may be lossy. Raw source rows follow.]*
+Row 1: Group [rowspan=2] | Dose [colspan=2]
+Row 2: Low | High
 ```
 
 ```text expect=rendered-jats-fulltext not-contains
 ((Figure 2))
+complex table omitted
+```
+
+The real receipted NCBI EFetch response for PMID 30311380 passes through the
+production response normalizer and JATS renderer. Its six merged-cell tables
+are written to the saved Markdown with representative cells intact.
+
+```bash run id=receipted-complex-tables-saved exit=0
+rm -rf ../../.cache/biomcp-specs/downloads
+mkdir -p ../../.cache/biomcp-specs/downloads
+result="$(../../tools/biomcp-ci --json get article 30311380 fulltext)"
+path="$(jq -r '.full_text_path' <<<"$result")"
+test -f "$path"
+for cell in 'Pathogenic Criteria' 'Macrocephaly of >2 SD to <4 SD' 'Supporting (PS4_P): 1-1.5 points' 'Round 1 review –criteria applied' 'Round 1 review – criteria applied' 'ClinVar Status (as of 10.29.17)'; do rg -F "$cell" "$path" >/dev/null; done
+test "$(rg -F -c 'merged-cell layout may be lossy' "$path")" -eq 6
+! rg -F 'complex table omitted' "$path"
+mustmatch like '"full_text_path"' <<<"$result"
 ```
 
 ## Fulltext Provenance, Reuse, and Quality Metadata

@@ -335,10 +335,8 @@ fn convert_table_wrap(node: Node<'_, '_>) -> Vec<String> {
 
     if let Some(markdown) = convert_regular_table(table) {
         blocks.push(markdown);
-    } else if let Some((rows, cols)) = complex_table_dimensions(table) {
-        blocks.push(format!(
-            "*[complex table omitted: {rows}×{cols}, merged cells]*"
-        ));
+    } else if let Some(markdown) = convert_complex_table(table) {
+        blocks.push(markdown);
     }
     blocks
 }
@@ -467,6 +465,36 @@ fn complex_table_dimensions(table: Node<'_, '_>) -> Option<(usize, usize)> {
     } else {
         None
     }
+}
+
+fn convert_complex_table(table: Node<'_, '_>) -> Option<String> {
+    let (rows, cols) = complex_table_dimensions(table)?;
+    let mut lines = vec![format!(
+        "*[Complex table: {rows}×{cols}; merged-cell layout may be lossy. Raw source rows follow.]*"
+    )];
+    for (index, row) in table
+        .descendants()
+        .filter(|node| node.is_element() && node.has_tag_name("tr"))
+        .enumerate()
+    {
+        let cells = row
+            .children()
+            .filter(|cell| cell.is_element() && matches!(cell.tag_name().name(), "th" | "td"))
+            .map(|cell| {
+                let mut text = normalize_table_cell(&inline_text(cell));
+                for name in ["rowspan", "colspan"] {
+                    if let Some(value) = cell.attribute(name) {
+                        text.push_str(&format!(" [{name}={value}]"));
+                    }
+                }
+                text
+            })
+            .collect::<Vec<_>>();
+        if !cells.is_empty() {
+            lines.push(format!("Row {}: {}", index + 1, cells.join(" | ")));
+        }
+    }
+    Some(lines.join("\n"))
 }
 
 fn convert_list(node: Node<'_, '_>) -> Option<String> {

@@ -261,11 +261,14 @@ fn extract_text_from_jats_preserves_complex_table_cells_and_spans() {
 
 #[test]
 fn real_pmc6329583_capture_preserves_all_six_complex_tables() {
-    let xml = include_str!(concat!(
+    let response = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/ncbi_efetch/pmc6329583.xml"
     ));
-    let out = extract_text_from_xml(xml);
+    let xml = crate::sources::ncbi_efetch::normalize_article_xml(response)
+        .unwrap()
+        .unwrap();
+    let out = extract_text_from_xml(&xml);
     for sentinel in [
         "Pathogenic Criteria",
         "Macrocephaly of >2 SD to <4 SD",

@@ -54,6 +54,7 @@ PMC_OA_3040717_METADATA = source_bytes("pmc_oa/pmc3040717.1.json")
 PMC_OA_3040717_XML = source_bytes("pmc_oa/pmc3040717.1.xml")
 PMC_3040717_HTML = source_bytes("pmc_article/pmc3040717.html")
 NCBI_EFETCH_3040717 = source_bytes("ncbi_efetch/pmc3040717.xml")
+NCBI_EFETCH_6329583 = source_bytes("ncbi_efetch/pmc6329583.xml")
 SEMANTIC_SCHOLAR_20516115_BATCH = source_bytes("semantic_scholar/pmid20516115-batch.json")
 SEMANTIC_SCHOLAR_20516115_CITATIONS = source_bytes("semantic_scholar/pmid20516115-citations.json")
 SEMANTIC_SCHOLAR_20516115_REFERENCES = source_bytes("semantic_scholar/pmid20516115-references.json")
@@ -281,6 +282,12 @@ EUROPE_PMC_SUPPLEMENTARY_ZIP = make_europe_pmc_supplementary_zip()
 
 
 ARTICLES = {
+    "30311380": {
+        "pmcid": "PMC6329583",
+        "title": "Gene-Specific Criteria for PTEN Variant Curation",
+        "abstract": "Captured complex-table article.",
+        "paper_id": "paper-30311380",
+    },
     "22663011": {
         "pmcid": "PMC123456",
         "title": "Europe full text winner",
@@ -818,7 +825,7 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
-        if decoded_path in {"/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/PMC123466/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML", "/22663023/fullTextXML"}:
+        if decoded_path in {"/PMC6329583/fullTextXML", "/30311380/fullTextXML", "/PMC123457/fullTextXML", "/PMC123458/fullTextXML", "/PMC123460/fullTextXML", "/PMC123464/fullTextXML", "/PMC123465/fullTextXML", "/PMC123466/fullTextXML", "/22663012/fullTextXML", "/22663013/fullTextXML", "/22663016/fullTextXML", "/22663023/fullTextXML"}:
             send_text(self, 404, "not found", "text/plain")
             return
 
@@ -1109,6 +1116,10 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if decoded_path == "/efetch.fcgi":
+            if query.get("db") == ["pmc"] and query.get("id") == ["6329583"]:
+                append_request_log("fulltext:xml:ncbi-efetch-pmc6329583")
+                send_bytes(self, 200, NCBI_EFETCH_6329583, "application/xml")
+                return
             if (
                 query.get("db") == ["pubmed"]
                 and query.get("retmode") == ["xml"]
