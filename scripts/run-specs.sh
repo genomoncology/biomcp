@@ -250,6 +250,8 @@ cleanup_protein_fixture() {
 }
 
 run_protein_fixture() {
+  # Runner lifecycle tests intentionally copy only the fixture subset they exercise.
+  [[ -x spec/fixtures/setup-complexportal-spec-fixture.sh ]] || return 0
   bash spec/fixtures/setup-complexportal-spec-fixture.sh "$ROOT"
   source_if_present "$ROOT/.cache/spec-complexportal-env"
   register_cleanup cleanup_protein_fixture

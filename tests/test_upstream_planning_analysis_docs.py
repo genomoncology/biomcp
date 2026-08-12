@@ -1479,10 +1479,9 @@ def test_repo_local_parallel_test_contract_is_documented() -> None:
         "Python/static surface contracts live under `tests/surface/`"
         in technical_spec_section
     )
-    assert (
-        "plus gene, drug, diagnostic, trial, PGx, VAERS, and CLI/discover surfaces"
-        in technical_spec_section
-    )
+    assert "which is the canonical registry" in technical_spec_section
+    assert "Protein identity, structure, and complex cards" in technical_spec_section
+    assert "Makefile names only runner modes" in technical_spec_section
     assert "`tools/biomcp-ci`" in technical_spec_section
     assert "`make spec-smoke`" not in technical_spec_section
 
