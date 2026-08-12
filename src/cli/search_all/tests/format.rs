@@ -76,7 +76,7 @@ fn to_json_array_preserves_article_source_and_ranking_metadata() {
 }
 
 #[test]
-fn counts_only_json_projection_omits_results_links_and_total() {
+fn counts_only_json_projection_reports_truthful_exact_counts() {
     let results = SearchAllResults {
         query: "gene=BRAF".to_string(),
         sections: vec![SearchAllSection {
@@ -104,11 +104,40 @@ fn counts_only_json_projection_omits_results_links_and_total() {
 
     assert_eq!(section["entity"], "gene");
     assert_eq!(section["label"], "Genes");
-    assert_eq!(section["count"], 12);
+    assert_eq!(section["returned"], 1);
+    assert_eq!(section["total"], 12);
+    assert_eq!(section["count_exact"], true);
+    assert!(section["total_lower_bound"].is_null());
     assert_eq!(section["note"], "Counts-only projection");
     assert!(section.get("results").is_none());
     assert!(section.get("links").is_none());
-    assert!(section.get("total").is_none());
+}
+
+#[test]
+fn counts_only_json_uses_a_lower_bound_when_no_exact_total_exists() {
+    let results = SearchAllResults {
+        query: "gene=BRAF".to_string(),
+        sections: vec![SearchAllSection {
+            entity: "variant".to_string(),
+            label: "Variants".to_string(),
+            count: 2,
+            total: None,
+            error: None,
+            note: None,
+            results: vec![json!({"id":"one"}), json!({"id":"two"})],
+            links: Vec::new(),
+        }],
+        searches_dispatched: 1,
+        searches_with_results: 1,
+        wall_time_ms: 1,
+        debug_plan: None,
+    };
+    let value = serde_json::to_value(counts_only_json(&results)).expect("counts-only json");
+    let section = &value["sections"][0];
+    assert_eq!(section["returned"], 2);
+    assert!(section["total"].is_null());
+    assert_eq!(section["count_exact"], false);
+    assert_eq!(section["total_lower_bound"], 2);
 }
 
 #[test]

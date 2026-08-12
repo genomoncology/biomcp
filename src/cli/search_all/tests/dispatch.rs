@@ -66,7 +66,7 @@ fn section_fetch_limit_reduces_only_safe_counts_only_sections() {
         assert_eq!(section_fetch_limit(kind, &counts_only), 1, "{kind:?}");
     }
     assert_eq!(section_fetch_limit(SectionKind::Article, &counts_only), 1);
-    assert_eq!(section_fetch_limit(SectionKind::Article, &debug_plan), 7);
+    assert_eq!(section_fetch_limit(SectionKind::Article, &debug_plan), 1);
 
     for kind in [
         SectionKind::Variant,
@@ -128,7 +128,7 @@ fn search_all_pathway_section_surfaces_sanitized_wikipathways_error() {
         true,
     )
     .expect("counts-only markdown should render");
-    assert!(markdown.contains("## Pathways (0)"));
+    assert!(markdown.contains("## Pathways (unknown)"));
     assert!(markdown.contains("Error: API error from wikipathways: HTTP 404"));
     assert!(markdown.contains("HTML error page"));
     assert!(!markdown.contains("<!DOCTYPE"));

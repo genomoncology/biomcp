@@ -36,7 +36,6 @@ CLI_SURFACE_REQUIRED_EXCEPTIONS = {
     "biomcp cache path": "plain_text_operator_path",
     "biomcp --json list": "command_reference_payload",
     "biomcp --json version": "release_identity_payload",
-    "biomcp --json search all --counts-only": "current_counts_only_shape",
 }
 CLI_SURFACE_STATIC_TEXT_PATHS = [
     "src/cli/commands.rs",

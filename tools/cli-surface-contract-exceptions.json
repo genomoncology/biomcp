@@ -18,12 +18,6 @@
       "exception": "release_identity_payload",
       "reason": "Version JSON reports release identity and build metadata, not an entity/helper result that can suggest next commands.",
       "owner_test": "tests/test_cli_surface_contract_ratchet.py::test_cli_surface_contract_exception_registry_names_initial_exceptions"
-    },
-    {
-      "command": "biomcp --json search all --counts-only",
-      "exception": "current_counts_only_shape",
-      "reason": "Counts-only search-all currently returns a counts payload shape; this ticket records that current shape as an explicit exception instead of changing the public contract.",
-      "owner_test": "tests/test_cli_surface_contract_ratchet.py::test_cli_surface_contract_exception_registry_names_initial_exceptions"
     }
   ]
 }

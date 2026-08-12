@@ -39,7 +39,7 @@ pub struct SearchAllLink {
     pub command: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct SearchAllSection {
     pub entity: String,
     pub label: String,
@@ -49,6 +49,38 @@ pub struct SearchAllSection {
     pub note: Option<String>,
     pub results: Vec<Value>,
     pub links: Vec<SearchAllLink>,
+}
+
+impl SearchAllSection {
+    fn count_exact(&self) -> bool {
+        self.error.is_none() && self.total.is_some()
+    }
+
+    fn total_lower_bound(&self) -> Option<usize> {
+        (self.error.is_none() && self.total.is_none()).then_some(self.count)
+    }
+}
+
+impl Serialize for SearchAllSection {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("SearchAllSection", 12)?;
+        state.serialize_field("entity", &self.entity)?;
+        state.serialize_field("label", &self.label)?;
+        state.serialize_field("count", &self.count)?;
+        state.serialize_field("returned", &self.count)?;
+        state.serialize_field("total", &self.total)?;
+        state.serialize_field("count_exact", &self.count_exact())?;
+        state.serialize_field("total_lower_bound", &self.total_lower_bound())?;
+        state.serialize_field("error", &self.error)?;
+        state.serialize_field("note", &self.note)?;
+        state.serialize_field("results", &self.results)?;
+        state.serialize_field("links", &self.links)?;
+        state.end()
+    }
 }
 
 impl SearchAllSection {
@@ -87,7 +119,10 @@ pub(crate) struct SearchAllCountsOnlyJson<'a> {
 pub(crate) struct SearchAllCountsOnlySection<'a> {
     pub entity: &'a str,
     pub label: &'a str,
-    pub count: usize,
+    pub returned: usize,
+    pub total: Option<usize>,
+    pub count_exact: bool,
+    pub total_lower_bound: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub note: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -103,7 +138,10 @@ pub(crate) fn counts_only_json(results: &SearchAllResults) -> SearchAllCountsOnl
             .map(|section| SearchAllCountsOnlySection {
                 entity: &section.entity,
                 label: &section.label,
-                count: section.total.unwrap_or(section.count),
+                returned: section.count,
+                total: section.total,
+                count_exact: section.count_exact(),
+                total_lower_bound: section.total_lower_bound(),
                 note: section.note.as_deref(),
                 error: section.error.as_deref(),
             })

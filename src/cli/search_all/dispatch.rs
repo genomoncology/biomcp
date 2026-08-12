@@ -396,13 +396,12 @@ pub(super) fn section_fetch_limit(kind: SectionKind, input: &PreparedInput) -> u
     // safely collapse sections backed by stable totals to a single fetched row.
     match kind {
         SectionKind::Gene | SectionKind::Disease | SectionKind::Trial | SectionKind::Pgx => 1,
-        SectionKind::Article if !input.debug_plan => 1,
+        SectionKind::Article => 1,
         SectionKind::Variant
         | SectionKind::Drug
         | SectionKind::Pathway
         | SectionKind::Gwas
-        | SectionKind::AdverseEvent
-        | SectionKind::Article => input.limit,
+        | SectionKind::AdverseEvent => input.limit,
     }
 }
 

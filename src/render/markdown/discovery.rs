@@ -13,7 +13,7 @@ pub fn search_all_markdown(
     struct SearchAllSectionView {
         entity: String,
         label: String,
-        heading_count: usize,
+        count_label: String,
         error: Option<String>,
         note: Option<String>,
         links: Vec<crate::cli::search_all::SearchAllLink>,
@@ -31,15 +31,19 @@ pub fn search_all_markdown(
             } else {
                 section.markdown_rows()
             };
-            let heading_count = if counts_only {
-                section.total.unwrap_or(section.count)
+            let count_label = if section.error.is_some() {
+                "unknown".to_string()
+            } else if let Some(total) = section.total {
+                total.to_string()
+            } else if section.count > 0 {
+                format!("at least {}", section.count)
             } else {
-                rows.len()
+                "at least 0".to_string()
             };
             SearchAllSectionView {
                 entity: section.entity.clone(),
                 label: section.label.clone(),
-                heading_count,
+                count_label,
                 error: section.error.clone(),
                 note: section.note.clone(),
                 links: section.links.clone(),
