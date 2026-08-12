@@ -55,7 +55,6 @@ while [[ ! -s "$tmp/port" ]]; do sleep 0.05; done
 fixture_port="$(<"$tmp/port")"
 export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$fixture_port"
 export BIOMCP_CACHE_MODE=off
-export BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_CLINGEN_EREPO_BASE"
 
 markdown="$($binary variant erepo CA015543)"
 summary="$($binary --json variant erepo CA015543)"
