@@ -853,7 +853,7 @@ def test_chart_rendering_architecture_doc_matches_repo_contract() -> None:
     )
     assert "terminal" in chart_section
     assert "SVG file" in chart_section
-    assert "PNG file behind the `charts-png` feature" in chart_section
+    assert "PNG file in every standard BioMCP artifact" in chart_section
     assert "MCP inline SVG" in chart_section
     assert "`--cols` and `--rows` size terminal output" in chart_section
     assert (
@@ -1166,7 +1166,7 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     runner = _read_repo("scripts/run-specs.sh")
     cargo_toml = _read_repo("Cargo.toml")
     assert (
-        ".PHONY: build test lint check-quality-ratchet full-feature-check release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
+        ".PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev"
         in makefile
     )
     assert "SPEC_PR_DESELECT_ARGS" not in makefile

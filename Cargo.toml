@@ -110,7 +110,7 @@ htmd = "0.5.4"
 unpdf = "0.4.5"
 
 [features]
-default = ["alphagenome"]
+default = ["alphagenome", "charts-png"]
 alphagenome = ["dep:tonic", "dep:prost", "dep:zstd"]
 charts-png = ["kuva/png"]
 

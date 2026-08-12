@@ -1,4 +1,4 @@
-.PHONY: build test lint check-quality-ratchet full-feature-check release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
+.PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
 .PHONY: output-footprint
 
 SPEC_PROFILE ?= spec
@@ -36,6 +36,10 @@ full-feature-check:
 	$(CARGO_WITH_IDENTITY) clippy --locked --all-targets --all-features -- -D warnings
 	$(CARGO_WITH_IDENTITY) test --locked --all-features --lib sources::alphagenome::tests
 	$(CARGO_WITH_IDENTITY) build --release --locked --all-features --bin biomcp
+	tools/check-png-artifact target/release/biomcp
+
+png-artifact-smoke: build
+	tools/check-png-artifact target/release/biomcp
 
 release-gate: lint
 	$(MAKE) test

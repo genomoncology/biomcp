@@ -10,7 +10,7 @@ Survival charts render Kaplan-Meier step curves for mutation-defined study cohor
 
 - `--terminal` for an in-terminal step plot
 - `-o file.svg` for SVG output
-- `-o file.png` for PNG output when BioMCP is built with `--features charts-png`
+- `-o file.png` for PNG output (included in standard BioMCP installations)
 
 ## Examples
 

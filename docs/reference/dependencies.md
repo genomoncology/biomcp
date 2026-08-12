@@ -17,7 +17,7 @@ HTML, and PDF text extraction.
 
 ### Kuva — Charting
 
-[Kuva](https://github.com/Psy-Fer/kuva) (v0.1.4) is the charting engine behind BioMCP's `--chart` flag. BioMCP currently exposes 12 chart modes (`bar`, `stacked-bar`, `pie`, `waterfall`, `heatmap`, `histogram`, `density`, `box`, `violin`, `ridgeline`, `scatter`, `survival`) backed by Kuva plots and rendered to terminal, SVG, and PNG.
+[Kuva](https://github.com/Psy-Fer/kuva) (v0.1.4) is the charting engine behind BioMCP's `--chart` flag. BioMCP currently exposes 12 chart modes (`bar`, `stacked-bar`, `pie`, `waterfall`, `heatmap`, `histogram`, `density`, `box`, `violin`, `ridgeline`, `scatter`, `survival`) backed by Kuva plots and rendered to terminal, SVG, and PNG. PNG support is included in Cargo's default features and therefore in standard native, wheel, and container builds; source builders may deliberately use `--no-default-features` for a smaller build.
 
 Kuva is linked as a Rust library, not called as a subprocess. Charts are generated in-process with no additional runtime dependencies.
 

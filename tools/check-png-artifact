@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+binary="${1:-$repo_root/target/release/biomcp}"
+[[ -x "$binary" ]] || {
+  printf 'BioMCP artifact is missing or not executable: %s\n' "$binary" >&2
+  exit 1
+}
+
+output_dir="$(mktemp -d)"
+cleanup() {
+  rm -rf "$output_dir"
+}
+trap cleanup EXIT
+bash "$repo_root/spec/fixtures/setup-study-spec-fixture.sh" "$repo_root"
+# shellcheck source=/dev/null
+. "$repo_root/.cache/spec-study-env"
+export BIOMCP_STUDY_DIR
+
+"$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
+  --output "$output_dir/default.png" >/dev/null
+"$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
+  --output "$output_dir/scaled.png" --scale 3 >/dev/null
+"$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
+  --output "$output_dir/chart.svg" >/dev/null
+"$binary" study query --study msk_impact_2017 --gene TP53 --type mutations --chart bar \
+  --terminal >/dev/null
+
+python3 - "$output_dir/default.png" "$output_dir/scaled.png" "$output_dir/chart.svg" <<'PY'
+from pathlib import Path
+import sys
+
+signature = b"\x89PNG\r\n\x1a\n"
+for value in sys.argv[1:3]:
+    payload = Path(value).read_bytes()
+    assert len(payload) > len(signature) and payload.startswith(signature), value
+svg = Path(sys.argv[3]).read_text()
+assert "<svg" in svg
+PY
+
+printf 'PNG, SVG, and terminal artifact smoke passed for %s\n' "$binary"

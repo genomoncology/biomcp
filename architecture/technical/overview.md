@@ -210,8 +210,9 @@ data-shape matrix enforced in code:
 | `study compare --type mutations` | `bar`, `stacked-bar` |
 | `study survival` | `bar`, `survival` |
 
-The renderer targets terminal, SVG file, PNG file behind the `charts-png`
-feature, and MCP inline SVG output. Every dynamic title, label, category, and
+The renderer targets terminal, SVG file, PNG file in every standard BioMCP
+artifact, and MCP inline SVG output. Source builders can still opt out of PNG
+support by disabling default Cargo features. Every dynamic title, label, category, and
 legend is sanitized before it enters the chart backend. Completed terminal chart
 output is not scrubbed because the backend's own ANSI styling is trusted and
 intentional. `--cols` and `--rows` size terminal
