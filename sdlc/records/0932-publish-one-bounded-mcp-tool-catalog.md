@@ -1,6 +1,6 @@
 ---
 base: cdba3e9a
-head: a65f4b8d
+head: fd74a68d
 ---
 
 One typed Rust catalog now owns the intentional seven-tool MCP inventory,
