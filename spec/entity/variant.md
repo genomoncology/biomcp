@@ -316,7 +316,9 @@ Cancerhotspots'
 ```
 
 ```bash
-../../tools/biomcp-ci --json list variant | jq -r '.commands[]' | mustmatch like 'variant structure <variant>'
+../../tools/biomcp-ci --json list variant \
+  | jq -r '.entries[] | select(.kind == "template") | .template' \
+  | mustmatch like 'variant structure <variant>'
 ```
 
 ## Variant Structure Blog Walkthrough
@@ -786,5 +788,6 @@ output so agents can find it without trying hidden `get variant` rewrites.
 ```bash
 ../../tools/biomcp-ci variant normalize --help | mustmatch like 'all, mutalyzer, or variantvalidator
 NM_000248.3:c.135del'
-../../tools/biomcp-ci --json list variant | jq -e '.commands | any(. == "variant normalize <service> <transcript_hgvs>")' >/dev/null
+../../tools/biomcp-ci --json list variant \
+  | jq -e '.entries | any(.kind == "template" and .template == "variant normalize <service> <transcript_hgvs>")' >/dev/null
 ```

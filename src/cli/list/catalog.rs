@@ -116,10 +116,11 @@ fn entity_entries(name: &str) -> Vec<CatalogEntry> {
         output.push(template("commands", &format!("get {name} <{identifier}>")));
     }
     if name == "variant" {
-        output.push(template(
-            "helpers",
-            "variant articles <id> --strategy <strategy>",
-        ));
+        output.extend([
+            template("helpers", "variant articles <id> --strategy <strategy>"),
+            template("helpers", "variant structure <variant>"),
+            template("helpers", "variant normalize <service> <transcript_hgvs>"),
+        ]);
     }
     output
 }
@@ -218,6 +219,9 @@ fn placeholder_type(name: &str) -> &'static str {
         "genes" => "comma_separated_gene_symbols",
         "strategy" => "enum:union|annotation|lexical",
         "number_or_slug" => "skill_identifier",
+        "service" => "enum:all|mutalyzer|variantvalidator",
+        "transcript_hgvs" => "transcript_hgvs",
+        "variant" => "variant",
         "name" | "query" => "text",
         _ => "text",
     }

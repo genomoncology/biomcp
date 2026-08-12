@@ -108,6 +108,20 @@ fn list_skill_json_contains_real_commands_without_duplicates() {
 }
 
 #[test]
+fn list_variant_json_keeps_helper_commands_discoverable() {
+    let out = render_json(Some("variant")).expect("list variant JSON should render");
+    let value: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
+    let templates = value["entries"]
+        .as_array()
+        .expect("typed entries")
+        .iter()
+        .filter_map(|entry| entry.get("template").and_then(serde_json::Value::as_str))
+        .collect::<Vec<_>>();
+    assert!(templates.contains(&"variant structure <variant>"));
+    assert!(templates.contains(&"variant normalize <service> <transcript_hgvs>"));
+}
+
+#[test]
 fn list_root_primary_discovery_lines_stay_terminal_friendly() {
     let out = render(None).expect("list root should render");
     let overwide: Vec<_> = out
