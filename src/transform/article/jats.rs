@@ -13,8 +13,10 @@ use super::{
 
 mod refs;
 mod supplements;
+mod tables;
 use self::refs::render_references;
 pub(crate) use self::supplements::extract_jats_supplement_links;
+use self::tables::{convert_complex_table, convert_regular_table};
 
 pub(crate) fn classify_jats_document(
     xml: &str,
@@ -392,111 +394,6 @@ fn push_unique_filename(files: &mut Vec<String>, value: &str) {
     }
 }
 
-fn convert_regular_table(table: Node<'_, '_>) -> Option<String> {
-    let mut rows = Vec::new();
-
-    for row in table
-        .descendants()
-        .filter(|node| node.is_element() && node.has_tag_name("tr"))
-    {
-        let mut cells = Vec::new();
-        for cell in row.children().filter(|child| child.is_element()) {
-            let tag = cell.tag_name().name();
-            if !matches!(tag, "th" | "td") {
-                continue;
-            }
-            if cell.attribute("rowspan").is_some() || cell.attribute("colspan").is_some() {
-                return None;
-            }
-            cells.push(normalize_table_cell(&inline_text(cell)));
-        }
-        if !cells.is_empty() && cells.iter().any(|cell| !cell.is_empty()) {
-            rows.push(cells);
-        }
-    }
-
-    let first = rows.first()?;
-    let width = first.len();
-    if width == 0 || rows.iter().any(|row| row.len() != width) {
-        return None;
-    }
-
-    let mut lines = Vec::with_capacity(rows.len() + 1);
-    lines.push(format!("| {} |", first.join(" | ")));
-    lines.push(format!("| {} |", vec!["---"; width].join(" | ")));
-    for row in rows.iter().skip(1) {
-        lines.push(format!("| {} |", row.join(" | ")));
-    }
-    Some(lines.join("\n"))
-}
-
-fn complex_table_dimensions(table: Node<'_, '_>) -> Option<(usize, usize)> {
-    let mut has_merged_cells = false;
-    let mut row_count = 0;
-    let mut max_cols = 0;
-
-    for row in table
-        .descendants()
-        .filter(|node| node.is_element() && node.has_tag_name("tr"))
-    {
-        let mut cols = 0;
-        for cell in row.children().filter(|child| child.is_element()) {
-            let tag = cell.tag_name().name();
-            if !matches!(tag, "th" | "td") {
-                continue;
-            }
-            if cell.attribute("rowspan").is_some() || cell.attribute("colspan").is_some() {
-                has_merged_cells = true;
-            }
-            cols += cell
-                .attribute("colspan")
-                .and_then(|value| value.parse::<usize>().ok())
-                .filter(|value| *value > 0)
-                .unwrap_or(1);
-        }
-        if cols > 0 {
-            row_count += 1;
-            max_cols = max_cols.max(cols);
-        }
-    }
-
-    if has_merged_cells && row_count > 0 && max_cols > 0 {
-        Some((row_count, max_cols))
-    } else {
-        None
-    }
-}
-
-fn convert_complex_table(table: Node<'_, '_>) -> Option<String> {
-    let (rows, cols) = complex_table_dimensions(table)?;
-    let mut lines = vec![format!(
-        "*[Complex table: {rows}×{cols}; merged-cell layout may be lossy. Raw source rows follow.]*"
-    )];
-    for (index, row) in table
-        .descendants()
-        .filter(|node| node.is_element() && node.has_tag_name("tr"))
-        .enumerate()
-    {
-        let cells = row
-            .children()
-            .filter(|cell| cell.is_element() && matches!(cell.tag_name().name(), "th" | "td"))
-            .map(|cell| {
-                let mut text = normalize_table_cell(&inline_text(cell));
-                for name in ["rowspan", "colspan"] {
-                    if let Some(value) = cell.attribute(name) {
-                        text.push_str(&format!(" [{name}={value}]"));
-                    }
-                }
-                text
-            })
-            .collect::<Vec<_>>();
-        if !cells.is_empty() {
-            lines.push(format!("Row {}: {}", index + 1, cells.join(" | ")));
-        }
-    }
-    Some(lines.join("\n"))
-}
-
 fn convert_list(node: Node<'_, '_>) -> Option<String> {
     let ordered = node
         .attribute("list-type")
@@ -709,10 +606,6 @@ fn append_ext_link(node: Node<'_, '_>, out: &mut String) {
 fn find_child<'a, 'input>(node: Node<'a, 'input>, name: &str) -> Option<Node<'a, 'input>> {
     node.children()
         .find(|child| child.is_element() && child.has_tag_name(name))
-}
-
-fn normalize_table_cell(value: &str) -> String {
-    collapse_whitespace(value).replace('|', "\\|")
 }
 
 fn join_blocks(blocks: Vec<String>) -> String {
