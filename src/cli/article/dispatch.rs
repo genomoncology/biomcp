@@ -7,7 +7,6 @@ use super::{
     article_search_warning,
 };
 use crate::cli::CommandOutcome;
-
 fn extract_pdf_from_sections(sections: &[String]) -> (Vec<String>, bool) {
     let mut allow_pdf = false;
     let cleaned = sections
@@ -83,7 +82,6 @@ pub(in crate::cli) async fn handle_get(
 
 #[cfg(test)]
 mod workflow_tests;
-
 pub(super) fn resolved_article_date_bounds(
     args: &ArticleSearchArgs,
 ) -> (Option<String>, Option<String>) {
