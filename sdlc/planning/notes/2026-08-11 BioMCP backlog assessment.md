@@ -391,3 +391,17 @@ sessions.
 - Recount the backlog after each merge. The expected counts are 53 after the
   eight-ticket session, 46 after the installer session, and 39 after the
   article session.
+
+## Installed-binary lifecycle result — 2026-08-12
+
+The seven-ticket session completed in one persistent worktree. Installation,
+Unix update, and uninstall now share one receipt-based ownership contract with
+unique same-directory staging, pre-commit version smoke, sync, pending-state
+recovery, and one binary rename. Package-managed binaries are never mutated.
+Windows self-update points to the installer. The checksum bypass and automatic
+shell-startup edits were removed.
+
+`make lint`, `make test` (2,875 Rust tests and 511 Python contracts), `make
+spec`, and `make full-feature-check` passed. The cold all-feature release build
+remained the dominant gate at 5m28s; focused lifecycle tests run in seconds once
+their build profile exists. The active backlog is now 46.
