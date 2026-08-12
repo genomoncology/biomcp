@@ -183,8 +183,8 @@ biomcp --json --no-cache get variant '{{input}}' \
 
 A bare coordinate is probed in both builds only when needed. A GRCh38-only
 coordinate resolves as GRCh38. When both builds have different records,
-BioMCP preserves the GRCh37-compatible default and makes the competing
-identity explicit instead of silently selecting a build.
+BioMCP prefers GRCh38 and makes the competing GRCh37 identity explicit instead
+of silently discarding it.
 
 ```bash
 biomcp --json --no-cache get variant 'chr7:g.140753336A>T' \
@@ -195,7 +195,7 @@ biomcp --json --no-cache get variant 'chr7:g.140753336A>T' \
 ```bash
 biomcp --json --no-cache get variant 'chr10:g.87933119A>C' \
   | jq '{id, rsid, genome_build, build_ambiguous, build_candidates: [.build_candidates[]? | {genome_build, id, rsid}] | sort_by(.genome_build)}' \
-  | mustmatch like '{"id":"chr10:g.87933119A>C","rsid":"rs1212585646","genome_build":"GRCh37","build_ambiguous":true,"build_candidates":[{"genome_build":"GRCh37","id":"chr10:g.87933119A>C","rsid":"rs1212585646"},{"genome_build":"GRCh38","id":"chr10:g.87933119A>C","rsid":"rs759485888"}]}'
+  | mustmatch like '{"id":"chr10:g.87933119A>C","rsid":"rs759485888","genome_build":"GRCh38","build_ambiguous":true,"build_candidates":[{"genome_build":"GRCh37","id":"chr10:g.87933119A>C","rsid":"rs1212585646"}]}'
 ```
 
 ## Documented coordinate grammar
