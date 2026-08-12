@@ -512,7 +512,7 @@ async fn run_outcome_inner(
     }
 }
 
-pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
+async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome> {
     let json = cli.json || command_requests_json(&cli.command);
     let trusted_terminal_chart = is_charted_mcp_study_command(&cli).unwrap_or(false);
     let contract = JsonResponseContract::for_command(&cli.command);
@@ -556,7 +556,7 @@ async fn run_outcome_with_worker_stack(
                 if alias_suggestions_as_json {
                     runtime.block_on(run_outcome_inner(cli, true))
                 } else {
-                    runtime.block_on(run_outcome(cli))
+                    runtime.block_on(run_outcome_on_current_stack(cli))
                 }
             })?;
 
@@ -566,6 +566,12 @@ async fn run_outcome_with_worker_stack(
     })
     .await
     .map_err(|err| anyhow::anyhow!("failed to join in-process CLI worker: {err}"))?
+}
+
+/// Execute a parsed CLI command on the bounded worker stack used by every
+/// in-process caller, including the native CLI and MCP transports.
+pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
+    run_outcome_with_worker_stack(cli, false).await
 }
 /// Main CLI execution - called by the MCP `biomcp` tool.
 ///
