@@ -443,6 +443,7 @@ fn markdown_detail_outputs_label_variant_protein_pgx_and_openfda_sources() {
     assert!(protein_markdown.contains("## Complexes (ComplexPortal)"));
 
     let pgx = Pgx {
+        section_pagination: std::collections::BTreeMap::new(),
         section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
         query: "CYP2D6".to_string(),
         gene: Some("CYP2D6".to_string()),

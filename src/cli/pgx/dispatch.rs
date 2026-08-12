@@ -16,7 +16,13 @@ pub(in crate::cli) async fn handle_get(
 ) -> anyhow::Result<CommandOutcome> {
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let json_output = json || json_override;
-    let pgx = crate::entities::pgx::get(&args.query, &sections).await?;
+    let options = crate::entities::pgx::PgxGetOptions {
+        sections: sections.clone(),
+        limit: args.limit,
+        offset: args.offset,
+        full: args.full,
+    };
+    let pgx = crate::entities::pgx::get_with_options(&args.query, &options).await?;
     let text = if json_output {
         crate::render::json::to_entity_json(
             &pgx,

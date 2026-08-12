@@ -15,6 +15,7 @@ In BioMCP, CPIC supplies the core `get pgx <gene_or_drug>` card plus recommendat
 |---|---|---|
 | `search pgx` | PGx matches for genes and drugs | Search is aligned to the CPIC-backed workflow |
 | `get pgx <gene_or_drug>` | Core PGx card for a gene or drug | CPIC-backed base view |
+| `get pgx <gene_or_drug> interactions` | Bounded gene-drug interaction page | CPIC pair view |
 | `get pgx <gene_or_drug> recommendations` | Dosing and action recommendations | CPIC recommendations section |
 | `get pgx <gene_or_drug> frequencies` | Allele frequency context | CPIC frequencies section |
 | `get pgx <gene_or_drug> guidelines` | Guideline references and summaries | CPIC guidelines section |

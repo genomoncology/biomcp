@@ -676,6 +676,7 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
     ),
     selector("variant", "gwas", SelectorClass::Canonical, Some("gwas")),
     selector("variant", "all", SelectorClass::Aggregate, None),
+    selector("pgx", "interactions", SelectorClass::Local, None),
     selector("pgx", "recommendations", SelectorClass::Local, None),
     selector(
         "pgx",

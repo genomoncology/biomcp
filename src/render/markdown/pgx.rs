@@ -11,6 +11,8 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
     let include_all = has_all_section(requested_sections);
     let requested = requested_section_names(requested_sections);
     let has_requested = |name: &str| requested.iter().any(|s| s.eq_ignore_ascii_case(name));
+    let show_interactions_section =
+        requested.is_empty() || include_all || has_requested("interactions");
     let show_recommendations_section = include_all || has_requested("recommendations");
     let show_frequencies_section = include_all || has_requested("frequencies");
     let show_guidelines_section = include_all || has_requested("guidelines");
@@ -33,6 +35,8 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
         guidelines => &pgx.guidelines,
         annotations => &pgx.annotations,
         annotations_note => &pgx.annotations_note,
+        section_pagination => &pgx.section_pagination,
+        show_interactions_section => show_interactions_section,
         show_recommendations_section => show_recommendations_section,
         show_frequencies_section => show_frequencies_section,
         show_guidelines_section => show_guidelines_section,

@@ -20,6 +20,7 @@ Affected Genes: {% for row in interactions -%}{{ row.genesymbol }}{% if not loop
 {% endif -%}
 {% endif -%}
 
+{% if show_interactions_section -%}
 ## Interactions (CPIC)
 
 {% if interactions -%}
@@ -30,6 +31,10 @@ Affected Genes: {% for row in interactions -%}{{ row.genesymbol }}{% if not loop
 {% endfor -%}
 {% else -%}
 No PGx interactions found.
+{% endif -%}
+{% if section_pagination.interactions and section_pagination.interactions.next_offset is not none -%}
+Next: `biomcp get pgx {{ query }} interactions --offset {{ section_pagination.interactions.next_offset }} --limit {{ section_pagination.interactions.limit }}`
+{% endif -%}
 {% endif -%}
 
 {% if show_recommendations_section -%}
@@ -43,6 +48,9 @@ No PGx interactions found.
 {% endfor -%}
 {% else -%}
 No CPIC recommendations found for this query.
+{% endif -%}
+{% if section_pagination.recommendations and section_pagination.recommendations.next_offset is not none -%}
+Next: `biomcp get pgx {{ query }} recommendations --offset {{ section_pagination.recommendations.next_offset }} --limit {{ section_pagination.recommendations.limit }}`
 {% endif -%}
 {% endif -%}
 
@@ -58,6 +66,9 @@ No CPIC recommendations found for this query.
 {% else -%}
 No CPIC population frequencies found for this query.
 {% endif -%}
+{% if section_pagination.frequencies and section_pagination.frequencies.next_offset is not none -%}
+Next: `biomcp get pgx {{ query }} frequencies --offset {{ section_pagination.frequencies.next_offset }} --limit {{ section_pagination.frequencies.limit }}`
+{% endif -%}
 {% endif -%}
 
 {% if show_guidelines_section -%}
@@ -71,6 +82,9 @@ No CPIC population frequencies found for this query.
 {% endfor -%}
 {% else -%}
 No CPIC guideline metadata found for this query.
+{% endif -%}
+{% if section_pagination.guidelines and section_pagination.guidelines.next_offset is not none -%}
+Next: `biomcp get pgx {{ query }} guidelines --offset {{ section_pagination.guidelines.next_offset }} --limit {{ section_pagination.guidelines.limit }}`
 {% endif -%}
 {% endif -%}
 
@@ -88,6 +102,9 @@ No PharmGKB annotations found for this query.
 {% endif -%}
 {% if annotations_note -%}
 {{ annotations_note }}
+{% endif -%}
+{% if section_pagination.annotations and section_pagination.annotations.next_offset is not none -%}
+Next: `biomcp get pgx {{ query }} annotations --offset {{ section_pagination.annotations.next_offset }} --limit {{ section_pagination.annotations.limit }}`
 {% endif -%}
 {% endif -%}
 

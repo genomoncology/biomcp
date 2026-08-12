@@ -34,12 +34,18 @@ levels. Use `--limit` and `--offset` for bounded paging.
 biomcp get pgx CYP2D6
 ```
 
-The base PGX card summarizes affected drugs and the guideline context tied to
-the gene or drug you queried.
+The default card returns only the first 10 CPIC interactions. Use `--limit`
+(1-50) and `--offset` to page that bounded list.
 
 ## Request PGX sections
 
 Retrieve detailed PGX data for a gene-drug pair by section.
+
+Interactions explicitly:
+
+```bash
+biomcp get pgx CYP2D6 interactions --limit 10 --offset 10
+```
 
 Dosing recommendations:
 
@@ -65,21 +71,27 @@ PharmGKB annotations:
 biomcp get pgx CYP2D6 annotations
 ```
 
-All sections at once:
+All sections at once, capped at 50 rows per section:
 
 ```bash
-biomcp get pgx CYP2D6 all
+biomcp get pgx CYP2D6 --full
 ```
 
 ### Available sections
 
 | Section | Content |
 |---------|---------|
+| `interactions` | CPIC gene-drug interactions |
 | `recommendations` | CPIC dosing recommendations |
 | `frequencies` | Allele frequency data |
 | `guidelines` | Published clinical guidelines |
 | `annotations` | PharmGKB clinical annotations |
 | `all` | All sections combined |
+
+A named section returns only identity, provenance, and that section. Multiple
+sections may be requested together at offset zero. To follow a continuation,
+request its section alone with the advertised `--offset`; nonzero offsets with
+multiple sections or `--full` are rejected before provider work.
 
 ## Helper commands
 
@@ -103,7 +115,7 @@ survive. PharmGKB annotation failures are `unavailable`; healthy no-results are
 ## Practical tips
 
 - Start with `search pgx` when you only know the gene or drug and need the matching guideline rows first.
-- Use section-specific `get pgx` calls when you need only recommendations, frequencies, guidelines, or annotations.
+- Use section-specific `get pgx` calls when you need only interactions, recommendations, frequencies, guidelines, or annotations.
 - Keep CPIC level filters tight when you want high-confidence dosing guidance.
 
 ## Related guides

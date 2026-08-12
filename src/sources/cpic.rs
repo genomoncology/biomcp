@@ -32,6 +32,17 @@ impl CpicClient {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_test_client(
+        client: reqwest_middleware::ClientWithMiddleware,
+        base: impl Into<Cow<'static, str>>,
+    ) -> Self {
+        Self {
+            client,
+            base: base.into(),
+        }
+    }
+
     pub(crate) fn pairs_by_gene_plan(
         gene_symbol: &str,
         limit: usize,
@@ -63,21 +74,41 @@ impl CpicClient {
             .query("order", "cpiclevel.asc,genesymbol.asc"))
     }
 
+    #[cfg(test)]
     pub(crate) fn recommendations_by_gene_plan(
         gene_symbol: &str,
         limit: usize,
+    ) -> Result<RequestPlan, BioMcpError> {
+        Self::recommendations_by_gene_page_plan(gene_symbol, limit, 0)
+    }
+
+    pub(crate) fn recommendations_by_gene_page_plan(
+        gene_symbol: &str,
+        limit: usize,
+        offset: usize,
     ) -> Result<RequestPlan, BioMcpError> {
         let gene_symbol = normalize_gene_symbol(gene_symbol)?;
         let limit = limit.clamp(1, 200);
         Ok(RequestPlan::get("recommendation_view")
             .query(format!("lookupkey->>{gene_symbol}"), "not.is.null")
             .query("select", "*")
-            .query("limit", limit.to_string()))
+            .query("limit", limit.to_string())
+            .query("offset", offset.to_string())
+            .query("order", "drugname.asc,recommendationid.asc"))
     }
 
+    #[cfg(test)]
     pub(crate) fn recommendations_by_drug_plan(
         drug_name: &str,
         limit: usize,
+    ) -> Result<RequestPlan, BioMcpError> {
+        Self::recommendations_by_drug_page_plan(drug_name, limit, 0)
+    }
+
+    pub(crate) fn recommendations_by_drug_page_plan(
+        drug_name: &str,
+        limit: usize,
+        offset: usize,
     ) -> Result<RequestPlan, BioMcpError> {
         let drug_name = normalize_drug_name(drug_name)?;
         let limit = limit.clamp(1, 200);
@@ -85,24 +116,46 @@ impl CpicClient {
         Ok(RequestPlan::get("recommendation_view")
             .query("drugname", like)
             .query("select", "*")
-            .query("limit", limit.to_string()))
+            .query("limit", limit.to_string())
+            .query("offset", offset.to_string())
+            .query("order", "drugname.asc,recommendationid.asc"))
     }
 
+    #[cfg(test)]
     pub(crate) fn frequencies_by_gene_plan(
         gene_symbol: &str,
         limit: usize,
+    ) -> Result<RequestPlan, BioMcpError> {
+        Self::frequencies_by_gene_page_plan(gene_symbol, limit, 0)
+    }
+
+    pub(crate) fn frequencies_by_gene_page_plan(
+        gene_symbol: &str,
+        limit: usize,
+        offset: usize,
     ) -> Result<RequestPlan, BioMcpError> {
         let gene_symbol = normalize_gene_symbol(gene_symbol)?;
         let limit = limit.clamp(1, 200);
         Ok(RequestPlan::get("population_frequency_view")
             .query("genesymbol", format!("eq.{gene_symbol}"))
             .query("select", "*")
-            .query("limit", limit.to_string()))
+            .query("limit", limit.to_string())
+            .query("offset", offset.to_string())
+            .query("order", "genesymbol.asc,allele.asc"))
     }
 
+    #[cfg(test)]
     pub(crate) fn guidelines_by_gene_plan(
         gene_symbol: &str,
         limit: usize,
+    ) -> Result<RequestPlan, BioMcpError> {
+        Self::guidelines_by_gene_page_plan(gene_symbol, limit, 0)
+    }
+
+    pub(crate) fn guidelines_by_gene_page_plan(
+        gene_symbol: &str,
+        limit: usize,
+        offset: usize,
     ) -> Result<RequestPlan, BioMcpError> {
         let gene_symbol = normalize_gene_symbol(gene_symbol)?;
         let limit = limit.clamp(1, 200);
@@ -110,7 +163,9 @@ impl CpicClient {
         Ok(RequestPlan::get("guideline_summary_view")
             .query("genes", filter)
             .query("select", "*")
-            .query("limit", limit.to_string()))
+            .query("limit", limit.to_string())
+            .query("offset", offset.to_string())
+            .query("order", "guidelinename.asc"))
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
@@ -136,29 +191,6 @@ impl CpicClient {
         let total = parse_content_range_total(headers);
         let rows = Self::decode_json_response(status, content_type, bytes)?;
         Ok(CpicPage { rows, total })
-    }
-
-    async fn get_json<T: DeserializeOwned>(
-        &self,
-        req: reqwest_middleware::RequestBuilder,
-    ) -> Result<T, BioMcpError> {
-        let resp = crate::sources::apply_cache_mode(req)
-            .send_with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::CPIC,
-            ))
-            .await?;
-        let status = resp.status();
-        let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
-        let bytes = crate::sources::read_limited_source_body(
-            resp,
-            crate::error::SourceContext::narrow(crate::error::SourceProvider::CPIC),
-        )
-        .await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
-            error.with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::CPIC,
-            ))
-        })
     }
 
     async fn get_json_with_total<T: DeserializeOwned>(
@@ -187,14 +219,6 @@ impl CpicClient {
         )
     }
 
-    pub async fn pairs_by_gene(
-        &self,
-        gene_symbol: &str,
-        limit: usize,
-    ) -> Result<Vec<CpicPairRow>, BioMcpError> {
-        Ok(self.pairs_by_gene_page(gene_symbol, limit, 0).await?.rows)
-    }
-
     pub async fn pairs_by_gene_page(
         &self,
         gene_symbol: &str,
@@ -202,16 +226,11 @@ impl CpicClient {
         offset: usize,
     ) -> Result<CpicPage<Vec<CpicPairRow>>, BioMcpError> {
         let plan = Self::pairs_by_gene_plan(gene_symbol, limit, offset)?;
-        self.get_json_with_total(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
-    }
-
-    pub async fn pairs_by_drug(
-        &self,
-        drug_name: &str,
-        limit: usize,
-    ) -> Result<Vec<CpicPairRow>, BioMcpError> {
-        Ok(self.pairs_by_drug_page(drug_name, limit, 0).await?.rows)
+        self.get_json_with_total(
+            request_from_plan(&self.client, self.base.as_ref(), &plan)
+                .header("Prefer", "count=exact"),
+        )
+        .await
     }
 
     pub async fn pairs_by_drug_page(
@@ -221,48 +240,67 @@ impl CpicClient {
         offset: usize,
     ) -> Result<CpicPage<Vec<CpicPairRow>>, BioMcpError> {
         let plan = Self::pairs_by_drug_plan(drug_name, limit, offset)?;
-        self.get_json_with_total(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
+        self.get_json_with_total(
+            request_from_plan(&self.client, self.base.as_ref(), &plan)
+                .header("Prefer", "count=exact"),
+        )
+        .await
     }
 
-    pub async fn recommendations_by_gene(
+    pub async fn recommendations_by_gene_page(
         &self,
         gene_symbol: &str,
         limit: usize,
-    ) -> Result<Vec<CpicRecommendationRow>, BioMcpError> {
-        let plan = Self::recommendations_by_gene_plan(gene_symbol, limit)?;
-        self.get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
+        offset: usize,
+    ) -> Result<CpicPage<Vec<CpicRecommendationRow>>, BioMcpError> {
+        let plan = Self::recommendations_by_gene_page_plan(gene_symbol, limit, offset)?;
+        self.get_json_with_total(
+            request_from_plan(&self.client, self.base.as_ref(), &plan)
+                .header("Prefer", "count=exact"),
+        )
+        .await
     }
 
-    pub async fn recommendations_by_drug(
+    pub async fn recommendations_by_drug_page(
         &self,
         drug_name: &str,
         limit: usize,
-    ) -> Result<Vec<CpicRecommendationRow>, BioMcpError> {
-        let plan = Self::recommendations_by_drug_plan(drug_name, limit)?;
-        self.get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
+        offset: usize,
+    ) -> Result<CpicPage<Vec<CpicRecommendationRow>>, BioMcpError> {
+        let plan = Self::recommendations_by_drug_page_plan(drug_name, limit, offset)?;
+        self.get_json_with_total(
+            request_from_plan(&self.client, self.base.as_ref(), &plan)
+                .header("Prefer", "count=exact"),
+        )
+        .await
     }
 
-    pub async fn frequencies_by_gene(
+    pub async fn frequencies_by_gene_page(
         &self,
         gene_symbol: &str,
         limit: usize,
-    ) -> Result<Vec<CpicFrequencyRow>, BioMcpError> {
-        let plan = Self::frequencies_by_gene_plan(gene_symbol, limit)?;
-        self.get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
+        offset: usize,
+    ) -> Result<CpicPage<Vec<CpicFrequencyRow>>, BioMcpError> {
+        let plan = Self::frequencies_by_gene_page_plan(gene_symbol, limit, offset)?;
+        self.get_json_with_total(
+            request_from_plan(&self.client, self.base.as_ref(), &plan)
+                .header("Prefer", "count=exact"),
+        )
+        .await
     }
 
-    pub async fn guidelines_by_gene(
+    pub async fn guidelines_by_gene_page(
         &self,
         gene_symbol: &str,
         limit: usize,
-    ) -> Result<Vec<CpicGuidelineSummaryRow>, BioMcpError> {
-        let plan = Self::guidelines_by_gene_plan(gene_symbol, limit)?;
-        self.get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
+        offset: usize,
+    ) -> Result<CpicPage<Vec<CpicGuidelineSummaryRow>>, BioMcpError> {
+        let plan = Self::guidelines_by_gene_page_plan(gene_symbol, limit, offset)?;
+        self.get_json_with_total(
+            request_from_plan(&self.client, self.base.as_ref(), &plan)
+                .header("Prefer", "count=exact"),
+        )
+        .await
     }
 }
 

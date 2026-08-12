@@ -236,6 +236,7 @@ fn disease_json_next_commands_include_top_gene_context() {
 #[test]
 fn pgx_json_next_commands_parse() {
     let pgx = Pgx {
+        section_pagination: std::collections::BTreeMap::new(),
         section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
         query: "CYP2D6".to_string(),
         gene: Some("CYP2D6".to_string()),

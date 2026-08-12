@@ -34,9 +34,18 @@ pub struct PgxSearchArgs {
 pub struct PgxGetArgs {
     /// Gene symbol or drug name (e.g., CYP2D6, codeine)
     pub query: String,
-    /// Sections to include (recommendations, frequencies, guidelines, annotations, all)
-    #[arg(trailing_var_arg = true)]
+    /// Sections to include (interactions, recommendations, frequencies, guidelines, annotations, all)
+    #[arg(value_name = "SECTION")]
     pub sections: Vec<String>,
+    /// Maximum rows per requested section, 1-50 (default: 10)
+    #[arg(short, long, default_value = "10")]
+    pub limit: usize,
+    /// Skip the first N rows (one requested section only)
+    #[arg(long, default_value = "0")]
+    pub offset: usize,
+    /// Include every section with a bounded limit of 50 per section
+    #[arg(long)]
+    pub full: bool,
 }
 
 mod dispatch;

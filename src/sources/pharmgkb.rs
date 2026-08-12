@@ -26,9 +26,18 @@ impl PharmGkbClient {
         })
     }
 
+    #[cfg(test)]
     pub(crate) fn drug_annotation_plans(
         drug_name: &str,
         limit: usize,
+    ) -> Result<Vec<AnnotationPlan>, BioMcpError> {
+        Self::drug_annotation_page_plans(drug_name, limit, 0)
+    }
+
+    pub(crate) fn drug_annotation_page_plans(
+        drug_name: &str,
+        limit: usize,
+        offset: usize,
     ) -> Result<Vec<AnnotationPlan>, BioMcpError> {
         let drug_name = normalize_drug_name(drug_name)?;
         let limit = limit.clamp(1, 100);
@@ -39,6 +48,7 @@ impl PharmGkbClient {
                 &drug_name,
                 "Clinical Annotation",
                 limit,
+                offset,
             ),
             annotation_plan(
                 "guidelineAnnotation",
@@ -46,6 +56,7 @@ impl PharmGkbClient {
                 &drug_name,
                 "Guideline Annotation",
                 limit,
+                offset,
             ),
             annotation_plan(
                 "labelAnnotation",
@@ -53,13 +64,23 @@ impl PharmGkbClient {
                 &drug_name,
                 "Label Annotation",
                 limit,
+                offset,
             ),
         ])
     }
 
+    #[cfg(test)]
     pub(crate) fn gene_annotation_plans(
         gene_symbol: &str,
         limit: usize,
+    ) -> Result<Vec<AnnotationPlan>, BioMcpError> {
+        Self::gene_annotation_page_plans(gene_symbol, limit, 0)
+    }
+
+    pub(crate) fn gene_annotation_page_plans(
+        gene_symbol: &str,
+        limit: usize,
+        offset: usize,
     ) -> Result<Vec<AnnotationPlan>, BioMcpError> {
         let gene_symbol = normalize_gene_symbol(gene_symbol)?;
         let limit = limit.clamp(1, 100);
@@ -70,6 +91,7 @@ impl PharmGkbClient {
                 &gene_symbol,
                 "Clinical Annotation",
                 limit,
+                offset,
             ),
             annotation_plan(
                 "guidelineAnnotation",
@@ -77,6 +99,7 @@ impl PharmGkbClient {
                 &gene_symbol,
                 "Guideline Annotation",
                 limit,
+                offset,
             ),
             annotation_plan(
                 "labelAnnotation",
@@ -84,6 +107,7 @@ impl PharmGkbClient {
                 &gene_symbol,
                 "Label Annotation",
                 limit,
+                offset,
             ),
         ])
     }
@@ -146,26 +170,28 @@ impl PharmGkbClient {
         })
     }
 
-    pub async fn annotations_by_drug(
+    pub async fn annotations_by_drug_page(
         &self,
         drug_name: &str,
         limit: usize,
+        offset: usize,
     ) -> Result<Vec<PharmGkbAnnotation>, BioMcpError> {
         let mut out = Vec::new();
-        for plan in Self::drug_annotation_plans(drug_name, limit)? {
+        for plan in Self::drug_annotation_page_plans(drug_name, limit, offset)? {
             out.extend(self.fetch_annotations(plan).await?);
         }
 
         Ok(dedupe_and_limit(out, limit.clamp(1, 100)))
     }
 
-    pub async fn annotations_by_gene(
+    pub async fn annotations_by_gene_page(
         &self,
         gene_symbol: &str,
         limit: usize,
+        offset: usize,
     ) -> Result<Vec<PharmGkbAnnotation>, BioMcpError> {
         let mut out = Vec::new();
-        for plan in Self::gene_annotation_plans(gene_symbol, limit)? {
+        for plan in Self::gene_annotation_page_plans(gene_symbol, limit, offset)? {
             out.extend(self.fetch_annotations(plan).await?);
         }
 
@@ -201,11 +227,14 @@ fn annotation_plan(
     criteria_value: &str,
     fallback_kind: &'static str,
     limit: usize,
+    offset: usize,
 ) -> AnnotationPlan {
     AnnotationPlan {
         request: RequestPlan::get(format!("data/{endpoint}"))
             .query(criteria_key, criteria_value)
-            .query("view", "min"),
+            .query("view", "min")
+            .query("limit", limit.to_string())
+            .query("offset", offset.to_string()),
         fallback_kind,
         limit,
     }

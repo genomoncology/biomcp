@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::time::Duration;
 
 use crate::entities::SearchPage;
@@ -11,6 +11,7 @@ use crate::sources::cpic::{
 use crate::sources::pharmgkb::{PharmGkbAnnotation, PharmGkbClient};
 use serde::{Deserialize, Serialize};
 
+const PGX_SECTION_INTERACTIONS: &str = "interactions";
 const PGX_SECTION_RECOMMENDATIONS: &str = "recommendations";
 const PGX_SECTION_FREQUENCIES: &str = "frequencies";
 const PGX_SECTION_GUIDELINES: &str = "guidelines";
@@ -18,6 +19,7 @@ const PGX_SECTION_ANNOTATIONS: &str = "annotations";
 const PGX_SECTION_ALL: &str = "all";
 
 pub const PGX_SECTION_NAMES: &[&str] = &[
+    PGX_SECTION_INTERACTIONS,
     PGX_SECTION_RECOMMENDATIONS,
     PGX_SECTION_FREQUENCIES,
     PGX_SECTION_GUIDELINES,
@@ -50,6 +52,8 @@ pub struct Pgx {
     )]
     pub section_outcomes: SectionOutcomes,
     pub query: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub section_pagination: BTreeMap<String, PgxSectionPagination>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gene: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -66,6 +70,57 @@ pub struct Pgx {
     pub annotations: Vec<PharmGkbAnnotation>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotations_note: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PgxSectionPagination {
+    pub offset: usize,
+    pub limit: usize,
+    pub returned: usize,
+    pub total: Option<usize>,
+    pub has_more: bool,
+    pub next_offset: Option<usize>,
+}
+
+impl PgxSectionPagination {
+    fn new(
+        offset: usize,
+        limit: usize,
+        returned: usize,
+        total: Option<usize>,
+        extra: bool,
+    ) -> Self {
+        let has_more = total
+            .map(|count| offset.saturating_add(returned) < count)
+            .unwrap_or(extra);
+        Self {
+            offset,
+            limit,
+            returned,
+            total,
+            has_more,
+            next_offset: has_more.then(|| offset.saturating_add(returned)),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PgxGetOptions {
+    pub sections: Vec<String>,
+    pub limit: usize,
+    pub offset: usize,
+    pub full: bool,
+}
+
+impl Default for PgxGetOptions {
+    fn default() -> Self {
+        Self {
+            sections: Vec::new(),
+            limit: 10,
+            offset: 0,
+            full: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -184,6 +239,7 @@ fn normalize_pgx_testing(value: &str) -> Result<String, BioMcpError> {
 
 #[derive(Debug, Clone, Copy, Default)]
 struct PgxSections {
+    include_interactions: bool,
     include_recommendations: bool,
     include_frequencies: bool,
     include_guidelines: bool,
@@ -204,6 +260,7 @@ fn parse_sections(sections: &[String]) -> Result<PgxSections, BioMcpError> {
         }
 
         match section.as_str() {
+            PGX_SECTION_INTERACTIONS => out.include_interactions = true,
             PGX_SECTION_RECOMMENDATIONS => out.include_recommendations = true,
             PGX_SECTION_FREQUENCIES => out.include_frequencies = true,
             PGX_SECTION_GUIDELINES => out.include_guidelines = true,
@@ -219,6 +276,7 @@ fn parse_sections(sections: &[String]) -> Result<PgxSections, BioMcpError> {
     }
 
     if include_all {
+        out.include_interactions = true;
         out.include_recommendations = true;
         out.include_frequencies = true;
         out.include_guidelines = true;
@@ -228,8 +286,69 @@ fn parse_sections(sections: &[String]) -> Result<PgxSections, BioMcpError> {
     Ok(out)
 }
 
+impl PgxSections {
+    fn count(self) -> usize {
+        [
+            self.include_interactions,
+            self.include_recommendations,
+            self.include_frequencies,
+            self.include_guidelines,
+            self.include_annotations,
+        ]
+        .into_iter()
+        .filter(|selected| *selected)
+        .count()
+    }
+
+    fn all() -> Self {
+        Self {
+            include_interactions: true,
+            include_recommendations: true,
+            include_frequencies: true,
+            include_guidelines: true,
+            include_annotations: true,
+        }
+    }
+}
+
 pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
-    let parsed_sections = parse_sections(sections)?;
+    get_with_options(
+        query,
+        &PgxGetOptions {
+            sections: sections.to_vec(),
+            ..PgxGetOptions::default()
+        },
+    )
+    .await
+}
+
+pub async fn get_with_options(query: &str, options: &PgxGetOptions) -> Result<Pgx, BioMcpError> {
+    get_with_cpic(query, options, &CpicClient::new()?).await
+}
+
+async fn get_with_cpic(
+    query: &str,
+    options: &PgxGetOptions,
+    cpic: &CpicClient,
+) -> Result<Pgx, BioMcpError> {
+    if options.limit == 0 || options.limit > 50 {
+        return Err(BioMcpError::InvalidArgument(
+            "--limit must be between 1 and 50".into(),
+        ));
+    }
+    let mut parsed_sections = parse_sections(&options.sections)?;
+    if options.full {
+        parsed_sections = PgxSections::all();
+    } else if parsed_sections.count() == 0 {
+        parsed_sections.include_interactions = true;
+    }
+    if options.offset > 0 && (options.full || parsed_sections.count() != 1) {
+        return Err(BioMcpError::InvalidArgument(
+            "--offset greater than zero requires exactly one named PGx section and cannot be combined with --full".into(),
+        ));
+    }
+    let limit = if options.full { 50 } else { options.limit };
+    let offset = options.offset;
     let query = query.trim();
     if query.is_empty() {
         return Err(BioMcpError::InvalidArgument(
@@ -242,81 +361,16 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
         ));
     }
 
-    let cpic = CpicClient::new()?;
-    let mut source_rows: Vec<CpicPairRow> = Vec::new();
-    let mut mode_gene: Option<String> = None;
-    let mut mode_drug: Option<String> = None;
-
-    if is_likely_gene(query) {
-        let rows = cpic.pairs_by_gene(query, 100).await?;
-        if !rows.is_empty() {
-            mode_gene = Some(query.trim().to_ascii_uppercase());
-            source_rows = rows;
-        }
-    }
-
-    if source_rows.is_empty() {
-        let rows = cpic.pairs_by_drug(query, 100).await?;
-        if !rows.is_empty() {
-            mode_drug = Some(query.to_string());
-            source_rows = rows;
-        }
-    }
-
-    if source_rows.is_empty() {
-        let rows = cpic.pairs_by_gene(query, 100).await?;
-        if !rows.is_empty() {
-            mode_gene = Some(query.trim().to_ascii_uppercase());
-            source_rows = rows;
-        }
-    }
-
-    if source_rows.is_empty() {
-        return Err(BioMcpError::NotFound {
-            entity: "pgx".into(),
-            id: query.to_string(),
-            suggestion: format!("Try searching: biomcp search pgx -g {query}"),
-        });
-    }
-
-    let mut interactions = map_pair_rows(&source_rows);
-    interactions.sort_by(|a, b| {
-        cpic_level_rank(a.cpiclevel.as_deref())
-            .cmp(&cpic_level_rank(b.cpiclevel.as_deref()))
-            .then_with(|| a.drugname.cmp(&b.drugname))
-            .then_with(|| a.genesymbol.cmp(&b.genesymbol))
-    });
-
-    if mode_gene.is_none() {
-        let genes: Vec<String> = interactions
-            .iter()
-            .map(|row| row.genesymbol.clone())
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect();
-        if genes.len() == 1 {
-            mode_gene = genes.first().cloned();
-        }
-    }
-
-    if mode_drug.is_none() {
-        let drugs: Vec<String> = interactions
-            .iter()
-            .map(|row| row.drugname.clone())
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect();
-        if drugs.len() == 1 {
-            mode_drug = drugs.first().cloned();
-        }
-    }
+    let mut mode_gene = is_likely_gene(query).then(|| query.to_ascii_uppercase());
+    let mode_drug = mode_gene.is_none().then(|| query.to_string());
 
     let mut out = Pgx {
         section_outcomes: default_pgx_section_outcomes(),
         query: query.to_string(),
+        section_pagination: BTreeMap::new(),
         gene: mode_gene.clone(),
         drug: mode_drug.clone(),
-        interactions,
+        interactions: Vec::new(),
         recommendations: Vec::new(),
         frequencies: Vec::new(),
         guidelines: Vec::new(),
@@ -324,47 +378,81 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
         annotations_note: None,
     };
 
-    if parsed_sections.include_recommendations {
-        let recommendations = if let Some(gene) = mode_gene.as_deref() {
-            cpic.recommendations_by_gene(gene, 50).await?
-        } else if let Some(drug) = mode_drug.as_deref() {
-            cpic.recommendations_by_drug(drug, 50).await?
+    if parsed_sections.include_interactions {
+        let page = if let Some(gene) = mode_gene.as_deref() {
+            cpic.pairs_by_gene_page(gene, limit + 1, offset).await?
         } else {
-            Vec::new()
+            cpic.pairs_by_drug_page(query, limit + 1, offset).await?
         };
-        out.recommendations = map_recommendations(&recommendations, mode_gene.as_deref());
+        let mut rows = map_pair_rows(&page.rows);
+        let extra = rows.len() > limit;
+        rows.truncate(limit);
+        if rows.is_empty() && offset == 0 {
+            return Err(BioMcpError::NotFound {
+                entity: "pgx".into(),
+                id: query.to_string(),
+                suggestion: format!("Try searching: biomcp search pgx -g {query}"),
+            });
+        }
+        out.section_pagination.insert(
+            PGX_SECTION_INTERACTIONS.into(),
+            PgxSectionPagination::new(offset, limit, rows.len(), page.total, extra),
+        );
+        out.interactions = rows;
+    }
+
+    async fn gene_for_drug(cpic: &CpicClient, drug: &str) -> Result<Option<String>, BioMcpError> {
+        Ok(cpic
+            .pairs_by_drug_page(drug, 1, 0)
+            .await?
+            .rows
+            .first()
+            .map(|row| row.genesymbol.trim().to_ascii_uppercase())
+            .filter(|gene| !gene.is_empty()))
+    }
+
+    if parsed_sections.include_recommendations {
+        let page = if let Some(gene) = mode_gene.as_deref() {
+            cpic.recommendations_by_gene_page(gene, limit + 1, offset)
+                .await?
+        } else {
+            cpic.recommendations_by_drug_page(query, limit + 1, offset)
+                .await?
+        };
+        let mut rows = map_recommendations(&page.rows, mode_gene.as_deref());
+        let extra = rows.len() > limit;
+        rows.truncate(limit);
+        out.section_pagination.insert(
+            PGX_SECTION_RECOMMENDATIONS.into(),
+            PgxSectionPagination::new(offset, limit, rows.len(), page.total, extra),
+        );
+        out.recommendations = rows;
     }
 
     if parsed_sections.include_frequencies {
-        let mut rows: Vec<PgxFrequency> = Vec::new();
-        let mut failed = false;
-        if let Some(gene) = mode_gene.as_deref() {
-            match cpic.frequencies_by_gene(gene, 30).await {
-                Ok(frequencies) => rows.extend(map_frequencies(&frequencies)),
-                Err(_) => failed = true,
-            }
-        } else {
-            let unique_genes = out
-                .interactions
-                .iter()
-                .map(|row| row.genesymbol.clone())
-                .collect::<HashSet<_>>();
-            for gene in unique_genes.into_iter().take(3) {
-                match cpic.frequencies_by_gene(&gene, 12).await {
-                    Ok(frequencies) => rows.extend(map_frequencies(&frequencies)),
-                    Err(_) => failed = true,
-                }
-            }
+        if mode_gene.is_none() {
+            mode_gene = gene_for_drug(cpic, query).await?;
+            out.gene.clone_from(&mode_gene);
         }
-        out.frequencies = dedupe_frequencies(rows);
-        let outcome = if failed && out.frequencies.is_empty() {
-            SectionOutcome::unavailable("CPIC frequency data is temporarily unavailable.")
-        } else if failed {
-            SectionOutcome::degraded(
-                ["CPIC"],
-                "CPIC frequency data is incomplete because an additive lookup failed.",
-            )
-        } else if out.frequencies.is_empty() {
+        let page = match mode_gene.as_deref() {
+            Some(gene) => {
+                cpic.frequencies_by_gene_page(gene, limit + 1, offset)
+                    .await?
+            }
+            None => crate::sources::cpic::CpicPage {
+                rows: Vec::new(),
+                total: Some(0),
+            },
+        };
+        let mut rows = dedupe_frequencies(map_frequencies(&page.rows));
+        let extra = rows.len() > limit;
+        rows.truncate(limit);
+        out.section_pagination.insert(
+            PGX_SECTION_FREQUENCIES.into(),
+            PgxSectionPagination::new(offset, limit, rows.len(), page.total, extra),
+        );
+        out.frequencies = rows;
+        let outcome = if out.frequencies.is_empty() {
             SectionOutcome::empty("CPIC")
         } else {
             SectionOutcome::data("CPIC")
@@ -373,17 +461,28 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
     }
 
     if parsed_sections.include_guidelines {
-        let guidelines = if let Some(gene) = mode_gene.as_deref() {
-            cpic.guidelines_by_gene(gene, 40).await?
-        } else {
-            Vec::new()
-        };
-
-        if !guidelines.is_empty() {
-            out.guidelines = map_guidelines(&guidelines);
-        } else {
-            out.guidelines = guidelines_from_pairs(&source_rows);
+        if mode_gene.is_none() {
+            mode_gene = gene_for_drug(cpic, query).await?;
+            out.gene.clone_from(&mode_gene);
         }
+        let page = match mode_gene.as_deref() {
+            Some(gene) => {
+                cpic.guidelines_by_gene_page(gene, limit + 1, offset)
+                    .await?
+            }
+            None => crate::sources::cpic::CpicPage {
+                rows: Vec::new(),
+                total: Some(0),
+            },
+        };
+        let mut rows = map_guidelines(&page.rows);
+        let extra = rows.len() > limit;
+        rows.truncate(limit);
+        out.section_pagination.insert(
+            PGX_SECTION_GUIDELINES.into(),
+            PgxSectionPagination::new(offset, limit, rows.len(), page.total, extra),
+        );
+        out.guidelines = rows;
     }
 
     if parsed_sections.include_annotations {
@@ -404,9 +503,13 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
         };
         let annotation_fut = async {
             if let Some(gene) = mode_gene.as_deref() {
-                pharmgkb.annotations_by_gene(gene, 40).await
+                pharmgkb
+                    .annotations_by_gene_page(gene, limit + 1, offset)
+                    .await
             } else if let Some(drug) = mode_drug.as_deref() {
-                pharmgkb.annotations_by_drug(drug, 40).await
+                pharmgkb
+                    .annotations_by_drug_page(drug, limit + 1, offset)
+                    .await
             } else {
                 Ok(Vec::new())
             }
@@ -414,6 +517,13 @@ pub async fn get(query: &str, sections: &[String]) -> Result<Pgx, BioMcpError> {
 
         match tokio::time::timeout(OPTIONAL_ENRICHMENT_TIMEOUT, annotation_fut).await {
             Ok(Ok(annotations)) => {
+                let mut annotations = annotations;
+                let extra = annotations.len() > limit;
+                annotations.truncate(limit);
+                out.section_pagination.insert(
+                    PGX_SECTION_ANNOTATIONS.into(),
+                    PgxSectionPagination::new(offset, limit, annotations.len(), None, extra),
+                );
                 out.annotations = annotations;
                 let outcome = if out.annotations.is_empty() {
                     SectionOutcome::empty("PharmGKB")
@@ -883,36 +993,6 @@ fn map_guidelines(rows: &[CpicGuidelineSummaryRow]) -> Vec<PgxGuideline> {
         .collect();
 
     out.sort_by(|a, b| a.name.cmp(&b.name));
-    out.truncate(20);
-    out
-}
-
-fn guidelines_from_pairs(rows: &[CpicPairRow]) -> Vec<PgxGuideline> {
-    let mut seen = HashSet::new();
-    let mut out = Vec::new();
-    for row in rows {
-        let Some(name) = row
-            .guidelinename
-            .as_deref()
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        else {
-            continue;
-        };
-
-        let key = name.to_ascii_lowercase();
-        if !seen.insert(key) {
-            continue;
-        }
-
-        out.push(PgxGuideline {
-            name: name.to_string(),
-            url: row.guidelineurl.clone(),
-            genes: Vec::new(),
-            drugs: Vec::new(),
-        });
-    }
-    out.sort_by(|a, b| a.name.cmp(&b.name));
     out
 }
 
@@ -938,14 +1018,105 @@ fn cpic_level_rank(level: Option<&str>) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     #[test]
     fn parse_sections_supports_all() {
         let parsed = parse_sections(&["all".to_string()]).expect("sections");
+        assert!(parsed.include_interactions);
         assert!(parsed.include_recommendations);
         assert!(parsed.include_frequencies);
         assert!(parsed.include_guidelines);
         assert!(parsed.include_annotations);
+    }
+
+    #[test]
+    fn section_pagination_uses_exact_total_or_limit_plus_one() {
+        assert_eq!(
+            PgxSectionPagination::new(10, 5, 5, Some(16), false).next_offset,
+            Some(15)
+        );
+        assert_eq!(
+            PgxSectionPagination::new(10, 5, 5, Some(15), true).next_offset,
+            None
+        );
+        assert_eq!(
+            PgxSectionPagination::new(0, 5, 5, None, true).next_offset,
+            Some(5)
+        );
+    }
+
+    #[test]
+    fn get_options_reject_invalid_paging_before_client_construction() {
+        let runtime = tokio::runtime::Runtime::new().expect("runtime");
+        let error = runtime
+            .block_on(get_with_options(
+                "CYP2D6",
+                &PgxGetOptions {
+                    sections: vec!["recommendations".into(), "guidelines".into()],
+                    limit: 10,
+                    offset: 1,
+                    full: false,
+                },
+            ))
+            .expect_err("multi-section offset must fail");
+        assert!(error.to_string().contains("exactly one"));
+    }
+
+    #[tokio::test]
+    async fn recommendations_only_uses_one_bounded_recommendation_request() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind CPIC fixture");
+        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+        let body = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/cpic/recommendation_cyp2d6_20260803.json"
+        ));
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.expect("accept CPIC request");
+            let mut request = Vec::new();
+            loop {
+                let mut chunk = [0_u8; 4096];
+                let read = stream.read(&mut chunk).await.expect("read CPIC request");
+                request.extend_from_slice(&chunk[..read]);
+                if read == 0 || request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
+                    break;
+                }
+            }
+            let response = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Range: 0-0/1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream
+                .write_all(response.as_bytes())
+                .await
+                .expect("write CPIC response");
+            String::from_utf8(request).expect("request text")
+        });
+        let client =
+            CpicClient::with_test_client(crate::sources::test_client().expect("test client"), base);
+        let result = get_with_cpic(
+            "CYP2D6",
+            &PgxGetOptions {
+                sections: vec!["recommendations".into()],
+                limit: 10,
+                offset: 0,
+                full: false,
+            },
+            &client,
+        )
+        .await
+        .expect("focused recommendations");
+
+        assert!(result.interactions.is_empty());
+        assert!(!result.recommendations.is_empty());
+        let request = server.await.expect("CPIC fixture server");
+        assert!(request.starts_with("GET /recommendation_view?"));
+        assert!(request.contains("limit=11"));
+        assert!(request.contains("offset=0"));
+        assert!(!request.contains("pair_view"));
     }
 
     #[test]

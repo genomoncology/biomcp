@@ -5,6 +5,10 @@ users to switch tools or guess which source backed the answer. These canaries
 focus on CPIC-style interaction tables plus opt-in recommendation, guideline, and
 frequency detail.
 
+Every `get pgx` list is bounded. The default selects only `interactions` with
+limit 10; named sections omit unrelated lists, and each JSON section advertises
+its own continuation metadata.
+
 ## Gene-First Search
 
 Searching by pharmacogene should keep the interaction table shape visible so a
