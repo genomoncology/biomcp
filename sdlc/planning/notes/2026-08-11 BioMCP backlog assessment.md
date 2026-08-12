@@ -405,3 +405,24 @@ shell-startup edits were removed.
 spec`, and `make full-feature-check` passed. The cold all-feature release build
 remained the dominant gate at 5m28s; focused lifecycle tests run in seconds once
 their build profile exists. The active backlog is now 46.
+
+## Article trust and retrieval result — 2026-08-12
+
+The seven-ticket session completed in one persistent worktree. External
+provider failures now have one credential-safe logging boundary. Europe PMC's
+known non-open-access response is permanent absence, nonretrievable NCBI assets
+have a typed browser fallback, and complex JATS tables preserve every source
+cell with explicit merged-cell markers.
+
+Article searches expose and honor separate candidate and enrichment source
+plans, so an explicit provider selection makes no hidden Semantic Scholar
+request. Variant-article identity now has a real receipted TP53 → CA000072 →
+PMC8372092 table-annotation anchor through the production CAR and LDH paths.
+The seven-variant 9-of-12 recall gate moved from credentialed public providers
+to its real captured routine corpus, with exact-route refusal and production
+JSON/Markdown checks.
+
+All seven completion records are present and the active ticket files are gone.
+The active backlog is now **39**, matching the planned 61 → 53 → 46 → 39
+reduction across the three focused sessions. Final combined repository gates
+are recorded in the batch integration commit.
