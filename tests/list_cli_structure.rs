@@ -23,6 +23,7 @@ fn assert_module_doc_header(path: &Path) {
 fn expected_list_submodule_files(root: &Path) -> Vec<PathBuf> {
     let mut files = vec![
         root.join("src/cli/list/mod.rs"),
+        root.join("src/cli/list/catalog.rs"),
         root.join("src/cli/list/helpers.rs"),
         root.join("src/cli/list/molecular.rs"),
         root.join("src/cli/list/clinical.rs"),
