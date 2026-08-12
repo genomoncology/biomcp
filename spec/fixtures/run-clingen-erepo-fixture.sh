@@ -47,7 +47,8 @@ server.serve_forever()
 PY
 server_pid=$!
 while [[ ! -s "$tmp/port" ]]; do sleep 0.05; done
-export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$(<"$tmp/port")"
+fixture_port="$(<"$tmp/port")"
+export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$fixture_port"
 export BIOMCP_CACHE_MODE=off
 
 markdown="$($binary variant erepo CA015543)"

@@ -10,7 +10,8 @@ if [[ ! -f "$env_file" ]]; then
   bash "$script_dir/setup-article-fulltext-source-fixture.sh" "$repo_root" >/dev/null
   trap 'bash "$script_dir/cleanup-article-fulltext-source-fixture.sh" "$repo_root"' EXIT
 fi
-# shellcheck disable=SC1091
+# The setup script writes this test-owned environment file.
+# shellcheck disable=SC1090
 . "$env_file"
 
 cache_dir="$repo_root/.cache/spec-article-fulltext-jats-cache"

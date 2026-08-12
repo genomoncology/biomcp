@@ -282,7 +282,7 @@ try:
 finally:
     p.kill()
 PY
-  local line name status detail
+  local name status detail
   while IFS=$'\t' read -r name status detail; do
     [[ -n "$name" ]] || continue
     if [[ "$status" == "PASS" ]]; then

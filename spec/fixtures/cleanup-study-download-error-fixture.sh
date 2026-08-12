@@ -10,6 +10,8 @@ if [ ! -f "$env_file" ]; then
 fi
 
 set +u
+# The setup script writes this test-owned environment file.
+# shellcheck disable=SC1090
 . "$env_file"
 set -u
 

@@ -50,6 +50,7 @@ jobs:
           uv tool install "ruff==$RUFF_VERSION"
           uv tool install "mustmatch==$MUSTMATCH_VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          tools/bootstrap-lint-tools >> "$GITHUB_PATH"
       - name: Record exact tool versions
         run: |
           rustc --version
@@ -60,6 +61,8 @@ jobs:
           cargo deny --version
           mustmatch --version
           protoc --version
+          shellcheck --version
+          actionlint --version
       - name: Canonical lint gate
         run: make lint
       - name: Canonical test gate

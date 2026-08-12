@@ -1132,6 +1132,7 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     for version in ("1.93.1", "3.12.3", "0.8.0", "0.13.2", "0.9.132", "0.19.4", "0.1.0", "28.3"):
         assert version in ci
     assert "@v" not in canonical and "@stable" not in canonical
+    assert "tools/bootstrap-lint-tools" in canonical
     assert "secrets." not in canonical.replace("secrets.GITHUB_TOKEN", "")
 
     assert 'version: "28.3"' in ci_generated_sources

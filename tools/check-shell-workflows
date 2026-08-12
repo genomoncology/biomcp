@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+
+ROOT = Path(__file__).resolve().parents[1]
+POLICY = ROOT / "tools/lint-inventory.json"
+
+
+def tracked_files() -> list[Path]:
+    result = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=ROOT, check=True, capture_output=True
+    )
+    return [ROOT / item.decode() for item in result.stdout.split(b"\0") if item]
+
+
+def is_bash(path: Path) -> bool:
+    if path.suffix == ".sh":
+        return True
+    try:
+        first = path.open("rb").readline(256)
+    except OSError:
+        return False
+    return first.startswith((b"#!/bin/bash", b"#!/usr/bin/env bash"))
+
+
+def run(command: list[str]) -> None:
+    subprocess.run(command, cwd=ROOT, check=True)
+
+
+def require_version(command: list[str], expected: str) -> None:
+    result = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True)
+    if expected not in result.stdout + result.stderr:
+        raise SystemExit(f"{' '.join(command[:-1])} must be version {expected}")
+
+
+def prove_negative_controls() -> None:
+    with tempfile.TemporaryDirectory(prefix="biomcp-lint-controls-") as directory:
+        root = Path(directory)
+        bad_bash = root / "bad-syntax.sh"
+        bad_shell = root / "bad-shellcheck.sh"
+        bad_workflow = root / "bad-workflow.yml"
+        bad_bash.write_text("#!/usr/bin/env bash\nif true; then\n", encoding="utf-8")
+        bad_shell.write_text("#!/usr/bin/env bash\ncd /tmp\n", encoding="utf-8")
+        bad_workflow.write_text("jobs:\n  broken:\n    steps: [\n", encoding="utf-8")
+        controls = (
+            (["bash", "-n", str(bad_bash)], "Bash syntax"),
+            (["shellcheck", "--severity=warning", str(bad_shell)], "ShellCheck"),
+            (["actionlint", str(bad_workflow)], "actionlint"),
+        )
+        for command, name in controls:
+            result = subprocess.run(command, cwd=ROOT, capture_output=True)
+            if result.returncode == 0:
+                raise SystemExit(f"{name} negative control unexpectedly passed")
+
+
+def main() -> int:
+    require_version(["shellcheck", "--version"], "version: 0.10.0")
+    require_version(["actionlint", "--version"], "1.7.12")
+    prove_negative_controls()
+    policy = json.loads(POLICY.read_text(encoding="utf-8"))
+    if policy.get("schema") != "biomcp-shell-workflow-inventory-v1":
+        raise SystemExit("invalid shell/workflow inventory schema")
+    exclusions = policy.get("shellcheck_exclusions", [])
+    if any(not item.get("prefix") or not item.get("reason") for item in exclusions):
+        raise SystemExit("every ShellCheck exclusion needs a prefix and reason")
+
+    tracked = tracked_files()
+    bash_files = sorted(path for path in tracked if is_bash(path))
+    workflows = sorted(
+        path for path in tracked if path.parent == ROOT / ".github/workflows" and path.suffix in {".yml", ".yaml"}
+    )
+    checked: list[Path] = []
+    for path in bash_files:
+        relative = path.relative_to(ROOT).as_posix()
+        matches = [item for item in exclusions if relative.startswith(item["prefix"])]
+        if len(matches) > 1:
+            raise SystemExit(f"{relative} matches multiple ShellCheck exclusions")
+        if not matches:
+            checked.append(path)
+
+    if bash_files:
+        run(["bash", "-n", *map(str, bash_files)])
+    if checked:
+        run(["shellcheck", "--severity=warning", *map(str, checked)])
+    if workflows:
+        run(["actionlint", *map(str, workflows)])
+    print(
+        f"checked {len(bash_files)} Bash files for syntax, "
+        f"{len(checked)} with ShellCheck, and {len(workflows)} workflows"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -55,14 +55,16 @@ else
 fi
 
 if has_tracked_files '*.py'; then
-  if command -v ruff >/dev/null 2>&1; then
+  if command -v ruff >/dev/null 2>&1 && ruff --version | grep -Fxq 'ruff 0.13.2'; then
     run_required 'Python lint (ruff check .)' ruff check .
   else
-    skip 'Python lint (ruff not installed)'
+    fail 'Python lint (Ruff 0.13.2 required)'
   fi
 else
   skip 'Python lint (no tracked Python files)'
 fi
+
+run_required 'Bash and workflow lint' python3 tools/check-shell-workflows
 
 if [ -f build.zig ] || has_tracked_files '*.zig'; then
   run_required 'Zig lint (zig fmt --check .)' zig fmt --check .

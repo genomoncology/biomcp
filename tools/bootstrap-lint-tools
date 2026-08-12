@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+tool_dir="${BIOMCP_TOOL_DIR:-$repo_root/.cache/tools/bin}"
+mkdir -p "$tool_dir"
+
+install_archive_binary() {
+  local name="$1" version="$2" url="$3" expected="$4" member="$5"
+  if [ -x "$tool_dir/$name" ] && "$tool_dir/$name" --version 2>&1 | grep -Fq "$version"; then
+    return
+  fi
+  local temp_dir archive actual
+  temp_dir="$(mktemp -d)"
+  trap 'rm -rf "$temp_dir"' RETURN
+  archive="$temp_dir/archive"
+  curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 "$url" -o "$archive"
+  actual="$(sha256sum "$archive" | awk '{print $1}')"
+  [ "$actual" = "$expected" ] || {
+    printf 'checksum mismatch for %s: expected %s, got %s\n' "$name" "$expected" "$actual" >&2
+    return 1
+  }
+  case "$url" in
+    *.tar.xz) tar -xJf "$archive" -C "$temp_dir" "$member" ;;
+    *.tar.gz) tar -xzf "$archive" -C "$temp_dir" "$member" ;;
+    *) printf 'unsupported lint-tool archive: %s\n' "$url" >&2; return 1 ;;
+  esac
+  install -m 0755 "$temp_dir/$member" "$tool_dir/$name"
+}
+
+case "$(uname -s)-$(uname -m)" in
+  Linux-x86_64)
+    install_archive_binary shellcheck 0.10.0 \
+      https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz \
+      6c881ab0698e4e6ea235245f22832860544f17ba386442fe7e9d629f8cbedf87 \
+      shellcheck-v0.10.0/shellcheck
+    install_archive_binary actionlint 1.7.12 \
+      https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+      8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8 \
+      actionlint
+    ;;
+  *)
+    printf 'No pinned lint-tool archive for %s; install ShellCheck 0.10.0 and actionlint 1.7.12 manually.\n' "$(uname -s)-$(uname -m)" >&2
+    exit 1
+    ;;
+esac
+
+printf '%s\n' "$tool_dir"

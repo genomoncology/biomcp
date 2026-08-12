@@ -1,0 +1,13 @@
+{
+  "schema": "biomcp-shell-workflow-inventory-v1",
+  "shellcheck_exclusions": [
+    {
+      "prefix": "architecture/experiments/",
+      "reason": "Historical experiment scripts are preserved evidence, not production entrypoints."
+    },
+    {
+      "prefix": "examples/",
+      "reason": "Example snippets favor teaching clarity and are syntax-checked but are not production automation."
+    }
+  ]
+}

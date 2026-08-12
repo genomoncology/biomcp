@@ -518,7 +518,6 @@ done
 test -s "$ready_file"
 test -s "$server_pid_file"
 base_url="$(cat "$ready_file")"
-server_pid="$(cat "$server_pid_file")"
 
 printf 'export BIOMCP_CTGOV_BASE=%q\n' "$base_url/api/v2" >"$env_file"
 printf 'export BIOMCP_CTGOV_CDN_BASE=%q\n' "$base_url" >>"$env_file"
