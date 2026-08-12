@@ -1179,9 +1179,9 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
     assert "BIOMCP_CACHE_DIR" not in makefile
     assert "RUST_LOG=error" not in makefile
     assert re.search(
-        r"^test:\n"
-        r"\t\$\(CARGO_WITH_IDENTITY\) nextest run \$\(ROUTINE_CARGO_FEATURES\)\n"
-        r"\t\$\(MAKE\) test-contracts$",
+        r"^test: prepare-test\n"
+        r'\ttools/run-offline -- cargo nextest run --archive-file "\$\(ROUTINE_TEST_ARCHIVE\)"\n'
+        r"\t\$\(MAKE\) test-contracts-prepared$",
         makefile,
         flags=re.MULTILINE,
     )
@@ -1234,8 +1234,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         flags=re.MULTILINE,
     )
     assert re.search(
-        r"^spec:\n"
-        r'\tSPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_FEATURE_ON_BIN="\$\(if \$\(filter release,\$\(SPEC_PROFILE\)\),\$\(SPEC_BIN\),\)" bash scripts/run-specs\.sh spec$',
+        r"^spec: prepare-spec\n"
+        r'\ttools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="\$\(SPEC_PROFILE\)" BIOMCP_FEATURE_ON_BIN="\$\(if \$\(filter release,\$\(SPEC_PROFILE\)\),\$\(SPEC_BIN\),\)" bash scripts/run-specs\.sh spec$',
         makefile,
         flags=re.MULTILINE,
     ), "spec: must run through scripts/run-specs.sh with the selected binary"
@@ -1274,11 +1274,8 @@ def test_makefile_spec_split_contract_is_documented_and_executable() -> None:
         assert "run_markdown_specs" in runner
     assert "PY_PATHS" in runner and "run_python_contracts" in runner
     assert re.search(
-        r"^test-contracts:\n"
-        r"\t\$\(SPEC_BUILD\)\n"
-        r"\t\$\(MAKE\) sync-python-dev\n"
-        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync pytest tests/ -v \$\(PYTEST_XDIST_ARGS\)\n'
-        r'\tBIOMCP_BIN="\$\(SPEC_RUN_BIN\)" uv run --no-sync mkdocs build --strict$',
+        r"^test-contracts: prepare-test-contracts\n"
+        r"\t\$\(MAKE\) test-contracts-prepared$",
         makefile,
         flags=re.MULTILINE,
     )

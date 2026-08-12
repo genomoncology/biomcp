@@ -59,6 +59,13 @@ Release workflow additionally hard-runs the live contract and release smokes in
 and does not run on a daily schedule. Use `make test-contracts` to rerun just
 the release-critical Python/docs lane.
 
+On Linux, `make test` and `make spec` require Bubblewrap. Each target prepares
+dependencies and compiled artifacts first, then runs its assertions in a
+network namespace where public DNS and direct public connections are blocked.
+Loopback fixtures and Unix sockets remain available. CI's Linux result is
+authoritative; other operating systems report that this enforcement is
+unsupported. `make verify` remains the explicit network-enabled lane.
+
 Routine gates use `--no-default-features` for one reusable lint/test/spec Cargo
 graph and therefore do not exercise AlphaGenome. `make full-feature-check`
 lints all targets with all shipped features, runs the AlphaGenome behavior

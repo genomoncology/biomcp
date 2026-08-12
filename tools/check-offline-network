@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Fail closed unless public networking is blocked and local transports work."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import socket
+import sys
+import tempfile
+import threading
+
+
+def require_blocked(action: str, operation: object) -> None:
+    try:
+        operation()  # type: ignore[operator]
+    except OSError:
+        return
+    raise SystemExit(f"offline network isolation failed: {action} succeeded")
+
+
+def check_dns_blocked() -> None:
+    require_blocked(
+        "public DNS lookup",
+        lambda: socket.getaddrinfo("example.com", 443, type=socket.SOCK_STREAM),
+    )
+
+
+def check_public_tcp_blocked() -> None:
+    def connect() -> None:
+        with socket.socket() as client:
+            client.settimeout(0.5)
+            client.connect(("1.1.1.1", 443))
+
+    require_blocked("direct public TCP connection", connect)
+
+
+def exchange(listener: socket.socket, address: object) -> None:
+    received: list[bytes] = []
+
+    def serve() -> None:
+        connection, _ = listener.accept()
+        with connection:
+            received.append(connection.recv(4))
+            connection.sendall(b"pong")
+
+    worker = threading.Thread(target=serve)
+    worker.start()
+    with socket.socket(listener.family) as client:
+        client.settimeout(2)
+        client.connect(address)  # type: ignore[arg-type]
+        client.sendall(b"ping")
+        if client.recv(4) != b"pong":
+            raise SystemExit(
+                "offline network isolation failed: local reply was corrupt"
+            )
+    worker.join(timeout=2)
+    if worker.is_alive() or received != [b"ping"]:
+        raise SystemExit("offline network isolation failed: local exchange stalled")
+
+
+def check_loopback_tcp() -> None:
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        exchange(listener, listener.getsockname())
+
+
+def check_unix_socket() -> None:
+    if not hasattr(socket, "AF_UNIX"):
+        raise SystemExit("offline network isolation failed: Unix sockets unavailable")
+    with tempfile.TemporaryDirectory(prefix="biomcp-offline-", dir="/tmp") as root:
+        path = Path(root) / "gate.sock"
+        if len(os.fsencode(path)) >= 100:
+            raise SystemExit(
+                "offline network isolation failed: Unix socket path is unbounded"
+            )
+        with socket.socket(socket.AF_UNIX) as listener:
+            listener.bind(str(path))
+            listener.listen(1)
+            exchange(listener, str(path))
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        raise SystemExit("usage: check-offline-network COMMAND [ARG ...]")
+    check_dns_blocked()
+    check_public_tcp_blocked()
+    print(
+        "offline network controls: public DNS blocked; direct public TCP blocked",
+        flush=True,
+    )
+    check_loopback_tcp()
+    check_unix_socket()
+    print(
+        "offline network controls: loopback TCP and Unix sockets available",
+        flush=True,
+    )
+    os.execvp(sys.argv[1], sys.argv[1:])
+    return 127
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

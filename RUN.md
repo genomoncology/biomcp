@@ -13,6 +13,7 @@ shared target, owned artifacts, and promotion contract, see
 - `cargo-deny` for the repo-local license and advisory policy checks in `make lint`
 - `uv` for repo-local pytest and spec flows
 - `curl` for `scripts/contract-smoke.sh`
+- `bubblewrap` for public-network isolation in routine `make test` and `make spec`
 
 Install the Rust helper tools with:
 
@@ -140,6 +141,14 @@ itself; it runs explicit local/fixture-backed `SPEC_ROUTINE_PATHS` through
 `scripts/run-specs.sh` with `mustmatch test` and `--lang bash` plus the longer timeout.
 `make spec` runs the same offline path set with the shorter local timeout and
 should pass with external network blocked.
+
+On Linux, `make test` and `make spec` enforce that claim with Bubblewrap. They
+finish dependency setup and compilation before entering a network namespace,
+then prove public DNS and direct public TCP are unavailable while loopback and
+Unix sockets still work. A missing or unusable Bubblewrap installation fails
+closed. Non-Linux machines cannot provide the authoritative isolation result;
+use the canonical Linux CI job. `make verify` intentionally stays outside this
+boundary because it is the opt-in live-upstream lane.
 
 The executable docs do not hand-roll env setup inside bash blocks anymore.
 `scripts/run-specs.sh` owns one explicit artifact-preparation phase, fixture

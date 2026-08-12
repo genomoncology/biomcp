@@ -69,7 +69,7 @@ SPEC_LIVE_PATHS=(
 )
 
 usage() {
-  echo "usage: scripts/run-specs.sh <spec|spec-static|spec-pr|spec-contracts|verify|verify-nih-reporter>" >&2
+  echo "usage: scripts/run-specs.sh <prepare-spec|spec|spec-static|spec-pr|spec-contracts|verify|verify-nih-reporter>" >&2
 }
 
 mustmatch_dir() {
@@ -462,7 +462,9 @@ prepare_spec_artifacts() {
   if [[ -n "${BIOMCP_FEATURE_ON_BIN:-}" ]]; then
     arguments+=(--feature-on-bin "$BIOMCP_FEATURE_ON_BIN")
   fi
-  python3 scripts/prepare-spec-artifacts.py "${arguments[@]}"
+  if [[ "${BIOMCP_SPEC_ARTIFACTS_PREPARED:-0}" != 1 ]]; then
+    python3 scripts/prepare-spec-artifacts.py "${arguments[@]}"
+  fi
   [[ -s "$env_file" ]] || {
     echo "spec preparation did not create $env_file" >&2
     return 1
@@ -523,6 +525,11 @@ prepare_spec_artifacts() {
 
 mode="${1:-}"
 case "$mode" in
+  prepare-spec)
+    mode=spec
+    prepare_spec_artifacts
+    exit 0
+    ;;
   spec|spec-pr)
     timeout_args=(--timeout 180)
     paths=("${SPEC_ROUTINE_PATHS[@]}")

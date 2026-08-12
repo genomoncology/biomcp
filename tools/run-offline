@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "$(uname -s)" != Linux ]]; then
+  echo "offline routine-gate enforcement is unsupported on this platform; Linux CI is authoritative" >&2
+  exit 2
+fi
+if ! command -v bwrap >/dev/null 2>&1; then
+  echo "offline routine gates require bubblewrap; refusing to run without network isolation" >&2
+  exit 2
+fi
+if [[ "${1:-}" == -- ]]; then
+  shift
+fi
+if (($# == 0)); then
+  echo "usage: tools/run-offline -- COMMAND [ARG ...]" >&2
+  exit 2
+fi
+
+echo "offline network isolation: bubblewrap --unshare-net"
+exec bwrap \
+  --unshare-net \
+  --dev-bind / / \
+  --proc /proc \
+  --die-with-parent \
+  --chdir "$PWD" \
+  -- "$ROOT/tools/check-offline-network" "$@"

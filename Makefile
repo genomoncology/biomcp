@@ -1,5 +1,6 @@
 .PHONY: build test lint check-quality-ratchet full-feature-check png-artifact-smoke release-gate run clean spec spec-static spec-pr spec-contracts verify release-live-smoke validate-skills test-contracts install sync-python-dev
 .PHONY: output-footprint
+.PHONY: prepare-test prepare-test-contracts test-contracts-prepared prepare-spec
 
 SPEC_PROFILE ?= spec
 ROUTINE_CARGO_FEATURES ?= --no-default-features
@@ -10,6 +11,7 @@ SPEC_BIN ?= $(CURDIR)/target/$(SPEC_PROFILE)/biomcp
 SPEC_USE_PROVIDED_BIN = $(shell if [ -n "$(BIOMCP_BIN)" ] && [ -x "$(BIOMCP_BIN)" ]; then echo yes; fi)
 SPEC_RUN_BIN = $(if $(SPEC_USE_PROVIDED_BIN),$(BIOMCP_BIN),$(SPEC_BIN))
 CARGO_WITH_IDENTITY = tools/with-build-identity cargo
+ROUTINE_TEST_ARCHIVE = $(CURDIR)/.cache/routine-tests.tar.zst
 SPEC_BUILD = $(if $(SPEC_USE_PROVIDED_BIN),,$(CARGO_WITH_IDENTITY) build --locked --profile $(SPEC_PROFILE) $(ROUTINE_CARGO_FEATURES) --bin biomcp --example rmcp_streamable_http_contract)
 
 sync-python-dev:
@@ -18,15 +20,24 @@ sync-python-dev:
 build:
 	$(CARGO_WITH_IDENTITY) build --release
 
-test:
-	$(CARGO_WITH_IDENTITY) nextest run $(ROUTINE_CARGO_FEATURES)
-	$(MAKE) test-contracts
+prepare-test: prepare-test-contracts
+	mkdir -p "$(CURDIR)/.cache"
+	$(CARGO_WITH_IDENTITY) nextest archive --locked $(ROUTINE_CARGO_FEATURES) --archive-file "$(ROUTINE_TEST_ARCHIVE)" --zstd-level -7
 
-test-contracts:
+test: prepare-test
+	tools/run-offline -- cargo nextest run --archive-file "$(ROUTINE_TEST_ARCHIVE)"
+	$(MAKE) test-contracts-prepared
+
+prepare-test-contracts:
 	$(SPEC_BUILD)
 	$(MAKE) sync-python-dev
-	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS)
-	BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
+
+test-contracts: prepare-test-contracts
+	$(MAKE) test-contracts-prepared
+
+test-contracts-prepared:
+	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS)
+	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
 	ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
@@ -65,9 +76,12 @@ install:
 	$(CARGO_WITH_IDENTITY) build --release --locked
 	install -m 755 target/release/biomcp "$(HOME)/.local/bin/biomcp"
 
-spec:
-	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec
-	$(MAKE) spec-static
+prepare-spec:
+	SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh prepare-spec
+
+spec: prepare-spec
+	tools/run-offline -- env BIOMCP_SPEC_ARTIFACTS_PREPARED=1 SPEC_PROFILE="$(SPEC_PROFILE)" BIOMCP_FEATURE_ON_BIN="$(if $(filter release,$(SPEC_PROFILE)),$(SPEC_BIN),)" bash scripts/run-specs.sh spec
+	tools/run-offline -- bash scripts/run-specs.sh spec-static
 
 spec-static:
 	bash scripts/run-specs.sh spec-static
