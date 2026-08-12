@@ -39,7 +39,7 @@ cleanup_on_error() {
 
 trap cleanup_on_error EXIT
 
-python3 - "$ready_file" "$request_log" <<'PY' >"$server_log" 2>&1 8>&- &
+python3 - "$ready_file" "$request_log" "$workspace_root/testdata/sources/uniprot" <<'PY' >"$server_log" 2>&1 8>&- &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -50,10 +50,12 @@ import sys
 EXPECTED_FILTER = 'species_f:("Homo sapiens")'
 
 
-def send_json(handler, status, payload):
-    body = json.dumps(payload).encode("utf-8")
+def send_json(handler, status, payload, headers=None):
+    body = payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json")
+    for key, value in (headers or {}).items():
+        handler.send_header(key, value)
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)
@@ -68,6 +70,26 @@ class Handler(BaseHTTPRequestHandler):
 
         with Path(sys.argv[2]).open("a", encoding="utf-8") as log:
             log.write(f"GET {parsed.path} number={number} filters={filters}\n")
+
+        if parsed.path == "/uniprotkb/P15056.json" and not query:
+            send_json(self, 200, (Path(sys.argv[3]) / "get_p15056_20260812.json").read_bytes())
+            return
+
+        if parsed.path == "/uniprotkb/search":
+            expected = {
+                "query": ["(BRAF) AND organism_id:9606 AND reviewed:true"],
+                "format": ["json"],
+                "size": ["25"],
+                "offset": ["0"],
+            }
+            if all(query.get(key) == value for key, value in expected.items()):
+                send_json(
+                    self,
+                    200,
+                    (Path(sys.argv[3]) / "search_braf_reviewed_20260812.json").read_bytes(),
+                    {"X-Total-Results": "1"},
+                )
+                return
 
         if parsed.path != "/search/P15056" or number != "25" or filters != EXPECTED_FILTER:
             send_json(
@@ -195,6 +217,7 @@ curl -fsS "$base_url/search/P15056?number=25&filters=species_f:%28%22Homo%20sapi
 : >"$request_log"
 
 printf 'export BIOMCP_COMPLEXPORTAL_BASE=%q\n' "$base_url" >"$env_file"
+printf 'export BIOMCP_UNIPROT_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_COMPLEXPORTAL_FIXTURE_PID=%q\n' "$server_pid" >>"$env_file"
 printf 'export BIOMCP_COMPLEXPORTAL_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_COMPLEXPORTAL_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"

@@ -10,6 +10,7 @@ def _read_repo(path: str) -> str:
 def test_complexportal_fixture_enforces_p15056_search_request_contract() -> None:
     script = _read_repo("spec/fixtures/setup-complexportal-spec-fixture.sh")
     protein_spec = _read_repo("spec/entity/protein.md")
+    runner = _read_repo("scripts/run-specs.sh")
     health_catalog = _read_repo("src/cli/health/catalog.rs")
 
     assert 'parsed.path != "/search/P15056"' in script
@@ -18,7 +19,8 @@ def test_complexportal_fixture_enforces_p15056_search_request_contract() -> None
     assert "BIOMCP_COMPLEXPORTAL_BASE" in script
     assert "BIOMCP_COMPLEXPORTAL_FIXTURE_REQUEST_LOG" in script
 
-    assert "setup-complexportal-spec-fixture.sh" in protein_spec
+    assert "setup-complexportal-spec-fixture.sh" in runner
+    assert "spec/entity/protein.md" in runner
     assert "BIOMCP_COMPLEXPORTAL_FIXTURE_REQUEST_LOG" in protein_spec
     assert 'GET /search/P15056 number=25 filters=species_f:("Homo sapiens")' in protein_spec
 

@@ -2049,6 +2049,30 @@
       }
     },
     {
+      "path": "uniprot/get_p15056_20260812.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "UniProt",
+        "request": "https://rest.uniprot.org/uniprotkb/P15056.json",
+        "captured_at": "2026-08-12T16:30:00Z",
+        "sha256": "6c8652f092544b0ad88bd17564f4a6a7827f8aab4a6b5291786f57e0676908a6",
+        "minimization_or_redaction": "Reduced evidence annotations and PDB cross-references while preserving the decoded identity, function, and paginated structure fields; JSON whitespace was normalized.",
+        "provider_origin_statement": "Bytes were recorded from the public UniProt response produced by BioMCP's production request shape before the stated minimization."
+      }
+    },
+    {
+      "path": "uniprot/search_braf_reviewed_20260812.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "UniProt",
+        "request": "https://rest.uniprot.org/uniprotkb/search?query=%28BRAF%29%20AND%20organism_id%3A9606%20AND%20reviewed%3Atrue&format=json&size=25&offset=0",
+        "captured_at": "2026-08-12T16:30:00Z",
+        "sha256": "762003a115ba7697abb621c9f8486e11400858153dafa147f6c25ebca1557a6c",
+        "minimization_or_redaction": "Reduced to the first result, removed evidence annotations, and bounded PDB cross-references while preserving the decoded search fields; JSON whitespace was normalized.",
+        "provider_origin_statement": "Bytes were recorded from the public UniProt response produced by BioMCP's production request shape before the stated minimization."
+      }
+    },
+    {
       "path": "gnomad/variant_7_140753125_t_c_v4_20260812.json",
       "classification": "real_and_receipted",
       "receipt": {

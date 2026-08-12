@@ -7,12 +7,13 @@ identity card, deepen sections, and JSON follow-up contract stable.
 ## Positional Search & Table
 
 Protein search should still echo the reviewed default and keep the result table
-centered on accession, name, gene, and species.
+centered on accession, name, gene, species, and reviewed status. This page is
+served entirely by the supervised loopback UniProt and ComplexPortal fixture.
 
 ```bash
-../../tools/biomcp-ci search protein BRAF --limit 3 | mustmatch like '# Proteins: BRAF, reviewed=true
-| Accession | Name | Gene | Species |
-| P15056 | Serine/threonine-protein kinase B-raf | BRAF | Homo sapiens |'
+../../tools/biomcp-ci search protein BRAF --limit 3 | mustmatch like '# Proteins: BRAF, species=human, reviewed=true
+| Accession | Name | Gene | Species | Reviewed |
+| P15056 | Serine/threonine-protein kinase B-raf | BRAF | Homo sapiens | yes |'
 ```
 
 ## UniProt Identity Card
@@ -32,9 +33,6 @@ Complexes should stay readable as a bounded summary table plus compact member
 bullets, rather than dumping an unstructured raw payload.
 
 ```bash
-bash ../fixtures/setup-complexportal-spec-fixture.sh ../..
-. ../../.cache/spec-complexportal-env
-trap 'bash ../fixtures/cleanup-complexportal-spec-fixture.sh ../..' EXIT
 ../../tools/biomcp-ci get protein P15056 complexes | mustmatch like '## Complexes (ComplexPortal)
 | ID | Name | Members | Curation |'
 ../../tools/biomcp-ci get protein P15056 complexes | mustmatch '/\| CPX-[0-9]+ \|/'
@@ -42,14 +40,14 @@ trap 'bash ../fixtures/cleanup-complexportal-spec-fixture.sh ../..' EXIT
 cat "$BIOMCP_COMPLEXPORTAL_FIXTURE_REQUEST_LOG" | mustmatch like 'GET /search/P15056 number=25 filters=species_f:("Homo sapiens")'
 ```
 
-## Typed optional-section outcomes
+## Typed optional-section outcome
 
-Live protein enrichments retain one bounded state per requested section. The
-same outcomes appear in provenance even when a provider has no rows to return.
+The local complex enrichment retains one bounded state. The same outcome
+appears in provenance, proving orchestration without contacting public hosts.
 
 ```bash
-../../tools/biomcp-ci --json get protein P15056 domains interactions complexes \
-  | jq '. as $root | ["domains", "interactions", "complexes"] | all(.[]; . as $key | $root.section_outcomes[$key] as $outcome | ($outcome.outcome | IN("data", "empty", "unavailable")) and ($root._meta.section_sources | any(.key == $key and .outcome == $outcome.outcome and .sources == $outcome.sources)) and ($root._meta.section_sources | all(.key != $key or (.outcome == $outcome.outcome and .sources == $outcome.sources))))' \
+../../tools/biomcp-ci --json get protein P15056 complexes \
+  | jq '. as $root | ["complexes"] | all(.[]; . as $key | $root.section_outcomes[$key] as $outcome | ($outcome.outcome | IN("data", "empty", "unavailable")) and ($root._meta.section_sources | any(.key == $key and .outcome == $outcome.outcome and .sources == $outcome.sources)) and ($root._meta.section_sources | all(.key != $key or (.outcome == $outcome.outcome and .sources == $outcome.sources))))' \
   | mustmatch 'true'
 ```
 
