@@ -69,7 +69,7 @@ def _copy_mcp_fixture(tmp_path: Path) -> Path:
         "src/cli/mod.rs",
         "src/cli/commands.rs",
         "src/mcp/shell.rs",
-        "build.rs",
+        "src/mcp/catalog.rs",
     ):
         source = REPO_ROOT / relative_path
         target = fixture_root / relative_path
@@ -227,23 +227,18 @@ def _break_skill_positive_policy(shell_file: Path) -> None:
     shell_file.write_text(updated, encoding="utf-8")
 
 
-def _remove_description_filter_term(build_file: Path) -> None:
-    content = build_file.read_text(encoding="utf-8")
-    updated = content.replace('    "`skill install`",\n', "", 1)
+def _remove_description_filter_term(catalog_file: Path) -> None:
+    content = catalog_file.read_text(encoding="utf-8")
+    updated = content.replace("Binary downloads", "Downloads", 1)
     assert updated != content
-    build_file.write_text(updated, encoding="utf-8")
+    catalog_file.write_text(updated, encoding="utf-8")
 
 
-def _remove_structural_update_description_filter(build_file: Path) -> None:
-    content = build_file.read_text(encoding="utf-8")
-    updated = content.replace(
-        '        || line.trim_start().starts_with("- `update ")\n',
-        "",
-        1,
-    )
+def _remove_structural_update_description_filter(catalog_file: Path) -> None:
+    content = catalog_file.read_text(encoding="utf-8")
+    updated = content.replace("biomcp list <entity>", "entity catalog", 1)
     assert updated != content
-    assert '"`update [--check]`"' in updated
-    build_file.write_text(updated, encoding="utf-8")
+    catalog_file.write_text(updated, encoding="utf-8")
 
 
 def _remove_mygene_health_entry(health_file: Path) -> None:
@@ -301,8 +296,8 @@ def test_mcp_allowlist_audit_reports_allowlist_drift(tmp_path: Path) -> None:
         str(fixture_root / "src/cli/mod.rs"),
         "--shell-file",
         str(fixture_root / "src/mcp/shell.rs"),
-        "--build-file",
-        str(fixture_root / "build.rs"),
+        "--catalog-file",
+        str(fixture_root / "src/mcp/catalog.rs"),
         "--json",
     )
 
@@ -322,8 +317,8 @@ def test_mcp_allowlist_audit_reports_study_policy_drift(tmp_path: Path) -> None:
         str(fixture_root / "src/cli/mod.rs"),
         "--shell-file",
         str(fixture_root / "src/mcp/shell.rs"),
-        "--build-file",
-        str(fixture_root / "build.rs"),
+        "--catalog-file",
+        str(fixture_root / "src/mcp/catalog.rs"),
         "--json",
     )
 
@@ -343,8 +338,8 @@ def test_mcp_allowlist_audit_reports_skill_policy_drift(tmp_path: Path) -> None:
         str(fixture_root / "src/cli/mod.rs"),
         "--shell-file",
         str(fixture_root / "src/mcp/shell.rs"),
-        "--build-file",
-        str(fixture_root / "build.rs"),
+        "--catalog-file",
+        str(fixture_root / "src/mcp/catalog.rs"),
         "--json",
     )
 
@@ -356,7 +351,7 @@ def test_mcp_allowlist_audit_reports_skill_policy_drift(tmp_path: Path) -> None:
 
 def test_mcp_allowlist_audit_reports_description_policy_drift(tmp_path: Path) -> None:
     fixture_root = _copy_mcp_fixture(tmp_path)
-    _remove_description_filter_term(fixture_root / "build.rs")
+    _remove_description_filter_term(fixture_root / "src/mcp/catalog.rs")
 
     result = _run_python_script(
         MCP_SCRIPT,
@@ -364,8 +359,8 @@ def test_mcp_allowlist_audit_reports_description_policy_drift(tmp_path: Path) ->
         str(fixture_root / "src/cli/mod.rs"),
         "--shell-file",
         str(fixture_root / "src/mcp/shell.rs"),
-        "--build-file",
-        str(fixture_root / "build.rs"),
+        "--catalog-file",
+        str(fixture_root / "src/mcp/catalog.rs"),
         "--json",
     )
 
@@ -379,7 +374,7 @@ def test_mcp_description_policy_rejects_legacy_update_marker_only(
     tmp_path: Path,
 ) -> None:
     fixture_root = _copy_mcp_fixture(tmp_path)
-    _remove_structural_update_description_filter(fixture_root / "build.rs")
+    _remove_structural_update_description_filter(fixture_root / "src/mcp/catalog.rs")
 
     result = _run_python_script(
         MCP_SCRIPT,
@@ -387,8 +382,8 @@ def test_mcp_description_policy_rejects_legacy_update_marker_only(
         str(fixture_root / "src/cli/mod.rs"),
         "--shell-file",
         str(fixture_root / "src/mcp/shell.rs"),
-        "--build-file",
-        str(fixture_root / "build.rs"),
+        "--catalog-file",
+        str(fixture_root / "src/mcp/catalog.rs"),
         "--json",
     )
 
@@ -955,7 +950,7 @@ def test_wrapper_propagates_mcp_failures_from_override_paths(tmp_path: Path) -> 
             "QUALITY_RATCHET_SPEC_GLOB": str(spec_path),
             "QUALITY_RATCHET_CLI_FILE": str(fixture_root / "src/cli/mod.rs"),
             "QUALITY_RATCHET_SHELL_FILE": str(fixture_root / "src/mcp/shell.rs"),
-            "QUALITY_RATCHET_BUILD_FILE": str(fixture_root / "build.rs"),
+            "QUALITY_RATCHET_CATALOG_FILE": str(fixture_root / "src/mcp/catalog.rs"),
         },
         audits="mcp_allowlist",
     )

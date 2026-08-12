@@ -296,9 +296,8 @@ async fn print_typed_tool_surface(
         }
     }
 
-    println!("MCP typed tools: biomcp, search, get, variant_articles");
     println!(
-        "ClinGen typed tools: variant_normalize_car, variant_erepo, gene_cspec, variant_articles"
+        "MCP tools: biomcp, search, get, variant_normalize_car, variant_erepo, gene_cspec, variant_articles"
     );
     println!("ClinGen schemas validate their named root properties");
     println!("all listed MCP tools are read-only annotated");

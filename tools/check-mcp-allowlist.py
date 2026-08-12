@@ -36,12 +36,14 @@ EXPECTED_STUDY_SUBCOMMANDS = {
     "top-mutated",
 }
 EXPECTED_SKILL_ALLOWED_SUBCOMMANDS = {"list", "render"}
-EXPECTED_DESCRIPTION_BLOCKED_TERMS = {
-    "`ema sync`",
-    "`gtr sync`",
-    "`who-ivd sync`",
-    "`skill install`",
-    "`uninstall`",
+EXPECTED_CATALOG_TOOLS = {
+    "biomcp",
+    "search",
+    "get",
+    "variant_normalize_car",
+    "variant_erepo",
+    "gene_cspec",
+    "variant_articles",
 }
 
 
@@ -51,7 +53,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--cli-file", type=Path, default=Path("src/cli/mod.rs"))
     parser.add_argument("--shell-file", type=Path, default=Path("src/mcp/shell.rs"))
-    parser.add_argument("--build-file", type=Path, default=Path("build.rs"))
+    parser.add_argument(
+        "--catalog-file", type=Path, default=Path("src/mcp/catalog.rs")
+    )
     parser.add_argument("--json", action="store_true")
     return parser.parse_args()
 
@@ -138,33 +142,34 @@ def parse_skill_policy(shell_text: str) -> tuple[set[str], bool]:
     return allowed, lookup_is_known_skill and arity_is_exact and denies_by_default
 
 
-def check_description_policy(build_text: str) -> bool:
-    required_markers = {
-        "const MCP_SAFE_STUDY_PATTERN_LINE",
-        "const MCP_SAFE_STUDY_DOWNLOAD_LINE",
-        "const STUDY_PATTERN_LINE",
-        "const STUDY_DOWNLOAD_LINE",
-        "fn mcp_safe_description_line",
-        "fn mcp_safe_list_reference",
-    }
+def check_description_policy(catalog_text: str) -> bool:
+    names = set(re.findall(r'name:\s*"([a-z_]+)"', catalog_text))
+    raw_match = re.search(
+        r'name:\s*"biomcp".*?description:\s*"(?P<description>.*?)"',
+        catalog_text,
+        flags=re.DOTALL,
+    )
+    raw_description = raw_match.group("description") if raw_match else ""
     return (
-        re.search(r'\.trim_start\(\)\.starts_with\(\s*"- `update "\s*\)', build_text) is not None
-        and all(term in build_text for term in EXPECTED_DESCRIPTION_BLOCKED_TERMS)
-        and all(marker in build_text for marker in required_markers)
+        names == EXPECTED_CATALOG_TOOLS
+        and "biomcp list <entity>" in raw_description
+        and "read-only" in raw_description
+        and "Binary downloads" in raw_description
+        and len(raw_description.encode()) <= 4_000
     )
 
 
-def make_payload(cli_file: Path, shell_file: Path, build_file: Path) -> dict[str, object]:
+def make_payload(cli_file: Path, shell_file: Path, catalog_file: Path) -> dict[str, object]:
     errors: list[str] = []
     try:
         shell_text = shell_file.read_text(encoding="utf-8")
-        build_text = build_file.read_text(encoding="utf-8")
+        catalog_text = catalog_file.read_text(encoding="utf-8")
 
         cli_families = parse_cli_families_with_fallback(cli_file)
         allowed_families = parse_allowed_families(shell_text)
         study_allowed, study_download_ok = parse_study_policy(shell_text)
         skill_allowed, skill_lookup_policy_ok = parse_skill_policy(shell_text)
-        description_policy_ok = check_description_policy(build_text)
+        description_policy_ok = check_description_policy(catalog_text)
     except Exception as exc:  # noqa: BLE001
         errors.append(str(exc))
         cli_families = []
@@ -208,7 +213,7 @@ def make_payload(cli_file: Path, shell_file: Path, build_file: Path) -> dict[str
 
 def main() -> int:
     args = parse_args()
-    payload = make_payload(args.cli_file, args.shell_file, args.build_file)
+    payload = make_payload(args.cli_file, args.shell_file, args.catalog_file)
     if args.json:
         json.dump(payload, sys.stdout, indent=2)
         sys.stdout.write("\n")

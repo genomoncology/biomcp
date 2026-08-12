@@ -1,5 +1,6 @@
 //! MCP server entrypoints for stdio and HTTP transports.
 
+mod catalog;
 mod shell;
 
 /// Runs the BioMCP MCP server over stdio.

@@ -332,7 +332,7 @@ fn expected_skill_resources(
 
 pub async fn assert_initialize_and_tools<T>(
     client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
-    repo_root: impl AsRef<Path>,
+    _repo_root: impl AsRef<Path>,
 ) -> anyhow::Result<()>
 where
     T: rmcp::Service<rmcp::RoleClient>,
@@ -358,9 +358,18 @@ where
         .iter()
         .map(|tool| tool.name.as_ref())
         .collect::<Vec<_>>();
-    assert!(tool_names.contains(&"biomcp"));
-    assert!(tool_names.contains(&"search"));
-    assert!(tool_names.contains(&"get"));
+    assert_eq!(
+        tool_names,
+        [
+            "biomcp",
+            "search",
+            "get",
+            "variant_normalize_car",
+            "variant_erepo",
+            "gene_cspec",
+            "variant_articles",
+        ]
+    );
     assert!(!tool_names.contains(&"shell"));
     let search = tools
         .tools
@@ -396,7 +405,7 @@ where
         .find(|tool| tool.name == "biomcp")
         .expect("biomcp tool listed");
     let annotations = biomcp.annotations.as_ref().expect("biomcp annotations");
-    assert_eq!(annotations.title.as_deref(), Some("BioMCP"));
+    assert_eq!(annotations.title.as_deref(), Some("BioMCP command"));
     assert_eq!(annotations.read_only_hint, Some(true));
 
     let description = biomcp
@@ -404,68 +413,10 @@ where
         .as_deref()
         .expect("biomcp tool description");
     assert!(description.to_ascii_lowercase().contains("read-only"));
-    let list_contract =
-        std::fs::read_to_string(repo_root.as_ref().join("src/cli/list_reference.md"))?;
-    let required = [
-        "BioMCP Command Reference",
-        "search <entity> [query|filters]",
-        "search trial [filters]",
-        "get <entity> <id> [section...]",
-        "skill list",
-        "search phenotype \"seizure, developmental delay\"",
-    ];
-    let article_markers = [
-        "Turn a literature question into article filters",
-        "known gene/disease/drug anchors go in `-g/-d/--drug`; free-text concepts go in `-k`",
-        "PubMed ESearch cleans question-format terms provider-locally",
-    ];
-    let article_details = [
-        "## Query formulation",
-        "apoptosis gene regulation",
-        "photosensitivity mechanism",
-        "TCGA mutation analysis dataset",
-    ];
-    for marker in required {
-        assert!(
-            list_contract.contains(marker),
-            "list contract missing {marker}"
-        );
-        assert!(
-            description.contains(marker),
-            "tool description missing {marker}"
-        );
-    }
-    for marker in article_markers {
-        assert!(
-            list_contract.contains(marker),
-            "list contract missing {marker}"
-        );
-        assert!(
-            description.contains(marker),
-            "tool description missing {marker}"
-        );
-    }
-    for detail in article_details {
-        assert!(
-            !list_contract.contains(detail),
-            "list contract leaked {detail}"
-        );
-        assert!(
-            !description.contains(detail),
-            "tool description leaked {detail}"
-        );
-    }
-    assert!(description.contains("leading public biomedical data sources"));
-    assert!(!description.contains("15 biomedical sources"));
-    assert!(description.contains("TYPED MCP TOOLS:"));
-    assert!(description.contains("Prefer typed `search` and `get`"));
-    assert!(description.contains("raw `biomcp` as an escape hatch"));
-    assert!(description.contains("SEARCH FILTERS:"));
-    assert!(description.contains("MCP RESPONSE METADATA:"));
-    assert!(description.contains("json: true"));
-    assert!(description.contains("_meta.section_sources"));
-    assert!(description.contains("AGENT GUIDANCE:"));
+    assert!(description.len() <= 4_000);
     assert!(description.contains("biomcp list"));
+    assert!(description.contains("bounded typed tools"));
+    assert!(description.contains("escape hatch"));
     for forbidden in [
         "ema sync",
         "who sync",
@@ -486,12 +437,8 @@ where
             "tool description leaked {forbidden}"
         );
     }
-    assert!(description.contains("study download --list"));
-    assert!(
-        !description
-            .lines()
-            .any(|line| line.trim().starts_with("- `update "))
-    );
+    let serialized = serde_json::to_vec(&tools.tools)?;
+    assert!(serialized.len() <= 16_000);
 
     Ok(())
 }
@@ -543,16 +490,40 @@ where
         .iter()
         .map(|tool| tool.name.as_ref())
         .collect::<Vec<_>>();
-    assert!(names.contains(&"biomcp"));
+    assert_eq!(
+        names,
+        [
+            "biomcp",
+            "search",
+            "get",
+            "variant_normalize_car",
+            "variant_erepo",
+            "gene_cspec",
+            "variant_articles",
+        ]
+    );
     assert!(!names.contains(&"shell"));
+    let serialized = serde_json::to_vec(&tools.tools)?;
+    assert!(
+        serialized.len() <= 16_000,
+        "tools/list used {} bytes",
+        serialized.len()
+    );
     let biomcp = tools
         .tools
         .iter()
         .find(|tool| tool.name == "biomcp")
         .expect("biomcp tool listed");
     let annotations = biomcp.annotations.as_ref().expect("biomcp annotations");
-    assert_eq!(annotations.title.as_deref(), Some("BioMCP"));
+    assert_eq!(annotations.title.as_deref(), Some("BioMCP command"));
     assert_eq!(annotations.read_only_hint, Some(true));
+    assert!(
+        biomcp.description.as_deref().unwrap_or_default().len() <= 4_000,
+        "raw biomcp description exceeded 4,000 bytes"
+    );
+    for name in &names {
+        assert!(instructions.contains(name), "instructions omitted {name}");
+    }
 
     assert_version_call(client).await?;
     assert_binary_download_rejections(client).await?;

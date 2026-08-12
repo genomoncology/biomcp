@@ -44,8 +44,6 @@ pub use self::commands::{Commands, GetEntity, SearchEntity};
 pub use self::disease::DiseaseCommand;
 pub use self::drug::DrugCommand;
 pub use self::gene::GeneCommand;
-#[cfg(test)]
-use self::outcome::{McpChartPass, rewrite_mcp_chart_args};
 pub use self::outcome::{execute, execute_mcp, run, run_outcome};
 pub use self::pathway::PathwayCommand;
 pub use self::protein::ProteinCommand;

@@ -355,7 +355,9 @@ def test_chart_reference_pages_use_shared_compact_shape() -> None:
 def test_blog_try_it_and_install_copy_are_consistent() -> None:
     blog = _read("docs/blog/we-deleted-35-tools.md")
 
-    assert "We went from 36 MCP tools to one CLI command" in blog
+    assert "replaced 36 narrow MCP tools with one command grammar" in blog
+    assert "seven-tool catalog" in blog
+    assert "1,628 `cl100k_base` tokens" in blog
     assert "uv tool install biomcp-cli" in blog
     assert "curl -fsSL https://biomcp.org/install.sh | bash" in blog
     assert blog.index("curl -fsSL https://biomcp.org/install.sh | bash") < blog.index(

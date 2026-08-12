@@ -1,6 +1,6 @@
 use clap::{CommandFactory, FromArgMatches, Parser};
 
-use super::super::{ChartArgs, Cli, Commands, McpChartPass, execute, rewrite_mcp_chart_args};
+use super::super::{ChartArgs, Cli, Commands, execute};
 
 mod cache;
 mod chart;

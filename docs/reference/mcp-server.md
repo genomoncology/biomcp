@@ -114,12 +114,22 @@ Prefer the typed tools when possible:
 
 - `search` for biomedical searches across supported entity types.
 - `get` for record lookup and sectioned detail retrieval.
+- `variant_normalize_car` for bounded ClinGen Allele Registry normalization.
+- `variant_erepo` for bounded ClinGen ERepo assertions.
+- `gene_cspec` for bounded ClinGen CSpec manifests and pages.
+- `variant_articles` for compact multi-variant literature shortlists.
 
 Their schemas enumerate valid entity names, valid get section tokens, and the bounded search `limit`.
 
 ### Raw command escape hatch
 
 The raw `biomcp` tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as `discover`, `biomcp skill list`, `biomcp skill render`, embedded `biomcp skill <number-or-slug>` lookups, and the catalog-only `study download --list` form.
+
+The seven-tool catalog is intentionally bounded. A current compact serialized
+`tools/list` is 6,707 UTF-8 bytes and 1,628 `cl100k_base` tokens; the raw
+`biomcp` description is 425 bytes. Reproduce the measurement locally with
+`uv run --no-sync python scripts/measure-mcp-tools.py`. CI ratchets the full
+catalog at 16,000 bytes and 4,000 tokens and the raw description at 4,000 bytes.
 
 Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, `skill status`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Status remains CLI-only because probing an arbitrary skill directory can reveal workstation-local paths. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
 

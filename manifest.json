@@ -45,7 +45,31 @@
   "tools": [
     {
       "name": "biomcp",
-      "description": "Run read-only BioMCP commands for biomedical search, detail retrieval, discovery, enrichment, and study analytics."
+      "description": "Run one read-only BioMCP CLI command. Prefer the bounded typed tools when they fit. Use this escape hatch for discovery, enrichment, study analytics, and other read-only commands. Start with `biomcp list` or `biomcp list <entity>` for compact command discovery; use `biomcp skill list` for worked workflows. Set `json` for structured output. Binary downloads, local filesystem operations, updates, and mutations are rejected."
+    },
+    {
+      "name": "search",
+      "description": "Search one supported biomedical entity with typed inputs, bounded pagination, and optional JSON output."
+    },
+    {
+      "name": "get",
+      "description": "Retrieve one biomedical record and optional named text sections with typed inputs. Binary assets remain CLI-only."
+    },
+    {
+      "name": "variant_normalize_car",
+      "description": "Normalize 1-50 versioned RefSeq HGVS values through the read-only ClinGen Allele Registry."
+    },
+    {
+      "name": "variant_erepo",
+      "description": "Retrieve versioned ClinGen ERepo expert assertions for one CAid or a bounded CAid batch."
+    },
+    {
+      "name": "gene_cspec",
+      "description": "Retrieve ClinGen CSpec manifests or bounded pages from one captured exact document."
+    },
+    {
+      "name": "variant_articles",
+      "description": "Retrieve compact literature shortlists for 1-10 structured variant identities."
     }
   ],
   "compatibility": {

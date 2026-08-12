@@ -112,8 +112,7 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-"${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" typed-tools "$port" | mustmatch like 'MCP typed tools: biomcp, search, get, variant_articles
-ClinGen typed tools: variant_normalize_car, variant_erepo, gene_cspec, variant_articles
+"${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" typed-tools "$port" | mustmatch like 'MCP tools: biomcp, search, get, variant_normalize_car, variant_erepo, gene_cspec, variant_articles
 ClinGen schemas validate their named root properties
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
@@ -223,7 +222,7 @@ from pathlib import Path
 
 repo = Path('../..')
 shell = (repo / 'src/mcp/shell.rs').read_text()
-build = (repo / 'build.rs').read_text()
+catalog = (repo / 'src/mcp/catalog.rs').read_text()
 tests = (repo / 'tests/rmcp_client_contract.rs').read_text()
 contract = (repo / 'crates/biomcp-mcp-contract-client/src/lib.rs').read_text()
 
@@ -233,9 +232,9 @@ assert 'append_default_mcp_footer' in shell
 assert 'mcp_meta_footer_from_json' in shell
 assert '## Sources' in shell
 assert '## Next commands' in shell
-assert 'MCP RESPONSE METADATA:' in build
-assert 'json: true' in build
-assert '_meta.section_sources' in build
+assert 'pub(super) const TOOLS' in catalog
+assert 'name: "biomcp"' in catalog
+assert 'biomcp list <entity>' in catalog
 assert 'assert_mcp_provenance_calls' in tests
 assert 'assert_mcp_provenance_calls' in contract
 assert 'biomcp discover BRCA1 --json' in contract

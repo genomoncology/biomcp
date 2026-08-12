@@ -269,7 +269,8 @@ try:
     p.stdin.flush()
     tools = request({'jsonrpc':'2.0','id':2,'method':'tools/list','params':{}})['result']['tools']
     by_name = {tool['name']: tool for tool in tools}
-    typed_ok = {'search', 'get'}.issubset(by_name) and 'biomcp' in by_name
+    expected = ['biomcp', 'search', 'get', 'variant_normalize_car', 'variant_erepo', 'gene_cspec', 'variant_articles']
+    typed_ok = [tool['name'] for tool in tools] == expected
     typed_ok = typed_ok and 'enum' in by_name['search']['inputSchema']['properties']['entity']
     typed_ok = typed_ok and 'enum' in by_name['get']['inputSchema']['properties']['entity']
     print('435 typed MCP tool surface\t' + ('PASS' if typed_ok else 'FAIL') + '\tsearch/get tools with entity enum schemas')

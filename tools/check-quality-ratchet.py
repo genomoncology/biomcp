@@ -99,7 +99,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--spec-glob", required=True)
     parser.add_argument("--cli-file", type=Path, required=True)
     parser.add_argument("--shell-file", type=Path, required=True)
-    parser.add_argument("--build-file", type=Path, required=True)
+    parser.add_argument("--catalog-file", type=Path, required=True)
     parser.add_argument("--sources-dir", type=Path, required=True)
     parser.add_argument("--sources-mod", type=Path, required=True)
     parser.add_argument("--health-file", type=Path, required=True)
@@ -2133,8 +2133,8 @@ def main() -> int:
                 str(args.cli_file),
                 "--shell-file",
                 str(args.shell_file),
-                "--build-file",
-                str(args.build_file),
+                "--catalog-file",
+                str(args.catalog_file),
                 "--json",
             ],
             allowed_exit_codes={0, 1},

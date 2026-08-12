@@ -88,8 +88,15 @@ def test_manifest_matches_directory_bundle_contract() -> None:
 
     tools = manifest["tools"]
     assert isinstance(tools, list)
-    assert len(tools) == 1
-    assert tools[0]["name"] == "biomcp"
+    assert [tool["name"] for tool in tools] == [
+        "biomcp",
+        "search",
+        "get",
+        "variant_normalize_car",
+        "variant_erepo",
+        "gene_cspec",
+        "variant_articles",
+    ]
     assert "read-only" in str(tools[0]["description"]).lower()
     assert "ONCOKB_API_KEY" not in json.dumps(manifest)
 

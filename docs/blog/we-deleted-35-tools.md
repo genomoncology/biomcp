@@ -2,7 +2,7 @@
 
 *What rebuilding a biomedical data tool taught us about designing for AI agents.*
 
-**TL;DR:** We went from 36 MCP tools to one CLI command and cut context window overhead by 95%. The agent got faster, cheaper, and more accurate. Here's what we changed and what's generalizable.
+**TL;DR:** We replaced 36 narrow MCP tools with one command grammar, then selectively added six bounded typed tools where schemas materially help. The current seven-tool catalog is 6,707 bytes (1,628 `cl100k_base` tokens), measured from a real local `tools/list` response.
 
 ![Redesigned for AI Agents](../assets/04-redesign-1280x720.png)
 
@@ -46,9 +46,9 @@ A single lookup is a clean comparison, but the real payoff is multi-step. A rese
 
 ## What We Changed
 
-### 1. One tool does it all
+### 1. One command grammar, with a few bounded typed routes
 
-The old version was an MCP server that happened to have a CLI. The new version is a CLI that happens to serve MCP — one tool called `biomcp` that proxies the full command hierarchy:
+The old version was an MCP server that happened to have a CLI. The new version is a CLI that happens to serve MCP. Its raw `biomcp` tool proxies the full read-only command hierarchy:
 
 ```
 ## Patterns
@@ -63,11 +63,21 @@ The old version was an MCP server that happened to have a CLI. The new version i
 - `drug adverse-events <name>`
 ```
 
-The tool description is auto-generated from CLI help at build time, so it **can never drift** from reality. Context cost: ~800 tokens. Down from 16,600.
+Six bounded typed tools now sit beside that escape hatch: `search`, `get`,
+`variant_normalize_car`, `variant_erepo`, `gene_cspec`, and
+`variant_articles`. One typed Rust catalog owns all seven names, descriptions,
+annotations, and ordering. The raw description points to bounded `biomcp list`
+discovery instead of embedding the whole CLI reference.
+
+The current compact serialized `tools/list` measures 6,707 UTF-8 bytes and
+1,628 `cl100k_base` tokens, versus roughly 16,600 tokens in the original Python
+surface. Reproduce it with
+`uv run --no-sync python scripts/measure-mcp-tools.py`; these are measurements,
+not a claimed percentage.
 
 We still support MCP — local stdio and remote server modes — but the MCP server is now a thin proxy over the CLI. You don't have to choose. Build the CLI first, serve it over MCP second.
 
-*The general principle: Don't shatter a natural grammar into individual function signatures. Today's models handle a single tool with a command grammar — and you save thousands of context tokens.*
+*The general principle: Don't shatter a natural grammar into dozens of function signatures. Keep one compact command escape hatch, then add typed routes only where bounded schemas materially improve safety or usability.*
 
 ### 2. Light on context
 
@@ -144,7 +154,7 @@ The agent doesn't memorize the command surface. Each response teaches it where t
 
 | Metric | Python (v0.7) | Rust (v0.8+) | Change |
 |---|---|---|---|
-| Tool descriptions loaded | 36 tools, ~16,600 tokens | 1 tool, ~800 tokens | **95% reduction** |
+| Tool catalog loaded | 36 tools, ~16,600 tokens | 7 tools, 1,628 tokens | Measured locally from `tools/list` |
 | Variant lookup output | ~1,400 tokens | ~350 tokens | **75% reduction** |
 | Trial search output | ~1,600 tokens | ~400 tokens | **75% reduction** |
 | Round-trips per query | 3-4 (think + search + get) | 1 | **70% fewer** |

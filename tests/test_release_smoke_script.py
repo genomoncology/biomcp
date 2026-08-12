@@ -51,9 +51,13 @@ def _fake_biomcp_script(git_sha: str, build_date: str = "2026-06-24T00:00:00Z") 
                 elif method == "tools/list":
                     schema = {{"type":"object","properties":{{"entity":{{"enum":["gene"]}}}}}}
                     tools = [
+                        {{"name":"biomcp","inputSchema":{{"type":"object"}}}},
                         {{"name":"search","inputSchema":schema}},
                         {{"name":"get","inputSchema":schema}},
-                        {{"name":"biomcp","inputSchema":{{"type":"object"}}}},
+                        {{"name":"variant_normalize_car","inputSchema":{{"type":"object"}}}},
+                        {{"name":"variant_erepo","inputSchema":{{"type":"object"}}}},
+                        {{"name":"gene_cspec","inputSchema":{{"type":"object"}}}},
+                        {{"name":"variant_articles","inputSchema":{{"type":"object"}}}},
                     ]
                     print(json.dumps({{"jsonrpc":"2.0","id":msg["id"],"result":{{"tools":tools}}}}), flush=True)
                 elif method == "tools/call":

@@ -7,7 +7,7 @@ use base64::Engine;
 use clap::CommandFactory;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
-    AnnotateAble, CallToolResult, Content, Implementation, ListResourcesResult,
+    AnnotateAble, CallToolResult, Content, Implementation, ListResourcesResult, ListToolsResult,
     PaginatedRequestParams, RawResource, ReadResourceRequestParams, ReadResourceResult,
     ResourceContents, ServerCapabilities, ServerInfo,
 };
@@ -184,9 +184,9 @@ const VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: variant articl
 
 impl BioMcpServer {
     pub fn new() -> Self {
-        Self {
-            tool_router: Self::tool_router(),
-        }
+        let mut tool_router = Self::tool_router();
+        super::catalog::apply(&mut tool_router);
+        Self { tool_router }
     }
 
     fn tool_error(message: impl Into<String>) -> CallToolResult {
@@ -640,8 +640,7 @@ fn append_default_mcp_footer(text: String, json_text: &str) -> String {
 
 #[tool_router]
 impl BioMcpServer {
-    #[doc = include_str!(concat!(env!("OUT_DIR"), "/mcp_shell_description.txt"))]
-    #[tool(annotations(title = "BioMCP", read_only_hint = true))]
+    #[tool]
     async fn biomcp(
         &self,
         Parameters(ShellCommand { command, json }): Parameters<ShellCommand>,
@@ -677,8 +676,7 @@ impl BioMcpServer {
         Self::execute_args(args, json).await
     }
 
-    /// Search a biomedical entity with typed MCP parameters instead of a shell command string.
-    #[tool(annotations(title = "BioMCP typed search", read_only_hint = true))]
+    #[tool]
     async fn search(
         &self,
         Parameters(input): Parameters<TypedSearch>,
@@ -688,8 +686,7 @@ impl BioMcpServer {
         Self::execute_args(args, json).await
     }
 
-    /// Get one biomedical entity record with typed entity, id, and section parameters.
-    #[tool(annotations(title = "BioMCP typed get", read_only_hint = true))]
+    #[tool]
     async fn get(
         &self,
         Parameters(input): Parameters<TypedGet>,
@@ -699,11 +696,7 @@ impl BioMcpServer {
         Self::execute_args(args, json).await
     }
 
-    /// Normalize 1-50 versioned RefSeq HGVS values through the read-only ClinGen Allele Registry.
-    #[tool(annotations(
-        title = "BioMCP ClinGen Allele Registry normalization",
-        read_only_hint = true
-    ))]
+    #[tool]
     async fn variant_normalize_car(
         &self,
         Parameters(input): Parameters<TypedVariantCar>,
@@ -727,8 +720,7 @@ impl BioMcpServer {
         }
     }
 
-    /// Retrieve versioned ClinGen ERepo expert assertions for one CAid or a bounded CAid batch.
-    #[tool(annotations(title = "BioMCP ClinGen ERepo assertions", read_only_hint = true))]
+    #[tool]
     async fn variant_erepo(
         &self,
         Parameters(input): Parameters<TypedVariantErepo>,
@@ -779,8 +771,7 @@ impl BioMcpServer {
         }
     }
 
-    /// Retrieve ClinGen CSpec manifests or bounded pages from one captured exact document.
-    #[tool(annotations(title = "BioMCP ClinGen CSpec", read_only_hint = true))]
+    #[tool]
     async fn gene_cspec(
         &self,
         Parameters(input): Parameters<TypedGeneCspec>,
@@ -824,8 +815,7 @@ impl BioMcpServer {
         }
     }
 
-    /// Retrieve compact variant-literature shortlists for 1-10 structured identities.
-    #[tool(annotations(title = "BioMCP variant literature batch", read_only_hint = true))]
+    #[tool]
     async fn variant_articles(
         &self,
         Parameters(input): Parameters<TypedVariantArticles>,
@@ -892,16 +882,17 @@ impl ServerHandler for BioMcpServer {
                 .build(),
         )
         .with_server_info(Implementation::new("biomcp", env!("CARGO_PKG_VERSION")))
-        .with_instructions(
-            "BioMCP provides biomedical data from leading public biomedical data sources \
-             (PubMed, ClinicalTrials.gov, ClinVar, gnomAD, OncoKB, Reactome, UniProt, \
-             PharmGKB, OpenFDA, and more). \
-             Prefer the typed `search`, `get`, and `variant_articles` tools for structured entity lookup; use the raw `biomcp` command tool as an escape hatch for long-tail commands. \
-             Start with `biomcp skill list` when you need the right playbook, \
-             `biomcp list` for a command reference, \
-             or `biomcp skill` for guided investigation workflows."
-                .to_string(),
-        )
+        .with_instructions(super::catalog::instructions())
+    }
+
+    fn list_tools(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> impl Future<Output = Result<ListToolsResult, McpError>> + Send + '_ {
+        std::future::ready(Ok(ListToolsResult::with_all_items(super::catalog::list(
+            &self.tool_router,
+        ))))
     }
 
     fn list_resources(
