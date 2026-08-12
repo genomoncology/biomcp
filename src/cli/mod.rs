@@ -45,7 +45,7 @@ pub use self::commands::{Commands, GetEntity, SearchEntity};
 pub use self::disease::DiseaseCommand;
 pub use self::drug::DrugCommand;
 pub use self::gene::GeneCommand;
-pub use self::outcome::{execute, execute_mcp, run, run_outcome};
+pub use self::outcome::{execute, execute_mcp, run, run_outcome, server_json_rejection};
 pub use self::pathway::PathwayCommand;
 pub use self::protein::ProteinCommand;
 pub use self::shared::{build_cli, parse_cli_from_env, try_parse_cli};
@@ -67,6 +67,8 @@ use self::shared::RUNTIME_HELP_SUBCOMMANDS;
 use self::shared::alias_suggestion_outcome;
 pub(crate) use self::shared::paginate_results;
 #[cfg(test)]
+use self::shared::render_batch_json;
+#[cfg(test)]
 use self::shared::search_json;
 #[cfg(test)]
 use self::shared::search_meta_with_suggestions;
@@ -74,7 +76,7 @@ use self::shared::{
     PaginationMeta, SearchJsonMeta, empty_sections, extract_json_from_sections,
     log_pagination_truncation, normalize_cli_query, normalize_cli_tokens, normalize_next_commands,
     paged_fetch_limit, paged_fetch_limit_for, pagination_footer_cursor, pagination_footer_offset,
-    related_article_filters, render_batch_json, resolve_query_input, search_json_with_meta,
+    related_article_filters, resolve_query_input, search_json_with_meta,
     search_json_with_meta_and_suggestions, search_meta, search_meta_with_section_sources,
     search_meta_with_workflow, try_alias_fallback_outcome,
 };

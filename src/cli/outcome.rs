@@ -36,6 +36,31 @@ fn mcp_output_flag_error() -> crate::error::BioMcpError {
     )
 }
 
+fn require_json_document(mut outcome: CommandOutcome) -> CommandOutcome {
+    if outcome.exit_code == 0
+        && outcome.stream == super::OutputStream::Stdout
+        && outcome.bytes.is_none()
+        && serde_json::from_str::<serde_json::Value>(&outcome.text).is_err()
+    {
+        let error = crate::error::BioMcpError::InternalProcessing;
+        outcome.text = crate::render::json::to_error_json(&error)
+            .expect("static JSON contract error must serialize");
+        outcome.exit_code = error.exit_code();
+    }
+    outcome
+}
+
+pub fn server_json_rejection() -> CommandOutcome {
+    let error = crate::error::BioMcpError::InvalidArgument(
+        "--json cannot be used with a long-running MCP server command".into(),
+    );
+    CommandOutcome::stdout_with_exit(
+        crate::render::json::to_error_json(&error)
+            .expect("static server JSON rejection must serialize"),
+        error.exit_code(),
+    )
+}
+
 fn is_charted_mcp_study_command(cli: &Cli) -> Result<bool, crate::error::BioMcpError> {
     let chart = match &cli.command {
         Commands::Study {
@@ -246,7 +271,17 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 }
             }
             Commands::Cache { cmd } => match cmd {
-                super::cache::CacheCommand::Path => Ok(crate::cli::cache::render_path()?),
+                super::cache::CacheCommand::Path => {
+                    let path = crate::cli::cache::render_path()?.trim().to_string();
+                    if json {
+                        Ok(crate::render::json::to_pretty(&serde_json::json!({
+                            "kind": "cache_path",
+                            "path": path,
+                        }))?)
+                    } else {
+                        Ok(path)
+                    }
+                }
                 super::cache::CacheCommand::Stats => {
                     let report = crate::cli::cache::collect_cache_stats_report()?;
                     if json {
@@ -274,25 +309,35 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     .into())
                 }
             },
-            Commands::Ema { cmd } => outcome_to_string(super::system::handle_ema(cmd).await?),
-            Commands::Who { cmd } => outcome_to_string(super::system::handle_who(cmd).await?),
-            Commands::Cvx { cmd } => outcome_to_string(super::system::handle_cvx(cmd).await?),
+            Commands::Ema { cmd } => outcome_to_string(super::system::handle_ema(cmd, json).await?),
+            Commands::Who { cmd } => outcome_to_string(super::system::handle_who(cmd, json).await?),
+            Commands::Cvx { cmd } => outcome_to_string(super::system::handle_cvx(cmd, json).await?),
             Commands::Ddinter { cmd } => {
-                outcome_to_string(super::system::handle_ddinter(cmd).await?)
+                outcome_to_string(super::system::handle_ddinter(cmd, json).await?)
             }
-            Commands::Gtr { cmd } => outcome_to_string(super::system::handle_gtr(cmd).await?),
+            Commands::Gtr { cmd } => outcome_to_string(super::system::handle_gtr(cmd, json).await?),
             Commands::WhoIvd { cmd } => {
-                outcome_to_string(super::system::handle_who_ivd(cmd).await?)
+                outcome_to_string(super::system::handle_who_ivd(cmd, json).await?)
             }
             Commands::Skill { command } => match command {
-                None => Ok(crate::cli::skill::show_overview()?),
-                Some(SkillCommand::List) => Ok(crate::cli::skill::list_use_cases()?),
-                Some(SkillCommand::Render) => Ok(crate::cli::skill::render_system_prompt()?),
+                None => {
+                    let content = crate::cli::skill::show_overview()?;
+                    if json { Ok(crate::render::json::to_pretty(&serde_json::json!({"kind":"skill","action":"overview","content":content}))?) } else { Ok(content) }
+                }
+                Some(SkillCommand::List) => {
+                    let content = crate::cli::skill::list_use_cases()?;
+                    if json { Ok(crate::render::json::to_pretty(&serde_json::json!({"kind":"skill","action":"list","content":content}))?) } else { Ok(content) }
+                }
+                Some(SkillCommand::Render) => {
+                    let content = crate::cli::skill::render_system_prompt()?;
+                    if json { Ok(crate::render::json::to_pretty(&serde_json::json!({"kind":"skill","action":"render","content":content}))?) } else { Ok(content) }
+                }
                 Some(SkillCommand::Status { dir }) => {
                     Ok(crate::cli::skill::skill_status(dir.as_deref(), json)?)
                 }
                 Some(SkillCommand::Install { dir, force }) => {
-                    Ok(crate::cli::skill::install_skills(dir.as_deref(), force)?)
+                    let content = crate::cli::skill::install_skills(dir.as_deref(), force)?;
+                    if json { Ok(crate::render::json::to_pretty(&serde_json::json!({"kind":"skill","action":"install","status":"installed","changed":true,"content":content}))?) } else { Ok(content) }
                 }
                 Some(SkillCommand::Show(args)) => {
                     let key = if args.is_empty() {
@@ -302,14 +347,32 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     } else {
                         args.join("-")
                     };
-                    Ok(crate::cli::skill::show_use_case(&key)?)
+                    let content = crate::cli::skill::show_use_case(&key)?;
+                    if json { Ok(crate::render::json::to_pretty(&serde_json::json!({"kind":"skill","action":"show","skill":key,"content":content}))?) } else { Ok(content) }
                 }
             },
-            Commands::Chart { command } => Ok(crate::cli::chart::show(command.as_ref())?),
-            Commands::Update(super::system::UpdateArgs { check }) => {
-                Ok(crate::cli::update::run(check).await?)
+            Commands::Chart { command } => {
+                let content = crate::cli::chart::show(command.as_ref())?;
+                if json {
+                    Ok(crate::render::json::to_pretty(&serde_json::json!({
+                        "kind":"chart",
+                        "chart": command.map(|value| format!("{value:?}").to_ascii_lowercase()),
+                        "content": content,
+                    }))?)
+                } else { Ok(content) }
             }
-            Commands::Uninstall => outcome_to_string(super::system::handle_uninstall().await?),
+            Commands::Update(super::system::UpdateArgs { check }) => {
+                let content = crate::cli::update::run(check).await?;
+                if json {
+                    Ok(crate::render::json::to_pretty(&serde_json::json!({
+                        "kind":"update",
+                        "status": if check { "checked" } else { "completed" },
+                        "changed": !check && content.starts_with("Updated "),
+                        "content": content,
+                    }))?)
+                } else { Ok(content) }
+            }
+            Commands::Uninstall => outcome_to_string(super::system::handle_uninstall(json).await?),
             Commands::Enrich(args) => {
                 outcome_to_string(super::system::handle_enrich(args, json).await?)
             }
@@ -323,7 +386,14 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     crate::cli::list::render(entity.as_deref()).map_err(Into::into)
                 }
             }
-            Commands::McpConfig(args) => crate::cli::mcp_config::run(args),
+            Commands::McpConfig(args) => {
+                let content = crate::cli::mcp_config::run(args)?;
+                if json {
+                    let config = serde_json::from_str::<serde_json::Value>(&content)
+                        .unwrap_or(serde_json::Value::String(content));
+                    crate::render::json::to_pretty(&serde_json::json!({"kind":"mcp_config","config":config})).map_err(Into::into)
+                } else { Ok(content) }
+            }
             Commands::Mcp | Commands::Serve | Commands::ServeHttp(_) | Commands::ServeSse => {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
             }
@@ -517,7 +587,8 @@ async fn run_outcome_on_current_stack(cli: Cli) -> anyhow::Result<CommandOutcome
     let contract = JsonResponseContract::for_command(&cli.command);
     match Box::pin(run_outcome_inner(cli, false)).await {
         Ok(mut outcome) => Ok(if json {
-            finalize_structured_error(outcome, contract)
+            outcome = finalize_structured_error(outcome, contract);
+            require_json_document(outcome)
         } else {
             if outcome.bytes.is_none() && !trusted_terminal_chart {
                 outcome.text = crate::render::human::sanitize_document(&outcome.text);
@@ -608,5 +679,42 @@ mod mcp_binary_tests {
             .expect_err("MCP must reject binary output");
         assert!(error.to_string().contains("binary downloads are CLI-only"));
         assert!(!error.to_string().contains('\u{fffd}'));
+    }
+}
+
+#[cfg(test)]
+mod global_json_tests {
+    use super::{run_outcome, server_json_rejection};
+
+    #[tokio::test]
+    async fn formerly_plain_finite_commands_emit_one_json_document() {
+        let rows: &[&[&str]] = &[
+            &["biomcp", "--json", "skill"],
+            &["biomcp", "--json", "skill", "render"],
+            &["biomcp", "--json", "chart"],
+            &[
+                "biomcp",
+                "--json",
+                "mcp-config",
+                "--client",
+                "claude-desktop",
+            ],
+            &["biomcp", "--json", "cache", "path"],
+        ];
+        for args in rows {
+            let cli = crate::cli::try_parse_cli(*args).expect("matrix command must parse");
+            let outcome = run_outcome(cli).await.expect("matrix command must execute");
+            assert_eq!(outcome.exit_code, 0, "{args:?}");
+            serde_json::from_str::<serde_json::Value>(&outcome.text)
+                .unwrap_or_else(|error| panic!("{args:?} did not emit one JSON value: {error}"));
+        }
+    }
+
+    #[test]
+    fn long_running_server_json_rejection_is_structured_and_nonzero() {
+        let outcome = server_json_rejection();
+        assert_ne!(outcome.exit_code, 0);
+        let value: serde_json::Value = serde_json::from_str(&outcome.text).unwrap();
+        assert_eq!(value["error"]["code"], "invalid_argument");
     }
 }

@@ -39,6 +39,20 @@ async fn main() -> std::process::ExitCode {
     init_tracing();
 
     let cli = biomcp_cli::cli::parse_cli_from_env();
+    if cli.json
+        && matches!(
+            &cli.command,
+            biomcp_cli::cli::Commands::Mcp
+                | biomcp_cli::cli::Commands::Serve
+                | biomcp_cli::cli::Commands::ServeHttp(_)
+                | biomcp_cli::cli::Commands::ServeSse
+        )
+    {
+        let outcome = biomcp_cli::cli::server_json_rejection();
+        println!("{}", outcome.text);
+        let _ = std::io::stdout().flush();
+        return std::process::ExitCode::from(outcome.exit_code);
+    }
     match cli.command {
         biomcp_cli::cli::Commands::Mcp | biomcp_cli::cli::Commands::Serve => {
             match biomcp_cli::mcp::run_stdio().await {
