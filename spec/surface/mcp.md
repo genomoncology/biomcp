@@ -147,10 +147,11 @@ curl -fsS "http://127.0.0.1:$port/" | mustmatch like '"transport":"streamable-ht
 "mcp":"/mcp"'
 ```
 
-## Streamable HTTP Host Headers Are Open By Default And Restrictable
+## Streamable HTTP Host Headers Default To A Safe Boundary
 
-Default `serve-http` should not inherit rmcp's localhost-only Host guard, while
-operators can re-enable a precise Host allowlist with `--allowed-hosts`.
+Loopback `serve-http` accepts local Host values and rejects unrelated values.
+Non-loopback binds require a precise allowlist or the explicit unsafe escape
+hatch.
 
 ```bash
 port="$(../../spec/fixtures/reserve-local-port)"
@@ -165,9 +166,13 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
-status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H 'Host: example.com' "http://127.0.0.1:$port/mcp")
-test "$status" != 403
-cat "$body" | mustmatch not like 'Host header is not allowed'
+for host in localhost "localhost:$port" 127.0.0.1 "127.0.0.1:$port" '[::1]' "[::1]:$port"; do
+  status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H "Host: $host" "http://127.0.0.1:$port/mcp")
+  test "$status" != 403
+done
+status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H 'Host: attacker.example' "http://127.0.0.1:$port/mcp")
+test "$status" = 403
+cat "$body" | mustmatch like 'Host header is not allowed'
 kill "$pid" 2>/dev/null || true
 wait "$pid" 2>/dev/null || true
 trap - EXIT
@@ -190,6 +195,22 @@ cat "$body" | mustmatch like 'Host header is not allowed'
 status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H 'Host: example.com' "http://127.0.0.1:$port/mcp")
 test "$status" != 403
 cat "$body" | mustmatch not like 'Host header is not allowed'
+
+set +e
+non_loopback_error=$(../../tools/biomcp-ci serve-http --host 0.0.0.0 --port 0 2>&1)
+non_loopback_status=$?
+set -e
+test "$non_loopback_status" -ne 0
+printf '%s' "$non_loopback_error" | mustmatch like '--allowed-hosts
+--unsafe-allow-any-host'
+
+../../tools/biomcp-ci serve-http --host 127.0.0.1 --port 0 --unsafe-allow-any-host >/tmp/biomcp-mcp-host-unsafe.log 2>&1 &
+unsafe_pid=$!
+sleep 0.25
+kill "$unsafe_pid" 2>/dev/null || true
+wait "$unsafe_pid" 2>/dev/null || true
+cat /tmp/biomcp-mcp-host-unsafe.log | mustmatch like 'Host header checks are disabled
+does not provide authentication or encryption'
 ```
 
 ## MCP Responses Surface Provenance Metadata

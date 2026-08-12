@@ -49,7 +49,8 @@ Pass provider keys through the container environment, for example with `-e ONCOK
 Use Streamable HTTP when the MCP client reaches BioMCP over a network, through a container port, or behind a proxy:
 
 ```bash
-biomcp serve-http --host 0.0.0.0 --port 8000
+biomcp serve-http --host 0.0.0.0 --port 8000 \
+  --allowed-hosts biomcp.example.org
 ```
 
 Routes:
@@ -63,16 +64,23 @@ Point HTTP-capable MCP clients at the full MCP URL, for example `https://biomcp.
 
 ## Host guard and proxies
 
-As of BioMCP 0.8.24, the HTTP Host guard is opt-in. If you do not pass `--allowed-hosts`, BioMCP accepts any Host header. That default is intentional so the server works behind containers, reverse proxies, service meshes, and custom domains without extra configuration. This behavior corresponds to issue #240.
-
-Use `--allowed-hosts` only when BioMCP itself should reject unexpected Host headers:
+Loopback binds accept `localhost`, `127.0.0.1`, and `[::1]` Host values by
+default, with or without the listening port, and reject unrelated values. A
+non-loopback bind fails before opening its listener unless you provide an
+explicit Host policy:
 
 ```bash
 biomcp serve-http --host 0.0.0.0 --port 8000 \
   --allowed-hosts biomcp.example.org,localhost:8000
 ```
 
-If a proxy rewrites Host headers, include the value BioMCP actually receives or leave the option unset and enforce host policy at the proxy.
+If a proxy rewrites Host headers, include the value BioMCP actually receives.
+BioMCP does not infer trust from `Forwarded` or `X-Forwarded-Host` headers.
+
+`--unsafe-allow-any-host` is an explicit escape hatch for infrastructure that
+must accept arbitrary Host values. It disables only the Host check and is
+mutually exclusive with `--allowed-hosts`; it adds no authentication or
+encryption.
 
 ## Authentication model
 
@@ -149,6 +157,6 @@ MCP chart calls do not write files. If the caller supplies `--output` or `-o`, t
 - Use `biomcp serve` for local stdio clients.
 - Use `biomcp serve-http` for remote Streamable HTTP clients and route them to `/mcp`.
 - Probe `/health`, `/readyz`, or `/` from load balancers and deployment checks.
-- Leave `--allowed-hosts` unset unless BioMCP itself should enforce Host headers.
+- Keep loopback defaults, or set `--allowed-hosts` for every non-loopback bind.
 - Put remote HTTP deployments behind your own authentication and TLS layer.
 - Set provider keys as environment variables for the BioMCP process.

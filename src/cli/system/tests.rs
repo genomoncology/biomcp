@@ -462,9 +462,24 @@ fn serve_http_help_describes_streamable_http() {
     assert!(help.contains("--host <HOST>"));
     assert!(help.contains("--port <PORT>"));
     assert!(help.contains("--allowed-hosts <ALLOWED_HOSTS>"));
+    assert!(help.contains("--unsafe-allow-any-host"));
+    assert!(help.contains("does not add authentication or encryption"));
     assert!(!help.contains("SSE transport"));
     assert!(!help.contains("--json"));
     assert!(!help.contains("--no-cache"));
+}
+
+#[test]
+fn serve_http_host_safety_flags_conflict() {
+    let error = crate::cli::try_parse_cli([
+        "biomcp",
+        "serve-http",
+        "--allowed-hosts",
+        "example.com",
+        "--unsafe-allow-any-host",
+    ])
+    .expect_err("host allowlist and unsafe bypass must conflict");
+    assert!(error.to_string().contains("cannot be used with"));
 }
 
 #[test]

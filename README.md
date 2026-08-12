@@ -385,12 +385,15 @@ Streamable HTTP `biomcp serve-http` endpoint so all workers share a single
 limiter budget:
 
 ```bash
-biomcp serve-http --host 0.0.0.0 --port 8080
+biomcp serve-http --host 0.0.0.0 --port 8080 \
+  --allowed-hosts biomcp.example.org
 ```
 
-By default, `serve-http` accepts any HTTP `Host` header. Add
-`--allowed-hosts example.com,internal.example.com` when you want to restrict
-accepted Host header values.
+Loopback servers accept only local `Host` values by default. A non-loopback
+bind requires `--allowed-hosts`. The explicit `--unsafe-allow-any-host` escape
+hatch disables only this Host check; it does not add authentication, TLS, or
+encryption. Put remote deployments behind a trusted authenticated TLS proxy or
+inside a private network.
 
 Remote clients should connect to `http://<host>:8080/mcp`. Lightweight process
 probes are available at `GET /health`, `GET /readyz`, and `GET /`.

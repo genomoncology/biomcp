@@ -13,7 +13,18 @@ biomcp serve-http --host 127.0.0.1 --port 8080
 ```
 
 Use `--host 0.0.0.0` only when the server must accept connections from other
-machines or containers.
+machines or containers. A non-loopback bind must name the Host values BioMCP
+will receive:
+
+```bash
+biomcp serve-http --host 0.0.0.0 --port 8080 \
+  --allowed-hosts biomcp.example.org,localhost:8080
+```
+
+Use TLS and authentication at a trusted reverse proxy, gateway, or private
+network boundary. The Host allowlist prevents unexpected Host headers; it is
+not authentication. If a proxy rewrites `Host`, allow the value BioMCP actually
+receives. BioMCP does not trust forwarding headers to infer it.
 
 ## MCP endpoint and probes
 

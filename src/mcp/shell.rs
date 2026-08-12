@@ -1003,11 +1003,44 @@ pub async fn run_stdio() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn run_http(host: &str, port: u16, allowed_hosts: Vec<String>) -> anyhow::Result<()> {
+fn http_allowed_hosts(
+    ip: std::net::IpAddr,
+    allowed_hosts: Vec<String>,
+    unsafe_allow_any_host: bool,
+) -> anyhow::Result<Vec<String>> {
+    let allowed_hosts = allowed_hosts
+        .into_iter()
+        .map(|host| host.trim().to_string())
+        .filter(|host| !host.is_empty())
+        .collect::<Vec<_>>();
+    if unsafe_allow_any_host && !allowed_hosts.is_empty() {
+        anyhow::bail!("--allowed-hosts cannot be combined with --unsafe-allow-any-host");
+    }
+    if unsafe_allow_any_host {
+        return Ok(Vec::new());
+    }
+    if !allowed_hosts.is_empty() {
+        return Ok(allowed_hosts);
+    }
+    if ip.is_loopback() {
+        return Ok(vec!["localhost".into(), "127.0.0.1".into(), "::1".into()]);
+    }
+    anyhow::bail!(
+        "A non-loopback serve-http bind requires --allowed-hosts or --unsafe-allow-any-host"
+    )
+}
+
+pub async fn run_http(
+    host: &str,
+    port: u16,
+    allowed_hosts: Vec<String>,
+    unsafe_allow_any_host: bool,
+) -> anyhow::Result<()> {
     let ip: std::net::IpAddr = host
         .parse()
         .map_err(|e| anyhow::anyhow!("Invalid host address: {e}"))?;
     let bind = std::net::SocketAddr::new(ip, port);
+    let allowed_hosts = http_allowed_hosts(ip, allowed_hosts, unsafe_allow_any_host)?;
     let shutdown = CancellationToken::new();
 
     #[allow(clippy::field_reassign_with_default)]
@@ -1032,6 +1065,11 @@ pub async fn run_http(host: &str, port: u16, allowed_hosts: Vec<String>) -> anyh
         .map_err(|e| anyhow::anyhow!("Failed to bind HTTP server: {e}"))?;
 
     tracing::info!("BioMCP Streamable HTTP server listening on http://{bind}");
+    if unsafe_allow_any_host {
+        tracing::warn!(
+            "Host header checks are disabled; this does not provide authentication or encryption"
+        );
+    }
     tracing::info!("  MCP endpoint:   POST/GET http://{bind}/mcp");
     tracing::info!("  Health probe:   GET      http://{bind}/health");
     tracing::info!("  Ready probe:    GET      http://{bind}/readyz");
@@ -1061,8 +1099,9 @@ mod tests {
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
         TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles, TypedVariantCar,
         VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, all_get_sections, get_args,
-        get_section_groups, index_handler, is_allowed_mcp_command, mcp_rejection_message,
-        redact_mcp_json_text, redact_mcp_text, search_args, subcommand_names, to_resource_result,
+        get_section_groups, http_allowed_hosts, index_handler, is_allowed_mcp_command,
+        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
+        subcommand_names, to_resource_result,
     };
     use axum::Json;
 
@@ -1071,6 +1110,34 @@ mod tests {
             .iter()
             .flat_map(|group| group.iter().copied())
             .collect()
+    }
+
+    #[test]
+    fn loopback_http_defaults_to_local_host_headers() {
+        let hosts = http_allowed_hosts("127.0.0.1".parse().unwrap(), vec![], false).unwrap();
+        assert_eq!(hosts, ["localhost", "127.0.0.1", "::1"]);
+    }
+
+    #[test]
+    fn non_loopback_http_requires_an_explicit_policy() {
+        let error = http_allowed_hosts("0.0.0.0".parse().unwrap(), vec![], false).unwrap_err();
+        assert!(error.to_string().contains("--allowed-hosts"));
+        assert!(error.to_string().contains("--unsafe-allow-any-host"));
+
+        assert!(
+            http_allowed_hosts("0.0.0.0".parse().unwrap(), vec![], true)
+                .unwrap()
+                .is_empty()
+        );
+        assert_eq!(
+            http_allowed_hosts(
+                "0.0.0.0".parse().unwrap(),
+                vec!["api.example".into()],
+                false
+            )
+            .unwrap(),
+            ["api.example"]
+        );
     }
 
     #[test]

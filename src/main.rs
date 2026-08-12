@@ -53,7 +53,9 @@ async fn main() -> std::process::ExitCode {
             let host = args.host;
             let port = args.port;
             let allowed_hosts = args.allowed_hosts;
-            match biomcp_cli::mcp::run_http(&host, port, allowed_hosts).await {
+            let unsafe_allow_any_host = args.unsafe_allow_any_host;
+            match biomcp_cli::mcp::run_http(&host, port, allowed_hosts, unsafe_allow_any_host).await
+            {
                 Ok(()) => std::process::ExitCode::SUCCESS,
                 Err(err) => {
                     eprintln!("Error: {}", human_error(&err));

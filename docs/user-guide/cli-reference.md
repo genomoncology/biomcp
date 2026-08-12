@@ -101,7 +101,7 @@ biomcp skill list                 # list embedded worked examples
 biomcp mcp
 biomcp serve
 biomcp mcp-config [--client <client>] [--absolute-path]
-biomcp serve-http [--host 127.0.0.1] [--port 8080]
+biomcp serve-http [--host 127.0.0.1] [--port 8080] [--allowed-hosts <hosts> | --unsafe-allow-any-host]
 biomcp update [--check] [--allow-missing-checksum]
 biomcp uninstall
 biomcp version [--verbose]
@@ -705,6 +705,7 @@ biomcp batch variant "BRAF V600E","KRAS G12D" --json
 - `biomcp serve` runs the stdio MCP server.
 - `biomcp mcp-config --client <codex|claude-desktop|claude-code|cursor|cline|vscode|json>` prints copy-paste local stdio MCP client config using `biomcp serve`; add `--absolute-path` when the client cannot see your shell `PATH`.
 - `biomcp serve-http` runs the MCP Streamable HTTP server.
+- Loopback binds accept local Host headers by default. Non-loopback binds require `--allowed-hosts`; `--unsafe-allow-any-host` explicitly disables only that check and adds no authentication or encryption.
 - Streamable HTTP clients connect to `/mcp`.
 - Probe routes: `/health`, `/readyz`, and `/`.
 - `biomcp serve-sse` remains available only as a hidden compatibility command that points users back to `biomcp serve-http`.

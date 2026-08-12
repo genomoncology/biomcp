@@ -530,6 +530,15 @@ def test_remote_http_docs_are_promoted_for_newcomers() -> None:
     assert "three-step BRAF V600E melanoma" in remote_http
     assert "workflow over the remote MCP `biomcp` tool" in remote_http
     assert "prints `Command: ...` before each BioMCP step" in remote_http
+    assert "--allowed-hosts biomcp.example.org,localhost:8080" in remote_http
+    assert "not authentication" in remote_http
+
+    mcp_reference = _read("docs/reference/mcp-server.md")
+    assert "non-loopback bind fails" in mcp_reference
+    assert "--unsafe-allow-any-host" in mcp_reference
+    assert "adds no authentication" in mcp_reference
+    assert "encryption" in mcp_reference
+    assert "does not infer trust" in mcp_reference
     assert (
         "biomcp search all --gene BRAF --disease melanoma --counts-only" in remote_http
     )

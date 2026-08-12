@@ -33,6 +33,17 @@ def _read_json(url: str) -> tuple[dict[str, str], str]:
         return json.loads(body), response.headers.get_content_type()
 
 
+def _mcp_status(base_url: str, host: str) -> int:
+    request = urllib.request.Request(
+        f"{base_url}/mcp", data=b"{}", headers={"Host": host}, method="POST"
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=2) as response:
+            return response.status
+    except urllib.error.HTTPError as error:
+        return error.code
+
+
 @pytest.fixture
 def http_server() -> Iterator[str]:
     binary = _require_release_binary()
@@ -85,6 +96,13 @@ def test_http_routes_advertise_streamable_http_surface(http_server: str) -> None
     assert ready_payload == {"status": "ok"}
 
 
+def test_loopback_server_rejects_unrelated_host_headers(http_server: str) -> None:
+    port = http_server.rsplit(":", 1)[1]
+    assert _mcp_status(http_server, "attacker.example") == 403
+    for host in ("localhost", f"localhost:{port}", "127.0.0.1", f"127.0.0.1:{port}", "[::1]", f"[::1]:{port}"):
+        assert _mcp_status(http_server, host) != 403
+
+
 def test_serve_http_help_matches_runtime_surface() -> None:
     binary = _require_release_binary()
     result = subprocess.run(
@@ -100,9 +118,26 @@ def test_serve_http_help_matches_runtime_surface() -> None:
     assert "/mcp" in result.stdout
     assert "--host <HOST>" in result.stdout
     assert "--port <PORT>" in result.stdout
+    assert "--unsafe-allow-any-host" in result.stdout
+    assert "does not add authentication or encryption" in result.stdout
     assert "SSE transport" not in result.stdout
     assert "--json" not in result.stdout
     assert "--no-cache" not in result.stdout
+
+
+def test_non_loopback_bind_requires_explicit_host_policy() -> None:
+    binary = _require_release_binary()
+    result = subprocess.run(
+        [str(binary), "serve-http", "--host", "0.0.0.0", "--port", "0"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "--allowed-hosts" in result.stderr
+    assert "--unsafe-allow-any-host" in result.stderr
 
 
 def test_top_level_help_hides_serve_sse_but_lists_serve_http() -> None:

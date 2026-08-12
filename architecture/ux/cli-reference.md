@@ -437,7 +437,7 @@ Multi-worker deployment (shared rate limiter):
 
 ```bash
 # Start shared Streamable HTTP server
-biomcp serve-http --host 0.0.0.0 --port 8080
+biomcp serve-http --host 0.0.0.0 --port 8080 --allowed-hosts biomcp.example.org
 
 # Point agent workers at /mcp instead of spawning individual biomcp processes
 ```
