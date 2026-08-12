@@ -345,7 +345,7 @@ See also: biomcp list article")]
 
 mod assets;
 mod dispatch;
-mod session;
+pub(crate) mod session;
 mod workflow;
 pub(super) use self::dispatch::{handle_command, handle_get, handle_search};
 

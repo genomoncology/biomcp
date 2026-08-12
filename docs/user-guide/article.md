@@ -112,7 +112,10 @@ such as `lit-review-1`. When post-stopword term overlap is at least 60%,
 BioMCP can add JSON-only `_meta.suggestions[]` fallbacks after exact entity
 suggestions: prior `article batch`, `discover`, and a date-narrowed retry when
 available. Session baselines expire after 10 minutes. Markdown output is
-unchanged.
+unchanged. The local record stores the token, keyword and normalized terms,
+bounded PMID set, and update time under the resolved BioMCP cache root. Opening
+the store removes expired records; upstream providers apply their own separate
+logging and retention policies.
 
 Known anchor only:
 

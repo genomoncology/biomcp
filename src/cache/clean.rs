@@ -58,8 +58,7 @@ where
     RK: for<'a, 'b> FnMut(&'a Path, &'b str) -> Result<(), cacache::Error>,
     RB: for<'a, 'b> FnMut(&'a Path, &'b Integrity) -> Result<(), cacache::Error>,
 {
-    let effective_max_age =
-        resolve_effective_limit(options.max_age, config.max_age, config.origins.max_age);
+    let effective_max_age = Some(options.max_age.unwrap_or(config.max_age));
     let effective_max_size =
         resolve_effective_limit(options.max_size, config.max_size, config.origins.max_size);
     let snapshot =
@@ -382,7 +381,7 @@ mod tests {
     }
 
     #[test]
-    fn cache_clean_default_origins_skip_limits_without_flags() {
+    fn cache_clean_default_origin_enforces_retention_without_size_eviction() {
         let root = TempDirGuard::new("default-origin");
         let cache_path = root.path().join("http");
         let _ = write_entry(&cache_path, "old", b"old", 100);
@@ -406,9 +405,9 @@ mod tests {
         )
         .expect("default-origin clean should succeed");
 
-        assert_eq!(report.entries_removed, 0);
-        assert_eq!(report.bytes_freed, 0);
-        assert_eq!(snapshot_keys(&cache_path), vec!["old"]);
+        assert_eq!(report.entries_removed, 1);
+        assert_eq!(report.bytes_freed, 3);
+        assert!(snapshot_keys(&cache_path).is_empty());
     }
 
     #[test]

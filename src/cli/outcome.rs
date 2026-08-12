@@ -431,7 +431,7 @@ async fn run_outcome_inner(
             let cache_path = config.cache_root.join("http");
 
             let report = if yes || crate::cli::cache::prompt_clear_confirmation(&cache_path)? {
-                crate::cache::execute_cache_clear(&cache_path)?
+                crate::cli::cache::execute_managed_clear(&config)?
             } else {
                 crate::cache::ClearReport {
                     bytes_freed: None,

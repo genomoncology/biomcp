@@ -182,6 +182,8 @@ fn build_cache_stats_report_empty_snapshot_has_zero_counts_null_age_and_default_
             referenced_blob_bytes: 0,
             blob_count: 0,
             orphan_count: 0,
+            http_entry_count: 0,
+            session_count: 0,
             provider_capture_bytes: 0,
             age_range: None,
             max_size_bytes: 10_000_000_000,
@@ -314,6 +316,8 @@ fn cache_stats_report_markdown_is_heading_free_and_stable() {
         referenced_blob_bytes: 24,
         blob_count: 3,
         orphan_count: 1,
+        http_entry_count: 1,
+        session_count: 2,
         provider_capture_bytes: 0,
         age_range: Some(CacheStatsAgeRange {
             oldest_ms: 100,
@@ -335,6 +339,8 @@ fn cache_stats_report_markdown_is_heading_free_and_stable() {
 | Referenced blob bytes | 24 |
 | Blob files | 3 |
 | Orphan blobs | 1 |
+| HTTP cache entries | 1 |
+| Article sessions | 2 |
 | Provider capture bytes | 0 |
 | Age range | 100 .. 500 |
 | Max size | 5000 bytes (env) |

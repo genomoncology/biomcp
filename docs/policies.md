@@ -35,8 +35,16 @@ provider-specific terms that still apply when a query touches an upstream API.
 
 ## Retention and sensitive data
 
-BioMCP does not define a separate retention period because it does not collect
-or store request payloads. Anthropic/Claude and upstream providers may retain
+BioMCP keeps two kinds of managed local request state: HTTP provider responses
+under the resolved cache root's `http/` directory, and article-search session
+records containing a session token, query terms, PMIDs, and update time under
+`sessions/`. HTTP entries expire at configured `max_age_secs` (one day by
+default); article sessions expire after ten minutes. Opening either store for
+normal use or inspection physically removes expired records. `biomcp cache
+clean` performs targeted maintenance and `biomcp cache clear --yes` removes
+both managed trees.
+
+These local controls do not govern provider systems. Anthropic/Claude and upstream providers may retain
 request data according to their own privacy policies. Do not send protected
 health information (PHI) or other sensitive patient data to third-party APIs
 unless your organization has approved that workflow.

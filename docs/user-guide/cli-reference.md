@@ -142,8 +142,10 @@ executable provenance and PATH diagnostics.
 
 `biomcp cache stats` is the companion local-CLI operator command. It reports the
 resolved cache path, total blob inventory, referenced blob bytes used for
-enforcement, orphan count, age range, and the resolved cache limits including
-`min_disk_free`; under `--json`, it returns the same contract as a JSON object.
+enforcement, HTTP entry count, article-session count, orphan count, age range,
+and the resolved cache limits including `min_disk_free`; under `--json`, it
+returns the same contract as a JSON object. Statistics first remove expired
+HTTP entries and ten-minute session records.
 
 `biomcp cache clean [--max-age <duration>] [--max-size <size>] [--dry-run]`
 is the targeted maintenance command for the same cache family. It always removes
@@ -151,8 +153,8 @@ orphan blobs, can optionally evict entries older than a duration or LRU-evict to
 a byte target, and keeps the same structured report under `--json`.
 
 `biomcp cache clear [--yes]` is the destructive sibling for the same managed
-HTTP cache tree. It wipes `<resolved cache_root>/http` completely, never touches
-the sibling `downloads/` directory, prompts for confirmation when stdin is a
+request-state trees. It wipes `<resolved cache_root>/http` and `sessions/`, never
+touches the sibling `downloads/` directory, prompts for confirmation when stdin is a
 TTY, and refuses non-interactive runs with plain stderr unless you pass
 `--yes`. Successful `--json` output uses `{ "bytes_freed": <number|null>,
 "entries_removed": <number> }`.

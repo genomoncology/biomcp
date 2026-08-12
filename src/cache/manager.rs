@@ -38,8 +38,26 @@ pub(crate) struct SizeAwareCacheManager {
 }
 
 impl SizeAwareCacheManager {
-    pub(crate) fn new(path: PathBuf, config: ResolvedCacheConfig) -> Self {
-        Self::build_with_services(path, config, default_services())
+    pub(crate) fn new(path: PathBuf, config: ResolvedCacheConfig) -> Result<Self, BioMcpError> {
+        Self::new_at(path, config, current_time_ms())
+    }
+
+    fn new_at(
+        path: PathBuf,
+        config: ResolvedCacheConfig,
+        now_ms: u128,
+    ) -> Result<Self, BioMcpError> {
+        execute_cache_clean(
+            &path,
+            CleanOptions {
+                max_age: None,
+                max_size: None,
+                dry_run: false,
+            },
+            &config,
+            now_ms,
+        )?;
+        Ok(Self::build_with_services(path, config, default_services()))
     }
 
     #[cfg(test)]
@@ -787,9 +805,34 @@ mod tests {
         let manager = SizeAwareCacheManager::new(
             root.path().join("http"),
             test_config(root.path(), 100, DiskFreeThreshold::Percent(10)),
-        );
+        )
+        .expect("new cache manager");
 
         assert_eq!(manager.approx_bytes.load(Ordering::Relaxed), 8);
+    }
+
+    #[test]
+    fn opening_manager_physically_removes_expired_entries_below_size_limit() {
+        let root = TempDirGuard::new("open-age-maintenance");
+        let cache_path = root.path().join("http");
+        write_entry(&cache_path, "expired", b"old", 1_000);
+        write_entry(&cache_path, "retained", b"new", 15_000);
+        let mut config = test_config(root.path(), 1_000_000, DiskFreeThreshold::Percent(1));
+        config.max_age = Duration::from_secs(10);
+
+        SizeAwareCacheManager::new_at(cache_path.clone(), config, 20_000)
+            .expect("open maintained manager");
+
+        assert!(
+            cacache::metadata_sync(&cache_path, "expired")
+                .expect("expired metadata")
+                .is_none()
+        );
+        assert!(
+            cacache::metadata_sync(&cache_path, "retained")
+                .expect("retained metadata")
+                .is_some()
+        );
     }
 
     #[tokio::test(flavor = "current_thread")]

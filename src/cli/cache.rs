@@ -15,11 +15,11 @@ This command is read-only and prints `<resolved cache_root>/http`.
 The global `--json` flag is ignored for this command and output stays plain text.
 This command family is CLI-only because it reveals workstation-local filesystem paths.")]
     Path,
-    /// Show HTTP cache statistics
+    /// Show HTTP cache and article-session statistics
     #[command(long_about = "\
 Show HTTP cache statistics.
 
-Print an on-demand snapshot of blob counts, bytes, age range, and configured cache limits.
+Print an on-demand snapshot of HTTP entries, article sessions, blob counts, bytes, age range, and configured cache limits.
 Use the global `--json` flag for machine-readable output.
 This command is CLI-only because cache commands reveal workstation-local filesystem paths.")]
     Stats,
@@ -46,11 +46,11 @@ This command is CLI-only because cache commands reveal workstation-local filesys
         #[arg(long)]
         dry_run: bool,
     },
-    /// Wipe the entire managed HTTP cache directory
+    /// Wipe managed HTTP cache and article-session directories
     #[command(long_about = "\
 Wipe the entire managed HTTP cache directory.
 
-Deletes all contents of <resolved cache_root>/http. This is a destructive full wipe;
+Deletes all contents of <resolved cache_root>/http and sessions/. This is a destructive full wipe;
 use `biomcp cache clean` for targeted cleanup instead. The managed downloads/ sibling
 directory is never touched. Interactive confirmation is required unless you pass
 --yes. Without a TTY and without --yes, this command refuses even under `--json`.
@@ -122,6 +122,13 @@ pub(crate) fn execute_clean(
         Err(error) => report
             .errors
             .push(format!("provider capture maintenance failed: {error:?}")),
+    }
+    if !dry_run {
+        let now_secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| BioMcpError::InvalidArgument(error.to_string()))?
+            .as_secs();
+        super::article::session::maintain_sessions(&config.cache_root, now_secs)?;
     }
     Ok(report)
 }
@@ -209,6 +216,8 @@ pub(crate) struct CacheStatsReport {
     pub(crate) referenced_blob_bytes: u64,
     pub(crate) blob_count: usize,
     pub(crate) orphan_count: usize,
+    pub(crate) http_entry_count: usize,
+    pub(crate) session_count: usize,
     pub(crate) provider_capture_bytes: u64,
     pub(crate) age_range: Option<CacheStatsAgeRange>,
     pub(crate) max_size_bytes: u64,
@@ -231,6 +240,8 @@ impl CacheStatsReport {
             format!("| Referenced blob bytes | {} |", self.referenced_blob_bytes),
             format!("| Blob files | {} |", self.blob_count),
             format!("| Orphan blobs | {} |", self.orphan_count),
+            format!("| HTTP cache entries | {} |", self.http_entry_count),
+            format!("| Article sessions | {} |", self.session_count),
             format!(
                 "| Provider capture bytes | {} |",
                 self.provider_capture_bytes
@@ -292,6 +303,8 @@ pub(crate) fn build_cache_stats_report(
             .iter()
             .filter(|blob| blob.refcount == 0)
             .count(),
+        http_entry_count: snapshot.entries.len(),
+        session_count: 0,
         provider_capture_bytes: crate::cache::ProviderCaptureStore::new(&config.cache_root)
             .retained_bytes()
             .map_err(|err| {
@@ -310,12 +323,44 @@ pub(crate) fn build_cache_stats_report(
 }
 
 pub(crate) fn collect_cache_stats_report() -> Result<CacheStatsReport, BioMcpError> {
-    collect_cache_stats_report_with(
-        crate::cache::resolve_cache_config,
-        crate::cache::snapshot_cache,
-    )
+    let config = crate::cache::resolve_cache_config()?;
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| BioMcpError::InvalidArgument(error.to_string()))?;
+    crate::cache::execute_cache_clean(
+        &config.cache_root.join("http"),
+        crate::cache::CleanOptions {
+            max_age: None,
+            max_size: None,
+            dry_run: false,
+        },
+        &config,
+        now.as_millis(),
+    )?;
+    let session_count =
+        super::article::session::maintain_sessions(&config.cache_root, now.as_secs())?;
+    let snapshot = crate::cache::snapshot_cache(&config.cache_root.join("http"))
+        .map_err(|error| BioMcpError::Io(std::io::Error::other(error)))?;
+    let mut report = build_cache_stats_report(&snapshot, &config)?;
+    report.session_count = session_count;
+    Ok(report)
 }
 
+pub(crate) fn execute_managed_clear(
+    config: &crate::cache::ResolvedCacheConfig,
+) -> Result<crate::cache::ClearReport, BioMcpError> {
+    let http = crate::cache::execute_cache_clear(&config.cache_root.join("http"))?;
+    let sessions = crate::cache::execute_cache_clear(&config.cache_root.join("sessions"))?;
+    Ok(crate::cache::ClearReport {
+        bytes_freed: http
+            .bytes_freed
+            .zip(sessions.bytes_freed)
+            .map(|(a, b)| a + b),
+        entries_removed: http.entries_removed + sessions.entries_removed,
+    })
+}
+
+#[cfg(test)]
 fn collect_cache_stats_report_with<R, S>(
     resolve_config: R,
     snapshotter: S,

@@ -708,7 +708,7 @@ fn build_http_client_with_config(
 
     let builder = ClientBuilder::new(base_client).with(Cache(HttpCache {
         mode: CacheMode::Default,
-        manager: crate::cache::SizeAwareCacheManager::new(cache_path, config),
+        manager: crate::cache::SizeAwareCacheManager::new(cache_path, config)?,
         options: cache_options,
     }));
     let builder = builder.with(

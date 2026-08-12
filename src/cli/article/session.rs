@@ -106,6 +106,34 @@ pub(super) fn current_epoch_secs() -> u64 {
         .map_or(0, |duration| duration.as_secs())
 }
 
+pub(crate) fn maintain_sessions(
+    cache_root: &Path,
+    now_epoch_secs: u64,
+) -> Result<usize, BioMcpError> {
+    let path = store_path(cache_root);
+    if !path.exists() {
+        return Ok(0);
+    }
+    let lock = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(lock_path(cache_root))?;
+    lock.lock_exclusive()?;
+    let mut store = read_store(&path).map_err(store_error)?;
+    let before = store.sessions.len();
+    prune_sessions(&mut store, now_epoch_secs, MAX_ACTIVE_SESSIONS);
+    if store.sessions.len() != before {
+        write_store_atomic(cache_root, &store).map_err(store_error)?;
+    }
+    Ok(store.sessions.len())
+}
+
+fn store_error(error: StoreError) -> BioMcpError {
+    BioMcpError::Io(std::io::Error::other(error))
+}
+
 fn store_path(cache_root: &Path) -> PathBuf {
     cache_root.join(STORE_DIR).join(STORE_FILE)
 }

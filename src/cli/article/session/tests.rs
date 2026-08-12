@@ -185,6 +185,25 @@ fn expired_or_disjoint_session_state_does_not_emit_loop_suggestions() {
 }
 
 #[test]
+fn maintenance_physically_removes_only_expired_sessions() {
+    let root = crate::test_support::TempDirGuard::new("article-session-maintenance");
+    let pmids = strings(&["fixture-pmid"]);
+    record_success_and_suggestions(
+        root.path(),
+        search("expired", Some("fixture query one"), &pmids, &[], 1_000),
+    );
+    record_success_and_suggestions(
+        root.path(),
+        search("retained", Some("fixture query two"), &pmids, &[], 1_500),
+    );
+
+    assert_eq!(maintain_sessions(root.path(), 1_601).expect("maintain"), 1);
+    let store = read_store(&store_path(root.path())).expect("read maintained store");
+    assert!(!store.sessions.contains_key("expired"));
+    assert!(store.sessions.contains_key("retained"));
+}
+
+#[test]
 fn empty_normalized_keyword_resets_baseline_without_loop_suggestions() {
     let root = crate::test_support::TempDirGuard::new("article-session-empty-keyword");
     let pmids = strings(&["22663011"]);

@@ -37,6 +37,10 @@ internal fixture overrides and release/install variables.
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
 
 Cache runtime precedence is environment, then `cache.toml`, then built-in default.
+The resolved root contains the managed HTTP response cache in `http/` and the
+ten-minute article-search loop-breaker records in `sessions/`. Cache reads,
+writes, statistics, and maintenance physically remove entries older than
+`max_age_secs`; opening the session store removes expired sessions.
 `BIOMCP_CACHE_MAX_AGE` overrides `[cache].max_age_secs`; both values are
 positive integer seconds.
 
