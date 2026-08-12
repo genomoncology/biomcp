@@ -11,4 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify canonical installer copy
+        run: cmp --silent install.sh docs/install.sh
       - run: bash scripts/release-disabled.sh

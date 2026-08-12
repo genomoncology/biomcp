@@ -12,7 +12,30 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = REPO_ROOT / "install.sh"
+DOCS_INSTALLER = REPO_ROOT / "docs/install.sh"
 ASSET = "biomcp-linux-x86_64.tar.gz"
+
+
+def test_root_installer_is_the_canonical_deployed_copy() -> None:
+    assert DOCS_INSTALLER.read_bytes() == INSTALLER.read_bytes()
+
+
+def test_ci_and_release_gate_installer_identity_before_docs_or_release() -> None:
+    ci = (REPO_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    release = (REPO_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+    check = "cmp --silent install.sh docs/install.sh"
+    assert check in ci
+    assert ci.index(check) < ci.index("make test-contracts")
+    assert check in release
+    assert release.index(check) < release.index("release-disabled.sh")
+
+
+def test_public_installer_verifier_compares_deployed_bytes() -> None:
+    verifier = (REPO_ROOT / "scripts/verify-public-installer.sh").read_text(
+        encoding="utf-8"
+    )
+    assert "https://biomcp.org/install.sh" in verifier
+    assert "cmp --silent" in verifier
 
 
 def _write_executable(path: Path, content: str) -> None:

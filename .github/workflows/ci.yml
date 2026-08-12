@@ -84,6 +84,8 @@ jobs:
       - run: tools/with-build-identity cargo build --release --locked
       - name: Enforce compact output-footprint ratchet
         run: make output-footprint SPEC_PROFILE=release SPEC_BIN="$PWD/target/release/biomcp"
+      - name: Verify canonical installer copy
+        run: cmp --silent install.sh docs/install.sh
       - run: make test-contracts BIOMCP_BIN="$PWD/target/release/biomcp"
 
   # Stable PR-blocking executable spec gate. Volatile live-network specs
