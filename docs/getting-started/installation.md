@@ -37,7 +37,9 @@ uv tool install biomcp-cli
 ```
 
 Install the `biomcp-cli` package, then use the `biomcp` command in the rest of
-this guide.
+this guide. The package also keeps a small `biomcp-cli` compatibility command;
+it forwards to the sibling `biomcp` executable without changing command output
+or exit status.
 
 Verify:
 
