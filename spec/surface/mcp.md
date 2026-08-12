@@ -196,11 +196,11 @@ test "$status" != 403
 cat "$body" | mustmatch not like 'Host header is not allowed'
 
 set +e
-non_loopback_error=$(../../tools/biomcp-ci serve-http --host 0.0.0.0 --port 0 2>&1)
+../../tools/biomcp-ci serve-http --host 0.0.0.0 --port 0 >/tmp/biomcp-mcp-non-loopback.out 2>/tmp/biomcp-mcp-non-loopback.err
 non_loopback_status=$?
 set -e
 test "$non_loopback_status" -ne 0
-printf '%s' "$non_loopback_error" | mustmatch like '--allowed-hosts
+cat /tmp/biomcp-mcp-non-loopback.err | mustmatch like '--allowed-hosts
 --unsafe-allow-any-host'
 
 ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port 0 --unsafe-allow-any-host >/tmp/biomcp-mcp-host-unsafe.log 2>&1 &
