@@ -4,8 +4,8 @@
 use crate::error::BioMcpError;
 use crate::sources::decode_json;
 use crate::sources::europepmc::{
-    EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse, parse_supplementary_zip,
-    parse_supplementary_zip_with_limits, supplementary_status_has_package,
+    EuropePmcClient, EuropePmcResult, EuropePmcSearchResponse, parse_supplementary_response,
+    parse_supplementary_zip, parse_supplementary_zip_with_limits, supplementary_status_has_package,
 };
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
@@ -127,6 +127,26 @@ fn supplementary_status_distinguishes_absence_from_failure() {
         supplementary_status_has_package(StatusCode::BAD_GATEWAY),
         Err(BioMcpError::Api { .. })
     ));
+}
+
+#[test]
+fn supplementary_response_treats_the_receipted_not_open_access_error_as_absent() {
+    let bytes = include_bytes!(
+        "../../../../testdata/sources/europepmc/pmc3040717-supplementary-not-open-access.xml"
+    );
+    assert!(
+        parse_supplementary_response(StatusCode::OK, bytes)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        parse_supplementary_response(
+            StatusCode::OK,
+            b"<errorBean><errCode>1</errCode><errMsg>temporary failure</errMsg></errorBean>"
+        )
+        .is_err()
+    );
+    assert!(parse_supplementary_response(StatusCode::OK, b"<errorBean>").is_err());
 }
 
 #[test]
