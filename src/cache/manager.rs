@@ -119,6 +119,7 @@ impl CacheManager for SizeAwareCacheManager {
         &self,
         cache_key: &str,
     ) -> http_cache::Result<Option<(HttpResponse, CachePolicy)>> {
+        super::secure_managed_tree(&self.inner.path)?;
         self.inner.get(cache_key).await
     }
 
@@ -128,7 +129,9 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
+        super::secure_managed_tree(&self.inner.path)?;
         let response = self.inner.put(cache_key.clone(), res, policy).await?;
+        super::secure_managed_tree(&self.inner.path)?;
 
         match cacache::metadata(&self.inner.path, &cache_key).await {
             Ok(Some(metadata)) => {
@@ -180,6 +183,7 @@ impl CacheManager for SizeAwareCacheManager {
     }
 
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
+        super::secure_managed_tree(&self.inner.path)?;
         self.inner.delete(cache_key).await
     }
 }

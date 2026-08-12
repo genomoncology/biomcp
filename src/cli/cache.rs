@@ -95,7 +95,9 @@ pub(crate) fn execute_clean(
     dry_run: bool,
 ) -> Result<crate::cache::CleanReport, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
+    crate::cache::secure_managed_tree(&config.cache_root)?;
     let cache_path = config.cache_root.join("http");
+    crate::cache::secure_managed_tree(&cache_path)?;
     let now_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|err| {
@@ -324,6 +326,7 @@ pub(crate) fn build_cache_stats_report(
 
 pub(crate) fn collect_cache_stats_report() -> Result<CacheStatsReport, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
+    crate::cache::secure_managed_tree(&config.cache_root)?;
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|error| BioMcpError::InvalidArgument(error.to_string()))?;
@@ -349,6 +352,7 @@ pub(crate) fn collect_cache_stats_report() -> Result<CacheStatsReport, BioMcpErr
 pub(crate) fn execute_managed_clear(
     config: &crate::cache::ResolvedCacheConfig,
 ) -> Result<crate::cache::ClearReport, BioMcpError> {
+    crate::cache::secure_managed_tree(&config.cache_root)?;
     let http = crate::cache::execute_cache_clear(&config.cache_root.join("http"))?;
     let sessions = crate::cache::execute_cache_clear(&config.cache_root.join("sessions"))?;
     Ok(crate::cache::ClearReport {

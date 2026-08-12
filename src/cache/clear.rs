@@ -47,6 +47,8 @@ pub(crate) fn execute_cache_clear(cache_path: &Path) -> Result<ClearReport, BioM
         )));
     }
 
+    super::secure_managed_tree(cache_path)
+        .map_err(|error| BioMcpError::InvalidArgument(error.to_string()))?;
     let mut plan = ClearPlan::default();
     scan_directory(cache_path, &mut plan)?;
     plan.directories.push(cache_path.to_path_buf());
@@ -58,6 +60,7 @@ pub(crate) fn execute_cache_clear(cache_path: &Path) -> Result<ClearReport, BioM
 
     let mut bytes_freed = 0u64;
     for (path, size_bytes) in plan.regular_files {
+        reject_linked_file(&path, &fs::symlink_metadata(&path)?)?;
         fs::remove_file(path)?;
         bytes_freed += size_bytes;
     }
@@ -76,6 +79,29 @@ pub(crate) fn execute_cache_clear(cache_path: &Path) -> Result<ClearReport, BioM
         bytes_freed: (!saw_symlink).then_some(bytes_freed),
         entries_removed: file_count + symlink_count + directory_count,
     })
+}
+
+#[cfg(unix)]
+fn reject_linked_file(path: &Path, metadata: &fs::Metadata) -> Result<(), BioMcpError> {
+    use std::os::unix::fs::MetadataExt;
+    if !metadata.is_file() || metadata.nlink() != 1 {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "cache clear refuses linked or replaced file '{}'",
+            path.display()
+        )));
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn reject_linked_file(_path: &Path, metadata: &fs::Metadata) -> Result<(), BioMcpError> {
+    if metadata.is_file() {
+        Ok(())
+    } else {
+        Err(BioMcpError::InvalidArgument(
+            "cache file changed during clear".into(),
+        ))
+    }
 }
 
 fn scan_directory(path: &Path, plan: &mut ClearPlan) -> Result<(), BioMcpError> {

@@ -70,6 +70,12 @@ never touches the sibling `downloads/` directory, so the choice is explicit:
 start with `cache clean` for targeted GC, escalate to `cache clear --yes` only
 when you need the destructive full wipe.
 
+If a cache command reports that it cannot secure managed local state, inspect
+the configured root for symlinks, hard links, unsupported file types, or an ACL
+that the current account cannot change. BioMCP fails before reading or writing
+provider responses or article queries; do not bypass this check by making the
+directory world-readable.
+
 ## 3) ClinicalTrials.gov API v2 quirks
 
 ClinicalTrials.gov search behavior can vary with complex query combinations and pagination tokens.

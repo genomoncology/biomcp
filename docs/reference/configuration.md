@@ -41,6 +41,9 @@ The resolved root contains the managed HTTP response cache in `http/` and the
 ten-minute article-search loop-breaker records in `sessions/`. Cache reads,
 writes, statistics, and maintenance physically remove entries older than
 `max_age_secs`; opening the session store removes expired sessions.
+Managed directories and files are private to the current OS user. BioMCP
+repairs overly broad permissions inside the managed root and refuses linked
+regular files rather than risking access through another pathname.
 `BIOMCP_CACHE_MAX_AGE` overrides `[cache].max_age_secs`; both values are
 positive integer seconds.
 

@@ -116,6 +116,8 @@ unchanged. The local record stores the token, keyword and normalized terms,
 bounded PMID set, and update time under the resolved BioMCP cache root. Opening
 the store removes expired records; upstream providers apply their own separate
 logging and retention policies.
+BioMCP keeps the session directory and records private to the current OS user
+and refuses linked files before reading or replacing them.
 
 Known anchor only:
 

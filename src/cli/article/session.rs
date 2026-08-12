@@ -110,16 +110,20 @@ pub(crate) fn maintain_sessions(
     cache_root: &Path,
     now_epoch_secs: u64,
 ) -> Result<usize, BioMcpError> {
+    crate::cache::secure_managed_tree(cache_root)?;
     let path = store_path(cache_root);
     if !path.exists() {
         return Ok(0);
     }
-    let lock = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(false)
-        .open(lock_path(cache_root))?;
+    crate::cache::secure_managed_tree(path.parent().expect("session store has parent"))?;
+    let lock = crate::cache::open_private(
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false),
+        &lock_path(cache_root),
+    )?;
     lock.lock_exclusive()?;
     let mut store = read_store(&path).map_err(store_error)?;
     let before = store.sessions.len();
@@ -178,14 +182,17 @@ fn record_success_and_suggestions_inner(
     cache_root: &Path,
     search: SessionSearch<'_>,
 ) -> Result<Vec<ArticleSuggestion>, StoreError> {
+    crate::cache::secure_managed_tree(cache_root)?;
     let session_dir = cache_root.join(STORE_DIR);
-    fs::create_dir_all(&session_dir)?;
-    let lock = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .truncate(false)
-        .open(lock_path(cache_root))?;
+    crate::cache::secure_managed_tree(&session_dir)?;
+    let lock = crate::cache::open_private(
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false),
+        &lock_path(cache_root),
+    )?;
     lock.try_lock_exclusive()?;
 
     let now = search.now_epoch_secs;
@@ -255,10 +262,8 @@ fn write_store_atomic(cache_root: &Path, store: &Store) -> Result<(), StoreError
     let tmp_path = create_temp_path(dir)?;
 
     let write_result = (|| -> Result<(), StoreError> {
-        let mut tmp = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&tmp_path)?;
+        let mut tmp =
+            crate::cache::open_private(OpenOptions::new().write(true).create_new(true), &tmp_path)?;
         tmp.write_all(&bytes)?;
         tmp.flush()?;
         tmp.sync_all()?;

@@ -101,7 +101,9 @@ jobs:
         with:
           toolchain: 1.93.1
       - name: Compile Windows CSpec and managed-state boundaries
-        run: cargo check --locked
+        run: |
+          cargo check --locked
+          cargo test --locked --test managed_state_permissions
 
   repository-contracts:
     runs-on: ubuntu-24.04

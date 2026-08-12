@@ -105,6 +105,23 @@ fn session_store_records_first_search_then_emits_ordered_loop_suggestions() {
         first.is_empty(),
         "first search should only record a baseline"
     );
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = |path: &Path| {
+            fs::metadata(path)
+                .expect("managed mode")
+                .permissions()
+                .mode()
+                & 0o777
+        };
+        assert_eq!(
+            mode(store_path(root.path()).parent().expect("session dir")),
+            0o700
+        );
+        assert_eq!(mode(&store_path(root.path())), 0o600);
+        assert_eq!(mode(&lock_path(root.path())), 0o600);
+    }
 
     let second = record_success_and_suggestions(
         root.path(),

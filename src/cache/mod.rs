@@ -5,6 +5,7 @@ mod limits;
 mod manager;
 pub(crate) mod migration;
 mod planner;
+mod private;
 mod provider_capture;
 
 #[allow(unused_imports)]
@@ -28,6 +29,7 @@ pub(crate) use planner::{
     CacheBlob, CacheCleanupPlan, CacheEntry, CachePlannerError, CacheSnapshot, plan_age_cleanup,
     plan_composite_cleanup, plan_orphan_gc, plan_size_lru, snapshot_cache,
 };
+pub(crate) use private::{open_private, secure_managed_tree};
 #[allow(unused_imports)]
 pub(crate) use provider_capture::{
     CspecCaptureBinding, ProviderCaptureError, ProviderCaptureManifest, ProviderCaptureProvider,

@@ -44,6 +44,13 @@ normal use or inspection physically removes expired records. `biomcp cache
 clean` performs targeted maintenance and `biomcp cache clear --yes` removes
 both managed trees.
 
+BioMCP creates managed local-state directories for the current user only. On
+Unix, directories are mode `0700` and regular files are `0600`; on Windows,
+the managed root uses a current-user ACL. Reopening a store narrows managed
+paths without following links or changing unrelated ancestors, and linked
+regular files are rejected before access. These filesystem controls still do
+not govern copies retained by an upstream provider.
+
 These local controls do not govern provider systems. Anthropic/Claude and upstream providers may retain
 request data according to their own privacy policies. Do not send protected
 health information (PHI) or other sensitive patient data to third-party APIs
