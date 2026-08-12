@@ -690,13 +690,46 @@ impl From<reqwest_middleware::Error> for BioMcpError {
 
 #[cfg(test)]
 mod tests {
-    use super::{BioMcpError, RecoveryAction, SourceContext, SourceProvider};
+    use super::{
+        BioMcpError, ExternalFailureClass, RecoveryAction, SourceContext, SourceProvider,
+        bounded_external_message,
+    };
 
     fn reqwest_error() -> reqwest::Error {
         reqwest::Client::new()
             .get("http://[::1")
             .build()
             .expect_err("invalid URL should fail")
+    }
+
+    #[test]
+    fn external_failure_projection_never_exposes_the_request_url() {
+        let secret = "biomcp-log-secret-DO-NOT-USE";
+        let error = reqwest::Client::new()
+            .get(format!("http://[::1/provider/path?api_key={secret}"))
+            .build()
+            .expect_err("invalid URL should retain a nested request error");
+        let projection =
+            BioMcpError::Http(error).external_failure(SourceProvider::EUROPE_PMC, "article search");
+
+        assert_eq!(projection.provider, "Europe PMC");
+        assert_eq!(projection.operation, "article search");
+        assert_eq!(projection.class, ExternalFailureClass::Internal);
+        assert!(projection.message.len() <= 512);
+        assert!(!format!("{projection:?}").contains(secret));
+        assert!(!format!("{projection:?}").contains("http://"));
+    }
+
+    #[test]
+    fn external_failure_message_bound_is_utf8_safe_at_and_after_512_bytes() {
+        let exact = format!("{}aa", "é".repeat(255));
+        assert_eq!(exact.len(), 512);
+        assert_eq!(bounded_external_message(&exact), exact);
+
+        let over = format!("{exact}é");
+        let bounded = bounded_external_message(&over);
+        assert_eq!(bounded.len(), 512);
+        assert!(bounded.is_char_boundary(bounded.len()));
     }
 
     #[test]
