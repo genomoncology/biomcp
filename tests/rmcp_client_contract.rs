@@ -4,11 +4,33 @@ use biomcp_mcp_contract_client::{
     assert_mcp_fulltext_path_redaction, assert_mcp_provenance_calls,
     assert_read_only_and_policy_calls, assert_resource_inventory_and_reads,
     assert_typed_tool_calls, assert_version_call, provision_article_fulltext_fixture,
-    provision_study_fixture, start_ols4_stub, study_dir_from_fixture, terminate_process,
+    provision_study_fixture, start_counting_ols4_stub, start_ols4_stub, study_dir_from_fixture,
+    terminate_process,
 };
+use std::sync::atomic::Ordering;
 
 fn harness() -> ContractHarness {
     ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"))
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
+    let harness = harness();
+    let (_thread, ols_url, requests) = start_counting_ols4_stub()?;
+    let (_medline_thread, medline_url) = start_ols4_stub()?;
+    let client = harness
+        .spawn_stdio_client(&[
+            ("BIOMCP_OLS4_BASE", ols_url),
+            ("BIOMCP_MEDLINEPLUS_BASE", medline_url),
+        ])
+        .await?;
+
+    let result = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp discover BRCA1").await?;
+    assert_eq!(result.is_error, Some(false));
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+
+    client.cancel().await?;
+    Ok(())
 }
 
 #[tokio::test(flavor = "multi_thread")]

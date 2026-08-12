@@ -258,6 +258,7 @@ pub struct ChartArgs {
 
 pub struct CliOutput {
     pub text: String,
+    pub metadata_json: Option<String>,
     pub svg: Option<String>,
 }
 
@@ -270,7 +271,9 @@ pub enum OutputStream {
 #[derive(Debug, Clone)]
 pub struct CommandOutcome {
     pub text: String,
+    pub metadata_json: Option<String>,
     pub bytes: Option<Vec<u8>>,
+    pub svg: Option<String>,
     pub stream: OutputStream,
     pub exit_code: u8,
 }
@@ -279,7 +282,9 @@ impl CommandOutcome {
     pub(crate) fn stdout(text: String) -> Self {
         Self {
             text,
+            metadata_json: None,
             bytes: None,
+            svg: None,
             stream: OutputStream::Stdout,
             exit_code: 0,
         }
@@ -288,7 +293,9 @@ impl CommandOutcome {
     pub(crate) fn stdout_bytes(bytes: Vec<u8>) -> Self {
         Self {
             text: String::new(),
+            metadata_json: None,
             bytes: Some(bytes),
+            svg: None,
             stream: OutputStream::Stdout,
             exit_code: 0,
         }
@@ -297,7 +304,9 @@ impl CommandOutcome {
     pub(crate) fn stdout_with_exit(text: String, exit_code: u8) -> Self {
         Self {
             text,
+            metadata_json: None,
             bytes: None,
+            svg: None,
             stream: OutputStream::Stdout,
             exit_code,
         }
@@ -306,9 +315,27 @@ impl CommandOutcome {
     pub(crate) fn stderr_with_exit(text: String, exit_code: u8) -> Self {
         Self {
             text,
+            metadata_json: None,
             bytes: None,
+            svg: None,
             stream: OutputStream::Stderr,
             exit_code,
+        }
+    }
+
+    pub(crate) fn with_metadata_json(mut self, metadata_json: String) -> Self {
+        self.metadata_json = Some(metadata_json);
+        self
+    }
+
+    pub(crate) fn stdout_with_svg(text: String, svg: String) -> Self {
+        Self {
+            text,
+            metadata_json: None,
+            bytes: None,
+            svg: Some(svg),
+            stream: OutputStream::Stdout,
+            exit_code: 0,
         }
     }
 }

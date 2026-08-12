@@ -20,6 +20,7 @@ pub(crate) async fn handle_get(
 pub(crate) async fn handle_search(
     args: GeneSearchArgs,
     json: bool,
+    include_metadata: bool,
 ) -> anyhow::Result<CommandOutcome> {
     let query = super::super::resolve_query_input(args.query, args.positional_query, "--query")?;
     let filters = crate::entities::gene::GeneSearchFilters {
@@ -38,19 +39,19 @@ pub(crate) async fn handle_search(
     let results = page.results;
     let pagination =
         super::super::PaginationMeta::offset(args.offset, args.limit, results.len(), page.total);
-    let text = if json {
-        let next_commands = crate::render::markdown::search_next_commands_gene(&results);
-        return super::super::search_json_with_meta(results, pagination, next_commands)
-            .map(CommandOutcome::stdout);
-    } else {
-        let footer = super::super::pagination_footer_offset(&pagination);
-        crate::render::markdown::gene_search_markdown_with_footer(
-            &query_summary,
-            &results,
-            &footer,
-        )?
-    };
-    Ok(CommandOutcome::stdout(text))
+    let footer = super::super::pagination_footer_offset(&pagination);
+    let human = crate::render::markdown::gene_search_markdown_with_footer(
+        &query_summary,
+        &results,
+        &footer,
+    )?;
+    if !json && !include_metadata {
+        return Ok(CommandOutcome::stdout(human));
+    }
+    let next_commands = crate::render::markdown::search_next_commands_gene(&results);
+    let structured = super::super::search_json_with_meta(results, pagination, next_commands)?;
+    let text = if json { structured.clone() } else { human };
+    Ok(CommandOutcome::stdout(text).with_metadata_json(structured))
 }
 
 pub(crate) async fn handle_command(
@@ -111,20 +112,25 @@ pub(super) async fn render_gene_card_outcome(
 ) -> anyhow::Result<CommandOutcome> {
     match crate::gene::get(symbol, sections).await {
         Ok(gene) => {
+            let human = crate::render::markdown::gene_markdown(&gene, sections)?;
+            if !json_output && !alias_suggestions_as_json {
+                return Ok(CommandOutcome::stdout(human));
+            }
+            let workflow = gene_mechanism_workflow(&gene).await?;
+            let structured = crate::render::json::to_entity_json_with_suggestions_and_workflow(
+                &gene,
+                crate::render::markdown::gene_evidence_urls(&gene),
+                crate::render::markdown::gene_next_commands(&gene, sections),
+                crate::render::markdown::related_gene(&gene),
+                crate::render::provenance::gene_section_sources(&gene),
+                workflow,
+            )?;
             let text = if json_output {
-                let workflow = gene_mechanism_workflow(&gene).await?;
-                crate::render::json::to_entity_json_with_suggestions_and_workflow(
-                    &gene,
-                    crate::render::markdown::gene_evidence_urls(&gene),
-                    crate::render::markdown::gene_next_commands(&gene, sections),
-                    crate::render::markdown::related_gene(&gene),
-                    crate::render::provenance::gene_section_sources(&gene),
-                    workflow,
-                )?
+                structured.clone()
             } else {
-                crate::render::markdown::gene_markdown(&gene, sections)?
+                human
             };
-            Ok(CommandOutcome::stdout(text))
+            Ok(CommandOutcome::stdout(text).with_metadata_json(structured))
         }
         Err(err @ crate::error::BioMcpError::NotFound { .. }) => {
             if let Some(outcome) = super::super::try_alias_fallback_outcome(

@@ -46,12 +46,45 @@ fn is_charted_mcp_study_command(cli: &Cli) -> Result<bool, crate::error::BioMcpE
     Ok(true)
 }
 
+fn prepare_mcp_chart(cli: &mut Cli) -> Result<(), crate::error::BioMcpError> {
+    let chart = match &mut cli.command {
+        Commands::Study {
+            cmd:
+                StudyCommand::Query { chart, .. }
+                | StudyCommand::Survival { chart, .. }
+                | StudyCommand::Compare { chart, .. }
+                | StudyCommand::CoOccurrence { chart, .. },
+        } => chart,
+        _ => return Ok(()),
+    };
+    if chart.chart.is_none() || cli.json {
+        return Ok(());
+    }
+    if chart.output.is_some() {
+        return Err(mcp_output_flag_error());
+    }
+    if chart.cols.is_some() || chart.rows.is_some() {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            crate::render::chart::TERMINAL_SIZE_FLAGS_ERROR.into(),
+        ));
+    }
+    if chart.scale.is_some() {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            crate::render::chart::PNG_SCALE_FLAGS_ERROR.into(),
+        ));
+    }
+    chart.mcp_inline = true;
+    Ok(())
+}
+
+#[cfg(test)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(in crate::cli) enum McpChartPass {
     Text,
     Svg,
 }
 
+#[cfg(test)]
 fn require_flag_value(
     args: &[String],
     index: usize,
@@ -62,6 +95,7 @@ fn require_flag_value(
     })
 }
 
+#[cfg(test)]
 pub(in crate::cli) fn rewrite_mcp_chart_args(
     args: &[String],
     pass: McpChartPass,
@@ -230,7 +264,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             } => outcome_to_string(super::gene::handle_get(args, json, false).await?),
             Commands::Get {
                 entity: GetEntity::Article(args),
-            } => outcome_to_string(super::article::handle_get(args, json).await?),
+            } => outcome_to_string(super::article::handle_get(args, json, false).await?),
             Commands::Get {
                 entity: GetEntity::Disease(args),
             } => outcome_to_string(super::disease::handle_get(args, json).await?),
@@ -323,7 +357,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     }
                 }
                 SearchEntity::Gene(args) => {
-                    outcome_to_string(super::gene::handle_search(args, json).await?)
+                    outcome_to_string(super::gene::handle_search(args, json, false).await?)
                 }
                 SearchEntity::Disease(args) => {
                     outcome_to_string(super::disease::handle_search(args, json).await?)
@@ -527,6 +561,14 @@ async fn run_outcome_inner(
             .await
         }
         Commands::Search {
+            entity: SearchEntity::Gene(args),
+        } => {
+            crate::sources::with_no_cache(no_cache, async move {
+                super::gene::handle_search(args, json, alias_suggestions_as_json).await
+            })
+            .await
+        }
+        Commands::Search {
             entity: SearchEntity::Variant(args),
         } => {
             crate::sources::with_no_cache(no_cache, async move {
@@ -538,7 +580,7 @@ async fn run_outcome_inner(
             entity: GetEntity::Article(args),
         } => {
             crate::sources::with_no_cache(no_cache, async move {
-                super::article::handle_get(args, json).await
+                super::article::handle_get(args, json, alias_suggestions_as_json).await
             })
             .await
         }
@@ -547,6 +589,16 @@ async fn run_outcome_inner(
         } => {
             crate::sources::with_no_cache(no_cache, async move {
                 super::trial::handle_get(args, json).await
+            })
+            .await
+        }
+        Commands::Discover(super::system::DiscoverArgs { query }) => {
+            crate::sources::with_no_cache(no_cache, async move {
+                crate::cli::discover::run_outcome(
+                    crate::cli::discover::DiscoverArgs { query },
+                    json,
+                )
+                .await
             })
             .await
         }
@@ -602,6 +654,12 @@ async fn run_outcome_inner(
             })
             .await
         }
+        Commands::Study { cmd } => {
+            crate::sources::with_no_cache(no_cache, async move {
+                super::study::handle_command(cmd, json).await
+            })
+            .await
+        }
         command => Ok(CommandOutcome::stdout(
             run(Cli {
                 command,
@@ -641,7 +699,10 @@ pub async fn run_outcome(cli: Cli) -> anyhow::Result<CommandOutcome> {
     }
 }
 
-async fn run_outcome_with_worker_stack(cli: Cli) -> anyhow::Result<CommandOutcome> {
+async fn run_outcome_with_worker_stack(
+    cli: Cli,
+    alias_suggestions_as_json: bool,
+) -> anyhow::Result<CommandOutcome> {
     const EXECUTE_STACK_BYTES: usize = 8 * 1024 * 1024;
     tokio::task::spawn_blocking(move || {
         let handle = std::thread::Builder::new()
@@ -651,7 +712,11 @@ async fn run_outcome_with_worker_stack(cli: Cli) -> anyhow::Result<CommandOutcom
                 let runtime = tokio::runtime::Builder::new_current_thread()
                     .enable_all()
                     .build()?;
-                runtime.block_on(run_outcome(cli))
+                if alias_suggestions_as_json {
+                    runtime.block_on(run_outcome_inner(cli, true))
+                } else {
+                    runtime.block_on(run_outcome(cli))
+                }
             })?;
 
         handle
@@ -671,7 +736,7 @@ pub async fn execute(mut args: Vec<String>) -> anyhow::Result<String> {
         args.push("biomcp".to_string());
     }
     let cli = crate::cli::try_parse_cli(args)?;
-    let outcome = run_outcome_with_worker_stack(cli).await?;
+    let outcome = run_outcome_with_worker_stack(cli, false).await?;
     outcome_to_string(outcome)
 }
 
@@ -680,21 +745,15 @@ pub async fn execute_mcp(mut args: Vec<String>) -> anyhow::Result<CliOutput> {
         args.push("biomcp".to_string());
     }
 
-    let cli = crate::cli::try_parse_cli(args.clone())?;
-    if !is_charted_mcp_study_command(&cli)? {
-        let outcome = Box::pin(run_outcome_inner(cli, true)).await?;
-        return Ok(CliOutput {
-            text: outcome
-                .bytes
-                .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
-                .unwrap_or(outcome.text),
-            svg: None,
-        });
-    }
-    let text = Box::pin(execute(rewrite_mcp_chart_args(&args, McpChartPass::Text)?)).await?;
-    let svg = Box::pin(execute(rewrite_mcp_chart_args(&args, McpChartPass::Svg)?)).await?;
+    let mut cli = crate::cli::try_parse_cli(args)?;
+    prepare_mcp_chart(&mut cli)?;
+    let outcome = run_outcome_with_worker_stack(cli, true).await?;
     Ok(CliOutput {
-        text,
-        svg: Some(svg),
+        text: outcome
+            .bytes
+            .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+            .unwrap_or(outcome.text),
+        metadata_json: outcome.metadata_json,
+        svg: outcome.svg,
     })
 }

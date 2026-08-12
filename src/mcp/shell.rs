@@ -205,11 +205,11 @@ impl BioMcpServer {
                         )
                     })?
                 } else {
-                    match crate::cli::execute_mcp(args_with_json(&args)).await {
-                        Ok(json_output) => match serde_json::from_str::<Value>(&json_output.text) {
+                    match output.metadata_json.as_deref() {
+                        Some(json_text) => match serde_json::from_str::<Value>(json_text) {
                             Ok(value) => {
                                 let text = redact_mcp_text(output.text, &value);
-                                append_default_mcp_footer(text, &json_output.text)
+                                append_default_mcp_footer(text, json_text)
                             }
                             Err(err) if args_may_return_article_fulltext(&args) => {
                                 return Err(McpError::internal_error(
@@ -221,13 +221,13 @@ impl BioMcpServer {
                             }
                             Err(_) => output.text,
                         },
-                        Err(err) if args_may_return_article_fulltext(&args) => {
+                        None if args_may_return_article_fulltext(&args) => {
                             return Err(McpError::internal_error(
-                                format!("Failed to prepare safe MCP full-text response: {err}"),
+                                "Failed to prepare safe MCP full-text response metadata",
                                 None,
                             ));
                         }
-                        Err(_) => output.text,
+                        None => output.text,
                     }
                 };
                 let text = if json || args_include_json(&args) {

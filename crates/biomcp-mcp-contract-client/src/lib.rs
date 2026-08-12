@@ -3,6 +3,10 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 use std::thread;
 use std::time::Duration;
 
@@ -940,6 +944,22 @@ pub fn start_ols4_stub() -> anyhow::Result<(thread::JoinHandle<()>, String)> {
     Ok((handle, url))
 }
 
+pub fn start_counting_ols4_stub()
+-> anyhow::Result<(thread::JoinHandle<()>, String, Arc<AtomicUsize>)> {
+    let listener = TcpListener::bind(("127.0.0.1", 0))?;
+    listener.set_nonblocking(false)?;
+    let url = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
+    let requests = Arc::new(AtomicUsize::new(0));
+    let observed = Arc::clone(&requests);
+    let handle = thread::spawn(move || {
+        for stream in listener.incoming().flatten() {
+            observed.fetch_add(1, Ordering::SeqCst);
+            handle_ols4_connection(stream);
+        }
+    });
+    Ok((handle, url, requests))
+}
+
 fn handle_ols4_connection(mut stream: TcpStream) {
     let mut buffer = [0_u8; 2048];
     let _ = stream.read(&mut buffer);
@@ -972,7 +992,7 @@ fn handle_ols4_connection(mut stream: TcpStream) {
 impl ContractHarness {
     fn base_server_command(&self, extra_env: &[EnvVar]) -> Command {
         let mut command = Command::new(&self.biomcp_bin);
-        command.env("RUST_MIN_STACK", "8388608");
+        command.env_remove("RUST_MIN_STACK");
         command.env("UMLS_API_KEY", "");
         for (key, value) in extra_env {
             command.env(key, value);

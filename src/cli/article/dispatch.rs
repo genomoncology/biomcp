@@ -31,6 +31,7 @@ fn extract_pdf_from_sections(sections: &[String]) -> (Vec<String>, bool) {
 pub(in crate::cli) async fn handle_get(
     args: ArticleGetArgs,
     json: bool,
+    include_metadata: bool,
 ) -> anyhow::Result<CommandOutcome> {
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let (sections, pdf_from_sections) = extract_pdf_from_sections(&sections);
@@ -57,22 +58,27 @@ pub(in crate::cli) async fn handle_get(
         },
     )
     .await?;
+    let human = crate::render::markdown::article_markdown(&article, &sections)?;
+    if !json_output && !include_metadata {
+        return Ok(CommandOutcome::stdout(human));
+    }
+    let mut next_commands = crate::render::markdown::related_article(&article);
+    if let Some(not_included) = article.not_included.as_ref() {
+        next_commands.extend(not_included.next_commands.clone());
+    }
+    let structured = crate::render::json::to_entity_json_with_workflow(
+        &article,
+        crate::render::markdown::article_evidence_urls(&article),
+        next_commands,
+        crate::render::provenance::article_section_sources(&article),
+        article_follow_up_workflow(&article)?,
+    )?;
     let text = if json_output {
-        let mut next_commands = crate::render::markdown::related_article(&article);
-        if let Some(not_included) = article.not_included.as_ref() {
-            next_commands.extend(not_included.next_commands.clone());
-        }
-        crate::render::json::to_entity_json_with_workflow(
-            &article,
-            crate::render::markdown::article_evidence_urls(&article),
-            next_commands,
-            crate::render::provenance::article_section_sources(&article),
-            article_follow_up_workflow(&article)?,
-        )?
+        structured.clone()
     } else {
-        crate::render::markdown::article_markdown(&article, &sections)?
+        human
     };
-    Ok(CommandOutcome::stdout(text))
+    Ok(CommandOutcome::stdout(text).with_metadata_json(structured))
 }
 
 #[cfg(test)]

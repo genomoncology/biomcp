@@ -5,6 +5,7 @@ pub(crate) async fn handle_command(
     cmd: StudyCommand,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    let mcp_chart_text = mcp_chart_text(&cmd);
     let text = match cmd {
         StudyCommand::List => {
             let studies = crate::entities::study::list_studies().await?;
@@ -338,7 +339,47 @@ pub(crate) async fn handle_command(
         }
     };
 
-    Ok(CommandOutcome::stdout(text))
+    if let Some(summary) = mcp_chart_text {
+        Ok(CommandOutcome::stdout_with_svg(summary, text))
+    } else {
+        Ok(CommandOutcome::stdout(text))
+    }
+}
+
+fn mcp_chart_text(cmd: &StudyCommand) -> Option<String> {
+    match cmd {
+        StudyCommand::Query {
+            study,
+            gene,
+            query_type,
+            chart,
+        } if chart.mcp_inline => {
+            let label = match query_type.trim().to_ascii_lowercase().as_str() {
+                "mutation" | "mutations" => "Mutation Frequency",
+                "cna" => "CNA Distribution",
+                "expression" | "expr" => "Expression",
+                _ => "Query",
+            };
+            Some(format!("# Study {label}: {gene} ({study})"))
+        }
+        StudyCommand::Survival {
+            study, gene, chart, ..
+        } if chart.mcp_inline => Some(format!("# Study Survival: {gene} ({study})")),
+        StudyCommand::Compare {
+            study,
+            gene,
+            target,
+            chart,
+            ..
+        } if chart.mcp_inline => Some(format!("# Study Comparison: {gene} vs {target} ({study})")),
+        StudyCommand::CoOccurrence {
+            study,
+            genes,
+            chart,
+            ..
+        } if chart.mcp_inline => Some(format!("# Study Co-occurrence: {genes} ({study})")),
+        _ => None,
+    }
 }
 
 pub(super) fn parse_expression_filter(
