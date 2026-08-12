@@ -392,57 +392,45 @@ pub(super) async fn resolve_base_with_hit(
             if normalized_coordinate
                 .as_ref()
                 .is_some_and(|coordinate| coordinate.requires_comparison)
-                && effective_build.is_none()
             {
-                match myvariant.get(hgvs, Some(GenomeBuild::Grch37)).await {
-                    Ok(grch37) => match myvariant.get(hgvs, Some(GenomeBuild::Grch38)).await {
-                        Ok(grch38) => {
-                            let candidates =
-                                if super::SourceVariantIdentity::from_myvariant_hit(&grch37)
+                let preferred = effective_build.unwrap_or(GenomeBuild::Grch38);
+                let other = if preferred == GenomeBuild::Grch38 {
+                    GenomeBuild::Grch37
+                } else {
+                    GenomeBuild::Grch38
+                };
+                let preferred_hit = myvariant.get(hgvs, Some(preferred)).await;
+                let other_hit = myvariant.get(hgvs, Some(other)).await;
+                match (preferred_hit, other_hit) {
+                    (Ok(preferred_hit), Ok(other_hit)) => {
+                        let candidates =
+                            if super::SourceVariantIdentity::from_myvariant_hit(&preferred_hit)
+                                .normalized_key()
+                                != super::SourceVariantIdentity::from_myvariant_hit(&other_hit)
                                     .normalized_key()
-                                    != super::SourceVariantIdentity::from_myvariant_hit(&grch38)
-                                        .normalized_key()
-                                {
-                                    vec![
-                                        super::VariantBuildCandidate {
-                                            genome_build: GenomeBuild::Grch37,
-                                            id: grch37.id.clone(),
-                                            rsid: transform::variant::from_myvariant_hit(&grch37)
-                                                .rsid,
-                                        },
-                                        super::VariantBuildCandidate {
-                                            genome_build: GenomeBuild::Grch38,
-                                            id: grch38.id.clone(),
-                                            rsid: transform::variant::from_myvariant_hit(&grch38)
-                                                .rsid,
-                                        },
-                                    ]
-                                } else {
-                                    Vec::new()
-                                };
-                            (grch37, Some(GenomeBuild::Grch37), candidates)
-                        }
-                        Err(error) if error.is_not_found() => {
-                            (grch37, Some(GenomeBuild::Grch37), Vec::new())
-                        }
-                        Err(error) => return Err(error),
-                    },
-                    Err(error) if error.is_not_found() => {
-                        match myvariant.get(hgvs, Some(GenomeBuild::Grch38)).await {
-                            Ok(grch38) => (grch38, Some(GenomeBuild::Grch38), Vec::new()),
-                            Err(error) if error.is_not_found() => {
-                                return Err(BioMcpError::NotFound {
-                                    entity: "variant".into(),
-                                    id: format!(
-                                        "{hgvs} (tried GRCh37 and GRCh38; upstream HTTP 404)"
-                                    ),
-                                    suggestion: "Try searching: biomcp search variant".into(),
-                                });
-                            }
-                            Err(error) => return Err(error),
-                        }
+                            {
+                                vec![super::VariantBuildCandidate {
+                                    genome_build: other,
+                                    id: other_hit.id.clone(),
+                                    rsid: transform::variant::from_myvariant_hit(&other_hit).rsid,
+                                }]
+                            } else {
+                                Vec::new()
+                            };
+                        (preferred_hit, Some(preferred), candidates)
                     }
-                    Err(error) => return Err(error),
+                    (Ok(hit), Err(error)) if error.is_not_found() => {
+                        (hit, Some(preferred), Vec::new())
+                    }
+                    (Err(error), Ok(hit)) if error.is_not_found() => (hit, Some(other), Vec::new()),
+                    (Err(first), Err(second)) if first.is_not_found() && second.is_not_found() => {
+                        return Err(BioMcpError::NotFound {
+                            entity: "variant".into(),
+                            id: format!("{hgvs} (tried GRCh38 and GRCh37; upstream HTTP 404)"),
+                            suggestion: "Try searching: biomcp search variant".into(),
+                        });
+                    }
+                    (Err(error), _) | (_, Err(error)) => return Err(error),
                 }
             } else {
                 let direct = myvariant.get(hgvs, effective_build).await;

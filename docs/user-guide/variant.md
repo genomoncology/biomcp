@@ -19,10 +19,11 @@ BioMCP supports multiple input forms:
 These exact formats are accepted by `biomcp get variant` and the exact-ID
 helper commands. Use `--assembly hg19` or `--assembly hg38` to declare the
 build for a chromosome-prefixed coordinate; build-qualified and versioned RefSeq
-inputs already establish it. For a bare coordinate, BioMCP checks GRCh37 first
-and checks GRCh38 when needed. If the same spelling identifies different records,
-it returns the GRCh37-compatible record and reports the competing identity in
-`build_candidates` JSON and a Markdown warning.
+inputs already establish it. For a bare coordinate, BioMCP checks both GRCh37
+and GRCh38, preferring GRCh38. Set `BIOMCP_DEFAULT_ASSEMBLY=grch37` (or `hg19`)
+to restore GRCh37 preference; an explicit `--assembly` always wins. If the same
+spelling identifies different records, BioMCP returns the preferred record and
+reports the other identity in `build_candidates` JSON and a Markdown warning.
 
 ## ClinGen Allele Registry normalization
 

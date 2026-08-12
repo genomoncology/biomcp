@@ -5,7 +5,7 @@
 
 rsID: {% if rsid %}{{ rsid }}{% else %}Not reported{% endif %}
 {% if genome_build %}Genomic coordinate ({{ genome_build }}{% if genome_build_provider_default %}, provider default{% endif %}): {{ id }}{% else %}Genomic coordinate (unknown): {{ id }}{% endif %}
-{% if build_ambiguous %}Warning: this coordinate resolves to a different record on GRCh38{% if build_candidates[1].rsid %} (rsID: {{ build_candidates[1].rsid }}){% endif %}.{% endif %}
+{% if build_ambiguous %}Warning: this coordinate also resolves to a different {{ build_candidates[0].genome_build }} record{% if build_candidates[0].rsid %} (rsID: {{ build_candidates[0].rsid }}){% endif %}.{% endif %}
 {% if hgvs_p %}Protein: {{ hgvs_p }}{% endif %}
 {% if legacy_name %}Legacy Name: {{ legacy_name }}{% endif %}
 {% if hgvs_c %}cDNA: {{ hgvs_c }}{% endif %}

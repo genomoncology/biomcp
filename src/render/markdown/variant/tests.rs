@@ -25,20 +25,19 @@ fn markdown_render_variant_entity() {
 fn variant_markdown_names_the_competing_build_identity() {
     let variant: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr10:g.87933119A>C",
-        "gene": "GRID1",
-        "rsid": "rs1212585646",
-        "genome_build": "GRCh37",
+        "gene": "PTEN",
+        "rsid": "rs759485888",
+        "genome_build": "GRCh38",
         "build_ambiguous": true,
         "build_candidates": [
-            {"genome_build": "GRCh37", "id": "chr10:g.87933119A>C", "rsid": "rs1212585646"},
-            {"genome_build": "GRCh38", "id": "chr10:g.87933119A>C", "rsid": "rs759485888"}
+            {"genome_build": "GRCh37", "id": "chr10:g.87933119A>C", "rsid": "rs1212585646"}
         ]
     }))
     .expect("variant should deserialize");
 
     let markdown = variant_markdown(&variant, &[]).expect("rendered markdown");
-    assert!(markdown.contains("different record on GRCh38"));
-    assert!(markdown.contains("rsID: rs759485888"));
+    assert!(markdown.contains("different GRCh37 record"));
+    assert!(markdown.contains("rsID: rs1212585646"));
 }
 
 #[test]

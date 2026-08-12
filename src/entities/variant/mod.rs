@@ -1,5 +1,6 @@
 //! Variant entity models and workflows exposed through the stable variant facade.
 
+use crate::error::BioMcpError;
 use serde::{Deserialize, Serialize};
 
 use crate::entities::section_outcome::SectionOutcomes;
@@ -84,6 +85,25 @@ impl GenomeBuild {
             Self::Grch37 => "hg19",
             Self::Grch38 => "hg38",
         }
+    }
+}
+
+pub(crate) fn resolved_default_assembly(
+    explicit: Option<GenomeBuild>,
+) -> Result<GenomeBuild, BioMcpError> {
+    if let Some(build) = explicit {
+        return Ok(build);
+    }
+    match std::env::var("BIOMCP_DEFAULT_ASSEMBLY") {
+        Ok(value) => value.parse().map_err(|_| {
+            BioMcpError::InvalidArgument(
+                "BIOMCP_DEFAULT_ASSEMBLY must be grch37, hg19, grch38, or hg38".into(),
+            )
+        }),
+        Err(std::env::VarError::NotPresent) => Ok(GenomeBuild::Grch38),
+        Err(_) => Err(BioMcpError::InvalidArgument(
+            "BIOMCP_DEFAULT_ASSEMBLY must contain valid Unicode".into(),
+        )),
     }
 }
 

@@ -289,6 +289,9 @@ fn typed_get_schema(schema: &mut schemars::Schema) {
             if entity != "author" {
                 properties.insert("sections".into(), json!({"type":"array","maxItems":16,"uniqueItems":true,"items":{"enum":crate::cli::list::catalog::sections(entity)}}));
             }
+            if entity == "variant" {
+                properties.insert("assembly".into(), json!({"enum":["grch37","hg19","grch38","hg38"]}));
+            }
             json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity","id"]})
         }).collect::<Vec<_>>();
     *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed get schema");
@@ -682,6 +685,8 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
     let id = checked_text(object.get("id").unwrap_or(&Value::Null), "id", 512)?;
     let allowed_keys = if entity == "author" {
         &["entity", "id", "json"][..]
+    } else if entity == "variant" {
+        &["entity", "id", "sections", "assembly", "json"][..]
     } else {
         &["entity", "id", "sections", "json"][..]
     };
@@ -691,7 +696,15 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
     {
         return Err(input_error(format!("unknown {entity} get field: {key}")));
     }
-    let mut args = vec!["biomcp".into(), "get".into(), entity.clone(), id];
+    let mut args = vec!["biomcp".into(), "get".into(), entity.clone()];
+    if let Some(assembly) = object.get("assembly") {
+        let assembly = checked_text(assembly, "assembly", 256)?;
+        if !["grch37", "hg19", "grch38", "hg38"].contains(&assembly.as_str()) {
+            return Err(input_error("invalid variant assembly"));
+        }
+        args.extend(["--assembly".into(), assembly]);
+    }
+    args.push(id);
     let sections = object
         .get("sections")
         .and_then(Value::as_array)
@@ -1514,6 +1527,16 @@ mod tests {
                 .as_array()
                 .unwrap()
                 .contains(&json!("population"))
+        );
+        let variant = get["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|branch| branch["properties"]["entity"]["const"] == "variant")
+            .unwrap();
+        assert_eq!(
+            variant["properties"]["assembly"]["enum"],
+            json!(["grch37", "hg19", "grch38", "hg38"])
         );
     }
 

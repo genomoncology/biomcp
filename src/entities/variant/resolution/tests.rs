@@ -1,7 +1,7 @@
 //! Sidecar tests for variant resolution helpers.
 
 use super::*;
-use crate::entities::variant::GenomeBuild;
+use crate::entities::variant::{GenomeBuild, resolved_default_assembly};
 
 #[test]
 fn versioned_refseq_rows_normalize_to_their_chromosome_and_build() {
@@ -48,6 +48,32 @@ fn coordinate_normalizer_handles_aliases_and_alternate_spellings() {
     assert!(normalize_genomic_coordinate("NC_000010:g.1A>T").is_err());
     assert!(normalize_genomic_coordinate("NC_000010.99:g.1A>T").is_err());
     assert!(normalize_genomic_coordinate("chr10:g.0A>T").is_err());
+}
+
+#[test]
+#[serial_test::serial]
+fn default_assembly_precedence_is_explicit_then_environment_then_grch38() {
+    unsafe { std::env::remove_var("BIOMCP_DEFAULT_ASSEMBLY") };
+    assert_eq!(
+        resolved_default_assembly(None).unwrap(),
+        GenomeBuild::Grch38
+    );
+    unsafe { std::env::set_var("BIOMCP_DEFAULT_ASSEMBLY", "hg19") };
+    assert_eq!(
+        resolved_default_assembly(None).unwrap(),
+        GenomeBuild::Grch37
+    );
+    assert_eq!(
+        resolved_default_assembly(Some(GenomeBuild::Grch38)).unwrap(),
+        GenomeBuild::Grch38
+    );
+    unsafe { std::env::set_var("BIOMCP_DEFAULT_ASSEMBLY", "not-a-build") };
+    assert!(resolved_default_assembly(None).is_err());
+    assert_eq!(
+        resolved_default_assembly(Some(GenomeBuild::Grch37)).unwrap(),
+        GenomeBuild::Grch37
+    );
+    unsafe { std::env::remove_var("BIOMCP_DEFAULT_ASSEMBLY") };
 }
 
 #[test]
