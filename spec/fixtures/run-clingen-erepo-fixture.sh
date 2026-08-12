@@ -17,6 +17,9 @@ requests = Path(os.environ["REQUESTS"])
 requests.touch()
 apc_summary = (root / "apc-summary.json").read_bytes()
 apc_detail = (root / "apc-detail.json").read_bytes()
+# The receipted APC page has no p.cspec-svi-text element. Keep that absence
+# explicit while still exercising the required HTML request and parser path.
+apc_guideline = b"<!doctype html><html><body></body></html>"
 summaries = {}
 for path in root.glob("*-summary.json"):
     value = json.loads(path.read_text())
@@ -27,8 +30,8 @@ extra = dict(apc["data"][0]); extra["uuid"] = "00000000-0000-0000-0000-000000000
 multiple = {"status":{"code":200}, "metadata":{}, "data":[apc["data"][0], extra]}
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_): pass
-    def send_bytes(self, code, body):
-        self.send_response(code); self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+    def send_bytes(self, code, body, content_type="application/json"):
+        self.send_response(code); self.send_header("Content-Type", content_type); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
     def send_json(self, code, value): self.send_bytes(code, json.dumps(value).encode())
     def do_GET(self):
         requests.open("a").write(self.path + "\n")
@@ -40,6 +43,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(200, multiple if caid == "CA-MULTI" else summaries.get(caid, {"status":{"code":200}, "metadata":{}, "data":[]})); return
         if path.endswith("/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0"):
             self.send_bytes(200, apc_detail); return
+        if path == "/evrepo/ui/classification/34ea9707-51d8-44df-818d-f69b075295c5" and query == "version=1.0.0":
+            self.send_bytes(200, apc_guideline, "text/html; charset=utf-8"); return
         self.send_json(404, {"status":{"code":404}, "metadata":{}, "data":[]})
 server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 Path(os.environ["PORT_FILE"]).write_text(str(server.server_port))
@@ -50,6 +55,7 @@ while [[ ! -s "$tmp/port" ]]; do sleep 0.05; done
 fixture_port="$(<"$tmp/port")"
 export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$fixture_port"
 export BIOMCP_CACHE_MODE=off
+export BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_CLINGEN_EREPO_BASE"
 
 markdown="$($binary variant erepo CA015543)"
 summary="$($binary --json variant erepo CA015543)"
@@ -90,6 +96,7 @@ jq -n --arg markdown "$markdown" --argjson summary "$summary" --argjson detail "
   cli_and_mcp_have_same_contract: ($batch == $mcp),
   summary_and_detail_bounds_are_reported: ($detail.items[0].assertions[0].detail.body_bytes > 0),
   detail_cli_consumes_selected_source_plan: ($requests | contains("/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0")),
+  detail_cli_consumes_guideline_plan: ($requests | contains("/evrepo/ui/classification/34ea9707-51d8-44df-818d-f69b075295c5?version=1.0.0")),
   receipted_summary_and_detail_drive_cli: ($summary.items[0].assertions[0].assertion_id == "34ea9707-51d8-44df-818d-f69b075295c5" and $detail.items[0].assertions[0].detail.body_sha256 == "f6b1e4bfd2359a4d648626a87d487c4d92e5f2cc723de9347139218c03abad46"),
   provider_at_id_is_preserved_in_detail: ($detail.items[0].assertions[0].detail.provider_at_id == "https://cgerepoapi/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0")
 }'
