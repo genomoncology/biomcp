@@ -250,8 +250,22 @@ async fn print_typed_tool_surface(
     let gene_cspec_schema = tool_schema(gene_cspec);
     let variant_articles_schema = tool_schema(variant_articles);
 
-    if !json_property_contains(&search_schema, "entity", "pathway") {
-        anyhow::bail!("search entity schema missing pathway enum");
+    if search_schema
+        .get("oneOf")
+        .and_then(serde_json::Value::as_array)
+        .is_none_or(|branches| branches.len() != 8)
+    {
+        anyhow::bail!("search schema must have eight entity-specific branches");
+    }
+    if get_schema
+        .get("oneOf")
+        .and_then(serde_json::Value::as_array)
+        .is_none_or(|branches| branches.len() != 12)
+    {
+        anyhow::bail!("get schema must have twelve entity-specific branches");
+    }
+    if !json_property_contains(&search_schema, "entity", "gwas") {
+        anyhow::bail!("search entity schema missing gwas branch");
     }
     if !json_property_contains(&search_schema, "entity", "author") {
         anyhow::bail!("search entity schema missing author enum");
@@ -302,7 +316,8 @@ async fn print_typed_tool_surface(
     println!("ClinGen schemas validate their named root properties");
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
-    println!("search schema includes entity enum and bounded limit");
+    println!("search and get schemas use entity-specific branches");
+    println!("search schema includes a bounded limit");
     println!("search and get schemas include author entity");
     println!("get schema includes entity and sections enum");
     println!("variant_articles schema includes identity verification controls");

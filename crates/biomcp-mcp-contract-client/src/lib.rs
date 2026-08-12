@@ -382,15 +382,25 @@ where
         .find(|tool| tool.name == "get")
         .expect("typed get tool listed");
     let search_schema = serde_json::to_value(&search.input_schema)?;
+    assert_eq!(
+        search_schema["oneOf"].as_array().map(Vec::len),
+        Some(8),
+        "typed search schema must have eight entity-specific branches: {search_schema}"
+    );
     assert!(
-        json_property_contains(&search_schema, "entity", "pathway"),
-        "typed search entity schema missing pathway enum: {search_schema}"
+        json_property_contains(&search_schema, "entity", "gwas"),
+        "typed search entity schema missing gwas branch: {search_schema}"
     );
     assert!(
         json_property_contains(&search_schema, "limit", "25"),
         "typed search limit schema missing 25 bound: {search_schema}"
     );
     let get_schema = serde_json::to_value(&get.input_schema)?;
+    assert_eq!(
+        get_schema["oneOf"].as_array().map(Vec::len),
+        Some(12),
+        "typed get schema must have twelve entity-specific branches: {get_schema}"
+    );
     assert!(
         json_property_contains(&get_schema, "entity", "gene"),
         "typed get entity schema missing gene enum: {get_schema}"

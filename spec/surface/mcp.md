@@ -119,7 +119,8 @@ curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.
 ClinGen schemas validate their named root properties
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
-search schema includes entity enum and bounded limit
+search and get schemas use entity-specific branches
+search schema includes a bounded limit
 get schema includes entity and sections enum
 search and get schemas include author entity
 variant_articles schema includes identity verification controls
