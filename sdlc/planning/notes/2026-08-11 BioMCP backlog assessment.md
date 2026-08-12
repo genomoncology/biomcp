@@ -560,3 +560,25 @@ backlog: **4 → 0**.
 - Reassess the post-release grouping only if the release implementation
   materially changes the named code boundaries; do not redo the batching
   analysis without concrete evidence of such a conflict.
+
+## Pre-release closure result — 2026-08-12
+
+The 12-ticket session completed in one persistent worktree: **0881, 0884,
+0925, 0934, 0935, 0937, 0939, 0940, 0941, 0942, 0948, and 0949**. ERepo and
+pharmacogenomics requests are truthful and bounded. Managed cache and session
+state now has truthful retention, private permissions, and a real no-cache
+path. The release surface ships PNG support without packaging captured
+biomedical fixtures or a duplicate full executable.
+
+CI delegates to the canonical gates, which now lint all tracked production
+shell and workflow files. Routine tests and executable specifications run
+inside a fail-closed network namespace after their artifacts are prepared.
+That final isolation exposed and repaired stale MyGene, CPIC, ERepo, and build
+profile fixture contracts instead of permitting public fallbacks.
+
+Final validation passed: **2,904 Rust tests**, **533 Python contracts**, strict
+documentation, the complete executable specification corpus, all lint and
+quality checks, the all-feature release build, six AlphaGenome tests, and PNG,
+SVG, and terminal artifact smoke. The active backlog is now **19**, completing
+the planned **31 → 19** reduction. The next recorded session remains the
+seven-ticket release-construction batch, beginning with 0952.
