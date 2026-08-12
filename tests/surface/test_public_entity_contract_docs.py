@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC_DOCS = [
     ROOT / "README.md",
     ROOT / "docs" / "index.md",
-    ROOT / "src" / "cli" / "list_reference.md",
 ]
 
 
@@ -16,19 +17,30 @@ def _read(path: Path) -> str:
 
 
 def test_public_docs_label_search_only_entities() -> None:
-    for path in PUBLIC_DOCS:
-        text = _read(path)
-        assert "Search-Only Entities" in text or "Search-only entities" in text, path
-        assert "gwas" in text and "search gwas" in text, path
-        assert "phenotype" in text and "search phenotype" in text, path
+    documents = [(str(path), _read(path)) for path in PUBLIC_DOCS]
+    biomcp_bin = Path(os.environ.get("BIOMCP_BIN", ROOT / "target" / "release" / "biomcp"))
+    result = subprocess.run(
+        [str(biomcp_bin), "list"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    documents.append(("biomcp list", result.stdout))
+
+    for source, text in documents:
+        assert "Search-Only Entities" in text or "Search-only entities" in text, source
+        assert "gwas" in text and "search gwas" in text, source
+        assert "phenotype" in text and "search phenotype" in text, source
 
 
 def test_public_docs_do_not_imply_get_gwas_or_get_phenotype() -> None:
     forbidden = ["get gwas", "get phenotype"]
-    for path in PUBLIC_DOCS:
-        text = _read(path).lower()
+    documents = [(str(path), _read(path)) for path in PUBLIC_DOCS]
+    documents.append(("list template", _read(ROOT / "src" / "cli" / "list_reference.md")))
+    for source, text in documents:
+        text = text.lower()
         for phrase in forbidden:
-            assert phrase not in text, f"{path} must not document `{phrase}`"
+            assert phrase not in text, f"{source} must not document `{phrase}`"
 
 
 def test_spec_architecture_routes_public_search_only_surfaces() -> None:
