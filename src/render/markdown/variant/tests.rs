@@ -278,9 +278,13 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
 
     let markdown =
         variant_search_markdown("gene=PLN, hgvsp=L39X", &results).expect("rendered markdown");
-    assert!(markdown.contains("| ID | Build | Gene | Protein | Legacy Name | Significance |"));
-    assert!(markdown.contains("| chr6:g.118880200T>G | GRCh37 | PLN | p.L39X | PLN L39stop |"));
-    assert!(markdown.contains("| chr6:g.118880100A>G | GRCh37 | PLN | p.K3R | - |"));
+    assert!(markdown.contains(
+        "| ID | Build | Gene | Transcript | Coding | Protein | Legacy Name | Significance |"
+    ));
+    assert!(
+        markdown.contains("| chr6:g.118880200T>G | GRCh37 | PLN | - | - | p.L39X | PLN L39stop |")
+    );
+    assert!(markdown.contains("| chr6:g.118880100A>G | GRCh37 | PLN | - | - | p.K3R | - |"));
 }
 
 #[test]
