@@ -2,8 +2,8 @@
 
 use super::super::dispatch::{
     article_debug_filters, article_query_summary, article_search_request, build_article_debug_plan,
-    truncate_article_annotations,
 };
+use super::super::truncate_article_annotations;
 use crate::cli::PaginationMeta;
 
 fn default_article_search_args() -> super::super::ArticleSearchArgs {

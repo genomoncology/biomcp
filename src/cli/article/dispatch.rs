@@ -394,7 +394,7 @@ pub(in crate::cli) async fn handle_command(
             let annotations = article
                 .annotations
                 .clone()
-                .map(|value| truncate_article_annotations(value, limit));
+                .map(|value| super::truncate_article_annotations(value, limit));
             if json {
                 #[derive(serde::Serialize)]
                 struct ArticleEntitiesResponse {
@@ -693,15 +693,4 @@ pub(super) fn article_search_json_with_detail(
         ),
     })
     .map_err(Into::into)
-}
-
-pub(super) fn truncate_article_annotations(
-    mut annotations: crate::entities::article::ArticleAnnotations,
-    limit: usize,
-) -> crate::entities::article::ArticleAnnotations {
-    annotations.genes.truncate(limit);
-    annotations.diseases.truncate(limit);
-    annotations.chemicals.truncate(limit);
-    annotations.mutations.truncate(limit);
-    annotations
 }

@@ -11,6 +11,40 @@ use crate::entities::discover::{
     DiscoverConfidence, DiscoverType, MatchTier,
 };
 
+#[tokio::test]
+async fn formerly_plain_finite_commands_emit_one_json_document() {
+    let rows: &[&[&str]] = &[
+        &["biomcp", "--json", "skill"],
+        &["biomcp", "--json", "skill", "render"],
+        &["biomcp", "--json", "chart"],
+        &[
+            "biomcp",
+            "--json",
+            "mcp-config",
+            "--client",
+            "claude-desktop",
+        ],
+        &["biomcp", "--json", "cache", "path"],
+    ];
+    for args in rows {
+        let cli = try_parse_cli(*args).expect("matrix command must parse");
+        let outcome = crate::cli::run_outcome(cli)
+            .await
+            .expect("matrix command must execute");
+        assert_eq!(outcome.exit_code, 0, "{args:?}");
+        serde_json::from_str::<serde_json::Value>(&outcome.text)
+            .unwrap_or_else(|error| panic!("{args:?} did not emit one JSON value: {error}"));
+    }
+}
+
+#[test]
+fn long_running_server_json_rejection_is_structured_and_nonzero() {
+    let outcome = crate::cli::server_json_rejection();
+    assert_ne!(outcome.exit_code, 0);
+    let value: serde_json::Value = serde_json::from_str(&outcome.text).unwrap();
+    assert_eq!(value["error"]["code"], "invalid_argument");
+}
+
 #[test]
 fn clap_diagnostics_remove_terminal_controls_from_rejected_arguments() {
     let args = ["biomcp", "--bad\u{9b}31m\u{202e}\nforged-line"];

@@ -2,6 +2,9 @@
 
 use clap::{Args, Subcommand};
 
+mod annotations;
+pub(super) use annotations::truncate_article_annotations;
+
 fn parse_article_year(value: &str) -> Result<u16, String> {
     if value.len() != 4 || !value.chars().all(|ch| ch.is_ascii_digit()) {
         return Err("expected YYYY".to_string());

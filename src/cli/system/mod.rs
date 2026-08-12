@@ -131,10 +131,12 @@ pub struct VersionArgs {
     pub verbose: bool,
 }
 
+mod batch;
 mod dispatch;
+pub(crate) use self::batch::settle_batch;
 pub(crate) use self::dispatch::{
     handle_batch, handle_cvx, handle_ddinter, handle_ema, handle_enrich, handle_gtr,
-    handle_uninstall, handle_version, handle_who, handle_who_ivd, settle_batch,
+    handle_uninstall, handle_version, handle_who, handle_who_ivd,
 };
 
 #[cfg(test)]
