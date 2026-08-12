@@ -47,6 +47,8 @@ pub(crate) struct ERepoItem {
 pub(crate) struct ERepoAssertion {
     pub assertion_id: String,
     pub doc_version: String,
+    pub guideline_label: Option<String>,
+    pub guideline_version: Option<String>,
     pub versions: Vec<String>,
     pub classification: Option<String>,
     pub condition: Option<String>,
@@ -167,29 +169,28 @@ async fn retrieve_with_client(
         });
         if detail {
             let selected = select(&assertions, assertion_id, version)?;
-            let detail_version = version.unwrap_or(&selected.doc_version);
-            let (envelope, bytes) = client
-                .detail(&selected.assertion_id, detail_version)
-                .await?;
+            let selected_id = selected.assertion_id.clone();
+            let detail_version = version.unwrap_or(&selected.doc_version).to_owned();
+            let (envelope, bytes) = client.detail(&selected_id, &detail_version).await?;
+            let guideline_bytes = client.guideline_page(&selected_id, &detail_version).await?;
             let data = envelope
                 .get("data")
                 .and_then(Value::as_object)
                 .ok_or_else(|| invalid("detail data must be one object"))?;
-            let url = client.detail_url(&selected.assertion_id, detail_version);
-            validate_detail_identity(data, &selected.assertion_id, &url)?;
+            let url = client.detail_url(&selected_id, &detail_version);
+            validate_detail_identity(data, &selected_id, &url)?;
             let selected_index = assertions
                 .iter()
                 .position(|row| {
-                    row.assertion_id == selected.assertion_id
-                        && row.doc_version == selected.doc_version
+                    row.assertion_id == selected_id && row.doc_version == selected.doc_version
                 })
                 .expect("selected summary exists");
-            assertions[selected_index].detail = Some(detail_projection(
-                data,
-                &selected.assertion_id,
-                &url,
-                &bytes,
-            ));
+            let guideline_label = parse_guideline_label(&guideline_bytes)?;
+            assertions[selected_index].guideline_version =
+                guideline_label.as_deref().and_then(parse_guideline_version);
+            assertions[selected_index].guideline_label = guideline_label;
+            assertions[selected_index].detail =
+                Some(detail_projection(data, &selected_id, &url, &bytes));
         }
         items.push(ERepoItem {
             caid,
@@ -222,6 +223,8 @@ fn summary(row: &Value, client: &ERepoClient) -> Result<ERepoAssertion, BioMcpEr
         source_url: client.detail_url(&assertion_id, &doc_version),
         assertion_id,
         doc_version,
+        guideline_label: None,
+        guideline_version: None,
         versions,
         classification: string(row, "classification"),
         condition: string(row, "condition"),
@@ -245,6 +248,38 @@ fn summary(row: &Value, client: &ERepoClient) -> Result<ERepoAssertion, BioMcpEr
         },
         detail: None,
     })
+}
+
+fn parse_guideline_label(bytes: &[u8]) -> Result<Option<String>, BioMcpError> {
+    let html = std::str::from_utf8(bytes).map_err(|_| invalid("guideline page is not UTF-8"))?;
+    let document = scraper::Html::parse_document(html);
+    let selector = scraper::Selector::parse("p.cspec-svi-text em")
+        .expect("static ERepo guideline selector is valid");
+    let labels = document
+        .select(&selector)
+        .map(|element| element.text().collect::<String>().trim().to_owned())
+        .filter(|label| !label.is_empty())
+        .collect::<Vec<_>>();
+    match labels.as_slice() {
+        [] => Ok(None),
+        [label] => Ok(Some(label.clone())),
+        _ => Err(invalid("guideline page returned multiple labels")),
+    }
+}
+
+fn parse_guideline_version(label: &str) -> Option<String> {
+    let mut tokens = label.split_whitespace();
+    while let Some(token) = tokens.next() {
+        if token.trim_matches(|ch: char| !ch.is_ascii_alphanumeric()) == "Version" {
+            let candidate = tokens
+                .next()?
+                .trim_matches(|ch: char| !ch.is_ascii_alphanumeric() && ch != '.' && ch != '-');
+            return semver::Version::parse(candidate)
+                .ok()
+                .map(|version| version.to_string());
+        }
+    }
+    None
 }
 
 fn select<'a>(
@@ -617,6 +652,36 @@ mod tests {
         );
     }
 
+    #[test]
+    fn receipted_guideline_pages_preserve_labels_and_parse_only_semver() {
+        let versioned = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/gp1ba-guideline.html"
+        ));
+        let legacy = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/mtdna-guideline.html"
+        ));
+
+        let versioned_label = parse_guideline_label(versioned)
+            .expect("versioned receipt parses")
+            .expect("versioned label");
+        assert_eq!(
+            versioned_label,
+            "ClinGen Platelet Disorders Expert Panel Specifications to the ACMG/AMP Variant Interpretation Guidelines for GP1BA Version 1.1.0"
+        );
+        assert_eq!(
+            parse_guideline_version(&versioned_label).as_deref(),
+            Some("1.1.0")
+        );
+
+        let legacy_label = parse_guideline_label(legacy)
+            .expect("legacy receipt parses")
+            .expect("legacy label");
+        assert_eq!(parse_guideline_version(&legacy_label), None);
+        assert!(legacy_label.ends_with("Version 1_mtDNA"));
+    }
+
     #[tokio::test]
     async fn detail_retrieval_consumes_the_summary_selected_plan() {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -633,7 +698,15 @@ mod tests {
         ));
         let server = tokio::spawn(async move {
             let mut requests = Vec::new();
-            for body in [summary, detail] {
+            let guideline = include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/testdata/sources/clingen_erepo/gp1ba-guideline.html"
+            ));
+            for (body, content_type) in [
+                (summary, "application/json"),
+                (detail, "application/json"),
+                (guideline, "text/html; charset=utf-8"),
+            ] {
                 let (mut stream, _) = listener.accept().await.expect("accept ERepo request");
                 let mut request = Vec::new();
                 loop {
@@ -649,7 +722,7 @@ mod tests {
                 }
                 requests.push(String::from_utf8_lossy(&request).into_owned());
                 let response = format!(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                     body.len(),
                     body,
                 );
@@ -676,6 +749,9 @@ mod tests {
         ));
         assert!(requests[1].starts_with(
             "GET /evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0 "
+        ));
+        assert!(requests[2].starts_with(
+            "GET /evrepo/ui/classification/34ea9707-51d8-44df-818d-f69b075295c5?version=1.0.0 "
         ));
     }
 

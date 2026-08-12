@@ -10,6 +10,7 @@ const EREPO_BASE: &str = "https://erepo.clinicalgenome.org";
 const EREPO_BASE_ENV: &str = "BIOMCP_CLINGEN_EREPO_BASE";
 const SUMMARY_BODY_LIMIT: usize = 1024 * 1024;
 const DETAIL_BODY_LIMIT: usize = 4 * 1024 * 1024;
+const GUIDELINE_BODY_LIMIT: usize = 1024 * 1024;
 
 pub(crate) struct ERepoClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -46,6 +47,10 @@ impl ERepoClient {
 
     pub(crate) fn detail_plan(uuid: &str, version: &str) -> RequestPlan {
         RequestPlan::get(detail_path(uuid, version))
+    }
+
+    pub(crate) fn guideline_plan(uuid: &str, version: &str) -> RequestPlan {
+        RequestPlan::get(guideline_path(uuid)).query("version", version)
     }
 
     pub(crate) fn detail_url(&self, uuid: &str, version: &str) -> String {
@@ -108,6 +113,48 @@ impl ERepoClient {
         let value = decode_envelope(status, &bytes)?;
         Ok((value, bytes))
     }
+
+    pub(crate) async fn guideline_page(
+        &self,
+        uuid: &str,
+        version: &str,
+    ) -> Result<Vec<u8>, BioMcpError> {
+        let response = crate::sources::apply_cache_mode(request_from_plan(
+            &self.client,
+            self.base.as_ref(),
+            &Self::guideline_plan(uuid, version),
+        ))
+        .send_with_source_context(SourceContext::retry(SourceProvider::CLINGEN_EREPO))
+        .await?;
+        let status = response.status();
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_owned);
+        let bytes = crate::sources::read_limited_source_body_with_limit(
+            response,
+            SourceContext::narrow(SourceProvider::CLINGEN_EREPO),
+            GUIDELINE_BODY_LIMIT,
+        )
+        .await?;
+        if !status.is_success() {
+            return Err(BioMcpError::Api {
+                api: "ClinGen ERepo".into(),
+                message: format!("HTTP {status}"),
+            });
+        }
+        if !content_type
+            .as_deref()
+            .is_some_and(|value| value.to_ascii_lowercase().starts_with("text/html"))
+        {
+            return Err(BioMcpError::Api {
+                api: "ClinGen ERepo".into(),
+                message: "guideline page did not return HTML".into(),
+            });
+        }
+        Ok(bytes)
+    }
 }
 
 fn detail_path(uuid: &str, version: &str) -> String {
@@ -126,6 +173,15 @@ fn detail_path(uuid: &str, version: &str) -> String {
             "version",
             version,
         ]);
+    url.path().trim_start_matches('/').to_owned()
+}
+
+fn guideline_path(uuid: &str) -> String {
+    let mut url = reqwest::Url::parse("https://erepo.clinicalgenome.org/")
+        .expect("static ERepo origin is valid");
+    url.path_segments_mut()
+        .expect("static ERepo origin accepts path segments")
+        .extend(["evrepo", "ui", "classification", uuid]);
     url.path().trim_start_matches('/').to_owned()
 }
 

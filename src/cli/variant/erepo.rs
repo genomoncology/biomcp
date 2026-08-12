@@ -90,6 +90,12 @@ fn render_markdown(response: &ERepoResponse) -> String {
             if let Some(classification) = &assertion.classification {
                 out.push_str(&format!("- Classification: {classification}\n"));
             }
+            if let Some(label) = &assertion.guideline_label {
+                out.push_str(&format!("- Guideline: {label}\n"));
+                if let Some(version) = &assertion.guideline_version {
+                    out.push_str(&format!("- Guideline version: {version}\n"));
+                }
+            }
             if let Some(condition) = &assertion.condition {
                 out.push_str(&format!("- Condition: {condition}\n"));
             }
@@ -122,6 +128,8 @@ mod tests {
                 assertions: vec![ERepoAssertion {
                     assertion_id: "assertion-id".into(),
                     doc_version: "1.0.0".into(),
+                    guideline_label: Some("Example specifications Version 2.1.0".into()),
+                    guideline_version: Some("2.1.0".into()),
                     versions: vec!["1.0.0".into()],
                     classification: Some("Pathogenic".into()),
                     condition: Some("Example condition".into()),

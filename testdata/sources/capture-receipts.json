@@ -287,6 +287,30 @@
       }
     },
     {
+      "path": "clingen_erepo/gp1ba-guideline.html",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Evidence Repository",
+        "request": "https://erepo.genome.network/evrepo/ui/classification/2132ef1b-c0ed-49bc-8cbc-07ef85e5353b?version=1.0",
+        "captured_at": "2026-08-12T18:51:31Z",
+        "sha256": "551aae19e123042d6e6e964469760300038d0302892e1f3bb310dd2253b5068f",
+        "minimization_or_redaction": "Minimized to the complete p.cspec-svi-text element consumed by the production parser; the element text and link are byte-faithful.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Evidence Repository classification page."
+      }
+    },
+    {
+      "path": "clingen_erepo/mtdna-guideline.html",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Evidence Repository",
+        "request": "https://erepo.genome.network/evrepo/ui/classification/644f76d0-51ff-456a-a6ae-823499e2250a",
+        "captured_at": "2026-08-12T18:52:00Z",
+        "sha256": "99680dc11b7d4ad040f3c58da4a6569a2a700eb8d7e3f4eb1cc7edeefa9c4423",
+        "minimization_or_redaction": "Minimized to the complete p.cspec-svi-text element consumed by the production parser; the element text and link are byte-faithful.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Evidence Repository classification page."
+      }
+    },
+    {
       "path": "clingen_erepo/atm-summary.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
