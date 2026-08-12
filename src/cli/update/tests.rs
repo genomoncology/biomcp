@@ -4,6 +4,8 @@ use flate2::write::GzEncoder;
 use std::cell::Cell;
 use std::io::Write;
 use std::net::TcpListener;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::thread;
 use tar::{Builder, Header};
@@ -153,6 +155,10 @@ fn owned_update_smokes_and_atomically_replaces_with_agreeing_receipt() {
     use crate::test_support::TempDirGuard;
     let root = TempDirGuard::new("update-owned");
     let executable = seed_owned_script(root.path(), "1.0.0");
+    std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o750)).unwrap();
+    let mut owned = crate::cli::install::validate_owned(&executable).unwrap();
+    owned.receipt.sha256 = crate::cli::install::sha256_file(&executable).unwrap();
+    crate::cli::install::write_receipt_atomic(&owned.receipt_path, &owned.receipt).unwrap();
     let predictable = root.path().join(".biomcp.new");
     std::os::unix::fs::symlink(root.path().join("do-not-touch"), &predictable).unwrap();
     let new_bytes = b"#!/bin/sh\necho 'biomcp 2.0.0'\n";
@@ -161,6 +167,14 @@ fn owned_update_smokes_and_atomically_replaces_with_agreeing_receipt() {
     let owned = crate::cli::install::validate_owned(&executable).unwrap();
     assert_eq!(owned.receipt.version, "v2.0.0");
     assert_eq!(owned.receipt.sha256, sha256_hex(new_bytes));
+    assert_eq!(
+        std::fs::symlink_metadata(&executable)
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o750
+    );
     assert!(predictable.is_symlink());
 }
 

@@ -140,6 +140,7 @@ write_receipt() {
   local transaction_nonce="${5:-}" old_version="${6:-}" old_sha="${7:-}"
   local new_version="${8:-}" new_sha="${9:-}" staged_receipt
   staged_receipt="$(mktemp "$INSTALL_DIR/.biomcp.install.json.XXXXXX")"
+  receipt_stage_path="$staged_receipt"
   chmod 600 "$staged_receipt"
   {
     printf '{\n'
@@ -164,6 +165,7 @@ write_receipt() {
   } > "$staged_receipt"
   sync_path "$staged_receipt"
   mv "$staged_receipt" "$receipt"
+  receipt_stage_path=""
   sync_path "$INSTALL_DIR"
 }
 
@@ -269,9 +271,9 @@ verify_checksum "$archive_path" "$checksum_path"
 bin_path=""
 if [[ "$ASSET" == *.tar.gz ]]; then
   tar -xzf "$archive_path" -C "$tmpdir"
-  if [[ -f "$tmpdir/biomcp" ]]; then
+  if [[ -f "$tmpdir/biomcp" && ! -L "$tmpdir/biomcp" ]]; then
     bin_path="$tmpdir/biomcp"
-  elif [[ -f "$tmpdir/bin/biomcp" ]]; then
+  elif [[ -f "$tmpdir/bin/biomcp" && ! -L "$tmpdir/bin/biomcp" ]]; then
     bin_path="$tmpdir/bin/biomcp"
   else
     echo "Could not find biomcp binary in archive" >&2
@@ -283,7 +285,7 @@ elif [[ "$ASSET" == *.zip ]]; then
     exit 1
   fi
   unzip -q "$archive_path" -d "$tmpdir"
-  if [[ -f "$tmpdir/biomcp.exe" ]]; then
+  if [[ -f "$tmpdir/biomcp.exe" && ! -L "$tmpdir/biomcp.exe" ]]; then
     bin_path="$tmpdir/biomcp.exe"
   else
     echo "Could not find biomcp.exe in archive" >&2
@@ -330,6 +332,9 @@ stage_path="$(mktemp "$INSTALL_DIR/.biomcp-stage.XXXXXX")"
 cleanup_stage() {
   if [[ -n "${stage_path:-}" && -e "$stage_path" ]]; then
     rm -f "$stage_path"
+  fi
+  if [[ -n "${receipt_stage_path:-}" && -e "$receipt_stage_path" ]]; then
+    rm -f "$receipt_stage_path"
   fi
   return 0
 }

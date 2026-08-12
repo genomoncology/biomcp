@@ -175,6 +175,7 @@ fn replace_owned_binary_at(
     };
 
     use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+    let installed_mode = std::fs::symlink_metadata(current)?.permissions().mode();
     let mut staged = None;
     for _ in 0..32 {
         let nonce = format!(
@@ -206,7 +207,7 @@ fn replace_owned_binary_at(
     })?;
     let result = (|| {
         stage_file.write_all(new_bytes)?;
-        stage_file.set_permissions(std::fs::Permissions::from_mode(0o755))?;
+        stage_file.set_permissions(std::fs::Permissions::from_mode(installed_mode))?;
         stage_file.sync_all()?;
         drop(stage_file);
         let smoke = std::process::Command::new(&stage_path)
