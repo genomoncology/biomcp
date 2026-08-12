@@ -28,7 +28,7 @@ path = "src/main_biomcp_cli.rs"
 [dependencies]
 # CLI
 clap = { version = "4", features = ["derive"] }
-kuva = "0.1.4"
+kuva = "0.5.0"
 
 # Async
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "fs", "signal", "io-util", "net", "process"] }

@@ -5,6 +5,7 @@ ignore = [
   { id = "RUSTSEC-2024-0384", reason = "instant 0.1.13 is still pulled in transitively through reqwest-retry's parking_lot/wasm-timer stack; this ticket does not replace that retry chain." },
   { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile 2.2.0 is still brought in transitively by tonic 0.12.3; replacing tonic's PEM reader is outside this ticket." },
   { id = "RUSTSEC-2026-0186", reason = "memmap2 0.5.10 is a transitive dependency via cacache 13.1.0 (latest cacache), which pins memmap2 ^0.5.8; no cacache release uses the fixed memmap2 >=0.9.11. The separately-pulled memmap2 0.9.x instance is bumped to 0.9.11 in this change, so the only remaining affected version is cacache's 0.5.10. BioMCP's cache usage does not call the affected advise_range/flush_range APIs." },
+  { id = "RUSTSEC-2026-0192", reason = "ttf-parser 0.25.1 is an unmaintained transitive dependency of fontdue in kuva's PNG renderer. The advisory offers no safe upgrade; BioMCP keeps this visible until kuva replaces its font parser." },
 ]
 unmaintained = "all"
 unsound = "all"
@@ -19,6 +20,7 @@ allow = [
   "BSD-3-Clause",
   "ISC",
   "MPL-2.0",
+  "Zlib",
 ]
 
 [[licenses.exceptions]]
