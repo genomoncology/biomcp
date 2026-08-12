@@ -33,7 +33,8 @@ routine graph intact, then adds a separate named full-feature proof.
 ```bash
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
     -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \
-  make -C ../.. -n test | mustmatch like 'cargo nextest run --no-default-features'
+  make -C ../.. -n test | mustmatch like 'cargo nextest archive --locked --no-default-features
+cargo nextest run --archive-file'
 env -u BIOMCP_BIN -u SPEC_BIN -u MAKEFLAGS -u MAKEOVERRIDES \
     -u ROUTINE_CARGO_FEATURES -u SPEC_PROFILE -u SPEC_USE_PROVIDED_BIN \
   make -C ../.. -n spec | mustmatch like 'scripts/run-specs.sh spec'
