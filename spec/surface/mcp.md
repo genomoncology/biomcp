@@ -72,7 +72,10 @@ router.
 ```bash
 cd ../.. && uv run --no-sync python3 -c '
 from pathlib import Path
-text = Path("src/mcp/shell.rs").read_text(encoding="utf-8")
+text = "\n".join(
+    Path(path).read_text(encoding="utf-8")
+    for path in ("src/mcp/shell.rs", "src/mcp/catalog.rs")
+)
 assert "biomcp skill list" in text
 assert "biomcp suggest" not in text
 assert "discover/suggest/skill" not in text
@@ -203,9 +206,16 @@ test "$non_loopback_status" -ne 0
 cat /tmp/biomcp-mcp-non-loopback.err | mustmatch like '--allowed-hosts
 --unsafe-allow-any-host'
 
-../../tools/biomcp-ci serve-http --host 127.0.0.1 --port 0 --unsafe-allow-any-host >/tmp/biomcp-mcp-host-unsafe.log 2>&1 &
+port="$(../../spec/fixtures/reserve-local-port)"
+RUST_LOG=warn ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" --unsafe-allow-any-host >/tmp/biomcp-mcp-host-unsafe.log 2>&1 &
 unsafe_pid=$!
-sleep 0.25
+for _ in $(seq 1 40); do
+  if curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null; then
+    break
+  fi
+  sleep 0.25
+done
+curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null
 kill "$unsafe_pid" 2>/dev/null || true
 wait "$unsafe_pid" 2>/dev/null || true
 cat /tmp/biomcp-mcp-host-unsafe.log | mustmatch like 'Host header checks are disabled
