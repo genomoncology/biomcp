@@ -849,8 +849,23 @@ advertises the challenge as raw scientific bytes.
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663023 assets \
-  | jq '(.assets | all(.filename != "NIHMS265402-supplement-Supplementary_Tables.xls")) and (.coverage | any(.filename == "NIHMS265402-supplement-Supplementary_Tables.xls" and .source_document == "pmc_html" and .outcome == "pmc_proof_of_work" and .asset_key == null and .handle == null))' \
+  | jq '(.assets | all(.filename != "NIHMS265402-supplement-Supplementary_Tables.xls")) and (.coverage | any(.filename == "NIHMS265402-supplement-Supplementary_Tables.xls" and .source_document == "pmc_html" and .outcome == "pmc_proof_of_work" and (.asset_key | startswith("unavailable-")) and .handle == null))' \
   | mustmatch 'true'
+```
+
+```bash run id=nonretrievable-asset-human exit=2
+../../tools/biomcp-ci get article 22663023 asset NIHMS265402-supplement-Supplementary_Tables.xls 2>&1 | mustmatch like "article_asset_not_retrievable
+ncbi_interstitial
+NIHMS265402-supplement-Supplementary_Tables.xls
+https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/"
+```
+
+```bash run id=nonretrievable-asset-json exit=2
+key="$(../../tools/biomcp-ci --json get article 22663023 assets | jq -r '.coverage[] | select(.outcome == "pmc_proof_of_work") | .asset_key')"
+../../tools/biomcp-ci --json get article 22663023 asset "$key" 2>/dev/null | jq -r '.error | [.code, .message] | join("\n")' | mustmatch like "article_asset_not_retrievable
+ncbi_interstitial
+NIHMS265402-supplement-Supplementary_Tables.xls
+https://pmc.ncbi.nlm.nih.gov/articles/PMC123466/"
 ```
 
 ## Europe PMC Recovers Assets After a PMC Archive Failure

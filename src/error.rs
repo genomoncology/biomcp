@@ -364,6 +364,7 @@ pub enum BioMcpError {
         id: String,
         suggestion: String,
     },
+    ArticleAssetNotRetrievable(String),
     PackageManagedInstall {
         guidance: String,
     },
@@ -467,6 +468,7 @@ impl BioMcpError {
                 format!("API request to {source} was rejected.")
             }
             Self::NotFound { .. } => format!("Requested item was not found in {source}."),
+            Self::ArticleAssetNotRetrievable(_) => "Article asset is not retrievable.".to_string(),
             Self::PackageManagedInstall { .. } | Self::NotInstalled { .. } => {
                 format!("Local installation cannot be changed by {source}.")
             }
@@ -506,6 +508,7 @@ impl BioMcpError {
                 id,
                 suggestion,
             } => format!("{entity} '{id}' not found.\n\n{suggestion}"),
+            Self::ArticleAssetNotRetrievable(message) => message.clone(),
             Self::PackageManagedInstall { guidance } => guidance.clone(),
             Self::NotInstalled { path } => {
                 format!("BioMCP is not installed at {path}.")
@@ -604,6 +607,7 @@ impl BioMcpError {
             | Self::CtGovInterventionQueryRejected { .. } => "api",
             Self::ApiJson { .. } => "api_json",
             Self::NotFound { .. } => "not_found",
+            Self::ArticleAssetNotRetrievable(_) => "article_asset_not_retrievable",
             Self::PackageManagedInstall { .. } => "package_managed_install",
             Self::NotInstalled { .. } => "not_installed",
             Self::InvalidArgument(_) => "invalid_argument",
@@ -670,6 +674,7 @@ impl fmt::Display for BioMcpError {
                 id,
                 suggestion,
             } => write!(formatter, "{entity} '{id}' not found.\n\n{suggestion}"),
+            Self::ArticleAssetNotRetrievable(message) => formatter.write_str(message),
             Self::PackageManagedInstall { guidance } => formatter.write_str(guidance),
             Self::NotInstalled { path } => write!(formatter, "BioMCP is not installed at {path}."),
             Self::InvalidArgument(message) => write!(formatter, "Invalid argument: {message}"),

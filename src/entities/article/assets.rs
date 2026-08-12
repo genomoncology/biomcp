@@ -76,6 +76,7 @@ const LINKED_CANDIDATE_LIMIT: usize = 256;
 const LINKED_FETCH_CONCURRENCY: usize = 8;
 const LINKED_AGGREGATE_LIMIT: usize = 64 * 1024 * 1024;
 
+#[derive(Clone)]
 struct ResolvedArticleAssets {
     manifest: ArticleAssetsManifest,
     bytes: BTreeMap<String, Vec<u8>>,
@@ -141,11 +142,47 @@ pub async fn article_asset_bytes(
     asset_key: &str,
 ) -> Result<Vec<u8>, BioMcpError> {
     let article = super::detail::get_article_base(requested_id).await?;
-    resolve_article_assets(requested_id, article)
-        .await?
-        .bytes
-        .remove(asset_key.trim())
-        .ok_or_else(|| article_asset_not_found(requested_id, asset_key.trim()))
+    let resolved = resolve_article_assets(requested_id, article).await?;
+    article_asset_bytes_from_resolution(requested_id, asset_key.trim(), resolved)
+}
+
+fn article_asset_bytes_from_resolution(
+    requested_id: &str,
+    wanted: &str,
+    mut resolved: ResolvedArticleAssets,
+) -> Result<Vec<u8>, BioMcpError> {
+    if let Some(bytes) = resolved.bytes.remove(wanted) {
+        return Ok(bytes);
+    }
+    let exact_filename_keys = resolved
+        .manifest
+        .assets
+        .iter()
+        .filter(|asset| asset.filename == wanted)
+        .map(|asset| asset.asset_key.as_str())
+        .collect::<Vec<_>>();
+    if let [key] = exact_filename_keys.as_slice()
+        && let Some(bytes) = resolved.bytes.remove(*key)
+    {
+        return Ok(bytes);
+    }
+    let matches = resolved
+        .manifest
+        .coverage
+        .iter()
+        .filter(|coverage| {
+            coverage.asset_key.as_deref() == Some(wanted) || coverage.filename == wanted
+        })
+        .filter(|coverage| coverage.outcome != ArticleAssetNamedOutcome::Retrievable)
+        .collect::<Vec<_>>();
+    if let [coverage] = matches.as_slice() {
+        return Err(article_asset_not_retrievable(
+            requested_id,
+            resolved.manifest.pmcid.as_deref(),
+            coverage,
+        ));
+    }
+    Err(article_asset_not_found(requested_id, wanted))
 }
 
 pub(super) async fn attach_not_included(article: &mut Article, requested_id: &str) {
@@ -773,7 +810,10 @@ fn finish_resolution(
         });
 
     let mut coverage = finalize_retrievable_coverage(retrievable_observations, &assets);
-    coverage.extend(pending.into_values());
+    coverage.extend(pending.into_iter().map(|(identity, mut row)| {
+        row.asset_key = Some(format!("unavailable-{}", sha256_hex(identity.as_bytes())));
+        row
+    }));
     coverage.sort_by(|left, right| {
         (
             left.filename.as_str(),
@@ -1173,6 +1213,34 @@ fn article_asset_not_found(requested_id: &str, wanted: &str) -> BioMcpError {
         id: wanted.to_string(),
         suggestion: format!("List assets: biomcp --json get article {requested_id} assets"),
     }
+}
+
+fn article_asset_not_retrievable(
+    requested_id: &str,
+    pmcid: Option<&str>,
+    coverage: &ArticleAssetNamedCoverage,
+) -> BioMcpError {
+    let reason = match coverage.outcome {
+        ArticleAssetNamedOutcome::PmcProofOfWork => "ncbi_interstitial",
+        ArticleAssetNamedOutcome::HealthyAbsent => "healthy_absent",
+        ArticleAssetNamedOutcome::AccessOrLicenceDenied => "access_or_licence_denied",
+        ArticleAssetNamedOutcome::UnsupportedOrigin => "unsupported_origin",
+        ArticleAssetNamedOutcome::SourceUnavailable => "source_unavailable",
+        ArticleAssetNamedOutcome::Retrievable => "internal",
+    };
+    let article = pmcid
+        .map(str::trim)
+        .filter(|value| value.starts_with("PMC") && value[3..].chars().all(|c| c.is_ascii_digit()))
+        .unwrap_or(requested_id.trim());
+    let key = coverage
+        .asset_key
+        .as_deref()
+        .map(|key| format!(" Asset key: {key}."))
+        .unwrap_or_default();
+    BioMcpError::ArticleAssetNotRetrievable(format!(
+        "article_asset_not_retrievable: '{}' cannot be retrieved ({reason}).{key}\n\nOpen the article in a browser: https://pmc.ncbi.nlm.nih.gov/articles/{article}/",
+        coverage.filename
+    ))
 }
 
 fn no_supported_asset_source(requested_id: &str) -> BioMcpError {
@@ -2189,8 +2257,8 @@ mod tests {
             assets.is_empty(),
             "a PoW page must not receive an advertised raw-byte asset handle"
         );
-        let coverage = pending
-            .pop()
+        let coverage = &pending
+            .first()
             .expect("named linked file remains visible")
             .row;
         assert_eq!(
@@ -2200,6 +2268,28 @@ mod tests {
         );
         assert!(coverage.asset_key.is_none());
         assert!(coverage.handle.is_none());
+        let resolved = finish_resolution(
+            "30311380",
+            &sample_article(),
+            Some("PMC6329583"),
+            assets,
+            pending,
+            0,
+            false,
+        )
+        .unwrap();
+        let key = resolved.manifest.coverage[0].asset_key.clone().unwrap();
+        for wanted in [&key, "NIHMS265402-supplement-Supplementary_Tables.xls"] {
+            let error = article_asset_bytes_from_resolution("30311380", wanted, resolved.clone())
+                .unwrap_err();
+            assert_eq!(error.code(), "article_asset_not_retrievable");
+            assert!(error.to_string().contains("ncbi_interstitial"));
+            assert!(error.to_string().contains("PMC6329583"));
+        }
+        assert!(matches!(
+            article_asset_bytes_from_resolution("30311380", "unknown", resolved),
+            Err(BioMcpError::NotFound { .. })
+        ));
     }
 
     #[test]
