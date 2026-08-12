@@ -21,39 +21,16 @@ fn associations_by_rsid_plan_sets_path_projection_and_limit() {
 
 #[test]
 fn search_plans_set_expected_paths_and_queries() {
-    let gene = GwasClient::snps_by_gene_plan(" tcf7l2 ", 5).unwrap();
-    assert_eq!(gene.path, "singleNucleotidePolymorphisms/search/findByGene");
-    assert_eq!(gene.query_value("geneName"), Some("TCF7L2"));
+    let gene = GwasClient::association_search_plan(Some(" tcf7l2 "), None, 5).unwrap();
+    assert_eq!(gene.path, "v2/associations");
+    assert_eq!(gene.query_value("mapped_gene"), Some("TCF7L2"));
     assert_eq!(gene.query_value("size"), Some("5"));
+    assert_eq!(gene.query_value("sort"), Some("p_value"));
+    assert_eq!(gene.query_value("direction"), Some("asc"));
 
-    let trait_plan = GwasClient::snps_by_trait_plan("type 2 diabetes", 5).unwrap();
-    assert_eq!(
-        trait_plan.path,
-        "singleNucleotidePolymorphisms/search/findByDiseaseTrait"
-    );
-    assert_eq!(
-        trait_plan.query_value("diseaseTrait"),
-        Some("type 2 diabetes")
-    );
-
-    let studies = GwasClient::studies_by_trait_plan("type 2 diabetes", 5).unwrap();
-    assert_eq!(studies.path, "studies/search/findByDiseaseTrait");
-    assert_eq!(studies.query_value("diseaseTrait"), Some("type 2 diabetes"));
-}
-
-#[test]
-fn study_association_plans_set_search_and_fallback_paths() {
-    let search = GwasClient::associations_by_study_search_plan(" gcst000796 ", 5).unwrap();
-    assert_eq!(search.path, "associations/search/findByStudyAccessionId");
-    assert_eq!(search.query_value("studyAccessionId"), Some("GCST000796"));
-    assert_eq!(search.query_value("projection"), Some("associationByStudy"));
-
-    let fallback = GwasClient::associations_by_study_fallback_plan(" gcst000796 ", 5).unwrap();
-    assert_eq!(fallback.path, "studies/GCST000796/associations");
-    assert_eq!(
-        fallback.query_value("projection"),
-        Some("associationByStudy")
-    );
+    let trait_plan = GwasClient::association_search_plan(None, Some("type 2 diabetes"), 5).unwrap();
+    assert_eq!(trait_plan.path, "v2/associations");
+    assert_eq!(trait_plan.query_value("efo_trait"), Some("type 2 diabetes"));
 }
 
 #[test]
@@ -63,15 +40,19 @@ fn plans_reject_invalid_inputs() {
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        GwasClient::snps_by_gene_plan("", 5),
+        GwasClient::association_search_plan(Some(""), None, 5),
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        GwasClient::snps_by_trait_plan("", 5),
+        GwasClient::association_search_plan(None, Some(""), 5),
         Err(BioMcpError::InvalidArgument(_))
     ));
     assert!(matches!(
-        GwasClient::associations_by_study_search_plan("not-gcst", 5),
+        GwasClient::association_search_plan(None, None, 5),
+        Err(BioMcpError::InvalidArgument(_))
+    ));
+    assert!(matches!(
+        GwasClient::association_search_plan(Some("BRAF"), Some("melanoma"), 5),
         Err(BioMcpError::InvalidArgument(_))
     ));
 }

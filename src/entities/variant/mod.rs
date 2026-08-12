@@ -22,8 +22,11 @@ pub(crate) use self::erepo::{
     retrieve as retrieve_erepo,
 };
 pub use self::get::{VARIANT_SECTION_NAMES, get, get_with_workflow_signals, oncokb};
+pub(crate) use self::gwas::validate_gwas_window;
 #[allow(unused_imports)]
-pub use self::gwas::{gwas_search_query_summary, search_gwas, search_gwas_page};
+pub use self::gwas::{
+    GwasPagination, GwasSearchPage, gwas_search_query_summary, search_gwas, search_gwas_page,
+};
 pub use self::normalization::{
     CarAliasCollection, CarNormalizationBatchResponse, CarNormalizationItem,
     CarNormalizationStatus, CarProvenance, VariantNormalizationAggregate,
@@ -433,7 +436,6 @@ pub struct VariantSearchFilters {
 pub struct GwasSearchFilters {
     pub gene: Option<String>,
     pub trait_query: Option<String>,
-    pub region: Option<String>,
     pub p_value: Option<f64>,
 }
 

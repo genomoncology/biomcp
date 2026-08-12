@@ -421,7 +421,12 @@ By trait:
 biomcp search gwas --trait "type 2 diabetes" --limit 10
 ```
 
-Trait search uses GWAS Catalog trait endpoints first, then study-association fallback paths when needed.
+Gene and trait searches each use one bounded GWAS Catalog v2 association request.
+Supplying both filters returns their rsID intersection, and `--p-value` is
+applied afterward. Interval search is not supported. The checked
+`--offset + --limit` window must be at most 50; JSON reports followable pages
+under `_meta.pagination` and distinguishes provider-budget truncation from
+true exhaustion.
 
 ## Optional enrichment
 

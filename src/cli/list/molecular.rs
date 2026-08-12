@@ -201,20 +201,20 @@ pub(super) fn list_gwas() -> String {
 
 - `search gwas -g <gene>` - GWAS-linked variants by gene
 - `search gwas --trait <text>` - GWAS-linked variants by disease trait
-- `search gwas --region <chr:start-end>`
 - `search gwas --p-value <threshold>` - finite probability greater than 0 and at most 1
-- `search gwas ... --limit <N> --offset <N>`
+- `search gwas ... --limit <N> --offset <N>` - checked result window must be at most 50
 
 ## Examples
 
 - `search gwas -g TCF7L2 --limit 5`
 - `search gwas --trait "type 2 diabetes" --limit 5`
-- `search gwas --region 7:55000000-55200000 --p-value 5e-8 --limit 10`
+- `search gwas -g TCF7L2 --trait "type 2 diabetes" --p-value 5e-8 --limit 10`
 
 ## Workflow tips
 
 - Use `--trait` for phenotype-first discovery and `-g` for gene-first review.
-- Tighten noisy results with `--p-value` and locus-focused `--region`.
+- Combining `-g` and `--trait` returns only rsIDs present in both bounded result sets.
+- Tighten noisy results with `--p-value`; interval search is not supported.
 - Pivot high-interest hits into `get variant <id>` and `variant trials <id>`.
 
 ## Related

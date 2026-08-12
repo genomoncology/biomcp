@@ -41,68 +41,33 @@ impl GwasClient {
         )
     }
 
-    pub(crate) fn snps_by_gene_plan(
-        gene_symbol: &str,
+    pub(crate) fn association_search_plan(
+        gene: Option<&str>,
+        trait_query: Option<&str>,
         limit: usize,
     ) -> Result<RequestPlan, BioMcpError> {
-        let gene_symbol = normalize_gene_symbol(gene_symbol)?;
-        Ok(
-            RequestPlan::get("singleNucleotidePolymorphisms/search/findByGene")
-                .query("geneName", gene_symbol)
-                .query("page", "0")
-                .query("size", limit.clamp(1, 200).to_string()),
-        )
-    }
-
-    pub(crate) fn snps_by_trait_plan(
-        trait_query: &str,
-        limit: usize,
-    ) -> Result<RequestPlan, BioMcpError> {
-        let trait_query = normalize_trait_query(trait_query)?;
-        Ok(
-            RequestPlan::get("singleNucleotidePolymorphisms/search/findByDiseaseTrait")
-                .query("diseaseTrait", trait_query)
-                .query("page", "0")
-                .query("size", limit.clamp(1, 200).to_string()),
-        )
-    }
-
-    pub(crate) fn studies_by_trait_plan(
-        trait_query: &str,
-        limit: usize,
-    ) -> Result<RequestPlan, BioMcpError> {
-        let trait_query = normalize_trait_query(trait_query)?;
-        Ok(RequestPlan::get("studies/search/findByDiseaseTrait")
-            .query("diseaseTrait", trait_query)
+        if gene.is_some() == trait_query.is_some() {
+            return Err(BioMcpError::InvalidArgument(
+                "GWAS association search requires exactly one gene or trait filter".into(),
+            ));
+        }
+        if limit == 0 || limit > 50 {
+            return Err(BioMcpError::InvalidArgument(
+                "GWAS association search limit must be between 1 and 50".into(),
+            ));
+        }
+        let mut plan = RequestPlan::get("v2/associations")
             .query("page", "0")
-            .query("size", limit.clamp(1, 200).to_string()))
-    }
-
-    pub(crate) fn associations_by_study_search_plan(
-        study_accession: &str,
-        limit: usize,
-    ) -> Result<RequestPlan, BioMcpError> {
-        let study_accession = normalize_study_accession(study_accession)?;
-        Ok(
-            RequestPlan::get("associations/search/findByStudyAccessionId")
-                .query("studyAccessionId", study_accession)
-                .query("page", "0")
-                .query("size", limit.clamp(1, 200).to_string())
-                .query("projection", "associationByStudy"),
-        )
-    }
-
-    pub(crate) fn associations_by_study_fallback_plan(
-        study_accession: &str,
-        limit: usize,
-    ) -> Result<RequestPlan, BioMcpError> {
-        let study_accession = normalize_study_accession(study_accession)?;
-        Ok(
-            RequestPlan::get(format!("studies/{study_accession}/associations"))
-                .query("projection", "associationByStudy")
-                .query("page", "0")
-                .query("size", limit.clamp(1, 200).to_string()),
-        )
+            .query("size", limit.to_string())
+            .query("sort", "p_value")
+            .query("direction", "asc");
+        if let Some(gene) = gene {
+            plan = plan.query("mapped_gene", normalize_gene_symbol(gene)?);
+        }
+        if let Some(trait_query) = trait_query {
+            plan = plan.query("efo_trait", normalize_trait_query(trait_query)?);
+        }
+        Ok(plan)
     }
 
     fn request_no_store(&self, plan: &RequestPlan) -> reqwest_middleware::RequestBuilder {
@@ -175,93 +140,86 @@ impl GwasClient {
         Ok(resp.embedded.associations)
     }
 
-    pub async fn snps_by_gene(
+    pub async fn search_associations(
         &self,
-        gene_symbol: &str,
+        gene: Option<&str>,
+        trait_query: Option<&str>,
         limit: usize,
-    ) -> Result<Vec<GwasSnp>, BioMcpError> {
-        let plan = Self::snps_by_gene_plan(gene_symbol, limit)?;
+    ) -> Result<GwasAssociationSearchPage, BioMcpError> {
+        let plan = Self::association_search_plan(gene, trait_query, limit)?;
         let req = self.request_no_store(&plan);
-
-        let Some(resp): Option<GwasSnpsResponse> = self
+        let Some(resp): Option<GwasV2AssociationsResponse> = self
             .get_json_optional(req)
             .await
             .map_err(remap_gwas_error)?
         else {
-            return Ok(Vec::new());
+            return Ok(GwasAssociationSearchPage::default());
         };
-
-        Ok(resp.embedded.snps)
+        Ok(GwasAssociationSearchPage {
+            associations: resp.embedded.associations,
+            total: resp.page.total_elements,
+        })
     }
+}
 
-    pub async fn snps_by_trait(
-        &self,
-        trait_query: &str,
-        limit: usize,
-    ) -> Result<Vec<GwasSnp>, BioMcpError> {
-        let plan = Self::snps_by_trait_plan(trait_query, limit)?;
-        let req = self.request_no_store(&plan);
+#[derive(Debug, Clone, Default)]
+pub struct GwasAssociationSearchPage {
+    pub associations: Vec<GwasAssociationSummary>,
+    pub total: usize,
+}
 
-        let Some(resp): Option<GwasSnpsResponse> = self
-            .get_json_optional(req)
-            .await
-            .map_err(remap_gwas_error)?
-        else {
-            return Ok(Vec::new());
-        };
+#[derive(Debug, Clone, Deserialize, Default)]
+struct GwasV2AssociationsResponse {
+    #[serde(default, rename = "_embedded")]
+    embedded: GwasV2AssociationsEmbedded,
+    #[serde(default)]
+    page: GwasV2Page,
+}
 
-        Ok(resp.embedded.snps)
-    }
+#[derive(Debug, Clone, Deserialize, Default)]
+struct GwasV2AssociationsEmbedded {
+    #[serde(default)]
+    associations: Vec<GwasAssociationSummary>,
+}
 
-    pub async fn studies_by_trait(
-        &self,
-        trait_query: &str,
-        limit: usize,
-    ) -> Result<Vec<GwasStudy>, BioMcpError> {
-        let plan = Self::studies_by_trait_plan(trait_query, limit)?;
-        let req = self.request_no_store(&plan);
+#[derive(Debug, Clone, Deserialize, Default)]
+struct GwasV2Page {
+    #[serde(default, rename = "totalElements")]
+    total_elements: usize,
+}
 
-        let Some(resp): Option<GwasStudiesResponse> = self
-            .get_json_optional(req)
-            .await
-            .map_err(remap_gwas_error)?
-        else {
-            return Ok(Vec::new());
-        };
+#[derive(Debug, Clone, Deserialize)]
+pub struct GwasAssociationSummary {
+    #[serde(default)]
+    pub snp_allele: Vec<GwasAlleleSummary>,
+    #[serde(default)]
+    pub snp_effect_allele: Vec<String>,
+    #[serde(default)]
+    pub efo_traits: Vec<GwasV2Trait>,
+    #[serde(default)]
+    pub reported_trait: Vec<String>,
+    #[serde(default)]
+    pub mapped_genes: Vec<String>,
+    pub p_value: Option<f64>,
+    pub or_per_copy_num: Option<f64>,
+    pub beta_num: Option<f64>,
+    pub range: Option<String>,
+    #[serde(default, deserialize_with = "de_opt_f64")]
+    pub risk_frequency: Option<f64>,
+    pub accession_id: Option<String>,
+    pub pubmed_id: Option<String>,
+    pub first_author: Option<String>,
+}
 
-        Ok(resp.embedded.studies)
-    }
+#[derive(Debug, Clone, Deserialize)]
+pub struct GwasAlleleSummary {
+    pub rs_id: Option<String>,
+    pub effect_allele: Option<String>,
+}
 
-    pub async fn associations_by_study(
-        &self,
-        study_accession: &str,
-        limit: usize,
-    ) -> Result<Vec<GwasAssociation>, BioMcpError> {
-        let search_plan = Self::associations_by_study_search_plan(study_accession, limit)?;
-        let search_req = self.request_no_store(&search_plan);
-
-        if let Some(search_resp) = self
-            .get_json_optional::<GwasAssociationsResponse>(search_req)
-            .await
-            .map_err(remap_gwas_error)?
-            && !search_resp.embedded.associations.is_empty()
-        {
-            return Ok(search_resp.embedded.associations);
-        }
-
-        let fallback_plan = Self::associations_by_study_fallback_plan(study_accession, limit)?;
-        let fallback_req = self.request_no_store(&fallback_plan);
-
-        let Some(fallback_resp): Option<GwasAssociationsResponse> = self
-            .get_json_optional(fallback_req)
-            .await
-            .map_err(remap_gwas_error)?
-        else {
-            return Ok(Vec::new());
-        };
-
-        Ok(fallback_resp.embedded.associations)
-    }
+#[derive(Debug, Clone, Deserialize)]
+pub struct GwasV2Trait {
+    pub efo_trait: Option<String>,
 }
 
 fn remap_gwas_error(err: BioMcpError) -> BioMcpError {
@@ -357,21 +315,6 @@ fn normalize_trait_query(value: &str) -> Result<String, BioMcpError> {
     Ok(normalized)
 }
 
-fn normalize_study_accession(value: &str) -> Result<String, BioMcpError> {
-    let normalized = value.trim().to_ascii_uppercase();
-    if normalized.is_empty() {
-        return Err(BioMcpError::InvalidArgument(
-            "Study accession is required (e.g., GCST000796).".into(),
-        ));
-    }
-    if !normalized.starts_with("GCST") {
-        return Err(BioMcpError::InvalidArgument(format!(
-            "Invalid study accession: {value}"
-        )));
-    }
-    Ok(normalized)
-}
-
 fn de_opt_f64<'de, D>(deserializer: D) -> Result<Option<f64>, D::Error>
 where
     D: Deserializer<'de>,
@@ -403,30 +346,6 @@ struct GwasAssociationsResponse {
 struct GwasAssociationsEmbedded {
     #[serde(default)]
     associations: Vec<GwasAssociation>,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-struct GwasSnpsResponse {
-    #[serde(default, rename = "_embedded")]
-    embedded: GwasSnpsEmbedded,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-struct GwasSnpsEmbedded {
-    #[serde(default, rename = "singleNucleotidePolymorphisms")]
-    snps: Vec<GwasSnp>,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-struct GwasStudiesResponse {
-    #[serde(default, rename = "_embedded")]
-    embedded: GwasStudiesEmbedded,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-struct GwasStudiesEmbedded {
-    #[serde(default)]
-    studies: Vec<GwasStudy>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

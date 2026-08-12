@@ -13,9 +13,6 @@ pub struct GwasSearchArgs {
     /// Filter by disease trait text
     #[arg(long = "trait")]
     pub trait_query: Option<String>,
-    /// Filter by genomic region (chr:start-end)
-    #[arg(long)]
-    pub region: Option<String>,
     /// Filter by a finite p-value threshold greater than 0 and at most 1
     #[arg(long = "p-value")]
     pub p_value: Option<f64>,

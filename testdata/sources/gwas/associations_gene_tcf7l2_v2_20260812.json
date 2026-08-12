@@ -1,0 +1,34 @@
+{
+  "_embedded": {
+    "associations": [
+      {
+        "association_id": 164634754,
+        "risk_frequency": "0.22941",
+        "p_value": 0.0,
+        "efo_traits": [{"efo_id": "MONDO_0005148", "efo_trait": "type 2 diabetes mellitus"}],
+        "reported_trait": ["Type 2 diabetes"],
+        "accession_id": "GCST90492734",
+        "mapped_genes": ["TCF7L2"],
+        "pubmed_id": "38374256",
+        "first_author": "Suzuki K",
+        "snp_effect_allele": ["rs7903146-T"],
+        "snp_allele": [{"rs_id": "rs7903146", "effect_allele": "T"}]
+      },
+      {
+        "association_id": 62204245,
+        "risk_frequency": "0.7079",
+        "range": "[0.27-0.29]",
+        "p_value": 0.0,
+        "efo_traits": [{"efo_id": "MONDO_0005148", "efo_trait": "type 2 diabetes mellitus"}],
+        "reported_trait": ["Type 2 diabetes"],
+        "accession_id": "GCST010555",
+        "mapped_genes": ["TCF7L2"],
+        "pubmed_id": "32541925",
+        "first_author": "Vujkovic M",
+        "snp_effect_allele": ["rs7903146-C"],
+        "snp_allele": [{"rs_id": "rs7903146", "effect_allele": "C"}]
+      }
+    ]
+  },
+  "page": {"size": 2, "totalElements": 902, "totalPages": 451, "number": 0}
+}

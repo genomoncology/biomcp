@@ -23,7 +23,7 @@ variables, test-only override seams, cache settings, and release/install knobs.
 | Variant normalization | Mutalyzer | `variant normalize` / `https://mutalyzer.nl/api` | No | Calls `GET /normalize/{description}` for explicit transcript HGVS and preserves normalized/corrected/protein fields plus source warnings/status |
 | Variant normalization | VariantValidator | `variant normalize` / `https://rest.variantvalidator.org` | No | Calls `GET /VariantValidator/variantvalidator/{genome_build}/{variant_description}/{select_transcripts}` for explicit transcript HGVS and preserves `TranscriptVersionWarning`, GRCh38 genomic descriptions, and source status |
 | Variant population section | MyVariant.info (gnomAD fields) | `https://myvariant.info/v1` | No | Uses cached gnomAD AF/subpopulation fields from MyVariant payload |
-| Variant GWAS section and GWAS search | GWAS Catalog REST API | `https://www.ebi.ac.uk/gwas/rest/api` | No | rsID, gene, and trait association retrieval |
+| Variant GWAS section and GWAS search | GWAS Catalog REST API | `https://www.ebi.ac.uk/gwas/rest/api` | No | rsID detail plus bounded v2 gene and trait association retrieval |
 | Variant OncoKB helper | OncoKB | `https://www.oncokb.org/api/v1` | Yes (`ONCOKB_TOKEN`) | Accessed via explicit `variant oncokb <id>` command |
 | Variant prediction | AlphaGenome | `https://gdmscience.googleapis.com:443` | Yes (`ALPHAGENOME_API_KEY`) | gRPC scoring for `predict` section |
 | Trial (default) | ClinicalTrials.gov API v2 | `https://clinicaltrials.gov/api/v2` | No | Default trial search/get source |
@@ -142,7 +142,7 @@ and practical ceilings observed in command behavior.
 | VariantValidator `variant normalize` | Single explicit transcript HGVS per command; upstream docs mention 2 requests / second | Use `all`, `mutalyzer`, or `variantvalidator`; BioMCP does not batch, parse report prose, choose transcripts, or classify clinical meaning |
 | PGx (CPIC) | Rate-limited to 1 request / 250ms | Keep result limits focused around target gene/drug |
 | PGx annotations (PharmGKB) | Rate-limited to 1 request / 500ms | Treat as enrichment; core PGx data remains from CPIC |
-| GWAS search (`search gwas`) | `--limit` must be 1-50 | Prefer specific gene or trait queries to avoid broad result sets |
+| GWAS search (`search gwas`) | `--limit` must be 1-50 and checked `--offset + --limit` must be at most 50 | Prefer specific gene or trait queries; combined filters use rsID intersection |
 | Trial search | `--limit` defaults to 10, supports pagination | Use `--offset` to page and keep filters stable |
 | Article search | `--limit` defaults to 10 | Use `--since` and typed entity filters to constrain results; `sort=relevance` defaults to hybrid for keyword queries and lexical for entity-only queries |
 | KEGG pathway search/detail | Rate-limited to 1 request / 334ms | Matches KEGG's published 3 requests / second guidance |

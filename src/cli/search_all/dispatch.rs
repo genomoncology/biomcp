@@ -341,7 +341,6 @@ async fn run_section(
             let filters = crate::entities::variant::GwasSearchFilters {
                 gene: input.gene_anchor().map(str::to_string),
                 trait_query: Some(trait_query.to_string()),
-                region: None,
                 p_value: None,
             };
             let page = crate::entities::variant::search_gwas_page(&filters, limit, 0).await?;

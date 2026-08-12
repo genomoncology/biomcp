@@ -47,6 +47,26 @@ fn associations_response_parses_rows() {
 }
 
 #[test]
+fn v2_association_search_response_keeps_rows_and_provider_total() {
+    let content_type = HeaderValue::from_static("application/json");
+    let resp: GwasV2AssociationsResponse = GwasClient::decode_json_optional(
+        StatusCode::OK,
+        Some(&content_type),
+        fixture!("associations_gene_tcf7l2_v2_20260812.json"),
+    )
+    .unwrap()
+    .expect("v2 association response");
+
+    assert_eq!(resp.embedded.associations.len(), 2);
+    assert_eq!(resp.page.total_elements, 902);
+    assert_eq!(
+        resp.embedded.associations[0].snp_allele[0].rs_id.as_deref(),
+        Some("rs7903146")
+    );
+    assert_eq!(resp.embedded.associations[0].risk_frequency, Some(0.22941));
+}
+
+#[test]
 fn associations_by_study_fallback_parse_path_can_read_fallback_response() {
     let content_type = HeaderValue::from_static("application/json");
     let search: GwasAssociationsResponse = GwasClient::decode_json_optional(
