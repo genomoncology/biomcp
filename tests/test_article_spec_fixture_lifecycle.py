@@ -52,6 +52,7 @@ def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None
     for path in (
         "europepmc/search_pmid_20516115.json",
         "ncbi_efetch/pmc3040717.xml",
+        "ncbi_efetch/pmc6329583.xml",
         "pmc_article/pmc3040717-supplementary-tables-pow.html",
         "pmc_article/pmc3040717.html",
         "pmc_oa/pmc3040717-versions.xml",
@@ -188,7 +189,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == (4 if mode == "spec-contracts" else 28)
+    assert len(invocations) == (4 if mode == "spec-contracts" else 29)
     article_args, article_base, article_origin = invocations[0]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args
@@ -748,6 +749,7 @@ def test_only_owned_article_fixtures_export_unpaced_origin() -> None:
         "run-article-semanticscholar-source-search.sh",
         "run-variant-article-entity-fixture.sh",
         "run-variant-article-identity-fixture.sh",
+        "run-variant-articles-live-canary.sh",
         "setup-article-federated-timeout-fixture.sh",
         "setup-article-fulltext-source-fixture.sh",
     }
