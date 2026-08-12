@@ -6,10 +6,10 @@ Found: {{ count }} variant(s)
 {% if count == 0 -%}
 No variants found matching the filters.
 {% else -%}
-| ID | Build | Gene | Protein | Legacy Name | Significance | ClinVar Stars | gnomAD AF | REVEL | GERP |
-|---|---|---|---|---|---|---|---|---|---|
+| ID | Build | Gene | Transcript | Coding | Protein | Legacy Name | Significance | ClinVar Stars | gnomAD AF | REVEL | GERP |
+|---|---|---|---|---|---|---|---|---|---|---|---|
 {% for v in results -%}
-| {{ v.id }} | {{ v.genome_build }} | {{ v.gene }} | {{ v.hgvs_p | default("-") }} | {{ v.legacy_name | default("-") }} | {{ v.significance | default("-") }} | {{ v.clinvar_stars | default("-") }} | {{ v.gnomad_af | default("-") }} | {{ v.revel | default("-") }} | {{ v.gerp | default("-") }} |
+| {{ v.id }} | {{ v.genome_build }} | {{ v.gene }} | {{ v.transcript | default("-") }} | {{ v.hgvs_c | default("-") }} | {{ v.hgvs_p | default("-") }} | {{ v.legacy_name | default("-") }} | {{ v.significance | default("-") }} | {{ v.clinvar_stars | default("-") }} | {{ v.gnomad_af | default("-") }} | {{ v.revel | default("-") }} | {{ v.gerp | default("-") }} |
 {% endfor %}
 
 Use `get variant <id>` for details.

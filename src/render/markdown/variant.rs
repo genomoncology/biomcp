@@ -73,6 +73,7 @@ pub fn variant_markdown(
         hgvs_p => &variant.hgvs_p,
         legacy_name => &variant.legacy_name,
         hgvs_c => &variant.hgvs_c,
+        transcript => &variant.transcript,
         consequence => &variant.consequence,
         rsid => &variant.rsid,
         cosmic_id => &variant.cosmic_id,

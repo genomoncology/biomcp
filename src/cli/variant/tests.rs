@@ -543,6 +543,8 @@ fn ticket_377_variant_renderer_envelope_contracts() {
         genome_build_provenance: "test".into(),
         gene: "BRAF".to_string(),
         hgvs_p: Some("p.V600E".to_string()),
+        hgvs_c: Some("c.1799T>A".to_string()),
+        transcript: Some("NM_004333.6".to_string()),
         legacy_name: Some("BRAF V600E".to_string()),
         significance: Some("Pathogenic".to_string()),
         clinvar_stars: Some(3),

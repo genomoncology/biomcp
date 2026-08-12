@@ -26,7 +26,7 @@ $ biomcp get variant "BRAF V600E"
 rsID: rs113488022
 ID: chr7:g.140453136A>T
 Protein: p.V600E
-Legacy Name: BRAF V640E
+Legacy Name: BRAF V600E
 cDNA: c.620T>A
 Consequence: missense_variant
 COSMIC: COSM476

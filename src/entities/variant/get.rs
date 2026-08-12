@@ -890,6 +890,7 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         hgvs_p: None,
         legacy_name: None,
         hgvs_c: None,
+        transcript: None,
         rsid: Some(rsid.to_string()),
         cosmic_id: None,
         significance: None,

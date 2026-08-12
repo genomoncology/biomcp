@@ -4270,6 +4270,7 @@ mod tests {
             cosmic: None,
             cgi: None,
             civic: None,
+            snpeff: None,
         });
 
         let (rows, pre_call_stopped) = citation_candidates(&context, &execution)

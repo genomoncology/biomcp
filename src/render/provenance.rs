@@ -1064,6 +1064,7 @@ mod tests {
             hgvs_p: None,
             legacy_name: None,
             hgvs_c: None,
+            transcript: None,
             rsid: Some("rs7903146".to_string()),
             cosmic_id: None,
             significance: None,

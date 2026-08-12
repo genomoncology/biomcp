@@ -15,7 +15,8 @@ const MYVARIANT_BASE_ENV: &str = "BIOMCP_MYVARIANT_BASE";
 
 pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "_id,cadd.phred,cadd.consequence,",
-    "clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.variant_id,",
+    "clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.rcv.preferred_name,clinvar.variant_id,",
+    "snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,",
     "dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,",
     "dbnsfp.sift.pred,dbnsfp.sift.score,",
     "dbnsfp.polyphen2.hdiv.pred,",
@@ -45,7 +46,7 @@ pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "cosmic.cosmic_id,cosmic.mut_freq,cosmic.tumor_site,cosmic.mut_nt,",
     "cgi,civic"
 );
-pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
+pub(crate) const MYVARIANT_FIELDS_SEARCH: &str = "_id,dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,dbnsfp.revel.score,dbnsfp.gerp*.rs,clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.preferred_name,clinvar.variant_id,snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,dbsnp.rsid,gnomad_exome.af.af,gnomad.exomes.af.af,gnomad.genomes.af.af,cadd.consequence";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -849,6 +850,21 @@ pub struct MyVariantHit {
     pub cosmic: Option<MyVariantCosmic>,
     pub cgi: Option<serde_json::Value>,
     pub civic: Option<serde_json::Value>,
+    pub snpeff: Option<MyVariantSnpeff>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MyVariantSnpeff {
+    #[serde(default, deserialize_with = "de_vec_or_single")]
+    pub ann: Vec<MyVariantSnpeffAnnotation>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MyVariantSnpeffAnnotation {
+    pub feature_id: Option<String>,
+    pub genename: Option<String>,
+    pub hgvs_c: Option<String>,
+    pub hgvs_p: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -1008,6 +1024,7 @@ pub struct MyVariantClinVarRcv {
     pub clinical_significance: Option<String>,
     pub review_status: Option<String>,
     pub conditions: Option<serde_json::Value>,
+    pub preferred_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

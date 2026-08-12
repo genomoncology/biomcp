@@ -143,6 +143,8 @@ pub struct Variant {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hgvs_c: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcript: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rsid: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cosmic_id: Option<String>,
@@ -353,6 +355,10 @@ pub struct VariantSearchResult {
     pub gene: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hgvs_p: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hgvs_c: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcript: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub legacy_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

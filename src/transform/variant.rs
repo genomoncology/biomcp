@@ -20,64 +20,6 @@ fn normalize_gene(gene: &str) -> Option<String> {
     Some(g.to_uppercase())
 }
 
-fn pick_hgvs(values: Vec<StringOrVec>) -> Option<String> {
-    let mut out: Vec<String> = Vec::new();
-    for v in values {
-        out.extend(v.into_vec());
-    }
-
-    // Prefer compact HGVS protein forms like `p.V600E`.
-    for s in &out {
-        let t = s.trim();
-        if !t.starts_with("p.") {
-            continue;
-        }
-        let rest = &t[2..];
-        let mut chars = rest.chars();
-        let Some(first) = chars.next() else { continue };
-        if !first.is_ascii_uppercase() {
-            continue;
-        }
-        let mut seen_digit = false;
-        let mut digits = 0;
-        let mut last: Option<char> = None;
-        for ch in chars {
-            if ch.is_ascii_digit() {
-                seen_digit = true;
-                digits += 1;
-                last = Some(ch);
-                continue;
-            }
-            last = Some(ch);
-        }
-        let Some(last) = last else { continue };
-        if !seen_digit || digits == 0 {
-            continue;
-        }
-        if last.is_ascii_uppercase() || last == '*' {
-            // Ensure there are no extra letters (e.g., Val600Glu).
-            if rest.len() >= 3 && rest.chars().all(|c| c.is_ascii_alphanumeric() || c == '*') {
-                // This is still a heuristic; accept.
-                if rest.len() <= 12 {
-                    return Some(t.to_string());
-                }
-            }
-        }
-    }
-
-    // Fall back to any `p.` form.
-    for s in &out {
-        let t = s.trim();
-        if t.starts_with("p.") && !t.is_empty() {
-            return Some(t.to_string());
-        }
-    }
-
-    out.into_iter()
-        .map(|s| s.trim().to_string())
-        .find(|s| !s.is_empty())
-}
-
 fn pick_gene(dbnsfp: &crate::sources::myvariant::MyVariantDbnsfp) -> String {
     dbnsfp
         .genename
@@ -86,43 +28,97 @@ fn pick_gene(dbnsfp: &crate::sources::myvariant::MyVariantDbnsfp) -> String {
         .unwrap_or_default()
 }
 
-fn pick_hgvsp(dbnsfp: &crate::sources::myvariant::MyVariantDbnsfp) -> Option<String> {
-    pick_hgvs(vec![dbnsfp.hgvsp.clone()])
+#[derive(Default)]
+struct TranscriptAnnotation {
+    gene: Option<String>,
+    transcript: Option<String>,
+    coding: Option<String>,
+    protein: Option<String>,
 }
 
-fn pick_hgvsc(dbnsfp: &crate::sources::myvariant::MyVariantDbnsfp) -> Option<String> {
-    pick_hgvs(vec![dbnsfp.hgvsc.clone()])
+fn accession_stem(value: &str) -> &str {
+    value.trim().split('.').next().unwrap_or(value.trim())
 }
 
-fn derive_legacy_name(hit: &MyVariantHit, gene: &str) -> Option<String> {
+fn clinvar_preferred_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
+    hit.clinvar.as_ref()?.rcv.iter().find_map(|rcv| {
+        let name = rcv.preferred_name.as_deref()?.trim();
+        let (left, rest) = name.split_once(":c.")?;
+        let transcript = left.split_once('(').map_or(left, |(value, _)| value).trim();
+        if !transcript.starts_with("NM_") {
+            return None;
+        }
+        let gene = left
+            .split_once('(')
+            .and_then(|(_, value)| value.strip_suffix(')'))
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let coding_tail = format!("c.{rest}");
+        let coding = coding_tail
+            .split_whitespace()
+            .next()
+            .map(str::to_string)
+            .filter(|value| value.len() > 2);
+        let protein = name
+            .rfind("(p.")
+            .and_then(|start| name[start + 1..].strip_suffix(')'))
+            .map(str::to_string);
+        Some(TranscriptAnnotation {
+            gene: gene.map(str::to_string),
+            transcript: Some(transcript.to_string()),
+            coding,
+            protein,
+        })
+    })
+}
+
+fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
+    let clinvar = clinvar_preferred_annotation(hit);
+    let preferred_stem = clinvar
+        .as_ref()
+        .and_then(|value| value.transcript.as_deref())
+        .map(accession_stem);
+    let annotations = &hit.snpeff.as_ref()?.ann;
+    let selected = annotations
+        .iter()
+        .filter(|ann| {
+            ann.hgvs_c
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty())
+        })
+        .min_by_key(|ann| {
+            let feature = ann.feature_id.as_deref().unwrap_or_default();
+            if preferred_stem.is_some_and(|preferred| accession_stem(feature) == preferred) {
+                0
+            } else if feature.starts_with("NM_") {
+                1
+            } else {
+                2
+            }
+        })?;
+    Some(TranscriptAnnotation {
+        gene: selected.genename.clone(),
+        transcript: selected.feature_id.clone(),
+        coding: selected.hgvs_c.clone(),
+        protein: selected.hgvs_p.clone(),
+    })
+}
+
+fn paired_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
+    select_transcript_annotation(hit).or_else(|| clinvar_preferred_annotation(hit))
+}
+
+fn legacy_name(gene: &str, protein: Option<&str>) -> Option<String> {
     let gene = gene.trim();
+    let normalized = normalize_protein_change(protein?)?;
     if gene.is_empty() {
         return None;
     }
-
-    let has_clinvar = hit
-        .clinvar
-        .as_ref()
-        .map(|clinvar| clinvar.variant_id.is_some() || !clinvar.rcv.is_empty())
-        .unwrap_or(false);
-    if !has_clinvar {
-        return None;
-    }
-
-    let dbnsfp = hit.dbnsfp.as_ref()?;
-    for alias in dbnsfp.hgvsp.clone().into_vec() {
-        let normalized = match normalize_protein_change(&alias) {
-            Some(value) => value,
-            None => continue,
-        };
-        let legacy = normalized
-            .strip_suffix('*')
-            .map(|prefix| format!("{prefix}stop"))
-            .unwrap_or(normalized);
-        return Some(format!("{gene} {legacy}"));
-    }
-
-    None
+    let legacy = normalized
+        .strip_suffix('*')
+        .map(|prefix| format!("{prefix}stop"))
+        .unwrap_or(normalized);
+    Some(format!("{gene} {legacy}"))
 }
 
 fn normalize_consequence(value: &str) -> String {
@@ -764,10 +760,9 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
     let mut sift_pred: Option<String> = None;
     let mut polyphen_pred: Option<String> = None;
 
+    let annotation = paired_annotation(hit);
     if let Some(dbnsfp) = hit.dbnsfp.as_ref() {
         gene = pick_gene(dbnsfp);
-        hgvs_p = pick_hgvsp(dbnsfp);
-        hgvs_c = pick_hgvsc(dbnsfp);
 
         sift_pred = dbnsfp
             .sift
@@ -797,7 +792,15 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
             .to_string();
     }
 
-    let legacy_name = derive_legacy_name(hit, &gene);
+    if let Some(annotation) = annotation.as_ref() {
+        if let Some(annotation_gene) = annotation.gene.as_deref().and_then(normalize_gene) {
+            gene = annotation_gene;
+        }
+        hgvs_p = annotation.protein.clone();
+        hgvs_c = annotation.coding.clone();
+    }
+
+    let legacy_name = legacy_name(&gene, hgvs_p.as_deref());
 
     let rsid = hit
         .dbsnp
@@ -862,6 +865,9 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         hgvs_p,
         legacy_name,
         hgvs_c,
+        transcript: annotation
+            .as_ref()
+            .and_then(|value| value.transcript.clone()),
         rsid,
         cosmic_id,
         significance,
@@ -896,9 +902,26 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
 }
 
 pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
-    let gene = hit.dbnsfp.as_ref().map(pick_gene).unwrap_or_default();
-    let hgvs_p = hit.dbnsfp.as_ref().and_then(pick_hgvsp);
-    let legacy_name = derive_legacy_name(hit, &gene);
+    let annotation = paired_annotation(hit);
+    let mut gene = hit.dbnsfp.as_ref().map(pick_gene).unwrap_or_default();
+    if gene.is_empty() {
+        gene = hit
+            .clinvar
+            .as_ref()
+            .and_then(|value| value.gene.as_ref())
+            .and_then(|value| value.symbol.as_deref())
+            .and_then(normalize_gene)
+            .unwrap_or_default();
+    }
+    if let Some(annotation_gene) = annotation
+        .as_ref()
+        .and_then(|value| value.gene.as_deref())
+        .and_then(normalize_gene)
+    {
+        gene = annotation_gene;
+    }
+    let hgvs_p = annotation.as_ref().and_then(|value| value.protein.clone());
+    let legacy_name = legacy_name(&gene, hgvs_p.as_deref());
 
     let significance = hit.clinvar.as_ref().and_then(|c| pick_significance(&c.rcv));
     let clinvar_stars = hit
@@ -923,6 +946,8 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
         genome_build_provenance: "MyVariant.info provider default".into(),
         gene,
         hgvs_p,
+        hgvs_c: annotation.as_ref().and_then(|value| value.coding.clone()),
+        transcript: annotation.and_then(|value| value.transcript),
         legacy_name,
         significance,
         clinvar_stars,
@@ -997,11 +1022,13 @@ mod tests {
                 clinical_significance: None,
                 review_status: Some("criteria provided, single submitter".into()),
                 conditions: None,
+                preferred_name: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: None,
                 review_status: Some("reviewed by expert panel".into()),
                 conditions: None,
+                preferred_name: None,
             },
         ];
 
@@ -1019,6 +1046,7 @@ mod tests {
             clinical_significance: None,
             review_status: Some("criteria provided, single submitter".into()),
             conditions: None,
+            preferred_name: None,
         }];
         assert_eq!(pick_significance(&partial), None);
     }
@@ -1030,11 +1058,13 @@ mod tests {
                 clinical_significance: Some("Likely benign".into()),
                 review_status: Some("criteria provided, single submitter".into()),
                 conditions: Some(serde_json::json!({"name": "Breast-ovarian cancer"})),
+                preferred_name: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: Some("Pathogenic".into()),
                 review_status: Some("reviewed by expert panel".into()),
                 conditions: Some(serde_json::json!({"name": "Hereditary breast cancer"})),
+                preferred_name: None,
             },
         ];
 
@@ -1048,11 +1078,13 @@ mod tests {
                 clinical_significance: Some("Uncertain significance".into()),
                 review_status: None,
                 conditions: Some(serde_json::json!({"name": "Colorectal carcinoma"})),
+                preferred_name: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: Some("Likely pathogenic".into()),
                 review_status: Some("criteria provided, single submitter".into()),
                 conditions: Some(serde_json::json!({"name": "Lung adenocarcinoma"})),
+                preferred_name: None,
             },
         ];
 
@@ -1072,11 +1104,13 @@ mod tests {
                     {"name": "Melanoma"},
                     {"name": "Lung cancer"}
                 ])),
+                preferred_name: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: None,
                 review_status: None,
                 conditions: Some(serde_json::json!({"name": "Melanoma"})),
+                preferred_name: None,
             },
         ];
 
@@ -1209,7 +1243,8 @@ mod tests {
                 },
                 "clinvar": {
                     "variant_id": 4472
-                }
+                },
+                "snpeff": {"ann": {"feature_id": "NM_002667.5", "genename": "PLN", "hgvs_c": "c.116T>G", "hgvs_p": alias}}
             }))
             .expect("variant payload should parse");
 
@@ -1229,7 +1264,8 @@ mod tests {
                 },
                 "clinvar": {
                     "rcv": [{"clinical_significance": "Likely pathogenic"}]
-                }
+                },
+                "snpeff": {"ann": {"feature_id": "NM_002667.5", "genename": "PLN", "hgvs_c": "c.73C>T", "hgvs_p": alias}}
             }))
             .expect("variant payload should parse");
 
@@ -1251,5 +1287,49 @@ mod tests {
 
         let variant = from_myvariant_hit(&hit);
         assert_eq!(variant.legacy_name, None);
+    }
+
+    #[test]
+    fn transcript_annotation_never_zips_independent_dbnsfp_arrays() {
+        let hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+            "_id": "chr10:g.89720808T>G",
+            "clinvar": {
+                "variant_id": 1,
+                "gene": {"symbol": "PTEN"},
+                "rcv": [{
+                    "preferred_name": "NM_000314.8(PTEN):c.959T>G (p.Leu320Ter)",
+                    "clinical_significance": "Pathogenic"
+                }]
+            },
+            "dbnsfp": {
+                "genename": ["PTEN", "PTEN"],
+                "hgvsc": ["c.386T>G", "c.959T>G"],
+                "hgvsp": ["p.Leu129Ter", "p.Leu320Ter"]
+            },
+            "snpeff": {"ann": [
+                {"feature_id":"NM_001304717.5", "genename":"PTEN", "hgvs_c":"c.1478T>G", "hgvs_p":"p.Leu493Ter"},
+                {"feature_id":"NM_000314.8", "genename":"PTEN", "hgvs_c":"c.959T>G", "hgvs_p":"p.Leu320Ter"}
+            ]}
+        }))
+        .expect("adversarial MyVariant fixture");
+
+        let variant = from_myvariant_hit(&hit);
+        assert_eq!(variant.hgvs_c.as_deref(), Some("c.959T>G"));
+        assert_eq!(variant.hgvs_p.as_deref(), Some("p.Leu320Ter"));
+        assert_eq!(variant.legacy_name.as_deref(), Some("PTEN L320stop"));
+    }
+
+    #[test]
+    fn real_braf_receipt_prefers_the_transcript_associated_v600_annotation() {
+        let hit: MyVariantHit = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/myvariant/get_braf_v600e_grch38_20260806.json"
+        )))
+        .expect("real BRAF receipt");
+
+        let variant = from_myvariant_hit(&hit);
+        assert_eq!(variant.hgvs_c.as_deref(), Some("c.1799T>A"));
+        assert_eq!(variant.hgvs_p.as_deref(), Some("p.Val600Glu"));
+        assert_eq!(variant.legacy_name.as_deref(), Some("BRAF V600E"));
     }
 }
