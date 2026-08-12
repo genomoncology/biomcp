@@ -443,3 +443,120 @@ and verification.
 `make lint`, `make test` (2,891 Rust tests, 512 Python contracts, and strict
 documentation), `make spec`, and `make full-feature-check` passed. The active
 backlog is now **31**, completing the planned **39 → 31** reduction.
+
+## Remaining 31-ticket batching decision — 2026-08-12
+
+Continue the direct, persistent-worktree approach. The remaining backlog is
+not 31 independent flights: it is one pre-release closure session, one release
+construction session, and three post-release substreams. Preserve individual
+implementation commits and completion records, but pay the complete repository
+gate cost once per focused session.
+
+Only 0881, 0925, 0934, and 0935 are initially dependency-ready. The next
+session deliberately starts with those prerequisites and continues through the
+tickets they unlock without returning to the queue between them.
+
+### Next session: pre-release closure — 12 tickets
+
+Tickets: **0881, 0925, 0934, 0935, 0937, 0942, 0940, 0939, 0948, 0949, 0941,
+and 0884**.
+
+Recommended dependency order:
+
+1. 0881 — preserve the real ERepo guideline identity.
+2. 0925 — make PGx named sections focused and bounded.
+3. 0934 — run canonical gates for pull requests and every main push.
+4. 0935 — establish truthful session and HTTP-cache retention.
+5. 0937 — enable the advertised PNG support in public artifact builds.
+6. 0942 — add complete pinned shell and workflow linting to the canonical
+   gate.
+7. 0940 — exclude captured biomedical fixtures from source packages.
+8. 0939 — replace the duplicate full `biomcp-cli` executable with the small
+   compatibility shim.
+9. 0948 — make managed cache and session state private.
+10. 0949 — make `--no-cache` avoid all managed request state.
+11. 0941 — make the Unix-socket test independent of ambient path length.
+12. 0884 — enforce the final no-public-network boundary around routine gates.
+
+This session has three internal work areas. Delivery and gate infrastructure
+is owned by 0934, 0937, 0942, 0940, 0939, and 0884. Managed local-state
+correctness is owned by 0935, 0948, 0949, and 0941. Tickets 0881 and 0925 are
+the final two independent product-correctness blockers required before release
+construction. They share little code, but keeping them in this session avoids
+two extra setup and complete-gate cycles solely for singleton tickets.
+
+Use focused tests after each behavior. Keep 0884 last so its isolated run is
+the final proof that the resulting routine test and specification lanes make
+no public connection. Run `make lint`, `make test`, `make spec`, and `make
+full-feature-check` once on the final candidate. Expected backlog: **31 → 19**.
+
+### Following session: release construction — seven tickets
+
+Tickets: **0952, 0958, 0953, 0954, 0955, 0956, and 0957**.
+
+Recommended dependency order:
+
+1. 0952 — establish the pinned private candidate transaction with promotion
+   still disabled.
+2. 0958 — establish the protected signing and notarization seam.
+3. 0953 — register and prove the five native and wheel targets.
+4. 0954 — assemble the two-platform non-root container from verified Linux
+   executables.
+5. 0955 — generate and prove the Homebrew formula from the staged macOS
+   artifacts.
+6. 0956 — assemble and verify the declared MCPB desktop bundle.
+7. 0957 — expose promotion only with complete candidate and public-artifact
+   verification.
+
+These tickets share one release workflow, candidate manifest, artifact
+registry, signing policy, inspection framework, platform matrix, and
+promotion transaction. Implement them in one persistent worktree, while
+retaining their separate trust boundaries and completion records. Do not
+publish, approve, tag, or move a mutable pointer during implementation.
+External identities, protected-environment policy, hosted platform evidence,
+and Ian's approval remain real requirements and must never be marked complete
+from workflow text or local fixtures alone. Expected backlog: **19 → 12**.
+
+### Post-release substream 1: ClinGen completion — three tickets
+
+Tickets: **0880, 0908, and 0962**.
+
+Implement the CSpec attachment manifest, bounded ERepo gene search, and the
+CSpec timeout/ERepo input boundaries together. They reuse the CSpec and ERepo
+clients, real captures, request plans, local transports, typed limits, and
+JSON/Markdown projections established by 0881. Expected backlog: **12 → 9**.
+
+### Post-release substream 2: bounded and relevant output — five tickets
+
+Tickets: **0883, 0959, 0960, 0961, and 0963**.
+
+These tickets share bounded response models, stable paging, continuation
+commands, compact/full projections, typed source outcomes, local provider
+fixtures, generated schemas, and renderer tests. They touch several entities,
+so keep per-ticket commits and focused tests, but use one final complete gate
+run. Expected backlog: **9 → 4**.
+
+### Post-release substream 3: development and test maintenance — four tickets
+
+Tickets: **0895, 0896, 0897, and 0965**.
+
+Finish the tracked documentation-only hook, move the remaining setup fixtures
+and run wrappers onto the generalized supervisor, and install the large-module
+and dead-code ratchets. This work is intentionally last because it changes
+development and test infrastructure rather than release behavior. The two
+supervisor tickets retain their required order, 0896 then 0897. Expected
+backlog: **4 → 0**.
+
+### Shared rules for the remaining sessions
+
+- Do not use the paused SDLC queue for these focused sessions.
+- Keep one readable implementation commit and completion record per ticket.
+- Remove a ticket file only after its behavior and dependencies are genuinely
+  complete.
+- Use red-green focused tests during implementation and complete repository
+  gates once per final session candidate.
+- Never weaken biomedical behavior, bounds, privacy, or release trust merely
+  to make a fixture or batch pass.
+- Reassess the post-release grouping only if the release implementation
+  materially changes the named code boundaries; do not redo the batching
+  analysis without concrete evidence of such a conflict.
