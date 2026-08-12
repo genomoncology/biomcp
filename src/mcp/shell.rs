@@ -4,7 +4,6 @@ use std::time::Duration;
 
 use axum::{Json, Router, routing::get};
 use base64::Engine;
-use clap::CommandFactory;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
     AnnotateAble, CallToolResult, Content, Implementation, ListResourcesResult, ListToolsResult,
@@ -36,30 +35,14 @@ struct ShellCommand {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
-struct TypedSearch {
-    #[schemars(transform = add_search_entity_enum)]
-    entity: String,
-    #[serde(default)]
-    query: Option<String>,
-    #[serde(default = "default_typed_limit")]
-    #[schemars(range(min = 1, max = 25))]
-    limit: usize,
-    #[serde(default)]
-    offset: usize,
-    #[serde(default)]
-    json: bool,
-}
+#[serde(transparent)]
+#[schemars(transform = typed_search_schema)]
+struct TypedSearch(Value);
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
-struct TypedGet {
-    #[schemars(transform = add_get_entity_enum)]
-    entity: String,
-    id: String,
-    #[serde(default)]
-    sections: Vec<McpGetSection>,
-    #[serde(default)]
-    json: bool,
-}
+#[serde(transparent)]
+#[schemars(transform = typed_get_schema)]
+struct TypedGet(Value);
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct TypedVariantCar {
@@ -116,10 +99,6 @@ struct TypedVariantArticles {
     confirmed_only: bool,
 }
 
-#[derive(Debug, Deserialize, schemars::JsonSchema)]
-#[serde(transparent)]
-struct McpGetSection(#[schemars(transform = add_get_section_enum)] String);
-
 fn default_typed_limit() -> usize {
     10
 }
@@ -144,16 +123,175 @@ fn add_string_enum(schema: &mut schemars::Schema, values: &[String]) {
     );
 }
 
-fn add_search_entity_enum(schema: &mut schemars::Schema) {
-    add_string_enum(schema, &subcommand_names("search"));
+fn short_string_schema() -> Value {
+    json!({"type":"string","minLength":1,"maxLength":256})
 }
 
-fn add_get_entity_enum(schema: &mut schemars::Schema) {
-    add_string_enum(schema, &subcommand_names("get"));
+fn string_array_schema() -> Value {
+    json!({"type":"array","minItems":1,"maxItems":3,"uniqueItems":true,"items":short_string_schema()})
 }
 
-fn add_get_section_enum(schema: &mut schemars::Schema) {
-    add_string_enum(schema, &all_get_sections());
+fn typed_search_branch(entity: &str) -> Value {
+    let (fields, required): (&[(&str, &str)], &[&str]) = match entity {
+        "author" => (
+            &[("query", "text"), ("source", "author_source")],
+            &["query"],
+        ),
+        "gene" => (
+            &[
+                ("query", "text"),
+                ("gene_type", "text"),
+                ("chromosome", "text"),
+                ("region", "text"),
+            ],
+            &["query", "gene_type", "chromosome", "region"],
+        ),
+        "pgx" => (
+            &[("gene", "text"), ("drug", "text"), ("cpic_level", "cpic")],
+            &["gene", "drug"],
+        ),
+        "gwas" => (
+            &[
+                ("gene", "text"),
+                ("trait", "text"),
+                ("p_value", "probability"),
+            ],
+            &["gene", "trait"],
+        ),
+        "article" => (
+            &[
+                ("keyword", "array"),
+                ("gene", "text"),
+                ("disease", "array"),
+                ("drug", "array"),
+                ("author", "array"),
+                ("journal", "array"),
+                ("date_from", "date"),
+                ("date_to", "date"),
+                ("article_type", "article_type"),
+                ("source", "article_source"),
+                ("open_access", "bool"),
+                ("no_preprints", "bool"),
+                ("sort", "sort"),
+            ],
+            &["keyword", "gene", "disease", "drug", "author"],
+        ),
+        "trial" => (
+            &[
+                ("condition", "array"),
+                ("intervention", "array"),
+                ("mutation", "array"),
+                ("criteria", "array"),
+                ("biomarker", "array"),
+                ("phase", "phase"),
+                ("status", "status"),
+                ("source", "trial_source"),
+            ],
+            &[
+                "condition",
+                "intervention",
+                "mutation",
+                "criteria",
+                "biomarker",
+            ],
+        ),
+        "variant" => (
+            &[
+                ("query", "text"),
+                ("gene", "text"),
+                ("hgvsp", "text"),
+                ("significance", "text"),
+                ("max_frequency", "unit"),
+                ("consequence", "text"),
+                ("review_status", "review"),
+                ("revel_min", "unit"),
+            ],
+            &["query", "gene", "hgvsp"],
+        ),
+        "protein" => (
+            &[
+                ("query", "text"),
+                ("all_species", "bool"),
+                ("reviewed", "bool"),
+                ("disease", "text"),
+                ("existence", "existence"),
+            ],
+            &["query"],
+        ),
+        _ => unreachable!(),
+    };
+    let mut properties = serde_json::Map::from_iter([
+        ("entity".into(), json!({"const":entity})),
+        (
+            "limit".into(),
+            json!({"type":"integer","minimum":1,"maximum":25,"default":10}),
+        ),
+        (
+            "offset".into(),
+            json!({"type":"integer","minimum":0,"maximum":1000,"default":0}),
+        ),
+        ("json".into(), json!({"type":"boolean","default":false})),
+    ]);
+    for &(name, kind) in fields {
+        let value = match kind {
+            "array" => string_array_schema(),
+            "bool" => json!({"type":"boolean"}),
+            "probability" => json!({"type":"number","exclusiveMinimum":0,"maximum":1}),
+            "unit" => json!({"type":"number","minimum":0,"maximum":1}),
+            "existence" => json!({"type":"integer","minimum":1,"maximum":5}),
+            "date" => json!({"type":"string","pattern":"^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"}),
+            "author_source" => json!({"const":"semanticscholar"}),
+            "cpic" => json!({"enum":["A","B","C","D"]}),
+            "article_type" => {
+                json!({"enum":["research-article","review","case-reports","meta-analysis"]})
+            }
+            "article_source" => {
+                json!({"enum":["all","pubtator","europepmc","pubmed","semanticscholar","litsense2"]})
+            }
+            "sort" => json!({"enum":["date","citations","relevance"]}),
+            "phase" => json!({"enum":["NA","1","1/2","2","3","4"]}),
+            "status" => {
+                json!({"enum":["recruiting","not_yet_recruiting","enrolling_by_invitation","active_not_recruiting","completed","suspended","terminated","withdrawn"]})
+            }
+            "trial_source" => json!({"enum":["ctgov","nci"]}),
+            "review" => {
+                json!({"enum":["0","1","2","3","4","none","criteria_provided","expert_panel"]})
+            }
+            _ => short_string_schema(),
+        };
+        properties.insert(name.into(), value);
+    }
+    let any_of = required
+        .iter()
+        .map(|name| json!({"required":[name]}))
+        .collect::<Vec<_>>();
+    json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity"],"anyOf":any_of})
+}
+
+fn typed_search_schema(schema: &mut schemars::Schema) {
+    let branches = [
+        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
+    ]
+    .into_iter()
+    .map(typed_search_branch)
+    .collect::<Vec<_>>();
+    *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed search schema");
+}
+
+fn typed_get_schema(schema: &mut schemars::Schema) {
+    let branches = ["author", "gene", "article", "disease", "diagnostic", "pgx", "trial", "variant", "drug", "pathway", "protein", "adverse-event"]
+        .into_iter().map(|entity| {
+            let mut properties = serde_json::Map::from_iter([
+                ("entity".into(), json!({"const":entity})),
+                ("id".into(), json!({"type":"string","minLength":1,"maxLength":512})),
+                ("json".into(), json!({"type":"boolean","default":false})),
+            ]);
+            if entity != "author" {
+                properties.insert("sections".into(), json!({"type":"array","maxItems":16,"uniqueItems":true,"items":{"enum":crate::cli::list::catalog::sections(entity)}}));
+            }
+            json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity","id"]})
+        }).collect::<Vec<_>>();
+    *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed get schema");
 }
 
 fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
@@ -357,118 +495,229 @@ fn args_may_return_article_fulltext(args: &[String]) -> bool {
     args.get(1).is_some_and(|arg| arg == "get") && args.get(2).is_some_and(|arg| arg == "article")
 }
 
-fn get_section_groups() -> &'static [&'static [&'static str]] {
-    &[
-        crate::entities::gene::GENE_SECTION_NAMES,
-        crate::entities::article::ARTICLE_SECTION_NAMES,
-        crate::entities::disease::DISEASE_SECTION_NAMES,
-        crate::entities::diagnostic::DIAGNOSTIC_SECTION_NAMES,
-        crate::entities::pgx::PGX_SECTION_NAMES,
-        crate::entities::trial::TRIAL_SECTION_NAMES,
-        crate::entities::variant::VARIANT_SECTION_NAMES,
-        crate::entities::drug::DRUG_SECTION_NAMES,
-        crate::entities::pathway::PATHWAY_SECTION_NAMES,
-        crate::entities::protein::PROTEIN_SECTION_NAMES,
-        crate::entities::adverse_event::ADVERSE_EVENT_SECTION_NAMES,
-    ]
+fn input_error(message: impl Into<String>) -> McpError {
+    McpError::invalid_params(message.into(), None)
 }
 
-fn subcommand_names(name: &str) -> Vec<String> {
-    crate::cli::Cli::command()
-        .find_subcommand(name)
-        .expect("top-level subcommand exists")
-        .get_subcommands()
-        .map(|cmd| cmd.get_name().to_string())
-        .collect()
-}
-
-fn all_get_sections() -> Vec<String> {
-    get_section_groups()
-        .iter()
-        .flat_map(|group| group.iter().copied())
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .map(str::to_string)
-        .collect()
-}
-
-fn normalize_token(raw: &str, allowed: &[String], field: &str) -> Result<String, McpError> {
-    let token = raw.trim();
-    if allowed.iter().any(|allowed| allowed == token) {
-        Ok(token.to_string())
-    } else {
-        Err(McpError::invalid_params(
-            format!(
-                "invalid {field}: {token}; allowed values: {}",
-                allowed.join(", ")
-            ),
-            None,
-        ))
+fn checked_text(value: &Value, field: &str, max: usize) -> Result<String, McpError> {
+    let text = value
+        .as_str()
+        .ok_or_else(|| input_error(format!("{field} must be a string")))?
+        .trim();
+    if text.is_empty() || text.chars().count() > max {
+        return Err(input_error(format!(
+            "{field} must contain 1-{max} characters"
+        )));
     }
+    Ok(text.into())
 }
 
 fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
-    let search_entities = subcommand_names("search");
-    let entity = normalize_token(&input.entity, &search_entities, "search entity")?;
-    if input.limit == 0 || input.limit > 25 {
-        return Err(McpError::invalid_params(
-            "invalid limit: typed search limit must be between 1 and 25",
-            None,
+    let object = input
+        .0
+        .as_object()
+        .ok_or_else(|| input_error("typed search input must be an object"))?;
+    let entity = checked_text(object.get("entity").unwrap_or(&Value::Null), "entity", 256)?;
+    if ![
+        "author", "gene", "pgx", "gwas", "article", "trial", "variant", "protein",
+    ]
+    .contains(&entity.as_str())
+    {
+        return Err(input_error("invalid typed search entity"));
+    }
+    let branch = typed_search_branch(&entity);
+    let allowed = branch["properties"].as_object().expect("branch properties");
+    if let Some(key) = object.keys().find(|key| !allowed.contains_key(*key)) {
+        return Err(input_error(format!("unknown {entity} search field: {key}")));
+    }
+    let required = branch["anyOf"].as_array().expect("required choices");
+    if !required.iter().any(|choice| {
+        choice["required"][0]
+            .as_str()
+            .is_some_and(|key| object.contains_key(key))
+    }) {
+        return Err(input_error(format!(
+            "{entity} search requires at least one identity field"
+        )));
+    }
+    let limit = object.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
+    let offset = object.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+    if !(1..=25).contains(&limit)
+        || offset > 1000
+        || (entity == "gwas" && offset.checked_add(limit).is_none_or(|end| end > 50))
+    {
+        return Err(input_error(
+            "typed search pagination is outside its supported bounds",
         ));
     }
-
-    let mut args = vec![
-        "biomcp".to_string(),
-        "search".to_string(),
-        entity.to_string(),
-    ];
-    if let Some(query) = input
-        .query
-        .as_deref()
-        .map(str::trim)
-        .filter(|q| !q.is_empty())
-    {
-        match entity.as_str() {
-            "article" => args.extend(["--keyword".to_string(), query.to_string()]),
-            "author" => args.extend(["--query".to_string(), query.to_string()]),
-            "diagnostic" | "gwas" | "pgx" => {
-                args.extend(["--gene".to_string(), query.to_string()]);
-            }
-            "trial" => args.extend(["--condition".to_string(), query.to_string()]),
-            "all" => args.extend(["--keyword".to_string(), query.to_string()]),
-            _ => args.push(query.to_string()),
+    if entity == "trial" && object.get("source").and_then(Value::as_str) == Some("nci") {
+        let nci = ["mutation", "criteria", "biomarker"]
+            .into_iter()
+            .filter(|key| object.contains_key(*key))
+            .collect::<Vec<_>>();
+        if nci.len() > 1
+            || nci.first().is_some_and(|key| {
+                object[*key]
+                    .as_array()
+                    .is_none_or(|values| values.len() != 1)
+            })
+        {
+            return Err(input_error(
+                "NCI typed search accepts exactly one mutation, criteria, or biomarker value",
+            ));
         }
     }
-    args.extend(["--limit".to_string(), input.limit.to_string()]);
-    if input.offset > 0 {
-        args.extend(["--offset".to_string(), input.offset.to_string()]);
+    let mut args = vec!["biomcp".into(), "search".into(), entity.clone()];
+    for (field, value) in object {
+        if matches!(field.as_str(), "entity" | "limit" | "offset" | "json") {
+            continue;
+        }
+        let field_schema = &allowed[field];
+        if let Some(values) = field_schema.get("enum").and_then(Value::as_array)
+            && !values.contains(value)
+        {
+            return Err(input_error(format!("invalid {field} value")));
+        }
+        if field_schema.get("type").and_then(Value::as_str) == Some("boolean")
+            && !value.is_boolean()
+        {
+            return Err(input_error(format!("{field} must be a boolean")));
+        }
+        if field_schema.get("type").and_then(Value::as_str) == Some("number") {
+            let number = value
+                .as_f64()
+                .filter(|number| number.is_finite())
+                .ok_or_else(|| input_error(format!("{field} must be a finite number")))?;
+            let minimum = field_schema.get("minimum").and_then(Value::as_f64);
+            let exclusive = field_schema.get("exclusiveMinimum").and_then(Value::as_f64);
+            let maximum = field_schema.get("maximum").and_then(Value::as_f64);
+            if minimum.is_some_and(|min| number < min)
+                || exclusive.is_some_and(|min| number <= min)
+                || maximum.is_some_and(|max| number > max)
+            {
+                return Err(input_error(format!(
+                    "{field} is outside its supported range"
+                )));
+            }
+        }
+        let flag = match (entity.as_str(), field.as_str()) {
+            ("gene", "gene_type") | ("article", "article_type") => "--type",
+            ("gwas", "trait") => "--trait",
+            ("gwas", "p_value") => "--p-value",
+            ("variant", "max_frequency") => "--max-frequency",
+            ("variant", "review_status") => "--review-status",
+            ("variant", "revel_min") => "--revel-min",
+            ("pgx", "cpic_level") => "--cpic-level",
+            ("article", "date_from") => "--date-from",
+            ("article", "date_to") => "--date-to",
+            ("article", "open_access") => "--open-access",
+            ("article", "no_preprints") => "--no-preprints",
+            ("protein", "all_species") => "--all-species",
+            (_, "query") if matches!(entity.as_str(), "gene" | "variant") => "",
+            (_, name) => Box::leak(format!("--{}", name.replace('_', "-")).into_boxed_str()),
+        };
+        if value.is_boolean() {
+            if value.as_bool() == Some(true) {
+                args.push(flag.into());
+            }
+        } else if let Some(values) = value.as_array() {
+            if values.is_empty() || values.len() > 3 {
+                return Err(input_error(format!("{field} must contain 1-3 values")));
+            }
+            let mut seen = BTreeSet::new();
+            for value in values {
+                let text = checked_text(value, field, 256)?;
+                if !seen.insert(text.clone()) {
+                    return Err(input_error(format!("{field} values must be unique")));
+                }
+                args.extend([flag.into(), text]);
+            }
+        } else {
+            let text = if value.is_string() {
+                checked_text(value, field, 256)?
+            } else {
+                value.to_string()
+            };
+            if flag.is_empty() {
+                args.push(text);
+            } else {
+                args.extend([flag.into(), text]);
+            }
+        }
     }
-    if input.json {
+    args.extend(["--limit".into(), limit.to_string()]);
+    if offset > 0 {
+        args.extend(["--offset".into(), offset.to_string()]);
+    }
+    if object.get("json").and_then(Value::as_bool) == Some(true) {
         args = args_with_json(&args);
     }
+    crate::cli::try_parse_cli(args.clone()).map_err(|error| input_error(error.to_string()))?;
     Ok(args)
 }
 
 fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
-    let get_entities = subcommand_names("get");
-    let entity = normalize_token(&input.entity, &get_entities, "get entity")?;
-    let mut args = vec![
-        "biomcp".to_string(),
-        "get".to_string(),
-        entity.to_string(),
-        input.id.clone(),
+    let object = input
+        .0
+        .as_object()
+        .ok_or_else(|| input_error("typed get input must be an object"))?;
+    let entity = checked_text(object.get("entity").unwrap_or(&Value::Null), "entity", 256)?;
+    let allowed_entities = [
+        "author",
+        "gene",
+        "article",
+        "disease",
+        "diagnostic",
+        "pgx",
+        "trial",
+        "variant",
+        "drug",
+        "pathway",
+        "protein",
+        "adverse-event",
     ];
-    args.extend(input.sections.iter().map(|section| section.0.clone()));
+    if !allowed_entities.contains(&entity.as_str()) {
+        return Err(input_error("invalid typed get entity"));
+    }
+    let id = checked_text(object.get("id").unwrap_or(&Value::Null), "id", 512)?;
+    let allowed_keys = if entity == "author" {
+        &["entity", "id", "json"][..]
+    } else {
+        &["entity", "id", "sections", "json"][..]
+    };
+    if let Some(key) = object
+        .keys()
+        .find(|key| !allowed_keys.contains(&key.as_str()))
+    {
+        return Err(input_error(format!("unknown {entity} get field: {key}")));
+    }
+    let mut args = vec!["biomcp".into(), "get".into(), entity.clone(), id];
+    let sections = object
+        .get("sections")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if sections.len() > 16 {
+        return Err(input_error("sections accepts at most 16 unique values"));
+    }
+    let allowed_sections = crate::cli::list::catalog::sections(&entity);
+    let mut seen = BTreeSet::new();
+    for section in sections {
+        let section = checked_text(&section, "section", 256)?;
+        if !allowed_sections.contains(&section.as_str()) || !seen.insert(section.clone()) {
+            return Err(input_error(format!(
+                "invalid or duplicate {entity} section: {section}"
+            )));
+        }
+        args.push(section);
+    }
     if let Some(message) = binary_download_rejection(&args) {
         return Err(McpError::invalid_params(message, None));
     }
-    let allowed_sections = all_get_sections();
-    for section in &input.sections {
-        normalize_token(&section.0, &allowed_sections, "get section")?;
-    }
-    if input.json {
+    if object.get("json").and_then(Value::as_bool) == Some(true) {
         args = args_with_json(&args);
     }
+    crate::cli::try_parse_cli(args.clone()).map_err(|error| input_error(error.to_string()))?;
     Ok(args)
 }
 
@@ -681,7 +930,11 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedSearch>,
     ) -> Result<CallToolResult, McpError> {
-        let json = input.json;
+        let json = input
+            .0
+            .get("json")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let args = search_args(input)?;
         Self::execute_args(args, json).await
     }
@@ -691,7 +944,11 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedGet>,
     ) -> Result<CallToolResult, McpError> {
-        let json = input.json;
+        let json = input
+            .0
+            .get("json")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let args = get_args(input)?;
         Self::execute_args(args, json).await
     }
@@ -1113,24 +1370,15 @@ pub async fn run_http(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
-
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
         TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles, TypedVariantCar,
-        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, all_get_sections, binary_download_rejection,
-        get_args, get_section_groups, http_allowed_hosts, index_handler, is_allowed_mcp_command,
-        mcp_rejection_message, redact_mcp_json_text, redact_mcp_text, search_args,
-        subcommand_names, to_resource_result,
+        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, binary_download_rejection, http_allowed_hosts,
+        index_handler, is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text,
+        redact_mcp_text, search_args, to_resource_result,
     };
     use axum::Json;
-
-    fn section_names_from_sources() -> BTreeSet<&'static str> {
-        get_section_groups()
-            .iter()
-            .flat_map(|group| group.iter().copied())
-            .collect()
-    }
+    use serde_json::json;
 
     #[test]
     fn binary_downloads_are_rejected_but_manifests_remain_allowed() {
@@ -1228,17 +1476,44 @@ mod tests {
     }
 
     #[test]
-    fn typed_schema_sources_match_cli_entities_and_sections() {
-        assert!(subcommand_names("search").contains(&"pathway".to_string()));
-        assert!(subcommand_names("search").contains(&"author".to_string()));
-        assert!(subcommand_names("get").contains(&"author".to_string()));
-        assert!(subcommand_names("get").contains(&"gene".to_string()));
-        assert_eq!(
-            all_get_sections().into_iter().collect::<BTreeSet<String>>(),
-            section_names_from_sources()
-                .into_iter()
-                .map(str::to_string)
-                .collect::<BTreeSet<String>>()
+    fn typed_schemas_are_entity_specific() {
+        let search = serde_json::to_value(rmcp::schemars::schema_for!(TypedSearch)).unwrap();
+        assert_eq!(search["oneOf"].as_array().unwrap().len(), 8);
+        let gwas = search["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|branch| branch["properties"]["entity"]["const"] == "gwas")
+            .unwrap();
+        assert!(gwas["properties"].get("trait").is_some());
+        assert!(gwas["properties"].get("region").is_none());
+
+        let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
+        assert_eq!(get["oneOf"].as_array().unwrap().len(), 12);
+        let author = get["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|branch| branch["properties"]["entity"]["const"] == "author")
+            .unwrap();
+        assert!(author["properties"].get("sections").is_none());
+        let gene = get["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|branch| branch["properties"]["entity"]["const"] == "gene")
+            .unwrap();
+        assert!(
+            gene["properties"]["sections"]["items"]["enum"]
+                .as_array()
+                .unwrap()
+                .contains(&json!("pathways"))
+        );
+        assert!(
+            !gene["properties"]["sections"]["items"]["enum"]
+                .as_array()
+                .unwrap()
+                .contains(&json!("population"))
         );
     }
 
@@ -1363,70 +1638,55 @@ mod tests {
     }
 
     #[test]
-    fn typed_search_and_get_build_cli_args() {
-        let search = search_args(TypedSearch {
-            entity: "pathway".to_string(),
-            query: Some("MAPK signaling".to_string()),
-            limit: 5,
-            offset: 0,
-            json: true,
-        })
-        .expect("typed search args");
-        assert_eq!(
-            search,
-            [
-                "biomcp",
-                "search",
-                "pathway",
-                "MAPK signaling",
-                "--limit",
-                "5",
-                "--json"
-            ]
-        );
+    fn typed_search_maps_each_published_entity_and_rejects_schema_mismatches() {
+        for (input, expected) in [
+            (
+                json!({"entity":"article","keyword":["BRAF"],"gene":"BRAF","source":"pubmed"}),
+                "--keyword",
+            ),
+            (
+                json!({"entity":"trial","condition":["melanoma"],"phase":"2"}),
+                "--condition",
+            ),
+            (
+                json!({"entity":"variant","gene":"BRAF","hgvsp":"V600E"}),
+                "--hgvsp",
+            ),
+            (json!({"entity":"gene","region":"7:1-2"}), "--region"),
+            (
+                json!({"entity":"protein","query":"BRAF","reviewed":true}),
+                "--reviewed",
+            ),
+            (
+                json!({"entity":"pgx","gene":"CYP2D6","cpic_level":"A"}),
+                "--cpic-level",
+            ),
+            (
+                json!({"entity":"gwas","gene":"TCF7L2","trait":"diabetes"}),
+                "--trait",
+            ),
+            (
+                json!({"entity":"author","query":"Jane Doe","source":"semanticscholar"}),
+                "--source",
+            ),
+        ] {
+            let args = search_args(TypedSearch(input)).expect("published typed search");
+            assert!(
+                args.iter().any(|arg| arg == expected),
+                "missing {expected} in {args:?}"
+            );
+        }
 
-        let author = search_args(TypedSearch {
-            entity: "author".to_string(),
-            query: Some("Louis Williams".to_string()),
-            limit: 5,
-            offset: 0,
-            json: false,
-        })
-        .expect("typed author search args");
-        assert_eq!(
-            author,
-            [
-                "biomcp",
-                "search",
-                "author",
-                "--query",
-                "Louis Williams",
-                "--limit",
-                "5"
-            ]
-        );
-
-        let get = get_args(TypedGet {
-            entity: "gene".to_string(),
-            id: "BRAF".to_string(),
-            sections: vec![super::McpGetSection("pathways".to_string())],
-            json: false,
-        })
-        .expect("typed get args");
-        assert_eq!(get, ["biomcp", "get", "gene", "BRAF", "pathways"]);
-    }
-
-    #[test]
-    fn typed_search_rejects_out_of_schema_limit_before_cli_dispatch() {
-        let err = search_args(TypedSearch {
-            entity: "pathway".to_string(),
-            query: Some("MAPK".to_string()),
-            limit: 50,
-            offset: 0,
-            json: false,
-        })
-        .expect_err("limit over schema cap should be invalid params");
-        assert!(err.message.contains("typed search limit"));
+        for input in [
+            json!({"entity":"gwas","gene":"BRAF","region":"7:1-2"}),
+            json!({"entity":"pathway","query":"MAPK"}),
+            json!({"entity":"protein","query":"BRAF","reviewed":"yes"}),
+            json!({"entity":"gwas","gene":"BRAF","offset":49,"limit":2}),
+            json!({"entity":"gene","query":"BRAF","limit":50}),
+            json!({"entity":"trial","condition":["x"],"source":"nci","mutation":["a"],"criteria":["b"]}),
+        ] {
+            assert!(search_args(TypedSearch(input)).is_err());
+        }
     }
 
     #[test]

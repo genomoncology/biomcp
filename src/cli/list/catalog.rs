@@ -65,7 +65,7 @@ pub(super) fn entities() -> Vec<EntityCapability> {
         .collect()
 }
 
-fn sections(name: &str) -> &'static [&'static str] {
+pub(crate) fn sections(name: &str) -> &'static [&'static str] {
     match name {
         "gene" => crate::entities::gene::GENE_SECTION_NAMES,
         "variant" => crate::entities::variant::VARIANT_SECTION_NAMES,

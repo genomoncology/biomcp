@@ -2,7 +2,7 @@
 
 use crate::error::BioMcpError;
 
-mod catalog;
+pub(crate) mod catalog;
 mod clinical;
 mod helpers;
 mod literature;
