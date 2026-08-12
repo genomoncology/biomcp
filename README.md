@@ -304,7 +304,8 @@ key, BioMCP sends authenticated requests and uses a dedicated rate limit at
 `semanticscholar`, and `litsense2`. The default compatible article federation
 uses PubTator3, Europe PMC, PubMed, and automatic Semantic Scholar; use
 `--source semanticscholar` or `--source litsense2` explicitly when you want one
-of those sources alone. References
+of those sources alone. Explicit source selection also disables cross-provider
+row enrichment. References
 and recommendations can be empty for paywalled papers because of publisher
 elision in Semantic Scholar upstream coverage.
 

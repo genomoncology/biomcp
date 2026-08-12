@@ -273,10 +273,19 @@ pub(super) async fn enrich_and_finalize_article_candidates_with_semantic_scholar
     offset: usize,
     total: Option<usize>,
     filters: &ArticleSearchFilters,
+    enrichment_sources: &[ArticleSource],
 ) -> (SearchPage<ArticleSearchResult>, Option<ArticleSourceStatus>) {
-    let source_status = enrich_article_search_rows_with_semantic_scholar(&mut rows).await;
+    let source_status = if enrichment_sources.contains(&ArticleSource::SemanticScholar) {
+        enrich_article_search_rows_with_semantic_scholar(&mut rows).await
+    } else {
+        None
+    };
     let mut page = finalize_article_candidates(rows, limit, offset, total, filters);
-    enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
+    if enrichment_sources.contains(&ArticleSource::PubTator)
+        || enrichment_sources.contains(&ArticleSource::EuropePmc)
+    {
+        enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
+    }
     (page, source_status)
 }
 
@@ -286,9 +295,15 @@ pub(super) async fn enrich_and_finalize_article_candidates(
     offset: usize,
     total: Option<usize>,
     filters: &ArticleSearchFilters,
+    enrichment_sources: &[ArticleSource],
 ) -> SearchPage<ArticleSearchResult> {
     enrich_and_finalize_article_candidates_with_semantic_scholar_status(
-        rows, limit, offset, total, filters,
+        rows,
+        limit,
+        offset,
+        total,
+        filters,
+        enrichment_sources,
     )
     .await
     .0
@@ -296,9 +311,16 @@ pub(super) async fn enrich_and_finalize_article_candidates(
 
 pub(super) async fn enrich_visible_article_search_page(
     mut page: SearchPage<ArticleSearchResult>,
+    enrichment_sources: &[ArticleSource],
 ) -> SearchPage<ArticleSearchResult> {
-    let _ = enrich_article_search_rows_with_semantic_scholar(&mut page.results).await;
-    enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
+    if enrichment_sources.contains(&ArticleSource::SemanticScholar) {
+        let _ = enrich_article_search_rows_with_semantic_scholar(&mut page.results).await;
+    }
+    if enrichment_sources.contains(&ArticleSource::PubTator)
+        || enrichment_sources.contains(&ArticleSource::EuropePmc)
+    {
+        enrich_visible_article_search_rows_with_article_base(&mut page.results).await;
+    }
     page
 }
 

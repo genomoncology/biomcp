@@ -148,3 +148,31 @@ fn article_base_merge_fills_abstract_when_semantic_scholar_has_none() {
     );
     assert!(row.normalized_abstract.contains("hirschsprung"));
 }
+
+#[serial_test::serial(article_resolver_env)]
+#[tokio::test]
+async fn empty_enrichment_plan_makes_no_provider_requests() {
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+    let hits = Arc::new(AtomicUsize::new(0));
+    let observed = hits.clone();
+    let fixture = TestHttpFixture::spawn(move |_| {
+        observed.fetch_add(1, Ordering::SeqCst);
+        TestHttpReply::Bytes(test_http_response("200 OK", "application/json", b"[null]"))
+    })
+    .await;
+    let mut env = TestEnv::new();
+    for key in [
+        "BIOMCP_TEST_UNPACED_ORIGIN",
+        "BIOMCP_S2_BASE",
+        "BIOMCP_PUBTATOR_BASE",
+        "BIOMCP_EUROPEPMC_BASE",
+    ] {
+        env.set(key, &fixture.base);
+    }
+    let rows = vec![row_with("8896569", ArticleSource::PubMed, None, None, None)];
+    enrich_and_finalize_article_candidates(rows, 1, 0, None, &empty_filters(), &[]).await;
+    assert_eq!(hits.load(Ordering::SeqCst), 0);
+}

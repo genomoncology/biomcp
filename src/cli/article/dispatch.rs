@@ -247,11 +247,8 @@ pub(in crate::cli) async fn handle_search(
         let (page, exact_entity) = tokio::join!(search_future, exact_future);
         let exact_entity = match exact_entity {
             Ok(entity) => entity,
-            Err(err) => {
-                tracing::warn!(
-                    keyword = %query,
-                    "Exact article keyword entity lookup unavailable: {err}"
-                );
+            Err(_err) => {
+                tracing::warn!("Exact article keyword entity lookup unavailable");
                 None
             }
         };
@@ -321,6 +318,7 @@ pub(in crate::cli) async fn handle_search(
         article_search_json_with_detail(
             &query,
             filters,
+            source_filter,
             detail,
             semantic_scholar_enabled,
             article_type_note,
@@ -564,6 +562,15 @@ pub(super) fn build_article_debug_plan(
     source_status: &[crate::entities::article::ArticleSourceStatus],
 ) -> Result<crate::cli::debug_plan::DebugPlan, crate::error::BioMcpError> {
     let summary = crate::entities::article::summarize_debug_plan(filters, source_filter, results)?;
+    let mut routing = summary.routing;
+    routing.push(format!(
+        "candidate_sources={}",
+        summary.candidate_sources.join(",")
+    ));
+    routing.push(format!(
+        "enrichment_sources={}",
+        summary.enrichment_sources.join(",")
+    ));
     Ok(crate::cli::debug_plan::DebugPlan {
         surface: "search_article",
         query: query.to_string(),
@@ -572,7 +579,7 @@ pub(super) fn build_article_debug_plan(
             leg: "article".to_string(),
             entity: "article".to_string(),
             filters: article_debug_filters(filters, source_filter, limit),
-            routing: summary.routing,
+            routing,
             sources: summary.sources,
             matched_sources: summary.matched_sources,
             source_status: source_status.to_vec(),
@@ -604,6 +611,7 @@ pub(super) fn article_search_json(
     article_search_json_with_detail(
         query,
         filters,
+        crate::entities::article::ArticleSourceFilter::All,
         ArticleSearchDetail::Full,
         semantic_scholar_enabled,
         note,
@@ -612,9 +620,11 @@ pub(super) fn article_search_json(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn article_search_json_with_detail(
     query: &str,
     filters: &crate::entities::article::ArticleSearchFilters,
+    source_filter: crate::entities::article::ArticleSourceFilter,
     detail: ArticleSearchDetail,
     semantic_scholar_enabled: bool,
     note: Option<String>,
@@ -626,6 +636,7 @@ pub(super) fn article_search_json_with_detail(
         query: String,
         sort: String,
         semantic_scholar_enabled: bool,
+        source_plan: crate::entities::article::ArticleSourcePlan,
         #[serde(skip_serializing_if = "Option::is_none")]
         ranking_policy: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -653,6 +664,7 @@ pub(super) fn article_search_json_with_detail(
         query: query.to_string(),
         sort: filters.sort.as_str().to_string(),
         semantic_scholar_enabled,
+        source_plan: crate::entities::article::article_source_plan(filters, source_filter)?,
         ranking_policy: crate::entities::article::article_relevance_ranking_policy(filters),
         note,
         pagination: page.pagination,

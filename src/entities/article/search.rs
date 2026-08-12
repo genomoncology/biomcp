@@ -375,6 +375,7 @@ pub(super) async fn search_federated_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
+    enrichment_sources: &[ArticleSource],
 ) -> Result<ArticleSearchPage, BioMcpError> {
     let fetch_count = limit.saturating_add(offset);
     if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
@@ -395,6 +396,7 @@ pub(super) async fn search_federated_page(
             offset,
             None,
             filters,
+            enrichment_sources,
         )
         .await;
     if let Some(status) = enrichment_status {
@@ -567,6 +569,7 @@ async fn search_type_capable_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
+    enrichment_sources: &[ArticleSource],
 ) -> Result<ArticleSearchPage, BioMcpError> {
     let fetch_count = limit.saturating_add(offset);
     if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
@@ -585,9 +588,15 @@ async fn search_type_capable_page(
         ),
     );
     let capable = collect_type_capable_article_rows(europe_leg, pubmed_leg)?;
-    let page =
-        enrich_and_finalize_article_candidates(capable.rows, limit, offset, capable.total, filters)
-            .await;
+    let page = enrich_and_finalize_article_candidates(
+        capable.rows,
+        limit,
+        offset,
+        capable.total,
+        filters,
+        enrichment_sources,
+    )
+    .await;
     Ok(article_search_page(page, capable.source_status))
 }
 
@@ -596,6 +605,7 @@ async fn search_relevance_page(
     limit: usize,
     offset: usize,
     plan: BackendPlan,
+    enrichment_sources: &[ArticleSource],
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
     let fetch_count = limit.saturating_add(offset);
     if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
@@ -613,6 +623,7 @@ async fn search_relevance_page(
                 offset,
                 page.total,
                 filters,
+                enrichment_sources,
             )
             .await)
         }
@@ -624,6 +635,7 @@ async fn search_relevance_page(
                 offset,
                 page.total,
                 filters,
+                enrichment_sources,
             )
             .await)
         }
@@ -635,6 +647,7 @@ async fn search_relevance_page(
                 offset,
                 page.total,
                 filters,
+                enrichment_sources,
             )
             .await)
         }
@@ -642,14 +655,27 @@ async fn search_relevance_page(
             let outcome =
                 search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None)
                     .await?;
-            Ok(
-                enrich_and_finalize_article_candidates(outcome.rows, limit, offset, None, filters)
-                    .await,
+            Ok(enrich_and_finalize_article_candidates(
+                outcome.rows,
+                limit,
+                offset,
+                None,
+                filters,
+                enrichment_sources,
             )
+            .await)
         }
         BackendPlan::LitSense2Only => {
             let rows = search_litsense2_candidates(filters, fetch_count).await?;
-            Ok(enrich_and_finalize_article_candidates(rows, limit, offset, None, filters).await)
+            Ok(enrich_and_finalize_article_candidates(
+                rows,
+                limit,
+                offset,
+                None,
+                filters,
+                enrichment_sources,
+            )
+            .await)
         }
         BackendPlan::TypeCapable => {
             unreachable!("type-capable search is handled by search_page")
@@ -662,6 +688,7 @@ async fn search_semantic_scholar_page(
     filters: &ArticleSearchFilters,
     limit: usize,
     offset: usize,
+    enrichment_sources: &[ArticleSource],
 ) -> Result<ArticleSearchPage, BioMcpError> {
     let fetch_count = limit.saturating_add(offset);
     if fetch_count > MAX_FEDERATED_FETCH_RESULTS {
@@ -672,8 +699,15 @@ async fn search_semantic_scholar_page(
 
     let outcome =
         search_semantic_scholar_candidates(filters, fetch_count, None, "federated", None).await?;
-    let page =
-        enrich_and_finalize_article_candidates(outcome.rows, limit, offset, None, filters).await;
+    let page = enrich_and_finalize_article_candidates(
+        outcome.rows,
+        limit,
+        offset,
+        None,
+        filters,
+        enrichment_sources,
+    )
+    .await;
     Ok(article_search_page(page, vec![outcome.status]))
 }
 
@@ -685,18 +719,20 @@ pub async fn search_page(
 ) -> Result<ArticleSearchPage, BioMcpError> {
     validate_search_page_request(filters, limit, source)?;
     let plan = plan_backends(filters, source)?;
+    let source_plan = super::planner::article_source_plan(filters, source)?;
+    let enrichment_sources = source_plan.enrichment_sources.as_slice();
     if plan == BackendPlan::TypeCapable {
-        return search_type_capable_page(filters, limit, offset).await;
+        return search_type_capable_page(filters, limit, offset, enrichment_sources).await;
     }
     if filters.sort == ArticleSort::Relevance {
         if plan == BackendPlan::Both {
-            return search_federated_page(filters, limit, offset).await;
+            return search_federated_page(filters, limit, offset, enrichment_sources).await;
         }
         if plan == BackendPlan::SemanticScholarOnly {
-            return search_semantic_scholar_page(filters, limit, offset).await;
+            return search_semantic_scholar_page(filters, limit, offset, enrichment_sources).await;
         }
         return Ok(article_search_page(
-            search_relevance_page(filters, limit, offset, plan).await?,
+            search_relevance_page(filters, limit, offset, plan, enrichment_sources).await?,
             Vec::new(),
         ));
     }
@@ -704,28 +740,30 @@ pub async fn search_page(
         BackendPlan::EuropeOnly => {
             let page = search_europepmc_page(filters, limit, offset).await?;
             Ok(article_search_page(
-                enrich_visible_article_search_page(page).await,
+                enrich_visible_article_search_page(page, enrichment_sources).await,
                 Vec::new(),
             ))
         }
         BackendPlan::PubTatorOnly => {
             let page = search_pubtator_page(filters, limit, offset).await?;
             Ok(article_search_page(
-                enrich_visible_article_search_page(page).await,
+                enrich_visible_article_search_page(page, enrichment_sources).await,
                 Vec::new(),
             ))
         }
         BackendPlan::PubMedOnly | BackendPlan::LitSense2Only => Ok(article_search_page(
-            search_relevance_page(filters, limit, offset, plan).await?,
+            search_relevance_page(filters, limit, offset, plan, enrichment_sources).await?,
             Vec::new(),
         )),
         BackendPlan::TypeCapable => {
             unreachable!("type-capable search returned before sort dispatch")
         }
         BackendPlan::SemanticScholarOnly => {
-            search_semantic_scholar_page(filters, limit, offset).await
+            search_semantic_scholar_page(filters, limit, offset, enrichment_sources).await
         }
-        BackendPlan::Both => search_federated_page(filters, limit, offset).await,
+        BackendPlan::Both => {
+            search_federated_page(filters, limit, offset, enrichment_sources).await
+        }
     }
 }
 

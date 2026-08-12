@@ -522,10 +522,21 @@ pub fn article_search_markdown_with_footer_and_context(
     );
     let index_date_footer = newest_indexed_footer(results);
     let semantic_scholar_source_status_note = article_source_status_note(context.source_status);
+    let source_plan =
+        crate::entities::article::article_source_plan(filters, context.source_filter)?;
+    let source_names = |values: &[crate::entities::article::ArticleSource]| {
+        values
+            .iter()
+            .map(|value| value.display_name())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
 
     let tmpl = env()?.get_template("article_search.md.j2")?;
     let body = tmpl.render(context! {
         query => query,
+        candidate_sources => source_names(&source_plan.candidate_sources),
+        enrichment_sources => source_names(&source_plan.enrichment_sources),
         count => results.len(),
         rows => rows,
         semantic_scholar_enabled => context.semantic_scholar_enabled,

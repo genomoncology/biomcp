@@ -117,16 +117,22 @@ Europe PMC source status: degraded
 
 `--source semanticscholar` should use the same Semantic Scholar search client as
 federation, while keeping the returned rows attributable to Semantic Scholar.
-The fixture points only the Semantic Scholar base URL at a local handler, so the
-contract fails before the source value is accepted and passes without touching
-other article backends.
+The fixture points every article-provider base URL at one strict local handler
+and proves that the explicit route makes only its planned Semantic Scholar
+candidate request, with no cross-provider enrichment.
 
 ```bash
 bash ../fixtures/run-article-semanticscholar-source-search.sh ../.. \
   | mustmatch like '"semantic_scholar_enabled": true
+"source_plan": {
+"candidate_sources": [
+"semanticscholar"
+"enrichment_sources": []
 "source": "semanticscholar"
 "Semantic Scholar selectable source fixture"
-"planner=semanticscholar_only"'
+"planner=semanticscholar_only"
+"candidate_sources=Semantic Scholar"
+"enrichment_sources="'
 ```
 
 ## Federated Article Search Bounds Slow Sources

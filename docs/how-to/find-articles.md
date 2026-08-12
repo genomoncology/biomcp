@@ -81,6 +81,8 @@ Europe PMC, PubMed, and compatible Semantic Scholar; use `--source
 semanticscholar` or `--source litsense2` explicitly when you want one of those
 sources alone. `S2_API_KEY` upgrades Semantic Scholar
 requests to authenticated quota; without it, BioMCP uses the shared pool.
+Explicit `--source` routes do not contact Semantic Scholar for enrichment;
+responses show candidate and enrichment sources separately.
 BioMCP also caps each federated source's contribution after deduplication and
 before ranking. Default: 40% of `--limit` on federated pools with at least
 three surviving primary sources. Rows count against their primary source after

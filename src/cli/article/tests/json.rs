@@ -109,6 +109,14 @@ fn article_search_json_includes_query_and_ranking_context() {
     assert_eq!(value["query"], query);
     assert_eq!(value["sort"], "relevance");
     assert_eq!(value["semantic_scholar_enabled"], true);
+    assert_eq!(
+        value["source_plan"]["candidate_sources"],
+        serde_json::json!(["pubtator", "europepmc", "semanticscholar"])
+    );
+    assert_eq!(
+        value["source_plan"]["enrichment_sources"],
+        serde_json::json!(["semanticscholar"])
+    );
     let source_status = value["_meta"]["source_status"]
         .as_array()
         .expect("article search JSON should expose source status metadata");
@@ -555,6 +563,7 @@ fn compact_article_search_rows_preserve_triage_fields_and_date_warnings() {
     let compact = article_search_json_with_detail(
         "sort=date",
         &filters,
+        crate::entities::article::ArticleSourceFilter::All,
         ArticleSearchDetail::Compact,
         true,
         None,
@@ -565,6 +574,7 @@ fn compact_article_search_rows_preserve_triage_fields_and_date_warnings() {
     let full = article_search_json_with_detail(
         "sort=date",
         &filters,
+        crate::entities::article::ArticleSourceFilter::All,
         ArticleSearchDetail::Full,
         true,
         None,
@@ -614,6 +624,7 @@ fn date_warning_alone_retains_article_search_metadata() {
     let json = article_search_json_with_detail(
         "sort=date",
         &filters,
+        crate::entities::article::ArticleSourceFilter::All,
         ArticleSearchDetail::Compact,
         false,
         None,

@@ -25,8 +25,8 @@ pub use self::graph::{citations, recommendations, references};
 pub(crate) use self::identity_verification::VariantArticleVerificationOptions;
 #[allow(unused_imports)]
 pub(crate) use self::planner::{
-    ArticleSearchDebugSummary, BackendPlan, article_type_limitation_note, litsense2_search_enabled,
-    plan_backends, semantic_scholar_search_enabled, summarize_debug_plan,
+    ArticleSearchDebugSummary, BackendPlan, article_source_plan, article_type_limitation_note,
+    litsense2_search_enabled, plan_backends, semantic_scholar_search_enabled, summarize_debug_plan,
 };
 #[allow(unused_imports)]
 pub(crate) use self::ranking::{article_effective_ranking_mode, article_relevance_ranking_policy};
@@ -538,6 +538,12 @@ pub struct ArticleSourceStatus {
     pub status: Option<ArticleSourceAvailability>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleSourcePlan {
+    pub candidate_sources: Vec<ArticleSource>,
+    pub enrichment_sources: Vec<ArticleSource>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -34,7 +34,7 @@ The shared target path is `./target/release/biomcp`.
 ```bash
 ./target/release/biomcp health --apis-only
 ./target/release/biomcp get gene BRAF
-./target/release/biomcp get article 22663011 tldr   # requires S2_API_KEY
+./target/release/biomcp get article 22663011 tldr   # anonymous works; S2_API_KEY raises quota
 ```
 
 Use `docs/user-guide/cli-reference.md` for the full command grammar and entity

@@ -155,7 +155,9 @@ whose native author fields make every returned candidate an authorship match
 rather than a lexical match.
 Semantic Scholar and LitSense2 are also available as explicit single-source
 routes with `--source semanticscholar` and
-`--source litsense2`. BioMCP merges duplicates across PMID,
+`--source litsense2`. Any explicit source selection stays on that source: it
+does not silently enrich rows through Semantic Scholar or another metadata
+provider. The response reports candidate and enrichment source plans. BioMCP merges duplicates across PMID,
 PMCID, and DOI where possible. `S2_API_KEY` upgrades the Semantic
 Scholar leg to authenticated requests at 1 req/sec; without it, BioMCP uses
 the shared unauthenticated pool at 1 req/2sec. Search results are still

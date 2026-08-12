@@ -6,6 +6,7 @@ CACHE_DIR="$ROOT/.cache"
 mkdir -p "$CACHE_DIR"
 PORT_FILE="$CACHE_DIR/spec-article-semanticscholar-source-port"
 LOG_FILE="$CACHE_DIR/spec-article-semanticscholar-source.log"
+REQUEST_FILE="$CACHE_DIR/spec-article-semanticscholar-source.requests"
 PID_FILE="$CACHE_DIR/spec-article-semanticscholar-source.pid"
 
 cleanup() {
@@ -18,9 +19,9 @@ cleanup() {
 }
 trap cleanup EXIT
 cleanup
-rm -f "$PORT_FILE" "$LOG_FILE" "$PID_FILE"
+rm -f "$PORT_FILE" "$LOG_FILE" "$PID_FILE" "$REQUEST_FILE"
 
-uv run --no-sync python3 - "$PORT_FILE" >"$LOG_FILE" 2>&1 <<'PY' 8>&- &
+uv run --no-sync python3 - "$PORT_FILE" "$REQUEST_FILE" >"$LOG_FILE" 2>&1 <<'PY' 8>&- &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,6 +29,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 port_file = Path(sys.argv[1])
+request_file = Path(sys.argv[2])
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
@@ -43,6 +45,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        request_file.write_text(request_file.read_text() + parsed.path + "\n" if request_file.exists() else parsed.path + "\n")
         if parsed.path == "/graph/v1/paper/search":
             self.send_json({
                 "total": 1,
@@ -83,6 +86,11 @@ fi
 base="http://127.0.0.1:$(cat "$PORT_FILE")"
 BIOMCP_CACHE_DIR="$ROOT/.cache/biomcp-article-semanticscholar-source" \
 BIOMCP_S2_BASE="$base" \
+BIOMCP_PUBTATOR_BASE="$base" \
+BIOMCP_EUROPEPMC_BASE="$base" \
+BIOMCP_PUBMED_BASE="$base" \
+BIOMCP_LITSENSE2_BASE="$base" \
 BIOMCP_TEST_UNPACED_ORIGIN="$base" \
 S2_API_KEY="" \
   timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "BRAF melanoma" --source semanticscholar --debug-plan --limit 1
+test "$(cat "$REQUEST_FILE")" = "/graph/v1/paper/search"

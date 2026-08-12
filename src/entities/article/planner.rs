@@ -3,7 +3,10 @@
 use crate::error::BioMcpError;
 
 use super::filters::{has_article_type_filter, has_author_filter, has_keyword_query};
-use super::{ArticleSearchFilters, ArticleSearchResult, ArticleSource, ArticleSourceFilter};
+use super::{
+    ArticleSearchFilters, ArticleSearchResult, ArticleSource, ArticleSourceFilter,
+    ArticleSourcePlan,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum BackendPlan {
@@ -163,6 +166,43 @@ pub(crate) fn semantic_scholar_search_enabled(
         && !has_author_filter(filters)
 }
 
+pub fn article_source_plan(
+    filters: &ArticleSearchFilters,
+    source: ArticleSourceFilter,
+) -> Result<ArticleSourcePlan, BioMcpError> {
+    let candidates = match plan_backends(filters, source)? {
+        BackendPlan::EuropeOnly => vec![ArticleSource::EuropePmc],
+        BackendPlan::PubTatorOnly => vec![ArticleSource::PubTator],
+        BackendPlan::PubMedOnly => vec![ArticleSource::PubMed],
+        BackendPlan::SemanticScholarOnly => vec![ArticleSource::SemanticScholar],
+        BackendPlan::LitSense2Only => vec![ArticleSource::LitSense2],
+        BackendPlan::TypeCapable => vec![ArticleSource::EuropePmc, ArticleSource::PubMed],
+        BackendPlan::Both => {
+            let mut values = vec![ArticleSource::PubTator, ArticleSource::EuropePmc];
+            if pubmed_filter_compatible(filters) {
+                values.push(ArticleSource::PubMed);
+            }
+            if semantic_scholar_search_enabled(filters, source) {
+                values.push(ArticleSource::SemanticScholar);
+            }
+            values
+        }
+    };
+    let mut enrichment = Vec::new();
+    if source == ArticleSourceFilter::All {
+        if semantic_scholar_search_enabled(filters, source) {
+            enrichment.push(ArticleSource::SemanticScholar);
+        }
+        if candidates.contains(&ArticleSource::PubMed) {
+            enrichment.extend([ArticleSource::PubTator, ArticleSource::EuropePmc]);
+        }
+    }
+    Ok(ArticleSourcePlan {
+        candidate_sources: candidates,
+        enrichment_sources: enrichment,
+    })
+}
+
 pub(crate) fn litsense2_search_enabled(
     _filters: &ArticleSearchFilters,
     source: ArticleSourceFilter,
@@ -194,6 +234,8 @@ pub(crate) fn article_type_limitation_note(
 pub(crate) struct ArticleSearchDebugSummary {
     pub routing: Vec<String>,
     pub sources: Vec<String>,
+    pub candidate_sources: Vec<String>,
+    pub enrichment_sources: Vec<String>,
     pub matched_sources: Vec<String>,
 }
 
@@ -203,6 +245,7 @@ pub(crate) fn summarize_debug_plan(
     results: &[ArticleSearchResult],
 ) -> Result<ArticleSearchDebugSummary, BioMcpError> {
     let plan = plan_backends(filters, source)?;
+    let source_plan = article_source_plan(filters, source)?;
     let planner = match (plan, source) {
         (BackendPlan::EuropeOnly, ArticleSourceFilter::All)
             if filters.open_access
@@ -259,6 +302,16 @@ pub(crate) fn summarize_debug_plan(
     Ok(ArticleSearchDebugSummary {
         routing: vec![planner.to_string()],
         sources,
+        candidate_sources: source_plan
+            .candidate_sources
+            .iter()
+            .map(|value| value.display_name().to_string())
+            .collect(),
+        enrichment_sources: source_plan
+            .enrichment_sources
+            .iter()
+            .map(|value| value.display_name().to_string())
+            .collect(),
         matched_sources,
     })
 }

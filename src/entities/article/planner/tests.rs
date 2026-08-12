@@ -441,3 +441,20 @@ fn litsense2_search_enabled_only_for_explicit_litsense2_source() {
         ArticleSourceFilter::LitSense2
     ));
 }
+
+#[test]
+fn explicit_article_sources_have_no_cross_provider_enrichment() {
+    let mut filters = empty_filters();
+    filters.keyword = Some("BRAF melanoma".into());
+    for source in [
+        ArticleSourceFilter::PubMed,
+        ArticleSourceFilter::PubTator,
+        ArticleSourceFilter::EuropePmc,
+        ArticleSourceFilter::SemanticScholar,
+        ArticleSourceFilter::LitSense2,
+    ] {
+        let plan = article_source_plan(&filters, source).unwrap();
+        assert_eq!(plan.candidate_sources.len(), 1, "source={source:?}");
+        assert!(plan.enrichment_sources.is_empty(), "source={source:?}");
+    }
+}
