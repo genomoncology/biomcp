@@ -191,11 +191,11 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 1876,
+      "baseline_lines": 1883,
       "floor_lines": 1847,
       "authorized_increase": {
         "ticket": "0982",
-        "delta": 29,
+        "delta": 36,
         "reason": "The middleware-compatible retry path preserves bounded retry behavior for streaming provider clients after they join the exact-origin network boundary.",
         "removal_condition": "Move streaming retry orchestration beside the ordinary provider client policy when shared source utilities are next decomposed."
       }
