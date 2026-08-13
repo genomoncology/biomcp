@@ -42,6 +42,8 @@ execution failures:
 | `HttpMiddleware` | Retry/cache middleware failed | Retry; if persistent, clear cache and re-run with `--no-cache` |
 | `Api` | Upstream API returned an error response | Check API status, input values, and any source-specific constraints |
 | `ApiJson` | API response shape changed or returned malformed JSON | Retry once; if repeatable, report issue because upstream format may have changed |
+| `InputTooLarge` | A local structured input exceeded its command byte budget | Reduce the input below the reported `limit_bytes` |
+| `ProviderResponseLimit` | A provider document exceeded a bounded item or field contract | Select a smaller provider document or report the changed response shape |
 | `NotFound` | Requested entity ID was not found | Verify identifier format; run `search` before `get` when unsure |
 | `InvalidArgument` | Command arguments are invalid or inconsistent | Re-run with `--help` and correct flag values/section names |
 | `InternalProcessing` | BioMCP could not process data after a successful retrieval | Report the command and error code; retrying the provider will not repair a repeatable local processing failure |

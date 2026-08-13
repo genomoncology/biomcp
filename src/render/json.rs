@@ -328,6 +328,12 @@ struct AliasError {
     source: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     recovery: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    limit_bytes: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    limit: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    unit: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -343,12 +349,27 @@ struct ErrorMeta {
 
 pub(crate) fn to_error_json(error: &BioMcpError) -> Result<String, BioMcpError> {
     let projection = error.public_projection();
+    let (limit_bytes, limit, unit) = match error {
+        BioMcpError::InputTooLarge { limit_bytes } => (Some(*limit_bytes), None, None),
+        BioMcpError::ProviderResponseLimit { limit, unit, .. } => (None, Some(*limit), Some(*unit)),
+        BioMcpError::WithSourceContext { source, .. } => match source.as_ref() {
+            BioMcpError::InputTooLarge { limit_bytes } => (Some(*limit_bytes), None, None),
+            BioMcpError::ProviderResponseLimit { limit, unit, .. } => {
+                (None, Some(*limit), Some(*unit))
+            }
+            _ => (None, None, None),
+        },
+        _ => (None, None, None),
+    };
     to_pretty(&ErrorJsonResponse {
         error: AliasError {
             code: error.code(),
             message: projection.message,
             source: projection.source,
             recovery: projection.recovery,
+            limit_bytes,
+            limit,
+            unit,
         },
         _meta: ErrorMeta {
             not_found: error.is_not_found(),
@@ -445,6 +466,9 @@ pub(crate) fn to_alias_suggestion_json(
                 ),
                 source: None,
                 recovery: None,
+                limit_bytes: None,
+                limit: None,
+                unit: None,
             },
             _meta: AliasMeta {
                 not_found: true,
@@ -470,6 +494,9 @@ pub(crate) fn to_alias_suggestion_json(
                 ),
                 source: None,
                 recovery: None,
+                limit_bytes: None,
+                limit: None,
+                unit: None,
             },
             _meta: AliasMeta {
                 not_found: true,
@@ -537,6 +564,9 @@ pub(crate) fn to_variant_guidance_json(guidance: &VariantGuidance) -> Result<Str
             message: variant_guidance_message(guidance),
             source: None,
             recovery: None,
+            limit_bytes: None,
+            limit: None,
+            unit: None,
         },
         _meta: VariantGuidanceMeta {
             not_found: true,
@@ -636,6 +666,18 @@ mod tests {
         assert!(json.contains("API error from BioMCP source: Response body exceeded 42 bytes"));
         assert!(json.contains("\"source\": \"BioMCP source\""));
         assert!(!json.contains("body_limit"));
+    }
+
+    #[test]
+    fn input_limit_error_exposes_only_its_stable_byte_budget() {
+        let json = to_error_json(&BioMcpError::InputTooLarge {
+            limit_bytes: 65_536,
+        })
+        .unwrap();
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(value["error"]["code"], "input_too_large");
+        assert_eq!(value["error"]["limit_bytes"], 65_536);
+        assert!(value["error"].get("source").is_none());
     }
 
     #[test]

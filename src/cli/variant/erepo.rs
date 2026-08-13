@@ -4,24 +4,35 @@ use crate::cli::CommandOutcome;
 use crate::entities::variant::{ERepoBatchInput, ERepoResponse, retrieve_erepo};
 use crate::error::BioMcpError;
 
-async fn read_input(path: &str) -> Result<Vec<u8>, BioMcpError> {
-    const READ_LIMIT: u64 = 64 * 1024 + 1;
+pub(crate) const MAX_EREPO_INPUT_BYTES: usize = 65_536;
+
+async fn read_limited_input<R>(reader: R) -> Result<Vec<u8>, BioMcpError>
+where
+    R: tokio::io::AsyncRead + Unpin,
+{
     let mut bytes = Vec::new();
-    if path == "-" {
-        tokio::io::stdin()
-            .take(READ_LIMIT)
-            .read_to_end(&mut bytes)
-            .await
-    } else {
-        tokio::fs::File::open(path)
-            .await
-            .map_err(|_| BioMcpError::InvalidArgument("unable to read ERepo input file".into()))?
-            .take(READ_LIMIT)
-            .read_to_end(&mut bytes)
-            .await
+    reader
+        .take((MAX_EREPO_INPUT_BYTES + 1) as u64)
+        .read_to_end(&mut bytes)
+        .await
+        .map_err(BioMcpError::Io)?;
+    if bytes.len() > MAX_EREPO_INPUT_BYTES {
+        return Err(BioMcpError::InputTooLarge {
+            limit_bytes: MAX_EREPO_INPUT_BYTES,
+        });
     }
-    .map_err(|_| BioMcpError::InvalidArgument("unable to read ERepo input".into()))?;
     Ok(bytes)
+}
+
+async fn read_input(path: &str) -> Result<Vec<u8>, BioMcpError> {
+    if path == "-" {
+        read_limited_input(tokio::io::stdin()).await
+    } else {
+        let file = tokio::fs::File::open(path)
+            .await
+            .map_err(|_| BioMcpError::InvalidArgument("unable to read ERepo input file".into()))?;
+        read_limited_input(file).await
+    }
 }
 
 pub(super) async fn handle(
@@ -119,6 +130,24 @@ fn render_markdown(response: &ERepoResponse) -> String {
 mod tests {
     use super::*;
     use crate::entities::variant::{ERepoAssertion, ERepoCriterion, ERepoItem, ERepoSourceStatus};
+
+    #[tokio::test]
+    async fn input_reader_accepts_exact_limit_and_rejects_one_extra_byte() {
+        let exact = read_limited_input(std::io::Cursor::new(vec![b' '; MAX_EREPO_INPUT_BYTES]))
+            .await
+            .expect("exact limit");
+        assert_eq!(exact.len(), MAX_EREPO_INPUT_BYTES);
+
+        let error = read_limited_input(std::io::Cursor::new(vec![b' '; MAX_EREPO_INPUT_BYTES + 1]))
+            .await
+            .expect_err("sentinel byte must be rejected");
+        assert!(matches!(
+            error,
+            BioMcpError::InputTooLarge {
+                limit_bytes: MAX_EREPO_INPUT_BYTES
+            }
+        ));
+    }
 
     #[test]
     fn markdown_reports_source_facts_without_json() {

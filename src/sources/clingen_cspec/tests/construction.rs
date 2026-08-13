@@ -3,6 +3,13 @@ use crate::sources::HttpMethod;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 #[test]
+fn cspec_production_timeouts_match_shared_provider_policy() {
+    let timeouts = CspecTimeouts::default();
+    assert_eq!(timeouts.connect, Duration::from_secs(10));
+    assert_eq!(timeouts.request, Duration::from_secs(30));
+}
+
+#[test]
 fn cspec_plans_keep_manifest_and_document_provider_paths() {
     let manifest = CspecClient::manifest_plan("ATM");
     assert_eq!(manifest.method, HttpMethod::Get);
@@ -92,4 +99,41 @@ async fn cspec_execution_methods_consume_manifest_and_document_plans() {
     assert!(
         requests[1].starts_with("GET /cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1 ")
     );
+}
+
+#[tokio::test]
+async fn cspec_request_deadline_covers_headers_and_body_with_safe_attribution() {
+    for stall_after_headers in [false, true] {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind timeout fixture");
+        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.expect("accept request");
+            let mut request = [0_u8; 1024];
+            let _ = stream.read(&mut request).await.expect("read request");
+            if stall_after_headers {
+                stream
+                    .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n{")
+                    .await
+                    .expect("write partial response");
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        });
+        let client = CspecClient::with_test_timeouts_at(
+            base,
+            Duration::from_millis(25),
+            Duration::from_millis(25),
+        )
+        .expect("test client");
+
+        let error = client
+            .manifest("PTEN")
+            .await
+            .expect_err("stalled request must time out");
+        let projection = error.public_projection();
+        assert_eq!(projection.source, Some("ClinGen CSpec"));
+        assert!(!projection.message.contains("127.0.0.1"));
+        server.await.expect("timeout fixture");
+    }
 }

@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::time::Duration;
 
 use reqwest::{StatusCode, Url};
 use serde_json::Value;
@@ -10,6 +11,8 @@ use crate::sources::{
 };
 
 pub(crate) const CSPEC_BASE: &str = "https://cspec.clinicalgenome.org";
+const CSPEC_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const CSPEC_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const MANIFEST_LIMIT: usize = 256 * 1024;
 const DOCUMENT_LIMIT: usize = 4 * 1024 * 1024;
 
@@ -19,10 +22,27 @@ pub(crate) struct CspecClient {
     fixture_origin: Option<Url>,
 }
 
+#[derive(Clone, Copy)]
+struct CspecTimeouts {
+    connect: Duration,
+    request: Duration,
+}
+
+impl Default for CspecTimeouts {
+    fn default() -> Self {
+        Self {
+            connect: CSPEC_CONNECT_TIMEOUT,
+            request: CSPEC_REQUEST_TIMEOUT,
+        }
+    }
+}
+
 impl CspecClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::cspec()?;
         let client = reqwest::Client::builder()
+            .connect_timeout(CspecTimeouts::default().connect)
+            .timeout(CspecTimeouts::default().request)
             .dns_resolver(policy.dns_resolver())
             .redirect(policy.redirect_policy())
             .build()
@@ -53,6 +73,25 @@ impl CspecClient {
             base: Cow::Owned(base),
             fixture_origin: None,
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_test_timeouts_at(
+        base: String,
+        connect: Duration,
+        request: Duration,
+    ) -> Result<Self, BioMcpError> {
+        let client = reqwest::Client::builder()
+            .connect_timeout(connect)
+            .timeout(request)
+            .redirect(reqwest::redirect::Policy::limited(10))
+            .build()
+            .map_err(BioMcpError::HttpClientInit)?;
+        Ok(Self {
+            client: reqwest_middleware::ClientBuilder::new(client).build(),
+            base: Cow::Owned(base),
+            fixture_origin: None,
+        })
     }
 
     pub(crate) fn manifest_plan(gene: &str) -> RequestPlan {

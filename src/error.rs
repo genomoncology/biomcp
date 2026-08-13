@@ -356,6 +356,14 @@ pub enum BioMcpError {
         source_name: String,
         max_bytes: usize,
     },
+    InputTooLarge {
+        limit_bytes: usize,
+    },
+    ProviderResponseLimit {
+        source_name: String,
+        limit: usize,
+        unit: &'static str,
+    },
     CtGovInterventionQueryRejected {
         reason: String,
     },
@@ -461,6 +469,9 @@ impl BioMcpError {
             Self::BodyLimit { max_bytes, .. } => {
                 format!("API error from {source}: Response body exceeded {max_bytes} bytes")
             }
+            Self::ProviderResponseLimit { limit, unit, .. } => {
+                format!("API response from {source} exceeded the {limit} {unit} limit.")
+            }
             Self::SourceUnavailable { .. } => {
                 format!("Source unavailable: {source} is not available.")
             }
@@ -473,6 +484,7 @@ impl BioMcpError {
                 format!("Local installation cannot be changed by {source}.")
             }
             Self::InvalidArgument(_) => format!("Invalid request for {source}."),
+            Self::InputTooLarge { .. } => format!("Input for {source} was too large."),
             Self::InternalProcessing => "Internal processing failed.".to_string(),
             Self::CaptureUnavailable | Self::CaptureCorrupt | Self::BindingConflict => {
                 "Captured source material could not be used.".to_string()
@@ -500,6 +512,14 @@ impl BioMcpError {
                 source_name,
                 max_bytes,
             } => format!("API error from {source_name}: Response body exceeded {max_bytes} bytes"),
+            Self::InputTooLarge { limit_bytes } => {
+                format!("Input exceeds the {limit_bytes}-byte limit.")
+            }
+            Self::ProviderResponseLimit {
+                source_name,
+                limit,
+                unit,
+            } => format!("API response from {source_name} exceeded the {limit} {unit} limit."),
             Self::CtGovInterventionQueryRejected { .. } => {
                 "ClinicalTrials.gov rejected the intervention query.".to_string()
             }
@@ -567,6 +587,10 @@ impl BioMcpError {
                     RecoveryAction::ReviewSourceConfiguration
                 },
             )),
+            Self::ProviderResponseLimit { source_name, .. } => Some(SourceContext::new(
+                SourceProvider::from_legacy(source_name).unwrap_or(SourceProvider::UNKNOWN),
+                RecoveryAction::NarrowRequest,
+            )),
             Self::SourceUnavailable { source_name, .. } => Some(SourceContext::new(
                 SourceProvider::from_legacy(source_name).unwrap_or(SourceProvider::UNKNOWN),
                 RecoveryAction::ReviewSourceConfiguration,
@@ -602,9 +626,10 @@ impl BioMcpError {
             Self::HttpClientInit(_) => "http_client_init",
             Self::Http(_) => "http",
             Self::HttpMiddleware(_) => "http_middleware",
-            Self::Api { .. }
-            | Self::BodyLimit { .. }
-            | Self::CtGovInterventionQueryRejected { .. } => "api",
+            Self::Api { .. } | Self::CtGovInterventionQueryRejected { .. } => "api",
+            Self::BodyLimit { .. } => "api",
+            Self::InputTooLarge { .. } => "input_too_large",
+            Self::ProviderResponseLimit { .. } => "provider_response_limit",
             Self::ApiJson { .. } => "api_json",
             Self::NotFound { .. } => "not_found",
             Self::ArticleAssetNotRetrievable(_) => "article_asset_not_retrievable",
@@ -637,7 +662,7 @@ impl BioMcpError {
     pub fn exit_code(&self) -> u8 {
         match self {
             Self::WithSourceContext { source, .. } => source.exit_code(),
-            Self::InvalidArgument(_) => 2,
+            Self::InvalidArgument(_) | Self::InputTooLarge { .. } => 2,
             _ => 1,
         }
     }
@@ -651,6 +676,7 @@ impl fmt::Display for BioMcpError {
             | Self::Api { .. }
             | Self::ApiJson { .. }
             | Self::BodyLimit { .. }
+            | Self::ProviderResponseLimit { .. }
             | Self::SourceUnavailable { .. }
             | Self::WithSourceContext { .. } => {
                 let projection = self.public_projection();
@@ -668,6 +694,9 @@ impl fmt::Display for BioMcpError {
                     formatter,
                     "ClinicalTrials.gov intervention query rejected: {reason}"
                 )
+            }
+            Self::InputTooLarge { limit_bytes } => {
+                write!(formatter, "Input exceeds the {limit_bytes}-byte limit.")
             }
             Self::NotFound {
                 entity,
