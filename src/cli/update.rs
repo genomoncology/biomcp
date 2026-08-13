@@ -7,6 +7,7 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 use crate::error::BioMcpError;
+use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
 
 const GITHUB_API: &str = "https://api.github.com/repos/genomoncology/biomcp/releases/latest";
 const GITHUB_API_NAME: &str = "github";
@@ -273,7 +274,7 @@ fn binary_name_for_platform() -> &'static str {
 }
 
 async fn fetch_latest_release_from(url: &str) -> Result<GithubRelease, BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let (client, url) = update_client(url)?;
     let resp = client
         .get(url)
         .with_extension(CacheMode::NoStore)
@@ -302,7 +303,7 @@ async fn fetch_latest_release() -> Result<GithubRelease, BioMcpError> {
 }
 
 async fn download_asset_with_limit(url: &str, max_bytes: usize) -> Result<Vec<u8>, BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let (client, url) = update_client(url)?;
     let request = client.get(url).with_extension(CacheMode::NoStore);
     let resp = crate::sources::with_response_body_limit(request, max_bytes, GITHUB_API_NAME)
         .send()
@@ -325,7 +326,7 @@ async fn download_archive(url: &str) -> Result<Vec<u8>, BioMcpError> {
 }
 
 async fn download_asset_optional(url: &str) -> Result<Option<Vec<u8>>, BioMcpError> {
-    let client = crate::sources::shared_client()?;
+    let (client, url) = update_client(url)?;
     let request = client.get(url).with_extension(CacheMode::NoStore);
     let resp = crate::sources::with_response_body_limit(
         request,
@@ -347,6 +348,27 @@ async fn download_asset_optional(url: &str) -> Result<Option<Vec<u8>>, BioMcpErr
         });
     }
     Ok(Some(bytes.to_vec()))
+}
+
+fn update_client(
+    raw_url: &str,
+) -> Result<(reqwest_middleware::ClientWithMiddleware, reqwest::Url), BioMcpError> {
+    let url = reqwest::Url::parse(raw_url)
+        .map_err(|_| BioMcpError::InvalidArgument("Invalid release URL".into()))?;
+    #[cfg(test)]
+    let policy = if url.host_str().is_some_and(|host| {
+        host.trim_matches(['[', ']'])
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|address| address.is_loopback())
+    }) {
+        ProviderUrlPolicy::test_fixture(ProviderUrlConsumer::GithubRelease, &url)?
+    } else {
+        ProviderUrlPolicy::for_consumer(ProviderUrlConsumer::GithubRelease, None)?
+    };
+    #[cfg(not(test))]
+    let policy = ProviderUrlPolicy::for_consumer(ProviderUrlConsumer::GithubRelease, None)?;
+    policy.validate_url(&url)?;
+    Ok((crate::sources::provider_url_client(&policy)?, url))
 }
 
 fn parse_sha256_from_checksum_file(text: &str) -> Option<String> {

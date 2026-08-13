@@ -32,6 +32,12 @@ const FIGSHARE_ORIGINS: &[&str] = &[
     "https://s3-eu-west-1.amazonaws.com",
 ];
 const CTGOV_DOCUMENT_ORIGINS: &[&str] = &["https://cdn.clinicaltrials.gov"];
+const GITHUB_RELEASE_ORIGINS: &[&str] = &[
+    "https://api.github.com",
+    "https://github.com",
+    "https://objects.githubusercontent.com",
+    "https://release-assets.githubusercontent.com",
+];
 const CSPEC_ORIGINS: &[&str] = &[
     "https://cspec.clinicalgenome.org",
     "https://cspec.genome.network",
@@ -58,6 +64,7 @@ provider_url_consumers!(
     PmcLinkedArticleAsset,
     FigshareDownload,
     ClinicalTrialsDocument,
+    GithubRelease,
 );
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -235,6 +242,11 @@ impl ProviderUrlPolicy {
                 "ClinicalTrials.gov document",
                 SourceProvider::CLINICAL_TRIALS,
                 CTGOV_DOCUMENT_ORIGINS,
+            ),
+            ProviderUrlConsumer::GithubRelease => (
+                "GitHub release",
+                SourceProvider::UNKNOWN,
+                GITHUB_RELEASE_ORIGINS,
             ),
         };
         let mut allowed_origins = origins
@@ -747,6 +759,10 @@ mod tests {
                     "https://cdn.clinicaltrials.gov/large-docs/48/NCT03361748/Protocol.pdf",
                     "ClinicalTrials.gov",
                 ),
+                ProviderUrlConsumer::GithubRelease => (
+                    "https://api.github.com/repos/genomoncology/biomcp/releases/latest",
+                    "BioMCP source",
+                ),
             };
             let policy = ProviderUrlPolicy::for_consumer(consumer, None).unwrap();
             assert!(policy.validate_url(&Url::parse(valid_url).unwrap()).is_ok());
@@ -850,6 +866,11 @@ mod tests {
                 ProviderUrlConsumer::ClinicalTrialsDocument,
                 include_str!("../entities/trial/documents.rs"),
                 "ProviderUrlConsumer::ClinicalTrialsDocument",
+            ),
+            (
+                ProviderUrlConsumer::GithubRelease,
+                include_str!("../cli/update.rs"),
+                "ProviderUrlConsumer::GithubRelease",
             ),
         ];
         assert_eq!(sites.len(), ProviderUrlConsumer::ALL.len());
