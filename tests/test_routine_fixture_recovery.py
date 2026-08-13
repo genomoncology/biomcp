@@ -257,6 +257,21 @@ SERVER_FIXTURES = (
     ),
 )
 
+SUPERVISED_SETUP_FIXTURES = (
+    ("article-fulltext-source", "setup-article-fulltext-source-fixture.sh", "cleanup-article-fulltext-source-fixture.sh", "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE"),
+    ("ctgov-intervention-alias", "setup-ctgov-intervention-alias-spec-fixture.sh", "cleanup-ctgov-intervention-alias-spec-fixture.sh", "BIOMCP_CTGOV_INTERVENTION_ALIAS"),
+    ("variant-identity", "setup-variant-identity-spec-fixture.sh", "cleanup-variant-identity-spec-fixture.sh", "BIOMCP_VARIANT_IDENTITY"),
+    ("clingen-cspec", "setup-clingen-cspec-spec-fixture.sh", "cleanup-clingen-cspec-spec-fixture.sh", "BIOMCP_CSPEC_FIXTURE"),
+    ("cpic", "setup-cpic-spec-fixture.sh", "cleanup-cpic-spec-fixture.sh", "BIOMCP_CPIC_FIXTURE"),
+    ("complexportal", "setup-complexportal-spec-fixture.sh", "cleanup-complexportal-spec-fixture.sh", "BIOMCP_COMPLEXPORTAL_FIXTURE"),
+    ("drug-ae-fallback", "setup-drug-ae-fallback-spec-fixture.sh", "cleanup-drug-ae-fallback-spec-fixture.sh", "BIOMCP_DRUG_AE_FALLBACK"),
+    ("mychem-empty", "setup-mychem-empty-spec-fixture.sh", "cleanup-mychem-empty-spec-fixture.sh", "BIOMCP_MYCHEM_EMPTY"),
+    ("section-outcomes", "setup-section-outcomes-spec-fixture.sh", "cleanup-section-outcomes-spec-fixture.sh", "BIOMCP_SECTION_OUTCOMES_FIXTURE"),
+    ("study-download-error", "setup-study-download-error-fixture.sh", "cleanup-study-download-error-fixture.sh", "BIOMCP_STUDY_DOWNLOAD_ERROR"),
+    ("vaers", "setup-vaers-spec-fixture.sh", "cleanup-vaers-spec-fixture.sh", "BIOMCP_VAERS_FIXTURE"),
+    ("article-federated-timeout", "setup-article-federated-timeout-fixture.sh", "cleanup-article-federated-timeout-fixture.sh", "BIOMCP_ARTICLE_FEDERATED_TIMEOUT_FIXTURE"),
+)
+
 
 def _wait_until(predicate, timeout: float = 10.0) -> None:
     deadline = time.monotonic() + timeout
@@ -278,6 +293,57 @@ def _read_exports(path: Path) -> dict[str, str]:
 
 def _read_record(path: Path) -> dict[str, str]:
     return dict(line.split("=", 1) for line in path.read_text().splitlines())
+
+
+@pytest.mark.parametrize(
+    "fixture_kind, setup_name, cleanup_name, variable_prefix",
+    SUPERVISED_SETUP_FIXTURES,
+)
+def test_adopted_setup_fixture_dies_with_its_real_exported_owner(
+    tmp_path: Path,
+    fixture_kind: str,
+    setup_name: str,
+    cleanup_name: str,
+    variable_prefix: str,
+) -> None:
+    workspace = tmp_path / "workspace with space"
+    workspace.mkdir()
+    for name in ("spec", "testdata", "tests"):
+        (workspace / name).symlink_to(REPO_ROOT / name, target_is_directory=True)
+    ready = workspace / "owner-ready"
+    owner = subprocess.Popen(
+        [
+            "bash",
+            "-c",
+            'stat="$(< /proc/$$/stat)"; rest="${stat#*) }"; '
+            'read -r -a fields <<<"$rest"; '
+            'export ROUTINE_FIXTURE_OWNER_PID="$$" ROUTINE_FIXTURE_OWNER_START_ID="${fields[19]}"; '
+            'bash "$1" "$2" >/dev/null; touch "$3"; while :; do sleep 1; done',
+            "fixture-owner",
+            str(REPO_ROOT / "spec" / "fixtures" / setup_name),
+            str(workspace),
+            str(ready),
+        ],
+        start_new_session=True,
+    )
+    record_path = workspace / ".cache" / f"spec-{fixture_kind}-ownership"
+    try:
+        _wait_until(lambda: ready.exists() and record_path.exists())
+        record = _read_record(record_path)
+        server_pid = int(record[f"{variable_prefix}_PID"])
+        fixture_root = Path(record[f"{variable_prefix}_ROOT"])
+        owner.kill()
+        assert owner.wait(timeout=10) == -signal.SIGKILL
+        _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())
+        _wait_until(lambda: not fixture_root.exists())
+    finally:
+        if owner.poll() is None:
+            owner.kill()
+            owner.wait()
+        subprocess.run(
+            ["bash", str(REPO_ROOT / "spec" / "fixtures" / cleanup_name), str(workspace)],
+            check=False,
+        )
 
 
 @pytest.mark.parametrize(
@@ -348,6 +414,8 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
     shutil.copy2(REPO_ROOT / "scripts" / "run-specs.sh", workspace / "scripts")
     for name in (
         "routine-fixture-ownership.sh",
+        "fixture-supervisor.py",
+        "fixture-supervisor.sh",
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
         "cleanup-ctgov-intervention-alias-spec-fixture.sh",
@@ -563,6 +631,8 @@ def test_sigkill_orphan_releases_routine_lock_before_stale_recovery(
     (workspace / ".cache").mkdir()
     for name in (
         "routine-fixture-ownership.sh",
+        "fixture-supervisor.py",
+        "fixture-supervisor.sh",
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
         "setup-ctgov-intervention-alias-spec-fixture.sh",

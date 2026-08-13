@@ -5,13 +5,19 @@ workspace_root="${1:-$PWD}"
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-section-outcomes-env"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 cleanup_script="$script_dir/cleanup-section-outcomes-spec-fixture.sh"
 
 mkdir -p "$cache_dir"
 bash "$cleanup_script" "$workspace_root"
+recover_fixture_orphans "$cache_dir" "section-outcomes" "spec-section-outcomes."
 
 fixture_root="$(mktemp -d "$cache_dir/spec-section-outcomes.XXXXXX")"
+owner_arg="$(bash "$ownership_helper" new-owner "section-outcomes" "$fixture_root")"
 ready_file="$fixture_root/base-url"
+server_pid_file="$fixture_root/server-pid"
 server_log="$fixture_root/server.log"
 server_pid=""
 
@@ -30,7 +36,9 @@ cleanup_on_error() {
 }
 trap cleanup_on_error EXIT
 
-python3 - "$ready_file" 8>&- <<'PY' >"$server_log" 2>&1 &
+prepare_fixture_supervisor_owner
+start_fixture_supervisor "section-outcomes" "$cache_dir" "$fixture_root" "spec-section-outcomes." "$server_pid_file" \
+  python3 - "$ready_file" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -140,7 +148,10 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
-server_pid=$!
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+server_pid="$(<"$server_pid_file")"
 
 for _ in $(seq 1 50); do
   if [ -s "$ready_file" ]; then
@@ -164,5 +175,6 @@ printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_PID=%q\n' "$server_pid" >>"$env_f
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 
+bash "$ownership_helper" write "$workspace_root" "section-outcomes" "$fixture_root" "$server_pid" "BIOMCP_SECTION_OUTCOMES_FIXTURE" "$owner_arg" >/dev/null
 trap - EXIT
 printf '%s\n' "$fixture_root"

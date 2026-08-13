@@ -37,25 +37,27 @@ prepare_fixture_supervisor_owner() {
 }
 
 start_fixture_supervisor() {
-  local parent="$1" root="$2" prefix="$3" pid_file="$4"
-  shift 4
+  local kind="$1" parent="$2" root="$3" prefix="$4" pid_file="$5"
+  shift 5
   if [[ -z "${fixture_supervisor_owner_pid:-}" || -z "${fixture_supervisor_owner_start:-}" ]]; then
     prepare_fixture_supervisor_owner
   fi
   exec 8>&-
   exec setsid python3 "$_fixture_supervisor_dir/fixture-supervisor.py" launch \
     "$fixture_supervisor_owner_pid" "$fixture_supervisor_owner_start" \
-    "$parent" "$root" "$prefix" "$pid_file" -- "$@"
+    "$kind" "$parent" "$root" "$prefix" "$pid_file" -- "$@"
+}
+
+recover_fixture_orphans() {
+  local parent="$1" kind="$2" prefix="$3"
+  python3 "$_fixture_supervisor_dir/fixture-supervisor.py" recover \
+    "$parent" "$kind" "$prefix"
 }
 
 recover_disease_survival_orphans() {
-  local parent="$1"
-  python3 "$_fixture_supervisor_dir/fixture-supervisor.py" recover-disease \
-    "$parent" "spec-disease-survival."
+  recover_fixture_orphans "$1" "disease-survival" "spec-disease-survival."
 }
 
 recover_provider_contract_orphans() {
-  local parent="$1"
-  python3 "$_fixture_supervisor_dir/fixture-supervisor.py" recover-disease \
-    "$parent" "spec-provider-contract."
+  recover_fixture_orphans "$1" "provider-contract" "spec-provider-contract."
 }

@@ -33,7 +33,7 @@ cp -R "$script_dir/who-ivd" "$who_ivd_dir"
 find "$ema_dir" "$who_dir" "$who_ivd_dir" "$gtr_dir" -type f -exec touch {} +
 prepare_fixture_supervisor_owner
 
-start_fixture_supervisor "$cache_dir" "$fixture_root" "spec-provider-contract." "$server_pid_file" \
+start_fixture_supervisor "provider-contract" "$cache_dir" "$fixture_root" "spec-provider-contract." "$server_pid_file" \
   python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path

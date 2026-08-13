@@ -5,6 +5,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 root="$(cd "${1:-$PWD}" && pwd)"
 cache="$root/.cache"
 env_file="$cache/spec-cpic-env"
@@ -13,12 +15,16 @@ mkdir -p "$cache"
 fixture_root="$(mktemp -d "$cache/spec-cpic.XXXXXX")"
 owner_arg="$(bash "$ownership_helper" new-owner "cpic" "$fixture_root")"
 bash "$script_dir/cleanup-cpic-spec-fixture.sh" "$root"
+recover_fixture_orphans "$cache" "cpic" "spec-cpic."
 ready="$fixture_root/origin"
 requests="$fixture_root/requests.log"
+server_pid_file="$fixture_root/server-pid"
 : >"$requests"
 
+prepare_fixture_supervisor_owner
 READY="$ready" REQUESTS="$requests" FIXTURE_DATA="$fixture_data" \
-  setsid python3 - "$owner_arg" 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
+  start_fixture_supervisor "cpic" "$cache" "$fixture_root" "spec-cpic." "$server_pid_file" \
+  python3 - "$owner_arg" <<'PY' >"$fixture_root/server.log" 2>&1 &
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -92,10 +98,13 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 ready.write_text(f"http://127.0.0.1:{server.server_port}")
 server.serve_forever()
 PY
-pid=$!
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+pid="$(<"$server_pid_file")"
 cleanup_incomplete_setup() {
   kill -TERM -- "-$pid" 2>/dev/null || true
-  wait "$pid" 2>/dev/null || true
+  wait "$supervisor_pid" 2>/dev/null || true
   rm -rf "$fixture_root"
 }
 trap cleanup_incomplete_setup EXIT

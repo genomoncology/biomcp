@@ -3,21 +3,23 @@ set -euo pipefail
 
 ROOT="${1:?repo root required}"
 CACHE_DIR="$ROOT/.cache"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OWNERSHIP_HELPER="$SCRIPT_DIR/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$SCRIPT_DIR/fixture-supervisor.sh"
 mkdir -p "$CACHE_DIR"
-PORT_FILE="$CACHE_DIR/spec-article-federated-timeout-port"
 ENV_FILE="$CACHE_DIR/spec-article-federated-timeout-env"
-LOG_FILE="$CACHE_DIR/spec-article-federated-timeout.log"
-PID_FILE="$CACHE_DIR/spec-article-federated-timeout.pid"
+bash "$SCRIPT_DIR/cleanup-article-federated-timeout-fixture.sh" "$ROOT"
+recover_fixture_orphans "$CACHE_DIR" "article-federated-timeout" "spec-article-federated-timeout."
+FIXTURE_ROOT="$(mktemp -d "$CACHE_DIR/spec-article-federated-timeout.XXXXXX")"
+OWNER_ARG="$(bash "$OWNERSHIP_HELPER" new-owner "article-federated-timeout" "$FIXTURE_ROOT")"
+PORT_FILE="$FIXTURE_ROOT/port"
+LOG_FILE="$FIXTURE_ROOT/server.log"
+PID_FILE="$FIXTURE_ROOT/server-pid"
 
-if [[ -f "$PID_FILE" ]]; then
-  old_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
-  if [[ -n "$old_pid" ]]; then
-    kill "$old_pid" 2>/dev/null || true
-  fi
-fi
-rm -f "$PORT_FILE" "$ENV_FILE" "$LOG_FILE" "$PID_FILE"
-
-uv run --no-sync python3 - "$PORT_FILE" >"$LOG_FILE" 2>&1 <<'PY' 8>&- &
+prepare_fixture_supervisor_owner
+start_fixture_supervisor "article-federated-timeout" "$CACHE_DIR" "$FIXTURE_ROOT" "spec-article-federated-timeout." "$PID_FILE" \
+  python3 - "$PORT_FILE" "$OWNER_ARG" >"$LOG_FILE" 2>&1 <<'PY' &
 import json
 import sys
 import time
@@ -108,8 +110,10 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 port_file.write_text(str(server.server_address[1]))
 server.serve_forever()
 PY
-pid=$!
-echo "$pid" >"$PID_FILE"
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$PID_FILE" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$PID_FILE"
+pid="$(<"$PID_FILE")"
 
 for _ in $(seq 1 100); do
   if [[ -s "$PORT_FILE" ]]; then
@@ -127,6 +131,7 @@ port="$(cat "$PORT_FILE")"
 base="http://127.0.0.1:$port"
 cat >"$ENV_FILE" <<EOF
 export BIOMCP_ARTICLE_FEDERATED_TIMEOUT_FIXTURE_PID="$pid"
+export BIOMCP_ARTICLE_FEDERATED_TIMEOUT_FIXTURE_ROOT="$FIXTURE_ROOT"
 export BIOMCP_PUBTATOR_BASE="$base"
 export BIOMCP_EUROPEPMC_BASE="$base"
 export BIOMCP_PUBMED_BASE="$base/entrez/eutils"
@@ -135,3 +140,4 @@ export BIOMCP_TEST_UNPACED_ORIGIN="$base"
 export BIOMCP_LITSENSE2_BASE="$base"
 export S2_API_KEY=""
 EOF
+bash "$OWNERSHIP_HELPER" write "$ROOT" "article-federated-timeout" "$FIXTURE_ROOT" "$pid" "BIOMCP_ARTICLE_FEDERATED_TIMEOUT_FIXTURE" "$OWNER_ARG" >/dev/null

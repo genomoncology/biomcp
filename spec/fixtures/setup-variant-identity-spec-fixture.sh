@@ -3,6 +3,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 
 workspace_root="${1:-$PWD}"
 cache_dir="$workspace_root/.cache"
@@ -12,15 +14,19 @@ cleanup_script="$script_dir/cleanup-variant-identity-spec-fixture.sh"
 
 mkdir -p "$cache_dir"
 bash "$cleanup_script" "$workspace_root"
+recover_fixture_orphans "$cache_dir" "variant-identity" "spec-variant-identity."
 
 fixture_root="$(mktemp -d "$cache_dir/spec-variant-identity.XXXXXX")"
 owner_arg="$(bash "$ownership_helper" new-owner "variant-identity" "$fixture_root")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
 request_log="$fixture_root/request.log"
+server_pid_file="$fixture_root/server-pid"
 : >"$request_log"
 
-setsid python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" 8>&- <<'PY' >"$server_log" 2>&1 &
+prepare_fixture_supervisor_owner
+start_fixture_supervisor "variant-identity" "$cache_dir" "$fixture_root" "spec-variant-identity." "$server_pid_file" \
+  python3 - "$workspace_root" "$ready_file" "$request_log" "$owner_arg" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -144,10 +150,13 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 READY.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
-server_pid=$!
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+server_pid="$(<"$server_pid_file")"
 cleanup_partial_setup() {
   kill -TERM -- "-$server_pid" 2>/dev/null || true
-  wait "$server_pid" 2>/dev/null || true
+  wait "$supervisor_pid" 2>/dev/null || true
   rm -rf "$fixture_root"
 }
 trap cleanup_partial_setup EXIT

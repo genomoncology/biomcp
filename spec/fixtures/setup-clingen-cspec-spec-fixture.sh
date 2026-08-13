@@ -5,6 +5,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 
 root="$(cd "${1:-$PWD}" && pwd)"
 cache="$root/.cache"
@@ -14,11 +16,16 @@ fixture_root="$(mktemp -d "$cache/spec-clingen-cspec.XXXXXX")"
 mkdir -p "$fixture_root/cache"
 owner_arg="$(bash "$ownership_helper" new-owner "clingen-cspec" "$fixture_root")"
 bash "$(dirname "$0")/cleanup-clingen-cspec-spec-fixture.sh" "$root"
+recover_fixture_orphans "$cache" "clingen-cspec" "spec-clingen-cspec."
 ready="$fixture_root/origin"
 requests="$fixture_root/requests.jsonl"
+server_pid_file="$fixture_root/server-pid"
 : >"$requests"
 
-CAPTURES="$root/testdata/sources/clingen_cspec" READY="$ready" REQUESTS="$requests" setsid python3 - "$owner_arg" 8>&- <<'PY' >"$fixture_root/server.log" 2>&1 &
+prepare_fixture_supervisor_owner
+CAPTURES="$root/testdata/sources/clingen_cspec" READY="$ready" REQUESTS="$requests" \
+  start_fixture_supervisor "clingen-cspec" "$cache" "$fixture_root" "spec-clingen-cspec." "$server_pid_file" \
+  python3 - "$owner_arg" <<'PY' >"$fixture_root/server.log" 2>&1 &
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -56,10 +63,13 @@ server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
 READY.write_text(f'http://127.0.0.1:{server.server_port}')
 server.serve_forever()
 PY
-pid=$!
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+pid="$(<"$server_pid_file")"
 cleanup_incomplete_setup() {
   kill -TERM -- "-$pid" 2>/dev/null || true
-  wait "$pid" 2>/dev/null || true
+  wait "$supervisor_pid" 2>/dev/null || true
   rm -rf "$fixture_root"
 }
 trap cleanup_incomplete_setup EXIT

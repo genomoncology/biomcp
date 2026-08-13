@@ -3,6 +3,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 
 workspace_root="${1:-$PWD}"
 cache_dir="$workspace_root/.cache"
@@ -15,6 +17,7 @@ mkdir -p "$cache_dir"
 if [ -x "$cleanup_script" ]; then
   bash "$cleanup_script" "$workspace_root"
 fi
+recover_fixture_orphans "$cache_dir" "ctgov-intervention-alias" "spec-ctgov-intervention-alias."
 
 fixture_root="$(mktemp -d "$cache_dir/spec-ctgov-intervention-alias.XXXXXX")"
 owner_arg="$(bash "$ownership_helper" new-owner "ctgov-intervention-alias" "$fixture_root")"
@@ -37,7 +40,9 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 trap 'exit 129' HUP
 
-setsid python3 - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" "$workspace_root" 8>&- <<'PY' >"$server_log" 2>&1 &
+prepare_fixture_supervisor_owner
+start_fixture_supervisor "ctgov-intervention-alias" "$cache_dir" "$fixture_root" "spec-ctgov-intervention-alias." "$server_pid_file" \
+  python3 - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" "$workspace_root" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -502,13 +507,13 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
-fixture_pgid=$!
+supervisor_pid=$!
 
 for _ in $(seq 1 50); do
   if [ -s "$ready_file" ]; then
     break
   fi
-  if ! kill -0 "$fixture_pgid" 2>/dev/null; then
+  if ! kill -0 "$supervisor_pid" 2>/dev/null; then
     cat "$server_log" >&2
     exit 1
   fi
@@ -517,6 +522,7 @@ done
 
 test -s "$ready_file"
 test -s "$server_pid_file"
+fixture_pgid="$(<"$server_pid_file")"
 base_url="$(cat "$ready_file")"
 
 printf 'export BIOMCP_CTGOV_BASE=%q\n' "$base_url/api/v2" >"$env_file"

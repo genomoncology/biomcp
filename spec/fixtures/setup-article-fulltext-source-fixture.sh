@@ -3,6 +3,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 
 workspace_root="${1:-$PWD}"
 repo_root="$(git -C "$workspace_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$workspace_root")"
@@ -15,15 +17,19 @@ exec 9>"$lock_file"
 flock 9
 
 bash "$repo_root/spec/fixtures/cleanup-article-fulltext-source-fixture.sh" "$workspace_root"
+recover_fixture_orphans "$cache_dir" "article-fulltext-source" "spec-article-fulltext-source."
 
 fixture_root="$(mktemp -d "$cache_dir/spec-article-fulltext-source.XXXXXX")"
 owner_arg="$(bash "$ownership_helper" new-owner "article-fulltext-source" "$fixture_root")"
 ready_file="$fixture_root/base-url"
 server_log="$fixture_root/server.log"
 request_log="$fixture_root/request-log.txt"
+server_pid_file="$fixture_root/server-pid"
 : > "$request_log"
 
-setsid python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources" "$owner_arg" 8>&- 9>&- <<'PY' >"$server_log" 2>&1 &
+prepare_fixture_supervisor_owner
+start_fixture_supervisor "article-fulltext-source" "$cache_dir" "$fixture_root" "spec-article-fulltext-source." "$server_pid_file" \
+  python3 - "$ready_file" "$repo_root/tests/fixtures/article/fulltext" "$request_log" "$repo_root/testdata/sources" "$owner_arg" 9>&- <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -1146,10 +1152,14 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 ready_path.write_text(f"http://127.0.0.1:{server.server_port}\n", encoding="utf-8")
 server.serve_forever()
 PY
-server_pid=$!
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+server_pid="$(<"$server_pid_file")"
 fixture_pgid="$server_pid"
 cleanup_failed_setup() {
   kill -TERM -- "-$fixture_pgid" 2>/dev/null || true
+  wait "$supervisor_pid" 2>/dev/null || true
   rm -rf "$fixture_root"
   rm -f "$env_file"
 }

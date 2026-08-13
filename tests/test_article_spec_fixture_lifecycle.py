@@ -44,6 +44,8 @@ def _copy_article_fixture(workspace: Path, *, include_data: bool = True) -> None
     fixtures.mkdir(parents=True, exist_ok=True)
     for name in (
         "routine-fixture-ownership.sh",
+        "fixture-supervisor.py",
+        "fixture-supervisor.sh",
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
     ):

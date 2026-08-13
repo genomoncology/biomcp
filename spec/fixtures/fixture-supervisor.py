@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 
 MARKER_RE = re.compile(
-    r"^routine-fixture-owner:disease-survival:([0-9a-f]{32}):(/.+)$"
+    r"^routine-fixture-owner:([a-z0-9][a-z0-9-]*):([0-9a-f]{32}):(/.+)$"
 )
 
 
@@ -54,7 +54,9 @@ def validated_root(parent: Path, root: str, prefix: str) -> Path | None:
     return canonical_root
 
 
-def marker_root(argv: list[bytes], parent: Path, prefix: str) -> Path | None:
+def marker_root(
+    argv: list[bytes], parent: Path, kind: str, prefix: str
+) -> Path | None:
     for argument in argv:
         try:
             marker = argument.decode("utf-8")
@@ -63,13 +65,17 @@ def marker_root(argv: list[bytes], parent: Path, prefix: str) -> Path | None:
         matched = MARKER_RE.fullmatch(marker)
         if matched is None:
             continue
-        root = validated_root(parent, matched.group(2), prefix)
+        if matched.group(1) != kind:
+            continue
+        root = validated_root(parent, matched.group(3), prefix)
         if root is not None:
             return root
     return None
 
 
-def process_marker_root(pid: int, parent: Path, prefix: str) -> Path | None:
+def process_marker_root(
+    pid: int, parent: Path, kind: str, prefix: str
+) -> Path | None:
     try:
         argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
     except (FileNotFoundError, PermissionError, OSError):
@@ -82,7 +88,7 @@ def process_marker_root(pid: int, parent: Path, prefix: str) -> Path | None:
                 return None
         except OSError:
             return None
-    return marker_root(argv, parent, prefix)
+    return marker_root(argv, parent, kind, prefix)
 
 
 def remove_root(root: Path, parent: Path, prefix: str) -> None:
@@ -161,6 +167,10 @@ def launch(args: argparse.Namespace) -> int:
     root = validated_root(parent, args.root, args.prefix)
     if root is None:
         raise ValueError("fixture root is not an owned direct child of its parent")
+    if marker_root(
+        [os.fsencode(value) for value in args.command], parent, args.kind, args.prefix
+    ) != root:
+        raise ValueError("server command does not carry its authenticated owner marker")
     pidfd = open_owner_pidfd(args.owner_pid, args.owner_start_id)
     child: subprocess.Popen[bytes] | None = None
     try:
@@ -179,7 +189,7 @@ def launch(args: argparse.Namespace) -> int:
             remove_root(root, parent, args.prefix)
 
 
-def recover_disease(args: argparse.Namespace) -> int:
+def recover(args: argparse.Namespace) -> int:
     parent = Path(args.parent)
     try:
         parent = parent.resolve(strict=True)
@@ -194,7 +204,7 @@ def recover_disease(args: argparse.Namespace) -> int:
         if fields is None or fields[0] != 1 or fields[1] != pid:
             continue
         start_id = fields[2]
-        root = process_marker_root(pid, parent, args.prefix)
+        root = process_marker_root(pid, parent, args.kind, args.prefix)
         if root is None:
             continue
         # Procfs observations are mutable: authenticate the same process again
@@ -207,13 +217,13 @@ def recover_disease(args: argparse.Namespace) -> int:
             or fields[2] != start_id
         ):
             continue
-        if process_marker_root(pid, parent, args.prefix) != root:
+        if process_marker_root(pid, parent, args.kind, args.prefix) != root:
             continue
         stop_group(pid)
         remove_root(root, parent, args.prefix)
         collected += 1
     print(
-        f"fixture supervisor: collected {collected} disease-survival orphan(s)",
+        f"fixture supervisor: collected {collected} {args.kind} orphan(s)",
         file=sys.stderr,
     )
     return 0
@@ -225,13 +235,15 @@ def parser() -> argparse.ArgumentParser:
     launch_parser = commands.add_parser("launch")
     launch_parser.add_argument("owner_pid", type=int)
     launch_parser.add_argument("owner_start_id", type=int)
+    launch_parser.add_argument("kind")
     launch_parser.add_argument("parent")
     launch_parser.add_argument("root")
     launch_parser.add_argument("prefix")
     launch_parser.add_argument("pid_file")
     launch_parser.add_argument("command", nargs=argparse.REMAINDER)
-    recover_parser = commands.add_parser("recover-disease")
+    recover_parser = commands.add_parser("recover")
     recover_parser.add_argument("parent")
+    recover_parser.add_argument("kind")
     recover_parser.add_argument("prefix")
     return result
 
@@ -242,7 +254,7 @@ def main() -> int:
         if not args.command:
             raise ValueError("launch requires a server command")
         return launch(args)
-    return recover_disease(args)
+    return recover(args)
 
 
 if __name__ == "__main__":
