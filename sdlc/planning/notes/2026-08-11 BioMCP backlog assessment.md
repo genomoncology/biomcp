@@ -517,6 +517,17 @@ External identities, protected-environment policy, hosted platform evidence,
 and Ian's approval remain real requirements and must never be marked complete
 from workflow text or local fixtures alone. Expected backlog: **19 → 12**.
 
+Result on 2026-08-12: all seven tickets were implemented as separate commits
+and completion records in one focused session. The repository now has a sealed
+13-artifact private candidate transaction, protected signing policy, five
+native/wheel targets, two-platform OCI image, generated Homebrew formula,
+signed MCPB construction, and a protected public-proof promotion path. Local
+fixtures exercised publication failure and replay without making public writes.
+The complete lint, test, specification, and all-feature gates passed. The
+committed signing policy remains intentionally disabled and unprovisioned; no
+candidate was staged, approved, tagged, published, or promoted. Backlog:
+**19 → 12**.
+
 ### Post-release substream 1: ClinGen completion — three tickets
 
 Tickets: **0880, 0908, and 0962**.
