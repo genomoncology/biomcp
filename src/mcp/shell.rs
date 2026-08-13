@@ -337,7 +337,7 @@ fn variant_article_strategy(
 const RESOURCE_HELP_URI: &str = "biomcp://help";
 const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
 const CACHE_FAMILY_MCP_REJECTION_MESSAGE: &str = "Error: biomcp cache commands are CLI-only over MCP because they reveal workstation-local filesystem paths.";
-const VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: variant articles --input is CLI-only over raw MCP because it reads server-local files or stdin; use the typed variant_articles tool instead.";
+const LOCAL_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: --input file and stdin arguments are CLI-only over raw MCP because they read server-local state; use the matching typed MCP tool instead.";
 
 impl BioMcpServer {
     pub fn new() -> Self {
@@ -437,16 +437,21 @@ impl Default for BioMcpServer {
     }
 }
 
-fn raw_variant_articles_reads_input(args: &[String]) -> bool {
-    args.get(1)
+fn raw_command_reads_local_input(args: &[String]) -> bool {
+    if !args
+        .get(1)
         .is_some_and(|value| value.eq_ignore_ascii_case("variant"))
-        && args
-            .get(2)
-            .is_some_and(|value| value.eq_ignore_ascii_case("articles"))
-        && args
-            .iter()
-            .skip(3)
-            .any(|value| value == "--input" || value.starts_with("--input="))
+    {
+        return false;
+    }
+    let option_start = match args.get(2).map(|value| value.to_ascii_lowercase()) {
+        Some(command) if command == "articles" || command == "erepo" => 3,
+        Some(command) if command == "normalize" => 4,
+        _ => return false,
+    };
+    args.iter()
+        .skip(option_start)
+        .any(|value| value == "--input" || value.starts_with("--input="))
 }
 
 fn is_allowed_mcp_command(args: &[String]) -> bool {
@@ -456,7 +461,7 @@ fn is_allowed_mcp_command(args: &[String]) -> bool {
     };
 
     match cmd.as_str() {
-        "variant" => !raw_variant_articles_reads_input(args),
+        "variant" => !raw_command_reads_local_input(args),
         "search" | "get" | "drug" | "disease" | "article" | "gene" | "pathway" | "protein"
         | "list" | "version" | "health" | "batch" | "enrich" | "discover" => true,
         "study" => {
@@ -490,8 +495,8 @@ fn mcp_rejection_message(args: &[String]) -> &'static str {
         .is_some_and(|cmd| cmd.trim().eq_ignore_ascii_case("cache"))
     {
         CACHE_FAMILY_MCP_REJECTION_MESSAGE
-    } else if raw_variant_articles_reads_input(args) {
-        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE
+    } else if raw_command_reads_local_input(args) {
+        LOCAL_INPUT_MCP_REJECTION_MESSAGE
     } else {
         GENERIC_MCP_REJECTION_MESSAGE
     }
@@ -1538,8 +1543,8 @@ pub async fn run_http(
 mod tests {
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
-        TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles, TypedVariantCar,
-        VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, binary_download_rejection, get_args,
+        LOCAL_INPUT_MCP_REJECTION_MESSAGE, TypedGeneCspec, TypedGet, TypedSearch,
+        TypedVariantArticles, TypedVariantCar, binary_download_rejection, get_args,
         host_is_allowed, http_allowed_hosts, index_handler, is_allowed_mcp_command,
         mcp_rejection_message, normalized_authority, redact_mcp_json_text, redact_mcp_text,
         search_args, to_resource_result,
@@ -2103,20 +2108,58 @@ mod tests {
     }
 
     #[test]
-    fn raw_variant_article_input_rejection_directs_callers_to_the_typed_tool() {
-        for input in [["--input", "/server/private.json"], ["--input=-", ""]] {
-            let mut args = vec!["biomcp".into(), "variant".into(), "articles".into()];
-            args.extend(
-                input
-                    .into_iter()
-                    .filter(|value| !value.is_empty())
-                    .map(String::from),
-            );
-            assert_eq!(
-                mcp_rejection_message(&args),
-                VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE
-            );
+    fn raw_local_input_rejection_covers_every_spelling_and_variant_route() {
+        for prefix in [
+            &["biomcp", "variant", "articles"][..],
+            &["biomcp", "variant", "erepo"][..],
+            &["biomcp", "variant", "normalize", "car"][..],
+        ] {
+            for input in [["--input", "/server/private.json"], ["--input=-", ""]] {
+                let mut args = prefix
+                    .iter()
+                    .map(|value| (*value).to_string())
+                    .collect::<Vec<_>>();
+                args.extend(
+                    input
+                        .into_iter()
+                        .filter(|value| !value.is_empty())
+                        .map(String::from),
+                );
+                assert!(!is_allowed_mcp_command(&args));
+                assert_eq!(
+                    mcp_rejection_message(&args),
+                    LOCAL_INPUT_MCP_REJECTION_MESSAGE
+                );
+            }
         }
+    }
+
+    #[test]
+    fn raw_mcp_local_input_inventory_matches_the_cli_surface() {
+        use clap::CommandFactory;
+
+        fn collect(command: &clap::Command, path: &mut Vec<String>, found: &mut Vec<String>) {
+            if command
+                .get_arguments()
+                .any(|argument| argument.get_id().as_str() == "input")
+            {
+                found.push(path.join(" "));
+            }
+            for child in command.get_subcommands() {
+                path.push(child.get_name().to_string());
+                collect(child, path, found);
+                path.pop();
+            }
+        }
+
+        let command = crate::cli::Cli::command();
+        let mut found = Vec::new();
+        collect(&command, &mut Vec::new(), &mut found);
+        found.sort();
+        assert_eq!(
+            found,
+            ["variant articles", "variant erepo", "variant normalize"]
+        );
     }
 
     #[test]
