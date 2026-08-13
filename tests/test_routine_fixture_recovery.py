@@ -258,26 +258,102 @@ SERVER_FIXTURES = (
 )
 
 SUPERVISED_SETUP_FIXTURES = (
-    ("article-fulltext-source", "setup-article-fulltext-source-fixture.sh", "cleanup-article-fulltext-source-fixture.sh", "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE"),
-    ("ctgov-intervention-alias", "setup-ctgov-intervention-alias-spec-fixture.sh", "cleanup-ctgov-intervention-alias-spec-fixture.sh", "BIOMCP_CTGOV_INTERVENTION_ALIAS"),
-    ("variant-identity", "setup-variant-identity-spec-fixture.sh", "cleanup-variant-identity-spec-fixture.sh", "BIOMCP_VARIANT_IDENTITY"),
-    ("clingen-cspec", "setup-clingen-cspec-spec-fixture.sh", "cleanup-clingen-cspec-spec-fixture.sh", "BIOMCP_CSPEC_FIXTURE"),
-    ("cpic", "setup-cpic-spec-fixture.sh", "cleanup-cpic-spec-fixture.sh", "BIOMCP_CPIC_FIXTURE"),
-    ("complexportal", "setup-complexportal-spec-fixture.sh", "cleanup-complexportal-spec-fixture.sh", "BIOMCP_COMPLEXPORTAL_FIXTURE"),
-    ("drug-ae-fallback", "setup-drug-ae-fallback-spec-fixture.sh", "cleanup-drug-ae-fallback-spec-fixture.sh", "BIOMCP_DRUG_AE_FALLBACK"),
-    ("mychem-empty", "setup-mychem-empty-spec-fixture.sh", "cleanup-mychem-empty-spec-fixture.sh", "BIOMCP_MYCHEM_EMPTY"),
-    ("section-outcomes", "setup-section-outcomes-spec-fixture.sh", "cleanup-section-outcomes-spec-fixture.sh", "BIOMCP_SECTION_OUTCOMES_FIXTURE"),
-    ("study-download-error", "setup-study-download-error-fixture.sh", "cleanup-study-download-error-fixture.sh", "BIOMCP_STUDY_DOWNLOAD_ERROR"),
-    ("vaers", "setup-vaers-spec-fixture.sh", "cleanup-vaers-spec-fixture.sh", "BIOMCP_VAERS_FIXTURE"),
-    ("article-federated-timeout", "setup-article-federated-timeout-fixture.sh", "cleanup-article-federated-timeout-fixture.sh", "BIOMCP_ARTICLE_FEDERATED_TIMEOUT_FIXTURE"),
+    (
+        "article-fulltext-source",
+        "setup-article-fulltext-source-fixture.sh",
+        "cleanup-article-fulltext-source-fixture.sh",
+        "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE",
+    ),
+    (
+        "ctgov-intervention-alias",
+        "setup-ctgov-intervention-alias-spec-fixture.sh",
+        "cleanup-ctgov-intervention-alias-spec-fixture.sh",
+        "BIOMCP_CTGOV_INTERVENTION_ALIAS",
+    ),
+    (
+        "variant-identity",
+        "setup-variant-identity-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
+        "BIOMCP_VARIANT_IDENTITY",
+    ),
+    (
+        "clingen-cspec",
+        "setup-clingen-cspec-spec-fixture.sh",
+        "cleanup-clingen-cspec-spec-fixture.sh",
+        "BIOMCP_CSPEC_FIXTURE",
+    ),
+    (
+        "cpic",
+        "setup-cpic-spec-fixture.sh",
+        "cleanup-cpic-spec-fixture.sh",
+        "BIOMCP_CPIC_FIXTURE",
+    ),
+    (
+        "complexportal",
+        "setup-complexportal-spec-fixture.sh",
+        "cleanup-complexportal-spec-fixture.sh",
+        "BIOMCP_COMPLEXPORTAL_FIXTURE",
+    ),
+    (
+        "drug-ae-fallback",
+        "setup-drug-ae-fallback-spec-fixture.sh",
+        "cleanup-drug-ae-fallback-spec-fixture.sh",
+        "BIOMCP_DRUG_AE_FALLBACK",
+    ),
+    (
+        "mychem-empty",
+        "setup-mychem-empty-spec-fixture.sh",
+        "cleanup-mychem-empty-spec-fixture.sh",
+        "BIOMCP_MYCHEM_EMPTY",
+    ),
+    (
+        "section-outcomes",
+        "setup-section-outcomes-spec-fixture.sh",
+        "cleanup-section-outcomes-spec-fixture.sh",
+        "BIOMCP_SECTION_OUTCOMES_FIXTURE",
+    ),
+    (
+        "study-download-error",
+        "setup-study-download-error-fixture.sh",
+        "cleanup-study-download-error-fixture.sh",
+        "BIOMCP_STUDY_DOWNLOAD_ERROR",
+    ),
+    (
+        "vaers",
+        "setup-vaers-spec-fixture.sh",
+        "cleanup-vaers-spec-fixture.sh",
+        "BIOMCP_VAERS_FIXTURE",
+    ),
+    (
+        "article-federated-timeout",
+        "setup-article-federated-timeout-fixture.sh",
+        "cleanup-article-federated-timeout-fixture.sh",
+        "BIOMCP_ARTICLE_FEDERATED_TIMEOUT_FIXTURE",
+    ),
 )
 
 SUPERVISED_RUN_WRAPPERS = (
-    ("run-article-semanticscholar-source", "run-article-semanticscholar-source-search.sh", "BIOMCP_RUN_ARTICLE_SEMANTICSCHOLAR_SOURCE"),
+    (
+        "run-article-semanticscholar-source",
+        "run-article-semanticscholar-source-search.sh",
+        "BIOMCP_RUN_ARTICLE_SEMANTICSCHOLAR_SOURCE",
+    ),
     ("run-clingen-erepo", "run-clingen-erepo-fixture.sh", "BIOMCP_RUN_CLINGEN_EREPO"),
-    ("run-section-outcome-mcp", "run-section-outcome-mcp.sh", "BIOMCP_RUN_SECTION_OUTCOME_MCP"),
-    ("run-variant-article-entity", "run-variant-article-entity-fixture.sh", "BIOMCP_RUN_VARIANT_ARTICLE_ENTITY"),
-    ("run-variant-article-identity", "run-variant-article-identity-fixture.sh", "BIOMCP_RUN_VARIANT_ARTICLE_IDENTITY"),
+    (
+        "run-section-outcome-mcp",
+        "run-section-outcome-mcp.sh",
+        "BIOMCP_RUN_SECTION_OUTCOME_MCP",
+    ),
+    (
+        "run-variant-article-entity",
+        "run-variant-article-entity-fixture.sh",
+        "BIOMCP_RUN_VARIANT_ARTICLE_ENTITY",
+    ),
+    (
+        "run-variant-article-identity",
+        "run-variant-article-identity-fixture.sh",
+        "BIOMCP_RUN_VARIANT_ARTICLE_IDENTITY",
+    ),
 )
 
 
@@ -349,7 +425,11 @@ def test_adopted_setup_fixture_dies_with_its_real_exported_owner(
             owner.kill()
             owner.wait()
         subprocess.run(
-            ["bash", str(REPO_ROOT / "spec" / "fixtures" / cleanup_name), str(workspace)],
+            [
+                "bash",
+                str(REPO_ROOT / "spec" / "fixtures" / cleanup_name),
+                str(workspace),
+            ],
             check=False,
         )
 
@@ -416,7 +496,9 @@ def test_run_wrapper_sigkill_reaps_server_group_and_owned_root(
             subprocess.run(
                 [
                     "bash",
-                    str(REPO_ROOT / "spec" / "fixtures" / "routine-fixture-ownership.sh"),
+                    str(
+                        REPO_ROOT / "spec" / "fixtures" / "routine-fixture-ownership.sh"
+                    ),
                     "cleanup",
                     str(workspace),
                     fixture_kind,
