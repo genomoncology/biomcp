@@ -40,9 +40,10 @@ pub struct CBioPortalDownloadClient {
 
 impl CBioPortalDownloadClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(DATAHUB_BASE, DATAHUB_BASE_ENV);
         Ok(Self {
-            client: datahub_client(DATAHUB_CONNECT_TIMEOUT, None)?,
-            base: crate::sources::env_base(DATAHUB_BASE, DATAHUB_BASE_ENV),
+            client: datahub_client(base.as_ref(), DATAHUB_CONNECT_TIMEOUT, None)?,
+            base,
             download_idle_timeout: DATAHUB_ARCHIVE_IDLE_TIMEOUT,
             max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
         })
@@ -274,17 +275,20 @@ fn account_download_bytes(
 }
 
 fn datahub_client(
+    base: &str,
     connect_timeout: Duration,
     total_timeout: Option<Duration>,
 ) -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
-    let mut builder = reqwest::Client::builder()
-        .connect_timeout(connect_timeout)
-        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")));
-    if let Some(timeout) = total_timeout {
-        builder = builder.timeout(timeout);
-    }
-    let client = builder.build().map_err(BioMcpError::HttpClientInit)?;
-    Ok(reqwest_middleware::ClientBuilder::new(client).build())
+    crate::sources::ordinary_middleware_client_for_base(base, DATAHUB_BASE_ENV, |builder| {
+        let builder = builder
+            .connect_timeout(connect_timeout)
+            .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")));
+        if let Some(timeout) = total_timeout {
+            builder.timeout(timeout)
+        } else {
+            builder
+        }
+    })
 }
 
 fn unique_temp_path(parent: &Path, prefix: &str) -> Result<PathBuf, BioMcpError> {

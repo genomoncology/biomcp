@@ -72,9 +72,10 @@ pub(crate) struct VaersClient {
 
 impl VaersClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(VAERS_BASE, VAERS_BASE_ENV);
         Ok(Self {
-            client: vaers_http_client()?,
-            base: crate::sources::env_base(VAERS_BASE, VAERS_BASE_ENV),
+            client: vaers_http_client(base.as_ref())?,
+            base,
         })
     }
 
@@ -208,16 +209,15 @@ impl VaersClient {
     }
 }
 
-fn vaers_http_client() -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
+fn vaers_http_client(base: &str) -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
     // CDC WONDER's edge denies the shared `biomcp-cli/<version>` user-agent for
     // VAERS XML POSTs while allowing common command-line clients.
-    let base_client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .connect_timeout(Duration::from_secs(10))
-        .user_agent(CDC_WONDER_COMPATIBLE_USER_AGENT)
-        .build()
-        .map_err(BioMcpError::HttpClientInit)?;
-    Ok(reqwest_middleware::ClientBuilder::new(base_client).build())
+    crate::sources::ordinary_middleware_client_for_base(base, VAERS_BASE_ENV, |builder| {
+        builder
+            .timeout(Duration::from_secs(30))
+            .connect_timeout(Duration::from_secs(10))
+            .user_agent(CDC_WONDER_COMPATIBLE_USER_AGENT)
+    })
 }
 
 fn aggregate_request_plan(

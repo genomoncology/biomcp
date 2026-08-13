@@ -285,26 +285,6 @@ fn policy(
 
 static GLOBAL_RATE_LIMITER: OnceLock<Arc<RateLimiter>> = OnceLock::new();
 
-pub(crate) fn redirect_policy() -> reqwest::redirect::Policy {
-    redirect_policy_for(global_limiter().unpaced_origin.clone())
-}
-
-fn redirect_policy_for(unpaced_origin: Option<UnpacedOrigin>) -> reqwest::redirect::Policy {
-    let default_policy = reqwest::redirect::Policy::default();
-    reqwest::redirect::Policy::custom(move |attempt| {
-        let leaves_unpaced_origin = attempt.previous().last().is_some_and(|source| {
-            unpaced_origin
-                .as_ref()
-                .is_some_and(|origin| origin.matches(source) && !origin.matches(attempt.url()))
-        });
-        if leaves_unpaced_origin {
-            attempt.error("fixture request cannot redirect outside its unpaced origin")
-        } else {
-            default_policy.redirect(attempt)
-        }
-    })
-}
-
 pub(crate) fn global_limiter() -> Arc<RateLimiter> {
     GLOBAL_RATE_LIMITER
         .get_or_init(|| Arc::new(RateLimiter::from_env()))
@@ -346,10 +326,6 @@ pub(crate) async fn wait_for_url_str(raw: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
-    use tokio::net::TcpListener;
-    use tokio::task::JoinHandle;
-    use tokio::time::timeout;
 
     fn test_policy(key: &'static str, prefix: &str, ms: u64) -> RateLimitPolicy {
         RateLimitPolicy {
@@ -383,118 +359,6 @@ mod tests {
                 "signal should fail closed: {raw}"
             );
         }
-    }
-
-    fn spawn_http_responses(listener: TcpListener, responses: Vec<String>) -> JoinHandle<bool> {
-        tokio::spawn(async move {
-            let mut received_request = false;
-            for response in responses {
-                let Ok(Ok((mut socket, _))) =
-                    timeout(Duration::from_millis(500), listener.accept()).await
-                else {
-                    break;
-                };
-                received_request = true;
-                let mut request = [0_u8; 2048];
-                let _ = socket.read(&mut request).await;
-                socket.write_all(response.as_bytes()).await.unwrap();
-            }
-            received_request
-        })
-    }
-
-    fn ok_response() -> String {
-        "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".to_string()
-    }
-
-    fn redirect_response(location: &str) -> String {
-        format!(
-            "HTTP/1.1 302 Found\r\nLocation: {location}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        )
-    }
-
-    #[tokio::test]
-    async fn fixture_redirects_stay_within_the_unpaced_origin() {
-        let same_origin_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let same_origin_addr = same_origin_listener.local_addr().unwrap();
-        let same_origin_server = spawn_http_responses(
-            same_origin_listener,
-            vec![
-                redirect_response(&format!("http://{same_origin_addr}/final")),
-                ok_response(),
-            ],
-        );
-        let client = reqwest::Client::builder()
-            .redirect(redirect_policy_for(UnpacedOrigin::parse_signal(&format!(
-                "http://{same_origin_addr}"
-            ))))
-            .build()
-            .unwrap();
-
-        let response = client
-            .get(format!("http://{same_origin_addr}/start"))
-            .send()
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), reqwest::StatusCode::OK);
-        assert!(same_origin_server.await.unwrap());
-    }
-
-    #[tokio::test]
-    async fn fixture_redirects_cannot_escape_to_another_origin() {
-        let target_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let target_addr = target_listener.local_addr().unwrap();
-        let target_server = spawn_http_responses(target_listener, vec![ok_response()]);
-        let fixture_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let fixture_addr = fixture_listener.local_addr().unwrap();
-        let fixture_server = spawn_http_responses(
-            fixture_listener,
-            vec![redirect_response(&format!("http://{target_addr}/outside"))],
-        );
-        let client = reqwest::Client::builder()
-            .redirect(redirect_policy_for(UnpacedOrigin::parse_signal(&format!(
-                "http://{fixture_addr}"
-            ))))
-            .build()
-            .unwrap();
-
-        let error = client
-            .get(format!("http://{fixture_addr}/start"))
-            .send()
-            .await
-            .expect_err("cross-origin fixture redirect must fail closed");
-
-        assert!(error.is_redirect());
-        assert!(fixture_server.await.unwrap());
-        assert!(!target_server.await.unwrap());
-    }
-
-    #[tokio::test]
-    async fn ordinary_cross_origin_redirects_remain_enabled() {
-        let target_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let target_addr = target_listener.local_addr().unwrap();
-        let target_server = spawn_http_responses(target_listener, vec![ok_response()]);
-        let source_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let source_addr = source_listener.local_addr().unwrap();
-        let source_server = spawn_http_responses(
-            source_listener,
-            vec![redirect_response(&format!("http://{target_addr}/final"))],
-        );
-        let client = reqwest::Client::builder()
-            .redirect(redirect_policy_for(None))
-            .build()
-            .unwrap();
-
-        let response = client
-            .get(format!("http://{source_addr}/start"))
-            .send()
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), reqwest::StatusCode::OK);
-        assert!(source_server.await.unwrap());
-        assert!(target_server.await.unwrap());
     }
 
     #[test]

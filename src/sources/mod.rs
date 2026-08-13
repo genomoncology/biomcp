@@ -107,6 +107,10 @@ pub(crate) mod ols4;
 pub(crate) mod oncokb;
 pub(crate) mod openfda;
 pub(crate) mod opentargets;
+mod ordinary_url_policy;
+pub(crate) use ordinary_url_policy::{
+    ordinary_middleware_client_for_base, provider_policy_client_builder,
+};
 pub(crate) mod pharmgkb;
 pub(crate) mod pmc_article;
 pub(crate) mod pmc_oa;
@@ -134,7 +138,6 @@ pub(crate) const DEFAULT_MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
 pub(crate) const BIOTHINGS_MAX_RESULT_WINDOW: usize = 10_000;
 
 static HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
-static STREAMING_HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 tokio::task_local! {
     static NO_CACHE: bool;
@@ -663,22 +666,17 @@ fn build_uncached_http_client(
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     let mut headers = HeaderMap::new();
     headers.insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
-    let mut base = reqwest::Client::builder()
+    let base = ordinary_url_policy::http_client_builder(provider_policy);
+    let base = base
         .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(headers);
-    if let Some(policy) = provider_policy {
-        base = base
-            .no_proxy()
-            .dns_resolver(policy.dns_resolver())
-            .redirect(policy.redirect_policy());
-    } else {
-        base = base.redirect(rate_limit::redirect_policy());
-    }
     let base = base.build().map_err(BioMcpError::HttpClientInit)?;
     let retry = ExponentialBackoff::builder().build_with_max_retries(3);
-    let builder = ClientBuilder::new(base).with(
+    let builder = ClientBuilder::new(base);
+    let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
+    let builder = builder.with(
         RetryTransientMiddleware::new_with_policy(retry)
             .with_retry_log_level(tracing::Level::DEBUG),
     );
@@ -721,19 +719,12 @@ fn build_http_client_with_config(
     let mut default_headers = HeaderMap::new();
     default_headers.insert(CACHE_CONTROL, HeaderValue::from_static("max-stale=86400"));
 
-    let mut base_client = reqwest::Client::builder()
+    let base_client = ordinary_url_policy::http_client_builder(provider_policy);
+    let base_client = base_client
         .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
         .default_headers(default_headers);
-    if let Some(policy) = provider_policy {
-        base_client = base_client
-            .no_proxy()
-            .dns_resolver(policy.dns_resolver())
-            .redirect(policy.redirect_policy());
-    } else {
-        base_client = base_client.redirect(rate_limit::redirect_policy());
-    }
     let base_client = base_client.build().map_err(BioMcpError::HttpClientInit)?;
 
     let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
@@ -747,7 +738,9 @@ fn build_http_client_with_config(
         ..HttpCacheOptions::default()
     };
 
-    let builder = ClientBuilder::new(base_client).with(Cache(HttpCache {
+    let builder = ClientBuilder::new(base_client);
+    let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
+    let builder = builder.with(Cache(HttpCache {
         mode: CacheMode::Default,
         manager: crate::cache::SizeAwareCacheManager::new(cache_path, config)?,
         options: cache_options,
@@ -920,47 +913,76 @@ pub(crate) fn is_semantic_scholar_shared_pool_rate_limit_error(
 ///
 /// Use this for requests with streaming bodies (e.g., multipart) that cannot be cloned and therefore
 /// cannot pass through the retry/cache middleware stack.
-pub(crate) fn streaming_http_client() -> Result<reqwest::Client, BioMcpError> {
-    if let Some(client) = STREAMING_HTTP_CLIENT.get() {
-        return Ok(client.clone());
-    }
-
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .connect_timeout(Duration::from_secs(10))
-        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
-        .redirect(rate_limit::redirect_policy())
-        .build()
-        .map_err(BioMcpError::HttpClientInit)?;
-
-    match STREAMING_HTTP_CLIENT.set(client.clone()) {
-        Ok(()) => Ok(client),
-        Err(_) => STREAMING_HTTP_CLIENT
-            .get()
-            .cloned()
-            .ok_or_else(|| BioMcpError::Api {
-                api: "http-client".into(),
-                message: "Shared streaming HTTP client initialization race".into(),
-            }),
-    }
+pub(crate) fn streaming_http_client(
+    base: &str,
+    env_var: &str,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    ordinary_middleware_client_for_base(base, env_var, |builder| {
+        builder
+            .timeout(Duration::from_secs(30))
+            .connect_timeout(Duration::from_secs(10))
+            .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
+    })
 }
 
 /// Retry wrapper for streaming requests that bypass middleware.
 ///
 /// `build_request` is invoked on each attempt so non-cloneable request bodies
 /// can be reconstructed safely.
-pub(crate) async fn retry_send<F, Fut>(
+pub(crate) async fn retry_middleware_send<F, Fut>(
     context: SourceContext,
     max_retries: u32,
     build_request: F,
 ) -> Result<reqwest::Response, BioMcpError>
 where
     F: Fn() -> Fut,
-    Fut: Future<Output = Result<reqwest::Response, reqwest::Error>>,
+    Fut: Future<Output = Result<reqwest::Response, reqwest_middleware::Error>>,
 {
-    retry_send_with_sleep(context, max_retries, build_request, tokio::time::sleep).await
+    let total_attempts = max_retries.saturating_add(1);
+    let mut last_error = None;
+    let mut last_server_status = None;
+    let mut retry_sleep_state = RetrySleepState::default();
+
+    for attempt in 0..total_attempts {
+        let mut retry_after_floor = None;
+        match build_request().await {
+            Ok(response)
+                if response.status().is_server_error()
+                    || response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS =>
+            {
+                if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                    retry_after_floor = parse_retry_after_header(response.headers());
+                }
+                last_server_status = Some(response.status());
+            }
+            Ok(response) => return Ok(response),
+            Err(error) => last_error = Some(error),
+        }
+        if attempt + 1 < total_attempts
+            && let Some(duration) = next_retry_sleep(&mut retry_sleep_state, retry_after_floor)
+        {
+            tokio::time::sleep(duration).await;
+        }
+    }
+
+    if let Some(status) = last_server_status {
+        return Err(BioMcpError::Api {
+            api: context.provider().label().to_string(),
+            message: format!("HTTP {status} after {total_attempts} attempts"),
+        }
+        .with_source_context(context));
+    }
+    if let Some(error) = last_error {
+        return Err(BioMcpError::from(error).with_source_context(context));
+    }
+    Err(BioMcpError::Api {
+        api: context.provider().label().to_string(),
+        message: format!("All retry attempts exhausted after {total_attempts} attempts"),
+    }
+    .with_source_context(context))
 }
 
+#[cfg(test)]
 async fn retry_send_with_sleep<F, Fut, S, SleepFut>(
     context: SourceContext,
     max_retries: u32,
@@ -1245,6 +1267,8 @@ pub(crate) async fn read_limited_source_body(
 mod tests {
     #[path = "clingen_runtime.rs"]
     mod clingen_runtime;
+    #[path = "provider_network.rs"]
+    mod provider_network;
     #[path = "../request_plan_transport.rs"]
     mod request_plan_transport;
 

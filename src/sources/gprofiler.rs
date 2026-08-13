@@ -18,15 +18,16 @@ const GPROFILER_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const GPROFILER_RETRY_SUGGESTION: &str = "Retry shortly. If the problem persists, probe https://biit.cs.ut.ee/gprofiler/api/gost/profile/ directly.";
 
 pub struct GProfilerClient {
-    client: reqwest::Client,
+    client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
 }
 
 impl GProfilerClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(GPROFILER_BASE, GPROFILER_BASE_ENV);
         Ok(Self {
-            client: gprofiler_http_client(GPROFILER_TIMEOUT)?,
-            base: crate::sources::env_base(GPROFILER_BASE, GPROFILER_BASE_ENV),
+            client: gprofiler_http_client(GPROFILER_TIMEOUT, base.as_ref())?,
+            base,
         })
     }
 
@@ -40,7 +41,7 @@ impl GProfilerClient {
 
     async fn post_json<T: DeserializeOwned, B: Serialize>(
         &self,
-        req: reqwest::RequestBuilder,
+        req: reqwest_middleware::RequestBuilder,
         body: &B,
     ) -> Result<T, BioMcpError> {
         let resp = req
@@ -134,13 +135,16 @@ impl GProfilerClient {
     }
 }
 
-fn gprofiler_http_client(timeout: Duration) -> Result<reqwest::Client, BioMcpError> {
-    reqwest::Client::builder()
-        .timeout(timeout)
-        .connect_timeout(GPROFILER_CONNECT_TIMEOUT)
-        .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .map_err(BioMcpError::HttpClientInit)
+fn gprofiler_http_client(
+    timeout: Duration,
+    base: &str,
+) -> Result<reqwest_middleware::ClientWithMiddleware, BioMcpError> {
+    crate::sources::ordinary_middleware_client_for_base(base, GPROFILER_BASE_ENV, |builder| {
+        builder
+            .timeout(timeout)
+            .connect_timeout(GPROFILER_CONNECT_TIMEOUT)
+            .user_agent(concat!("biomcp-cli/", env!("CARGO_PKG_VERSION")))
+    })
 }
 
 fn remap_gprofiler_error(err: BioMcpError) -> BioMcpError {

@@ -17,7 +17,7 @@ const UNIPROT_BASE_ENV: &str = "BIOMCP_UNIPROT_BASE";
 const UNIPROT_MAX_EXPANDED_BYTES: usize = 32 * 1024 * 1024;
 
 pub struct UniProtClient {
-    client: reqwest::Client,
+    client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
 }
 
@@ -30,9 +30,10 @@ pub struct UniProtSearchPage {
 
 impl UniProtClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(UNIPROT_BASE, UNIPROT_BASE_ENV);
         Ok(Self {
-            client: crate::sources::streaming_http_client()?,
-            base: crate::sources::env_base(UNIPROT_BASE, UNIPROT_BASE_ENV),
+            client: crate::sources::streaming_http_client(base.as_ref(), UNIPROT_BASE_ENV)?,
+            base,
         })
     }
 
@@ -44,7 +45,7 @@ impl UniProtClient {
         )
     }
 
-    fn request_from_plan(&self, plan: &RequestPlan) -> reqwest::RequestBuilder {
+    fn request_from_plan(&self, plan: &RequestPlan) -> reqwest_middleware::RequestBuilder {
         let url = if plan.path.starts_with("http://") || plan.path.starts_with("https://") {
             plan.path.clone()
         } else {
@@ -68,11 +69,14 @@ impl UniProtClient {
         }
     }
 
-    async fn get_json<T>(&self, request: reqwest::RequestBuilder) -> Result<T, BioMcpError>
+    async fn get_json<T>(
+        &self,
+        request: reqwest_middleware::RequestBuilder,
+    ) -> Result<T, BioMcpError>
     where
         T: DeserializeOwned,
     {
-        let resp = crate::sources::retry_send(
+        let resp = crate::sources::retry_middleware_send(
             crate::error::SourceContext::retry(crate::error::SourceProvider::UNIPROT),
             3,
             || {
@@ -211,7 +215,7 @@ impl UniProtClient {
         let plan = Self::search_plan(query, limit, offset, next_page)?;
         let url = self.plan_url(&plan);
         crate::sources::rate_limit::wait_for_url_str(&url).await;
-        let resp = crate::sources::retry_send(
+        let resp = crate::sources::retry_middleware_send(
             crate::error::SourceContext::retry(crate::error::SourceProvider::UNIPROT),
             3,
             || async { self.request_from_plan(&plan).send().await },

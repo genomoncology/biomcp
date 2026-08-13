@@ -14,16 +14,20 @@ const ENRICHR_BASE_ENV: &str = "BIOMCP_ENRICHR_BASE";
 #[derive(Clone)]
 pub struct EnrichrClient {
     client: reqwest_middleware::ClientWithMiddleware,
-    streaming_client: reqwest::Client,
+    streaming_client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
 }
 
 impl EnrichrClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(ENRICHR_BASE, ENRICHR_BASE_ENV);
         Ok(Self {
             client: crate::sources::shared_client()?,
-            streaming_client: crate::sources::streaming_http_client()?,
-            base: crate::sources::env_base(ENRICHR_BASE, ENRICHR_BASE_ENV),
+            streaming_client: crate::sources::streaming_http_client(
+                base.as_ref(),
+                ENRICHR_BASE_ENV,
+            )?,
+            base,
         })
     }
 
@@ -73,9 +77,9 @@ impl EnrichrClient {
         BioMcpError,
     >
     where
-        F: Fn() -> reqwest::RequestBuilder,
+        F: Fn() -> reqwest_middleware::RequestBuilder,
     {
-        let resp = crate::sources::retry_send(
+        let resp = crate::sources::retry_middleware_send(
             crate::error::SourceContext::retry(crate::error::SourceProvider::ENRICHR),
             3,
             || async { build_request().send().await },

@@ -43,10 +43,18 @@ async fn archive_download_rejects_declared_oversize_before_creating_destination(
 
     let root = TempDirGuard::new("study-download-declared-oversize");
     let destination = root.path().join("archive.tar.gz");
+    let base = format!("http://{address}");
     let client = CBioPortalDownloadClient {
-        client: datahub_client(Duration::from_secs(1), Some(Duration::from_secs(2)))
-            .expect("test client"),
-        base: Cow::Owned(format!("http://{address}")),
+        client: crate::sources::ordinary_url_policy::test_middleware_client_for_base(
+            &base,
+            |builder| {
+                builder
+                    .connect_timeout(Duration::from_secs(1))
+                    .timeout(Duration::from_secs(2))
+            },
+        )
+        .expect("test client"),
+        base: Cow::Owned(base),
         download_idle_timeout: Duration::from_secs(1),
         max_archive_download_bytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
     };
@@ -85,10 +93,18 @@ async fn archive_download_rejects_chunked_max_plus_one_and_removes_partial_file(
     });
 
     let root = TempDirGuard::new("study-download-chunked-oversize");
+    let base = format!("http://{address}");
     let client = CBioPortalDownloadClient {
-        client: datahub_client(Duration::from_secs(1), Some(Duration::from_secs(2)))
-            .expect("test client"),
-        base: Cow::Owned(format!("http://{address}")),
+        client: crate::sources::ordinary_url_policy::test_middleware_client_for_base(
+            &base,
+            |builder| {
+                builder
+                    .connect_timeout(Duration::from_secs(1))
+                    .timeout(Duration::from_secs(2))
+            },
+        )
+        .expect("test client"),
+        base: Cow::Owned(base),
         download_idle_timeout: Duration::from_secs(1),
         max_archive_download_bytes: 3,
     };

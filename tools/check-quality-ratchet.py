@@ -2055,9 +2055,10 @@ def check_remote_resource_bounds(root_dir: Path) -> dict[str, object]:
 
     shared = production_text("mod.rs")
     migration = shared.find("ensure_body_limited_cache_epoch")
-    cache = shared.find("ClientBuilder::new(base_client).with(Cache(")
+    client = shared.find("ClientBuilder::new(base_client)")
+    cache = shared.find(".with(Cache(", max(client, 0))
     limiter = shared.find(".with(ResponseBodyLimitMiddleware", max(cache, 0))
-    if migration < 0 or cache < 0 or migration > cache:
+    if migration < 0 or client < 0 or cache < 0 or migration > client or client > cache:
         findings.append(
             "src/sources/mod.rs: legacy HTTP cache epoch must be enforced before shared cache construction"
         )

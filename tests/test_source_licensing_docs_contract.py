@@ -125,6 +125,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             "cbioportal_download",
             "cbioportal_study",
             "pmc_article",
+            "ordinary_url_policy",
             "provider_url_policy",
         }
     ]

@@ -81,6 +81,16 @@ The first bounded-client initialization performs a filesystem-locked, one-time
 HTTP-cache epoch migration. It clears entries written before pre-cache body
 limits existed and fails closed if that migration cannot complete.
 
+Ordinary HTTP provider clients connect directly and ignore ambient
+`HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` settings. Built-in provider bases
+must use HTTPS and resolve only to public addresses; redirects stay on the exact
+scheme, host, and effective port of the initial request. An explicit
+`BIOMCP_*_BASE` or `BIOMCP_*_BASE_URL` setting is a process-level trusted origin,
+so an operator can deliberately select HTTP or private/on-prem addresses, but
+the exception does not allow a redirect to another origin. AlphaGenome is the
+single separate authenticated gRPC/Tonic provider transport and is not part of
+this ordinary Reqwest boundary.
+
 Provider-returned URL fetches share one outbound policy across Semantic Scholar
 PDFs, PMC OA objects, Figshare files, and ClinicalTrials.gov documents. Before
 contact, it requires an explicit HTTPS origin/port, rejects URL credentials and

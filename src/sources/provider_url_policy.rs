@@ -547,7 +547,7 @@ fn parse_ip_literal(host: &str) -> Option<IpAddr> {
     host.trim_matches(['[', ']']).parse().ok()
 }
 
-fn is_forbidden_address(address: IpAddr) -> bool {
+pub(super) fn is_forbidden_address(address: IpAddr) -> bool {
     match address {
         IpAddr::V4(address) => forbidden_ipv4(address),
         IpAddr::V6(address) => {

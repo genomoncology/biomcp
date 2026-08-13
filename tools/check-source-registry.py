@@ -12,6 +12,7 @@ HELPER_MODULES = {
     "cbioportal_download",
     "cbioportal_study",
     "pmc_article",
+    "ordinary_url_policy",
     "provider_url_policy",
     "rate_limit",
     "request_plan_transport",

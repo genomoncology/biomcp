@@ -40,11 +40,9 @@ impl Default for CspecTimeouts {
 impl CspecClient {
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::cspec()?;
-        let client = reqwest::Client::builder()
+        let client = crate::sources::provider_policy_client_builder(&policy)
             .connect_timeout(CspecTimeouts::default().connect)
             .timeout(CspecTimeouts::default().request)
-            .dns_resolver(policy.dns_resolver())
-            .redirect(policy.redirect_policy())
             .build()
             .map_err(BioMcpError::from)?;
         Ok(Self {

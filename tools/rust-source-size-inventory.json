@@ -56,12 +56,12 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 3796,
+      "baseline_lines": 4001,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "0973",
-        "delta": 102,
-        "reason": "Bounded typed gene identity participates directly in the existing concurrent discovery merge and ranking contract.",
+        "ticket": "0979",
+        "delta": 307,
+        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, and pagination contract.",
         "removal_condition": "Extract discovery provider orchestration and its tests when the discovery entity is next decomposed."
       }
     },
@@ -138,12 +138,12 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2167,
+      "baseline_lines": 2210,
       "floor_lines": 2059,
       "authorized_increase": {
-        "ticket": "0975",
-        "delta": 108,
-        "reason": "The global Host policy must share authority semantics and router state with the existing Streamable HTTP server boundary.",
+        "ticket": "0976",
+        "delta": 151,
+        "reason": "The global Host policy and exhaustive raw-command local-input boundary share authority semantics and parser coverage with the existing MCP transport shell.",
         "removal_condition": "Extract HTTP server policy and tests when the MCP transport shell is next decomposed."
       }
     },
@@ -191,9 +191,14 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 1852,
-      "floor_lines": 1852,
-      "authorized_increase": null
+      "baseline_lines": 1876,
+      "floor_lines": 1847,
+      "authorized_increase": {
+        "ticket": "0982",
+        "delta": 29,
+        "reason": "The middleware-compatible retry path preserves bounded retry behavior for streaming provider clients after they join the exact-origin network boundary.",
+        "removal_condition": "Move streaming retry orchestration beside the ordinary provider client policy when shared source utilities are next decomposed."
+      }
     },
     {
       "path": "src/sources/myvariant.rs",

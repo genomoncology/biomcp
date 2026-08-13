@@ -37,7 +37,7 @@ execution failures:
 
 | Error variant | Meaning | Recovery guidance |
 |---------------|---------|-------------------|
-| `HttpClientInit` | HTTP client could not initialize | Check TLS/network stack, proxy settings, and local certificate configuration |
+| `HttpClientInit` | HTTP client could not initialize | Check the TLS/network stack and local certificate configuration; ordinary provider clients intentionally ignore ambient proxy settings |
 | `Http` | HTTP request failed before receiving a successful response | Retry the command and verify network connectivity |
 | `HttpMiddleware` | Retry/cache middleware failed | Retry; if persistent, clear cache and re-run with `--no-cache` |
 | `Api` | Upstream API returned an error response | Check API status, input values, and any source-specific constraints |
