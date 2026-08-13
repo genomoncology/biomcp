@@ -50,11 +50,14 @@ pub struct CspecArgs {
     /// HGNC gene symbol
     pub gene: Option<String>,
     /// Exact full CSpec resource IRI from the manifest
-    #[arg(long)]
+    #[arg(long, conflicts_with = "capture_id")]
     pub version: Option<String>,
     /// Page a previously selected CSpec capture without refetching
-    #[arg(long)]
+    #[arg(long, conflicts_with = "version")]
     pub capture_id: Option<String>,
+    /// List metadata for linked public files without downloading them
+    #[arg(long)]
+    pub files: bool,
     /// Skip the first N criteria
     #[arg(long, default_value = "0")]
     pub offset: usize,

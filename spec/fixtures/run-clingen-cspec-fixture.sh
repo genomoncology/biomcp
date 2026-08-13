@@ -5,6 +5,7 @@ set -euo pipefail
 root="$(cd "${1:-../..}" && pwd)"
 bin="${BIOMCP_BIN:?run through scripts/run-specs.sh}"
 official='https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
+pten_official='https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN003/version/3.2.1'
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
@@ -15,11 +16,18 @@ done
 capture="$(jq -er '.capture_id' "$work/selected.json")"
 requests_before_raw="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
 "$bin" gene cspec document "$capture" >"$work/raw.json"
+requests_after_raw="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
 "$bin" --json gene cspec ATM --capture-id "$capture" --offset 1 --limit 1 >"$work/page-two.json"
 "$bin" --json gene cspec BRCA1 --capture-id "$capture" >"$work/relabel.json" || true
 "$bin" --json gene cspec ATM --capture-id 'capture:cspec:sha256:0000000000000000000000000000000000000000000000000000000000000000' >"$work/missing.json" || true
+"$bin" --json gene cspec PTEN --version "$pten_official" --files >"$work/files.json"
+files_capture="$(jq -er '.capture_id' "$work/files.json")"
+"$bin" --json gene cspec PTEN --capture-id "$files_capture" --limit 1 >"$work/pten-page.json"
+requests_before_files_reuse="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
+"$bin" --json gene cspec PTEN --capture-id "$files_capture" --files >"$work/files-reuse.json"
+requests_after_files_reuse="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
 
-BIN="$bin" CAPTURE="$capture" OUT="$work/mcp.json" uv run --no-sync python - <<'PY'
+BIN="$bin" CAPTURE="$capture" FILES_CAPTURE="$files_capture" OUT="$work/mcp.json" uv run --no-sync python - <<'PY'
 import json, os, subprocess
 proc = subprocess.Popen([os.environ['BIN'], 'mcp'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
 def call(value):
@@ -28,20 +36,25 @@ call({'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'
 proc.stdin.write(json.dumps({'jsonrpc':'2.0','method':'notifications/initialized','params':{}})+'\n'); proc.stdin.flush()
 reply=call({'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'gene_cspec','arguments':{'gene':'ATM','capture_id':os.environ['CAPTURE'],'limit':1}}})
 open(os.environ['OUT'],'w').write(reply['result']['content'][0]['text'])
+reply=call({'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'gene_cspec','arguments':{'gene':'PTEN','capture_id':os.environ['FILES_CAPTURE'],'files':True}}})
+open(os.environ['OUT']+'.files','w').write(reply['result']['content'][0]['text'])
 proc.terminate(); proc.wait()
 PY
 
-uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" "$requests_before_raw" "$root" <<'PY'
+uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" "$requests_before_raw" "$requests_after_raw" "$requests_before_files_reuse" "$requests_after_files_reuse" "$root" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
 work, request_log = map(Path, sys.argv[1:3])
-requests_before_raw = int(sys.argv[3])
-repo_root = Path(sys.argv[4])
+requests_before_raw, requests_after_raw, requests_before_files_reuse, requests_after_files_reuse = map(int, sys.argv[3:7])
+repo_root = Path(sys.argv[7])
 recorded_document = (repo_root / 'testdata/sources/clingen_cspec/atm-gn020-1.5.1.json').read_bytes()
 manifest_path = '/cspec/Gene/id/ATM/SequenceVariantInterpretation/version'
 document_path = '/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
 def load(name): return json.loads((work/name).read_text())
 selected, second, mcp = load('selected.json'), load('page-two.json'), load('mcp.json')
+files, files_reuse = load('files.json'), load('files-reuse.json')
+pten_page = load('pten-page.json')
+files_mcp = load('mcp.json.files')
 series = {'APC':'GN089','ATM':'GN020','BRCA1':'GN092','MLH1':'GN115','PALB2':'GN077','PTEN':'GN003','TP53':'GN009','BRAF':'GN049'}
 def manifest_has(gene, spec): return any(f'/{spec}/version/' in iri for iri in load(f'{gene}.json')['resource_iris'])
 raw=(work/'raw.json').read_bytes()
@@ -62,7 +75,11 @@ report={
  'cli_capture_page_matches_typed_mcp': selected==mcp,
  'caller_gene_cannot_relabel_capture': load('relabel.json')['error']['code']=='invalid_argument',
  'raw_bytes_match_reported_sha256_and_length': hashlib.sha256(raw).hexdigest()==selected['source_sha256'] and len(raw)==selected['byte_length'],
- 'raw_read_does_not_refetch': len(requests) == requests_before_raw,
+ 'raw_read_does_not_refetch': requests_after_raw == requests_before_raw,
+ 'pten_attachment_manifest_is_bounded_metadata_only': files['attachment_count']==5 and len(files['attachments'])==5 and all(row['download_url'].startswith('https://cspec.genome.network/data/') for row in files['attachments']),
+ 'normal_criteria_reports_attachment_count': pten_page['attachment_count']==5,
+ 'attachment_capture_reuse_does_not_refetch': files==files_reuse and requests_before_files_reuse==requests_after_files_reuse,
+ 'attachment_cli_and_mcp_match': files==files_mcp,
  'missing_capture_is_capture_unavailable': load('missing.json')['error']['code']=='capture_unavailable',
 }
 print(json.dumps(report, sort_keys=True))

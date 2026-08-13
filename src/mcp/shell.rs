@@ -80,6 +80,8 @@ struct TypedGeneCspec {
     #[serde(default)]
     capture_id: Option<String>,
     #[serde(default)]
+    files: bool,
+    #[serde(default)]
     offset: usize,
     #[serde(default = "default_cspec_limit")]
     #[schemars(range(min = 1, max = 50))]
@@ -1099,28 +1101,44 @@ impl BioMcpServer {
         if input.version_iri.is_some() && input.capture_id.is_some()
             || input.limit == 0
             || input.limit > 50
+            || input.files && input.version_iri.is_none() && input.capture_id.is_none()
         {
             return Err(McpError::invalid_params(
-                "gene_cspec version_iri and capture_id are mutually exclusive; limit must be 1-50",
+                "gene_cspec version_iri and capture_id are mutually exclusive; files requires one of them; limit must be 1-50",
                 None,
             ));
         }
-        let result = match input.capture_id {
-            Some(capture_id) => crate::entities::gene::cspec::page_capture(
-                &capture_id,
-                &input.gene,
-                input.offset,
-                input.limit,
-            )
-            .and_then(|response| crate::render::json::to_pretty(&response)),
-            None => crate::entities::gene::cspec::retrieve(
-                &input.gene,
-                input.version_iri.as_deref(),
-                input.offset,
-                input.limit,
-            )
-            .await
-            .and_then(|response| crate::render::json::to_pretty(&response)),
+        let result = if input.files {
+            match input.capture_id {
+                Some(capture_id) => {
+                    crate::entities::gene::cspec::files_capture(&capture_id, &input.gene)
+                        .and_then(|response| crate::render::json::to_pretty(&response))
+                }
+                None => crate::entities::gene::cspec::retrieve_files(
+                    &input.gene,
+                    input.version_iri.as_deref().expect("validated version"),
+                )
+                .await
+                .and_then(|response| crate::render::json::to_pretty(&response)),
+            }
+        } else {
+            match input.capture_id {
+                Some(capture_id) => crate::entities::gene::cspec::page_capture(
+                    &capture_id,
+                    &input.gene,
+                    input.offset,
+                    input.limit,
+                )
+                .and_then(|response| crate::render::json::to_pretty(&response)),
+                None => crate::entities::gene::cspec::retrieve(
+                    &input.gene,
+                    input.version_iri.as_deref(),
+                    input.offset,
+                    input.limit,
+                )
+                .await
+                .and_then(|response| crate::render::json::to_pretty(&response)),
+            }
         };
         match result {
             Ok(text) => Ok(CallToolResult::success(vec![Content::text(
@@ -1620,6 +1638,7 @@ mod tests {
                 gene: "ATM".into(),
                 version_iri: Some("https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1".into()),
                 capture_id: Some("capture:cspec:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into()),
+                files: false,
                 offset: 0,
                 limit: 25,
             }))

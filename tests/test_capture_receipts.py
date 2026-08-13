@@ -31,6 +31,7 @@ def test_clingen_live_replacements_have_receipted_manifest_summary_and_detail_ca
 
     assert classifications.get("clingen_cspec/atm-manifest.json") == "real_and_receipted"
     assert classifications.get("clingen_cspec/atm-gn020-1.5.1.json") == "real_and_receipted"
+    assert classifications.get("clingen_cspec/pten-gn003-3.2.1.json") == "real_and_receipted"
     assert classifications.get("clingen_erepo/apc-summary.json") == "real_and_receipted"
     assert classifications.get("clingen_erepo/apc-detail.json") == "real_and_receipted"
     assert classifications.get("clingen_erepo/pten-gene-limit-26.json") == "real_and_receipted"

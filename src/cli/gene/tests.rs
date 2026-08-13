@@ -69,6 +69,53 @@ fn gene_cspec_document_parses_as_nested_raw_subcommand() {
 }
 
 #[test]
+fn gene_cspec_files_is_a_flag_on_version_or_capture_selection() {
+    for args in [
+        vec![
+            "biomcp",
+            "gene",
+            "cspec",
+            "PTEN",
+            "--version",
+            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN003/version/3.2.1",
+            "--files",
+        ],
+        vec![
+            "biomcp",
+            "gene",
+            "cspec",
+            "PTEN",
+            "--capture-id",
+            "capture:cspec:sha256:x",
+            "--files",
+        ],
+    ] {
+        let cli = Cli::try_parse_from(args).expect("files form");
+        let Commands::Gene {
+            cmd: GeneCommand::Cspec(args),
+        } = cli.command
+        else {
+            panic!("CSpec command")
+        };
+        assert!(args.files);
+    }
+    assert!(
+        Cli::try_parse_from([
+            "biomcp",
+            "gene",
+            "cspec",
+            "PTEN",
+            "--version",
+            "https://example.test/v1",
+            "--capture-id",
+            "capture",
+            "--files"
+        ])
+        .is_err()
+    );
+}
+
+#[test]
 fn gene_bare_symbol_parses_as_external_subcommand() {
     let cli =
         Cli::try_parse_from(["biomcp", "gene", "BRAF"]).expect("bare gene symbol should parse");

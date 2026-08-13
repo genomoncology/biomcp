@@ -130,10 +130,14 @@ to stream the original stored bytes locally:
 biomcp --json gene cspec ATM
 biomcp --json gene cspec ATM --version https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1
 biomcp gene cspec document <capture-id>
+biomcp --json gene cspec PTEN --version <full-resource-iri> --files
+biomcp --json gene cspec PTEN --capture-id <capture-id> --files
 ```
 
 CSpec returns source facts and provenance; it does not evaluate ACMG criteria or
-classify variants.
+classify variants. The opt-in files view lists bounded metadata for linked public
+attachments without downloading them. Normal criteria output reports
+`attachment_count`; capture-based file listing never refetches the provider.
 
 Constraint metrics (gnomAD):
 

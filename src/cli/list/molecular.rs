@@ -30,6 +30,7 @@ pub(super) fn list_gene() -> String {
 - `gene definition <symbol>` - same card as `get gene <symbol>`
 - `gene get <symbol>` - alias for `gene definition <symbol>`
 - `gene cspec <symbol> [--version <full-resource-iri>]` - versioned ClinGen CSpec source facts and capture provenance
+- `gene cspec <symbol> (--version <IRI>|--capture-id <id>) --files` - bounded linked-file metadata without downloading attachments
 - `gene cspec document <capture-id>` - exact stored CSpec bytes without refetching
 
 ## Search filters

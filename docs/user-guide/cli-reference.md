@@ -442,10 +442,15 @@ Versioned ClinGen CSpec documents are separate from gene-card sections:
 biomcp --json gene cspec ATM
 biomcp --json gene cspec ATM --version <full-resource-iri>
 biomcp gene cspec document <capture-id>
+biomcp --json gene cspec PTEN --version <full-resource-iri> --files
+biomcp --json gene cspec PTEN --capture-id <capture-id> --files
 ```
 
 The full resource IRI selects one document exactly. The raw-document command
 streams its verified local capture and does not refetch the provider.
+The files forms return public attachment metadata only. They preserve capture
+provenance, reject unsafe or excessive provider entries, and never download a
+linked file.
 
 ClinGen Allele Registry normalization is separate from `get variant`:
 

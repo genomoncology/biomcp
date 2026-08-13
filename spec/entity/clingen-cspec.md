@@ -35,4 +35,8 @@ A capture binds the selected ATM document and gene rather than trusting a later 
 "receipt_backed_manifest_plan_is_consumed": true
 "receipted_manifest_and_version_page_drive_cli": true
 "paged_capture_keeps_provider_criterion_order": true
+"pten_attachment_manifest_is_bounded_metadata_only": true
+"normal_criteria_reports_attachment_count": true
+"attachment_capture_reuse_does_not_refetch": true
+"attachment_cli_and_mcp_match": true
 ```

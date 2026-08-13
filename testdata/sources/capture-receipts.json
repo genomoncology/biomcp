@@ -209,6 +209,18 @@
       }
     },
     {
+      "path": "clingen_cspec/pten-gn003-3.2.1.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Criteria Specification Registry",
+        "request": "https://cspec.clinicalgenome.org/cspec/SequenceVariantInterpretation/id/GN003/version/3.2.1",
+        "captured_at": "2026-08-13T11:19:06Z",
+        "sha256": "a9159b399c736840157f2d736538742c1c543688824352700a3e0e568b657356",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Criteria Specification Registry before minimization."
+      }
+    },
+    {
       "path": "clingen_cspec/pten-manifest.json",
       "classification": "real_and_receipted",
       "receipt": {

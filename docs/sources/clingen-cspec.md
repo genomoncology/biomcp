@@ -16,6 +16,8 @@ Use the full resource IRI returned by a manifest when selecting a document; its 
 - `gene cspec <gene>` lists full resource IRIs returned by the provider.
 - `gene cspec <gene> --version <full-IRI>` retrieves one exact source document and binds its normalized gene, resource IRI, and specification ID to the capture.
 - `gene cspec <gene> --capture-id <capture-id>` pages that bound capture without another provider request.
+- Add `--files` to an exact version or capture selection to list bounded public
+  attachment metadata without downloading files.
 - Typed MCP `gene_cspec` returns the manifest or bounded parsed capture pages. Its caller gene must match the captured binding.
 - Parsed pages include raw-byte provenance and a page-independent `cspec-semantic-v1` digest; citations are deduplicated and capped at 32 per criterion.
 
@@ -36,6 +38,16 @@ Select one exact version and retain its capture provenance.
 ```bash
 biomcp gene cspec document <capture-id>
 ```
+
+```bash
+biomcp --json gene cspec PTEN --version <full-resource-iri> --files
+biomcp --json gene cspec PTEN --capture-id <capture-id> --files
+```
+
+The attachment view exposes label, filename, declared media type and size,
+stable attachment ID, and a validated same-origin HTTPS URL. It accepts at most
+100 linked files and fails the whole manifest instead of returning partial or
+truncated identifiers.
 
 Stream the original local capture bytes without another provider request.
 

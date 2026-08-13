@@ -83,6 +83,7 @@ pub(crate) async fn handle_command(
                     gene,
                     args.version,
                     args.capture_id,
+                    args.files,
                     args.offset,
                     args.limit,
                     json,

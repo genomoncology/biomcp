@@ -11,6 +11,7 @@ cache="$root/.cache"
 env_file="$cache/spec-clingen-cspec-env"
 mkdir -p "$cache"
 fixture_root="$(mktemp -d "$cache/spec-clingen-cspec.XXXXXX")"
+mkdir -p "$fixture_root/cache"
 owner_arg="$(bash "$ownership_helper" new-owner "clingen-cspec" "$fixture_root")"
 bash "$(dirname "$0")/cleanup-clingen-cspec-spec-fixture.sh" "$root"
 ready="$fixture_root/origin"
@@ -28,7 +29,10 @@ MANIFESTS = {
     gene: (CAPTURES / f'{gene.lower()}-manifest.json').read_bytes()
     for gene in ('APC', 'ATM', 'BRCA1', 'MLH1', 'PALB2', 'PTEN', 'TP53', 'BRAF')
 }
-DOCUMENT = (CAPTURES / 'atm-gn020-1.5.1.json').read_bytes()
+DOCUMENTS = {
+  ('GN020', '1.5.1'): (CAPTURES / 'atm-gn020-1.5.1.json').read_bytes(),
+  ('GN003', '3.2.1'): (CAPTURES / 'pten-gn003-3.2.1.json').read_bytes(),
+}
 
 class Handler(BaseHTTPRequestHandler):
   def log_message(self, *_): pass
@@ -42,8 +46,10 @@ class Handler(BaseHTTPRequestHandler):
       body = MANIFESTS.get(parts[3])
       if body is not None:
         self.send(body); return
-    if parts == ['cspec', 'SequenceVariantInterpretation', 'id', 'GN020', 'version', '1.5.1']:
-      self.send(DOCUMENT); return
+    if len(parts) == 6 and parts[:3] == ['cspec', 'SequenceVariantInterpretation', 'id']:
+      body = DOCUMENTS.get((parts[3], parts[5]))
+      if body is not None:
+        self.send(body); return
     self.send_response(404); self.end_headers()
 
 server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)

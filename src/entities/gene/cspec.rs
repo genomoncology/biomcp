@@ -9,6 +9,9 @@ use crate::error::BioMcpError;
 use crate::sources::clingen_cspec::CspecClient;
 
 const FIELD_LIMIT: usize = 16 * 1024;
+const ATTACHMENT_LIMIT: usize = 100;
+const ATTACHMENT_FIELD_BYTES: usize = 512;
+const ATTACHMENT_URL_BYTES: usize = 4096;
 
 #[derive(Debug)]
 struct CspecDocumentIri {
@@ -37,10 +40,30 @@ pub(crate) struct CspecResponse {
     pub offset: usize,
     pub limit: usize,
     pub total: usize,
+    pub attachment_count: usize,
     pub semantic_subset_version: &'static str,
     pub semantic_subset_sha256: String,
     #[serde(flatten)]
     pub capture: CaptureProvenance,
+}
+#[derive(Debug, Serialize)]
+pub(crate) struct CspecFilesResponse {
+    pub resource_iri: String,
+    pub specification_id: String,
+    pub gene: String,
+    pub attachment_count: usize,
+    pub attachments: Vec<CspecAttachment>,
+    #[serde(flatten)]
+    pub capture: CaptureProvenance,
+}
+#[derive(Debug, Serialize)]
+pub(crate) struct CspecAttachment {
+    pub attachment_id: String,
+    pub label: String,
+    pub filename: String,
+    pub media_type: String,
+    pub declared_size: Option<u64>,
+    pub download_url: String,
 }
 #[derive(Debug, Serialize)]
 pub(crate) struct CaptureProvenance {
@@ -121,6 +144,44 @@ pub(crate) fn page_capture(
         ));
     }
     page_from_bytes(&bytes, binding, offset, limit, &manifest)
+}
+
+pub(crate) fn files_capture(
+    capture_id: &str,
+    gene: &str,
+) -> Result<CspecFilesResponse, BioMcpError> {
+    let store = store()?;
+    let bytes = store.read(capture_id).map_err(capture_error)?;
+    let manifest = store.read_manifest(capture_id).map_err(capture_error)?;
+    let binding = manifest
+        .capture_binding
+        .as_ref()
+        .ok_or(BioMcpError::CaptureCorrupt)?;
+    validate_binding(binding)?;
+    if binding.normalized_gene != gene.to_ascii_uppercase() {
+        return Err(BioMcpError::InvalidArgument(
+            "CSpec capture does not match the requested gene".into(),
+        ));
+    }
+    files_from_bytes(&bytes, binding, &manifest)
+}
+
+pub(crate) async fn retrieve_files(
+    gene: &str,
+    version_iri: &str,
+) -> Result<CspecFilesResponse, BioMcpError> {
+    let client = CspecClient::new()?;
+    let manifest = manifest(gene, &client).await?;
+    let selected = select(&manifest.resource_iris, version_iri)?;
+    let bytes = client.document(&selected.url).await?;
+    let binding = CspecCaptureBinding {
+        binding_schema_version: 1,
+        normalized_gene: gene.to_ascii_uppercase(),
+        resource_iri: selected.raw,
+        specification_id: selected.specification_id,
+    };
+    let capture = capture(&bytes, binding.clone())?;
+    files_from_bytes(&read_capture(&capture.capture_id)?, &binding, &capture)
 }
 
 pub(crate) fn read_capture(capture_id: &str) -> Result<Vec<u8>, BioMcpError> {
@@ -341,6 +402,7 @@ fn page_from_bytes(
         .and_then(|value| value.get("CriteriaCode"))
         .and_then(Value::as_array)
         .ok_or_else(processing)?;
+    let attachment_count = linked_files(ld).len();
     let parsed_criteria = all
         .iter()
         .enumerate()
@@ -379,11 +441,125 @@ fn page_from_bytes(
         offset,
         limit,
         total,
+        attachment_count,
         criteria,
         semantic_subset_version: "cspec-semantic-v1",
         semantic_subset_sha256,
         capture: provenance(capture),
     })
+}
+
+fn linked_files(ld: Option<&serde_json::Map<String, Value>>) -> Vec<&Value> {
+    ld.and_then(|value| value.get("RuleSet"))
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .flat_map(|ruleset| {
+            ruleset
+                .pointer("/ld/File")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+        })
+        .collect()
+}
+
+fn files_from_bytes(
+    bytes: &[u8],
+    binding: &CspecCaptureBinding,
+    capture: &ProviderCaptureManifest,
+) -> Result<CspecFilesResponse, BioMcpError> {
+    let value: Value = serde_json::from_slice(bytes).map_err(|_| processing())?;
+    let data = value
+        .get("data")
+        .and_then(Value::as_object)
+        .ok_or_else(processing)?;
+    if data.get("entId").and_then(Value::as_str) != Some(&binding.specification_id) {
+        return Err(processing());
+    }
+    let files = linked_files(data.get("ld").and_then(Value::as_object));
+    if files.len() > ATTACHMENT_LIMIT {
+        return Err(response_limit(ATTACHMENT_LIMIT, "attachments"));
+    }
+    let base = reqwest::Url::parse(&binding.resource_iri).map_err(|_| processing())?;
+    let mut ids = std::collections::HashSet::new();
+    let mut urls = std::collections::HashSet::new();
+    let mut attachments = Vec::with_capacity(files.len());
+    for file in files {
+        if file.get("entType").and_then(Value::as_str) != Some("File")
+            || file.pointer("/entContent/public").and_then(Value::as_bool) != Some(true)
+        {
+            return Err(invalid("linked CSpec attachment is not public"));
+        }
+        let content = file
+            .get("entContent")
+            .and_then(Value::as_object)
+            .ok_or_else(processing)?;
+        let attachment_id = attachment_field(file.get("entId"), "attachment identifier")?;
+        let label = attachment_field(content.get("fileLabel"), "attachment label")?;
+        let filename = attachment_field(content.get("fileName"), "attachment filename")?;
+        let media_type = attachment_field(content.get("type"), "attachment media type")?;
+        let path = content
+            .get("path")
+            .and_then(Value::as_str)
+            .ok_or_else(processing)?;
+        if path.len() > ATTACHMENT_URL_BYTES || !path.starts_with('/') {
+            return Err(response_limit(ATTACHMENT_URL_BYTES, "URL bytes"));
+        }
+        let url = base
+            .join(path)
+            .map_err(|_| invalid("malformed CSpec attachment URL"))?;
+        if url.origin() != base.origin()
+            || url.scheme() != "https"
+            || !url.username().is_empty()
+            || url.password().is_some()
+            || url.query().is_some()
+            || url.fragment().is_some()
+            || url.as_str().len() > ATTACHMENT_URL_BYTES
+        {
+            return Err(invalid("unsupported CSpec attachment URL"));
+        }
+        if !ids.insert(attachment_id.clone()) || !urls.insert(url.as_str().to_owned()) {
+            return Err(invalid("duplicate CSpec attachment"));
+        }
+        let declared_size = match content.get("size") {
+            None | Some(Value::Null) => None,
+            Some(value) => Some(value.as_u64().ok_or_else(processing)?),
+        };
+        attachments.push(CspecAttachment {
+            attachment_id,
+            label,
+            filename,
+            media_type,
+            declared_size,
+            download_url: url.into(),
+        });
+    }
+    Ok(CspecFilesResponse {
+        resource_iri: binding.resource_iri.clone(),
+        specification_id: binding.specification_id.clone(),
+        gene: binding.normalized_gene.clone(),
+        attachment_count: attachments.len(),
+        attachments,
+        capture: provenance(capture),
+    })
+}
+
+fn attachment_field(value: Option<&Value>, unit: &'static str) -> Result<String, BioMcpError> {
+    let value = value.and_then(Value::as_str).ok_or_else(processing)?;
+    if value.len() > ATTACHMENT_FIELD_BYTES {
+        Err(response_limit(ATTACHMENT_FIELD_BYTES, unit))
+    } else {
+        Ok(value.to_owned())
+    }
+}
+
+fn response_limit(limit: usize, unit: &'static str) -> BioMcpError {
+    BioMcpError::ProviderResponseLimit {
+        source_name: "ClinGen CSpec".into(),
+        limit,
+        unit,
+    }
 }
 fn provenance(m: &ProviderCaptureManifest) -> CaptureProvenance {
     CaptureProvenance {
@@ -515,11 +691,142 @@ fn bounded(value: &str, field: &str, truncated: &mut Vec<String>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json::{Value, json};
 
-    use super::{FIELD_LIMIT, bounded, page_from_bytes, select};
+    use super::{
+        ATTACHMENT_FIELD_BYTES, ATTACHMENT_LIMIT, FIELD_LIMIT, bounded, files_from_bytes,
+        page_from_bytes, select,
+    };
     use crate::cache::{CspecCaptureBinding, ProviderCaptureManifest, ProviderCaptureProvider};
     use crate::error::BioMcpError;
+
+    fn pten_capture(bytes: &[u8]) -> ProviderCaptureManifest {
+        ProviderCaptureManifest {
+            capture_id: format!("capture:cspec:sha256:{}", "a".repeat(64)),
+            provider: ProviderCaptureProvider::Cspec,
+            media_type: "application/json".into(),
+            byte_length: bytes.len() as u64,
+            sha256: "a".repeat(64),
+            captured_at: 1,
+            expires_at: 2,
+            schema_version: 1,
+            capture_binding: Some(CspecCaptureBinding {
+                binding_schema_version: 1,
+                normalized_gene: "PTEN".into(),
+                resource_iri: "https://cspec.clinicalgenome.org/cspec/SequenceVariantInterpretation/id/GN003/version/3.2.1".into(),
+                specification_id: "GN003".into(),
+            }),
+        }
+    }
+
+    #[test]
+    fn receipted_pten_files_and_normal_count_use_the_production_parser() {
+        let bytes = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_cspec/pten-gn003-3.2.1.json"
+        ));
+        let capture = pten_capture(bytes);
+        let binding = capture.capture_binding.as_ref().unwrap();
+        let files = files_from_bytes(bytes, binding, &capture).expect("attachment manifest");
+        assert_eq!(files.attachment_count, 5);
+        assert_eq!(files.attachments[0].media_type, "png");
+        assert!(files.attachments.iter().all(|file| {
+            file.download_url
+                .starts_with("https://cspec.clinicalgenome.org/data/")
+        }));
+        assert_eq!(
+            page_from_bytes(bytes, binding, 0, 25, &capture)
+                .unwrap()
+                .attachment_count,
+            5
+        );
+    }
+
+    #[test]
+    fn attachment_count_and_field_boundaries_fail_without_partial_rows() {
+        let original: Value = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_cspec/pten-gn003-3.2.1.json"
+        )))
+        .unwrap();
+        for count in [ATTACHMENT_LIMIT, ATTACHMENT_LIMIT + 1] {
+            let mut value = original.clone();
+            let template = value
+                .pointer("/data/ld/RuleSet/0/ld/File/0")
+                .unwrap()
+                .clone();
+            let rows = (0..count)
+                .map(|index| {
+                    let mut row = template.clone();
+                    row["entId"] = json!(format!("attachment-{index}"));
+                    row["entContent"]["path"] = json!(format!("/data/attachment-{index}.png"));
+                    row
+                })
+                .collect::<Vec<_>>();
+            value["data"]["ld"]["RuleSet"][0]["ld"]["File"] = json!(rows);
+            let bytes = serde_json::to_vec(&value).unwrap();
+            let capture = pten_capture(&bytes);
+            let result =
+                files_from_bytes(&bytes, capture.capture_binding.as_ref().unwrap(), &capture);
+            assert_eq!(result.is_ok(), count == ATTACHMENT_LIMIT);
+        }
+        for pointer in [
+            "/entId",
+            "/entContent/fileLabel",
+            "/entContent/fileName",
+            "/entContent/type",
+        ] {
+            for size in [ATTACHMENT_FIELD_BYTES, ATTACHMENT_FIELD_BYTES + 1] {
+                let mut value = original.clone();
+                *value
+                    .pointer_mut(&format!("/data/ld/RuleSet/0/ld/File/0{pointer}"))
+                    .unwrap() = json!("x".repeat(size));
+                let bytes = serde_json::to_vec(&value).unwrap();
+                let capture = pten_capture(&bytes);
+                assert_eq!(
+                    files_from_bytes(&bytes, capture.capture_binding.as_ref().unwrap(), &capture)
+                        .is_ok(),
+                    size == ATTACHMENT_FIELD_BYTES
+                );
+            }
+        }
+        let origin = "https://cspec.clinicalgenome.org";
+        for size in [4096, 4097] {
+            let mut value = original.clone();
+            value["data"]["ld"]["RuleSet"][0]["ld"]["File"][0]["entContent"]["path"] =
+                json!(format!("/{}", "x".repeat(size - origin.len() - 1)));
+            let bytes = serde_json::to_vec(&value).unwrap();
+            let capture = pten_capture(&bytes);
+            assert_eq!(
+                files_from_bytes(&bytes, capture.capture_binding.as_ref().unwrap(), &capture)
+                    .is_ok(),
+                size == 4096
+            );
+        }
+        for mutation in ["private", "cross-origin", "duplicate"] {
+            let mut value = original.clone();
+            match mutation {
+                "private" => {
+                    value["data"]["ld"]["RuleSet"][0]["ld"]["File"][0]["entContent"]["public"] =
+                        json!(false)
+                }
+                "cross-origin" => {
+                    value["data"]["ld"]["RuleSet"][0]["ld"]["File"][0]["entContent"]["path"] =
+                        json!("https://example.test/file")
+                }
+                _ => {
+                    value["data"]["ld"]["RuleSet"][0]["ld"]["File"][1] =
+                        value["data"]["ld"]["RuleSet"][0]["ld"]["File"][0].clone()
+                }
+            }
+            let bytes = serde_json::to_vec(&value).unwrap();
+            let capture = pten_capture(&bytes);
+            assert!(
+                files_from_bytes(&bytes, capture.capture_binding.as_ref().unwrap(), &capture)
+                    .is_err()
+            );
+        }
+    }
 
     #[test]
     fn selection_requires_the_literal_manifest_iri() {
