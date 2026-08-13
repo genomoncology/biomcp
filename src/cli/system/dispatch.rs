@@ -668,6 +668,7 @@ mod batch_settlement_tests {
         .expect("settled batch");
 
         assert_eq!(outcome.exit_code, 1);
+        assert_eq!(outcome.stream, crate::cli::OutputStream::Stdout);
         let value: serde_json::Value = serde_json::from_str(&outcome.text).expect("batch json");
         assert_eq!(
             value["summary"],

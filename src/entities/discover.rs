@@ -17,6 +17,7 @@ use crate::sources::umls::{UmlsConcept, UmlsXref};
 const OLS4_TIMEOUT: Duration = Duration::from_millis(8000);
 const UMLS_TIMEOUT: Duration = Duration::from_millis(2500);
 const MEDLINEPLUS_TIMEOUT: Duration = Duration::from_millis(800);
+const TYPED_GENE_IDENTITY_TIMEOUT: Duration = Duration::from_millis(2500);
 const GENERAL_DISCOVER_MAX_SURVIVORS: usize = 5;
 const DISCOVER_GENERAL_STOPWORDS: &[&str] = &[
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "in", "into", "of", "on", "or", "the",
@@ -423,11 +424,36 @@ async fn resolve_request_with_options(
         }
     };
 
-    let (ols_docs, (umls_rows, umls_note), medline_topics) = match request.no_cache {
-        false => tokio::join!(ols_future, umls_future, medline_future),
+    let gene_identity_future = async {
+        if !crate::entities::gene::looks_like_symbol(query) {
+            return None;
+        }
+        match tokio::time::timeout(
+            TYPED_GENE_IDENTITY_TIMEOUT,
+            crate::entities::gene::resolve_unique_canonical_alias(query),
+        )
+        .await
+        {
+            Ok(Ok(identity)) => identity,
+            Ok(Err(_)) | Err(_) => None,
+        }
+    };
+
+    let (ols_docs, (umls_rows, umls_note), medline_topics, gene_identity) = match request.no_cache {
+        false => tokio::join!(
+            ols_future,
+            umls_future,
+            medline_future,
+            gene_identity_future
+        ),
         true => {
             crate::sources::with_no_cache(request.no_cache, async {
-                tokio::join!(ols_future, umls_future, medline_future)
+                tokio::join!(
+                    ols_future,
+                    umls_future,
+                    medline_future,
+                    gene_identity_future
+                )
             })
             .await
         }
@@ -502,6 +528,16 @@ async fn resolve_request_with_options(
     }
 
     let mut result = build_result(query, &ols_docs, &umls_rows, &medline_topics, notes);
+    if let Some(identity) = gene_identity {
+        merge_candidate(
+            &mut result.concepts,
+            typed_gene_identity_concept(query, identity),
+        );
+        result
+            .concepts
+            .sort_by(|left, right| compare_concepts(left, right, query));
+        refresh_selected_guidance(&mut result);
+    }
     apply_discover_options(&mut result, options);
 
     if let Some(client) = umls_client.as_ref() {
@@ -535,6 +571,34 @@ async fn resolve_request_with_options(
     }
     refresh_preview_metadata(&mut result, options.full);
     Ok(result)
+}
+
+fn typed_gene_identity_concept(
+    query: &str,
+    identity: crate::entities::gene::CanonicalGeneAlias,
+) -> DiscoverConcept {
+    let matched_alias = !identity.symbol.eq_ignore_ascii_case(query.trim());
+    DiscoverConcept {
+        label: identity.symbol.clone(),
+        primary_id: Some(format!("NCBIGENE:{}", identity.entrez_id)),
+        primary_type: DiscoverType::Gene,
+        synonyms: matched_alias
+            .then(|| query.trim().to_string())
+            .into_iter()
+            .collect(),
+        xrefs: vec![ConceptXref {
+            source: "NCBIGENE".into(),
+            id: identity.entrez_id.clone(),
+        }],
+        sources: vec![ConceptSource {
+            source: "MyGene.info".into(),
+            id: identity.entrez_id,
+            label: identity.symbol,
+            source_type: "Gene".into(),
+        }],
+        match_tier: MatchTier::Exact,
+        confidence: DiscoverConfidence::CanonicalId,
+    }
 }
 
 pub(crate) fn discover_continuation_command(
@@ -2386,8 +2450,9 @@ mod tests {
         AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept, DiscoverConfidence,
         DiscoverIntent, DiscoverMode, DiscoverRequest, DiscoverResult, DiscoverType, MatchTier,
         OLS4_TIMEOUT, build_result, classify_alias_fallback, concept_from_ols, generate_commands,
-        normalize_primary_id, ols_doc_identifier,
+        merge_candidate, normalize_primary_id, ols_doc_identifier,
         resolve_exact_article_keyword_entity_from_ols_docs, symptom_disease_lookup_query,
+        typed_gene_identity_concept,
     };
     use crate::sources::medlineplus::MedlinePlusTopic;
     use crate::sources::ols4::OlsDoc;
@@ -2819,6 +2884,43 @@ mod tests {
         assert_eq!(result.concepts[0].label, "EGFR");
         assert_eq!(result.concepts[0].primary_type, DiscoverType::Gene);
         assert_eq!(result.next_commands[0], "biomcp get gene EGFR");
+    }
+
+    #[test]
+    fn typed_alias_identity_leads_when_ontology_omits_hgnc() {
+        let mut result = build_result(
+            "ERBB1",
+            &[],
+            &[UmlsConcept {
+                cui: "C9999999".to_string(),
+                name: "erbB1 Genes".to_string(),
+                semantic_types: vec!["Gene or Genome".to_string()],
+                xrefs: Vec::new(),
+                uri: "https://example.invalid/weak".to_string(),
+            }],
+            &[],
+            Vec::new(),
+        );
+        merge_candidate(
+            &mut result.concepts,
+            typed_gene_identity_concept(
+                "ERBB1",
+                crate::entities::gene::CanonicalGeneAlias {
+                    symbol: "EGFR".to_string(),
+                    entrez_id: "1956".to_string(),
+                },
+            ),
+        );
+        result
+            .concepts
+            .sort_by(|left, right| super::compare_concepts(left, right, "ERBB1"));
+
+        assert_eq!(result.concepts[0].label, "EGFR");
+        assert_eq!(
+            result.concepts[0].primary_id.as_deref(),
+            Some("NCBIGENE:1956")
+        );
+        assert_eq!(result.concepts[0].sources[0].source, "MyGene.info");
     }
 
     #[test]

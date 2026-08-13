@@ -220,7 +220,7 @@ pub struct VariantGwasAssociation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trait_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub p_value: Option<f64>,
+    pub p_value: Option<GwasPValue>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effect_size: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -241,6 +241,115 @@ pub struct VariantGwasAssociation {
     pub author: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sample_description: Option<String>,
+}
+
+/// A GWAS p-value that preserves the provider's exact scientific notation.
+///
+/// `numeric` is absent when the value cannot be represented by an `f64`
+/// without underflowing to zero. Callers should use `scientific` when they
+/// need a lossless display value.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GwasPValue {
+    pub scientific: String,
+    pub mantissa: Option<i64>,
+    pub exponent: Option<i32>,
+    pub numeric: Option<f64>,
+}
+
+impl GwasPValue {
+    pub(crate) fn from_numeric(value: f64) -> Option<Self> {
+        if !value.is_finite() || value <= 0.0 {
+            return None;
+        }
+        Some(Self {
+            scientific: normalize_scientific(format!("{value:e}")),
+            mantissa: None,
+            exponent: None,
+            numeric: Some(value),
+        })
+    }
+
+    pub(crate) fn from_provider_parts(
+        numeric: Option<f64>,
+        mantissa: Option<i64>,
+        exponent: Option<i32>,
+    ) -> Option<Self> {
+        match (mantissa, exponent) {
+            (Some(mantissa), Some(exponent)) if mantissa > 0 => {
+                let representable = (mantissa as f64) * 10_f64.powi(exponent);
+                Some(Self {
+                    scientific: format!("{mantissa}e{exponent}"),
+                    mantissa: Some(mantissa),
+                    exponent: Some(exponent),
+                    numeric: (representable.is_finite() && representable > 0.0)
+                        .then_some(representable),
+                })
+            }
+            _ => numeric.and_then(Self::from_numeric),
+        }
+    }
+
+    pub(crate) fn is_at_most(&self, threshold: f64) -> bool {
+        Self::from_numeric(threshold).is_some_and(|limit| self.total_cmp(&limit).is_le())
+    }
+
+    pub(crate) fn total_cmp(&self, other: &Self) -> std::cmp::Ordering {
+        compare_positive_scientific(&self.scientific, &other.scientific)
+    }
+}
+
+fn normalize_scientific(value: String) -> String {
+    let Some((coefficient, exponent)) = value.split_once('e') else {
+        return value;
+    };
+    let coefficient = coefficient
+        .trim_end_matches('0')
+        .trim_end_matches('.')
+        .to_string();
+    let exponent = exponent.parse::<i32>().unwrap_or_default();
+    format!("{coefficient}e{exponent}")
+}
+
+fn compare_positive_scientific(left: &str, right: &str) -> std::cmp::Ordering {
+    let Some((left_digits, left_exponent)) = scientific_parts(left) else {
+        return left.cmp(right);
+    };
+    let Some((right_digits, right_exponent)) = scientific_parts(right) else {
+        return left.cmp(right);
+    };
+    let left_magnitude = left_exponent + i32::try_from(left_digits.len()).unwrap_or(i32::MAX);
+    let right_magnitude = right_exponent + i32::try_from(right_digits.len()).unwrap_or(i32::MAX);
+    left_magnitude.cmp(&right_magnitude).then_with(|| {
+        let width = left_digits.len().max(right_digits.len());
+        let mut left_scaled = left_digits.clone();
+        let mut right_scaled = right_digits.clone();
+        left_scaled.extend(std::iter::repeat_n('0', width - left_scaled.len()));
+        right_scaled.extend(std::iter::repeat_n('0', width - right_scaled.len()));
+        left_scaled.cmp(&right_scaled)
+    })
+}
+
+fn scientific_parts(value: &str) -> Option<(String, i32)> {
+    let (coefficient, exponent) = value.split_once('e')?;
+    let exponent = exponent.parse::<i32>().ok()?;
+    let decimal_places = coefficient
+        .split_once('.')
+        .map_or(0, |(_, fraction)| fraction.len());
+    let mut digits = coefficient.replace('.', "");
+    if !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    let leading = digits.len() - digits.trim_start_matches('0').len();
+    digits.drain(..leading);
+    if digits.is_empty() {
+        return None;
+    }
+    let trailing = digits.len() - digits.trim_end_matches('0').len();
+    digits.truncate(digits.len() - trailing);
+    let exponent = exponent
+        .saturating_sub(i32::try_from(decimal_places).ok()?)
+        .saturating_add(i32::try_from(trailing).ok()?);
+    Some((digits, exponent))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

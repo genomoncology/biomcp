@@ -64,6 +64,8 @@ fn v2_association_search_response_keeps_rows_and_provider_total() {
         Some("rs7903146")
     );
     assert_eq!(resp.embedded.associations[0].risk_frequency, Some(0.22941));
+    assert_eq!(resp.embedded.associations[0].pvalue_mantissa, Some(3));
+    assert_eq!(resp.embedded.associations[0].pvalue_exponent, Some(-1315));
 }
 
 #[test]

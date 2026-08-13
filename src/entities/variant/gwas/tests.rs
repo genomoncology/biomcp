@@ -7,7 +7,7 @@ fn search_row(rsid: &str, p_value: f64) -> VariantGwasAssociation {
     VariantGwasAssociation {
         rsid: rsid.into(),
         trait_name: Some("trait".into()),
-        p_value: Some(p_value),
+        p_value: super::super::GwasPValue::from_numeric(p_value),
         effect_size: None,
         effect_type: None,
         confidence_interval: None,
@@ -37,7 +37,38 @@ fn combined_gene_and_trait_rows_are_an_intersection_before_p_value_filtering() {
 
     apply_p_value_filter(&mut intersection, Some(0.01));
     assert_eq!(intersection.len(), 1);
-    assert_eq!(intersection[0].p_value, Some(0.0001));
+    assert_eq!(
+        intersection[0]
+            .p_value
+            .as_ref()
+            .and_then(|value| value.numeric),
+        Some(0.0001)
+    );
+}
+
+#[test]
+fn underflowed_exact_p_values_remain_truthful_and_filterable() {
+    let exact = super::super::GwasPValue::from_provider_parts(Some(0.0), Some(3), Some(-1315))
+        .expect("exact provider p-value");
+
+    assert_eq!(exact.scientific, "3e-1315");
+    assert_eq!(exact.mantissa, Some(3));
+    assert_eq!(exact.exponent, Some(-1315));
+    assert_eq!(exact.numeric, None);
+    assert_eq!(
+        serde_json::to_value(&exact).unwrap(),
+        serde_json::json!({
+            "scientific": "3e-1315",
+            "mantissa": 3,
+            "exponent": -1315,
+            "numeric": null
+        })
+    );
+    assert!(exact.is_at_most(5e-324));
+
+    let larger = super::super::GwasPValue::from_provider_parts(Some(0.0), Some(5), Some(-420))
+        .expect("second exact p-value");
+    assert!(exact.total_cmp(&larger).is_lt());
 }
 
 #[test]

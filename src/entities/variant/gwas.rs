@@ -143,7 +143,11 @@ pub async fn search_gwas_page(
 
 fn apply_p_value_filter(rows: &mut Vec<VariantGwasAssociation>, threshold: Option<f64>) {
     if let Some(threshold) = threshold {
-        rows.retain(|row| row.p_value.is_some_and(|value| value <= threshold));
+        rows.retain(|row| {
+            row.p_value
+                .as_ref()
+                .is_some_and(|value| value.is_at_most(threshold))
+        });
     }
 }
 
@@ -210,7 +214,11 @@ fn map_gwas_summary(association: &GwasAssociationSummary) -> Option<VariantGwasA
     Some(VariantGwasAssociation {
         rsid: rsid.to_ascii_lowercase(),
         trait_name,
-        p_value: association.p_value,
+        p_value: super::GwasPValue::from_provider_parts(
+            association.p_value,
+            association.pvalue_mantissa,
+            association.pvalue_exponent,
+        ),
         effect_size,
         effect_type,
         confidence_interval: association.range.clone(),
@@ -270,10 +278,13 @@ fn dedupe_gwas_rows(
     });
 
     rows.sort_by(|a, b| {
-        a.p_value
-            .unwrap_or(f64::INFINITY)
-            .total_cmp(&b.p_value.unwrap_or(f64::INFINITY))
-            .then_with(|| a.rsid.cmp(&b.rsid))
+        match (&a.p_value, &b.p_value) {
+            (Some(left), Some(right)) => left.total_cmp(right),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => std::cmp::Ordering::Equal,
+        }
+        .then_with(|| a.rsid.cmp(&b.rsid))
     });
     rows.truncate(limit);
     Ok(rows)
@@ -439,7 +450,7 @@ fn map_gwas_association(
     Some(VariantGwasAssociation {
         rsid,
         trait_name: association_trait_name(association),
-        p_value: association.pvalue,
+        p_value: association.pvalue.and_then(super::GwasPValue::from_numeric),
         effect_size,
         effect_type,
         confidence_interval: association

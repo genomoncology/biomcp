@@ -576,7 +576,7 @@ fn gwas_search_markdown_renders_result_row() {
         &[crate::entities::variant::VariantGwasAssociation {
             rsid: "rs121434568".to_string(),
             trait_name: Some("Lung adenocarcinoma".to_string()),
-            p_value: Some(5.0e-8),
+            p_value: crate::entities::variant::GwasPValue::from_numeric(5.0e-8),
             effect_size: Some(1.23),
             effect_type: Some("OR".to_string()),
             confidence_interval: None,

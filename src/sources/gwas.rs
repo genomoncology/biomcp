@@ -201,6 +201,8 @@ pub struct GwasAssociationSummary {
     #[serde(default)]
     pub mapped_genes: Vec<String>,
     pub p_value: Option<f64>,
+    pub pvalue_mantissa: Option<i64>,
+    pub pvalue_exponent: Option<i32>,
     pub or_per_copy_num: Option<f64>,
     pub beta_num: Option<f64>,
     pub range: Option<String>,

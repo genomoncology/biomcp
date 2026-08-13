@@ -219,7 +219,7 @@ No cBioPortal frequency data available.
 | rsID | Trait | p-value | Effect | Confidence | Risk AF | Risk Allele | Study | PMID | Author |
 |---|---|---|---|---|---|---|---|---|---|
 {% for row in gwas -%}
-| {{ row.rsid }} | {{ row.trait_name or "-" }} | {% if row.p_value is defined and row.p_value is not none %}{{ row.p_value | pval }}{% else %}-{% endif %} | {% if row.effect_size is defined and row.effect_size is not none %}{{ row.effect_type or "effect" }} {{ row.effect_size | score }}{% else %}-{% endif %} | {{ row.confidence_interval or "-" }} | {% if row.risk_allele_frequency is defined and row.risk_allele_frequency is not none %}{{ row.risk_allele_frequency | af }}{% else %}-{% endif %} | {{ row.risk_allele or "-" }} | {{ row.study_accession or "-" }} | {{ row.pmid or "-" }} | {{ row.author or "-" }} |
+| {{ row.rsid }} | {{ row.trait_name or "-" }} | {% if row.p_value is defined and row.p_value is not none %}{{ row.p_value.scientific }}{% else %}-{% endif %} | {% if row.effect_size is defined and row.effect_size is not none %}{{ row.effect_type or "effect" }} {{ row.effect_size | score }}{% else %}-{% endif %} | {{ row.confidence_interval or "-" }} | {% if row.risk_allele_frequency is defined and row.risk_allele_frequency is not none %}{{ row.risk_allele_frequency | af }}{% else %}-{% endif %} | {{ row.risk_allele or "-" }} | {{ row.study_accession or "-" }} | {{ row.pmid or "-" }} | {{ row.author or "-" }} |
 {% endfor -%}
 {% else -%}
 No GWAS associations found for this variant.

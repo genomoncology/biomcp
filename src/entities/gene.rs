@@ -861,6 +861,30 @@ fn matching_canonical_alias_symbols(query: &str, hits: &[MyGeneHit]) -> Vec<Stri
     out
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct CanonicalGeneAlias {
+    pub(crate) symbol: String,
+    pub(crate) entrez_id: String,
+}
+
+fn matching_canonical_aliases(query: &str, hits: &[MyGeneHit]) -> Vec<CanonicalGeneAlias> {
+    let symbols = matching_canonical_alias_symbols(query, hits);
+    symbols
+        .into_iter()
+        .filter_map(|symbol| {
+            let hit = hits.iter().find(|hit| {
+                hit.symbol
+                    .as_deref()
+                    .is_some_and(|value| value.eq_ignore_ascii_case(&symbol))
+            })?;
+            Some(CanonicalGeneAlias {
+                symbol,
+                entrez_id: hit.entrezgene.as_ref()?.as_string(),
+            })
+        })
+        .collect()
+}
+
 async fn unique_canonical_alias_symbol(
     client: &MyGeneClient,
     query: &str,
@@ -870,6 +894,17 @@ async fn unique_canonical_alias_symbol(
         .await?;
     let matches = matching_canonical_alias_symbols(query, &resp.hits);
     Ok((matches.len() == 1).then(|| matches[0].clone()))
+}
+
+pub(crate) async fn resolve_unique_canonical_alias(
+    query: &str,
+) -> Result<Option<CanonicalGeneAlias>, BioMcpError> {
+    let client = MyGeneClient::new()?;
+    let resp = client
+        .search(&mygene_query_term(query), 10, 0, None)
+        .await?;
+    let mut matches = matching_canonical_aliases(query, &resp.hits);
+    Ok((matches.len() == 1).then(|| matches.remove(0)))
 }
 
 fn normalize_gene_type(value: &str) -> Result<&'static str, BioMcpError> {
@@ -3308,6 +3343,18 @@ mod tests {
         assert_eq!(
             matching_canonical_alias_symbols("SHARED", &hits),
             vec!["GENE1", "GENE2"]
+        );
+    }
+
+    #[test]
+    fn canonical_alias_identity_keeps_the_entrez_identifier() {
+        let aliases = matching_canonical_aliases("ERBB1", &[mygene_hit("EGFR", &["ERBB1"])]);
+        assert_eq!(
+            aliases,
+            vec![CanonicalGeneAlias {
+                symbol: "EGFR".into(),
+                entrez_id: "1".into(),
+            }]
         );
     }
 

@@ -29,7 +29,7 @@ async fn create_unique_sibling_temp(
             "Invalid cache path (no parent directory)".into(),
         ));
     };
-    tokio::fs::create_dir_all(dir).await?;
+    crate::cache::secure_managed_tree(dir, true)?;
 
     let stem = path
         .file_name()
@@ -44,13 +44,15 @@ async fn create_unique_sibling_temp(
             ".{stem}.{}.tmp",
             seed.saturating_add(attempt as u128)
         ));
-        match tokio::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&candidate)
-            .await
-        {
-            Ok(file) => return Ok((file, candidate)),
+        let opened = crate::cache::open_private(
+            std::fs::OpenOptions::new().write(true).create_new(true),
+            &candidate,
+        );
+        match opened {
+            Ok(file) => {
+                crate::cache::secure_managed_tree(dir, true)?;
+                return Ok((tokio::fs::File::from_std(file), candidate));
+            }
             Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(err) => return Err(err.into()),
         }
@@ -124,6 +126,7 @@ pub async fn save_atomic(id: &str, content: &str) -> Result<PathBuf, BioMcpError
 
 async fn save_atomic_to_path(path: PathBuf, content: &str) -> Result<PathBuf, BioMcpError> {
     if matches!(tokio::fs::metadata(&path).await, Ok(metadata) if metadata.is_file()) {
+        crate::cache::secure_managed_tree(path.parent().expect("download path has parent"), true)?;
         return Ok(path);
     }
 
@@ -231,6 +234,39 @@ mod tests {
         assert_eq!(saved_path, path);
         let content = std::fs::read_to_string(&saved_path).expect("saved file should exist");
         assert_eq!(content, "hello world");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn downloads_are_private_and_existing_files_are_repaired() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = TempDirGuard::new("private-download");
+        let target = root.path().join("downloads").join("article.txt");
+        let saved = save_atomic_to_path(target.clone(), "private")
+            .await
+            .expect("private download");
+        assert_eq!(
+            std::fs::metadata(&saved).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        assert_eq!(
+            std::fs::metadata(saved.parent().unwrap())
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o700
+        );
+
+        std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o664)).unwrap();
+        save_atomic_to_path(target.clone(), "ignored")
+            .await
+            .expect("repair existing download");
+        assert_eq!(
+            std::fs::metadata(&target).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
     }
 
     #[tokio::test]

@@ -187,7 +187,7 @@ fn gwas_row(rsid: &str, trait_name: Option<&str>, p_value: Option<f64>) -> Varia
     VariantGwasAssociation {
         rsid: rsid.to_string(),
         trait_name: trait_name.map(str::to_string),
-        p_value,
+        p_value: p_value.and_then(crate::entities::variant::GwasPValue::from_numeric),
         effect_size: None,
         effect_type: None,
         confidence_interval: None,
@@ -265,7 +265,10 @@ fn dedupe_gwas_rows_keeps_lowest_p_value() {
         .iter()
         .find(|row| row.rsid == "rs1")
         .expect("rs1 row should remain");
-    assert_eq!(rs1.p_value, Some(1e-7));
+    assert_eq!(
+        rs1.p_value.as_ref().and_then(|value| value.numeric),
+        Some(1e-7)
+    );
 }
 
 #[test]
@@ -275,4 +278,13 @@ fn format_search_all_p_value_removes_float_artifacts() {
         "6e-22"
     );
     assert_eq!(format_search_all_p_value(&json!(0.005)), "0.005");
+    assert_eq!(
+        format_search_all_p_value(&json!({
+            "scientific": "3e-1315",
+            "mantissa": 3,
+            "exponent": -1315,
+            "numeric": null
+        })),
+        "3e-1315"
+    );
 }

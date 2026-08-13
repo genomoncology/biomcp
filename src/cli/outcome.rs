@@ -578,6 +578,12 @@ async fn run_outcome_inner(
             })
             .await
         }
+        Commands::Batch(args) => {
+            crate::sources::with_no_cache(no_cache, async move {
+                super::system::handle_batch(args, json).await
+            })
+            .await
+        }
         command => Ok(CommandOutcome::stdout(
             run(Cli {
                 command,
@@ -687,5 +693,15 @@ mod mcp_binary_tests {
             .expect_err("MCP must reject binary output");
         assert!(error.to_string().contains("binary downloads are CLI-only"));
         assert!(!error.to_string().contains('\u{fffd}'));
+    }
+
+    #[test]
+    fn mcp_keeps_text_from_a_nonzero_structured_outcome() {
+        let output = outcome_to_mcp_output(CommandOutcome::stdout_with_exit(
+            r#"{"summary":{"failed":1}}"#.to_string(),
+            1,
+        ))
+        .expect("MCP consumes the completed report rather than its process status");
+        assert_eq!(output.text, r#"{"summary":{"failed":1}}"#);
     }
 }

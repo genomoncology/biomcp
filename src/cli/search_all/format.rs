@@ -151,6 +151,11 @@ fn is_empty_cell(value: &str) -> bool {
 }
 
 pub(super) fn format_search_all_p_value(value: &Value) -> String {
+    if let Value::Object(fields) = value
+        && let Some(Value::String(scientific)) = fields.get("scientific")
+    {
+        return scientific.clone();
+    }
     let parsed = match value {
         Value::Number(v) => v.as_f64(),
         Value::String(v) => v.trim().parse::<f64>().ok(),
@@ -325,9 +330,12 @@ pub(super) fn dedupe_gwas_rows(
 
         let key = (rsid_key, trait_key);
         if let Some(existing_idx) = index_by_key.get(&key).copied() {
-            let existing_p = out[existing_idx].p_value.unwrap_or(f64::INFINITY);
-            let candidate_p = row.p_value.unwrap_or(f64::INFINITY);
-            if candidate_p < existing_p {
+            let candidate_is_lower = match (&row.p_value, &out[existing_idx].p_value) {
+                (Some(candidate), Some(existing)) => candidate.total_cmp(existing).is_lt(),
+                (Some(_), None) => true,
+                _ => false,
+            };
+            if candidate_is_lower {
                 out[existing_idx] = row;
             }
             continue;
