@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biomcp.org/schemas/release-candidate-manifest-v1.json",
+  "title": "BioMCP release candidate manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_sha",
+    "version",
+    "stage_run_id",
+    "status",
+    "created_at",
+    "gates",
+    "pins",
+    "signing_policy_sha256",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "stage_run_id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+    "status": { "enum": ["staging", "complete"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "gates": {
+      "type": "object",
+      "additionalProperties": { "enum": ["passed"] }
+    },
+    "pins": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "signing_policy_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/artifact" }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "kind", "target", "filename", "sha256", "bytes",
+        "source_sha", "version", "stage_run_id", "provenance", "evidence"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]+$" },
+        "kind": { "enum": ["native", "wheel", "oci", "homebrew", "mcpb"] },
+        "target": { "type": "string", "minLength": 1 },
+        "filename": { "type": "string", "pattern": "^[^/\\\\]+$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "version": { "type": "string" },
+        "stage_run_id": { "type": "string" },
+        "provenance": { "type": "object" },
+        "evidence": { "type": "object" },
+        "upstream": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}

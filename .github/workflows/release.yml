@@ -1,16 +1,149 @@
-name: Release
+name: Release candidate
 
 on:
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full commit SHA from main to stage privately
+        required: true
+        type: string
 
 permissions:
   contents: read
 
+env:
+  RUST_TOOLCHAIN: 1.93.1
+  PROTOC_VERSION: 28.3
+  MANYLINUX_X86_64: quay.io/pypa/manylinux_2_28_x86_64@sha256:f854c50adf7b7a325bc4794316f3758d387a41d61f9e2ebca0f26c7dc8f761d4
+
 jobs:
-  release-disabled:
-    runs-on: ubuntu-latest
+  candidate-gates:
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - name: Verify canonical installer copy
-        run: cmp --silent install.sh docs/install.sh
-      - run: bash scripts/release-disabled.sh
+      - name: Check out the selected commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+      - name: Reject anything except one full main SHA
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
+          test -z "$(git status --porcelain)"
+      - uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c
+        with:
+          toolchain: 1.93.1
+          components: rustfmt, clippy
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: 3.12.3
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3
+        with:
+          version: 0.8.0
+      - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b
+        with:
+          version: "28.3"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Canonical candidate gates
+        run: |
+          tools/bootstrap-lint-tools >> "$GITHUB_PATH"
+          make lint
+          make test
+          make spec
+      - name: Initialize candidate manifest
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 release/candidate.py init \
+            --sha "$SOURCE_SHA" --run-id "$RUN_ID" \
+            --pins '{"rust":"1.93.1","protoc":"28.3","manylinux_x86_64":"sha256:f854c50adf7b7a325bc4794316f3758d387a41d61f9e2ebca0f26c7dc8f761d4"}' \
+            --output candidate-manifest.json
+          for gate in lint test spec; do
+            python3 release/candidate.py record-gate --manifest candidate-manifest.json --name "$gate"
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: candidate-base-${{ github.run_id }}
+          path: candidate-manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  linux-x86_64:
+    needs: candidate-gates
+    runs-on: ubuntu-24.04
+    container: quay.io/pypa/manylinux_2_28_x86_64@sha256:f854c50adf7b7a325bc4794316f3758d387a41d61f9e2ebca0f26c7dc8f761d4
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - name: Install pinned build tools
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain "$RUST_TOOLCHAIN"
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Compile both shipped executables once
+        run: cargo build --release --locked --all-features --target x86_64-unknown-linux-gnu --bin biomcp --bin biomcp-cli
+      - name: Assemble and inspect baseline artifacts
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          mkdir -p dist
+          python3 release/package.py --kind native --artifact-id native-linux-x86_64 \
+            --biomcp target/x86_64-unknown-linux-gnu/release/biomcp \
+            --output dist/biomcp-linux-x86_64.tar.gz --record dist/native.json \
+            --source-sha "$SOURCE_SHA" --version "$VERSION" --run-id "$RUN_ID"
+          python3 release/package.py --kind wheel --artifact-id wheel-linux-x86_64 \
+            --biomcp target/x86_64-unknown-linux-gnu/release/biomcp \
+            --shim target/x86_64-unknown-linux-gnu/release/biomcp-cli \
+            --wheel-tag py3-none-manylinux_2_28_x86_64 \
+            --output "dist/biomcp_cli-${VERSION}-py3-none-manylinux_2_28_x86_64.whl" \
+            --record dist/wheel.json --source-sha "$SOURCE_SHA" --version "$VERSION" --run-id "$RUN_ID"
+          for kind in native wheel; do
+            artifact="$(python3 -c "import json; print(json.load(open('dist/$kind.json'))['filename'])")"
+            python3 release/inspect.py --kind "$kind" --artifact "dist/$artifact" \
+              --record "dist/$kind.json" --binary target/x86_64-unknown-linux-gnu/release/biomcp \
+              --source-sha "$SOURCE_SHA" --version "$VERSION"
+          done
+          tools/check-png-artifact target/x86_64-unknown-linux-gnu/release/biomcp
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: linux-x86_64-${{ github.run_id }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  seal-candidate:
+    needs: [candidate-gates, linux-x86_64]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: '*-${{ github.run_id }}'
+          path: candidate
+      - name: Register exact baseline and seal private candidate
+        run: |
+          cp candidate/candidate-base-${{ github.run_id }}/candidate-manifest.json .
+          for kind in native wheel; do
+            record="candidate/linux-x86_64-${{ github.run_id }}/$kind.json"
+            artifact="candidate/linux-x86_64-${{ github.run_id }}/$(python3 -c "import json; print(json.load(open('$record'))['filename'])")"
+            python3 release/candidate.py register --manifest candidate-manifest.json --record "$record" --artifact "$artifact"
+          done
+          python3 release/candidate.py finalize --manifest candidate-manifest.json --set baseline
+          python3 release/candidate.py checksum --manifest candidate-manifest.json > candidate-manifest.json.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sealed-candidate-${{ github.run_id }}
+          path: |
+            candidate-manifest.json
+            candidate-manifest.json.sha256
+          if-no-files-found: error
+          retention-days: 30
