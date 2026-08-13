@@ -13,7 +13,7 @@ pub(super) const TOOLS: &[ToolCatalogEntry] = &[
     ToolCatalogEntry {
         name: "biomcp",
         title: "BioMCP command",
-        description: "Run one read-only BioMCP CLI command. Prefer the bounded typed tools when they fit. Use this escape hatch for discovery, enrichment, study analytics, and other read-only commands. Start with `biomcp list` or `biomcp list <entity>` for compact command discovery; use `biomcp skill list` for worked workflows. Set `json` for structured output. Binary downloads, local filesystem operations, updates, and mutations are rejected.",
+        description: "Run one read-only BioMCP CLI command when a bounded typed tool does not fit. Start with `biomcp list` for command discovery or `biomcp skill list` for workflows. Set `json` for structured output. Binary downloads, filesystem operations, updates, and mutations are rejected.",
     },
     ToolCatalogEntry {
         name: "search",
