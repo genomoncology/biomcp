@@ -254,6 +254,9 @@ def _parser() -> argparse.ArgumentParser:
     gate = commands.add_parser("record-gate")
     gate.add_argument("--manifest", type=Path, required=True)
     gate.add_argument("--name", choices=sorted(REQUIRED_GATES), required=True)
+    policy = commands.add_parser("bind-signing-policy")
+    policy.add_argument("--manifest", type=Path, required=True)
+    policy.add_argument("--policy", type=Path, required=True)
     register = commands.add_parser("register")
     register.add_argument("--manifest", type=Path, required=True)
     register.add_argument("--record", required=True, help="JSON object or JSON file")
@@ -288,6 +291,12 @@ def main(argv: list[str] | None = None) -> int:
             if manifest["status"] != "staging":
                 raise CandidateError("complete candidate cannot be changed")
             manifest["gates"][args.name] = "passed"
+            _atomic_json(args.manifest, manifest)
+        elif args.command == "bind-signing-policy":
+            manifest = load_manifest(args.manifest)
+            if manifest["status"] != "staging":
+                raise CandidateError("complete candidate cannot be changed")
+            manifest["signing_policy_sha256"] = sha256_file(args.policy)
             _atomic_json(args.manifest, manifest)
         elif args.command == "register":
             manifest = load_manifest(args.manifest)

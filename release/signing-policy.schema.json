@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://biomcp.org/schemas/release-signing-policy-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "enabled", "apple", "windows", "mcpb", "allowed_notary_warnings"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "enabled": { "type": "boolean" },
+    "fixture_only": { "type": "boolean" },
+    "apple": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/apple" }] },
+    "windows": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/windows" }] },
+    "mcpb": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/mcpb" }] },
+    "allowed_notary_warnings": { "type": "array", "maxItems": 0 }
+  },
+  "$defs": {
+    "fingerprint": { "type": "string", "pattern": "^[0-9A-F]{64}$" },
+    "apple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team_id", "identity", "leaf_sha256", "notary_profile", "notary_service", "network_destinations"],
+      "properties": {
+        "team_id": { "type": "string", "pattern": "^[A-Z0-9]{10}$" },
+        "identity": { "type": "string", "minLength": 1 },
+        "leaf_sha256": { "$ref": "#/$defs/fingerprint" },
+        "notary_profile": { "type": "string", "minLength": 1 },
+        "notary_service": { "const": "https://appstoreconnect.apple.com" },
+        "network_destinations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^https://[^/]+$" }
+        }
+      }
+    },
+    "windows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publisher", "leaf_sha256", "timestamp_url", "timestamp_policy_oid"],
+      "properties": {
+        "publisher": { "type": "string", "minLength": 1 },
+        "leaf_sha256": { "$ref": "#/$defs/fingerprint" },
+        "timestamp_url": { "type": "string", "pattern": "^https://" },
+        "timestamp_policy_oid": { "type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+)+$" }
+      }
+    },
+    "mcpb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject", "leaf_sha256"],
+      "properties": {
+        "subject": { "type": "string", "minLength": 1 },
+        "leaf_sha256": { "$ref": "#/$defs/fingerprint" }
+      }
+    }
+  }
+}

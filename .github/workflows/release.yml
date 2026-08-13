@@ -66,6 +66,8 @@ jobs:
           for gate in lint test spec; do
             python3 release/candidate.py record-gate --manifest candidate-manifest.json --name "$gate"
           done
+          python3 release/candidate.py bind-signing-policy \
+            --manifest candidate-manifest.json --policy release/signing-policy.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: candidate-base-${{ github.run_id }}
