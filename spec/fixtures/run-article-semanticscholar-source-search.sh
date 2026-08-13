@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="${1:?repo root required}"
+ROOT="$(cd "$ROOT" && pwd)"
 CACHE_DIR="$ROOT/.cache"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OWNERSHIP_HELPER="$SCRIPT_DIR/routine-fixture-ownership.sh"
@@ -91,7 +92,7 @@ if [[ ! -s "$PORT_FILE" ]]; then
 fi
 
 base="http://127.0.0.1:$(cat "$PORT_FILE")"
-BIOMCP_CACHE_DIR="$ROOT/.cache/biomcp-article-semanticscholar-source" \
+BIOMCP_CACHE_DIR="$FIXTURE_ROOT/cache" \
 BIOMCP_S2_BASE="$base" \
 BIOMCP_PUBTATOR_BASE="$base" \
 BIOMCP_EUROPEPMC_BASE="$base" \

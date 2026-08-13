@@ -594,11 +594,11 @@ When the XML ladder misses, BioMCP should fall back to the PMC HTML article page
 and still keep the saved-file contract on stdout.
 
 ```bash
-rm -rf ../../.cache/biomcp-specs/downloads
-mkdir -p ../../.cache/biomcp-specs/downloads
+rm -rf "${BIOMCP_CACHE_DIR:?}/downloads"
+mkdir -p "$BIOMCP_CACHE_DIR/downloads"
 ../../tools/biomcp-ci get article 22663012 fulltext | mustmatch like '## Full Text (PMC HTML)
 ...'
-rg -l 'PMC HTML fallback body text' ../../.cache/biomcp-specs/downloads >/dev/null
+rg -l 'PMC HTML fallback body text' "$BIOMCP_CACHE_DIR/downloads" >/dev/null
 ```
 
 ## PDF Fallback Is Opt-In
@@ -609,11 +609,11 @@ fixture-backed article should fail cleanly without `--pdf` and succeed with it.
 ```bash
 ../../tools/biomcp-ci get article 22663013 fulltext | mustmatch like "XML and HTML sources did not return full text"
 ../../tools/biomcp-ci get article 22663013 fulltext | mustmatch not like "Semantic Scholar PDF"
-rm -rf ../../.cache/biomcp-specs/downloads
-mkdir -p ../../.cache/biomcp-specs/downloads
+rm -rf "${BIOMCP_CACHE_DIR:?}/downloads"
+mkdir -p "$BIOMCP_CACHE_DIR/downloads"
 ../../tools/biomcp-ci get article 22663013 fulltext --pdf | mustmatch like '## Full Text (Semantic Scholar PDF)
 ...'
-test "$(find ../../.cache/biomcp-specs/downloads -maxdepth 1 -type f -name '*.txt' | wc -l)" -ge 1
+test "$(find "$BIOMCP_CACHE_DIR/downloads" -maxdepth 1 -type f -name '*.txt' | wc -l)" -ge 1
 ```
 
 ## JATS Converter Keeps Evidence-Carrying Floats, Supplements, and Complex Table Cells
@@ -655,8 +655,8 @@ production response normalizer and JATS renderer. Its six merged-cell tables
 are written to the saved Markdown with representative cells intact.
 
 ```bash run id=receipted-complex-tables-saved exit=0
-rm -rf ../../.cache/biomcp-specs/downloads
-mkdir -p ../../.cache/biomcp-specs/downloads
+rm -rf "${BIOMCP_CACHE_DIR:?}/downloads"
+mkdir -p "$BIOMCP_CACHE_DIR/downloads"
 result="$(../../tools/biomcp-ci --json get article 30311380 fulltext)"
 path="$(jq -r '.full_text_path' <<<"$result")"
 test -f "$path"

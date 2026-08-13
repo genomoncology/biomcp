@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CACHE_ROOT="${REPO_ROOT}/.cache/biomcp-specs"
+CACHE_ROOT="${BIOMCP_CACHE_DIR:-${REPO_ROOT}/.cache/biomcp-specs}"
 XDG_CACHE_ROOT="${CACHE_ROOT}/xdg-cache"
 XDG_CONFIG_ROOT="${CACHE_ROOT}/config"
  mkdir -p "$CACHE_ROOT" "$XDG_CACHE_ROOT" "$XDG_CONFIG_ROOT"

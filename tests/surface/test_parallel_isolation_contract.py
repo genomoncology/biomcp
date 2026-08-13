@@ -636,11 +636,11 @@ def test_ticket_376_article_source_fixture_contracts_replace_routine_live_canari
         "src/sources/semantic_scholar/tests/construction.rs",
     )
     for label, fragments in (
-        ("PubMed article source fixture", ("PubMedESearchRequestPlan", "PubMedESummaryRequestPlan", "BRAF")),
+        ("PubMed article source fixture", ("esearch_plan", "esearch.fcgi", "BRAF")),
         ("Europe PMC article source fixture", ("EuropePmcSearchRequestPlan", "alternative microexon", "pageSize")),
         ("PubTator article source fixture", ("PubTatorSearchRequestPlan", "PubTatorExportRequestPlan", "annotations")),
         ("LitSense2 article source fixture", ("LitSense2SearchRequestPlan", "BRAF")),
-        ("LitSense2 PubMed hydration fixture", ("PubMedESummaryRequestPlan", "pubmed_hydration")),
+        ("LitSense2 PubMed hydration fixture", ("esummary_plan", "RequestPlan", "pubmed_hydration")),
         (
             "Semantic Scholar keyless/auth degradation fixture",
             ("SemanticScholarPaperSearchRequestPlan", "auth_mode", "shared_pool"),

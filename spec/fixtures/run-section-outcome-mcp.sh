@@ -2,6 +2,7 @@
 set -euo pipefail
 
 workspace_root="${1:-$PWD}"
+workspace_root="$(cd "$workspace_root" && pwd)"
 biomcp_bin="${BIOMCP_BIN:-$workspace_root/target/spec/biomcp}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ownership_helper="$script_dir/routine-fixture-ownership.sh"

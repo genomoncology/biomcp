@@ -357,6 +357,36 @@ SUPERVISED_RUN_WRAPPERS = (
 )
 
 
+def test_nested_article_fixtures_keep_caches_inside_owned_roots() -> None:
+    fulltext_setup = (
+        REPO_ROOT / "spec" / "fixtures" / "setup-article-fulltext-source-fixture.sh"
+    ).read_text()
+    semantic_wrapper = (
+        REPO_ROOT
+        / "spec"
+        / "fixtures"
+        / "run-article-semanticscholar-source-search.sh"
+    ).read_text()
+    timeout_setup = (
+        REPO_ROOT / "spec" / "fixtures" / "setup-article-federated-timeout-fixture.sh"
+    ).read_text()
+    timeout_wrapper = (
+        REPO_ROOT / "spec" / "fixtures" / "run-article-federated-timeout-search.sh"
+    ).read_text()
+    section_wrapper = (
+        REPO_ROOT / "spec" / "fixtures" / "run-section-outcome-mcp.sh"
+    ).read_text()
+
+    assert 'export BIOMCP_CACHE_DIR=%q' in fulltext_setup
+    assert '"$fixture_root/cache"' in fulltext_setup
+    assert 'BIOMCP_CACHE_DIR="$FIXTURE_ROOT/cache"' in semantic_wrapper
+    assert 'export BIOMCP_CACHE_DIR="$FIXTURE_ROOT/cache"' in timeout_setup
+    assert "BIOMCP_CACHE_DIR=" not in timeout_wrapper
+    for script in (semantic_wrapper, timeout_setup, timeout_wrapper):
+        assert '$(cd "$ROOT" && pwd)' in script
+    assert '$(cd "$workspace_root" && pwd)' in section_wrapper
+
+
 def _wait_until(predicate, timeout: float = 10.0) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:

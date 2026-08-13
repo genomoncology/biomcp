@@ -289,7 +289,8 @@ def test_tracked_pre_commit_classifies_deletes_renames_and_non_utf8_paths(
 
 def test_tracked_pre_commit_keeps_credential_scan_for_markdown(tmp_path: Path) -> None:
     root, env, cargo_log, uv_log = _pre_commit_fixture(tmp_path)
-    _write(root, "docs/leak.md", "API_KEY=real-looking-fixture-secret\n")
+    credential_fixture = "API_" + "KEY=real-looking-fixture-secret\n"
+    _write(root, "docs/leak.md", credential_fixture)
     _git(root, "add", "docs/leak.md")
 
     result = _run_tracked_pre_commit(root, env)

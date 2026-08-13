@@ -75,7 +75,8 @@ routine gates plus that full-feature proof.
 ### Local Pre-Commit Hook
 
 Developers opt in to the repository-owned hook for each checkout; the
-repository does not install it automatically:
+repository does not install it automatically. Run
+`scripts/install-pre-commit-hook` to install it:
 
 ```bash
 scripts/install-pre-commit-hook

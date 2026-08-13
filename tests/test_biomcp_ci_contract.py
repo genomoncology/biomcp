@@ -91,6 +91,23 @@ def test_biomcp_ci_wrapper_sets_repo_cache_env_and_forwards_args(tmp_path: Path)
     assert (expected_cache_root / "config").is_dir()
 
 
+def test_biomcp_ci_wrapper_preserves_an_explicit_fixture_cache(tmp_path: Path) -> None:
+    fixture_cache = tmp_path / "fixture-cache"
+    result = _run_wrapper(
+        tmp_path,
+        "get",
+        "article",
+        "22663011",
+        env={"BIOMCP_CACHE_DIR": str(fixture_cache)},
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["env"]["BIOMCP_CACHE_DIR"] == str(fixture_cache)
+    assert payload["env"]["XDG_CACHE_HOME"] == str(fixture_cache / "xdg-cache")
+    assert payload["env"]["XDG_CONFIG_HOME"] == str(fixture_cache / "config")
+
+
 def test_biomcp_ci_wrapper_enables_force_cache_only_on_warm_hits(tmp_path: Path) -> None:
     result = _run_wrapper(
         tmp_path,

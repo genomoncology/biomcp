@@ -1180,6 +1180,7 @@ test -s "$ready_file"
 base_url="$(cat "$ready_file")"
 
 printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url" >"$env_file"
+printf 'export BIOMCP_CACHE_DIR=%q\n' "$fixture_root/cache" >>"$env_file"
 printf 'export BIOMCP_PUBTATOR_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_EUROPEPMC_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_PUBMED_BASE=%q\n' "$base_url" >>"$env_file"
