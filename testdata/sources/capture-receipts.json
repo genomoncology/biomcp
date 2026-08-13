@@ -2139,8 +2139,8 @@
         "provider": "GWAS Catalog",
         "request": "https://www.ebi.ac.uk/gwas/rest/api/v2/associations?mapped_gene=TCF7L2&page=0&size=2&sort=p_value&direction=asc",
         "captured_at": "2026-08-12T10:05:55Z",
-        "sha256": "072c29bb4742b7a1c06a7aa7c08a555020e36a7c3ab3f3e303cad538033a8765",
-        "minimization_or_redaction": "Reduced to fields decoded by the bounded association search plus provider pagination; JSON whitespace was normalized.",
+        "sha256": "0fbbb28d2e53e8e07a807175afadd1177695154903dc031c77eaf1b2ee9646cf",
+        "minimization_or_redaction": "Reduced to fields decoded by the bounded association search plus provider pagination, retaining the provider's exact p-value mantissa and exponent; JSON whitespace was normalized.",
         "provider_origin_statement": "Bytes were recorded from the public GWAS Catalog v2 response produced by BioMCP's RequestPlan shape before the stated minimization."
       }
     }
