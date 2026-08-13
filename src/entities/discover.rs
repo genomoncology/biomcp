@@ -648,10 +648,15 @@ fn apply_discover_options(result: &mut DiscoverResult, options: DiscoverOptions)
         discover_continuation_command(&result.query, options.limit, offset, options.full)
     });
     refresh_selected_guidance(result);
+    if result.concepts.is_empty() && total > 0 {
+        result.next_commands.clear();
+    }
 }
 
 pub(crate) fn refresh_selected_guidance(result: &mut DiscoverResult) {
     if result.concepts.is_empty() {
+        result.ambiguous = false;
+        result.next_commands = generate_commands(&result.query, &[], false, result.intent);
         return;
     }
     result.ambiguous = is_ambiguous(&result.concepts);
@@ -1838,50 +1843,83 @@ fn generate_commands(
                     })
                 });
             if let Some(condition) = condition {
-                commands.push(format!(
-                    "biomcp search trial -c {} --limit 5",
-                    quote_query_term(&condition.label)
-                ));
-                commands.push(format!(
-                    "biomcp search article -k {} --limit 5",
-                    quote_query_term(&condition.label)
-                ));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "trial",
+                    "-c",
+                    &condition.label,
+                    "--limit",
+                    "5",
+                ]));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "article",
+                    "-k",
+                    &condition.label,
+                    "--limit",
+                    "5",
+                ]));
             } else if let Some(gene) = top_concept_of_type(concepts, DiscoverType::Gene)
                 .map(|concept| concept.label.clone())
                 .or_else(|| query.split_whitespace().find_map(gene_symbol_token))
             {
-                commands.push(format!(
-                    "biomcp search trial --biomarker {} --limit 5",
-                    quote_query_term(&gene)
-                ));
-                commands.push(format!(
-                    "biomcp search article -g {} --limit 5",
-                    quote_query_term(&gene)
-                ));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "trial",
+                    "--biomarker",
+                    &gene,
+                    "--limit",
+                    "5",
+                ]));
+                commands.push(next_command([
+                    "biomcp", "search", "article", "-g", &gene, "--limit", "5",
+                ]));
             }
             return dedupe_strings(commands);
         }
         DiscoverIntent::DrugSafety => {
             if let Some(drug) = top_concept_of_type(concepts, DiscoverType::Drug) {
                 let drug_name = drug.label.to_ascii_lowercase();
-                commands.push(format!("biomcp drug adverse-events {drug_name}"));
-                commands.push(format!("biomcp get drug {drug_name} safety"));
-                commands.push(format!(
-                    "biomcp search article --drug {} --type review --limit 5",
-                    quote_query_term(&drug.label)
-                ));
+                commands.push(next_command([
+                    "biomcp",
+                    "drug",
+                    "adverse-events",
+                    &drug_name,
+                ]));
+                commands.push(next_command([
+                    "biomcp", "get", "drug", &drug_name, "safety",
+                ]));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "article",
+                    "--drug",
+                    &drug.label,
+                    "--type",
+                    "review",
+                    "--limit",
+                    "5",
+                ]));
             }
         }
         DiscoverIntent::TreatmentSearch => {
             if let Some(disease) = treatment_focus(query, concepts) {
-                commands.push(format!(
-                    "biomcp search drug --indication {} --limit 5",
-                    quote_query_term(&disease)
-                ));
-                commands.push(format!(
-                    "biomcp search article -d {} --type review --limit 5",
-                    quote_query_term(&disease)
-                ));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "drug",
+                    "--indication",
+                    &disease,
+                    "--limit",
+                    "5",
+                ]));
+                commands.push(next_command([
+                    "biomcp", "search", "article", "-d", &disease, "--type", "review", "--limit",
+                    "5",
+                ]));
             }
         }
         DiscoverIntent::SymptomSearch => {
@@ -1889,50 +1927,100 @@ fn generate_commands(
                 && let Some(disease) = top_concept_of_type(concepts, DiscoverType::Disease)
             {
                 if let Some(disease_ref) = disease_command_ref(disease) {
-                    commands.push(format!("biomcp get disease {disease_ref} phenotypes"));
+                    commands.push(next_command([
+                        "biomcp",
+                        "get",
+                        "disease",
+                        &disease_ref,
+                        "phenotypes",
+                    ]));
                 }
-                commands.push(format!(
-                    "biomcp search article -d {} --type review --limit 5",
-                    quote_query_term(&disease.label)
-                ));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "article",
+                    "-d",
+                    &disease.label,
+                    "--type",
+                    "review",
+                    "--limit",
+                    "5",
+                ]));
             } else {
                 let hpo_ids = collect_hpo_ids(concepts);
                 if !hpo_ids.is_empty() {
-                    commands.push(format!("biomcp search phenotype \"{}\"", hpo_ids.join(" ")));
+                    commands.push(next_command([
+                        "biomcp",
+                        "search",
+                        "phenotype",
+                        &hpo_ids.join(" "),
+                    ]));
                 }
-                commands.push(format!(
-                    "biomcp search disease -q {} --limit 10",
-                    quote_query_term(query.trim())
-                ));
-                commands.push(format!(
-                    "biomcp search trial -c {} --limit 5",
-                    quote_query_term(query.trim())
-                ));
-                commands.push(format!(
-                    "biomcp search article -k {} --limit 5",
-                    quote_query_term(query.trim())
-                ));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "disease",
+                    "-q",
+                    query.trim(),
+                    "--limit",
+                    "10",
+                ]));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "trial",
+                    "-c",
+                    query.trim(),
+                    "--limit",
+                    "5",
+                ]));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "article",
+                    "-k",
+                    query.trim(),
+                    "--limit",
+                    "5",
+                ]));
             }
             return dedupe_strings(commands);
         }
         DiscoverIntent::GeneDiseaseOrientation => {
             if let Some((gene, disease)) = gene_disease_focus(query, concepts) {
-                commands.push(format!(
-                    "biomcp search all --gene {} --disease \"{}\"",
-                    gene, disease
-                ));
-                commands.push(format!("biomcp get gene {}", gene));
+                commands.push(next_command([
+                    "biomcp",
+                    "search",
+                    "all",
+                    "--gene",
+                    &gene,
+                    "--disease",
+                    &disease,
+                ]));
+                commands.push(next_command(["biomcp", "get", "gene", &gene]));
                 if let Some(disease_ref) =
                     disease_concept_for_label(concepts, &disease).and_then(disease_command_ref)
                 {
-                    commands.push(format!("biomcp get disease {disease_ref}"));
+                    commands.push(next_command(["biomcp", "get", "disease", &disease_ref]));
                 }
                 return dedupe_strings(commands);
             }
         }
         DiscoverIntent::GeneFunction => {
             if let Some(gene) = top_concept_of_type(concepts, DiscoverType::Gene) {
-                commands.push(format!("biomcp get gene {}", gene.label));
+                if canonical_gene_ref(gene).is_some() {
+                    commands.push(next_command(["biomcp", "get", "gene", &gene.label]));
+                } else {
+                    commands.push(next_command([
+                        "biomcp",
+                        "search",
+                        "gene",
+                        "-q",
+                        query.trim(),
+                        "--limit",
+                        "10",
+                    ]));
+                }
                 if let Some(topic) = gene_article_topic(query, &gene.label, intent) {
                     commands.push(next_command([
                         "biomcp",
@@ -1946,7 +2034,15 @@ fn generate_commands(
                         "5",
                     ]));
                 } else {
-                    commands.push(format!("biomcp search article -g {} --limit 5", gene.label));
+                    commands.push(next_command([
+                        "biomcp",
+                        "search",
+                        "article",
+                        "-g",
+                        &gene.label,
+                        "--limit",
+                        "5",
+                    ]));
                 }
                 return dedupe_strings(commands);
             }
@@ -1955,70 +2051,110 @@ fn generate_commands(
     }
 
     match top.primary_type {
-        DiscoverType::Gene if !ambiguous => {
-            commands.push(format!("biomcp get gene {}", top.label));
+        DiscoverType::Gene if !ambiguous && canonical_gene_ref(top).is_some() => {
+            commands.push(next_command(["biomcp", "get", "gene", &top.label]));
             if let Some(topic) = gene_article_topic(query, &top.label, intent) {
                 commands.push(next_command([
                     "biomcp", "search", "article", "-g", &top.label, "-k", &topic, "--limit", "5",
                 ]));
             }
         }
-        DiscoverType::Gene => commands.push(format!(
-            "biomcp search gene -q \"{}\" --limit 10",
-            query.trim()
-        )),
-        DiscoverType::Drug => commands.push(format!(
-            "biomcp get drug \"{}\"",
-            top.label.to_ascii_lowercase()
-        )),
-        DiscoverType::Disease if ambiguous => commands.push(format!(
-            "biomcp search disease -q \"{}\" --limit 10",
-            query.trim()
-        )),
+        DiscoverType::Gene => commands.push(next_command([
+            "biomcp",
+            "search",
+            "gene",
+            "-q",
+            query.trim(),
+            "--limit",
+            "10",
+        ])),
+        DiscoverType::Drug => commands.push(next_command([
+            "biomcp",
+            "get",
+            "drug",
+            &top.label.to_ascii_lowercase(),
+        ])),
+        DiscoverType::Disease if ambiguous => commands.push(next_command([
+            "biomcp",
+            "search",
+            "disease",
+            "-q",
+            query.trim(),
+            "--limit",
+            "10",
+        ])),
         DiscoverType::Disease => {
-            commands.push(format!("biomcp get disease \"{}\"", top.label));
-            commands.push(format!("biomcp disease trials \"{}\"", top.label));
-            commands.push(format!(
-                "biomcp search article -k \"{}\" --limit 5",
-                top.label
-            ));
+            commands.push(next_command(["biomcp", "get", "disease", &top.label]));
+            commands.push(next_command(["biomcp", "disease", "trials", &top.label]));
+            commands.push(next_command([
+                "biomcp", "search", "article", "-k", &top.label, "--limit", "5",
+            ]));
         }
         DiscoverType::Symptom => {
-            commands.push(format!(
-                "biomcp search disease -q \"{}\" --limit 10",
-                query.trim()
-            ));
-            commands.push(format!(
-                "biomcp search trial -c \"{}\" --limit 5",
-                query.trim()
-            ));
-            commands.push(format!(
-                "biomcp search article -k \"{}\" --limit 5",
-                query.trim()
-            ));
+            commands.push(next_command([
+                "biomcp",
+                "search",
+                "disease",
+                "-q",
+                query.trim(),
+                "--limit",
+                "10",
+            ]));
+            commands.push(next_command([
+                "biomcp",
+                "search",
+                "trial",
+                "-c",
+                query.trim(),
+                "--limit",
+                "5",
+            ]));
+            commands.push(next_command([
+                "biomcp",
+                "search",
+                "article",
+                "-k",
+                query.trim(),
+                "--limit",
+                "5",
+            ]));
         }
-        DiscoverType::Pathway => commands.push(format!(
-            "biomcp search pathway -q \"{}\" --limit 5",
-            top.label
-        )),
+        DiscoverType::Pathway => commands.push(next_command([
+            "biomcp", "search", "pathway", "-q", &top.label, "--limit", "5",
+        ])),
         DiscoverType::Variant => {
             if let Ok(crate::entities::variant::VariantIdFormat::GeneProteinChange {
                 gene,
                 change,
             }) = crate::entities::variant::parse_variant_id(query.trim())
             {
-                commands.push(format!("biomcp get variant \"{gene} {change}\""));
+                commands.push(next_command([
+                    "biomcp",
+                    "get",
+                    "variant",
+                    &format!("{gene} {change}"),
+                ]));
             }
-            commands.push(format!(
-                "biomcp search article -k \"{}\" --limit 5",
-                query.trim()
-            ));
+            commands.push(next_command([
+                "biomcp",
+                "search",
+                "article",
+                "-k",
+                query.trim(),
+                "--limit",
+                "5",
+            ]));
         }
         DiscoverType::Unknown => {
-            commands.push(format!(
-                "biomcp search article -k {} --limit 5",
-                quote_query_term(query.trim())
-            ));
+            commands.push(next_command([
+                "biomcp",
+                "search",
+                "article",
+                "-k",
+                query.trim(),
+                "--limit",
+                "5",
+            ]));
         }
     }
 
@@ -2031,6 +2167,13 @@ fn generate_commands(
     }
 
     dedupe_strings(commands)
+}
+
+fn canonical_gene_ref(concept: &DiscoverConcept) -> Option<&str> {
+    let id = concept.primary_id.as_deref()?;
+    (concept.confidence == DiscoverConfidence::CanonicalId
+        && (id.starts_with("HGNC:") || id.starts_with("NCBIGENE:")))
+    .then_some(concept.label.as_str())
 }
 
 fn contains_any_phrase(normalized_query: &str, phrases: &[&str]) -> bool {
@@ -2448,9 +2591,10 @@ fn alias_candidates(result: &DiscoverResult) -> Vec<AliasCandidateSummary> {
 mod tests {
     use super::{
         AliasFallbackDecision, ConceptSource, ConceptXref, DiscoverConcept, DiscoverConfidence,
-        DiscoverIntent, DiscoverMode, DiscoverRequest, DiscoverResult, DiscoverType, MatchTier,
-        OLS4_TIMEOUT, build_result, classify_alias_fallback, concept_from_ols, generate_commands,
-        merge_candidate, normalize_primary_id, ols_doc_identifier,
+        DiscoverIntent, DiscoverMode, DiscoverOptions, DiscoverRequest, DiscoverResult,
+        DiscoverType, MatchTier, OLS4_TIMEOUT, apply_discover_options, build_result,
+        classify_alias_fallback, concept_from_ols, generate_commands, merge_candidate,
+        normalize_primary_id, ols_doc_identifier,
         resolve_exact_article_keyword_entity_from_ols_docs, symptom_disease_lookup_query,
         typed_gene_identity_concept,
     };
@@ -2813,7 +2957,7 @@ mod tests {
         assert_eq!(result.concepts[0].primary_id.as_deref(), Some("HP:0001263"));
         assert_eq!(
             result.next_commands[0],
-            "biomcp search phenotype \"HP:0001263\""
+            "biomcp search phenotype HP:0001263"
         );
     }
 
@@ -2921,6 +3065,67 @@ mod tests {
             Some("NCBIGENE:1956")
         );
         assert_eq!(result.concepts[0].sources[0].source, "MyGene.info");
+    }
+
+    #[test]
+    fn weak_umls_gene_label_never_becomes_an_exact_lookup() {
+        use clap::Parser;
+
+        let result = build_result(
+            "ERBB1",
+            &[],
+            &[UmlsConcept {
+                cui: "C0242984".to_string(),
+                name: "erbB1 Genes".to_string(),
+                semantic_types: vec!["Gene or Genome".to_string()],
+                xrefs: Vec::new(),
+                uri: "https://example.invalid/weak".to_string(),
+            }],
+            &[],
+            Vec::new(),
+        );
+
+        assert!(
+            result
+                .next_commands
+                .iter()
+                .all(|command| !command.starts_with("biomcp get gene "))
+        );
+        for command in &result.next_commands {
+            let args = shlex::split(command).expect("rendered command is shell-safe");
+            crate::cli::Cli::try_parse_from(args)
+                .unwrap_or_else(|error| panic!("invalid command {command}: {error}"));
+        }
+    }
+
+    #[test]
+    fn page_past_returned_concepts_does_not_retain_hidden_guidance() {
+        let mut result = build_result(
+            "ERBB1",
+            &[],
+            &[UmlsConcept {
+                cui: "C0242984".to_string(),
+                name: "erbB1 Genes".to_string(),
+                semantic_types: vec!["Gene or Genome".to_string()],
+                xrefs: Vec::new(),
+                uri: "https://example.invalid/weak".to_string(),
+            }],
+            &[],
+            Vec::new(),
+        );
+
+        apply_discover_options(
+            &mut result,
+            DiscoverOptions {
+                limit: 1,
+                offset: 100,
+                full: false,
+            },
+        );
+
+        assert!(result.concepts.is_empty());
+        assert!(result.next_commands.is_empty());
+        assert!(!result.ambiguous);
     }
 
     #[test]
@@ -3268,7 +3473,7 @@ mod tests {
         assert_eq!(result.intent, DiscoverIntent::GeneDiseaseOrientation);
         assert_eq!(
             result.next_commands[0],
-            "biomcp search all --gene BRAF --disease \"melanoma\""
+            "biomcp search all --gene BRAF --disease melanoma"
         );
     }
 
@@ -3460,7 +3665,7 @@ mod tests {
         );
         assert_eq!(
             result.next_commands,
-            vec!["biomcp search article -k \"V600E\" --limit 5".to_string()]
+            vec!["biomcp search article -k V600E --limit 5".to_string()]
         );
     }
 
@@ -3480,7 +3685,7 @@ mod tests {
         assert_eq!(
             commands,
             vec![
-                "biomcp search gene -q \"FAKE1\" --limit 10".to_string(),
+                "biomcp search gene -q FAKE1 --limit 10".to_string(),
                 "biomcp search article -k FAKE1".to_string(),
             ]
         );
@@ -3610,7 +3815,7 @@ mod tests {
         assert!(result.ambiguous);
         assert_eq!(
             result.next_commands[0],
-            "biomcp search disease -q \"diabetes\" --limit 10"
+            "biomcp search disease -q diabetes --limit 10"
         );
     }
 
