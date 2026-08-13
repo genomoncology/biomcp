@@ -2,7 +2,14 @@ use std::collections::BTreeSet;
 use std::future::Future;
 use std::time::Duration;
 
-use axum::{Json, Router, routing::get};
+use axum::{
+    Json, Router,
+    extract::{Request, State},
+    http::{HeaderMap, StatusCode, Uri},
+    middleware::{Next, from_fn_with_state},
+    response::{IntoResponse, Response},
+    routing::get,
+};
 use base64::Engine;
 use rmcp::handler::server::{router::tool::ToolRouter, wrapper::Parameters};
 use rmcp::model::{
@@ -1388,6 +1395,80 @@ fn http_allowed_hosts(
     )
 }
 
+#[derive(Clone)]
+struct HostPolicy {
+    allowed_hosts: Vec<String>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct NormalizedAuthority {
+    host: String,
+    port: Option<u16>,
+}
+
+fn normalized_authority(value: &str) -> Option<NormalizedAuthority> {
+    let value = value.trim();
+    if value.is_empty() {
+        return None;
+    }
+    if let Ok(authority) = axum::http::uri::Authority::try_from(value) {
+        return Some(NormalizedAuthority {
+            host: authority
+                .host()
+                .trim_matches(['[', ']'])
+                .trim_end_matches('.')
+                .to_ascii_lowercase(),
+            port: authority.port_u16(),
+        });
+    }
+    value
+        .parse::<std::net::IpAddr>()
+        .ok()
+        .map(|address| NormalizedAuthority {
+            host: address.to_string().to_ascii_lowercase(),
+            port: None,
+        })
+}
+
+fn request_authority(uri: &Uri, headers: &HeaderMap) -> Option<NormalizedAuthority> {
+    if let Some(host) = headers.get(axum::http::header::HOST) {
+        return host.to_str().ok().and_then(normalized_authority);
+    }
+    uri.authority()
+        .and_then(|value| normalized_authority(value.as_str()))
+}
+
+fn host_is_allowed(host: &NormalizedAuthority, allowed_hosts: &[String]) -> bool {
+    allowed_hosts.is_empty()
+        || allowed_hosts.iter().any(|allowed| {
+            normalized_authority(allowed).is_some_and(|allowed| {
+                allowed.host == host.host && allowed.port.is_none_or(|port| host.port == Some(port))
+            })
+        })
+}
+
+async fn enforce_host_policy(
+    State(policy): State<HostPolicy>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let Some(host) = request_authority(request.uri(), request.headers()) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Bad Request: invalid or missing Host header",
+        )
+            .into_response();
+    };
+    if !host_is_allowed(&host, &policy.allowed_hosts) {
+        return (
+            StatusCode::FORBIDDEN,
+            "Forbidden: Host header is not allowed",
+        )
+            .into_response();
+    }
+    next.run(request).await
+}
+
 pub async fn run_http(
     host: &str,
     port: u16,
@@ -1406,7 +1487,7 @@ pub async fn run_http(
         let mut http_config = StreamableHttpServerConfig::default();
         http_config.stateful_mode = true;
         http_config.cancellation_token = shutdown.child_token();
-        http_config.allowed_hosts = allowed_hosts;
+        http_config.allowed_hosts = allowed_hosts.clone();
         http_config
     };
 
@@ -1417,7 +1498,11 @@ pub async fn run_http(
         .nest_service("/mcp", service)
         .route("/health", get(health_handler))
         .route("/readyz", get(health_handler))
-        .route("/", get(index_handler));
+        .route("/", get(index_handler))
+        .layer(from_fn_with_state(
+            HostPolicy { allowed_hosts },
+            enforce_host_policy,
+        ));
     let listener = tokio::net::TcpListener::bind(bind)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to bind HTTP server: {e}"))?;
@@ -1455,8 +1540,9 @@ mod tests {
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
         TypedGeneCspec, TypedGet, TypedSearch, TypedVariantArticles, TypedVariantCar,
         VARIANT_ARTICLE_INPUT_MCP_REJECTION_MESSAGE, binary_download_rejection, get_args,
-        http_allowed_hosts, index_handler, is_allowed_mcp_command, mcp_rejection_message,
-        redact_mcp_json_text, redact_mcp_text, search_args, to_resource_result,
+        host_is_allowed, http_allowed_hosts, index_handler, is_allowed_mcp_command,
+        mcp_rejection_message, normalized_authority, redact_mcp_json_text, redact_mcp_text,
+        search_args, to_resource_result,
     };
     use axum::Json;
     use serde_json::json;
@@ -1522,6 +1608,28 @@ mod tests {
             .unwrap(),
             ["api.example"]
         );
+    }
+
+    #[test]
+    fn global_host_policy_matches_names_ports_case_and_ipv6() {
+        let hosts = vec!["Example.COM:8443".into(), "::1".into()];
+        assert!(host_is_allowed(
+            &normalized_authority("example.com:8443").unwrap(),
+            &hosts
+        ));
+        assert!(!host_is_allowed(
+            &normalized_authority("example.com:8080").unwrap(),
+            &hosts
+        ));
+        assert!(host_is_allowed(
+            &normalized_authority("[::1]:8080").unwrap(),
+            &hosts
+        ));
+        assert!(host_is_allowed(
+            &normalized_authority("anything.invalid").unwrap(),
+            &[]
+        ));
+        assert!(normalized_authority("bad host").is_none());
     }
 
     #[test]

@@ -331,3 +331,45 @@ def test_pre_commit_installer_writes_a_thin_handoff(tmp_path: Path) -> None:
     invoked = subprocess.run([str(hook)], cwd=root, env=env, check=False)
     assert invoked.returncode == 0
     assert cargo_log.exists()
+
+
+def test_pre_commit_installer_check_is_read_only_for_missing_stale_and_current_hooks(
+    tmp_path: Path,
+) -> None:
+    root, env, _, _ = _pre_commit_fixture(tmp_path)
+    hook = Path(
+        _git(root, "rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-commit")
+        .stdout.strip()
+    )
+
+    missing = subprocess.run(
+        [str(root / INSTALLER_PATH), "--check"],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert missing.returncode == 1
+    assert "missing" in missing.stderr
+    assert not hook.exists()
+
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text("#!/bin/sh\nexit 0\n")
+    hook.chmod(0o755)
+    before = hook.read_bytes()
+    stale = subprocess.run(
+        [str(root / INSTALLER_PATH), "--check"], cwd=root, env=env,
+        capture_output=True, text=True, check=False,
+    )
+    assert stale.returncode == 1
+    assert "stale" in stale.stderr
+    assert hook.read_bytes() == before
+
+    subprocess.run([str(root / INSTALLER_PATH)], cwd=root, env=env, check=True)
+    current = subprocess.run(
+        [str(root / INSTALLER_PATH), "--check"], cwd=root, env=env,
+        capture_output=True, text=True, check=False,
+    )
+    assert current.returncode == 0
+    assert "current" in current.stdout

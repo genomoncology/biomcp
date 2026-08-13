@@ -142,16 +142,44 @@ pub(crate) async fn handle_search(
             )?
         }
         crate::entities::drug::DrugSearchPageWithRegion::All { us, eu, who } => {
-            crate::render::markdown::drug_search_markdown_with_region(
+            let footers = crate::render::markdown::DrugSearchRegionFooters {
+                us: super::render::drug_region_continuation(
+                    filters.query.as_deref(),
+                    "us",
+                    args.offset,
+                    args.limit,
+                    us.results.len(),
+                    us.total
+                        .is_some_and(|total| args.offset + us.results.len() < total),
+                ),
+                eu: super::render::drug_region_continuation(
+                    filters.query.as_deref(),
+                    "eu",
+                    args.offset,
+                    args.limit,
+                    eu.results.len(),
+                    eu.total
+                        .is_some_and(|total| args.offset + eu.results.len() < total),
+                ),
+                who: super::render::drug_region_continuation(
+                    filters.query.as_deref(),
+                    "who",
+                    args.offset,
+                    args.limit,
+                    who.results.len(),
+                    who.total
+                        .is_some_and(|total| args.offset + who.results.len() < total),
+                ),
+            };
+            crate::render::markdown::drug_search_markdown_all_regions(
                 &query_summary,
-                region,
                 &us.results,
                 us.total,
                 &eu.results,
                 eu.total,
                 &who.results,
                 who.total,
-                "",
+                &footers,
             )?
         }
     };

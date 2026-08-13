@@ -808,3 +808,49 @@ fn drug_search_all_region_empty_state_includes_discover_only_when_both_regions_a
     .expect("markdown");
     assert!(!eu_only_markdown.contains("Try: biomcp discover MK-3475"));
 }
+
+#[test]
+fn all_region_search_places_exact_continuation_under_the_matching_region() {
+    let eu = vec![crate::entities::drug::EmaDrugSearchResult {
+        name: "Keytruda".to_string(),
+        active_substance: "pembrolizumab".to_string(),
+        ema_product_number: "EMEA/H/C/003820".to_string(),
+        status: "Authorized".to_string(),
+    }];
+    let markdown = drug_search_markdown_all_regions(
+        "pembrolizumab",
+        &[],
+        Some(0),
+        &eu,
+        Some(3),
+        &[],
+        Some(0),
+        &DrugSearchRegionFooters {
+            eu: Some(
+                "biomcp search drug --query pembrolizumab --region eu --limit 1 --offset 1"
+                    .to_string(),
+            ),
+            ..Default::default()
+        },
+    )
+    .expect("markdown");
+
+    let eu_section = markdown
+        .split("## EU (EMA)")
+        .nth(1)
+        .unwrap()
+        .split("## WHO")
+        .next()
+        .unwrap();
+    assert!(eu_section.contains("Continue this region with `biomcp search drug --query pembrolizumab --region eu --limit 1 --offset 1`."));
+    assert!(
+        !markdown
+            .split("## US")
+            .nth(1)
+            .unwrap()
+            .split("## EU")
+            .next()
+            .unwrap()
+            .contains("Continue this region")
+    );
+}

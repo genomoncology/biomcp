@@ -303,7 +303,7 @@ See also: biomcp list phenotype")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp search gwas -g TCF7L2
-  biomcp search gwas --trait EFO_0000305 --region 7:140000000-141000000 --p-value 5e-8
+  biomcp search gwas --trait EFO_0000305 --p-value 5e-8
 
 See also: biomcp list gwas")]
     Gwas(gwas::GwasSearchArgs),

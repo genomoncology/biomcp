@@ -57,8 +57,9 @@ pub use self::disease::{
 };
 #[allow(unused_imports)]
 pub use self::drug::{
-    drug_interaction_report_markdown, drug_markdown, drug_markdown_with_region,
-    drug_search_markdown, drug_search_markdown_with_footer, drug_search_markdown_with_region,
+    DrugSearchRegionFooters, drug_interaction_report_markdown, drug_markdown,
+    drug_markdown_with_region, drug_search_markdown, drug_search_markdown_all_regions,
+    drug_search_markdown_with_footer, drug_search_markdown_with_region,
 };
 #[allow(unused_imports)]
 pub use self::gene::{gene_markdown, gene_search_markdown, gene_search_markdown_with_footer};

@@ -115,18 +115,8 @@ pub(super) fn bucket_from_page<T: serde::Serialize>(
 ) -> DrugSearchRegionBucket<T> {
     let count = page.results.len();
     let pagination = crate::cli::PaginationMeta::offset(offset, limit, count, page.total);
-    let continuation_command = pagination.has_more.then(|| {
-        format!(
-            "biomcp search drug{} --region {region} --limit {limit} --offset {}",
-            query
-                .map(|value| format!(
-                    " --query {}",
-                    crate::render::markdown::shell_quote_arg(value)
-                ))
-                .unwrap_or_default(),
-            offset.saturating_add(count)
-        )
-    });
+    let continuation_command =
+        drug_region_continuation(query, region, offset, limit, count, pagination.has_more);
     let results = page
         .results
         .into_iter()
@@ -143,6 +133,28 @@ pub(super) fn bucket_from_page<T: serde::Serialize>(
         results,
         continuation_command,
     }
+}
+
+pub(super) fn drug_region_continuation(
+    query: Option<&str>,
+    region: &'static str,
+    offset: usize,
+    limit: usize,
+    returned: usize,
+    has_more: bool,
+) -> Option<String> {
+    has_more.then(|| {
+        format!(
+            "biomcp search drug{} --region {region} --limit {limit} --offset {}",
+            query
+                .map(|value| format!(
+                    " --query {}",
+                    crate::render::markdown::shell_quote_arg(value)
+                ))
+                .unwrap_or_default(),
+            offset.saturating_add(returned)
+        )
+    })
 }
 
 pub(super) fn drug_search_json(

@@ -141,6 +141,11 @@ fn search_args_reject_windows_beyond_the_provider_budget_without_panicking() {
 
 #[test]
 fn region_is_not_an_advertised_or_accepted_gwas_filter() {
+    let gwas_help = Cli::try_parse_from(["biomcp", "search", "gwas", "--help"])
+        .expect_err("help exits through clap")
+        .to_string();
+    assert!(!gwas_help.contains("--region"));
+
     let error = Cli::try_parse_from([
         "biomcp",
         "search",

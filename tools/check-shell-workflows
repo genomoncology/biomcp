@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,10 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "tools/lint-inventory.json"
+REQUIRED_TOOLS = {
+    "shellcheck": "ShellCheck 0.10.0",
+    "actionlint": "actionlint 1.7.12",
+}
 
 
 def tracked_files() -> list[Path]:
@@ -60,6 +65,12 @@ def prove_negative_controls() -> None:
 
 
 def main() -> int:
+    missing = [label for command, label in REQUIRED_TOOLS.items() if shutil.which(command) is None]
+    if missing:
+        raise SystemExit(
+            f"Missing required lint tool(s): {', '.join(missing)}. "
+            "Run: tools/bootstrap-lint-tools"
+        )
     require_version(["shellcheck", "--version"], "version: 0.10.0")
     require_version(["actionlint", "--version"], "1.7.12")
     prove_negative_controls()

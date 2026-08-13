@@ -41,7 +41,8 @@ test-contracts-prepared:
 	tools/run-offline -- env BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
-	ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
+	@tool_dir="$$(tools/bootstrap-lint-tools)" && \
+		PATH="$$tool_dir:$$PATH" ROUTINE_CARGO_FEATURES="$(ROUTINE_CARGO_FEATURES)" ./bin/lint
 	tools/check-quality-ratchet.sh
 
 full-feature-check:

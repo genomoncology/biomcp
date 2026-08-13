@@ -55,6 +55,20 @@
 
 ### Fixes
 
+- Preserved exact GWAS Catalog mantissa/exponent p-values in structured JSON,
+  Markdown, filtering, and ordering instead of displaying underflowed values as
+  zero. Mixed-result batches now keep their complete report on stdout while
+  returning a nonzero status, and gene-alias discovery uses a bounded typed
+  identity lookup so `ERBB1` resolves to canonical EGFR.
+- Made downloaded full-text artifacts private on creation and during managed
+  state repair. Article-asset discovery now bounds optional providers, reports
+  distinct provider outcomes, and reuses fresh manifests for five minutes so
+  paging does not immediately repeat a slow or unavailable provider ladder.
+- Added region-specific Markdown continuation commands to combined drug search,
+  removed the unsupported GWAS region example, enforced allowed Host values on
+  every HTTP route, made canonical lint bootstrap its pinned shell tools, and
+  added a read-only pre-commit hook currency check.
+
 - Bare genomic coordinates now prefer GRCh38 while retaining GRCh37 collision
   evidence. `--assembly` overrides `BIOMCP_DEFAULT_ASSEMBLY`, which overrides
   the GRCh38 default; typed MCP variant get exposes the same assembly choice.

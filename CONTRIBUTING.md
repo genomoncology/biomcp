@@ -32,7 +32,10 @@ pinned `protoc` 28.3 and run `scripts/regenerate-alphagenome-proto`, while CI
 runs `scripts/regenerate-alphagenome-proto --check` without editing the tree.
 
 `make test` uses `cargo nextest run` plus the Python/docs contract lane.
-`make lint` runs the repo lint script and the quality ratchet. `make spec` is
+`make lint` bootstraps the repository's checksum-verified pinned ShellCheck and
+actionlint binaries on supported hosts, then runs the repo lint script and the
+quality ratchet. Unsupported hosts receive explicit manual installation
+instructions. `make spec` is
 the offline deterministic routine executable-spec gate. `make spec-contracts`
 is a deterministic legacy subset kept for profile compatibility. `make verify`
 is the explicit opt-in live public-upstream confidence lane; CPIC `web_anon`
@@ -80,6 +83,13 @@ repository does not install it automatically. Run
 
 ```bash
 scripts/install-pre-commit-hook
+```
+
+Check whether the current checkout already has that exact handoff without
+changing it:
+
+```bash
+scripts/install-pre-commit-hook --check
 ```
 
 The installed `.git/hooks/pre-commit` file is only a thin handoff to the tracked

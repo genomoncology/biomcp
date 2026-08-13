@@ -254,6 +254,65 @@ pub fn drug_search_markdown_with_region(
     who_total: Option<usize>,
     pagination_footer: &str,
 ) -> Result<String, BioMcpError> {
+    drug_search_markdown_with_region_and_footers(
+        query,
+        region,
+        us_results,
+        us_total,
+        eu_results,
+        eu_total,
+        who_results,
+        who_total,
+        pagination_footer,
+        None,
+    )
+}
+
+#[derive(Default)]
+pub struct DrugSearchRegionFooters {
+    pub us: Option<String>,
+    pub eu: Option<String>,
+    pub who: Option<String>,
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn drug_search_markdown_all_regions(
+    query: &str,
+    us_results: &[DrugSearchResult],
+    us_total: Option<usize>,
+    eu_results: &[EmaDrugSearchResult],
+    eu_total: Option<usize>,
+    who_results: &[WhoPrequalificationSearchResult],
+    who_total: Option<usize>,
+    footers: &DrugSearchRegionFooters,
+) -> Result<String, BioMcpError> {
+    drug_search_markdown_with_region_and_footers(
+        query,
+        DrugRegion::All,
+        us_results,
+        us_total,
+        eu_results,
+        eu_total,
+        who_results,
+        who_total,
+        "",
+        Some(footers),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn drug_search_markdown_with_region_and_footers(
+    query: &str,
+    region: DrugRegion,
+    us_results: &[DrugSearchResult],
+    us_total: Option<usize>,
+    eu_results: &[EmaDrugSearchResult],
+    eu_total: Option<usize>,
+    who_results: &[WhoPrequalificationSearchResult],
+    who_total: Option<usize>,
+    pagination_footer: &str,
+    region_footers: Option<&DrugSearchRegionFooters>,
+) -> Result<String, BioMcpError> {
     match region {
         DrugRegion::Us => {
             let count = us_total.unwrap_or(us_results.len());
@@ -410,6 +469,10 @@ pub fn drug_search_markdown_with_region(
                     );
                 }
             }
+            append_region_continuation(
+                &mut out,
+                region_footers.and_then(|value| value.us.as_deref()),
+            );
 
             out.push_str("\n## EU (EMA)\n\n");
             if eu_results.is_empty() {
@@ -434,6 +497,10 @@ pub fn drug_search_markdown_with_region(
                     );
                 }
             }
+            append_region_continuation(
+                &mut out,
+                region_footers.and_then(|value| value.eu.as_deref()),
+            );
 
             out.push_str("\n## WHO (WHO Prequalification)\n\n");
             if who_results.is_empty() {
@@ -476,6 +543,10 @@ pub fn drug_search_markdown_with_region(
                     }
                 }
             }
+            append_region_continuation(
+                &mut out,
+                region_footers.and_then(|value| value.who.as_deref()),
+            );
 
             if us_count == 0
                 && eu_count == 0
@@ -495,6 +566,12 @@ pub fn drug_search_markdown_with_region(
             }
             Ok(out)
         }
+    }
+}
+
+fn append_region_continuation(out: &mut String, command: Option<&str>) {
+    if let Some(command) = command {
+        let _ = writeln!(out, "\nContinue this region with `{command}`.");
     }
 }
 

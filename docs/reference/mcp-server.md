@@ -77,6 +77,8 @@ biomcp serve-http --host 0.0.0.0 --port 8000 \
 
 If a proxy rewrites Host headers, include the value BioMCP actually receives.
 BioMCP does not infer trust from `Forwarded` or `X-Forwarded-Host` headers.
+The policy covers `/mcp`, `/`, `/health`, and `/readyz`; probe routes are not an
+exception to the DNS-rebinding boundary.
 
 `--unsafe-allow-any-host` is an explicit escape hatch for infrastructure that
 must accept arbitrary Host values. It disables only the Host check and is
