@@ -22,9 +22,10 @@ use crate::xml::{ARTICLE_XML_NODE_LIMIT, parse_external_xml};
 
 use super::{
     Article, ArticleAssetCoverage, ArticleAssetDiscoveryRoute, ArticleAssetEntry, ArticleAssetJats,
-    ArticleAssetNamedCoverage, ArticleAssetNamedOutcome, ArticleAssetSourceDocument,
-    ArticleAssetsManifest, ArticleFulltextProvenance, ArticleFulltextProvider,
-    ArticleFulltextReuse, ArticleNotIncluded, ArticleOmittedCoverage,
+    ArticleAssetNamedCoverage, ArticleAssetNamedOutcome, ArticleAssetSourceAttempt,
+    ArticleAssetSourceDocument, ArticleAssetSourceOutcome, ArticleAssetsManifest,
+    ArticleFulltextProvenance, ArticleFulltextProvider, ArticleFulltextReuse, ArticleNotIncluded,
+    ArticleOmittedCoverage,
 };
 
 const PMC_PROVIDER_LABEL: &str = "PMC OA Archive";
@@ -34,11 +35,24 @@ const EUROPE_PMC_PROVIDER_SOURCE: &str = "Europe PMC";
 const FIGSHARE_PROVIDER_LABEL: &str = "Figshare";
 const FIGSHARE_PROVIDER_SOURCE: &str = "Figshare";
 const FIGSHARE_COLLECTION_RECORD_LIMIT: usize = 25;
+const PRIMARY_ASSET_SOURCE_BUDGET: std::time::Duration = std::time::Duration::from_secs(30);
+const OPTIONAL_ASSET_SOURCE_BUDGET: std::time::Duration = std::time::Duration::from_secs(10);
+const ASSET_MANIFEST_CACHE_TTL_SECS: u64 = 5 * 60;
+const ASSET_MANIFEST_CACHE_MAX_BYTES: usize = 4 * 1024 * 1024;
+const ASSET_MANIFEST_CACHE_SCHEMA: u8 = 1;
 
 enum SourceAttempt<T> {
     Success(T),
     Absent,
     Failed,
+    TimedOut,
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+struct CachedAssetManifest {
+    schema: u8,
+    saved_at_epoch_secs: u64,
+    manifest: ArticleAssetsManifest,
 }
 
 enum ArchivePackage {
@@ -131,10 +145,135 @@ struct FigshareAssetsObservation {
 pub async fn article_assets_manifest(
     requested_id: &str,
 ) -> Result<ArticleAssetsManifest, BioMcpError> {
+    if !crate::sources::is_no_cache_enabled()
+        && let Some(manifest) = read_cached_asset_manifest(requested_id).await
+    {
+        return Ok(manifest);
+    }
     let article = super::detail::get_article_base(requested_id).await?;
-    Ok(resolve_article_assets(requested_id, article)
+    let manifest = resolve_article_assets(requested_id, article)
         .await?
-        .manifest)
+        .manifest;
+    if !crate::sources::is_no_cache_enabled() {
+        write_cached_asset_manifest(requested_id, &manifest).await;
+    }
+    Ok(manifest)
+}
+
+fn asset_manifest_cache_path(requested_id: &str) -> Result<std::path::PathBuf, BioMcpError> {
+    let config = crate::cache::resolve_cache_config()?;
+    let key = crate::utils::download::cache_key(&requested_id.trim().to_ascii_uppercase());
+    Ok(config
+        .cache_root
+        .join("sessions")
+        .join("article-assets-v1")
+        .join(format!("{key}.json")))
+}
+
+fn epoch_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_secs())
+}
+
+async fn read_cached_asset_manifest(requested_id: &str) -> Option<ArticleAssetsManifest> {
+    let path = asset_manifest_cache_path(requested_id).ok()?;
+    let metadata = match tokio::fs::symlink_metadata(&path).await {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return None,
+        Err(error) => {
+            tracing::warn!("Article asset manifest cache metadata unavailable: {error}");
+            return None;
+        }
+    };
+    if metadata.file_type().is_symlink()
+        || !metadata.is_file()
+        || metadata.len() > ASSET_MANIFEST_CACHE_MAX_BYTES as u64
+    {
+        let _ = tokio::fs::remove_file(&path).await;
+        return None;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if metadata.nlink() != 1 {
+            tracing::warn!("Ignoring linked article asset manifest cache entry");
+            return None;
+        }
+    }
+    let bytes = tokio::fs::read(&path).await.ok()?;
+    let cached: CachedAssetManifest = match serde_json::from_slice(&bytes) {
+        Ok(cached) => cached,
+        Err(_) => {
+            let _ = tokio::fs::remove_file(&path).await;
+            return None;
+        }
+    };
+    if cached.schema != ASSET_MANIFEST_CACHE_SCHEMA
+        || epoch_secs().saturating_sub(cached.saved_at_epoch_secs) > ASSET_MANIFEST_CACHE_TTL_SECS
+    {
+        let _ = tokio::fs::remove_file(&path).await;
+        return None;
+    }
+    if let Some(parent) = path.parent()
+        && let Err(error) = crate::cache::secure_managed_tree(parent, true)
+    {
+        tracing::warn!("Article asset manifest cache permissions could not be repaired: {error}");
+        return None;
+    }
+    Some(cached.manifest)
+}
+
+async fn write_cached_asset_manifest(requested_id: &str, manifest: &ArticleAssetsManifest) {
+    let cached = CachedAssetManifest {
+        schema: ASSET_MANIFEST_CACHE_SCHEMA,
+        saved_at_epoch_secs: epoch_secs(),
+        manifest: manifest.clone(),
+    };
+    let Ok(bytes) = serde_json::to_vec(&cached) else {
+        tracing::warn!("Article asset manifest cache serialization failed");
+        return;
+    };
+    if bytes.len() > ASSET_MANIFEST_CACHE_MAX_BYTES {
+        tracing::warn!("Article asset manifest cache entry exceeded its size budget");
+        return;
+    }
+    let Ok(path) = asset_manifest_cache_path(requested_id) else {
+        return;
+    };
+    if let Err(error) = crate::utils::download::write_atomic_bytes(&path, &bytes).await {
+        tracing::warn!("Article asset manifest cache write failed: {error}");
+    }
+}
+
+async fn bounded_source_attempt<T>(
+    budget: std::time::Duration,
+    future: impl std::future::Future<Output = SourceAttempt<T>>,
+) -> SourceAttempt<T> {
+    match tokio::time::timeout(budget, future).await {
+        Ok(attempt) => attempt,
+        Err(_) => SourceAttempt::TimedOut,
+    }
+}
+
+fn source_attempt_record<T>(
+    provider: ArticleFulltextProvider,
+    source_document: ArticleAssetSourceDocument,
+    attempt: &SourceAttempt<T>,
+    degraded: bool,
+) -> ArticleAssetSourceAttempt {
+    let outcome = match attempt {
+        SourceAttempt::Success(_) if degraded => ArticleAssetSourceOutcome::Degraded,
+        SourceAttempt::Success(_) => ArticleAssetSourceOutcome::Data,
+        SourceAttempt::Absent => ArticleAssetSourceOutcome::HealthyAbsent,
+        SourceAttempt::Failed => ArticleAssetSourceOutcome::SourceUnavailable,
+        SourceAttempt::TimedOut => ArticleAssetSourceOutcome::TimedOut,
+    };
+    ArticleAssetSourceAttempt {
+        provider,
+        source_document,
+        outcome,
+    }
 }
 
 pub async fn article_asset_bytes(
@@ -201,7 +340,7 @@ pub(super) async fn attach_not_included(article: &mut Article, requested_id: &st
             package,
             pmc_manifest.as_ref(),
         ),
-        SourceAttempt::Absent | SourceAttempt::Failed => return,
+        SourceAttempt::Absent | SourceAttempt::Failed | SourceAttempt::TimedOut => return,
     };
     article.not_included = manifest.not_included;
 }
@@ -222,17 +361,67 @@ async fn resolve_article_assets(
     let mut candidates = Vec::<LinkedCandidate>::new();
     let mut nonretrievable = Vec::<PendingCoverage>::new();
     let mut complex_tables = 0usize;
+    let mut source_attempts = Vec::new();
 
     if let Some(pmcid) = pmcid.as_deref() {
         let mut figshare_article = article.clone();
         let (pmc, europe, europe_xml, ncbi_xml, html, figshare) = tokio::join!(
-            observe_pmc_package(pmcid),
-            observe_europe_package(pmcid),
-            observe_europe_xml(pmcid),
-            observe_ncbi_xml(pmcid),
-            observe_pmc_html(pmcid),
-            observe_figshare_assets(requested_id, &mut figshare_article),
+            bounded_source_attempt(PRIMARY_ASSET_SOURCE_BUDGET, observe_pmc_package(pmcid)),
+            bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_europe_package(pmcid)),
+            bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_europe_xml(pmcid)),
+            bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_ncbi_xml(pmcid)),
+            bounded_source_attempt(OPTIONAL_ASSET_SOURCE_BUDGET, observe_pmc_html(pmcid)),
+            bounded_source_attempt(
+                OPTIONAL_ASSET_SOURCE_BUDGET,
+                observe_figshare_assets(requested_id, &mut figshare_article),
+            ),
         );
+
+        source_attempts.push(source_attempt_record(
+            provider(),
+            ArticleAssetSourceDocument::PmcOaArchive,
+            &pmc,
+            matches!(&pmc, SourceAttempt::Success(observation) if observation.failed),
+        ));
+        source_attempts.push(source_attempt_record(
+            ArticleFulltextProvider {
+                label: EUROPE_PMC_PROVIDER_LABEL.into(),
+                source: EUROPE_PMC_PROVIDER_SOURCE.into(),
+            },
+            ArticleAssetSourceDocument::EuropePmcZip,
+            &europe,
+            false,
+        ));
+        source_attempts.push(source_attempt_record(
+            ArticleFulltextProvider {
+                label: "Europe PMC XML".into(),
+                source: "Europe PMC".into(),
+            },
+            ArticleAssetSourceDocument::JatsXml,
+            &europe_xml,
+            false,
+        ));
+        source_attempts.push(source_attempt_record(
+            ArticleFulltextProvider {
+                label: "NCBI EFetch PMC XML".into(),
+                source: "NCBI EFetch".into(),
+            },
+            ArticleAssetSourceDocument::JatsXml,
+            &ncbi_xml,
+            false,
+        ));
+        source_attempts.push(source_attempt_record(
+            linked_provider(),
+            ArticleAssetSourceDocument::PmcHtml,
+            &html,
+            false,
+        ));
+        source_attempts.push(source_attempt_record(
+            figshare_provider(),
+            ArticleAssetSourceDocument::Figshare,
+            &figshare,
+            matches!(&figshare, SourceAttempt::Success(observation) if observation.failed),
+        ));
 
         let retained_pmc_manifest = match pmc {
             SourceAttempt::Success(observation) => {
@@ -294,6 +483,10 @@ async fn resolve_article_assets(
                 any_failed = true;
                 None
             }
+            SourceAttempt::TimedOut => {
+                any_failed = true;
+                None
+            }
         };
 
         match europe {
@@ -330,6 +523,7 @@ async fn resolve_article_assets(
             }
             SourceAttempt::Absent => {}
             SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::TimedOut => any_failed = true,
         }
 
         match europe_xml {
@@ -346,6 +540,7 @@ async fn resolve_article_assets(
             }
             SourceAttempt::Absent => {}
             SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::TimedOut => any_failed = true,
         }
         match ncbi_xml {
             SourceAttempt::Success(xml) => {
@@ -361,6 +556,7 @@ async fn resolve_article_assets(
             }
             SourceAttempt::Absent => {}
             SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::TimedOut => any_failed = true,
         }
         match html {
             SourceAttempt::Success(html) => {
@@ -382,20 +578,44 @@ async fn resolve_article_assets(
             }
             SourceAttempt::Absent => {}
             SourceAttempt::Failed => any_failed = true,
+            SourceAttempt::TimedOut => any_failed = true,
         }
 
-        resolve_linked_candidates(
-            requested_id,
-            &article,
-            pmcid,
-            candidates,
-            &mut assets,
-            &mut nonretrievable,
-        )
-        .await;
+        if !candidates.is_empty() {
+            let linked = tokio::time::timeout(
+                OPTIONAL_ASSET_SOURCE_BUDGET,
+                resolve_linked_candidates(
+                    requested_id,
+                    &article,
+                    pmcid,
+                    candidates,
+                    &mut assets,
+                    &mut nonretrievable,
+                ),
+            )
+            .await;
+            if linked.is_err() {
+                any_failed = true;
+                source_attempts.push(ArticleAssetSourceAttempt {
+                    provider: linked_provider(),
+                    source_document: ArticleAssetSourceDocument::JatsXml,
+                    outcome: ArticleAssetSourceOutcome::TimedOut,
+                });
+            }
+        }
         fold_figshare_observation(figshare, &mut assets, &mut nonretrievable, &mut any_failed);
     } else {
-        let figshare = observe_figshare_assets(requested_id, &mut article).await;
+        let figshare = bounded_source_attempt(
+            OPTIONAL_ASSET_SOURCE_BUDGET,
+            observe_figshare_assets(requested_id, &mut article),
+        )
+        .await;
+        source_attempts.push(source_attempt_record(
+            figshare_provider(),
+            ArticleAssetSourceDocument::Figshare,
+            &figshare,
+            matches!(&figshare, SourceAttempt::Success(observation) if observation.failed),
+        ));
         fold_figshare_observation(figshare, &mut assets, &mut nonretrievable, &mut any_failed);
     }
 
@@ -407,6 +627,7 @@ async fn resolve_article_assets(
         nonretrievable,
         complex_tables,
         any_failed,
+        source_attempts,
     )
 }
 
@@ -424,6 +645,7 @@ fn fold_figshare_observation(
         }
         SourceAttempt::Absent => {}
         SourceAttempt::Failed => *any_failed = true,
+        SourceAttempt::TimedOut => *any_failed = true,
     }
 }
 
@@ -739,6 +961,7 @@ fn named_coverage(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn finish_resolution(
     requested_id: &str,
     article: &Article,
@@ -747,6 +970,7 @@ fn finish_resolution(
     nonretrievable: Vec<PendingCoverage>,
     complex_tables: usize,
     any_failed: bool,
+    source_attempts: Vec<ArticleAssetSourceAttempt>,
 ) -> Result<ResolvedArticleAssets, BioMcpError> {
     let retrievable_observations = retrievable_coverage_observations(&assets);
     let mut assets = merge_resolved_assets(assets);
@@ -840,6 +1064,7 @@ fn finish_resolution(
         pmcid: pmcid.map(str::to_string).or_else(|| article.pmcid.clone()),
         provider,
         provenance,
+        source_attempts,
         assets: entries,
         coverage,
         not_included: None,
@@ -1674,6 +1899,7 @@ fn build_europe_pmc_manifest(
         pmcid: Some(pmcid.to_string()),
         provider,
         provenance,
+        source_attempts: Vec::new(),
         assets,
         coverage: Vec::new(),
         not_included: None,
@@ -1761,6 +1987,7 @@ fn build_assets_manifest(
         pmcid: Some(pmcid.to_string()),
         provider,
         provenance,
+        source_attempts: Vec::new(),
         assets,
         coverage: Vec::new(),
         not_included: None,
@@ -2049,6 +2276,89 @@ mod tests {
         }
     }
 
+    fn sample_cached_manifest() -> ArticleAssetsManifest {
+        ArticleAssetsManifest {
+            article_id: "PMID:22663011".to_string(),
+            pmid: Some("22663011".to_string()),
+            pmcid: Some("PMC123456".to_string()),
+            provider: provider(),
+            provenance: ArticleFulltextProvenance::default(),
+            source_attempts: vec![ArticleAssetSourceAttempt {
+                provider: linked_provider(),
+                source_document: ArticleAssetSourceDocument::PmcHtml,
+                outcome: ArticleAssetSourceOutcome::TimedOut,
+            }],
+            assets: Vec::new(),
+            coverage: Vec::new(),
+            not_included: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn source_attempt_budget_reports_timeout_without_collapsing_other_outcomes() {
+        let timed_out = bounded_source_attempt(std::time::Duration::from_millis(1), async {
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+            SourceAttempt::<()>::Success(())
+        })
+        .await;
+        assert!(matches!(timed_out, SourceAttempt::TimedOut));
+
+        let absent = bounded_source_attempt(
+            std::time::Duration::from_millis(20),
+            std::future::ready(SourceAttempt::<()>::Absent),
+        )
+        .await;
+        assert!(matches!(absent, SourceAttempt::Absent));
+        let failed = bounded_source_attempt(
+            std::time::Duration::from_millis(20),
+            std::future::ready(SourceAttempt::<()>::Failed),
+        )
+        .await;
+        assert!(matches!(failed, SourceAttempt::Failed));
+    }
+
+    #[tokio::test]
+    #[serial_test::serial(article_resolver_env)]
+    async fn manifest_cache_reuses_fresh_entries_and_discards_expired_or_corrupt_entries() {
+        let cache = TempDirGuard::new("article-assets-manifest-cache");
+        let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
+        let requested_id = "PMID:22663011";
+        let manifest = sample_cached_manifest();
+
+        write_cached_asset_manifest(requested_id, &manifest).await;
+        assert_eq!(
+            read_cached_asset_manifest(requested_id).await,
+            Some(manifest.clone())
+        );
+
+        let path = asset_manifest_cache_path(requested_id).unwrap();
+        let expired = CachedAssetManifest {
+            schema: ASSET_MANIFEST_CACHE_SCHEMA,
+            saved_at_epoch_secs: epoch_secs().saturating_sub(ASSET_MANIFEST_CACHE_TTL_SECS + 1),
+            manifest: manifest.clone(),
+        };
+        crate::utils::download::write_atomic_bytes(&path, &serde_json::to_vec(&expired).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(read_cached_asset_manifest(requested_id).await, None);
+        assert!(!path.exists());
+
+        crate::utils::download::write_atomic_bytes(&path, b"not json")
+            .await
+            .unwrap();
+        assert_eq!(read_cached_asset_manifest(requested_id).await, None);
+        assert!(!path.exists());
+    }
+
+    #[test]
+    fn source_attempt_outcomes_are_stable_json() {
+        assert_eq!(
+            serde_json::to_value(sample_cached_manifest()).unwrap()["source_attempts"][0]["outcome"],
+            serde_json::json!("timed_out")
+        );
+    }
+
     #[test]
     fn build_manifest_hashes_binary_bytes_and_quotes_retrieval_commands() {
         let binary = vec![0, 0xff, b'P', b'N', b'G', b'\n'];
@@ -2276,6 +2586,7 @@ mod tests {
             pending,
             0,
             false,
+            Vec::new(),
         )
         .unwrap();
         let key = resolved.manifest.coverage[0].asset_key.clone().unwrap();

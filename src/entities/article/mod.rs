@@ -395,11 +395,30 @@ pub struct ArticleAssetsManifest {
     pub pmcid: Option<String>,
     pub provider: ArticleFulltextProvider,
     pub provenance: ArticleFulltextProvenance,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub source_attempts: Vec<ArticleAssetSourceAttempt>,
     pub assets: Vec<ArticleAssetEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub coverage: Vec<ArticleAssetNamedCoverage>,
     #[serde(skip)]
     pub not_included: Option<ArticleNotIncluded>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArticleAssetSourceOutcome {
+    Data,
+    Degraded,
+    HealthyAbsent,
+    SourceUnavailable,
+    TimedOut,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleAssetSourceAttempt {
+    pub provider: ArticleFulltextProvider,
+    pub source_document: ArticleAssetSourceDocument,
+    pub outcome: ArticleAssetSourceOutcome,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

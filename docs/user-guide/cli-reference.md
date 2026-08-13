@@ -565,7 +565,10 @@ for the JSON article-asset manifest merged from PMC OA, Europe PMC supplementary
 recognized JATS/PMC HTML links, and eligible Figshare metadata.
 Figshare manifests may merge same-paper sibling records discovered by DOI/title;
 handles stay as BioMCP commands and provider URLs remain internal. Named linked files
-carry typed coverage outcomes. Use `get article <id> asset <asset-key>` to stream
+carry typed coverage outcomes, while `source_attempts` distinguishes successful,
+degraded, absent, failed, and timed-out providers. Fresh manifests are reused
+for five minutes so paging does not repeat optional-provider work; `--no-cache`
+bypasses this reuse. Use `get article <id> asset <asset-key>` to stream
 one asset as raw bytes with no conversion. Named-only coverage still returns a
 manifest with `assets: []`; an entirely healthy unnamed miss is `not_found`, and
 a failed source with no successful fallback is `source_unavailable`.

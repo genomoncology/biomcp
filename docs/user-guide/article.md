@@ -312,6 +312,11 @@ the retired FTP/archive route, whose legacy files are removed in August 2026. Fi
 manifests can include same-paper sibling records discovered by DOI/title, while
 excluding records that do not match the paper. Linked provider URLs stay internal;
 coverage reports named files that are absent, denied, unsupported, unavailable, or gated.
+The manifest's `source_attempts` distinguishes data, degraded data, healthy
+absence, provider failure, and timeout. Optional-provider work has an overall
+budget, so a slow optional source cannot withhold assets already returned by a
+successful source. Normal calls reuse the resolved manifest for five minutes,
+including paging continuations; `--no-cache` bypasses that reuse.
 PMC's `pmc_proof_of_work` outcome means PMC returned a proof-of-work challenge
 instead of the named file; it has no `asset_key` or handle. A linked binary
 received as HTML or XHTML is rejected rather than exposed as asset bytes.
@@ -325,7 +330,9 @@ retrievable, the manifest remains available with `assets: []` and a specific
 per-file outcome. If no route names an asset, a healthy all-source miss is
 `not_found`; source failures remain `source_unavailable`. A missing or unknown
 asset key is `not_found`. Figshare supplement PDFs and tables remain assets,
-not full-text article substitutes.
+not full-text article substitutes. Full-text downloads are managed private
+state (`0600` files on Unix); routine managed-state maintenance also repairs
+older permissive files.
 
 Opt in to the final PDF rung only when you want the last-resort open-access PDF
 path after XML and PMC HTML fail to provide an article body (including when they
