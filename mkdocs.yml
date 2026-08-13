@@ -100,6 +100,7 @@ nav:
       - Data Sources: reference/data-sources.md
       - Source Licensing: reference/source-licensing.md
       - MCP Server: reference/mcp-server.md
+      - Release Process: reference/release-process.md
       - Error Codes: reference/error-codes.md
       - Benchmarks: reference/benchmarks.md
       - BioASQ Benchmark: reference/bioasq-benchmark.md

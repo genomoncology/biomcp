@@ -93,13 +93,13 @@ mcp_docs = read_text("docs/reference/mcp-server.md")
 for needle in (
     "committed `server.json`",
     "never stamps registry metadata from a tag",
-    "release disabled until ticket 0957 installs the public-artifact gate",
+    "must separately review",
     "io.github.genomoncology/biomcp",
 ):
     if needle not in mcp_docs:
         fail(f"docs/reference/mcp-server.md missing {needle}")
 if "mcp-publisher publish" in mcp_docs:
-    fail("docs/reference/mcp-server.md must not instruct registry publication while disabled")
+    fail("docs/reference/mcp-server.md must not automate official registry publication")
 PY
 
 printf 'MCP registry metadata ok\n'

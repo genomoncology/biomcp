@@ -676,27 +676,16 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
         "Package versions are committed metadata, not values stamped from tags."
         in release_pipeline_section
     )
-    assert (
-        "disabled until ticket 0957 installs the public-artifact gate"
-        in release_pipeline_section
-    )
+    assert "separate `stage` and `promote` modes" in release_pipeline_section
+    assert "only then advances mutable" in release_pipeline_section
     assert "scripts/check-version-sync.sh" in release_pipeline_section
-    assert "release workflow builds and publishes" not in technical_ws
-    assert "release workflow builds binaries, publishes" not in technical_ws
+    assert "privately builds, signs, inspects, and seals" in technical_ws
     assert "release workflow stamps" not in technical_ws
     assert "workflow_dispatch:" in release_workflow
     assert "contents: read" in release_workflow
-    assert "release-disabled:" in release_workflow
-    assert "bash scripts/release-disabled.sh" in release_workflow
-    for forbidden in (
-        "release:\n",
-        "contents: write",
-        "packages: write",
-        "id-token: write",
-        "publish",
-        "gh-deploy",
-    ):
-        assert forbidden not in release_workflow
+    assert "promotion-preflight:" in release_workflow
+    assert "reconcile-public-release:" in release_workflow
+    assert "advance-mutable-pointers:" in release_workflow
     assert (
         'DOWNLOAD_URL="https://github.com/${REPO}/releases/latest/download/${ASSET}"'
         in install_script
@@ -1117,7 +1106,7 @@ def test_source_integration_architecture_doc_captures_repo_contract() -> None:
     assert "`CHANGELOG.md`" in source_addition_section
 
 
-def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard() -> (
+def test_pull_request_contracts_remain_separate_from_protected_release() -> (
     None
 ):
     ci = _read_repo(".github/workflows/ci.yml")
@@ -1150,17 +1139,9 @@ def test_pull_request_contracts_remain_separate_from_the_disabled_release_guard(
     ]
 
     assert "workflow_dispatch:" in release
-    assert "release-disabled:" in release
-    assert "bash scripts/release-disabled.sh" in release
-    for forbidden in (
-        "release:\n",
-        "contents: write",
-        "packages: write",
-        "id-token: write",
-        "publish",
-        "gh-deploy",
-    ):
-        assert forbidden not in release
+    assert "promotion-preflight:" in release
+    assert "environment: biomcp-release-promotion" in release
+    assert "advance-mutable-pointers:" in release
 
     assert "name: Contract Smoke Tests" in contracts_smoke
     assert "schedule:" not in contracts_smoke

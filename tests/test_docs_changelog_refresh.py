@@ -825,7 +825,7 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
     assert "MCP chart responses can now return SVG inline" in v0_8_17_block
 
 
-def test_release_overview_describes_committed_metadata_and_the_disabled_guard() -> None:
+def test_release_overview_describes_committed_metadata_and_protected_promotion() -> None:
     overview = _read("architecture/technical/overview.md")
 
     assert "**Current version:** see `Cargo.toml`" in overview
@@ -834,8 +834,9 @@ def test_release_overview_describes_committed_metadata_and_the_disabled_guard() 
     assert "`CITATION.cff`" in overview
     assert "v0.8.25 is the latest published release." in overview
     assert "Package versions are committed metadata, not values stamped from tags." in overview
-    assert "disabled until ticket 0957 installs the public-artifact gate" in overview
-    assert "Post-tag public proof" not in overview
+    assert "separate `stage` and `promote` modes" in overview
+    assert "only then advances mutable" in overview
+    assert "Neither implementing the workflow nor staging a candidate publishes" in overview
 
 
 def test_gene_guide_includes_new_sections_and_positional_search() -> None:

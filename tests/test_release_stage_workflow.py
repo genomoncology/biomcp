@@ -10,12 +10,22 @@ def _text() -> str:
     return WORKFLOW.read_text(encoding="utf-8")
 
 
-def test_stage_is_the_only_callable_release_mode_before_promotion() -> None:
+def test_stage_and_protected_promotion_are_the_only_callable_modes() -> None:
     workflow = yaml.safe_load(_text())
     dispatch = workflow[True]["workflow_dispatch"]["inputs"]
-    assert set(dispatch) == {"source_sha"}
-    assert "promote" not in _text().lower()
+    assert set(dispatch) == {
+        "mode",
+        "source_sha",
+        "stage_run_id",
+        "windows_desktop_smoke",
+        "updater_transition",
+    }
+    assert dispatch["mode"]["options"] == ["stage", "promote"]
     assert workflow["permissions"] == {"contents": "read"}
+    jobs = workflow["jobs"]
+    assert jobs["candidate-gates"]["if"] == "inputs.mode == 'stage'"
+    assert jobs["promotion-preflight"]["environment"] == "biomcp-release-promotion"
+    assert jobs["advance-mutable-pointers"]["needs"] == "reconcile-public-release"
 
 
 def test_stage_binds_checkout_build_and_manifest_to_input_sha() -> None:
@@ -33,16 +43,15 @@ def test_baseline_build_is_once_in_pinned_manylinux_and_never_publishes() -> Non
     assert "manylinux_2_28_x86_64@sha256:" in text
     assert "manylinux_2_28_aarch64@sha256:" in text
     assert "release/build_target.py" in text
-    forbidden = (
-        "softprops/action-gh-release",
-        "pypa/gh-action-pypi-publish",
-        "docker push",
-        "packages: write",
-        "contents: write",
-        "git push",
-        "HOMEBREW_TAP_TOKEN",
-    )
-    assert not any(item in text for item in forbidden)
+    workflow = yaml.safe_load(text)
+    stage_jobs = [
+        value
+        for value in workflow["jobs"].values()
+        if value.get("if") == "inputs.mode == 'stage'"
+    ]
+    stage_text = yaml.safe_dump(stage_jobs)
+    for forbidden in ("packages: write", "contents: write", "git push", "uv publish"):
+        assert forbidden not in stage_text
 
 
 def test_every_action_and_container_is_commit_or_digest_pinned() -> None:
@@ -91,8 +100,10 @@ def test_homebrew_formula_is_generated_once_and_smoked_offline_on_both_macs() ->
     assert "HOMEBREW_NO_INSTALL_FROM_API: 1" in text
     assert "macos-15-intel" in text and "macos-15" in text
     assert "spctl --assess --type execute" in text
-    assert "homebrew-biomcp" not in text
-    assert "HOMEBREW_TAP_TOKEN" not in text
+    workflow = yaml.safe_load(text)
+    stage_text = yaml.safe_dump(workflow["jobs"]["homebrew-smoke"])
+    assert "homebrew-biomcp" not in stage_text
+    assert "HOMEBREW_TAP_TOKEN" not in stage_text
 
 
 def test_mcpb_is_derived_signed_once_and_smoked_on_three_platform_runners() -> None:

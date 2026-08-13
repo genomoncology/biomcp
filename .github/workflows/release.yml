@@ -3,9 +3,29 @@ name: Release candidate
 on:
   workflow_dispatch:
     inputs:
-      source_sha:
-        description: Full commit SHA from main to stage privately
+      mode:
+        description: Stage privately or promote one sealed stage run
         required: true
+        default: stage
+        type: choice
+        options:
+          - stage
+          - promote
+      source_sha:
+        description: Full commit SHA from main
+        required: true
+        type: string
+      stage_run_id:
+        description: Prior successful stage run ID (promotion only)
+        required: false
+        type: string
+      windows_desktop_smoke:
+        description: Exact Claude Desktop smoke JSON (promotion only)
+        required: false
+        type: string
+      updater_transition:
+        description: Exact previous-version public updater/installer proof JSON (promotion only)
+        required: false
         type: string
 
 permissions:
@@ -19,6 +39,7 @@ env:
 
 jobs:
   candidate-gates:
+    if: inputs.mode == 'stage'
     runs-on: ubuntu-24.04
     steps:
       - name: Check out the selected commit
@@ -52,6 +73,7 @@ jobs:
       - name: Canonical candidate gates
         run: |
           tools/bootstrap-lint-tools >> "$GITHUB_PATH"
+          cmp --silent install.sh docs/install.sh
           make lint
           make test
           make spec
@@ -77,6 +99,7 @@ jobs:
           retention-days: 30
 
   linux-artifacts:
+    if: inputs.mode == 'stage'
     needs: candidate-gates
     strategy:
       matrix:
@@ -119,6 +142,7 @@ jobs:
           retention-days: 30
 
   signed-artifacts:
+    if: inputs.mode == 'stage'
     needs: candidate-gates
     strategy:
       matrix:
@@ -166,6 +190,7 @@ jobs:
           retention-days: 30
 
   container-artifact:
+    if: inputs.mode == 'stage'
     needs: [linux-artifacts]
     runs-on: ubuntu-24.04
     steps:
@@ -233,6 +258,7 @@ jobs:
           retention-days: 30
 
   homebrew-formula:
+    if: inputs.mode == 'stage'
     needs: signed-artifacts
     runs-on: ubuntu-24.04
     steps:
@@ -260,6 +286,7 @@ jobs:
           retention-days: 30
 
   homebrew-smoke:
+    if: inputs.mode == 'stage'
     needs: [signed-artifacts, homebrew-formula]
     strategy:
       matrix:
@@ -318,6 +345,7 @@ jobs:
           retention-days: 30
 
   mcpb-artifact:
+    if: inputs.mode == 'stage'
     needs: signed-artifacts
     runs-on: macos-15
     environment: biomcp-release-signing
@@ -399,6 +427,7 @@ jobs:
           retention-days: 30
 
   mcpb-smoke:
+    if: inputs.mode == 'stage'
     needs: mcpb-artifact
     strategy:
       matrix:
@@ -440,6 +469,7 @@ jobs:
           fi
 
   seal-candidate:
+    if: inputs.mode == 'stage'
     needs: [candidate-gates, linux-artifacts, signed-artifacts, container-artifact, homebrew-smoke, mcpb-smoke]
     runs-on: ubuntu-24.04
     steps:
@@ -480,3 +510,397 @@ jobs:
             candidate-manifest.json.sha256
           if-no-files-found: error
           retention-days: 30
+
+  promotion-preflight:
+    if: inputs.mode == 'promote'
+    runs-on: ubuntu-24.04
+    environment: biomcp-release-promotion
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: '*-${{ inputs.stage_run_id }}'
+          path: candidate
+      - name: Require the exact successful sealed stage run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STAGE_RUN_ID: ${{ inputs.stage_run_id }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          [[ "$STAGE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STAGE_RUN_ID" --jq .conclusion)" = success
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STAGE_RUN_ID" --jq .head_sha)" = "$SOURCE_SHA"
+          test "$(jq -r .status "candidate/sealed-candidate-$STAGE_RUN_ID/candidate-manifest.json")" = complete
+          test "$(jq -r .enabled release/signing-policy.json)" = true
+      - name: Resolve and verify every private candidate byte
+        env:
+          GH_TOKEN: ${{ secrets.BIOMCP_RELEASE_GITHUB_TOKEN }}
+          BIOMCP_PYPI_TOKEN: ${{ secrets.BIOMCP_PYPI_TOKEN }}
+          BIOMCP_GHCR_TOKEN: ${{ secrets.BIOMCP_GHCR_TOKEN }}
+          BIOMCP_HOMEBREW_TAP_TOKEN: ${{ secrets.BIOMCP_HOMEBREW_TAP_TOKEN }}
+          POLICY_SHA256: ${{ secrets.BIOMCP_SIGNING_POLICY_SHA256 }}
+          STAGE_RUN_ID: ${{ inputs.stage_run_id }}
+        run: |
+          python3 release/promotion.py preflight \
+            --manifest "candidate/sealed-candidate-$STAGE_RUN_ID/candidate-manifest.json" \
+            --candidate-root candidate --stage-run-id "$STAGE_RUN_ID" \
+            --policy release/signing-policy.json --protected-policy-sha256 "$POLICY_SHA256" \
+            --require-credentials --output promotion-inventory.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: promotion-inventory-${{ github.run_id }}
+          path: promotion-inventory.json
+          if-no-files-found: error
+
+  publish-versioned:
+    needs: promotion-preflight
+    runs-on: ubuntu-24.04
+    environment: biomcp-release-promotion
+    permissions:
+      actions: read
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: 3.12.3
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3
+        with:
+          version: 0.8.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: '*-${{ inputs.stage_run_id }}'
+          path: candidate
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: promotion-inventory-${{ github.run_id }}
+      - name: Publish immutable versioned bytes only
+        env:
+          GH_TOKEN: ${{ secrets.BIOMCP_RELEASE_GITHUB_TOKEN }}
+          BIOMCP_PYPI_TOKEN: ${{ secrets.BIOMCP_PYPI_TOKEN }}
+          BIOMCP_GHCR_TOKEN: ${{ secrets.BIOMCP_GHCR_TOKEN }}
+          BIOMCP_HOMEBREW_TAP_TOKEN: ${{ secrets.BIOMCP_HOMEBREW_TAP_TOKEN }}
+          STAGE_RUN_ID: ${{ inputs.stage_run_id }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+          bash release/publish-versioned.sh \
+            "candidate/sealed-candidate-$STAGE_RUN_ID/candidate-manifest.json" \
+            candidate promotion-inventory.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: formula-commit-${{ github.run_id }}
+          path: formula-commit.txt
+          if-no-files-found: error
+
+  public-platform-smoke:
+    needs: publish-versioned
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            slug: linux-x86_64
+            native: native-linux-x86_64
+            wheel: wheel-linux-x86_64
+          - runner: ubuntu-24.04-arm
+            slug: linux-arm64
+            native: native-linux-arm64
+            wheel: wheel-linux-arm64
+          - runner: macos-15-intel
+            slug: macos-x86_64
+            native: native-macos-x86_64
+            wheel: wheel-macos-x86_64
+          - runner: macos-15
+            slug: macos-arm64
+            native: native-macos-arm64
+            wheel: wheel-macos-arm64
+          - runner: windows-2022
+            slug: windows-x86_64
+            native: native-windows-x86_64
+            wheel: wheel-windows-x86_64
+    runs-on: ${{ matrix.runner }}
+    environment: biomcp-release-promotion
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: sealed-candidate-${{ inputs.stage_run_id }}
+          path: sealed
+      - name: Download, hash, install, and smoke both public package forms
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NATIVE_ID: ${{ matrix.native }}
+          WHEEL_ID: ${{ matrix.wheel }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          version="$(jq -r .version sealed/candidate-manifest.json)"
+          native="$(jq -r --arg id "$NATIVE_ID" '.artifacts[$id].filename' sealed/candidate-manifest.json)"
+          gh release download "v$version" --pattern "$native" --dir public
+          gh release download "v$version" --pattern "$native.sha256" --dir public
+          test "$(cat "public/$native.sha256")" = "$(jq -r --arg id "$NATIVE_ID" '.artifacts[$id].sha256 + "  " + .artifacts[$id].filename' sealed/candidate-manifest.json)"
+          (cd public && shasum -a 256 -c "$native.sha256")
+          test "$(shasum -a 256 "public/$native" | cut -d' ' -f1)" = \
+            "$(jq -r --arg id "$NATIVE_ID" '.artifacts[$id].sha256' sealed/candidate-manifest.json)"
+          mkdir unpacked
+          case "$native" in *.zip) unzip -q "public/$native" -d unpacked ;; *) tar -xzf "public/$native" -C unpacked ;; esac
+          binary=unpacked/biomcp; [[ '${{ runner.os }}' == Windows ]] && binary=unpacked/biomcp.exe
+          python release/smoke.py --bin "$binary" --version "$version" --revision "${SOURCE_SHA:0:8}"
+          tools/check-png-artifact "$binary"
+          python -m pip download --only-binary=:all: --no-deps "biomcp-cli==$version" -d public-wheel
+          wheel="$(find public-wheel -type f -name '*.whl' -print -quit)"
+          test "$(shasum -a 256 "$wheel" | cut -d' ' -f1)" = \
+            "$(jq -r --arg id "$WHEEL_ID" '.artifacts[$id].sha256' sealed/candidate-manifest.json)"
+          python -m venv installed-wheel
+          installed-wheel/bin/pip install --no-index "$wheel" 2>/dev/null || installed-wheel/Scripts/pip.exe install --no-index "$wheel"
+          if [[ '${{ runner.os }}' == macOS ]]; then
+            xattr -w com.apple.quarantine '0081;public;BioMCP;' "public/$native"
+            codesign --verify --deep --strict "$binary"
+            spctl --assess --type execute --verbose=4 "$binary"
+          elif [[ '${{ runner.os }}' == Windows ]]; then
+            signtool verify /pa /all /tw "$binary"
+          fi
+      - run: mkdir -p proof && printf '{"passed":true}\n' > proof/${{ matrix.slug }}.json
+        shell: bash
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-platform-${{ matrix.slug }}-${{ github.run_id }}
+          path: proof/
+
+  public-container-smoke:
+    needs: publish-versioned
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: sealed-candidate-${{ inputs.stage_run_id }}
+          path: sealed
+      - name: Pull and smoke both public architectures
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          version="$(curl -fsSL "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$SOURCE_SHA/Cargo.toml" | sed -n 's/^version = "\([^"]*\)"/\1/p' | head -1)"
+          docker manifest inspect "ghcr.io/genomoncology/biomcp:$version" > public-index.json
+          test "sha256:$(jq -Sc . public-index.json | sha256sum | cut -d' ' -f1)" = \
+            "$(jq -r '.artifacts["oci-index"].evidence.index_digest' sealed/candidate-manifest.json)"
+          for architecture in amd64 arm64; do
+            docker pull --platform "linux/$architecture" "ghcr.io/genomoncology/biomcp:$version"
+            test "$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "ghcr.io/genomoncology/biomcp:$version")" = "$SOURCE_SHA"
+            docker run --rm --platform "linux/$architecture" "ghcr.io/genomoncology/biomcp:$version" --version
+            test "$(docker run --rm --platform "linux/$architecture" --entrypoint id "ghcr.io/genomoncology/biomcp:$version" -u)" != 0
+          done
+          mkdir proof && printf '{"passed":true}\n' > proof/container.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-container-${{ github.run_id }}
+          path: proof/
+
+  public-homebrew-smoke:
+    needs: publish-versioned
+    strategy:
+      matrix:
+        runner: [macos-15-intel, macos-15]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: sealed-candidate-${{ inputs.stage_run_id }}
+          path: sealed
+      - name: Install the immutable public formula and smoke it
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          formula_url="https://raw.githubusercontent.com/genomoncology/homebrew-biomcp/v$version/Formula/biomcp.rb"
+          curl -fsSL "$formula_url" -o public-biomcp.rb
+          test "$(shasum -a 256 public-biomcp.rb | cut -d' ' -f1)" = "$(jq -r '.artifacts["homebrew-formula"].sha256' sealed/candidate-manifest.json)"
+          brew install --formula "$formula_url"
+          python3 release/smoke.py --bin "$(brew --prefix)/bin/biomcp" --version "$version" --revision "${SOURCE_SHA:0:8}"
+          xattr -w com.apple.quarantine '0081;public;BioMCP;' "$(brew --prefix)/bin/biomcp"
+          spctl --assess --type execute --verbose=4 "$(brew --prefix)/bin/biomcp"
+          mkdir proof && printf '{"passed":true}\n' > proof/homebrew-${{ matrix.runner }}.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-homebrew-${{ matrix.runner }}-${{ github.run_id }}
+          path: proof/
+
+  public-mcpb-smoke:
+    needs: publish-versioned
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15-intel
+            binary: server/biomcp
+          - runner: macos-15
+            binary: server/biomcp
+          - runner: windows-2022
+            binary: server/biomcp.exe
+    runs-on: ${{ matrix.runner }}
+    environment: biomcp-release-promotion
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: sealed-candidate-${{ inputs.stage_run_id }}
+          path: sealed
+      - name: Download exact public MCPB, verify, and smoke
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          bash release/install-mcpb-tool.sh
+          version="$(jq -r .version sealed/candidate-manifest.json)"
+          filename="$(jq -r '.artifacts.mcpb.filename' sealed/candidate-manifest.json)"
+          gh release download "v$version" --pattern "$filename" --dir public
+          test "$(shasum -a 256 "public/$filename" | cut -d' ' -f1)" = "$(jq -r '.artifacts.mcpb.sha256' sealed/candidate-manifest.json)"
+          mcpb verify "public/$filename"
+          mkdir unpacked && unzip -q "public/$filename" -d unpacked
+          python release/smoke.py --bin "unpacked/${{ matrix.binary }}" --version "$version" --revision "${SOURCE_SHA:0:8}"
+          mkdir proof && printf '{"passed":true}\n' > proof/mcpb-${{ matrix.runner }}.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-mcpb-${{ matrix.runner }}-${{ github.run_id }}
+          path: proof/
+
+  reconcile-public-release:
+    needs: [public-platform-smoke, public-container-smoke, public-homebrew-smoke, public-mcpb-smoke]
+    runs-on: ubuntu-24.04
+    environment: biomcp-release-promotion
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: sealed-candidate-${{ inputs.stage_run_id }}
+          path: sealed
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: 'public-*-${{ github.run_id }}'
+          path: public-proof
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: promotion-inventory-${{ github.run_id }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: formula-commit-${{ github.run_id }}
+      - name: Require manual desktop proof and live provider contracts
+        env:
+          WINDOWS_DESKTOP_SMOKE: ${{ inputs.windows_desktop_smoke }}
+        run: |
+          mcpb_hash="$(jq -r '.artifacts.mcpb.sha256' sealed/candidate-manifest.json)"
+          python3 release/promotion.py validate-manual-smoke --record "$WINDOWS_DESKTOP_SMOKE" \
+            --source-sha "${{ inputs.source_sha }}" --mcpb-sha256 "$mcpb_hash"
+          make verify
+          printf '{"live-provider-contracts":{"status":"passed"}}\n' > live-provider-results.json
+      - name: Verify public installer and create the immutable final record
+        env:
+          WINDOWS_DESKTOP_SMOKE: ${{ inputs.windows_desktop_smoke }}
+          UPDATER_TRANSITION: ${{ inputs.updater_transition }}
+        run: |
+          bash scripts/verify-public-installer.sh
+          mapfile -t proof_files < <(find public-proof -type f -name '*.json')
+          test "${#proof_files[@]}" -eq 11
+          test "$(jq -s '[.[] | select(.passed == true)] | length' "${proof_files[@]}")" -eq 11
+          jq -n --argjson artifacts "$(jq '.artifacts | with_entries(.value="passed")' sealed/candidate-manifest.json)" '$artifacts' > public-results.json
+          version="$(jq -r .version sealed/candidate-manifest.json)"
+          install_root="$(mktemp -d)"
+          BIOMCP_INSTALL_DIR="$install_root" bash install.sh --version "$version"
+          "$install_root/biomcp" --version
+          updater_result="$(python3 release/promotion.py validate-updater-transition \
+            --record "$UPDATER_TRANSITION" --manifest sealed/candidate-manifest.json)"
+          python3 release/promotion.py release-record \
+            --manifest sealed/candidate-manifest.json --inventory promotion-inventory.json \
+            --public-results public-results.json --manual-smoke "$WINDOWS_DESKTOP_SMOKE" \
+            --live-provider-results live-provider-results.json \
+            --formula-commit "$(cat formula-commit.txt)" --updater-result "$updater_result" \
+            --output "release-record-$version.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: final-release-record-${{ github.run_id }}
+          path: release-record-*.json*
+          if-no-files-found: error
+
+  advance-mutable-pointers:
+    needs: reconcile-public-release
+    runs-on: ubuntu-24.04
+    environment: biomcp-release-promotion
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: final-release-record-${{ github.run_id }}
+      - name: Advance latest only after all public proof
+        env:
+          GH_TOKEN: ${{ secrets.BIOMCP_RELEASE_GITHUB_TOKEN }}
+          BIOMCP_GHCR_TOKEN: ${{ secrets.BIOMCP_GHCR_TOKEN }}
+          BIOMCP_HOMEBREW_TAP_TOKEN: ${{ secrets.BIOMCP_HOMEBREW_TAP_TOKEN }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+          version="$(jq -r .version release-record-*.json)"
+          gh release upload "v$version" release-record-*.json* --repo "$GITHUB_REPOSITORY"
+          gh release edit "v$version" --repo "$GITHUB_REPOSITORY" --latest
+          skopeo copy --all --src-creds "$GITHUB_ACTOR:$BIOMCP_GHCR_TOKEN" \
+            "docker://ghcr.io/genomoncology/biomcp:$version" "docker://ghcr.io/genomoncology/biomcp:latest"
+          tap="$(mktemp -d)"
+          git clone -q "https://x-access-token:${BIOMCP_HOMEBREW_TAP_TOKEN}@github.com/genomoncology/homebrew-biomcp.git" "$tap"
+          git -C "$tap" merge --ff-only "v$version"
+          git -C "$tap" push origin HEAD:main
+
+  promotion-failure-record:
+    if: always() && inputs.mode == 'promote' && failure()
+    needs: [publish-versioned, public-platform-smoke, public-container-smoke, public-homebrew-smoke, public-mcpb-smoke, reconcile-public-release]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        continue-on-error: true
+        with:
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: sealed-candidate-${{ inputs.stage_run_id }}
+          path: sealed
+      - name: Preserve a unique partial record without moving pointers
+        run: |
+          version="$(jq -r .version sealed/candidate-manifest.json 2>/dev/null || printf unknown)"
+          printf '{"schema_version":1,"status":"partial","source_sha":"%s","stage_run_id":"%s","promotion_run_id":"%s"}\n' \
+            '${{ inputs.source_sha }}' '${{ inputs.stage_run_id }}' '${{ github.run_id }}' \
+            > "release-record-$version-partial-${{ github.run_id }}.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: partial-release-record-${{ github.run_id }}
+          path: release-record-*-partial-${{ github.run_id }}.json

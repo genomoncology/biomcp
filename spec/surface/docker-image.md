@@ -1,66 +1,50 @@
 # Docker Image
 
-BioMCP ships as a container image for users who want the CLI or stdio MCP server
-without installing a local Rust or Python toolchain. The image should behave like
-the local binary: Docker supplies the executable, and users pass normal `biomcp`
-arguments after the image name.
+BioMCP's release image is assembled only from the two Linux executables already
+registered in the sealed candidate. The container build does not compile source
+or download a different BioMCP executable.
 
-## Docker Image Uses The BioMCP Entrypoint
+## Runtime Image Is Bounded And Non-Root
 
-The root Dockerfile is the source of the published image. It should keep HTTPS
-trust roots in the runtime layer and expose the `biomcp` binary directly as the
-entrypoint so documented `docker run` commands can pass ordinary CLI arguments.
+The pinned runtime layer checks the staged executable, retains HTTPS trust
+roots, creates private state directories, declares no service port, and runs as
+the dedicated non-root account.
 
 ```bash
-find ../.. -maxdepth 1 -name Dockerfile -type f -exec sed -n '1,220p' {} \; | mustmatch like 'ca-certificates
+cat ../../Dockerfile | mustmatch like 'debian:bookworm-slim@sha256:
+ca-certificates
+sha256sum -c
+USER 65532:65532
 ENTRYPOINT ["biomcp"]'
+! rg -n '^(EXPOSE|FROM rust|FROM quay.io/pypa)' ../../Dockerfile
 ```
 
-## Docker Context Excludes Local Artifacts
-
-The image build context should not send local build outputs, caches, March
-runtime state, or the Git database to the Docker daemon. Keeping those paths out
-prevents slow builds and avoids leaking local-only files into image layers.
+## Build Context Contains Only Staged Inputs
 
 ```bash
-find ../.. -maxdepth 1 -name .dockerignore -type f -exec sed -n '1,120p' {} \; | mustmatch like 'target/
-.cache/
-.march/
-.git/'
+cat ../../.dockerignore | mustmatch like '**
+!Dockerfile
+!dist/container/**'
 ```
 
-## Pull Request CI Builds And Smokes The Image
+## Stage And Promotion Stay Separate
 
-Pull request CI should build the image and run the two no-network smoke commands
-that prove the entrypoint works: version output and the command-reference page.
-Keeping this in CI catches broken Dockerfiles before a release tries to publish
-an unusable image.
+The private stage creates and smokes a two-platform OCI archive without a push.
+Only the protected promotion jobs can write the versioned GHCR tag. Both public
+architectures are then pulled, checked for the full revision label, run as
+non-root, and reconciled before `latest` moves.
 
 ```bash
-sed -n '1,260p' ../../.github/workflows/ci.yml | mustmatch like 'docker build
-docker run --rm
---version
-list'
+cat ../../.github/workflows/release.yml | mustmatch like 'mode:
+container-artifact:
+--output type=oci,dest=dist/oci/biomcp.oci.tar
+publish-versioned:
+public-container-smoke:
+org.opencontainers.image.revision
+advance-mutable-pointers:'
 ```
 
-## Release Publication Is Disabled
-
-Until ticket 0957 installs the public-artifact gate, the manually callable
-release workflow must fail closed rather than build or publish a GHCR image.
-
-```bash
-cat ../../.github/workflows/release.yml | mustmatch like 'workflow_dispatch
-contents: read
-release-disabled
-bash scripts/release-disabled.sh'
-! rg -i 'docker/build-push-action|docker push|push: true|packages: write' ../../.github/workflows/release.yml
-```
-
-## Documentation Shows Docker CLI And Stdio MCP Use
-
-The user docs should show both ways people run the image: direct CLI commands
-such as `--version` and `list`, and a stdio MCP server invocation that passes
-`serve` to the same image entrypoint.
+## Documentation Shows CLI And Stdio MCP Use
 
 ```bash
 cat ../../README.md ../../docs/getting-started/installation.md ../../docs/reference/mcp-server.md | mustmatch like 'docker run --rm ghcr.io/genomoncology/biomcp --version

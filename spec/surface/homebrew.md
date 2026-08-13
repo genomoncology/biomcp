@@ -1,71 +1,49 @@
 # Homebrew Tap
 
-BioMCP ships a single binary, so the Homebrew install path should download the
-same released macOS archives that other release channels publish. These checks
-keep the formula, release automation, and installation docs aligned with that
-binary-download contract.
+The Homebrew formula is generated once from the two signed macOS records and
+downloads the same immutable GitHub archives as the native channel.
 
-## Homebrew Formula Downloads Release Binaries
-
-The repository should keep a canonical `biomcp.rb` formula or formula template
-that points at the official GitHub release assets for both supported macOS
-architectures. The formula must carry SHA256 fields so Homebrew verifies the
-archive it installs, and it must install the released `biomcp` executable rather
-than rebuilding from source or downloading an unchecked asset.
+## Formula Verifies Archives And Installed Executables
 
 ```bash
-sed -n '1,260p' ../../Formula/biomcp.rb | mustmatch like 'genomoncology/biomcp
+cat ../../Formula/biomcp.rb | mustmatch like 'genomoncology/biomcp
 biomcp-darwin-arm64.tar.gz
 biomcp-darwin-x86_64.tar.gz
 sha256
-bin.install
-biomcp'
+bin.install "biomcp"
+bin.install_symlink
+Digest::SHA256.file'
 ```
 
-Rendering the template for a release should replace the tag, version, and both
-architecture checksums without leaving placeholder text behind.
+The renderer requires matching source identity and real signing evidence,
+replaces every marker, and records both native archive hashes as upstreams.
 
 ```bash
-TAG=v9.8.7 VERSION=9.8.7 ARM64_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa X86_64_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb python3 - <<'PY' | mustmatch like 'version "9.8.7"
-releases/download/v9.8.7/biomcp-darwin-arm64.tar.gz
-sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-releases/download/v9.8.7/biomcp-darwin-x86_64.tar.gz
-sha256 "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-NO_PLACEHOLDERS_LEFT'
-import os
-from pathlib import Path
-
-formula = Path("../../Formula/biomcp.rb").read_text(encoding="utf-8")
-formula = formula.replace("__TAG__", os.environ["TAG"])
-formula = formula.replace("__VERSION__", os.environ["VERSION"])
-formula = formula.replace("__DARWIN_ARM64_SHA256__", os.environ["ARM64_SHA256"])
-formula = formula.replace("__DARWIN_X86_64_SHA256__", os.environ["X86_64_SHA256"])
-print(formula)
-if "__" not in formula:
-    print("NO_PLACEHOLDERS_LEFT")
-PY
+cat ../../release/homebrew.py | mustmatch like 'macOS candidate identities disagree
+unsigned Homebrew source artifact
+__DARWIN_ARM64_BINARY_SHA256__
+unresolved Homebrew formula placeholder
+native-macos-arm64
+native-macos-x86_64'
 ```
 
-## Release Publication Is Disabled
+## Public Tap Moves Only After Verification
 
-Until ticket 0957 installs the public-artifact gate, the manually callable
-release workflow must fail closed rather than update the Homebrew tap or render
-publication artifacts.
+Stage mode renders and tests the formula from an exact preseeded archive cache
+on both Mac architectures. Promotion first pushes an immutable formula tag,
+installs from that public tag on both architectures, and fast-forwards the tap's
+main branch only in the final pointer job.
 
 ```bash
-cat ../../.github/workflows/release.yml | mustmatch like 'workflow_dispatch
-contents: read
-release-disabled
-bash scripts/release-disabled.sh'
-! rg -i 'homebrew-biomcp|HOMEBREW_TAP_TOKEN|git push|biomcp.rb|upload-artifact' ../../.github/workflows/release.yml
+cat ../../.github/workflows/release.yml ../../release/publish-versioned.sh | mustmatch like 'homebrew-smoke:
+HOMEBREW_NO_INSTALL_FROM_API: 1
+public-homebrew-smoke:
+refs/tags/$tag
+advance-mutable-pointers:
+merge --ff-only'
 ```
 
-## Installation Docs Show The Brew Tap Path
-
-The installation guide should show the two commands Mac users need: adding the
-BioMCP tap and installing the formula. It should also make the separate tap
-repository prerequisite visible so a missing tap is not confused with a BioMCP
-binary problem.
+## Installation Docs Show The Tap Path
 
 ```bash
 cat ../../README.md ../../docs/getting-started/installation.md | mustmatch like 'brew tap genomoncology/biomcp

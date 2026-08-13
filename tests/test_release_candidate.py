@@ -120,18 +120,3 @@ def test_finalize_requires_gates_and_exact_registered_set(tmp_path: Path) -> Non
     manifest["gates"] = {name: "passed" for name in candidate.REQUIRED_GATES}
     with pytest.raises(candidate.CandidateError, match="artifact set mismatch"):
         candidate.finalize_manifest(manifest, candidate.BASELINE_ARTIFACTS)
-
-
-def test_disabled_promotion_guard_is_stable_and_has_no_side_effect(tmp_path: Path) -> None:
-    marker = tmp_path / "must-not-exist"
-    result = subprocess.run(
-        ["bash", str(ROOT / "scripts/release-disabled.sh")],
-        cwd=tmp_path,
-        env={"BIOMCP_RELEASE_MARKER": str(marker)},
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    assert result.returncode != 0
-    assert result.stderr.strip() == "promotion disabled until the 0957 public-artifact gate is installed"
-    assert not marker.exists()

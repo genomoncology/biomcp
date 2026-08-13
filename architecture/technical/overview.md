@@ -67,8 +67,9 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
   `manifest.json`, both `server.json` version fields, `CITATION.cff`, and the
   Homebrew formula aligned.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
-- **Release state:** v0.8.25 is the latest published release. The manual
-  workflow is disabled until ticket 0957 installs the public-artifact gate.
+- **Release state:** v0.8.25 is the latest published release. A protected
+  two-step workflow can privately stage a committed future version and, only
+  after separate approval, promote those exact bytes through public checks.
 - **Metadata changes:** Commit synchronized metadata and changelog updates;
   package versions are never stamped from tags.
 - **Generated AlphaGenome client:** Normal builds do not run or require
@@ -270,12 +271,18 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. `scripts/check-version-sync.sh` uses
 `Cargo.toml` as the canonical comparison value and keeps committed `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, root `uv.lock`, `manifest.json`, both `server.json` version fields, `CITATION.cff`, and the Homebrew formula version synchronized.
 
-The manual release workflow is disabled until ticket 0957 installs the
-public-artifact gate. It is a read-only manual guard and intentionally creates
-no release, registry update, image, wheel, tap update, documentation deployment,
-or public asset. Existing installation documentation continues to describe the
-already published v0.8.25 channels; `install.sh` resolves the latest release
-with platform assets rather than the latest merge to `main`.
+The manual release workflow has separate `stage` and `promote` modes. `stage`
+is read-only and privately builds, signs, inspects, and seals one exact commit.
+`promote` requires the protected release environment and Ian's approval,
+reconciles the sealed manifest, publishes immutable versioned bytes, installs
+those public bytes on every supported platform, and only then advances mutable
+`latest` pointers. A unique partial record is retained if promotion fails.
+Neither implementing the workflow nor staging a candidate publishes a release.
+The official MCP Registry submission remains a separate documented manual
+action. See [Release process](../../docs/reference/release-process.md).
+Existing installation documentation continues to describe the already
+published v0.8.25 channels; `install.sh` resolves the latest release with
+platform assets rather than the latest merge to `main`.
 
 CI (`.github/workflows/ci.yml`) runs for pull requests and every push to
 `main`. Its `canonical-gates` job installs exact tool versions and invokes

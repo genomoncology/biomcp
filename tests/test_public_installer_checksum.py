@@ -28,7 +28,7 @@ def test_ci_and_release_gate_installer_identity_before_docs_or_release() -> None
     assert check in ci
     assert ci.index(check) < ci.index("bash scripts/check-version-sync.sh")
     assert check in release
-    assert release.index(check) < release.index("release-disabled.sh")
+    assert release.index(check) < release.index("release/candidate.py init")
 
 
 def test_public_installer_verifier_compares_deployed_bytes() -> None:

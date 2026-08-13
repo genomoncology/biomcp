@@ -394,8 +394,8 @@ def test_release_workflow_uses_committed_registry_metadata_without_rewriting_it(
     operator_docs = _read("docs/reference/mcp-server.md")
 
     assert "server.json" not in release
-    assert "manifest.json" not in release
+    assert "mcp-publisher publish" not in release
     assert "committed `server.json`" in operator_docs
     assert "never stamps registry metadata from a tag" in operator_docs
-    assert "release disabled until ticket 0957 installs the public-artifact gate" in operator_docs
+    assert "must separately review" in operator_docs
     assert "release workflow stamps `server.json` from the tag" not in operator_docs

@@ -9,11 +9,12 @@ committed `server.json` is the registry metadata source: it points
 clients at the `biomcp-cli` PyPI package and the existing `biomcp serve` stdio
 command. The workflow never stamps registry metadata from a tag.
 
-Registry publication is disabled until ticket 0957 installs the public-artifact
-gate: `release disabled until ticket 0957 installs the public-artifact gate`.
-Operators must not run an active registry publication command while this guard
-is active. The committed metadata remains the truthful record for the already
-published v0.8.25 release.
+The protected release workflow never stamps registry metadata from a tag and
+does not submit BioMCP to the official MCP Registry. After a promoted release
+passes its public-artifact checks, an operator must separately review the
+committed metadata and submit it to the official registry. That manual action
+must not be described as complete until the registry accepts it. The committed
+metadata remains the truthful record for the already published v0.8.25 release.
 
 ## Which server mode should I use?
 
