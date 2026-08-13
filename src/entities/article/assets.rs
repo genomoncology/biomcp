@@ -160,7 +160,7 @@ pub async fn article_assets_manifest(
     Ok(manifest)
 }
 
-fn asset_manifest_cache_path(requested_id: &str) -> Result<std::path::PathBuf, BioMcpError> {
+fn asset_manifest_entry_path(requested_id: &str) -> Result<std::path::PathBuf, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
     let key = crate::utils::download::cache_key(&requested_id.trim().to_ascii_uppercase());
     Ok(config
@@ -177,7 +177,7 @@ fn epoch_secs() -> u64 {
 }
 
 async fn read_cached_asset_manifest(requested_id: &str) -> Option<ArticleAssetsManifest> {
-    let path = asset_manifest_cache_path(requested_id).ok()?;
+    let path = asset_manifest_entry_path(requested_id).ok()?;
     let metadata = match tokio::fs::symlink_metadata(&path).await {
         Ok(metadata) => metadata,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return None,
@@ -238,7 +238,7 @@ async fn write_cached_asset_manifest(requested_id: &str, manifest: &ArticleAsset
         tracing::warn!("Article asset manifest cache entry exceeded its size budget");
         return;
     }
-    let Ok(path) = asset_manifest_cache_path(requested_id) else {
+    let Ok(path) = asset_manifest_entry_path(requested_id) else {
         return;
     };
     if let Err(error) = crate::utils::download::write_atomic_bytes(&path, &bytes).await {
@@ -2332,7 +2332,7 @@ mod tests {
             Some(manifest.clone())
         );
 
-        let path = asset_manifest_cache_path(requested_id).unwrap();
+        let path = asset_manifest_entry_path(requested_id).unwrap();
         let expired = CachedAssetManifest {
             schema: ASSET_MANIFEST_CACHE_SCHEMA,
             saved_at_epoch_secs: epoch_secs().saturating_sub(ASSET_MANIFEST_CACHE_TTL_SECS + 1),
