@@ -81,3 +81,15 @@ def test_container_consumes_both_registered_linux_archives_without_push() -> Non
     assert "release/container.py" in text
     assert "push: true" not in text
     assert "docker push" not in text
+
+
+def test_homebrew_formula_is_generated_once_and_smoked_offline_on_both_macs() -> None:
+    text = _text()
+    assert "homebrew-formula:" in text
+    assert "release/homebrew.py" in text
+    assert "homebrew-smoke:" in text
+    assert "HOMEBREW_NO_INSTALL_FROM_API: 1" in text
+    assert "macos-15-intel" in text and "macos-15" in text
+    assert "spctl --assess --type execute" in text
+    assert "homebrew-biomcp" not in text
+    assert "HOMEBREW_TAP_TOKEN" not in text

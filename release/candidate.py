@@ -47,6 +47,7 @@ PLATFORM_ARTIFACTS = {
     if kind in {"native", "wheel"}
 }
 CONTAINER_ARTIFACTS = PLATFORM_ARTIFACTS | {"oci-index"}
+DELIVERY_ARTIFACTS = CONTAINER_ARTIFACTS | {"homebrew-formula"}
 FINAL_ARTIFACTS = set(ARTIFACTS)
 REQUIRED_GATES = {"lint", "test", "spec"}
 
@@ -273,7 +274,7 @@ def _parser() -> argparse.ArgumentParser:
     finalize.add_argument("--manifest", type=Path, required=True)
     finalize.add_argument(
         "--set",
-        choices=["baseline", "platforms", "container", "final"],
+        choices=["baseline", "platforms", "container", "delivery", "final"],
         default="final",
     )
     checksum = commands.add_parser("checksum")
@@ -325,6 +326,7 @@ def main(argv: list[str] | None = None) -> int:
                 "baseline": BASELINE_ARTIFACTS,
                 "platforms": PLATFORM_ARTIFACTS,
                 "container": CONTAINER_ARTIFACTS,
+                "delivery": DELIVERY_ARTIFACTS,
                 "final": FINAL_ARTIFACTS,
             }[args.set]
             finalize_manifest(manifest, required)

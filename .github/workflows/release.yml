@@ -232,8 +232,93 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  homebrew-formula:
+    needs: signed-artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: 'macos-*-${{ github.run_id }}'
+          path: candidate
+      - name: Render exact immutable formula
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p dist/homebrew/Formula
+          python3 release/homebrew.py \
+            --arm-record "candidate/macos-arm64-$RUN_ID/native.json" \
+            --intel-record "candidate/macos-x86_64-$RUN_ID/native.json" \
+            --output dist/homebrew/Formula/biomcp.rb --record dist/homebrew/homebrew.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: homebrew-formula-${{ github.run_id }}
+          path: dist/homebrew/
+          if-no-files-found: error
+          retention-days: 30
+
+  homebrew-smoke:
+    needs: [signed-artifacts, homebrew-formula]
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15-intel
+            slug: macos-x86_64
+          - runner: macos-15
+            slug: macos-arm64
+    runs-on: ${{ matrix.runner }}
+    environment: biomcp-release-signing
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ matrix.slug }}-${{ github.run_id }}
+          path: candidate/native
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: homebrew-formula-${{ github.run_id }}
+          path: candidate/homebrew
+      - name: Preseed exact final-URL cache and install without download
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_FROM_API: 1
+          HOMEBREW_CACHE: ${{ runner.temp }}/homebrew-cache
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          record=candidate/native/native.json
+          archive="candidate/native/$(jq -r .filename "$record")"
+          url="https://github.com/genomoncology/biomcp/releases/download/v$VERSION/$(basename "$archive")"
+          cache_path="$(URL="$url" python3 -c 'import hashlib,os; u=os.environ["URL"]; print(os.path.join(os.environ["HOMEBREW_CACHE"], "downloads", hashlib.sha256(u.encode()).hexdigest()+"--"+os.path.basename(u)))')"
+          mkdir -p "$(dirname "$cache_path")"
+          cp "$archive" "$cache_path"
+          brew install --formula candidate/homebrew/Formula/biomcp.rb
+          test "$(shasum -a 256 "$(brew --prefix)/bin/biomcp" | cut -d' ' -f1)" = "$(jq -r .evidence.binary_sha256 "$record")"
+          python3 release/smoke.py --bin "$(brew --prefix)/bin/biomcp" \
+            --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
+          tools/check-png-artifact "$(brew --prefix)/bin/biomcp"
+          xattr -w com.apple.quarantine '0081;candidate;BioMCP;' "$archive"
+          spctl --assess --type execute --verbose=4 "$(brew --prefix)/bin/biomcp"
+      - name: Record architecture proof
+        run: |
+          mkdir -p proof
+          printf '{"runner":"%s","formula_sha256":"%s","passed":true}\n' \
+            '${{ matrix.runner }}' \
+            "$(shasum -a 256 candidate/homebrew/Formula/biomcp.rb | cut -d' ' -f1)" \
+            > proof/${{ matrix.slug }}.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: homebrew-proof-${{ matrix.slug }}-${{ github.run_id }}
+          path: proof/
+          if-no-files-found: error
+          retention-days: 30
+
   seal-candidate:
-    needs: [candidate-gates, linux-artifacts, signed-artifacts, container-artifact]
+    needs: [candidate-gates, linux-artifacts, signed-artifacts, container-artifact, homebrew-smoke]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -256,7 +341,10 @@ jobs:
           python3 release/candidate.py register --manifest candidate-manifest.json \
             --record "candidate/oci-index-${{ github.run_id }}/oci.json" \
             --artifact "candidate/oci-index-${{ github.run_id }}/biomcp.oci.tar"
-          python3 release/candidate.py finalize --manifest candidate-manifest.json --set container
+          python3 release/candidate.py register --manifest candidate-manifest.json \
+            --record "candidate/homebrew-formula-${{ github.run_id }}/homebrew.json" \
+            --artifact "candidate/homebrew-formula-${{ github.run_id }}/Formula/biomcp.rb"
+          python3 release/candidate.py finalize --manifest candidate-manifest.json --set delivery
           python3 release/candidate.py checksum --manifest candidate-manifest.json > candidate-manifest.json.sha256
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
