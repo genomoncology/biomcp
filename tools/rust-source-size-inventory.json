@@ -16,9 +16,14 @@
     },
     {
       "path": "src/entities/article/assets.rs",
-      "baseline_lines": 2570,
+      "baseline_lines": 2881,
       "floor_lines": 2570,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "0974",
+        "delta": 311,
+        "reason": "Provider-wide deadlines, source outcome facts, private manifest reuse, and their local tests belong beside the existing asset-resolution ladder.",
+        "removal_condition": "Extract manifest caching and provider-attempt policy when article asset resolution is next decomposed."
+      }
     },
     {
       "path": "src/entities/article/fulltext.rs",
@@ -34,9 +39,14 @@
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1314,
+      "baseline_lines": 1333,
       "floor_lines": 1314,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "0974",
+        "delta": 19,
+        "reason": "Public article-asset provider outcome types remain local to the existing article entity contract.",
+        "removal_condition": "Move asset-specific public types into an article asset model module when that model is decomposed."
+      }
     },
     {
       "path": "src/entities/article/variant_search.rs",
@@ -46,9 +56,14 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 3694,
+      "baseline_lines": 3796,
       "floor_lines": 3694,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "0973",
+        "delta": 102,
+        "reason": "Bounded typed gene identity participates directly in the existing concurrent discovery merge and ranking contract.",
+        "removal_condition": "Extract discovery provider orchestration and its tests when the discovery entity is next decomposed."
+      }
     },
     {
       "path": "src/entities/drug/get.rs",
@@ -58,9 +73,14 @@
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3851,
+      "baseline_lines": 3898,
       "floor_lines": 3851,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "0973",
+        "delta": 47,
+        "reason": "Canonical MyGene alias identity reuses the existing gene query and ambiguity rules rather than duplicating them in discovery.",
+        "removal_condition": "Extract MyGene identity resolution when the gene entity provider helpers are next decomposed."
+      }
     },
     {
       "path": "src/entities/gene/cspec.rs",
@@ -118,9 +138,14 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2059,
+      "baseline_lines": 2167,
       "floor_lines": 2059,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "0975",
+        "delta": 108,
+        "reason": "The global Host policy must share authority semantics and router state with the existing Streamable HTTP server boundary.",
+        "removal_condition": "Extract HTTP server policy and tests when the MCP transport shell is next decomposed."
+      }
     },
     {
       "path": "src/render/chart.rs",
