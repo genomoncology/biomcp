@@ -41,6 +41,11 @@ ARTIFACTS: dict[str, tuple[str, str]] = {
 }
 
 BASELINE_ARTIFACTS = {"native-linux-x86_64", "wheel-linux-x86_64"}
+PLATFORM_ARTIFACTS = {
+    artifact_id
+    for artifact_id, (kind, _) in ARTIFACTS.items()
+    if kind in {"native", "wheel"}
+}
 FINAL_ARTIFACTS = set(ARTIFACTS)
 REQUIRED_GATES = {"lint", "test", "spec"}
 
@@ -265,7 +270,9 @@ def _parser() -> argparse.ArgumentParser:
     verify.add_argument("--manifest", type=Path, required=True)
     finalize = commands.add_parser("finalize")
     finalize.add_argument("--manifest", type=Path, required=True)
-    finalize.add_argument("--set", choices=["baseline", "final"], default="final")
+    finalize.add_argument(
+        "--set", choices=["baseline", "platforms", "final"], default="final"
+    )
     checksum = commands.add_parser("checksum")
     checksum.add_argument("--manifest", type=Path, required=True)
     return parser
@@ -311,7 +318,11 @@ def main(argv: list[str] | None = None) -> int:
             load_manifest(args.manifest)
         elif args.command == "finalize":
             manifest = load_manifest(args.manifest)
-            required = BASELINE_ARTIFACTS if args.set == "baseline" else FINAL_ARTIFACTS
+            required = {
+                "baseline": BASELINE_ARTIFACTS,
+                "platforms": PLATFORM_ARTIFACTS,
+                "final": FINAL_ARTIFACTS,
+            }[args.set]
             finalize_manifest(manifest, required)
             _atomic_json(args.manifest, manifest)
         elif args.command == "checksum":

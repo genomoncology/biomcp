@@ -31,8 +31,8 @@ def test_stage_binds_checkout_build_and_manifest_to_input_sha() -> None:
 def test_baseline_build_is_once_in_pinned_manylinux_and_never_publishes() -> None:
     text = _text()
     assert "manylinux_2_28_x86_64@sha256:" in text
-    assert text.count("cargo build --release") == 1
-    assert "--bin biomcp --bin biomcp-cli" in text
+    assert "manylinux_2_28_aarch64@sha256:" in text
+    assert "release/build_target.py" in text
     forbidden = (
         "softprops/action-gh-release",
         "pypa/gh-action-pypi-publish",
@@ -52,4 +52,21 @@ def test_every_action_and_container_is_commit_or_digest_pinned() -> None:
             reference = stripped.rsplit("@", 1)[1]
             assert len(reference) == 40 and all(char in "0123456789abcdef" for char in reference)
         if "container:" in stripped or stripped.startswith("MANYLINUX_"):
-            assert "@sha256:" in stripped
+            assert "${{ matrix.container }}" in stripped or "@sha256:" in stripped
+
+
+def test_five_platform_jobs_are_explicit_and_signing_is_protected() -> None:
+    text = _text()
+    for value in (
+        "x86_64-unknown-linux-gnu",
+        "aarch64-unknown-linux-gnu",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+        "x86_64-pc-windows-msvc",
+        "macos-15-intel",
+        "macos-15",
+        "windows-2022",
+    ):
+        assert value in text
+    assert "environment: biomcp-release-signing" in text
+    assert "BIOMCP_SIGNING_POLICY_SHA256: ${{ secrets.BIOMCP_SIGNING_POLICY_SHA256 }}" in text
