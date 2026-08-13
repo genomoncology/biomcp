@@ -537,6 +537,19 @@ CSpec timeout/ERepo input boundaries together. They reuse the CSpec and ERepo
 clients, real captures, request plans, local transports, typed limits, and
 JSON/Markdown projections established by 0881. Expected backlog: **12 → 9**.
 
+Result on 2026-08-13: all three tickets were implemented and closed with
+separate completion records. CSpec now has explicit request deadlines and a
+safe, metadata-only attachment manifest with exact capture reuse. ERepo batch
+input is bounded before parsing, and gene assertion search has compact,
+truthful continuation through both CLI and typed MCP. Real byte-faithful PTEN
+captures and isolated fixtures cover both providers without routine public
+network access. The seven-tool MCP catalog remains below 16,000 bytes and
+4,000 tokens. CLI-only test modules moved under `tests/unit/cli`, preserving
+coverage while leaving the combined production `src/` change at +58 net lines
+against the batch's +520 allowance. Complete lint, **2,915 Rust tests**, **584
+Python contracts**, strict documentation, executable specifications, and the
+all-feature release smoke passed. Backlog: **12 → 9**.
+
 ### Post-release substream 2: bounded and relevant output — five tickets
 
 Tickets: **0883, 0959, 0960, 0961, and 0963**.
