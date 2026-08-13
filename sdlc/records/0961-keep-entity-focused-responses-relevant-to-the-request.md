@@ -2,6 +2,8 @@
 flow: build
 priority: 7
 deps: ["0957"]
+base: edca929f
+head: 988844b4
 ---
 # Keep entity-focused responses relevant to the request
 
@@ -52,3 +54,12 @@ request planning, disease section serialization, next-command tests, fixtures,
 schemas, and docs. Do not add a general workflow engine.
 
 The src line ceiling may rise by at most 180 lines.
+
+## Completion
+
+Runtime workflow metadata now names and explains the relevant installed
+playbook without copying unrelated executable examples into entity results or
+probing extra providers to decide whether to show guidance. Gene, drug, and
+disease paths no longer make those unrelated workflow calls. Explicit disease
+sections fetch and render only the requested enrichment while the default card
+retains its intentionally broad behavior.

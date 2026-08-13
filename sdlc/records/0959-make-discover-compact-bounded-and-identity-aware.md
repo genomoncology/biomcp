@@ -2,6 +2,8 @@
 flow: build
 priority: 7
 deps: ["0957"]
+base: edca929f
+head: 988844b4
 ---
 # Make discover compact, bounded, and identity-aware
 
@@ -71,3 +73,12 @@ expansion planning, bounded renderers, local provider fixtures, MCP schemas,
 and discover documentation. Do not build a new ontology or generic resolver.
 
 The src line ceiling may rise by at most 220 lines.
+
+## Completion
+
+Discovery now validates its 1-25 limit and offset before provider work, pages a
+stable ranked candidate set, and enriches only selected UMLS candidates. Compact
+and full modes have explicit per-field and whole-response budgets, report
+truncation and omitted malformed candidates, and emit an exact continuation.
+Focused tests cover malformed identities, offset overflow, oversized values,
+UTF-8 truncation, and the existing request seam.

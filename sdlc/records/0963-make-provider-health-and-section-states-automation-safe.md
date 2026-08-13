@@ -2,6 +2,8 @@
 flow: build
 priority: 6
 deps: ["0957"]
+base: edca929f
+head: 988844b4
 ---
 # Make provider health and section states automation-safe
 
@@ -65,3 +67,12 @@ fixtures, schemas, and docs. Provider-specific biomedical interpretation is out
 of scope.
 
 The src line ceiling may rise by at most 220 lines.
+
+## Completion
+
+Health accepts repeatable exact case-insensitive provider filters, rejects bad
+names before client construction, and offers report-first `--fail-on-error`
+semantics for automation. JSON exposes the exit policy and overall result. A
+shared six-state human mapping now keeps not-requested, empty, degraded, and
+unavailable outcomes distinct, so absence claims are made only after a healthy
+empty result and partial or unavailable sources cannot imply negative evidence.

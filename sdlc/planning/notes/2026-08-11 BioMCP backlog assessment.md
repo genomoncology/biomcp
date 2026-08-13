@@ -560,6 +560,23 @@ fixtures, generated schemas, and renderer tests. They touch several entities,
 so keep per-ticket commits and focused tests, but use one final complete gate
 run. Expected backlog: **9 → 4**.
 
+Result on 2026-08-13: all five tickets were implemented together and closed
+with individual completion records. Entity responses no longer copy unrelated
+executable workflows or make provider calls solely to choose guidance. Health
+has exact provider selection, report-first failure exits, and consistent
+six-state outcome language. Discovery, diagnostic results, drug regions, author
+rows, article full text, and article asset manifests now have explicit bounds,
+truthful totals, stable paging, and exact continuation commands.
+
+The final review caught and repaired an important subtlety before closure: drug
+ranking now classifies and orders the complete bounded provider result before
+applying the user's per-region page, so an exact result on a later provider page
+cannot remain behind an earlier broad match. Production `src/` grew by 1,054 net
+lines against the batch's combined 1,200-line allowance; large CLI-only test
+modules remain under `tests/unit/cli`. Canonical lint, **2,927 Rust tests**, **584
+Python contracts**, strict documentation, the executable specifications, and
+the all-feature release build passed. Backlog: **9 → 4**.
+
 ### Post-release substream 3: development and test maintenance — four tickets
 
 Tickets: **0895, 0896, 0897, and 0965**.

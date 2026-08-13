@@ -2,6 +2,8 @@
 flow: build
 priority: 6
 deps: ["0876", "0877", "0951", "0957"]
+base: edca929f
+head: 988844b4
 ---
 # Read bounded ranges from cached article full text
 
@@ -90,3 +92,12 @@ fixtures, entity retrieval tests, renderer tests, docs, and schemas/examples
 that describe the fulltext and asset sections.
 
 The src line ceiling may rise by at most 320 lines.
+
+## Completion
+
+Article full text now has bounded outline and line-range views while its default
+response stays constant-size and keeps the compatible local CLI cache path.
+Asset manifests have compact, retrievable, and coverage views with exact stable
+paging, deduplication, and continuation commands. MCP still withholds local
+paths. Local fixtures cover UTF-8 byte limits, oversized lines, duplicate and
+long headings, cache reuse, and asset-manifest paging.

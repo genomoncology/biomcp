@@ -2,6 +2,8 @@
 flow: build
 priority: 7
 deps: ["0957"]
+base: edca929f
+head: 988844b4
 ---
 # Make search limits, ranking, and continuation precise
 
@@ -68,3 +70,13 @@ typed presentation metadata, ranking, renderers, fixtures, schemas, and docs.
 Provider query meaning outside the named ranking tiers stays unchanged.
 
 The src line ceiling may rise by at most 260 lines.
+
+## Completion
+
+Diagnostic results now default to compact nested gene and condition arrays with
+truthful totals and offer explicit full expansion. Drug search reports and pages
+each region independently, carries provider-derived match kinds, and ranks the
+complete bounded provider result before applying the user's offset and limit;
+a regression proves a later exact match beats earlier broad rows. Human author
+results now expose stable IDs, bounded affiliations, truthful unknown metrics,
+provider totals, paging state, and continuation.
