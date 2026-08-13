@@ -46,6 +46,7 @@ PLATFORM_ARTIFACTS = {
     for artifact_id, (kind, _) in ARTIFACTS.items()
     if kind in {"native", "wheel"}
 }
+CONTAINER_ARTIFACTS = PLATFORM_ARTIFACTS | {"oci-index"}
 FINAL_ARTIFACTS = set(ARTIFACTS)
 REQUIRED_GATES = {"lint", "test", "spec"}
 
@@ -271,7 +272,9 @@ def _parser() -> argparse.ArgumentParser:
     finalize = commands.add_parser("finalize")
     finalize.add_argument("--manifest", type=Path, required=True)
     finalize.add_argument(
-        "--set", choices=["baseline", "platforms", "final"], default="final"
+        "--set",
+        choices=["baseline", "platforms", "container", "final"],
+        default="final",
     )
     checksum = commands.add_parser("checksum")
     checksum.add_argument("--manifest", type=Path, required=True)
@@ -321,6 +324,7 @@ def main(argv: list[str] | None = None) -> int:
             required = {
                 "baseline": BASELINE_ARTIFACTS,
                 "platforms": PLATFORM_ARTIFACTS,
+                "container": CONTAINER_ARTIFACTS,
                 "final": FINAL_ARTIFACTS,
             }[args.set]
             finalize_manifest(manifest, required)

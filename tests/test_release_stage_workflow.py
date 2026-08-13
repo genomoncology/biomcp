@@ -70,3 +70,14 @@ def test_five_platform_jobs_are_explicit_and_signing_is_protected() -> None:
         assert value in text
     assert "environment: biomcp-release-signing" in text
     assert "BIOMCP_SIGNING_POLICY_SHA256: ${{ secrets.BIOMCP_SIGNING_POLICY_SHA256 }}" in text
+
+
+def test_container_consumes_both_registered_linux_archives_without_push() -> None:
+    text = _text()
+    assert "container-artifact:" in text
+    assert "pattern: 'linux-*-${{ github.run_id }}'" in text
+    assert "--platform linux/amd64,linux/arm64" in text
+    assert "--output type=oci,dest=dist/oci/biomcp.oci.tar" in text
+    assert "release/container.py" in text
+    assert "push: true" not in text
+    assert "docker push" not in text

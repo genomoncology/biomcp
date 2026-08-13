@@ -165,8 +165,75 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  container-artifact:
+    needs: [linux-artifacts]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: 'linux-*-${{ github.run_id }}'
+          path: candidate
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - name: Prepare exact staged Linux executables
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p dist/container/{amd64,arm64} dist/oci
+          for tuple in 'linux-x86_64 amd64' 'linux-arm64 arm64'; do
+            read -r platform architecture <<< "$tuple"
+            record="candidate/$platform-$RUN_ID/native.json"
+            archive="candidate/$platform-$RUN_ID/$(jq -r .filename "$record")"
+            test "$(sha256sum "$archive" | cut -d' ' -f1)" = "$(jq -r .sha256 "$record")"
+            tar -xzf "$archive" -C "dist/container/$architecture"
+            binary_hash="$(sha256sum "dist/container/$architecture/biomcp" | cut -d' ' -f1)"
+            test "$binary_hash" = "$(jq -r .evidence.binary_sha256 "$record")"
+            printf '%s  biomcp\n' "$binary_hash" > "dist/container/$architecture/biomcp.sha256"
+          done
+          cp "candidate/linux-x86_64-$RUN_ID/sbom.cdx.json" dist/oci/sbom.cdx.json
+      - name: Build and smoke both private platform images
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          CREATED="$(git show -s --format=%cI "$SOURCE_SHA")"
+          for architecture in amd64 arm64; do
+            docker buildx build --load --platform "linux/$architecture" \
+              --build-arg SOURCE_SHA="$SOURCE_SHA" --build-arg VERSION="$VERSION" \
+              --build-arg CREATED="$CREATED" --tag "biomcp-candidate:$architecture" .
+            docker run --rm --platform "linux/$architecture" "biomcp-candidate:$architecture" --version
+            test "$(docker run --rm --platform "linux/$architecture" --entrypoint id "biomcp-candidate:$architecture" -u)" != 0
+            docker run --rm --platform "linux/$architecture" --entrypoint sh "biomcp-candidate:$architecture" \
+              -c 'touch "$XDG_CACHE_HOME/biomcp/write-proof" && test -r "$XDG_CACHE_HOME/biomcp/write-proof"'
+          done
+      - name: Assemble and inspect private OCI index
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          CREATED="$(git show -s --format=%cI "$SOURCE_SHA")"
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            --build-arg SOURCE_SHA="$SOURCE_SHA" --build-arg VERSION="$VERSION" \
+            --build-arg CREATED="$CREATED" --output type=oci,dest=dist/oci/biomcp.oci.tar .
+          python3 release/container.py --layout dist/oci/biomcp.oci.tar \
+            --record dist/oci/oci.json --source-sha "$SOURCE_SHA" --version "$VERSION" \
+            --run-id "$RUN_ID" \
+            --amd64-sha256 "$(jq -r .sha256 "candidate/linux-x86_64-$RUN_ID/native.json")" \
+            --arm64-sha256 "$(jq -r .sha256 "candidate/linux-arm64-$RUN_ID/native.json")" \
+            --sbom dist/oci/sbom.cdx.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: oci-index-${{ github.run_id }}
+          path: dist/oci/
+          if-no-files-found: error
+          retention-days: 30
+
   seal-candidate:
-    needs: [candidate-gates, linux-artifacts, signed-artifacts]
+    needs: [candidate-gates, linux-artifacts, signed-artifacts, container-artifact]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -186,7 +253,10 @@ jobs:
               python3 release/candidate.py register --manifest candidate-manifest.json --record "$record" --artifact "$artifact"
             done
           done
-          python3 release/candidate.py finalize --manifest candidate-manifest.json --set platforms
+          python3 release/candidate.py register --manifest candidate-manifest.json \
+            --record "candidate/oci-index-${{ github.run_id }}/oci.json" \
+            --artifact "candidate/oci-index-${{ github.run_id }}/biomcp.oci.tar"
+          python3 release/candidate.py finalize --manifest candidate-manifest.json --set container
           python3 release/candidate.py checksum --manifest candidate-manifest.json > candidate-manifest.json.sha256
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
