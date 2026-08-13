@@ -13,37 +13,37 @@ pub(super) const TOOLS: &[ToolCatalogEntry] = &[
     ToolCatalogEntry {
         name: "biomcp",
         title: "BioMCP command",
-        description: "Run one read-only BioMCP CLI command when a bounded typed tool does not fit. Start with `biomcp list` for command discovery or `biomcp skill list` for workflows. Set `json` for structured output. Binary downloads, filesystem operations, updates, and mutations are rejected.",
+        description: "Run one read-only BioMCP command. Prefer typed tools. Use `biomcp list <entity>` for discovery or `biomcp skill list` for workflows. Set `json` for structured output. Binary downloads and mutations are rejected.",
     },
     ToolCatalogEntry {
         name: "search",
         title: "BioMCP search",
-        description: "Search one supported biomedical entity with typed inputs, bounded pagination, and optional JSON output.",
+        description: "Search one biomedical entity with typed, bounded inputs.",
     },
     ToolCatalogEntry {
         name: "get",
         title: "BioMCP get",
-        description: "Retrieve one biomedical record and optional named text sections with typed inputs. Binary assets remain CLI-only.",
+        description: "Get one biomedical record with typed inputs. Binary assets are CLI-only.",
     },
     ToolCatalogEntry {
         name: "variant_normalize_car",
         title: "ClinGen Allele Registry normalization",
-        description: "Normalize 1-50 versioned RefSeq HGVS values through the read-only ClinGen Allele Registry.",
+        description: "Normalize 1-50 RefSeq HGVS values with ClinGen Allele Registry.",
     },
     ToolCatalogEntry {
         name: "variant_erepo",
         title: "ClinGen ERepo assertions",
-        description: "Retrieve versioned ClinGen ERepo expert assertions for one CAid or a bounded CAid batch.",
+        description: "Get ClinGen ERepo expert assertions by CAid or gene.",
     },
     ToolCatalogEntry {
         name: "gene_cspec",
         title: "ClinGen CSpec",
-        description: "Retrieve ClinGen CSpec manifests or bounded pages from one captured exact document.",
+        description: "Get ClinGen CSpec manifests, pages, or attachment metadata.",
     },
     ToolCatalogEntry {
         name: "variant_articles",
         title: "Variant literature batch",
-        description: "Retrieve compact literature shortlists for 1-10 structured variant identities.",
+        description: "Get compact literature shortlists for 1-10 variant identities.",
     },
 ];
 

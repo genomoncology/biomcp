@@ -47,8 +47,7 @@ Batch input accepts 1–50 CAids and remains summary-only.
 biomcp --json variant erepo --gene PTEN --limit 25 --offset 0
 ```
 
-Gene search returns at most 100 rows per page, limits string previews to 256
-UTF-8 bytes, and never cuts an HGVS expression to fit.
+Gene search returns at most 100 rows per page, limits string previews to 256 UTF-8 bytes, and never cuts an HGVS expression to fit.
 
 When a summary has multiple assertions, detail requires `--assertion <UUID>`;
 `--version` must be an exact source document version.

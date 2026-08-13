@@ -718,6 +718,7 @@ SOURCE_PAGE_SPECS = {
             "biomcp --json variant erepo CA015543",
             "biomcp --json variant erepo CA015543 --detail",
             "biomcp --json variant erepo --input caids.json",
+            "biomcp --json variant erepo --gene PTEN --limit 25 --offset 0",
         ],
     },
     "clingen-ldh.md": {

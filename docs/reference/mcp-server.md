@@ -127,8 +127,8 @@ Their schemas enumerate valid entity names, valid get section tokens, and the bo
 The raw `biomcp` tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as `discover`, `biomcp skill list`, `biomcp skill render`, embedded `biomcp skill <number-or-slug>` lookups, and the catalog-only `study download --list` form.
 
 The seven-tool catalog is intentionally bounded. A current compact serialized
-`tools/list` is 6,707 UTF-8 bytes and 1,628 `cl100k_base` tokens; the raw
-`biomcp` description is 425 bytes. Reproduce the measurement locally with
+`tools/list` is 15,723 UTF-8 bytes and 3,979 `cl100k_base` tokens; the raw
+`biomcp` description is 211 bytes. Reproduce the measurement locally with
 `uv run --no-sync python scripts/measure-mcp-tools.py`. CI ratchets the full
 catalog at 16,000 bytes and 4,000 tokens and the raw description at 4,000 bytes.
 

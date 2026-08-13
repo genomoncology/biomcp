@@ -37,19 +37,16 @@ Select one exact version and retain its capture provenance.
 
 ```bash
 biomcp gene cspec document <capture-id>
-```
-
-```bash
 biomcp --json gene cspec PTEN --version <full-resource-iri> --files
 biomcp --json gene cspec PTEN --capture-id <capture-id> --files
 ```
+
+The `document` command streams the original local capture bytes without another provider request.
 
 The attachment view exposes label, filename, declared media type and size,
 stable attachment ID, and a validated same-origin HTTPS URL. It accepts at most
 100 linked files and fails the whole manifest instead of returning partial or
 truncated identifiers.
-
-Stream the original local capture bytes without another provider request.
 
 ## API access
 
