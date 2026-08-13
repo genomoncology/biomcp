@@ -19,3 +19,13 @@ fn erepo_plans_use_exact_search_and_encoded_detail_segments() {
         "evrepo/api/summary/classification/id%2Fone/doc/sepio/version/1.0%2Frc"
     );
 }
+
+#[test]
+fn gene_plan_requests_one_extra_row_at_the_requested_offset() {
+    let plan = ERepoClient::gene_plan("PTEN", 25, 50);
+    assert_eq!(plan.method, HttpMethod::Get);
+    assert_eq!(plan.path, "evrepo/api/classifications");
+    assert_eq!(plan.query_value("gene"), Some("PTEN"));
+    assert_eq!(plan.query_value("matchLimit"), Some("26"));
+    assert_eq!(plan.query_value("matchSkip"), Some("50"));
+}

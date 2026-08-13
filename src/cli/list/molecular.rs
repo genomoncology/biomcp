@@ -145,6 +145,7 @@ Transcript normalization examples:
 - `--json variant articles --input <path|-> [--debug-plan]` - ordered compact literature for 1-10 structured variants
 - `variant structure <variant>` - opt-in residue, domain, PDB, AlphaFold, and Cancerhotspots context
 - `variant erepo <CAid> [--detail --assertion <UUID> --version <exact-docVersion>]` - versioned ClinGen expert assertion facts
+- `variant erepo --gene <symbol> [--limit <N>] [--offset <N>]` - bounded compact ClinGen assertion pages
 - `variant normalize car <HGVS>` - read-only ClinGen Allele Registry lookup for supported versioned RefSeq HGVS
 "#
     .to_string();

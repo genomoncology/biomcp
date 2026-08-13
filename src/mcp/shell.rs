@@ -58,6 +58,13 @@ struct TypedVariantErepo {
     #[schemars(length(min = 1, max = 50))]
     caids: Option<Vec<String>>,
     #[serde(default)]
+    gene: Option<String>,
+    #[serde(default = "default_cspec_limit")]
+    #[schemars(range(min = 1, max = 100))]
+    limit: usize,
+    #[serde(default)]
+    offset: usize,
+    #[serde(default)]
     detail: bool,
     #[serde(default)]
     assertion_id: Option<String>,
@@ -1006,6 +1013,38 @@ impl BioMcpServer {
         &self,
         Parameters(input): Parameters<TypedVariantErepo>,
     ) -> Result<CallToolResult, McpError> {
+        if let Some(gene) = input.gene {
+            if input.caid.is_some()
+                || input.caids.is_some()
+                || input.detail
+                || input.assertion_id.is_some()
+                || input.version.is_some()
+                || input.limit == 0
+                || input.limit > 100
+            {
+                return Err(McpError::invalid_params(
+                    "variant_erepo gene mode cannot use CAID or detail selectors; limit must be 1-100",
+                    None,
+                ));
+            }
+            return match crate::entities::variant::search_erepo_gene(
+                &gene,
+                input.limit,
+                input.offset,
+            )
+            .await
+            {
+                Ok(response) => Ok(CallToolResult::success(vec![Content::text(
+                    crate::render::json::to_pretty(&response).map_err(|error| {
+                        McpError::internal_error(
+                            format!("Failed to serialize ERepo response: {error}"),
+                            None,
+                        )
+                    })?,
+                )])),
+                Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+            };
+        }
         let caids = match (input.caid, input.caids) {
             (Some(caid), None) => vec![caid],
             (None, Some(caids)) if !caids.is_empty() && caids.len() <= 50 => caids,

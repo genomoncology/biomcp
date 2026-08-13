@@ -62,6 +62,44 @@ fn variant_trials_parses_source_flag() {
     }
 }
 
+#[test]
+fn erepo_gene_mode_is_bounded_and_mutually_exclusive() {
+    let cli = Cli::try_parse_from([
+        "biomcp", "variant", "erepo", "--gene", "PTEN", "--limit", "25", "--offset", "50",
+    ])
+    .expect("bounded gene search");
+    match cli.command {
+        Commands::Variant {
+            cmd:
+                VariantCommand::Erepo {
+                    gene,
+                    limit,
+                    offset,
+                    ..
+                },
+        } => {
+            assert_eq!(gene.as_deref(), Some("PTEN"));
+            assert_eq!(limit, 25);
+            assert_eq!(offset, 50);
+        }
+        other => panic!("unexpected command: {other:?}"),
+    }
+    for args in [
+        vec!["biomcp", "variant", "erepo", "CA1", "--gene", "PTEN"],
+        vec![
+            "biomcp", "variant", "erepo", "--gene", "PTEN", "--limit", "0",
+        ],
+        vec![
+            "biomcp", "variant", "erepo", "--gene", "PTEN", "--limit", "101",
+        ],
+        vec![
+            "biomcp", "variant", "erepo", "--gene", "PTEN", "--offset", "-1",
+        ],
+    ] {
+        assert!(Cli::try_parse_from(args).is_err());
+    }
+}
+
 #[tokio::test]
 async fn handle_get_returns_guidance_json_for_shorthand_variant() {
     let cli = Cli::try_parse_from(["biomcp", "--json", "get", "variant", "R620W"]).expect("parse");

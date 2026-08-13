@@ -9,6 +9,7 @@ use crate::sources::{RequestBuilderSourceContextExt, RequestPlan, request_from_p
 const EREPO_BASE: &str = "https://erepo.clinicalgenome.org";
 const EREPO_BASE_ENV: &str = "BIOMCP_CLINGEN_EREPO_BASE";
 const SUMMARY_BODY_LIMIT: usize = 1024 * 1024;
+const GENE_SEARCH_BODY_LIMIT: usize = 2 * 1024 * 1024;
 const DETAIL_BODY_LIMIT: usize = 4 * 1024 * 1024;
 const GUIDELINE_BODY_LIMIT: usize = 1024 * 1024;
 
@@ -43,6 +44,13 @@ impl ERepoClient {
             .query("matchTypes", "exact")
             .query("pgSize", "25")
             .query("pg", "1")
+    }
+
+    pub(crate) fn gene_plan(gene: &str, limit: usize, offset: usize) -> RequestPlan {
+        RequestPlan::get("evrepo/api/classifications")
+            .query("gene", gene)
+            .query("matchLimit", limit.saturating_add(1).to_string())
+            .query("matchSkip", offset.to_string())
     }
 
     pub(crate) fn detail_plan(uuid: &str, version: &str) -> RequestPlan {
@@ -100,6 +108,38 @@ impl ERepoClient {
             return Ok(serde_json::json!({"status":{"code":200}, "metadata":{}, "data":[]}));
         }
         decode_envelope(status, &bytes)
+    }
+
+    pub(crate) async fn gene(
+        &self,
+        gene: &str,
+        limit: usize,
+        offset: usize,
+    ) -> Result<Value, BioMcpError> {
+        let (status, bytes) = self
+            .get(Self::gene_plan(gene, limit, offset), GENE_SEARCH_BODY_LIMIT)
+            .await?;
+        if !status.is_success() {
+            return Err(BioMcpError::Api {
+                api: "ClinGen ERepo".into(),
+                message: format!("HTTP {status}"),
+            });
+        }
+        let value: Value =
+            serde_json::from_slice(&bytes).map_err(|source| BioMcpError::ApiJson {
+                api: "ClinGen ERepo".into(),
+                source,
+            })?;
+        if !value
+            .get("variantInterpretations")
+            .is_some_and(Value::is_array)
+        {
+            return Err(BioMcpError::Api {
+                api: "ClinGen ERepo".into(),
+                message: "gene response has no variantInterpretations array".into(),
+            });
+        }
+        Ok(value)
     }
 
     pub(crate) async fn detail(

@@ -35,14 +35,37 @@ async fn read_input(path: &str) -> Result<Vec<u8>, BioMcpError> {
     }
 }
 
-pub(super) async fn handle(
-    caid: Option<String>,
-    input: Option<String>,
-    detail: bool,
-    assertion: Option<String>,
-    version: Option<String>,
-    json: bool,
-) -> anyhow::Result<CommandOutcome> {
+pub(super) struct Request {
+    pub caid: Option<String>,
+    pub input: Option<String>,
+    pub gene: Option<String>,
+    pub limit: usize,
+    pub offset: usize,
+    pub detail: bool,
+    pub assertion: Option<String>,
+    pub version: Option<String>,
+}
+
+pub(super) async fn handle(request: Request, json: bool) -> anyhow::Result<CommandOutcome> {
+    let Request {
+        caid,
+        input,
+        gene,
+        limit,
+        offset,
+        detail,
+        assertion,
+        version,
+    } = request;
+    if let Some(gene) = gene {
+        let response = crate::entities::variant::search_erepo_gene(&gene, limit, offset).await?;
+        let text = if json {
+            crate::render::json::to_pretty(&response)?
+        } else {
+            render_gene_markdown(&response)
+        };
+        return Ok(CommandOutcome::stdout(text));
+    }
     if caid.is_some() && input.is_some() {
         return Err(BioMcpError::InvalidArgument(
             "variant erepo CAid cannot be combined with --input".into(),
@@ -83,6 +106,56 @@ pub(super) async fn handle(
         render_markdown(&response)
     };
     Ok(CommandOutcome::stdout(text))
+}
+
+fn render_gene_markdown(response: &crate::entities::variant::ERepoGenePage) -> String {
+    let mut out = String::from("# ClinGen ERepo gene assertions\n\n");
+    out.push_str(&format!(
+        "Returned {} results at offset {} (limit {}; more: {}).\n\n",
+        response.returned, response.offset, response.limit, response.has_more
+    ));
+    for row in &response.results {
+        out.push_str(&format!(
+            "## {}\n\n",
+            row.caid
+                .as_deref()
+                .unwrap_or("CAID omitted by safety limit")
+        ));
+        if let Some(value) = &row.classification {
+            out.push_str(&format!("- Classification: {value}\n"));
+        }
+        if let Some(value) = &row.condition {
+            out.push_str(&format!("- Condition: {value}\n"));
+        }
+        if let Some(value) = &row.guideline_label {
+            out.push_str(&format!("- Guideline: {value}\n"));
+        }
+        if let Some(value) = &row.expert_panel {
+            out.push_str(&format!("- Expert panel: {value}\n"));
+        }
+        if let Some(value) = &row.published_date {
+            out.push_str(&format!("- Published: {value}\n"));
+        }
+        out.push_str(&format!(
+            "- HGVS: {} of {} shown\n",
+            row.hgvs.len(),
+            row.hgvs_count
+        ));
+        if !row.met_evidence_codes.is_empty() {
+            out.push_str(&format!(
+                "- Met evidence codes: {}\n",
+                row.met_evidence_codes.join(", ")
+            ));
+        }
+        if !row.truncated_fields.is_empty() {
+            out.push_str(&format!(
+                "- Omitted oversized fields: {}\n",
+                row.truncated_fields.join(", ")
+            ));
+        }
+        out.push('\n');
+    }
+    out
 }
 
 fn render_markdown(response: &ERepoResponse) -> String {

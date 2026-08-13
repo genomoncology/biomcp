@@ -316,6 +316,18 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "clingen_erepo/pten-gene-limit-26.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen Evidence Repository",
+        "request": "https://erepo.clinicalgenome.org/evrepo/api/classifications?gene=PTEN&matchLimit=26&matchSkip=0",
+        "captured_at": "2026-08-13T11:09:09Z",
+        "sha256": "4b2e431cf687259231e40287c9bc65755dcd532d7195591e76bc5615b7311e22",
+        "minimization_or_redaction": "none; the committed bytes are byte-faithful",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen Evidence Repository before minimization."
+      }
+    },
+    {
       "path": "clingen_erepo/pten-summary.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."

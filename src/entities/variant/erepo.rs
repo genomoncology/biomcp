@@ -6,6 +6,7 @@ use crate::error::BioMcpError;
 use crate::sources::clingen_erepo::ERepoClient;
 
 const MAX_CAIDS: usize = 50;
+const GENE_PREVIEW_BYTES: usize = 256;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
@@ -34,6 +35,33 @@ pub(crate) struct ERepoResponse {
 pub(crate) struct ERepoSourceStatus {
     pub source: &'static str,
     pub status: &'static str,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoGenePage {
+    pub results: Vec<ERepoGeneResult>,
+    pub returned: usize,
+    pub offset: usize,
+    pub limit: usize,
+    pub has_more: bool,
+    pub total: Option<usize>,
+    pub source_status: Vec<ERepoSourceStatus>,
+    pub provider: &'static str,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub(crate) struct ERepoGeneResult {
+    pub caid: Option<String>,
+    pub gene: Option<String>,
+    pub condition: Option<String>,
+    pub classification: Option<String>,
+    pub guideline_label: Option<String>,
+    pub expert_panel: Option<String>,
+    pub published_date: Option<String>,
+    pub hgvs: Vec<String>,
+    pub hgvs_count: usize,
+    pub met_evidence_codes: Vec<String>,
+    pub truncated_fields: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -139,6 +167,169 @@ pub(crate) async fn retrieve(
         ));
     }
     retrieve_with_client(caids, detail, assertion_id, version, ERepoClient::new()?).await
+}
+
+pub(crate) async fn search_gene(
+    gene: &str,
+    limit: usize,
+    offset: usize,
+) -> Result<ERepoGenePage, BioMcpError> {
+    if !crate::sources::is_valid_gene_symbol(gene) {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo --gene must be a gene symbol".into(),
+        ));
+    }
+    if !(1..=100).contains(&limit) {
+        return Err(BioMcpError::InvalidArgument(
+            "variant erepo --limit must be between 1 and 100".into(),
+        ));
+    }
+    let value = ERepoClient::new()?.gene(gene, limit, offset).await?;
+    gene_page_from_value(&value, offset, limit)
+}
+
+fn gene_page_from_value(
+    value: &Value,
+    offset: usize,
+    limit: usize,
+) -> Result<ERepoGenePage, BioMcpError> {
+    let rows = value
+        .get("variantInterpretations")
+        .and_then(Value::as_array)
+        .ok_or_else(|| invalid("gene response has no variantInterpretations array"))?;
+    if rows.len() > limit.saturating_add(1) {
+        return Err(invalid("gene response exceeded requested page"));
+    }
+    let has_more = rows.len() > limit;
+    let results = rows
+        .iter()
+        .take(limit)
+        .map(gene_result)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(ERepoGenePage {
+        returned: results.len(),
+        results,
+        offset,
+        limit,
+        has_more,
+        total: None,
+        source_status: vec![ERepoSourceStatus {
+            source: "clingen_erepo",
+            status: "available",
+        }],
+        provider: "ClinGen ERepo",
+    })
+}
+
+fn gene_result(row: &Value) -> Result<ERepoGeneResult, BioMcpError> {
+    let guidelines = row
+        .get("guidelines")
+        .and_then(Value::as_array)
+        .and_then(|rows| rows.first());
+    let agents = guidelines
+        .and_then(|value| value.get("agents"))
+        .and_then(Value::as_array);
+    let agent = agents.and_then(|rows| rows.first());
+    let mut truncated_fields = Vec::new();
+    let hgvs_values = row
+        .get("hgvs")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .collect::<Vec<_>>();
+    let hgvs = hgvs_values
+        .iter()
+        .take(3)
+        .enumerate()
+        .filter_map(|(index, value)| {
+            bounded_preview(
+                Some(value),
+                &format!("hgvs[{index}]"),
+                &mut truncated_fields,
+            )
+        })
+        .collect();
+    let met_evidence_codes = agent
+        .and_then(|value| value.get("evidenceCodes"))
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|code| code.get("status").and_then(Value::as_str) == Some("Met"))
+        .filter_map(|code| code.get("label").and_then(Value::as_str))
+        .enumerate()
+        .filter_map(|(index, value)| {
+            bounded_preview(
+                Some(value),
+                &format!("met_evidence_codes[{index}]"),
+                &mut truncated_fields,
+            )
+        })
+        .collect();
+    let caid = row
+        .get("caid")
+        .and_then(Value::as_str)
+        .map(|value| value.strip_prefix("CAR:").unwrap_or(value));
+    Ok(ERepoGeneResult {
+        caid: bounded_preview(caid, "caid", &mut truncated_fields),
+        gene: bounded_preview(
+            row.pointer("/gene/label").and_then(Value::as_str),
+            "gene",
+            &mut truncated_fields,
+        ),
+        condition: bounded_preview(
+            row.pointer("/condition/label").and_then(Value::as_str),
+            "condition",
+            &mut truncated_fields,
+        ),
+        classification: bounded_preview(
+            guidelines
+                .and_then(|value| value.pointer("/outcome/label"))
+                .and_then(Value::as_str),
+            "classification",
+            &mut truncated_fields,
+        ),
+        guideline_label: bounded_preview(
+            guidelines
+                .and_then(|value| value.get("label"))
+                .and_then(Value::as_str),
+            "guideline_label",
+            &mut truncated_fields,
+        ),
+        expert_panel: bounded_preview(
+            agent.and_then(|value| {
+                value
+                    .get("affiliation")
+                    .or_else(|| value.get("label"))
+                    .and_then(Value::as_str)
+            }),
+            "expert_panel",
+            &mut truncated_fields,
+        ),
+        published_date: bounded_preview(
+            row.get("publishedDate").and_then(Value::as_str),
+            "published_date",
+            &mut truncated_fields,
+        ),
+        hgvs,
+        hgvs_count: hgvs_values.len(),
+        met_evidence_codes,
+        truncated_fields,
+    })
+}
+
+fn bounded_preview(
+    value: Option<&str>,
+    field: &str,
+    truncated_fields: &mut Vec<String>,
+) -> Option<String> {
+    let value = value?;
+    if value.len() > GENE_PREVIEW_BYTES {
+        truncated_fields.push(field.to_owned());
+        None
+    } else {
+        Some(value.to_owned())
+    }
 }
 
 async fn retrieve_with_client(
@@ -594,6 +785,53 @@ fn invalid(_message: &str) -> BioMcpError {
 mod tests {
     use super::*;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    #[test]
+    fn receipted_pten_gene_page_is_compact_bounded_and_truthfully_paged() {
+        let value: Value = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/clingen_erepo/pten-gene-limit-26.json"
+        )))
+        .expect("PTEN gene receipt");
+        let page = gene_page_from_value(&value, 0, 25).expect("gene page");
+        assert_eq!(page.returned, 25);
+        assert!(page.has_more);
+        assert_eq!(page.total, None);
+        assert_eq!(page.results[0].gene.as_deref(), Some("PTEN"));
+        assert!(
+            page.results[0]
+                .caid
+                .as_deref()
+                .is_some_and(|id| id.starts_with("CA"))
+        );
+        assert!(page.results.iter().all(|row| row.hgvs.len() <= 3));
+        assert!(
+            page.results
+                .iter()
+                .flat_map(|row| row.hgvs.iter())
+                .all(|value| value.len() <= GENE_PREVIEW_BYTES)
+        );
+    }
+
+    #[test]
+    fn gene_preview_omits_oversized_strings_without_cutting_them() {
+        let oversized = "α".repeat(129);
+        let value = serde_json::json!({
+            "variantInterpretations": [{
+                "caid": "CAR:CA1",
+                "gene": {"label": "PTEN"},
+                "condition": {"label": oversized},
+                "hgvs": [oversized, "NM_1:c.1A>G"],
+                "guidelines": []
+            }]
+        });
+        let page = gene_page_from_value(&value, 0, 25).expect("bounded page");
+        let row = &page.results[0];
+        assert_eq!(row.condition, None);
+        assert_eq!(row.hgvs, vec!["NM_1:c.1A>G"]);
+        assert_eq!(row.hgvs_count, 2);
+        assert_eq!(row.truncated_fields, vec!["hgvs[0]", "condition"]);
+    }
 
     #[tokio::test]
     async fn selectors_require_detail() {

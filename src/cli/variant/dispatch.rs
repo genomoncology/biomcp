@@ -139,12 +139,25 @@ pub(crate) async fn handle_command(
         VariantCommand::Erepo {
             caid,
             input,
+            gene,
+            limit,
+            offset,
             detail,
             assertion,
             version,
         } => {
             return Box::pin(super::erepo::handle(
-                caid, input, detail, assertion, version, json,
+                super::erepo::Request {
+                    caid,
+                    input,
+                    gene,
+                    limit,
+                    offset,
+                    detail,
+                    assertion,
+                    version,
+                },
+                json,
             ))
             .await;
         }

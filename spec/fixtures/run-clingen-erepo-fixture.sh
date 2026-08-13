@@ -17,6 +17,7 @@ requests = Path(os.environ["REQUESTS"])
 requests.touch()
 apc_summary = (root / "apc-summary.json").read_bytes()
 apc_detail = (root / "apc-detail.json").read_bytes()
+pten_gene = json.loads((root / "pten-gene-limit-26.json").read_text())
 # The receipted APC page has no p.cspec-svi-text element. Keep that absence
 # explicit while still exercising the required HTML request and parser path.
 apc_guideline = b"<!doctype html><html><body></body></html>"
@@ -36,6 +37,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         requests.open("a").write(self.path + "\n")
         path, _, query = self.path.partition("?")
+        if path == "/evrepo/api/classifications":
+            params = dict(part.split("=", 1) for part in query.split("&"))
+            start = int(params["matchSkip"]); size = int(params["matchLimit"])
+            self.send_json(200, {"@context": pten_gene["@context"], "variantInterpretations": pten_gene["variantInterpretations"][start:start + size]}); return
         if path == "/evrepo/api/summary/classifications":
             caid = next((part[7:] for part in query.split("&") if part.startswith("values=")), "")
             if caid == "CA015543": self.send_bytes(200, apc_summary); return
@@ -64,6 +69,8 @@ miss="$($binary --json variant erepo CA001621)"
 multiple="$($binary --json variant erepo CA-MULTI)"
 printf '["CA015543","CA001621","CA015543"]' > "$tmp/caids.json"
 batch="$($binary --json variant erepo --input "$tmp/caids.json")"
+gene="$($binary --json variant erepo --gene PTEN --limit 25 --offset 0)"
+gene_second="$($binary --json variant erepo --gene PTEN --limit 25 --offset 25)"
 if "$binary" --json variant erepo CA-MULTI --detail >/dev/null 2>&1; then ambiguous=false; else ambiguous=true; fi
 BINARY="$binary" MCP_FILE="$tmp/mcp.json" uv run --no-sync python - <<'PY'
 import json, os, subprocess
@@ -75,11 +82,14 @@ request({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion
 proc.stdin.write(json.dumps({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}) + "\n"); proc.stdin.flush()
 result = request({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"variant_erepo","arguments":{"caids":["CA015543","CA001621","CA015543"]}}})
 open(os.environ["MCP_FILE"], "w").write(result["result"]["content"][0]["text"])
+result = request({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"variant_erepo","arguments":{"gene":"PTEN","limit":25}}})
+open(os.environ["MCP_FILE"] + ".gene", "w").write(result["result"]["content"][0]["text"])
 proc.terminate(); proc.wait()
 PY
 mcp="$(<"$tmp/mcp.json")"
+gene_mcp="$(<"$tmp/mcp.json.gene")"
 requests="$(<"$tmp/requests.jsonl")"
-jq -n --arg markdown "$markdown" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
+jq -n --arg markdown "$markdown" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
   plain_cli_reports_summary: ($markdown | contains("ClinGen ERepo expert assertions") and contains("Classification: Pathogenic")),
   apc_summary_preserves_source_facts: ($summary.items[0].assertions[0].classification == "Pathogenic"),
   plain_ps4_has_no_explicit_strength: (($summary.items[0].assertions[0].criteria[] | select(.source_token == "PS4").explicit_strength) == null),
@@ -93,6 +103,9 @@ jq -n --arg markdown "$markdown" --argjson summary "$summary" --argjson detail "
   selected_detail_keeps_version_and_citation_locator: ($detail.items[0].assertions[0].detail.source_url | endswith("/version/1.0.0") and any($detail.items[0].assertions[0].detail.criteria[]; any(.pmids[]; .pmid == 12901799 and (.locator | startswith("/evidenceLine/"))))),
   batch_preserves_order_and_duplicates: ($batch.items | map(.caid) == ["CA015543", "CA001621", "CA015543"]),
   cli_and_mcp_have_same_contract: ($batch == $mcp),
+  gene_page_is_bounded_and_truthful: ($gene.returned == 25 and $gene.has_more and $gene.total == null and ($gene.results | length) == 25 and all($gene.results[]; (.hgvs | length) <= 3)),
+  gene_second_page_is_reachable: ($gene_second.offset == 25 and $gene_second.returned == 1 and ($gene_second.has_more | not)),
+  gene_cli_and_mcp_have_same_contract: ($gene == $gene_mcp),
   summary_and_detail_bounds_are_reported: ($detail.items[0].assertions[0].detail.body_bytes > 0),
   detail_cli_consumes_selected_source_plan: ($requests | contains("/evrepo/api/summary/classification/34ea9707-51d8-44df-818d-f69b075295c5/doc/sepio/version/1.0.0")),
   detail_cli_consumes_guideline_plan: ($requests | contains("/evrepo/ui/classification/34ea9707-51d8-44df-818d-f69b075295c5?version=1.0.0")),

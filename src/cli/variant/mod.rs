@@ -169,15 +169,25 @@ EXAMPLES:
   biomcp --json variant erepo CA015543
   biomcp --json variant erepo CA015543 --detail
   biomcp --json variant erepo --input caids.json
+  biomcp --json variant erepo --gene PTEN --limit 25 --offset 0
 
-Note: Batch input accepts 1-50 CAids and returns summaries only. Detail requires one CAid and, when multiple assertions exist, an explicit assertion UUID.")]
+Note: Batch input accepts 1-50 CAids and returns summaries only. Gene search is bounded and paged. Detail requires one CAid and, when multiple assertions exist, an explicit assertion UUID.")]
     Erepo {
         /// ClinGen Allele identifier (for example CA015543)
-        #[arg(required_unless_present = "input")]
+        #[arg(required_unless_present_any = ["input", "gene"], conflicts_with = "gene")]
         caid: Option<String>,
         /// JSON input file, or - for stdin, containing 1-50 CAids
-        #[arg(long, value_name = "PATH")]
+        #[arg(long, value_name = "PATH", conflicts_with = "gene")]
         input: Option<String>,
+        /// Search compact assertions for one HGNC gene symbol
+        #[arg(long, conflicts_with_all = ["detail", "assertion", "version"])]
+        gene: Option<String>,
+        /// Maximum gene-search results, 1-100 (default: 25)
+        #[arg(long, default_value = "25", value_parser = parse_erepo_limit)]
+        limit: usize,
+        /// Skip the first N gene-search results
+        #[arg(long, default_value = "0")]
+        offset: usize,
         /// Fetch one selected versioned SEPIO detail document
         #[arg(long)]
         detail: bool,
@@ -220,6 +230,17 @@ See also: biomcp list variant")]
     },
     #[command(external_subcommand)]
     External(Vec<String>),
+}
+
+fn parse_erepo_limit(value: &str) -> Result<usize, String> {
+    let limit = value
+        .parse::<usize>()
+        .map_err(|_| "limit must be an integer from 1 to 100".to_owned())?;
+    if (1..=100).contains(&limit) {
+        Ok(limit)
+    } else {
+        Err("limit must be between 1 and 100".to_owned())
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

@@ -9,3 +9,7 @@ captured 2026-08-03T00:03:40Z (2026-08-02 local). Its SHA-256 is
 from 2026-08-12, minimized to the single `p.cspec-svi-text` element consumed by
 the production guideline parser. Their complete request and minimization
 records are in `testdata/sources/capture-receipts.json`.
+
+`pten-gene-limit-26.json` is the byte-faithful first page returned by the
+bounded PTEN gene endpoint on 2026-08-13. BioMCP requests 26 rows to return a
+25-row page and derive `has_more` without claiming an exact total.

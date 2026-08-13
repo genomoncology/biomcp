@@ -49,11 +49,18 @@ not infer a criterion strength from defaults or comments.
 biomcp variant erepo CA015543
 biomcp --json variant erepo CA015543 --detail
 biomcp --json variant erepo --input caids.json
+biomcp --json variant erepo --gene PTEN --limit 25 --offset 0
 ```
 
 Batch input accepts 1–50 CAids and is summary-only. Detail fetches one assertion;
 when a summary has multiple assertions, supply `--assertion <UUID>`, and use
 `--version <exact-docVersion>` only with `--detail`.
+
+Gene mode is mutually exclusive with CAID and batch/detail modes. It returns a
+bounded compact page, requests one extra provider row to derive `has_more`, and
+reports `total: null` because ERepo does not provide an exact total. At most
+three HGVS strings are shown per assertion; the response retains the full count
+and names any oversized preview fields it omitted.
 
 ## Search variants
 

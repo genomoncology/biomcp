@@ -18,6 +18,10 @@ defaults and comments as applied criterion strength.
 - `variant erepo <CAid> --detail` retrieves one explicitly selected versioned SEPIO
   document, including comments, curator facts, and narrowly located PMIDs.
 - Typed MCP `variant_erepo` accepts one `caid` or a bounded `caids` batch.
+- `variant erepo --gene <symbol>` returns bounded compact pages with truthful
+  continuation metadata and no inferred total.
+- Typed MCP `variant_erepo` also accepts `gene`, `limit`, and `offset`, mutually
+  exclusive with CAID and detail inputs.
 
 ## Example commands
 
@@ -38,6 +42,13 @@ biomcp --json variant erepo --input caids.json
 ```
 
 Batch input accepts 1–50 CAids and remains summary-only.
+
+```bash
+biomcp --json variant erepo --gene PTEN --limit 25 --offset 0
+```
+
+Gene search returns at most 100 rows per page, limits string previews to 256
+UTF-8 bytes, and never cuts an HGVS expression to fit.
 
 When a summary has multiple assertions, detail requires `--assertion <UUID>`;
 `--version` must be an exact source document version.
