@@ -289,4 +289,5 @@ mod trial;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 
 #[cfg(test)]
+#[path = "../../../tests/unit/cli/variant.rs"]
 mod tests;

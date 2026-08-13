@@ -1,6 +1,8 @@
 use clap::Parser;
 
+#[path = "variant/articles.rs"]
 mod articles;
+#[path = "variant/parsing.rs"]
 mod parsing;
 
 use super::dispatch::{VariantSearchPlan, parse_simple_gene_change, resolve_variant_query};
