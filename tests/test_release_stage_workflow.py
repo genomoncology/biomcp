@@ -38,6 +38,12 @@ def test_stage_binds_checkout_build_and_manifest_to_input_sha() -> None:
     assert "github.sha" not in text
 
 
+def test_stage_runs_and_records_the_all_feature_candidate_gate() -> None:
+    text = _text()
+    assert "make full-feature-check" in text
+    assert "for gate in lint test full-feature-check spec" in text
+
+
 def test_baseline_build_is_once_in_pinned_manylinux_and_never_publishes() -> None:
     text = _text()
     assert "manylinux_2_28_x86_64@sha256:" in text

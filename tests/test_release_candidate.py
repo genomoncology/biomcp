@@ -120,3 +120,10 @@ def test_finalize_requires_gates_and_exact_registered_set(tmp_path: Path) -> Non
     manifest["gates"] = {name: "passed" for name in candidate.REQUIRED_GATES}
     with pytest.raises(candidate.CandidateError, match="artifact set mismatch"):
         candidate.finalize_manifest(manifest, candidate.BASELINE_ARTIFACTS)
+
+
+def test_old_three_gate_candidate_cannot_finalize(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+    manifest["gates"] = {name: "passed" for name in ("lint", "test", "spec")}
+    with pytest.raises(candidate.CandidateError, match="full-feature-check"):
+        candidate.finalize_manifest(manifest, candidate.BASELINE_ARTIFACTS)

@@ -76,6 +76,7 @@ jobs:
           cmp --silent install.sh docs/install.sh
           make lint
           make test
+          make full-feature-check
           make spec
       - name: Initialize candidate manifest
         env:
@@ -86,7 +87,7 @@ jobs:
             --sha "$SOURCE_SHA" --run-id "$RUN_ID" \
             --pins '{"rust":"1.93.1","protoc":"28.3","manylinux_x86_64":"sha256:f854c50adf7b7a325bc4794316f3758d387a41d61f9e2ebca0f26c7dc8f761d4"}' \
             --output candidate-manifest.json
-          for gate in lint test spec; do
+          for gate in lint test full-feature-check spec; do
             python3 release/candidate.py record-gate --manifest candidate-manifest.json --name "$gate"
           done
           python3 release/candidate.py bind-signing-policy \

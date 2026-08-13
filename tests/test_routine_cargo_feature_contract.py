@@ -77,3 +77,9 @@ def test_ci_and_developer_docs_name_small_and_full_feature_lanes() -> None:
     assert "Routine gates use `--no-default-features`" in docs
     assert "`make full-feature-check`" in docs
     assert "AlphaGenome" in docs
+
+
+def test_release_staging_runs_and_records_the_named_all_feature_proof() -> None:
+    workflow = _read(".github/workflows/release.yml")
+    assert "make full-feature-check" in workflow
+    assert "for gate in lint test full-feature-check spec" in workflow

@@ -49,7 +49,7 @@ PLATFORM_ARTIFACTS = {
 CONTAINER_ARTIFACTS = PLATFORM_ARTIFACTS | {"oci-index"}
 DELIVERY_ARTIFACTS = CONTAINER_ARTIFACTS | {"homebrew-formula"}
 FINAL_ARTIFACTS = set(ARTIFACTS)
-REQUIRED_GATES = {"lint", "test", "spec"}
+REQUIRED_GATES = {"lint", "test", "spec", "full-feature-check"}
 
 
 class CandidateError(ValueError):
