@@ -272,6 +272,14 @@ SUPERVISED_SETUP_FIXTURES = (
     ("article-federated-timeout", "setup-article-federated-timeout-fixture.sh", "cleanup-article-federated-timeout-fixture.sh", "BIOMCP_ARTICLE_FEDERATED_TIMEOUT_FIXTURE"),
 )
 
+SUPERVISED_RUN_WRAPPERS = (
+    ("run-article-semanticscholar-source", "run-article-semanticscholar-source-search.sh", "BIOMCP_RUN_ARTICLE_SEMANTICSCHOLAR_SOURCE"),
+    ("run-clingen-erepo", "run-clingen-erepo-fixture.sh", "BIOMCP_RUN_CLINGEN_EREPO"),
+    ("run-section-outcome-mcp", "run-section-outcome-mcp.sh", "BIOMCP_RUN_SECTION_OUTCOME_MCP"),
+    ("run-variant-article-entity", "run-variant-article-entity-fixture.sh", "BIOMCP_RUN_VARIANT_ARTICLE_ENTITY"),
+    ("run-variant-article-identity", "run-variant-article-identity-fixture.sh", "BIOMCP_RUN_VARIANT_ARTICLE_IDENTITY"),
+)
+
 
 def _wait_until(predicate, timeout: float = 10.0) -> None:
     deadline = time.monotonic() + timeout
@@ -344,6 +352,78 @@ def test_adopted_setup_fixture_dies_with_its_real_exported_owner(
             ["bash", str(REPO_ROOT / "spec" / "fixtures" / cleanup_name), str(workspace)],
             check=False,
         )
+
+
+@pytest.mark.parametrize(
+    "fixture_kind, wrapper_name, variable_prefix", SUPERVISED_RUN_WRAPPERS
+)
+def test_run_wrapper_sigkill_reaps_server_group_and_owned_root(
+    tmp_path: Path,
+    fixture_kind: str,
+    wrapper_name: str,
+    variable_prefix: str,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    for name in ("spec", "testdata", "tools"):
+        (workspace / name).symlink_to(REPO_ROOT / name, target_is_directory=True)
+    fake_binary = tmp_path / "fake-biomcp"
+    fake_binary.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "if [[ ${1:-} == serve-http ]]; then\n"
+        "  while [[ $# -gt 0 ]]; do\n"
+        "    if [[ $1 == --port ]]; then port=$2; shift 2; else shift; fi\n"
+        "  done\n"
+        "  exec python3 - \"$port\" <<'PY'\n"
+        "from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer\n"
+        "import sys\n"
+        "class Handler(BaseHTTPRequestHandler):\n"
+        "    def log_message(self, *_): pass\n"
+        "    def do_GET(self):\n"
+        "        self.send_response(200 if self.path == '/readyz' else 404); self.end_headers()\n"
+        "ThreadingHTTPServer(('127.0.0.1', int(sys.argv[1])), Handler).serve_forever()\n"
+        "PY\n"
+        "fi\n"
+        "sleep 60\n",
+    )
+    fake_binary.chmod(0o755)
+    wrapper = subprocess.Popen(
+        ["bash", str(REPO_ROOT / "spec" / "fixtures" / wrapper_name), str(workspace)],
+        env=os.environ
+        | {
+            "BIOMCP_BIN": str(fake_binary),
+            "BIOMCP_SPEC_MCP_EXAMPLE_BIN": str(fake_binary),
+        },
+        start_new_session=True,
+    )
+    record_path = workspace / ".cache" / f"spec-{fixture_kind}-ownership"
+    try:
+        _wait_until(lambda: record_path.exists() or wrapper.poll() is not None)
+        assert record_path.exists(), f"{wrapper_name} exited before exporting ownership"
+        record = _read_record(record_path)
+        server_pid = int(record[f"{variable_prefix}_PID"])
+        fixture_root = Path(record[f"{variable_prefix}_ROOT"])
+        wrapper.kill()
+        assert wrapper.wait(timeout=10) == -signal.SIGKILL
+        _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())
+        _wait_until(lambda: not fixture_root.exists())
+    finally:
+        if wrapper.poll() is None:
+            wrapper.kill()
+            wrapper.wait()
+        if record_path.exists():
+            subprocess.run(
+                [
+                    "bash",
+                    str(REPO_ROOT / "spec" / "fixtures" / "routine-fixture-ownership.sh"),
+                    "cleanup",
+                    str(workspace),
+                    fixture_kind,
+                    variable_prefix,
+                ],
+                check=False,
+            )
 
 
 @pytest.mark.parametrize(

@@ -4,13 +4,22 @@ set -euo pipefail
 repo_root="${1:-../..}"
 scenario="${2:-all}"
 repo_root="$(cd "$repo_root" && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
 batch_input="${3:-${repo_root}/spec/fixtures/variant-article-batch-input.json}"
-fixture_root="${repo_root}/.cache/spec-variant-article-entity-${scenario}"
+cache_dir="$repo_root/.cache"
+kind="run-variant-article-entity"
+prefix="spec-run-variant-article-entity."
+mkdir -p "$cache_dir"
+recover_fixture_orphans "$cache_dir" "$kind" "$prefix"
+fixture_root="$(mktemp -d "$cache_dir/$prefix"XXXXXX)"
+owner_arg="$(bash "$ownership_helper" new-owner "$kind" "$fixture_root")"
 ready_file="${fixture_root}/ready"
 server_py="${fixture_root}/server.py"
 request_log="${fixture_root}/requests.log"
-rm -rf "$fixture_root"
-mkdir -p "$fixture_root"
+server_pid_file="$fixture_root/server-pid"
 
 cat >"$server_py" <<'PY'
 import json
@@ -344,9 +353,15 @@ ready.write_text(f"http://127.0.0.1:{server.server_port}", encoding="utf-8")
 server.serve_forever()
 PY
 
-uv run --no-sync python3 "$server_py" "$ready_file" "$request_log" "$scenario" 8>&- &
-server_pid=$!
-trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+prepare_fixture_supervisor_current_process
+start_fixture_supervisor "$kind" "$cache_dir" "$fixture_root" "$prefix" "$server_pid_file" \
+  python3 "$server_py" "$ready_file" "$request_log" "$scenario" "$owner_arg" &
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+server_pid="$(<"$server_pid_file")"
+bash "$ownership_helper" write "$repo_root" "$kind" "$fixture_root" "$server_pid" "BIOMCP_RUN_VARIANT_ARTICLE_ENTITY" "$owner_arg" >/dev/null
+trap 'bash "$ownership_helper" cleanup "$repo_root" "$kind" "BIOMCP_RUN_VARIANT_ARTICLE_ENTITY"' EXIT
 
 for _ in $(seq 1 100); do
   if [ -s "$ready_file" ]; then

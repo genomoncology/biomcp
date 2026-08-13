@@ -3,25 +3,29 @@ set -euo pipefail
 
 ROOT="${1:?repo root required}"
 CACHE_DIR="$ROOT/.cache"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OWNERSHIP_HELPER="$SCRIPT_DIR/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$SCRIPT_DIR/fixture-supervisor.sh"
 mkdir -p "$CACHE_DIR"
-PORT_FILE="$CACHE_DIR/spec-article-semanticscholar-source-port"
-LOG_FILE="$CACHE_DIR/spec-article-semanticscholar-source.log"
-REQUEST_FILE="$CACHE_DIR/spec-article-semanticscholar-source.requests"
-PID_FILE="$CACHE_DIR/spec-article-semanticscholar-source.pid"
+KIND="run-article-semanticscholar-source"
+PREFIX="spec-run-article-semanticscholar-source."
+recover_fixture_orphans "$CACHE_DIR" "$KIND" "$PREFIX"
+FIXTURE_ROOT="$(mktemp -d "$CACHE_DIR/$PREFIX"XXXXXX)"
+OWNER_ARG="$(bash "$OWNERSHIP_HELPER" new-owner "$KIND" "$FIXTURE_ROOT")"
+PORT_FILE="$FIXTURE_ROOT/port"
+LOG_FILE="$FIXTURE_ROOT/server.log"
+REQUEST_FILE="$FIXTURE_ROOT/requests"
+PID_FILE="$FIXTURE_ROOT/server-pid"
 
 cleanup() {
-  if [[ -f "$PID_FILE" ]]; then
-    old_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
-    if [[ -n "$old_pid" ]]; then
-      kill "$old_pid" 2>/dev/null || true
-    fi
-  fi
+  bash "$OWNERSHIP_HELPER" cleanup "$ROOT" "$KIND" "BIOMCP_RUN_ARTICLE_SEMANTICSCHOLAR_SOURCE"
 }
 trap cleanup EXIT
-cleanup
-rm -f "$PORT_FILE" "$LOG_FILE" "$PID_FILE" "$REQUEST_FILE"
 
-uv run --no-sync python3 - "$PORT_FILE" "$REQUEST_FILE" >"$LOG_FILE" 2>&1 <<'PY' 8>&- &
+prepare_fixture_supervisor_current_process
+start_fixture_supervisor "$KIND" "$CACHE_DIR" "$FIXTURE_ROOT" "$PREFIX" "$PID_FILE" \
+  python3 - "$PORT_FILE" "$REQUEST_FILE" "$OWNER_ARG" >"$LOG_FILE" 2>&1 <<'PY' &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -68,8 +72,11 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 port_file.write_text(str(server.server_address[1]))
 server.serve_forever()
 PY
-pid=$!
-echo "$pid" >"$PID_FILE"
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$PID_FILE" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$PID_FILE"
+pid="$(<"$PID_FILE")"
+bash "$OWNERSHIP_HELPER" write "$ROOT" "$KIND" "$FIXTURE_ROOT" "$pid" "BIOMCP_RUN_ARTICLE_SEMANTICSCHOLAR_SOURCE" "$OWNER_ARG" >/dev/null
 
 for _ in $(seq 1 100); do
   if [[ -s "$PORT_FILE" ]]; then

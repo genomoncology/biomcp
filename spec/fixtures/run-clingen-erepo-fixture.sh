@@ -4,10 +4,24 @@ set -euo pipefail
 
 repo_root="$(cd "${1:-../..}" && pwd)"
 binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
-tmp="$(mktemp -d)"
-trap 'kill "${server_pid:-}" 2>/dev/null || true; rm -rf "$tmp"' EXIT
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
+cache_dir="$repo_root/.cache"
+kind="run-clingen-erepo"
+prefix="spec-run-clingen-erepo."
+mkdir -p "$cache_dir"
+recover_fixture_orphans "$cache_dir" "$kind" "$prefix"
+tmp="$(mktemp -d "$cache_dir/$prefix"XXXXXX)"
+owner_arg="$(bash "$ownership_helper" new-owner "$kind" "$tmp")"
+server_pid_file="$tmp/server-pid"
+trap 'bash "$ownership_helper" cleanup "$repo_root" "$kind" "BIOMCP_RUN_CLINGEN_EREPO"' EXIT
 
-REPO_ROOT="$repo_root" PORT_FILE="$tmp/port" REQUESTS="$tmp/requests.jsonl" uv run --no-sync python - 8>&- <<'PY' &
+prepare_fixture_supervisor_current_process
+REPO_ROOT="$repo_root" PORT_FILE="$tmp/port" REQUESTS="$tmp/requests.jsonl" \
+  start_fixture_supervisor "$kind" "$cache_dir" "$tmp" "$prefix" "$server_pid_file" \
+  python3 - "$owner_arg" <<'PY' &
 import json, os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -55,7 +69,11 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 Path(os.environ["PORT_FILE"]).write_text(str(server.server_port))
 server.serve_forever()
 PY
-server_pid=$!
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+server_pid="$(<"$server_pid_file")"
+bash "$ownership_helper" write "$repo_root" "$kind" "$tmp" "$server_pid" "BIOMCP_RUN_CLINGEN_EREPO" "$owner_arg" >/dev/null
 while [[ ! -s "$tmp/port" ]]; do sleep 0.05; done
 fixture_port="$(<"$tmp/port")"
 export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$fixture_port"

@@ -36,6 +36,14 @@ prepare_fixture_supervisor_owner() {
   }
 }
 
+prepare_fixture_supervisor_current_process() {
+  fixture_supervisor_owner_pid="$$"
+  fixture_supervisor_owner_start="$(_fixture_proc_start_identity "$$")" || {
+    echo "fixture supervisor: could not read wrapper identity" >&2
+    return 2
+  }
+}
+
 start_fixture_supervisor() {
   local kind="$1" parent="$2" root="$3" prefix="$4" pid_file="$5"
   shift 5

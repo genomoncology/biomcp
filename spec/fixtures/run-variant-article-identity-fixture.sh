@@ -3,13 +3,25 @@ set -euo pipefail
 
 repo_root="${1:-../..}"
 repo_root="$(cd "$repo_root" && pwd)"
-fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/biomcp-g5-identity.XXXXXX")"
-trap 'rm -rf "$fixture_root"' EXIT
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ownership_helper="$script_dir/routine-fixture-ownership.sh"
+# shellcheck source=fixture-supervisor.sh
+source "$script_dir/fixture-supervisor.sh"
+cache_dir="$repo_root/.cache"
+kind="run-variant-article-identity"
+prefix="spec-run-variant-article-identity."
+mkdir -p "$cache_dir"
+recover_fixture_orphans "$cache_dir" "$kind" "$prefix"
+fixture_root="$(mktemp -d "$cache_dir/$prefix"XXXXXX)"
+owner_arg="$(bash "$ownership_helper" new-owner "$kind" "$fixture_root")"
+server_pid_file="$fixture_root/server-pid"
 ready="$fixture_root/ready"
 mode="$fixture_root/mode"
 printf 'normal\n' >"$mode"
 
-uv run --no-sync python - "$ready" "$mode" "$repo_root" <<'PY' >"$fixture_root/server.log" 2>&1 8>&- &
+prepare_fixture_supervisor_current_process
+start_fixture_supervisor "$kind" "$cache_dir" "$fixture_root" "$prefix" "$server_pid_file" \
+  python3 - "$ready" "$mode" "$repo_root" "$owner_arg" <<'PY' >"$fixture_root/server.log" 2>&1 &
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -196,8 +208,12 @@ server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 ready.write_text(f"http://127.0.0.1:{server.server_port}")
 server.serve_forever()
 PY
-server_pid=$!
-trap 'kill "$server_pid" 2>/dev/null || true; rm -rf "$fixture_root"' EXIT
+supervisor_pid=$!
+for _ in $(seq 1 50); do test -s "$server_pid_file" && break; kill -0 "$supervisor_pid" 2>/dev/null || break; sleep .1; done
+test -s "$server_pid_file"
+server_pid="$(<"$server_pid_file")"
+bash "$ownership_helper" write "$repo_root" "$kind" "$fixture_root" "$server_pid" "BIOMCP_RUN_VARIANT_ARTICLE_IDENTITY" "$owner_arg" >/dev/null
+trap 'bash "$ownership_helper" cleanup "$repo_root" "$kind" "BIOMCP_RUN_VARIANT_ARTICLE_IDENTITY"' EXIT
 for _ in $(seq 1 100); do test -s "$ready" && break; sleep 0.05; done
 base_url="$(cat "$ready")"
 binary="${BIOMCP_BIN:-$repo_root/target/spec/biomcp}"
