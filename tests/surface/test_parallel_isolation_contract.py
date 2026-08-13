@@ -774,7 +774,7 @@ def test_ticket_377_renderer_envelope_fixture_contracts_exist() -> None:
         (
             "Variant renderer/envelope fixture contract",
             (
-                "src/cli/variant/tests.rs",
+                    "tests/unit/cli/variant.rs",
                 "src/render/markdown/variant/tests.rs",
                 "src/entities/variant/normalization.rs",
             ),
