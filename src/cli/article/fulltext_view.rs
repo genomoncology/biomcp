@@ -1,4 +1,5 @@
 use std::fmt::Write as _;
+use std::io::Read as _;
 use std::path::Path;
 
 use serde::Serialize;
@@ -167,7 +168,7 @@ pub(super) fn render(
     range: Option<&str>,
     json: bool,
 ) -> Result<String, BioMcpError> {
-    let text = std::fs::read_to_string(path).map_err(BioMcpError::Io)?;
+    let text = read_managed_text(path)?;
     if outline {
         let result = build_outline(&text);
         return if json {
@@ -185,7 +186,7 @@ pub(super) fn render(
 }
 
 pub(super) fn summary(path: &Path) -> Result<(usize, usize, usize), BioMcpError> {
-    let text = std::fs::read_to_string(path).map_err(BioMcpError::Io)?;
+    let text = read_managed_text(path)?;
     let lines = text.lines().count();
     let sections = text
         .lines()
@@ -199,6 +200,13 @@ pub(super) fn summary(path: &Path) -> Result<(usize, usize, usize), BioMcpError>
         })
         .count();
     Ok((text.len(), lines, sections))
+}
+
+fn read_managed_text(path: &Path) -> Result<String, BioMcpError> {
+    let mut file = crate::cache::open_managed_read(path).map_err(BioMcpError::Io)?;
+    let mut text = String::new();
+    file.read_to_string(&mut text).map_err(BioMcpError::Io)?;
+    Ok(text)
 }
 
 fn parse_range(value: &str) -> Result<(usize, usize), BioMcpError> {

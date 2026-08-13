@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use crate::error::BioMcpError;
 
@@ -69,11 +69,16 @@ async fn remove_temp_if_present(path: &Path) {
 }
 
 async fn existing_file_matches(path: &Path, content: &[u8]) -> bool {
-    matches!(tokio::fs::read(path).await, Ok(existing) if existing == content)
+    let Ok(file) = crate::cache::open_managed_read(path) else {
+        return false;
+    };
+    let mut file = tokio::fs::File::from_std(file);
+    let mut existing = Vec::new();
+    file.read_to_end(&mut existing).await.is_ok() && existing == content
 }
 
 async fn existing_regular_file(path: &Path) -> bool {
-    matches!(tokio::fs::metadata(path).await, Ok(metadata) if metadata.is_file())
+    crate::cache::open_managed_read(path).is_ok()
 }
 
 pub async fn write_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), BioMcpError> {
@@ -125,9 +130,12 @@ pub async fn save_atomic(id: &str, content: &str) -> Result<PathBuf, BioMcpError
 }
 
 async fn save_atomic_to_path(path: PathBuf, content: &str) -> Result<PathBuf, BioMcpError> {
-    if matches!(tokio::fs::metadata(&path).await, Ok(metadata) if metadata.is_file()) {
-        crate::cache::secure_managed_tree(path.parent().expect("download path has parent"), true)?;
-        return Ok(path);
+    let parent = path.parent().expect("download path has parent");
+    crate::cache::secure_managed_tree(parent, true)?;
+    match crate::cache::open_managed_read(&path) {
+        Ok(_) => return Ok(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(error.into()),
     }
 
     write_atomic_bytes(&path, content.as_bytes()).await?;
@@ -289,5 +297,34 @@ mod tests {
                 || err.to_string().contains("Access is denied"),
             "unexpected error: {err}"
         );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn saved_download_rejects_symlinks_and_hard_links() {
+        use std::os::unix::fs::symlink;
+
+        let root = TempDirGuard::new("linked-download");
+        let downloads = root.path().join("downloads");
+        std::fs::create_dir_all(&downloads).unwrap();
+        let outside = root.path().join("outside.txt");
+        std::fs::write(&outside, "outside").unwrap();
+
+        let symlink_target = downloads.join("symlink.txt");
+        symlink(&outside, &symlink_target).unwrap();
+        assert!(
+            save_atomic_to_path(symlink_target, "ignored")
+                .await
+                .is_err()
+        );
+
+        let hardlink_target = downloads.join("hardlink.txt");
+        std::fs::hard_link(&outside, &hardlink_target).unwrap();
+        assert!(
+            save_atomic_to_path(hardlink_target, "ignored")
+                .await
+                .is_err()
+        );
+        assert_eq!(std::fs::read_to_string(outside).unwrap(), "outside");
     }
 }

@@ -26,6 +26,68 @@ pub(crate) fn open_private(options: &mut OpenOptions, path: &Path) -> io::Result
     options.open(path)
 }
 
+pub(crate) fn open_managed_read(path: &Path) -> io::Result<File> {
+    let metadata = fs::symlink_metadata(path)?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "managed state entry is not a regular file: {}",
+                path.display()
+            ),
+        ));
+    }
+
+    let mut options = OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+        options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
+    }
+    let file = options.open(path)?;
+    let opened = file.metadata()?;
+    if !opened.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "managed state entry is not a regular file: {}",
+                path.display()
+            ),
+        ));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if opened.nlink() != 1 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("managed file has {} links: {path:?}", opened.nlink()),
+            ));
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        if opened.number_of_links() != 1 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "managed file has {} links: {path:?}",
+                    opened.number_of_links()
+                ),
+            ));
+        }
+    }
+    Ok(file)
+}
+
 #[cfg(unix)]
 fn create_private_dir(path: &Path) -> io::Result<()> {
     use std::os::unix::fs::DirBuilderExt;
