@@ -1469,16 +1469,23 @@ mod tests {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
         let cache_root = TempDirGuard::new("body-limit-cache");
-        let client = build_http_client_with_config(
-            SharedHttpClientKind::Default,
-            test_cache_config(cache_root.path()),
-            None,
-        )
-        .expect("test client");
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("bind test listener");
         let address = listener.local_addr().expect("test listener address");
+        let fixture_url = reqwest::Url::parse(&format!("http://{address}"))
+            .expect("parse body-limit fixture origin");
+        let fixture_policy = provider_url_policy::ProviderUrlPolicy::test_fixture(
+            provider_url_policy::ProviderUrlConsumer::GithubRelease,
+            &fixture_url,
+        )
+        .expect("body-limit fixture policy");
+        let client = build_http_client_with_config(
+            SharedHttpClientKind::Default,
+            test_cache_config(cache_root.path()),
+            Some(&fixture_policy),
+        )
+        .expect("test client");
         let server = tokio::spawn(async move {
             let mut handlers = Vec::new();
             for request_number in 0..4 {

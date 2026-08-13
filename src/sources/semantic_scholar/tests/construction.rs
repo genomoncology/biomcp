@@ -65,7 +65,11 @@ async fn author_fixture_client(
     });
     (
         SemanticScholarClient {
-            client: crate::sources::shared_client().expect("shared client"),
+            client: crate::sources::ordinary_url_policy::test_middleware_client_for_base(
+                &base,
+                |builder| builder,
+            )
+            .expect("author fixture client"),
             base: std::borrow::Cow::Owned(base),
             api_key: Some("fixture-key".into()),
         },
