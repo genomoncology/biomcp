@@ -1602,7 +1602,8 @@ def test_validation_profile_and_hook_contract_docs_are_pinned() -> None:
 
     assert "opt in" in contributing_hook
     assert "does not install it automatically" in contributing_hook
-    assert "`$(git rev-parse --git-path hooks/pre-commit)`" in contributing_hook
+    assert "`scripts/install-pre-commit-hook`" in contributing_hook
+    assert "`scripts/pre-commit`" in contributing_hook
     assert "`scripts/pre-commit-reject-march-artifacts.sh`" in contributing_hook
     assert "`cargo fmt --check`" in contributing_hook
     assert (

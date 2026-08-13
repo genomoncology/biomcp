@@ -74,34 +74,23 @@ routine gates plus that full-feature proof.
 
 ### Local Pre-Commit Hook
 
-Developers who opt in to the repo-local pre-commit hook should install it at
-`$(git rev-parse --git-path hooks/pre-commit)`. The hook is local Git state;
-the repo does not install it automatically.
-
-Use this shape so `scripts/pre-commit-reject-march-artifacts.sh` runs before
-`cargo fmt --check` and
-`cargo clippy --no-default-features --lib --tests -- -D warnings`:
+Developers opt in to the repository-owned hook for each checkout; the
+repository does not install it automatically:
 
 ```bash
-hook_path="$(git rev-parse --git-path hooks/pre-commit)"
-mkdir -p "$(dirname "$hook_path")"
-cat >"$hook_path" <<'HOOK'
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT="$(git rev-parse --show-toplevel)"
-cd "$ROOT"
-
-scripts/pre-commit-reject-march-artifacts.sh
-cargo fmt --check
-cargo clippy --no-default-features --lib --tests -- -D warnings
-HOOK
-chmod +x "$hook_path"
+scripts/install-pre-commit-hook
 ```
 
-The helper allows only `.march/code-review-log.md` under `.march/`, and it
-permits staged deletions so cleanup commits can remove old March artifacts from
-tracking.
+The installed `.git/hooks/pre-commit` file is only a thin handoff to the tracked
+`scripts/pre-commit` entrypoint. Every commit still runs the credential and
+forbidden-artifact scans. A change containing only Markdown in the repository
+root, `sdlc/`, `docs/`, `architecture/`, `spec/`, or `skills/` runs strict
+documentation checks without Cargo, rustfmt, or Clippy. Any other staged path
+runs the full Rust pre-commit checks. The artifact helper
+`scripts/pre-commit-reject-march-artifacts.sh` still permits staged deletions
+and allows only `.march/code-review-log.md` under `.march/`.
+The full path runs `cargo fmt --check` and
+`cargo clippy --no-default-features --lib --tests -- -D warnings`.
 
 ### Rust maintenance ratchets
 

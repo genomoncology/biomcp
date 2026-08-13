@@ -16,7 +16,18 @@ CHECK_LABELS = {
     "deprecated_docs": "deprecated public-doc install string scan",
     "docs_test_code": "docs test-code leak scan",
 }
-TBD_SUFFIXES = {".py", ".sh", ".bash", ".zsh", ".rs", ".zig", ".js", ".ts", ".tsx", ".jsx"}
+TBD_SUFFIXES = {
+    ".py",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".rs",
+    ".zig",
+    ".js",
+    ".ts",
+    ".tsx",
+    ".jsx",
+}
 CREDENTIAL_PATTERNS = [
     re.compile(r"postgres://[^\s\"']+:[^\s\"']+@"),
     re.compile(r"(?:^|[^A-Za-z0-9_])DSN\s*=\s*[\"']?[^$\"'\s][^\s]*"),
@@ -33,7 +44,7 @@ def tracked_paths(root: Path) -> list[str]:
         check=True,
         capture_output=True,
     )
-    return sorted(path.decode("utf-8") for path in result.stdout.split(b"\0") if path)
+    return sorted(os.fsdecode(path) for path in result.stdout.split(b"\0") if path)
 
 
 def is_tbd_target(relative: str) -> bool:
@@ -121,8 +132,10 @@ def run(root: Path) -> tuple[dict[str, list[str]], Counter[str]]:
 
         if is_tbd_target(relative):
             for line_number, line in enumerate(lines, start=1):
-                if "TBD" in line and not is_tbd_comment(relative, line) and not re.match(
-                    r"^\s*--", line
+                if (
+                    "TBD" in line
+                    and not is_tbd_comment(relative, line)
+                    and not re.match(r"^\s*--", line)
                 ):
                     findings["tbd"].append(f"{relative}:{line_number}:{line}")
 

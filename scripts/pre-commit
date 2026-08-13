@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Run repository-owned checks selected from the staged path set."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+DOC_DIRS = (b"sdlc/", b"docs/", b"architecture/", b"spec/", b"skills/")
+
+
+def run(root: Path, command: list[str], *, env: dict[str, str] | None = None) -> None:
+    subprocess.run(command, cwd=root, env=env, check=True)
+
+
+def staged_paths(root: Path) -> list[bytes]:
+    raw = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--cached",
+            "--name-status",
+            "-z",
+            "--find-renames",
+            "--diff-filter=ACMRTD",
+        ],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    ).stdout
+    fields = raw.split(b"\0")
+    if fields and fields[-1] == b"":
+        fields.pop()
+    paths: list[bytes] = []
+    index = 0
+    while index < len(fields):
+        status = fields[index]
+        index += 1
+        path_count = 2 if status.startswith((b"R", b"C")) else 1
+        if index + path_count > len(fields):
+            raise SystemExit("pre-commit: malformed staged path stream")
+        paths.extend(fields[index : index + path_count])
+        index += path_count
+    return paths
+
+
+def is_documentation(path: bytes) -> bool:
+    return path.endswith(b".md") and (b"/" not in path or path.startswith(DOC_DIRS))
+
+
+def main() -> int:
+    root = Path(
+        subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+    run(root, [str(root / "scripts/pre-commit-reject-march-artifacts.sh")])
+    run(root, [sys.executable, str(root / "tools/check-tracked-text"), str(root)])
+
+    paths = staged_paths(root)
+    doc_only = bool(paths) and all(is_documentation(path) for path in paths)
+    if doc_only:
+        if any(path.startswith(b"spec/") for path in paths):
+            env = os.environ.copy()
+            env["QUALITY_RATCHET_AUDITS"] = "spec_lint"
+            run(root, [str(root / "tools/check-quality-ratchet.sh")], env=env)
+        run(root, ["uv", "run", "--no-sync", "mkdocs", "build", "--strict"])
+        print("pre-commit: documentation-only change; Rust checks skipped")
+        return 0
+
+    run(root, ["cargo", "fmt", "--check"])
+    run(
+        root,
+        [
+            str(root / "tools/with-build-identity"),
+            "cargo",
+            "clippy",
+            "--no-default-features",
+            "--lib",
+            "--tests",
+            "--",
+            "-D",
+            "warnings",
+        ],
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

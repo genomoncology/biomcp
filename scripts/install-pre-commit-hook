@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+hook_path="$(git rev-parse --path-format=absolute --git-path hooks/pre-commit)"
+mkdir -p "$(dirname "$hook_path")"
+printf '#!/usr/bin/env bash\nexec %q "$@"\n' "$repo_root/scripts/pre-commit" >"$hook_path"
+chmod +x "$hook_path"
+printf 'Installed BioMCP pre-commit hook at %s\n' "$hook_path"
