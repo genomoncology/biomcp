@@ -521,9 +521,10 @@ Article detail and batch return every author supplied by the selected source in
 source order. JSON carries `authors`, returned `author_count`,
 `author_completeness` (`complete`, `source_limited`, or `unavailable`), and
 `author_source` (`pubtator` or `europepmc`). Europe PMC display-string lists are
-source-limited. Batch keeps its bare-array JSON envelope and request order, and
-Markdown cards show authorship plus its status. This compatibility exception is
-not converted to an object collection envelope.
+source-limited. Batch keeps request order and returns a `{summary, items}` JSON
+envelope. Each item reports `ok` or `error`; a partially failed batch keeps the
+complete report on stdout and exits nonzero. Markdown cards show authorship plus
+its status.
 
 Default full-text output reports only cached byte, line, and heading counts.
 Use `--outline` for at most 200 heading ranges or `--lines START:END` for an

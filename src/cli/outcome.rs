@@ -492,6 +492,12 @@ async fn run_outcome_inner(
             })
             .await
         }
+        Commands::Article { cmd } => {
+            crate::sources::with_no_cache(no_cache, async move {
+                super::article::handle_command(cmd, json).await
+            })
+            .await
+        }
         Commands::Get {
             entity: GetEntity::Trial(args),
         } => {
