@@ -317,8 +317,130 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  mcpb-artifact:
+    needs: signed-artifacts
+    runs-on: macos-15
+    environment: biomcp-release-signing
+    env:
+      BIOMCP_SIGNING_POLICY_SHA256: ${{ secrets.BIOMCP_SIGNING_POLICY_SHA256 }}
+      BIOMCP_MCPB_CERTIFICATE: ${{ secrets.BIOMCP_MCPB_CERTIFICATE }}
+      BIOMCP_MCPB_PRIVATE_KEY: ${{ secrets.BIOMCP_MCPB_PRIVATE_KEY }}
+      BIOMCP_MCPB_CHAIN: ${{ secrets.BIOMCP_MCPB_CHAIN }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: 'macos-*-${{ github.run_id }}'
+          path: candidate
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: windows-x86_64-${{ github.run_id }}
+          path: candidate/windows-x86_64-${{ github.run_id }}
+      - name: Install integrity-pinned official MCPB tool
+        run: bash release/install-mcpb-tool.sh
+      - name: Derive and finalize universal macOS executable
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          mkdir -p dist/mcpb/thin dist/mcpb/root
+          for platform in macos-x86_64 macos-arm64; do
+            record="candidate/$platform-$RUN_ID/native.json"
+            archive="candidate/$platform-$RUN_ID/$(jq -r .filename "$record")"
+            tar -xzf "$archive" -C "dist/mcpb/thin"
+            mv dist/mcpb/thin/biomcp "dist/mcpb/thin/$platform"
+            test "$(shasum -a 256 "dist/mcpb/thin/$platform" | cut -d' ' -f1)" = "$(jq -r .evidence.binary_sha256 "$record")"
+          done
+          lipo -create dist/mcpb/thin/macos-x86_64 dist/mcpb/thin/macos-arm64 \
+            -output dist/mcpb/universal-unsigned
+          test "$(lipo -archs dist/mcpb/universal-unsigned)" = 'x86_64 arm64'
+          python3 release/signing.py --source dist/mcpb/universal-unsigned \
+            --output dist/mcpb/universal-signed --evidence dist/mcpb/universal-signing.json \
+            --target macos-universal --source-sha "$SOURCE_SHA" --version "$VERSION" \
+            --unsigned-sha256 "$(shasum -a 256 dist/mcpb/universal-unsigned | cut -d' ' -f1)"
+          test "$(lipo -archs dist/mcpb/universal-signed)" = 'x86_64 arm64'
+      - name: Pack, sign once, verify, and inspect MCPB
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          win_record="candidate/windows-x86_64-$RUN_ID/native.json"
+          win_archive="candidate/windows-x86_64-$RUN_ID/$(jq -r .filename "$win_record")"
+          ditto -x -k "$win_archive" dist/mcpb/windows
+          python3 release/mcpb.py prepare --version "$VERSION" \
+            --macos dist/mcpb/universal-signed --windows dist/mcpb/windows/biomcp.exe \
+            --output dist/mcpb/root
+          mcpb validate dist/mcpb/root/manifest.json
+          mcpb pack dist/mcpb/root "dist/mcpb/biomcp-$VERSION-unsigned.mcpb"
+          python3 release/mcpb_sign.py --source "dist/mcpb/biomcp-$VERSION-unsigned.mcpb" \
+            --output "dist/mcpb/biomcp-$VERSION.mcpb" --evidence dist/mcpb/mcpb-signing.json \
+            --source-sha "$SOURCE_SHA"
+          mcpb verify "dist/mcpb/biomcp-$VERSION.mcpb"
+          python3 release/mcpb.py record --bundle "dist/mcpb/biomcp-$VERSION.mcpb" \
+            --record dist/mcpb/mcpb.json --signing-evidence dist/mcpb/mcpb-signing.json \
+            --source-sha "$SOURCE_SHA" --version "$VERSION" --run-id "$RUN_ID" \
+            --macos-sha256 "$(shasum -a 256 dist/mcpb/universal-signed | cut -d' ' -f1)" \
+            --windows-sha256 "$(jq -r .evidence.binary_sha256 "$win_record")" \
+            --macos-arm-record "candidate/macos-arm64-$RUN_ID/native.json" \
+            --macos-intel-record "candidate/macos-x86_64-$RUN_ID/native.json" \
+            --windows-record "$win_record"
+          rm -rf dist/mcpb/root dist/mcpb/thin dist/mcpb/windows \
+            dist/mcpb/universal-unsigned "dist/mcpb/biomcp-$VERSION-unsigned.mcpb"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mcpb-${{ github.run_id }}
+          path: dist/mcpb/
+          if-no-files-found: error
+          retention-days: 30
+
+  mcpb-smoke:
+    needs: mcpb-artifact
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15-intel
+            binary: server/biomcp
+          - runner: macos-15
+            binary: server/biomcp
+          - runner: windows-2022
+            binary: server/biomcp.exe
+    runs-on: ${{ matrix.runner }}
+    environment: biomcp-release-signing
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: mcpb-${{ github.run_id }}
+          path: candidate/mcpb
+      - name: Install pinned verifier and smoke selected executable
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          bash release/install-mcpb-tool.sh
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          bundle="candidate/mcpb/biomcp-$VERSION.mcpb"
+          mcpb verify "$bundle"
+          mkdir unpacked
+          unzip -q "$bundle" -d unpacked
+          python release/smoke.py --bin "unpacked/${{ matrix.binary }}" \
+            --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
+          if [[ '${{ runner.os }}' == macOS ]]; then
+            xattr -w com.apple.quarantine '0081;candidate;BioMCP;' "$bundle"
+            spctl --assess --type execute --verbose=4 "unpacked/${{ matrix.binary }}"
+          else
+            signtool verify /pa /all /tw "unpacked/${{ matrix.binary }}"
+          fi
+
   seal-candidate:
-    needs: [candidate-gates, linux-artifacts, signed-artifacts, container-artifact, homebrew-smoke]
+    needs: [candidate-gates, linux-artifacts, signed-artifacts, container-artifact, homebrew-smoke, mcpb-smoke]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -344,7 +466,11 @@ jobs:
           python3 release/candidate.py register --manifest candidate-manifest.json \
             --record "candidate/homebrew-formula-${{ github.run_id }}/homebrew.json" \
             --artifact "candidate/homebrew-formula-${{ github.run_id }}/Formula/biomcp.rb"
-          python3 release/candidate.py finalize --manifest candidate-manifest.json --set delivery
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          python3 release/candidate.py register --manifest candidate-manifest.json \
+            --record "candidate/mcpb-${{ github.run_id }}/mcpb.json" \
+            --artifact "candidate/mcpb-${{ github.run_id }}/biomcp-$VERSION.mcpb"
+          python3 release/candidate.py finalize --manifest candidate-manifest.json --set final
           python3 release/candidate.py checksum --manifest candidate-manifest.json > candidate-manifest.json.sha256
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

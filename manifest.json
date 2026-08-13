@@ -3,8 +3,8 @@
   "name": "biomcp",
   "display_name": "BioMCP",
   "version": "0.8.25",
-  "description": "Read-only biomedical search via the biomcp-cli PyPI distribution and biomcp command.",
-  "long_description": "BioMCP packages the existing Rust CLI and MCP server as a local read-only bundle. Install biomcp-cli from PyPI; the unrelated biomcp PyPI package is not this project.",
+  "description": "Portable read-only biomedical search and retrieval for desktop MCP clients.",
+  "long_description": "BioMCP bundles verified macOS and Windows executables as a local read-only MCP server. The separate PyPI distribution remains biomcp-cli; the unrelated biomcp PyPI package is not this project.",
   "author": {
     "name": "GenomOncology",
     "url": "https://genomoncology.com"
@@ -39,6 +39,11 @@
         "ONCOKB_TOKEN": "${user_config.oncokb_token}",
         "DISGENET_API_KEY": "${user_config.disgenet_api_key}",
         "S2_API_KEY": "${user_config.s2_api_key}"
+      },
+      "platform_overrides": {
+        "win32": {
+          "command": "server/biomcp.exe"
+        }
       }
     }
   },

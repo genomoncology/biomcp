@@ -93,3 +93,16 @@ def test_homebrew_formula_is_generated_once_and_smoked_offline_on_both_macs() ->
     assert "spctl --assess --type execute" in text
     assert "homebrew-biomcp" not in text
     assert "HOMEBREW_TAP_TOKEN" not in text
+
+
+def test_mcpb_is_derived_signed_once_and_smoked_on_three_platform_runners() -> None:
+    text = _text()
+    assert "mcpb-artifact:" in text
+    assert "lipo -create" in text
+    assert "--target macos-universal" in text
+    assert "mcpb pack" in text
+    assert "release/mcpb_sign.py" in text
+    assert text.count("mcpb verify") >= 2
+    assert "mcpb-smoke:" in text
+    assert "signtool verify /pa /all /tw" in text
+    assert "macos-15-intel" in text and "windows-2022" in text
