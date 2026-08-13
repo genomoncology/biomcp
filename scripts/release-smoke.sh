@@ -222,7 +222,7 @@ smoke_serve_http() {
   SERVER_PID=""
 
   port=$(free_port)
-  "$BIN" serve-http --host 127.0.0.1 --port "$port" --allowed-hosts allowed.example >"$TMP_ROOT/serve-http-locked.out" 2>"$TMP_ROOT/serve-http-locked.err" &
+  "$BIN" serve-http --host 127.0.0.1 --port "$port" --allowed-hosts allowed.example,127.0.0.1 >"$TMP_ROOT/serve-http-locked.out" 2>"$TMP_ROOT/serve-http-locked.err" &
   SERVER_PID=$!
   if ! wait_for_http "http://127.0.0.1:$port/health"; then
     record_fail "240 serve-http allowed-hosts rejects foreign Host" "server did not become healthy"

@@ -186,12 +186,16 @@ body=/tmp/biomcp-mcp-host-restricted.body
 pid=$!
 trap 'kill "$pid" 2>/dev/null || true' EXIT
 for _ in $(seq 1 40); do
-  if curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null; then
+  if curl -fsS -H 'Host: example.com' "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS -H 'Host: example.com' "http://127.0.0.1:$port/health" >/dev/null; then
     break
   fi
   sleep 0.25
 done
-curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
+curl -fsS -H 'Host: example.com' "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS -H 'Host: example.com' "http://127.0.0.1:$port/health" >/dev/null
+for path in / /health /readyz; do
+  status=$(curl -sS -o "$body" -w '%{http_code}' -H 'Host: evil.com' "http://127.0.0.1:$port$path")
+  test "$status" = 403
+done
 status=$(curl -sS -o "$body" -w '%{http_code}' -X POST -H 'Host: evil.com' "http://127.0.0.1:$port/mcp")
 test "$status" = 403
 cat "$body" | mustmatch like 'Host header is not allowed'
