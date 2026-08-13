@@ -588,6 +588,29 @@ development and test infrastructure rather than release behavior. The two
 supervisor tickets retain their required order, 0896 then 0897. Expected
 backlog: **4 → 0**.
 
+Result on 2026-08-13: all four tickets were implemented and closed with
+separate completion records. Every remaining routine setup fixture and
+server-starting wrapper now uses the shared owner-death supervisor, including
+authenticated stale-process recovery and bounded cleanup. The final full-suite
+run exposed two integration details that the focused lifecycle tests could not:
+Markdown invokes some wrappers with relative repository paths, and the CLI test
+launcher previously forced distinct fixtures back onto one shared cache. The
+wrappers now canonicalize their roots, and fixture-owned cache directories are
+preserved through `tools/biomcp-ci`, making repeated and parallel runs
+deterministic without relaxing the five-second full-text performance contract.
+
+The tracked pre-commit hook now skips Rust compilation only for Markdown-only
+changes in approved documentation trees while retaining credential,
+forbidden-artifact, strict documentation, and specification-lint checks. Mixed
+or unknown changes still run rustfmt and Clippy. Rust maintenance now has exact
+large-file baselines, an explicit reviewed-growth command, and an owned
+exception registry for every dead-code allowance; duplicate PubMed request-plan
+test scaffolding was removed rather than allowlisted. Final validation passed:
+canonical lint, **2,925 Rust tests**, **620 Python contracts**, strict
+documentation, the complete offline executable specification corpus, the
+all-feature Clippy and release build, six AlphaGenome tests, and PNG, SVG, and
+terminal artifact smoke. Backlog: **4 → 0**.
+
 ### Shared rules for the remaining sessions
 
 - Do not use the paused SDLC queue for these focused sessions.
