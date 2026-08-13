@@ -24,6 +24,9 @@ biomcp search gwas -g TCF7L2 --p-value 5e-8 --limit 10
 
 Key flags: `-g/--gene` for a gene symbol, `--trait` for phenotype text, and
 `--p-value` for a finite significance threshold greater than 0 and at most 1.
+Exact provider mantissa/exponent values must also represent a probability in
+that range; BioMCP accepts exponents from -1,000,000 through 0, which preserves
+extreme underflowed results while rejecting malformed upstream values.
 Use `--limit` and `--offset` for bounded paging. Genomic interval search is not
 supported by this command.
 

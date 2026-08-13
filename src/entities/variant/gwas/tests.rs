@@ -72,6 +72,43 @@ fn underflowed_exact_p_values_remain_truthful_and_filterable() {
 }
 
 #[test]
+fn malformed_exact_p_value_parts_are_bounded_and_fall_back_truthfully() {
+    for exponent in [i32::MIN, -1_000_001, 1, i32::MAX] {
+        assert!(
+            super::super::GwasPValue::from_provider_parts(None, Some(1), Some(exponent)).is_none(),
+            "exponent {exponent} must be rejected"
+        );
+    }
+    assert!(super::super::GwasPValue::from_provider_parts(None, Some(2), Some(0)).is_none());
+
+    let fallback =
+        super::super::GwasPValue::from_provider_parts(Some(5e-8), Some(1), Some(i32::MAX))
+            .expect("valid numeric fallback");
+    assert_eq!(fallback.numeric, Some(5e-8));
+    assert_eq!(fallback.mantissa, None);
+    assert_eq!(fallback.exponent, None);
+    assert_eq!(fallback.scientific, "5e-8");
+}
+
+#[test]
+fn scientific_comparison_is_safe_for_extreme_in_memory_exponents() {
+    let smallest = super::super::GwasPValue {
+        scientific: format!("1e{}", i32::MIN),
+        mantissa: Some(1),
+        exponent: Some(i32::MIN),
+        numeric: None,
+    };
+    let largest = super::super::GwasPValue {
+        scientific: format!("1e{}", i32::MAX),
+        mantissa: Some(1),
+        exponent: Some(i32::MAX),
+        numeric: None,
+    };
+    assert!(smallest.total_cmp(&largest).is_lt());
+    assert!(smallest.is_at_most(1.0));
+}
+
+#[test]
 fn disjoint_gene_and_trait_rows_return_no_union_rows() {
     let rows = intersect_gwas_legs(
         vec![search_row("rs1", 0.1)],

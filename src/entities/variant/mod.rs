@@ -257,8 +257,10 @@ pub struct GwasPValue {
 }
 
 impl GwasPValue {
+    const MIN_EXACT_EXPONENT: i32 = -1_000_000;
+
     pub(crate) fn from_numeric(value: f64) -> Option<Self> {
-        if !value.is_finite() || value <= 0.0 {
+        if !value.is_finite() || value <= 0.0 || value > 1.0 {
             return None;
         }
         Some(Self {
@@ -275,13 +277,20 @@ impl GwasPValue {
         exponent: Option<i32>,
     ) -> Option<Self> {
         match (mantissa, exponent) {
-            (Some(mantissa), Some(exponent)) if mantissa > 0 => {
+            (Some(mantissa), Some(exponent))
+                if mantissa > 0
+                    && (Self::MIN_EXACT_EXPONENT..=0).contains(&exponent)
+                    && compare_positive_scientific(&format!("{mantissa}e{exponent}"), "1e0")
+                        .is_le() =>
+            {
                 let representable = (mantissa as f64) * 10_f64.powi(exponent);
                 Some(Self {
                     scientific: format!("{mantissa}e{exponent}"),
                     mantissa: Some(mantissa),
                     exponent: Some(exponent),
-                    numeric: (representable.is_finite() && representable > 0.0)
+                    numeric: (representable.is_finite()
+                        && representable > 0.0
+                        && representable <= 1.0)
                         .then_some(representable),
                 })
             }
@@ -317,8 +326,8 @@ fn compare_positive_scientific(left: &str, right: &str) -> std::cmp::Ordering {
     let Some((right_digits, right_exponent)) = scientific_parts(right) else {
         return left.cmp(right);
     };
-    let left_magnitude = left_exponent + i32::try_from(left_digits.len()).unwrap_or(i32::MAX);
-    let right_magnitude = right_exponent + i32::try_from(right_digits.len()).unwrap_or(i32::MAX);
+    let left_magnitude = left_exponent + i64::try_from(left_digits.len()).unwrap_or(i64::MAX);
+    let right_magnitude = right_exponent + i64::try_from(right_digits.len()).unwrap_or(i64::MAX);
     left_magnitude.cmp(&right_magnitude).then_with(|| {
         let width = left_digits.len().max(right_digits.len());
         let mut left_scaled = left_digits.clone();
@@ -329,9 +338,9 @@ fn compare_positive_scientific(left: &str, right: &str) -> std::cmp::Ordering {
     })
 }
 
-fn scientific_parts(value: &str) -> Option<(String, i32)> {
+fn scientific_parts(value: &str) -> Option<(String, i64)> {
     let (coefficient, exponent) = value.split_once('e')?;
-    let exponent = exponent.parse::<i32>().ok()?;
+    let exponent = exponent.parse::<i64>().ok()?;
     let decimal_places = coefficient
         .split_once('.')
         .map_or(0, |(_, fraction)| fraction.len());
@@ -347,8 +356,8 @@ fn scientific_parts(value: &str) -> Option<(String, i32)> {
     let trailing = digits.len() - digits.trim_end_matches('0').len();
     digits.truncate(digits.len() - trailing);
     let exponent = exponent
-        .saturating_sub(i32::try_from(decimal_places).ok()?)
-        .saturating_add(i32::try_from(trailing).ok()?);
+        .checked_sub(i64::try_from(decimal_places).ok()?)?
+        .checked_add(i64::try_from(trailing).ok()?)?;
     Some((digits, exponent))
 }
 
