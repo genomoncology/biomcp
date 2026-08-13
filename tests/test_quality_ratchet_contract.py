@@ -149,6 +149,40 @@ def _write_dead_code_fixture(
     subprocess.run(["git", "add", relative_path], cwd=root, check=True)
 
 
+def _write_source_size_inventory(root: Path, entries: list[dict[str, object]]) -> Path:
+    path = root / "tools/rust-source-size-inventory.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "biomcp-rust-source-size-v1",
+                "threshold": 1000,
+                "entries": entries,
+            }
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _write_dead_code_inventory(root: Path, entries: list[dict[str, object]]) -> Path:
+    path = root / "tools/dead-code-exceptions.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "biomcp-dead-code-exceptions-v1",
+                "generated_exclusions": [
+                    "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs"
+                ],
+                "entries": entries,
+            }
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _write_failing_spec(spec_dir: Path) -> Path:
     spec_dir.mkdir(parents=True, exist_ok=True)
     spec_path = spec_dir / "failing-spec.md"
@@ -501,6 +535,194 @@ def test_dead_code_allowance_audit_does_not_match_deny_group(tmp_path: Path) -> 
 
     assert payload["status"] == "pass", payload
     assert payload["allowances_checked"] == 0
+
+
+def test_rust_source_size_inventory_passes_for_repo() -> None:
+    ratchet = _load_ratchet_module()
+    payload = ratchet.check_rust_source_size(
+        REPO_ROOT, REPO_ROOT / "tools/rust-source-size-inventory.json"
+    )
+    assert payload["status"] == "pass", payload
+
+
+def test_rust_source_size_rejects_added_renamed_grown_and_symlinked_files(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    root = tmp_path / "source-size"
+    root.mkdir()
+    _init_git_fixture(root)
+    _write_tracked_file(root, "src/grown.rs", 1002)
+    _write_tracked_file(root, "src/added.rs", 1001)
+    external = tmp_path / "external.rs"
+    external.write_text("// outside\n" * 1001)
+    symlink = root / "src/symlink.rs"
+    symlink.symlink_to(external)
+    subprocess.run(["git", "add", "src/symlink.rs"], cwd=root, check=True)
+    inventory = _write_source_size_inventory(
+        root,
+        [
+            {
+                "path": "src/grown.rs",
+                "baseline_lines": 1001,
+                "floor_lines": 1001,
+                "authorized_increase": None,
+            },
+            {
+                "path": "src/renamed-from.rs",
+                "baseline_lines": 1001,
+                "floor_lines": 1001,
+                "authorized_increase": None,
+            },
+        ],
+    )
+    payload = ratchet.check_rust_source_size(root, inventory)
+    assert payload["status"] == "fail"
+    messages = "\n".join(row["message"] for row in payload["findings"])
+    assert "differs from its exact baseline" in messages
+    assert "without a pinned baseline" in messages
+    assert "entry is stale" in messages
+    assert "regular file below src" in messages
+
+
+def test_rust_source_size_accepts_a_lowered_exact_baseline(tmp_path: Path) -> None:
+    ratchet = _load_ratchet_module()
+    root = tmp_path / "lowered"
+    root.mkdir()
+    _init_git_fixture(root)
+    _write_tracked_file(root, "src/lib.rs", 1001)
+    inventory = _write_source_size_inventory(
+        root,
+        [
+            {
+                "path": "src/lib.rs",
+                "baseline_lines": 1001,
+                "floor_lines": 1001,
+                "authorized_increase": None,
+            }
+        ],
+    )
+    assert ratchet.check_rust_source_size(root, inventory)["status"] == "pass"
+
+
+def test_rust_source_size_rejects_an_unexplained_raised_baseline(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    root = tmp_path / "raised"
+    root.mkdir()
+    _init_git_fixture(root)
+    _write_tracked_file(root, "src/lib.rs", 1002)
+    inventory = _write_source_size_inventory(
+        root,
+        [
+            {
+                "path": "src/lib.rs",
+                "baseline_lines": 1002,
+                "floor_lines": 1001,
+                "authorized_increase": None,
+            }
+        ],
+    )
+    payload = ratchet.check_rust_source_size(root, inventory)
+    assert payload["status"] == "error"
+    assert "lacks exact authorization" in "\n".join(payload["errors"])
+
+
+def test_dead_code_inventory_covers_item_file_reason_stale_and_generated_paths(
+    tmp_path: Path,
+) -> None:
+    ratchet = _load_ratchet_module()
+    root = tmp_path / "dead-code-inventory"
+    root.mkdir()
+    _init_git_fixture(root)
+    source = root / "src/lib.rs"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "// dead-code reason: binary target owns this module\n"
+        "#![allow(dead_code)]\n"
+        "// dead-code reason: provider field is deserialized\n"
+        "#[allow(dead_code)]\n"
+        "fn helper() {}\n"
+    )
+    generated = root / "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs"
+    generated.parent.mkdir(parents=True)
+    generated.write_text("#![allow(dead_code)]\nfn generated() {}\n")
+    near_match = (
+        root / "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs.bak.rs"
+    )
+    near_match.write_text("#![allow(dead_code)]\nfn near_match() {}\n")
+    subprocess.run(["git", "add", "src"], cwd=root, check=True)
+    inventory = _write_dead_code_inventory(
+        root,
+        [
+            {
+                "path": "src/lib.rs",
+                "scope": "file",
+                "item": "fn helper() {}",
+                "occurrence": 1,
+                "owner": "build-contracts",
+                "reason": "binary target owns this module",
+                "removal_condition": "Remove when the library target owns the module.",
+            },
+            {
+                "path": "src/lib.rs",
+                "scope": "item",
+                "item": "fn helper() {}",
+                "occurrence": 1,
+                "owner": "source-contracts",
+                "reason": "provider field is deserialized",
+                "removal_condition": "Remove when the field is consumed.",
+            },
+            {
+                "path": "src/deleted.rs",
+                "scope": "item",
+                "item": "fn gone() {}",
+                "occurrence": 1,
+                "owner": "source-contracts",
+                "reason": "old reason",
+                "removal_condition": "Remove with the old field.",
+            },
+        ],
+    )
+    payload = ratchet.check_dead_code_allowances(root, exception_path=inventory)
+    assert payload["status"] == "fail"
+    messages = "\n".join(row["message"] for row in payload["findings"])
+    assert "not in the reviewed exception inventory" in messages
+    assert "exception is stale" in messages
+    assert all(
+        row["path"] != "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs"
+        for row in payload["findings"]
+    )
+
+
+def test_dead_code_inventory_rejects_reason_drift(tmp_path: Path) -> None:
+    ratchet = _load_ratchet_module()
+    root = tmp_path / "reason-drift"
+    _write_dead_code_fixture(
+        root,
+        "// dead-code reason: current reason\n#[allow(dead_code)]\nfn helper() {}\n",
+    )
+    inventory = _write_dead_code_inventory(
+        root,
+        [
+            {
+                "path": "src/lib.rs",
+                "scope": "item",
+                "item": "fn helper() {}",
+                "occurrence": 1,
+                "owner": "source-contracts",
+                "reason": "reviewed reason",
+                "removal_condition": "Remove when used.",
+            }
+        ],
+    )
+    payload = ratchet.check_dead_code_allowances(root, exception_path=inventory)
+    assert payload["status"] == "fail"
+    assert (
+        payload["findings"][0]["message"]
+        == "adjacent dead-code reason drifted from the reviewed exception"
+    )
 
 
 def test_full_rust_audits_share_one_source_snapshot(

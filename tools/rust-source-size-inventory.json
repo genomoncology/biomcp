@@ -1,0 +1,204 @@
+{
+  "schema": "biomcp-rust-source-size-v1",
+  "threshold": 1000,
+  "entries": [
+    {
+      "path": "src/cache/provider_capture.rs",
+      "baseline_lines": 1507,
+      "floor_lines": 1507,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/adverse_event.rs",
+      "baseline_lines": 2708,
+      "floor_lines": 2708,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/article/assets.rs",
+      "baseline_lines": 2570,
+      "floor_lines": 2570,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/article/fulltext.rs",
+      "baseline_lines": 1727,
+      "floor_lines": 1727,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/article/identity_verification.rs",
+      "baseline_lines": 1398,
+      "floor_lines": 1398,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/article/mod.rs",
+      "baseline_lines": 1314,
+      "floor_lines": 1314,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/article/variant_search.rs",
+      "baseline_lines": 4828,
+      "floor_lines": 4828,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/discover.rs",
+      "baseline_lines": 3694,
+      "floor_lines": 3694,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/drug/get.rs",
+      "baseline_lines": 1097,
+      "floor_lines": 1097,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "baseline_lines": 3851,
+      "floor_lines": 3851,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/gene/cspec.rs",
+      "baseline_lines": 1068,
+      "floor_lines": 1068,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/pathway.rs",
+      "baseline_lines": 1314,
+      "floor_lines": 1314,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/pgx.rs",
+      "baseline_lines": 1192,
+      "floor_lines": 1192,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/study.rs",
+      "baseline_lines": 1779,
+      "floor_lines": 1779,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/variant/erepo.rs",
+      "baseline_lines": 1026,
+      "floor_lines": 1026,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/variant/get.rs",
+      "baseline_lines": 1128,
+      "floor_lines": 1128,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/entities/variant/resolution.rs",
+      "baseline_lines": 1291,
+      "floor_lines": 1291,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/error.rs",
+      "baseline_lines": 1122,
+      "floor_lines": 1122,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
+      "baseline_lines": 1486,
+      "floor_lines": 1486,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/mcp/shell.rs",
+      "baseline_lines": 2059,
+      "floor_lines": 2059,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/render/chart.rs",
+      "baseline_lines": 2079,
+      "floor_lines": 2079,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/render/json.rs",
+      "baseline_lines": 1555,
+      "floor_lines": 1555,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/render/markdown/article/tests.rs",
+      "baseline_lines": 1207,
+      "floor_lines": 1207,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/render/markdown/related.rs",
+      "baseline_lines": 1123,
+      "floor_lines": 1123,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/render/provenance.rs",
+      "baseline_lines": 1900,
+      "floor_lines": 1900,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/sources/cbioportal_study.rs",
+      "baseline_lines": 3224,
+      "floor_lines": 3224,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/sources/ema.rs",
+      "baseline_lines": 1059,
+      "floor_lines": 1059,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/sources/mod.rs",
+      "baseline_lines": 1852,
+      "floor_lines": 1852,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/sources/myvariant.rs",
+      "baseline_lines": 1047,
+      "floor_lines": 1047,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/sources/opentargets.rs",
+      "baseline_lines": 2088,
+      "floor_lines": 2088,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/sources/who_pq.rs",
+      "baseline_lines": 1117,
+      "floor_lines": 1117,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/transform/disease.rs",
+      "baseline_lines": 1050,
+      "floor_lines": 1050,
+      "authorized_increase": null
+    },
+    {
+      "path": "src/transform/variant.rs",
+      "baseline_lines": 1335,
+      "floor_lines": 1335,
+      "authorized_increase": null
+    }
+  ]
+}

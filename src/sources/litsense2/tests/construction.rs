@@ -63,16 +63,9 @@ fn legacy_request_plan_keeps_article_contract_shape() {
 #[test]
 fn pubmed_hydration_contract_still_builds_esummary_plan() {
     let ids = vec!["22663011".to_string()];
-    let hydration: crate::sources::pubmed::PubMedESummaryRequestPlan =
-        crate::sources::pubmed::PubMedClient::new()
-            .expect("pubmed client")
-            .esummary_request_plan(&ids)
-            .expect("hydration plan")
-            .expect("PubMedESummaryRequestPlan");
-    assert_eq!(hydration.path, "/esummary.fcgi");
-    assert!(
-        hydration
-            .query_params
-            .contains(&("id", "22663011".to_string()))
-    );
+    let hydration = crate::sources::pubmed::PubMedClient::esummary_plan(&ids, None)
+        .expect("hydration plan")
+        .expect("nonempty PubMed RequestPlan");
+    assert_eq!(hydration.path, "esummary.fcgi");
+    assert_eq!(hydration.query_value("id"), Some("22663011"));
 }

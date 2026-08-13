@@ -1,6 +1,3 @@
-// dead-code reason: PubMed keeps fixture-only request planners beside live citation execution
-#![allow(dead_code)]
-
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 use std::collections::HashSet;
@@ -31,42 +28,6 @@ pub(crate) struct PubMedESearchParams {
     pub retmax: usize,
     pub date_from: Option<String>,
     pub date_to: Option<String>,
-}
-
-// dead-code reason: pubmed::PubMedESearchRequestPlan preserves the provider shape used by source contract fixtures
-#[allow(dead_code)]
-pub struct PubMedESearchRequestPlan {
-    pub method: &'static str,
-    pub path: &'static str,
-    pub query_params: Vec<(&'static str, String)>,
-    pub cache_mode: &'static str,
-    pub status_expectation: &'static str,
-    pub content_type_expectation: &'static str,
-    pub auth_mode: &'static str,
-}
-
-// dead-code reason: pubmed::PubMedESummaryRequestPlan preserves the provider shape used by source contract fixtures
-#[allow(dead_code)]
-pub struct PubMedESummaryRequestPlan {
-    pub method: &'static str,
-    pub path: &'static str,
-    pub query_params: Vec<(&'static str, String)>,
-    pub cache_mode: &'static str,
-    pub status_expectation: &'static str,
-    pub content_type_expectation: &'static str,
-    pub auth_mode: &'static str,
-}
-
-// dead-code reason: pubmed::PubMedCitationRequestPlan preserves the provider shape used by source contract fixtures
-#[allow(dead_code)]
-pub struct PubMedCitationRequestPlan {
-    pub method: &'static str,
-    pub path: &'static str,
-    pub query_params: Vec<(&'static str, String)>,
-    pub cache_mode: &'static str,
-    pub status_expectation: &'static str,
-    pub content_type_expectation: &'static str,
-    pub auth_mode: &'static str,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -232,37 +193,6 @@ impl PubMedClient {
         Ok(plan)
     }
 
-    // dead-code reason: pubmed::citation_request_plan preserves the provider shape used by source contract fixtures
-    #[allow(dead_code)]
-    pub fn citation_request_plan(
-        &self,
-        pmid: &str,
-    ) -> Result<PubMedCitationRequestPlan, BioMcpError> {
-        let plan = Self::citation_plan(pmid, self.api_key.as_deref())?;
-        Ok(PubMedCitationRequestPlan {
-            method: "GET",
-            path: "/efetch.fcgi",
-            query_params: plan
-                .query
-                .into_iter()
-                .filter(|(key, _)| key != "api_key")
-                .map(|(key, value)| (pubmed_query_key(&key), value))
-                .collect(),
-            cache_mode: if self.api_key.is_some() {
-                "auth"
-            } else {
-                "default"
-            },
-            status_expectation: "non-2xx => Api",
-            content_type_expectation: "xml",
-            auth_mode: if self.api_key.is_some() {
-                "authenticated"
-            } else {
-                "keyless"
-            },
-        })
-    }
-
     pub(crate) async fn citation(
         &self,
         pmid: &str,
@@ -395,37 +325,6 @@ impl PubMedClient {
         Ok(plan)
     }
 
-    // dead-code reason: pubmed::esearch_request_plan preserves the provider shape used by source contract fixtures
-    #[allow(dead_code)]
-    pub fn esearch_request_plan(
-        &self,
-        params: &PubMedESearchParams,
-    ) -> Result<PubMedESearchRequestPlan, BioMcpError> {
-        let plan = Self::esearch_plan(params, self.api_key.as_deref())?;
-        Ok(PubMedESearchRequestPlan {
-            method: "GET",
-            path: "/esearch.fcgi",
-            query_params: plan
-                .query
-                .into_iter()
-                .filter(|(key, _)| key != "api_key")
-                .map(|(key, value)| (pubmed_query_key(&key), value))
-                .collect(),
-            cache_mode: if self.api_key.is_some() {
-                "auth"
-            } else {
-                "default"
-            },
-            status_expectation: "non-2xx => Api",
-            content_type_expectation: "json",
-            auth_mode: if self.api_key.is_some() {
-                "authenticated"
-            } else {
-                "keyless"
-            },
-        })
-    }
-
     pub async fn esearch(
         &self,
         params: &PubMedESearchParams,
@@ -496,40 +395,6 @@ impl PubMedClient {
             plan = plan.query("api_key", key);
         }
         Ok(Some(plan))
-    }
-
-    // dead-code reason: pubmed::esummary_request_plan preserves the provider shape used by source contract fixtures
-    #[allow(dead_code)]
-    pub fn esummary_request_plan(
-        &self,
-        ids: &[String],
-    ) -> Result<Option<PubMedESummaryRequestPlan>, BioMcpError> {
-        let Some(plan) = Self::esummary_plan(ids, self.api_key.as_deref())? else {
-            return Ok(None);
-        };
-
-        Ok(Some(PubMedESummaryRequestPlan {
-            method: "GET",
-            path: "/esummary.fcgi",
-            query_params: plan
-                .query
-                .into_iter()
-                .filter(|(key, _)| key != "api_key")
-                .map(|(key, value)| (pubmed_query_key(&key), value))
-                .collect(),
-            cache_mode: if self.api_key.is_some() {
-                "auth"
-            } else {
-                "default"
-            },
-            status_expectation: "non-2xx => Api",
-            content_type_expectation: "json",
-            auth_mode: if self.api_key.is_some() {
-                "authenticated"
-            } else {
-                "keyless"
-            },
-        }))
     }
 
     pub async fn esummary(&self, ids: &[String]) -> Result<Vec<ESummaryEntry>, BioMcpError> {
@@ -863,24 +728,6 @@ fn parse_citation_xml(pmid: &str, xml: &str) -> Result<PubMedCitation, PubMedCit
 
 fn clean_api_key(api_key: Option<&str>) -> Option<&str> {
     api_key.map(str::trim).filter(|key| !key.is_empty())
-}
-
-// dead-code reason: pubmed::pubmed_query_key preserves the provider shape used by source contract fixtures
-#[allow(dead_code)]
-fn pubmed_query_key(key: &str) -> &'static str {
-    match key {
-        "db" => "db",
-        "retmode" => "retmode",
-        "term" => "term",
-        "retstart" => "retstart",
-        "retmax" => "retmax",
-        "datetype" => "datetype",
-        "mindate" => "mindate",
-        "maxdate" => "maxdate",
-        "id" => "id",
-        "api_key" => "api_key",
-        _ => unreachable!("unexpected PubMed query key: {key}"),
-    }
 }
 
 #[cfg(test)]

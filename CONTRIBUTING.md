@@ -103,6 +103,22 @@ The helper allows only `.march/code-review-log.md` under `.march/`, and it
 permits staged deletions so cleanup commits can remove old March artifacts from
 tracking.
 
+### Rust maintenance ratchets
+
+Canonical lint pins every tracked Rust source file above 1,000 physical lines
+in `tools/rust-source-size-inventory.json`. Files below the threshold may grow
+only to 1,000 lines, and new files may not begin above it. When a large file
+shrinks, run `tools/update-rust-source-size-inventory` to lower its baseline.
+The command refuses growth unless one path is named with `--authorize` plus a
+ticket, an exact reason, and a removal condition. Prefer a local extraction to
+raising a baseline.
+
+Every `allow(dead_code)` is also checked against
+`tools/dead-code-exceptions.json`. Keep the adjacent `dead-code reason:` comment
+and the inventory's owner and removal condition precise. Add or broaden an
+exception only when a ticket explicitly requires it; generated bindings are
+excluded solely at their exact generated path.
+
 ### Timing Method
 
 Measured on beelink on 2026-04-23 with `/usr/bin/time -p` using warm-cache

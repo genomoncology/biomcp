@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Lower Rust size baselines or record one explicitly authorized increase."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+INVENTORY = ROOT / "tools/rust-source-size-inventory.json"
+THRESHOLD = 1000
+
+
+def tracked_sources() -> dict[str, int]:
+    output = subprocess.run(
+        ["git", "ls-files", "--", "src/**/*.rs", "src/*.rs"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    return {
+        relative: len((ROOT / relative).read_text(encoding="utf-8").splitlines())
+        for relative in sorted(set(output.splitlines()))
+        if relative
+        and len((ROOT / relative).read_text(encoding="utf-8").splitlines()) > THRESHOLD
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--authorize")
+    parser.add_argument("--ticket")
+    parser.add_argument("--reason")
+    parser.add_argument("--removal-condition")
+    parser.add_argument("--bootstrap", action="store_true", help=argparse.SUPPRESS)
+    args = parser.parse_args()
+    authorization_fields = (args.ticket, args.reason, args.removal_condition)
+    if args.authorize and not all(authorization_fields):
+        parser.error("--authorize requires --ticket, --reason, and --removal-condition")
+    if not args.authorize and any(authorization_fields):
+        parser.error("authorization metadata requires --authorize PATH")
+
+    old_entries: dict[str, dict[str, object]] = {}
+    if INVENTORY.exists():
+        payload = json.loads(INVENTORY.read_text(encoding="utf-8"))
+        old_entries = {entry["path"]: entry for entry in payload["entries"]}
+
+    entries: list[dict[str, object]] = []
+    for path, lines in tracked_sources().items():
+        old = old_entries.get(path)
+        if old is None:
+            if not args.bootstrap:
+                raise SystemExit(
+                    f"new over-threshold source requires deliberate extraction: {path}"
+                )
+            entries.append(
+                {
+                    "path": path,
+                    "baseline_lines": lines,
+                    "floor_lines": lines,
+                    "authorized_increase": None,
+                }
+            )
+            continue
+        baseline = int(old["baseline_lines"])
+        floor = int(old["floor_lines"])
+        if lines > baseline:
+            if args.authorize != path:
+                raise SystemExit(
+                    f"growth requires --authorize {path} and complete ticket metadata"
+                )
+            entries.append(
+                {
+                    "path": path,
+                    "baseline_lines": lines,
+                    "floor_lines": floor,
+                    "authorized_increase": {
+                        "ticket": args.ticket,
+                        "delta": lines - floor,
+                        "reason": args.reason,
+                        "removal_condition": args.removal_condition,
+                    },
+                }
+            )
+        elif lines < baseline:
+            entries.append(
+                {
+                    "path": path,
+                    "baseline_lines": lines,
+                    "floor_lines": lines,
+                    "authorized_increase": None,
+                }
+            )
+        else:
+            entries.append(old)
+
+    INVENTORY.write_text(
+        json.dumps(
+            {
+                "schema": "biomcp-rust-source-size-v1",
+                "threshold": THRESHOLD,
+                "entries": entries,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

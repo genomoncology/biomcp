@@ -5,14 +5,6 @@ use super::super::*;
 use crate::error::BioMcpError;
 use crate::sources::HttpMethod;
 
-fn client_with_api_key(api_key: Option<&str>) -> PubMedClient {
-    PubMedClient {
-        client: crate::sources::shared_client().expect("shared client"),
-        base: std::borrow::Cow::Borrowed("http://127.0.0.1"),
-        api_key: api_key.map(str::to_string),
-    }
-}
-
 fn params(term: &str) -> PubMedESearchParams {
     PubMedESearchParams {
         term: term.into(),
@@ -33,30 +25,6 @@ fn citation_plan_sets_required_query_params_and_api_key() {
     assert_eq!(plan.query_value("retmode"), Some("xml"));
     assert_eq!(plan.query_value("id"), Some("22663011"));
     assert_eq!(plan.query_value("api_key"), Some("test-key"));
-}
-
-#[test]
-fn citation_diagnostic_plan_redacts_key_and_reports_cache_mode() {
-    let keyed = client_with_api_key(Some("super-secret-ncbi"));
-    let plan = keyed
-        .citation_request_plan("22663011")
-        .expect("citation plan");
-    assert_eq!(plan.path, "/efetch.fcgi");
-    assert_eq!(plan.content_type_expectation, "xml");
-    assert_eq!(plan.cache_mode, "auth");
-    assert_eq!(plan.auth_mode, "authenticated");
-    assert!(
-        !plan
-            .query_params
-            .iter()
-            .any(|(_, value)| value.contains("super-secret"))
-    );
-
-    let keyless = client_with_api_key(None)
-        .citation_request_plan("22663011")
-        .expect("keyless citation plan");
-    assert_eq!(keyless.cache_mode, "default");
-    assert_eq!(keyless.auth_mode, "keyless");
 }
 
 #[test]
@@ -142,56 +110,4 @@ fn esummary_plan_handles_empty_and_blank_ids() {
         PubMedClient::esummary_plan(&ids, None),
         Err(BioMcpError::InvalidArgument(_))
     ));
-}
-
-#[test]
-fn legacy_request_plans_keep_article_contract_shape() {
-    let client = client_with_api_key(Some("super-secret-ncbi"));
-
-    let esearch: PubMedESearchRequestPlan = client
-        .esearch_request_plan(&PubMedESearchParams {
-            term: " BRAF melanoma ".into(),
-            retstart: 0,
-            retmax: 20,
-            date_from: Some("2020-01-01".into()),
-            date_to: None,
-        })
-        .expect("PubMedESearchRequestPlan");
-    assert_eq!(esearch.method, "GET");
-    assert_eq!(esearch.path, "/esearch.fcgi");
-    assert!(
-        esearch
-            .query_params
-            .contains(&("term", "BRAF melanoma".to_string()))
-    );
-    assert!(esearch.query_params.contains(&("retmax", "20".to_string())));
-    assert_eq!(esearch.auth_mode, "authenticated");
-    assert!(
-        !esearch
-            .query_params
-            .iter()
-            .any(|(_, value)| value.contains("super-secret"))
-    );
-
-    let ids = vec!["123".to_string(), "456".to_string()];
-    let esummary: PubMedESummaryRequestPlan = client
-        .esummary_request_plan(&ids)
-        .expect("plan")
-        .expect("PubMedESummaryRequestPlan");
-    assert_eq!(esummary.method, "GET");
-    assert_eq!(esummary.path, "/esummary.fcgi");
-    assert!(
-        esummary
-            .query_params
-            .contains(&("id", "123,456".to_string()))
-    );
-    assert_eq!(esummary.content_type_expectation, "json");
-
-    let keyless = client_with_api_key(None);
-    let keyless_plan = keyless
-        .esummary_request_plan(&ids)
-        .expect("keyless plan")
-        .expect("summary plan");
-    assert_eq!(keyless_plan.cache_mode, "default");
-    assert_eq!(keyless_plan.auth_mode, "keyless");
 }

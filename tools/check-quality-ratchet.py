@@ -19,6 +19,9 @@ CAPTURED_PRINTF_MUSTMATCH_RE = re.compile(
 )
 MUSTMATCH_LINT_SKIP = "<!-- mustmatch-lint: skip -->"
 CLI_LINE_CAP = 700
+RUST_SOURCE_LINE_THRESHOLD = 1000
+RUST_SOURCE_SIZE_INVENTORY = "tools/rust-source-size-inventory.json"
+DEAD_CODE_EXCEPTION_INVENTORY = "tools/dead-code-exceptions.json"
 SECTION_OUTCOME_POLICY_LINE_CAP = 700
 SECTION_OUTCOME_POLICY_MODULES = ["src/entities/section_outcome.rs"]
 CLI_LINE_CAP_TICKET_RE = re.compile(r"^\d+(?:[-_][a-z0-9][a-z0-9-]*)?$")
@@ -54,6 +57,7 @@ AUDIT_NAMES = [
     "mcp_allowlist",
     "source_registry",
     "dead_code_allowances",
+    "rust_source_size",
     "cli_line_cap",
     "section_outcome_policy_line_cap",
     "experiment_results",
@@ -104,6 +108,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sources-mod", type=Path, required=True)
     parser.add_argument("--health-file", type=Path, required=True)
     parser.add_argument("--cli-line-cap-allowlist", type=Path)
+    parser.add_argument("--rust-source-size-inventory", type=Path)
+    parser.add_argument("--dead-code-exception-inventory", type=Path)
     parser.add_argument(
         "--audit",
         action="append",
@@ -179,6 +185,11 @@ def tracked_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
     if proc.returncode != 0:
         return [], [proc.stderr.strip() or "git ls-files failed"]
     return sorted({line for line in proc.stdout.splitlines() if line}), []
+
+
+def tracked_src_rust_files(root_dir: Path) -> tuple[list[str], list[str]]:
+    files, errors = tracked_rust_files(root_dir)
+    return [path for path in files if path.startswith("src/")], errors
 
 
 class RustSourceSnapshot:
@@ -321,45 +332,283 @@ def _allows_dead_code(attribute: str) -> bool:
     return False
 
 
-def check_dead_code_allowances(
-    root_dir: Path, snapshot: RustSourceSnapshot | None = None
-) -> dict[str, object]:
-    snapshot = snapshot or load_rust_source_snapshot(root_dir)
-    if snapshot.errors:
-        return {"status": "error", "findings": [], "errors": snapshot.errors}
+def check_rust_source_size(root_dir: Path, inventory_path: Path) -> dict[str, object]:
+    try:
+        inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return {"status": "error", "findings": [], "errors": [str(error)]}
+    if (
+        inventory.get("schema") != "biomcp-rust-source-size-v1"
+        or inventory.get("threshold") != RUST_SOURCE_LINE_THRESHOLD
+        or not isinstance(inventory.get("entries"), list)
+    ):
+        return {
+            "status": "error",
+            "findings": [],
+            "errors": ["invalid Rust source-size inventory"],
+        }
 
+    entries: dict[str, dict[str, object]] = {}
+    errors: list[str] = []
+    for entry in inventory["entries"]:
+        if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
+            errors.append("every source-size entry needs a path")
+            continue
+        path = entry["path"]
+        if path in entries:
+            errors.append(f"duplicate source-size entry: {path}")
+        if not path.startswith("src/") or not path.endswith(".rs"):
+            errors.append(f"invalid source-size path: {path}")
+        baseline = entry.get("baseline_lines")
+        floor = entry.get("floor_lines")
+        if not isinstance(baseline, int) or baseline <= RUST_SOURCE_LINE_THRESHOLD:
+            errors.append(f"invalid source-size baseline: {path}")
+        if not isinstance(floor, int) or floor > baseline:
+            errors.append(f"invalid source-size floor: {path}")
+        authorization = entry.get("authorized_increase")
+        if baseline != floor:
+            required = {"ticket", "delta", "reason", "removal_condition"}
+            if not isinstance(authorization, dict) or not required.issubset(
+                authorization
+            ):
+                errors.append(f"raised baseline lacks exact authorization: {path}")
+            elif authorization.get("delta") != baseline - floor:
+                errors.append(f"authorized source-size delta is not exact: {path}")
+        elif authorization is not None:
+            errors.append(f"unchanged baseline must not carry authorization: {path}")
+        entries[path] = entry
+
+    tracked, git_errors = tracked_src_rust_files(root_dir)
+    errors.extend(git_errors)
     findings: list[dict[str, object]] = []
-    spans_checked = 0
-    reason_re = re.compile(r"^\s*//.*dead-code reason:\s*\S")
+    seen: set[str] = set()
+    canonical_src = (root_dir / "src").resolve()
+    for relative_path in tracked:
+        path = root_dir / relative_path
+        try:
+            if (
+                path.is_symlink()
+                or not path.is_file()
+                or not path.resolve().is_relative_to(canonical_src)
+            ):
+                findings.append(
+                    {
+                        "path": relative_path,
+                        "message": "tracked Rust source must be a regular file below src",
+                    }
+                )
+                continue
+            lines = len(path.read_text(encoding="utf-8").splitlines())
+        except (OSError, UnicodeError) as error:
+            findings.append(
+                {"path": relative_path, "message": f"cannot read Rust source: {error}"}
+            )
+            continue
+        entry = entries.get(relative_path)
+        if lines > RUST_SOURCE_LINE_THRESHOLD:
+            if entry is None:
+                findings.append(
+                    {
+                        "path": relative_path,
+                        "lines": lines,
+                        "message": "Rust source exceeds 1000 lines without a pinned baseline",
+                    }
+                )
+            elif lines != entry.get("baseline_lines"):
+                findings.append(
+                    {
+                        "path": relative_path,
+                        "lines": lines,
+                        "baseline_lines": entry.get("baseline_lines"),
+                        "message": "Rust source line count differs from its exact baseline",
+                    }
+                )
+            seen.add(relative_path)
+        elif entry is not None:
+            findings.append(
+                {
+                    "path": relative_path,
+                    "lines": lines,
+                    "message": "lowered source no longer needs an over-threshold entry; regenerate the inventory",
+                }
+            )
+            seen.add(relative_path)
+    for stale in sorted(set(entries) - seen):
+        if stale not in tracked:
+            findings.append(
+                {"path": stale, "message": "source-size inventory entry is stale"}
+            )
+
+    return {
+        "status": "error" if errors else ("fail" if findings else "pass"),
+        "threshold": RUST_SOURCE_LINE_THRESHOLD,
+        "files_checked": len(tracked),
+        "finding_count": len(findings),
+        "findings": findings,
+        "errors": errors,
+    }
+
+
+def _dead_code_allowance_rows(snapshot: RustSourceSnapshot) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    occurrences: dict[tuple[str, str, str], int] = {}
+    reason_re = re.compile(r"^\s*//\s*dead-code reason:\s*(\S.*)$")
     for relative_path, source in snapshot.sources.items():
+        if relative_path == "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs":
+            continue
         lines = source.splitlines()
         for opening, attribute in _rust_attribute_spans(
             source, masked_source=snapshot.masked_sources[relative_path]
         ):
             if not _allows_dead_code(attribute):
                 continue
-            spans_checked += 1
             opening_line = source.count("\n", 0, opening)
-            previous = lines[opening_line - 1] if opening_line else ""
-            if not reason_re.match(previous):
+            end_line = opening_line + attribute.count("\n") + 1
+            item = next(
+                (
+                    line.strip()
+                    for line in lines[end_line:]
+                    if line.strip() and not line.lstrip().startswith(("#", "//"))
+                ),
+                "<end-of-file>",
+            )
+            scope = (
+                "file"
+                if attribute.startswith("#![")
+                else (
+                    "module"
+                    if re.match(r"(?:pub(?:\([^)]*\))?\s+)?mod\s+", item)
+                    else "item"
+                )
+            )
+            reason_match = reason_re.match(
+                lines[opening_line - 1] if opening_line else ""
+            )
+            key = (relative_path, scope, item)
+            occurrence = occurrences.get(key, 0) + 1
+            occurrences[key] = occurrence
+            rows.append(
+                {
+                    "path": relative_path,
+                    "line": opening_line + 1,
+                    "scope": scope,
+                    "item": item,
+                    "occurrence": occurrence,
+                    "reason": reason_match.group(1) if reason_match else None,
+                }
+            )
+    return rows
+
+
+def check_dead_code_allowances(
+    root_dir: Path,
+    snapshot: RustSourceSnapshot | None = None,
+    exception_path: Path | None = None,
+) -> dict[str, object]:
+    snapshot = snapshot or load_rust_source_snapshot(root_dir)
+    if snapshot.errors:
+        return {"status": "error", "findings": [], "errors": snapshot.errors}
+
+    rows = _dead_code_allowance_rows(snapshot)
+    findings: list[dict[str, object]] = []
+    if exception_path is None:
+        for row in rows:
+            if row["reason"] is None:
                 findings.append(
                     {
-                        "path": relative_path,
-                        "line": opening_line + 1,
-                        "message": (
-                            "dead-code allowance requires an adjacent concrete "
-                            "`dead-code reason:` comment"
-                        ),
+                        "path": row["path"],
+                        "line": row["line"],
+                        "message": "dead-code allowance requires an adjacent concrete `dead-code reason:` comment",
                     }
                 )
+        return {
+            "status": "fail" if findings else "pass",
+            "files_checked": len(snapshot.sources),
+            "allowances_checked": len(rows),
+            "finding_count": len(findings),
+            "findings": findings,
+            "errors": [],
+        }
+
+    try:
+        payload = json.loads(exception_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return {"status": "error", "findings": [], "errors": [str(error)]}
+    if (
+        payload.get("schema") != "biomcp-dead-code-exceptions-v1"
+        or payload.get("generated_exclusions")
+        != ["src/generated/google.gdm.gdmscience.alphagenome.v1main.rs"]
+        or not isinstance(payload.get("entries"), list)
+    ):
+        return {
+            "status": "error",
+            "findings": [],
+            "errors": ["invalid dead-code exception inventory"],
+        }
+    required = {
+        "path",
+        "scope",
+        "item",
+        "occurrence",
+        "owner",
+        "reason",
+        "removal_condition",
+    }
+    exceptions: dict[tuple[object, ...], dict[str, object]] = {}
+    errors: list[str] = []
+    for entry in payload["entries"]:
+        if not isinstance(entry, dict) or not required.issubset(entry):
+            errors.append(
+                "every dead-code exception needs path, scope, item, occurrence, owner, reason, and removal_condition"
+            )
+            continue
+        key = (entry["path"], entry["scope"], entry["item"], entry["occurrence"])
+        if key in exceptions:
+            errors.append(f"duplicate dead-code exception: {key}")
+        if not all(
+            isinstance(entry[field], str) and entry[field].strip()
+            for field in ("owner", "reason", "removal_condition")
+        ):
+            errors.append(f"dead-code exception metadata must be concrete: {key}")
+        exceptions[key] = entry
+
+    seen: set[tuple[object, ...]] = set()
+    for row in rows:
+        key = (row["path"], row["scope"], row["item"], row["occurrence"])
+        entry = exceptions.get(key)
+        if entry is None:
+            findings.append(
+                {
+                    **row,
+                    "message": "dead-code allowance is not in the reviewed exception inventory",
+                }
+            )
+            continue
+        seen.add(key)
+        if row["reason"] != entry["reason"]:
+            findings.append(
+                {
+                    **row,
+                    "message": "adjacent dead-code reason drifted from the reviewed exception",
+                }
+            )
+    for key in sorted(set(exceptions) - seen):
+        findings.append(
+            {
+                "path": key[0],
+                "scope": key[1],
+                "item": key[2],
+                "message": "dead-code exception is stale",
+            }
+        )
 
     return {
-        "status": "fail" if findings else "pass",
+        "status": "error" if errors else ("fail" if findings else "pass"),
         "files_checked": len(snapshot.sources),
-        "allowances_checked": spans_checked,
+        "allowances_checked": len(rows),
         "finding_count": len(findings),
         "findings": findings,
-        "errors": [],
+        "errors": errors,
     }
 
 
@@ -437,15 +686,22 @@ def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
         try:
             text = _rust_production_text(path.read_text(encoding="utf-8"))
         except OSError as exc:
-            findings.append({"path": relative_path, "message": f"required output boundary is unreadable: {exc}"})
+            findings.append(
+                {
+                    "path": relative_path,
+                    "message": f"required output boundary is unreadable: {exc}",
+                }
+            )
             continue
         for marker in markers:
             if marker not in text:
-                findings.append({
-                    "path": relative_path,
-                    "marker": marker,
-                    "message": "required terminal-output sanitization seam is missing",
-                })
+                findings.append(
+                    {
+                        "path": relative_path,
+                        "marker": marker,
+                        "message": "required terminal-output sanitization seam is missing",
+                    }
+                )
 
     src_dir = root_dir / "src"
     for path in sorted(src_dir.rglob("*.rs")):
@@ -455,11 +711,13 @@ def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
             continue
         production_text = _rust_production_text(path.read_text(encoding="utf-8"))
         for match in re.finditer(r"\bto_string_pretty\b", production_text):
-            findings.append({
-                "path": relative_path,
-                "line": production_text.count("\n", 0, match.start()) + 1,
-                "message": "production pretty JSON must route through src/render/json.rs",
-            })
+            findings.append(
+                {
+                    "path": relative_path,
+                    "line": production_text.count("\n", 0, match.start()) + 1,
+                    "message": "production pretty JSON must route through src/render/json.rs",
+                }
+            )
 
     return {
         "name": "terminal_output_boundaries",
@@ -518,10 +776,9 @@ def load_cli_line_cap_allowlist(
             )
         if not isinstance(date, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
             errors.append(f"{prefix}.date must be YYYY-MM-DD")
-        if (
-            not isinstance(follow_up_ticket, str)
-            or not CLI_LINE_CAP_TICKET_RE.fullmatch(follow_up_ticket)
-        ):
+        if not isinstance(
+            follow_up_ticket, str
+        ) or not CLI_LINE_CAP_TICKET_RE.fullmatch(follow_up_ticket):
             errors.append(
                 f"{prefix}.follow_up_ticket must be a ticket number or ticket slug"
             )
@@ -633,22 +890,28 @@ def check_cli_line_cap(root_dir: Path, allowlist_path: Path) -> dict[str, object
     }
 
 
-
-
-def load_cli_surface_exceptions(root_dir: Path) -> tuple[list[dict[str, object]], list[str]]:
+def load_cli_surface_exceptions(
+    root_dir: Path,
+) -> tuple[list[dict[str, object]], list[str]]:
     registry_path = root_dir / CLI_SURFACE_EXCEPTION_REGISTRY
     try:
         payload = json.loads(registry_path.read_text(encoding="utf-8"))
     except OSError as exc:
-        return [], [f"failed to read exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"]
+        return [], [
+            f"failed to read exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"
+        ]
     except json.JSONDecodeError as exc:
-        return [], [f"invalid exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"]
+        return [], [
+            f"invalid exception registry {CLI_SURFACE_EXCEPTION_REGISTRY}: {exc}"
+        ]
 
     errors: list[str] = []
     if not isinstance(payload, dict):
         return [], ["exception registry root must be a JSON object"]
     if payload.get("schema") != "biomcp-cli-surface-contract-exceptions-v1":
-        errors.append("exception registry schema must be biomcp-cli-surface-contract-exceptions-v1")
+        errors.append(
+            "exception registry schema must be biomcp-cli-surface-contract-exceptions-v1"
+        )
     entries = payload.get("entries")
     if not isinstance(entries, list):
         return [], errors + ["exception registry entries must be a list"]
@@ -711,7 +974,9 @@ def tracked_static_text_paths(root_dir: Path) -> tuple[list[str], list[str]]:
     return [path for path in paths if (root_dir / path).is_file()], []
 
 
-def read_existing_text(root_dir: Path, paths: list[str]) -> tuple[dict[str, str], list[str]]:
+def read_existing_text(
+    root_dir: Path, paths: list[str]
+) -> tuple[dict[str, str], list[str]]:
     texts: dict[str, str] = {}
     errors: list[str] = []
     for relative in paths:
@@ -727,7 +992,9 @@ def documented_token_corpus(texts: dict[str, str]) -> str:
     return "\n".join(texts.values()).lower()
 
 
-def check_public_flags_and_value_aliases_documented(root_dir: Path, texts: dict[str, str]) -> dict[str, object]:
+def check_public_flags_and_value_aliases_documented(
+    root_dir: Path, texts: dict[str, str]
+) -> dict[str, object]:
     rust_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted((root_dir / "src" / "cli").glob("**/*.rs"))
@@ -743,7 +1010,9 @@ def check_public_flags_and_value_aliases_documented(root_dir: Path, texts: dict[
         }
         | {
             match.group(1)
-            for match in re.finditer(r'#\[value\([^\]]*alias\s*=\s*"([^"]+)"', rust_text)
+            for match in re.finditer(
+                r'#\[value\([^\]]*alias\s*=\s*"([^"]+)"', rust_text
+            )
         }
     )
     corpus = documented_token_corpus(texts)
@@ -764,8 +1033,12 @@ def check_public_flags_and_value_aliases_documented(root_dir: Path, texts: dict[
     }
 
 
-def check_list_and_reference_docs_cover_public_commands(root_dir: Path, texts: dict[str, str]) -> dict[str, object]:
-    list_mod = (root_dir / "src" / "cli" / "list" / "mod.rs").read_text(encoding="utf-8")
+def check_list_and_reference_docs_cover_public_commands(
+    root_dir: Path, texts: dict[str, str]
+) -> dict[str, object]:
+    list_mod = (root_dir / "src" / "cli" / "list" / "mod.rs").read_text(
+        encoding="utf-8"
+    )
     commands = sorted(
         {
             match.group(1)
@@ -775,7 +1048,10 @@ def check_list_and_reference_docs_cover_public_commands(root_dir: Path, texts: d
     )
     docs_text = "\n".join(
         texts.get(path, "")
-        for path in ["architecture/ux/cli-reference.md", "docs/user-guide/cli-reference.md"]
+        for path in [
+            "architecture/ux/cli-reference.md",
+            "docs/user-guide/cli-reference.md",
+        ]
     ).lower()
     findings: list[dict[str, object]] = []
     for command in commands:
@@ -790,11 +1066,22 @@ def check_list_and_reference_docs_cover_public_commands(root_dir: Path, texts: d
             f"biomcp {command_words}",
         ]
         if not any(pattern in docs_text for pattern in patterns):
-            findings.append({"command": command, "surface": "CLI reference docs", "message": "command/helper is missing from reference docs"})
+            findings.append(
+                {
+                    "command": command,
+                    "surface": "CLI reference docs",
+                    "message": "command/helper is missing from reference docs",
+                }
+            )
     return {
         "name": "list_and_reference_docs_cover_public_commands",
         "status": "fail" if findings else "pass",
-        "checked_surfaces": ["src/cli/list/mod.rs", "src/cli/list/*.rs", "architecture/ux/cli-reference.md", "docs/user-guide/cli-reference.md"],
+        "checked_surfaces": [
+            "src/cli/list/mod.rs",
+            "src/cli/list/*.rs",
+            "architecture/ux/cli-reference.md",
+            "docs/user-guide/cli-reference.md",
+        ],
         "commands_checked": commands,
         "findings": findings,
     }
@@ -814,12 +1101,16 @@ def runnable_helper_commands(root_dir: Path) -> dict[str, list[str]]:
     for entity, path in helper_files.items():
         text = path.read_text(encoding="utf-8")
         enum_name = f"{entity.title()}Command"
-        match = re.search(rf"pub enum {enum_name} \{{(?P<body>.*?)\n\}}", text, re.DOTALL)
+        match = re.search(
+            rf"pub enum {enum_name} \{{(?P<body>.*?)\n\}}", text, re.DOTALL
+        )
         if match is None:
             commands[entity] = []
             continue
         helpers = []
-        for variant in re.findall(r"^    ([A-Z][A-Za-z0-9]*)\b", match.group("body"), re.MULTILINE):
+        for variant in re.findall(
+            r"^    ([A-Z][A-Za-z0-9]*)\b", match.group("body"), re.MULTILINE
+        ):
             if variant == "External":
                 continue
             helpers.append(f"{entity} {pascal_to_kebab(variant)}")
@@ -827,7 +1118,9 @@ def runnable_helper_commands(root_dir: Path) -> dict[str, list[str]]:
     return commands
 
 
-def check_runnable_helpers_are_discoverable_in_list_pages(root_dir: Path) -> dict[str, object]:
+def check_runnable_helpers_are_discoverable_in_list_pages(
+    root_dir: Path,
+) -> dict[str, object]:
     list_files = {
         "drug": root_dir / "src" / "cli" / "list" / "clinical.rs",
         "disease": root_dir / "src" / "cli" / "list" / "clinical.rs",
@@ -839,11 +1132,13 @@ def check_runnable_helpers_are_discoverable_in_list_pages(root_dir: Path) -> dic
         list_text = list_files[entity].read_text(encoding="utf-8").lower()
         for command in helper_commands:
             if command.lower() not in list_text:
-                findings.append({
-                    "command": f"biomcp {command}",
-                    "surface": f"biomcp list {entity}",
-                    "message": "runnable helper command is missing from matching list page discovery text",
-                })
+                findings.append(
+                    {
+                        "command": f"biomcp {command}",
+                        "surface": f"biomcp list {entity}",
+                        "message": "runnable helper command is missing from matching list page discovery text",
+                    }
+                )
     return {
         "name": "runnable_helpers_are_discoverable_in_list_pages",
         "status": "fail" if findings else "pass",
@@ -859,22 +1154,50 @@ def check_runnable_helpers_are_discoverable_in_list_pages(root_dir: Path) -> dic
     }
 
 
-def check_json_next_commands(root_dir: Path, exceptions: list[dict[str, object]]) -> dict[str, object]:
+def check_json_next_commands(
+    root_dir: Path, exceptions: list[dict[str, object]]
+) -> dict[str, object]:
     shared = (root_dir / "src" / "cli" / "shared.rs").read_text(encoding="utf-8")
     render_json = (root_dir / "src" / "render" / "json.rs").read_text(encoding="utf-8")
     findings: list[dict[str, object]] = []
-    required_source_markers = ["SearchJsonMeta", "next_commands", "search_json_with_meta"]
+    required_source_markers = [
+        "SearchJsonMeta",
+        "next_commands",
+        "search_json_with_meta",
+    ]
     for marker in required_source_markers:
         if marker not in shared:
-            findings.append({"source": "src/cli/shared.rs", "marker": marker, "message": "search JSON metadata seam is missing"})
-    for marker in ["_meta", "next_commands", "to_entity_json_value", "to_discover_json"]:
+            findings.append(
+                {
+                    "source": "src/cli/shared.rs",
+                    "marker": marker,
+                    "message": "search JSON metadata seam is missing",
+                }
+            )
+    for marker in [
+        "_meta",
+        "next_commands",
+        "to_entity_json_value",
+        "to_discover_json",
+    ]:
         if marker not in render_json:
-            findings.append({"source": "src/render/json.rs", "marker": marker, "message": "entity/discover JSON metadata seam is missing"})
+            findings.append(
+                {
+                    "source": "src/render/json.rs",
+                    "marker": marker,
+                    "message": "entity/discover JSON metadata seam is missing",
+                }
+            )
     return {
         "name": "json_entity_surfaces_include_next_commands_or_exception",
         "status": "fail" if findings else "pass",
         "checked_surfaces": ["src/cli/shared.rs", "src/render/json.rs"],
-        "applied_exceptions": [entry for entry in exceptions if isinstance(entry.get("command"), str) and "--json" in str(entry.get("command"))],
+        "applied_exceptions": [
+            entry
+            for entry in exceptions
+            if isinstance(entry.get("command"), str)
+            and "--json" in str(entry.get("command"))
+        ],
         "findings": findings,
     }
 
@@ -901,7 +1224,9 @@ def shell_has_unquoted_redirect(line: str) -> bool:
     return False
 
 
-def check_copy_paste_examples_are_shell_safe(root_dir: Path, texts: dict[str, str]) -> dict[str, object]:
+def check_copy_paste_examples_are_shell_safe(
+    root_dir: Path, texts: dict[str, str]
+) -> dict[str, object]:
     findings: list[dict[str, object]] = []
     for relative, text in texts.items():
         for lineno, line in enumerate(text.splitlines(), start=1):
@@ -910,15 +1235,17 @@ def check_copy_paste_examples_are_shell_safe(root_dir: Path, texts: dict[str, st
                 continue
             if "→" in stripped:
                 continue
-            if not re.search(r'[A-Z]{2}_[0-9.]+:[cgmnpr]\.[^\s\'\"]*>', stripped):
+            if not re.search(r"[A-Z]{2}_[0-9.]+:[cgmnpr]\.[^\s\'\"]*>", stripped):
                 continue
             if shell_has_unquoted_redirect(stripped):
-                findings.append({
-                    "path": relative,
-                    "line": lineno,
-                    "text": stripped,
-                    "message": "copy-pasteable biomcp example contains an unquoted shell redirection metacharacter",
-                })
+                findings.append(
+                    {
+                        "path": relative,
+                        "line": lineno,
+                        "text": stripped,
+                        "message": "copy-pasteable biomcp example contains an unquoted shell redirection metacharacter",
+                    }
+                )
     return {
         "name": "copy_paste_examples_are_shell_safe",
         "status": "fail" if findings else "pass",
@@ -949,12 +1276,14 @@ def check_entity_markdown_quoting_dependencies(root_dir: Path) -> dict[str, obje
         relative = path.relative_to(root_dir).as_posix()
         for pattern, regex in patterns.items():
             for match in regex.finditer(text):
-                findings.append({
-                    "path": relative,
-                    "line": text.count("\n", 0, match.start()) + 1,
-                    "pattern": pattern,
-                    "message": "entity code must build typed next commands instead of importing markdown shell quoting helpers",
-                })
+                findings.append(
+                    {
+                        "path": relative,
+                        "line": text.count("\n", 0, match.start()) + 1,
+                        "pattern": pattern,
+                        "message": "entity code must build typed next commands instead of importing markdown shell quoting helpers",
+                    }
+                )
     return {
         "name": "entities_do_not_depend_on_markdown_shell_quoting",
         "status": "fail" if findings else "pass",
@@ -1141,19 +1470,21 @@ def check_profile_independent_specs(root_dir: Path) -> dict[str, object]:
                 for value, sources in conditional.items():
                     if fragment in value and (relative, fragment) not in seen:
                         seen.add((relative, fragment))
-                        findings.append({
-                            "path": relative,
-                            "line": lineno,
-                            "fragment": fragment,
-                            "conditional_string": value,
-                            "emitted_by": sorted(set(sources)),
-                            "message": (
-                                "spec page runs under both build profiles but asserts "
-                                "output the binary emits only under some feature "
-                                "configurations; prove build-specific behavior in a "
-                                "native test covering both branches"
-                            ),
-                        })
+                        findings.append(
+                            {
+                                "path": relative,
+                                "line": lineno,
+                                "fragment": fragment,
+                                "conditional_string": value,
+                                "emitted_by": sorted(set(sources)),
+                                "message": (
+                                    "spec page runs under both build profiles but asserts "
+                                    "output the binary emits only under some feature "
+                                    "configurations; prove build-specific behavior in a "
+                                    "native test covering both branches"
+                                ),
+                            }
+                        )
     return {
         "name": "dual_lane_spec_pages_are_profile_independent",
         "status": "fail" if findings else "pass",
@@ -1198,18 +1529,21 @@ def check_cli_surface_contract(root_dir: Path) -> dict[str, object]:
         "status": status,
         "exception_registry": CLI_SURFACE_EXCEPTION_REGISTRY,
         "checks": CLI_SURFACE_CONTRACT_CHECKS,
-        "checked_surfaces": sorted({
-            surface
-            for payload in check_payloads
-            for surface in payload.get("checked_surfaces", [])
-            if isinstance(surface, str)
-        }),
+        "checked_surfaces": sorted(
+            {
+                surface
+                for payload in check_payloads
+                for surface in payload.get("checked_surfaces", [])
+                if isinstance(surface, str)
+            }
+        ),
         "applied_exceptions": exceptions,
         "finding_count": len(findings),
         "findings": findings,
         "results": check_payloads,
         "errors": [],
     }
+
 
 def make_repo_compatibility_findings(
     spec_path: Path, *, min_like_len: int = 10
@@ -1425,7 +1759,9 @@ def make_nested_test_gate_findings(spec_path: Path) -> list[dict[str, object]]:
     block_start = 0
 
     inside_bash = False
-    for line_number, line in enumerate(spec_path.read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(
+        spec_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if line.startswith("```"):
             if inside_bash:
                 findings.extend(
@@ -1875,9 +2211,7 @@ def _rust_section_values(path: Path, entity: str) -> set[str]:
     body = text[body_start + 2 : body_end]
     values = set(re.findall(r'"([^"]+)"', body))
     for name in re.findall(r"\b[A-Z][A-Z0-9_]+\b", body):
-        match = re.search(
-            rf'const\s+{re.escape(name)}:\s*&str\s*=\s*"([^"]+)";', text
-        )
+        match = re.search(rf'const\s+{re.escape(name)}:\s*&str\s*=\s*"([^"]+)";', text)
         if match:
             values.add(match.group(1))
     return values
@@ -1908,7 +2242,9 @@ def _source_state_registry_rows(
     dict[tuple[str, str], tuple[str, str | None]],
     list[dict[str, str]],
 ]:
-    text = (root_dir / "src/entities/source_state_registry.rs").read_text(encoding="utf-8")
+    text = (root_dir / "src/entities/source_state_registry.rs").read_text(
+        encoding="utf-8"
+    )
     errors: list[dict[str, str]] = []
     states: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {}
     state_pattern = re.compile(
@@ -1927,10 +2263,18 @@ def _source_state_registry_rows(
         r'selector\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*SelectorClass::(\w+)\s*,\s*(None|Some\("([^"]+)"\))\s*,?\s*\)',
         re.DOTALL,
     )
-    for entity, selector, selector_class, canonical_expr, canonical in selector_pattern.findall(text):
+    for (
+        entity,
+        selector,
+        selector_class,
+        canonical_expr,
+        canonical,
+    ) in selector_pattern.findall(text):
         identity = (entity, selector)
         if identity in selectors:
-            errors.append({"kind": "duplicate_selector", "entity": entity, "section": selector})
+            errors.append(
+                {"kind": "duplicate_selector", "entity": entity, "section": selector}
+            )
         selectors[identity] = (
             selector_class.lower(),
             canonical if canonical_expr != "None" else None,
@@ -1939,7 +2283,9 @@ def _source_state_registry_rows(
 
 
 def _source_state_architecture_rows(root_dir: Path) -> set[tuple[str, ...]]:
-    text = (root_dir / "architecture/technical/source-integration.md").read_text(encoding="utf-8")
+    text = (root_dir / "architecture/technical/source-integration.md").read_text(
+        encoding="utf-8"
+    )
     table = text.partition("<!-- source-state-registry:start -->")[2].partition(
         "<!-- source-state-registry:end -->"
     )[0]
@@ -1977,17 +2323,37 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
     stale = sorted(set(selector_rows) - runtime_selectors)
 
     for (entity, selector), (selector_class, canonical) in selector_rows.items():
-        if selector_class == "canonical" and (entity, canonical or "") not in state_rows:
-            errors.append({"kind": "missing_canonical_state", "entity": entity, "section": selector})
+        if (
+            selector_class == "canonical"
+            and (entity, canonical or "") not in state_rows
+        ):
+            errors.append(
+                {
+                    "kind": "missing_canonical_state",
+                    "entity": entity,
+                    "section": selector,
+                }
+            )
         elif selector_class == "alias" and (
             canonical is None or (entity, canonical) not in runtime_selectors
         ):
-            errors.append({"kind": "invalid_alias_target", "entity": entity, "section": selector})
+            errors.append(
+                {"kind": "invalid_alias_target", "entity": entity, "section": selector}
+            )
         elif selector_class in {"aggregate", "local"} and canonical is not None:
-            errors.append({"kind": "unexpected_canonical_target", "entity": entity, "section": selector})
+            errors.append(
+                {
+                    "kind": "unexpected_canonical_target",
+                    "entity": entity,
+                    "section": selector,
+                }
+            )
 
     runtime_key_lists = {
-        "adverse_event": ("src/entities/adverse_event.rs", "ADVERSE_EVENT_OUTCOME_KEYS"),
+        "adverse_event": (
+            "src/entities/adverse_event.rs",
+            "ADVERSE_EVENT_OUTCOME_KEYS",
+        ),
         "article": ("src/entities/article/mod.rs", "ARTICLE_OUTCOME_KEYS"),
         "gene": ("src/entities/gene.rs", "GENE_OUTCOME_KEYS"),
         "pathway": ("src/entities/pathway.rs", "PATHWAY_OUTCOME_KEYS"),
@@ -2009,9 +2375,7 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
         )
     for entity, relative in runtime_key_factories.items():
         expected = {key for row_entity, key in state_rows if row_entity == entity}
-        source = re.sub(
-            r"\s+", "", (root_dir / relative).read_text(encoding="utf-8")
-        )
+        source = re.sub(r"\s+", "", (root_dir / relative).read_text(encoding="utf-8"))
         factory_call = f'SectionOutcomes::with_keys(&outcome_keys("{entity}"))'
         if factory_call not in source:
             runtime_key_mismatches.extend(
@@ -2036,7 +2400,9 @@ def check_source_state_registry(root_dir: Path) -> dict[str, object]:
     }
     architecture_mismatches = [
         {"entity": row[0], "section": row[1]}
-        for row in sorted(expected_architecture ^ _source_state_architecture_rows(root_dir))
+        for row in sorted(
+            expected_architecture ^ _source_state_architecture_rows(root_dir)
+        )
     ]
 
     def records(rows: list[tuple[str, str]]) -> list[dict[str, str]]:
@@ -2069,7 +2435,9 @@ def check_source_attributed_status_is_typed(
         return {"status": "error", "findings": [], "errors": snapshot.errors}
     allowlist_path = root_dir / "tools" / "source-status-typing-allowlist.json"
     try:
-        allowlist = set(json.loads(allowlist_path.read_text(encoding="utf-8")).get("entries", []))
+        allowlist = set(
+            json.loads(allowlist_path.read_text(encoding="utf-8")).get("entries", [])
+        )
     except (OSError, json.JSONDecodeError):
         allowlist = set()
     findings: list[dict[str, object]] = []
@@ -2087,13 +2455,17 @@ def check_source_attributed_status_is_typed(
             name = match.group("name")
             key = f"{relative}::{name}"
             body = match.group("body")
-            if key in allowlist or not re.search(r"\b(?:source|provider|api|route)\s*:", body):
+            if key in allowlist or not re.search(
+                r"\b(?:source|provider|api|route)\s*:", body
+            ):
                 continue
             if re.search(r"\bstatus\s*:\s*String\b", body):
-                findings.append({
-                    "path": relative,
-                    "message": f"{name} serializes a source-attributed status as String",
-                })
+                findings.append(
+                    {
+                        "path": relative,
+                        "message": f"{name} serializes a source-attributed status as String",
+                    }
+                )
     return {
         "name": "source_attributed_status_typing",
         "status": "fail" if findings else "pass",
@@ -2145,6 +2517,12 @@ def main() -> int:
     payloads: dict[str, dict[str, object]] = {}
     cli_line_cap_allowlist = args.cli_line_cap_allowlist or (
         args.root_dir / "tools" / "cli-line-cap-allowlist.json"
+    )
+    rust_source_size_inventory = args.rust_source_size_inventory or (
+        args.root_dir / RUST_SOURCE_SIZE_INVENTORY
+    )
+    dead_code_exception_inventory = args.dead_code_exception_inventory or (
+        args.root_dir / DEAD_CODE_EXCEPTION_INVENTORY
     )
     rust_snapshot = (
         load_rust_source_snapshot(args.root_dir)
@@ -2205,7 +2583,13 @@ def main() -> int:
     simple_audits = {
         "dead_code_allowances": (
             "quality-ratchet-dead-code-allowances.json",
-            lambda: check_dead_code_allowances(args.root_dir, rust_snapshot),
+            lambda: check_dead_code_allowances(
+                args.root_dir, rust_snapshot, dead_code_exception_inventory
+            ),
+        ),
+        "rust_source_size": (
+            "quality-ratchet-rust-source-size.json",
+            lambda: check_rust_source_size(args.root_dir, rust_source_size_inventory),
         ),
         "cli_line_cap": (
             "quality-ratchet-cli-line-cap.json",
@@ -2233,7 +2617,9 @@ def main() -> int:
         ),
         "source_attributed_status_typing": (
             "quality-ratchet-source-status-typing.json",
-            lambda: check_source_attributed_status_is_typed(args.root_dir, rust_snapshot),
+            lambda: check_source_attributed_status_is_typed(
+                args.root_dir, rust_snapshot
+            ),
         ),
         "external_error_logging": (
             "quality-ratchet-external-error-logging.json",

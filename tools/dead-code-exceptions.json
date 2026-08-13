@@ -1,0 +1,1151 @@
+{
+  "schema": "biomcp-dead-code-exceptions-v1",
+  "generated_exclusions": [
+    "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs"
+  ],
+  "entries": [
+    {
+      "path": "src/cli/health/catalog.rs",
+      "scope": "item",
+      "item": "AuthPostJson {",
+      "occurrence": 1,
+      "owner": "cli-contracts",
+      "reason": "AuthPostJson models authenticated JSON health probes in the catalog",
+      "removal_condition": "Remove when `AuthPostJson {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/cli/health/catalog.rs",
+      "scope": "item",
+      "item": "pub(in crate::cli::health) fn affects_for_api(api: &str) -> Option<&'static str> {",
+      "occurrence": 1,
+      "owner": "cli-contracts",
+      "reason": "catalog::affects_for_api is exercised by binary dispatch or CLI contracts",
+      "removal_condition": "Remove when `pub(in crate::cli::health) fn affects_for_api(api: &str) -> Option<&'static str> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/cli/mod.rs",
+      "scope": "module",
+      "item": "mod benchmark;",
+      "occurrence": 1,
+      "owner": "cli-contracts",
+      "reason": "benchmark is an internal regression harness compiled only for native tests",
+      "removal_condition": "Remove when `mod benchmark;` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/cli/shared.rs",
+      "scope": "item",
+      "item": "struct SearchJsonResponse<T: serde::Serialize> {",
+      "occurrence": 1,
+      "owner": "cli-contracts",
+      "reason": "shared::SearchJsonResponse is exercised by binary dispatch or CLI contracts",
+      "removal_condition": "Remove when `struct SearchJsonResponse<T: serde::Serialize> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/cli/shared.rs",
+      "scope": "item",
+      "item": "pub(super) fn search_json<T: serde::Serialize>(",
+      "occurrence": 1,
+      "owner": "cli-contracts",
+      "reason": "shared::search_json is exercised by binary dispatch or CLI contracts",
+      "removal_condition": "Remove when `pub(super) fn search_json<T: serde::Serialize>(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/cli/update.rs",
+      "scope": "item",
+      "item": "enum ChecksumStatus {",
+      "occurrence": 1,
+      "owner": "cli-contracts",
+      "reason": "update::ChecksumStatus is exercised by binary dispatch or CLI contracts",
+      "removal_condition": "Remove when `enum ChecksumStatus {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/adverse_event.rs",
+      "scope": "item",
+      "item": "pub async fn search_page(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "binary CLI dispatch uses this page-aware entity seam",
+      "removal_condition": "Remove when `pub async fn search_page(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/adverse_event.rs",
+      "scope": "item",
+      "item": "pub async fn search_with_summary(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "page-aware adverse-event search preserves report summary metadata",
+      "removal_condition": "Remove when `pub async fn search_with_summary(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/article/mod.rs",
+      "scope": "item",
+      "item": "pub next_page_token: Option<String>,",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "mod::next_page_token is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub next_page_token: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/article/query.rs",
+      "scope": "item",
+      "item": "pub(super) fn build_pubmed_esearch_params(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "query::build_pubmed_esearch_params is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub(super) fn build_pubmed_esearch_params(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/article/variant_search.rs",
+      "scope": "item",
+      "item": "pub async fn search_variant_articles(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "search_variant_articles preserves the article facade's default-verification entry point.",
+      "removal_condition": "Remove when `pub async fn search_variant_articles(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/article/variant_search.rs",
+      "scope": "item",
+      "item": "pub async fn search_variant_articles_with_plan(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "search_variant_articles_with_plan preserves the article facade's debug-plan entry point.",
+      "removal_condition": "Remove when `pub async fn search_variant_articles_with_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/article/variant_search.rs",
+      "scope": "item",
+      "item": "pub async fn search_variant_article_batch(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "search_variant_article_batch preserves the batch facade's default-verification entry point.",
+      "removal_condition": "Remove when `pub async fn search_variant_article_batch(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/diagnostic/mod.rs",
+      "scope": "item",
+      "item": "pub fn from_flag(value: &str) -> Result<Self, crate::error::BioMcpError> {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "mod::from_flag is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn from_flag(value: &str) -> Result<Self, crate::error::BioMcpError> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub fn as_str(self) -> &'static str {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::as_str is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn as_str(self) -> &'static str {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub fn all_default() -> Vec<Self> {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::all_default is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn all_default() -> Vec<Self> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub fn from_name(value: &str) -> Option<Self> {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::from_name is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn from_name(value: &str) -> Option<Self> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub fn with_sections(mut self, sections: Vec<GeneSection>) -> Self {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::with_sections is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn with_sections(mut self, sections: Vec<GeneSection>) -> Self {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub fn with_strategy(mut self, strategy: GeneGetStrategy) -> Self {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::with_strategy is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn with_strategy(mut self, strategy: GeneGetStrategy) -> Self {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub fn with_optional_timeout(mut self, timeout: Duration) -> Self {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::with_optional_timeout is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn with_optional_timeout(mut self, timeout: Duration) -> Self {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub fn with_timing_path(mut self, path: impl Into<PathBuf>) -> Self {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::with_timing_path is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub fn with_timing_path(mut self, path: impl Into<PathBuf>) -> Self {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/gene.rs",
+      "scope": "item",
+      "item": "pub async fn search(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::search is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub async fn search(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/source_state_registry.rs",
+      "scope": "file",
+      "item": "pub(crate) enum Aggregation {",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "static source-state registry is also consumed by the quality contract",
+      "removal_condition": "Remove when `pub(crate) enum Aggregation {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/variant/gwas.rs",
+      "scope": "item",
+      "item": "pub async fn search_gwas(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gwas::search_gwas is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub async fn search_gwas(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/entities/variant/search/mod.rs",
+      "scope": "item",
+      "item": "pub async fn search(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "mod::search is exercised by native tests or binary dispatch",
+      "removal_condition": "Remove when `pub async fn search(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/lib.rs",
+      "scope": "module",
+      "item": "mod cache;",
+      "occurrence": 1,
+      "owner": "build-contracts",
+      "reason": "binary-only exports are not all referenced by the library target",
+      "removal_condition": "Remove when `mod cache;` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/adverse_event.rs",
+      "scope": "item",
+      "item": "pub fn adverse_event_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "adverse_event::adverse_event_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn adverse_event_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/adverse_event.rs",
+      "scope": "item",
+      "item": "pub fn adverse_event_search_markdown_with_footer(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "adverse_event::adverse_event_search_markdown_with_footer is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn adverse_event_search_markdown_with_footer(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/adverse_event.rs",
+      "scope": "item",
+      "item": "pub fn device_event_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "adverse_event::device_event_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn device_event_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/adverse_event.rs",
+      "scope": "item",
+      "item": "pub fn recall_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "adverse_event::recall_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn recall_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/diagnostic.rs",
+      "scope": "item",
+      "item": "pub fn diagnostic_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "diagnostic::diagnostic_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn diagnostic_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/disease.rs",
+      "scope": "item",
+      "item": "pub fn disease_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "disease::disease_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn disease_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/gene.rs",
+      "scope": "item",
+      "item": "pub fn gene_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "gene::gene_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn gene_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/protein.rs",
+      "scope": "item",
+      "item": "pub fn protein_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "protein::protein_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn protein_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/variant.rs",
+      "scope": "item",
+      "item": "pub fn variant_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "variant::variant_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn variant_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/variant.rs",
+      "scope": "item",
+      "item": "pub fn phenotype_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "variant::phenotype_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn phenotype_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/render/markdown/variant.rs",
+      "scope": "item",
+      "item": "pub fn gwas_search_markdown(",
+      "occurrence": 1,
+      "owner": "runtime-contracts",
+      "reason": "variant::gwas_search_markdown is exercised by native renderer contracts",
+      "removal_condition": "Remove when `pub fn gwas_search_markdown(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cancerhotspots.rs",
+      "scope": "item",
+      "item": "pub hugo_symbol: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cancerhotspots::hugo_symbol preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub hugo_symbol: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cancerhotspots.rs",
+      "scope": "item",
+      "item": "pub amino_acid_position: Option<serde_json::Value>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cancerhotspots::amino_acid_position preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub amino_acid_position: Option<serde_json::Value>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cbioportal.rs",
+      "scope": "item",
+      "item": "pub total_mutations: Option<i32>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cbioportal::total_mutations preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub total_mutations: Option<i32>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cbioportal.rs",
+      "scope": "item",
+      "item": "pub mutation_frequency: Option<f64>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cbioportal::mutation_frequency preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub mutation_frequency: Option<f64>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cbioportal_study.rs",
+      "scope": "item",
+      "item": "pub struct StudyMeta {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cbioportal_study::StudyMeta preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct StudyMeta {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cbioportal_study.rs",
+      "scope": "item",
+      "item": "pub patient_id: String,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cbioportal_study::patient_id preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub patient_id: String,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cpic.rs",
+      "scope": "item",
+      "item": "pub pairid: Option<u64>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cpic::pairid preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub pairid: Option<u64>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cpic.rs",
+      "scope": "item",
+      "item": "pub usedforrecommendation: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cpic::usedforrecommendation preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub usedforrecommendation: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cpic.rs",
+      "scope": "item",
+      "item": "pub provisional: Option<bool>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cpic::provisional preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub provisional: Option<bool>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cpic.rs",
+      "scope": "item",
+      "item": "pub recommendationid: Option<u64>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cpic::recommendationid preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub recommendationid: Option<u64>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cpic.rs",
+      "scope": "item",
+      "item": "pub lookupkey: HashMap<String, String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cpic::lookupkey preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub lookupkey: HashMap<String, String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cpic.rs",
+      "scope": "item",
+      "item": "pub url: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cpic::url preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub url: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cvx.rs",
+      "scope": "item",
+      "item": "struct CvxAliasRecord {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "cvx::CvxAliasRecord preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `struct CvxAliasRecord {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/cvx.rs",
+      "scope": "item",
+      "item": "pub(crate) fn new() -> Self {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "binary adverse-event dispatch constructs the local CVX client",
+      "removal_condition": "Remove when `pub(crate) fn new() -> Self {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/europepmc.rs",
+      "scope": "item",
+      "item": "pub struct EuropePmcSearchRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "europepmc::EuropePmcSearchRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct EuropePmcSearchRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/europepmc.rs",
+      "scope": "item",
+      "item": "pub fn search_query_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "europepmc::search_query_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn search_query_request_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/gwas.rs",
+      "scope": "item",
+      "item": "pub description: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "gwas::description preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub description: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/gwas.rs",
+      "scope": "item",
+      "item": "pub genomic_contexts: Vec<GwasGenomicContext>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "gwas::genomic_contexts preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub genomic_contexts: Vec<GwasGenomicContext>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/gwas.rs",
+      "scope": "item",
+      "item": "pub gene: Option<GwasGene>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "gwas::gene preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub gene: Option<GwasGene>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/hpo.rs",
+      "scope": "item",
+      "item": "pub id: String,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "hpo::id preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub id: String,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/litsense2.rs",
+      "scope": "item",
+      "item": "pub struct LitSense2SearchRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "litsense2::LitSense2SearchRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct LitSense2SearchRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/litsense2.rs",
+      "scope": "item",
+      "item": "pub fn search_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "litsense2::search_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn search_request_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mod.rs",
+      "scope": "item",
+      "item": "Json(serde_json::Value),",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "RequestBody::Json is reserved for source request-plan JSON fan-out",
+      "removal_condition": "Remove when `Json(serde_json::Value),` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/monarch.rs",
+      "scope": "item",
+      "item": "total: usize,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "monarch::total preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `total: usize,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mutalyzer.rs",
+      "scope": "item",
+      "item": "pub struct MutalyzerNormalizeRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mutalyzer::MutalyzerNormalizeRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct MutalyzerNormalizeRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "pub struct MyDiseaseQueryRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::MyDiseaseQueryRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct MyDiseaseQueryRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "pub struct MyDiseaseXrefLookupRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::MyDiseaseXrefLookupRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct MyDiseaseXrefLookupRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "pub struct MyDiseaseGetRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::MyDiseaseGetRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct MyDiseaseGetRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "fn legacy_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::legacy_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `fn legacy_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "fn legacy_xref_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::legacy_xref_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `fn legacy_xref_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "fn legacy_get_plan(plan: &RequestPlan) -> MyDiseaseGetRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::legacy_get_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `fn legacy_get_plan(plan: &RequestPlan) -> MyDiseaseGetRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "pub fn query_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::query_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn query_request_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "pub fn lookup_disease_by_xref_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::lookup_disease_by_xref_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn lookup_disease_by_xref_request_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "pub fn get_request_plan(&self, id: &str) -> Result<MyDiseaseGetRequestPlan, BioMcpError> {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::get_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn get_request_plan(&self, id: &str) -> Result<MyDiseaseGetRequestPlan, BioMcpError> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mydisease.rs",
+      "scope": "item",
+      "item": "pub total: usize,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mydisease::total preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub total: usize,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mygene.rs",
+      "scope": "item",
+      "item": "pub total: usize,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "mygene::total preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub total: usize,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/mygene.rs",
+      "scope": "item",
+      "item": "pub total: usize,",
+      "occurrence": 2,
+      "owner": "source-contracts",
+      "reason": "mygene::total preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub total: usize,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ncbi_idconv.rs",
+      "scope": "item",
+      "item": "pub status: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ncbi_idconv::status preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub status: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ncbi_idconv.rs",
+      "scope": "item",
+      "item": "pub pmid: Option<u64>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ncbi_idconv::pmid preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub pmid: Option<u64>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ncbi_idconv.rs",
+      "scope": "item",
+      "item": "pub doi: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ncbi_idconv::doi preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub doi: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ncbi_idconv.rs",
+      "scope": "item",
+      "item": "pub status: Option<String>,",
+      "occurrence": 2,
+      "owner": "source-contracts",
+      "reason": "ncbi_idconv::status preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub status: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ncbi_idconv.rs",
+      "scope": "item",
+      "item": "pub errmsg: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ncbi_idconv::errmsg preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub errmsg: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ncbi_idconv.rs",
+      "scope": "item",
+      "item": "pub requested_id: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ncbi_idconv::requested_id preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub requested_id: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ols4.rs",
+      "scope": "item",
+      "item": "pub struct OlsSearchRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ols4::OlsSearchRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct OlsSearchRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ols4.rs",
+      "scope": "item",
+      "item": "pub ontology_name: String,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ols4::ontology_name preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub ontology_name: String,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ols4.rs",
+      "scope": "item",
+      "item": "pub description: Vec<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ols4::description preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub description: Vec<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ols4.rs",
+      "scope": "item",
+      "item": "pub is_defining_ontology: bool,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ols4::is_defining_ontology preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub is_defining_ontology: bool,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/ols4.rs",
+      "scope": "item",
+      "item": "pub doc_type: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "ols4::doc_type preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub doc_type: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/openfda.rs",
+      "scope": "item",
+      "item": "pub meta: OpenFdaMeta,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "openfda::meta preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub meta: OpenFdaMeta,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/openfda.rs",
+      "scope": "item",
+      "item": "pub results: OpenFdaMetaResults,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "openfda::results preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub results: OpenFdaMetaResults,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/openfda.rs",
+      "scope": "item",
+      "item": "pub skip: usize,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "openfda::skip preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub skip: usize,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/openfda.rs",
+      "scope": "item",
+      "item": "pub limit: usize,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "openfda::limit preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub limit: usize,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/openfda.rs",
+      "scope": "item",
+      "item": "pub total: usize,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "openfda::total preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub total: usize,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/openfda.rs",
+      "scope": "item",
+      "item": "pub meta: serde_json::Value,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "openfda::meta preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub meta: serde_json::Value,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/openfda.rs",
+      "scope": "item",
+      "item": "pub reactionoutcome: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "openfda::reactionoutcome preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub reactionoutcome: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/opentargets.rs",
+      "scope": "item",
+      "item": "id: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "opentargets::id preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `id: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/opentargets.rs",
+      "scope": "item",
+      "item": "score: Option<f64>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "opentargets::score preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `score: Option<f64>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/opentargets.rs",
+      "scope": "item",
+      "item": "id: Option<String>,",
+      "occurrence": 2,
+      "owner": "source-contracts",
+      "reason": "opentargets::id preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `id: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/opentargets.rs",
+      "scope": "item",
+      "item": "id: Option<String>,",
+      "occurrence": 3,
+      "owner": "source-contracts",
+      "reason": "opentargets::id preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `id: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/opentargets.rs",
+      "scope": "item",
+      "item": "dosing: Option<String>,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "opentargets::dosing preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `dosing: Option<String>,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/pubtator.rs",
+      "scope": "item",
+      "item": "pub struct PubTatorSearchRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "pubtator::PubTatorSearchRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct PubTatorSearchRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/pubtator.rs",
+      "scope": "item",
+      "item": "pub struct PubTatorExportRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "pubtator::PubTatorExportRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct PubTatorExportRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/pubtator.rs",
+      "scope": "item",
+      "item": "pub struct PubTatorAutocompleteRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "pubtator::PubTatorAutocompleteRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct PubTatorAutocompleteRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/pubtator.rs",
+      "scope": "item",
+      "item": "pub fn export_biocjson_request_plan(&self, pmid: u32) -> PubTatorExportRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "pubtator::export_biocjson_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn export_biocjson_request_plan(&self, pmid: u32) -> PubTatorExportRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/pubtator.rs",
+      "scope": "item",
+      "item": "pub fn entity_autocomplete_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "pubtator::entity_autocomplete_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn entity_autocomplete_request_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/pubtator.rs",
+      "scope": "item",
+      "item": "pub fn search_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "pubtator::search_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn search_request_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/pubtator.rs",
+      "scope": "item",
+      "item": "fn pubtator_query_key(key: &str) -> &'static str {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "pubtator::pubtator_query_key preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `fn pubtator_query_key(key: &str) -> &'static str {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/reactome.rs",
+      "scope": "item",
+      "item": "enum ReactomeContainedEvent {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "reactome::ReactomeContainedEvent preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `enum ReactomeContainedEvent {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/seer.rs",
+      "scope": "item",
+      "item": "pub fn race_label(&self, race_code: u16) -> Option<&str> {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "seer::race_label preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn race_label(&self, race_code: u16) -> Option<&str> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/seer.rs",
+      "scope": "item",
+      "item": "pub fn age_range_label(&self, age_range_code: u16) -> Option<&str> {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "seer::age_range_label preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn age_range_label(&self, age_range_code: u16) -> Option<&str> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "const AUTHOR_FIELDS: &str =",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::AUTHOR_FIELDS preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `const AUTHOR_FIELDS: &str =` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "const AUTHOR_PAPER_FIELDS: &str =",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::AUTHOR_PAPER_FIELDS preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `const AUTHOR_PAPER_FIELDS: &str =` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "const SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX: usize = 1_000;",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `const SEMANTIC_SCHOLAR_AUTHOR_BATCH_MAX: usize = 1_000;` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub struct SemanticScholarPaperSearchRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarPaperSearchRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct SemanticScholarPaperSearchRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "impl SemanticScholarClient {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarClient preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `impl SemanticScholarClient {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub fn paper_search_request_plan(",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::paper_search_request_plan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub fn paper_search_request_plan(` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "fn semantic_scholar_query_key(key: &str) -> &'static str {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::semantic_scholar_query_key preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `fn semantic_scholar_query_key(key: &str) -> &'static str {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::validate_author_id preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `fn validate_author_id(author_id: &str) -> Result<&str, BioMcpError> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "fn validate_author_page_limit(limit: usize) -> Result<usize, BioMcpError> {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::validate_author_page_limit preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `fn validate_author_page_limit(limit: usize) -> Result<usize, BioMcpError> {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub struct SemanticScholarAuthor {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarAuthor preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct SemanticScholarAuthor {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub struct SemanticScholarAuthorPaper {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarAuthorPaper preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct SemanticScholarAuthorPaper {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub struct SemanticScholarAuthorPaperAuthor {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarAuthorPaperAuthor preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct SemanticScholarAuthorPaperAuthor {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub struct SemanticScholarAuthorSearchResponse {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarAuthorSearchResponse preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct SemanticScholarAuthorSearchResponse {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/semantic_scholar.rs",
+      "scope": "item",
+      "item": "pub struct SemanticScholarAuthorPapersResponse {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "semantic_scholar::SemanticScholarAuthorPapersResponse preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct SemanticScholarAuthorPapersResponse {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/umls.rs",
+      "scope": "item",
+      "item": "pub uri: String,",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "umls::uri preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub uri: String,` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/variantvalidator.rs",
+      "scope": "item",
+      "item": "pub struct VariantValidatorNormalizeRequestPlan {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "variantvalidator::VariantValidatorNormalizeRequestPlan preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub struct VariantValidatorNormalizeRequestPlan {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/sources/who_pq.rs",
+      "scope": "item",
+      "item": "pub(crate) fn from_root(root: impl Into<PathBuf>) -> Self {",
+      "occurrence": 1,
+      "owner": "source-contracts",
+      "reason": "who_pq::from_root preserves the provider shape used by source contract fixtures",
+      "removal_condition": "Remove when `pub(crate) fn from_root(root: impl Into<PathBuf>) -> Self {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "src/workflow_ladders.rs",
+      "scope": "item",
+      "item": "pub(crate) enum Workflow {",
+      "occurrence": 1,
+      "owner": "build-contracts",
+      "reason": "some workflow variants are sidecar-only outside test inventory validation",
+      "removal_condition": "Remove when `pub(crate) enum Workflow {` is used by every compiled target or deleted."
+    },
+    {
+      "path": "tests/pty_helpers.rs",
+      "scope": "file",
+      "item": "use std::path::Path;",
+      "occurrence": 1,
+      "owner": "build-contracts",
+      "reason": "Cargo also compiles this shared integration helper as a standalone target",
+      "removal_condition": "Remove when `use std::path::Path;` is used by every compiled target or deleted."
+    }
+  ]
+}
