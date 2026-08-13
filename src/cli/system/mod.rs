@@ -7,6 +7,12 @@ pub struct HealthArgs {
     /// Check external APIs only
     #[arg(long)]
     pub apis_only: bool,
+    /// Check only this API (repeatable; names come from `biomcp health`)
+    #[arg(long = "api", value_name = "CANONICAL_NAME")]
+    pub apis: Vec<String>,
+    /// Exit with status 1 after rendering when any probe is in the error bucket
+    #[arg(long)]
+    pub fail_on_error: bool,
 }
 
 #[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
@@ -122,6 +128,15 @@ pub struct EnrichArgs {
 pub struct DiscoverArgs {
     /// Free-text biomedical query
     pub query: String,
+    /// Maximum concepts returned (applied after validation and ranking)
+    #[arg(long, default_value_t = 5)]
+    pub limit: usize,
+    /// Zero-based offset into the stable ranked concepts
+    #[arg(long, default_value_t = 0)]
+    pub offset: usize,
+    /// Expand bounded synonym and cross-reference previews
+    #[arg(long)]
+    pub full: bool,
 }
 
 #[derive(Args, Debug)]

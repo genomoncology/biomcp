@@ -108,27 +108,36 @@ fn append_source_state_messages(
         let Some(outcome) = outcomes.get(row.key) else {
             continue;
         };
-        if !matches!(
-            outcome.outcome(),
-            SectionOutcomeState::Inapplicable
-                | SectionOutcomeState::Degraded
-                | SectionOutcomeState::Unavailable
-        ) {
+        let Some(state_label) = source_state_message_label(outcome.outcome()) else {
             continue;
-        }
+        };
         let providers = row.providers.join(" / ");
         let message = outcome
             .message()
             .unwrap_or_else(|| outcome.outcome().as_str());
         body.push_str(&format!(
             "\n\n**{} status ({}):** {} — {}",
-            row.label,
-            providers,
-            outcome.outcome().as_str(),
-            message
+            row.label, providers, state_label, message
         ));
     }
     body
+}
+
+fn source_state_message_label(state: SectionOutcomeState) -> Option<&'static str> {
+    match state {
+        SectionOutcomeState::NotRequested
+        | SectionOutcomeState::Data
+        | SectionOutcomeState::Empty => None,
+        SectionOutcomeState::Inapplicable => Some("inapplicable"),
+        SectionOutcomeState::Degraded => Some("degraded (partial/incomplete)"),
+        SectionOutcomeState::Unavailable => Some("unavailable; no conclusion can be drawn"),
+    }
+}
+
+fn section_has_healthy_empty(outcomes: &SectionOutcomes, key: &str) -> bool {
+    outcomes
+        .get(key)
+        .is_some_and(|outcome| outcome.outcome() == SectionOutcomeState::Empty)
 }
 use crate::cli::search_all::SearchAllResults;
 use crate::entities::adverse_event::{

@@ -71,6 +71,11 @@ fn search_medicines_matches_therapeutic_indication_queries() {
 
     assert!(names.contains(&"Flucelvax Tetra"));
     assert!(names.contains(&"Fluad Tetra"));
+    assert!(
+        page.match_kinds
+            .iter()
+            .all(|kind| *kind == DrugSearchMatchKind::BroadText)
+    );
 }
 
 #[test]
@@ -79,6 +84,7 @@ fn search_medicines_matches_cvx_alias_tokens_on_active_substance() {
     let aliases = vec![
         "Pneumococcal conjugate PCV 13".to_string(),
         "pneumococcal conjugate vaccine, 13 valent".to_string(),
+        "pneumococcal polysaccharide conjugate vaccine (13 valent, adsorbed)".to_string(),
     ];
     let page = client
         .search_medicines(
@@ -94,6 +100,7 @@ fn search_medicines_matches_cvx_alias_tokens_on_active_substance() {
         .collect::<Vec<_>>();
 
     assert!(names.contains(&"Prevenar 13"));
+    assert!(page.match_kinds.contains(&DrugSearchMatchKind::Alias));
 }
 
 #[test]

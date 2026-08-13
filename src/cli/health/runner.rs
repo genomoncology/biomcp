@@ -7,7 +7,7 @@ use futures::stream::{self, StreamExt};
 
 use crate::error::BioMcpError;
 
-use super::catalog::{ProbeKind, SourceDescriptor, health_sources};
+use super::catalog::{ProbeKind, SourceDescriptor};
 #[cfg(feature = "alphagenome")]
 use super::http::check_alphagenome_connect;
 use super::http::{
@@ -246,9 +246,12 @@ pub(in crate::cli::health) async fn probe_source_with_timeout(
     probe_source_with_timeout_for_test(client, source, HEALTH_API_PROBE_TIMEOUT).await
 }
 
-async fn run_api_probes(client: reqwest::Client) -> Vec<ProbeOutcome> {
+async fn run_api_probes(
+    client: reqwest::Client,
+    sources: &[SourceDescriptor],
+) -> Vec<ProbeOutcome> {
     run_buffered_in_order(
-        health_sources().iter().copied(),
+        sources.iter().copied(),
         HEALTH_API_PROBE_CONCURRENCY_LIMIT,
         move |source| probe_source_with_timeout(client.clone(), source),
     )
@@ -318,9 +321,12 @@ pub(in crate::cli::health) fn report_from_outcomes(outcomes: Vec<ProbeOutcome>) 
 /// # Errors
 ///
 /// Returns an error when the shared HTTP client cannot be created.
-pub(super) async fn check(apis_only: bool) -> Result<HealthReport, BioMcpError> {
+pub(super) async fn check(
+    apis_only: bool,
+    selected_sources: &[SourceDescriptor],
+) -> Result<HealthReport, BioMcpError> {
     let client = health_http_client()?;
-    let mut outcomes = run_api_probes(client).await;
+    let mut outcomes = run_api_probes(client, selected_sources).await;
 
     if !apis_only {
         outcomes.push(check_ema_local_data());

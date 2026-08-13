@@ -677,21 +677,7 @@ pub async fn search_page(
     Ok(SearchPage::offset(out, total))
 }
 
-pub async fn distinct_actionable_cpic_gene_count_for_drug(
-    drug: &str,
-    threshold: usize,
-) -> Result<usize, BioMcpError> {
-    let drug = drug.trim();
-    if drug.is_empty() || threshold == 0 {
-        return Ok(0);
-    }
-
-    let cpic = CpicClient::new()?;
-    let fetch_limit = threshold.saturating_mul(10).clamp(threshold, 200);
-    let page = cpic.pairs_by_drug_page(drug, fetch_limit, 0).await?;
-    Ok(distinct_actionable_cpic_gene_count(&page.rows, threshold))
-}
-
+#[cfg(test)]
 fn distinct_actionable_cpic_gene_count(rows: &[CpicPairRow], threshold: usize) -> usize {
     if threshold == 0 {
         return 0;

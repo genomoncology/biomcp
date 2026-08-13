@@ -262,13 +262,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     outcome_to_string(super::adverse_event::handle_search(args, json).await?)
                 }
             },
-            Commands::Health(super::system::HealthArgs { apis_only }) => {
-                let report = crate::cli::health::check(apis_only).await?;
-                if json {
-                    Ok(crate::render::json::to_pretty(&report)?)
-                } else {
-                    Ok(report.to_markdown())
-                }
+            Commands::Health(args) => {
+                outcome_to_string(crate::cli::health::command(args, json).await?)
             }
             Commands::Cache { cmd } => match cmd {
                 super::cache::CacheCommand::Path => {
@@ -376,8 +371,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             Commands::Enrich(args) => {
                 outcome_to_string(super::system::handle_enrich(args, json).await?)
             }
-            Commands::Discover(super::system::DiscoverArgs { query }) => {
-                crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query }, json).await
+            Commands::Discover(super::system::DiscoverArgs { query, limit, offset, full }) => {
+                crate::cli::discover::run(crate::cli::discover::DiscoverArgs { query, limit, offset, full }, json).await
             }
             Commands::List(super::system::ListArgs { entity }) => {
                 if json {
@@ -416,6 +411,9 @@ async fn run_outcome_inner(
     } = cli;
 
     match command {
+        Commands::Health(args) => crate::cli::health::command(args, json)
+            .await
+            .map_err(Into::into),
         Commands::Cache {
             cmd: super::cache::CacheCommand::Clear { yes },
         } => {
@@ -502,10 +500,20 @@ async fn run_outcome_inner(
             })
             .await
         }
-        Commands::Discover(super::system::DiscoverArgs { query }) => {
+        Commands::Discover(super::system::DiscoverArgs {
+            query,
+            limit,
+            offset,
+            full,
+        }) => {
             crate::sources::with_no_cache(no_cache, async move {
                 crate::cli::discover::run_outcome(
-                    crate::cli::discover::DiscoverArgs { query },
+                    crate::cli::discover::DiscoverArgs {
+                        query,
+                        limit,
+                        offset,
+                        full,
+                    },
                     json,
                 )
                 .await

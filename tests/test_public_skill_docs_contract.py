@@ -63,7 +63,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "`normalize-to-codes` sidecar is installed authoring reference material" in skills
     assert "eight routed" not in skills
     assert "_meta.workflow" in skills
-    assert "_meta.ladder[]" in skills
+    assert "_meta.workflow_playbook" in skills
     assert "Current builds ship examples for treatment lookup, symptom lookup" not in skills
     assert "Current builds ship 17 worked examples" in skills
     assert "AUTHORING.md" in skills
@@ -123,9 +123,9 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     )
     assert "Streamable HTTP" in cli_reference
     assert "/mcp" in cli_reference
-    assert "## Workflow ladder metadata" in cli_reference
+    assert "## Workflow metadata" in cli_reference
     assert "_meta.workflow" in cli_reference
-    assert "_meta.ladder[]" in cli_reference
+    assert "_meta.workflow_playbook" in cli_reference
     assert "biomcp get drug aspirin --json" in cli_reference
     assert "biomcp drug interactions warfarin" in cli_reference
     assert "single-entity resolver" in cli_reference
@@ -158,9 +158,9 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "`cache clear`" in mcp_server
     assert "reveal workstation-local paths" in mcp_server
     assert "`skill status`" in mcp_server
-    assert "Workflow ladders do not add MCP resources" in mcp_server
+    assert "Workflow playbooks do not add MCP resources" in mcp_server
     assert "_meta.workflow" in mcp_server
-    assert "_meta.ladder[]" in mcp_server
+    assert "_meta.workflow_playbook" in mcp_server
 
     assert "biomcp skill render" in bioasq_benchmark
     assert "eval runners should call `biomcp skill render`" in bioasq_benchmark
@@ -271,7 +271,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "add `--drug <name>` to `search article`" in skill_file
     assert "DDInter is the local drug-interaction bundle" in skill_file
     assert "_meta.workflow" in skill_file
-    assert "_meta.ladder[]" in skill_file
+    assert "_meta.workflow_playbook" in skill_file
     assert "`biomcp article batch <pmid1> <pmid2> ...` uses spaces between PMIDs." in skill_file
     assert "Only add more commands if a needed claim is still unsupported." in skill_file
     assert "If one command already answers the question, stop searching and answer." in skill_file

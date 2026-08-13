@@ -7,25 +7,6 @@ use super::{
     article_search_warning,
 };
 use crate::cli::CommandOutcome;
-fn extract_pdf_from_sections(sections: &[String]) -> (Vec<String>, bool) {
-    let mut allow_pdf = false;
-    let cleaned = sections
-        .iter()
-        .filter_map(|raw| {
-            let trimmed = raw.trim();
-            let normalized = trimmed.to_ascii_lowercase();
-            if normalized == "--pdf" {
-                allow_pdf = true;
-                return None;
-            }
-            if trimmed.is_empty() {
-                return None;
-            }
-            Some(trimmed.to_string())
-        })
-        .collect();
-    (cleaned, allow_pdf)
-}
 
 pub(in crate::cli) async fn handle_get(
     args: ArticleGetArgs,
@@ -33,7 +14,10 @@ pub(in crate::cli) async fn handle_get(
     include_metadata: bool,
 ) -> anyhow::Result<CommandOutcome> {
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
-    let (sections, pdf_from_sections) = extract_pdf_from_sections(&sections);
+    let (sections, pdf_from_sections) = super::fulltext_view::extract_pdf(&sections);
+    let (sections, outline, lines) =
+        super::fulltext_view::extract_controls(&sections, args.outline, args.lines)?;
+    super::fulltext_view::validate_controls(&sections, outline, lines.as_deref())?;
     let json_output = json || json_override;
     if super::assets::article_asset_route(&sections) && (args.pdf || pdf_from_sections) {
         return Err(crate::error::BioMcpError::InvalidArgument(
@@ -43,7 +27,15 @@ pub(in crate::cli) async fn handle_get(
         .into());
     }
 
-    if let Some(outcome) = super::assets::handle_asset_get(&args.id, &sections, json_output).await?
+    if let Some(outcome) = super::assets::handle_asset_get(
+        &args.id,
+        &sections,
+        json_output,
+        &args.asset_view,
+        args.asset_limit,
+        args.asset_offset,
+    )
+    .await?
     {
         return Ok(outcome);
     }
@@ -57,7 +49,22 @@ pub(in crate::cli) async fn handle_get(
         },
     )
     .await?;
-    let human = crate::render::markdown::article_markdown(&article, &sections)?;
+    if let Some(response) = super::fulltext_view::requested_response(
+        &article,
+        &args.id,
+        &sections,
+        outline,
+        lines.as_deref(),
+        json_output,
+    )? {
+        return Ok(CommandOutcome::stdout(response));
+    }
+    let fulltext_summary = super::fulltext_view::article_summary(&article)?;
+    let human = super::fulltext_view::decorate_human(
+        &article,
+        crate::render::markdown::article_markdown(&article, &sections)?,
+        fulltext_summary,
+    );
     if !json_output && !include_metadata {
         return Ok(CommandOutcome::stdout(human));
     }
@@ -65,13 +72,14 @@ pub(in crate::cli) async fn handle_get(
     if let Some(not_included) = article.not_included.as_ref() {
         next_commands.extend(not_included.next_commands.clone());
     }
-    let structured = crate::render::json::to_entity_json_with_workflow(
+    let mut structured = crate::render::json::to_entity_json_with_workflow(
         &article,
         crate::render::markdown::article_evidence_urls(&article),
         next_commands,
         crate::render::provenance::article_section_sources(&article),
         article_follow_up_workflow(&article)?,
     )?;
+    structured = super::fulltext_view::decorate_json(structured, fulltext_summary)?;
     let text = if json_output {
         structured.clone()
     } else {
@@ -82,27 +90,6 @@ pub(in crate::cli) async fn handle_get(
 
 #[cfg(test)]
 mod workflow_tests;
-pub(super) fn resolved_article_date_bounds(
-    args: &ArticleSearchArgs,
-) -> (Option<String>, Option<String>) {
-    let date_from = args
-        .date_from
-        .clone()
-        .or_else(|| args.year_min.map(|year| format!("{year:04}-01-01")));
-    let date_to = args
-        .date_to
-        .clone()
-        .or_else(|| args.year_max.map(|year| format!("{year:04}-12-31")));
-    (date_from, date_to)
-}
-
-fn article_keyword_token_count(keyword: &str) -> usize {
-    keyword
-        .split(|ch: char| !(ch.is_ascii_alphanumeric() || ch == '_' || ch == '-'))
-        .filter(|token| !token.is_empty())
-        .count()
-}
-
 pub(super) fn is_exact_article_keyword_lookup_eligible(
     filters: &crate::entities::article::ArticleSearchFilters,
 ) -> bool {
@@ -131,7 +118,7 @@ pub(super) fn is_exact_article_keyword_lookup_eligible(
         return false;
     }
 
-    matches!(article_keyword_token_count(keyword), 1..=3)
+    matches!(super::workflow::article_keyword_token_count(keyword), 1..=3)
 }
 
 #[derive(Debug, Clone)]
@@ -149,7 +136,7 @@ pub(super) struct ArticleSearchRequest {
 pub(super) fn article_search_request(
     args: ArticleSearchArgs,
 ) -> Result<ArticleSearchRequest, crate::error::BioMcpError> {
-    let (date_from, date_to) = resolved_article_date_bounds(&args);
+    let (date_from, date_to) = super::workflow::resolved_article_date_bounds(&args);
     let disease = super::super::normalize_cli_tokens(args.disease);
     let drug = super::super::normalize_cli_tokens(args.drug);
     let author = super::super::normalize_cli_tokens(args.author);

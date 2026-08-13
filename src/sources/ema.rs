@@ -13,10 +13,9 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-use crate::entities::SearchPage;
 use crate::entities::drug::{
-    EmaDhpcEntry, EmaDrugSearchResult, EmaPsusaEntry, EmaReferralEntry, EmaRegulatoryActivity,
-    EmaRegulatoryRow, EmaSafetyInfo, EmaShortageEntry,
+    DrugSearchMatchKind, EmaDhpcEntry, EmaDrugSearchResult, EmaPsusaEntry, EmaReferralEntry,
+    EmaRegulatoryActivity, EmaRegulatoryRow, EmaSafetyInfo, EmaShortageEntry,
 };
 use crate::error::BioMcpError;
 use crate::utils::serde::StringOrVec;
@@ -367,7 +366,7 @@ impl EmaClient {
         identity: &EmaDrugIdentity,
         limit: usize,
         offset: usize,
-    ) -> Result<SearchPage<EmaDrugSearchResult>, BioMcpError> {
+    ) -> Result<crate::entities::drug::RankedDrugSearchPage<EmaDrugSearchResult>, BioMcpError> {
         let medicines = self.read_feed::<EmaMedicineRow>(MEDICINES_FILE)?;
         let phrase_terms = identity.term_set();
         let token_terms = identity.search_tokens();
@@ -390,25 +389,30 @@ impl EmaClient {
             };
             let therapeutic_indication = scalar_ema_text(&row.therapeutic_indication);
 
-            let match_rank = if field_matches_terms(&medicine_name, &phrase_terms) {
-                0
-            } else if field_matches_terms(&active_substance, &phrase_terms) {
-                1
-            } else if therapeutic_indication
-                .as_deref()
-                .is_some_and(|value| field_matches_terms(value, &phrase_terms))
-            {
-                2
-            } else if !token_terms.is_empty()
-                && field_matches_terms(&active_substance, &token_terms)
-            {
-                3
-            } else if !token_terms.is_empty()
-                && therapeutic_indication
+            let primary = identity.terms.first();
+            let normalized_name = normalize_term(&medicine_name);
+            let normalized_active = normalize_term(&active_substance);
+            let alias_match = identity.terms.iter().skip(1).any(|term| {
+                normalized_name.as_ref() == Some(term) || normalized_active.as_ref() == Some(term)
+            });
+            let broad_match = field_matches_terms(&medicine_name, &phrase_terms)
+                || field_matches_terms(&active_substance, &phrase_terms)
+                || therapeutic_indication
                     .as_deref()
-                    .is_some_and(|value| field_matches_terms(value, &token_terms))
-            {
-                4
+                    .is_some_and(|value| field_matches_terms(value, &phrase_terms))
+                || (!token_terms.is_empty()
+                    && (field_matches_terms(&active_substance, &token_terms)
+                        || therapeutic_indication
+                            .as_deref()
+                            .is_some_and(|value| field_matches_terms(value, &token_terms))));
+            let match_kind = if normalized_name.as_ref() == primary {
+                DrugSearchMatchKind::ProductName
+            } else if normalized_active.as_ref() == primary {
+                DrugSearchMatchKind::ActiveSubstance
+            } else if alias_match {
+                DrugSearchMatchKind::Alias
+            } else if broad_match {
+                DrugSearchMatchKind::BroadText
             } else {
                 continue;
             };
@@ -426,22 +430,25 @@ impl EmaClient {
                 holder: scalar_value(&row.marketing_authorisation_developer_applicant_holder),
                 marketing_authorisation_date: scalar_value(&row.marketing_authorisation_date),
                 therapeutic_indication,
-                match_rank,
+                match_rank: match_kind.rank(),
             });
         }
 
-        out.sort_by(|a, b| {
-            a.match_rank
-                .cmp(&b.match_rank)
-                .then_with(|| a.medicine_name.cmp(&b.medicine_name))
-                .then_with(|| a.ema_product_number.cmp(&b.ema_product_number))
-        });
+        out.sort_by_key(|medicine| medicine.match_rank);
 
         let total = out.len();
-        let results = out
+        let selected = out.into_iter().skip(offset).take(limit).collect::<Vec<_>>();
+        let match_kinds = selected
+            .iter()
+            .map(|medicine| match medicine.match_rank {
+                0 => DrugSearchMatchKind::ProductName,
+                1 => DrugSearchMatchKind::ActiveSubstance,
+                2 => DrugSearchMatchKind::Alias,
+                _ => DrugSearchMatchKind::BroadText,
+            })
+            .collect();
+        let results = selected
             .into_iter()
-            .skip(offset)
-            .take(limit)
             .map(|medicine| EmaDrugSearchResult {
                 name: medicine.medicine_name,
                 active_substance: medicine.active_substance,
@@ -449,7 +456,11 @@ impl EmaClient {
                 status: medicine.status,
             })
             .collect::<Vec<_>>();
-        Ok(SearchPage::offset(results, Some(total)))
+        Ok(crate::entities::drug::RankedDrugSearchPage::offset(
+            results,
+            Some(total),
+            match_kinds,
+        ))
     }
 
     pub(crate) fn regulatory(

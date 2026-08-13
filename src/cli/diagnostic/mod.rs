@@ -22,7 +22,7 @@ impl From<DiagnosticSourceArg> for crate::entities::diagnostic::DiagnosticSource
 
 #[derive(Args, Debug)]
 pub struct DiagnosticSearchArgs {
-    /// Diagnostic source [default: all]
+    /// Diagnostic source
     #[arg(long, value_enum, default_value_t = DiagnosticSourceArg::All)]
     pub source: DiagnosticSourceArg,
     /// Filter by gene symbol
@@ -43,6 +43,9 @@ pub struct DiagnosticSearchArgs {
     /// Skip the first N results
     #[arg(long, default_value = "0")]
     pub offset: usize,
+    /// Return complete bounded gene and condition arrays
+    #[arg(long)]
+    pub full: bool,
 }
 
 #[derive(Args, Debug)]

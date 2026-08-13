@@ -690,4 +690,5 @@ fn get_drug_region_respects_explicit_region() {
     assert_eq!(region, DrugRegion::Who);
 }
 
+#[path = "../../../tests/unit/cli/drug_json.rs"]
 mod json;

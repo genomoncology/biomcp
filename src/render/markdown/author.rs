@@ -8,6 +8,18 @@ pub fn author_search_markdown(response: &AuthorSearchResponse) -> String {
     );
     for provider in &response.providers {
         let _ = writeln!(out, "\nStatus: {}", status(provider.status));
+        let pagination = &provider.pagination;
+        let _ = writeln!(
+            out,
+            "Total: {}; offset: {}; returned: {}; has more: {}",
+            pagination
+                .total
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "unknown".into()),
+            pagination.offset,
+            provider.results.len(),
+            pagination.next.is_some()
+        );
         if let Some(degradation) = &provider.degradation {
             let _ = writeln!(out, "Degradation: {}", degradation.message);
         }
@@ -15,12 +27,46 @@ pub fn author_search_markdown(response: &AuthorSearchResponse) -> String {
             let AuthorIdentity::ExactProvider { id } = &result.identity;
             let _ = writeln!(
                 out,
-                "\n## {}\n\n- ID: `{id}`\n- ORCID link: not established by BioMCP in this release.",
-                result.display_name
+                "\n## {}\n\n- ID: `{id}`\n- Affiliation: {}\n- Papers: {}\n- Citations: {}\n- h-index: {}\n- ORCID link: not established by BioMCP in this release.",
+                result.display_name,
+                result
+                    .affiliations
+                    .first()
+                    .map(|value| truncate_affiliation(&value.value))
+                    .unwrap_or_else(|| "unknown".into()),
+                metric(result.paper_count),
+                metric(result.citation_count),
+                metric(result.h_index)
+            );
+        }
+        if let Some(next) = pagination.next {
+            let _ = writeln!(
+                out,
+                "\nNext: `biomcp search author --query {} --limit {} --offset {next}`",
+                crate::render::markdown::shell_quote_arg(&response.query.name),
+                pagination.limit
             );
         }
     }
     out
+}
+
+fn metric(value: Option<u64>) -> String {
+    value
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "unknown".into())
+}
+
+fn truncate_affiliation(value: &str) -> String {
+    const MAX: usize = 120;
+    if value.len() <= MAX {
+        return value.to_string();
+    }
+    let mut end = MAX - '…'.len_utf8();
+    while !value.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}…", &value[..end])
 }
 pub fn author_detail_markdown(author: &AuthorDetail) -> String {
     let AuthorIdentity::ExactProvider { id } = &author.identity;
@@ -95,5 +141,15 @@ mod tests {
         ] {
             assert!(output.contains(expected));
         }
+    }
+
+    #[test]
+    fn affiliation_preview_is_bounded_without_splitting_utf8() {
+        let shortened = truncate_affiliation(&"é".repeat(100));
+        assert!(shortened.len() <= 120);
+        assert!(shortened.ends_with('…'));
+        assert!(shortened.is_char_boundary(shortened.len()));
+        assert_eq!(metric(None), "unknown");
+        assert_eq!(metric(Some(0)), "0");
     }
 }

@@ -310,19 +310,16 @@ def test_workflow_ladder_sidecars_match_schema_and_playbooks() -> None:
             assert not re.search(r"<[^>]+>", step["command"])
 
 
-def test_installed_output_schemas_allow_workflow_ladder_meta() -> None:
+def test_installed_output_schemas_allow_descriptive_workflow_meta() -> None:
     for schema_path in sorted((REPO_ROOT / "skills" / "schemas").glob("*.json")):
         if schema_path.name == "workflow-ladder.schema.json":
             continue
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         meta_properties = schema["properties"]["_meta"]["properties"]
         assert "workflow" in meta_properties
-        assert "ladder" in meta_properties
-        assert meta_properties["ladder"]["items"]["required"] == [
-            "step",
-            "command",
-            "what_it_gives",
-        ]
+        assert "workflow_rationale" in meta_properties
+        assert "workflow_playbook" in meta_properties
+        assert "ladder" not in meta_properties
 
 
 def test_rust_sources_do_not_embed_workflow_ladder_commands() -> None:

@@ -225,7 +225,8 @@ Results depend on source document wording and may vary across sources.
 - Diagnostic WHO IVD commands auto-download `who_ivd.csv` into the default data
   dir or `BIOMCP_WHO_IVD_DIR`, then refresh stale files after 72 hours.
 - Run `ema sync`, `who sync`, `cvx sync`, `gtr sync`, or `who-ivd sync` to force-refresh the local runtime data.
-- Use `biomcp health --apis-only` for upstream/API checks and full `biomcp health` for local EMA/WHO/CVX/GTR/cache readiness plus cache-limit warnings.
+- Use `biomcp health --apis-only` for upstream/API checks. Repeat `--api` for exact providers and add `--fail-on-error` for automation.
+- Full `biomcp health` includes local EMA/WHO/CVX/GTR/cache readiness plus cache-limit warnings.
 - In multi-worker environments, run one shared `biomcp serve-http` process so workers share one Streamable HTTP `/mcp` endpoint and one limiter budget.
 
 ## Ops
@@ -242,7 +243,7 @@ Results depend on source document wording and may vary across sources.
 - `who-ivd sync`
 - `update [--check]` - atomically update a standalone-installer-owned Unix binary with release SHA256 verification
 - `uninstall`
-- `health [--apis-only]`
+- `health [--apis-only] [--api <canonical-name>]... [--fail-on-error]`
 - `version`
 
 Run `biomcp list <entity>` for entity-specific examples.

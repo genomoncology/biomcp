@@ -1,15 +1,10 @@
-use std::future::Future;
-use std::pin::Pin;
-
 use serde::{Deserialize, Serialize};
-use tokio::time::timeout;
-use tracing::debug;
 
 use crate::error::BioMcpError;
 
-pub(crate) const WORKFLOW_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(4);
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// dead-code reason: some workflow variants are sidecar-only outside test inventory validation
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) enum Workflow {
     TreatmentLookup,
     ArticleFollowUp,
@@ -63,17 +58,9 @@ pub(crate) struct WorkflowLadderStep {
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct WorkflowMeta {
     pub(crate) workflow: String,
-    pub(crate) ladder: Vec<WorkflowLadderStep>,
+    pub(crate) rationale: String,
+    pub(crate) playbook: String,
 }
-
-pub(crate) enum WorkflowProbeOutcome {
-    Triggered(WorkflowMeta),
-    NotTriggered,
-    Unavailable,
-}
-
-pub(crate) type WorkflowProbeFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<bool, BioMcpError>> + Send + 'a>>;
 
 pub(crate) fn load(workflow: Workflow) -> Result<WorkflowLadder, BioMcpError> {
     let slug = workflow.slug();
@@ -87,42 +74,9 @@ pub(crate) fn meta_for(workflow: Workflow) -> Result<WorkflowMeta, BioMcpError> 
     let ladder = load(workflow)?;
     Ok(WorkflowMeta {
         workflow: ladder.workflow,
-        ladder: ladder.ladder,
+        rationale: ladder.rationale,
+        playbook: ladder.playbook,
     })
-}
-
-pub(crate) async fn probe_workflow(
-    workflow: Workflow,
-    probe: WorkflowProbeFuture<'_>,
-) -> Result<WorkflowProbeOutcome, BioMcpError> {
-    probe_workflow_with_timeout(workflow, probe, WORKFLOW_PROBE_TIMEOUT).await
-}
-
-async fn probe_workflow_with_timeout(
-    workflow: Workflow,
-    probe: WorkflowProbeFuture<'_>,
-    timeout_duration: std::time::Duration,
-) -> Result<WorkflowProbeOutcome, BioMcpError> {
-    match timeout(timeout_duration, probe).await {
-        Ok(Ok(true)) => Ok(WorkflowProbeOutcome::Triggered(meta_for(workflow)?)),
-        Ok(Ok(false)) => Ok(WorkflowProbeOutcome::NotTriggered),
-        Ok(Err(err)) => {
-            debug!(
-                workflow = workflow.slug(),
-                error = %err,
-                "workflow ladder probe failed; omitting workflow metadata"
-            );
-            Ok(WorkflowProbeOutcome::Unavailable)
-        }
-        Err(_) => {
-            debug!(
-                workflow = workflow.slug(),
-                timeout_ms = timeout_duration.as_millis(),
-                "workflow ladder probe timed out; omitting workflow metadata"
-            );
-            Ok(WorkflowProbeOutcome::Unavailable)
-        }
-    }
 }
 
 fn workflow_asset_error(slug: &str, message: impl Into<String>) -> BioMcpError {
@@ -176,10 +130,7 @@ fn validate_ladder(slug: &str, ladder: &WorkflowLadder) -> Result<(), BioMcpErro
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
-
-    use super::{Workflow, WorkflowProbeOutcome, load, meta_for, probe_workflow_with_timeout};
-    use crate::error::BioMcpError;
+    use super::{Workflow, load, meta_for};
 
     #[test]
     fn every_workflow_ladder_loads_and_validates() {
@@ -195,40 +146,7 @@ mod tests {
     fn workflow_meta_discards_sidecar_only_fields() {
         let meta = meta_for(Workflow::PharmacogeneCumulative).expect("workflow metadata");
         assert_eq!(meta.workflow, "pharmacogene-cumulative");
-        assert_eq!(meta.ladder.len(), 4);
-        assert!(meta.ladder[0].command.starts_with("biomcp "));
-    }
-
-    #[tokio::test]
-    async fn probe_workflow_omits_metadata_on_probe_error() {
-        let outcome = probe_workflow_with_timeout(
-            Workflow::TreatmentLookup,
-            Box::pin(async {
-                Err(BioMcpError::InvalidArgument(
-                    "synthetic probe failure".to_string(),
-                ))
-            }),
-            Duration::from_secs(1),
-        )
-        .await
-        .expect("probe errors should degrade");
-
-        assert!(matches!(outcome, WorkflowProbeOutcome::Unavailable));
-    }
-
-    #[tokio::test]
-    async fn probe_workflow_omits_metadata_on_timeout() {
-        let outcome = probe_workflow_with_timeout(
-            Workflow::TreatmentLookup,
-            Box::pin(async {
-                tokio::time::sleep(Duration::from_millis(50)).await;
-                Ok(true)
-            }),
-            Duration::from_millis(1),
-        )
-        .await
-        .expect("probe timeouts should degrade");
-
-        assert!(matches!(outcome, WorkflowProbeOutcome::Unavailable));
+        assert!(!meta.rationale.is_empty());
+        assert_eq!(meta.playbook, "biomcp skill pharmacogene-cumulative");
     }
 }

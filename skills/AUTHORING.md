@@ -15,7 +15,7 @@ Keep commands concrete. Use real example terms, IDs, or flags rather than placeh
 
 ## Ladder sidecar mapping
 
-A `*.ladder.json` file is the machine-readable version of the command block. Runtime-routed ladder sidecars let BioMCP attach `_meta.workflow` and `_meta.ladder[]` guidance to matching command output; non-routed sidecars are still useful installed references for agents and authors.
+A `*.ladder.json` file is the machine-readable version of the command block. Runtime responses expose only `_meta.workflow`, `_meta.workflow_rationale`, and `_meta.workflow_playbook`; executable example ladders remain installed references for agents and authors.
 
 Map fields this way:
 

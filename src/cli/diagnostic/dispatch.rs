@@ -40,14 +40,42 @@ pub(super) fn diagnostic_get_json(
 }
 
 pub(super) fn diagnostic_search_json(
-    results: Vec<crate::entities::diagnostic::DiagnosticSearchResult>,
+    mut results: Vec<crate::entities::diagnostic::DiagnosticSearchResult>,
     total: Option<usize>,
     limit: usize,
     offset: usize,
+    full: bool,
 ) -> anyhow::Result<String> {
+    #[derive(serde::Serialize)]
+    struct DiagnosticSearchView {
+        #[serde(flatten)]
+        row: crate::entities::diagnostic::DiagnosticSearchResult,
+        genes_total: usize,
+        genes_has_more: bool,
+        conditions_total: usize,
+        conditions_has_more: bool,
+    }
+    let next_commands = crate::render::markdown::search_next_commands_diagnostic(&results);
+    let results = results
+        .drain(..)
+        .map(|mut row| {
+            let genes_total = row.genes.len();
+            let conditions_total = row.conditions.len();
+            if !full {
+                row.genes.truncate(5);
+                row.conditions.truncate(5);
+            }
+            DiagnosticSearchView {
+                genes_has_more: row.genes.len() < genes_total,
+                conditions_has_more: row.conditions.len() < conditions_total,
+                genes_total,
+                conditions_total,
+                row,
+            }
+        })
+        .collect::<Vec<_>>();
     let true_zero_result = results.is_empty() && total == Some(0);
     let pagination = super::super::PaginationMeta::offset(offset, limit, results.len(), total);
-    let next_commands = crate::render::markdown::search_next_commands_diagnostic(&results);
     let suggestions =
         true_zero_result.then(crate::render::markdown::diagnostic_zero_result_recovery_commands);
     super::super::search_json_with_meta_and_suggestions(
@@ -84,7 +112,7 @@ pub(in crate::cli) async fn handle_search(
     let pagination =
         super::super::PaginationMeta::offset(args.offset, args.limit, results.len(), total);
     let text = if json {
-        diagnostic_search_json(results, total, args.limit, args.offset)?
+        diagnostic_search_json(results, total, args.limit, args.offset, args.full)?
     } else {
         let footer = super::super::pagination_footer_offset(&pagination);
         crate::render::markdown::diagnostic_search_markdown_with_footer(

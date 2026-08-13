@@ -418,8 +418,10 @@ inventory ledger.
   and `error` counts. These categories reconcile with the report invariant
   `healthy + warning + excluded + error == total`.
 - Partial upstream failures remain visible in the rendered report.
-- Current CLI behavior is report-first: the command exits `0` when the report
-  renders, even if some upstream rows are failing.
+- Default CLI behavior remains report-first and exits `0` after rendering.
+  Repeatable `--api` filters select exact catalog names and imply API-only;
+  `--fail-on-error` renders the same complete report, then exits `1` exactly
+  when the existing error count is nonzero.
 
 ### 4. Contract Smoke Checks (`scripts/contract-smoke.sh`)
 

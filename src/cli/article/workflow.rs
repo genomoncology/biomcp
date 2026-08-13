@@ -1,5 +1,26 @@
 use super::dispatch::ArticleSuggestion;
 
+pub(super) fn resolved_article_date_bounds(
+    args: &super::ArticleSearchArgs,
+) -> (Option<String>, Option<String>) {
+    let date_from = args
+        .date_from
+        .clone()
+        .or_else(|| args.year_min.map(|year| format!("{year:04}-01-01")));
+    let date_to = args
+        .date_to
+        .clone()
+        .or_else(|| args.year_max.map(|year| format!("{year:04}-12-31")));
+    (date_from, date_to)
+}
+
+pub(super) fn article_keyword_token_count(keyword: &str) -> usize {
+    keyword
+        .split(|ch: char| !(ch.is_ascii_alphanumeric() || ch == '_' || ch == '-'))
+        .filter(|token| !token.is_empty())
+        .count()
+}
+
 pub(super) fn article_follow_up_workflow(
     article: &crate::entities::article::Article,
 ) -> Result<Option<crate::workflow_ladders::WorkflowMeta>, crate::error::BioMcpError> {

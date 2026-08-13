@@ -472,7 +472,10 @@ entity-owned `section_outcomes` registry. Its six states are `not_requested`,
 means BioMCP determined locally that a required input was absent and did not
 contact the provider; it has empty `sources` and a safe explanatory message.
 `empty` means a healthy source confirmed zero rows; `unavailable` means no usable
-result was obtained. `sources` credits only providers that returned usable
+result was obtained. Human output follows those typed states: `not_requested`
+makes no absence claim, `empty` alone can say that a healthy source found no
+rows, `degraded` is partial, and `unavailable` draws no negative conclusion.
+`sources` credits only providers that returned usable
 evidence, so inapplicable and unavailable outcomes have no successful source
 credit. `_meta.section_sources` omits `not_requested` but preserves source-less
 `inapplicable` entries.

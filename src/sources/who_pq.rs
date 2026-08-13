@@ -9,9 +9,9 @@ use std::time::{Duration, SystemTime};
 use http_cache_reqwest::CacheMode;
 use regex::Regex;
 
-use crate::entities::SearchPage;
 use crate::entities::drug::{
-    WhoPrequalificationEntry, WhoPrequalificationKind, WhoPrequalificationSearchResult,
+    DrugSearchMatchKind, WhoPrequalificationEntry, WhoPrequalificationKind,
+    WhoPrequalificationSearchResult,
 };
 use crate::error::BioMcpError;
 
@@ -202,7 +202,10 @@ impl WhoPqClient {
         limit: usize,
         offset: usize,
         product_type: WhoProductTypeFilter,
-    ) -> Result<SearchPage<WhoPrequalificationSearchResult>, BioMcpError> {
+    ) -> Result<
+        crate::entities::drug::RankedDrugSearchPage<WhoPrequalificationSearchResult>,
+        BioMcpError,
+    > {
         const MAX_SEARCH_LIMIT: usize = 50;
         if limit == 0 || limit > MAX_SEARCH_LIMIT {
             return Err(BioMcpError::InvalidArgument(format!(
@@ -210,13 +213,25 @@ impl WhoPqClient {
             )));
         }
 
-        let rows = self.regulatory(identity, product_type)?;
+        let mut rows = self
+            .regulatory(identity, product_type)?
+            .into_iter()
+            .map(|row| {
+                let kind = who_match_kind(&row, identity);
+                (row, kind)
+            })
+            .collect::<Vec<_>>();
+        rows.sort_by_key(|(_, kind)| kind.rank());
         let total = rows.len();
-        let results = rows
+        let selected = rows
             .into_iter()
             .skip(offset)
             .take(limit)
-            .map(|row| WhoPrequalificationSearchResult {
+            .collect::<Vec<_>>();
+        let match_kinds = selected.iter().map(|(_, kind)| *kind).collect();
+        let results = selected
+            .into_iter()
+            .map(|(row, _)| WhoPrequalificationSearchResult {
                 kind: row.kind,
                 inn: row.inn,
                 product_type: row.product_type,
@@ -235,7 +250,11 @@ impl WhoPqClient {
                 responsible_nra: row.responsible_nra,
             })
             .collect();
-        Ok(SearchPage::offset(results, Some(total)))
+        Ok(crate::entities::drug::RankedDrugSearchPage::offset(
+            results,
+            Some(total),
+            match_kinds,
+        ))
     }
 
     pub(crate) fn read_rows(&self) -> Result<Vec<WhoPrequalificationEntry>, BioMcpError> {
@@ -749,6 +768,33 @@ fn row_matches_identity(row: &WhoPrequalificationEntry, identity: &WhoPqIdentity
                 || (row.is_vaccine() && contains_boundary_phrase(term, field))
         })
     })
+}
+
+fn who_match_kind(row: &WhoPrequalificationEntry, identity: &WhoPqIdentity) -> DrugSearchMatchKind {
+    let primary = identity.terms.first();
+    if row
+        .commercial_name
+        .as_deref()
+        .and_then(normalize_match_key)
+        .as_ref()
+        == primary
+    {
+        return DrugSearchMatchKind::ProductName;
+    }
+    if normalize_match_key(&row.inn).as_ref() == primary {
+        return DrugSearchMatchKind::ActiveSubstance;
+    }
+    let keys = entry_match_keys(row);
+    if identity
+        .terms
+        .iter()
+        .skip(1)
+        .any(|alias| keys.iter().any(|key| key == alias))
+    {
+        DrugSearchMatchKind::Alias
+    } else {
+        DrugSearchMatchKind::BroadText
+    }
 }
 
 pub(crate) fn filter_regulatory_rows(

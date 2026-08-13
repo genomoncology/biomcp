@@ -97,7 +97,7 @@ Next: `biomcp get pgx {{ query }} guidelines --offset {{ section_pagination.guid
 {% for row in annotations -%}
 | {{ row.source }} | {{ row.kind }} | {{ row.id }} | {% if row.url %}[{{ row.title }}]({{ row.url }}){% else %}{{ row.title }}{% endif %} | {{ row.level or "-" }} |
 {% endfor -%}
-{% else -%}
+{% elif show_annotations_empty -%}
 No PharmGKB annotations found for this query.
 {% endif -%}
 {% if annotations_note -%}

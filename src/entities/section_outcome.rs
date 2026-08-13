@@ -254,6 +254,7 @@ impl SectionOutcomes {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn iter(&self) -> impl Iterator<Item = (&str, &SectionOutcome)> {
         self.0.iter().map(|(key, outcome)| (key.as_str(), outcome))
     }

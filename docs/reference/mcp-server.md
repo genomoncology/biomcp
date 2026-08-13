@@ -143,7 +143,7 @@ Current builds always publish the help resource and one markdown resource per em
 | `biomcp://help` | BioMCP Overview | Same in-memory help text returned by `biomcp skill render`. |
 | `biomcp://skill/<slug>` | Embedded worked example | Markdown resource for a built-in BioMCP skill use-case. |
 
-Workflow ladders do not add MCP resources. MCP callers that execute BioMCP commands with `--json`, or pass tool input `json: true`, receive the same CLI JSON contract, so first-call responses can include `_meta.workflow` and `_meta.ladder[]` when a sidecar-backed ladder trigger matches. `_meta.next_commands` remains the dynamic one-hop follow-up list.
+Workflow playbooks do not add MCP resources. MCP callers that execute BioMCP commands with `--json`, or pass tool input `json: true`, receive the same CLI JSON contract, so responses can include `_meta.workflow`, `_meta.workflow_rationale`, and `_meta.workflow_playbook`. `_meta.next_commands` remains the dynamic current-result follow-up list; unrelated executable examples are never placed in runtime metadata.
 
 ## Tool responses
 
@@ -152,7 +152,7 @@ By default, the `biomcp` tool keeps non-chart calls as readable text and appends
 - `## Sources` rolls up `_meta.section_sources` per section.
 - `## Next commands` rolls up `_meta.next_commands` as copyable follow-up commands.
 
-Agents that need the full structured contract can pass the tool input field `json: true`; BioMCP injects `--json` and returns JSON text with metadata such as `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.ladder`.
+Agents that need the full structured contract can pass the tool input field `json: true`; BioMCP injects `--json` and returns JSON text with metadata such as `_meta.section_sources`, `_meta.evidence_urls`, `_meta.next_commands`, and `_meta.workflow_playbook`.
 
 MCP responses never disclose workstation-local article full-text paths. When full text is saved, readable MCP output reports that it is available while withholding the cache path; JSON replaces the CLI-only `full_text_path` field with `full_text_available: true`. Source, manifest, status, and provenance fields remain available. This transport boundary applies to both local stdio and remote Streamable HTTP MCP clients. Direct CLI calls intentionally continue to print `Saved to:` and serialize `full_text_path` because the CLI user is operating on the machine that owns the file.
 

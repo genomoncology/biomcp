@@ -357,6 +357,7 @@ pub fn disease_markdown(
         show_clinical_features_section => show_clinical_features_section,
         show_civic_section => show_civic_section,
         show_disgenet_section => show_disgenet_section,
+        show_disgenet_empty => section_has_healthy_empty(&disease.section_outcomes, "disgenet"),
         xrefs => xrefs,
         sections_block => format_sections_block("disease", &disease.id, sections_disease(disease, requested_sections)),
         related_block => format_related_block(related_disease(disease)),

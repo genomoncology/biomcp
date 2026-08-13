@@ -20,8 +20,8 @@ export BIOMCP_CACHE_DIR="$cache_dir"
 export BIOMCP_CACHE_MODE="off"
 
 binary="${BIOMCP_BIN:-$repo_root/target/release/biomcp}"
-out="$($binary get article 22663011 fulltext)"
-saved_path="$(printf '%s\n' "$out" | sed -n 's/^Saved to: //p' | head -n1)"
+out="$($binary --json get article 22663011 fulltext)"
+saved_path="$(printf '%s\n' "$out" | jq -r '.full_text_path // empty')"
 
 if [ -z "$saved_path" ]; then
   printf '%s\n' "$out" >&2

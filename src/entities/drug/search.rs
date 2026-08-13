@@ -1,6 +1,6 @@
 //! Drug search workflows and search-only helpers.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 
 use tracing::warn;
@@ -17,10 +17,83 @@ use crate::transform;
 use super::label::extract_openfda_values_from_result;
 use super::query::{AtcExpansion, build_mychem_query, mechanism_atc_expansions};
 use super::{
-    Drug, DrugRegion, DrugSearchFilters, DrugSearchPageWithRegion, DrugSearchResult,
-    WhoPrequalificationEntry, WhoPrequalificationSearchResult, build_ema_identity,
-    build_who_identity, direct_drug_lookup,
+    Drug, DrugRegion, DrugSearchFilters, DrugSearchMatchKind, DrugSearchPageWithRegion,
+    DrugSearchResult, RankedDrugSearchPage, WhoPrequalificationEntry,
+    WhoPrequalificationSearchResult, build_ema_identity, build_who_identity, direct_drug_lookup,
 };
+
+fn normalized_name(value: &str) -> String {
+    value
+        .trim()
+        .trim_matches('.')
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_ascii_lowercase()
+}
+
+fn string_field_matches(value: &crate::utils::serde::StringOrVec, query: &str) -> bool {
+    match value {
+        crate::utils::serde::StringOrVec::None => false,
+        crate::utils::serde::StringOrVec::Single(value) => normalized_name(value) == query,
+        crate::utils::serde::StringOrVec::Multiple(values) => {
+            values.iter().any(|value| normalized_name(value) == query)
+        }
+    }
+}
+
+fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
+    let query = normalized_name(query);
+    if hit
+        .openfda
+        .as_ref()
+        .is_some_and(|value| string_field_matches(&value.brand_name, &query))
+    {
+        return DrugSearchMatchKind::ProductName;
+    }
+    let ndc_matches = hit.ndc.as_ref().is_some_and(|value| match value {
+        MyChemNdcField::One(row) => row
+            .nonproprietaryname
+            .as_deref()
+            .is_some_and(|value| normalized_name(value) == query),
+        MyChemNdcField::Many(rows) => rows.iter().any(|row| {
+            row.nonproprietaryname
+                .as_deref()
+                .is_some_and(|value| normalized_name(value) == query)
+        }),
+    });
+    let active_matches = ndc_matches
+        || hit
+            .openfda
+            .as_ref()
+            .is_some_and(|value| string_field_matches(&value.generic_name, &query))
+        || hit
+            .drugbank
+            .as_ref()
+            .and_then(|value| value.name.as_deref())
+            .is_some_and(|value| normalized_name(value) == query)
+        || hit
+            .chembl
+            .as_ref()
+            .and_then(|value| value.pref_name.as_deref())
+            .is_some_and(|value| normalized_name(value) == query);
+    if active_matches {
+        DrugSearchMatchKind::ActiveSubstance
+    } else if hit.drugbank.as_ref().is_some_and(|value| {
+        value
+            .synonyms
+            .iter()
+            .any(|alias| normalized_name(alias) == query)
+    }) {
+        DrugSearchMatchKind::Alias
+    } else {
+        DrugSearchMatchKind::BroadText
+    }
+}
+
+fn rank_drug_candidates<T>(candidates: &mut [(T, DrugSearchMatchKind)]) {
+    candidates.sort_by_key(|(_, kind)| kind.rank());
+}
 
 pub async fn search(
     filters: &DrugSearchFilters,
@@ -126,6 +199,93 @@ pub async fn search_page(
     }
 
     Ok(SearchPage::offset(out, Some(resp.total)))
+}
+
+async fn search_ranked_name_us_page(
+    filters: &DrugSearchFilters,
+    query: &str,
+    limit: usize,
+    offset: usize,
+) -> Result<RankedDrugSearchPage<DrugSearchResult>, BioMcpError> {
+    const PAGE_SIZE: usize = 50;
+    crate::sources::validate_biothings_result_window("MyChem search", limit, offset)?;
+    let q = build_mychem_query(filters)?;
+    let client = crate::sources::mychem::MyChemClient::new()?;
+    let mut provider_offset = 0;
+    let mut candidates: Vec<(DrugSearchResult, DrugSearchMatchKind)> = Vec::new();
+    let mut positions: HashMap<String, usize> = HashMap::new();
+
+    loop {
+        let response = client
+            .query_with_fields(
+                &q,
+                PAGE_SIZE,
+                provider_offset,
+                crate::sources::mychem::MYCHEM_FIELDS_SEARCH,
+            )
+            .await?;
+        if response.total > crate::sources::BIOTHINGS_MAX_RESULT_WINDOW {
+            return Err(BioMcpError::InvalidArgument(format!(
+                "Drug search matched {} MyChem rows; narrow the query so complete ranking fits the 10,000-row provider window.",
+                response.total
+            )));
+        }
+        let returned = response.hits.len();
+        for hit in &response.hits {
+            let Some(mut row) = transform::drug::from_mychem_search_hit(hit) else {
+                continue;
+            };
+            row.name = normalized_name(&row.name);
+            if row.name.is_empty() {
+                continue;
+            }
+            let kind = mychem_match_kind(hit, query);
+            if let Some(index) = positions.get(&row.name).copied() {
+                if kind.rank() < candidates[index].1.rank() {
+                    candidates[index].1 = kind;
+                }
+            } else {
+                positions.insert(row.name.clone(), candidates.len());
+                candidates.push((row, kind));
+            }
+        }
+        provider_offset = provider_offset.saturating_add(returned);
+        if returned == 0 || provider_offset >= response.total {
+            break;
+        }
+    }
+
+    if candidates.is_empty() {
+        let page = search_page(filters, limit, offset).await?;
+        let query = normalized_name(query);
+        let kinds = page
+            .results
+            .iter()
+            .map(|row| {
+                if normalized_name(&row.name) == query {
+                    DrugSearchMatchKind::ProductName
+                } else {
+                    DrugSearchMatchKind::BroadText
+                }
+            })
+            .collect();
+        return Ok(RankedDrugSearchPage::offset(
+            page.results,
+            page.total,
+            kinds,
+        ));
+    }
+
+    rank_drug_candidates(&mut candidates);
+    let total = candidates.len();
+    let selected = candidates
+        .into_iter()
+        .skip(offset)
+        .take(limit)
+        .collect::<Vec<_>>();
+    let kinds = selected.iter().map(|(_, kind)| *kind).collect();
+    let results = selected.into_iter().map(|(row, _)| row).collect();
+    Ok(RankedDrugSearchPage::offset(results, Some(total), kinds))
 }
 
 pub(super) fn should_attempt_openfda_fallback(
@@ -443,7 +603,7 @@ pub async fn search_name_query_with_region(
 
     match region {
         DrugRegion::Us => Ok(DrugSearchPageWithRegion::Us(
-            search_page(&filters, limit, offset).await?,
+            search_ranked_name_us_page(&filters, query, limit, offset).await?,
         )),
         DrugRegion::Eu => Ok(DrugSearchPageWithRegion::Eu(
             eu_client
@@ -458,7 +618,7 @@ pub async fn search_name_query_with_region(
                 .search(&who_identity, limit, offset, product_type)?,
         )),
         DrugRegion::All => Ok(DrugSearchPageWithRegion::All {
-            us: search_page(&filters, limit, offset).await?,
+            us: search_ranked_name_us_page(&filters, query, limit, offset).await?,
             eu: eu_client
                 .as_ref()
                 .expect("EU client should exist for all region")
@@ -594,10 +754,12 @@ pub async fn search_page_with_region(
         }
         return match region {
             DrugRegion::Us => Ok(DrugSearchPageWithRegion::Us(
-                search_page(filters, limit, offset).await?,
+                search_page(filters, limit, offset).await?.into(),
             )),
             DrugRegion::Who => Ok(DrugSearchPageWithRegion::Who(
-                search_structured_who_page(filters, limit, offset, product_type).await?,
+                search_structured_who_page(filters, limit, offset, product_type)
+                    .await?
+                    .into(),
             )),
             DrugRegion::Eu | DrugRegion::All => Err(BioMcpError::InvalidArgument(
                 "EMA and all-region search currently support name/alias lookups only; use --region us for structured MyChem filters or --region who to filter structured U.S. hits through WHO prequalification.".into(),

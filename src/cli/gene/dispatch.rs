@@ -117,7 +117,7 @@ pub(super) async fn render_gene_card_outcome(
             if !json_output && !alias_suggestions_as_json {
                 return Ok(CommandOutcome::stdout(human));
             }
-            let workflow = gene_mechanism_workflow(&gene).await?;
+            let workflow = gene_mechanism_workflow(&gene)?;
             let structured = crate::render::json::to_entity_json_with_suggestions_and_workflow(
                 &gene,
                 crate::render::markdown::gene_evidence_urls(&gene),
@@ -150,19 +150,12 @@ pub(super) async fn render_gene_card_outcome(
     }
 }
 
-async fn gene_mechanism_workflow(
+fn gene_mechanism_workflow(
     gene: &crate::entities::gene::Gene,
 ) -> Result<Option<crate::workflow_ladders::WorkflowMeta>, crate::error::BioMcpError> {
-    match crate::workflow_ladders::probe_workflow(
-        crate::workflow_ladders::Workflow::MechanismPathway,
-        Box::pin(crate::entities::gene::has_reactome_pathway_signal(
-            &gene.symbol,
-        )),
-    )
-    .await?
-    {
-        crate::workflow_ladders::WorkflowProbeOutcome::Triggered(meta) => Ok(Some(meta)),
-        crate::workflow_ladders::WorkflowProbeOutcome::NotTriggered
-        | crate::workflow_ladders::WorkflowProbeOutcome::Unavailable => Ok(None),
-    }
+    (!gene.symbol.trim().is_empty())
+        .then(|| {
+            crate::workflow_ladders::meta_for(crate::workflow_ladders::Workflow::MechanismPathway)
+        })
+        .transpose()
 }

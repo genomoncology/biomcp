@@ -357,8 +357,10 @@ pub(super) struct SearchJsonMeta {
     pub(super) suggestions: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) workflow: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub(super) ladder: Vec<crate::workflow_ladders::WorkflowLadderStep>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) workflow_rationale: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) workflow_playbook: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) section_sources: Vec<crate::render::provenance::SectionSource>,
 }
@@ -417,7 +419,8 @@ pub(super) fn search_meta_with_section_sources(
         next_commands: Vec::new(),
         suggestions: None,
         workflow: None,
-        ladder: Vec::new(),
+        workflow_rationale: None,
+        workflow_playbook: None,
         section_sources: Vec::new(),
     });
     (!meta.next_commands.is_empty() || !section_sources.is_empty())
@@ -438,15 +441,22 @@ pub(super) fn search_meta_with_workflow(
 ) -> Option<SearchJsonMeta> {
     let next_commands = normalize_next_commands(next_commands);
     let suggestions = suggestions.map(normalize_next_commands);
-    let (workflow, ladder) = workflow
-        .map(|meta| (Some(meta.workflow), meta.ladder))
-        .unwrap_or_else(|| (None, Vec::new()));
+    let (workflow, workflow_rationale, workflow_playbook) = workflow
+        .map(|meta| {
+            (
+                Some(meta.workflow),
+                Some(meta.rationale),
+                Some(meta.playbook),
+            )
+        })
+        .unwrap_or((None, None, None));
     (!next_commands.is_empty() || suggestions.is_some() || workflow.is_some()).then_some(
         SearchJsonMeta {
             next_commands,
             suggestions,
             workflow,
-            ladder,
+            workflow_rationale,
+            workflow_playbook,
             section_sources: Vec::new(),
         },
     )

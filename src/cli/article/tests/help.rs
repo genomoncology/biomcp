@@ -1,7 +1,7 @@
 //! Article CLI help text and parser tests.
 use clap::{CommandFactory, Parser};
 
-use super::super::dispatch::resolved_article_date_bounds;
+use super::super::workflow::resolved_article_date_bounds;
 use crate::cli::{Cli, Commands, GetEntity, SearchEntity};
 
 fn render_article_search_long_help() -> String {

@@ -271,7 +271,13 @@ fn discover_top_level_command_parses_query() {
     let cli = Cli::try_parse_from(["biomcp", "discover", "ERBB1"]).expect("parse");
 
     let Cli {
-        command: Commands::Discover(crate::cli::system::DiscoverArgs { query }),
+        command:
+            Commands::Discover(crate::cli::system::DiscoverArgs {
+                query,
+                limit,
+                offset,
+                full,
+            }),
         ..
     } = cli
     else {
@@ -279,6 +285,9 @@ fn discover_top_level_command_parses_query() {
     };
 
     assert_eq!(query, "ERBB1");
+    assert_eq!(limit, 5);
+    assert_eq!(offset, 0);
+    assert!(!full);
 }
 
 #[test]
@@ -288,7 +297,10 @@ fn health_command_parses_apis_only() {
 
     assert!(matches!(
         cli.command,
-        Commands::Health(crate::cli::system::HealthArgs { apis_only: true })
+        Commands::Health(crate::cli::system::HealthArgs {
+            apis_only: true,
+            ..
+        })
     ));
 }
 

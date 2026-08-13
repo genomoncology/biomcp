@@ -415,6 +415,63 @@ pub struct EmaDrugSearchResult {
     pub status: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DrugSearchMatchKind {
+    ProductName,
+    ActiveSubstance,
+    Alias,
+    BroadText,
+}
+
+impl DrugSearchMatchKind {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::ProductName => "product_name",
+            Self::ActiveSubstance => "active_substance",
+            Self::Alias => "alias",
+            Self::BroadText => "broad_text",
+        }
+    }
+
+    pub(crate) fn rank(self) -> u8 {
+        match self {
+            Self::ProductName => 0,
+            Self::ActiveSubstance => 1,
+            Self::Alias => 2,
+            Self::BroadText => 3,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct RankedDrugSearchPage<T> {
+    pub results: Vec<T>,
+    pub total: Option<usize>,
+    pub match_kinds: Vec<DrugSearchMatchKind>,
+}
+
+impl<T> RankedDrugSearchPage<T> {
+    pub(crate) fn offset(
+        results: Vec<T>,
+        total: Option<usize>,
+        match_kinds: Vec<DrugSearchMatchKind>,
+    ) -> Self {
+        debug_assert_eq!(results.len(), match_kinds.len());
+        Self {
+            results,
+            total,
+            match_kinds,
+        }
+    }
+}
+
+impl<T> From<SearchPage<T>> for RankedDrugSearchPage<T> {
+    fn from(page: SearchPage<T>) -> Self {
+        let kinds = vec![DrugSearchMatchKind::BroadText; page.results.len()];
+        Self::offset(page.results, page.total, kinds)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmaRegulatoryRow {
     pub medicine_name: String,
@@ -511,13 +568,13 @@ pub struct EmaShortageEntry {
 
 #[derive(Debug, Clone)]
 pub enum DrugSearchPageWithRegion {
-    Us(SearchPage<DrugSearchResult>),
-    Eu(SearchPage<EmaDrugSearchResult>),
-    Who(SearchPage<WhoPrequalificationSearchResult>),
+    Us(RankedDrugSearchPage<DrugSearchResult>),
+    Eu(RankedDrugSearchPage<EmaDrugSearchResult>),
+    Who(RankedDrugSearchPage<WhoPrequalificationSearchResult>),
     All {
-        us: SearchPage<DrugSearchResult>,
-        eu: SearchPage<EmaDrugSearchResult>,
-        who: SearchPage<WhoPrequalificationSearchResult>,
+        us: RankedDrugSearchPage<DrugSearchResult>,
+        eu: RankedDrugSearchPage<EmaDrugSearchResult>,
+        who: RankedDrugSearchPage<WhoPrequalificationSearchResult>,
     },
 }
 

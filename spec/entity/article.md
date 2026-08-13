@@ -860,7 +860,7 @@ same stable article-asset grammar, even when no package contains the linked file
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663011 assets \
-  | jq '(.assets | any(.filename == "linked-jats-s2.csv" and .asset_key == "linked-jats-s2.csv" and .size_bytes == 37 and .sha256 == "1caac444292d1aaff76b7dbc82291105f9c420a5412de39c915e615369772893" and (.provider.source | length > 0) and (.discovery_routes | any(.source_document == "jats_xml")) and .handle == "biomcp get article 22663011 asset linked-jats-s2.csv")) and (.coverage | any(.filename == "linked-jats-s2.csv" and .source_document == "jats_xml" and .outcome == "retrievable" and .handle == "biomcp get article 22663011 asset linked-jats-s2.csv")) and (._meta.next_commands | index("biomcp get article 22663011 asset linked-jats-s2.csv") != null)' \
+  | jq '(.assets | any(.filename == "linked-jats-s2.csv" and .asset_key == "linked-jats-s2.csv" and .size_bytes == 37 and .sha256 == "1caac444292d1aaff76b7dbc82291105f9c420a5412de39c915e615369772893" and (.provider.source | length > 0) and (.discovery_routes | any(.source_document == "jats_xml")) and .handle == "biomcp get article 22663011 asset linked-jats-s2.csv")) and (.coverage | all(.filename != "linked-jats-s2.csv")) and (._meta.next_commands | index("biomcp get article 22663011 asset linked-jats-s2.csv") != null)' \
   | mustmatch 'true'
 ```
 
@@ -871,7 +871,7 @@ same stable article-asset grammar, even when no package contains the linked file
 
 ```bash
 ../../tools/biomcp-ci --json get article 22663012 assets \
-  | jq '(.assets | any(.filename == "linked-html-s1.xlsx" and .asset_key == "linked-html-s1.xlsx" and .size_bytes == 46 and .sha256 == "db9f09a4e801943defc5187ca88d685e1bff170602ae8cba8d2539699ae60cdb" and (.provider.source | length > 0) and (.discovery_routes | any(.source_document == "pmc_html")) and .handle == "biomcp get article 22663012 asset linked-html-s1.xlsx")) and (.coverage | any(.filename == "linked-html-s1.xlsx" and .source_document == "pmc_html" and .outcome == "retrievable" and .handle == "biomcp get article 22663012 asset linked-html-s1.xlsx")) and (._meta.next_commands | index("biomcp get article 22663012 asset linked-html-s1.xlsx") != null)' \
+  | jq '(.assets | any(.filename == "linked-html-s1.xlsx" and .asset_key == "linked-html-s1.xlsx" and .size_bytes == 46 and .sha256 == "db9f09a4e801943defc5187ca88d685e1bff170602ae8cba8d2539699ae60cdb" and (.provider.source | length > 0) and (.discovery_routes | any(.source_document == "pmc_html")) and .handle == "biomcp get article 22663012 asset linked-html-s1.xlsx")) and (.coverage | all(.filename != "linked-html-s1.xlsx")) and (._meta.next_commands | index("biomcp get article 22663012 asset linked-html-s1.xlsx") != null)' \
   | mustmatch 'true'
 ```
 

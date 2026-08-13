@@ -195,11 +195,8 @@ fn search_meta_with_workflow_keeps_meta_without_next_commands() {
         None,
         Some(crate::workflow_ladders::WorkflowMeta {
             workflow: "demo-workflow".to_string(),
-            ladder: vec![crate::workflow_ladders::WorkflowLadderStep {
-                step: 1,
-                command: "biomcp demo workflow-step".to_string(),
-                what_it_gives: "A deterministic demo step.".to_string(),
-            }],
+            rationale: "A deterministic demo workflow.".to_string(),
+            playbook: "biomcp skill demo-workflow".to_string(),
         }),
     )
     .expect("workflow metadata should force _meta");
@@ -207,7 +204,12 @@ fn search_meta_with_workflow_keeps_meta_without_next_commands() {
     let value = serde_json::to_value(meta).expect("meta json");
     assert_eq!(value["next_commands"], serde_json::json!([]));
     assert_eq!(value["workflow"], "demo-workflow");
-    assert_eq!(value["ladder"][0]["step"], 1);
+    assert_eq!(
+        value["workflow_rationale"],
+        "A deterministic demo workflow."
+    );
+    assert_eq!(value["workflow_playbook"], "biomcp skill demo-workflow");
+    assert!(value.get("ladder").is_none());
 }
 
 #[test]

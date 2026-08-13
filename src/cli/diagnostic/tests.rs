@@ -57,6 +57,7 @@ fn search_diagnostic_parses_filter_only_flags() {
                         manufacturer,
                         limit,
                         offset,
+                        ..
                     }),
             },
         ..
@@ -186,9 +187,14 @@ fn handle_search_json_includes_suggestions_for_true_zero_result() {
     };
     super::dispatch::validate_search_args(&args).expect("search args should validate");
 
-    let text =
-        super::dispatch::diagnostic_search_json(Vec::new(), Some(0), args.limit, args.offset)
-            .expect("search diagnostic json");
+    let text = super::dispatch::diagnostic_search_json(
+        Vec::new(),
+        Some(0),
+        args.limit,
+        args.offset,
+        false,
+    )
+    .expect("search diagnostic json");
     let value: serde_json::Value = serde_json::from_str(&text).expect("valid json");
 
     assert!(json);
@@ -233,9 +239,14 @@ fn handle_search_json_omits_suggestions_for_high_offset_empty_page() {
     };
     super::dispatch::validate_search_args(&args).expect("search args should validate");
 
-    let text =
-        super::dispatch::diagnostic_search_json(Vec::new(), Some(10), args.limit, args.offset)
-            .expect("search diagnostic json");
+    let text = super::dispatch::diagnostic_search_json(
+        Vec::new(),
+        Some(10),
+        args.limit,
+        args.offset,
+        false,
+    )
+    .expect("search diagnostic json");
     let value: serde_json::Value = serde_json::from_str(&text).expect("valid json");
 
     assert!(json);
@@ -247,6 +258,33 @@ fn handle_search_json_omits_suggestions_for_high_offset_empty_page() {
             .is_some_and(|total| total > 0)
     );
     assert!(value.get("_meta").is_none());
+}
+
+#[test]
+fn diagnostic_json_compacts_nested_lists_and_full_restores_them() {
+    let row = crate::entities::diagnostic::DiagnosticSearchResult {
+        source: "gtr".into(),
+        accession: "GTR1.1".into(),
+        name: "panel".into(),
+        test_type: None,
+        manufacturer_or_lab: None,
+        genes: (0..7).map(|index| format!("G{index}")).collect(),
+        conditions: (0..6).map(|index| format!("C{index}")).collect(),
+    };
+    let compact: serde_json::Value = serde_json::from_str(
+        &super::dispatch::diagnostic_search_json(vec![row.clone()], Some(1), 5, 0, false).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(compact["results"][0]["genes"].as_array().unwrap().len(), 5);
+    assert_eq!(compact["results"][0]["genes_total"], 7);
+    assert_eq!(compact["results"][0]["genes_has_more"], true);
+
+    let full: serde_json::Value = serde_json::from_str(
+        &super::dispatch::diagnostic_search_json(vec![row], Some(1), 5, 0, true).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(full["results"][0]["genes"].as_array().unwrap().len(), 7);
+    assert_eq!(full["results"][0]["genes_has_more"], false);
 }
 
 #[test]

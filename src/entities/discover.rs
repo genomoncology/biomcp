@@ -56,6 +56,52 @@ pub(crate) struct DiscoverResult {
     pub notes: Vec<String>,
     pub ambiguous: bool,
     pub intent: DiscoverIntent,
+    pub offset: usize,
+    pub limit: usize,
+    pub returned: usize,
+    pub has_more: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_offset: Option<usize>,
+    pub budget_truncated: bool,
+    pub malformed_candidates: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub continuation_command: Option<String>,
+    #[serde(skip)]
+    pub preview_meta: Vec<DiscoverConceptPreviewMeta>,
+    #[serde(skip)]
+    pub full: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct DiscoverPreviewStats {
+    pub returned: usize,
+    pub total: usize,
+    pub has_more: bool,
+    pub omitted_oversized: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct DiscoverConceptPreviewMeta {
+    pub label_truncated: bool,
+    pub synonyms: DiscoverPreviewStats,
+    pub xrefs: DiscoverPreviewStats,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct DiscoverOptions {
+    pub limit: usize,
+    pub offset: usize,
+    pub full: bool,
+}
+
+impl Default for DiscoverOptions {
+    fn default() -> Self {
+        Self {
+            limit: 5,
+            offset: 0,
+            full: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -278,10 +324,41 @@ pub(crate) async fn resolve_query(
     mode: DiscoverMode,
 ) -> Result<DiscoverResult, BioMcpError> {
     let request = DiscoverRequest::new(query, mode)?;
+    let ols_client = crate::sources::ols4::OlsClient::new()?;
+    resolve_request_with_options(request, DiscoverOptions::default(), ols_client).await
+}
+
+pub(crate) async fn resolve_query_with_options(
+    query: &str,
+    mode: DiscoverMode,
+    options: DiscoverOptions,
+) -> Result<DiscoverResult, BioMcpError> {
+    validate_discover_options(options)?;
+    let request = DiscoverRequest::new(query, mode)?;
+    let ols_client = crate::sources::ols4::OlsClient::new()?;
+    resolve_request_with_options(request, options, ols_client).await
+}
+
+fn validate_discover_options(options: DiscoverOptions) -> Result<(), BioMcpError> {
+    if !(1..=25).contains(&options.limit) {
+        return Err(BioMcpError::InvalidArgument(
+            "discover --limit must be between 1 and 25".into(),
+        ));
+    }
+    options.offset.checked_add(options.limit).ok_or_else(|| {
+        BioMcpError::InvalidArgument("discover offset plus limit overflows".into())
+    })?;
+    Ok(())
+}
+
+async fn resolve_request_with_options(
+    request: DiscoverRequest,
+    options: DiscoverOptions,
+    ols_client: crate::sources::ols4::OlsClient,
+) -> Result<DiscoverResult, BioMcpError> {
     let query = request.query.as_str();
     let mode = request.mode;
 
-    let ols_client = crate::sources::ols4::OlsClient::new()?;
     let umls_client = crate::sources::umls::UmlsClient::new()?;
     let medline_client = if request.medlineplus_enabled {
         Some(crate::sources::medlineplus::MedlinePlusClient::new()?)
@@ -303,8 +380,8 @@ pub(crate) async fn resolve_query(
     };
 
     let query_owned = query.to_string();
-    let umls_future = async move {
-        let Some(client) = umls_client else {
+    let umls_future = async {
+        let Some(client) = umls_client.as_ref() else {
             let note = match mode {
                 DiscoverMode::Command => {
                     Some("UMLS enrichment unavailable (set UMLS_API_KEY)".to_string())
@@ -314,7 +391,7 @@ pub(crate) async fn resolve_query(
             return (Vec::new(), note);
         };
 
-        match tokio::time::timeout(UMLS_TIMEOUT, client.search(&query_owned)).await {
+        match tokio::time::timeout(UMLS_TIMEOUT, client.search_compact(&query_owned)).await {
             Ok(Ok(rows)) => (rows, None),
             Ok(Err(err)) => (
                 Vec::new(),
@@ -424,13 +501,174 @@ pub(crate) async fn resolve_query(
         notes.push(note);
     }
 
-    Ok(build_result(
-        query,
-        &ols_docs,
-        &umls_rows,
-        &medline_topics,
-        notes,
-    ))
+    let mut result = build_result(query, &ols_docs, &umls_rows, &medline_topics, notes);
+    apply_discover_options(&mut result, options);
+
+    if let Some(client) = umls_client.as_ref() {
+        for concept in &mut result.concepts {
+            let Some(source) = concept
+                .sources
+                .iter()
+                .find(|source| source.source == "UMLS")
+            else {
+                continue;
+            };
+            let mut umls = UmlsConcept {
+                cui: source.id.clone(),
+                name: source.label.clone(),
+                semantic_types: source
+                    .source_type
+                    .split(',')
+                    .map(str::trim)
+                    .map(str::to_string)
+                    .collect(),
+                xrefs: Vec::new(),
+                uri: String::new(),
+            };
+            if matches!(
+                tokio::time::timeout(UMLS_TIMEOUT, client.expand_concept(&mut umls)).await,
+                Ok(Ok(()))
+            ) {
+                enrich_concept_from_umls_atoms(concept, &umls, options.full);
+            }
+        }
+    }
+    refresh_preview_metadata(&mut result, options.full);
+    Ok(result)
+}
+
+pub(crate) fn discover_continuation_command(
+    query: &str,
+    limit: usize,
+    offset: usize,
+    full: bool,
+) -> String {
+    let mut command = crate::next_command::NextCommand::biomcp()
+        .args(["discover", query, "--limit"])
+        .arg(limit.to_string())
+        .arg("--offset")
+        .arg(offset.to_string());
+    if full {
+        command = command.arg("--full");
+    }
+    command.render_shell()
+}
+
+fn apply_discover_options(result: &mut DiscoverResult, options: DiscoverOptions) {
+    let before = result.concepts.len();
+    result.concepts.retain(|concept| {
+        concept
+            .primary_id
+            .as_deref()
+            .is_none_or(|identifier| identifier.len() <= 512)
+    });
+    result.malformed_candidates = before.saturating_sub(result.concepts.len());
+
+    let total = result.concepts.len();
+    result.concepts = result
+        .concepts
+        .drain(..)
+        .skip(options.offset)
+        .take(options.limit)
+        .collect();
+    result.offset = options.offset;
+    result.limit = options.limit;
+    result.returned = result.concepts.len();
+    result.has_more = options.offset.saturating_add(result.returned) < total;
+    result.next_offset = result
+        .has_more
+        .then_some(options.offset.saturating_add(result.returned));
+    result.full = options.full;
+    result.budget_truncated = false;
+    result.continuation_command = result.next_offset.map(|offset| {
+        discover_continuation_command(&result.query, options.limit, offset, options.full)
+    });
+    refresh_selected_guidance(result);
+}
+
+pub(crate) fn refresh_selected_guidance(result: &mut DiscoverResult) {
+    if result.concepts.is_empty() {
+        return;
+    }
+    result.ambiguous = is_ambiguous(&result.concepts);
+    result.next_commands = generate_commands(
+        &result.query,
+        &result.concepts,
+        result.ambiguous,
+        result.intent,
+    );
+}
+
+fn enrich_concept_from_umls_atoms(concept: &mut DiscoverConcept, umls: &UmlsConcept, _full: bool) {
+    concept.synonyms.extend(
+        umls.xrefs
+            .iter()
+            .map(|xref| xref.label.clone())
+            .filter(|label| !label.eq_ignore_ascii_case(&concept.label)),
+    );
+    concept
+        .xrefs
+        .extend(umls.xrefs.iter().filter_map(normalize_umls_xref));
+    concept.synonyms = dedupe_strings(std::mem::take(&mut concept.synonyms));
+    concept.xrefs = dedupe_xrefs(std::mem::take(&mut concept.xrefs));
+}
+
+fn refresh_preview_metadata(result: &mut DiscoverResult, full: bool) {
+    let value_limit = if full { 512 } else { 256 };
+    let synonym_limit = if full { 50 } else { 3 };
+    let xref_limit = if full { 100 } else { 5 };
+    result.preview_meta.clear();
+
+    for concept in &mut result.concepts {
+        let (label, label_truncated) = truncate_utf8_bytes(&concept.label, 512);
+        concept.label = label;
+
+        let synonym_total = concept.synonyms.len();
+        let mut omitted_synonyms = 0;
+        concept.synonyms.retain(|value| {
+            let keep = value.len() <= value_limit;
+            omitted_synonyms += usize::from(!keep);
+            keep
+        });
+        concept.synonyms.truncate(synonym_limit);
+
+        let xref_total = concept.xrefs.len();
+        let mut omitted_xrefs = 0;
+        concept.xrefs.retain(|xref| {
+            let keep = xref.source.len() <= value_limit && xref.id.len() <= value_limit;
+            omitted_xrefs += usize::from(!keep);
+            keep
+        });
+        concept.xrefs.truncate(xref_limit);
+
+        result.preview_meta.push(DiscoverConceptPreviewMeta {
+            label_truncated,
+            synonyms: DiscoverPreviewStats {
+                returned: concept.synonyms.len(),
+                total: synonym_total,
+                has_more: concept.synonyms.len() + omitted_synonyms < synonym_total
+                    || omitted_synonyms > 0,
+                omitted_oversized: omitted_synonyms,
+            },
+            xrefs: DiscoverPreviewStats {
+                returned: concept.xrefs.len(),
+                total: xref_total,
+                has_more: concept.xrefs.len() + omitted_xrefs < xref_total || omitted_xrefs > 0,
+                omitted_oversized: omitted_xrefs,
+            },
+        });
+    }
+}
+
+fn truncate_utf8_bytes(value: &str, max_bytes: usize) -> (String, bool) {
+    if value.len() <= max_bytes {
+        return (value.to_string(), false);
+    }
+    let mut end = max_bytes;
+    while !value.is_char_boundary(end) {
+        end -= 1;
+    }
+    (value[..end].to_string(), true)
 }
 
 pub(crate) async fn resolve_exact_article_keyword_entity(
@@ -708,6 +946,7 @@ pub(crate) fn build_result(
         notes.push(broad_results_article_fallback_note(query));
     }
 
+    let returned = concepts.len();
     DiscoverResult {
         query: query.trim().to_string(),
         normalized_query,
@@ -717,6 +956,16 @@ pub(crate) fn build_result(
         notes,
         ambiguous,
         intent,
+        offset: 0,
+        limit: returned,
+        returned,
+        has_more: false,
+        next_offset: None,
+        budget_truncated: false,
+        malformed_candidates: 0,
+        continuation_command: None,
+        preview_meta: Vec::new(),
+        full: false,
     }
 }
 
@@ -3345,11 +3594,101 @@ mod tests {
             notes: Vec::new(),
             ambiguous: false,
             intent: DiscoverIntent::General,
+            offset: 0,
+            limit: 5,
+            returned: 0,
+            has_more: false,
+            next_offset: None,
+            budget_truncated: false,
+            malformed_candidates: 0,
+            continuation_command: None,
+            preview_meta: Vec::new(),
+            full: false,
         };
 
         assert!(matches!(
             classify_alias_fallback(&result, DiscoverType::Gene),
             AliasFallbackDecision::None
         ));
+    }
+
+    fn bounded_result(concepts: Vec<DiscoverConcept>) -> DiscoverResult {
+        DiscoverResult {
+            query: "query".into(),
+            normalized_query: "query".into(),
+            concepts,
+            plain_language: None,
+            next_commands: Vec::new(),
+            notes: Vec::new(),
+            ambiguous: false,
+            intent: DiscoverIntent::General,
+            offset: 0,
+            limit: 5,
+            returned: 0,
+            has_more: false,
+            next_offset: None,
+            budget_truncated: false,
+            malformed_candidates: 0,
+            continuation_command: None,
+            preview_meta: Vec::new(),
+            full: false,
+        }
+    }
+
+    fn bounded_concept(label: &str, id: &str) -> DiscoverConcept {
+        DiscoverConcept {
+            label: label.into(),
+            primary_id: Some(id.into()),
+            primary_type: DiscoverType::Gene,
+            synonyms: Vec::new(),
+            xrefs: Vec::new(),
+            sources: Vec::new(),
+            match_tier: MatchTier::Exact,
+            confidence: DiscoverConfidence::CanonicalId,
+        }
+    }
+
+    #[test]
+    fn malformed_candidates_do_not_consume_the_requested_offset() {
+        let oversized = "x".repeat(513);
+        let mut result = bounded_result(vec![
+            bounded_concept("bad-one", &oversized),
+            bounded_concept("first", "HGNC:1"),
+            bounded_concept("bad-two", &oversized),
+            bounded_concept("second", "HGNC:2"),
+        ]);
+        super::apply_discover_options(
+            &mut result,
+            super::DiscoverOptions {
+                limit: 1,
+                offset: 1,
+                full: false,
+            },
+        );
+        assert_eq!(result.malformed_candidates, 2);
+        assert_eq!(result.concepts[0].label, "second");
+        assert_eq!(result.returned, 1);
+    }
+
+    #[test]
+    fn compact_previews_bound_multibyte_labels_and_oversized_values() {
+        let mut concept = bounded_concept(&"é".repeat(300), "HGNC:1");
+        concept.synonyms = vec!["one".into(), "two".into(), "three".into(), "x".repeat(257)];
+        concept.xrefs = (0..6)
+            .map(|index| ConceptXref {
+                source: "HGNC".into(),
+                id: index.to_string(),
+            })
+            .collect();
+        let mut result = bounded_result(vec![concept]);
+        super::refresh_preview_metadata(&mut result, false);
+        let preview = &result.preview_meta[0];
+        assert!(preview.label_truncated);
+        assert!(result.concepts[0].label.len() <= 512);
+        assert_eq!(preview.synonyms.total, 4);
+        assert_eq!(preview.synonyms.returned, 3);
+        assert_eq!(preview.synonyms.omitted_oversized, 1);
+        assert_eq!(preview.xrefs.returned, 5);
+        assert!(preview.xrefs.has_more);
     }
 }

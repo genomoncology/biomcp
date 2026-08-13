@@ -600,6 +600,21 @@ pub(super) async fn apply_requested_sections(
     requested_lookup: Option<&str>,
 ) -> Result<(), BioMcpError> {
     if sections.include_genes {
+        let opentargets_base_result = if disease.top_gene_scores.is_empty() {
+            add_genes_section(disease).await
+        } else {
+            Ok(())
+        };
+        disease.top_genes = if disease.top_gene_scores.is_empty() {
+            disease.associated_genes.iter().take(5).cloned().collect()
+        } else {
+            disease
+                .top_gene_scores
+                .iter()
+                .take(5)
+                .map(|row| row.symbol.clone())
+                .collect()
+        };
         let had_opentargets_data = !disease.top_gene_scores.is_empty();
         let monarch_result = add_monarch_gene_section(disease).await;
         let civic_result = augment_genes_with_civic(disease).await;
@@ -628,8 +643,10 @@ pub(super) async fn apply_requested_sections(
         {
             contributors.push("CIViC");
         }
-        let failed =
-            monarch_result.is_err() || civic_result.is_err() || opentargets_result.is_err();
+        let failed = opentargets_base_result.is_err()
+            || monarch_result.is_err()
+            || civic_result.is_err()
+            || opentargets_result.is_err();
         let outcome = if contributors.is_empty() && failed {
             SectionOutcome::unavailable(GENES_UNAVAILABLE_NOTE)
         } else if failed {

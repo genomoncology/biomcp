@@ -7,7 +7,7 @@ use crate::entities::variant::{VariantGuidance, VariantGuidanceKind};
 use crate::error::BioMcpError;
 use crate::render::markdown::discover_evidence_urls;
 use crate::render::provenance::SectionSource;
-use crate::workflow_ladders::{WorkflowLadderStep, WorkflowMeta};
+use crate::workflow_ladders::WorkflowMeta;
 
 pub fn to_pretty<T: Serialize>(value: &T) -> Result<String, BioMcpError> {
     let serialized = serde_json::to_string_pretty(value)?;
@@ -62,8 +62,10 @@ struct EntityMeta {
     section_sources: Vec<SectionSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     workflow: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    ladder: Vec<WorkflowLadderStep>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    workflow_rationale: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    workflow_playbook: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -255,9 +257,15 @@ where
         .into_iter()
         .filter_map(SectionSource::normalized)
         .collect::<Vec<_>>();
-    let (workflow, ladder) = workflow
-        .map(|meta| (Some(meta.workflow), meta.ladder))
-        .unwrap_or_else(|| (None, Vec::new()));
+    let (workflow, workflow_rationale, workflow_playbook) = workflow
+        .map(|meta| {
+            (
+                Some(meta.workflow),
+                Some(meta.rationale),
+                Some(meta.playbook),
+            )
+        })
+        .unwrap_or((None, None, None));
 
     Ok(serde_json::to_value(EntityJsonResponse {
         entity,
@@ -267,7 +275,8 @@ where
             suggestions,
             section_sources,
             workflow,
-            ladder,
+            workflow_rationale,
+            workflow_playbook,
         },
     })?)
 }
@@ -308,7 +317,7 @@ pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> 
         }
     }
 
-    to_pretty(&DiscoverJsonResponse {
+    let mut value = serde_json::to_value(DiscoverJsonResponse {
         result,
         _meta: DiscoverMeta {
             evidence_urls,
@@ -317,7 +326,43 @@ pub fn to_discover_json(result: &DiscoverResult) -> Result<String, BioMcpError> 
             section_sources,
             discovery_sources,
         },
-    })
+    })?;
+    if let Some(concepts) = value
+        .get_mut("concepts")
+        .and_then(serde_json::Value::as_array_mut)
+    {
+        for (concept, preview) in concepts.iter_mut().zip(&result.preview_meta) {
+            let Some(object) = concept.as_object_mut() else {
+                continue;
+            };
+            object.insert("label_truncated".into(), preview.label_truncated.into());
+            if let Some(values) = object.remove("synonyms") {
+                object.insert(
+                    "synonyms".into(),
+                    serde_json::json!({
+                        "values": values,
+                        "returned": preview.synonyms.returned,
+                        "total": preview.synonyms.total,
+                        "has_more": preview.synonyms.has_more,
+                        "omitted_oversized": preview.synonyms.omitted_oversized,
+                    }),
+                );
+            }
+            if let Some(values) = object.remove("xrefs") {
+                object.insert(
+                    "xrefs".into(),
+                    serde_json::json!({
+                        "values": values,
+                        "returned": preview.xrefs.returned,
+                        "total": preview.xrefs.total,
+                        "has_more": preview.xrefs.has_more,
+                        "omitted_oversized": preview.xrefs.omitted_oversized,
+                    }),
+                );
+            }
+        }
+    }
+    to_pretty(&value)
 }
 
 #[derive(Serialize)]
@@ -1161,7 +1206,7 @@ mod tests {
     }
 
     #[test]
-    fn to_entity_json_with_workflow_adds_ladder_without_losing_existing_meta() {
+    fn to_entity_json_with_workflow_adds_descriptor_without_losing_existing_meta() {
         #[derive(Serialize)]
         struct DemoEntity<'a> {
             id: &'a str,
@@ -1169,11 +1214,8 @@ mod tests {
 
         let workflow = crate::workflow_ladders::WorkflowMeta {
             workflow: "demo-workflow".to_string(),
-            ladder: vec![crate::workflow_ladders::WorkflowLadderStep {
-                step: 1,
-                command: "biomcp demo workflow-step".to_string(),
-                what_it_gives: "A deterministic demo step.".to_string(),
-            }],
+            rationale: "A deterministic demo workflow.".to_string(),
+            playbook: "biomcp skill demo-workflow".to_string(),
         };
 
         let value = to_entity_json_value_with_suggestions_and_workflow(
@@ -1192,7 +1234,15 @@ mod tests {
         .expect("entity json");
 
         assert_eq!(value["_meta"]["workflow"], "demo-workflow");
-        assert_eq!(value["_meta"]["ladder"][0]["step"], 1);
+        assert_eq!(
+            value["_meta"]["workflow_rationale"],
+            "A deterministic demo workflow."
+        );
+        assert_eq!(
+            value["_meta"]["workflow_playbook"],
+            "biomcp skill demo-workflow"
+        );
+        assert!(value["_meta"].get("ladder").is_none());
         assert_eq!(value["_meta"]["next_commands"][0], "biomcp list drug");
         assert_eq!(value["_meta"]["suggestions"][0], "biomcp get drug demo");
         assert_eq!(value["_meta"]["evidence_urls"][0]["label"], "Source");
@@ -1309,6 +1359,16 @@ mod tests {
             notes: vec!["UMLS enrichment unavailable (set UMLS_API_KEY)".to_string()],
             ambiguous: false,
             intent: DiscoverIntent::General,
+            offset: 0,
+            limit: 5,
+            returned: 1,
+            has_more: false,
+            next_offset: None,
+            budget_truncated: false,
+            malformed_candidates: 0,
+            continuation_command: None,
+            preview_meta: vec![crate::entities::discover::DiscoverConceptPreviewMeta::default()],
+            full: false,
         })
         .expect("discover json");
 
@@ -1349,6 +1409,16 @@ mod tests {
             notes: vec![note.clone()],
             ambiguous: false,
             intent: DiscoverIntent::General,
+            offset: 0,
+            limit: 5,
+            returned: 0,
+            has_more: false,
+            next_offset: None,
+            budget_truncated: false,
+            malformed_candidates: 0,
+            continuation_command: None,
+            preview_meta: Vec::new(),
+            full: false,
         })
         .expect("discover json");
 
@@ -1361,11 +1431,17 @@ mod tests {
             vec![
                 "_meta".to_string(),
                 "ambiguous".to_string(),
+                "budget_truncated".to_string(),
                 "concepts".to_string(),
+                "has_more".to_string(),
                 "intent".to_string(),
+                "limit".to_string(),
+                "malformed_candidates".to_string(),
                 "normalized_query".to_string(),
                 "notes".to_string(),
+                "offset".to_string(),
                 "query".to_string(),
+                "returned".to_string(),
             ]
         );
         assert!(

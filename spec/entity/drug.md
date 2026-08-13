@@ -106,7 +106,7 @@ The routine fixture records the requests emitted by production clients. These
 checks keep method, route, query, paging, and requested field contracts visible.
 
 ```bash
-grep -F 'GET /mychem/v1/query?q=trastuzumab&size=6&from=0&fields=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'chembl.molecule_chembl_id'
+grep -F 'GET /mychem/v1/query?q=trastuzumab&size=50&from=0&fields=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'drugbank.synonyms%2Cchembl.molecule_chembl_id'
 grep -F 'GET /openfda/drug/drugsfda.json?search=' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&limit=8&skip=0'
 ```
 

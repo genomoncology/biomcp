@@ -22,6 +22,11 @@ Sources: {{ concept.sources | join(", ") }}
 
 {% endfor -%}
 {% endfor -%}
+Results: offset {{ pagination.offset }}, limit {{ pagination.limit }}, returned {{ pagination.returned }}, has more: {{ pagination.has_more }}{% if pagination.budget_truncated %} (document budget reached){% endif %}.
+{% if pagination.continuation_command -%}
+Next: `{{ pagination.continuation_command }}`
+{% endif %}
+
 {% if plain_language -%}
 ## Plain Language
 **{{ plain_language.title }}** (MedlinePlus)

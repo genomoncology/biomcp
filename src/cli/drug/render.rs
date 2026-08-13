@@ -24,7 +24,7 @@ pub(super) async fn render_drug_card_outcome(
     {
         Ok(drug) => {
             let text = if json_output {
-                let workflow = drug_pharmacogene_workflow(&drug, name).await?;
+                let workflow = drug_pharmacogene_workflow(&drug)?;
                 crate::render::json::to_entity_json_with_workflow(
                     &drug,
                     crate::render::markdown::drug_evidence_urls(&drug),
@@ -59,53 +59,33 @@ pub(super) async fn render_drug_card_outcome(
     }
 }
 
-async fn drug_pharmacogene_workflow(
+fn drug_pharmacogene_workflow(
     drug: &crate::entities::drug::Drug,
-    requested_name: &str,
 ) -> Result<Option<crate::workflow_ladders::WorkflowMeta>, crate::error::BioMcpError> {
-    const CPIC_GENE_THRESHOLD: usize = 3;
-
-    let has_signal = match crate::workflow_ladders::probe_workflow(
-        crate::workflow_ladders::Workflow::PharmacogeneCumulative,
-        Box::pin(async {
-            let primary_count = crate::entities::pgx::distinct_actionable_cpic_gene_count_for_drug(
-                &drug.name,
-                CPIC_GENE_THRESHOLD,
+    (!drug.name.trim().is_empty())
+        .then(|| {
+            crate::workflow_ladders::meta_for(
+                crate::workflow_ladders::Workflow::PharmacogeneCumulative,
             )
-            .await?;
-            if primary_count >= CPIC_GENE_THRESHOLD {
-                return Ok(true);
-            }
-
-            let requested = requested_name.trim();
-            if requested.is_empty() || requested.eq_ignore_ascii_case(drug.name.trim()) {
-                return Ok(false);
-            }
-
-            let requested_count =
-                crate::entities::pgx::distinct_actionable_cpic_gene_count_for_drug(
-                    requested,
-                    CPIC_GENE_THRESHOLD,
-                )
-                .await?;
-            Ok(requested_count >= CPIC_GENE_THRESHOLD)
-        }),
-    )
-    .await?
-    {
-        crate::workflow_ladders::WorkflowProbeOutcome::Triggered(meta) => Some(meta),
-        crate::workflow_ladders::WorkflowProbeOutcome::NotTriggered
-        | crate::workflow_ladders::WorkflowProbeOutcome::Unavailable => None,
-    };
-
-    Ok(has_signal)
+        })
+        .transpose()
 }
 
 #[derive(serde::Serialize)]
 pub(super) struct DrugSearchRegionBucket<T: serde::Serialize> {
+    region: &'static str,
     pagination: crate::cli::PaginationMeta,
     count: usize,
-    results: Vec<T>,
+    results: Vec<DrugSearchView<T>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    continuation_command: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+struct DrugSearchView<T: serde::Serialize> {
+    #[serde(flatten)]
+    row: T,
+    match_kind: &'static str,
 }
 
 #[derive(Default, serde::Serialize)]
@@ -127,15 +107,41 @@ pub(super) struct DrugSearchJsonResponse {
 }
 
 pub(super) fn bucket_from_page<T: serde::Serialize>(
-    page: crate::entities::SearchPage<T>,
+    page: crate::entities::drug::RankedDrugSearchPage<T>,
+    region: &'static str,
+    query: Option<&str>,
     offset: usize,
     limit: usize,
 ) -> DrugSearchRegionBucket<T> {
     let count = page.results.len();
+    let pagination = crate::cli::PaginationMeta::offset(offset, limit, count, page.total);
+    let continuation_command = pagination.has_more.then(|| {
+        format!(
+            "biomcp search drug{} --region {region} --limit {limit} --offset {}",
+            query
+                .map(|value| format!(
+                    " --query {}",
+                    crate::render::markdown::shell_quote_arg(value)
+                ))
+                .unwrap_or_default(),
+            offset.saturating_add(count)
+        )
+    });
+    let results = page
+        .results
+        .into_iter()
+        .zip(page.match_kinds)
+        .map(|(row, kind)| DrugSearchView {
+            match_kind: kind.as_str(),
+            row,
+        })
+        .collect::<Vec<_>>();
     DrugSearchRegionBucket {
-        pagination: crate::cli::PaginationMeta::offset(offset, limit, count, page.total),
+        region,
+        pagination,
         count,
-        results: page.results,
+        results,
+        continuation_command,
     }
 }
 
@@ -157,7 +163,7 @@ pub(super) fn drug_search_json(
             DrugSearchJsonResponse {
                 region: crate::entities::drug::DrugRegion::Us.as_str(),
                 regions: DrugSearchJsonRegions {
-                    us: Some(bucket_from_page(page, offset, limit)),
+                    us: Some(bucket_from_page(page, "us", requested_name, offset, limit)),
                     ..Default::default()
                 },
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
@@ -173,7 +179,7 @@ pub(super) fn drug_search_json(
             DrugSearchJsonResponse {
                 region: crate::entities::drug::DrugRegion::Eu.as_str(),
                 regions: DrugSearchJsonRegions {
-                    eu: Some(bucket_from_page(page, offset, limit)),
+                    eu: Some(bucket_from_page(page, "eu", requested_name, offset, limit)),
                     ..Default::default()
                 },
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
@@ -189,7 +195,7 @@ pub(super) fn drug_search_json(
             DrugSearchJsonResponse {
                 region: crate::entities::drug::DrugRegion::Who.as_str(),
                 regions: DrugSearchJsonRegions {
-                    who: Some(bucket_from_page(page, offset, limit)),
+                    who: Some(bucket_from_page(page, "who", requested_name, offset, limit)),
                     ..Default::default()
                 },
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
@@ -205,9 +211,9 @@ pub(super) fn drug_search_json(
             DrugSearchJsonResponse {
                 region: crate::entities::drug::DrugRegion::All.as_str(),
                 regions: DrugSearchJsonRegions {
-                    us: Some(bucket_from_page(us, offset, limit)),
-                    eu: Some(bucket_from_page(eu, offset, limit)),
-                    who: Some(bucket_from_page(who, offset, limit)),
+                    us: Some(bucket_from_page(us, "us", requested_name, offset, limit)),
+                    eu: Some(bucket_from_page(eu, "eu", requested_name, offset, limit)),
+                    who: Some(bucket_from_page(who, "who", requested_name, offset, limit)),
                 },
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow),
             }

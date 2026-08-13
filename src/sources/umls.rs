@@ -1,7 +1,6 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use futures::future::join_all;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 use serde::Deserialize;
@@ -101,7 +100,7 @@ impl UmlsClient {
         }
     }
 
-    pub async fn search(&self, query: &str) -> Result<Vec<UmlsConcept>, BioMcpError> {
+    pub async fn search_compact(&self, query: &str) -> Result<Vec<UmlsConcept>, BioMcpError> {
         let Some(plan) = Self::search_plan(query, &self.api_key) else {
             return Ok(Vec::new());
         };
@@ -128,19 +127,15 @@ impl UmlsClient {
                 ))
             })?;
 
-        let tasks = Self::search_hits(search)
+        Ok(Self::search_hits(search)
             .into_iter()
-            .map(|hit| async move {
-                let xrefs = self.fetch_atoms(&hit.ui).await?;
-                Ok::<_, BioMcpError>(Self::concept_from_hit(hit, xrefs))
-            })
-            .collect::<Vec<_>>();
+            .map(|hit| Self::concept_from_hit(hit, Vec::new()))
+            .collect())
+    }
 
-        let mut out = Vec::new();
-        for result in join_all(tasks).await {
-            out.push(result?);
-        }
-        Ok(out)
+    pub async fn expand_concept(&self, concept: &mut UmlsConcept) -> Result<(), BioMcpError> {
+        concept.xrefs = self.fetch_atoms(&concept.cui).await?;
+        Ok(())
     }
 
     async fn fetch_atoms(&self, cui: &str) -> Result<Vec<UmlsXref>, BioMcpError> {

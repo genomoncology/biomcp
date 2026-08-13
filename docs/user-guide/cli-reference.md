@@ -34,28 +34,23 @@ In JSON mode, links are exposed under `_meta.evidence_urls` and can include
 Ensembl, OMIM, NCBI Gene, and UniProt URLs. Section-level provenance is exposed
 under `_meta.section_sources`.
 
-## Workflow ladder metadata
+## Workflow metadata
 
-Some first-call JSON responses include sidecar-backed workflow ladder metadata:
+Some JSON responses include descriptive workflow metadata:
 
 ```json
 "_meta": {
   "workflow": "pharmacogene-cumulative",
-  "ladder": [
-    {
-      "step": 1,
-      "command": "biomcp search pgx -d warfarin --limit 10",
-      "what_it_gives": "CPIC drug-gene rows for known pharmacogenes."
-    }
-  ]
+  "workflow_rationale": "Build cumulative pharmacogene evidence.",
+  "workflow_playbook": "biomcp skill pharmacogene-cumulative"
 }
 ```
 
 `_meta.next_commands` remains the dynamic one-hop HATEOAS follow-up list for the
-current response. `_meta.workflow` and `_meta.ladder[]` are static, named
-multi-step worked-example paths loaded from installed sidecar JSON files. The
-ladder commands are byte-equal to the matching `biomcp skill <slug>` playbook
-command block and do not interpolate the user's query.
+current response. `_meta.workflow`, `_meta.workflow_rationale`, and
+`_meta.workflow_playbook` name and explain an installed playbook;
+executable worked examples are not copied into entity responses because their
+example entities may be unrelated to the current request.
 
 Examples:
 
@@ -66,8 +61,8 @@ biomcp drug interactions warfarin --limit 25 --offset 0 --json
 biomcp get drug aspirin --json
 ```
 
-The warfarin response can emit `pharmacogene-cumulative`; aspirin omits that
-workflow ladder when the actionable CPIC A/B pharmacogene threshold is not met.
+Drug responses can name the `pharmacogene-cumulative` playbook without making
+an extra provider request merely to decide whether to show it.
 
 ## Top-level commands
 
@@ -88,7 +83,7 @@ biomcp who sync
 biomcp cvx sync
 biomcp gtr sync
 biomcp who-ivd sync
-biomcp health [--apis-only]
+biomcp health [--apis-only] [--api NAME]... [--fail-on-error]
 biomcp list [entity]
 biomcp study list
 biomcp study download [--list] [<study_id>]
@@ -119,9 +114,10 @@ biomcp skill 01
 biomcp skill article-follow-up
 ```
 
-`biomcp health --apis-only` is the upstream inventory smoke test. Full
-`biomcp health` also reports local readiness rows such as EMA local data,
-WHO Prequalification local data, CDC CVX/MVX local data, GTR local data,
+`biomcp health --apis-only` is the upstream inventory smoke test. Repeatable
+`--api` selects only named providers, and `--fail-on-error` renders the complete
+report before exiting 1 when its error count is nonzero. Full `biomcp health`
+also reports EMA, WHO Prequalification, and CDC CVX/MVX local data, GTR local data,
 WHO IVD local data, cache dir status, and cache-limit warnings when the
 managed HTTP cache is over size or below the configured disk-free floor.
 With `--json`, the health summary includes numeric `healthy`, `warning`,
@@ -130,8 +126,8 @@ Each row's `status` is one of `ok`, `error`, `excluded`, `available`,
 `configured`, `not_configured`, `warning`, or `unavailable`. Context such as a
 local path, staleness, required environment-variable name, and missing files is
 provided in separate fields; callers must not parse the rendered health table
-prose. Error rows remain report data and do not change the command's current exit
-behavior.
+prose. Error rows remain report data; they change the exit status only when
+`--fail-on-error` is requested.
 
 `biomcp cache path` is a local-CLI-only operator command. It prints the managed
 HTTP cache path as plain text and ignores the global `--json` flag.
@@ -179,6 +175,7 @@ read-only and remains available on every platform.
 biomcp discover ERBB1
 biomcp discover "chest pain"
 biomcp discover "developmental delay"
+biomcp discover ERBB1 --limit 5 --offset 0 [--full]
 biomcp --json discover diabetes
 ```
 
@@ -191,6 +188,11 @@ concepts by type and suggests concrete follow-up BioMCP commands. JSON adds
 `_meta.discovery_sources` alongside the standard `_meta.next_commands` and
 `_meta.section_sources` metadata. Symptom-first queries that resolve to HPO
 concepts can suggest `biomcp search phenotype "HP:..."` as the first follow-up.
+The default returns at most five ranked concepts, three synonyms and five
+cross-references per concept, and 32 KiB of JSON. `--full` is still bounded: at
+most 25 concepts, 50 synonyms and 100 cross-references per concept, and 256 KiB
+of JSON. Pagination is stable and the returned continuation preserves the
+selected mode.
 
 ### All (cross-entity)
 
@@ -341,9 +343,13 @@ biomcp search drug BCG --region who --product-type vaccine --limit 5
 biomcp search drug --indication malaria --region who --limit 5
 ```
 
+Drug search limits and offsets apply per region. An all-region request may
+therefore return up to three times the limit; each region reports its own
+pagination and continuation command.
+
 Drug search JSON is region-aware: the top-level object exposes `region`,
 `regions`, and optional `_meta` metadata such as `next_commands`, `workflow`,
-and `ladder`. Single-region searches use
+and `workflow_playbook`. Single-region searches use
 `regions.us.results`, `regions.eu.results`, or `regions.who.results`; omitted
 `--region` on a plain name lookup and explicit `--region all` expose all three
 region buckets, each with `pagination`, `count`, and `results`. Those nested
@@ -363,6 +369,7 @@ stays U.S.-only and does not touch the CVX root.
 biomcp search diagnostic --gene BRCA1 --limit 5 --offset 0
 biomcp search diagnostic --disease HIV --source who-ivd --limit 5
 biomcp search diagnostic --disease tuberculosis --source all --limit 5
+biomcp search diagnostic --disease tuberculosis --full
 biomcp get gene BRCA1 diagnostics
 biomcp get disease tuberculosis diagnostics
 biomcp get diagnostic GTR000006692.3 regulatory
@@ -501,6 +508,9 @@ biomcp get article 22663011 indexing
 biomcp get article 22663011 all
 biomcp get article 22663011 fulltext
 biomcp get article 22663011 fulltext --pdf
+biomcp get article 22663011 fulltext --outline
+biomcp get article 22663011 fulltext --lines 210:340
+biomcp --json get article 22663011 --asset-view coverage --asset-limit 25 --asset-offset 0 assets
 biomcp --json get article <id> assets
 biomcp get article <id> asset <asset-key>
 biomcp get article 22663011 tldr
@@ -514,6 +524,13 @@ source order. JSON carries `authors`, returned `author_count`,
 source-limited. Batch keeps its bare-array JSON envelope and request order, and
 Markdown cards show authorship plus its status. This compatibility exception is
 not converted to an object collection envelope.
+
+Default full-text output reports only cached byte, line, and heading counts.
+Use `--outline` for at most 200 heading ranges or `--lines START:END` for an
+inclusive range of at most 500 complete lines and 65,536 UTF-8 bytes. Asset
+manifests default to 25 retrievable rows and ten coverage rows; use
+`--asset-view retrievable|coverage` with `--asset-limit` and `--asset-offset`
+to page either complete list.
 
 `get article <id> indexing` adds PubMed citation authors with nested
 source-associated affiliations and optional ORCID plus structured MeSH

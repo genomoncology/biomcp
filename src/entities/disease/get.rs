@@ -11,6 +11,7 @@ use super::resolution::{
 };
 #[derive(Debug, Clone, Copy, Default)]
 pub(super) struct DiseaseSections {
+    pub(super) explicit: bool,
     pub(super) include_genes: bool,
     pub(super) include_pathways: bool,
     pub(super) include_phenotypes: bool,
@@ -45,6 +46,7 @@ fn parse_sections_for_name(
         if section == "--json" || section == "-j" {
             continue;
         }
+        out.explicit = true;
 
         match section.as_str() {
             DISEASE_SECTION_GENES => out.include_genes = true,
@@ -152,7 +154,9 @@ pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMc
                 warn!("OLS4 unavailable for sparse disease identity repair: {err}");
             }
             disease.parents = resolve_parent_names(&client, &disease.parents).await;
-            enrich_base_context(&mut disease).await;
+            if !parsed_sections.explicit {
+                enrich_base_context(&mut disease).await;
+            }
             apply_requested_sections(&mut disease, parsed_sections, Some(name_or_id)).await?;
             return Ok(disease);
         }
@@ -171,7 +175,9 @@ pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMc
                 warn!("OLS4 unavailable for sparse disease identity repair: {err}");
             }
             disease.parents = resolve_parent_names(&client, &disease.parents).await;
-            enrich_base_context(&mut disease).await;
+            if !parsed_sections.explicit {
+                enrich_base_context(&mut disease).await;
+            }
             apply_requested_sections(&mut disease, parsed_sections, Some(name_or_id)).await?;
             return Ok(disease);
         }
@@ -186,7 +192,9 @@ pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMc
         warn!("OLS4 unavailable for sparse disease identity repair: {err}");
     }
     disease.parents = resolve_parent_names(&client, &disease.parents).await;
-    enrich_base_context(&mut disease).await;
+    if !parsed_sections.explicit {
+        enrich_base_context(&mut disease).await;
+    }
     apply_requested_sections(&mut disease, parsed_sections, Some(name_or_id)).await?;
     Ok(disease)
 }

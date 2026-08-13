@@ -139,6 +139,15 @@ pub fn render_discover(result: &DiscoverResult) -> Result<String, BioMcpError> {
         groups => groups,
         plain_language => &result.plain_language,
         next_commands => &result.next_commands,
+        pagination => serde_json::json!({
+            "offset": result.offset,
+            "limit": result.limit,
+            "returned": result.returned,
+            "has_more": result.has_more,
+            "next_offset": result.next_offset,
+            "budget_truncated": result.budget_truncated,
+            "continuation_command": result.continuation_command,
+        }),
     })?;
     Ok(append_evidence_urls(body, discover_evidence_urls(result)))
 }

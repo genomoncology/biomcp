@@ -94,6 +94,16 @@ fn ticket_377_discover_renderer_envelope_contracts() {
         notes: vec!["UMLS enrichment unavailable (set UMLS_API_KEY)".to_string()],
         ambiguous: false,
         intent: crate::entities::discover::DiscoverIntent::GeneFunction,
+        offset: 0,
+        limit: 5,
+        returned: 1,
+        has_more: false,
+        next_offset: None,
+        budget_truncated: false,
+        malformed_candidates: 0,
+        continuation_command: None,
+        preview_meta: vec![crate::entities::discover::DiscoverConceptPreviewMeta::default()],
+        full: false,
     };
 
     let json = crate::render::json::to_discover_json(&result).expect("discover JSON");
@@ -144,6 +154,16 @@ fn render_discover_renders_grouped_concepts_and_plain_language() {
         notes: vec!["Resolved via canonical symbol.".to_string()],
         ambiguous: false,
         intent: crate::entities::discover::DiscoverIntent::GeneFunction,
+        offset: 0,
+        limit: 5,
+        returned: 1,
+        has_more: false,
+        next_offset: None,
+        budget_truncated: false,
+        malformed_candidates: 0,
+        continuation_command: None,
+        preview_meta: vec![crate::entities::discover::DiscoverConceptPreviewMeta::default()],
+        full: false,
     };
 
     let markdown = render_discover(&result).expect("discover markdown");

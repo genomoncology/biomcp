@@ -360,7 +360,12 @@ biomcp --json search drug Keytruda --region all --limit 3 | jq '.regions | keys'
 
 `search drug --json` always returns the same top-level shape: `region`,
 `regions`, and optional `_meta.next_commands`. Each region bucket keeps the
-single-region wrapper fields `pagination`, `count`, and `results`.
+single-region wrapper fields `pagination`, `count`, and `results`. `--limit`
+and `--offset` apply separately to each requested region, so an all-region
+search can return up to three times the requested limit. Every bucket has its
+own region-only continuation command. Rows identify whether they matched an
+exact product name, exact active substance, structured alias, or broader text;
+that ordering is applied only within the region, never across providers.
 
 - Use `regions.us.results` for U.S. search rows.
 - Use `regions.eu.results` for EMA rows.

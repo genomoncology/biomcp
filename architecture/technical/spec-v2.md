@@ -273,7 +273,7 @@ literal `mustmatch` bytes.
 
 1. **Search & Get Envelope** - core command grammar (`search`, `get`, sections,
    `--json`, `--no-cache`) remains stable.
-2. **Workflow Metadata** - `_meta.workflow`, `_meta.ladder[]`, and
+2. **Workflow Metadata** - `_meta.workflow`, `_meta.workflow_playbook`, and
    `_meta.next_commands` keep their distinct roles.
 3. **Evidence & Attribution** - `_meta.evidence_urls` and `_meta.section_sources`
    remain first-class auditability surfaces.

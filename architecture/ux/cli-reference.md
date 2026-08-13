@@ -468,8 +468,9 @@ These properties should be preserved across releases:
    all`, scalar trial `--count-only`, and VAERS-only aggregate responses retain
    their existing non-collection shapes
 4. **`biomcp health`** reports per-source connectivity, cache writability, and
-   excluded key-gated sources in one inspection view; partial upstream failures
-   stay visible in output even though the command currently exits 0
+   excluded key-gated sources in one inspection view. Repeatable `--api`
+   selects exact catalog names, and `--fail-on-error` renders the complete
+   report before returning status 1 when its error bucket is nonzero.
 5. **Error messages** include suggested next steps — suggestions must name
    real commands
 
@@ -491,7 +492,9 @@ per-region `pagination` / `count` / `results` buckets instead of one shared
 top-level `results` array. Drug `--region ema` is a public alias for the
 canonical `--region eu` value on search and get drug regional sections. Parsed
 errors retain the applicable nested region result path or all three paths and do
-not gain a false flat `results` key.
+not gain a false flat `results` key. Search limits and offsets are per region;
+each bucket reports its own continuation and rows carry the stable
+`product_name`, `active_substance`, `alias`, or `broad_text` match class.
 
 Batch helpers use one settlement envelope with an ordered `items` array and a
 `summary` of successes and failures. Every requested item appears exactly once;
@@ -516,8 +519,8 @@ from the current output.
 - Structured output carries the same follow-up contract in
   `_meta.next_commands` from `src/render/json.rs` for agent and script
   consumers.
-- Workflow ladders are a separate JSON-only contract: `_meta.workflow` names one
-  sidecar-backed workflow and `_meta.ladder[]` carries the static multi-step
+- Workflow guidance is a separate JSON-only contract: `_meta.workflow` names one
+  sidecar-backed workflow while `_meta.workflow_rationale` and `_meta.workflow_playbook` describe it; static multi-step examples stay in the installed playbook rather than runtime output
   worked-example path loaded from `skills/use-cases/<slug>.ladder.json`.
 - Ladder commands are byte-equal to the matching `biomcp skill <slug>` fenced
   bash commands. They are not templated; runtime code chooses a workflow slug

@@ -1385,16 +1385,6 @@ async fn fetch_pathways_section(symbol: &str) -> Result<Option<Vec<GenePathway>>
     }
 }
 
-pub async fn has_reactome_pathway_signal(symbol: &str) -> Result<bool, BioMcpError> {
-    let symbol = symbol.trim();
-    if symbol.is_empty() {
-        return Ok(false);
-    }
-
-    let (rows, _) = ReactomeClient::new()?.search_pathways(symbol, 1).await?;
-    Ok(!rows.is_empty())
-}
-
 fn pathway_outcome(pathways: Option<&[GenePathway]>, reactome_available: bool) -> SectionOutcome {
     let mut sources = pathways
         .unwrap_or_default()
@@ -3564,15 +3554,6 @@ mod tests {
         let unavailable = pathway_outcome(None, false);
         assert_eq!(unavailable.outcome(), SectionOutcomeState::Unavailable);
         assert!(unavailable.sources().is_empty());
-    }
-
-    #[tokio::test]
-    async fn reactome_workflow_signal_skips_empty_gene_without_probe() {
-        assert!(
-            !has_reactome_pathway_signal("   ")
-                .await
-                .expect("empty gene should not probe")
-        );
     }
 
     #[test]

@@ -3,6 +3,7 @@
 use clap::{Args, Subcommand};
 
 mod annotations;
+mod fulltext_view;
 pub(super) use annotations::truncate_article_annotations;
 
 fn parse_article_year(value: &str) -> Result<u16, String> {
@@ -251,6 +252,21 @@ pub struct ArticleGetArgs {
     /// Allow Semantic Scholar PDF as a final fulltext fallback (requires fulltext section)
     #[arg(long)]
     pub pdf: bool,
+    /// Return a bounded heading outline from cached full text
+    #[arg(long, conflicts_with = "lines")]
+    pub outline: bool,
+    /// Return an inclusive one-based cached full-text line range (START:END)
+    #[arg(long, value_name = "START:END", conflicts_with = "outline")]
+    pub lines: Option<String>,
+    /// Asset manifest view
+    #[arg(long = "asset-view", default_value = "compact", value_parser = ["compact", "retrievable", "coverage"])]
+    pub asset_view: String,
+    /// Page size for retrievable or coverage asset views (1-100)
+    #[arg(long = "asset-limit")]
+    pub asset_limit: Option<usize>,
+    /// Zero-based asset manifest offset
+    #[arg(long = "asset-offset", default_value_t = 0)]
+    pub asset_offset: usize,
     /// Sections to include (annotations, indexing, fulltext, tldr, assets, asset <asset-key>, all)
     #[arg(trailing_var_arg = true)]
     pub sections: Vec<String>,

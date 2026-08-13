@@ -11,7 +11,7 @@ use crate::utils::serde::StringOrVec;
 const MYCHEM_BASE: &str = "https://mychem.info/v1";
 const MYCHEM_BASE_ENV: &str = "BIOMCP_MYCHEM_BASE";
 
-pub(crate) const MYCHEM_FIELDS_SEARCH: &str = "drugbank.id,drugbank.name,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,chembl.atc_classifications,gtopdb.name,gtopdb.interaction_targets.symbol,unii.unii,unii.display_name,ndc.nonproprietaryname,ndc.pharm_classes,chebi.name,openfda.generic_name,openfda.brand_name";
+pub(crate) const MYCHEM_FIELDS_SEARCH: &str = "drugbank.id,drugbank.name,drugbank.synonyms,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,chembl.atc_classifications,gtopdb.name,gtopdb.interaction_targets.symbol,unii.unii,unii.display_name,ndc.nonproprietaryname,ndc.pharm_classes,chebi.name,openfda.generic_name,openfda.brand_name";
 pub(crate) const MYCHEM_FIELDS_GET: &str = "drugbank.id,drugbank.name,drugbank.synonyms,drugbank.drug_interactions,chembl.molecule_chembl_id,chembl.molecule_type,chembl.pref_name,chembl.drug_mechanisms.action_type,chembl.drug_mechanisms.target_name,chembl.drug_mechanisms.mechanism_of_action,gtopdb.name,gtopdb.interaction_targets.symbol,drugcentral.drug_use.indication.concept_name,drugcentral.approval.agency,drugcentral.approval.date,ndc.nonproprietaryname,ndc.pharm_classes,unii.unii,unii.display_name,chebi.name,openfda.generic_name,openfda.brand_name";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -51,12 +51,31 @@ pub struct HealthReport {
     pub rows: Vec<HealthRow>,
 }
 
+#[derive(Debug, Clone, Copy, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HealthExitPolicy {
+    ReportOnly,
+    FailOnError,
+}
+
+#[derive(serde::Serialize)]
+struct HealthOutput<'a> {
+    #[serde(flatten)]
+    report: &'a HealthReport,
+    exit_policy: HealthExitPolicy,
+    ok: bool,
+}
+
 impl HealthReport {
     pub fn all_healthy(&self) -> bool {
         self.error == 0
     }
 
     pub fn to_markdown(&self) -> String {
+        self.to_markdown_with_policy(false)
+    }
+
+    pub fn to_markdown_with_policy(&self, fail_on_error: bool) -> String {
         let mut out = String::new();
         let show_affects = self.rows.iter().any(|row| row.affects.is_some());
 
@@ -89,7 +108,32 @@ impl HealthReport {
             out.push_str(&format!(", {} warning", self.warning));
         }
         out.push('\n');
+        out.push_str(&format!(
+            "Exit policy: {}; result: {}\n",
+            if fail_on_error {
+                "fail_on_error"
+            } else {
+                "report_only"
+            },
+            if self.all_healthy() {
+                "ok"
+            } else {
+                "errors present"
+            }
+        ));
         out
+    }
+
+    pub fn to_json(&self, fail_on_error: bool) -> Result<String, BioMcpError> {
+        crate::render::json::to_pretty(&HealthOutput {
+            report: self,
+            exit_policy: if fail_on_error {
+                HealthExitPolicy::FailOnError
+            } else {
+                HealthExitPolicy::ReportOnly
+            },
+            ok: self.all_healthy(),
+        })
     }
 }
 
@@ -142,8 +186,78 @@ fn markdown_status(row: &HealthRow) -> String {
 /// # Errors
 ///
 /// Returns an error when the shared HTTP client cannot be created.
-pub async fn check(apis_only: bool) -> Result<HealthReport, BioMcpError> {
-    runner::check(apis_only).await
+pub async fn check(apis_only: bool, apis: &[String]) -> Result<HealthReport, BioMcpError> {
+    let selected = select_sources(apis)?;
+    runner::check(apis_only || !apis.is_empty(), &selected).await
+}
+
+pub(crate) async fn command(
+    args: crate::cli::system::HealthArgs,
+    json: bool,
+) -> Result<crate::cli::CommandOutcome, BioMcpError> {
+    let report = check(args.apis_only, &args.apis).await?;
+    let text = if json {
+        report.to_json(args.fail_on_error)?
+    } else {
+        report.to_markdown_with_policy(args.fail_on_error)
+    };
+    Ok(crate::cli::CommandOutcome::stdout_with_exit(
+        text,
+        u8::from(args.fail_on_error && !report.all_healthy()),
+    ))
+}
+
+fn select_sources(requested: &[String]) -> Result<Vec<catalog::SourceDescriptor>, BioMcpError> {
+    let catalog = catalog::health_sources();
+    if requested.is_empty() {
+        return Ok(catalog.to_vec());
+    }
+
+    let mut selected = Vec::new();
+    for raw in requested {
+        let name = raw.trim();
+        let matches = catalog
+            .iter()
+            .filter(|source| source.api.eq_ignore_ascii_case(name))
+            .copied()
+            .collect::<Vec<_>>();
+        match matches.as_slice() {
+            [source] => {
+                if !selected.iter().any(|chosen: &catalog::SourceDescriptor| {
+                    chosen.api.eq_ignore_ascii_case(source.api)
+                }) {
+                    selected.push(*source);
+                }
+            }
+            [] => {
+                let needle = name.to_ascii_lowercase();
+                let mut suggestions = catalog
+                    .iter()
+                    .filter(|source| source.api.to_ascii_lowercase().contains(&needle))
+                    .map(|source| source.api)
+                    .take(3)
+                    .collect::<Vec<_>>();
+                if suggestions.is_empty() {
+                    suggestions.extend(catalog.iter().take(3).map(|source| source.api));
+                }
+                return Err(BioMcpError::InvalidArgument(format!(
+                    "Unknown health API {name:?}. Canonical suggestions: {}.",
+                    suggestions.join(", ")
+                )));
+            }
+            _ => {
+                return Err(BioMcpError::InvalidArgument(format!(
+                    "Ambiguous health API {name:?}; matching canonical names: {}.",
+                    matches
+                        .iter()
+                        .map(|source| source.api)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )));
+            }
+        }
+    }
+    Ok(selected)
 }
 
 #[cfg(test)]
@@ -355,6 +469,42 @@ mod tests {
                 max_age: ConfigOrigin::Default,
             },
         }
+    }
+
+    #[test]
+    fn requested_health_sources_are_exact_case_insensitive_and_deduplicated() {
+        let selected =
+            super::select_sources(&[" mygene ".into(), "MYGENE".into(), "MyVariant".into()])
+                .unwrap();
+        assert_eq!(
+            selected.iter().map(|source| source.api).collect::<Vec<_>>(),
+            ["MyGene", "MyVariant"]
+        );
+    }
+
+    #[test]
+    fn unknown_health_source_returns_bounded_canonical_suggestions() {
+        let error = super::select_sources(&["not-a-provider".into()]).unwrap_err();
+        let message = error.to_string();
+        assert!(message.contains("Unknown health API"));
+        assert!(message.contains("Canonical suggestions"));
+        assert!(message.split(',').count() <= 3);
+    }
+
+    #[test]
+    fn health_json_exposes_automation_exit_policy() {
+        let report = super::HealthReport {
+            healthy: 0,
+            warning: 0,
+            excluded: 0,
+            error: 1,
+            total: 1,
+            rows: Vec::new(),
+        };
+        let output: serde_json::Value =
+            serde_json::from_str(&report.to_json(true).unwrap()).unwrap();
+        assert_eq!(output["exit_policy"], "fail_on_error");
+        assert_eq!(output["ok"], false);
     }
 
     mod catalog;
