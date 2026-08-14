@@ -54,3 +54,6 @@ Death-or-Injury rather than merely `any`.
 The design may add or restate assertions in `src/cli/adverse_event/tests.rs`,
 the native tests in `src/entities/adverse_event.rs`, and a focused process
 contract under `tests/` for pre-contact rejection and output truthfulness.
+It may also align the shipped VAERS behavior specification in
+`spec/entity/vaers.md` with the accepted route matrix, including explicit
+`--source faers` on count examples.
