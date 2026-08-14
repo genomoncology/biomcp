@@ -65,9 +65,6 @@ fn public_region_aliases_are_aligned_across_parser_help_list_and_docs() {
 
     let user_guide = include_str!("../../../docs/user-guide/cli-reference.md");
     assert!(user_guide.contains("--region ema"));
+    assert!(user_guide.contains("--region eu"));
     assert!(user_guide.contains("canonical `eu` region value"));
-
-    let ux_reference = include_str!("../../../architecture/ux/cli-reference.md");
-    assert!(ux_reference.contains("--region ema"));
-    assert!(ux_reference.contains("--region eu"));
 }

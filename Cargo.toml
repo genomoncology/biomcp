@@ -11,8 +11,10 @@ readme = "README.md"
 keywords = ["bioinformatics", "mcp", "genomics", "clinical-trials", "pubmed"]
 categories = ["command-line-utilities", "science"]
 exclude = [
+    "architecture/",
     "protos/",
     "scripts/regenerate-alphagenome-proto",
+    "sdlc/",
     "testdata/",
     "tools/alphagenome-proto-generator/",
 ]
