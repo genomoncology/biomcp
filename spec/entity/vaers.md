@@ -61,8 +61,7 @@ FAERS-style filters should fail truthfully when the user forces the VAERS
 source, instead of being silently ignored.
 
 ```bash
-../../tools/biomcp-ci search adverse-event --drug 'COVID-19 vaccine' --source vaers --outcome death 2>&1 | mustmatch like '--source vaers only supports
-unsupported flags: --outcome'
+../../tools/biomcp-ci search adverse-event --drug 'COVID-19 vaccine' --source vaers --outcome death 2>&1 | mustmatch like '--source vaers does not support: --outcome'
 ```
 
 ## FAERS Count Field Validation
@@ -72,7 +71,7 @@ lives in response metadata, so `total` should be rejected instead of forwarded a
 a fake field that returns empty buckets.
 
 ```bash
-../../tools/biomcp-ci search adverse-event --drug pembrolizumab --count total 2>&1 | mustmatch like '--count total is not a count field
+../../tools/biomcp-ci search adverse-event --drug pembrolizumab --source faers --count total 2>&1 | mustmatch like '--count total is not a count field
 patient.reaction.reactionmeddrapt'
 ```
 
@@ -81,7 +80,7 @@ requested field without pinning volatile bucket values or counts.
 
 ```bash
 set -o pipefail
-../../tools/biomcp-ci --json search adverse-event --drug pembrolizumab --count reaction --limit 1 \
+../../tools/biomcp-ci --json search adverse-event --drug pembrolizumab --source faers --count reaction --limit 1 \
   | jq '.count_field == "reaction" and (.buckets | length) > 0' \
   | mustmatch 'true'
 ```
