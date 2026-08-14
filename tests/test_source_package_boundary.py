@@ -16,7 +16,7 @@ MAX_PACKAGE_FILES = 1_300
 
 def _cargo_package_list() -> list[str]:
     result = subprocess.run(
-        ["cargo", "package", "--list", "--allow-dirty", "--locked"],
+        ["cargo", "package", "--list", "--allow-dirty", "--locked", "--offline"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -88,7 +88,7 @@ def test_verified_package_compiles_focused_identity_test_after_extraction(
 ) -> None:
     assert tmp_path != ROOT and ROOT not in tmp_path.parents
     subprocess.run(
-        ["cargo", "package", "--allow-dirty", "--locked"],
+        ["cargo", "package", "--allow-dirty", "--locked", "--offline"],
         cwd=ROOT,
         check=True,
     )
@@ -110,6 +110,7 @@ def test_verified_package_compiles_focused_identity_test_after_extraction(
             "--manifest-path",
             str(package_root / "Cargo.toml"),
             "--locked",
+            "--offline",
             "--no-default-features",
             "--test",
             "package_build_identity",
