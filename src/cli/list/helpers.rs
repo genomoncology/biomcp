@@ -29,12 +29,25 @@ pub(super) fn list_discover() -> String {
 - `discover <query>` - resolve a trimmed free-text biomedical phrase of at most 4,096 UTF-8 bytes into a primary concept and suggested BioMCP follow-up commands
 - `--json discover <query>` - emit structured concepts plus discover-specific `_meta` metadata for agents
 
+## Options
+
+- `--limit <N>` - maximum concepts returned; default 5, must be between 1 and 25
+- `--offset <N>` - checked zero-based index into the stable ranked concepts
+- `--full` - expand the bounded synonym and cross-reference previews
+
+## Output bounds
+
+Compact mode keeps at most 3 synonyms and 5 cross-references per concept, with at most 256 UTF-8 bytes per value and a 32 KiB structured-output budget.
+
+`--full` keeps at most 50 synonyms and 100 cross-references per concept, with at most 512 UTF-8 bytes per value and a 256 KiB structured-output budget.
+
 ## When to use this surface
 
 - Use `discover` when you only have free text and need BioMCP to resolve the first entity or alias before choosing the next typed command.
 - Discover is primarily a single-entity resolver for aliases, brands, symptoms, and close concept names.
 - Prefer the first suggested command when the query clearly implies treatment, symptoms, safety, trials, or gene+disease orientation.
-- Existing routed exceptions remain supported for symptom-of-disease prompts, HPO symptom bridging, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups.
+- Existing routed exceptions remain supported for symptom-of-disease prompts, HPO symptom bridging, treatment prompts,
+  gene+disease orientation, and unambiguous gene-plus-topic follow-ups.
 - Relational or multi-entity questions may redirect to `biomcp search all --keyword "<query>"`.
 - Unambiguous gene-plus-topic queries can also surface `biomcp search article -g <symbol> -k <topic> --limit 5` when the remaining topic is meaningful.
 - If no biomedical entities resolve, discover suggests `biomcp search article -k <query> --type review --limit 5`.

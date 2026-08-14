@@ -320,6 +320,74 @@ fn list_command_parses_entity_name() {
 }
 
 #[test]
+fn rendered_list_help_names_exactly_the_production_catalog_entities() {
+    let mut command = Cli::command();
+    let list = command.find_subcommand_mut("list").expect("list command");
+    let mut help = Vec::new();
+    list.write_long_help(&mut help).expect("render list help");
+    let help = String::from_utf8(help).expect("UTF-8 help");
+    let overwide = help
+        .lines()
+        .filter(|line| line.chars().count() > 160)
+        .collect::<Vec<_>>();
+    assert!(overwide.is_empty(), "overwide list help: {overwide:?}");
+    let mut lines = help.lines();
+    let entity_line = lines
+        .find(|line| line.trim_start().starts_with("[ENTITY]"))
+        .expect("rendered [ENTITY] argument block");
+    let entity_block = std::iter::once(entity_line)
+        .chain(lines.take_while(|line| !line.trim().is_empty()))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let names = entity_block
+        .rsplit_once('(')
+        .expect("final parenthesized canonical values")
+        .1
+        .rsplit_once(')')
+        .expect("canonical values closing parenthesis")
+        .0;
+    let mut help_entities = names
+        .split(',')
+        .map(|name| name.trim().to_ascii_lowercase())
+        .collect::<std::collections::BTreeSet<_>>();
+    for page in ["search-all", "discover", "batch", "enrich", "skill"] {
+        assert!(help_entities.remove(page), "missing list page {page}");
+    }
+    let catalog_entities = crate::cli::list::catalog::entities()
+        .into_iter()
+        .map(|entity| entity.name.to_string())
+        .collect();
+    assert_eq!(help_entities, catalog_entities);
+}
+
+#[test]
+fn discover_and_batch_json_keep_executable_templates_without_human_option_prose() {
+    for page in ["discover", "batch"] {
+        let out = crate::cli::list::render_json(Some(page)).expect("typed list page");
+        let value: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
+        let templates = value["entries"]
+            .as_array()
+            .expect("entries")
+            .iter()
+            .filter_map(|entry| entry.get("template").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>();
+        assert!(!templates.is_empty(), "missing {page} template");
+        for template in templates {
+            let command = template
+                .replace("<query>", "BRCA1")
+                .replace("<entity>", "gene")
+                .replace("<ids>", "BRAF,TP53");
+            let args = std::iter::once("biomcp".to_string())
+                .chain(shlex::split(&command).expect("valid template shell syntax"));
+            crate::cli::try_parse_cli(args)
+                .unwrap_or_else(|error| panic!("invalid {page} template `{command}`: {error}"));
+        }
+        assert!(!out.contains("structured-output budget"));
+        assert!(!out.contains("adverse-event batches do not support"));
+    }
+}
+
+#[test]
 fn batch_command_parses_sections_and_source() {
     let cli = Cli::try_parse_from([
         "biomcp",

@@ -3,7 +3,7 @@
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
-pub(super) struct EntityCapability {
+pub(crate) struct EntityCapability {
     pub name: &'static str,
     pub searchable: bool,
     pub gettable: bool,
@@ -53,7 +53,7 @@ const ENTITY_FLAGS: &[(&str, bool, bool)] = &[
     ("study", false, false),
 ];
 
-pub(super) fn entities() -> Vec<EntityCapability> {
+pub(crate) fn entities() -> Vec<EntityCapability> {
     ENTITY_FLAGS
         .iter()
         .map(|&(name, searchable, gettable)| EntityCapability {

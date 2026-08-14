@@ -151,6 +151,32 @@ fn list_discover_page_exists() {
 }
 
 #[test]
+fn list_discover_page_states_exact_paging_and_output_bounds() {
+    let out = render(Some("discover")).expect("list discover should render");
+    for expected in [
+        "`--limit <N>` - maximum concepts returned; default 5, must be between 1 and 25",
+        "`--offset <N>` - checked zero-based index into the stable ranked concepts",
+        "Compact mode keeps at most 3 synonyms and 5 cross-references per concept, with at most 256 UTF-8 bytes per value and a 32 KiB structured-output budget.",
+        "`--full` keeps at most 50 synonyms and 100 cross-references per concept, with at most 512 UTF-8 bytes per value and a 256 KiB structured-output budget.",
+    ] {
+        assert!(
+            out.contains(expected),
+            "missing discover contract: {expected}"
+        );
+    }
+}
+
+#[test]
+fn list_discover_page_stays_terminal_friendly() {
+    let out = render(Some("discover")).expect("list discover should render");
+    let overwide = out
+        .lines()
+        .filter(|line| line.chars().count() > 160)
+        .collect::<Vec<_>>();
+    assert!(overwide.is_empty(), "overwide discover lines: {overwide:?}");
+}
+
+#[test]
 fn list_suggest_page_is_not_valid() {
     assert!(render(Some("suggest")).is_err());
 }
@@ -197,7 +223,8 @@ fn list_discover_page_mentions_empty_and_low_confidence_article_fallbacks() {
 #[test]
 fn list_discover_page_mentions_relational_redirect_and_supported_exceptions() {
     let out = render(Some("discover")).expect("list discover should render");
-    assert!(out.contains(
+    let normalized = out.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(normalized.contains(
         "Existing routed exceptions remain supported for symptom-of-disease prompts, HPO symptom bridging, treatment prompts, gene+disease orientation, and unambiguous gene-plus-topic follow-ups."
     ));
     assert!(out.contains(
