@@ -62,7 +62,7 @@ can render aggregate rankings.
 ../../tools/biomcp-ci drug adverse-events --help | mustmatch like '--count <COUNT>'
 ../../tools/biomcp-ci drug adverse-events --help | mustmatch like '--reaction <REACTION>'
 ../../tools/biomcp-ci drug adverse-events --help | mustmatch like 'osimertinib --count patient.reaction.reactionmeddrapt.exact'
-(../../tools/biomcp-ci drug adverse-events osimertinib --type recall --count patient.reaction.reactionmeddrapt.exact 2>&1 || true) | mustmatch like '--count are only valid for --type faers'
+(../../tools/biomcp-ci drug adverse-events osimertinib --type recall --count patient.reaction.reactionmeddrapt.exact 2>&1 || true) | mustmatch like '--type recall does not support: --count'
 ```
 
 ## Indication Structured Search
