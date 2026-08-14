@@ -56,4 +56,5 @@ the native tests in `src/entities/adverse_event.rs`, and a focused process
 contract under `tests/` for pre-contact rejection and output truthfulness.
 It may also align the shipped VAERS behavior specification in
 `spec/entity/vaers.md` with the accepted route matrix, including explicit
-`--source faers` on count examples.
+`--source faers` on count examples, and the adverse-event helper canary in
+`spec/entity/drug.md` with the same route-specific rejection text.
