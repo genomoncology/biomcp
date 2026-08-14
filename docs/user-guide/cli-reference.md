@@ -729,6 +729,7 @@ message so failed symbols are not mistaken for confident empty evidence.
 ## Batch mode
 
 Batch accepts up to 10 IDs per call and each call must use a single entity type.
+Named sections are entity-dependent. Adverse-event batches do not support `--sections`; use individual `get adverse-event` calls for FAERS report sections.
 
 ```bash
 biomcp batch article 22663011,24200969

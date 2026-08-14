@@ -32,10 +32,11 @@ use self::{evidence::*, funding::*, related::*, sections::*, support::*};
 
 #[allow(unused_imports)]
 pub use self::adverse_event::{
-    adverse_event_count_markdown, adverse_event_markdown, adverse_event_search_markdown,
-    adverse_event_search_markdown_with_context, adverse_event_search_markdown_with_footer,
-    device_event_markdown, device_event_search_markdown, device_event_search_markdown_with_footer,
-    recall_search_markdown, recall_search_markdown_with_footer,
+    adverse_event_count_markdown, adverse_event_guidance_commands, adverse_event_markdown,
+    adverse_event_search_markdown, adverse_event_search_markdown_with_context,
+    adverse_event_search_markdown_with_footer, device_event_markdown, device_event_search_markdown,
+    device_event_search_markdown_with_footer, recall_search_markdown,
+    recall_search_markdown_with_footer,
 };
 #[allow(unused_imports)]
 pub use self::article::{

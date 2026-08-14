@@ -240,6 +240,7 @@ fn list_batch_and_enrich_pages_exist() {
     assert!(batch.contains("## When to use this surface"));
     assert_eq!(batch.matches("## When to use this surface").count(), 1);
     assert!(batch.contains("Use batch when you already have a short list of IDs"));
+    assert!(batch.contains("adverse-event batches do not support `--sections`"));
 
     let enrich = render(Some("enrich")).expect("list enrich should render");
     assert!(enrich.contains("# enrich"));

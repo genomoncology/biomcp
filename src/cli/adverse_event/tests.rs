@@ -101,6 +101,31 @@ fn get_adverse_event_parses_sections() {
 }
 
 #[test]
+fn resolved_device_report_rejects_every_named_section_including_all() {
+    let report = crate::entities::adverse_event::AdverseEventReport::Device(
+        crate::entities::adverse_event::DeviceEvent {
+            report_id: "123".into(),
+            report_number: None,
+            device: "pump".into(),
+            manufacturer: None,
+            event_type: None,
+            date: None,
+            description: None,
+        },
+    );
+
+    for section in ["reactions", "all"] {
+        crate::entities::adverse_event::parse_sections(&[section.into()])
+            .expect("syntactically valid section");
+        let error = super::dispatch::validate_resolved_sections(&report, true)
+            .expect_err("device sections must be rejected after resolution");
+        assert!(error.to_string().contains("resolved to a device report"));
+    }
+    super::dispatch::validate_resolved_sections(&report, false)
+        .expect("unsectioned device report remains valid");
+}
+
+#[test]
 fn search_plan_rejects_positional_drug_alias_for_device() {
     let cli = Cli::try_parse_from([
         "biomcp",

@@ -44,7 +44,7 @@ New to BioMCP? Try:
 | Follow one article into related evidence | `article citations <id> --limit 5` or `article recommendations <id> --limit 5` |
 | I know the entities but not the next pivot | `search all --gene BRAF --disease melanoma` |
 | I only have a biomedical phrase and need routing | `discover "<free text>"`; fallback: `search all --keyword "<query>"` |
-| The same sections for several entities | `batch <entity> <id1,id2,...> --sections <s1,s2,...>` |
+| The same sections for several entities | `batch <entity> <id1,id2,...> --sections <s1,s2,...>`; adverse-event batches do not support sections |
 | Enriched pathways or functions for a gene set | `enrich <GENE1,GENE2,...>` |
 
 {{ENTITY_CATALOG}}

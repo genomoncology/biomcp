@@ -228,6 +228,54 @@ fn faers_json_next_commands_parse() {
 }
 
 #[test]
+fn faers_subset_json_filters_data_commands_and_provenance_together() {
+    let faers = AdverseEvent {
+        report_id: "1001".to_string(),
+        drug: "drug with space".to_string(),
+        reactions: vec!["Rash".into()],
+        outcomes: vec!["Hospitalization".into()],
+        patient: Some("Adult".into()),
+        concomitant_medications: vec!["other drug".into()],
+        reporter_type: Some("Physician".into()),
+        reporter_country: Some("US".into()),
+        indication: Some("lung cancer".into()),
+        serious: true,
+        date: Some("2025-01-01".into()),
+    };
+    let sections =
+        crate::entities::adverse_event::parse_sections(&["guidance".into(), "concomitant".into()])
+            .expect("valid sections");
+    let commands = crate::render::markdown::adverse_event_guidance_commands(&faers);
+    let value = crate::render::json::to_entity_json_value(
+        &crate::entities::adverse_event::FaersSubsetReport::new(&faers, sections),
+        crate::render::markdown::adverse_event_evidence_urls(&faers),
+        commands.clone(),
+        crate::render::provenance::adverse_event_subset_section_sources(&faers, sections),
+    )
+    .expect("subset JSON");
+
+    assert_eq!(value["type"], "faers");
+    assert_eq!(value["data"]["report_id"], "1001");
+    assert_eq!(
+        value["data"]["concomitant_medications"],
+        serde_json::json!(["other drug"])
+    );
+    assert!(value["data"].get("reactions").is_none());
+    assert!(value["data"].get("outcomes").is_none());
+    assert!(value["data"].get("patient").is_none());
+    assert_eq!(value["_meta"]["next_commands"], serde_json::json!(commands));
+    assert_eq!(
+        value["_meta"]["section_sources"].as_array().unwrap().len(),
+        1
+    );
+    assert_eq!(
+        value["_meta"]["section_sources"][0]["key"],
+        "concomitant_drugs"
+    );
+    assert_eq!(value["_meta"]["evidence_urls"][0]["label"], "OpenFDA");
+}
+
+#[test]
 fn device_event_json_next_commands_parse() {
     let device = DeviceEvent {
         report_id: "MDR-123".to_string(),

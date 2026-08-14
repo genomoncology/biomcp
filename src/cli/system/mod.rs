@@ -107,7 +107,7 @@ pub struct BatchArgs {
     pub entity: String,
     /// Comma-separated IDs (max 10)
     pub ids: String,
-    /// Optional comma-separated sections to request on each get call
+    /// Optional comma-separated sections (not supported for adverse-event batches)
     #[arg(long)]
     pub sections: Option<String>,
     /// Trial source when entity=trial (ctgov or nci)

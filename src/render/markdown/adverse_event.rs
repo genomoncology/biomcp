@@ -16,8 +16,9 @@ pub fn adverse_event_markdown(
     let show_outcomes_section = !section_only || parsed.include_outcomes;
     let show_concomitant_section = !section_only || parsed.include_concomitant;
     let show_guidance_section = !section_only || parsed.include_guidance;
-    let drug = quote_arg(&event.drug);
-    let indication = event
+    let guidance_commands = adverse_event_guidance_commands(event);
+    let guidance_drug = quote_arg(&event.drug);
+    let guidance_indication = event
         .indication
         .as_deref()
         .map(quote_arg)
@@ -34,21 +35,46 @@ pub fn adverse_event_markdown(
         reporter_type => &event.reporter_type,
         reporter_country => &event.reporter_country,
         indication => &event.indication,
-        guidance_indication => indication,
-        guidance_drug => drug,
+        guidance_commands => guidance_commands,
+        guidance_drug => guidance_drug,
+        guidance_indication => guidance_indication,
         show_reactions_section => show_reactions_section,
         show_outcomes_section => show_outcomes_section,
         show_concomitant_section => show_concomitant_section,
         show_guidance_section => show_guidance_section,
         serious => &event.serious,
         date => &event.date,
-        sections_block => format_sections_block("adverse-event", &event.report_id, sections_adverse_event(event, requested_sections)),
-        related_block => format_related_block(related_adverse_event(event)),
+        sections_block => if section_only { String::new() } else { format_sections_block("adverse-event", &event.report_id, sections_adverse_event(event, requested_sections)) },
+        related_block => if section_only { String::new() } else { format_related_block(related_adverse_event(event)) },
     })?;
     Ok(append_evidence_urls(
         body,
         adverse_event_evidence_urls(event),
     ))
+}
+
+pub fn adverse_event_guidance_commands(event: &AdverseEvent) -> Vec<String> {
+    let drug = quote_arg(&event.drug);
+    if drug.is_empty() {
+        return Vec::new();
+    }
+    let mut commands = vec![
+        format!("biomcp drug adverse-events {drug}"),
+        format!("biomcp get drug {drug}"),
+        format!("biomcp drug trials {drug}"),
+    ];
+    if let Some(indication) = event
+        .indication
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        commands.push(format!(
+            "biomcp search disease --query {}",
+            quote_arg(indication)
+        ));
+    }
+    commands
 }
 
 // dead-code reason: adverse_event::adverse_event_search_markdown is exercised by native renderer contracts

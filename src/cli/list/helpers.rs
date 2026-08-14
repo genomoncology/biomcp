@@ -57,7 +57,7 @@ pub(super) fn list_batch() -> String {
 
 ## Options
 
-- `--sections <s1,s2,...>` - request specific sections on each entity
+- `--sections <s1,s2,...>` - request specific sections on each entity; adverse-event batches do not support `--sections`
 - `--source <ctgov|nci>` - trial source when `entity=trial` (default: `ctgov`)
 
 ## Supported entities

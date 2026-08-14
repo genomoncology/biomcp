@@ -7,6 +7,22 @@ use std::time::Duration;
 
 const EMPTY_OPENFDA_PAGE: &str =
     r#"{"meta":{"results":{"skip":0,"limit":5,"total":0}},"results":[]}"#;
+const FAERS_REPORT_PAGE: &str = r#"{
+  "meta":{"results":{"skip":0,"limit":1,"total":1}},
+  "results":[{
+    "safetyreportid":"1001",
+    "serious":"1",
+    "receivedate":"20250101",
+    "seriousnesshospitalization":"1",
+    "patient":{
+      "reaction":[{"reactionmeddrapt":"Rash"}],
+      "drug":[
+        {"medicinalproduct":"DRUG NAME","drugcharacterization":"1","drugindication":"LUNG CANCER"},
+        {"medicinalproduct":"OTHER DRUG","drugcharacterization":"2"}
+      ]
+    }
+  }]
+}"#;
 
 struct RequestFixture {
     base: String,
@@ -16,6 +32,10 @@ struct RequestFixture {
 
 impl RequestFixture {
     fn start() -> Self {
+        Self::start_with_body(EMPTY_OPENFDA_PAGE)
+    }
+
+    fn start_with_body(body: &'static str) -> Self {
         let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind OpenFDA fixture");
         let base = format!("http://{}", listener.local_addr().expect("fixture address"));
         let (request_tx, requests) = mpsc::channel();
@@ -40,8 +60,8 @@ impl RequestFixture {
                 request_tx.send(target).expect("capture request target");
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                    EMPTY_OPENFDA_PAGE.len(),
-                    EMPTY_OPENFDA_PAGE
+                    body.len(),
+                    body
                 );
                 let _ = stream.write_all(response.as_bytes());
             }
@@ -121,6 +141,141 @@ fn invalid_count_offset_is_rejected_without_provider_contact() {
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--count requires --offset 0"));
     fixture.assert_no_request();
+}
+
+#[test]
+fn unknown_get_section_is_rejected_without_provider_contact() {
+    let fixture = RequestFixture::start();
+    let output = run_biomcp(
+        &["--json", "get", "adverse-event", "1001", "not-a-section"],
+        &fixture,
+    );
+
+    assert_eq!(output.status.code(), Some(2));
+    let error: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("structured JSON error");
+    assert_eq!(error["error"]["code"], "invalid_argument");
+    assert!(
+        error["error"]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("Unknown section"))
+    );
+    fixture.assert_no_request();
+}
+
+#[test]
+fn faers_subset_json_process_contract_is_bounded_and_truthful() {
+    let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+    let output = run_biomcp(
+        &[
+            "--json",
+            "--no-cache",
+            "get",
+            "adverse-event",
+            "1001",
+            "guidance",
+            "reactions",
+            "guidance",
+            "outcomes",
+            "reactions",
+        ],
+        &fixture,
+    );
+
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).expect("subset JSON");
+    assert_eq!(value["type"], "faers");
+    assert_eq!(value["data"]["report_id"], "1001");
+    assert_eq!(value["data"]["drug"], "drug name");
+    assert_eq!(value["data"]["reactions"], serde_json::json!(["Rash"]));
+    assert_eq!(
+        value["data"]["outcomes"],
+        serde_json::json!(["Hospitalization"])
+    );
+    assert!(value["data"].get("concomitant_medications").is_none());
+    assert!(value["data"].get("patient").is_none());
+    assert!(value["data"].get("serious").is_none());
+    assert_eq!(
+        value["_meta"]["next_commands"],
+        serde_json::json!([
+            "biomcp drug adverse-events \"drug name\"",
+            "biomcp get drug \"drug name\"",
+            "biomcp drug trials \"drug name\"",
+            "biomcp search disease --query \"LUNG CANCER\""
+        ])
+    );
+    assert_eq!(
+        value["_meta"]["next_commands"]
+            .as_array()
+            .expect("guidance commands")
+            .len(),
+        4,
+        "duplicate sections must remain idempotent"
+    );
+    assert_eq!(
+        value["_meta"]["section_sources"]
+            .as_array()
+            .expect("section sources")
+            .iter()
+            .map(|source| source["key"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        ["reactions", "outcomes"]
+    );
+    assert!(fixture.request_target().contains("drug/event.json"));
+}
+
+#[test]
+fn unsectioned_and_all_faers_json_keep_the_same_full_contract() {
+    fn get_json(sections: &[&str]) -> serde_json::Value {
+        let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+        let mut args = vec!["--json", "--no-cache", "get", "adverse-event", "1001"];
+        args.extend_from_slice(sections);
+        let output = run_biomcp(&args, &fixture);
+        assert!(
+            output.status.success(),
+            "stderr={}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let value = serde_json::from_slice(&output.stdout).expect("full JSON");
+        assert!(fixture.request_target().contains("drug/event.json"));
+        value
+    }
+
+    let unsectioned = get_json(&[]);
+    let all = get_json(&["all"]);
+    assert_eq!(all, unsectioned);
+    assert_eq!(all["type"], "faers");
+    for key in [
+        "report_id",
+        "drug",
+        "reactions",
+        "outcomes",
+        "concomitant_medications",
+        "indication",
+        "serious",
+        "date",
+    ] {
+        assert!(
+            all["data"].get(key).is_some(),
+            "missing full field {key}: {all}"
+        );
+    }
+    assert!(
+        all["_meta"]["next_commands"]
+            .as_array()
+            .is_some_and(|commands| !commands.is_empty()),
+        "full metadata changed: {all}"
+    );
+    assert!(
+        all["_meta"]["section_sources"]
+            .as_array()
+            .is_some_and(|sources| sources.iter().any(|source| source["key"] == "overview")),
+        "full overview provenance changed: {all}"
+    );
 }
 
 #[test]

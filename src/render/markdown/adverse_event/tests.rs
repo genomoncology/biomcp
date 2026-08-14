@@ -53,6 +53,54 @@ fn adverse_event_markdown_includes_openfda_sections() {
 }
 
 #[test]
+fn adverse_event_subset_markdown_keeps_identity_and_only_selected_bodies() {
+    let event = AdverseEvent {
+        report_id: "10329882".to_string(),
+        drug: "drug with space".to_string(),
+        reactions: vec!["Cough".to_string()],
+        outcomes: vec!["Hospitalization".to_string()],
+        patient: Some("Adult".to_string()),
+        concomitant_medications: vec!["azithromycin".to_string()],
+        reporter_type: Some("Physician".to_string()),
+        reporter_country: Some("US".to_string()),
+        indication: Some("lung cancer".to_string()),
+        serious: true,
+        date: Some("2024-01-01".to_string()),
+    };
+
+    let markdown = adverse_event_markdown(
+        &event,
+        &[
+            "guidance".to_string(),
+            "reactions".to_string(),
+            "guidance".to_string(),
+        ],
+    )
+    .expect("subset markdown");
+
+    assert!(markdown.contains("Report ID: 10329882"));
+    assert!(markdown.contains("Drug: drug with space"));
+    assert!(markdown.contains("## Reactions (OpenFDA)"));
+    assert!(!markdown.contains("## Outcomes (OpenFDA)"));
+    assert!(!markdown.contains("## Concomitant Drugs (OpenFDA)"));
+    assert!(!markdown.contains("Patient: Adult"));
+    assert!(!markdown.contains("Reporter:"));
+    assert!(!markdown.contains("More:"));
+    assert!(!markdown.contains("Related:"));
+    for command in adverse_event_guidance_commands(&event) {
+        assert!(
+            markdown.contains(&format!("`{command}`")),
+            "missing {command}: {markdown}"
+        );
+        assert_eq!(
+            markdown.matches(&command).count(),
+            1,
+            "duplicate {command}: {markdown}"
+        );
+    }
+}
+
+#[test]
 fn adverse_event_search_markdown_renders_summary_and_filters() {
     let summary = AdverseEventSearchSummary {
         total_reports: 12,

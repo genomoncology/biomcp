@@ -29,6 +29,9 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
+mod typed_get;
+use self::typed_get::typed_get_schema;
+
 #[derive(Debug, Clone)]
 pub struct BioMcpServer {
     tool_router: ToolRouter<Self>,
@@ -292,25 +295,6 @@ fn typed_search_schema(schema: &mut schemars::Schema) {
     .map(typed_search_branch)
     .collect::<Vec<_>>();
     *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed search schema");
-}
-
-fn typed_get_schema(schema: &mut schemars::Schema) {
-    let branches = ["author", "gene", "article", "disease", "diagnostic", "pgx", "trial", "variant", "drug", "pathway", "protein", "adverse-event"]
-        .into_iter().map(|entity| {
-            let mut properties = serde_json::Map::from_iter([
-                ("entity".into(), json!({"const":entity})),
-                ("id".into(), json!({"type":"string","minLength":1,"maxLength":512})),
-                ("json".into(), json!({"type":"boolean","default":false})),
-            ]);
-            if entity != "author" {
-                properties.insert("sections".into(), json!({"type":"array","maxItems":16,"uniqueItems":true,"items":{"enum":crate::cli::list::catalog::sections(entity)}}));
-            }
-            if entity == "variant" {
-                properties.insert("assembly".into(), json!({"enum":["grch37","hg19","grch38","hg38"]}));
-            }
-            json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity","id"]})
-        }).collect::<Vec<_>>();
-    *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed get schema");
 }
 
 fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
@@ -732,7 +716,7 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         .cloned()
         .unwrap_or_default();
     if sections.len() > 16 {
-        return Err(input_error("sections accepts at most 16 unique values"));
+        return Err(input_error("sections accepts at most 16 values"));
     }
     let sections = sections
         .iter()
@@ -749,9 +733,15 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
     let allowed_sections = crate::cli::list::catalog::sections(&entity);
     let mut seen = BTreeSet::new();
     for section in sections {
-        if !allowed_sections.contains(&section.as_str()) || !seen.insert(section.clone()) {
+        if !allowed_sections.contains(&section.as_str()) {
+            return Err(input_error(format!("invalid {entity} section: {section}")));
+        }
+        if !seen.insert(section.clone()) {
+            if entity == "adverse-event" {
+                continue;
+            }
             return Err(input_error(format!(
-                "invalid or duplicate {entity} section: {section}"
+                "duplicate {entity} section: {section}"
             )));
         }
         args.push(section);
@@ -1538,6 +1528,10 @@ pub async fn run_http(
         .map_err(|e| anyhow::anyhow!("HTTP server exited: {e}"))?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "shell/typed_get_tests.rs"]
+mod typed_get_tests;
 
 #[cfg(test)]
 mod tests {

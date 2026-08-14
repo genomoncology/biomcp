@@ -10,8 +10,8 @@
     },
     {
       "path": "src/entities/adverse_event.rs",
-      "baseline_lines": 2670,
-      "floor_lines": 2670,
+      "baseline_lines": 2663,
+      "floor_lines": 2663,
       "authorized_increase": null
     },
     {
@@ -138,11 +138,11 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2210,
+      "baseline_lines": 2204,
       "floor_lines": 2059,
       "authorized_increase": {
         "ticket": "0976",
-        "delta": 151,
+        "delta": 145,
         "reason": "The global Host policy and exhaustive raw-command local-input boundary share authority semantics and parser coverage with the existing MCP transport shell.",
         "removal_condition": "Extract HTTP server policy and tests when the MCP transport shell is next decomposed."
       }
@@ -173,8 +173,8 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1900,
-      "floor_lines": 1900,
+      "baseline_lines": 1820,
+      "floor_lines": 1820,
       "authorized_increase": null
     },
     {

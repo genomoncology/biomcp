@@ -17,11 +17,13 @@ use serde::{Deserialize, Serialize};
 
 #[path = "adverse_event/device.rs"]
 mod device;
+mod sections;
 #[cfg(test)]
 use self::device::build_device_query;
 pub use self::device::{
     DeviceEventSearchFilters, DeviceEventSeriousness, device_query_summary, search_device_page,
 };
+pub use self::sections::{AdverseEventSections, FaersSubsetReport};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdverseEvent {
@@ -249,7 +251,6 @@ pub const ADVERSE_EVENT_SECTION_NAMES: &[&str] = &[
     ADVERSE_EVENT_SECTION_GUIDANCE,
     ADVERSE_EVENT_SECTION_ALL,
 ];
-
 const TRIAL_ADVERSE_EVENT_LIMIT: usize = 20;
 const CTGOV_ADVERSE_EVENT_PAGE_SIZE: usize = 100;
 const CTGOV_ADVERSE_EVENT_PAGE_CAP: usize = 20;
@@ -302,14 +303,6 @@ const VAERS_BRIDGE: &[VaersBridgeEntry] = &[
         ],
     },
 ];
-
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
-pub struct AdverseEventSections {
-    pub include_reactions: bool,
-    pub include_outcomes: bool,
-    pub include_concomitant: bool,
-    pub include_guidance: bool,
-}
 
 pub fn parse_sections(sections: &[String]) -> Result<AdverseEventSections, BioMcpError> {
     let mut out = AdverseEventSections::default();

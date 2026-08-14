@@ -15,15 +15,61 @@ fn vaers_only_next_commands(query: &str) -> Vec<String> {
     ]
 }
 
+pub(super) fn validate_resolved_sections(
+    report: &crate::entities::adverse_event::AdverseEventReport,
+    sections_requested: bool,
+) -> Result<(), crate::error::BioMcpError> {
+    if sections_requested
+        && matches!(
+            report,
+            crate::entities::adverse_event::AdverseEventReport::Device(_)
+        )
+    {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "Named sections are supported only for FAERS adverse-event reports; this ID resolved to a device report. Retry without sections."
+                .into(),
+        ));
+    }
+    Ok(())
+}
+
 pub(crate) async fn handle_get(
     args: AdverseEventGetArgs,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let json_output = json || json_override;
+    let parsed_sections = crate::entities::adverse_event::parse_sections(&sections)?;
+    let sections_requested = !sections.is_empty();
+    let subset_requested = sections_requested
+        && !sections
+            .iter()
+            .any(|section| section.eq_ignore_ascii_case("all"));
     let event = crate::entities::adverse_event::get(&args.report_id).await?;
+    validate_resolved_sections(&event, sections_requested)?;
     let text = if json_output {
         match &event {
+            crate::entities::adverse_event::AdverseEventReport::Faers(report)
+                if subset_requested =>
+            {
+                let commands = if parsed_sections.include_guidance {
+                    crate::render::markdown::adverse_event_guidance_commands(report)
+                } else {
+                    Vec::new()
+                };
+                crate::render::json::to_entity_json(
+                    &crate::entities::adverse_event::FaersSubsetReport::new(
+                        report,
+                        parsed_sections,
+                    ),
+                    crate::render::markdown::adverse_event_evidence_urls(report),
+                    commands,
+                    crate::render::provenance::adverse_event_subset_section_sources(
+                        report,
+                        parsed_sections,
+                    ),
+                )?
+            }
             crate::entities::adverse_event::AdverseEventReport::Faers(report) => {
                 crate::render::json::to_entity_json(
                     &event,
@@ -47,6 +93,7 @@ pub(crate) async fn handle_get(
                 crate::render::markdown::adverse_event_markdown(report, &sections)?
             }
             crate::entities::adverse_event::AdverseEventReport::Device(report) => {
+                debug_assert!(!sections_requested);
                 crate::render::markdown::device_event_markdown(report)?
             }
         }
