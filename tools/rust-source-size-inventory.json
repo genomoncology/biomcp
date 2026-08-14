@@ -10,8 +10,8 @@
     },
     {
       "path": "src/entities/adverse_event.rs",
-      "baseline_lines": 2708,
-      "floor_lines": 2708,
+      "baseline_lines": 2670,
+      "floor_lines": 2670,
       "authorized_increase": null
     },
     {

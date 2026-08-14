@@ -25,7 +25,7 @@ pub struct AdverseEventSearchArgs {
     /// Filter by reaction outcome [values: death, hospitalization, disability]
     #[arg(long)]
     pub outcome: Option<String>,
-    /// Seriousness filter (optionally specify type: death, hospitalization, lifethreatening, disability, congenital, other)
+    /// Seriousness filter. FAERS: any, death, hospitalization, lifethreatening, disability, congenital, other. Device input any means death_or_injury; death and injury are exact
     #[arg(long, num_args = 0..=1, default_missing_value = "any")]
     pub serious: Option<String>,
     /// Received after year/date (YYYY or YYYY-MM-DD)
@@ -49,7 +49,7 @@ pub struct AdverseEventSearchArgs {
     /// Reporter qualification filter
     #[arg(long)]
     pub reporter: Option<String>,
-    /// FAERS aggregation field: reaction/reactionmeddrapt, patient.reaction.reactionmeddrapt[.exact], patient.drug.medicinalproduct[.exact], patient.drug.openfda.generic_name[.exact], patient.drug.openfda.brand_name[.exact], patient.patientsex, patient.patientonsetage, serious, seriousnessdeath/hospitalization/lifethreatening/disabling/congenitalanomali/other, patient.reaction.reactionoutcome, or primarysource.qualification
+    /// FAERS aggregation field (requires --source faers): reaction/reactionmeddrapt, patient.reaction.reactionmeddrapt[.exact], patient.drug.medicinalproduct[.exact], patient.drug.openfda.generic_name[.exact], patient.drug.openfda.brand_name[.exact], patient.patientsex, patient.patientonsetage, serious, seriousnessdeath/hospitalization/lifethreatening/disabling/congenitalanomali/other, patient.reaction.reactionoutcome, or primarysource.qualification
     #[arg(long)]
     pub count: Option<String>,
     /// Query type: faers (default search path), recall, or device
@@ -66,7 +66,7 @@ pub struct AdverseEventSearchArgs {
     /// Filter by recall classification (Class I, Class II, Class III)
     #[arg(long)]
     pub classification: Option<String>,
-    /// Maximum results, 1-50 (default: 10)
+    /// Maximum results, 1-50; also bounds VAERS top reactions (default: 10)
     #[arg(short, long, default_value = "10")]
     pub limit: usize,
     /// Skip the first N results
@@ -84,6 +84,7 @@ pub struct AdverseEventGetArgs {
 }
 
 mod dispatch;
+mod plan;
 pub(crate) use self::dispatch::{handle_get, handle_search};
 
 #[cfg(test)]

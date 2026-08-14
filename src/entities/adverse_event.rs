@@ -15,6 +15,14 @@ use crate::transform;
 use crate::utils::date::validate_since;
 use serde::{Deserialize, Serialize};
 
+#[path = "adverse_event/device.rs"]
+mod device;
+#[cfg(test)]
+use self::device::build_device_query;
+pub use self::device::{
+    DeviceEventSearchFilters, DeviceEventSeriousness, device_query_summary, search_device_page,
+};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdverseEvent {
     pub report_id: String,
@@ -245,7 +253,6 @@ pub const ADVERSE_EVENT_SECTION_NAMES: &[&str] = &[
 const TRIAL_ADVERSE_EVENT_LIMIT: usize = 20;
 const CTGOV_ADVERSE_EVENT_PAGE_SIZE: usize = 100;
 const CTGOV_ADVERSE_EVENT_PAGE_CAP: usize = 20;
-const VAERS_TOP_REACTION_LIMIT: usize = 10;
 
 struct VaersBridgeEntry {
     display_name: &'static str,
@@ -359,15 +366,6 @@ pub struct RecallSearchFilters {
     pub classification: Option<String>,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct DeviceEventSearchFilters {
-    pub device: Option<String>,
-    pub manufacturer: Option<String>,
-    pub product_code: Option<String>,
-    pub serious: bool,
-    pub since: Option<String>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdverseEventCountBucket {
     pub value: String,
@@ -394,7 +392,7 @@ pub struct RecallSearchResult {
     pub recall_initiation_date: Option<String>,
 }
 
-fn yyyymmdd_from_date(value: &str, end_of_year: bool) -> Result<String, BioMcpError> {
+pub(super) fn yyyymmdd_from_date(value: &str, end_of_year: bool) -> Result<String, BioMcpError> {
     let raw = value.trim();
     if raw.len() == 4 && raw.chars().all(|c| c.is_ascii_digit()) {
         return Ok(if end_of_year {
@@ -780,6 +778,17 @@ fn unsupported_vaers_filter_names(filters: &AdverseEventSearchFilters) -> Vec<&'
     out
 }
 
+fn unsupported_vaers_branch_names(
+    filters: &AdverseEventSearchFilters,
+    offset: usize,
+) -> Vec<&'static str> {
+    let mut unsupported = unsupported_vaers_filter_names(filters);
+    if offset > 0 {
+        unsupported.push("--offset");
+    }
+    unsupported
+}
+
 fn normalize_vaccine_match_key(value: &str) -> Option<String> {
     let mut normalized = String::new();
     let mut last_was_space = true;
@@ -916,6 +925,7 @@ async fn resolve_vaers_vaccine_from_root(
 fn vaers_summary_from_tables(
     matched_vaccine: VaersMatchedVaccine,
     tables: crate::sources::vaers::VaersSummaryTables,
+    limit: usize,
 ) -> VaersSearchPayload {
     let mut top_reactions = tables
         .reactions
@@ -931,7 +941,7 @@ fn vaers_summary_from_tables(
             .cmp(&a.count)
             .then_with(|| a.reaction.cmp(&b.reaction))
     });
-    top_reactions.truncate(VAERS_TOP_REACTION_LIMIT);
+    top_reactions.truncate(limit);
 
     let age_distribution = tables
         .age_distribution
@@ -966,12 +976,13 @@ fn vaers_summary_from_tables(
 async fn fetch_vaers_payload(
     query: &str,
     cvx_lookup_mode: CvxLookupMode,
+    limit: usize,
 ) -> Result<VaersSearchPayload, BioMcpError> {
     match resolve_vaers_vaccine(query, cvx_lookup_mode).await? {
         ResolvedVaersVaccine::Matched(matched_vaccine) => {
             let client = VaersClient::new()?;
             let tables = client.summary(&matched_vaccine.wonder_code).await?;
-            Ok(vaers_summary_from_tables(matched_vaccine, tables))
+            Ok(vaers_summary_from_tables(matched_vaccine, tables, limit))
         }
         ResolvedVaersVaccine::QueryNotVaccine(message) => Ok(VaersSearchPayload::status_only(
             VaersSearchStatus::QueryNotVaccine,
@@ -1109,6 +1120,13 @@ pub async fn search_with_source(
     limit: usize,
     offset: usize,
 ) -> Result<AdverseEventSourceSearch, BioMcpError> {
+    const MAX_SEARCH_LIMIT: usize = 50;
+    if limit == 0 || limit > MAX_SEARCH_LIMIT {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--limit must be between 1 and {MAX_SEARCH_LIMIT}"
+        )));
+    }
+
     let query = filters
         .drug
         .as_deref()
@@ -1120,7 +1138,7 @@ pub async fn search_with_source(
                     .into(),
             )
         })?;
-    let unsupported = unsupported_vaers_filter_names(filters);
+    let unsupported = unsupported_vaers_branch_names(filters, offset);
 
     match source {
         AdverseEventSourceFilter::Faers => Ok(source_search(
@@ -1134,7 +1152,7 @@ pub async fn search_with_source(
             validate_explicit_vaers_source(filters, offset)?;
 
             let vaers = vaers_payload_from_result(
-                fetch_vaers_payload(query, CvxLookupMode::AutoSync).await,
+                fetch_vaers_payload(query, CvxLookupMode::AutoSync, limit).await,
             );
             Ok(source_search(source, None, Some(vaers)))
         }
@@ -1142,7 +1160,7 @@ pub async fn search_with_source(
             if unsupported.is_empty() {
                 let (faers_result, vaers_result) = tokio::join!(
                     search_with_status(filters, limit, offset),
-                    fetch_vaers_payload(query, CvxLookupMode::LocalOnly)
+                    fetch_vaers_payload(query, CvxLookupMode::LocalOnly, limit)
                 );
                 let vaers = vaers_payload_from_result(vaers_result);
                 Ok(all_source_search_with_vaers_payload(
@@ -1615,107 +1633,6 @@ fn normalize_count_field_for_openfda(count_field: &str) -> String {
         )
 }
 
-fn build_device_query(filters: &DeviceEventSearchFilters) -> Result<String, BioMcpError> {
-    let device = filters
-        .device
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty());
-    let manufacturer = filters
-        .manufacturer
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty());
-    let product_code = filters
-        .product_code
-        .as_deref()
-        .and_then(normalize_product_code);
-
-    if device.is_none() && manufacturer.is_none() && product_code.is_none() {
-        return Err(BioMcpError::InvalidArgument(
-            "At least one device filter is required (--device, --manufacturer, or --product-code)."
-                .into(),
-        ));
-    }
-
-    let mut terms: Vec<String> = Vec::new();
-    if let Some(device) = device {
-        let escaped = OpenFdaClient::escape_query_value(device);
-        let name_query = if device.chars().any(|c| c.is_whitespace()) {
-            format!("device.brand_name:\"{escaped}\" OR device.generic_name:\"{escaped}\"")
-        } else {
-            format!("device.brand_name:*{escaped}* OR device.generic_name:*{escaped}*")
-        };
-        terms.push(format!("({name_query})"));
-    }
-
-    if let Some(manufacturer) = manufacturer {
-        let escaped = OpenFdaClient::escape_query_value(manufacturer);
-        let manufacturer_query = if manufacturer.chars().any(|c| c.is_whitespace()) {
-            format!("manufacturer_name:\"{escaped}\" OR device.manufacturer_d_name:\"{escaped}\"")
-        } else {
-            format!("manufacturer_name:*{escaped}* OR device.manufacturer_d_name:*{escaped}*")
-        };
-        terms.push(format!("({manufacturer_query})"));
-    }
-
-    if let Some(product_code) = product_code {
-        terms.push(format!(
-            "device.device_report_product_code:\"{}\"",
-            OpenFdaClient::escape_query_value(&product_code)
-        ));
-    }
-
-    if filters.serious {
-        terms.push("(event_type:\"Death\" OR event_type:\"Injury\")".to_string());
-    }
-
-    if let Some(since) = filters.since.as_deref() {
-        let yyyymmdd = yyyymmdd_from_date(since, false)?;
-        terms.push(format!("date_received:[{yyyymmdd} TO *]"));
-    }
-
-    Ok(terms.join(" AND "))
-}
-
-fn normalize_product_code(value: &str) -> Option<String> {
-    let normalized = value.trim().to_ascii_uppercase();
-    if normalized.is_empty() {
-        None
-    } else {
-        Some(normalized)
-    }
-}
-
-pub async fn search_device_page(
-    filters: &DeviceEventSearchFilters,
-    limit: usize,
-    offset: usize,
-) -> Result<SearchPage<DeviceEventSearchResult>, BioMcpError> {
-    const MAX_SEARCH_LIMIT: usize = 50;
-    if limit == 0 || limit > MAX_SEARCH_LIMIT {
-        return Err(BioMcpError::InvalidArgument(format!(
-            "--limit must be between 1 and {MAX_SEARCH_LIMIT}"
-        )));
-    }
-
-    let q = build_device_query(filters)?;
-
-    let client = OpenFdaClient::new()?;
-    let resp = client.device_event_search(&q, limit, offset).await?;
-    let Some(resp) = resp else {
-        return Ok(SearchPage::offset(Vec::new(), Some(0)));
-    };
-
-    Ok(SearchPage::offset(
-        resp.results
-            .iter()
-            .map(transform::adverse_event::from_openfda_device_search_result)
-            .collect(),
-        Some(resp.meta.results.total),
-    ))
-}
-
 fn normalize_classification(value: &str) -> Result<String, BioMcpError> {
     let v = value.trim();
     if v.is_empty() {
@@ -1957,45 +1874,6 @@ pub fn search_query_summary(filters: &AdverseEventSearchFilters) -> String {
     parts.join(", ")
 }
 
-pub fn device_query_summary(filters: &DeviceEventSearchFilters) -> String {
-    let mut parts: Vec<String> = Vec::new();
-    if let Some(d) = filters
-        .device
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        parts.push(format!("device={d}"));
-    }
-    if let Some(m) = filters
-        .manufacturer
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        parts.push(format!("manufacturer={m}"));
-    }
-    if let Some(code) = filters
-        .product_code
-        .as_deref()
-        .and_then(normalize_product_code)
-    {
-        parts.push(format!("product_code={code}"));
-    }
-    if filters.serious {
-        parts.push("serious=true".into());
-    }
-    if let Some(s) = filters
-        .since
-        .as_deref()
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-    {
-        parts.push(format!("since={s}"));
-    }
-    parts.join(", ")
-}
-
 pub fn recall_query_summary(filters: &RecallSearchFilters) -> String {
     let mut parts: Vec<String> = vec!["Recalls".into()];
     if let Some(d) = filters
@@ -2127,7 +2005,7 @@ mod tests {
             device: None,
             manufacturer: Some("Medtronic".into()),
             product_code: Some("pqp".into()),
-            serious: true,
+            serious: Some(DeviceEventSeriousness::Any),
             since: Some("2024-01-01".into()),
         })
         .unwrap();
@@ -2139,15 +2017,71 @@ mod tests {
     }
 
     #[test]
-    fn device_query_summary_includes_new_filters() {
-        let summary = device_query_summary(&DeviceEventSearchFilters {
-            device: None,
-            manufacturer: Some("Medtronic".into()),
-            product_code: Some("pqp".into()),
-            serious: false,
-            since: None,
-        });
-        assert_eq!(summary, "manufacturer=Medtronic, product_code=PQP");
+    fn build_device_query_preserves_typed_seriousness() {
+        for (seriousness, expected, excluded) in [
+            (
+                DeviceEventSeriousness::Any,
+                "(event_type:\"Death\" OR event_type:\"Injury\")",
+                None,
+            ),
+            (
+                DeviceEventSeriousness::Death,
+                "event_type:\"Death\"",
+                Some("event_type:\"Injury\""),
+            ),
+            (
+                DeviceEventSeriousness::Injury,
+                "event_type:\"Injury\"",
+                Some("event_type:\"Death\""),
+            ),
+        ] {
+            let query = build_device_query(&DeviceEventSearchFilters {
+                device: Some("pump".into()),
+                serious: Some(seriousness),
+                ..Default::default()
+            })
+            .expect("device query");
+            assert!(query.contains(expected), "{seriousness:?}: {query}");
+            if let Some(excluded) = excluded {
+                assert!(!query.contains(excluded), "{seriousness:?}: {query}");
+            }
+        }
+    }
+
+    #[test]
+    fn device_query_summary_names_all_seriousness_meanings() {
+        for (seriousness, label) in [
+            (DeviceEventSeriousness::Any, "death_or_injury"),
+            (DeviceEventSeriousness::Death, "death"),
+            (DeviceEventSeriousness::Injury, "injury"),
+        ] {
+            let summary = device_query_summary(&DeviceEventSearchFilters {
+                device: None,
+                manufacturer: Some("Medtronic".into()),
+                product_code: Some("pqp".into()),
+                serious: Some(seriousness),
+                since: None,
+            });
+            assert_eq!(
+                summary,
+                format!("manufacturer=Medtronic, product_code=PQP, serious={label}")
+            );
+        }
+    }
+
+    #[test]
+    fn vaers_limit_bounds_top_reactions() {
+        let payload = vaers_summary_from_tables(
+            VaersMatchedVaccine {
+                display_name: "fixture".into(),
+                wonder_code: "fixture".into(),
+                cvx_codes: vec![],
+            },
+            vaers_summary_tables_fixture(),
+            1,
+        );
+
+        assert_eq!(payload.summary.expect("summary").top_reactions.len(), 1);
     }
 
     #[test]
@@ -2393,6 +2327,32 @@ mod tests {
         );
     }
 
+    #[test]
+    fn search_with_source_all_treats_offset_as_a_visible_vaers_skip() {
+        let filters = AdverseEventSearchFilters {
+            drug: Some("MMR vaccine".into()),
+            ..Default::default()
+        };
+        let unsupported = unsupported_vaers_branch_names(&filters, 1);
+        let response = all_source_search_with_unsupported_vaers_filters(
+            FaersSearchStatus::NotFound,
+            &unsupported,
+        );
+        let vaers = response.vaers.expect("vaers payload");
+
+        assert_eq!(unsupported, vec!["--offset"]);
+        assert_eq!(vaers.status, VaersSearchStatus::UnsupportedFilters);
+        assert!(vaers.message.unwrap_or_default().contains("--offset"));
+        assert_eq!(
+            response
+                .section_outcomes
+                .get("vaers")
+                .expect("vaers outcome")
+                .outcome(),
+            crate::entities::section_outcome::SectionOutcomeState::NotRequested
+        );
+    }
+
     #[tokio::test]
     async fn search_with_source_all_non_vaccine_uses_local_only_vaers_result() {
         let root = cvx_fixture_root();
@@ -2437,6 +2397,7 @@ mod tests {
                 cvx_codes: vec!["03".into(), "94".into()],
             },
             vaers_summary_tables_fixture(),
+            10,
         );
         let summary = vaers.summary.expect("vaers summary");
         let matched = vaers.matched_vaccine.expect("matched vaccine");
@@ -2680,7 +2641,7 @@ mod tests {
         empty_tables.non_serious_reports = 0;
         empty_tables.reactions.clear();
         empty_tables.age_distribution.clear();
-        let empty_input = vaers_summary_from_tables(matched_mmr(), empty_tables);
+        let empty_input = vaers_summary_from_tables(matched_mmr(), empty_tables, 10);
         let empty_expected = serde_json::to_value(&empty_input).expect("empty payload serializes");
         let empty = vaers_payload_from_result(Ok(empty_input));
         assert_eq!(
@@ -2690,7 +2651,8 @@ mod tests {
         assert_eq!(empty.status, VaersSearchStatus::Empty);
         assert_cvx_vaers_outcome(&empty, SectionOutcomeState::Empty);
 
-        let data_input = vaers_summary_from_tables(matched_mmr(), vaers_summary_tables_fixture());
+        let data_input =
+            vaers_summary_from_tables(matched_mmr(), vaers_summary_tables_fixture(), 10);
         let data_expected = serde_json::to_value(&data_input).expect("data payload serializes");
         let data = vaers_payload_from_result(Ok(data_input));
         assert_eq!(

@@ -192,7 +192,7 @@ fn search_plan_rejects_count_for_vaers_source() {
             .expect_err("vaers search should reject count");
         assert!(
             err.to_string()
-                .contains("--count is not supported with --source vaers")
+                .contains("--count requires explicit --source faers")
         );
     }
 }
@@ -263,5 +263,250 @@ fn search_plan_rejects_nondefault_source_for_device() {
     assert!(
         err.to_string()
             .contains("--source is only supported for --type faers adverse-event search")
+    );
+}
+
+fn adverse_event_search_args(extra: &[&str]) -> super::AdverseEventSearchArgs {
+    let mut argv = vec!["biomcp", "search", "adverse-event"];
+    argv.extend_from_slice(extra);
+    let cli = Cli::try_parse_from(argv).expect("adverse-event search should parse");
+    let Cli {
+        command: Commands::Search {
+            entity: SearchEntity::AdverseEvent(args),
+        },
+        ..
+    } = cli
+    else {
+        panic!("expected adverse-event search command");
+    };
+    args
+}
+
+#[test]
+fn search_plan_rejects_every_inapplicable_route_filter() {
+    let cases: &[(&[&str], &str)] = &[
+        (
+            &["aspirin", "--classification", "Class I"],
+            "--classification",
+        ),
+        (
+            &["MMR vaccine", "--source", "vaers", "--reaction", "fever"],
+            "--reaction",
+        ),
+        (
+            &["MMR vaccine", "--source", "vaers", "--offset", "1"],
+            "--offset",
+        ),
+        (
+            &["aspirin", "--count", "reaction"],
+            "--count requires explicit --source faers",
+        ),
+        (
+            &[
+                "aspirin", "--source", "faers", "--count", "reaction", "--offset", "1",
+            ],
+            "--count requires --offset 0",
+        ),
+        (
+            &["aspirin", "--type", "recall", "--reaction", "rash"],
+            "--reaction",
+        ),
+        (
+            &["aspirin", "--type", "recall", "--serious", "death"],
+            "--serious",
+        ),
+        (
+            &[
+                "--type",
+                "device",
+                "--device",
+                "pump",
+                "--classification",
+                "Class I",
+            ],
+            "--classification",
+        ),
+        (
+            &[
+                "--type",
+                "device",
+                "--device",
+                "pump",
+                "--serious",
+                "hospitalization",
+            ],
+            "Expected one of: any, death, injury",
+        ),
+    ];
+
+    for (argv, expected) in cases {
+        let args = adverse_event_search_args(argv);
+        let err = match super::dispatch::search_plan_from_args(&args) {
+            Ok(_) => panic!("expected rejection for {argv:?}"),
+            Err(err) => err,
+        };
+        assert!(
+            err.to_string().contains(expected),
+            "{argv:?}: expected {expected:?} in {err}"
+        );
+    }
+}
+
+#[test]
+fn search_plan_accepts_each_route_specific_contract() {
+    let cases: &[&[&str]] = &[
+        &[
+            "aspirin",
+            "--source",
+            "faers",
+            "--reaction",
+            "rash",
+            "--outcome",
+            "death",
+            "--serious",
+            "hospitalization",
+            "--date-from",
+            "2024",
+            "--date-to",
+            "2025",
+            "--suspect-only",
+            "--sex",
+            "f",
+            "--age-min",
+            "18",
+            "--age-max",
+            "65",
+            "--reporter",
+            "physician",
+            "--count",
+            "reaction",
+            "--limit",
+            "5",
+        ],
+        &["MMR vaccine", "--source", "vaers", "--limit", "3"],
+        &[
+            "aspirin",
+            "--type",
+            "recall",
+            "--classification",
+            "Class I",
+            "--limit",
+            "5",
+            "--offset",
+            "2",
+        ],
+        &[
+            "--type",
+            "device",
+            "--device",
+            "pump",
+            "--manufacturer",
+            "Acme",
+            "--product-code",
+            "PQP",
+            "--date-from",
+            "2024",
+            "--serious",
+            "injury",
+            "--limit",
+            "5",
+            "--offset",
+            "2",
+        ],
+        &[
+            "MMR vaccine",
+            "--source",
+            "all",
+            "--reaction",
+            "fever",
+            "--offset",
+            "2",
+        ],
+    ];
+
+    for argv in cases {
+        let args = adverse_event_search_args(argv);
+        super::dispatch::search_plan_from_args(&args)
+            .unwrap_or_else(|err| panic!("expected accepted plan for {argv:?}: {err}"));
+    }
+}
+
+fn assert_each_filter_is_rejected(base: &[&str], filters: &[&[&str]]) {
+    for filter in filters {
+        let mut argv = base.to_vec();
+        argv.extend_from_slice(filter);
+        let args = adverse_event_search_args(&argv);
+        assert!(
+            super::dispatch::search_plan_from_args(&args).is_err(),
+            "expected rejection for {argv:?}"
+        );
+    }
+}
+
+#[test]
+fn search_plan_covers_the_complete_rejected_filter_matrix() {
+    assert_each_filter_is_rejected(
+        &["aspirin", "--source", "faers"],
+        &[
+            &["--classification", "Class I"],
+            &["--device", "pump"],
+            &["--manufacturer", "Acme"],
+            &["--product-code", "PQP"],
+        ],
+    );
+    assert_each_filter_is_rejected(
+        &["MMR vaccine", "--source", "vaers"],
+        &[
+            &["--reaction", "rash"],
+            &["--outcome", "death"],
+            &["--serious", "death"],
+            &["--date-from", "2024"],
+            &["--date-to", "2025"],
+            &["--suspect-only"],
+            &["--sex", "f"],
+            &["--age-min", "18"],
+            &["--age-max", "65"],
+            &["--reporter", "physician"],
+            &["--count", "reaction"],
+            &["--offset", "1"],
+            &["--classification", "Class I"],
+            &["--device", "pump"],
+            &["--manufacturer", "Acme"],
+            &["--product-code", "PQP"],
+        ],
+    );
+    assert_each_filter_is_rejected(
+        &["aspirin", "--type", "recall"],
+        &[
+            &["--reaction", "rash"],
+            &["--outcome", "death"],
+            &["--serious", "death"],
+            &["--date-from", "2024"],
+            &["--date-to", "2025"],
+            &["--suspect-only"],
+            &["--sex", "f"],
+            &["--age-min", "18"],
+            &["--age-max", "65"],
+            &["--reporter", "physician"],
+            &["--count", "reaction"],
+            &["--device", "pump"],
+            &["--manufacturer", "Acme"],
+            &["--product-code", "PQP"],
+        ],
+    );
+    assert_each_filter_is_rejected(
+        &["--type", "device", "--device", "pump"],
+        &[
+            &["--reaction", "rash"],
+            &["--outcome", "death"],
+            &["--date-to", "2025"],
+            &["--suspect-only"],
+            &["--sex", "f"],
+            &["--age-min", "18"],
+            &["--age-max", "65"],
+            &["--reporter", "physician"],
+            &["--count", "reaction"],
+            &["--classification", "Class I"],
+        ],
     );
 }

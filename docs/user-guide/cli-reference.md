@@ -409,12 +409,15 @@ biomcp search protein -q kinase --all-species --limit 5
 
 ```bash
 biomcp search adverse-event --drug pembrolizumab --source faers --serious --limit 5 --offset 0
-biomcp search adverse-event --drug osimertinib --count patient.reaction.reactionmeddrapt.exact --limit 10
+biomcp search adverse-event --drug osimertinib --source faers --count patient.reaction.reactionmeddrapt.exact --limit 10
 biomcp search adverse-event "COVID-19 vaccine" --source all --limit 5
 biomcp search adverse-event "MMR vaccine" --source vaers --limit 5
 biomcp search adverse-event --type device --manufacturer Medtronic --limit 5
 biomcp search adverse-event --type device --product-code PQP --limit 5
+biomcp search adverse-event --type device --device "insulin pump" --serious death --limit 5
 ```
+
+Each adverse-event route rejects filters it cannot apply before contacting a provider. VAERS-only accepts a vaccine query and `--limit`; recall accepts a drug query and classification; device accepts device identity fields, `--date-from`, and `--serious any|death|injury`, with broad `any` output labeled `death_or_injury`. FAERS counts require explicit `--source faers` and offset zero.
 
 FAERS `--count` accepts `reaction` and `reactionmeddrapt` as aliases for
 `patient.reaction.reactionmeddrapt.exact`; `patient.reaction.reactionmeddrapt`

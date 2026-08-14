@@ -1,3 +1,4 @@
+pub(super) use super::plan::search_plan_from_args;
 use super::{AdverseEventGetArgs, AdverseEventSearchArgs};
 use crate::cli::CommandOutcome;
 
@@ -12,144 +13,6 @@ fn vaers_only_next_commands(query: &str) -> Vec<String> {
         "biomcp health".to_string(),
         "biomcp list adverse-event".to_string(),
     ]
-}
-
-pub(super) fn search_plan_from_args(
-    args: &AdverseEventSearchArgs,
-) -> Result<
-    (
-        Option<String>,
-        crate::entities::adverse_event::AdverseEventQueryType,
-        crate::entities::adverse_event::AdverseEventSourceFilter,
-    ),
-    crate::error::BioMcpError,
-> {
-    let drug = super::super::resolve_query_input(
-        args.drug.clone(),
-        args.positional_query.clone(),
-        "--drug",
-    )?;
-    let query_type =
-        crate::entities::adverse_event::AdverseEventQueryType::from_flag(&args.r#type)?;
-    let source_filter =
-        crate::entities::adverse_event::AdverseEventSourceFilter::from_flag(&args.source)?;
-
-    match query_type {
-        crate::entities::adverse_event::AdverseEventQueryType::Faers => {
-            if args.device.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--device can only be used with --type device".into(),
-                ));
-            }
-            if args.manufacturer.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--manufacturer can only be used with --type device".into(),
-                ));
-            }
-            if args.product_code.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--product-code can only be used with --type device".into(),
-                ));
-            }
-            if args.count.is_some()
-                && matches!(
-                    source_filter,
-                    crate::entities::adverse_event::AdverseEventSourceFilter::Vaers
-                )
-            {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--count is not supported with --source vaers".into(),
-                ));
-            }
-        }
-        crate::entities::adverse_event::AdverseEventQueryType::Recall => {
-            if !matches!(
-                source_filter,
-                crate::entities::adverse_event::AdverseEventSourceFilter::All
-            ) {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--source is only supported for --type faers adverse-event search".into(),
-                ));
-            }
-            if args.date_from.is_some()
-                || args.date_to.is_some()
-                || args.suspect_only
-                || args.sex.is_some()
-                || args.age_min.is_some()
-                || args.age_max.is_some()
-                || args.reporter.is_some()
-                || args.count.is_some()
-            {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--date-from/--date-to/--suspect-only/--sex/--age-min/--age-max/--reporter/--count are only valid for --type faers".into(),
-                ));
-            }
-            if args.device.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--device can only be used with --type device".into(),
-                ));
-            }
-            if args.manufacturer.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--manufacturer can only be used with --type device".into(),
-                ));
-            }
-            if args.product_code.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--product-code can only be used with --type device".into(),
-                ));
-            }
-            if args.outcome.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--outcome is only valid for --type faers".into(),
-                ));
-            }
-        }
-        crate::entities::adverse_event::AdverseEventQueryType::Device => {
-            if !matches!(
-                source_filter,
-                crate::entities::adverse_event::AdverseEventSourceFilter::All
-            ) {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--source is only supported for --type faers adverse-event search".into(),
-                ));
-            }
-            if drug.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--drug cannot be used with --type device (use --device)".into(),
-                ));
-            }
-            if args.reaction.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--reaction is not supported with --type device".into(),
-                ));
-            }
-            if args.outcome.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--outcome is only valid for --type faers".into(),
-                ));
-            }
-            if args.classification.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--classification is only valid for --type recall".into(),
-                ));
-            }
-            if args.date_to.is_some()
-                || args.suspect_only
-                || args.sex.is_some()
-                || args.age_min.is_some()
-                || args.age_max.is_some()
-                || args.reporter.is_some()
-                || args.count.is_some()
-            {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--date-to/--suspect-only/--sex/--age-min/--age-max/--reporter/--count are only valid for --type faers".into(),
-                ));
-            }
-        }
-    }
-
-    Ok((drug, query_type, source_filter))
 }
 
 pub(crate) async fn handle_get(
@@ -195,29 +58,14 @@ pub(crate) async fn handle_search(
     args: AdverseEventSearchArgs,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
-    let (drug, query_type, source_filter) = search_plan_from_args(&args)?;
+    let plan = search_plan_from_args(&args)?;
+    let drug = plan.drug;
+    let query_type = plan.query_type;
+    let source_filter = plan.source_filter;
+    let device_seriousness = plan.device_seriousness;
 
     let text = match query_type {
         crate::entities::adverse_event::AdverseEventQueryType::Faers => {
-            if args.device.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--device can only be used with --type device".into(),
-                )
-                .into());
-            }
-            if args.manufacturer.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--manufacturer can only be used with --type device".into(),
-                )
-                .into());
-            }
-            if args.product_code.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--product-code can only be used with --type device".into(),
-                )
-                .into());
-            }
-
             let filters = crate::entities::adverse_event::AdverseEventSearchFilters {
                 drug,
                 reaction: args.reaction,
@@ -249,15 +97,6 @@ pub(crate) async fn handle_search(
             }
 
             if let Some(count_field) = args.count.as_deref().map(str::trim) {
-                if matches!(
-                    source_filter,
-                    crate::entities::adverse_event::AdverseEventSourceFilter::Vaers
-                ) {
-                    return Err(crate::error::BioMcpError::InvalidArgument(
-                        "--count is not supported with --source vaers".into(),
-                    )
-                    .into());
-                }
                 let response =
                     crate::entities::adverse_event::search_count(&filters, count_field, args.limit)
                         .await?;
@@ -529,53 +368,6 @@ pub(crate) async fn handle_search(
             }
         }
         crate::entities::adverse_event::AdverseEventQueryType::Recall => {
-            if !matches!(
-                source_filter,
-                crate::entities::adverse_event::AdverseEventSourceFilter::All
-            ) {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--source is only supported for --type faers adverse-event search".into(),
-                )
-                .into());
-            }
-            if args.date_from.is_some()
-                || args.date_to.is_some()
-                || args.suspect_only
-                || args.sex.is_some()
-                || args.age_min.is_some()
-                || args.age_max.is_some()
-                || args.reporter.is_some()
-                || args.count.is_some()
-            {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--date-from/--date-to/--suspect-only/--sex/--age-min/--age-max/--reporter/--count are only valid for --type faers".into(),
-                )
-                .into());
-            }
-            if args.device.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--device can only be used with --type device".into(),
-                )
-                .into());
-            }
-            if args.manufacturer.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--manufacturer can only be used with --type device".into(),
-                )
-                .into());
-            }
-            if args.product_code.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--product-code can only be used with --type device".into(),
-                )
-                .into());
-            }
-            if args.outcome.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--outcome is only valid for --type faers".into(),
-                )
-                .into());
-            }
             let filters = crate::entities::adverse_event::RecallSearchFilters {
                 drug,
                 classification: args.classification,
@@ -610,58 +402,11 @@ pub(crate) async fn handle_search(
             )?
         }
         crate::entities::adverse_event::AdverseEventQueryType::Device => {
-            if !matches!(
-                source_filter,
-                crate::entities::adverse_event::AdverseEventSourceFilter::All
-            ) {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--source is only supported for --type faers adverse-event search".into(),
-                )
-                .into());
-            }
-            if drug.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--drug cannot be used with --type device (use --device)".into(),
-                )
-                .into());
-            }
-            if args.reaction.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--reaction is not supported with --type device".into(),
-                )
-                .into());
-            }
-            if args.outcome.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--outcome is only valid for --type faers".into(),
-                )
-                .into());
-            }
-            if args.classification.is_some() {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--classification is only valid for --type recall".into(),
-                )
-                .into());
-            }
-            if args.date_to.is_some()
-                || args.suspect_only
-                || args.sex.is_some()
-                || args.age_min.is_some()
-                || args.age_max.is_some()
-                || args.reporter.is_some()
-                || args.count.is_some()
-            {
-                return Err(crate::error::BioMcpError::InvalidArgument(
-                    "--date-to/--suspect-only/--sex/--age-min/--age-max/--reporter/--count are only valid for --type faers".into(),
-                )
-                .into());
-            }
-
             let filters = crate::entities::adverse_event::DeviceEventSearchFilters {
                 device: args.device,
                 manufacturer: args.manufacturer,
                 product_code: args.product_code,
-                serious: args.serious.is_some(),
+                serious: device_seriousness,
                 since: args.date_from,
             };
             let mut query_summary = crate::entities::adverse_event::device_query_summary(&filters);
@@ -682,10 +427,26 @@ pub(crate) async fn handle_search(
                 page.total,
             );
             if json {
+                #[derive(serde::Serialize)]
+                struct DeviceSearchResponse {
+                    query: String,
+                    pagination: super::super::PaginationMeta,
+                    count: usize,
+                    results: Vec<crate::entities::adverse_event::DeviceEventSearchResult>,
+                    #[serde(skip_serializing_if = "Option::is_none")]
+                    _meta: Option<crate::cli::SearchJsonMeta>,
+                }
                 let next_commands =
                     crate::render::markdown::search_next_commands_device_events(&results);
-                return super::super::search_json_with_meta(results, pagination, next_commands)
-                    .map(CommandOutcome::stdout);
+                return Ok(CommandOutcome::stdout(crate::render::json::to_pretty(
+                    &DeviceSearchResponse {
+                        query: query_summary,
+                        count: results.len(),
+                        results,
+                        pagination,
+                        _meta: crate::cli::search_meta(next_commands),
+                    },
+                )?));
             }
             let footer = super::super::pagination_footer_offset(&pagination);
             crate::render::markdown::device_event_search_markdown_with_footer(

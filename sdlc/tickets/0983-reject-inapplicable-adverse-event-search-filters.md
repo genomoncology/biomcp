@@ -21,8 +21,8 @@ The accepted route matrix is explicit:
 - FAERS accepts a drug query, reaction, outcome, seriousness, both dates,
   suspect-only, sex, both age bounds, reporter, limit, offset, and count.
   Classification and all device fields are invalid. Count requires explicit
-  `--source faers`; `--source all --count` is rejected rather than silently
-  becoming a FAERS-only response.
+  `--source faers` and offset zero; `--source all --count` and count with a
+  nonzero offset are rejected rather than silently changing the operation.
 - VAERS-only accepts a vaccine query and limit. Limit bounds the returned top
   reaction rows. Offset, count, every other FAERS filter, classification, and
   all device fields are invalid.
@@ -38,7 +38,8 @@ The accepted route matrix is explicit:
 For device search, bare `--serious` and `--serious any` mean Death or Injury,
 `--serious death` means Death only, and `--serious injury` means Injury only.
 FAERS-only seriousness values are invalid for device searches. Help, query
-summaries, Markdown, and JSON must describe the effective filter truthfully.
+summaries, Markdown, and JSON must describe the broad value unambiguously as
+Death-or-Injury rather than merely `any`.
 
 ## Done when
 
