@@ -401,6 +401,11 @@ pub(super) fn parse_expression_filter(
         return Err(invalid());
     }
     let threshold = threshold.parse::<f64>().map_err(|_| invalid())?;
+    if !threshold.is_finite() {
+        return Err(crate::error::BioMcpError::InvalidArgument(format!(
+            "Invalid value '{trimmed}' for {flag}. THRESHOLD must be finite; expected GENE:THRESHOLD."
+        )));
+    }
     Ok(make_criterion(gene.to_string(), threshold))
 }
 

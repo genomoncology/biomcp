@@ -107,6 +107,95 @@ returning the full cohort.
 --mutated, --amplified, --deleted'
 ```
 
+Expression thresholds are measurements, so both comparison flags reject NaN,
+infinity, and overflowing numeric forms before looking for a local study. The
+JSON CLI envelope and raw MCP tool result keep that failure machine-detectable.
+
+```bash
+set +e
+cli_json="$(../../tools/biomcp-ci --json study filter --study definitely-not-a-local-study --expression-above MYC:NaN 2>/dev/null)"
+cli_status=$?
+set -e
+test "$cli_status" -eq 2
+CLI_JSON="$cli_json" python3 - <<'PY'
+import json
+import os
+
+payload = json.loads(os.environ["CLI_JSON"])
+assert payload["error"]["code"] == "invalid_argument", payload
+assert "finite" in payload["error"]["message"], payload
+print("CLI non-finite threshold: invalid_argument")
+PY
+
+biomcp_bin="${BIOMCP_BIN:-../../target/spec/biomcp}"
+python3 - "$biomcp_bin" <<'PY'
+import json
+import subprocess
+import sys
+
+process = subprocess.Popen(
+    [sys.argv[1], "serve"],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True,
+)
+
+def request(payload):
+    process.stdin.write(json.dumps(payload) + "\n")
+    process.stdin.flush()
+    return json.loads(process.stdout.readline())
+
+try:
+    request({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-03-26",
+            "capabilities": {},
+            "clientInfo": {"name": "study-spec", "version": "1"},
+        },
+    })
+    process.stdin.write(json.dumps({
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized",
+        "params": {},
+    }) + "\n")
+    process.stdin.flush()
+    response = request({
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/call",
+        "params": {
+            "name": "biomcp",
+            "arguments": {
+                "command": "biomcp study filter --study definitely-not-a-local-study --expression-below MYC:inf",
+                "json": True,
+            },
+        },
+    })
+    result = response["result"]
+    text = result["content"][0]["text"]
+    assert result["isError"] is True, response
+    assert "Invalid argument" in text and "finite" in text, response
+    print("Raw MCP non-finite threshold: invalid_argument tool error")
+finally:
+    process.terminate()
+    process.wait(timeout=5)
+PY
+```
+
+Finite thresholds retain strict boundary comparisons for both flags.
+
+```bash
+../../tools/biomcp-ci study filter --study brca_tcga_pan_can_atlas_2018 --expression-above ERBB2:1 --expression-below TP53:3 | mustmatch like '# Study Filter: brca_tcga_pan_can_atlas_2018
+| expression > 1 for ERBB2 | 2 |
+| expression < 3 for TP53 | 2 |
+| Intersection | 1 |
+S3'
+```
+
 ## Survival Validation
 
 Survival analysis should stay typed: unknown endpoint names must fail fast and

@@ -742,10 +742,9 @@ pub fn expression_distribution(
         let mut values = row
             .iter()
             .skip(sample_start)
-            .filter_map(|v| parse_f64(v))
+            .filter_map(|v| parse_f64(v).filter(|value| value.is_finite()))
             .collect::<Vec<_>>();
         values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-
         if values.is_empty() {
             return Ok(ExpressionDistributionResult {
                 study_id,
@@ -1218,7 +1217,7 @@ pub fn expression_values_by_sample(
                 .get(sample_start + offset)
                 .map(String::as_str)
                 .unwrap_or("");
-            if let Some(value) = parse_f64(value) {
+            if let Some(value) = parse_f64(value).filter(|value| value.is_finite()) {
                 values.insert(sample_id.to_string(), value);
             }
         }
@@ -1273,6 +1272,7 @@ pub fn expression_pairs_by_sample(
                 row.get(sample_start + offset)
                     .map(String::as_str)
                     .and_then(parse_f64)
+                    .filter(|value| value.is_finite())
             })
             .collect::<Vec<_>>();
 
@@ -2310,7 +2310,7 @@ PTEN\t5728\t-2\t0\t0\tNA\n",
         fs::write(
             study_dir.join("data_mrna_seq_v2_rsem_zscores_ref_all_samples.txt"),
             "Hugo_Symbol\tEntrez_Gene_Id\tS1\tS2\tS3\tS4\n\
-MYC\t4609\t1.5\t0.2\t2.0\t0.5\n\
+MYC\t4609\t1.5\tNaN\t2.0\tinf\n\
 ERBB2\t2064\t2.1\t1.0\t3.4\tbad\n",
         )
         .expect("write expression");
@@ -2562,12 +2562,12 @@ BRAF\tS1\tMissense_Mutation\tp.V600E\n",
     }
 
     #[test]
-    fn expression_distribution_ignores_na_and_empty_values() {
+    fn expression_distribution_ignores_missing_and_non_finite_values() {
         let fixture = TestStudyDir::new("expr-dist");
         let study_dir = fixture.study_path("expr_study");
         fixture.write_file(
             &study_dir.join("data_mrna_seq_v2_rsem_zscores_ref_all_samples.txt"),
-            "Hugo_Symbol\tEntrez_Gene_Id\tS1\tS2\tS3\tS4\tS5\nESR1\t2099\t1.0\tNA\t\t2.0\t3.0\n",
+            "Hugo_Symbol\tEntrez_Gene_Id\tS1\tS2\tS3\tS4\tS5\tS6\tS7\tS8\tS9\nESR1\t2099\t1.0\tNA\t\t2.0\t3.0\tNaN\tinf\t-inf\t1e309\n",
         );
 
         let result = expression_distribution(&study_dir, "ESR1").expect("expression distribution");
@@ -3147,8 +3147,8 @@ BRAF\tS1\tMissense_Mutation\tp.V600E\n",
         fixture.write_file(
             &study_dir.join("data_mrna_seq_v2_rsem_zscores_ref_all_samples.txt"),
             "Hugo_Symbol\tEntrez_Gene_Id\tS3\tS1\tS2\tS4\n\
-TP53\t7157\t3.0\t1.0\tbad\t5.0\n\
-ERBB2\t2064\t30.0\t10.0\t20.0\tNA\n",
+TP53\t7157\t3.0\t1.0\tNaN\tinf\n\
+ERBB2\t2064\t30.0\t10.0\t20.0\t60.0\n",
         );
 
         let pairs =
