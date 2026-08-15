@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,25 @@ import tiktoken
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TOKENIZER = "cl100k_base"
+TOKENIZER_CACHE = ROOT / "benchmarks" / "output-footprint" / "tokenizer-cache"
+TOKENIZER_CACHE_FILE = TOKENIZER_CACHE / "9b5ad71b2ce5302211f9c61530b329a4922fc6a4"
+TOKENIZER_CACHE_SHA256 = (
+    "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7"
+)
+
+
+def _encoding() -> tiktoken.Encoding:
+    try:
+        digest = hashlib.sha256(TOKENIZER_CACHE_FILE.read_bytes()).hexdigest()
+    except OSError as error:
+        raise SystemExit(
+            f"committed {TOKENIZER} tokenizer cache is unavailable: {error}"
+        ) from error
+    if digest != TOKENIZER_CACHE_SHA256:
+        raise SystemExit(f"committed {TOKENIZER} tokenizer cache failed validation")
+    os.environ["TIKTOKEN_CACHE_DIR"] = str(TOKENIZER_CACHE)
+    return tiktoken.get_encoding(TOKENIZER)
 
 
 def _binary() -> Path:
@@ -25,6 +45,7 @@ def _binary() -> Path:
 
 
 def main() -> None:
+    encoding = _encoding()
     process = subprocess.Popen(
         [str(_binary()), "serve"],
         cwd=ROOT,
@@ -67,7 +88,7 @@ def main() -> None:
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
         )["result"]["tools"]
         serialized = json.dumps(tools, ensure_ascii=False, separators=(",", ":"))
-        tokens = len(tiktoken.get_encoding("cl100k_base").encode(serialized))
+        tokens = len(encoding.encode(serialized))
         raw = next(tool for tool in tools if tool["name"] == "biomcp")
         print(f"tools: {', '.join(tool['name'] for tool in tools)}")
         print(f"tools/list UTF-8 bytes: {len(serialized.encode())}")
