@@ -159,9 +159,11 @@ fn test_config(
 
 #[test]
 fn build_cache_stats_report_empty_snapshot_has_zero_counts_null_age_and_default_origins() {
-    let snapshot = test_snapshot("/tmp/cache/http", Vec::new(), Vec::new());
+    let root = crate::test_support::TempDirGuard::new("cache-stats-empty");
+    let cache_path = root.path().join("http");
+    let snapshot = test_snapshot(&cache_path, Vec::new(), Vec::new());
     let config = test_config(
-        "/tmp/cache",
+        root.path(),
         10_000_000_000,
         86_400,
         CacheConfigOrigins {
@@ -177,7 +179,7 @@ fn build_cache_stats_report_empty_snapshot_has_zero_counts_null_age_and_default_
     assert_eq!(
         report,
         CacheStatsReport {
-            path: "/tmp/cache/http".into(),
+            path: cache_path.display().to_string(),
             blob_bytes: 0,
             referenced_blob_bytes: 0,
             blob_count: 0,
@@ -213,8 +215,9 @@ fn build_cache_stats_report_empty_snapshot_has_zero_counts_null_age_and_default_
 
 #[test]
 fn build_cache_stats_report_counts_orphans_and_includes_all_blob_bytes() {
+    let root = crate::test_support::TempDirGuard::new("cache-stats-orphans");
     let snapshot = test_snapshot(
-        "/tmp/cache/http",
+        root.path().join("http"),
         vec![test_entry("retained", b"live-bytes", 100)],
         vec![
             test_blob("retained", b"live-bytes", 1),
@@ -222,7 +225,7 @@ fn build_cache_stats_report_counts_orphans_and_includes_all_blob_bytes() {
         ],
     );
     let config = test_config(
-        "/tmp/cache",
+        root.path(),
         1_024,
         3_600,
         CacheConfigOrigins {
@@ -245,8 +248,9 @@ fn build_cache_stats_report_counts_orphans_and_includes_all_blob_bytes() {
 
 #[test]
 fn build_cache_stats_report_uses_index_entry_timestamps_only_for_age_range() {
+    let root = crate::test_support::TempDirGuard::new("cache-stats-age-range");
     let snapshot = test_snapshot(
-        "/tmp/cache/http",
+        root.path().join("http"),
         vec![
             test_entry("older", b"shared", 100),
             test_entry("newer", b"other", 500),
@@ -258,7 +262,7 @@ fn build_cache_stats_report_uses_index_entry_timestamps_only_for_age_range() {
         ],
     );
     let config = test_config(
-        "/tmp/cache",
+        root.path(),
         2_048,
         7_200,
         CacheConfigOrigins {
@@ -287,9 +291,10 @@ fn build_cache_stats_report_uses_index_entry_timestamps_only_for_age_range() {
 
 #[test]
 fn cache_stats_report_json_serializes_env_and_file_origins_lowercase() {
-    let snapshot = test_snapshot("/tmp/cache/http", Vec::new(), Vec::new());
+    let root = crate::test_support::TempDirGuard::new("cache-stats-origins");
+    let snapshot = test_snapshot(root.path().join("http"), Vec::new(), Vec::new());
     let config = test_config(
-        "/tmp/cache",
+        root.path(),
         5_000,
         7_200,
         CacheConfigOrigins {
@@ -352,8 +357,10 @@ fn cache_stats_report_markdown_is_heading_free_and_stable() {
 
 #[test]
 fn collect_cache_stats_report_calls_snapshot_once_for_resolved_http_path() {
+    let root = crate::test_support::TempDirGuard::new("cache-stats-collector");
+    let expected_path = root.path().join("http");
     let config = test_config(
-        "/tmp/resolved-cache",
+        root.path(),
         5_000,
         7_200,
         CacheConfigOrigins {
@@ -381,9 +388,6 @@ fn collect_cache_stats_report_calls_snapshot_once_for_resolved_http_path() {
     .expect("collector report");
 
     assert_eq!(calls.get(), 1);
-    assert_eq!(
-        seen_path.borrow().as_ref(),
-        Some(&PathBuf::from("/tmp/resolved-cache/http"))
-    );
-    assert_eq!(report.path, "/tmp/resolved-cache/http");
+    assert_eq!(seen_path.borrow().as_ref(), Some(&expected_path));
+    assert_eq!(report.path, expected_path.display().to_string());
 }
