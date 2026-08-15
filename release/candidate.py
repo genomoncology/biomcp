@@ -165,6 +165,151 @@ def validate_manifest(value: Any) -> None:
         validate_artifact(value, artifact_id, record)
 
 
+STABLE_MCPB_OUTER_FIELDS = {
+    "schema_version",
+    "unsigned_sha256",
+    "signed_sha256",
+    "certificate_fingerprint",
+    "certificate_subject",
+    "chain_verified",
+    "eku",
+    "signing_policy_sha256",
+    "source_sha",
+    "version",
+    "python_version",
+    "candidate_kind",
+    "stage_run_id",
+    "signing_job_id",
+    "fixture_only",
+}
+DEVELOPMENT_MCPB_OUTER_FIELDS = {
+    "schema_version",
+    "evidence_type",
+    "archive_sha256",
+    "source_sha",
+    "version",
+    "python_version",
+    "candidate_kind",
+    "stage_run_id",
+    "signing_policy_sha256",
+    "package",
+    "tool_version",
+    "exception_reason",
+    "outer_signature_status",
+    "non_promotable",
+    "github",
+    "fixture_only",
+}
+MCPB_GITHUB_FIELDS = {
+    "repository",
+    "workflow_ref",
+    "job",
+    "run_id",
+    "run_attempt",
+    "source_sha",
+}
+
+
+def _validate_stable_mcpb_outer(
+    manifest: dict[str, Any], record: dict[str, Any], outer: Any
+) -> None:
+    expected = {
+        "schema_version": 1,
+        "signed_sha256": record["sha256"],
+        "chain_verified": True,
+        "eku": "codeSigning",
+        "signing_policy_sha256": manifest["signing_policy_sha256"],
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "python_version": manifest["python_version"],
+        "candidate_kind": "release",
+        "stage_run_id": manifest["stage_run_id"],
+        "signing_job_id": "mcpb-artifact",
+        "fixture_only": False,
+    }
+    if (
+        not isinstance(outer, dict)
+        or set(outer) != STABLE_MCPB_OUTER_FIELDS
+        or any(outer.get(key) != value for key, value in expected.items())
+        or not HASH_RE.fullmatch(str(outer.get("unsigned_sha256", "")))
+        or not re.fullmatch(
+            r"[0-9A-F]{64}", str(outer.get("certificate_fingerprint", ""))
+        )
+        or not isinstance(outer.get("certificate_subject"), str)
+        or not outer["certificate_subject"].strip()
+    ):
+        raise CandidateError("stable MCPB outer evidence is invalid")
+
+
+def _validate_development_mcpb_outer(
+    manifest: dict[str, Any], record: dict[str, Any], outer: Any
+) -> None:
+    expected = {
+        "schema_version": 1,
+        "evidence_type": "unsigned-development-mcpb",
+        "archive_sha256": record["sha256"],
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "python_version": manifest["python_version"],
+        "candidate_kind": "development",
+        "stage_run_id": manifest["stage_run_id"],
+        "signing_policy_sha256": manifest["signing_policy_sha256"],
+        "package": "@anthropic-ai/mcpb",
+        "tool_version": "2.1.2",
+        "outer_signature_status": "unsigned-development",
+        "non_promotable": True,
+        "fixture_only": False,
+    }
+    if (
+        not isinstance(outer, dict)
+        or set(outer) != DEVELOPMENT_MCPB_OUTER_FIELDS
+        or any(outer.get(key) != value for key, value in expected.items())
+        or not isinstance(outer.get("exception_reason"), str)
+        or not outer["exception_reason"].strip()
+    ):
+        raise CandidateError("development MCPB outer evidence is invalid")
+    github = outer["github"]
+    github_expected = {
+        "repository": "genomoncology/biomcp",
+        "workflow_ref": "genomoncology/biomcp/.github/workflows/release.yml@refs/heads/main",
+        "job": "mcpb-artifact",
+        "run_id": manifest["stage_run_id"],
+        "source_sha": manifest["source_sha"],
+    }
+    if (
+        not isinstance(github, dict)
+        or set(github) != MCPB_GITHUB_FIELDS
+        or any(github.get(key) != value for key, value in github_expected.items())
+        or not RUN_RE.fullmatch(str(github.get("run_attempt", "")))
+    ):
+        raise CandidateError("development MCPB outer evidence is invalid")
+
+
+def _validate_mcpb_evidence(
+    manifest: dict[str, Any], record: dict[str, Any]
+) -> None:
+    expected_filename = f"biomcp-{manifest['version']}.mcpb"
+    evidence = record["evidence"]
+    if not HASH_RE.fullmatch(str(manifest.get("signing_policy_sha256", ""))):
+        raise CandidateError("MCPB evidence requires a bound signing policy")
+    if record["filename"] != expected_filename:
+        raise CandidateError("MCPB filename does not match candidate version")
+    if manifest["candidate_kind"] == "release":
+        if (
+            evidence.get("outer_signature_status") != "signed"
+            or evidence.get("non_promotable") is not False
+        ):
+            raise CandidateError("MCPB evidence does not match candidate kind")
+        _validate_stable_mcpb_outer(manifest, record, evidence.get("outer"))
+        return
+    if (
+        evidence.get("outer_signature_status") != "unsigned-development"
+        or evidence.get("non_promotable") is not True
+    ):
+        raise CandidateError("MCPB evidence does not match candidate kind")
+    _validate_development_mcpb_outer(manifest, record, evidence.get("outer"))
+
+
 def validate_artifact(manifest: dict[str, Any], artifact_id: str, record: Any) -> None:
     if artifact_id not in ARTIFACTS or not isinstance(record, dict):
         raise CandidateError(f"unregistered artifact: {artifact_id}")
@@ -199,16 +344,7 @@ def validate_artifact(manifest: dict[str, Any], artifact_id: str, record: Any) -
     if record["evidence"].get("fixture_only"):
         raise CandidateError(f"artifact {artifact_id} uses fixture-only evidence")
     if artifact_id == "mcpb":
-        expected_status = (
-            "signed" if manifest["candidate_kind"] == "release" else "unsigned-development"
-        )
-        expected_non_promotable = manifest["candidate_kind"] == "development"
-        if (
-            record["evidence"].get("outer_signature_status") != expected_status
-            or record["evidence"].get("non_promotable")
-            is not expected_non_promotable
-        ):
-            raise CandidateError("MCPB evidence does not match candidate kind")
+        _validate_mcpb_evidence(manifest, record)
     upstream = record.get("upstream", {})
     if not isinstance(upstream, dict) or any(
         key not in manifest["artifacts"]

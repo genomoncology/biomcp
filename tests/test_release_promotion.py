@@ -24,6 +24,54 @@ candidate = _module("candidate", "release/candidate.py")
 promotion = _module("release_promotion", "release/promotion.py")
 
 
+def _stable_mcpb_outer(manifest: dict, archive_sha256: str) -> dict:
+    return {
+        "schema_version": 1,
+        "unsigned_sha256": "d" * 64,
+        "signed_sha256": archive_sha256,
+        "certificate_fingerprint": "A" * 64,
+        "certificate_subject": "CN=BioMCP MCPB Signing",
+        "chain_verified": True,
+        "eku": "codeSigning",
+        "signing_policy_sha256": manifest["signing_policy_sha256"],
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "python_version": manifest["python_version"],
+        "candidate_kind": "release",
+        "stage_run_id": manifest["stage_run_id"],
+        "signing_job_id": "mcpb-artifact",
+        "fixture_only": False,
+    }
+
+
+def _development_mcpb_outer(manifest: dict, archive_sha256: str) -> dict:
+    return {
+        "schema_version": 1,
+        "evidence_type": "unsigned-development-mcpb",
+        "archive_sha256": archive_sha256,
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "python_version": manifest["python_version"],
+        "candidate_kind": "development",
+        "stage_run_id": manifest["stage_run_id"],
+        "signing_policy_sha256": manifest["signing_policy_sha256"],
+        "package": "@anthropic-ai/mcpb",
+        "tool_version": "2.1.2",
+        "exception_reason": "private development desktop testing",
+        "outer_signature_status": "unsigned-development",
+        "non_promotable": True,
+        "github": {
+            "repository": "genomoncology/biomcp",
+            "workflow_ref": "genomoncology/biomcp/.github/workflows/release.yml@refs/heads/main",
+            "job": "mcpb-artifact",
+            "run_id": manifest["stage_run_id"],
+            "run_attempt": "1",
+            "source_sha": manifest["source_sha"],
+        },
+        "fixture_only": False,
+    }
+
+
 def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
     root = tmp_path / "candidate"
     root.mkdir()
@@ -46,7 +94,11 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
     }
     for artifact_id in sorted(candidate.FINAL_ARTIFACTS):
         kind, target = candidate.ARTIFACTS[artifact_id]
-        filename = f"{artifact_id}.bin"
+        filename = (
+            f"biomcp-{manifest['version']}.mcpb"
+            if artifact_id == "mcpb"
+            else f"{artifact_id}.bin"
+        )
         path = root / filename
         path.write_bytes(artifact_id.encode())
         manifest["artifacts"][artifact_id] = {
@@ -67,6 +119,9 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
                     {
                         "outer_signature_status": "signed",
                         "non_promotable": False,
+                        "outer": _stable_mcpb_outer(
+                            manifest, candidate.sha256_file(path)
+                        ),
                     }
                     if artifact_id == "mcpb"
                     else {}
@@ -109,8 +164,9 @@ def _development_public_fixture(
 ) -> tuple[dict, dict, dict, Path, bytes]:
     data = b"development artifact"
     manifest = _development_manifest(spoof_kind=spoof_kind)
+    manifest["signing_policy_sha256"] = "f" * 64
     artifact_id = "mcpb"
-    filename = "biomcp-dev.mcpb"
+    filename = f"biomcp-{manifest['version']}.mcpb"
     manifest["artifacts"][artifact_id] = {
         "id": artifact_id,
         "kind": "mcpb",
@@ -126,6 +182,9 @@ def _development_public_fixture(
             "inspected": True,
             "outer_signature_status": "unsigned-development",
             "non_promotable": True,
+            "outer": _development_mcpb_outer(
+                manifest, candidate.sha256_file(tmp_path / filename)
+            ),
         },
     }
     inventory = {
@@ -134,7 +193,7 @@ def _development_public_fixture(
         "files": {artifact_id: filename},
         "channels": {"github": [artifact_id]},
     }
-    url = "https://public.invalid/dev/biomcp-dev.mcpb"
+    url = f"https://public.invalid/dev/{filename}"
     public = {
         artifact_id: {
             "channel": "github",
