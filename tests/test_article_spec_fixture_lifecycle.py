@@ -185,7 +185,7 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
     assert result.returncode == 0
     pids = (workspace / "article-setup-log").read_text().splitlines()
     assert len(pids) == 1
-    assert not Path(f"/proc/{pids[0]}").exists()
+    _wait_until(lambda: not Path(f"/proc/{pids[0]}").exists())
     assert not (workspace / "mustmatch-fd-log").exists()
     invocations = [
         line.split("|", 2)
@@ -248,7 +248,7 @@ def test_runner_cleans_article_fixture_after_child_failure(
     )
     assert result.returncode != 0
     pid = (workspace / "article-setup-log").read_text().strip()
-    assert not Path(f"/proc/{pid}").exists()
+    _wait_until(lambda: not Path(f"/proc/{pid}").exists())
     assert not (workspace / ".cache" / "spec-article-fulltext-source-env").exists()
 
 
