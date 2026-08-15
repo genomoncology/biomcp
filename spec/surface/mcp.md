@@ -545,15 +545,15 @@ marker, and publish docs before a release is cut.
 bash ../../scripts/check-mcp-registry-server.sh | mustmatch like "MCP registry metadata ok"
 ```
 
-## Release Prep Pins The Next Release Version
+## Release Prep Pins The Development Candidate Version
 
-Before publishing, the repo metadata should already be synchronized to the next
-release version. The local version-sync check is the operator's quick proof that
-Cargo, Python, MCP registry, citation, and plugin metadata all agree on the
-release being prepared.
+Before private candidate testing, the package metadata should already use the
+canonical Rust and Python development versions. The local version-sync check is
+the operator's quick proof that those identities agree while MCP registry,
+citation, and plugin metadata truthfully remain on the latest public release.
 
 ```bash
-bash ../../scripts/check-version-sync.sh | mustmatch like "Versions in sync: 0.8.25"
+bash ../../scripts/check-version-sync.sh | mustmatch like "Versions in sync: 0.9.0-dev.1 (Python 0.9.0.dev1; development candidate)"
 ```
 
 ## Spec Corpus Uses Robust Mustmatch Blocks
