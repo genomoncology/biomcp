@@ -143,4 +143,7 @@ non-promotion.
 - Design review: accepted after requiring durable exact inner-signature
   evidence, canonical candidate and GitHub job context, atomic attestation
   ownership, protected-policy activation order, and honest desktop limitations
-- Code review: pending
+- Code review: accepted after canonical candidate validation was strengthened
+  to bind the complete nested stable or development MCPB evidence to its exact
+  archive, version pair, source, run, signing policy, identity, and candidate
+  kind, including a reproduced development-to-stable relabeling rejection

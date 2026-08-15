@@ -109,4 +109,7 @@ None.
   require ordinary success followed by the exact hard-link rejection; reopened
   after hosted Ubuntu exposed the missing scoped AppArmor setup, then accepted
   again after the exact pinned profile, preflight, sentinel state machine, and
-  direct plus wrapped isolation tests passed independently
+  direct plus wrapped isolation tests passed independently; reopened once more
+  when a clean hosted `/tmp` exposed shared-path assumptions in five cache
+  statistics tests, then accepted after each test received an isolated live
+  temporary root and passed direct, fresh-`/tmp`, and archived offline runs
