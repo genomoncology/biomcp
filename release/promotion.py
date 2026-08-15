@@ -95,6 +95,7 @@ def verify_public_snapshot(
     ``fetch`` is deliberately injected. Production passes an HTTPS downloader;
     tests pass a local registry so routine gates never touch public services.
     """
+    require_release_candidate(manifest)
     expected_ids = {
         artifact_id
         for artifact_ids in inventory["channels"].values()
@@ -187,6 +188,7 @@ def validate_updater_transition(
 def normalize_updater_transition(
     value: str, manifest: dict[str, Any], prior_records: list[dict[str, Any]]
 ) -> tuple[dict[str, Any], str]:
+    require_release_candidate(manifest)
     try:
         record = json.loads(value)
     except json.JSONDecodeError as error:
@@ -438,6 +440,7 @@ def fixture_transaction(
     *,
     fail_after: int | None = None,
 ) -> dict[str, Any]:
+    require_release_candidate(manifest)
     writes: list[dict[str, str]] = []
     try:
         count = 0

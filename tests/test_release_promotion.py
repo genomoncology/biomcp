@@ -96,6 +96,51 @@ def _development_manifest(*, spoof_kind: bool = False) -> dict:
     }
 
 
+def _development_public_fixture(
+    tmp_path: Path, *, spoof_kind: bool = False
+) -> tuple[dict, dict, dict, Path, bytes]:
+    data = b"development artifact"
+    manifest = _development_manifest(spoof_kind=spoof_kind)
+    artifact_id = "mcpb"
+    filename = "biomcp-dev.mcpb"
+    manifest["artifacts"][artifact_id] = {
+        "id": artifact_id,
+        "kind": "mcpb",
+        "target": "darwin-universal,win32-x86_64",
+        "filename": filename,
+        "sha256": candidate.sha256_file(_write(tmp_path / filename, data)),
+        "bytes": len(data),
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "stage_run_id": manifest["stage_run_id"],
+        "provenance": {"fixture": True},
+        "evidence": {"inspected": True},
+    }
+    inventory = {
+        "version": manifest["version"],
+        "stage_run_id": manifest["stage_run_id"],
+        "files": {artifact_id: filename},
+        "channels": {"github": [artifact_id]},
+    }
+    url = "https://public.invalid/dev/biomcp-dev.mcpb"
+    public = {
+        artifact_id: {
+            "channel": "github",
+            "url": url,
+            "filename": filename,
+            "version": manifest["version"],
+            "source_sha": manifest["source_sha"],
+            "target": manifest["artifacts"][artifact_id]["target"],
+        }
+    }
+    return manifest, inventory, public, tmp_path, data
+
+
+def _write(path: Path, data: bytes) -> Path:
+    path.write_bytes(data)
+    return path
+
+
 def test_preflight_rejects_development_before_other_inputs_or_artifacts(
     tmp_path: Path,
 ) -> None:
@@ -133,6 +178,52 @@ def test_updater_and_release_record_functions_validate_candidate_first(
             live_provider_results={"bad": None},
             formula_commit="not-a-commit",
         )
+
+
+@pytest.mark.parametrize("spoof_kind", [False, True])
+def test_normalize_updater_rejects_candidate_before_parsing_malformed_input(
+    spoof_kind: bool,
+) -> None:
+    expected = "version pair" if spoof_kind else "development candidate"
+    with pytest.raises((candidate.CandidateError, promotion.PromotionError), match=expected):
+        promotion.normalize_updater_transition(
+            "not json", _development_manifest(spoof_kind=spoof_kind), []
+        )
+
+
+@pytest.mark.parametrize("spoof_kind", [False, True])
+def test_public_verifier_rejects_candidate_before_fetch(
+    tmp_path: Path, spoof_kind: bool
+) -> None:
+    manifest, inventory, public, _, data = _development_public_fixture(
+        tmp_path, spoof_kind=spoof_kind
+    )
+    fetched: list[str] = []
+
+    def fetch(url: str) -> bytes:
+        fetched.append(url)
+        return data
+
+    expected = "version pair" if spoof_kind else "development candidate"
+    with pytest.raises((candidate.CandidateError, promotion.PromotionError), match=expected):
+        promotion.verify_public_snapshot(manifest, inventory, public, fetch)
+    assert fetched == []
+
+
+@pytest.mark.parametrize("spoof_kind", [False, True])
+def test_fixture_transaction_rejects_candidate_without_registry_effects(
+    tmp_path: Path, spoof_kind: bool
+) -> None:
+    manifest, inventory, _, candidate_root, _ = _development_public_fixture(
+        tmp_path, spoof_kind=spoof_kind
+    )
+    registry = promotion.FixtureRegistry(tmp_path / "registry")
+    expected = "version pair" if spoof_kind else "development candidate"
+
+    with pytest.raises((candidate.CandidateError, promotion.PromotionError), match=expected):
+        promotion.fixture_transaction(registry, inventory, manifest, candidate_root)
+
+    assert not registry.root.exists()
 
 
 @pytest.mark.parametrize(
