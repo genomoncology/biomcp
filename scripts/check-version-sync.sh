@@ -97,25 +97,36 @@ if [[ -z "$cargo_version" || -z "$python_version" || -z "$lock_version" || -z "$
 fi
 
 ok=true
-check_version() {
-    local name="$1"
-    local version="$2"
-    if [[ "$cargo_version" != "$version" ]]; then
-        echo "Version mismatch: Cargo.toml=$cargo_version, $name=$version" >&2
+check_equal() {
+    local expected_name="$1"
+    local expected="$2"
+    local name="$3"
+    local actual="$4"
+    if [[ "$expected" != "$actual" ]]; then
+        echo "Version mismatch: $expected_name=$expected, $name=$actual" >&2
         ok=false
     fi
 }
 
-check_version "pyproject.toml" "$python_version"
-check_version "Cargo.lock" "$lock_version"
-check_version "uv.lock" "$uv_lock_version"
-check_version "manifest.json" "$manifest_version"
-check_version "CITATION.cff" "$citation_version"
-check_version "server.json" "$server_version"
-check_version "server.json biomcp-cli" "$server_package_version"
-if [[ "$formula_version" != "__VERSION__" ]]; then
-    check_version "Formula/biomcp.rb" "$formula_version"
+stable_pattern='(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)'
+candidate_kind=""
+stable_base=""
+if [[ "$cargo_version" =~ ^${stable_pattern}$ ]]; then
+    candidate_kind="release"
+    stable_base="$cargo_version"
+    check_equal "Cargo.toml" "$cargo_version" "pyproject.toml" "$python_version"
+elif [[ "$cargo_version" =~ ^(${stable_pattern})-dev\.([1-9][0-9]*)$ ]]; then
+    candidate_kind="development"
+    stable_base="${BASH_REMATCH[1]}"
+    expected_python_version="${stable_base}.dev${BASH_REMATCH[5]}"
+    check_equal "Cargo.toml mapping" "$expected_python_version" "pyproject.toml" "$python_version"
+else
+    echo "Cargo.toml has a non-canonical release or development version: $cargo_version" >&2
+    ok=false
 fi
+
+check_equal "Cargo.toml" "$cargo_version" "Cargo.lock" "$lock_version"
+check_equal "pyproject.toml" "$python_version" "uv.lock" "$uv_lock_version"
 
 if grep -qiE '^[[:space:]]*doi:[[:space:]]*.*(placeholder|xxxxxxx)' "$repo_root/CITATION.cff"; then
     echo "CITATION.cff contains a placeholder DOI" >&2
@@ -124,7 +135,10 @@ fi
 
 if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     head_cargo_version="$(git -C "$repo_root" show HEAD:Cargo.toml 2>/dev/null | grep -m1 -E '^version\s*=\s*"' | sed -E 's/^[^"]*"([^"]+)".*$/\1/' || true)"
-    if [[ "$cargo_version" != "$head_cargo_version" ]]; then
+    head_python_version="$(git -C "$repo_root" show HEAD:pyproject.toml 2>/dev/null | grep -m1 -E '^version\s*=\s*"' | sed -E 's/^[^"]*"([^"]+)".*$/\1/' || true)"
+    head_lock_version="$(git -C "$repo_root" show HEAD:Cargo.lock 2>/dev/null | awk '/name = "biomcp-cli"/{found=1} found && /^version/{print; exit}' | sed -E 's/^[^"]*"([^"]+)".*$/\1/' || true)"
+    head_uv_lock_version="$(git -C "$repo_root" show HEAD:uv.lock 2>/dev/null | awk '/name = "biomcp-cli"/{found=1} found && /^version/{print; exit}' | sed -E 's/^[^"]*"([^"]+)".*$/\1/' || true)"
+    if [[ "$cargo_version" != "$head_cargo_version" || "$python_version" != "$head_python_version" || "$lock_version" != "$head_lock_version" || "$uv_lock_version" != "$head_uv_lock_version" ]]; then
         echo "release version changes must be committed" >&2
         ok=false
     fi
@@ -134,6 +148,29 @@ if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         echo "a reachable release tag is required for the pre-1.0 boundary check" >&2
         ok=false
     else
+        published_version="${latest_tag#v}"
+        if [[ "$candidate_kind" == development ]]; then
+            for entry in \
+                "manifest.json:$manifest_version" \
+                "CITATION.cff:$citation_version" \
+                "server.json:$server_version" \
+                "server.json biomcp-cli:$server_package_version"; do
+                name="${entry%%:*}"
+                actual="${entry#*:}"
+                check_equal "latest stable tag" "$published_version" "$name" "$actual"
+            done
+            if [[ "$formula_version" != "__VERSION__" ]]; then
+                check_equal "latest stable tag" "$published_version" "Formula/biomcp.rb" "$formula_version"
+            fi
+        else
+            check_equal "Cargo.toml" "$cargo_version" "manifest.json" "$manifest_version"
+            check_equal "Cargo.toml" "$cargo_version" "CITATION.cff" "$citation_version"
+            check_equal "Cargo.toml" "$cargo_version" "server.json" "$server_version"
+            check_equal "Cargo.toml" "$cargo_version" "server.json biomcp-cli" "$server_package_version"
+            if [[ "$formula_version" != "__VERSION__" ]]; then
+                check_equal "Cargo.toml" "$cargo_version" "Formula/biomcp.rb" "$formula_version"
+            fi
+        fi
         breaking_changes="$(awk '
             /^## Unreleased$/ { unreleased=1; next }
             unreleased && /^## / { exit }
@@ -141,7 +178,7 @@ if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
             breaking && /^### / { exit }
             breaking && /^[[:space:]]*[-*][[:space:]]+[^[:space:]]/ { print; exit }
         ' "$repo_root/CHANGELOG.md")"
-        if [[ -n "$breaking_changes" && "$cargo_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+        if [[ -n "$breaking_changes" && "$stable_base" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             proposed_major="${BASH_REMATCH[1]}"
             proposed_minor="${BASH_REMATCH[2]}"
             if [[ "$latest_tag" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
@@ -160,4 +197,4 @@ if [[ "$ok" == false ]]; then
     exit 1
 fi
 
-echo "Versions in sync: $cargo_version"
+echo "Versions in sync: $cargo_version (Python $python_version; $candidate_kind candidate)"

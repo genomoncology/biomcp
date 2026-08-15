@@ -67,8 +67,8 @@ def test_citation_cff_release_metadata_matches_repo_metadata() -> None:
 
     assert citation_version == "0.8.25"
     assert citation_date == "2026-07-07"
-    assert citation_version == cargo["package"]["version"]
-    assert citation_version == pyproject["project"]["version"]
+    assert cargo["package"]["version"] == "0.9.0-dev.1"
+    assert pyproject["project"]["version"] == "0.9.0.dev1"
     assert citation_version == changelog_match.group("version")
     assert citation_date == changelog_match.group("date")
 

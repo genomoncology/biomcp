@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -66,3 +68,37 @@ def test_publication_uses_curated_notes_without_generated_fallback() -> None:
     assert "--notes-file" in script
     assert "--generate-notes" not in script
     subprocess.run(["bash", "-n", "release/publish-versioned.sh"], cwd=ROOT, check=True)
+
+
+@pytest.mark.parametrize(
+    ("schema_version", "candidate_kind"),
+    [(1, ""), (2, "development")],
+)
+def test_publish_script_rejects_unsupported_candidate_before_other_inputs(
+    tmp_path: Path, schema_version: int, candidate_kind: str
+) -> None:
+    manifest = tmp_path / "manifest.json"
+    value = {
+        "schema_version": schema_version,
+        "version": "0.9.0-dev.1",
+        "source_sha": "a" * 40,
+    }
+    if candidate_kind:
+        value["candidate_kind"] = candidate_kind
+    manifest.write_text(json.dumps(value))
+    result = subprocess.run(
+        [
+            "bash",
+            "release/publish-versioned.sh",
+            str(manifest),
+            str(tmp_path / "missing-candidate"),
+            str(tmp_path / "missing-inventory"),
+        ],
+        cwd=ROOT,
+        env={**os.environ, "RUNNER_TEMP": str(tmp_path)},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "publication requires a schema-2 release candidate" in result.stderr

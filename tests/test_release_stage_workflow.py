@@ -158,6 +158,8 @@ def test_all_five_private_wheels_install_and_smoke_both_commands_before_sealing(
         assert smoke_index < upload_index
         smoke = job["steps"][smoke_index]["run"]
         assert "pip install --no-index" in smoke
+        assert "PYTHON_VERSION=" in smoke
+        assert '"biomcp_cli-$PYTHON_VERSION-"*' in smoke
         assert 'release/smoke.py --bin "$wheel_bin/biomcp"' in smoke
         assert 'release/smoke.py --bin "$wheel_bin/biomcp-cli"' in smoke
     assert {"linux-artifacts", "signed-artifacts"} <= set(
@@ -183,6 +185,24 @@ def test_manual_promotion_inputs_are_validated_once_before_publication() -> None
     assert "inputs.updater_transition" not in reconcile
     assert "promotion-inventory.json" in publish
     assert "promotion-inventory.json" in reconcile
+
+
+def test_development_candidate_guard_runs_before_public_release_lookup() -> None:
+    workflow = yaml.safe_load(_text())
+    preflight = next(
+        step["run"]
+        for step in workflow["jobs"]["promotion-preflight"]["steps"]
+        if step.get("name") == "Resolve and verify every private candidate byte"
+    )
+    assert preflight.index("release/promotion.py require-release") < preflight.index(
+        "gh api --paginate"
+    )
+
+
+def test_target_builds_thread_distinct_rust_and_python_versions() -> None:
+    text = _text()
+    assert text.count('--python-version "$PYTHON_VERSION"') == 2
+    assert text.count("PYTHON_VERSION=") >= 4
 
 
 def test_container_consumes_both_registered_linux_archives_without_push() -> None:

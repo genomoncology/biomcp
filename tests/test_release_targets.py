@@ -76,3 +76,10 @@ def test_sbom_is_deterministic_and_binds_source(tmp_path: Path) -> None:
 def test_release_target_build_uses_the_canonical_identity_wrapper() -> None:
     source = (ROOT / "release/build_target.py").read_text(encoding="utf-8")
     assert 'str(args.repo / "tools/with-build-identity")' in source
+
+
+def test_release_target_build_threads_python_package_identity() -> None:
+    source = (ROOT / "release/build_target.py").read_text(encoding="utf-8")
+    assert 'parser.add_argument("--python-version", required=True)' in source
+    assert 'f"biomcp_cli-{args.python_version}-py3-none-' in source
+    assert '"--python-version",\n            args.python_version' in source

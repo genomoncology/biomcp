@@ -145,8 +145,10 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          PYTHON_VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' pyproject.toml | head -1)"
           python3 release/build_target.py --target "$TARGET" --source-sha "$SOURCE_SHA" \
-            --version "$VERSION" --run-id "$RUN_ID" --dist dist
+            --version "$VERSION" --python-version "$PYTHON_VERSION" \
+            --run-id "$RUN_ID" --dist dist
           python3 release/smoke.py --bin "target/$TARGET/release/biomcp" \
             --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
           tools/check-png-artifact "target/$TARGET/release/biomcp"
@@ -155,8 +157,11 @@ jobs:
           SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
           VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
-          wheel="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
-          test -n "$wheel"
+          PYTHON_VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' pyproject.toml | head -1)"
+          mapfile -t wheels < <(find dist -maxdepth 1 -type f -name '*.whl')
+          test "${#wheels[@]}" = 1
+          wheel="${wheels[0]}"
+          [[ "$(basename "$wheel")" = "biomcp_cli-$PYTHON_VERSION-"* ]]
           wheel_env="${RUNNER_TEMP:?}/wheel-smoke-$TARGET"
           python3 -m venv "$wheel_env"
           "$wheel_env/bin/python" -m pip install --no-index "$wheel"
@@ -211,16 +216,21 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          PYTHON_VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' pyproject.toml | head -1)"
           python release/build_target.py --target "$TARGET" --source-sha "$SOURCE_SHA" \
-            --version "$VERSION" --run-id "$RUN_ID" --dist dist
+            --version "$VERSION" --python-version "$PYTHON_VERSION" \
+            --run-id "$RUN_ID" --dist dist
       - name: Install and smoke both private wheel commands
         shell: bash
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
           VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
-          wheel="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
-          test -n "$wheel"
+          PYTHON_VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' pyproject.toml | head -1)"
+          mapfile -t wheels < <(find dist -maxdepth 1 -type f -name '*.whl')
+          test "${#wheels[@]}" = 1
+          wheel="${wheels[0]}"
+          [[ "$(basename "$wheel")" = "biomcp_cli-$PYTHON_VERSION-"* ]]
           wheel_env="${RUNNER_TEMP:?}/wheel-smoke-$TARGET"
           python -m venv "$wheel_env"
           if [[ "$RUNNER_OS" = Windows ]]; then
@@ -599,6 +609,8 @@ jobs:
           WINDOWS_DESKTOP_SMOKE: ${{ inputs.windows_desktop_smoke }}
           UPDATER_TRANSITION: ${{ inputs.updater_transition }}
         run: |
+          python3 release/promotion.py require-release \
+            --manifest "candidate/sealed-candidate-$STAGE_RUN_ID/candidate-manifest.json"
           gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" | \
             jq -s 'add' > public-releases.json
           python3 release/promotion.py preflight \

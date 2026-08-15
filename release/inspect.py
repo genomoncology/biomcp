@@ -20,7 +20,13 @@ from email.parser import BytesParser
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from candidate import ARTIFACTS, canonical_bytes, sha256_file
+from candidate import (
+    ARTIFACTS,
+    CandidateError,
+    candidate_kind,
+    canonical_bytes,
+    sha256_file,
+)
 
 FORBIDDEN = ("testdata/", "tests/", "spec/fixtures/", ".git/", ".cache/", "sdlc/")
 TARGETS = {
@@ -175,16 +181,18 @@ def _one_header(data: bytes, name: str, expected: str) -> None:
         raise InspectionError(f"wheel has wrong {name}")
 
 
-def inspect_wheel(path: Path, artifact_id: str, version: str) -> dict[str, object]:
+def inspect_wheel(
+    path: Path, artifact_id: str, python_version: str
+) -> dict[str, object]:
     kind, target = ARTIFACTS[artifact_id]
     if kind != "wheel" or target not in TARGETS:
         raise InspectionError("wheel identity is not a registered platform target")
     settings = TARGETS[target]
     tag = settings["wheel_tag"]
-    expected_filename = f"biomcp_cli-{version}-{tag}.whl"
+    expected_filename = f"biomcp_cli-{python_version}-{tag}.whl"
     if path.name != expected_filename:
         raise InspectionError("wheel filename does not match candidate identity")
-    dist = f"biomcp_cli-{version}"
+    dist = f"biomcp_cli-{python_version}"
     suffix = ".exe" if settings["os"] == "windows" else ""
     full_name = f"{dist}.data/scripts/biomcp{suffix}"
     shim_name = f"{dist}.data/scripts/biomcp-cli{suffix}"
@@ -206,7 +214,7 @@ def inspect_wheel(path: Path, artifact_id: str, version: str) -> dict[str, objec
     if modes[full_name] & 0o111 == 0 or modes[shim_name] & 0o111 == 0:
         raise InspectionError("wheel executables lack execute permission")
     _one_header(contents[metadata_name], "Name", "biomcp-cli")
-    _one_header(contents[metadata_name], "Version", version)
+    _one_header(contents[metadata_name], "Version", python_version)
     _one_header(contents[wheel_name], "Root-Is-Purelib", "false")
     _one_header(contents[wheel_name], "Tag", tag)
     try:
@@ -497,6 +505,7 @@ def finalize_record(
     binary: Path,
     source_sha: str,
     version: str,
+    python_version: str,
     run_id: str,
     shim: Path | None,
     sbom: Path,
@@ -510,13 +519,14 @@ def finalize_record(
 ) -> dict[str, object]:
     """Independently inspect final bytes and atomically write their success record."""
     output.unlink(missing_ok=True)
+    candidate_kind(version, python_version)
     target_kind, target = ARTIFACTS[artifact_id]
     if target_kind != kind or target not in TARGETS:
         raise InspectionError("artifact kind does not match registered identity")
     archive_evidence = (
         inspect_native(artifact, target)
         if kind == "native"
-        else inspect_wheel(artifact, artifact_id, version)
+        else inspect_wheel(artifact, artifact_id, python_version)
     )
     if (kind == "wheel") != (shim is not None):
         raise InspectionError("shim path does not match artifact kind")
@@ -583,6 +593,7 @@ def main() -> int:
     parser.add_argument("--unsigned-shim", type=Path)
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--version", required=True)
+    parser.add_argument("--python-version", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--provenance", required=True)
     args = parser.parse_args()
@@ -599,6 +610,7 @@ def main() -> int:
             binary=args.binary,
             source_sha=args.source_sha,
             version=args.version,
+            python_version=args.python_version,
             run_id=args.run_id,
             shim=args.shim,
             sbom=args.sbom,
@@ -613,6 +625,7 @@ def main() -> int:
         return 0
     except (
         InspectionError,
+        CandidateError,
         OSError,
         KeyError,
         json.JSONDecodeError,

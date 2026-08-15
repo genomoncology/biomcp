@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 import package as package_artifact
-from candidate import canonical_bytes, sha256_file
+from candidate import CandidateError, candidate_kind, canonical_bytes, sha256_file
 
 TARGETS = {
     "x86_64-unknown-linux-gnu": {
@@ -127,11 +127,13 @@ def main() -> int:
     parser.add_argument("--target", choices=sorted(TARGETS), required=True)
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--version", required=True)
+    parser.add_argument("--python-version", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--repo", type=Path, default=Path.cwd())
     parser.add_argument("--dist", type=Path, required=True)
     parser.add_argument("--skip-build", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    candidate_kind(args.version, args.python_version)
     settings = TARGETS[args.target]
     args.dist.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
@@ -186,15 +188,15 @@ def main() -> int:
     sbom_path = args.dist / "sbom.cdx.json"
     sbom(args.repo / "Cargo.lock", sbom_path, args.source_sha, args.version)
     native_path = args.dist / str(settings["archive"])
-    wheel_path = (
-        args.dist / f"biomcp_cli-{args.version}-py3-none-{settings['wheel']}.whl"
+    wheel_path = args.dist / (
+        f"biomcp_cli-{args.python_version}-py3-none-{settings['wheel']}.whl"
     )
     package_artifact.native_archive(full, native_path, settings["os"] == "windows")
     package_artifact.wheel(
         full,
         shim,
         wheel_path,
-        args.version,
+        args.python_version,
         f"py3-none-{settings['wheel']}",
         settings["os"] == "windows",
     )
@@ -225,6 +227,8 @@ def main() -> int:
             args.source_sha,
             "--version",
             args.version,
+            "--python-version",
+            args.python_version,
             "--run-id",
             args.run_id,
             "--provenance",
@@ -267,6 +271,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (BuildError, OSError, json.JSONDecodeError) as error:
+    except (BuildError, CandidateError, OSError, json.JSONDecodeError) as error:
         print(f"release build: {error}", file=sys.stderr)
         raise SystemExit(2) from error

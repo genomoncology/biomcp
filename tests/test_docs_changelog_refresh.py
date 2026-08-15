@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 import subprocess
 from pathlib import Path
-import tomllib
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_RELEASE_TICKETS = {
@@ -343,8 +342,7 @@ def _citation_scalar(field_name: str) -> str:
 
 
 def _current_release_version() -> str:
-    cargo = tomllib.loads(_read("Cargo.toml"))
-    return cargo["package"]["version"]
+    return _citation_scalar("version")
 
 
 def _current_release_heading() -> str:
@@ -828,11 +826,12 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
 def test_release_overview_describes_committed_metadata_and_protected_promotion() -> None:
     overview = _read("architecture/technical/overview.md")
 
-    assert "**Current version:** see `Cargo.toml`" in overview
-    assert "committed `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, root `uv.lock`" in overview
+    assert "**Development candidate:** Rust `0.9.0-dev.1`; Python `0.9.0.dev1`" in overview
+    assert "validates that mapping and its lock roots" in overview
     assert "both `server.json` version fields" in overview
     assert "`CITATION.cff`" in overview
     assert "v0.8.25 is the latest published release." in overview
+    assert "public metadata remains at `0.8.25`" in overview
     assert "Package versions are committed metadata, not values stamped from tags." in overview
     assert "separate `stage` and `promote` modes" in overview
     assert "only then advances mutable" in overview

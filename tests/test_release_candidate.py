@@ -23,10 +23,19 @@ def _module(name: str, relative: str):
 candidate = _module("candidate", "release/candidate.py")
 
 
-def _repo(tmp_path: Path) -> tuple[Path, str]:
+def _repo(
+    tmp_path: Path,
+    rust_version: str = "1.2.3",
+    python_version: str = "1.2.3",
+) -> tuple[Path, str]:
     repo = tmp_path / "repo"
     repo.mkdir()
-    (repo / "Cargo.toml").write_text('[package]\nname="fixture"\nversion = "1.2.3"\n')
+    (repo / "Cargo.toml").write_text(
+        f'[package]\nname="fixture"\nversion = "{rust_version}"\n'
+    )
+    (repo / "pyproject.toml").write_text(
+        f'[project]\nname="fixture"\nversion = "{python_version}"\n'
+    )
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     subprocess.run(["git", "config", "user.name", "Fixture"], cwd=repo, check=True)
     subprocess.run(["git", "config", "user.email", "fixture@example.test"], cwd=repo, check=True)
@@ -60,11 +69,58 @@ def _record(manifest: dict, artifact_id: str, path: Path) -> dict:
 
 def test_manifest_initializes_from_exact_committed_identity(tmp_path: Path) -> None:
     manifest = _manifest(tmp_path)
+    assert manifest["schema_version"] == 2
     assert manifest["version"] == "1.2.3"
+    assert manifest["python_version"] == "1.2.3"
+    assert manifest["candidate_kind"] == "release"
     assert len(manifest["source_sha"]) == 40
     assert manifest["stage_run_id"] == "42"
     schema = json.loads((ROOT / "release/candidate-manifest.schema.json").read_text())
     jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(manifest)
+
+
+def test_manifest_accepts_exact_canonical_development_identity(tmp_path: Path) -> None:
+    repo, sha = _repo(tmp_path, "0.9.0-dev.1", "0.9.0.dev1")
+
+    manifest = candidate.init_manifest(
+        repo, sha, "42", {"rust": "1.93.1"}, require_main=False
+    )
+
+    assert manifest["version"] == "0.9.0-dev.1"
+    assert manifest["python_version"] == "0.9.0.dev1"
+    assert manifest["candidate_kind"] == "development"
+
+
+@pytest.mark.parametrize(
+    ("rust_version", "python_version"),
+    [
+        ("01.2.3", "01.2.3"),
+        ("1.02.3", "1.02.3"),
+        ("1.2.03", "1.2.03"),
+        ("1.2.3-dev.0", "1.2.3.dev0"),
+        ("1.2.3-dev.01", "1.2.3.dev1"),
+        ("1.2.3-dev.1", "1.2.3.dev01"),
+        ("1.2.3-dev.1", "1.2.3.dev2"),
+        ("1.2.3-rc.1", "1.2.3rc1"),
+    ],
+)
+def test_manifest_rejects_noncanonical_or_mismatched_identity(
+    tmp_path: Path, rust_version: str, python_version: str
+) -> None:
+    repo, sha = _repo(tmp_path, rust_version, python_version)
+
+    with pytest.raises(candidate.CandidateError, match="candidate version"):
+        candidate.init_manifest(
+            repo, sha, "42", {"rust": "1.93.1"}, require_main=False
+        )
+
+
+def test_schema_one_manifest_is_rejected(tmp_path: Path) -> None:
+    manifest = _manifest(tmp_path)
+    manifest["schema_version"] = 1
+
+    with pytest.raises(candidate.CandidateError, match="unsupported"):
+        candidate.validate_manifest(manifest)
 
 
 def test_init_rejects_dirty_checkout_existing_tag_and_short_sha(tmp_path: Path) -> None:

@@ -98,6 +98,28 @@ def test_wheel_contains_full_binary_and_small_shim_once(tmp_path: Path) -> None:
         )
 
 
+def test_development_wheel_uses_exact_pep440_identity(tmp_path: Path) -> None:
+    full = tmp_path / "biomcp"
+    shim = tmp_path / "biomcp-cli"
+    full.write_bytes(b"full executable bytes")
+    shim.write_bytes(b"shim")
+    wheel = tmp_path / "biomcp_cli-0.9.0.dev1-py3-none-manylinux_2_28_x86_64.whl"
+
+    packaging.wheel(
+        full,
+        shim,
+        wheel,
+        "0.9.0.dev1",
+        "py3-none-manylinux_2_28_x86_64",
+        False,
+    )
+
+    inspection.inspect_wheel(wheel, "wheel-linux-x86_64", "0.9.0.dev1")
+    with zipfile.ZipFile(wheel) as archive:
+        metadata = archive.read("biomcp_cli-0.9.0.dev1.dist-info/METADATA")
+    assert b"Version: 0.9.0.dev1\n" in metadata
+
+
 def test_artifact_record_binds_bytes_and_candidate_identity(tmp_path: Path) -> None:
     artifact = tmp_path / "biomcp-linux-x86_64.tar.gz"
     artifact.write_bytes(b"artifact")
@@ -247,6 +269,7 @@ def test_final_inspector_owns_complete_wheel_evidence(
         binary=full,
         source_sha="a" * 40,
         version="1.2.3",
+        python_version="1.2.3",
         run_id="42",
         shim=shim,
         sbom=_sbom(tmp_path / "sbom.cdx.json"),
@@ -288,6 +311,7 @@ def test_failed_final_inspection_leaves_no_success_record(tmp_path: Path) -> Non
             binary=binary,
             source_sha="a" * 40,
             version="1.2.3",
+            python_version="1.2.3",
             run_id="42",
             shim=None,
             sbom=_sbom(tmp_path / "sbom.cdx.json"),
@@ -327,6 +351,7 @@ def test_tampered_sbom_leaves_no_success_record(tmp_path: Path, monkeypatch) -> 
             binary=binary,
             source_sha="a" * 40,
             version="1.2.3",
+            python_version="1.2.3",
             run_id="42",
             shim=None,
             sbom=_sbom(tmp_path / "sbom.cdx.json", source_sha="c" * 40),
@@ -363,6 +388,7 @@ def test_failed_platform_reinspection_leaves_no_success_record(
             binary=binary,
             source_sha="a" * 40,
             version="1.2.3",
+            python_version="1.2.3",
             run_id="42",
             shim=None,
             sbom=_sbom(tmp_path / "sbom.cdx.json"),
@@ -454,6 +480,7 @@ def test_tampered_signing_evidence_leaves_no_success_record(
             binary=full,
             source_sha="a" * 40,
             version="1.2.3",
+            python_version="1.2.3",
             run_id="42",
             shim=shim,
             sbom=_sbom(tmp_path / "sbom.cdx.json"),

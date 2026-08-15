@@ -31,9 +31,11 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
     policy.write_text('{"schema_version":1,"enabled":true}\n')
     policy_hash = candidate.sha256_file(policy)
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source_sha": "a" * 40,
         "version": "1.2.3",
+        "python_version": "1.2.3",
+        "candidate_kind": "release",
         "stage_run_id": "42",
         "status": "complete",
         "created_at": "2026-08-12T00:00:00Z",
@@ -67,6 +69,43 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
         f"{checksum}  candidate-manifest.json\n"
     )
     return root, manifest_path, manifest, policy, policy_hash
+
+
+def test_preflight_rejects_development_before_other_inputs_or_artifacts(
+    tmp_path: Path,
+) -> None:
+    manifest_path = tmp_path / "candidate-manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "source_sha": "a" * 40,
+                "version": "0.9.0-dev.1",
+                "python_version": "0.9.0.dev1",
+                "candidate_kind": "development",
+                "stage_run_id": "42",
+                "status": "complete",
+                "created_at": "2026-08-15T00:00:00Z",
+                "gates": {},
+                "pins": {"rust": "1.93.1"},
+                "signing_policy_sha256": None,
+                "artifacts": {},
+            }
+        )
+    )
+
+    with pytest.raises(promotion.PromotionError, match="development candidate"):
+        promotion.preflight(
+            manifest_path,
+            tmp_path / "missing-candidate-root",
+            "wrong-run",
+            tmp_path / "missing-policy",
+            "not-a-hash",
+            require_credentials=True,
+            windows_desktop_smoke="not json",
+            updater_transition="not json",
+            public_releases_path=tmp_path / "missing-public-releases",
+        )
 
 
 def _manual_inputs(manifest: dict) -> tuple[str, str]:

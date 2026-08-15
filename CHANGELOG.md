@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-### New features
+### Breaking changes
 
 - Replaced the legacy MyVariant/ExAC variant-detail population fields with a
   direct, GRCh38-only gnomAD v4 population result. Exomes and genomes now keep
@@ -11,6 +11,8 @@
   public release to use a new minor version. Removed fields: `gnomad_af`,
   `allele_frequency_raw`, `allele_frequency_percent`, and
   `population_breakdown`; replacement: `population` with dataset `gnomad_r4`.
+
+### New features
 
 - Added read-only ClinGen Allele Registry (`clingen_car`) normalization for supported
   versioned RefSeq HGVS values, including bounded CLI JSON batches and the typed

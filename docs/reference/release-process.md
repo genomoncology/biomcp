@@ -4,6 +4,8 @@ BioMCP uses one manually started workflow with two deliberately separate modes.
 The repository currently records v0.8.25 as the latest published release. The
 workflow code does not approve or start a release on its own.
 
+The Rust package can move ahead as a private development candidate without changing public release claims. For example, Cargo and the compiled binary use `0.9.0-dev.1`, while Python packaging uses its canonical PEP 440 equivalent, `0.9.0.dev1`. The committed citation, MCP directory manifests, and other public metadata continue to identify v0.8.25 until a reviewed stable release commit updates them together. Development candidates may be staged privately but are rejected by promotion and publication.
+
 ## Go/no-go checkpoint
 
 Ian creates and reviews the single commit that changes the public version to

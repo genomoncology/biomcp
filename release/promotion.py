@@ -34,6 +34,11 @@ class PromotionError(ValueError):
     pass
 
 
+def require_release_candidate(manifest: dict[str, Any]) -> None:
+    if manifest["candidate_kind"] != "release":
+        raise PromotionError("development candidate cannot enter promotion")
+
+
 def _unique_file(root: Path, filename: str) -> Path:
     matches = [
         path
@@ -305,6 +310,7 @@ def preflight(
     public_releases_path: Path,
 ) -> dict[str, Any]:
     manifest = load_manifest(manifest_path)
+    require_release_candidate(manifest)
     if (
         manifest["status"] != "complete"
         or set(manifest["artifacts"]) != FINAL_ARTIFACTS
@@ -512,6 +518,8 @@ def release_record(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    promotable = commands.add_parser("require-release")
+    promotable.add_argument("--manifest", type=Path, required=True)
     preflight_command = commands.add_parser("preflight")
     preflight_command.add_argument("--manifest", type=Path, required=True)
     preflight_command.add_argument("--candidate-root", type=Path, required=True)
@@ -539,7 +547,9 @@ def main() -> int:
     record.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        if args.command == "preflight":
+        if args.command == "require-release":
+            require_release_candidate(load_manifest(args.manifest))
+        elif args.command == "preflight":
             inventory = preflight(
                 args.manifest,
                 args.candidate_root,

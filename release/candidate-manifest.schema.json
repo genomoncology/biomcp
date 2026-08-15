@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://biomcp.org/schemas/release-candidate-manifest-v1.json",
+  "$id": "https://biomcp.org/schemas/release-candidate-manifest-v2.json",
   "title": "BioMCP release candidate manifest",
   "type": "object",
   "additionalProperties": false,
@@ -8,6 +8,8 @@
     "schema_version",
     "source_sha",
     "version",
+    "python_version",
+    "candidate_kind",
     "stage_run_id",
     "status",
     "created_at",
@@ -17,9 +19,11 @@
     "artifacts"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
-    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "version": { "type": "string", "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-dev\\.[1-9][0-9]*)?$" },
+    "python_version": { "type": "string", "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:\\.dev[1-9][0-9]*)?$" },
+    "candidate_kind": { "enum": ["release", "development"] },
     "stage_run_id": { "type": "string", "pattern": "^[1-9][0-9]*$" },
     "status": { "enum": ["staging", "complete"] },
     "created_at": { "type": "string", "format": "date-time" },

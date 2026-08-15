@@ -20,7 +20,14 @@ from pathlib import Path
 from typing import Any
 
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
-SEMVER_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$")
+NUMERIC_COMPONENT = r"(?:0|[1-9][0-9]*)"
+STABLE_VERSION_RE = re.compile(
+    rf"^(?P<base>{NUMERIC_COMPONENT}\.{NUMERIC_COMPONENT}\.{NUMERIC_COMPONENT})$"
+)
+DEVELOPMENT_VERSION_RE = re.compile(
+    rf"^(?P<base>{NUMERIC_COMPONENT}\.{NUMERIC_COMPONENT}\.{NUMERIC_COMPONENT})"
+    r"-dev\.(?P<ordinal>[1-9][0-9]*)$"
+)
 RUN_RE = re.compile(r"^[1-9][0-9]*$")
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 
@@ -77,12 +84,32 @@ def _git(repo: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
-def committed_version(repo: Path, sha: str) -> str:
-    cargo = _git(repo, "show", f"{sha}:Cargo.toml")
-    match = re.search(r'^version\s*=\s*"([^"]+)"', cargo, re.MULTILINE)
-    if not match or not SEMVER_RE.fullmatch(match.group(1)):
-        raise CandidateError("candidate commit has no valid committed semver")
+def _manifest_version(repo: Path, sha: str, path: str) -> str:
+    text = _git(repo, "show", f"{sha}:{path}")
+    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.MULTILINE)
+    if not match:
+        raise CandidateError(f"candidate commit has no version in {path}")
     return match.group(1)
+
+
+def candidate_kind(version: str, python_version: str) -> str:
+    stable = STABLE_VERSION_RE.fullmatch(version)
+    if stable and python_version == version:
+        return "release"
+    development = DEVELOPMENT_VERSION_RE.fullmatch(version)
+    if development:
+        expected_python = (
+            f"{development.group('base')}.dev{development.group('ordinal')}"
+        )
+        if python_version == expected_python:
+            return "development"
+    raise CandidateError("candidate version pair is invalid or non-canonical")
+
+
+def committed_versions(repo: Path, sha: str) -> tuple[str, str, str]:
+    version = _manifest_version(repo, sha, "Cargo.toml")
+    python_version = _manifest_version(repo, sha, "pyproject.toml")
+    return version, python_version, candidate_kind(version, python_version)
 
 
 def _atomic_json(path: Path, value: Any) -> None:
@@ -109,12 +136,15 @@ def load_manifest(path: Path) -> dict[str, Any]:
 
 
 def validate_manifest(value: Any) -> None:
-    if not isinstance(value, dict) or value.get("schema_version") != 1:
+    if not isinstance(value, dict) or value.get("schema_version") != 2:
         raise CandidateError("unsupported candidate manifest schema")
     if not SHA_RE.fullmatch(str(value.get("source_sha", ""))):
         raise CandidateError("candidate manifest requires a full lowercase source SHA")
-    if not SEMVER_RE.fullmatch(str(value.get("version", ""))):
-        raise CandidateError("candidate manifest requires committed semver")
+    version = str(value.get("version", ""))
+    python_version = str(value.get("python_version", ""))
+    kind = candidate_kind(version, python_version)
+    if value.get("candidate_kind") != kind:
+        raise CandidateError("candidate kind does not match its version pair")
     if not RUN_RE.fullmatch(str(value.get("stage_run_id", ""))):
         raise CandidateError("candidate manifest requires a numeric stage run ID")
     if value.get("status") not in {"staging", "complete"}:
@@ -188,15 +218,17 @@ def init_manifest(
         raise CandidateError("stage run ID must be a positive integer")
     if _git(repo, "status", "--porcelain"):
         raise CandidateError("stage requires a clean checkout")
-    version = committed_version(repo, sha)
+    version, python_version, kind = committed_versions(repo, sha)
     if _git(repo, "tag", "--list", f"v{version}"):
         raise CandidateError(f"v{version} is already tagged")
     if not pins or any(not key or not value for key, value in pins.items()):
         raise CandidateError("stage requires non-empty tool and action pins")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "source_sha": sha,
         "version": version,
+        "python_version": python_version,
+        "candidate_kind": kind,
         "stage_run_id": run_id,
         "status": "staging",
         "created_at": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"),

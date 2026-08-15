@@ -48,8 +48,15 @@ def _record_hash(data: bytes) -> str:
     return f"sha256={encoded}"
 
 
-def wheel(full: Path, shim: Path, output: Path, version: str, tag: str, windows: bool) -> None:
-    dist = f"biomcp_cli-{version}"
+def wheel(
+    full: Path,
+    shim: Path,
+    output: Path,
+    python_version: str,
+    tag: str,
+    windows: bool,
+) -> None:
+    dist = f"biomcp_cli-{python_version}"
     suffix = ".exe" if windows else ""
     entries: list[tuple[str, bytes, int]] = [
         (f"{dist}.data/scripts/biomcp{suffix}", full.read_bytes(), 0o100755),
@@ -59,7 +66,7 @@ def wheel(full: Path, shim: Path, output: Path, version: str, tag: str, windows:
             (
                 "Metadata-Version: 2.3\n"
                 "Name: biomcp-cli\n"
-                f"Version: {version}\n"
+                f"Version: {python_version}\n"
                 "Summary: Biomedical MCP command-line interface\n"
                 "License: MIT\n"
                 "Requires-Python: >=3.10\n"
