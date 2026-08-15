@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import hashlib
 import re
-import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -186,6 +186,10 @@ POST_TAG_CHANGELOG_MARKERS = (
     "standard structured JSON errors",
     "Europe PMC supplementary ZIPs",
     "normal DTD-bearing citation XML",
+)
+# SHA-256 of the complete 0.8.25 section in the published v0.8.25 CHANGELOG.md.
+PUBLISHED_V0_8_25_CHANGELOG_BLOCK_SHA256 = (
+    "5d825643e7fb90dcdccd92957a992616f0e186227c660978489d483639435da0"
 )
 
 EXPECTED_RELEASE_MARKERS = {
@@ -469,19 +473,13 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
 
 
 def test_v0_8_25_release_block_matches_the_published_tag_boundary() -> None:
-    result = subprocess.run(
-        ["git", "show", "v0.8.25:CHANGELOG.md"],
-        cwd=REPO_ROOT,
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-    tagged_changelog = result.stdout
     current_changelog = _read("CHANGELOG.md")
     header = "## 0.8.25 — 2026-07-07"
+    published_block = header + _markdown_section_block(current_changelog, header)
 
-    assert _markdown_section_block(current_changelog, header) == _markdown_section_block(
-        tagged_changelog, header
+    assert (
+        hashlib.sha256(published_block.encode("utf-8")).hexdigest()
+        == PUBLISHED_V0_8_25_CHANGELOG_BLOCK_SHA256
     )
     unreleased = _markdown_section_block(current_changelog, "## Unreleased")
     published = _markdown_section_block(current_changelog, header)

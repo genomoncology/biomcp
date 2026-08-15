@@ -806,7 +806,10 @@ def test_concurrent_workspaces_have_distinct_article_fixture_ownership(
         )
         first_pid = records[0]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
         second_pid = records[1]["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_PID"]
-        assert not Path(f"/proc/{first_pid}").exists()
+        # Cleanup stops the owned process group before returning, but the
+        # detached supervisor can remain briefly visible in procfs until its
+        # host parent reaps it.
+        _wait_until(lambda: not Path(f"/proc/{first_pid}").exists())
         assert Path(f"/proc/{second_pid}").exists()
         assert (
             _status(f"{exports[1]['BIOMCP_FIGSHARE_BASE']}/graph/v1/author/1716151")
