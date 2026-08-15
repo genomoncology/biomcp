@@ -308,7 +308,7 @@ impl ProviderCaptureStore {
             tree.with_lock(|| tree.retained_regular_file_bytes())
         }
         #[cfg(not(unix))]
-        Err(ProviderCaptureError::Corrupt)
+        unsupported_platform_retained_bytes(&self.root)
     }
 
     pub(crate) fn maintain(&self) -> Result<u64, ProviderCaptureError> {
@@ -604,6 +604,14 @@ impl ProviderCaptureStore {
     #[cfg(all(test, unix))]
     fn blob_entries(&self) -> Result<Vec<BlobEntry>, ProviderCaptureError> {
         self.blob_entries_at(&CaptureTree::open_or_create(&self.root)?)
+    }
+}
+
+#[cfg(any(test, not(unix)))]
+fn unsupported_platform_retained_bytes(root: &Path) -> Result<u64, ProviderCaptureError> {
+    match std::fs::symlink_metadata(root.join("captures")) {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(0),
+        Err(_) | Ok(_) => Err(ProviderCaptureError::Corrupt),
     }
 }
 
@@ -1091,8 +1099,21 @@ mod tests {
     use super::{
         MAX_CAPTURE_BYTES, Metadata, ProviderCaptureError, ProviderCaptureProvider,
         ProviderCaptureStore, TestPublicationPause, plan_capacity_evictions,
+        unsupported_platform_retained_bytes,
     };
     use crate::test_support::TempDirGuard;
+
+    #[test]
+    fn unsupported_platform_stats_accept_an_absent_capture_store_only() {
+        let root = TempDirGuard::new("provider-capture-unsupported-stats");
+        assert_eq!(unsupported_platform_retained_bytes(root.path()), Ok(0));
+
+        std::fs::create_dir(root.path().join("captures")).expect("capture directory");
+        assert_eq!(
+            unsupported_platform_retained_bytes(root.path()),
+            Err(ProviderCaptureError::Corrupt)
+        );
+    }
 
     #[test]
     fn captures_and_reads_exact_bytes_with_content_addressed_dedupe() {
