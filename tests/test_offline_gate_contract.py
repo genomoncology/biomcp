@@ -35,6 +35,8 @@ def test_authoritative_linux_job_installs_pinned_bubblewrap() -> None:
     )[0]
     assert "BUBBLEWRAP_VERSION:" in WORKFLOW
     assert '"bubblewrap=$BUBBLEWRAP_VERSION"' in canonical
+    assert "RIPGREP_VERSION: 14.1.0-1" in WORKFLOW
+    assert '"ripgrep=$RIPGREP_VERSION"' in canonical
     assert "make test" in canonical
     assert "make spec" in canonical
 

@@ -40,6 +40,7 @@ env:
   PROTOC_VERSION: 28.3
   BUBBLEWRAP_VERSION: 0.9.0-1ubuntu0.1
   APPARMOR_VERSION: 4.0.1really4.0.1-0ubuntu0.24.04.7
+  RIPGREP_VERSION: 14.1.0-1
   MANYLINUX_X86_64: quay.io/pypa/manylinux_2_28_x86_64@sha256:f854c50adf7b7a325bc4794316f3758d387a41d61f9e2ebca0f26c7dc8f761d4
   MANYLINUX_ARM64: quay.io/pypa/manylinux_2_28_aarch64@sha256:b9dd5b2d6885fae144119ac934978003bcc413087ea08f602a960257205ec246
 
@@ -82,7 +83,8 @@ jobs:
           sudo apt-get install --no-install-recommends \
             "bubblewrap=$BUBBLEWRAP_VERSION" \
             "apparmor=$APPARMOR_VERSION" \
-            "apparmor-profiles=$APPARMOR_VERSION"
+            "apparmor-profiles=$APPARMOR_VERSION" \
+            "ripgrep=$RIPGREP_VERSION"
           sudo install -m 0644 \
             /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
             /etc/apparmor.d/bwrap-userns-restrict

@@ -20,6 +20,7 @@ env:
   PROTOC_VERSION: 28.3
   BUBBLEWRAP_VERSION: 0.9.0-1ubuntu0.1
   APPARMOR_VERSION: 4.0.1really4.0.1-0ubuntu0.24.04.7
+  RIPGREP_VERSION: 14.1.0-1
 
 jobs:
   canonical-gates:
@@ -51,7 +52,8 @@ jobs:
           sudo apt-get install --no-install-recommends \
             "bubblewrap=$BUBBLEWRAP_VERSION" \
             "apparmor=$APPARMOR_VERSION" \
-            "apparmor-profiles=$APPARMOR_VERSION"
+            "apparmor-profiles=$APPARMOR_VERSION" \
+            "ripgrep=$RIPGREP_VERSION"
           sudo install -m 0644 \
             /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
             /etc/apparmor.d/bwrap-userns-restrict

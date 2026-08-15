@@ -111,12 +111,14 @@ def test_candidate_gate_installs_the_complete_pinned_canonical_toolset() -> None
     )
     for command in (
         '"bubblewrap=$BUBBLEWRAP_VERSION"',
+        '"ripgrep=$RIPGREP_VERSION"',
         'cargo install cargo-nextest --version "$CARGO_NEXTEST_VERSION" --locked',
         'cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked',
         'uv tool install "ruff==$RUFF_VERSION"',
         'uv tool install "mustmatch==$MUSTMATCH_VERSION"',
     ):
         assert command in install
+    assert "RIPGREP_VERSION: 14.1.0-1" in _text()
 
 
 def test_candidate_gate_loads_scoped_apparmor_before_compilation() -> None:
