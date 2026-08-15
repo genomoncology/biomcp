@@ -107,4 +107,6 @@ promotion evidence boundary.
 
 - Design review: accepted after defining canonical numeric forms and removing
   an unenforceable cross-run development-ordinal reservation claim
-- Code review: pending
+- Code review: accepted after binding wheel evidence to the Python identity and
+  placing full development-candidate rejection at every promotion,
+  verification, fixture, updater, release-record, and publication boundary
