@@ -1,4 +1,4 @@
-#[cfg(unix)]
+#[cfg(any(unix, windows))]
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
@@ -69,4 +69,38 @@ fn windows_cache_root_is_restricted_to_the_current_user() {
     assert!(acl.status.success());
     let user = std::env::var("USERNAME").expect("current user");
     assert!(String::from_utf8_lossy(&acl.stdout).contains(&user));
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_managed_tree_rejects_hardlinked_files_without_fsutil() {
+    let parent = tempfile::tempdir().expect("temporary parent");
+    let root = parent.path().join("managed");
+    fs::create_dir_all(&root).expect("managed root");
+    let file = root.join("local-metadata");
+    fs::write(&file, b"fixture-only").expect("managed file");
+
+    let accepted = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
+        .args(["cache", "stats"])
+        .env("BIOMCP_CACHE_DIR", &root)
+        .output()
+        .expect("run accepted stats");
+    assert!(
+        accepted.status.success(),
+        "ordinary managed file was rejected: {}",
+        String::from_utf8_lossy(&accepted.stderr)
+    );
+
+    fs::hard_link(&file, parent.path().join("outside-link")).expect("hard link");
+
+    let failed = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
+        .args(["cache", "stats"])
+        .env("BIOMCP_CACHE_DIR", &root)
+        .output()
+        .expect("run rejected stats");
+
+    assert!(!failed.status.success());
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    assert!(stderr.contains("managed file has 2 links"), "{stderr}");
+    assert!(!stderr.contains("fsutil"));
 }

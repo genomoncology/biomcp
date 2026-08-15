@@ -125,6 +125,9 @@ tempfile = "3"
 [target.'cfg(unix)'.dev-dependencies]
 rexpect = "0.7.0"
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

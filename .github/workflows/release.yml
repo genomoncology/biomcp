@@ -33,7 +33,12 @@ permissions:
 
 env:
   RUST_TOOLCHAIN: 1.93.1
+  RUFF_VERSION: 0.13.2
+  CARGO_NEXTEST_VERSION: 0.9.132
+  CARGO_DENY_VERSION: 0.19.4
+  MUSTMATCH_VERSION: 0.1.0
   PROTOC_VERSION: 28.3
+  BUBBLEWRAP_VERSION: 0.9.0-1ubuntu0.1
   MANYLINUX_X86_64: quay.io/pypa/manylinux_2_28_x86_64@sha256:f854c50adf7b7a325bc4794316f3758d387a41d61f9e2ebca0f26c7dc8f761d4
   MANYLINUX_ARM64: quay.io/pypa/manylinux_2_28_aarch64@sha256:b9dd5b2d6885fae144119ac934978003bcc413087ea08f602a960257205ec246
 
@@ -63,13 +68,23 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: 3.12.3
-      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a
         with:
           version: 0.8.0
       - uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b
         with:
           version: "28.3"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install canonical gate tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends "bubblewrap=$BUBBLEWRAP_VERSION"
+          cargo install cargo-nextest --version "$CARGO_NEXTEST_VERSION" --locked
+          cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
+          uv tool install "ruff==$RUFF_VERSION"
+          uv tool install "mustmatch==$MUSTMATCH_VERSION"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          tools/bootstrap-lint-tools >> "$GITHUB_PATH"
       - name: Canonical candidate gates
         run: |
           tools/bootstrap-lint-tools >> "$GITHUB_PATH"
@@ -574,7 +589,7 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: 3.12.3
-      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3
+      - uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a
         with:
           version: 0.8.0
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093

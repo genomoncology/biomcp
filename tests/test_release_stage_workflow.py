@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import yaml
 
@@ -60,14 +61,58 @@ def test_baseline_build_is_once_in_pinned_manylinux_and_never_publishes() -> Non
         assert forbidden not in stage_text
 
 
-def test_every_action_and_container_is_commit_or_digest_pinned() -> None:
+def _action_references(value: object) -> list[str]:
+    if isinstance(value, dict):
+        references = [str(value["uses"])] if "uses" in value else []
+        return references + [
+            reference for child in value.values() for reference in _action_references(child)
+        ]
+    if isinstance(value, list):
+        return [reference for child in value for reference in _action_references(child)]
+    return []
+
+
+def _is_immutable_action_reference(reference: str) -> bool:
+    return re.fullmatch(r"[^@\s]+@[0-9a-f]{40}", reference) is not None
+
+
+def test_action_pin_shape_rejects_symbolic_and_shortened_revisions() -> None:
+    assert not _is_immutable_action_reference("actions/checkout@v4")
+    assert not _is_immutable_action_reference(f"astral-sh/setup-uv@{'a' * 39}")
+    assert _is_immutable_action_reference(f"actions/checkout@{'a' * 40}")
+
+
+def test_every_workflow_action_and_release_container_is_immutably_pinned() -> None:
+    workflow_paths = sorted(
+        path
+        for path in (ROOT / ".github/workflows").iterdir()
+        if path.suffix in {".yml", ".yaml"}
+    )
+    for path in workflow_paths:
+        for action in _action_references(yaml.safe_load(path.read_text(encoding="utf-8"))):
+            assert _is_immutable_action_reference(action), (path.name, action)
     for line in _text().splitlines():
         stripped = line.strip()
-        if stripped.startswith("uses:"):
-            reference = stripped.rsplit("@", 1)[1]
-            assert len(reference) == 40 and all(char in "0123456789abcdef" for char in reference)
         if "container:" in stripped or stripped.startswith("MANYLINUX_"):
             assert "${{ matrix.container }}" in stripped or "@sha256:" in stripped
+
+
+def test_candidate_gate_installs_the_complete_pinned_canonical_toolset() -> None:
+    workflow = yaml.safe_load(_text())
+    candidate = workflow["jobs"]["candidate-gates"]
+    install = next(
+        step["run"]
+        for step in candidate["steps"]
+        if step.get("name") == "Install canonical gate tools"
+    )
+    for command in (
+        'sudo apt-get install --no-install-recommends "bubblewrap=$BUBBLEWRAP_VERSION"',
+        'cargo install cargo-nextest --version "$CARGO_NEXTEST_VERSION" --locked',
+        'cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked',
+        'uv tool install "ruff==$RUFF_VERSION"',
+        'uv tool install "mustmatch==$MUSTMATCH_VERSION"',
+    ):
+        assert command in install
 
 
 def test_five_platform_jobs_are_explicit_and_signing_is_protected() -> None:

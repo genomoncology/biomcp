@@ -36,7 +36,7 @@ jobs:
         with:
           python-version: 3.12.3
       - name: Install pinned uv
-        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3 # v4
+        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
         with:
           version: 0.8.0
       - name: Install pinned protoc

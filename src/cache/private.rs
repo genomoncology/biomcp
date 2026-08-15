@@ -74,18 +74,42 @@ pub(crate) fn open_managed_read(path: &Path) -> io::Result<File> {
     }
     #[cfg(windows)]
     {
-        use std::os::windows::fs::MetadataExt;
-        if opened.number_of_links() != 1 {
+        let links = windows_link_count(&file)?;
+        if links != 1 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                format!(
-                    "managed file has {} links: {path:?}",
-                    opened.number_of_links()
-                ),
+                format!("managed file has {links} links: {path:?}"),
             ));
         }
     }
     Ok(file)
+}
+
+#[cfg(windows)]
+fn windows_link_count(file: &File) -> io::Result<u32> {
+    use std::os::windows::io::AsRawHandle;
+
+    windows_link_count_from_handle(file.as_raw_handle() as windows_sys::Win32::Foundation::HANDLE)
+}
+
+#[cfg(windows)]
+fn windows_link_count_from_handle(
+    handle: windows_sys::Win32::Foundation::HANDLE,
+) -> io::Result<u32> {
+    use windows_sys::Win32::Storage::FileSystem::{
+        BY_HANDLE_FILE_INFORMATION, GetFileInformationByHandle,
+    };
+
+    let mut information = std::mem::MaybeUninit::<BY_HANDLE_FILE_INFORMATION>::zeroed();
+    // SAFETY: `information` points to writable storage for the duration of the
+    // call, and callers supply an opened handle. Windows reports invalid or
+    // unreadable handles by returning zero, which we convert to an error.
+    let succeeded = unsafe { GetFileInformationByHandle(handle, information.as_mut_ptr()) };
+    if succeeded == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    // SAFETY: a successful call initialized the complete structure.
+    Ok(unsafe { information.assume_init() }.nNumberOfLinks)
 }
 
 #[cfg(unix)]
@@ -140,16 +164,7 @@ fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
         return Ok(());
     }
     if metadata.is_file() {
-        let links = std::process::Command::new("fsutil.exe")
-            .args(["hardlink", "list"])
-            .arg(path)
-            .output()?;
-        if !links.status.success() || String::from_utf8_lossy(&links.stdout).lines().count() != 1 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("cannot verify one-link managed file: {}", path.display()),
-            ));
-        }
+        drop(open_managed_read(path)?);
     } else if metadata.is_dir() {
         if recurse {
             for entry in fs::read_dir(path)? {
@@ -177,4 +192,29 @@ fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
         .success()
         .then_some(())
         .ok_or_else(|| io::Error::other(format!("cannot secure: {path:?}")))
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+
+    #[test]
+    fn opened_managed_file_rejects_a_hard_link() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let file = root.path().join("managed");
+        fs::write(&file, b"fixture-only").expect("managed file");
+        fs::hard_link(&file, root.path().join("other-name")).expect("hard link");
+
+        assert_eq!(
+            open_managed_read(&file)
+                .expect_err("hard link must be rejected")
+                .kind(),
+            io::ErrorKind::InvalidInput
+        );
+    }
+
+    #[test]
+    fn unreadable_handle_metadata_fails_closed() {
+        assert!(windows_link_count_from_handle(std::ptr::null_mut()).is_err());
+    }
 }
