@@ -28,11 +28,11 @@ def check_privilege_state() -> None:
         raise SystemExit("offline privilege isolation failed: NoNewPrivs is not set")
 
 
-def create_ownership_sentinel() -> None:
+def create_ownership_sentinel() -> tuple[str, str] | None:
     path = os.environ.pop("BIOMCP_OFFLINE_OWNERSHIP_SENTINEL", None)
     token = os.environ.pop("BIOMCP_OFFLINE_OWNERSHIP_TOKEN", None)
     if path is None and token is None:
-        return
+        return None
     if not path or not token:
         raise SystemExit("offline ownership isolation failed: incomplete sentinel request")
     try:
@@ -42,7 +42,22 @@ def create_ownership_sentinel() -> None:
             0o600,
         )
         with os.fdopen(descriptor, "w", encoding="utf-8") as sentinel:
-            sentinel.write(token)
+            sentinel.write(f"started:{token}")
+            sentinel.flush()
+            os.fsync(sentinel.fileno())
+    except OSError as error:
+        raise SystemExit(f"offline ownership isolation failed: {error}") from error
+    return path, token
+
+
+def mark_ownership_sentinel_verified(ownership: tuple[str, str] | None) -> None:
+    if ownership is None:
+        return
+    path, token = ownership
+    try:
+        descriptor = os.open(path, os.O_WRONLY | os.O_TRUNC | os.O_NOFOLLOW)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as sentinel:
+            sentinel.write(f"verified:{token}")
             sentinel.flush()
             os.fsync(sentinel.fileno())
     except OSError as error:
@@ -122,6 +137,7 @@ def check_unix_socket() -> None:
 def main() -> int:
     if len(sys.argv) < 2:
         raise SystemExit("usage: check-offline-network COMMAND [ARG ...]")
+    ownership = create_ownership_sentinel()
     check_privilege_state()
     print(
         "offline privilege controls: uid/gid 0; capabilities zero; NoNewPrivs 1",
@@ -139,7 +155,12 @@ def main() -> int:
         "offline network controls: loopback TCP and Unix sockets available",
         flush=True,
     )
-    create_ownership_sentinel()
+    mark_ownership_sentinel_verified(ownership)
+    if ownership is not None:
+        print(
+            "offline network isolation: bubblewrap isolated user and network namespaces",
+            flush=True,
+        )
     os.execvp(sys.argv[1], sys.argv[1:])
     return 127
 

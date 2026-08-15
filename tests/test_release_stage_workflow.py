@@ -110,13 +110,51 @@ def test_candidate_gate_installs_the_complete_pinned_canonical_toolset() -> None
         if step.get("name") == "Install canonical gate tools"
     )
     for command in (
-        'sudo apt-get install --no-install-recommends "bubblewrap=$BUBBLEWRAP_VERSION"',
+        '"bubblewrap=$BUBBLEWRAP_VERSION"',
         'cargo install cargo-nextest --version "$CARGO_NEXTEST_VERSION" --locked',
         'cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked',
         'uv tool install "ruff==$RUFF_VERSION"',
         'uv tool install "mustmatch==$MUSTMATCH_VERSION"',
     ):
         assert command in install
+
+
+def test_candidate_gate_loads_scoped_apparmor_before_compilation() -> None:
+    text = _text()
+    workflow = yaml.safe_load(text)
+    candidate = workflow["jobs"]["candidate-gates"]
+    install = next(
+        step["run"]
+        for step in candidate["steps"]
+        if step.get("name") == "Install canonical gate tools"
+    )
+    assert "APPARMOR_VERSION: 4.0.1really4.0.1-0ubuntu0.24.04.7" in text
+    expected = (
+        '"apparmor=$APPARMOR_VERSION"',
+        '"apparmor-profiles=$APPARMOR_VERSION"',
+        "/usr/share/apparmor/extra-profiles/bwrap-userns-restrict",
+        "/etc/apparmor.d/bwrap-userns-restrict",
+        "apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict",
+        "sysctl -n kernel.apparmor_restrict_unprivileged_userns",
+        "tools/run-offline -- true",
+    )
+    for contract in expected:
+        assert contract in install
+
+    assert install.index("tools/run-offline -- true") < install.index(
+        "cargo install cargo-nextest"
+    )
+    gate_index = next(
+        index
+        for index, step in enumerate(candidate["steps"])
+        if step.get("name") == "Canonical candidate gates"
+    )
+    install_index = next(
+        index
+        for index, step in enumerate(candidate["steps"])
+        if step.get("name") == "Install canonical gate tools"
+    )
+    assert install_index < gate_index
 
 
 def test_five_platform_jobs_are_explicit_and_signing_is_protected() -> None:

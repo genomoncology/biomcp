@@ -39,6 +39,28 @@ def test_authoritative_linux_job_installs_pinned_bubblewrap() -> None:
     assert "make spec" in canonical
 
 
+def test_authoritative_linux_job_loads_scoped_apparmor_before_compilation() -> None:
+    canonical = WORKFLOW.split("  canonical-gates:\n", 1)[1].split(
+        "\n  full-features:", 1
+    )[0]
+    assert "APPARMOR_VERSION: 4.0.1really4.0.1-0ubuntu0.24.04.7" in WORKFLOW
+    expected = (
+        '"apparmor=$APPARMOR_VERSION"',
+        '"apparmor-profiles=$APPARMOR_VERSION"',
+        "/usr/share/apparmor/extra-profiles/bwrap-userns-restrict",
+        "/etc/apparmor.d/bwrap-userns-restrict",
+        "apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict",
+        "sysctl -n kernel.apparmor_restrict_unprivileged_userns",
+        "tools/run-offline -- true",
+    )
+    for contract in expected:
+        assert contract in canonical
+    assert canonical.index("tools/run-offline -- true") < canonical.index(
+        "cargo install cargo-nextest"
+    )
+    assert canonical.index("tools/run-offline -- true") < canonical.index("make lint")
+
+
 def test_offline_runner_maps_root_inside_an_isolated_user_namespace() -> None:
     runner = (ROOT / "tools/run-offline").read_text(encoding="utf-8")
     assert "--unshare-user" in runner
@@ -47,6 +69,114 @@ def test_offline_runner_maps_root_inside_an_isolated_user_namespace() -> None:
     assert "--unshare-net" in runner
     assert "BIOMCP_OFFLINE_OWNERSHIP_SENTINEL" in runner
     assert "BIOMCP_OFFLINE_OWNERSHIP_TOKEN" in runner
+
+
+def test_failed_bubblewrap_preserves_bootstrap_error_and_status(tmp_path: Path) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_bwrap = fake_bin / "bwrap"
+    fake_bwrap.write_text(
+        "#!/usr/bin/env bash\n"
+        'echo "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted" >&2\n'
+        "exit 23\n",
+        encoding="utf-8",
+    )
+    fake_bwrap.chmod(0o755)
+    sentinel_root = tmp_path / "sentinels"
+    sentinel_root.mkdir()
+    env = os.environ.copy()
+    env.pop("BIOMCP_OFFLINE_NETWORK", None)
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["TMPDIR"] = str(sentinel_root)
+
+    completed = subprocess.run(
+        [str(ROOT / "tools/run-offline"), "--", "true"],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=env,
+        timeout=20,
+    )
+
+    assert completed.returncode == 23
+    assert "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted" in completed.stdout
+    assert "offline sandbox bootstrap failed: verifier did not start" in completed.stdout
+    assert "offline ownership isolation failed" not in completed.stdout
+    assert "bubblewrap isolated user and network namespaces" not in completed.stdout
+    assert list(sentinel_root.iterdir()) == []
+
+
+def test_failed_verifier_preserves_isolation_error_and_status(tmp_path: Path) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_bwrap = fake_bin / "bwrap"
+    fake_bwrap.write_text(
+        "#!/usr/bin/env bash\n"
+        "while (($#)); do\n"
+        "  if [[ $1 == --setenv ]]; then\n"
+        "    [[ $2 == BIOMCP_OFFLINE_OWNERSHIP_SENTINEL ]] && sentinel=$3\n"
+        "    [[ $2 == BIOMCP_OFFLINE_OWNERSHIP_TOKEN ]] && token=$3\n"
+        "    shift 3\n"
+        "  else\n"
+        "    shift\n"
+        "  fi\n"
+        "done\n"
+        'printf "started:%s" "$token" > "$sentinel"\n'
+        'echo "offline privilege isolation failed: simulated verifier failure" >&2\n'
+        "exit 24\n",
+        encoding="utf-8",
+    )
+    fake_bwrap.chmod(0o755)
+    sentinel_root = tmp_path / "sentinels"
+    sentinel_root.mkdir()
+    env = os.environ.copy()
+    env.pop("BIOMCP_OFFLINE_NETWORK", None)
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["TMPDIR"] = str(sentinel_root)
+
+    completed = subprocess.run(
+        [str(ROOT / "tools/run-offline"), "--", "true"],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=env,
+        timeout=20,
+    )
+
+    assert completed.returncode == 24
+    assert "offline privilege isolation failed: simulated verifier failure" in completed.stdout
+    assert "offline sandbox verification failed before isolation completed" in completed.stdout
+    assert "offline ownership isolation failed" not in completed.stdout
+    assert "bubblewrap isolated user and network namespaces" not in completed.stdout
+    assert list(sentinel_root.iterdir()) == []
+
+
+def test_verifier_creates_bootstrap_sentinel_before_isolation_checks(
+    tmp_path: Path,
+) -> None:
+    sentinel = tmp_path / "started"
+    token = "early-verifier-proof"
+    env = os.environ.copy()
+    env["BIOMCP_OFFLINE_OWNERSHIP_SENTINEL"] = str(sentinel)
+    env["BIOMCP_OFFLINE_OWNERSHIP_TOKEN"] = token
+
+    subprocess.run(
+        [str(ROOT / "tools/check-offline-network"), "false"],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=env,
+        timeout=20,
+    )
+
+    assert sentinel.is_file()
+    assert token in sentinel.read_text(encoding="utf-8")
 
 
 @pytest.mark.skipif(platform.system() != "Linux", reason="Linux is authoritative")

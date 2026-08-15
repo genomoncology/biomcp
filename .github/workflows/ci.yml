@@ -19,6 +19,7 @@ env:
   MUSTMATCH_VERSION: 0.1.0
   PROTOC_VERSION: 28.3
   BUBBLEWRAP_VERSION: 0.9.0-1ubuntu0.1
+  APPARMOR_VERSION: 4.0.1really4.0.1-0ubuntu0.24.04.7
 
 jobs:
   canonical-gates:
@@ -47,7 +48,16 @@ jobs:
       - name: Install canonical gate tools
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends "bubblewrap=$BUBBLEWRAP_VERSION"
+          sudo apt-get install --no-install-recommends \
+            "bubblewrap=$BUBBLEWRAP_VERSION" \
+            "apparmor=$APPARMOR_VERSION" \
+            "apparmor-profiles=$APPARMOR_VERSION"
+          sudo install -m 0644 \
+            /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+            /etc/apparmor.d/bwrap-userns-restrict
+          sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+          test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
+          tools/run-offline -- true
           cargo install cargo-nextest --version "$CARGO_NEXTEST_VERSION" --locked
           cargo install cargo-deny --version "$CARGO_DENY_VERSION" --locked
           uv tool install "ruff==$RUFF_VERSION"
