@@ -39,6 +39,20 @@ def test_stage_binds_checkout_build_and_manifest_to_input_sha() -> None:
     assert "github.sha" not in text
 
 
+def test_full_history_release_checkouts_omit_unrelated_historical_blobs() -> None:
+    workflow = yaml.safe_load(_text())
+    full_history_checkouts = [
+        step
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        if step.get("uses", "").startswith("actions/checkout@")
+        and step.get("with", {}).get("fetch-depth") == 0
+    ]
+
+    assert len(full_history_checkouts) == 2
+    assert all(step["with"].get("filter") == "blob:none" for step in full_history_checkouts)
+
+
 def test_stage_runs_and_records_the_all_feature_candidate_gate() -> None:
     text = _text()
     assert "make full-feature-check" in text

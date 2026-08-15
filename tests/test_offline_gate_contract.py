@@ -8,6 +8,7 @@ import shutil
 import subprocess
 
 import pytest
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +40,27 @@ def test_authoritative_linux_job_installs_pinned_bubblewrap() -> None:
     assert '"ripgrep=$RIPGREP_VERSION"' in canonical
     assert "make test" in canonical
     assert "make spec" in canonical
+
+
+def test_authoritative_linux_job_fetches_release_history_for_version_contracts() -> None:
+    workflow = yaml.safe_load(WORKFLOW)
+    checkout = workflow["jobs"]["canonical-gates"]["steps"][0]
+
+    assert checkout["name"] == "Check out the exact revision"
+    assert checkout["with"]["fetch-depth"] == 0
+    assert checkout["with"]["filter"] == "blob:none"
+    full_history_checkouts = [
+        step
+        for job in workflow["jobs"].values()
+        for step in job.get("steps", [])
+        if step.get("uses", "").startswith("actions/checkout@")
+        and step.get("with", {}).get("fetch-depth") == 0
+    ]
+    assert len(full_history_checkouts) == 2
+    assert all(
+        step["with"].get("filter") == "blob:none"
+        for step in full_history_checkouts
+    )
 
 
 def test_authoritative_linux_job_loads_scoped_apparmor_before_compilation() -> None:
