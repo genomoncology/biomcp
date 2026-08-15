@@ -107,4 +107,6 @@ None.
   privilege/network proofs unchanged
 - Code review: accepted after strengthening the Windows managed-tree proof to
   require ordinary success followed by the exact hard-link rejection; reopened
-  after hosted Ubuntu exposed the missing scoped AppArmor setup
+  after hosted Ubuntu exposed the missing scoped AppArmor setup, then accepted
+  again after the exact pinned profile, preflight, sentinel state machine, and
+  direct plus wrapped isolation tests passed independently
