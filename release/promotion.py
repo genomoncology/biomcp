@@ -18,6 +18,7 @@ from candidate import (
     canonical_bytes,
     load_manifest,
     sha256_file,
+    validate_manifest,
 )
 
 REQUIRED_CREDENTIALS = (
@@ -35,6 +36,7 @@ class PromotionError(ValueError):
 
 
 def require_release_candidate(manifest: dict[str, Any]) -> None:
+    validate_manifest(manifest)
     if manifest["candidate_kind"] != "release":
         raise PromotionError("development candidate cannot enter promotion")
 
@@ -177,6 +179,7 @@ def legacy_updater_result(
 def validate_updater_transition(
     value: str, manifest: dict[str, Any], prior_records: list[dict[str, Any]]
 ) -> str:
+    require_release_candidate(manifest)
     _, result = normalize_updater_transition(value, manifest, prior_records)
     return result
 
@@ -478,6 +481,7 @@ def release_record(
     live_provider_results: dict[str, Any],
     formula_commit: str,
 ) -> dict[str, Any]:
+    require_release_candidate(manifest)
     if any(value != "passed" for value in public_results.values()):
         raise PromotionError("public verification is incomplete")
     return {
@@ -572,6 +576,7 @@ def main() -> int:
             )
         else:
             manifest = load_manifest(args.manifest)
+            require_release_candidate(manifest)
             inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
             public_results = json.loads(args.public_results.read_text(encoding="utf-8"))
             live_results = json.loads(

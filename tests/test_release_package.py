@@ -114,7 +114,10 @@ def test_development_wheel_uses_exact_pep440_identity(tmp_path: Path) -> None:
         False,
     )
 
-    inspection.inspect_wheel(wheel, "wheel-linux-x86_64", "0.9.0.dev1")
+    evidence = inspection.inspect_wheel(
+        wheel, "wheel-linux-x86_64", "0.9.0.dev1"
+    )
+    assert evidence["python_version"] == "0.9.0.dev1"
     with zipfile.ZipFile(wheel) as archive:
         metadata = archive.read("biomcp_cli-0.9.0.dev1.dist-info/METADATA")
     assert b"Version: 0.9.0.dev1\n" in metadata
@@ -284,6 +287,7 @@ def test_final_inspector_owns_complete_wheel_evidence(
     assert evidence["artifact_sha256"] == hashlib.sha256(wheel.read_bytes()).hexdigest()
     assert evidence["archive_members"] == 5
     assert evidence["executable_count"] == 2
+    assert evidence["python_version"] == "1.2.3"
     assert evidence["version_help_json_smoke"] is True
     assert evidence["platform"] == {"glibc_floor_checked": True}
     assert (

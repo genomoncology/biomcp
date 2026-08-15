@@ -244,6 +244,7 @@ def inspect_wheel(
         "executable_count": 2,
         "assembled_binary_sha256": hashlib.sha256(full).hexdigest(),
         "assembled_shim_sha256": hashlib.sha256(shim).hexdigest(),
+        "python_version": python_version,
         "shim_is_smaller": True,
         "inspected": True,
     }

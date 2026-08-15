@@ -60,7 +60,15 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
             "version": manifest["version"],
             "stage_run_id": manifest["stage_run_id"],
             "provenance": {"fixture": True},
-            "evidence": {"inspected": True, "binary_sha256": "e" * 64},
+            "evidence": {
+                "inspected": True,
+                "binary_sha256": "e" * 64,
+                **(
+                    {"python_version": manifest["python_version"]}
+                    if kind == "wheel"
+                    else {}
+                ),
+            },
         }
     manifest_path = root / "candidate-manifest.json"
     manifest_path.write_bytes(candidate.canonical_bytes(manifest))
@@ -71,28 +79,28 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
     return root, manifest_path, manifest, policy, policy_hash
 
 
+def _development_manifest(*, spoof_kind: bool = False) -> dict:
+    return {
+        "schema_version": 2,
+        "source_sha": "a" * 40,
+        "version": "0.9.0-dev.1",
+        "python_version": "0.9.0.dev1",
+        "candidate_kind": "release" if spoof_kind else "development",
+        "stage_run_id": "42",
+        "status": "complete",
+        "created_at": "2026-08-15T00:00:00Z",
+        "gates": {},
+        "pins": {"rust": "1.93.1"},
+        "signing_policy_sha256": None,
+        "artifacts": {},
+    }
+
+
 def test_preflight_rejects_development_before_other_inputs_or_artifacts(
     tmp_path: Path,
 ) -> None:
     manifest_path = tmp_path / "candidate-manifest.json"
-    manifest_path.write_text(
-        json.dumps(
-            {
-                "schema_version": 2,
-                "source_sha": "a" * 40,
-                "version": "0.9.0-dev.1",
-                "python_version": "0.9.0.dev1",
-                "candidate_kind": "development",
-                "stage_run_id": "42",
-                "status": "complete",
-                "created_at": "2026-08-15T00:00:00Z",
-                "gates": {},
-                "pins": {"rust": "1.93.1"},
-                "signing_policy_sha256": None,
-                "artifacts": {},
-            }
-        )
-    )
+    manifest_path.write_text(json.dumps(_development_manifest()))
 
     with pytest.raises(promotion.PromotionError, match="development candidate"):
         promotion.preflight(
@@ -106,6 +114,78 @@ def test_preflight_rejects_development_before_other_inputs_or_artifacts(
             updater_transition="not json",
             public_releases_path=tmp_path / "missing-public-releases",
         )
+
+
+@pytest.mark.parametrize("spoof_kind", [False, True])
+def test_updater_and_release_record_functions_validate_candidate_first(
+    spoof_kind: bool,
+) -> None:
+    manifest = _development_manifest(spoof_kind=spoof_kind)
+    expected = "version pair" if spoof_kind else "development candidate"
+
+    with pytest.raises((candidate.CandidateError, promotion.PromotionError), match=expected):
+        promotion.validate_updater_transition("not json", manifest, [])
+    with pytest.raises((candidate.CandidateError, promotion.PromotionError), match=expected):
+        promotion.release_record(
+            manifest,
+            {},
+            {"already": "failed"},
+            live_provider_results={"bad": None},
+            formula_commit="not-a-commit",
+        )
+
+
+@pytest.mark.parametrize(
+    ("command", "extra_arguments"),
+    [
+        ("validate-updater-transition", ["--record", "not json"]),
+        (
+            "release-record",
+            [
+                "--inventory",
+                "missing-inventory.json",
+                "--public-results",
+                "missing-public.json",
+                "--live-provider-results",
+                "missing-live.json",
+                "--formula-commit",
+                "not-a-commit",
+                "--output",
+                "release-record.json",
+            ],
+        ),
+    ],
+)
+@pytest.mark.parametrize("spoof_kind", [False, True])
+def test_all_promotion_commands_reject_development_before_other_inputs_or_output(
+    tmp_path: Path,
+    command: str,
+    extra_arguments: list[str],
+    spoof_kind: bool,
+) -> None:
+    manifest_path = tmp_path / "candidate-manifest.json"
+    manifest_path.write_text(
+        json.dumps(_development_manifest(spoof_kind=spoof_kind))
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "release/promotion.py"),
+            command,
+            "--manifest",
+            str(manifest_path),
+            *extra_arguments,
+        ],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert result.stdout == ""
+    expected = "version pair" if spoof_kind else "development candidate"
+    assert expected in result.stderr
+    assert not (tmp_path / "release-record.json").exists()
 
 
 def _manual_inputs(manifest: dict) -> tuple[str, str]:
@@ -415,7 +495,7 @@ def test_complete_public_verifier_rejects_missing_stale_and_wrong_identity(
         )
 
 
-def test_live_provider_and_one_time_legacy_updater_rules() -> None:
+def test_live_provider_and_one_time_legacy_updater_rules(tmp_path: Path) -> None:
     assert promotion.validate_live_provider_results(
         {
             "NCI": {"status": "unavailable", "reason": "planned maintenance"},
@@ -438,10 +518,11 @@ def test_live_provider_and_one_time_legacy_updater_rules() -> None:
             installer_upgrade_proved=True,
         )
 
+    _, _, updater_manifest, _, _ = _candidate(tmp_path)
     transition = json.dumps(
         {
-            "source_sha": "a" * 40,
-            "version": "0.9.0",
+            "source_sha": updater_manifest["source_sha"],
+            "version": updater_manifest["version"],
             "previous_version": "0.8.25",
             "legacy_update_result": "failed-without-changing-binary",
             "verified_installer_result": "passed",
@@ -450,11 +531,6 @@ def test_live_provider_and_one_time_legacy_updater_rules() -> None:
             "after_installer_sha256": "e" * 64,
         }
     )
-    updater_manifest = {
-        "source_sha": "a" * 40,
-        "version": "0.9.0",
-        "artifacts": {"native-linux-x86_64": {"evidence": {"binary_sha256": "e" * 64}}},
-    }
     assert promotion.validate_updater_transition(transition, updater_manifest, []) == (
         "legacy-updater-limit-from-v0.8.25"
     )

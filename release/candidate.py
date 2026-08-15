@@ -191,6 +191,11 @@ def validate_artifact(manifest: dict[str, Any], artifact_id: str, record: Any) -
         record.get("evidence"), dict
     ):
         raise CandidateError(f"artifact {artifact_id} lacks evidence")
+    if (
+        kind == "wheel"
+        and record["evidence"].get("python_version") != manifest["python_version"]
+    ):
+        raise CandidateError(f"artifact {artifact_id} has wrong python_version")
     if record["evidence"].get("fixture_only"):
         raise CandidateError(f"artifact {artifact_id} uses fixture-only evidence")
     upstream = record.get("upstream", {})

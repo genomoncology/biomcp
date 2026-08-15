@@ -52,6 +52,9 @@ def _manifest(tmp_path: Path) -> dict:
 
 def _record(manifest: dict, artifact_id: str, path: Path) -> dict:
     kind, target = candidate.ARTIFACTS[artifact_id]
+    evidence = {"inspected": True}
+    if kind == "wheel":
+        evidence["python_version"] = manifest["python_version"]
     return {
         "id": artifact_id,
         "kind": kind,
@@ -63,7 +66,7 @@ def _record(manifest: dict, artifact_id: str, path: Path) -> dict:
         "version": manifest["version"],
         "stage_run_id": manifest["stage_run_id"],
         "provenance": {"build_count": 1},
-        "evidence": {"inspected": True},
+        "evidence": evidence,
     }
 
 
@@ -167,6 +170,20 @@ def test_registration_rejects_unknown_rebuilt_tampered_and_fixture_artifacts(tmp
             {**record, "evidence": {"fixture_only": True}},
             artifact,
         )
+
+
+def test_registration_rejects_wheel_for_wrong_python_identity(tmp_path: Path) -> None:
+    repo, sha = _repo(tmp_path, "0.9.0-dev.1", "0.9.0.dev1")
+    manifest = candidate.init_manifest(
+        repo, sha, "42", {"rust": "1.93.1"}, require_main=False
+    )
+    artifact = tmp_path / "biomcp_cli-0.9.0.dev2-py3-none-manylinux.whl"
+    artifact.write_bytes(b"wrong Python wheel")
+    record = _record(manifest, "wheel-linux-x86_64", artifact)
+    record["evidence"]["python_version"] = "0.9.0.dev2"
+
+    with pytest.raises(candidate.CandidateError, match="wrong python_version"):
+        candidate.register_artifact(manifest, record, artifact)
 
 
 def test_finalize_requires_gates_and_exact_registered_set(tmp_path: Path) -> None:

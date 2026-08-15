@@ -101,4 +101,45 @@ def test_publish_script_rejects_unsupported_candidate_before_other_inputs(
         check=False,
     )
     assert result.returncode == 2
-    assert "publication requires a schema-2 release candidate" in result.stderr
+    assert "promotion:" in result.stderr
+
+
+def test_publish_script_fully_validates_before_other_inputs_or_effects(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "source_sha": "a" * 40,
+                "version": "0.9.0-dev.1",
+                "python_version": "0.9.0.dev1",
+                "candidate_kind": "release",
+                "stage_run_id": "42",
+                "status": "complete",
+                "created_at": "2026-08-15T00:00:00Z",
+                "gates": {},
+                "pins": {"rust": "1.93.1"},
+                "signing_policy_sha256": None,
+                "artifacts": {},
+            }
+        )
+    )
+    result = subprocess.run(
+        [
+            "bash",
+            str(ROOT / "release/publish-versioned.sh"),
+            str(manifest),
+            str(tmp_path / "missing-candidate"),
+            str(tmp_path / "missing-inventory"),
+        ],
+        cwd=tmp_path,
+        env={**os.environ, "RUNNER_TEMP": str(tmp_path)},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "candidate kind does not match its version pair" in result.stderr
+    assert list(tmp_path.iterdir()) == [manifest]

@@ -4,12 +4,8 @@ set -euo pipefail
 manifest="${1:?candidate manifest is required}"
 candidate_root="${2:?candidate root is required}"
 inventory="${3:?promotion inventory is required}"
-schema_version="$(jq -r '.schema_version // empty' "$manifest")"
-candidate_kind="$(jq -r '.candidate_kind // empty' "$manifest")"
-if [[ "$schema_version" != 2 || "$candidate_kind" != release ]]; then
-  printf 'publication requires a schema-2 release candidate\n' >&2
-  exit 2
-fi
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+python3 "$script_dir/promotion.py" require-release --manifest "$manifest"
 tap_repo="${BIOMCP_HOMEBREW_TAP_REPO:-genomoncology/homebrew-biomcp}"
 repo="${GITHUB_REPOSITORY:-genomoncology/biomcp}"
 
