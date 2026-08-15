@@ -10,6 +10,16 @@ repo="${GITHUB_REPOSITORY:-genomoncology/biomcp}"
 version="$(jq -er .version "$manifest")"
 source_sha="$(jq -er .source_sha "$manifest")"
 tag="v$version"
+notes_file="${RUNNER_TEMP:?}/release-notes-$version.md"
+
+jq -e '.manual_windows_desktop_smoke.result == "passed"
+  and (.updater_result | type == "string" and length > 0)
+  and (.updater_transition | type == "object")
+  and (.prior_public_release.tag_name | type == "string" and length > 1)
+  and (.public_release_inventory_sha256 | test("^[0-9a-f]{64}$"))' \
+  "$inventory" >/dev/null
+python3 release/release_notes.py --changelog CHANGELOG.md --version "$version" \
+  --output "$notes_file"
 
 existing_ref="$(git ls-remote --tags origin "refs/tags/$tag^{}" | cut -f1)"
 if [[ -z "$existing_ref" ]]; then
@@ -25,7 +35,7 @@ if [[ -z "$existing_ref" ]]; then
 fi
 if ! gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   gh release create "$tag" --repo "$repo" --verify-tag --latest=false \
-    --title "BioMCP $version" --generate-notes
+    --title "BioMCP $version" --notes-file "$notes_file"
 fi
 
 publish_github_file() {

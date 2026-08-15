@@ -150,6 +150,21 @@ jobs:
           python3 release/smoke.py --bin "target/$TARGET/release/biomcp" \
             --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
           tools/check-png-artifact "target/$TARGET/release/biomcp"
+      - name: Install and smoke both private wheel commands
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          wheel="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          wheel_env="${RUNNER_TEMP:?}/wheel-smoke-$TARGET"
+          python3 -m venv "$wheel_env"
+          "$wheel_env/bin/python" -m pip install --no-index "$wheel"
+          wheel_bin="$wheel_env/bin"
+          python3 release/smoke.py --bin "$wheel_bin/biomcp" \
+            --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
+          python3 release/smoke.py --bin "$wheel_bin/biomcp-cli" \
+            --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ matrix.slug }}-${{ github.run_id }}
@@ -198,6 +213,26 @@ jobs:
           VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
           python release/build_target.py --target "$TARGET" --source-sha "$SOURCE_SHA" \
             --version "$VERSION" --run-id "$RUN_ID" --dist dist
+      - name: Install and smoke both private wheel commands
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          wheel="$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          wheel_env="${RUNNER_TEMP:?}/wheel-smoke-$TARGET"
+          python -m venv "$wheel_env"
+          if [[ "$RUNNER_OS" = Windows ]]; then
+            wheel_bin="$wheel_env/Scripts"
+          else
+            wheel_bin="$wheel_env/bin"
+          fi
+          "$wheel_bin/python" -m pip install --no-index "$wheel"
+          python release/smoke.py --bin "$wheel_bin/biomcp" \
+            --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
+          python release/smoke.py --bin "$wheel_bin/biomcp-cli" \
+            --version "$VERSION" --revision "${SOURCE_SHA:0:8}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ matrix.slug }}-${{ github.run_id }}
@@ -561,11 +596,18 @@ jobs:
           BIOMCP_HOMEBREW_TAP_TOKEN: ${{ secrets.BIOMCP_HOMEBREW_TAP_TOKEN }}
           POLICY_SHA256: ${{ secrets.BIOMCP_SIGNING_POLICY_SHA256 }}
           STAGE_RUN_ID: ${{ inputs.stage_run_id }}
+          WINDOWS_DESKTOP_SMOKE: ${{ inputs.windows_desktop_smoke }}
+          UPDATER_TRANSITION: ${{ inputs.updater_transition }}
         run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" | \
+            jq -s 'add' > public-releases.json
           python3 release/promotion.py preflight \
             --manifest "candidate/sealed-candidate-$STAGE_RUN_ID/candidate-manifest.json" \
             --candidate-root candidate --stage-run-id "$STAGE_RUN_ID" \
             --policy release/signing-policy.json --protected-policy-sha256 "$POLICY_SHA256" \
+            --windows-desktop-smoke "$WINDOWS_DESKTOP_SMOKE" \
+            --updater-transition "$UPDATER_TRANSITION" \
+            --public-releases public-releases.json \
             --require-credentials --output promotion-inventory.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -833,19 +875,11 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: formula-commit-${{ github.run_id }}
-      - name: Require manual desktop proof and live provider contracts
-        env:
-          WINDOWS_DESKTOP_SMOKE: ${{ inputs.windows_desktop_smoke }}
+      - name: Require live provider contracts
         run: |
-          mcpb_hash="$(jq -r '.artifacts.mcpb.sha256' sealed/candidate-manifest.json)"
-          python3 release/promotion.py validate-manual-smoke --record "$WINDOWS_DESKTOP_SMOKE" \
-            --source-sha "${{ inputs.source_sha }}" --mcpb-sha256 "$mcpb_hash"
           make verify
           printf '{"live-provider-contracts":{"status":"passed"}}\n' > live-provider-results.json
       - name: Verify public installer and create the immutable final record
-        env:
-          WINDOWS_DESKTOP_SMOKE: ${{ inputs.windows_desktop_smoke }}
-          UPDATER_TRANSITION: ${{ inputs.updater_transition }}
         run: |
           bash scripts/verify-public-installer.sh
           mapfile -t proof_files < <(find public-proof -type f -name '*.json')
@@ -856,13 +890,11 @@ jobs:
           install_root="$(mktemp -d)"
           BIOMCP_INSTALL_DIR="$install_root" bash install.sh --version "$version"
           "$install_root/biomcp" --version
-          updater_result="$(python3 release/promotion.py validate-updater-transition \
-            --record "$UPDATER_TRANSITION" --manifest sealed/candidate-manifest.json)"
           python3 release/promotion.py release-record \
             --manifest sealed/candidate-manifest.json --inventory promotion-inventory.json \
-            --public-results public-results.json --manual-smoke "$WINDOWS_DESKTOP_SMOKE" \
+            --public-results public-results.json \
             --live-provider-results live-provider-results.json \
-            --formula-commit "$(cat formula-commit.txt)" --updater-result "$updater_result" \
+            --formula-commit "$(cat formula-commit.txt)" \
             --output "release-record-$version.json"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

@@ -19,6 +19,7 @@ def _module(name: str, relative: str):
 
 candidate = _module("candidate", "release/candidate.py")
 package = _module("package", "release/package.py")
+inspection = _module("release_inspection", "release/inspect.py")
 targets = _module("release_targets", "release/build_target.py")
 
 
@@ -37,14 +38,23 @@ def test_target_registry_is_exactly_five_native_and_wheel_pairs() -> None:
 
 
 def test_linux_tags_and_archive_names_preserve_installer_contract() -> None:
-    assert targets.TARGETS["x86_64-unknown-linux-gnu"]["archive"] == "biomcp-linux-x86_64.tar.gz"
-    assert targets.TARGETS["aarch64-unknown-linux-gnu"]["wheel"] == "manylinux_2_28_aarch64"
-    assert targets.TARGETS["x86_64-pc-windows-msvc"]["archive"] == "biomcp-windows-x86_64.zip"
+    assert (
+        targets.TARGETS["x86_64-unknown-linux-gnu"]["archive"]
+        == "biomcp-linux-x86_64.tar.gz"
+    )
+    assert (
+        targets.TARGETS["aarch64-unknown-linux-gnu"]["wheel"]
+        == "manylinux_2_28_aarch64"
+    )
+    assert (
+        targets.TARGETS["x86_64-pc-windows-msvc"]["archive"]
+        == "biomcp-windows-x86_64.zip"
+    )
 
 
 def test_glibc_inspection_accepts_floor_and_rejects_newer_import() -> None:
-    assert targets.max_glibc_version("Name: GLIBC_2.17 Name: GLIBC_2.28") == (2, 28)
-    assert targets.max_glibc_version("Name: GLIBC_2.9 Name: GLIBC_2.3") == (2, 9)
+    assert inspection.max_glibc_version("Name: GLIBC_2.17 Name: GLIBC_2.28") == (2, 28)
+    assert inspection.max_glibc_version("Name: GLIBC_2.9 Name: GLIBC_2.3") == (2, 9)
 
 
 def test_sbom_is_deterministic_and_binds_source(tmp_path: Path) -> None:
@@ -61,3 +71,8 @@ def test_sbom_is_deterministic_and_binds_source(tmp_path: Path) -> None:
     value = json.loads(first.read_text())
     assert value["metadata"]["source_sha"] == "a" * 40
     assert [item["name"] for item in value["components"]] == ["a", "z"]
+
+
+def test_release_target_build_uses_the_canonical_identity_wrapper() -> None:
+    source = (ROOT / "release/build_target.py").read_text(encoding="utf-8")
+    assert 'str(args.repo / "tools/with-build-identity")' in source

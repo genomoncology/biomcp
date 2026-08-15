@@ -31,15 +31,22 @@ def smoke(binary: Path, expected_version: str, expected_revision: str) -> None:
         (["--json", "list"], True),
         (["--json", "not-a-command"], False),
     ):
-        result = subprocess.run([binary, *arguments], text=True, capture_output=True, check=False)
+        result = subprocess.run(
+            [binary, *arguments], text=True, capture_output=True, check=False
+        )
         if (result.returncode == 0) != expected_success:
             raise SmokeError(f"unexpected exit for {' '.join(arguments)}")
         if arguments[0] == "--json":
             json.loads(result.stdout)
-    version = subprocess.run(
+    version_result = subprocess.run(
         [binary, "--json", "version"], text=True, capture_output=True, check=True
-    ).stdout
-    if expected_version not in version or expected_revision not in version:
+    )
+    identity = json.loads(version_result.stdout)
+    if (
+        not isinstance(identity, dict)
+        or identity.get("version") != f"{expected_version}+g{expected_revision}"
+        or identity.get("git_revision") != expected_revision
+    ):
         raise SmokeError("release identity mismatch")
     process = subprocess.Popen(
         [binary, "serve"],
@@ -66,7 +73,9 @@ def smoke(binary: Path, expected_version: str, expected_revision: str) -> None:
             raise SmokeError("MCP initialize failed")
         assert process.stdin is not None
         process.stdin.write(
-            json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+            json.dumps(
+                {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
+            )
             + "\n"
         )
         process.stdin.flush()
@@ -93,7 +102,12 @@ def main() -> int:
     try:
         smoke(args.bin, args.version, args.revision)
         return 0
-    except (OSError, SmokeError, json.JSONDecodeError, subprocess.SubprocessError) as error:
+    except (
+        OSError,
+        SmokeError,
+        json.JSONDecodeError,
+        subprocess.SubprocessError,
+    ) as error:
         print(f"release smoke: {error}", file=sys.stderr)
         return 2
 

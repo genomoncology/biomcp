@@ -12,7 +12,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from candidate import FINAL_ARTIFACTS, CandidateError, canonical_bytes, load_manifest, sha256_file
+from candidate import (
+    FINAL_ARTIFACTS,
+    CandidateError,
+    canonical_bytes,
+    load_manifest,
+    sha256_file,
+)
 
 REQUIRED_CREDENTIALS = (
     "GH_TOKEN",
@@ -29,13 +35,21 @@ class PromotionError(ValueError):
 
 
 def _unique_file(root: Path, filename: str) -> Path:
-    matches = [path for path in root.rglob(filename) if path.is_file() and not path.is_symlink()]
+    matches = [
+        path
+        for path in root.rglob(filename)
+        if path.is_file() and not path.is_symlink()
+    ]
     if len(matches) != 1:
-        raise PromotionError(f"expected one private candidate file named {filename}, found {len(matches)}")
+        raise PromotionError(
+            f"expected one private candidate file named {filename}, found {len(matches)}"
+        )
     return matches[0]
 
 
-def validate_manual_smoke(value: str, source_sha: str, mcpb_sha256: str) -> dict[str, str]:
+def validate_manual_smoke(
+    value: str, source_sha: str, mcpb_sha256: str
+) -> dict[str, str]:
     try:
         record = json.loads(value)
     except json.JSONDecodeError as error:
@@ -51,9 +65,16 @@ def validate_manual_smoke(value: str, source_sha: str, mcpb_sha256: str) -> dict
             raise PromotionError(f"Windows desktop smoke has wrong {key}")
     if record.get("os") not in {"Windows 10", "Windows 11"}:
         raise PromotionError("Windows desktop smoke requires Windows 10 or 11")
-    if not isinstance(record.get("performed_by"), str) or not record["performed_by"].strip():
+    if (
+        not isinstance(record.get("performed_by"), str)
+        or not record["performed_by"].strip()
+    ):
         raise PromotionError("Windows desktop smoke lacks performer")
-    return record
+    return {
+        **expected,
+        "os": record["os"],
+        "performed_by": record["performed_by"].strip(),
+    }
 
 
 def verify_public_snapshot(
@@ -79,9 +100,9 @@ def verify_public_snapshot(
         record = manifest["artifacts"][artifact_id]
         endpoint = public[artifact_id]
         channel = endpoint.get("channel")
-        if channel not in PUBLIC_CHANNELS or artifact_id not in inventory["channels"].get(
-            channel, []
-        ):
+        if channel not in PUBLIC_CHANNELS or artifact_id not in inventory[
+            "channels"
+        ].get(channel, []):
             raise PromotionError(f"public channel mismatch: {artifact_id}")
         expected_identity = {
             "filename": record["filename"],
@@ -100,7 +121,9 @@ def verify_public_snapshot(
         except Exception as error:
             raise PromotionError(f"public download failed: {artifact_id}") from error
         if not isinstance(data, bytes):
-            raise PromotionError(f"public downloader returned invalid bytes: {artifact_id}")
+            raise PromotionError(
+                f"public downloader returned invalid bytes: {artifact_id}"
+            )
         digest = hashlib.sha256(data).hexdigest()
         if digest != record["sha256"] or len(data) != record["bytes"]:
             raise PromotionError(f"public byte mismatch: {artifact_id}")
@@ -114,7 +137,11 @@ def validate_live_provider_results(value: dict[str, Any]) -> list[dict[str, str]
         status = result.get("status") if isinstance(result, dict) else None
         if status == "passed":
             continue
-        if status == "unavailable" and isinstance(result.get("reason"), str) and result["reason"]:
+        if (
+            status == "unavailable"
+            and isinstance(result.get("reason"), str)
+            and result["reason"]
+        ):
             limitations.append({"provider": provider, "reason": result["reason"]})
             continue
         raise PromotionError(f"live provider contract failed: {provider}")
@@ -145,6 +172,13 @@ def legacy_updater_result(
 def validate_updater_transition(
     value: str, manifest: dict[str, Any], prior_records: list[dict[str, Any]]
 ) -> str:
+    _, result = normalize_updater_transition(value, manifest, prior_records)
+    return result
+
+
+def normalize_updater_transition(
+    value: str, manifest: dict[str, Any], prior_records: list[dict[str, Any]]
+) -> tuple[dict[str, Any], str]:
     try:
         record = json.loads(value)
     except json.JSONDecodeError as error:
@@ -179,22 +213,83 @@ def validate_updater_transition(
             raise PromotionError("legacy updater failure proof is incomplete")
         if hashes["after_update_sha256"] != hashes["before_sha256"]:
             raise PromotionError("legacy updater changed the installed executable")
-        return legacy_updater_result(
+        result = legacy_updater_result(
             previous,
             prior_records,
             legacy_limit_proved=True,
-            installer_upgrade_proved=record.get("verified_installer_result") == "passed",
+            installer_upgrade_proved=record.get("verified_installer_result")
+            == "passed",
         )
+        return {
+            "source_sha": record["source_sha"],
+            "version": record["version"],
+            "previous_version": previous,
+            "legacy_update_result": record["legacy_update_result"],
+            "verified_installer_result": record["verified_installer_result"],
+            **hashes,
+        }, result
     if record.get("self_update_result") != "passed":
         raise PromotionError("previous-version self-update proof is incomplete")
     if hashes["after_update_sha256"] != expected_new_hash:
         raise PromotionError("self-update produced the wrong executable")
-    return legacy_updater_result(
+    result = legacy_updater_result(
         previous,
         prior_records,
         legacy_limit_proved=False,
         installer_upgrade_proved=True,
     )
+    return {
+        "source_sha": record["source_sha"],
+        "version": record["version"],
+        "previous_version": previous,
+        "self_update_result": record["self_update_result"],
+        **hashes,
+    }, result
+
+
+def validate_prior_public_release(
+    path: Path, previous_version: str, candidate_version: str
+) -> dict[str, Any]:
+    try:
+        releases = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise PromotionError(
+            "public release inventory is absent or malformed"
+        ) from error
+    if not isinstance(releases, list):
+        raise PromotionError("public release inventory must be a list")
+    public = [
+        release
+        for release in releases
+        if isinstance(release, dict)
+        and release.get("draft") is False
+        and release.get("prerelease") is False
+        and isinstance(release.get("published_at"), str)
+        and release["published_at"]
+    ]
+    if any(release.get("tag_name") == f"v{candidate_version}" for release in public):
+        raise PromotionError("candidate version is already a public release")
+    if not public:
+        raise PromotionError("public release inventory contains no stable release")
+    latest = max(public, key=lambda release: release["published_at"])
+    expected_tag = f"v{previous_version}"
+    if latest.get("tag_name") != expected_tag:
+        raise PromotionError(
+            f"{previous_version} is not the actual prior public release"
+        )
+    if (
+        not isinstance(latest.get("id"), int)
+        or not isinstance(latest.get("html_url"), str)
+        or latest["html_url"]
+        != f"https://github.com/genomoncology/biomcp/releases/tag/{expected_tag}"
+    ):
+        raise PromotionError("actual prior public release identity is incomplete")
+    return {
+        "id": latest["id"],
+        "tag_name": expected_tag,
+        "published_at": latest["published_at"],
+        "html_url": latest["html_url"],
+    }
 
 
 def preflight(
@@ -205,15 +300,24 @@ def preflight(
     protected_policy_hash: str,
     *,
     require_credentials: bool,
+    windows_desktop_smoke: str,
+    updater_transition: str,
+    public_releases_path: Path,
 ) -> dict[str, Any]:
     manifest = load_manifest(manifest_path)
-    if manifest["status"] != "complete" or set(manifest["artifacts"]) != FINAL_ARTIFACTS:
+    if (
+        manifest["status"] != "complete"
+        or set(manifest["artifacts"]) != FINAL_ARTIFACTS
+    ):
         raise PromotionError("promotion requires one complete final candidate")
     if manifest["stage_run_id"] != stage_run_id:
         raise PromotionError("stage run ID does not match candidate")
     checksum_path = manifest_path.with_suffix(manifest_path.suffix + ".sha256")
     expected_line = f"{sha256_file(manifest_path)}  {manifest_path.name}"
-    if not checksum_path.is_file() or checksum_path.read_text(encoding="utf-8").strip() != expected_line:
+    if (
+        not checksum_path.is_file()
+        or checksum_path.read_text(encoding="utf-8").strip() != expected_line
+    ):
         raise PromotionError("candidate manifest checksum is absent or invalid")
     actual_policy_hash = sha256_file(policy_path)
     if (
@@ -224,7 +328,10 @@ def preflight(
     files: dict[str, str] = {}
     for artifact_id, record in manifest["artifacts"].items():
         path = _unique_file(candidate_root, record["filename"])
-        if sha256_file(path) != record["sha256"] or path.stat().st_size != record["bytes"]:
+        if (
+            sha256_file(path) != record["sha256"]
+            or path.stat().st_size != record["bytes"]
+        ):
             raise PromotionError(f"private candidate bytes changed: {artifact_id}")
         files[artifact_id] = str(path.relative_to(candidate_root))
     if require_credentials:
@@ -232,6 +339,19 @@ def preflight(
         if missing:
             raise PromotionError(f"missing promotion credentials: {', '.join(missing)}")
     version = manifest["version"]
+    manual_smoke = validate_manual_smoke(
+        windows_desktop_smoke,
+        manifest["source_sha"],
+        manifest["artifacts"]["mcpb"]["sha256"],
+    )
+    normalized_updater, updater_result = normalize_updater_transition(
+        updater_transition, manifest, []
+    )
+    prior_public_release = validate_prior_public_release(
+        public_releases_path,
+        normalized_updater["previous_version"],
+        manifest["version"],
+    )
     github_ids = sorted(
         artifact_id
         for artifact_id, record in manifest["artifacts"].items()
@@ -246,6 +366,11 @@ def preflight(
         "manifest_sha256": sha256_file(manifest_path),
         "signing_policy_sha256": actual_policy_hash,
         "files": files,
+        "manual_windows_desktop_smoke": manual_smoke,
+        "updater_transition": normalized_updater,
+        "updater_result": updater_result,
+        "prior_public_release": prior_public_release,
+        "public_release_inventory_sha256": sha256_file(public_releases_path),
         "channels": {
             "github": github_ids,
             "pypi": sorted(
@@ -311,19 +436,30 @@ def fixture_transaction(
             for artifact_id in artifact_ids:
                 record = manifest["artifacts"][artifact_id]
                 source = candidate_root / inventory["files"][artifact_id]
-                result = registry.publish(channel, inventory["version"], record["filename"], source)
-                writes.append({"channel": channel, "artifact": artifact_id, "result": result})
+                result = registry.publish(
+                    channel, inventory["version"], record["filename"], source
+                )
+                writes.append(
+                    {"channel": channel, "artifact": artifact_id, "result": result}
+                )
                 count += 1
                 if fail_after is not None and count == fail_after:
                     raise PromotionError("injected publication failure")
         for channel, artifact_ids in inventory["channels"].items():
             for artifact_id in artifact_ids:
                 record = manifest["artifacts"][artifact_id]
-                registry.verify(channel, inventory["version"], record["filename"], record["sha256"])
+                registry.verify(
+                    channel, inventory["version"], record["filename"], record["sha256"]
+                )
         registry.advance("latest", inventory["version"])
         return {"status": "complete", "writes": writes, **inventory}
     except PromotionError as error:
-        record = {"status": "partial", "error": str(error), "writes": writes, **inventory}
+        record = {
+            "status": "partial",
+            "error": str(error),
+            "writes": writes,
+            **inventory,
+        }
         registry.partial_record(inventory["version"], inventory["stage_run_id"], record)
         raise
 
@@ -333,10 +469,8 @@ def release_record(
     inventory: dict[str, Any],
     public_results: dict[str, Any],
     *,
-    manual_smoke: dict[str, str],
     live_provider_results: dict[str, Any],
     formula_commit: str,
-    updater_result: str,
 ) -> dict[str, Any]:
     if any(value != "passed" for value in public_results.values()):
         raise PromotionError("public verification is incomplete")
@@ -358,13 +492,20 @@ def release_record(
             for key, value in manifest["artifacts"].items()
         },
         "public_results": public_results,
-        "manual_windows_desktop_smoke": manual_smoke,
+        "manual_windows_desktop_smoke": inventory["manual_windows_desktop_smoke"],
+        "updater_transition": inventory["updater_transition"],
+        "prior_public_release": inventory["prior_public_release"],
+        "public_release_inventory_sha256": inventory["public_release_inventory_sha256"],
         "formula_commit": formula_commit,
-        "updater_result": updater_result,
+        "updater_result": inventory["updater_result"],
         "waivers": (
-            [updater_result] if updater_result == "legacy-updater-limit-from-v0.8.25" else []
+            [inventory["updater_result"]]
+            if inventory["updater_result"] == "legacy-updater-limit-from-v0.8.25"
+            else []
         ),
-        "live_provider_limitations": validate_live_provider_results(live_provider_results),
+        "live_provider_limitations": validate_live_provider_results(
+            live_provider_results
+        ),
     }
 
 
@@ -378,6 +519,9 @@ def main() -> int:
     preflight_command.add_argument("--policy", type=Path, required=True)
     preflight_command.add_argument("--protected-policy-sha256", required=True)
     preflight_command.add_argument("--output", type=Path, required=True)
+    preflight_command.add_argument("--windows-desktop-smoke", required=True)
+    preflight_command.add_argument("--updater-transition", required=True)
+    preflight_command.add_argument("--public-releases", type=Path, required=True)
     preflight_command.add_argument("--require-credentials", action="store_true")
     manual = commands.add_parser("validate-manual-smoke")
     manual.add_argument("--record", required=True)
@@ -390,10 +534,8 @@ def main() -> int:
     record.add_argument("--manifest", type=Path, required=True)
     record.add_argument("--inventory", type=Path, required=True)
     record.add_argument("--public-results", type=Path, required=True)
-    record.add_argument("--manual-smoke", required=True)
     record.add_argument("--live-provider-results", type=Path, required=True)
     record.add_argument("--formula-commit", required=True)
-    record.add_argument("--updater-result", required=True)
     record.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -405,30 +547,32 @@ def main() -> int:
                 args.policy,
                 args.protected_policy_sha256,
                 require_credentials=args.require_credentials,
+                windows_desktop_smoke=args.windows_desktop_smoke,
+                updater_transition=args.updater_transition,
+                public_releases_path=args.public_releases,
             )
             args.output.write_bytes(canonical_bytes(inventory))
         elif args.command == "validate-manual-smoke":
             validate_manual_smoke(args.record, args.source_sha, args.mcpb_sha256)
         elif args.command == "validate-updater-transition":
-            print(validate_updater_transition(args.record, load_manifest(args.manifest), []))
+            print(
+                validate_updater_transition(
+                    args.record, load_manifest(args.manifest), []
+                )
+            )
         else:
             manifest = load_manifest(args.manifest)
             inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
             public_results = json.loads(args.public_results.read_text(encoding="utf-8"))
-            live_results = json.loads(args.live_provider_results.read_text(encoding="utf-8"))
-            manual_value = validate_manual_smoke(
-                args.manual_smoke,
-                manifest["source_sha"],
-                manifest["artifacts"]["mcpb"]["sha256"],
+            live_results = json.loads(
+                args.live_provider_results.read_text(encoding="utf-8")
             )
             value = release_record(
                 manifest,
                 inventory,
                 public_results,
-                manual_smoke=manual_value,
                 live_provider_results=live_results,
                 formula_commit=args.formula_commit,
-                updater_result=args.updater_result,
             )
             args.output.write_bytes(canonical_bytes(value))
             args.output.with_suffix(args.output.suffix + ".sha256").write_text(

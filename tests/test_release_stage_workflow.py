@@ -32,7 +32,7 @@ def test_stage_and_protected_promotion_are_the_only_callable_modes() -> None:
 def test_stage_binds_checkout_build_and_manifest_to_input_sha() -> None:
     text = _text()
     assert text.count("ref: ${{ inputs.source_sha }}") >= 3
-    assert "git merge-base --is-ancestor \"$SOURCE_SHA\" origin/main" in text
+    assert 'git merge-base --is-ancestor "$SOURCE_SHA" origin/main' in text
     assert "release/candidate.py init" in text
     assert "release/candidate.py register" in text
     assert "release/candidate.py finalize" in text
@@ -65,7 +65,9 @@ def _action_references(value: object) -> list[str]:
     if isinstance(value, dict):
         references = [str(value["uses"])] if "uses" in value else []
         return references + [
-            reference for child in value.values() for reference in _action_references(child)
+            reference
+            for child in value.values()
+            for reference in _action_references(child)
         ]
     if isinstance(value, list):
         return [reference for child in value for reference in _action_references(child)]
@@ -89,7 +91,9 @@ def test_every_workflow_action_and_release_container_is_immutably_pinned() -> No
         if path.suffix in {".yml", ".yaml"}
     )
     for path in workflow_paths:
-        for action in _action_references(yaml.safe_load(path.read_text(encoding="utf-8"))):
+        for action in _action_references(
+            yaml.safe_load(path.read_text(encoding="utf-8"))
+        ):
             assert _is_immutable_action_reference(action), (path.name, action)
     for line in _text().splitlines():
         stripped = line.strip()
@@ -129,7 +133,56 @@ def test_five_platform_jobs_are_explicit_and_signing_is_protected() -> None:
     ):
         assert value in text
     assert "environment: biomcp-release-signing" in text
-    assert "BIOMCP_SIGNING_POLICY_SHA256: ${{ secrets.BIOMCP_SIGNING_POLICY_SHA256 }}" in text
+    assert (
+        "BIOMCP_SIGNING_POLICY_SHA256: ${{ secrets.BIOMCP_SIGNING_POLICY_SHA256 }}"
+        in text
+    )
+
+
+def test_all_five_private_wheels_install_and_smoke_both_commands_before_sealing() -> (
+    None
+):
+    workflow = yaml.safe_load(_text())
+    jobs = workflow["jobs"]
+    expected_counts = {"linux-artifacts": 2, "signed-artifacts": 3}
+    for job_name, target_count in expected_counts.items():
+        job = jobs[job_name]
+        assert len(job["strategy"]["matrix"]["include"]) == target_count
+        names = [step.get("name") for step in job["steps"]]
+        smoke_index = names.index("Install and smoke both private wheel commands")
+        upload_index = next(
+            index
+            for index, step in enumerate(job["steps"])
+            if str(step.get("uses", "")).startswith("actions/upload-artifact@")
+        )
+        assert smoke_index < upload_index
+        smoke = job["steps"][smoke_index]["run"]
+        assert "pip install --no-index" in smoke
+        assert 'release/smoke.py --bin "$wheel_bin/biomcp"' in smoke
+        assert 'release/smoke.py --bin "$wheel_bin/biomcp-cli"' in smoke
+    assert {"linux-artifacts", "signed-artifacts"} <= set(
+        jobs["seal-candidate"]["needs"]
+    )
+
+
+def test_manual_promotion_inputs_are_validated_once_before_publication() -> None:
+    workflow = yaml.safe_load(_text())
+    jobs = workflow["jobs"]
+    preflight = yaml.safe_dump(jobs["promotion-preflight"])
+    publish = yaml.safe_dump(jobs["publish-versioned"])
+    reconcile = yaml.safe_dump(jobs["reconcile-public-release"])
+    assert "--windows-desktop-smoke" in preflight
+    assert "--updater-transition" in preflight
+    assert "--public-releases" in preflight
+    assert "gh api --paginate" in preflight
+    assert "inputs.windows_desktop_smoke" in preflight
+    assert "inputs.updater_transition" in preflight
+    assert "inputs.windows_desktop_smoke" not in publish
+    assert "inputs.updater_transition" not in publish
+    assert "inputs.windows_desktop_smoke" not in reconcile
+    assert "inputs.updater_transition" not in reconcile
+    assert "promotion-inventory.json" in publish
+    assert "promotion-inventory.json" in reconcile
 
 
 def test_container_consumes_both_registered_linux_archives_without_push() -> None:

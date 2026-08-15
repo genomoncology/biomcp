@@ -53,51 +53,12 @@ class BuildError(ValueError):
 
 
 def _run(arguments: list[str], *, env: dict[str, str] | None = None) -> str:
-    result = subprocess.run(arguments, text=True, capture_output=True, env=env, check=False)
+    result = subprocess.run(
+        arguments, text=True, capture_output=True, env=env, check=False
+    )
     if result.returncode:
         raise BuildError(result.stderr.strip() or f"command failed: {arguments[0]}")
     return result.stdout
-
-
-def max_glibc_version(readelf_output: str) -> tuple[int, int]:
-    versions = [
-        tuple(map(int, match.groups()))
-        for match in re.finditer(r"GLIBC_([0-9]+)\.([0-9]+)", readelf_output)
-    ]
-    return max(versions, default=(0, 0))
-
-
-def platform_evidence(binary: Path, target: str) -> dict[str, object]:
-    settings = TARGETS[target]
-    if settings["os"] == "linux":
-        output = _run(["readelf", "--version-info", str(binary)])
-        maximum = max_glibc_version(output)
-        if maximum > (2, 28):
-            raise BuildError(f"binary imports GLIBC_{maximum[0]}.{maximum[1]} above 2.28")
-        return {"glibc_max": f"{maximum[0]}.{maximum[1]}", "glibc_floor_checked": True}
-    if settings["os"] == "macos":
-        output = _run(["otool", "-l", str(binary)])
-        versions = [
-            tuple(map(int, match.groups()))
-            for match in re.finditer(r"\bminos\s+([0-9]+)\.([0-9]+)", output)
-        ]
-        if not versions or max(versions) > (14, 0):
-            raise BuildError("Mach-O deployment target is absent or above macOS 14.0")
-        architectures = _run(["lipo", "-archs", str(binary)]).strip().split()
-        expected = "x86_64" if target.startswith("x86_64") else "arm64"
-        if architectures != [expected]:
-            raise BuildError(f"unexpected Mach-O architectures: {architectures}")
-        return {"deployment_target": "14.0", "architectures": architectures}
-    headers = _run(["dumpbin", "/headers", str(binary)])
-    imports = _run(["dumpbin", "/imports", str(binary)])
-    if "machine (x64)" not in headers.lower() or not imports.strip():
-        raise BuildError("Windows PE header/import inspection failed")
-    return {
-        "windows_client_floor": "10",
-        "windows_server_floor": "2016",
-        "pe_headers_checked": True,
-        "pe_imports_checked": True,
-    }
 
 
 def sbom(lockfile: Path, output: Path, source_sha: str, version: str) -> str:
@@ -116,8 +77,13 @@ def sbom(lockfile: Path, output: Path, source_sha: str, version: str) -> str:
         "bomFormat": "CycloneDX",
         "specVersion": "1.6",
         "version": 1,
-        "metadata": {"component": {"name": "biomcp-cli", "version": version}, "source_sha": source_sha},
-        "components": sorted(packages, key=lambda item: (item["name"], item["version"])),
+        "metadata": {
+            "component": {"name": "biomcp-cli", "version": version},
+            "source_sha": source_sha,
+        },
+        "components": sorted(
+            packages, key=lambda item: (item["name"], item["version"])
+        ),
     }
     output.write_bytes(canonical_bytes(value))
     return sha256_file(output)
@@ -174,8 +140,18 @@ def main() -> int:
     if not args.skip_build:
         _run(
             [
-                "cargo", "build", "--release", "--locked", "--all-features",
-                "--target", args.target, "--bin", "biomcp", "--bin", "biomcp-cli",
+                str(args.repo / "tools/with-build-identity"),
+                "cargo",
+                "build",
+                "--release",
+                "--locked",
+                "--all-features",
+                "--target",
+                args.target,
+                "--bin",
+                "biomcp",
+                "--bin",
+                "biomcp-cli",
             ],
             env=environment,
         )
@@ -183,11 +159,12 @@ def main() -> int:
     target_dir = args.repo / "target" / args.target / "release"
     full = target_dir / f"biomcp{suffix}"
     shim = target_dir / f"biomcp-cli{suffix}"
-    signing: dict[str, object] = {}
+    unsigned_full = full
+    unsigned_shim = shim
     if settings["os"] != "linux":
         signed_full = args.dist / f"signed-biomcp{suffix}"
         signed_shim = args.dist / f"signed-biomcp-cli{suffix}"
-        signing["biomcp"] = finalize(
+        finalize(
             full,
             signed_full,
             args.dist / "biomcp-signing.json",
@@ -196,7 +173,7 @@ def main() -> int:
             args.version,
             args.repo,
         )
-        signing["biomcp-cli"] = finalize(
+        finalize(
             shim,
             signed_shim,
             args.dist / "shim-signing.json",
@@ -206,37 +183,81 @@ def main() -> int:
             args.repo,
         )
         full, shim = signed_full, signed_shim
-    floor = platform_evidence(full, args.target)
-    sbom_hash = sbom(args.repo / "Cargo.lock", args.dist / "sbom.cdx.json", args.source_sha, args.version)
+    sbom_path = args.dist / "sbom.cdx.json"
+    sbom(args.repo / "Cargo.lock", sbom_path, args.source_sha, args.version)
     native_path = args.dist / str(settings["archive"])
-    wheel_path = args.dist / f"biomcp_cli-{args.version}-py3-none-{settings['wheel']}.whl"
+    wheel_path = (
+        args.dist / f"biomcp_cli-{args.version}-py3-none-{settings['wheel']}.whl"
+    )
     package_artifact.native_archive(full, native_path, settings["os"] == "windows")
     package_artifact.wheel(
-        full, shim, wheel_path, args.version, f"py3-none-{settings['wheel']}", settings["os"] == "windows"
+        full,
+        shim,
+        wheel_path,
+        args.version,
+        f"py3-none-{settings['wheel']}",
+        settings["os"] == "windows",
     )
     for kind, artifact_id, artifact_path in (
         ("native", f"native-{settings['slug']}", native_path),
         ("wheel", f"wheel-{settings['slug']}", wheel_path),
     ):
-        evidence = {
-            "inspected": True,
-            "platform": floor,
-            "sbom_sha256": sbom_hash,
-            "binary_sha256": sha256_file(full),
-            "shim_sha256": sha256_file(shim) if kind == "wheel" else None,
-            "signing": signing,
-        }
-        record = package_artifact.record(
-            artifact_id, artifact_path, args.source_sha, args.version, args.run_id, evidence
-        )
-        record["provenance"].update(
-            {
-                "target": args.target,
-                "rust": os.environ.get("RUST_TOOLCHAIN", "unknown"),
-                "source_sha": args.source_sha,
-            }
-        )
-        (args.dist / f"{kind}.json").write_bytes(canonical_bytes(record))
+        command = [
+            sys.executable,
+            str(args.repo / "release" / "inspect.py"),
+            "--kind",
+            kind,
+            "--artifact-id",
+            artifact_id,
+            "--artifact",
+            str(artifact_path),
+            "--record",
+            str(args.dist / f"{kind}.json"),
+            "--binary",
+            str(full),
+            "--sbom",
+            str(sbom_path),
+            "--cargo-lock",
+            str(args.repo / "Cargo.lock"),
+            "--signing-policy",
+            str(args.repo / "release/signing-policy.json"),
+            "--source-sha",
+            args.source_sha,
+            "--version",
+            args.version,
+            "--run-id",
+            args.run_id,
+            "--provenance",
+            json.dumps(
+                {
+                    "target": args.target,
+                    "rust": os.environ.get("RUST_TOOLCHAIN", "unknown"),
+                    "source_sha": args.source_sha,
+                },
+                sort_keys=True,
+            ),
+        ]
+        if kind == "wheel":
+            command.extend(["--shim", str(shim)])
+        if settings["os"] != "linux":
+            command.extend(
+                [
+                    "--binary-signing-evidence",
+                    str(args.dist / "biomcp-signing.json"),
+                    "--unsigned-binary",
+                    str(unsigned_full),
+                ]
+            )
+            if kind == "wheel":
+                command.extend(
+                    [
+                        "--shim-signing-evidence",
+                        str(args.dist / "shim-signing.json"),
+                        "--unsigned-shim",
+                        str(unsigned_shim),
+                    ]
+                )
+        _run(command)
     if settings["os"] != "linux":
         full.unlink()
         shim.unlink()
