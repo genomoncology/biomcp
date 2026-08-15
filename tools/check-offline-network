@@ -10,6 +10,44 @@ import sys
 import tempfile
 import threading
 
+CAPABILITY_FIELDS = ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb")
+
+
+def check_privilege_state() -> None:
+    status = dict(
+        line.split(":", 1)
+        for line in Path("/proc/self/status").read_text(encoding="utf-8").splitlines()
+        if ":" in line
+    )
+    namespace_ids = status.get("Uid", "-1").split() + status.get("Gid", "-1").split()
+    if os.getuid() != 0 or os.getgid() != 0 or any(value != "0" for value in namespace_ids):
+        raise SystemExit("offline privilege isolation failed: namespace uid/gid are not 0")
+    if any(int(status.get(field, "-1").strip(), 16) != 0 for field in CAPABILITY_FIELDS):
+        raise SystemExit("offline privilege isolation failed: capability set is nonzero")
+    if status.get("NoNewPrivs", "").strip() != "1":
+        raise SystemExit("offline privilege isolation failed: NoNewPrivs is not set")
+
+
+def create_ownership_sentinel() -> None:
+    path = os.environ.pop("BIOMCP_OFFLINE_OWNERSHIP_SENTINEL", None)
+    token = os.environ.pop("BIOMCP_OFFLINE_OWNERSHIP_TOKEN", None)
+    if path is None and token is None:
+        return
+    if not path or not token:
+        raise SystemExit("offline ownership isolation failed: incomplete sentinel request")
+    try:
+        descriptor = os.open(
+            path,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+            0o600,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as sentinel:
+            sentinel.write(token)
+            sentinel.flush()
+            os.fsync(sentinel.fileno())
+    except OSError as error:
+        raise SystemExit(f"offline ownership isolation failed: {error}") from error
+
 
 def require_blocked(action: str, operation: object) -> None:
     try:
@@ -84,6 +122,11 @@ def check_unix_socket() -> None:
 def main() -> int:
     if len(sys.argv) < 2:
         raise SystemExit("usage: check-offline-network COMMAND [ARG ...]")
+    check_privilege_state()
+    print(
+        "offline privilege controls: uid/gid 0; capabilities zero; NoNewPrivs 1",
+        flush=True,
+    )
     check_dns_blocked()
     check_public_tcp_blocked()
     print(
@@ -96,6 +139,7 @@ def main() -> int:
         "offline network controls: loopback TCP and Unix sockets available",
         flush=True,
     )
+    create_ownership_sentinel()
     os.execvp(sys.argv[1], sys.argv[1:])
     return 127
 
