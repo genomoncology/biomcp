@@ -418,7 +418,7 @@ def test_tampered_signing_evidence_leaves_no_success_record(
     policy.write_text(
         json.dumps(
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "enabled": True,
                 "apple": {
                     "team_id": "ABCDEFGHIJ",
@@ -435,6 +435,13 @@ def test_tampered_signing_evidence_leaves_no_success_record(
                     "timestamp_policy_oid": "1.2.3",
                 },
                 "mcpb": {"subject": "CN=Example", "leaf_sha256": "C" * 64},
+                "development_unsigned_mcpb": {
+                    "enabled": True,
+                    "package": "@anthropic-ai/mcpb",
+                    "tool_version": "2.1.2",
+                    "reason": "development testing",
+                    "blocks_promotion": True,
+                },
                 "allowed_notary_warnings": [],
             }
         )
@@ -454,6 +461,7 @@ def test_tampered_signing_evidence_leaves_no_success_record(
                     "target": "macos-x86_64",
                     "source_sha": "a" * 40,
                     "version": "1.2.3",
+                    "stage_run_id": "42",
                     "unsigned_sha256": unsigned_hash,
                     "signed_sha256": signed_hash,
                     "signing_policy_sha256": policy_hash,

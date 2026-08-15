@@ -6,6 +6,8 @@ workflow code does not approve or start a release on its own.
 
 The Rust package can move ahead as a private development candidate without changing public release claims. For example, Cargo and the compiled binary use `0.9.0-dev.1`, while Python packaging uses its canonical PEP 440 equivalent, `0.9.0.dev1`. The committed citation, MCP directory manifests, and other public metadata continue to identify v0.8.25 until a reviewed stable release commit updates them together. Development candidates may be staged privately but are rejected by promotion and publication.
 
+A schema-2 signing policy can allow one narrow development exception: the outer MCPB archive may remain unsigned for private desktop testing only. The macOS executable inside must still carry its real Developer ID signature and accepted notarization, and the Windows executable must still carry its real Authenticode signature and timestamp. The candidate records the unsigned outer archive, exact exception, and non-promotable status. Stable 0.9.0 still requires a valid outer MCPB signature and real MCPB identity. Unpacking and executing the archive on the three hosted runners proves the archive and signed inner binaries; it does not prove installation compatibility with a particular Claude Desktop build, which remains a separate manual check.
+
 ## Go/no-go checkpoint
 
 Ian creates and reviews the single commit that changes the public version to
@@ -38,9 +40,7 @@ bytes is a no-op; conflicting bytes stop promotion.
 
 ## Provisioning required before a real release
 
-- Enable `release/signing-policy.json` with reviewed Apple, Windows, and MCPB
-  identities, commit it with the version change, and pin its SHA-256 in the
-  protected environment.
+- Provision reviewed Apple and Windows identities for a development candidate; a stable candidate also requires the real MCPB identity and working outer-signature path. Enable the top-level `release/signing-policy.json` only with those real identities and pin its SHA-256 in the protected environment. Because the protected-policy check compares the staging commit with its parent, the identity and policy activation must land in a predecessor commit, followed by a staging commit that does not change the policy bytes.
 - Provision the protected signing and promotion environments, required
   publisher tokens, Apple notarization credentials, Windows signing material,
   and the MCPB certificate chain.

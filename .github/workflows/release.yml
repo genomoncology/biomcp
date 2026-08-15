@@ -417,7 +417,7 @@ jobs:
 
   mcpb-artifact:
     if: inputs.mode == 'stage'
-    needs: signed-artifacts
+    needs: [candidate-gates, signed-artifacts]
     runs-on: macos-15
     environment: biomcp-release-signing
     env:
@@ -430,6 +430,10 @@ jobs:
         with:
           ref: ${{ inputs.source_sha }}
           fetch-depth: 2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: candidate-base-${{ github.run_id }}
+          path: candidate/candidate-base-${{ github.run_id }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           pattern: 'macos-*-${{ github.run_id }}'
@@ -445,7 +449,13 @@ jobs:
           SOURCE_SHA: ${{ inputs.source_sha }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          MANIFEST="candidate/candidate-base-$RUN_ID/candidate-manifest.json"
+          python3 release/candidate.py verify --manifest "$MANIFEST"
+          VERSION="$(jq -r .version "$MANIFEST")"
+          test "$(jq -r .source_sha "$MANIFEST")" = "$SOURCE_SHA"
+          test "$(jq -r .stage_run_id "$MANIFEST")" = "$RUN_ID"
+          test "$(jq -r .signing_policy_sha256 "$MANIFEST")" = \
+            "$(shasum -a 256 release/signing-policy.json | cut -d' ' -f1)"
           mkdir -p dist/mcpb/thin dist/mcpb/root
           for platform in macos-x86_64 macos-arm64; do
             record="candidate/$platform-$RUN_ID/native.json"
@@ -460,6 +470,7 @@ jobs:
           python3 release/signing.py --source dist/mcpb/universal-unsigned \
             --output dist/mcpb/universal-signed --evidence dist/mcpb/universal-signing.json \
             --target macos-universal --source-sha "$SOURCE_SHA" --version "$VERSION" \
+            --run-id "$RUN_ID" \
             --unsigned-sha256 "$(shasum -a 256 dist/mcpb/universal-unsigned | cut -d' ' -f1)"
           test "$(lipo -archs dist/mcpb/universal-signed)" = 'x86_64 arm64'
       - name: Pack, sign once, verify, and inspect MCPB
@@ -467,7 +478,12 @@ jobs:
           SOURCE_SHA: ${{ inputs.source_sha }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          MANIFEST="candidate/candidate-base-$RUN_ID/candidate-manifest.json"
+          python3 release/candidate.py verify --manifest "$MANIFEST"
+          VERSION="$(jq -r .version "$MANIFEST")"
+          CANDIDATE_KIND="$(jq -r .candidate_kind "$MANIFEST")"
+          test "$(jq -r .source_sha "$MANIFEST")" = "$SOURCE_SHA"
+          test "$(jq -r .stage_run_id "$MANIFEST")" = "$RUN_ID"
           win_record="candidate/windows-x86_64-$RUN_ID/native.json"
           win_archive="candidate/windows-x86_64-$RUN_ID/$(jq -r .filename "$win_record")"
           ditto -x -k "$win_archive" dist/mcpb/windows
@@ -475,19 +491,30 @@ jobs:
             --macos dist/mcpb/universal-signed --windows dist/mcpb/windows/biomcp.exe \
             --output dist/mcpb/root
           mcpb validate dist/mcpb/root/manifest.json
-          mcpb pack dist/mcpb/root "dist/mcpb/biomcp-$VERSION-unsigned.mcpb"
-          python3 release/mcpb_sign.py --source "dist/mcpb/biomcp-$VERSION-unsigned.mcpb" \
-            --output "dist/mcpb/biomcp-$VERSION.mcpb" --evidence dist/mcpb/mcpb-signing.json \
-            --source-sha "$SOURCE_SHA"
-          mcpb verify "dist/mcpb/biomcp-$VERSION.mcpb"
+          if [[ "$CANDIDATE_KIND" == development ]]; then
+            mcpb pack dist/mcpb/root "dist/mcpb/biomcp-$VERSION.mcpb"
+            python3 release/mcpb_sign.py --attest-development \
+              --manifest "$MANIFEST" --source "dist/mcpb/biomcp-$VERSION.mcpb" \
+              --evidence dist/mcpb/mcpb-signing.json
+          else
+            test "$CANDIDATE_KIND" = release
+            mcpb pack dist/mcpb/root "dist/mcpb/biomcp-$VERSION-unsigned.mcpb"
+            python3 release/mcpb_sign.py --manifest "$MANIFEST" \
+              --source "dist/mcpb/biomcp-$VERSION-unsigned.mcpb" \
+              --output "dist/mcpb/biomcp-$VERSION.mcpb" \
+              --evidence dist/mcpb/mcpb-signing.json
+            mcpb verify "dist/mcpb/biomcp-$VERSION.mcpb"
+          fi
           python3 release/mcpb.py record --bundle "dist/mcpb/biomcp-$VERSION.mcpb" \
             --record dist/mcpb/mcpb.json --signing-evidence dist/mcpb/mcpb-signing.json \
-            --source-sha "$SOURCE_SHA" --version "$VERSION" --run-id "$RUN_ID" \
-            --macos-sha256 "$(shasum -a 256 dist/mcpb/universal-signed | cut -d' ' -f1)" \
-            --windows-sha256 "$(jq -r .evidence.binary_sha256 "$win_record")" \
+            --manifest "$MANIFEST" \
+            --universal-signing-evidence dist/mcpb/universal-signing.json \
             --macos-arm-record "candidate/macos-arm64-$RUN_ID/native.json" \
             --macos-intel-record "candidate/macos-x86_64-$RUN_ID/native.json" \
-            --windows-record "$win_record"
+            --windows-record "$win_record" \
+            --macos-arm-binary dist/mcpb/thin/macos-arm64 \
+            --macos-intel-binary dist/mcpb/thin/macos-x86_64 \
+            --windows-binary dist/mcpb/windows/biomcp.exe
           rm -rf dist/mcpb/root dist/mcpb/thin dist/mcpb/windows \
             dist/mcpb/universal-unsigned "dist/mcpb/biomcp-$VERSION-unsigned.mcpb"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -525,9 +552,19 @@ jobs:
           SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
           bash release/install-mcpb-tool.sh
-          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          VERSION="$(jq -r .version candidate/mcpb/mcpb.json)"
           bundle="candidate/mcpb/biomcp-$VERSION.mcpb"
-          mcpb verify "$bundle"
+          test "$(shasum -a 256 "$bundle" | cut -d' ' -f1)" = \
+            "$(jq -r .sha256 candidate/mcpb/mcpb.json)"
+          if [[ "$(jq -r .evidence.outer_signature_status candidate/mcpb/mcpb.json)" == unsigned-development ]]; then
+            jq -e --arg source "$SOURCE_SHA" --arg digest "$(shasum -a 256 "$bundle" | cut -d' ' -f1)" \
+              '.source_sha == $source and .evidence.outer_signature_status == "unsigned-development" and .evidence.non_promotable == true and .evidence.outer.archive_sha256 == $digest and .evidence.outer.candidate_kind == "development" and .evidence.outer.package == "@anthropic-ai/mcpb" and .evidence.outer.tool_version == "2.1.2" and .evidence.outer.fixture_only == false' \
+              candidate/mcpb/mcpb.json >/dev/null
+          else
+            jq -e '.evidence.outer_signature_status == "signed" and .evidence.non_promotable == false' \
+              candidate/mcpb/mcpb.json >/dev/null
+            mcpb verify "$bundle"
+          fi
           mkdir unpacked
           unzip -q "$bundle" -d unpacked
           python release/smoke.py --bin "unpacked/${{ matrix.binary }}" \
@@ -567,7 +604,7 @@ jobs:
           python3 release/candidate.py register --manifest candidate-manifest.json \
             --record "candidate/homebrew-formula-${{ github.run_id }}/homebrew.json" \
             --artifact "candidate/homebrew-formula-${{ github.run_id }}/Formula/biomcp.rb"
-          VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)"
+          VERSION="$(jq -r .version candidate-manifest.json)"
           python3 release/candidate.py register --manifest candidate-manifest.json \
             --record "candidate/mcpb-${{ github.run_id }}/mcpb.json" \
             --artifact "candidate/mcpb-${{ github.run_id }}/biomcp-$VERSION.mcpb"

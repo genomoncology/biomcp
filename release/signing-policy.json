@@ -1,8 +1,15 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "enabled": false,
   "apple": null,
   "windows": null,
   "mcpb": null,
+  "development_unsigned_mcpb": {
+    "enabled": true,
+    "package": "@anthropic-ai/mcpb",
+    "tool_version": "2.1.2",
+    "reason": "Private development desktop testing uses signed native executables inside an unsigned outer archive.",
+    "blocks_promotion": true
+  },
   "allowed_notary_warnings": []
 }

@@ -96,6 +96,7 @@ def finalize(
     target_slug: str,
     source_sha: str,
     version: str,
+    run_id: str,
     repo: Path,
 ) -> dict[str, object]:
     command = [
@@ -115,6 +116,8 @@ def finalize(
         source_sha,
         "--version",
         version,
+        "--run-id",
+        run_id,
         "--unsigned-sha256",
         sha256_file(source),
     ]
@@ -173,6 +176,7 @@ def main() -> int:
             str(settings["slug"]),
             args.source_sha,
             args.version,
+            args.run_id,
             args.repo,
         )
         finalize(
@@ -182,6 +186,7 @@ def main() -> int:
             str(settings["slug"]),
             args.source_sha,
             args.version,
+            args.run_id,
             args.repo,
         )
         full, shim = signed_full, signed_shim

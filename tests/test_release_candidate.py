@@ -186,6 +186,36 @@ def test_registration_rejects_wheel_for_wrong_python_identity(tmp_path: Path) ->
         candidate.register_artifact(manifest, record, artifact)
 
 
+@pytest.mark.parametrize(
+    ("rust_version", "python_version", "status", "non_promotable"),
+    [
+        ("0.9.0-dev.1", "0.9.0.dev1", "signed", False),
+        ("0.9.0", "0.9.0", "unsigned-development", True),
+    ],
+)
+def test_mcpb_registration_rejects_outer_evidence_relabeling(
+    tmp_path: Path,
+    rust_version: str,
+    python_version: str,
+    status: str,
+    non_promotable: bool,
+) -> None:
+    repo, sha = _repo(tmp_path, rust_version, python_version)
+    manifest = candidate.init_manifest(
+        repo, sha, "42", {"rust": "1.93.1"}, require_main=False
+    )
+    artifact = tmp_path / f"biomcp-{rust_version}.mcpb"
+    artifact.write_bytes(b"MCPB archive")
+    record = _record(manifest, "mcpb", artifact)
+    record["evidence"].update(
+        outer_signature_status=status,
+        non_promotable=non_promotable,
+    )
+
+    with pytest.raises(candidate.CandidateError, match="candidate kind"):
+        candidate.register_artifact(manifest, record, artifact)
+
+
 def test_finalize_requires_gates_and_exact_registered_set(tmp_path: Path) -> None:
     manifest = _manifest(tmp_path)
     with pytest.raises(candidate.CandidateError, match="missing candidate gates"):

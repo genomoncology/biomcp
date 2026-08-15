@@ -268,14 +268,40 @@ def test_homebrew_formula_is_generated_once_and_smoked_offline_on_both_macs() ->
     assert "HOMEBREW_TAP_TOKEN" not in stage_text
 
 
-def test_mcpb_is_derived_signed_once_and_smoked_on_three_platform_runners() -> None:
-    text = _text()
-    assert "mcpb-artifact:" in text
-    assert "lipo -create" in text
-    assert "--target macos-universal" in text
-    assert "mcpb pack" in text
-    assert "release/mcpb_sign.py" in text
-    assert text.count("mcpb verify") >= 2
-    assert "mcpb-smoke:" in text
-    assert "signtool verify /pa /all /tw" in text
-    assert "macos-15-intel" in text and "windows-2022" in text
+def test_mcpb_uses_canonical_manifest_and_keeps_stable_signing() -> None:
+    workflow = yaml.safe_load(_text())
+    job = workflow["jobs"]["mcpb-artifact"]
+    assert set(job["needs"]) == {"candidate-gates", "signed-artifacts"}
+    serialized = yaml.safe_dump(job, sort_keys=False)
+    job_text = "\n".join(step.get("run", "") for step in job["steps"])
+    assert "candidate-base-${{ github.run_id }}" in serialized
+    assert "release/candidate.py verify --manifest" in job_text
+    assert "CANDIDATE_KIND=\"$(jq -r .candidate_kind" in job_text
+    assert "VERSION=\"$(jq -r .version" in job_text
+    assert "sed -n 's/^version" not in job_text
+    assert "--manifest \"$MANIFEST\"" in job_text
+    assert "release/mcpb_sign.py" in job_text
+    assert "mcpb verify" in job_text
+    assert "--attest-development" in job_text
+    assert "--universal-signing-evidence" in job_text
+    assert "--run-id \"$RUN_ID\"" in job_text
+
+
+def test_all_development_mcpb_smokes_check_exception_before_unpacking() -> None:
+    workflow = yaml.safe_load(_text())
+    job = workflow["jobs"]["mcpb-smoke"]
+    assert len(job["strategy"]["matrix"]["include"]) == 3
+    smoke = next(
+        step["run"]
+        for step in job["steps"]
+        if step.get("name") == "Install pinned verifier and smoke selected executable"
+    )
+    exception_check = smoke.index("outer_signature_status")
+    assert exception_check < smoke.index("unzip -q")
+    assert "non_promotable" in smoke
+    assert 'package == "@anthropic-ai/mcpb"' in smoke
+    assert 'tool_version == "2.1.2"' in smoke
+    assert "archive_sha256" in smoke
+    assert "mcpb verify" in smoke
+    assert "signtool verify /pa /all /tw" in smoke
+    assert "spctl --assess --type execute" in smoke

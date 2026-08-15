@@ -29,7 +29,7 @@ signing = _module("release_signing", "release/signing.py")
 def _fixture_policy(tmp_path: Path) -> Path:
     fingerprint = "A" * 64
     policy = {
-        "schema_version": 1,
+        "schema_version": 2,
         "enabled": True,
         "fixture_only": True,
         "apple": {
@@ -47,6 +47,13 @@ def _fixture_policy(tmp_path: Path) -> Path:
             "timestamp_policy_oid": "1.2.3.4",
         },
         "mcpb": {"subject": "Fixture MCPB", "leaf_sha256": fingerprint},
+        "development_unsigned_mcpb": {
+            "enabled": True,
+            "package": "@anthropic-ai/mcpb",
+            "tool_version": "2.1.2",
+            "reason": "fixture development archive",
+            "blocks_promotion": True,
+        },
         "allowed_notary_warnings": [],
     }
     path = tmp_path / "policy.json"
@@ -60,11 +67,18 @@ def test_committed_production_policy_is_valid_explicitly_disabled_and_secret_fre
     schema = json.loads((ROOT / "release/signing-policy.schema.json").read_text())
     jsonschema.Draft202012Validator(schema).validate(policy)
     assert policy == {
-        "schema_version": 1,
+        "schema_version": 2,
         "enabled": False,
         "apple": None,
         "windows": None,
         "mcpb": None,
+        "development_unsigned_mcpb": {
+            "enabled": True,
+            "package": "@anthropic-ai/mcpb",
+            "tool_version": "2.1.2",
+            "reason": "Private development desktop testing uses signed native executables inside an unsigned outer archive.",
+            "blocks_promotion": True,
+        },
         "allowed_notary_warnings": [],
     }
     assert not any(word in policy_path.read_text().lower() for word in ("password", "private_key", "token"))
@@ -84,6 +98,53 @@ def test_fixture_policy_is_rejected_by_production_and_accepted_only_explicitly(t
     assert len(digest) == 64
 
 
+def test_native_and_stable_mcpb_policy_requirements_are_separate(tmp_path: Path) -> None:
+    policy_path = _fixture_policy(tmp_path)
+    value = json.loads(policy_path.read_text())
+    value["mcpb"] = None
+    policy_path.write_text(json.dumps(value))
+
+    policy, _ = signing.load_policy(policy_path, fixture=True)
+    assert policy["apple"] and policy["windows"] and policy["mcpb"] is None
+    with pytest.raises(signing.SigningError, match="stable MCPB"):
+        signing.load_policy(policy_path, fixture=True, require_mcpb=True)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda value: value.update(schema_version=1), "schema"),
+        (
+            lambda value: value["development_unsigned_mcpb"].update(
+                package="another-package"
+            ),
+            "exception",
+        ),
+        (
+            lambda value: value["development_unsigned_mcpb"].update(
+                blocks_promotion=False
+            ),
+            "exception",
+        ),
+        (
+            lambda value: value["development_unsigned_mcpb"].update(extra=True),
+            "incomplete or unknown",
+        ),
+        (lambda value: value["mcpb"].pop("subject"), "incomplete or unknown"),
+    ],
+)
+def test_policy_rejects_unknown_or_widened_development_exception(
+    tmp_path: Path, mutation, message: str
+) -> None:
+    policy_path = _fixture_policy(tmp_path)
+    value = json.loads(policy_path.read_text())
+    mutation(value)
+    policy_path.write_text(json.dumps(value))
+
+    with pytest.raises(signing.SigningError, match=message):
+        signing.load_policy(policy_path, fixture=True)
+
+
 @pytest.mark.parametrize("target", ["macos-x86_64", "macos-arm64", "macos-universal", "windows-x86_64"])
 def test_fixture_finalization_binds_unsigned_and_signed_bytes(tmp_path: Path, target: str) -> None:
     policy_path = _fixture_policy(tmp_path)
@@ -92,7 +153,7 @@ def test_fixture_finalization_binds_unsigned_and_signed_bytes(tmp_path: Path, ta
     output = tmp_path / "signed"
     source.write_bytes(b"fixture executable")
     evidence = signing.fixture_finalize(
-        source, output, target, "a" * 40, "1.2.3", digest, policy
+        source, output, target, "a" * 40, "1.2.3", "42", digest, policy
     )
     assert evidence["unsigned_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
     assert evidence["signed_sha256"] == candidate.sha256_file(output)
@@ -151,6 +212,8 @@ def test_duplicate_output_is_refused_before_signing(tmp_path: Path) -> None:
             "a" * 40,
             "--version",
             "1.2.3",
+            "--run-id",
+            "42",
             "--unsigned-sha256",
             hashlib.sha256(source.read_bytes()).hexdigest(),
         ],

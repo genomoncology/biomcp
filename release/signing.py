@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -21,26 +22,125 @@ class SigningError(ValueError):
     pass
 
 
-def load_policy(path: Path, *, fixture: bool) -> tuple[dict[str, Any], str]:
+POLICY_KEYS = {
+    "schema_version",
+    "enabled",
+    "fixture_only",
+    "apple",
+    "windows",
+    "mcpb",
+    "development_unsigned_mcpb",
+    "allowed_notary_warnings",
+}
+EXCEPTION_KEYS = {"enabled", "package", "tool_version", "reason", "blocks_promotion"}
+FINGERPRINT_RE = re.compile(r"^[0-9A-F]{64}$")
+
+
+def _require_keys(value: dict[str, Any], expected: set[str], label: str) -> None:
+    if set(value) != expected:
+        raise SigningError(f"{label} fields are incomplete or unknown")
+
+
+def _validate_policy(policy: Any, *, fixture: bool, require_mcpb: bool) -> None:
+    if not isinstance(policy, dict) or policy.get("schema_version") != 2:
+        raise SigningError("unsupported signing policy schema")
+    allowed = POLICY_KEYS if "fixture_only" in policy else POLICY_KEYS - {"fixture_only"}
+    _require_keys(policy, allowed, "signing policy")
+    if not isinstance(policy.get("enabled"), bool):
+        raise SigningError("signing policy enabled flag is invalid")
+    if fixture:
+        if policy.get("fixture_only") is not True:
+            raise SigningError("fixture signing requires a fixture-only policy")
+    elif policy.get("fixture_only"):
+        raise SigningError("production signing rejects fixture policy")
+    if policy.get("allowed_notary_warnings") != []:
+        raise SigningError("notary warning allowlist must remain empty")
+    exception = policy.get("development_unsigned_mcpb")
+    if not isinstance(exception, dict):
+        raise SigningError("development unsigned MCPB exception is absent")
+    _require_keys(exception, EXCEPTION_KEYS, "development unsigned MCPB exception")
+    if (
+        not isinstance(exception.get("enabled"), bool)
+        or exception.get("package") != "@anthropic-ai/mcpb"
+        or exception.get("tool_version") != "2.1.2"
+        or not isinstance(exception.get("reason"), str)
+        or not exception["reason"].strip()
+        or exception.get("blocks_promotion") is not True
+    ):
+        raise SigningError("development unsigned MCPB exception is invalid")
+    if not policy["enabled"]:
+        raise SigningError("release signing policy is not provisioned")
+    apple = policy.get("apple")
+    windows = policy.get("windows")
+    if not isinstance(apple, dict) or not isinstance(windows, dict):
+        raise SigningError("enabled policy lacks native signing identity")
+    _require_keys(
+        apple,
+        {
+            "team_id",
+            "identity",
+            "leaf_sha256",
+            "notary_profile",
+            "notary_service",
+            "network_destinations",
+        },
+        "Apple signing identity",
+    )
+    if (
+        not re.fullmatch(r"[A-Z0-9]{10}", str(apple.get("team_id", "")))
+        or not isinstance(apple.get("identity"), str)
+        or not apple["identity"]
+        or not FINGERPRINT_RE.fullmatch(str(apple.get("leaf_sha256", "")))
+        or not isinstance(apple.get("notary_profile"), str)
+        or not apple["notary_profile"]
+        or apple.get("notary_service") != "https://appstoreconnect.apple.com"
+        or not isinstance(apple.get("network_destinations"), list)
+        or not apple["network_destinations"]
+        or any(
+            not isinstance(url, str) or not re.fullmatch(r"https://[^/]+", url)
+            for url in apple["network_destinations"]
+        )
+    ):
+        raise SigningError("Apple signing identity is invalid")
+    _require_keys(
+        windows,
+        {"publisher", "leaf_sha256", "timestamp_url", "timestamp_policy_oid"},
+        "Windows signing identity",
+    )
+    if (
+        not isinstance(windows.get("publisher"), str)
+        or not windows["publisher"]
+        or not FINGERPRINT_RE.fullmatch(str(windows.get("leaf_sha256", "")))
+        or not re.fullmatch(r"https://[^/]+(?:/.*)?", str(windows.get("timestamp_url", "")))
+        or not re.fullmatch(
+            r"[0-9]+(?:\.[0-9]+)+", str(windows.get("timestamp_policy_oid", ""))
+        )
+    ):
+        raise SigningError("Windows signing identity is invalid")
+    mcpb = policy.get("mcpb")
+    if require_mcpb and not isinstance(mcpb, dict):
+        raise SigningError("enabled policy lacks stable MCPB identity")
+    if isinstance(mcpb, dict):
+        _require_keys(mcpb, {"subject", "leaf_sha256"}, "MCPB signing identity")
+        if (
+            not isinstance(mcpb.get("subject"), str)
+            or not mcpb["subject"]
+            or not FINGERPRINT_RE.fullmatch(str(mcpb.get("leaf_sha256", "")))
+        ):
+            raise SigningError("MCPB signing identity is invalid")
+    elif mcpb is not None:
+        raise SigningError("MCPB signing identity is invalid")
+
+
+def load_policy(
+    path: Path, *, fixture: bool, require_mcpb: bool = False
+) -> tuple[dict[str, Any], str]:
     raw = path.read_bytes()
     try:
         policy = json.loads(raw)
     except json.JSONDecodeError as error:
         raise SigningError(f"invalid signing policy: {error}") from error
-    if policy.get("schema_version") != 1:
-        raise SigningError("unsupported signing policy schema")
-    if fixture:
-        if not policy.get("fixture_only"):
-            raise SigningError("fixture signing requires a fixture-only policy")
-    elif policy.get("fixture_only"):
-        raise SigningError("production signing rejects fixture policy")
-    if not policy.get("enabled"):
-        raise SigningError("release signing policy is not provisioned")
-    if policy.get("allowed_notary_warnings") != []:
-        raise SigningError("notary warning allowlist must remain empty")
-    for section in ("apple", "windows", "mcpb"):
-        if not isinstance(policy.get(section), dict):
-            raise SigningError(f"enabled policy lacks {section} identity")
+    _validate_policy(policy, fixture=fixture, require_mcpb=require_mcpb)
     return policy, hashlib.sha256(raw).hexdigest()
 
 
@@ -72,6 +172,7 @@ def _base_evidence(
     target: str,
     source_sha: str,
     version: str,
+    run_id: str,
     unsigned_hash: str,
     signed_path: Path,
     policy_hash: str,
@@ -82,6 +183,7 @@ def _base_evidence(
         "target": target,
         "source_sha": source_sha,
         "version": version,
+        "stage_run_id": run_id,
         "unsigned_sha256": unsigned_hash,
         "signed_sha256": sha256_file(signed_path),
         "signing_policy_sha256": policy_hash,
@@ -96,6 +198,7 @@ def fixture_finalize(
     target: str,
     source_sha: str,
     version: str,
+    run_id: str,
     policy_hash: str,
     policy: dict[str, Any],
 ) -> dict[str, Any]:
@@ -109,7 +212,14 @@ def fixture_finalize(
     output.write_bytes(data + marker)
     section = policy["apple" if target.startswith("macos") else "windows"]
     evidence = _base_evidence(
-        target, source_sha, version, hashlib.sha256(data).hexdigest(), output, policy_hash, True
+        target,
+        source_sha,
+        version,
+        run_id,
+        hashlib.sha256(data).hexdigest(),
+        output,
+        policy_hash,
+        True,
     )
     evidence.update(
         {
@@ -146,6 +256,7 @@ def production_finalize(
     target: str,
     source_sha: str,
     version: str,
+    run_id: str,
     policy_hash: str,
     policy: dict[str, Any],
 ) -> dict[str, Any]:
@@ -185,7 +296,14 @@ def production_finalize(
             if issues:
                 raise SigningError("Apple notary log contains an unapproved warning or error")
             evidence = _base_evidence(
-                target, source_sha, version, unsigned_hash, output, policy_hash, False
+                target,
+                source_sha,
+                version,
+                run_id,
+                unsigned_hash,
+                output,
+                policy_hash,
+                False,
             )
             evidence.update(
                 {
@@ -223,7 +341,14 @@ def production_finalize(
     )
     _run(["signtool", "verify", "/pa", "/all", "/tw", str(output)])
     evidence = _base_evidence(
-        target, source_sha, version, unsigned_hash, output, policy_hash, False
+        target,
+        source_sha,
+        version,
+        run_id,
+        unsigned_hash,
+        output,
+        policy_hash,
+        False,
     )
     evidence.update(
         {
@@ -248,6 +373,7 @@ def main() -> int:
     parser.add_argument("--target", choices=["macos-x86_64", "macos-arm64", "macos-universal", "windows-x86_64"], required=True)
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--version", required=True)
+    parser.add_argument("--run-id", required=True)
     parser.add_argument("--unsigned-sha256", required=True)
     parser.add_argument("--fixture", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -262,11 +388,25 @@ def main() -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         evidence = (
             fixture_finalize(
-                args.source, args.output, args.target, args.source_sha, args.version, policy_hash, policy
+                args.source,
+                args.output,
+                args.target,
+                args.source_sha,
+                args.version,
+                args.run_id,
+                policy_hash,
+                policy,
             )
             if args.fixture
             else production_finalize(
-                args.source, args.output, args.target, args.source_sha, args.version, policy_hash, policy
+                args.source,
+                args.output,
+                args.target,
+                args.source_sha,
+                args.version,
+                args.run_id,
+                policy_hash,
+                policy,
             )
         )
         args.evidence.write_bytes(canonical_bytes(evidence))

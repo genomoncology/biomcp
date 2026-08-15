@@ -8,11 +8,22 @@ import json
 import os
 import shutil
 import stat
+import sys
+import tempfile
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from candidate import ARTIFACTS, canonical_bytes, sha256_file
+from candidate import (
+    ARTIFACTS,
+    HASH_RE,
+    REQUIRED_GATES,
+    CandidateError,
+    canonical_bytes,
+    load_manifest,
+    sha256_file,
+)
+from signing import SigningError, load_policy
 
 EXPECTED_MEMBERS = {"manifest.json", "server/biomcp", "server/biomcp.exe"}
 
@@ -99,6 +110,331 @@ def sha256_file_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _load_record(path: Path, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise McpbError(f"{label} is absent or malformed") from error
+    if not isinstance(value, dict):
+        raise McpbError(f"{label} is not an object")
+    return value
+
+
+def _candidate_base(path: Path) -> dict[str, Any]:
+    manifest = load_manifest(path)
+    if (
+        manifest["status"] != "staging"
+        or set(manifest["gates"]) != REQUIRED_GATES
+        or manifest["artifacts"] != {}
+        or not HASH_RE.fullmatch(str(manifest.get("signing_policy_sha256", "")))
+    ):
+        raise McpbError("MCPB record requires the validated candidate-base manifest")
+    return manifest
+
+
+def _validate_native_record(
+    record: dict[str, Any],
+    artifact_id: str,
+    binary: Path,
+    manifest: dict[str, Any],
+    policy: dict[str, Any],
+    policy_hash: str,
+) -> str:
+    kind, target = ARTIFACTS[artifact_id]
+    expected = {
+        "id": artifact_id,
+        "kind": kind,
+        "target": target,
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "stage_run_id": manifest["stage_run_id"],
+    }
+    if any(record.get(key) != value for key, value in expected.items()):
+        raise McpbError(f"{artifact_id} record identity does not match candidate")
+    if not HASH_RE.fullmatch(str(record.get("sha256", ""))):
+        raise McpbError(f"{artifact_id} record has an invalid archive hash")
+    evidence = record.get("evidence")
+    if not isinstance(evidence, dict) or evidence.get("binary_sha256") != sha256_file(binary):
+        raise McpbError(f"{artifact_id} record does not bind its executable bytes")
+    signing = evidence.get("signing", {}).get("biomcp")
+    if not isinstance(signing, dict):
+        raise McpbError(f"{artifact_id} lacks native signing evidence")
+    slug = "macos-arm64" if artifact_id.endswith("arm64") else (
+        "macos-x86_64" if "macos" in artifact_id else "windows-x86_64"
+    )
+    signed_expected = {
+        "schema_version": 1,
+        "target": slug,
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "stage_run_id": manifest["stage_run_id"],
+        "signed_sha256": sha256_file(binary),
+        "signing_policy_sha256": policy_hash,
+        "fixture_only": False,
+        "timestamp_verified": True,
+        "chain_verified": True,
+    }
+    if any(signing.get(key) != value for key, value in signed_expected.items()):
+        raise McpbError(f"{artifact_id} native signing evidence is stale or mismatched")
+    if (
+        not HASH_RE.fullmatch(str(signing.get("unsigned_sha256", "")))
+        or not isinstance(signing.get("signing_job_id"), str)
+        or not signing["signing_job_id"]
+    ):
+        raise McpbError(f"{artifact_id} native signing job identity is absent")
+    section = policy["windows"] if "windows" in artifact_id else policy["apple"]
+    identity = {
+        "certificate_fingerprint": section["leaf_sha256"],
+        **(
+            {
+                "publisher": section["publisher"],
+                "timestamp_authority": section["timestamp_url"],
+                "timestamp_policy_oid": section["timestamp_policy_oid"],
+            }
+            if "windows" in artifact_id
+            else {
+                "team_id": section["team_id"],
+                "hardened_runtime": True,
+                "notary_status": "Accepted",
+                "notary_warnings": [],
+            }
+        ),
+    }
+    if any(signing.get(key) != value for key, value in identity.items()):
+        raise McpbError(f"{artifact_id} native certificate evidence is invalid")
+    if "windows" not in artifact_id:
+        if (
+            not HASH_RE.fullmatch(str(signing.get("notary_log_sha256", "")))
+            or not isinstance(signing.get("notary_submission_id"), str)
+            or not signing["notary_submission_id"]
+        ):
+            raise McpbError(f"{artifact_id} notarization evidence is invalid")
+    return str(record["sha256"])
+
+
+def _validate_universal_signing(
+    path: Path,
+    macos_hash: str,
+    manifest: dict[str, Any],
+    policy: dict[str, Any],
+    policy_hash: str,
+) -> dict[str, Any]:
+    signing = _load_record(path, "universal macOS signing evidence")
+    expected = {
+        "schema_version": 1,
+        "target": "macos-universal",
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "stage_run_id": manifest["stage_run_id"],
+        "signed_sha256": macos_hash,
+        "signing_policy_sha256": policy_hash,
+        "certificate_fingerprint": policy["apple"]["leaf_sha256"],
+        "team_id": policy["apple"]["team_id"],
+        "hardened_runtime": True,
+        "timestamp_verified": True,
+        "chain_verified": True,
+        "notary_status": "Accepted",
+        "notary_warnings": [],
+        "fixture_only": False,
+    }
+    if any(signing.get(key) != value for key, value in expected.items()):
+        raise McpbError("universal macOS signing evidence is stale or mismatched")
+    if (
+        not HASH_RE.fullmatch(str(signing.get("unsigned_sha256", "")))
+        or not HASH_RE.fullmatch(str(signing.get("notary_log_sha256", "")))
+        or not isinstance(signing.get("notary_submission_id"), str)
+        or not signing["notary_submission_id"]
+        or not isinstance(signing.get("signing_job_id"), str)
+        or not signing["signing_job_id"]
+    ):
+        raise McpbError("universal macOS notarization evidence is incomplete")
+    return signing
+
+
+def _validate_outer_evidence(
+    path: Path,
+    bundle: Path,
+    manifest: dict[str, Any],
+    policy: dict[str, Any],
+    policy_hash: str,
+) -> tuple[dict[str, Any], str, bool]:
+    evidence = _load_record(path, "MCPB outer evidence")
+    bundle_hash = sha256_file(bundle)
+    if manifest["candidate_kind"] == "release":
+        mcpb_identity = policy.get("mcpb")
+        expected = {
+            "schema_version": 1,
+            "signed_sha256": bundle_hash,
+            "certificate_fingerprint": mcpb_identity["leaf_sha256"],
+            "certificate_subject": mcpb_identity["subject"],
+            "chain_verified": True,
+            "eku": "codeSigning",
+            "signing_policy_sha256": policy_hash,
+            "source_sha": manifest["source_sha"],
+            "version": manifest["version"],
+            "python_version": manifest["python_version"],
+            "candidate_kind": "release",
+            "stage_run_id": manifest["stage_run_id"],
+            "fixture_only": False,
+        }
+        if any(evidence.get(key) != value for key, value in expected.items()):
+            raise McpbError("stable MCPB signature evidence is absent or stale")
+        if not isinstance(evidence.get("signing_job_id"), str) or not evidence["signing_job_id"]:
+            raise McpbError("stable MCPB signing job identity is absent")
+        return evidence, "signed", False
+    exception = policy["development_unsigned_mcpb"]
+    if exception["enabled"] is not True or exception["blocks_promotion"] is not True:
+        raise McpbError("unsigned development MCPB exception is disabled")
+    expected = {
+        "schema_version": 1,
+        "evidence_type": "unsigned-development-mcpb",
+        "archive_sha256": bundle_hash,
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "python_version": manifest["python_version"],
+        "candidate_kind": "development",
+        "stage_run_id": manifest["stage_run_id"],
+        "signing_policy_sha256": policy_hash,
+        "package": exception["package"],
+        "tool_version": exception["tool_version"],
+        "exception_reason": exception["reason"],
+        "outer_signature_status": "unsigned-development",
+        "non_promotable": True,
+        "fixture_only": False,
+    }
+    expected_fields = set(expected) | {"github"}
+    if set(evidence) != expected_fields or any(
+        evidence.get(key) != value for key, value in expected.items()
+    ):
+        raise McpbError("unsigned development MCPB attestation is absent or stale")
+    github = evidence.get("github")
+    if (
+        not isinstance(github, dict)
+        or github.get("repository") != "genomoncology/biomcp"
+        or github.get("workflow_ref")
+        != "genomoncology/biomcp/.github/workflows/release.yml@refs/heads/main"
+        or github.get("job") != "mcpb-artifact"
+        or github.get("run_id") != manifest["stage_run_id"]
+        or not str(github.get("run_attempt", "")).isdigit()
+        or int(github["run_attempt"]) < 1
+        or github.get("source_sha") != manifest["source_sha"]
+    ):
+        raise McpbError("unsigned development MCPB job context is invalid")
+    return evidence, "unsigned-development", True
+
+
+def _atomic_record(path: Path, record: dict[str, Any]) -> None:
+    if path.exists():
+        raise McpbError("refusing to replace an existing MCPB record")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(canonical_bytes(record))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.link(temporary, path)
+        os.unlink(temporary)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def record_bundle(
+    *,
+    bundle: Path,
+    record_path: Path,
+    manifest_path: Path,
+    policy_path: Path,
+    outer_evidence_path: Path,
+    universal_signing_path: Path,
+    macos_arm_record_path: Path,
+    macos_intel_record_path: Path,
+    windows_record_path: Path,
+    macos_arm_binary: Path,
+    macos_intel_binary: Path,
+    windows_binary: Path,
+) -> dict[str, Any]:
+    manifest = _candidate_base(manifest_path)
+    policy, policy_hash = load_policy(
+        policy_path,
+        fixture=False,
+        require_mcpb=manifest["candidate_kind"] == "release",
+    )
+    if manifest["signing_policy_sha256"] != policy_hash:
+        raise McpbError("candidate signing policy hash does not match policy bytes")
+    try:
+        with zipfile.ZipFile(bundle) as archive:
+            macos_hash = sha256_file_bytes(archive.read("server/biomcp"))
+            windows_hash = sha256_file_bytes(archive.read("server/biomcp.exe"))
+    except (OSError, KeyError, zipfile.BadZipFile) as error:
+        raise McpbError("MCPB archive is absent or malformed") from error
+    bundle_evidence = inspect_bundle(
+        bundle, macos_hash, windows_hash, manifest["version"]
+    )
+    universal = _validate_universal_signing(
+        universal_signing_path, macos_hash, manifest, policy, policy_hash
+    )
+    arm = _load_record(macos_arm_record_path, "macOS arm64 native record")
+    intel = _load_record(macos_intel_record_path, "macOS x86_64 native record")
+    windows = _load_record(windows_record_path, "Windows native record")
+    upstream = {
+        "native-macos-arm64": _validate_native_record(
+            arm,
+            "native-macos-arm64",
+            macos_arm_binary,
+            manifest,
+            policy,
+            policy_hash,
+        ),
+        "native-macos-x86_64": _validate_native_record(
+            intel,
+            "native-macos-x86_64",
+            macos_intel_binary,
+            manifest,
+            policy,
+            policy_hash,
+        ),
+        "native-windows-x86_64": _validate_native_record(
+            windows,
+            "native-windows-x86_64",
+            windows_binary,
+            manifest,
+            policy,
+            policy_hash,
+        ),
+    }
+    if windows_hash != sha256_file(windows_binary):
+        raise McpbError("bundled Windows executable differs from its native record")
+    outer, status, non_promotable = _validate_outer_evidence(
+        outer_evidence_path, bundle, manifest, policy, policy_hash
+    )
+    evidence = {
+        **bundle_evidence,
+        "universal_macos_signing": universal,
+        "outer": outer,
+        "outer_signature_status": status,
+        "non_promotable": non_promotable,
+    }
+    kind, target = ARTIFACTS["mcpb"]
+    record = {
+        "id": "mcpb",
+        "kind": kind,
+        "target": target,
+        "filename": bundle.name,
+        "sha256": sha256_file(bundle),
+        "bytes": bundle.stat().st_size,
+        "source_sha": manifest["source_sha"],
+        "version": manifest["version"],
+        "stage_run_id": manifest["stage_run_id"],
+        "provenance": {"packer": "@anthropic-ai/mcpb@2.1.2", "build_count": 1},
+        "evidence": evidence,
+        "upstream": upstream,
+    }
+    _atomic_record(record_path, record)
+    return record
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -112,50 +448,39 @@ def main() -> int:
     record_command.add_argument("--bundle", type=Path, required=True)
     record_command.add_argument("--record", type=Path, required=True)
     record_command.add_argument("--signing-evidence", type=Path, required=True)
-    record_command.add_argument("--source-sha", required=True)
-    record_command.add_argument("--version", required=True)
-    record_command.add_argument("--run-id", required=True)
-    record_command.add_argument("--macos-sha256", required=True)
-    record_command.add_argument("--windows-sha256", required=True)
+    record_command.add_argument("--manifest", type=Path, required=True)
+    record_command.add_argument("--policy", type=Path, default=Path("release/signing-policy.json"))
+    record_command.add_argument("--universal-signing-evidence", type=Path, required=True)
     record_command.add_argument("--macos-arm-record", type=Path, required=True)
     record_command.add_argument("--macos-intel-record", type=Path, required=True)
     record_command.add_argument("--windows-record", type=Path, required=True)
+    record_command.add_argument("--macos-arm-binary", type=Path, required=True)
+    record_command.add_argument("--macos-intel-binary", type=Path, required=True)
+    record_command.add_argument("--windows-binary", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "prepare":
         prepare(args.template, args.version, args.macos, args.windows, args.output)
         return 0
-    evidence = inspect_bundle(
-        args.bundle, args.macos_sha256, args.windows_sha256, args.version
+    record_bundle(
+        bundle=args.bundle,
+        record_path=args.record,
+        manifest_path=args.manifest,
+        policy_path=args.policy,
+        outer_evidence_path=args.signing_evidence,
+        universal_signing_path=args.universal_signing_evidence,
+        macos_arm_record_path=args.macos_arm_record,
+        macos_intel_record_path=args.macos_intel_record,
+        windows_record_path=args.windows_record,
+        macos_arm_binary=args.macos_arm_binary,
+        macos_intel_binary=args.macos_intel_binary,
+        windows_binary=args.windows_binary,
     )
-    signing = json.loads(args.signing_evidence.read_text(encoding="utf-8"))
-    if signing.get("fixture_only") or signing.get("signed_sha256") != sha256_file(args.bundle):
-        raise McpbError("MCPB production signature evidence is absent or stale")
-    evidence["signing"] = signing
-    arm = json.loads(args.macos_arm_record.read_text(encoding="utf-8"))
-    intel = json.loads(args.macos_intel_record.read_text(encoding="utf-8"))
-    windows = json.loads(args.windows_record.read_text(encoding="utf-8"))
-    kind, target = ARTIFACTS["mcpb"]
-    record = {
-        "id": "mcpb",
-        "kind": kind,
-        "target": target,
-        "filename": args.bundle.name,
-        "sha256": sha256_file(args.bundle),
-        "bytes": args.bundle.stat().st_size,
-        "source_sha": args.source_sha,
-        "version": args.version,
-        "stage_run_id": args.run_id,
-        "provenance": {"packer": "@anthropic-ai/mcpb@2.1.2", "build_count": 1},
-        "evidence": evidence,
-        "upstream": {
-            "native-macos-arm64": arm["sha256"],
-            "native-macos-x86_64": intel["sha256"],
-            "native-windows-x86_64": windows["sha256"],
-        },
-    }
-    args.record.write_bytes(canonical_bytes(record))
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except (CandidateError, McpbError, OSError, SigningError, json.JSONDecodeError) as error:
+        print(f"MCPB: {error}", file=sys.stderr)
+        raise SystemExit(2) from error

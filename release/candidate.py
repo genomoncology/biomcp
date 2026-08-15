@@ -198,6 +198,17 @@ def validate_artifact(manifest: dict[str, Any], artifact_id: str, record: Any) -
         raise CandidateError(f"artifact {artifact_id} has wrong python_version")
     if record["evidence"].get("fixture_only"):
         raise CandidateError(f"artifact {artifact_id} uses fixture-only evidence")
+    if artifact_id == "mcpb":
+        expected_status = (
+            "signed" if manifest["candidate_kind"] == "release" else "unsigned-development"
+        )
+        expected_non_promotable = manifest["candidate_kind"] == "development"
+        if (
+            record["evidence"].get("outer_signature_status") != expected_status
+            or record["evidence"].get("non_promotable")
+            is not expected_non_promotable
+        ):
+            raise CandidateError("MCPB evidence does not match candidate kind")
     upstream = record.get("upstream", {})
     if not isinstance(upstream, dict) or any(
         key not in manifest["artifacts"]

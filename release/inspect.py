@@ -292,6 +292,7 @@ def _signing_record(
     target: str,
     source_sha: str,
     version: str,
+    run_id: str,
     policy: dict[str, Any],
     policy_hash: str,
 ) -> dict[str, Any]:
@@ -304,6 +305,7 @@ def _signing_record(
         "target": TARGETS[target]["slug"],
         "source_sha": source_sha,
         "version": version,
+        "stage_run_id": run_id,
         "signed_sha256": sha256_file(binary),
         "unsigned_sha256": sha256_file(unsigned_binary),
         "signing_policy_sha256": policy_hash,
@@ -356,18 +358,40 @@ def _signing_record(
 
 
 def _validate_signing_policy(policy: dict[str, Any]) -> None:
+    expected_keys = {
+        "schema_version",
+        "enabled",
+        "apple",
+        "windows",
+        "mcpb",
+        "development_unsigned_mcpb",
+        "allowed_notary_warnings",
+    }
     if (
-        policy.get("schema_version") != 1
+        set(policy) != expected_keys
+        or policy.get("schema_version") != 2
         or policy.get("enabled") is not True
         or policy.get("fixture_only") is True
         or policy.get("allowed_notary_warnings") != []
     ):
         raise InspectionError("production signing policy schema is invalid")
+    exception = policy.get("development_unsigned_mcpb")
+    if (
+        not isinstance(exception, dict)
+        or set(exception)
+        != {"enabled", "package", "tool_version", "reason", "blocks_promotion"}
+        or not isinstance(exception.get("enabled"), bool)
+        or exception.get("package") != "@anthropic-ai/mcpb"
+        or exception.get("tool_version") != "2.1.2"
+        or not isinstance(exception.get("reason"), str)
+        or not exception["reason"].strip()
+        or exception.get("blocks_promotion") is not True
+    ):
+        raise InspectionError("development unsigned MCPB exception is invalid")
     apple = policy.get("apple")
     windows = policy.get("windows")
-    mcpb = policy.get("mcpb")
-    if not all(isinstance(section, dict) for section in (apple, windows, mcpb)):
-        raise InspectionError("production signing policy lacks a release identity")
+    if not all(isinstance(section, dict) for section in (apple, windows)):
+        raise InspectionError("production signing policy lacks a native identity")
     if (
         not re.fullmatch(r"[A-Z0-9]{10}", str(apple.get("team_id", "")))
         or not apple.get("identity")
@@ -391,10 +415,6 @@ def _validate_signing_policy(policy: dict[str, Any]) -> None:
         )
     ):
         raise InspectionError("production Windows signing policy identity is invalid")
-    if not mcpb.get("subject") or not re.fullmatch(
-        r"[0-9A-F]{64}", str(mcpb.get("leaf_sha256", ""))
-    ):
-        raise InspectionError("production MCPB signing policy identity is invalid")
 
 
 def validate_signing(
@@ -406,6 +426,7 @@ def validate_signing(
     unsigned_shim: Path | None,
     source_sha: str,
     version: str,
+    run_id: str,
     policy_path: Path,
     evidence_paths: dict[str, Path],
 ) -> dict[str, Any]:
@@ -414,7 +435,7 @@ def validate_signing(
         policy = json.loads(raw)
     except (OSError, json.JSONDecodeError) as error:
         raise InspectionError("signing policy is absent or malformed") from error
-    if policy.get("schema_version") != 1:
+    if policy.get("schema_version") != 2:
         raise InspectionError("unsupported signing policy schema")
     if TARGETS[target]["os"] == "linux":
         if evidence_paths or unsigned_binary is not None or unsigned_shim is not None:
@@ -437,6 +458,7 @@ def validate_signing(
             target,
             source_sha,
             version,
+            run_id,
             policy,
             policy_hash,
         )
@@ -449,6 +471,7 @@ def validate_signing(
             target,
             source_sha,
             version,
+            run_id,
             policy,
             policy_hash,
         )
@@ -552,6 +575,7 @@ def finalize_record(
             unsigned_shim=unsigned_shim,
             source_sha=source_sha,
             version=version,
+            run_id=run_id,
             policy_path=signing_policy,
             evidence_paths=signing_evidence,
         ),

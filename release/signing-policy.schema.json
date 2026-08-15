@@ -1,16 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://biomcp.org/schemas/release-signing-policy-v1.json",
+  "$id": "https://biomcp.org/schemas/release-signing-policy-v2.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "enabled", "apple", "windows", "mcpb", "allowed_notary_warnings"],
+  "required": ["schema_version", "enabled", "apple", "windows", "mcpb", "development_unsigned_mcpb", "allowed_notary_warnings"],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "enabled": { "type": "boolean" },
     "fixture_only": { "type": "boolean" },
     "apple": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/apple" }] },
     "windows": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/windows" }] },
     "mcpb": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/mcpb" }] },
+    "development_unsigned_mcpb": { "$ref": "#/$defs/development_unsigned_mcpb" },
     "allowed_notary_warnings": { "type": "array", "maxItems": 0 }
   },
   "$defs": {
@@ -50,6 +51,18 @@
       "properties": {
         "subject": { "type": "string", "minLength": 1 },
         "leaf_sha256": { "$ref": "#/$defs/fingerprint" }
+      }
+    },
+    "development_unsigned_mcpb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "package", "tool_version", "reason", "blocks_promotion"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "package": { "const": "@anthropic-ai/mcpb" },
+        "tool_version": { "const": "2.1.2" },
+        "reason": { "type": "string", "minLength": 1 },
+        "blocks_promotion": { "const": true }
       }
     }
   }

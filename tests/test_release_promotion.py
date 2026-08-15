@@ -64,6 +64,14 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path, dict, Path, str]:
                 "inspected": True,
                 "binary_sha256": "e" * 64,
                 **(
+                    {
+                        "outer_signature_status": "signed",
+                        "non_promotable": False,
+                    }
+                    if artifact_id == "mcpb"
+                    else {}
+                ),
+                **(
                     {"python_version": manifest["python_version"]}
                     if kind == "wheel"
                     else {}
@@ -114,7 +122,11 @@ def _development_public_fixture(
         "version": manifest["version"],
         "stage_run_id": manifest["stage_run_id"],
         "provenance": {"fixture": True},
-        "evidence": {"inspected": True},
+        "evidence": {
+            "inspected": True,
+            "outer_signature_status": "unsigned-development",
+            "non_promotable": True,
+        },
     }
     inventory = {
         "version": manifest["version"],
