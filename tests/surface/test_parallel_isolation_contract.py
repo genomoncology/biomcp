@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
+import os
 import re
+import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -933,6 +936,150 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     assert "spec/entity/trial.md" in routine
     assert "spec/surface/discover.md" in routine
     assert "spec/surface/discover-live.md" not in routine
+
+
+def test_ticket_1010_live_umls_canary_parses_exact_full_concepts_fail_closed() -> None:
+    page = _read_repo("spec/surface/discover-live.md")
+    parser_match = re.search(
+        r"(?ms)set -o pipefail\n"
+        r"\.\./\.\./tools/biomcp-ci --with-umls-key --json discover "
+        r"\"Diabetes Mellitus, Non-Insulin-Dependent\" --full \|\n"
+        r"  env -i PATH=\"\$PATH\" python3 /dev/fd/3 3<<'PY'\n"
+        r"(?P<parser>.*?)\nPY",
+        page,
+    )
+
+    assert parser_match is not None, "live UMLS canary must use its JSON parser"
+    assert "--with-umls-key --json discover" in page
+    assert '"Diabetes Mellitus, Non-Insulin-Dependent" --full' in page
+    assert "DISCOVER_JSON" not in page
+    parser = parser_match.group("parser")
+    assert '"MONDO:0005148"' in parser
+    assert '"UMLS:C0011860"' in parser
+    assert 'startswith("SNOMEDCT")' in parser
+    assert 'startswith("ICD10")' in parser
+
+    valid = {
+        "concepts": [
+            {"primary_id": "MONDO:0005148"},
+            {
+                "primary_id": "UMLS:C0011860",
+                "sources": [{"source": "UMLS"}],
+                "xrefs": {
+                    "values": [
+                        {"source": "SNOMEDCT_US", "id": "44054006"},
+                        {"source": "ICD10CM", "id": "E11.9"},
+                    ]
+                },
+            },
+        ]
+    }
+
+    provider_credentials = (
+        "UMLS_API_KEY",
+        "NCBI_API_KEY",
+        "S2_API_KEY",
+        "OPENFDA_API_KEY",
+        "NCI_API_KEY",
+        "ONCOKB_TOKEN",
+        "DISGENET_API_KEY",
+        "ALPHAGENOME_API_KEY",
+    )
+
+    def parse_raw(
+        payload: str, extra_env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["python3", "-c", parser],
+            input=payload,
+            env={"PATH": os.environ["PATH"]} | (extra_env or {}),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    def clone() -> dict[str, object]:
+        return json.loads(json.dumps(valid))
+
+    assert parse_raw(json.dumps(valid)).returncode == 0
+    assert parse_raw("{not-json").returncode != 0
+    for malformed_document in ([], {"not_concepts": []}, {"concepts": {}}, {"concepts": [42]}):
+        assert parse_raw(json.dumps(malformed_document)).returncode != 0
+
+    missing_mondo = clone()
+    missing_mondo["concepts"] = missing_mondo["concepts"][1:]
+    duplicate_mondo = clone()
+    duplicate_mondo["concepts"].append(duplicate_mondo["concepts"][0])
+    missing_umls = clone()
+    missing_umls["concepts"] = missing_umls["concepts"][:1]
+    duplicate_umls = clone()
+    duplicate_umls["concepts"].append(duplicate_umls["concepts"][1])
+    for malformed_identity in (
+        missing_mondo,
+        duplicate_mondo,
+        missing_umls,
+        duplicate_umls,
+    ):
+        assert parse_raw(json.dumps(malformed_identity)).returncode != 0
+
+    for malformed_sources in (
+        {"source": "UMLS"},
+        [{"source": None}],
+        [{"source": {"nested": "UMLS"}}],
+    ):
+        malformed = clone()
+        malformed["concepts"][1]["sources"] = malformed_sources
+        assert parse_raw(json.dumps(malformed)).returncode != 0
+    missing_provenance = clone()
+    missing_provenance["concepts"][1]["sources"] = [{"source": "OLS4"}]
+    assert parse_raw(json.dumps(missing_provenance)).returncode != 0
+
+    for absent_prefix in ("SNOMEDCT", "ICD10"):
+        missing_family = clone()
+        values = missing_family["concepts"][1]["xrefs"]["values"]
+        missing_family["concepts"][1]["xrefs"]["values"] = [
+            value
+            for value in values
+            if not value["source"].startswith(absent_prefix)
+        ]
+        assert parse_raw(json.dumps(missing_family)).returncode != 0
+    unrelated_families = clone()
+    unrelated_families["concepts"].append(
+        {
+            "primary_id": "UMLS:C9999999",
+            "xrefs": unrelated_families["concepts"][1]["xrefs"],
+        }
+    )
+    unrelated_families["concepts"][1]["xrefs"] = {"values": []}
+    assert parse_raw(json.dumps(unrelated_families)).returncode != 0
+
+    for malformed_source in (None, 42, {"nested": "SNOMEDCT"}):
+        malformed = clone()
+        malformed["concepts"][1]["xrefs"]["values"][0]["source"] = malformed_source
+        assert parse_raw(json.dumps(malformed)).returncode != 0
+
+    for credential in provider_credentials:
+        assert parse_raw(json.dumps(valid), {credential: "must-not-leak"}).returncode != 0
+
+    failed_provider = subprocess.run(
+        [
+            "bash",
+            "-c",
+            (
+                "set -o pipefail\n"
+                '{ printf "%s" "$1"; exit 23; } | '
+                'env -i PATH="$PATH" python3 /dev/fd/3 3<<<"$2"'
+            ),
+            "ticket-1010-provider-failure",
+            json.dumps(valid),
+            parser,
+        ],
+        env={"PATH": os.environ["PATH"]},
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert failed_provider.returncode == 23
 
 
 def test_article_cache_transition_fixture_owns_disk_floor_precondition() -> None:
