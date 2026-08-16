@@ -59,7 +59,7 @@ esac
 resolve_repo() {
 	local from=$1 common
 	common=$(git -C "$from" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
-	(CDPATH= cd -- "$common/.." && pwd -P)
+	(CDPATH='' cd -- "$common/.." && pwd -P)
 }
 
 if [ -n "${SDLC_REPO-}" ]; then
@@ -77,7 +77,7 @@ if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
 	exit 2
 fi
 if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) ||
-	! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
+	! REPO_COMMON=$(CDPATH='' cd -- "$common" && pwd -P); then
 	echo "failure: cannot determine the Git common directory for $REPO" >&2
 	exit 2
 fi
@@ -85,11 +85,11 @@ fi
 candidate_owned() {
 	local candidate=$1 top candidate_path top_path candidate_common
 	top=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null) || return 1
-	candidate_path=$(CDPATH= cd -- "$candidate" && pwd -P) || return 1
-	top_path=$(CDPATH= cd -- "$top" && pwd -P) || return 1
+	candidate_path=$(CDPATH='' cd -- "$candidate" && pwd -P) || return 1
+	top_path=$(CDPATH='' cd -- "$top" && pwd -P) || return 1
 	[ "$candidate_path" = "$top_path" ] || return 1
 	candidate_common=$(git -C "$candidate" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
-	candidate_common=$(CDPATH= cd -- "$candidate_common" && pwd -P) || return 1
+	candidate_common=$(CDPATH='' cd -- "$candidate_common" && pwd -P) || return 1
 	[ "$candidate_common" = "$REPO_COMMON" ]
 }
 

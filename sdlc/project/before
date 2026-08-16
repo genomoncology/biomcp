@@ -86,7 +86,7 @@ if ! NAMESPACE=$(origin_namespace) || [ -z "$NAMESPACE" ]; then
 	exit 1
 fi
 if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) ||
-	! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
+	! REPO_COMMON=$(CDPATH='' cd -- "$common" && pwd -P); then
 	echo "before: cannot determine the Git common directory for $REPO" >&2
 	exit 1
 fi
@@ -97,11 +97,11 @@ TREE="$WORKTREES/$NAMESPACE/$TICKET_ID"
 candidate_owned() {
 	local candidate=$1 top candidate_path top_path candidate_common
 	top=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null) || return 1
-	candidate_path=$(CDPATH= cd -- "$candidate" && pwd -P) || return 1
-	top_path=$(CDPATH= cd -- "$top" && pwd -P) || return 1
+	candidate_path=$(CDPATH='' cd -- "$candidate" && pwd -P) || return 1
+	top_path=$(CDPATH='' cd -- "$top" && pwd -P) || return 1
 	[ "$candidate_path" = "$top_path" ] || return 1
 	candidate_common=$(git -C "$candidate" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
-	candidate_common=$(CDPATH= cd -- "$candidate_common" && pwd -P) || return 1
+	candidate_common=$(CDPATH='' cd -- "$candidate_common" && pwd -P) || return 1
 	[ "$candidate_common" = "$REPO_COMMON" ]
 }
 
