@@ -25,6 +25,12 @@ biomcp serve-http --host 0.0.0.0 --port 8080 \
   --allowed-hosts biomcp.example.org,localhost:8080
 ```
 
+Each `--allowed-hosts` entry is an exact hostname or IP address, with an
+optional port. IPv6 addresses with ports use brackets, such as `[::1]:8080`.
+Entries are case-insensitive, trailing dots are ignored, and duplicate entries
+are removed. Schemes, paths, wildcards, whitespace within an entry, empty
+entries, and ports outside 1–65535 are rejected before the server listens.
+
 Use TLS and authentication at a trusted reverse proxy, gateway, or private
 network boundary. The Host allowlist prevents unexpected Host headers; it is
 not authentication. If a proxy rewrites `Host`, allow the value BioMCP actually

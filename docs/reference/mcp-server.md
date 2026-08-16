@@ -77,6 +77,11 @@ biomcp serve-http --host 0.0.0.0 --port 8000 \
 
 If a proxy rewrites Host headers, include the value BioMCP actually receives.
 BioMCP does not infer trust from `Forwarded` or `X-Forwarded-Host` headers.
+Each allowlist entry is an exact hostname or IP address with an optional port;
+write an IPv6 address with a port as `[::1]:8000`. Entries are normalized for
+case, trailing dots, IP spelling, and duplicates before BioMCP listens. Empty
+entries, schemes, paths, wildcards, internal whitespace, malformed addresses,
+and ports outside 1–65535 are startup errors.
 The policy covers `/mcp`, `/`, `/health`, and `/readyz`; probe routes are not an
 exception to the DNS-rebinding boundary.
 

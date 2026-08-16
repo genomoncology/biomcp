@@ -60,7 +60,7 @@ pub struct ServeHttpArgs {
     /// Port to listen on
     #[arg(long, default_value = "8080", value_parser = parse_http_port)]
     pub port: u16,
-    /// Host header values to allow (comma-separated)
+    /// Hostnames or IP addresses to allow, optionally with ports (comma-separated)
     #[arg(long, value_delimiter = ',', conflicts_with = "unsafe_allow_any_host")]
     pub allowed_hosts: Vec<String>,
     /// Accept any Host header. This removes only the Host check; it does not add authentication or encryption.

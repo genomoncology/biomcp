@@ -37,61 +37,158 @@ fn http_allowed_hosts(
     ip: std::net::IpAddr,
     allowed_hosts: Vec<String>,
     unsafe_allow_any_host: bool,
-) -> anyhow::Result<Vec<String>> {
-    let allowed_hosts = allowed_hosts
-        .into_iter()
-        .map(|host| host.trim().to_string())
-        .filter(|host| !host.is_empty())
-        .collect::<Vec<_>>();
+) -> anyhow::Result<HostPolicy> {
     if unsafe_allow_any_host && !allowed_hosts.is_empty() {
         anyhow::bail!("--allowed-hosts cannot be combined with --unsafe-allow-any-host");
     }
     if unsafe_allow_any_host {
-        return Ok(Vec::new());
+        return Ok(HostPolicy::default());
     }
     if !allowed_hosts.is_empty() {
-        return Ok(allowed_hosts);
+        return allowed_hosts
+            .iter()
+            .map(|host| normalize_allowed_host(host))
+            .collect::<anyhow::Result<_>>()
+            .map(HostPolicy::new);
     }
     if ip.is_loopback() {
-        return Ok(vec!["localhost".into(), "127.0.0.1".into(), "::1".into()]);
+        return Ok(HostPolicy::new(vec![
+            normalized_authority("localhost").expect("valid loopback hostname"),
+            normalized_authority("127.0.0.1").expect("valid loopback IPv4 address"),
+            normalized_authority("::1").expect("valid loopback IPv6 address"),
+        ]));
     }
     anyhow::bail!(
         "A non-loopback serve-http bind requires --allowed-hosts or --unsafe-allow-any-host"
     )
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Default)]
 struct HostPolicy {
-    allowed_hosts: Vec<String>,
+    allowed_hosts: Vec<NormalizedAuthority>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+impl HostPolicy {
+    fn new(allowed_hosts: Vec<NormalizedAuthority>) -> Self {
+        let mut policy = Self::default();
+        for host in allowed_hosts {
+            if !policy.allowed_hosts.contains(&host) {
+                policy.allowed_hosts.push(host);
+            }
+        }
+        policy
+    }
+
+    fn transport_hosts(&self) -> Vec<String> {
+        self.allowed_hosts
+            .iter()
+            .map(NormalizedAuthority::as_host_header)
+            .collect()
+    }
+
+    #[cfg(test)]
+    fn is_empty(&self) -> bool {
+        self.allowed_hosts.is_empty()
+    }
+}
+
+impl<const N: usize> PartialEq<[&str; N]> for HostPolicy {
+    fn eq(&self, other: &[&str; N]) -> bool {
+        self.transport_hosts().iter().map(String::as_str).eq(*other)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct NormalizedAuthority {
     host: String,
     port: Option<u16>,
 }
 
+impl NormalizedAuthority {
+    fn as_host_header(&self) -> String {
+        let host = if self.host.contains(':') && self.port.is_some() {
+            format!("[{}]", self.host)
+        } else {
+            self.host.clone()
+        };
+        self.port
+            .map_or(host.clone(), |port| format!("{host}:{port}"))
+    }
+}
+
 fn normalized_authority(value: &str) -> Option<NormalizedAuthority> {
     let value = value.trim();
-    if value.is_empty() {
+    if value.is_empty() || value.chars().any(char::is_whitespace) {
         return None;
     }
-    if let Ok(authority) = axum::http::uri::Authority::try_from(value) {
+
+    let host_without_trailing_dot = value.trim_end_matches('.');
+    if let Ok(address) = host_without_trailing_dot.parse::<std::net::IpAddr>() {
         return Some(NormalizedAuthority {
-            host: authority
-                .host()
-                .trim_matches(['[', ']'])
-                .trim_end_matches('.')
-                .to_ascii_lowercase(),
-            port: authority.port_u16(),
+            host: address.to_string(),
+            port: None,
         });
     }
-    value
-        .parse::<std::net::IpAddr>()
-        .ok()
-        .map(|address| NormalizedAuthority {
-            host: address.to_string().to_ascii_lowercase(),
-            port: None,
+    if looks_like_ipv4_address(host_without_trailing_dot) {
+        return None;
+    }
+
+    if let Ok(authority) = axum::http::uri::Authority::try_from(value) {
+        let port = authority.port_u16();
+        if has_explicit_port(value) && port.is_none() {
+            return None;
+        }
+        let host = authority
+            .host()
+            .trim_matches(['[', ']'])
+            .trim_end_matches('.')
+            .to_ascii_lowercase();
+        if port == Some(0) || !is_valid_host(&host) {
+            return None;
+        }
+        return Some(NormalizedAuthority { host, port });
+    }
+    None
+}
+
+fn has_explicit_port(value: &str) -> bool {
+    if let Some(rest) = value.strip_prefix('[') {
+        return rest.find(']').is_some_and(|index| index + 1 < rest.len());
+    }
+    value.contains(':')
+}
+
+fn looks_like_ipv4_address(value: &str) -> bool {
+    let mut labels = value.split('.');
+    (0..4).all(|_| {
+        labels
+            .next()
+            .is_some_and(|label| !label.is_empty() && label.bytes().all(|b| b.is_ascii_digit()))
+    }) && labels.next().is_none()
+}
+
+fn normalize_allowed_host(value: &str) -> anyhow::Result<NormalizedAuthority> {
+    normalized_authority(value).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Invalid --allowed-hosts entry {value:?}: use a hostname or IP address with an optional port from 1 to 65535"
+        )
+    })
+}
+
+fn is_valid_host(host: &str) -> bool {
+    if host.parse::<std::net::IpAddr>().is_ok() {
+        return true;
+    }
+    !host.is_empty()
+        && host.len() <= 253
+        && host.split('.').all(|label| {
+            !label.is_empty()
+                && label.len() <= 63
+                && !label.starts_with('-')
+                && !label.ends_with('-')
+                && label
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
         })
 }
 
@@ -103,6 +200,17 @@ fn request_authority(uri: &Uri, headers: &HeaderMap) -> Option<NormalizedAuthori
         .and_then(|value| normalized_authority(value.as_str()))
 }
 
+fn normalized_host_is_allowed(
+    host: &NormalizedAuthority,
+    allowed_hosts: &[NormalizedAuthority],
+) -> bool {
+    allowed_hosts.is_empty()
+        || allowed_hosts.iter().any(|allowed| {
+            allowed.host == host.host && allowed.port.is_none_or(|port| host.port == Some(port))
+        })
+}
+
+#[cfg(test)]
 fn host_is_allowed(host: &NormalizedAuthority, allowed_hosts: &[String]) -> bool {
     allowed_hosts.is_empty()
         || allowed_hosts.iter().any(|allowed| {
@@ -124,7 +232,7 @@ async fn enforce_host_policy(
         )
             .into_response();
     };
-    if !host_is_allowed(&host, &policy.allowed_hosts) {
+    if !normalized_host_is_allowed(&host, &policy.allowed_hosts) {
         return (
             StatusCode::FORBIDDEN,
             "Forbidden: Host header is not allowed",
@@ -214,7 +322,7 @@ pub(in crate::mcp) async fn run_http(
         let mut http_config = StreamableHttpServerConfig::default();
         http_config.stateful_mode = true;
         http_config.cancellation_token = shutdown.child_token();
-        http_config.allowed_hosts = allowed_hosts.clone();
+        http_config.allowed_hosts = allowed_hosts.transport_hosts();
         http_config
     };
 
@@ -226,10 +334,7 @@ pub(in crate::mcp) async fn run_http(
         .route("/health", get(health_handler))
         .route("/readyz", get(health_handler))
         .route("/", get(index_handler))
-        .layer(from_fn_with_state(
-            HostPolicy { allowed_hosts },
-            enforce_host_policy,
-        ));
+        .layer(from_fn_with_state(allowed_hosts, enforce_host_policy));
     let listener = tokio::net::TcpListener::bind(bind)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to bind HTTP server: {e}"))?;
