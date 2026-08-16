@@ -9,7 +9,17 @@
     "entrez_id": { "type": ["string", "null"] },
     "ensembl_id": { "type": ["string", "null"] },
     "location": { "type": ["string", "null"] },
-    "genomic_coordinates": { "type": ["string", "null"] },
+    "genomic_coordinates": {
+      "type": ["object", "null"],
+      "properties": {
+        "coordinate": { "type": "string" },
+        "genome_build": { "type": "string" },
+        "source": { "type": "string" },
+        "provenance": { "type": "string" }
+      },
+      "required": ["coordinate", "genome_build", "source"],
+      "additionalProperties": false
+    },
     "omim_id": { "type": ["string", "null"] },
     "uniprot_id": { "type": ["string", "null"] },
     "summary": { "type": ["string", "null"] },

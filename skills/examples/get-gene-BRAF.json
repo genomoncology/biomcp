@@ -4,7 +4,12 @@
   "entrez_id": "673",
   "ensembl_id": "ENSG00000157764",
   "location": "7",
-  "genomic_coordinates": "7:140719327-140924976 (strand: -1)",
+  "genomic_coordinates": {
+    "coordinate": "7:140719327-140925199 (strand: -1)",
+    "genome_build": "GRCh38",
+    "source": "MyGene.info",
+    "provenance": "MyGene.info provider default"
+  },
   "omim_id": "164757",
   "uniprot_id": "P15056",
   "summary": "This gene encodes a protein belonging to the RAF family of serine/threonine protein kinases. This protein plays a role in regulating the MAP kinase/ERK signaling pathway, which affects cell division, differentiation, and...",

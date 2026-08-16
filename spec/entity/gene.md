@@ -36,6 +36,58 @@ biomcp get gene BRAF pathways
 biomcp get gene BRAF diagnostics'
 ```
 
+## Shipped schema matches the fixture-backed CLI payload
+
+The checked-in gene schema must validate the actual JSON emitted from the captured MyGene BRAF response. This closes the gate if the Rust serializer and shipped skill schema drift apart, even when the static example still agrees with the stale schema.
+
+```bash
+gene_json="$(../../tools/biomcp-ci --json get gene BRAF)"
+GENE_JSON="$gene_json" uv run --no-sync python3 - ../../skills/schemas/gene.json <<'PY' | mustmatch like 'gene schema matches fixture-backed CLI payload'
+import json
+import os
+from copy import deepcopy
+from pathlib import Path
+import sys
+
+from jsonschema import Draft202012Validator, ValidationError
+
+schema = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+Draft202012Validator.check_schema(schema)
+validator = Draft202012Validator(schema)
+payload = json.loads(os.environ["GENE_JSON"])
+validator.validate(payload)
+
+without_coordinates = deepcopy(payload)
+without_coordinates.pop("genomic_coordinates")
+validator.validate(without_coordinates)
+
+null_coordinates = deepcopy(payload)
+null_coordinates["genomic_coordinates"] = None
+validator.validate(null_coordinates)
+
+def require_rejection(candidate, label):
+    try:
+        validator.validate(candidate)
+    except ValidationError:
+        return
+    raise AssertionError(f"gene schema accepted invalid {label}")
+
+for required_field in ("coordinate", "genome_build", "source"):
+    missing_required = deepcopy(payload)
+    missing_required["genomic_coordinates"].pop(required_field)
+    require_rejection(missing_required, f"coordinate object without {required_field}")
+
+null_provenance = deepcopy(payload)
+null_provenance["genomic_coordinates"]["provenance"] = None
+require_rejection(null_provenance, "null coordinate provenance")
+
+extra_property = deepcopy(payload)
+extra_property["genomic_coordinates"]["unexpected"] = "value"
+require_rejection(extra_property, "extra coordinate property")
+print("gene schema matches fixture-backed CLI payload")
+PY
+```
+
 ## Common Alias Get Resolves Canonical Gene
 
 Clinical reports and papers often use common aliases instead of the HGNC symbol.
