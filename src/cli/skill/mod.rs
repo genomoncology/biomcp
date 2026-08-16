@@ -10,8 +10,29 @@ mod status;
 
 pub(crate) use catalog::list_use_case_refs;
 pub use catalog::{list_use_cases, render_system_prompt, show_overview, show_use_case};
-pub use install::install_skills;
+pub use install::{SkillInstallResult, install_skills};
 pub use status::skill_status;
+
+pub(crate) fn render_install_result(
+    result: &SkillInstallResult,
+    json: bool,
+) -> anyhow::Result<String> {
+    if !json {
+        return Ok(result.human_text());
+    }
+    #[derive(serde::Serialize)]
+    struct Response<'a> {
+        kind: &'static str,
+        action: &'static str,
+        #[serde(flatten)]
+        result: &'a SkillInstallResult,
+    }
+    Ok(crate::render::json::to_pretty(&Response {
+        kind: "skill",
+        action: "install",
+        result,
+    })?)
+}
 
 #[derive(Subcommand, Debug)]
 pub enum SkillCommand {

@@ -57,16 +57,16 @@ MONARCH_CML_PHENOTYPES_QUERY = {
 PHENOTYPE_PAYLOADS = {
     (
         "/monarch/v3/api/semsim/search/HP:0001250,HP:0033349,HP:0002069,HP:0002373,HP:0002199,HP:0007359,HP:0007207,HP:0033259,HP:0002123,HP:0010819/Human%20Diseases",
-        "3",
+        "4",
     ): "monarch/semsim_phrase_seizure_developmental_delay_20260811.json",
     (
         "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases",
-        "3",
+        "4",
     ): "monarch/semsim_hp_0001250_hp_0001263_limit3_20260811.json",
     (
         "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases",
-        "1",
-    ): "monarch/semsim_hp_0001250_hp_0001263_limit1_20260811.json",
+        "2",
+    ): "monarch/semsim_hp_0001250_hp_0001263_limit3_20260811.json",
 }
 OLS_ONTOLOGIES = "hgnc,mesh,mondo,doid,hp,go,chebi,dron,ncit,ordo,wikipathways,so"
 OLS_PAYLOADS = {

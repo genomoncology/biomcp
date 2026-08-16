@@ -56,11 +56,14 @@ When `--chart` is specified without `--terminal` or `-o`, BioMCP defaults to ter
 | `--title TEXT` | All chart outputs | Auto-generated title |
 | `--theme NAME` | All chart outputs | terminal: `dark`; files/inline SVG: `light` |
 | `--palette NAME` | Categorical charts | `category10` |
-| `--cols N` | Terminal charts only | `100` |
-| `--rows N` | Terminal charts only | `32` |
-| `--width PX` | SVG, PNG, MCP inline SVG | Kuva auto layout |
-| `--height PX` | SVG, PNG, MCP inline SVG | Kuva auto layout |
-| `--scale FACTOR` | PNG only | `2.0` |
+| `--cols N` | Terminal charts only; 20–500 | `100` |
+| `--rows N` | Terminal charts only; 8–200 | `32` |
+| `--width PX` | SVG, PNG, MCP inline SVG; 240–4096 | Kuva auto layout |
+| `--height PX` | SVG, PNG, MCP inline SVG; 160–4096 | Kuva auto layout |
+| `--scale FACTOR` | PNG only; 0.5–4.0 | `2.0` |
+
+PNG output is additionally limited to 16,777,216 final pixels after applying
+the scale factor. Invalid bounds fail before BioMCP loads local study data.
 
 Use `--palette wong` for colorblind-safe categorical output.
 

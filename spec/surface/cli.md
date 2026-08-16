@@ -6,8 +6,8 @@ and command-reference pages honest without re-testing entity-specific data here.
 
 ## Top-Level Help Keeps the Surface Visible
 
-The first thing a user sees still needs to teach the major surfaces and the one
-documented JSON exception for cache paths.
+The first thing a user sees still needs to teach the major surfaces and the
+shared structured-output contract.
 
 ```bash
 ../../tools/biomcp-ci --help | mustmatch like "leading public biomedical data sources"
@@ -15,7 +15,7 @@ documented JSON exception for cache paths.
 ../../tools/biomcp-ci --help | mustmatch like "skill       BioMCP skill overview"
 ../../tools/biomcp-ci --help | mustmatch like "discover    Resolve free-text biomedical text"
 ../../tools/biomcp-ci --help | mustmatch not '/(?m)^\s*suggest\s/'
-../../tools/biomcp-ci --help | mustmatch like "cache path, which stays plain text"
+../../tools/biomcp-ci --help | mustmatch like "Output as JSON instead of Markdown"
 ```
 
 ## Static Command Guides Stay Task-Oriented
@@ -171,13 +171,17 @@ mustmatch like '"entities"' <<<"$root_json"
 
 ## Operator Commands Keep Distinct Output Modes
 
-The operator-facing cache and version commands intentionally differ from the
-query surface: cache path stays plain text, while verbose version output exposes
-the executable/build identity for debugging.
+The operator-facing cache and version commands retain their own typed shapes:
+cache path is plain without `--json` and structured with it, while verbose
+version output exposes the executable/build identity for debugging.
 
 ```bash
-path="$(../../tools/biomcp-ci --json cache path)"
+path="$(../../tools/biomcp-ci cache path)"
 mustmatch '/^\/.*\/\.cache\/biomcp-specs\/http$/' <<<"$path"
+json_path="$(../../tools/biomcp-ci --json cache path)"
+jq -e '.kind == "cache_path" and (.path | endswith("/.cache/biomcp-specs/http"))' <<<"$json_path" | mustmatch 'true'
+json_path_after="$(../../tools/biomcp-ci cache path --json)"
+jq -e '.kind == "cache_path" and (.path | endswith("/.cache/biomcp-specs/http"))' <<<"$json_path_after" | mustmatch 'true'
 version="$(../../tools/biomcp-ci version --verbose)"
 mustmatch '/^biomcp 0\.[0-9]+\.[0-9]+/' <<<"$version"
 mustmatch like "Executable:" <<<"$version"

@@ -196,16 +196,12 @@ def test_cli_surface_contract_exception_registry_names_initial_exceptions() -> N
     entries = registry["entries"]
     by_command = {entry["command"]: entry for entry in entries}
 
-    for command in [
-        "biomcp cache path",
-        "biomcp --json list",
-        "biomcp --json version",
-    ]:
+    for command in ["biomcp --json list", "biomcp --json version"]:
         entry = by_command[command]
         assert entry["reason"].strip(), command
         assert entry["owner_test"].startswith("tests/test_cli_surface_contract_ratchet.py::"), command
 
-    assert by_command["biomcp cache path"]["exception"] == "plain_text_operator_path"
+    assert "biomcp cache path" not in by_command
     assert by_command["biomcp --json list"]["exception"] == "command_reference_payload"
     assert by_command["biomcp --json version"]["exception"] == "release_identity_payload"
     assert "biomcp --json search all --counts-only" not in by_command

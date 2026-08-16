@@ -41,9 +41,10 @@ Resource discovery gives agent clients both the overview entry point and the
 worked-example catalog before execution.
 
 Prefer the bounded typed tools. Use `biomcp` only as the raw read-only escape
-hatch, beginning with `biomcp list` for compact command discovery. A current
-local `tools/list` measurement is 6,707 UTF-8 bytes and 1,628 `cl100k_base`
-tokens; reproduce it with `uv run --no-sync python scripts/measure-mcp-tools.py`.
+hatch, beginning with `biomcp list` for compact command discovery. CI measures
+the real local `tools/list` response with
+`uv run --no-sync python scripts/measure-mcp-tools.py` and rejects catalogs over
+16,000 UTF-8 bytes or 4,000 `cl100k_base` tokens.
 
 ## Operational tips
 

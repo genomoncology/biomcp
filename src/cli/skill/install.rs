@@ -9,11 +9,57 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use crate::error::BioMcpError;
 
 use super::status::{
-    MANIFEST_NAME, ManagedPayload, classify_target, current_payload, parse_valid_manifest,
-    validate_managed_path,
+    MANIFEST_NAME, ManagedPayload, SkillStatus, classify_target, current_payload,
+    parse_valid_manifest, validate_managed_path,
 };
 
 static STAGING_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+#[derive(Debug, Clone, Copy, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+enum SkillInstallState {
+    Installed,
+    Unchanged,
+    Repaired,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct SkillInstallResult {
+    status: SkillInstallState,
+    changed: bool,
+    target: String,
+    skill_status: SkillStatus,
+}
+
+impl SkillInstallResult {
+    fn new(
+        status: SkillInstallState,
+        changed: bool,
+        target: &Path,
+        skill_status: SkillStatus,
+    ) -> Self {
+        Self {
+            status,
+            changed,
+            target: target.display().to_string(),
+            skill_status,
+        }
+    }
+
+    pub fn human_text(&self) -> String {
+        match self.status {
+            SkillInstallState::Installed => {
+                format!("Installed BioMCP skills to {}", self.target)
+            }
+            SkillInstallState::Unchanged => {
+                format!("Existing BioMCP skill was not changed at {}", self.target)
+            }
+            SkillInstallState::Repaired => format!("Repaired BioMCP skills at {}", self.target),
+            SkillInstallState::Cancelled => "No installation selected".into(),
+        }
+    }
+}
 
 pub(super) fn expand_tilde(path: &str) -> Result<PathBuf, BioMcpError> {
     if path == "~" {
@@ -491,14 +537,16 @@ fn install_to_dir_with_display(
     target: &Path,
     safe_dir: &str,
     force: bool,
-) -> Result<String, BioMcpError> {
+) -> Result<SkillInstallResult, BioMcpError> {
     let payload = current_payload()?;
     let exists = target_exists(target)?;
     if exists && !force {
         let status = classify_target(target, safe_dir, &payload)?;
-        return Ok(format!(
-            "Existing BioMCP skill was not changed.\n{}",
-            crate::render::json::to_pretty(&status)?
+        return Ok(SkillInstallResult::new(
+            SkillInstallState::Unchanged,
+            false,
+            target,
+            status,
         ));
     }
 
@@ -516,11 +564,21 @@ fn install_to_dir_with_display(
             write_stderr_line("Warning: skill repair committed, but old staging cleanup failed");
     }
 
-    Ok(format!("Installed BioMCP skills to {}", target.display()))
+    let status = classify_target(target, safe_dir, &payload)?;
+    Ok(SkillInstallResult::new(
+        if exists {
+            SkillInstallState::Repaired
+        } else {
+            SkillInstallState::Installed
+        },
+        true,
+        target,
+        status,
+    ))
 }
 
 #[cfg(test)]
-pub(super) fn install_to_dir(dir: &Path, force: bool) -> Result<String, BioMcpError> {
+pub(super) fn install_to_dir(dir: &Path, force: bool) -> Result<SkillInstallResult, BioMcpError> {
     install_to_dir_with_display(dir, "<skill-dir>", force)
 }
 
@@ -530,7 +588,7 @@ pub(super) fn install_to_dir(dir: &Path, force: bool) -> Result<String, BioMcpEr
 ///
 /// Returns an error when the destination path is invalid, not writable, or no
 /// supported installation directory can be determined.
-pub fn install_skills(dir: Option<&str>, force: bool) -> Result<String, BioMcpError> {
+pub fn install_skills(dir: Option<&str>, force: bool) -> Result<SkillInstallResult, BioMcpError> {
     let resolved = resolve_skill_target(dir)?;
     if !resolved.also_found.is_empty() {
         let extra = resolved
@@ -548,7 +606,14 @@ pub fn install_skills(dir: Option<&str>, force: bool) -> Result<String, BioMcpEr
             resolved.reason
         ))?;
         if io::stdin().is_terminal() && !prompt_confirm(&resolved.path)? {
-            return Ok("No installation selected".into());
+            let payload = current_payload()?;
+            let status = classify_target(&resolved.path, &resolved.safe_dir, &payload)?;
+            return Ok(SkillInstallResult::new(
+                SkillInstallState::Cancelled,
+                false,
+                &resolved.path,
+                status,
+            ));
         }
     }
     install_to_dir_with_display(&resolved.path, &resolved.safe_dir, force)

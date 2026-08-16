@@ -36,7 +36,6 @@ CLI_SURFACE_CONTRACT_CHECKS = [
 ]
 CLI_SURFACE_EXCEPTION_REGISTRY = "tools/cli-surface-contract-exceptions.json"
 CLI_SURFACE_REQUIRED_EXCEPTIONS = {
-    "biomcp cache path": "plain_text_operator_path",
     "biomcp --json list": "command_reference_payload",
     "biomcp --json version": "release_identity_payload",
 }

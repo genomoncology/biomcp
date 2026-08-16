@@ -372,6 +372,11 @@ fn parse_hpo_query_terms(raw: &str) -> Result<Vec<String>, BioMcpError> {
         };
         if seen.insert(id.clone()) {
             terms.push(id);
+            if terms.len() > MAX_PHENOTYPE_TERMS {
+                return Err(BioMcpError::InvalidArgument(format!(
+                    "Phenotype search accepts at most {MAX_PHENOTYPE_TERMS} unique HPO terms"
+                )));
+            }
         }
     }
 
@@ -399,15 +404,25 @@ fn split_phenotype_queries(raw: &str) -> Vec<String> {
 }
 
 async fn resolve_phenotype_query_terms(raw: &str) -> Result<Vec<String>, BioMcpError> {
-    const MAX_RESOLVED_TERMS: usize = 10;
-
     let raw = raw.trim();
     if raw.is_empty() {
         return Err(phenotype_query_required_error());
     }
 
-    if let Ok(terms) = parse_hpo_query_terms(raw) {
-        return Ok(terms);
+    match parse_hpo_query_terms(raw) {
+        Ok(terms) => return Ok(terms),
+        Err(error)
+            if raw
+                .split(|character: char| character.is_whitespace() || character == ',')
+                .filter(|token| !token.is_empty())
+                .all(|token| {
+                    let token = token.to_ascii_uppercase();
+                    token.starts_with("HP:") || token.starts_with("HP_")
+                }) =>
+        {
+            return Err(error);
+        }
+        Err(_) => {}
     }
 
     let queries = split_phenotype_queries(raw);
@@ -419,11 +434,11 @@ async fn resolve_phenotype_query_terms(raw: &str) -> Result<Vec<String>, BioMcpE
     let mut resolved = Vec::new();
     let mut seen = HashSet::new();
     for query in queries {
-        let ids = hpo.search_term_ids(&query, MAX_RESOLVED_TERMS).await?;
+        let ids = hpo.search_term_ids(&query, MAX_PHENOTYPE_TERMS).await?;
         for id in ids {
             if seen.insert(id.clone()) {
                 resolved.push(id);
-                if resolved.len() >= MAX_RESOLVED_TERMS {
+                if resolved.len() >= MAX_PHENOTYPE_TERMS {
                     return Ok(resolved);
                 }
             }
@@ -437,46 +452,105 @@ async fn resolve_phenotype_query_terms(raw: &str) -> Result<Vec<String>, BioMcpE
     Ok(resolved)
 }
 
+const MAX_PHENOTYPE_TERMS: usize = 10;
+const MAX_PHENOTYPE_WINDOW: usize = 50;
+
+pub(crate) fn validate_phenotype_search_window(
+    limit: usize,
+    offset: usize,
+) -> Result<usize, BioMcpError> {
+    if limit == 0 || limit > MAX_PHENOTYPE_WINDOW {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "--limit must be between 1 and {MAX_PHENOTYPE_WINDOW}"
+        )));
+    }
+    let end = offset.checked_add(limit).ok_or_else(|| {
+        BioMcpError::InvalidArgument("--offset + --limit must be <= 50 for phenotype search".into())
+    })?;
+    if end > MAX_PHENOTYPE_WINDOW {
+        return Err(BioMcpError::InvalidArgument(
+            "--offset + --limit must be <= 50 for phenotype search".into(),
+        ));
+    }
+    Ok(end)
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct PhenotypePagination {
+    pub offset: usize,
+    pub limit: usize,
+    pub returned: usize,
+    pub total: Option<usize>,
+    pub has_more: bool,
+    pub next_page_token: Option<String>,
+    pub truncated_by_provider_budget: bool,
+}
+
+impl PhenotypePagination {
+    pub(crate) fn next_window(&self) -> Option<(usize, usize)> {
+        if !self.has_more {
+            return None;
+        }
+        let offset = self.offset + self.returned;
+        let limit = self.limit.min(MAX_PHENOTYPE_WINDOW.saturating_sub(offset));
+        (limit > 0).then_some((limit, offset))
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PhenotypeSearchPage {
+    pub results: Vec<PhenotypeSearchResult>,
+    pub pagination: PhenotypePagination,
+}
+
 pub async fn search_phenotype_page(
     hpo_terms: &str,
     limit: usize,
     offset: usize,
-) -> Result<SearchPage<PhenotypeSearchResult>, BioMcpError> {
-    const MAX_SEARCH_LIMIT: usize = 50;
-    if limit == 0 || limit > MAX_SEARCH_LIMIT {
-        return Err(BioMcpError::InvalidArgument(format!(
-            "--limit must be between 1 and {MAX_SEARCH_LIMIT}"
-        )));
-    }
+) -> Result<PhenotypeSearchPage, BioMcpError> {
+    let window_end = validate_phenotype_search_window(limit, offset)?;
 
     let terms = resolve_phenotype_query_terms(hpo_terms).await?;
     let client = MonarchClient::new()?;
-    let fetch_limit = limit.saturating_add(offset).max(limit);
+    let fetch_limit = window_end.saturating_add(1).min(MAX_PHENOTYPE_WINDOW);
     let mut rows = client
         .phenotype_similarity_search(&terms, fetch_limit)
         .await?;
     rows.sort_by(|a, b| b.score.total_cmp(&a.score));
-    let total = rows.len();
     rows.truncate(fetch_limit);
+    let has_more = rows.len() > window_end;
+    let truncated_by_provider_budget =
+        window_end == MAX_PHENOTYPE_WINDOW && rows.len() == MAX_PHENOTYPE_WINDOW;
+    let results = rows
+        .into_iter()
+        .skip(offset)
+        .take(limit)
+        .map(
+            |MonarchPhenotypeMatch {
+                 disease_id,
+                 disease_name,
+                 score,
+             }| PhenotypeSearchResult {
+                disease_id,
+                disease_name,
+                score,
+            },
+        )
+        .collect::<Vec<_>>();
+    let returned = results.len();
 
-    Ok(SearchPage::offset(
-        rows.into_iter()
-            .skip(offset)
-            .take(limit)
-            .map(
-                |MonarchPhenotypeMatch {
-                     disease_id,
-                     disease_name,
-                     score,
-                 }| PhenotypeSearchResult {
-                    disease_id,
-                    disease_name,
-                    score,
-                },
-            )
-            .collect(),
-        Some(total),
-    ))
+    Ok(PhenotypeSearchPage {
+        results,
+        pagination: PhenotypePagination {
+            offset,
+            limit,
+            returned,
+            total: None,
+            has_more,
+            next_page_token: None,
+            truncated_by_provider_budget,
+        },
+    })
 }
 
 #[cfg(test)]

@@ -60,12 +60,13 @@ fn cache_clear_command_parses_with_yes_flag() {
 }
 
 #[test]
-fn cache_path_help_mentions_plain_text_and_ignored_json() {
+fn cache_path_help_describes_plain_and_typed_json_output() {
     let help = render_cache_path_long_help();
 
-    assert!(help.contains("plain text"));
+    assert!(help.contains("plain path"));
     assert!(help.contains("--json"));
-    assert!(help.contains("ignored"));
+    assert!(help.contains("cache_path"));
+    assert!(!help.contains("ignored"));
 }
 
 #[test]

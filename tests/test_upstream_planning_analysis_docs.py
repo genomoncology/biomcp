@@ -738,7 +738,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     assert "biomcp skill status [dir]     → compare installed guidance" in ux
     assert "biomcp skill list             → list embedded worked examples" in ux
     assert (
-        "biomcp cache path             → print the managed HTTP cache path (plain text; ignores `--json`)"
+        "biomcp cache path             → print the managed HTTP cache path (typed `cache_path` object under `--json`)"
         in ux
     )
     assert (
@@ -773,7 +773,7 @@ def test_technical_and_ux_docs_match_current_cli_and_workflow_contracts() -> Non
     )
     assert (
         "JSON is the default script contract for query commands, with a documented "
-        "plain-text exception for `biomcp cache path`. `biomcp cache stats`, "
+        "typed `cache_path` object for `biomcp cache path`. `biomcp cache stats`, "
         "`biomcp cache clean`, and `biomcp cache clear` support `--json` on "
         "success, while `cache clear` still refuses non-TTY destructive runs "
         "unless `--yes` is present. The cache family remains CLI-only because "

@@ -331,8 +331,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     Ok(crate::cli::skill::skill_status(dir.as_deref(), json)?)
                 }
                 Some(SkillCommand::Install { dir, force }) => {
-                    let content = crate::cli::skill::install_skills(dir.as_deref(), force)?;
-                    if json { Ok(crate::render::json::to_pretty(&serde_json::json!({"kind":"skill","action":"install","status":"installed","changed":true,"content":content}))?) } else { Ok(content) }
+                    let result = crate::cli::skill::install_skills(dir.as_deref(), force)?;
+                    crate::cli::skill::render_install_result(&result, json)
                 }
                 Some(SkillCommand::Show(args)) => {
                     let key = if args.is_empty() {
@@ -351,7 +351,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 if json {
                     Ok(crate::render::json::to_pretty(&serde_json::json!({
                         "kind":"chart",
-                        "chart": command.map(|value| format!("{value:?}").to_ascii_lowercase()),
+                        "chart": command.map(super::chart::ChartCommand::as_str),
                         "content": content,
                     }))?)
                 } else { Ok(content) }

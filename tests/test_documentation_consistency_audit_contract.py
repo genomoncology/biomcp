@@ -357,7 +357,8 @@ def test_blog_try_it_and_install_copy_are_consistent() -> None:
 
     assert "replaced 36 narrow MCP tools with one command grammar" in blog
     assert "seven-tool catalog" in blog
-    assert "1,628 `cl100k_base` tokens" in blog
+    assert "1,628 `cl100k_base` tokens at the 0932 snapshot" in blog
+    assert "16,000 bytes and 4,000 tokens" in blog
     assert "uv tool install biomcp-cli" in blog
     assert "curl -fsSL https://biomcp.org/install.sh | bash" in blog
     assert blog.index("curl -fsSL https://biomcp.org/install.sh | bash") < blog.index(

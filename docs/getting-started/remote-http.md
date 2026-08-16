@@ -12,6 +12,10 @@ launches BioMCP over stdio.
 biomcp serve-http --host 127.0.0.1 --port 8080
 ```
 
+Ports are explicit and must be in the range 1–65535. Port 0 is rejected because
+an undisclosed operating-system-selected port would not give clients a usable
+address.
+
 Use `--host 0.0.0.0` only when the server must accept connections from other
 machines or containers. A non-loopback bind must name the Host values BioMCP
 will receive:

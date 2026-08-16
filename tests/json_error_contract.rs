@@ -739,6 +739,51 @@ fn vaers_aggregate_and_pre_dispatch_errors_remain_keyless() {
 }
 
 #[test]
+fn contradictory_variant_filters_fail_before_myvariant_contact() {
+    for args in [
+        ["--has", "cadd", "--missing", "cadd"],
+        ["--min-cadd", "10", "--missing", "cadd"],
+        ["--max-frequency", "0.01", "--missing", "gnomad"],
+        ["--significance", "pathogenic", "--missing", "clinvar"],
+    ] {
+        let mut command = vec!["--json", "search", "variant"];
+        command.extend(args);
+        let result =
+            run_biomcp_with_env(&command, &[("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9")]);
+        assert_json_error(&result, 2, "invalid_argument");
+        assert!(
+            result.stdout.contains("cannot be combined with --missing"),
+            "stdout={}",
+            result.stdout
+        );
+        assert!(!result.stdout.contains("provider"));
+    }
+}
+
+#[test]
+fn non_trial_batch_source_fails_before_provider_contact() {
+    let result = run_biomcp_with_env(
+        &["--json", "batch", "gene", "BRAF", "--source", "ctgov"],
+        &[("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9")],
+    );
+
+    assert_json_error(&result, 2, "invalid_argument");
+    assert!(
+        result
+            .stdout
+            .contains("--source is only supported for trial batches")
+    );
+}
+
+#[test]
+fn serve_http_port_zero_is_a_json_usage_error() {
+    let result = run_biomcp(&["--json", "serve-http", "--port", "0"]);
+
+    assert_json_error(&result, 2, "invalid_argument");
+    assert!(result.stdout.contains("--port must be between 1 and 65535"));
+}
+
+#[test]
 fn json_mode_missing_required_arg_parse_error_writes_json_stdout_and_exit_2() {
     let result = run_biomcp(&["--json", "get", "variant"]);
 

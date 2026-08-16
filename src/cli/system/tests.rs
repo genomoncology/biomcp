@@ -3,6 +3,8 @@ use clap::{CommandFactory, Parser};
 use super::{CvxCommand, DdinterCommand, EmaCommand, GtrCommand, WhoCommand, WhoIvdCommand};
 use crate::cli::{Cli, Commands, execute};
 
+mod dev2_contracts;
+
 fn parse_built_cli<I, T>(args: I) -> Cli
 where
     I: IntoIterator<Item = T>,
@@ -418,7 +420,7 @@ fn batch_command_parses_sections_and_source() {
     assert_eq!(entity, "trial");
     assert_eq!(ids, "NCT02576665,NCT02693535");
     assert_eq!(sections.as_deref(), Some("eligibility,locations"));
-    assert_eq!(source, "nci");
+    assert_eq!(source.as_deref(), Some("nci"));
 }
 
 #[test]

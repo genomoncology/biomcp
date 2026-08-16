@@ -5,6 +5,11 @@ pub(crate) async fn handle_command(
     cmd: StudyCommand,
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    if let Some(chart) = chart_args(&cmd).filter(|chart| chart.chart.is_some()) {
+        crate::render::chart::validate_chart_output_options(
+            &crate::render::chart::ChartRenderOptions::from(chart),
+        )?;
+    }
     let mcp_chart_text = mcp_chart_text(&cmd);
     let text = match cmd {
         StudyCommand::List => {
@@ -343,6 +348,16 @@ pub(crate) async fn handle_command(
         Ok(CommandOutcome::stdout_with_svg(summary, text))
     } else {
         Ok(CommandOutcome::stdout(text))
+    }
+}
+
+fn chart_args(cmd: &StudyCommand) -> Option<&ChartArgs> {
+    match cmd {
+        StudyCommand::Query { chart, .. }
+        | StudyCommand::Survival { chart, .. }
+        | StudyCommand::Compare { chart, .. }
+        | StudyCommand::CoOccurrence { chart, .. } => Some(chart),
+        _ => None,
     }
 }
 

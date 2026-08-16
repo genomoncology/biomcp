@@ -28,7 +28,7 @@ biomcp skill render           → print the canonical agent prompt
 biomcp skill install [--force] <dir> → install or explicitly repair the BioMCP guide
 biomcp skill status [dir]     → compare installed guidance with this binary
 biomcp skill list             → list embedded worked examples
-biomcp cache path             → print the managed HTTP cache path (plain text; ignores `--json`)
+biomcp cache path             → print the managed HTTP cache path (typed `cache_path` object under `--json`)
 biomcp cache stats            → show HTTP cache statistics (JSON supported)
 biomcp cache clean            → remove orphan blobs and optionally age- or size-evict the HTTP cache (JSON supported)
 biomcp cache clear [--yes]    → destructively wipe the managed HTTP cache tree (JSON success; TTY or `--yes` required)
@@ -203,6 +203,8 @@ Variant consequence, ClinVar review-status, and field-presence filters use stabl
 public vocabularies discoverable through `biomcp list variant`. `--consequence`,
 `--review-status`, `--has`, and `--missing` reject unsupported values with a typed
 `invalid_argument` response rather than treating a typo as a successful empty search.
+Contradictory presence and field-specific predicates fail at the same pre-provider
+validation boundary.
 Provider-specific field paths and review phrases remain behind that public vocabulary.
 
 Protein, coding-HGVS, and rsID exact searches preserve the supplied identity in
@@ -475,7 +477,7 @@ These properties should be preserved across releases:
    real commands
 
 JSON is the default script contract for query commands, with a documented
-plain-text exception for `biomcp cache path`. `biomcp cache stats`,
+typed `cache_path` object for `biomcp cache path`. `biomcp cache stats`,
 `biomcp cache clean`, and `biomcp cache clear` support `--json` on success,
 while `cache clear` still refuses non-TTY destructive runs unless `--yes` is
 present. The cache family remains CLI-only because revealing workstation-local

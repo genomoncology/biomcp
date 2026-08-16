@@ -7,12 +7,13 @@ use crate::error::BioMcpError;
 
 #[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CacheCommand {
-    /// Print the managed HTTP cache path as plain text (`--json` is ignored)
+    /// Print the managed HTTP cache path
     #[command(long_about = "\
-Print the managed HTTP cache path as plain text.
+Print the managed HTTP cache path.
 
 This command is read-only and prints `<resolved cache_root>/http`.
-The global `--json` flag is ignored for this command and output stays plain text.
+Without `--json` the output is the plain path. With `--json` it is a typed
+`cache_path` object containing the path.
 This command family is CLI-only because it reveals workstation-local filesystem paths.")]
     Path,
     /// Show HTTP cache and article-session statistics

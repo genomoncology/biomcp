@@ -2,12 +2,6 @@
   "schema": "biomcp-cli-surface-contract-exceptions-v1",
   "entries": [
     {
-      "command": "biomcp cache path",
-      "exception": "plain_text_operator_path",
-      "reason": "This operator helper intentionally prints the workstation-local cache path as plain text instead of a JSON entity envelope.",
-      "owner_test": "tests/test_cli_surface_contract_ratchet.py::test_cli_surface_contract_exception_registry_names_initial_exceptions"
-    },
-    {
       "command": "biomcp --json list",
       "exception": "command_reference_payload",
       "reason": "The list command is a command-reference surface, so its JSON shape is a reference payload rather than an entity result with follow-up next commands.",

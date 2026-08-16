@@ -218,6 +218,39 @@ fn study_survival_parses_survival_chart_flag() {
     assert!(chart.terminal);
 }
 
+#[tokio::test]
+async fn png_pixel_budget_is_rejected_before_study_lookup() {
+    let err = execute(vec![
+        "biomcp".into(),
+        "study".into(),
+        "query".into(),
+        "--study".into(),
+        "definitely_missing".into(),
+        "--gene".into(),
+        "TP53".into(),
+        "--type".into(),
+        "mutations".into(),
+        "--chart".into(),
+        "bar".into(),
+        "--width".into(),
+        "4096".into(),
+        "--height".into(),
+        "4096".into(),
+        "--scale".into(),
+        "2".into(),
+        "--output".into(),
+        "oversized.png".into(),
+    ])
+    .await
+    .expect_err("oversized PNG should fail before study lookup");
+
+    assert!(
+        err.to_string()
+            .contains("PNG output is limited to 16777216 pixels")
+    );
+    assert!(!std::path::Path::new("oversized.png").exists());
+}
+
 #[test]
 fn chart_auxiliary_flags_require_chart() {
     let err = Cli::try_parse_from([

@@ -150,6 +150,41 @@ async fn raw_and_typed_mcp_reject_unknown_adverse_event_sections_before_provider
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn raw_mcp_rejects_contradictory_variant_filters_and_non_trial_batch_source()
+-> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness
+        .spawn_stdio_client(&[
+            ("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9".to_string()),
+            ("BIOMCP_MYGENE_BASE", "http://127.0.0.1:9".to_string()),
+        ])
+        .await?;
+
+    let variant = biomcp_mcp_contract_client::call_biomcp(
+        &client,
+        "biomcp search variant --min-cadd 10 --missing cadd",
+    )
+    .await?;
+    assert_eq!(variant.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&variant.content)
+            .contains("cannot be combined with --missing")
+    );
+
+    let batch =
+        biomcp_mcp_contract_client::call_biomcp(&client, "biomcp batch gene BRAF --source ctgov")
+            .await?;
+    assert_eq!(batch.is_error, Some(true));
+    assert!(
+        biomcp_mcp_contract_client::first_text(&batch.content)
+            .contains("--source is only supported for trial batches")
+    );
+
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts()
 -> anyhow::Result<()> {
     let harness = harness();

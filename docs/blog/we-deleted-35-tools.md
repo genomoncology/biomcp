@@ -2,7 +2,7 @@
 
 *What rebuilding a biomedical data tool taught us about designing for AI agents.*
 
-**TL;DR:** We replaced 36 narrow MCP tools with one command grammar, then selectively added six bounded typed tools where schemas materially help. The current seven-tool catalog is 6,707 bytes (1,628 `cl100k_base` tokens), measured from a real local `tools/list` response.
+**TL;DR:** We replaced 36 narrow MCP tools with one command grammar, then selectively added six bounded typed tools where schemas materially help. The seven-tool catalog measured 6,707 bytes and 1,628 `cl100k_base` tokens at the 0932 snapshot; the current catalog is measured and bounded in CI.
 
 ![Redesigned for AI Agents](../assets/04-redesign-1280x720.png)
 
@@ -69,11 +69,11 @@ Six bounded typed tools now sit beside that escape hatch: `search`, `get`,
 annotations, and ordering. The raw description points to bounded `biomcp list`
 discovery instead of embedding the whole CLI reference.
 
-The current compact serialized `tools/list` measures 6,707 UTF-8 bytes and
-1,628 `cl100k_base` tokens, versus roughly 16,600 tokens in the original Python
-surface. Reproduce it with
-`uv run --no-sync python scripts/measure-mcp-tools.py`; these are measurements,
-not a claimed percentage.
+The compact serialized `tools/list` measured 6,707 UTF-8 bytes and 1,628
+`cl100k_base` tokens at the 0932 snapshot, versus roughly 16,600 tokens in the
+original Python surface. Reproduce the current measurement with
+`uv run --no-sync python scripts/measure-mcp-tools.py`; CI keeps it at or below
+16,000 bytes and 4,000 tokens. These are measurements, not a claimed percentage.
 
 We still support MCP — local stdio and remote server modes — but the MCP server is now a thin proxy over the CLI. You don't have to choose. Build the CLI first, serve it over MCP second.
 
@@ -154,7 +154,7 @@ The agent doesn't memorize the command surface. Each response teaches it where t
 
 | Metric | Python (v0.7) | Rust (v0.8+) | Change |
 |---|---|---|---|
-| Tool catalog loaded | 36 tools, ~16,600 tokens | 7 tools, 1,628 tokens | Measured locally from `tools/list` |
+| Tool catalog loaded | 36 tools, ~16,600 tokens | 7 tools, 1,628 tokens at the 0932 snapshot | Current catalog measured and bounded in CI |
 | Variant lookup output | ~1,400 tokens | ~350 tokens | **75% reduction** |
 | Trial search output | ~1,600 tokens | ~400 tokens | **75% reduction** |
 | Round-trips per query | 3-4 (think + search + get) | 1 | **70% fewer** |

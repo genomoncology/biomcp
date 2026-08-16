@@ -37,7 +37,11 @@ The positional `terms` argument accepts:
 - multiple symptom phrases separated by commas
 
 Free-text symptom phrases are resolved to HPO IDs before the Monarch similarity
-search runs. Use `--limit` and `--offset` when you need bounded paging.
+search runs. A query may contain at most 10 unique HPO terms. Use `--limit` and
+`--offset` within Monarch's first 50 ranked matches; `offset + limit` cannot
+exceed 50. When that provider window is exhausted, BioMCP reports possible
+truncation and asks you to refine the terms instead of emitting an unusable
+continuation.
 
 ## Get records
 

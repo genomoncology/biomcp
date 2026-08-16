@@ -292,11 +292,7 @@ pub fn resolve_study_root() -> PathBuf {
 
 pub fn list_studies(root: &Path) -> Result<Vec<StudyDataset>, BioMcpError> {
     if !root.exists() {
-        return Err(BioMcpError::SourceUnavailable {
-            source_name: SOURCE_NAME.to_string(),
-            reason: format!("Study root does not exist: {}", root.display()),
-            suggestion: "Set BIOMCP_STUDY_DIR to a directory containing study folders.".to_string(),
-        });
+        return Ok(Vec::new());
     }
 
     if !root.is_dir() {
@@ -1165,7 +1161,9 @@ pub fn patient_survival_data(
         let Some(status) = parse_survival_status(row_field(&row, status_idx)) else {
             continue;
         };
-        let Some(months) = parse_f64(row_field(&row, months_idx)) else {
+        let Some(months) = parse_f64(row_field(&row, months_idx))
+            .filter(|value| value.is_finite() && *value >= 0.0)
+        else {
             continue;
         };
 
@@ -2225,6 +2223,8 @@ impl TsvReader {
 mod tests {
     use super::*;
 
+    mod dev2_contracts;
+
     use crate::test_support::TempDirGuard;
     use std::fs;
 
@@ -2901,35 +2901,6 @@ BRAF\tS1\tMissense_Mutation\tp.V600E\n",
         assert!(result.mutant_samples.contains("S2"));
         assert_eq!(result.wildtype_samples.len(), 1);
         assert!(result.wildtype_samples.contains("S3"));
-    }
-
-    #[test]
-    fn patient_survival_data_requires_canonical_columns_and_filters_invalid_rows() {
-        let fixture = TestStudyDir::new("patient-survival");
-        let study_dir = fixture.study_path("survival_study");
-        write_clinical_patients(
-            &study_dir,
-            &[
-                "P1\t1:DECEASED\t10\t1:Recurred\t8\t1:Progressed\t7\t1:Died of disease\t10",
-                "P2\t0:LIVING\t24\t0:DiseaseFree\t22\t0:No progression\t20\t0:Alive\t24",
-                "P3\t0:LIVING\tNA\t0:DiseaseFree\t14\t0:No progression\t12\t0:Alive\t18",
-                "P4\tUNKNOWN\t12\t0:DiseaseFree\t16\t0:No progression\t15\t0:Alive\t12",
-            ],
-        );
-
-        let result = patient_survival_data(&study_dir, "os").expect("survival records");
-        assert_eq!(result.len(), 2);
-        assert!(matches!(
-            result.get("P1").map(|row| row.status),
-            Some(SurvivalStatus::Event)
-        ));
-        assert_eq!(result.get("P1").map(|row| row.months), Some(10.0));
-        assert!(matches!(
-            result.get("P2").map(|row| row.status),
-            Some(SurvivalStatus::Censored)
-        ));
-        assert!(!result.contains_key("P3"));
-        assert!(!result.contains_key("P4"));
     }
 
     #[test]

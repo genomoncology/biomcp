@@ -311,6 +311,8 @@ Both `--has` and `--missing` accept the same stable aliases:
 `cadd`, `revel`, `gerp`, `clinvar`, `gnomad`, `dbsnp`, `snpeff`, `civic`, and
 `cosmic`. Unknown consequence, review-status, or field aliases return a typed
 `invalid_argument` error.
+BioMCP also rejects `--has X --missing X` and field-specific filters such as
+`--min-cadd 10 --missing cadd` before contacting MyVariant.
 
 ## Related references
 

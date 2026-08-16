@@ -1241,6 +1241,8 @@ where
 mod tests {
     use super::*;
 
+    mod missing_root;
+
     use crate::test_support::TempDirGuard;
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -1360,13 +1362,6 @@ mod tests {
     fn survival_endpoint_rejects_unknown_value() {
         let err = SurvivalEndpoint::from_flag("foo").expect_err("unknown endpoint should fail");
         assert!(matches!(err, BioMcpError::InvalidArgument(_)));
-    }
-
-    #[test]
-    fn normalize_study_id_rejects_path_like_input() {
-        let err = normalize_study_id("../demo_study").expect_err("path-like study ID should fail");
-        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
-        assert!(err.to_string().contains("Invalid study ID"));
     }
 
     #[tokio::test]

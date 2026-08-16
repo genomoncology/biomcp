@@ -46,3 +46,32 @@ fn search_args_reject_zero_limit_before_backend_lookup() {
         .expect_err("zero phenotype limit should fail fast");
     assert!(err.to_string().contains("--limit must be between 1 and 50"));
 }
+
+#[test]
+fn search_args_reject_a_window_beyond_the_provider_budget() {
+    let cli = Cli::try_parse_from([
+        "biomcp",
+        "search",
+        "phenotype",
+        "HP:0001250",
+        "--limit",
+        "11",
+        "--offset",
+        "40",
+    ])
+    .expect("search phenotype should parse");
+
+    let Cli {
+        command: Commands::Search {
+            entity: SearchEntity::Phenotype(args),
+        },
+        ..
+    } = cli
+    else {
+        panic!("expected search phenotype command");
+    };
+
+    let err = super::dispatch::validate_search_args(&args)
+        .expect_err("unsupported phenotype window should fail fast");
+    assert!(err.to_string().contains("--offset + --limit must be <= 50"));
+}

@@ -12,7 +12,7 @@ BioMCP provides one command family with entity-oriented subcommands.
 provider-side logging, and it does not reclassify explicit downloads, study
 datasets, CSpec captures, or other user-requested durable output.
 
-`--json` normally returns structured output, including JSON `error` objects on stdout for BioMCP command errors while preserving nonzero exit codes. Parse/usage errors under `--json` also exit 2 with a JSON `invalid_argument` error on stdout. `biomcp cache path` is a plain-text exception. `biomcp cache stats`, `biomcp cache clean`, and `biomcp cache clear` respect `--json` on success. `biomcp cache clear` still refuses non-TTY destructive runs with plain stderr unless you pass `--yes`.
+`--json` returns structured output, including JSON `error` objects on stdout for BioMCP command errors while preserving nonzero exit codes. Parse/usage errors under `--json` also exit 2 with a JSON `invalid_argument` error on stdout. `biomcp cache path` returns a typed `cache_path` object under `--json` and a plain path otherwise. `biomcp cache stats`, `biomcp cache clean`, and `biomcp cache clear` also respect `--json` on success. `biomcp cache clear` still refuses non-TTY destructive runs with plain stderr unless you pass `--yes`.
 
 Once a command is identified, its primary collection path remains present as `[]` on empty success and structured errors (for example, `results`, `concepts`, `edges`, `recommendations`, or a drug region's nested `results`). An empty collection beside `error` means the call failed, not that the biomedical result was negative; scripts must inspect the exit status or `error`. Errors before a command is identified remain keyless. Provider bodies, request URLs, credentials, parser details, and internal local paths are omitted from standard structured errors. Section-shaped `search all`, scalar trial `--count-only`, and VAERS-only aggregate responses keep their existing shapes rather than gaining a false `results` key.
 
@@ -71,7 +71,7 @@ biomcp search ...
 biomcp get ...
 biomcp discover <query>
 biomcp enrich <GENE1,GENE2,...> [--limit N]
-biomcp batch <entity> <id1,id2,...> [--sections ...] [--source ...]
+biomcp batch <entity> <id1,id2,...> [--sections ...]
 biomcp chart [type]
 biomcp cache path
 biomcp cache stats
@@ -130,7 +130,7 @@ prose. Error rows remain report data; they change the exit status only when
 `--fail-on-error` is requested.
 
 `biomcp cache path` is a local-CLI-only operator command. It prints the managed
-HTTP cache path as plain text and ignores the global `--json` flag.
+HTTP cache path as plain text, or as a typed `cache_path` object when the global `--json` flag is supplied.
 
 `biomcp --json list` emits structured reference data for scripts and agents.
 The root object includes typed `entities` and ordered `entries`; `biomcp --json list <entity>` adds `entity`. Each entry is tagged as a literal command, a
@@ -241,6 +241,11 @@ biomcp search phenotype "HP:0001250 HP:0001263" --limit 10
 biomcp search phenotype "seizure, developmental delay" --limit 10
 ```
 
+Phenotype queries accept at most 10 unique HPO terms. Paging is limited to the
+first 50 ranked Monarch matches, so `offset + limit` must be at most 50; the
+structured response reports possible provider truncation without inventing a
+total or an unusable next command.
+
 ### GWAS
 
 ```bash
@@ -320,6 +325,8 @@ biomcp search variant -g BRAF --missing revel --limit 5
 Consequence, review-status, and `--has`/`--missing` values use the stable
 vocabularies printed by `biomcp list variant`. Unknown values fail with a typed
 `invalid_argument` error instead of returning a successful empty search.
+`--missing <field>` also rejects any predicate that requires that same field
+(for example, `--missing cadd --min-cadd 10`) before BioMCP contacts MyVariant.
 
 Protein searches using `--hgvsp` or positional `GENE CHANGE`, plus coding-HGVS and rsID forms, are strict exact searches. Their JSON keeps
 the usual top-level `pagination`, `count`, `results`, and `_meta` fields and adds
@@ -730,6 +737,8 @@ message so failed symbols are not mistaken for confident empty evidence.
 
 Batch accepts up to 10 IDs per call and each call must use a single entity type.
 Named sections are entity-dependent. Adverse-event batches do not support `--sections`; use individual `get adverse-event` calls for FAERS report sections.
+`--source <ctgov|nci>` is available only for trial batches; trials default to
+`ctgov`, and other entities reject the flag before provider work.
 
 ```bash
 biomcp batch article 22663011,24200969

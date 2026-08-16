@@ -7,7 +7,19 @@ use super::{
     WhoCommand, WhoIvdCommand,
 };
 use crate::cli::CommandOutcome;
+
+pub(super) fn validate_batch_args(args: &BatchArgs) -> Result<(), crate::error::BioMcpError> {
+    let entity = args.entity.trim().to_ascii_lowercase();
+    if entity != "trial" && args.source.is_some() {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--source is only supported for trial batches".into(),
+        ));
+    }
+    Ok(())
+}
+
 pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<CommandOutcome> {
+    validate_batch_args(&args)?;
     let entity = args.entity.trim().to_ascii_lowercase();
     let parsed_ids = args
         .ids
@@ -99,7 +111,9 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
             .await;
         }
         "trial" => {
-            let trial_source = crate::entities::trial::TrialSource::from_flag(&args.source)?;
+            let trial_source = crate::entities::trial::TrialSource::from_flag(
+                args.source.as_deref().unwrap_or("ctgov"),
+            )?;
             let futs = parsed_ids
                 .iter()
                 .map(|id| crate::entities::trial::get(id, &batch_sections, trial_source));

@@ -125,6 +125,9 @@ biomcp search variant -g BRAF --missing revel --limit 5
 `dbsnp`, `snpeff`, `civic`, and `cosmic`. Unsupported consequence,
 review-status, or field values exit with a typed `invalid_argument` error rather
 than reporting an empty successful search.
+The same is true for contradictory predicates: a field cannot be requested with
+both `--has` and `--missing`, and a field-specific filter cannot be combined
+with `--missing` for that field. These errors occur before provider contact.
 
 CADD and GERP thresholds must be finite. Results filtered with `--gerp-min`
 include the qualifying `gerp` score in each row.

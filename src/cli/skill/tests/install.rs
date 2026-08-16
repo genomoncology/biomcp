@@ -167,6 +167,30 @@ fn plain_install_preserves_edits_and_force_repairs_managed_files() -> Result<(),
     Ok(())
 }
 
+#[test]
+fn install_result_reports_installed_unchanged_and_repaired_truthfully() -> Result<(), BioMcpError> {
+    let paths = TestPaths::new("typed-install-result");
+    let target = paths.cwd.join("skills/biomcp");
+
+    let installed = serde_json::to_value(install_to_dir(&target, false)?)?;
+    assert_eq!(installed["status"], "installed");
+    assert_eq!(installed["changed"], true);
+    assert_eq!(installed["skill_status"]["state"], "current");
+
+    let unchanged = serde_json::to_value(install_to_dir(&target, false)?)?;
+    assert_eq!(unchanged["status"], "unchanged");
+    assert_eq!(unchanged["changed"], false);
+    assert_eq!(unchanged["skill_status"]["state"], "current");
+
+    fs::write(target.join("SKILL.md"), "local edit")?;
+    let repaired = serde_json::to_value(install_to_dir(&target, true)?)?;
+    assert_eq!(repaired["status"], "repaired");
+    assert_eq!(repaired["changed"], true);
+    assert_eq!(repaired["skill_status"]["state"], "current");
+    assert_eq!(repaired["target"], target.display().to_string());
+    Ok(())
+}
+
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 #[test]
 fn fresh_atomic_rename_refuses_a_racing_target() -> Result<(), BioMcpError> {

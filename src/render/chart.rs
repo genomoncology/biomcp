@@ -21,6 +21,9 @@ use crate::entities::study::{
 };
 use crate::error::BioMcpError;
 
+mod bounds;
+pub(crate) use bounds::{numeric_range, suggest_bins, validate_chart_output_options};
+
 const DEFAULT_TERMINAL_COLS: usize = 100;
 const DEFAULT_TERMINAL_ROWS: usize = 32;
 const DEFAULT_PNG_SCALE: f32 = 2.0;
@@ -906,6 +909,7 @@ fn write_png(
 ) -> Result<String, BioMcpError> {
     #[cfg(feature = "charts-png")]
     {
+        bounds::validate_png_pixels(scene.width, scene.height, scale)?;
         let bytes = PngBackend::new()
             .with_scale(scale)
             .render_scene(scene)
@@ -973,21 +977,6 @@ fn ensure_non_empty(values: &[f64], label: &str) -> Result<(), BioMcpError> {
         )));
     }
     Ok(())
-}
-
-fn numeric_range(values: &[f64]) -> Result<(f64, f64), BioMcpError> {
-    ensure_non_empty(values, "Histogram")?;
-    let min = values.iter().copied().fold(f64::INFINITY, f64::min);
-    let max = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    if min == max {
-        Ok((min - 0.5, max + 0.5))
-    } else {
-        Ok((min, max))
-    }
-}
-
-fn suggest_bins(sample_count: usize) -> usize {
-    ((sample_count as f64).sqrt().round() as usize).clamp(5, 20)
 }
 
 #[cfg(test)]

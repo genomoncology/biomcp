@@ -163,6 +163,38 @@ fn parse_hpo_query_terms_requires_valid_ids() {
 }
 
 #[test]
+fn phenotype_terms_and_result_window_are_bounded() {
+    let eleven = (1..=11)
+        .map(|index| format!("HP:{index:07}"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let err = parse_hpo_query_terms(&eleven).expect_err("eleven HPO terms should fail");
+    assert!(err.to_string().contains("at most 10 unique HPO terms"));
+
+    assert_eq!(validate_phenotype_search_window(10, 40).unwrap(), 50);
+    for (limit, offset) in [(1, 50), (11, 40), (2, usize::MAX)] {
+        let err = validate_phenotype_search_window(limit, offset)
+            .expect_err("window beyond Monarch's first 50 rows should fail");
+        assert!(err.to_string().contains("--offset + --limit must be <= 50"));
+    }
+}
+
+#[test]
+fn phenotype_continuation_shrinks_to_the_remaining_provider_window() {
+    let pagination = PhenotypePagination {
+        offset: 40,
+        limit: 9,
+        returned: 9,
+        total: None,
+        has_more: true,
+        next_page_token: None,
+        truncated_by_provider_budget: false,
+    };
+
+    assert_eq!(pagination.next_window(), Some((1, 49)));
+}
+
+#[test]
 fn split_phenotype_queries_preserves_single_phrase_and_splits_commas() {
     assert_eq!(
         split_phenotype_queries("developmental delay"),

@@ -204,12 +204,21 @@ test "$status" != 403
 cat "$body" | mustmatch not like 'Host header is not allowed'
 
 set +e
-../../tools/biomcp-ci serve-http --host 0.0.0.0 --port 0 >/tmp/biomcp-mcp-non-loopback.out 2>/tmp/biomcp-mcp-non-loopback.err
+non_loopback_port="$(../../spec/fixtures/reserve-local-port)"
+../../tools/biomcp-ci serve-http --host 0.0.0.0 --port "$non_loopback_port" >/tmp/biomcp-mcp-non-loopback.out 2>/tmp/biomcp-mcp-non-loopback.err
 non_loopback_status=$?
 set -e
 test "$non_loopback_status" -ne 0
 cat /tmp/biomcp-mcp-non-loopback.err | mustmatch like '--allowed-hosts
 --unsafe-allow-any-host'
+
+set +e
+../../tools/biomcp-ci --json serve-http --port 0 >/tmp/biomcp-mcp-port-zero.out 2>/tmp/biomcp-mcp-port-zero.err
+port_zero_status=$?
+set -e
+test "$port_zero_status" -eq 2
+cat /tmp/biomcp-mcp-port-zero.out | mustmatch like '"code": "invalid_argument"
+--port must be between 1 and 65535'
 
 port="$(../../spec/fixtures/reserve-local-port)"
 RUST_LOG=warn ../../tools/biomcp-ci serve-http --host 127.0.0.1 --port "$port" --unsafe-allow-any-host >/tmp/biomcp-mcp-host-unsafe.log 2>&1 &

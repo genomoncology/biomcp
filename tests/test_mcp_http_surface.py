@@ -190,8 +190,9 @@ def test_serve_http_help_matches_runtime_surface() -> None:
 
 def test_non_loopback_bind_requires_explicit_host_policy() -> None:
     binary = _require_release_binary()
+    port = _reserve_port()
     result = subprocess.run(
-        [str(binary), "serve-http", "--host", "0.0.0.0", "--port", "0"],
+        [str(binary), "serve-http", "--host", "0.0.0.0", "--port", str(port)],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,

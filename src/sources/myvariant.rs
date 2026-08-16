@@ -6,8 +6,13 @@ use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::entities::variant::VariantProteinAlias;
 use crate::error::BioMcpError;
+
+mod filter_conflicts;
+mod filter_keys;
 use crate::sources::{RequestPlan, is_valid_gene_symbol, request_from_plan};
 use crate::utils::serde::StringOrVec;
+use filter_conflicts::validate_missing_filter_conflicts;
+use filter_keys::normalize_filter_key;
 
 const MYVARIANT_BASE: &str = "https://myvariant.info/v1";
 const MYVARIANT_API: &str = "myvariant.info";
@@ -209,26 +214,6 @@ const FIELD_VALUES: &[&str] = &[
 const POPULATION_VALUES: &[&str] = &["afr", "amr", "eas", "fin", "nfe", "sas", "asj", "oth"];
 
 const IMPACT_VALUES: &[&str] = &["HIGH", "MODERATE", "LOW", "MODIFIER"];
-
-fn normalize_filter_key(value: &str) -> String {
-    let mut out = String::new();
-    let mut prev_sep = false;
-    for ch in value.trim().chars() {
-        if ch.is_ascii_alphanumeric() {
-            out.push(ch.to_ascii_lowercase());
-            prev_sep = false;
-            continue;
-        }
-        if matches!(ch, ' ' | ',' | '-' | '_') && !prev_sep {
-            out.push('_');
-            prev_sep = true;
-        } else if !matches!(ch, ' ' | ',' | '-' | '_') {
-            out.push(ch);
-            prev_sep = false;
-        }
-    }
-    out.trim_matches('_').to_string()
-}
 
 fn invalid_filter_error(flag: &str, raw: &str, accepted: &[&str]) -> BioMcpError {
     BioMcpError::InvalidArgument(format!(
@@ -461,6 +446,7 @@ impl MyVariantClient {
             params.limit,
             params.offset,
         )?;
+        validate_missing_filter_conflicts(params)?;
 
         let mut terms: Vec<String> = Vec::new();
         let gene = params

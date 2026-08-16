@@ -78,6 +78,7 @@ New to BioMCP? Try:
 - `search variant` filter highlights:
   - `--review-status <0-4|N_star|N_stars|none|expert_panel|criteria_provided>`
   - `--has` / `--missing`: `cadd|revel|gerp|clinvar|gnomad|dbsnp|snpeff|civic|cosmic`
+  - A missing-field predicate cannot be combined with a predicate that requires that field.
   - `--population --revel-min --gerp-min --tumor-site --condition --impact --lof --therapy`
 - Variant consequences:
   - `missense_variant|synonymous_variant|frameshift_variant|nonsense_variant|stop_gained`
@@ -231,7 +232,7 @@ Results depend on source document wording and may vary across sources.
 
 ## Ops
 
-- `cache path` - print the managed HTTP cache directory `<resolved cache_root>/http`; output stays plain text and ignores `--json`
+- `cache path` - print the managed HTTP cache directory `<resolved cache_root>/http`; `--json` returns `{ "kind": "cache_path", "path": "..." }`
 - `cache stats` - show HTTP cache inventory, age range, and resolved limits
 - `cache clean [--max-age <duration>] [--max-size <size>] [--dry-run]`
   - remove orphan blobs and optionally age- or size-evict the HTTP cache

@@ -105,12 +105,13 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert 'biomcp discover "developmental delay"' in cli_reference
     assert 'biomcp search phenotype "seizure, developmental delay" --limit 10' in cli_reference
     assert (
-        "`--json` normally returns structured output, including JSON `error` "
+        "`--json` returns structured output, including JSON `error` "
         "objects on stdout for BioMCP command errors while preserving nonzero exit "
         "codes. Parse/usage errors under `--json` also exit 2 with a JSON "
-        "`invalid_argument` error on stdout. `biomcp cache path` is a plain-text "
-        "exception. `biomcp cache stats`, `biomcp cache clean`, and `biomcp cache "
-        "clear` respect `--json` on success. "
+        "`invalid_argument` error on stdout. `biomcp cache path` returns a typed "
+        "`cache_path` object under `--json` and a plain path otherwise. `biomcp "
+        "cache stats`, `biomcp cache clean`, and `biomcp cache clear` also respect "
+        "`--json` on success. "
         "`biomcp cache clear` still refuses non-TTY destructive runs with plain stderr "
         "unless you pass `--yes`."
         in cli_reference

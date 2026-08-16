@@ -148,7 +148,7 @@ fn top_level_help_omits_suggest_command() {
 }
 
 #[test]
-fn top_level_help_mentions_cache_path_json_exception() {
+fn top_level_help_has_no_cache_path_json_exception() {
     let mut command = crate::cli::build_cli();
     let mut help = Vec::new();
     command
@@ -156,8 +156,9 @@ fn top_level_help_mentions_cache_path_json_exception() {
         .expect("top-level help should render");
     let help = String::from_utf8(help).expect("help should be utf-8");
 
-    assert!(help.contains("except biomcp cache path"));
-    assert!(help.contains("stays plain text"));
+    assert!(help.contains("Output as JSON instead of Markdown"));
+    assert!(!help.contains("except biomcp cache path"));
+    assert!(!help.contains("stays plain text"));
 }
 
 #[test]

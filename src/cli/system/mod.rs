@@ -57,7 +57,7 @@ pub struct ServeHttpArgs {
     #[arg(long, default_value = "127.0.0.1")]
     pub host: String,
     /// Port to listen on
-    #[arg(long, default_value = "8080")]
+    #[arg(long, default_value = "8080", value_parser = parse_http_port)]
     pub port: u16,
     /// Host header values to allow (comma-separated)
     #[arg(long, value_delimiter = ',', conflicts_with = "unsafe_allow_any_host")]
@@ -65,6 +65,17 @@ pub struct ServeHttpArgs {
     /// Accept any Host header. This removes only the Host check; it does not add authentication or encryption.
     #[arg(long)]
     pub unsafe_allow_any_host: bool,
+}
+
+fn parse_http_port(value: &str) -> Result<u16, String> {
+    let port = value
+        .trim()
+        .parse::<u16>()
+        .map_err(|_| "--port must be between 1 and 65535".to_string())?;
+    if port == 0 {
+        return Err("--port must be between 1 and 65535".to_string());
+    }
+    Ok(port)
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
@@ -113,8 +124,8 @@ pub struct BatchArgs {
     #[arg(long)]
     pub sections: Option<String>,
     /// Trial source when entity=trial (ctgov or nci)
-    #[arg(long, default_value = "ctgov")]
-    pub source: String,
+    #[arg(long)]
+    pub source: Option<String>,
 }
 
 #[derive(Args, Debug)]

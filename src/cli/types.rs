@@ -16,7 +16,7 @@ pub struct Cli {
     #[command(subcommand)]
     pub command: super::Commands,
 
-    /// Output as JSON instead of Markdown (except biomcp cache path, which stays plain text)
+    /// Output as JSON instead of Markdown
     #[arg(short, long, global = true)]
     pub json: bool,
 
@@ -66,54 +66,64 @@ impl std::fmt::Display for ChartType {
     }
 }
 
-fn parse_chart_positive_usize(flag: &str, value: &str) -> Result<usize, String> {
+fn parse_chart_bounded_usize(
+    flag: &str,
+    value: &str,
+    minimum: usize,
+    maximum: usize,
+) -> Result<usize, String> {
     let parsed = value
         .trim()
         .parse::<usize>()
-        .map_err(|_| format!("{flag} must be an integer >= 1"))?;
-    if parsed == 0 {
-        return Err(format!("{flag} must be >= 1"));
+        .map_err(|_| format!("{flag} must be an integer between {minimum} and {maximum}"))?;
+    if !(minimum..=maximum).contains(&parsed) {
+        return Err(format!("{flag} must be between {minimum} and {maximum}"));
     }
     Ok(parsed)
 }
 
-fn parse_chart_positive_u32(flag: &str, value: &str) -> Result<u32, String> {
+fn parse_chart_bounded_u32(
+    flag: &str,
+    value: &str,
+    minimum: u32,
+    maximum: u32,
+) -> Result<u32, String> {
     let parsed = value
         .trim()
         .parse::<u32>()
-        .map_err(|_| format!("{flag} must be an integer >= 1"))?;
-    if parsed == 0 {
-        return Err(format!("{flag} must be >= 1"));
+        .map_err(|_| format!("{flag} must be an integer between {minimum} and {maximum}"))?;
+    if !(minimum..=maximum).contains(&parsed) {
+        return Err(format!("{flag} must be between {minimum} and {maximum}"));
     }
     Ok(parsed)
 }
 
 fn parse_chart_cols(value: &str) -> Result<usize, String> {
-    parse_chart_positive_usize("--cols", value)
+    parse_chart_bounded_usize("--cols", value, 20, 500)
 }
 
 fn parse_chart_rows(value: &str) -> Result<usize, String> {
-    parse_chart_positive_usize("--rows", value)
+    parse_chart_bounded_usize("--rows", value, 8, 200)
 }
 
 fn parse_chart_width(value: &str) -> Result<u32, String> {
-    parse_chart_positive_u32("--width", value)
+    parse_chart_bounded_u32("--width", value, 240, 4096)
 }
 
 fn parse_chart_height(value: &str) -> Result<u32, String> {
-    parse_chart_positive_u32("--height", value)
+    parse_chart_bounded_u32("--height", value, 160, 4096)
 }
 
 fn parse_chart_scale(value: &str) -> Result<f32, String> {
     let parsed = value
         .trim()
         .parse::<f32>()
-        .map_err(|_| "--scale must be a finite number > 0".to_string())?;
+        .map_err(|_| "--scale must be a finite number between 0.5 and 4".to_string())?;
     if !parsed.is_finite() {
-        return Err("--scale must be a finite number > 0".to_string());
+        return Err("--scale must be a finite number between 0.5 and 4".to_string());
     }
-    if parsed <= 0.0 {
-        return Err("--scale must be > 0".to_string());
+    if !(0.5..=4.0).contains(&parsed) {
+        return Err("--scale must be between 0.5 and 4".to_string());
     }
     Ok(parsed)
 }
@@ -202,7 +212,7 @@ pub struct ChartArgs {
         value_name = "N",
         value_parser = parse_chart_cols,
         requires = "chart",
-        help = "Terminal chart width in character cells",
+        help = "Terminal chart width in character cells (20-500)",
         hide_short_help = true,
         help_heading = "Chart Styling"
     )]
@@ -213,7 +223,7 @@ pub struct ChartArgs {
         value_name = "N",
         value_parser = parse_chart_rows,
         requires = "chart",
-        help = "Terminal chart height in character cells",
+        help = "Terminal chart height in character cells (8-200)",
         hide_short_help = true,
         help_heading = "Chart Styling"
     )]
@@ -224,7 +234,7 @@ pub struct ChartArgs {
         value_name = "PX",
         value_parser = parse_chart_width,
         requires = "chart",
-        help = "Chart canvas width in pixels for SVG, PNG, or MCP inline SVG",
+        help = "Chart canvas width in pixels for SVG, PNG, or MCP inline SVG (240-4096)",
         hide_short_help = true,
         help_heading = "Chart Styling"
     )]
@@ -235,7 +245,7 @@ pub struct ChartArgs {
         value_name = "PX",
         value_parser = parse_chart_height,
         requires = "chart",
-        help = "Chart canvas height in pixels for SVG, PNG, or MCP inline SVG",
+        help = "Chart canvas height in pixels for SVG, PNG, or MCP inline SVG (160-4096)",
         hide_short_help = true,
         help_heading = "Chart Styling"
     )]
@@ -246,7 +256,7 @@ pub struct ChartArgs {
         value_name = "FACTOR",
         value_parser = parse_chart_scale,
         requires = "chart",
-        help = "PNG pixel-density multiplier",
+        help = "PNG pixel-density multiplier (0.5-4; maximum 16777216 output pixels)",
         hide_short_help = true,
         help_heading = "Chart Styling"
     )]

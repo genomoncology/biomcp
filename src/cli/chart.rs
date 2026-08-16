@@ -37,6 +37,31 @@ pub enum ChartCommand {
     Survival,
 }
 
+impl ChartCommand {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Bar => "bar",
+            Self::StackedBar => "stacked-bar",
+            Self::Pie => "pie",
+            Self::Waterfall => "waterfall",
+            Self::Heatmap => "heatmap",
+            Self::Histogram => "histogram",
+            Self::Density => "density",
+            Self::Box => "box",
+            Self::Violin => "violin",
+            Self::Ridgeline => "ridgeline",
+            Self::Scatter => "scatter",
+            Self::Survival => "survival",
+        }
+    }
+}
+
+impl std::fmt::Display for ChartCommand {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
 fn embedded_text(path: &str) -> Result<String, BioMcpError> {
     let Some(asset) = EmbeddedCharts::get(path) else {
         return Err(BioMcpError::NotFound {

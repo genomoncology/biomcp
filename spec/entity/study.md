@@ -18,6 +18,16 @@ msk_impact_2017
 structural_variants'
 ```
 
+A fresh installation without a study directory is an empty local catalog, and
+queries retain the normal coverage signal.
+
+```bash
+missing_root="$PWD/../../.cache/spec-study-root-that-does-not-exist-$$"
+BIOMCP_STUDY_DIR="$missing_root" ../../tools/biomcp-ci --json study list | jq 'length == 0' | mustmatch 'true'
+BIOMCP_STUDY_DIR="$missing_root" ../../tools/biomcp-ci --json study query --study msk_impact_2017 --gene TP53 --type mutations | jq '.query_type == "not_in_local_cohorts" and .result.coverage_status == "not_in_local_cohorts" and (.result.local_study_ids | length == 0)' | mustmatch 'true'
+test ! -e "$missing_root"
+```
+
 ## Gene-Frequency Summary
 
 Per-study mutation queries should keep a human-readable summary heading and the

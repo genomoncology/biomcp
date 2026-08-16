@@ -7,7 +7,7 @@ description: "Use BioMCP to add cBioPortal cohort-frequency context to variants 
 
 cBioPortal matters when a single variant or gene question turns into a cohort question. It is the source page to use when you need cancer-study frequencies, downloadable study datasets, or local analytics that operate on a concrete study instead of a live one-record API lookup.
 
-In BioMCP, the variant `cbioportal` section adds best-effort cohort frequency context, while `study` is BioMCP's local cBioPortal analytics family for downloaded datasets. Use `study list` to see the local cohort list, `study download` to install a study into your local root, and `study query` when you want per-study mutation, CNA, expression, or structural-variant/fusion summaries from local files. If a query names a study outside the local snapshot, BioMCP returns `not_in_local_cohorts` with a `study download <study_id>` hint rather than a hollow cohort result.
+In BioMCP, the variant `cbioportal` section adds best-effort cohort frequency context, while `study` is BioMCP's local cBioPortal analytics family for downloaded datasets. Use `study list` to see the local cohort list, `study download` to install a study into your local root, and `study query` when you want per-study mutation, CNA, expression, or structural-variant/fusion summaries from local files. A missing study root is an empty first-run catalog. If a query names a study outside the local snapshot, BioMCP returns `not_in_local_cohorts` with a `study download <study_id>` hint rather than a hollow cohort result.
 
 ## What BioMCP exposes
 
@@ -47,7 +47,7 @@ Returns a per-study mutation summary for TP53 from local study files. Mutation s
 
 ## API access
 
-No BioMCP API key required. Local study analytics use downloaded datasets in the default study root or `BIOMCP_STUDY_DIR`.
+No BioMCP API key required. Local study analytics use downloaded datasets in the default study root or `BIOMCP_STUDY_DIR`. Survival rows contribute only when their month value is finite and nonnegative; malformed, negative, or infinite values are treated as missing.
 
 Study archives are capped at 2 GiB compressed and 100,000 physical tar entries,
 with 1 GiB per regular member, 8 GiB aggregate payload, and 1 MiB of path

@@ -57,6 +57,19 @@
 
 ### Fixes
 
+- Hardened CLI correctness before the next development candidate: local study
+  discovery now treats a missing data directory as an empty catalog and drops
+  invalid survival times; phenotype search has truthful 50-result paging and a
+  ten-term cap; impossible variant filters and inapplicable batch sources fail
+  before provider contact.
+- Bounded chart dimensions and PNG scale before study loading, restored canonical
+  chart names in JSON, made skill-install JSON report real no-op/repair state,
+  rejected unusable HTTP port zero, and documented the typed JSON form of
+  `cache path`.
+- Labeled the compact MCP measurements from ticket 0932 as historical and made
+  current documentation point to the reproducible offline measurement and its
+  enforced 16,000-byte / 4,000-token budgets.
+
 - Preserved exact GWAS Catalog mantissa/exponent p-values in structured JSON,
   Markdown, filtering, and ordering instead of displaying underflowed values as
   zero. Mixed-result batches now keep their complete report on stdout while

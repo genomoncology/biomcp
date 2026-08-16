@@ -584,6 +584,92 @@ fn search_plan_rejects_invalid_presence_and_absence_fields() {
 }
 
 #[test]
+fn search_plan_rejects_filters_that_require_a_missing_field() {
+    let cases = [
+        VariantSearchParams {
+            has: Some("cadd".into()),
+            missing: Some("cadd".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            min_cadd: Some(10.0),
+            missing: Some("cadd".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            revel_min: Some(0.5),
+            missing: Some("revel".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            gerp_min: Some(2.0),
+            missing: Some("gerp".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            max_frequency: Some(0.01),
+            missing: Some("gnomad".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            population: Some("afr".into()),
+            missing: Some("gnomad".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            significance: Some("pathogenic".into()),
+            missing: Some("clinvar".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            review_status: Some("expert panel".into()),
+            missing: Some("clinvar".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            condition: Some("melanoma".into()),
+            missing: Some("clinvar".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            consequence: Some("missense".into()),
+            missing: Some("snpeff".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            impact: Some("high".into()),
+            missing: Some("snpeff".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            lof: true,
+            missing: Some("snpeff".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            therapy: Some("vemurafenib".into()),
+            missing: Some("civic".into()),
+            ..params()
+        },
+        VariantSearchParams {
+            tumor_site: Some("skin".into()),
+            missing: Some("cosmic".into()),
+            ..params()
+        },
+    ];
+
+    for case in cases {
+        let err = MyVariantClient::search_plan(&case)
+            .expect_err("contradictory field predicates should fail");
+        assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+        assert!(
+            err.to_string()
+                .contains("cannot be combined with --missing")
+        );
+    }
+}
+
+#[test]
 fn search_plan_rejects_when_no_filters_present() {
     let err = MyVariantClient::search_plan(&params()).unwrap_err();
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));

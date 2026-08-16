@@ -102,8 +102,8 @@
     },
     {
       "path": "src/entities/study.rs",
-      "baseline_lines": 1779,
-      "floor_lines": 1779,
+      "baseline_lines": 1774,
+      "floor_lines": 1774,
       "authorized_increase": null
     },
     {
@@ -149,8 +149,8 @@
     },
     {
       "path": "src/render/chart.rs",
-      "baseline_lines": 2079,
-      "floor_lines": 2079,
+      "baseline_lines": 2068,
+      "floor_lines": 2068,
       "authorized_increase": null
     },
     {
@@ -179,8 +179,8 @@
     },
     {
       "path": "src/sources/cbioportal_study.rs",
-      "baseline_lines": 3224,
-      "floor_lines": 3224,
+      "baseline_lines": 3195,
+      "floor_lines": 3195,
       "authorized_increase": null
     },
     {
@@ -202,8 +202,8 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1047,
-      "floor_lines": 1047,
+      "baseline_lines": 1033,
+      "floor_lines": 1033,
       "authorized_increase": null
     },
     {

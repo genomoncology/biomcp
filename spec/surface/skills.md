@@ -21,6 +21,13 @@ use-cases/_TEMPLATE.md
 use-cases/normalize-to-codes.ladder.json"
 ```
 
+Structured install output tells automation whether the filesystem changed.
+
+```bash
+../../tools/biomcp-ci --json skill install ../../.cache/spec-skill-install | jq '.kind == "skill" and .action == "install" and .status == "unchanged" and .changed == false and .skill_status.state == "current"' | mustmatch 'true'
+../../tools/biomcp-ci --json skill install ../../.cache/spec-skill-install --force | jq '.status == "repaired" and .changed == true and .skill_status.state == "current"' | mustmatch 'true'
+```
+
 ## A fresh managed install reports current
 
 The installation stamp lets BioMCP distinguish its own unchanged payload from
