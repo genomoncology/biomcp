@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "biomcp-cli"
-version = "0.9.0.dev4"
+version = "0.9.0.dev5"
 description = "Biomedical MCP CLI: install biomcp-cli from PyPI, not unrelated biomcp; provides the biomcp binary."
 readme = "README.md"
 license = { text = "MIT" }
