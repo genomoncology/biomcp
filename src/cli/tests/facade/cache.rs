@@ -108,6 +108,84 @@ fn cache_help_lists_clear_subcommand() {
 }
 
 #[test]
+fn cache_help_keeps_json_but_hides_no_cache_everywhere() {
+    for help in [
+        render_cache_long_help(),
+        render_cache_path_long_help(),
+        render_cache_stats_long_help(),
+        render_cache_clean_long_help(),
+        render_cache_clear_long_help(),
+    ] {
+        assert!(help.contains("--json"), "cache help lost --json: {help}");
+        assert!(
+            !help.contains("--no-cache"),
+            "cache help advertises an inapplicable flag: {help}"
+        );
+    }
+}
+
+fn cache_commands() -> [crate::cli::cache::CacheCommand; 4] {
+    [
+        crate::cli::cache::CacheCommand::Path,
+        crate::cli::cache::CacheCommand::Stats,
+        crate::cli::cache::CacheCommand::Clean {
+            max_age: None,
+            max_size: None,
+            dry_run: true,
+        },
+        crate::cli::cache::CacheCommand::Clear { yes: true },
+    ]
+}
+
+#[test]
+fn no_cache_is_rejected_by_public_run_before_cache_dispatch() {
+    for cmd in cache_commands() {
+        let error = std::thread::Builder::new()
+            .stack_size(8 * 1024 * 1024)
+            .spawn(move || {
+                tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .expect("test runtime")
+                    .block_on(crate::cli::run(Cli {
+                        command: Commands::Cache { cmd },
+                        json: false,
+                        no_cache: true,
+                    }))
+            })
+            .expect("run test worker")
+            .join()
+            .expect("run test worker panicked")
+            .expect_err("run must reject --no-cache with cache commands");
+        assert!(error.to_string().contains("--no-cache"), "{error}");
+    }
+}
+
+#[tokio::test]
+async fn no_cache_is_rejected_by_public_run_outcome_as_json_usage_error() {
+    for cmd in cache_commands() {
+        let outcome = crate::cli::run_outcome(Cli {
+            command: Commands::Cache { cmd },
+            json: true,
+            no_cache: true,
+        })
+        .await
+        .expect("JSON usage errors are outcomes");
+        assert_eq!(outcome.exit_code, 2);
+        assert_eq!(outcome.stream, crate::cli::OutputStream::Stdout);
+        let value: serde_json::Value =
+            serde_json::from_str(&outcome.text).expect("structured usage error");
+        assert_eq!(value["error"]["code"], "invalid_argument");
+        assert!(
+            value["error"]["message"]
+                .as_str()
+                .is_some_and(|message| message.contains("--no-cache")),
+            "{value}"
+        );
+    }
+}
+
+#[test]
 fn json_cache_path_parses_as_plain_path_command() {
     let cli = parse_built_cli(["biomcp", "--json", "cache", "path"]);
 

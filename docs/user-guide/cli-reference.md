@@ -8,11 +8,11 @@ BioMCP provides one command family with entity-oriented subcommands.
 - `--no-cache`: use no managed request state for this invocation; it neither
   reads nor writes the HTTP cache or article-session store
 
-`--no-cache` cannot be combined with article `--session`. It does not suppress
-provider-side logging, and it does not reclassify explicit downloads, study
-datasets, CSpec captures, or other user-requested durable output.
+`--no-cache` cannot be combined with article `--session`. It does not suppress provider-side logging, and it does not reclassify explicit downloads, study datasets, CSpec captures, or other user-requested durable output. It is rejected for every `cache` subcommand because those commands explicitly inspect or modify managed cache state.
 
 `--json` returns structured output, including JSON `error` objects on stdout for BioMCP command errors while preserving nonzero exit codes. Parse/usage errors under `--json` also exit 2 with a JSON `invalid_argument` error on stdout. `biomcp cache path` returns a typed `cache_path` object under `--json` and a plain path otherwise. `biomcp cache stats`, `biomcp cache clean`, and `biomcp cache clear` also respect `--json` on success. `biomcp cache clear` still refuses non-TTY destructive runs with plain stderr unless you pass `--yes`.
+
+Help requests under `--json` succeed with `{ "kind": "help", "content": "..." }`, and `--json --version` returns the same release-identity object as `--json version`.
 
 Once a command is identified, its primary collection path remains present as `[]` on empty success and structured errors (for example, `results`, `concepts`, `edges`, `recommendations`, or a drug region's nested `results`). An empty collection beside `error` means the call failed, not that the biomedical result was negative; scripts must inspect the exit status or `error`. Errors before a command is identified remain keyless. Provider bodies, request URLs, credentials, parser details, and internal local paths are omitted from standard structured errors. Section-shaped `search all`, scalar trial `--count-only`, and VAERS-only aggregate responses keep their existing shapes rather than gaining a false `results` key.
 

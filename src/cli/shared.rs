@@ -4,6 +4,7 @@ use std::io::Write;
 use clap::{CommandFactory, FromArgMatches, error::ErrorKind};
 use tracing::{debug, warn};
 
+use super::commands::Commands;
 use super::types::{Cli, CommandOutcome};
 
 pub(super) const RUNTIME_HELP_SUBCOMMANDS: [&str; 4] = ["mcp", "serve", "serve-http", "serve-sse"];
@@ -26,8 +27,8 @@ pub fn build_cli() -> clap::Command {
         .get_arguments()
         .find(|arg| arg.get_id() == "json")
         .cloned()
-        .expect("json arg should exist")
-        .hide(true);
+        .expect("json arg should exist");
+    let hidden_json_arg = json_arg.clone().hide(true);
     let no_cache_arg = command
         .get_arguments()
         .find(|arg| arg.get_id() == "no_cache")
@@ -36,9 +37,21 @@ pub fn build_cli() -> clap::Command {
         .hide(true);
 
     for subcommand_name in RUNTIME_HELP_SUBCOMMANDS {
-        command = hide_runtime_help_globals(command, subcommand_name, &json_arg, &no_cache_arg);
+        command =
+            hide_runtime_help_globals(command, subcommand_name, &hidden_json_arg, &no_cache_arg);
     }
+    command = command.mut_subcommand("cache", |cache| cache.arg(json_arg).arg(no_cache_arg));
     command
+}
+
+pub(super) fn validate_cli_state_contract(cli: &Cli) -> Result<(), crate::error::BioMcpError> {
+    if cli.no_cache && matches!(&cli.command, Commands::Cache { .. }) {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--no-cache cannot be used with cache commands because they inspect or modify managed state"
+                .into(),
+        ));
+    }
+    Ok(())
 }
 
 fn reject_reserved_skill_subcommand(args: &[OsString]) -> Result<(), clap::Error> {
@@ -109,6 +122,28 @@ pub fn parse_cli_from_env() -> Cli {
     let args: Vec<OsString> = std::env::args_os().collect();
     match try_parse_cli(args.clone()) {
         Ok(cli) => cli,
+        Err(err)
+            if args_request_json(&args)
+                && matches!(
+                    err.kind(),
+                    ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+                ) =>
+        {
+            let json = match err.kind() {
+                ErrorKind::DisplayHelp => crate::render::json::to_pretty(&serde_json::json!({
+                    "kind": "help",
+                    "content": render_human_clap_error(&err, &args),
+                })),
+                ErrorKind::DisplayVersion => super::system::version_identity_json(),
+                _ => unreachable!("guarded display result"),
+            }
+            .expect("static CLI display result should render as JSON");
+            let mut stdout = std::io::stdout();
+            let _ = stdout.write_all(json.as_bytes());
+            let _ = stdout.write_all(b"\n");
+            let _ = stdout.flush();
+            std::process::exit(0);
+        }
         Err(err) if args_request_json(&args) => {
             let exit_code = err.exit_code();
             let bio_err = crate::error::BioMcpError::InvalidArgument(err.to_string());

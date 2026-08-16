@@ -447,7 +447,7 @@ pub(crate) async fn handle_version(
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
     let text = if json {
-        crate::render::json::to_pretty(&version_identity())?
+        version_identity_json()?
     } else {
         version_output(args.verbose)
     };
@@ -478,6 +478,10 @@ pub(super) fn version_identity() -> VersionIdentity {
         git_revision: identity.git_revision,
         build_timestamp: identity.build_date,
     }
+}
+
+pub(crate) fn version_identity_json() -> Result<String, crate::error::BioMcpError> {
+    crate::render::json::to_pretty(&version_identity())
 }
 
 pub(super) fn version_output(verbose: bool) -> String {

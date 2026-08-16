@@ -20,7 +20,7 @@ async fn search_all_requires_at_least_one_typed_slot() {
 }
 
 fn render_cache_path_long_help() -> String {
-    let mut command = Cli::command();
+    let mut command = super::super::build_cli();
     let cache = command
         .find_subcommand_mut("cache")
         .expect("cache subcommand should exist");
@@ -34,7 +34,7 @@ fn render_cache_path_long_help() -> String {
 }
 
 fn render_cache_long_help() -> String {
-    let mut command = Cli::command();
+    let mut command = super::super::build_cli();
     let cache = command
         .find_subcommand_mut("cache")
         .expect("cache subcommand should exist");
@@ -46,7 +46,7 @@ fn render_cache_long_help() -> String {
 }
 
 fn render_cache_stats_long_help() -> String {
-    let mut command = Cli::command();
+    let mut command = super::super::build_cli();
     let cache = command
         .find_subcommand_mut("cache")
         .expect("cache subcommand should exist");
@@ -61,7 +61,7 @@ fn render_cache_stats_long_help() -> String {
 }
 
 fn render_cache_clean_long_help() -> String {
-    let mut command = Cli::command();
+    let mut command = super::super::build_cli();
     let cache = command
         .find_subcommand_mut("cache")
         .expect("cache subcommand should exist");
@@ -76,7 +76,7 @@ fn render_cache_clean_long_help() -> String {
 }
 
 fn render_cache_clear_long_help() -> String {
-    let mut command = Cli::command();
+    let mut command = super::super::build_cli();
     let cache = command
         .find_subcommand_mut("cache")
         .expect("cache subcommand should exist");

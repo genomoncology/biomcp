@@ -94,6 +94,36 @@ def test_no_cache_session_is_rejected_before_transport_in_both_orders(tmp_path: 
         assert not cache.exists()
 
 
+def test_no_cache_cache_commands_reject_before_filesystem_in_both_orders(tmp_path: Path) -> None:
+    subcommands = (
+        ("path",),
+        ("stats",),
+        ("clean", "--dry-run"),
+        ("clear", "--yes"),
+    )
+    for json_mode in (False, True):
+        for position in ("before", "after"):
+            for subcommand in subcommands:
+                cache = tmp_path / f"{json_mode}-{position}-{'-'.join(subcommand)}"
+                prefix = ("--json",) if json_mode else ()
+                if position == "before":
+                    arguments = (*prefix, "--no-cache", "cache", *subcommand)
+                else:
+                    arguments = (*prefix, "cache", *subcommand, "--no-cache")
+                result = run(cache, "http://127.0.0.1:9", *arguments)
+
+                assert result.returncode == 2, (arguments, result.stdout, result.stderr)
+                assert not cache.exists(), arguments
+                if json_mode:
+                    assert result.stderr == "", arguments
+                    value = json.loads(result.stdout)
+                    assert value["error"]["code"] == "invalid_argument"
+                    assert "--no-cache" in value["error"]["message"]
+                else:
+                    assert result.stdout == "", arguments
+                    assert "--no-cache" in result.stderr
+
+
 def test_failed_no_cache_request_leaves_no_managed_state(tmp_path: Path) -> None:
     GeneHandler.requests = 0
     GeneHandler.status = 500

@@ -30,6 +30,7 @@ fn outcome_to_mcp_output(outcome: CommandOutcome) -> anyhow::Result<CliOutput> {
         svg: outcome.svg,
     })
 }
+
 fn mcp_output_flag_error() -> crate::error::BioMcpError {
     crate::error::BioMcpError::InvalidArgument(
         "MCP chart responses do not support --output/-o. Omit file output and consume the inline SVG image content instead.".into(),
@@ -114,6 +115,7 @@ fn prepare_mcp_chart(cli: &mut Cli) -> Result<(), crate::error::BioMcpError> {
 }
 
 pub async fn run(cli: Cli) -> anyhow::Result<String> {
+    super::shared::validate_cli_state_contract(&cli)?;
     let Cli {
         command,
         json,
@@ -404,6 +406,7 @@ async fn run_outcome_inner(
     cli: Cli,
     alias_suggestions_as_json: bool,
 ) -> anyhow::Result<CommandOutcome> {
+    super::shared::validate_cli_state_contract(&cli)?;
     let Cli {
         command,
         json,
