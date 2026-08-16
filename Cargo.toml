@@ -48,6 +48,7 @@ http-cache = { version = "0.20", default-features = false }
 http-cache-reqwest = "0.15"
 http-cache-semantics = "2"
 http = "1"
+http-body-util = "0.1"
 
 # gRPC (AlphaGenome)
 tonic = { version = "0.12", features = ["tls", "tls-roots"], optional = true }

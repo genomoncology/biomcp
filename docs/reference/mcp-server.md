@@ -56,7 +56,7 @@ biomcp serve-http --host 0.0.0.0 --port 8000 \
 
 Routes:
 
-- `/mcp` — MCP Streamable HTTP endpoint.
+- `/mcp` — MCP Streamable HTTP endpoint. Each `POST /mcp` encoded request body may contain at most 65,536 bytes; larger fixed-length and streamed requests receive HTTP 413.
 - `/health` — lightweight health probe.
 - `/readyz` — readiness probe.
 - `/` — small index/help response for humans and load balancers.

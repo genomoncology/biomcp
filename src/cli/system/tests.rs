@@ -546,6 +546,7 @@ fn serve_http_help_describes_streamable_http() {
     assert!(help.contains("--allowed-hosts <ALLOWED_HOSTS>"));
     assert!(help.contains("--unsafe-allow-any-host"));
     assert!(help.contains("does not add authentication or encryption"));
+    assert!(help.contains("65,536 bytes"));
     assert!(!help.contains("SSE transport"));
     assert!(!help.contains("--json"));
     assert!(!help.contains("--no-cache"));

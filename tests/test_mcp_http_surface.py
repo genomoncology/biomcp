@@ -6,6 +6,7 @@ import socket
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from contextlib import contextmanager
 from collections.abc import Iterator
@@ -15,6 +16,91 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RELEASE_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target" / "release" / "biomcp"))
+MCP_HTTP_BODY_LIMIT = 65_536
+
+
+def _initialize_body(size: int | None = None) -> bytes:
+    body = json.dumps(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "http-body-test", "version": "0"},
+            },
+        },
+        separators=(",", ":"),
+    ).encode()
+    if size is None:
+        return body
+    assert len(body) <= size
+    return body + b" " * (size - len(body))
+
+
+def _mcp_post_status(base_url: str, body: bytes) -> int:
+    return _post_status(base_url, "/mcp", body)
+
+
+def _post_status(base_url: str, path: str, body: bytes) -> int:
+    request = urllib.request.Request(
+        f"{base_url}{path}",
+        data=body,
+        headers={
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=3) as response:
+            response.read()
+            return response.status
+    except urllib.error.HTTPError as error:
+        error.read()
+        return error.code
+
+
+def _open_http_socket(base_url: str) -> tuple[socket.socket, str]:
+    parsed = urllib.parse.urlsplit(base_url)
+    assert parsed.hostname is not None and parsed.port is not None
+    return socket.create_connection((parsed.hostname, parsed.port), timeout=3), parsed.netloc
+
+
+def _response_status(sock: socket.socket) -> int:
+    response = bytearray()
+    while b"\r\n" not in response:
+        block = sock.recv(4096)
+        assert block, "server closed without an HTTP response"
+        response.extend(block)
+    status_line = bytes(response).split(b"\r\n", 1)[0]
+    return int(status_line.split(b" ", 2)[1])
+
+
+def _send_headers(
+    sock: socket.socket,
+    host: str,
+    *,
+    content_length: int | None = None,
+    chunked: bool = False,
+) -> None:
+    framing = (
+        "Transfer-Encoding: chunked\r\n"
+        if chunked
+        else f"Content-Length: {content_length}\r\n"
+    )
+    sock.sendall(
+        (
+            "POST /mcp HTTP/1.1\r\n"
+            f"Host: {host}\r\n"
+            "Accept: application/json, text/event-stream\r\n"
+            "Content-Type: application/json\r\n"
+            f"{framing}"
+            "Connection: close\r\n"
+            "\r\n"
+        ).encode()
+    )
 
 
 def _reserve_port() -> int:
@@ -136,6 +222,69 @@ def test_http_routes_advertise_streamable_http_surface(http_server: str) -> None
     assert ready_payload == {"status": "ok"}
 
 
+def test_mcp_accepts_valid_initialize_bodies_through_exact_limit(http_server: str) -> None:
+    assert _mcp_post_status(http_server, _initialize_body()) == 200
+    assert _mcp_post_status(http_server, _initialize_body(MCP_HTTP_BODY_LIMIT)) == 200
+
+
+def test_only_exact_mcp_path_reaches_rmcp(http_server: str) -> None:
+    body = _initialize_body()
+    assert _post_status(http_server, "/mcp/", body) == 404
+    assert _post_status(http_server, "/mcp/anything", body) == 404
+
+
+def test_mcp_rejects_fixed_and_chunked_bodies_over_limit(http_server: str) -> None:
+    oversized = _initialize_body(MCP_HTTP_BODY_LIMIT + 1)
+    assert _mcp_post_status(http_server, oversized) == 413
+
+    sock, host = _open_http_socket(http_server)
+    with sock:
+        _send_headers(sock, host, chunked=True)
+        sock.sendall(
+            f"{MCP_HTTP_BODY_LIMIT:x}\r\n".encode()
+            + oversized[:MCP_HTTP_BODY_LIMIT]
+            + b"\r\n1\r\n"
+            + oversized[MCP_HTTP_BODY_LIMIT:]
+            + b"\r\n"
+        )
+        assert _response_status(sock) == 413
+
+    assert _mcp_post_status(http_server, _initialize_body()) == 200
+    assert _route_status(http_server, "/readyz", host) == 200
+
+
+def test_declared_oversize_and_forbidden_host_reject_before_body(http_server: str) -> None:
+    sock, host = _open_http_socket(http_server)
+    with sock:
+        _send_headers(sock, host, content_length=MCP_HTTP_BODY_LIMIT + 1)
+        assert _response_status(sock) == 413
+
+    sock, _host = _open_http_socket(http_server)
+    with sock:
+        _send_headers(
+            sock,
+            "attacker.example",
+            content_length=MCP_HTTP_BODY_LIMIT + 1,
+        )
+        assert _response_status(sock) == 403
+
+
+def test_slow_oversize_request_does_not_block_other_traffic(http_server: str) -> None:
+    oversized = _initialize_body(MCP_HTTP_BODY_LIMIT + 1)
+    sock, host = _open_http_socket(http_server)
+    with sock:
+        _send_headers(sock, host, chunked=True)
+        sock.sendall(f"{len(oversized):x}\r\n".encode() + oversized[:1024])
+
+        assert _route_status(http_server, "/health", host) == 200
+        assert _mcp_post_status(http_server, _initialize_body()) == 200
+
+        sock.sendall(oversized[1024:] + b"\r\n0\r\n\r\n")
+        assert _response_status(sock) == 413
+
+    assert _route_status(http_server, "/readyz", host) == 200
+
+
 def test_loopback_server_rejects_unrelated_host_headers(http_server: str) -> None:
     port = http_server.rsplit(":", 1)[1]
     for path in ("/", "/health", "/readyz"):
@@ -183,9 +332,14 @@ def test_serve_http_help_matches_runtime_surface() -> None:
     assert "--port <PORT>" in result.stdout
     assert "--unsafe-allow-any-host" in result.stdout
     assert "does not add authentication or encryption" in result.stdout
+    assert "65,536 bytes" in result.stdout
     assert "SSE transport" not in result.stdout
     assert "--json" not in result.stdout
     assert "--no-cache" not in result.stdout
+
+    docs = (REPO_ROOT / "docs" / "reference" / "mcp-server.md").read_text()
+    assert "65,536 bytes" in docs
+    assert "POST /mcp" in docs
 
 
 def test_non_loopback_bind_requires_explicit_host_policy() -> None:

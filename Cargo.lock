@@ -311,6 +311,7 @@ dependencies = [
  "futures",
  "htmd",
  "http",
+ "http-body-util",
  "http-cache",
  "http-cache-reqwest",
  "http-cache-semantics",

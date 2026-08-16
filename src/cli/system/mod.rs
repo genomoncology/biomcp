@@ -52,6 +52,7 @@ pub enum WhoIvdCommand {
 }
 
 #[derive(Args, Debug)]
+#[command(after_help = "POST /mcp accepts encoded request bodies up to 65,536 bytes inclusive.")]
 pub struct ServeHttpArgs {
     /// Host address to bind
     #[arg(long, default_value = "127.0.0.1")]
