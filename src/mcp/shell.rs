@@ -452,26 +452,12 @@ fn variant_command_reads_local_input(command: &crate::cli::VariantCommand) -> bo
 fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
     use crate::cli::{
         ArticleCommand, Commands, DiseaseCommand, DrugCommand, GeneCommand, PathwayCommand,
-        ProteinCommand, StudyCommand, VariantCommand,
+        ProteinCommand, StudyCommand,
     };
 
     match &cli.command {
         Commands::Search { .. } | Commands::Get { .. } => true,
-        Commands::Variant {
-            cmd:
-                VariantCommand::Trials { .. }
-                | VariantCommand::Articles { .. }
-                | VariantCommand::Structure { .. }
-                | VariantCommand::Oncokb { .. }
-                | VariantCommand::Erepo { .. }
-                | VariantCommand::Normalize { .. },
-        } => !variant_command_reads_local_input(match &cli.command {
-            Commands::Variant { cmd } => cmd,
-            _ => unreachable!("matched variant command"),
-        }),
-        Commands::Variant {
-            cmd: VariantCommand::External(_),
-        } => false,
+        Commands::Variant { cmd } => !variant_command_reads_local_input(cmd),
         Commands::Drug {
             cmd:
                 DrugCommand::Trials { .. }

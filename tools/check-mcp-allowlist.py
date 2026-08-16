@@ -113,18 +113,7 @@ def parsed_authorization_body(shell_text: str) -> str:
 
 
 def parse_allowed_families(shell_text: str) -> list[str]:
-    try:
-        body = parsed_authorization_body(shell_text)
-    except ValueError:
-        match = re.search(
-            r'match cmd\.as_str\(\)\s*\{\s*(?P<body>.*?)\s*"study"\s*=>\s*\{',
-            shell_text,
-            flags=re.DOTALL,
-        )
-        if match is None:
-            raise ValueError("failed to parse MCP allowlisted top-level families")
-        return sorted(set(re.findall(r'"([^"]+)"', match.group("body"))))
-
+    body = parsed_authorization_body(shell_text)
     allowed = set()
     for arm in re.findall(r"(?P<pattern>.*?)=> true", body, flags=re.DOTALL):
         allowed.update(
@@ -137,20 +126,7 @@ def parse_allowed_families(shell_text: str) -> list[str]:
 
 
 def parse_study_policy(shell_text: str) -> tuple[set[str], bool]:
-    try:
-        body = parsed_authorization_body(shell_text)
-    except ValueError:
-        study_body = extract_braced_block(shell_text, '"study" =>')
-        sub_match_body = extract_braced_block(study_body, "match sub.as_str()")
-        allowed_match = re.search(
-            r"(?P<body>.*?)\s*\"download\"\s*=>", sub_match_body, flags=re.DOTALL
-        )
-        if allowed_match is None:
-            raise ValueError("failed to parse study allowlist body")
-        allowed = set(re.findall(r'"([^"]+)"', allowed_match.group("body")))
-        download_ok = 'args.len() == 4 && args[3] == "--list"' in sub_match_body
-        return allowed, download_ok
-
+    body = parsed_authorization_body(shell_text)
     allowed = {
         camel_to_kebab(name)
         for pattern in re.findall(r"(?P<pattern>.*?)=> true", body, flags=re.DOTALL)
@@ -162,21 +138,7 @@ def parse_study_policy(shell_text: str) -> tuple[set[str], bool]:
 
 
 def parse_skill_policy(shell_text: str) -> tuple[set[str], bool]:
-    try:
-        body = parsed_authorization_body(shell_text)
-    except ValueError:
-        skill_body = extract_braced_block(shell_text, '"skill" =>')
-        match = re.search(
-            r"matches!\(sub\.as_str\(\),\s*(?P<body>.*?)\)", skill_body, flags=re.DOTALL
-        )
-        if match is None:
-            raise ValueError("failed to parse skill policy")
-        allowed = set(re.findall(r'"([^"]+)"', match.group("body")))
-        lookup_is_known_skill = "crate::cli::skill::show_use_case(&sub).is_ok()" in skill_body
-        arity_is_exact = "args.len() != 3" in skill_body or "args.len() == 3" in skill_body
-        denies_by_default = "!matches!(sub.as_str()" not in skill_body
-        return allowed, lookup_is_known_skill and arity_is_exact and denies_by_default
-
+    body = parsed_authorization_body(shell_text)
     allowed = {
         camel_to_kebab(name)
         for pattern in re.findall(r"(?P<pattern>.*?)=> true", body, flags=re.DOTALL)
