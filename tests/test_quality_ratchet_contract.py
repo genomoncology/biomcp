@@ -237,14 +237,14 @@ def _write_h2_bash_spec(spec_dir: Path, name: str, body: str) -> Path:
 
 def _remove_allowlisted_discover(shell_file: Path) -> None:
     content = shell_file.read_text(encoding="utf-8")
-    updated = content.replace(' | "discover"', "")
+    updated = content.replace(" | Commands::Discover(_)", "", 1)
     assert updated != content
     shell_file.write_text(updated, encoding="utf-8")
 
 
 def _break_study_download_guard(shell_file: Path) -> None:
     content = shell_file.read_text(encoding="utf-8")
-    updated = content.replace('args.len() == 4 && args[3] == "--list"', "true", 1)
+    updated = content.replace("StudyCommand::Download { list: true, .. }", "StudyCommand::Download { list: false, .. }", 1)
     assert updated != content
     shell_file.write_text(updated, encoding="utf-8")
 
@@ -252,9 +252,8 @@ def _break_study_download_guard(shell_file: Path) -> None:
 def _break_skill_positive_policy(shell_file: Path) -> None:
     content = shell_file.read_text(encoding="utf-8")
     updated = content.replace(
-        '            matches!(sub.as_str(), "list" | "render")\n'
-        "                || crate::cli::skill::show_use_case(&sub).is_ok()\n",
-        '            !matches!(sub.as_str(), "install")\n',
+        "SkillCommand::List | crate::cli::skill::SkillCommand::Render",
+        "SkillCommand::Status { .. }",
         1,
     )
     assert updated != content
