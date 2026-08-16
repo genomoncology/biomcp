@@ -553,8 +553,7 @@ awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like 
 test_parallel_isolation_contract.py"
 awk '/SPEC_ROUTINE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch like "spec/entity/phenotype.md
 spec/entity/protein.md"
-awk '/SPEC_LIVE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch not like "spec/entity/protein.md
-spec/surface/cli.md"
+awk '/SPEC_LIVE_PATHS=\(/,/^\)/' ../../scripts/run-specs.sh | mustmatch not like "spec/entity/protein.md"
 ```
 
 The live lane is intentionally named and opt-in so operators can run upstream

@@ -238,8 +238,8 @@ where
         .call_tool(
             CallToolRequestParams::new("search").with_arguments(
                 BTreeMap::from([
-                    ("entity".to_string(), json!("pathway")),
-                    ("query".to_string(), json!("MAPK signaling")),
+                    ("entity".to_string(), json!("gene")),
+                    ("query".to_string(), json!("BRAF")),
                     ("limit".to_string(), json!(1)),
                     ("json".to_string(), json!(true)),
                 ])
@@ -274,8 +274,8 @@ where
         .call_tool(
             CallToolRequestParams::new("search").with_arguments(
                 BTreeMap::from([
-                    ("entity".to_string(), json!("pathway")),
-                    ("query".to_string(), json!("MAPK")),
+                    ("entity".to_string(), json!("gene")),
+                    ("query".to_string(), json!("BRAF")),
                     ("limit".to_string(), json!(50)),
                 ])
                 .into_iter()
@@ -285,7 +285,10 @@ where
         .await
         .expect_err("out-of-schema typed search limit should be rejected");
     match invalid {
-        ServiceError::McpError(data) => assert!(data.message.contains("typed search limit")),
+        ServiceError::McpError(data) => assert!(
+            data.message
+                .contains("typed search pagination is outside its supported bounds")
+        ),
         other => panic!("expected MCP invalid params error, got {other:?}"),
     }
     Ok(())
@@ -350,6 +353,9 @@ where
     assert!(instructions.contains("biomcp skill list"));
     assert!(!instructions.contains("biomcp suggest"));
     assert!(instructions.contains("biomcp skill"));
+    assert!(instructions.contains("Prefer bounded typed tools"));
+    assert!(instructions.contains("raw `biomcp` escape hatch"));
+    assert!(instructions.contains("start raw discovery with `biomcp list`"));
 
     let tools = client.peer().list_tools(Default::default()).await?;
     assert_tool_metadata(&tools.tools);
@@ -424,9 +430,13 @@ where
         .expect("biomcp tool description");
     assert!(description.to_ascii_lowercase().contains("read-only"));
     assert!(description.len() <= 4_000);
-    assert!(description.contains("biomcp list"));
-    assert!(description.contains("bounded typed tools"));
-    assert!(description.contains("escape hatch"));
+    assert!(description.contains("Prefer typed tools"));
+    assert!(description.contains("`biomcp list <entity>`"));
+    assert!(description.contains("`biomcp skill list`"));
+    assert!(description.contains("Set `json` for structured output"));
+    assert!(description.contains("Binary downloads and mutations are rejected"));
+    assert!(!description.contains("bounded typed tools"));
+    assert!(!description.contains("escape hatch"));
     for forbidden in [
         "ema sync",
         "who sync",
@@ -493,6 +503,9 @@ where
     assert!(instructions.contains("biomcp skill list"));
     assert!(!instructions.contains("biomcp suggest"));
     assert!(!instructions.contains("15 sources"));
+    assert!(instructions.contains("Prefer bounded typed tools"));
+    assert!(instructions.contains("raw `biomcp` escape hatch"));
+    assert!(instructions.contains("start raw discovery with `biomcp list`"));
 
     let tools = client.peer().list_tools(Default::default()).await?;
     let names = tools
@@ -531,6 +544,20 @@ where
         biomcp.description.as_deref().unwrap_or_default().len() <= 4_000,
         "raw biomcp description exceeded 4,000 bytes"
     );
+    let description = biomcp.description.as_deref().unwrap_or_default();
+    for phrase in [
+        "read-only BioMCP command",
+        "Prefer typed tools",
+        "`biomcp list <entity>`",
+        "`biomcp skill list`",
+        "Set `json` for structured output",
+        "Binary downloads and mutations are rejected",
+    ] {
+        assert!(
+            description.contains(phrase),
+            "raw tool description omitted {phrase}"
+        );
+    }
     for name in &names {
         assert!(instructions.contains(name), "instructions omitted {name}");
     }

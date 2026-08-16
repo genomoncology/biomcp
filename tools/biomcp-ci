@@ -12,6 +12,16 @@ export XDG_CACHE_HOME="$XDG_CACHE_ROOT"
 export XDG_CONFIG_HOME="$XDG_CONFIG_ROOT"
 export RUST_LOG="${RUST_LOG:-error}"
 
+preserve_umls_key=0
+if [[ "${1:-}" == "--with-umls-key" ]]; then
+  if [[ -z "${UMLS_API_KEY:-}" ]]; then
+    printf 'error: UMLS_API_KEY is required for --with-umls-key\n' >&2
+    exit 2
+  fi
+  preserve_umls_key=1
+  shift
+fi
+
 unset NCBI_API_KEY
 unset S2_API_KEY
 unset OPENFDA_API_KEY
@@ -19,7 +29,9 @@ unset NCI_API_KEY
 unset ONCOKB_TOKEN
 unset DISGENET_API_KEY
 unset ALPHAGENOME_API_KEY
-unset UMLS_API_KEY
+if [[ "$preserve_umls_key" != 1 ]]; then
+  unset UMLS_API_KEY
+fi
 
 if [[ "${BIOMCP_SPEC_CACHE_HIT:-}" == "1" && -z "${BIOMCP_CACHE_MODE:-}" ]]; then
   export BIOMCP_CACHE_MODE=infinite

@@ -176,6 +176,120 @@ def run_canary(binary: Path, env: dict[str, str]) -> subprocess.CompletedProcess
     )
 
 
+def write_strict_query_fake_binary(path: Path, mode: str = "valid") -> None:
+    path.write_text(
+        f"""#!/usr/bin/env python3
+import json
+import sys
+
+mode = {mode!r}
+requested = sys.argv[sys.argv.index("articles") + 1]
+gene = requested.split(" ", 1)[0]
+aliases = {{
+    "APC c.847C>T": ["APC c.847C>T", "APC p.Ala283Val"],
+    "TP53 c.356C>A": ["TP53 c.356C>A"],
+    "BRCA1 c.788G>T": ["BRCA1 c.788G>T"],
+    "BRCA1 c.2428A>T": ["BRCA1 c.2428A>T"],
+}}[requested]
+versions = {{
+    "pubmed": "pubmed-title-abstract-v1",
+    "europepmc": "europepmc-title-abstract-v1",
+    "semanticscholar": "semantic-scholar-bulk-phrase-v1",
+    "pubtator": "pubtator-entity-v1",
+}}
+
+def query(provider, alias):
+    _, value = alias.split(" ", 1)
+    return {{
+        "pubmed": f'(\"{{gene}}\"[Title/Abstract] AND \"{{value}}\"[Title/Abstract])',
+        "europepmc": f'TITLE_ABS:\"{{gene}} {{value}}\"',
+        "semanticscholar": alias,
+        "pubtator": f"@VARIANT_{{alias}}",
+    }}[provider]
+
+rows = [
+    {{
+        "provider": provider,
+        "route": "strict",
+        "query_alias": alias,
+        "query": query(provider, alias),
+        "query_template_version": versions[provider],
+    }}
+    for alias in aliases
+    for provider in versions
+]
+if requested == "APC c.847C>T":
+    if mode == "malformed-query":
+        rows[4]["query"] = "APC c.847C>T"
+    elif mode == "extra-provider":
+        rows.append({{"provider": "crossref", "route": "strict", "query_alias": aliases[0], "query": aliases[0], "query_template_version": "extra-v1"}})
+    elif mode == "missing-provider":
+        rows = [row for row in rows if not (row["query_alias"] == aliases[1] and row["provider"] == "pubtator")]
+    elif mode == "wrong-gene":
+        rows[4]["query_alias"] = "BRCA1 p.Ala283Val"
+    elif mode == "duplicate-provider":
+        rows.append(dict(rows[0]))
+
+providers = [{{"source": provider, "calls": 1}} for provider in versions]
+print(json.dumps({{
+    "debug_plan": {{
+        "provider_queries": rows + [{{"provider": "federated", "route": "discovery", "query_alias": requested, "query": requested, "query_template_version": "federated-free-text-v1"}}],
+        "routes": [{{"route": "strict", "providers": providers}}],
+    }},
+    "results": [{{"provenance": [{{"query_aliases": aliases}}]}}],
+}}))
+""",
+        encoding="utf-8",
+    )
+    path.chmod(0o755)
+
+
+def run_strict_query_canary(binary: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", str(REPO_ROOT / "spec/fixtures/run-variant-article-strict-live-canary.sh"), str(REPO_ROOT)],
+        capture_output=True,
+        check=False,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        text=True,
+    )
+
+
+def test_strict_query_canary_validates_every_row_for_every_alias(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    write_strict_query_fake_binary(binary)
+
+    completed = run_strict_query_canary(binary)
+
+    assert completed.returncode == 0, completed.stderr
+    payload = json.loads(completed.stdout)
+    assert payload["all_strict_templates_exact"] is True
+    assert payload["every_alias_has_all_four_providers"] is True
+    assert payload["brca1_aliases_remain_distinct"] is True
+
+
+def test_strict_query_canary_rejects_malformed_extra_and_incomplete_rows(
+    tmp_path: Path,
+) -> None:
+    for mode in (
+        "malformed-query",
+        "extra-provider",
+        "missing-provider",
+        "wrong-gene",
+        "duplicate-provider",
+    ):
+        binary = tmp_path / f"biomcp-{mode}"
+        write_strict_query_fake_binary(binary, mode)
+
+        completed = run_strict_query_canary(binary)
+
+        assert completed.returncode == 1, mode
+        payload = json.loads(completed.stdout)
+        assert not (
+            payload["all_strict_templates_exact"]
+            and payload["every_alias_has_all_four_providers"]
+        ), mode
+
+
 def test_g5_canary_reports_its_authoritative_verify_role(tmp_path: Path) -> None:
     binary = tmp_path / "biomcp"
     write_g5_fake_binary(binary)

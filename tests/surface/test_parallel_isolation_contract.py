@@ -909,6 +909,8 @@ LIVE_SPEC_PATHS = (
     "spec/surface/discover-live.md",
 )
 
+NIH_REPORTER_LIVE_SPEC_PATHS = ("spec/entity/nih-reporter-live.md",)
+
 
 def _runner_array_paths(name: str) -> list[str]:
     runner = _read_repo("scripts/run-specs.sh")
@@ -990,6 +992,7 @@ def test_ticket_673_runner_is_the_only_complete_spec_registry() -> None:
     routine = set(_runner_array_paths("SPEC_ROUTINE_PATHS"))
     static = set(_runner_array_paths("SPEC_STATIC_PATHS"))
     live = set(_runner_array_paths("SPEC_LIVE_PATHS"))
+    nih_reporter_live = set(_runner_array_paths("SPEC_NIH_REPORTER_LIVE_PATHS"))
     makefile = _read_repo("Makefile")
     spec_files = {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/entity").glob("*.md")}
     spec_files |= {str(path.relative_to(REPO_ROOT)) for path in (REPO_ROOT / "spec/surface").glob("*.md")}
@@ -1000,14 +1003,44 @@ def test_ticket_673_runner_is_the_only_complete_spec_registry() -> None:
     assert "SPEC_ROUTINE_PATHS" not in makefile
     assert "SPEC_STATIC_PATHS" not in makefile
     assert "SPEC_LIVE_PATHS" not in makefile
+    assert nih_reporter_live == set(NIH_REPORTER_LIVE_SPEC_PATHS)
     assert not routine & static and not routine & live and not static & live, (
         "spec lanes must be disjoint"
     )
+    assert not (routine | static | live) & nih_reporter_live
     retired = {"spec/surface/request-plan-ratchets.md"}
-    routed_specs = {path for path in routine | static | live if path.startswith("spec/")}
+    routed_specs = {
+        path
+        for path in routine | static | live | nih_reporter_live
+        if path.startswith("spec/")
+    }
     assert routed_specs == spec_files - retired, (
         "every active entity/surface spec must be explicitly routed"
     )
+
+
+def test_ticket_1007_nih_reporter_has_a_dedicated_fixture_free_live_page() -> None:
+    runner = _read_repo("scripts/run-specs.sh")
+    page = _read_repo("spec/entity/nih-reporter-live.md")
+    branch = re.search(
+        r"(?ms)^  verify-nih-reporter\)\n(?P<body>.*?)^    ;;",
+        runner,
+    )
+
+    assert branch is not None
+    assert 'paths=("${SPEC_NIH_REPORTER_LIVE_PATHS[@]}")' in branch.group("body")
+    assert "run_article_fixture" not in branch.group("body")
+    assert "run_provider_contract_fixture" not in branch.group("body")
+    assert page.count("../../tools/biomcp-ci") == 1
+    assert '--json get disease "Marfan syndrome" funding' in page
+    for required in (
+        '"query"',
+        '"fiscal_years"',
+        '"matching_project_years"',
+        '"grants"',
+        "NIH Reporter funding data is temporarily unavailable.",
+    ):
+        assert required in page
 
 
 

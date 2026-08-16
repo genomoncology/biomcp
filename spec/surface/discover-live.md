@@ -39,7 +39,9 @@ RxNorm"
 ```
 
 ```bash
-../../tools/biomcp-ci --json discover "type 2 diabetes mellitus" | mustmatch like '"primary_id": "MONDO:0005148"
+../../tools/biomcp-ci --with-umls-key --json discover "type 2 diabetes mellitus" | mustmatch like '"primary_id": "MONDO:0005148"
 "source": "SNOMEDCT"
 "source": "ICD10CM"'
 ```
+
+This credentialed block fails before contacting a provider unless `UMLS_API_KEY` is set. The wrapper preserves only that key for this command and continues stripping every other optional provider credential.

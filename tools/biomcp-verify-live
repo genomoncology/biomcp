@@ -21,12 +21,22 @@ case "$source_label" in
     ;;
 esac
 
-stdout_file="$(mktemp)"
-stderr_file="$(mktemp)"
+work_dir="$(mktemp -d)"
+chmod 700 "$work_dir"
+stdout_file="$work_dir/stdout"
+stderr_file="$work_dir/stderr"
+pending_sentinel="$work_dir/nih-reporter.pending"
+pending_marker="biomcp-nih-reporter-unavailable-v1"
 cleanup() {
-  rm -f "$stdout_file" "$stderr_file"
+  rm -f "$stdout_file" "$stderr_file" "$pending_sentinel"
+  rmdir "$work_dir" 2>/dev/null || true
 }
 trap cleanup EXIT
+
+unset BIOMCP_VERIFY_LIVE_PENDING_SENTINEL
+if [[ "$source_label" == "nih-reporter" ]]; then
+  export BIOMCP_VERIFY_LIVE_PENDING_SENTINEL="$pending_sentinel"
+fi
 
 set +e
 "$@" >"$stdout_file" 2>"$stderr_file"
@@ -51,14 +61,17 @@ is_hard_failure() {
 }
 
 is_operator_pending() {
+  local sentinel_value sentinel_size
   case "$source_label" in
     cpic)
       [[ "$lower_combined" == *"web_anon"* && "$lower_combined" == *"permission denied"* ]]
       ;;
     nih-reporter)
-      [[ "$lower_combined" == *"nih reporter funding data is temporarily unavailable"* ]] || \
-        [[ "$lower_combined" == *"nih reporter"* && "$lower_combined" == *"funding"* && "$lower_combined" == *"temporarily unavailable"* ]] || \
-        [[ "$lower_combined" == *"nih reporter"* && "$lower_combined" == *"funding"* && "$lower_combined" == *"missing"* && "$lower_combined" == *"table"* ]]
+      [[ -f "$pending_sentinel" && ! -L "$pending_sentinel" ]] || return 1
+      IFS= read -r sentinel_value < "$pending_sentinel" || return 1
+      sentinel_size="$(wc -c < "$pending_sentinel")"
+      [[ "$sentinel_value" == "$pending_marker" ]] &&
+        [[ "$sentinel_size" -eq $((${#pending_marker} + 1)) ]]
       ;;
   esac
 }

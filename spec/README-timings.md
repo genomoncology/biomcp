@@ -5,7 +5,7 @@
 | Target | Run when | Timeout | Scope | Cache contract |
 |---|---|---|---|---|
 | `make spec-contracts` | profile-compatible deterministic subset | `180s` per heading | offline Markdown executable contracts, including local MCP transport proof | uses the spec-profile binary selected by `PATH` and `BIOMCP_BIN`; no live-smoke commands or Python pytest contracts run in this lane |
-| `make verify` | explicit opt-in operator confidence before releases or upstream checks | n/a | live public-upstream matrix for discover/OLS4, disease, article source status, variant normalization, protein, pathway, NIH Reporter funding, and other live entity/surface specs | commands go through `tools/biomcp-ci` for cache/XDG roots and optional-key stripping; NIH Reporter is additionally routed through `tools/biomcp-verify-live` so known source/auth unavailability is reported as operator-pending |
+| `make verify` | explicit opt-in operator confidence before releases or upstream checks | n/a | live public-upstream matrix for discover/OLS4, disease, article source status, variant normalization, protein, pathway, NIH Reporter funding, and other live entity/surface specs | commands go through `tools/biomcp-ci` for cache/XDG roots and optional-key stripping; the UMLS crosswalk block alone opts in to preserving `UMLS_API_KEY`; dedicated NIH Reporter funding is routed through `tools/biomcp-verify-live` so only its exact known unavailable outcome is reported as operator-pending |
 | `make release-live-smoke` | compatibility alias for operators that still use the old live-lane name | n/a | delegates to `make verify` | not part of routine gates |
 | `make spec-pr` | PR CI canary and repo-local debugging of the offline executable corpus | `180s` per heading | the runner's explicit `SPEC_ROUTINE_PATHS`: local/fixture-backed CLI/MCP Markdown specs plus the parallel-isolation pytest canary | CI restores `.cache/biomcp-specs/`; cache hits export `BIOMCP_SPEC_CACHE_HIT=1`, which makes `tools/biomcp-ci` replay the warm HTTP cache with `BIOMCP_CACHE_MODE=infinite` |
 | `make spec` | repo-local routine spec gate and spec debugging | `180s` per heading | the same offline `SPEC_ROUTINE_PATHS` set as `make spec-pr` | uses the same wrapper/cache root; it should pass with external network blocked while local mock servers remain reachable |
@@ -82,7 +82,8 @@ locally; the runner remains the only routine owner of Cargo artifact creation.
 | `spec/surface/cli.md` | CLI surface canary for top-level help/list discovery, operator commands, cache-mode exceptions, and health/admin guidance |
 | `spec/surface/mcp.md` | MCP surface canary for stdio/HTTP entrypoints, probe routes, and streamable-HTTP tool execution |
 | `spec/surface/discover.md` | routine, receipt-backed OLS4 identity, no-match, and relational redirect contracts plus local skill guidance |
-| `spec/surface/discover-live.md` | operator-run discover trial intent and credentialed UMLS code-label checks |
+| `spec/surface/discover-live.md` | operator-run discover trial intent and credentialed UMLS code-label checks; the UMLS block requires the explicit wrapper opt-in and fails early when its key is absent |
+| `spec/entity/nih-reporter-live.md` | one bounded, fixture-free NIH Reporter funding request with strict JSON shape and non-empty grant validation; exact source unavailability is classified only by the outer live helper |
 
 The remaining `spec/entity/variant-articles-live.md` canaries are verify-only.
 G5 remains useful as a focused diagnostic, and its identity, exact-route,

@@ -177,3 +177,63 @@ def test_biomcp_ci_wrapper_avoids_pwd_dependent_shell_tricks() -> None:
     assert "eval" not in content
     assert "git rev-parse" not in content
     assert "$PWD" not in content
+
+
+def test_biomcp_ci_wrapper_preserves_only_umls_with_explicit_opt_in(
+    tmp_path: Path,
+) -> None:
+    result = _run_wrapper(tmp_path, "--with-umls-key", "discover", "diabetes")
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["argv"] == ["discover", "diabetes"]
+    assert payload["env"]["UMLS_API_KEY"] == "sentinel-umls_api_key"
+    for key in set(AUTH_KEYS) - {"UMLS_API_KEY"}:
+        assert payload["env"][key] is None, key
+
+
+def test_biomcp_ci_umls_opt_in_fails_before_exec_without_key(tmp_path: Path) -> None:
+    marker = tmp_path / "executed"
+    child = tmp_path / "child"
+    _write_executable(child, f"#!/usr/bin/env bash\ntouch {marker!s}\n")
+    env = os.environ.copy()
+    env["BIOMCP_BIN"] = str(child)
+    env.pop("UMLS_API_KEY", None)
+
+    result = subprocess.run(
+        ["bash", str(WRAPPER_SCRIPT), "--with-umls-key", "discover", "diabetes"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode == 2
+    assert "UMLS_API_KEY is required" in result.stderr
+    assert not marker.exists()
+
+
+def test_biomcp_ci_umls_opt_in_does_not_print_credential(tmp_path: Path) -> None:
+    child = tmp_path / "presence-only"
+    _write_executable(
+        child,
+        "#!/usr/bin/env python3\n"
+        "import os\n"
+        "print('umls-present' if os.environ.get('UMLS_API_KEY') else 'umls-missing')\n",
+    )
+    secret = "do-not-print-this-umls-secret"
+    env = os.environ | {"BIOMCP_BIN": str(child), "UMLS_API_KEY": secret}
+
+    result = subprocess.run(
+        ["bash", str(WRAPPER_SCRIPT), "--with-umls-key", "discover", "diabetes"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "umls-present"
+    assert secret not in result.stdout + result.stderr

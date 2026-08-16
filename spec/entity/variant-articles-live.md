@@ -93,6 +93,7 @@ bash ../fixtures/run-variant-article-strict-live-canary.sh ../..
 ```json expect=provider-strict-query-live-canary contains
 {
   "all_strict_templates_exact": true,
+  "every_alias_has_all_four_providers": true,
   "brca1_aliases_remain_distinct": true,
   "discovery_route_retained": true,
   "strict_route_executed": true,

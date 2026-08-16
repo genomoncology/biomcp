@@ -68,6 +68,10 @@ SPEC_LIVE_PATHS=(
   spec/surface/discover-live.md
 )
 
+SPEC_NIH_REPORTER_LIVE_PATHS=(
+  spec/entity/nih-reporter-live.md
+)
+
 usage() {
   echo "usage: scripts/run-specs.sh <prepare-spec|spec|spec-static|spec-pr|spec-contracts|verify|verify-nih-reporter>" >&2
 }
@@ -593,7 +597,7 @@ case "$mode" in
     ;;
   verify-nih-reporter)
     timeout_args=(--timeout 180)
-    paths=(spec/entity/disease.md)
+    paths=("${SPEC_NIH_REPORTER_LIVE_PATHS[@]}")
     mustmatch_path_dir="$(mustmatch_dir)"
     BIOMCP_FEATURE_ON_BIN="${BIOMCP_FEATURE_ON_BIN:-${BIOMCP_BIN:-}}"
     prepare_spec_artifacts
