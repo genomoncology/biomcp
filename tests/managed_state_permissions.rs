@@ -106,45 +106,216 @@ fn windows_managed_tree_rejects_hardlinked_files_without_fsutil() {
 }
 
 #[cfg(windows)]
-fn run_cached_probe(root: &std::path::Path) -> std::process::Output {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FixtureContact {
+    ValidRequest,
+    NoContact,
+}
+
+#[cfg(windows)]
+#[derive(Clone, Copy)]
+enum ProbeMode {
+    ValidRequest,
+    NoContact,
+}
+
+#[cfg(windows)]
+struct MyGeneFixture {
+    base: String,
+    stop: std::sync::mpsc::Sender<()>,
+    server: std::thread::JoinHandle<Result<FixtureContact, String>>,
+}
+
+#[cfg(windows)]
+fn start_mygene_fixture() -> MyGeneFixture {
     use std::io::{Read, Write};
     use std::net::TcpListener;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     let listener = TcpListener::bind("127.0.0.1:0").expect("local MyGene fixture");
     listener.set_nonblocking(true).expect("nonblocking fixture");
     let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let (stop, stop_rx) = std::sync::mpsc::channel();
     let server = std::thread::spawn(move || {
-        for _ in 0..200 {
+        let deadline = Instant::now() + Duration::from_secs(30);
+        let mut valid_requests = 0;
+        loop {
+            if stop_rx.try_recv().is_ok() {
+                match listener.accept() {
+                    Ok(_) => return Err("unexpected extra MyGene request".to_string()),
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        return match valid_requests {
+                            0 => Ok(FixtureContact::NoContact),
+                            1 => Ok(FixtureContact::ValidRequest),
+                            count => Err(format!("observed {count} valid MyGene requests")),
+                        };
+                    }
+                    Err(error) => return Err(format!("fixture final accept: {error}")),
+                }
+            }
+            if Instant::now() >= deadline {
+                return Err("local MyGene fixture timed out before contact".to_string());
+            }
             match listener.accept() {
                 Ok((mut stream, _)) => {
-                    let mut request = [0_u8; 4096];
-                    let _ = stream.read(&mut request);
+                    if valid_requests != 0 {
+                        return Err("unexpected extra MyGene request".to_string());
+                    }
+                    stream
+                        .set_read_timeout(Some(Duration::from_secs(5)))
+                        .map_err(|error| format!("set fixture read timeout: {error}"))?;
+                    let mut request = Vec::new();
+                    let mut chunk = [0_u8; 1024];
+                    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                        let count = stream
+                            .read(&mut chunk)
+                            .map_err(|error| format!("read MyGene request: {error}"))?;
+                        if count == 0 {
+                            return Err("MyGene request ended before its headers".to_string());
+                        }
+                        request.extend_from_slice(&chunk[..count]);
+                        if request.len() > 16 * 1024 {
+                            return Err("MyGene request headers exceeded 16 KiB".to_string());
+                        }
+                    }
+                    let request = std::str::from_utf8(&request)
+                        .map_err(|error| format!("MyGene request was not UTF-8: {error}"))?;
+                    let request_line = request
+                        .lines()
+                        .next()
+                        .ok_or_else(|| "MyGene request line was missing".to_string())?;
+                    let mut parts = request_line.split_whitespace();
+                    let method = parts.next();
+                    let target = parts.next();
+                    let version = parts.next();
+                    if parts.next().is_some()
+                        || method != Some("GET")
+                        || version != Some("HTTP/1.1")
+                    {
+                        return Err(format!("unexpected MyGene request line: {request_line}"));
+                    }
+                    let (path, query) = target
+                        .and_then(|target| target.split_once('?'))
+                        .ok_or_else(|| {
+                            format!("MyGene request query was missing: {request_line}")
+                        })?;
+                    if path != "/query" {
+                        return Err(format!("unexpected MyGene request path: {path}"));
+                    }
+                    let params = query
+                        .split('&')
+                        .filter_map(|pair| pair.split_once('='))
+                        .collect::<Vec<_>>();
+                    let exact_param = |name: &str, value: &str| {
+                        let values = params
+                            .iter()
+                            .filter_map(|(key, found)| (*key == name).then_some(*found))
+                            .collect::<Vec<_>>();
+                        values == [value]
+                    };
+                    let query_values = params
+                        .iter()
+                        .filter_map(|(key, value)| (*key == "q").then_some(*value))
+                        .collect::<Vec<_>>();
+                    if query_values.len() != 1
+                        || !query_values[0].to_ascii_uppercase().contains("BRAF")
+                        || !exact_param("species", "human")
+                        || !exact_param("size", "1")
+                        || !exact_param("from", "0")
+                    {
+                        return Err(format!("unexpected MyGene query parameters: {query}"));
+                    }
                     let body = br#"{"total":1,"hits":[{"symbol":"BRAF","name":"B-Raf proto-oncogene","entrezgene":"673"}]}"#;
                     write!(
                         stream,
                         "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                         body.len()
                     )
-                    .expect("fixture response headers");
-                    stream.write_all(body).expect("fixture response body");
-                    return;
+                    .map_err(|error| format!("write fixture response headers: {error}"))?;
+                    stream
+                        .write_all(body)
+                        .map_err(|error| format!("write fixture response body: {error}"))?;
+                    valid_requests += 1;
                 }
                 Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                     std::thread::sleep(Duration::from_millis(10));
                 }
-                Err(error) => panic!("fixture accept: {error}"),
+                Err(error) => return Err(format!("fixture accept: {error}")),
             }
         }
     });
+    MyGeneFixture { base, stop, server }
+}
+
+#[cfg(windows)]
+fn finish_mygene_fixture(fixture: MyGeneFixture) -> Result<FixtureContact, String> {
+    let _ = fixture.stop.send(());
+    fixture
+        .server
+        .join()
+        .map_err(|_| "local MyGene fixture thread panicked".to_string())?
+}
+
+#[cfg(windows)]
+fn run_cached_probe(
+    root: &std::path::Path,
+    mode: ProbeMode,
+) -> (std::process::Output, Result<(), String>) {
+    let fixture = start_mygene_fixture();
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["search", "gene", "BRAF", "--limit", "1"])
         .env("BIOMCP_CACHE_DIR", root)
-        .env("BIOMCP_MYGENE_BASE", base)
+        .env("BIOMCP_MYGENE_BASE", &fixture.base)
         .output()
         .expect("run cached probe");
-    server.join().expect("fixture thread");
-    output
+    let contact = finish_mygene_fixture(fixture).and_then(|contact| {
+        if matches!(
+            (mode, contact),
+            (ProbeMode::ValidRequest, FixtureContact::ValidRequest)
+                | (ProbeMode::NoContact, FixtureContact::NoContact)
+        ) {
+            Ok(())
+        } else {
+            Err(format!(
+                "unexpected fixture contact for probe mode: {contact:?}"
+            ))
+        }
+    });
+    (output, contact)
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_mygene_fixture_accepts_a_valid_request_after_cold_start_delay() {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use std::time::Duration;
+
+    let fixture = start_mygene_fixture();
+    std::thread::sleep(Duration::from_millis(2_500));
+    let mut stream = TcpStream::connect(fixture.base.trim_start_matches("http://"))
+        .expect("connect to delayed fixture");
+    stream
+        .write_all(
+            b"GET /query?size=1&q=BRAF&from=0&species=human HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
+        )
+        .expect("write delayed valid request");
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .expect("set delayed response timeout");
+    let mut response = Vec::new();
+    let mut chunk = [0_u8; 1024];
+    while !response.windows(6).any(|window| window == b"\"BRAF\"") {
+        let count = stream.read(&mut chunk).expect("read delayed response");
+        assert!(count > 0, "delayed fixture closed before its response");
+        response.extend_from_slice(&chunk[..count]);
+    }
+    let response = String::from_utf8(response).expect("UTF-8 delayed response");
+    assert!(response.starts_with("HTTP/1.1 200 OK\r\n"), "{response}");
+    assert_eq!(
+        finish_mygene_fixture(fixture).expect("delayed fixture result"),
+        FixtureContact::ValidRequest
+    );
 }
 
 #[cfg(windows)]
@@ -152,7 +323,8 @@ fn run_cached_probe(root: &std::path::Path) -> std::process::Output {
 fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
     let parent = tempfile::tempdir().expect("temporary parent");
     let root = parent.path().join("managed");
-    let initial = run_cached_probe(&root);
+    let (initial, initial_contact) = run_cached_probe(&root, ProbeMode::ValidRequest);
+    initial_contact.expect("initial MyGene fixture result");
     assert!(
         initial.status.success(),
         "initial cached probe failed: {}",
@@ -171,7 +343,8 @@ fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
         assert!(broadened.success());
     }
 
-    let repaired = run_cached_probe(&root);
+    let (repaired, repaired_contact) = run_cached_probe(&root, ProbeMode::ValidRequest);
+    repaired_contact.expect("repaired MyGene fixture result");
     assert!(
         repaired.status.success(),
         "fast-path ACL repair failed: {}",
@@ -204,7 +377,8 @@ if ($rule.FileSystemRights -ne [System.Security.AccessControl.FileSystemRights]:
 
     let outside = parent.path().join("outside-marker-link");
     fs::hard_link(&marker, &outside).expect("hard link marker");
-    let rejected = run_cached_probe(&root);
+    let (rejected, rejected_contact) = run_cached_probe(&root, ProbeMode::NoContact);
+    rejected_contact.expect("hard-link MyGene fixture result");
     assert!(!rejected.status.success());
     let stderr = String::from_utf8_lossy(&rejected.stderr);
     assert!(stderr.contains("managed file has 2 links"), "{stderr}");
