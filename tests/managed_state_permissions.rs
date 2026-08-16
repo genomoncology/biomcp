@@ -319,6 +319,76 @@ fn windows_mygene_fixture_accepts_a_valid_request_after_cold_start_delay() {
 }
 
 #[cfg(windows)]
+const WINDOWS_ACL_PATH_ENV: &str = "BIOMCP_TEST_ACL_PATH";
+
+#[cfg(windows)]
+const WINDOWS_ACL_CONTRACT: &str = r#"
+$ErrorActionPreference = 'Stop'
+function FailContract([int] $Code, [string] $Message) {
+    [Console]::Error.WriteLine($Message)
+    exit $Code
+}
+$path = [Environment]::GetEnvironmentVariable('BIOMCP_TEST_ACL_PATH', 'Process')
+if ([String]::IsNullOrWhiteSpace($path)) { FailContract 2 'BIOMCP_TEST_ACL_PATH is missing or blank' }
+if (-not [System.IO.Path]::IsPathRooted($path)) { FailContract 3 'BIOMCP_TEST_ACL_PATH is not rooted' }
+if (-not [System.IO.File]::Exists($path)) { FailContract 4 'BIOMCP_TEST_ACL_PATH does not exist' }
+$attributes = [System.IO.File]::GetAttributes($path)
+if (($attributes -band [System.IO.FileAttributes]::Directory) -ne 0 -or
+    ($attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+    FailContract 5 'BIOMCP_TEST_ACL_PATH is not a regular file'
+}
+$current = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+$acl = [System.IO.File]::GetAccessControl(
+    $path,
+    [System.Security.AccessControl.AccessControlSections]::Access
+)
+if (-not $acl.AreAccessRulesProtected) { FailContract 9 'DACL is not protected' }
+$rules = @($acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
+if ($rules.Count -ne 1) { FailContract 10 "expected exactly one DACL rule; found $($rules.Count)" }
+$rule = $rules[0]
+if ($rule.IdentityReference.Value -ne $current) { FailContract 11 'DACL rule belongs to the wrong SID' }
+if ($rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) { FailContract 12 'DACL rule is not Allow' }
+if ($rule.IsInherited) { FailContract 13 'DACL rule is inherited' }
+if ($rule.FileSystemRights -ne [System.Security.AccessControl.FileSystemRights]::FullControl) { FailContract 14 "DACL rights are not exact FullControl: $($rule.FileSystemRights)" }
+"#;
+
+#[cfg(windows)]
+fn inspect_windows_acl(path: Option<&std::path::Path>) -> std::process::Output {
+    let mut command = std::process::Command::new("powershell.exe");
+    command
+        .args(["-NoProfile", "-NonInteractive"])
+        .env_remove(WINDOWS_ACL_PATH_ENV);
+    if let Some(path) = path {
+        command.env(WINDOWS_ACL_PATH_ENV, path);
+    }
+    command
+        .args(["-Command", WINDOWS_ACL_CONTRACT])
+        .output()
+        .expect("run self-contained ACL contract")
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_acl_contract_rejects_missing_and_nonexistent_paths() {
+    let missing = inspect_windows_acl(None);
+    assert!(!missing.status.success());
+    let missing_stderr = String::from_utf8_lossy(&missing.stderr);
+    assert!(
+        missing_stderr.contains("missing or blank"),
+        "{missing_stderr}"
+    );
+
+    let parent = tempfile::tempdir().expect("temporary ACL parent");
+    let nonexistent = inspect_windows_acl(Some(&parent.path().join("does-not-exist")));
+    assert!(!nonexistent.status.success());
+    let nonexistent_stderr = String::from_utf8_lossy(&nonexistent.stderr);
+    assert!(
+        nonexistent_stderr.contains("does not exist"),
+        "{nonexistent_stderr}"
+    );
+}
+
+#[cfg(windows)]
 #[test]
 fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
     let parent = tempfile::tempdir().expect("temporary parent");
@@ -350,29 +420,13 @@ fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
         "fast-path ACL repair failed: {}",
         String::from_utf8_lossy(&repaired.stderr)
     );
-    let acl_contract = r#"
-$ErrorActionPreference = 'Stop'
-$current = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$acl = [System.IO.File]::GetAccessControl(
-    $args[0],
-    [System.Security.AccessControl.AccessControlSections]::Access
-)
-if (-not $acl.AreAccessRulesProtected) { exit 9 }
-$rules = @($acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
-if ($rules.Count -ne 1) { exit 10 }
-$rule = $rules[0]
-if ($rule.IdentityReference.Value -ne $current) { exit 11 }
-if ($rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) { exit 12 }
-if ($rule.IsInherited) { exit 13 }
-if ($rule.FileSystemRights -ne [System.Security.AccessControl.FileSystemRights]::FullControl) { exit 14 }
-"#;
     for path in [&lock, &marker] {
-        let exact_acl = std::process::Command::new("powershell.exe")
-            .args(["-NoProfile", "-NonInteractive", "-Command", acl_contract])
-            .arg(path)
-            .status()
-            .expect("enumerate repaired DACL");
-        assert!(exact_acl.success(), "unexpected epoch DACL: {path:?}");
+        let exact_acl = inspect_windows_acl(Some(path));
+        let stderr = String::from_utf8_lossy(&exact_acl.stderr);
+        assert!(
+            exact_acl.status.success(),
+            "unexpected epoch DACL for {path:?}: {stderr}"
+        );
     }
 
     let outside = parent.path().join("outside-marker-link");
