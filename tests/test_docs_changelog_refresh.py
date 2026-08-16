@@ -824,7 +824,7 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
 def test_release_overview_describes_committed_metadata_and_protected_promotion() -> None:
     overview = _read("architecture/technical/overview.md")
 
-    assert "**Development candidate:** Rust `0.9.0-dev.2`; Python `0.9.0.dev2`" in overview
+    assert "**Development candidate:** Rust `0.9.0-dev.3`; Python `0.9.0.dev3`" in overview
     assert "validates that mapping and its lock roots" in overview
     assert "both `server.json` version fields" in overview
     assert "`CITATION.cff`" in overview
