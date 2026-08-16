@@ -210,16 +210,6 @@ fn normalized_host_is_allowed(
         })
 }
 
-#[cfg(test)]
-fn host_is_allowed(host: &NormalizedAuthority, allowed_hosts: &[String]) -> bool {
-    allowed_hosts.is_empty()
-        || allowed_hosts.iter().any(|allowed| {
-            normalized_authority(allowed).is_some_and(|allowed| {
-                allowed.host == host.host && allowed.port.is_none_or(|port| host.port == Some(port))
-            })
-        })
-}
-
 async fn enforce_host_policy(
     State(policy): State<HostPolicy>,
     request: Request,
@@ -369,8 +359,8 @@ pub(in crate::mcp) async fn run_http(
 #[cfg(test)]
 mod tests {
     use super::{
-        MCP_HTTP_BODY_LIMIT, McpBodyReadError, collect_mcp_body, host_is_allowed,
-        http_allowed_hosts, index_handler, mcp_body_error_response, normalized_authority,
+        MCP_HTTP_BODY_LIMIT, McpBodyReadError, collect_mcp_body, http_allowed_hosts, index_handler,
+        mcp_body_error_response, normalized_authority, normalized_host_is_allowed,
     };
     use axum::{
         Json,
@@ -409,24 +399,48 @@ mod tests {
 
     #[test]
     fn global_host_policy_matches_names_ports_case_and_ipv6() {
-        let hosts = vec!["Example.COM:8443".into(), "::1".into()];
-        assert!(host_is_allowed(
+        let policy = http_allowed_hosts(
+            "127.0.0.1".parse().unwrap(),
+            vec![
+                "Example.COM.:8443".into(),
+                "[::1]:8080".into(),
+                "example.com:8443".into(),
+            ],
+            false,
+        )
+        .unwrap();
+        assert_eq!(policy.transport_hosts(), ["example.com:8443", "[::1]:8080"]);
+        assert!(normalized_host_is_allowed(
             &normalized_authority("example.com:8443").unwrap(),
-            &hosts
+            &policy.allowed_hosts
         ));
-        assert!(!host_is_allowed(
+        assert!(!normalized_host_is_allowed(
             &normalized_authority("example.com:8080").unwrap(),
-            &hosts
+            &policy.allowed_hosts
         ));
-        assert!(host_is_allowed(
+        assert!(normalized_host_is_allowed(
             &normalized_authority("[::1]:8080").unwrap(),
-            &hosts
+            &policy.allowed_hosts
         ));
-        assert!(host_is_allowed(
-            &normalized_authority("anything.invalid").unwrap(),
-            &[]
-        ));
-        assert!(normalized_authority("bad host").is_none());
+    }
+
+    #[test]
+    fn explicit_http_policy_rejects_invalid_entries_before_listening() {
+        for host in [
+            "",
+            "bad host",
+            "https://example.com",
+            "example.com/path",
+            "*.example.com",
+            "256.256.256.256",
+            "example.com:0",
+            "example.com:65536",
+        ] {
+            let error = http_allowed_hosts("127.0.0.1".parse().unwrap(), vec![host.into()], false)
+                .unwrap_err();
+            assert!(error.to_string().contains("Invalid --allowed-hosts entry"));
+            assert!(error.to_string().contains(host));
+        }
     }
 
     #[tokio::test]

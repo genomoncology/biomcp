@@ -366,6 +366,35 @@ def test_non_loopback_bind_requires_explicit_host_policy() -> None:
     assert "--unsafe-allow-any-host" in result.stderr
 
 
+def test_invalid_allowed_host_fails_before_listening() -> None:
+    binary = _require_release_binary()
+    port = _reserve_port()
+    result = subprocess.run(
+        [
+            str(binary),
+            "serve-http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+            "--allowed-hosts",
+            "bad host",
+        ],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "Invalid --allowed-hosts entry" in result.stderr
+    assert "bad host" in result.stderr
+    assert "Listening" not in result.stdout
+    assert "Listening" not in result.stderr
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", port))
+
+
 def test_top_level_help_hides_serve_sse_but_lists_serve_http() -> None:
     binary = _require_release_binary()
     result = subprocess.run(
