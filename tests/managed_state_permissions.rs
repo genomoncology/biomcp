@@ -178,8 +178,13 @@ fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
         String::from_utf8_lossy(&repaired.stderr)
     );
     let acl_contract = r#"
+$ErrorActionPreference = 'Stop'
 $current = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$acl = Get-Acl -LiteralPath $args[0]
+$acl = [System.IO.File]::GetAccessControl(
+    $args[0],
+    [System.Security.AccessControl.AccessControlSections]::Access
+)
+if (-not $acl.AreAccessRulesProtected) { exit 9 }
 $rules = @($acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
 if ($rules.Count -ne 1) { exit 10 }
 $rule = $rules[0]
