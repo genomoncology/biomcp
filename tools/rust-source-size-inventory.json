@@ -138,11 +138,11 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2006,
+      "baseline_lines": 2139,
       "floor_lines": 1956,
       "authorized_increase": {
         "ticket": "1017",
-        "delta": 50,
+        "delta": 183,
         "reason": "Parsed-command authorization regressions belong with the raw MCP handler.",
         "removal_condition": "Extract the raw MCP test module when its focused tests gain a dedicated module."
       }

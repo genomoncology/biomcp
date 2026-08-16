@@ -327,12 +327,26 @@ impl BioMcpServer {
     }
 
     async fn execute_args(args: Vec<String>, json: bool) -> Result<CallToolResult, McpError> {
-        if let Some(message) = binary_download_rejection(&args) {
+        let cli = match crate::cli::try_parse_cli(args.clone()) {
+            Ok(cli) => cli,
+            Err(error) => return Ok(Self::tool_error(format!("Error: {error}"))),
+        };
+        Self::execute_cli(cli, args, json).await
+    }
+
+    async fn execute_cli(
+        cli: crate::cli::Cli,
+        args: Vec<String>,
+        json: bool,
+    ) -> Result<CallToolResult, McpError> {
+        if let Some(message) = binary_download_rejection(&cli, &args) {
             return Ok(Self::tool_error(message));
         }
-        match crate::cli::execute_mcp(args.clone()).await {
+        let command_requests_json = json || cli.json;
+        let may_return_article_fulltext = cli_may_return_article_fulltext(&cli);
+        match crate::cli::execute_mcp_cli(cli).await {
             Ok(output) => {
-                let text = if json || args_include_json(&args) {
+                let text = if command_requests_json {
                     redact_mcp_json_text(&output.text).map_err(|err| {
                         McpError::internal_error(
                             format!("Failed to sanitize MCP JSON response: {err}"),
@@ -346,7 +360,7 @@ impl BioMcpServer {
                                 let text = redact_mcp_text(output.text, &value);
                                 append_default_mcp_footer(text, json_text)
                             }
-                            Err(err) if args_may_return_article_fulltext(&args) => {
+                            Err(err) if may_return_article_fulltext => {
                                 return Err(McpError::internal_error(
                                     format!(
                                         "Failed to inspect MCP full-text response fields: {err}"
@@ -356,7 +370,7 @@ impl BioMcpServer {
                             }
                             Err(_) => output.text,
                         },
-                        None if args_may_return_article_fulltext(&args) => {
+                        None if may_return_article_fulltext => {
                             return Err(McpError::internal_error(
                                 "Failed to prepare safe MCP full-text response metadata",
                                 None,
@@ -365,7 +379,7 @@ impl BioMcpServer {
                         None => output.text,
                     }
                 };
-                let text = if json || args_include_json(&args) {
+                let text = if command_requests_json {
                     text
                 } else {
                     crate::render::human::sanitize_document(&text)
@@ -382,28 +396,39 @@ impl BioMcpServer {
     }
 }
 
-fn binary_download_rejection(args: &[String]) -> Option<String> {
-    if args.get(1).is_none_or(|value| value != "get") {
-        return None;
-    }
-    let entity = args.get(2)?.as_str();
-    let section = args.get(4)?.as_str();
-    let is_binary = matches!(
-        (entity, section),
-        ("trial", "document") | ("article", "asset")
-    );
-    if !is_binary {
-        return None;
-    }
+fn binary_download_rejection(cli: &crate::cli::Cli, args: &[String]) -> Option<String> {
+    let (entity, section) = match &cli.command {
+        crate::cli::Commands::Get {
+            entity: crate::cli::GetEntity::Trial(args),
+        } if args
+            .sections
+            .first()
+            .is_some_and(|section| section == "document") =>
+        {
+            ("trial", "document")
+        }
+        crate::cli::Commands::Get {
+            entity: crate::cli::GetEntity::Article(args),
+        } if args
+            .sections
+            .first()
+            .is_some_and(|section| section == "asset") =>
+        {
+            ("article", "asset")
+        }
+        _ => return None,
+    };
+    Some(binary_download_message(entity, section, args))
+}
+
+fn binary_download_message(entity: &str, section: &str, args: &[String]) -> String {
     let command = args
         .iter()
         .take_while(|arg| !matches!(arg.as_str(), "--json" | "-j"))
         .map(|arg| shlex::try_quote(arg).unwrap_or_else(|_| "<value>".into()))
         .collect::<Vec<_>>()
         .join(" ");
-    Some(format!(
-        "Binary {entity} {section} downloads are CLI-only. Run `{command}` from a terminal."
-    ))
+    format!("Binary {entity} {section} downloads are CLI-only. Run `{command}` from a terminal.")
 }
 
 impl Default for BioMcpServer {
@@ -412,86 +437,184 @@ impl Default for BioMcpServer {
     }
 }
 
-fn raw_command_reads_local_input(args: &[String]) -> bool {
+fn variant_command_reads_local_input(command: &crate::cli::VariantCommand) -> bool {
+    match command {
+        crate::cli::VariantCommand::Articles { input, .. }
+        | crate::cli::VariantCommand::Erepo { input, .. }
+        | crate::cli::VariantCommand::Normalize { input, .. } => input.is_some(),
+        crate::cli::VariantCommand::Trials { .. }
+        | crate::cli::VariantCommand::Structure { .. }
+        | crate::cli::VariantCommand::Oncokb { .. }
+        | crate::cli::VariantCommand::External(_) => false,
+    }
+}
+
+fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
+    use crate::cli::{
+        ArticleCommand, Commands, DiseaseCommand, DrugCommand, GeneCommand, PathwayCommand,
+        ProteinCommand, StudyCommand, VariantCommand,
+    };
+
+    match &cli.command {
+        Commands::Search { .. } | Commands::Get { .. } => true,
+        Commands::Variant {
+            cmd:
+                VariantCommand::Trials { .. }
+                | VariantCommand::Articles { .. }
+                | VariantCommand::Structure { .. }
+                | VariantCommand::Oncokb { .. }
+                | VariantCommand::Erepo { .. }
+                | VariantCommand::Normalize { .. },
+        } => !variant_command_reads_local_input(match &cli.command {
+            Commands::Variant { cmd } => cmd,
+            _ => unreachable!("matched variant command"),
+        }),
+        Commands::Variant {
+            cmd: VariantCommand::External(_),
+        } => false,
+        Commands::Drug {
+            cmd:
+                DrugCommand::Trials { .. }
+                | DrugCommand::AdverseEvents { .. }
+                | DrugCommand::Interactions { .. },
+        }
+        | Commands::Disease {
+            cmd:
+                DiseaseCommand::Trials { .. }
+                | DiseaseCommand::Articles { .. }
+                | DiseaseCommand::Drugs { .. },
+        }
+        | Commands::Article {
+            cmd:
+                ArticleCommand::Entities { .. }
+                | ArticleCommand::Batch { .. }
+                | ArticleCommand::Citations { .. }
+                | ArticleCommand::References { .. }
+                | ArticleCommand::Recommendations { .. },
+        }
+        | Commands::Gene {
+            cmd:
+                GeneCommand::Definition { .. }
+                | GeneCommand::Trials { .. }
+                | GeneCommand::Drugs { .. }
+                | GeneCommand::Articles { .. }
+                | GeneCommand::Pathways { .. }
+                | GeneCommand::Cspec(_),
+        }
+        | Commands::Pathway {
+            cmd:
+                PathwayCommand::Drugs { .. }
+                | PathwayCommand::Articles { .. }
+                | PathwayCommand::Trials { .. },
+        }
+        | Commands::Protein {
+            cmd: ProteinCommand::Structures { .. },
+        }
+        | Commands::Health(_)
+        | Commands::List(_)
+        | Commands::Batch(_)
+        | Commands::Enrich(_)
+        | Commands::Discover(_)
+        | Commands::Version(_) => true,
+        Commands::Study {
+            cmd:
+                StudyCommand::List
+                | StudyCommand::TopMutated { .. }
+                | StudyCommand::Query { .. }
+                | StudyCommand::Filter { .. }
+                | StudyCommand::Cohort { .. }
+                | StudyCommand::Survival { .. }
+                | StudyCommand::Compare { .. }
+                | StudyCommand::CoOccurrence { .. },
+        }
+        | Commands::Study {
+            cmd: StudyCommand::Download { list: true, .. },
+        } => true,
+        Commands::Study {
+            cmd: StudyCommand::Download { list: false, .. },
+        } => false,
+        Commands::Skill { command: None }
+        | Commands::Skill {
+            command:
+                Some(crate::cli::skill::SkillCommand::List | crate::cli::skill::SkillCommand::Render),
+        } => true,
+        Commands::Skill {
+            command: Some(crate::cli::skill::SkillCommand::Show(parts)),
+        } => parts.len() == 1 && crate::cli::skill::show_use_case(&parts[0]).is_ok(),
+        Commands::Skill {
+            command:
+                Some(crate::cli::skill::SkillCommand::Status { .. })
+                | Some(crate::cli::skill::SkillCommand::Install { .. }),
+        }
+        | Commands::Cache { .. }
+        | Commands::Ema { .. }
+        | Commands::Who { .. }
+        | Commands::Cvx { .. }
+        | Commands::Ddinter { .. }
+        | Commands::Gtr { .. }
+        | Commands::WhoIvd { .. }
+        | Commands::Mcp
+        | Commands::Serve
+        | Commands::McpConfig(_)
+        | Commands::ServeHttp(_)
+        | Commands::ServeSse
+        | Commands::Chart { .. }
+        | Commands::Update(_)
+        | Commands::Uninstall
+        | Commands::Drug {
+            cmd: DrugCommand::External(_),
+        }
+        | Commands::Gene {
+            cmd: GeneCommand::External(_),
+        } => false,
+    }
+}
+
+fn mcp_rejection_message(cli: &crate::cli::Cli) -> &'static str {
+    match &cli.command {
+        crate::cli::Commands::Cache { .. } => CACHE_FAMILY_MCP_REJECTION_MESSAGE,
+        crate::cli::Commands::Variant { cmd } if variant_command_reads_local_input(cmd) => {
+            LOCAL_INPUT_MCP_REJECTION_MESSAGE
+        }
+        _ => GENERIC_MCP_REJECTION_MESSAGE,
+    }
+}
+
+fn args_with_json(mut args: Vec<String>) -> Vec<String> {
     if !args
-        .get(1)
-        .is_some_and(|value| value.eq_ignore_ascii_case("variant"))
-    {
-        return false;
-    }
-    let option_start = match args.get(2).map(|value| value.to_ascii_lowercase()) {
-        Some(command) if command == "articles" || command == "erepo" => 3,
-        Some(command) if command == "normalize" => 4,
-        _ => return false,
-    };
-    args.iter()
-        .skip(option_start)
-        .any(|value| value == "--input" || value.starts_with("--input="))
-}
-
-fn is_allowed_mcp_command(args: &[String]) -> bool {
-    // args[0] is the binary name ("biomcp")
-    let Some(cmd) = args.get(1).map(|s| s.trim().to_ascii_lowercase()) else {
-        return false;
-    };
-
-    match cmd.as_str() {
-        "variant" => !raw_command_reads_local_input(args),
-        "search" | "get" | "drug" | "disease" | "article" | "gene" | "pathway" | "protein"
-        | "list" | "version" | "health" | "batch" | "enrich" | "discover" => true,
-        "study" => {
-            let Some(sub) = args.get(2).map(|s| s.trim().to_ascii_lowercase()) else {
-                return false;
-            };
-            match sub.as_str() {
-                "list" | "top-mutated" | "query" | "filter" | "cohort" | "survival" | "compare"
-                | "co-occurrence" => true,
-                "download" => args.len() == 4 && args[3] == "--list",
-                _ => false,
-            }
-        }
-        "skill" => {
-            let Some(sub) = args.get(2).map(|s| s.trim().to_ascii_lowercase()) else {
-                return true;
-            };
-            if args.len() != 3 {
-                return false;
-            }
-            matches!(sub.as_str(), "list" | "render")
-                || crate::cli::skill::show_use_case(&sub).is_ok()
-        }
-        _ => false,
-    }
-}
-
-fn mcp_rejection_message(args: &[String]) -> &'static str {
-    if args
-        .get(1)
-        .is_some_and(|cmd| cmd.trim().eq_ignore_ascii_case("cache"))
-    {
-        CACHE_FAMILY_MCP_REJECTION_MESSAGE
-    } else if raw_command_reads_local_input(args) {
-        LOCAL_INPUT_MCP_REJECTION_MESSAGE
-    } else {
-        GENERIC_MCP_REJECTION_MESSAGE
-    }
-}
-
-fn args_include_json(args: &[String]) -> bool {
-    args.iter()
+        .iter()
         .any(|arg| matches!(arg.as_str(), "--json" | "-j"))
-}
-
-fn args_with_json(args: &[String]) -> Vec<String> {
-    let mut with_json = args.to_vec();
-    if !args_include_json(&with_json) {
-        with_json.push("--json".to_string());
+    {
+        args.push("--json".to_string());
     }
-    with_json
+    args
 }
 
-fn args_may_return_article_fulltext(args: &[String]) -> bool {
-    args.get(1).is_some_and(|arg| arg == "get") && args.get(2).is_some_and(|arg| arg == "article")
+fn cli_may_return_article_fulltext(cli: &crate::cli::Cli) -> bool {
+    matches!(
+        cli.command,
+        crate::cli::Commands::Get {
+            entity: crate::cli::GetEntity::Article(_),
+        }
+    )
+}
+
+#[cfg(test)]
+fn is_allowed_mcp_args(args: &[String]) -> bool {
+    crate::cli::try_parse_cli(args.to_vec()).is_ok_and(|cli| is_allowed_mcp_command(&cli))
+}
+
+#[cfg(test)]
+fn mcp_rejection_message_for_args(args: &[String]) -> &'static str {
+    let cli = crate::cli::try_parse_cli(args.to_vec()).expect("test command parses");
+    mcp_rejection_message(&cli)
+}
+
+#[cfg(test)]
+fn binary_download_rejection_for_args(args: &[String]) -> Option<String> {
+    crate::cli::try_parse_cli(args.to_vec())
+        .ok()
+        .and_then(|cli| binary_download_rejection(&cli, args))
 }
 
 fn input_error(message: impl Into<String>) -> McpError {
@@ -649,9 +772,8 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
         args.extend(["--offset".into(), offset.to_string()]);
     }
     if object.get("json").and_then(Value::as_bool) == Some(true) {
-        args = args_with_json(&args);
+        args = args_with_json(args);
     }
-    crate::cli::try_parse_cli(args.clone()).map_err(|error| input_error(error.to_string()))?;
     Ok(args)
 }
 
@@ -717,9 +839,12 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         (entity.as_str(), sections.first().map(String::as_str)),
         ("trial", Some("document")) | ("article", Some("asset"))
     ) {
+        let section = sections.first().expect("binary section").clone();
         args.extend(sections);
-        let message = binary_download_rejection(&args).expect("matched binary get route");
-        return Err(McpError::invalid_params(message, None));
+        return Err(McpError::invalid_params(
+            binary_download_message(entity.as_str(), &section, &args),
+            None,
+        ));
     }
     let allowed_sections = crate::cli::list::catalog::sections(&entity);
     let mut seen = BTreeSet::new();
@@ -737,13 +862,9 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         }
         args.push(section);
     }
-    if let Some(message) = binary_download_rejection(&args) {
-        return Err(McpError::invalid_params(message, None));
-    }
     if object.get("json").and_then(Value::as_bool) == Some(true) {
-        args = args_with_json(&args);
+        args = args_with_json(args);
     }
-    crate::cli::try_parse_cli(args.clone()).map_err(|error| input_error(error.to_string()))?;
     Ok(args)
 }
 
@@ -926,11 +1047,7 @@ impl BioMcpServer {
 
         let split = match shlex::split(&command) {
             Some(args) => args,
-            None => {
-                return Ok(Self::tool_error(format!(
-                    "Error: Invalid command syntax: {command}"
-                )));
-            }
+            None => return Ok(Self::tool_error(GENERIC_MCP_REJECTION_MESSAGE)),
         };
 
         let mut args = vec!["biomcp".to_string()];
@@ -939,16 +1056,19 @@ impl BioMcpServer {
         } else {
             args.extend(split);
         }
-
-        if !is_allowed_mcp_command(&args) {
-            return Ok(Self::tool_error(mcp_rejection_message(&args)));
-        }
-
         if json {
-            args = args_with_json(&args);
+            args = args_with_json(args);
         }
 
-        Self::execute_args(args, json).await
+        let cli = match crate::cli::try_parse_cli(args.clone()) {
+            Ok(cli) => cli,
+            Err(_) => return Ok(Self::tool_error(GENERIC_MCP_REJECTION_MESSAGE)),
+        };
+        if !is_allowed_mcp_command(&cli) {
+            return Ok(Self::tool_error(mcp_rejection_message(&cli)));
+        }
+
+        Self::execute_cli(cli, args, json).await
     }
 
     #[tool]
@@ -1350,9 +1470,10 @@ mod tests {
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
         LOCAL_INPUT_MCP_REJECTION_MESSAGE, ShellCommand, TypedGeneCspec, TypedGet, TypedSearch,
-        TypedVariantArticles, TypedVariantCar, args_may_return_article_fulltext,
-        binary_download_rejection, get_args, is_allowed_mcp_command, mcp_rejection_message,
-        redact_mcp_json_text, redact_mcp_text, search_args, to_resource_result,
+        TypedVariantArticles, TypedVariantCar, binary_download_rejection_for_args,
+        cli_may_return_article_fulltext, get_args, is_allowed_mcp_args,
+        mcp_rejection_message_for_args, redact_mcp_json_text, redact_mcp_text, search_args,
+        to_resource_result,
     };
     use serde_json::json;
 
@@ -1385,7 +1506,8 @@ mod tests {
             ),
         ] {
             let args = args.into_iter().map(String::from).collect::<Vec<_>>();
-            let message = binary_download_rejection(&args).expect("binary route is rejected");
+            let message =
+                binary_download_rejection_for_args(&args).expect("binary route is rejected");
             assert!(message.contains(label));
             assert!(message.contains("CLI-only"));
             assert!(message.contains("biomcp get"));
@@ -1395,7 +1517,7 @@ mod tests {
             ["biomcp", "get", "article", "1", "assets"],
         ] {
             let args = args.into_iter().map(String::from).collect::<Vec<_>>();
-            assert!(binary_download_rejection(&args).is_none());
+            assert!(binary_download_rejection_for_args(&args).is_none());
         }
 
         let error = get_args(TypedGet(json!({
@@ -1448,14 +1570,16 @@ mod tests {
             "full_text_path": path,
             "full_text_source": {"source": "Europe PMC"}
         });
-        assert!(args_may_return_article_fulltext(&[
-            "biomcp".into(),
-            "get".into(),
-            "--no-cache".into(),
-            "article".into(),
-            "22663011".into(),
-            "fulltext".into(),
-        ]));
+        let cli = crate::cli::try_parse_cli([
+            "biomcp",
+            "get",
+            "--no-cache",
+            "article",
+            "22663011",
+            "fulltext",
+        ])
+        .expect("full-text command parses");
+        assert!(cli_may_return_article_fulltext(&cli));
 
         let text = redact_mcp_text(format!("## Full Text\nSaved to: {path}"), &value);
         assert_eq!(
@@ -1700,18 +1824,18 @@ mod tests {
 
     #[test]
     fn mcp_allowlist_blocks_mutating_commands() {
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "search".into(),
             "gene".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "variant".into(),
             "articles".into(),
             "BRAF p.V600E".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "variant".into(),
             "--json".into(),
@@ -1719,63 +1843,63 @@ mod tests {
             "--input".into(),
             "/server/private.json".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "variant".into(),
             "articles".into(),
             "--input=-".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "--json".into(),
             "list".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "render".into()
         ]));
-        assert!(is_allowed_mcp_command(&["biomcp".into(), "skill".into()]));
+        assert!(is_allowed_mcp_args(&["biomcp".into(), "skill".into()]));
         // Numeric and slug skill lookups are read-only when they name embedded skills.
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "03".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "gene-disease-orientation".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "03-gene-disease-orientation".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "--no-cache".into(),
             "list".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "download".into(),
             "--list".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "cache".into(),
             "path".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "cache".into(),
             "stats".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "top-mutated".into(),
@@ -1784,7 +1908,7 @@ mod tests {
             "--limit".into(),
             "10".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "query".into(),
@@ -1795,7 +1919,7 @@ mod tests {
             "--type".into(),
             "mutations".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "filter".into(),
@@ -1804,7 +1928,7 @@ mod tests {
             "--mutated".into(),
             "TP53".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "cohort".into(),
@@ -1813,7 +1937,7 @@ mod tests {
             "--gene".into(),
             "TP53".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "survival".into(),
@@ -1822,7 +1946,7 @@ mod tests {
             "--gene".into(),
             "TP53".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "compare".into(),
@@ -1835,7 +1959,7 @@ mod tests {
             "--target".into(),
             "KRAS".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "co-occurrence".into(),
@@ -1844,68 +1968,68 @@ mod tests {
             "--genes".into(),
             "TP53,KRAS".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "suggest".into(),
             "What drugs treat melanoma?".into()
         ]));
-        assert!(is_allowed_mcp_command(&[
+        assert!(is_allowed_mcp_args(&[
             "biomcp".into(),
             "discover".into(),
             "BRCA1".into()
         ]));
-        assert!(!is_allowed_mcp_command(&["biomcp".into(), "update".into()]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&["biomcp".into(), "update".into()]));
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "install".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "status".into(),
             "/home/operator/private/skills".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "sync".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "not-a-real-skill".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "skill".into(),
             "render".into(),
             "extra".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "ema".into(),
             "sync".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "who-ivd".into(),
             "sync".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "download".into(),
             "msk_impact_2017".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "download".into(),
             "--list".into(),
             "msk_impact_2017".into()
         ]));
-        assert!(!is_allowed_mcp_command(&[
+        assert!(!is_allowed_mcp_args(&[
             "biomcp".into(),
             "study".into(),
             "download".into()
@@ -1930,9 +2054,9 @@ mod tests {
                         .filter(|value| !value.is_empty())
                         .map(String::from),
                 );
-                assert!(!is_allowed_mcp_command(&args));
+                assert!(!is_allowed_mcp_args(&args));
                 assert_eq!(
-                    mcp_rejection_message(&args),
+                    mcp_rejection_message_for_args(&args),
                     LOCAL_INPUT_MCP_REJECTION_MESSAGE
                 );
             }
@@ -1976,27 +2100,30 @@ mod tests {
             "path".into(),
         ];
         assert_eq!(
-            mcp_rejection_message(&args),
+            mcp_rejection_message_for_args(&args),
             CACHE_FAMILY_MCP_REJECTION_MESSAGE
         );
 
         let stats_args = vec!["biomcp".into(), "cache".into(), "stats".into()];
         assert_eq!(
-            mcp_rejection_message(&stats_args),
+            mcp_rejection_message_for_args(&stats_args),
             CACHE_FAMILY_MCP_REJECTION_MESSAGE
         );
 
         let clear_args = vec!["biomcp".into(), "cache".into(), "clear".into()];
         assert_eq!(
-            mcp_rejection_message(&clear_args),
+            mcp_rejection_message_for_args(&clear_args),
             CACHE_FAMILY_MCP_REJECTION_MESSAGE
         );
     }
 
     #[test]
-    fn generic_mcp_rejection_message_stays_read_only_for_mutating_commands() {
+    fn generic_mcp_rejection_message_for_args_stays_read_only_for_mutating_commands() {
         let args = vec!["biomcp".into(), "--json".into(), "update".into()];
-        assert_eq!(mcp_rejection_message(&args), GENERIC_MCP_REJECTION_MESSAGE);
+        assert_eq!(
+            mcp_rejection_message_for_args(&args),
+            GENERIC_MCP_REJECTION_MESSAGE
+        );
 
         let private = "/home/operator/private/skills";
         let status_args = vec![
@@ -2005,7 +2132,7 @@ mod tests {
             "status".into(),
             private.into(),
         ];
-        let message = mcp_rejection_message(&status_args);
+        let message = mcp_rejection_message_for_args(&status_args);
         assert_eq!(message, GENERIC_MCP_REJECTION_MESSAGE);
         assert!(!message.contains(private));
     }

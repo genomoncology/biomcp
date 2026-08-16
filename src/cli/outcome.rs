@@ -685,7 +685,11 @@ pub async fn execute_mcp(mut args: Vec<String>) -> anyhow::Result<CliOutput> {
         args.push("biomcp".to_string());
     }
 
-    let mut cli = crate::cli::try_parse_cli(args)?;
+    execute_mcp_cli(crate::cli::try_parse_cli(args)?).await
+}
+
+/// Execute a parsed CLI command through MCP without reparsing it.
+pub async fn execute_mcp_cli(mut cli: Cli) -> anyhow::Result<CliOutput> {
     prepare_mcp_chart(&mut cli)?;
     let outcome = run_outcome_with_worker_stack(cli, true).await?;
     outcome_to_mcp_output(outcome)

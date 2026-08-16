@@ -45,7 +45,9 @@ pub use self::commands::{Commands, GetEntity, SearchEntity};
 pub use self::disease::DiseaseCommand;
 pub use self::drug::DrugCommand;
 pub use self::gene::GeneCommand;
-pub use self::outcome::{execute, execute_mcp, run, run_outcome, server_json_rejection};
+pub use self::outcome::{
+    execute, execute_mcp, execute_mcp_cli, run, run_outcome, server_json_rejection,
+};
 pub use self::pathway::PathwayCommand;
 pub use self::protein::ProteinCommand;
 pub use self::shared::{build_cli, parse_cli_from_env, try_parse_cli};
