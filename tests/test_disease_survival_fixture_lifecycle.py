@@ -221,8 +221,17 @@ def test_real_runner_exports_owner_identity_to_nested_fixture_setup(
         "cleanup-article-fulltext-source-fixture.sh",
         "setup-study-spec-fixture.sh",
         "setup-ddinter-spec-fixture.sh",
+        "cleanup-ctgov-intervention-alias-spec-fixture.sh",
     ):
         (fixtures / name).write_text("#!/usr/bin/env bash\nexit 0\n")
+    (fixtures / "setup-ctgov-intervention-alias-spec-fixture.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'mkdir -p "$1/.cache"\n'
+        'printf "export BIOMCP_CTGOV_BASE=http://127.0.0.1/api/v2\\n" '
+        '>"$1/.cache/spec-ctgov-intervention-alias-env"\n'
+        'printf "export BIOMCP_CTGOV_CDN_BASE=http://127.0.0.1\\n" '
+        '>>"$1/.cache/spec-ctgov-intervention-alias-env"\n'
+    )
     for script in fixtures.iterdir():
         script.chmod(0o755)
 

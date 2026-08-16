@@ -611,6 +611,7 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         "setup-article-fulltext-source-fixture.sh",
         "cleanup-article-fulltext-source-fixture.sh",
         "cleanup-ctgov-intervention-alias-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
     ):
         shutil.copy2(REPO_ROOT / "spec" / "fixtures" / name, fixtures / name)
     (workspace / "tests").symlink_to(REPO_ROOT / "tests", target_is_directory=True)
@@ -622,6 +623,15 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         script = fixtures / name
         script.write_text("#!/usr/bin/env bash\nexit 0\n")
         script.chmod(0o755)
+    ctgov_setup = fixtures / "setup-ctgov-intervention-alias-spec-fixture.sh"
+    ctgov_setup.write_text(
+        "#!/usr/bin/env bash\n"
+        'printf "export BIOMCP_CTGOV_BASE=http://127.0.0.1/api/v2\\n" '
+        '>"$1/.cache/spec-ctgov-intervention-alias-env"\n'
+        'printf "export BIOMCP_CTGOV_CDN_BASE=http://127.0.0.1\\n" '
+        '>>"$1/.cache/spec-ctgov-intervention-alias-env"\n'
+    )
+    ctgov_setup.chmod(0o755)
 
     bin_dir = workspace / "bin"
     bin_dir.mkdir()
@@ -639,7 +649,7 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
     lock_path = workspace / ".cache" / "spec-routine-fixtures.lock"
     fixture_root = workspace / ".cache" / "spec-article-fulltext-source.stale"
     fixture_root.mkdir()
-    active_root = workspace / ".cache" / "spec-ctgov-intervention-alias.active"
+    active_root = workspace / ".cache" / "spec-variant-identity.active"
     active_root.mkdir()
     ownership = fixtures / "routine-fixture-ownership.sh"
     owner_arg = subprocess.run(
@@ -670,7 +680,7 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
             "bash",
             str(ownership),
             "new-owner",
-            "ctgov-intervention-alias",
+            "variant-identity",
             str(active_root),
         ],
         check=True,
@@ -704,10 +714,10 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
                 str(ownership),
                 "write",
                 str(workspace),
-                "ctgov-intervention-alias",
+                "variant-identity",
                 str(active_root),
                 str(active.pid),
-                "BIOMCP_CTGOV_INTERVENTION_ALIAS",
+                "BIOMCP_VARIANT_IDENTITY",
                 active_owner_arg,
             ],
             check=True,
@@ -728,7 +738,7 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         ).exists()
         assert active.poll() is None
         assert (
-            workspace / ".cache" / "spec-ctgov-intervention-alias-ownership"
+            workspace / ".cache" / "spec-variant-identity-ownership"
         ).exists()
     finally:
         if runner is not None and runner.poll() is None:
@@ -740,6 +750,7 @@ def test_runner_reaps_owned_lock_holder_before_acquiring_routine_lock(
         for cleanup_name in (
             "cleanup-article-fulltext-source-fixture.sh",
             "cleanup-ctgov-intervention-alias-spec-fixture.sh",
+            "cleanup-variant-identity-spec-fixture.sh",
         ):
             subprocess.run(
                 ["bash", str(fixtures / cleanup_name), str(workspace)],
