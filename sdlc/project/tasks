@@ -57,11 +57,18 @@ try {
 } catch {
   fail("no origin remote");
 }
-try {
-  execFileSync("timeout", ["-k", "10", "60", "git", "fetch", "--quiet", "origin"], { cwd: REPO, stdio: ["ignore", "ignore", "inherit"] });
-} catch (error) {
-  const status = error && error.status;
-  fail(status === 124 || status === 137 ? "git fetch origin timed out" : "git fetch origin failed");
+function fetchOrigin() {
+  try {
+    execFileSync("timeout", ["-k", "10", "60", "git", "fetch", "--quiet", "origin"], { cwd: REPO, stdio: ["ignore", "ignore", "ignore"] });
+    return 0;
+  } catch (error) {
+    return error && error.status;
+  }
+}
+let fetchStatus = fetchOrigin();
+if (fetchStatus === 124 || fetchStatus === 137) fetchStatus = fetchOrigin();
+if (fetchStatus !== 0) {
+  fail(fetchStatus === 124 || fetchStatus === 137 ? "git fetch origin timed out" : "git fetch origin failed");
 }
 try {
   git("rev-parse", "--verify", "origin/main");
