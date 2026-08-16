@@ -938,6 +938,174 @@ def test_ticket_442_routine_runner_restores_parallel_isolation_canary() -> None:
     assert "spec/surface/discover-live.md" not in routine
 
 
+def test_ticket_1011_live_article_assets_pages_both_states_fail_closed(
+    tmp_path: Path,
+) -> None:
+    page = _read_repo("spec/entity/article-assets-live.md")
+    parser_match = re.search(
+        r"(?ms)env -i PATH=\"\$PATH\" python3 /dev/fd/3 "
+        r"\"\$scratch/coverage.json\" \"\$scratch/retrievable.json\" 3<<'PY' "
+        r"\| mustmatch like \"live article asset pages are complete and mutually exclusive\"\n"
+        r"(?P<parser>.*?)\nPY",
+        page,
+    )
+
+    assert parser_match is not None, "live asset canary must use its two-view parser"
+    assert 'asset_cache_dir="$scratch/cache"' in page
+    assert "BIOMCP_CACHE_DIR:-" not in page
+    assert page.count('BIOMCP_CACHE_DIR="$asset_cache_dir"') == 2
+    assert "--asset-view coverage --asset-limit 100 --asset-offset 0 assets" in page
+    assert "--asset-view retrievable --asset-limit 100 --asset-offset 0 assets" in page
+    parser = parser_match.group("parser")
+    for required in (
+        "Supplementary_Methods__Figures__Tables.pdf",
+        "Supplementary_Tables.xls",
+        '"jats_xml"',
+        '"pmc_html"',
+        '"pmc_proof_of_work"',
+        '"source_unavailable"',
+    ):
+        assert required in parser
+
+    routes = [
+        {
+            "provider": {"label": "NCBI EFetch PMC XML", "source": "NCBI EFetch"},
+            "source_document": "jats_xml",
+        },
+        {
+            "provider": {"label": "PMC Linked Article Asset", "source": "PMC"},
+            "source_document": "pmc_html",
+        },
+    ]
+    filenames = (
+        "NIHMS265402-supplement-Supplementary_Methods__Figures__Tables.pdf",
+        "NIHMS265402-supplement-Supplementary_Tables.xls",
+    )
+    common = {
+        "article_id": "20516115",
+        "pmid": "20516115",
+        "pmcid": "PMC3040717",
+        "provider": {"label": "PMC Linked Article Asset", "source": "PMC"},
+        "provenance": {"open_access": True},
+        "source_attempts": [],
+    }
+
+    def page_info(total: int) -> dict[str, object]:
+        return {
+            "returned": total,
+            "total": total,
+            "has_more": False,
+            "next_offset": None,
+            "continuation_command": None,
+        }
+
+    coverage = common | {
+        "coverage": [
+            {
+                "filename": filenames[0],
+                "outcome": "pmc_proof_of_work",
+                "provider": {"label": "PMC Linked Article Asset", "source": "PMC"},
+                "source_document": "pmc_html",
+                "discovery_routes": routes,
+            },
+            {
+                "filename": filenames[1],
+                "outcome": "source_unavailable",
+                "provider": {"label": "PMC Linked Article Asset", "source": "PMC"},
+                "source_document": "pmc_html",
+                "discovery_routes": routes,
+            },
+        ],
+        "pagination": page_info(2),
+    }
+    retrievable = common | {"assets": [], "pagination": page_info(0)}
+
+    def clone(value: object) -> object:
+        return json.loads(json.dumps(value))
+
+    def parse(
+        coverage_document: object, retrievable_document: object
+    ) -> subprocess.CompletedProcess[str]:
+        coverage_path = tmp_path / "coverage.json"
+        retrievable_path = tmp_path / "retrievable.json"
+        coverage_path.write_text(json.dumps(coverage_document), encoding="utf-8")
+        retrievable_path.write_text(json.dumps(retrievable_document), encoding="utf-8")
+        return subprocess.run(
+            ["python3", "-c", parser, str(coverage_path), str(retrievable_path)],
+            env={"PATH": os.environ["PATH"]},
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    assert parse(coverage, retrievable).returncode == 0
+    reversed_coverage = clone(coverage)
+    reversed_coverage["coverage"].reverse()
+    for row in reversed_coverage["coverage"]:
+        row["discovery_routes"].reverse()
+    assert parse(reversed_coverage, retrievable).returncode == 0
+
+    mixed_coverage = clone(coverage)
+    mixed_retrievable = clone(retrievable)
+    moved = mixed_coverage["coverage"].pop()
+    mixed_coverage["pagination"] = page_info(1)
+    moved.pop("outcome")
+    moved["handle"] = "biomcp get article 20516115 asset Supplementary_Tables.xls"
+    mixed_retrievable["assets"] = [moved]
+    mixed_retrievable["pagination"] = page_info(1)
+    assert parse(mixed_coverage, mixed_retrievable).returncode == 0
+
+    invalid_pairs: list[tuple[object, object]] = []
+    missing = clone(coverage)
+    missing["coverage"].pop()
+    missing["pagination"] = page_info(1)
+    invalid_pairs.append((missing, retrievable))
+    partial = clone(coverage)
+    partial["pagination"] |= {
+        "total": 3,
+        "has_more": True,
+        "next_offset": 2,
+        "continuation_command": "continue",
+    }
+    invalid_pairs.append((partial, retrievable))
+    partial_assets = clone(retrievable)
+    partial_assets["pagination"] |= {
+        "total": 1,
+        "has_more": True,
+        "next_offset": 0,
+        "continuation_command": "continue",
+    }
+    invalid_pairs.append((coverage, partial_assets))
+    malformed = clone(coverage)
+    malformed["coverage"][0] = "not-an-object"
+    invalid_pairs.append((malformed, retrievable))
+    malformed_assets = clone(retrievable)
+    malformed_assets["assets"] = ["not-an-object"]
+    malformed_assets["pagination"] = page_info(1)
+    invalid_pairs.append((coverage, malformed_assets))
+    missing_route = clone(coverage)
+    missing_route["coverage"][0]["discovery_routes"] = routes[:1]
+    invalid_pairs.append((missing_route, retrievable))
+    missing_asset_route_coverage = clone(mixed_coverage)
+    missing_asset_route_retrievable = clone(mixed_retrievable)
+    missing_asset_route_retrievable["assets"][0]["discovery_routes"] = routes[:1]
+    invalid_pairs.append(
+        (missing_asset_route_coverage, missing_asset_route_retrievable)
+    )
+    other_outcome = clone(coverage)
+    other_outcome["coverage"][0]["outcome"] = "healthy_absent"
+    invalid_pairs.append((other_outcome, retrievable))
+    duplicate_state = clone(retrievable)
+    duplicate_state["assets"] = [clone(coverage["coverage"][0])]
+    duplicate_state["pagination"] = page_info(1)
+    invalid_pairs.append((coverage, duplicate_state))
+    different_manifest = clone(retrievable)
+    different_manifest["pmcid"] = "PMC9999999"
+    invalid_pairs.append((coverage, different_manifest))
+    for invalid_coverage, invalid_retrievable in invalid_pairs:
+        assert parse(invalid_coverage, invalid_retrievable).returncode != 0
+
+
 def test_ticket_1010_live_umls_canary_parses_exact_full_concepts_fail_closed() -> None:
     page = _read_repo("spec/surface/discover-live.md")
     parser_match = re.search(
