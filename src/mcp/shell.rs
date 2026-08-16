@@ -1801,7 +1801,7 @@ mod tests {
             "filter".into(),
             "--study".into(),
             "msk_impact_2017".into(),
-            "--gene".into(),
+            "--mutated".into(),
             "TP53".into()
         ]));
         assert!(is_allowed_mcp_command(&[
@@ -1810,15 +1810,17 @@ mod tests {
             "cohort".into(),
             "--study".into(),
             "msk_impact_2017".into(),
-            "--cohort".into(),
-            "tp53".into()
+            "--gene".into(),
+            "TP53".into()
         ]));
         assert!(is_allowed_mcp_command(&[
             "biomcp".into(),
             "study".into(),
             "survival".into(),
             "--study".into(),
-            "msk_impact_2017".into()
+            "msk_impact_2017".into(),
+            "--gene".into(),
+            "TP53".into()
         ]));
         assert!(is_allowed_mcp_command(&[
             "biomcp".into(),
@@ -1827,7 +1829,11 @@ mod tests {
             "--study".into(),
             "msk_impact_2017".into(),
             "--gene".into(),
-            "TP53".into()
+            "TP53".into(),
+            "--type".into(),
+            "mutations".into(),
+            "--target".into(),
+            "KRAS".into()
         ]));
         assert!(is_allowed_mcp_command(&[
             "biomcp".into(),
@@ -1835,8 +1841,8 @@ mod tests {
             "co-occurrence".into(),
             "--study".into(),
             "msk_impact_2017".into(),
-            "--gene".into(),
-            "TP53".into()
+            "--genes".into(),
+            "TP53,KRAS".into()
         ]));
         assert!(!is_allowed_mcp_command(&[
             "biomcp".into(),
