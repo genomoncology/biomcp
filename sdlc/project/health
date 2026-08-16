@@ -10,10 +10,13 @@
 #      unreachable or hanging remote is unfit, not a hung doctor
 #   3. origin/main resolves locally, because every other script reads it
 #   4. sdlc/tickets/ exists, because that is where the work is
+#   5. the registered directory's filesystem has at least 10 GiB free
 #
 # STDOUT:  one finding per line; nothing when everything passes.
 # EXIT:    0 fit · 1 unfit — the findings say why
 set -euo pipefail
+
+MINIMUM_FREE_SPACE_KIB=10485760
 
 findings=0
 report() {
@@ -40,6 +43,28 @@ fi
 
 if [ ! -d sdlc/tickets ]; then
 	report "sdlc/tickets/ is missing"
+fi
+
+registered_directory=$(pwd -P)
+if ! disk_report=$(df -Pk "$registered_directory"); then
+	report "could not determine free space for $registered_directory"
+else
+	parsed=$(printf '%s\n' "$disk_report" | awk 'NR == 2 { print $4, $6 }')
+	read -r available mount <<EOF
+$parsed
+EOF
+	if [ -z "$available" ] || [ -z "$mount" ]; then
+		report "could not determine free space for $registered_directory"
+	else
+		case "$available" in
+		*[!0-9]*) report "could not determine free space for $registered_directory" ;;
+		*)
+			if [ "$available" -lt "$MINIMUM_FREE_SPACE_KIB" ]; then
+				report "$mount has $available KiB available; floor is $MINIMUM_FREE_SPACE_KIB KiB"
+			fi
+			;;
+		esac
+	fi
 fi
 
 [ "$findings" -eq 0 ] || exit 1
