@@ -39,8 +39,9 @@ def _read_record(path: Path) -> dict[str, str]:
 @pytest.mark.parametrize(
     "termination_signal", [signal.SIGINT, signal.SIGTERM, signal.SIGHUP]
 )
+@pytest.mark.parametrize("runner_mode", ["spec", "spec-contracts"])
 def test_runner_termination_cleans_ctgov_process_group_env_and_port(
-    tmp_path: Path, termination_signal: signal.Signals
+    tmp_path: Path, termination_signal: signal.Signals, runner_mode: str
 ) -> None:
     workspace = tmp_path / "workspace"
     (workspace / "scripts").mkdir(parents=True)
@@ -99,7 +100,7 @@ def test_runner_termination_cleans_ctgov_process_group_env_and_port(
         "BIOMCP_SPEC_RUNNER_HOLD": "1",
     }
     runner = subprocess.Popen(
-        ["bash", "scripts/run-specs.sh", "spec"],
+        ["bash", "scripts/run-specs.sh", runner_mode],
         cwd=workspace,
         env=env,
     )

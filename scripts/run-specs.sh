@@ -53,6 +53,7 @@ SPEC_CTGOV_FIXTURE_PATHS=(
   spec/entity/trial-intervention-aliases.md
   spec/entity/trial-numeric-filters.md
   spec/entity/trial-documents.md
+  spec/surface/trial-retirement.md
 )
 
 SPEC_LIVE_PATHS=(

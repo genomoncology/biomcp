@@ -966,11 +966,12 @@ def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
     assert "phenotype_search_json_next_commands_parse" in protein_phenotype
     assert static_paths == ["spec/surface/docker-image.md", "spec/surface/homebrew.md"]
     assert not set(static_paths) & set(_runner_array_paths("SPEC_ROUTINE_PATHS"))
-    assert {
+    assert set(ctgov_paths) == {
         "spec/entity/trial-intervention-aliases.md",
         "spec/entity/trial-numeric-filters.md",
         "spec/entity/trial-documents.md",
-    } <= set(ctgov_paths)
+        "spec/surface/trial-retirement.md",
+    }
     removed_duplicate_specs = {
         "spec/entity/gwas-numeric-filters.md",
         "spec/surface/discover-input.md",
@@ -986,6 +987,21 @@ def test_ticket_624_runner_declares_ctgov_consumers_and_static_specs() -> None:
     assert "scripts/run-specs.sh spec-static" in static_target
     assert "$(MAKE) spec-static" in routine_target
     assert "SPEC_STATIC_PATHS" not in makefile
+
+
+def test_ticket_1009_spec_contracts_declares_its_ctgov_fixture_consumer() -> None:
+    runner = _read_repo("scripts/run-specs.sh")
+    ctgov_paths = set(_runner_array_paths("SPEC_CTGOV_FIXTURE_PATHS"))
+    branch = re.search(r"(?ms)^  spec-contracts\)\n(?P<body>.*?)^    ;;", runner)
+
+    assert branch is not None
+    spec_contract_paths = set(re.findall(r"spec/\S+\.md", branch.group("body")))
+    assert spec_contract_paths & ctgov_paths == {"spec/surface/trial-retirement.md"}
+    assert branch.group("body").count(
+        'if paths_include_any "${SPEC_CTGOV_FIXTURE_PATHS[@]}"; then'
+    ) == 1
+    assert branch.group("body").count("run_ctgov_fixture") == 1
+    assert branch.group("body").count("require_ctgov_fixture_env") == 1
 
 
 def test_ticket_673_runner_is_the_only_complete_spec_registry() -> None:
