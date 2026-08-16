@@ -43,6 +43,35 @@ def _mcp_post_status(base_url: str, body: bytes) -> int:
     return _post_status(base_url, "/mcp", body)
 
 
+def _mcp_rpc(
+    base_url: str, payload: dict[str, object], session_id: str | None = None
+) -> tuple[dict[str, str], str]:
+    headers = {
+        "Accept": "application/json, text/event-stream",
+        "Content-Type": "application/json",
+    }
+    if session_id is not None:
+        headers["Mcp-Session-Id"] = session_id
+    request = urllib.request.Request(
+        f"{base_url}/mcp",
+        data=json.dumps(payload, separators=(",", ":")).encode(),
+        headers=headers,
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=3) as response:
+        return (
+            {key.lower(): value for key, value in response.headers.items()},
+            response.read().decode("utf-8"),
+        )
+
+
+def _mcp_result(event_stream: str) -> dict[str, object]:
+    for line in event_stream.splitlines():
+        if line.startswith("data: {"):
+            return json.loads(line.removeprefix("data: "))
+    raise AssertionError(f"MCP response did not contain a JSON-RPC event: {event_stream}")
+
+
 def _post_status(base_url: str, path: str, body: bytes) -> int:
     request = urllib.request.Request(
         f"{base_url}{path}",
@@ -300,6 +329,67 @@ def test_loopback_server_rejects_unrelated_host_headers(http_server: str) -> Non
     assert _mcp_status(http_server, "attacker.example") == 403
     for host in ("localhost", f"localhost:{port}", "127.0.0.1", f"127.0.0.1:{port}", "[::1]", f"[::1]:{port}"):
         assert _mcp_status(http_server, host) != 403
+
+
+def test_http_raw_mcp_global_flags_reject_before_local_access() -> None:
+    with _running_server() as base_url:
+        headers, initialized = _mcp_rpc(
+            base_url,
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "http-surface-test", "version": "0"},
+                },
+            },
+        )
+        assert _mcp_result(initialized)["id"] == 1
+        session_id = headers["mcp-session-id"]
+        _mcp_rpc(
+            base_url,
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+            session_id,
+        )
+
+        private_path = "/server/private-variants.json"
+        for request_id, command, expected in [
+            (2, f"biomcp variant --json articles --input {private_path}", "server-local state"),
+            (
+                3,
+                "biomcp get --no-cache article 22663011 asset supplement.xlsx",
+                "Binary article asset downloads are CLI-only",
+            ),
+        ]:
+            _headers, event_stream = _mcp_rpc(
+                base_url,
+                {
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "method": "tools/call",
+                    "params": {"name": "biomcp", "arguments": {"command": command}},
+                },
+                session_id,
+            )
+            result = _mcp_result(event_stream)["result"]
+            assert result["isError"] is True
+            text = result["content"][0]["text"]
+            assert expected in text
+            assert private_path not in text
+
+        _headers, event_stream = _mcp_rpc(
+            base_url,
+            {
+                "jsonrpc": "2.0",
+                "id": 4,
+                "method": "tools/call",
+                "params": {"name": "biomcp", "arguments": {"command": "biomcp version"}},
+            },
+            session_id,
+        )
+        assert _mcp_result(event_stream)["result"].get("isError") is False
 
 
 def test_explicit_and_unsafe_host_policies_apply_to_every_route() -> None:

@@ -1349,10 +1349,10 @@ mod typed_get_tests;
 mod tests {
     use super::{
         BioMcpServer, CACHE_FAMILY_MCP_REJECTION_MESSAGE, GENERIC_MCP_REJECTION_MESSAGE,
-        LOCAL_INPUT_MCP_REJECTION_MESSAGE, TypedGeneCspec, TypedGet, TypedSearch,
-        TypedVariantArticles, TypedVariantCar, binary_download_rejection, get_args,
-        is_allowed_mcp_command, mcp_rejection_message, redact_mcp_json_text, redact_mcp_text,
-        search_args, to_resource_result,
+        LOCAL_INPUT_MCP_REJECTION_MESSAGE, ShellCommand, TypedGeneCspec, TypedGet, TypedSearch,
+        TypedVariantArticles, TypedVariantCar, args_may_return_article_fulltext,
+        binary_download_rejection, get_args, is_allowed_mcp_command, mcp_rejection_message,
+        redact_mcp_json_text, redact_mcp_text, search_args, to_resource_result,
     };
     use serde_json::json;
 
@@ -1360,11 +1360,27 @@ mod tests {
     fn binary_downloads_are_rejected_but_manifests_remain_allowed() {
         for (args, label) in [
             (
-                ["biomcp", "get", "trial", "NCT1", "document", "protocol.pdf"],
+                [
+                    "biomcp",
+                    "get",
+                    "--json",
+                    "trial",
+                    "NCT1",
+                    "document",
+                    "protocol.pdf",
+                ],
                 "trial document",
             ),
             (
-                ["biomcp", "get", "article", "1", "asset", "table.xlsx"],
+                [
+                    "biomcp",
+                    "get",
+                    "--no-cache",
+                    "article",
+                    "1",
+                    "asset",
+                    "table.xlsx",
+                ],
                 "article asset",
             ),
         ] {
@@ -1391,6 +1407,23 @@ mod tests {
         assert!(error.to_string().contains("CLI-only"));
     }
 
+    #[tokio::test]
+    async fn raw_mcp_rejects_unparseable_commands_before_execution() {
+        let result = BioMcpServer::new()
+            .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+                command: "biomcp get --json article".into(),
+                json: false,
+            }))
+            .await
+            .expect("raw MCP rejection");
+        let value = serde_json::to_value(result).expect("serialize raw MCP result");
+        let text = value["content"][0]["text"]
+            .as_str()
+            .expect("raw MCP rejection text");
+
+        assert_eq!(text, GENERIC_MCP_REJECTION_MESSAGE);
+    }
+
     #[test]
     fn mcp_human_error_and_resource_boundaries_remove_terminal_controls() {
         let error = serde_json::to_value(BioMcpServer::tool_error(
@@ -1415,6 +1448,15 @@ mod tests {
             "full_text_path": path,
             "full_text_source": {"source": "Europe PMC"}
         });
+        assert!(args_may_return_article_fulltext(&[
+            "biomcp".into(),
+            "get".into(),
+            "--no-cache".into(),
+            "article".into(),
+            "22663011".into(),
+            "fulltext".into(),
+        ]));
+
         let text = redact_mcp_text(format!("## Full Text\nSaved to: {path}"), &value);
         assert_eq!(
             text,
@@ -1672,6 +1714,7 @@ mod tests {
         assert!(!is_allowed_mcp_command(&[
             "biomcp".into(),
             "variant".into(),
+            "--json".into(),
             "articles".into(),
             "--input".into(),
             "/server/private.json".into()
@@ -1685,6 +1728,7 @@ mod tests {
         assert!(is_allowed_mcp_command(&[
             "biomcp".into(),
             "skill".into(),
+            "--json".into(),
             "list".into()
         ]));
         assert!(is_allowed_mcp_command(&[
@@ -1712,6 +1756,7 @@ mod tests {
         assert!(is_allowed_mcp_command(&[
             "biomcp".into(),
             "study".into(),
+            "--no-cache".into(),
             "list".into()
         ]));
         assert!(is_allowed_mcp_command(&[
@@ -1864,9 +1909,9 @@ mod tests {
     #[test]
     fn raw_local_input_rejection_covers_every_spelling_and_variant_route() {
         for prefix in [
-            &["biomcp", "variant", "articles"][..],
-            &["biomcp", "variant", "erepo"][..],
-            &["biomcp", "variant", "normalize", "car"][..],
+            &["biomcp", "variant", "--no-cache", "articles"][..],
+            &["biomcp", "variant", "--no-cache", "erepo"][..],
+            &["biomcp", "variant", "--no-cache", "normalize", "car"][..],
         ] {
             for input in [["--input", "/server/private.json"], ["--input=-", ""]] {
                 let mut args = prefix
@@ -1918,7 +1963,12 @@ mod tests {
 
     #[test]
     fn cache_family_rejection_message_mentions_local_path_disclosure() {
-        let args = vec!["biomcp".into(), "cache".into(), "path".into()];
+        let args = vec![
+            "biomcp".into(),
+            "--no-cache".into(),
+            "cache".into(),
+            "path".into(),
+        ];
         assert_eq!(
             mcp_rejection_message(&args),
             CACHE_FAMILY_MCP_REJECTION_MESSAGE
@@ -1939,7 +1989,7 @@ mod tests {
 
     #[test]
     fn generic_mcp_rejection_message_stays_read_only_for_mutating_commands() {
-        let args = vec!["biomcp".into(), "update".into()];
+        let args = vec!["biomcp".into(), "--json".into(), "update".into()];
         assert_eq!(mcp_rejection_message(&args), GENERIC_MCP_REJECTION_MESSAGE);
 
         let private = "/home/operator/private/skills";

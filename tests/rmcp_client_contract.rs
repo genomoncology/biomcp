@@ -92,6 +92,70 @@ fn harness() -> ContractHarness {
     ContractHarness::from_repo_root(env!("CARGO_MANIFEST_DIR"))
 }
 
+async fn assert_raw_mcp_global_flags_follow_the_parsed_command<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    let private_path = "/server/private-variants.json";
+    for (command, expected) in [
+        (
+            format!("biomcp variant --json articles --input {private_path}"),
+            "server-local state",
+        ),
+        (
+            "biomcp get --no-cache article 22663011 asset supplement.xlsx".to_string(),
+            "Binary article asset downloads are CLI-only",
+        ),
+    ] {
+        let result = biomcp_mcp_contract_client::call_biomcp(client, &command).await?;
+        assert_eq!(result.is_error, Some(true), "command={command}");
+        let text = biomcp_mcp_contract_client::first_text(&result.content);
+        assert!(
+            text.contains(expected),
+            "command={command}, response={text}"
+        );
+        assert!(
+            !text.contains(private_path),
+            "rejection disclosed the server-local path: {text}"
+        );
+    }
+
+    let allowed =
+        biomcp_mcp_contract_client::call_biomcp(client, "biomcp skill --json list").await?;
+    assert_eq!(allowed.is_error, Some(false));
+
+    let after_rejection = biomcp_mcp_contract_client::call_biomcp(client, "biomcp version").await?;
+    assert_eq!(after_rejection.is_error, Some(false));
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_mcp_global_flags_are_safe_over_stdio() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness.spawn_stdio_client(&[]).await?;
+    assert_raw_mcp_global_flags_follow_the_parsed_command(&client).await?;
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_mcp_global_flags_are_safe_over_http() -> anyhow::Result<()> {
+    let harness = harness();
+    let (mut child, base_url) = harness.spawn_http_server(&[]).await?;
+    let result = async {
+        let client = harness.http_client(format!("{base_url}/mcp")).await?;
+        assert_raw_mcp_global_flags_follow_the_parsed_command(&client).await?;
+        client.cancel().await?;
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
+
+    child.kill().await.ok();
+    result
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
     let harness = harness();
