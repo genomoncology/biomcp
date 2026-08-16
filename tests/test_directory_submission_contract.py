@@ -66,8 +66,8 @@ def test_manifest_matches_directory_bundle_contract() -> None:
     assert manifest["manifest_version"] == "0.3"
     assert manifest["name"] == "biomcp"
     assert manifest["display_name"] == "BioMCP"
-    assert cargo["package"]["version"] == "0.9.0-dev.1"
-    assert pyproject["project"]["version"] == "0.9.0.dev1"
+    assert cargo["package"]["version"] == "0.9.0-dev.2"
+    assert pyproject["project"]["version"] == "0.9.0.dev2"
     assert manifest["version"] == "0.8.25"
     assert manifest["privacy_policies"] == ["https://biomcp.org/policies/"]
     assert "tools_generated" not in manifest

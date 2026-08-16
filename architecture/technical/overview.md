@@ -62,7 +62,7 @@ curl ... install.sh | bash       # binary installer (resolves latest release)
 ```
 
 - **Edition:** Rust 2024
-- **Development candidate:** Rust `0.9.0-dev.1`; Python `0.9.0.dev1`. `scripts/check-version-sync.sh` validates that exact mapping and its lock files while public metadata remains at `0.8.25`.
+- **Development candidate:** Rust `0.9.0-dev.2`; Python `0.9.0.dev2`. `scripts/check-version-sync.sh` validates that exact mapping and its lock files while public metadata remains at `0.8.25`.
 - **Package name:** `biomcp-cli` on PyPI; binary name is `biomcp`
 - **Release state:** v0.8.25 is the latest published release. A protected
   two-step workflow can privately stage a committed future version and, only
@@ -265,7 +265,7 @@ in [Semantic Scholar runtime contract](semantic-scholar-runtime-contract.md).
 
 ## Release Pipeline
 
-v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `0.9.0-dev.1` and Python `0.9.0.dev1`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
+v0.8.25 is the latest published release. Package versions are committed metadata, not values stamped from tags. The current private development candidate uses Cargo `0.9.0-dev.2` and Python `0.9.0.dev2`; `scripts/check-version-sync.sh` validates that mapping and its lock roots while keeping `manifest.json`, both `server.json` version fields, `CITATION.cff`, and any concrete Homebrew formula version on the latest reachable stable tag.
 
 The manual release workflow has separate `stage` and `promote` modes. `stage`
 is read-only and privately builds, signs, inspects, and seals one exact commit.

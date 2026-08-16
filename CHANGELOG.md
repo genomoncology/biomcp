@@ -69,6 +69,9 @@
 - Labeled the compact MCP measurements from ticket 0932 as historical and made
   current documentation point to the reproducible offline measurement and its
   enforced 16,000-byte / 4,000-token budgets.
+- Advanced the private package identity to Rust `0.9.0-dev.2` and Python
+  `0.9.0.dev2`. Public citation, directory, updater, and release metadata remain
+  at the latest published release, v0.8.25.
 
 - Preserved exact GWAS Catalog mantissa/exponent p-values in structured JSON,
   Markdown, filtering, and ordering instead of displaying underflowed values as
