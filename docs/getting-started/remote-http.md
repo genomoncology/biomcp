@@ -41,7 +41,7 @@ and `/`.
 | `GET /mcp` | Streamable HTTP session stream |
 | `GET /health` | Liveness check returning `{"status":"ok"}` |
 | `GET /readyz` | Readiness check returning `{"status":"ok"}` |
-| `GET /` | BioMCP identity document with name, version, transport, and MCP path |
+| `GET /` | BioMCP identity document with name, version, git revision, build timestamp, transport, and MCP path |
 
 ## Minimal Python client
 

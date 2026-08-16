@@ -204,11 +204,19 @@ def http_server() -> Iterator[str]:
 
 
 def test_http_routes_advertise_streamable_http_surface(http_server: str) -> None:
+    version = subprocess.run(
+        [str(_require_release_binary()), "--json", "version"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    identity = json.loads(version.stdout)
     root_payload, root_content_type = _read_json(f"{http_server}/")
     assert root_content_type == "application/json"
     assert root_payload == {
         "name": "biomcp",
-        "version": root_payload["version"],
+        **identity,
         "transport": "streamable-http",
         "mcp": "/mcp",
     }

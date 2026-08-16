@@ -22,9 +22,12 @@ async fn health_handler() -> Json<serde_json::Value> {
 }
 
 async fn index_handler() -> Json<serde_json::Value> {
+    let identity = crate::build_identity::current();
     Json(json!({
         "name": "biomcp",
-        "version": env!("CARGO_PKG_VERSION"),
+        "version": identity.version,
+        "git_revision": identity.git_revision,
+        "build_timestamp": identity.build_date,
         "transport": "streamable-http",
         "mcp": "/mcp"
     }))
@@ -324,7 +327,11 @@ mod tests {
     #[tokio::test]
     async fn index_handler_reports_streamable_http_surface() {
         let Json(payload) = index_handler().await;
+        let identity = crate::build_identity::current();
         assert_eq!(payload["name"], "biomcp");
+        assert_eq!(payload["version"], identity.version);
+        assert_eq!(payload["git_revision"], identity.git_revision);
+        assert_eq!(payload["build_timestamp"], identity.build_date);
         assert_eq!(payload["transport"], "streamable-http");
         assert_eq!(payload["mcp"], "/mcp");
     }
