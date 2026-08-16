@@ -1,0 +1,230 @@
+#!/usr/bin/env node
+// tasks — report every ticket this repository carries, read from origin/main.
+//
+// ENVIRONMENT (this script receives NO factory variables):
+//   (none) — it starts in the repository's registered directory and reads it.
+//   It reads the TIP OF origin/main, never the working tree: a landing or a
+//   teammate changes origin without touching the checkout we stand in, and a
+//   dirty checkout must not change what the factory believes about the board.
+//   It fetches first, bounded by `timeout -k 10 60`, so a hung transport
+//   fails rather than hangs.
+//
+// STDIN:   nothing.
+// STDOUT:  one JSON object per line, one line per ticket:
+//            {"id":"0068","flow":"build","priority":9,"deps":["0067"],
+//             "status":"ready","ref":"sdlc/tickets/0068-a-slug.md"}
+//          Optional keys, present only when the frontmatter declares them:
+//            "hold":"<reason>"     the ticket holds itself out of dispatch
+//            "channel":"<name>"    concurrency-fence override
+//            "runsOn":"<host>"     the ticket runs only on that machine
+//            "waitsOn":["<scope>/<id>", ...]
+//                                  cross-project waits in authored order
+//          status is "done" for a ticket that has a completion record in
+//          sdlc/records/ with the same id, and for anything under
+//          sdlc/tickets/archive/; every other ticket is "ready". Scheduling
+//          is the factory's job — this script filters nothing.
+//          Files under sdlc/tickets/drafts/ are not tickets and are ignored.
+// STDERR:  one line per malformed ticket, named by path and problem. A
+//          malformed ticket is reported and NOT emitted; the rest still are.
+// EXIT:    0 the scan completed (even with problems, even if empty)
+//          2 cannot report — no origin, fetch failed, origin/main unreadable
+//
+// It is an ES module because this repository's package.json says type:
+// module and Node reads the nearest one. It imports nothing but Node's own
+// child_process, so no install has to have happened for the board to be
+// readable.
+import { execFileSync } from "node:child_process";
+
+const REPO = process.cwd();
+
+// Git's own stderr is swallowed: every failure below is reported in this
+// script's own words, and a doubled message reads as two problems.
+function git(...args) {
+  return execFileSync("git", args, { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+}
+function gitBytes(...args) {
+  return execFileSync("git", args, { cwd: REPO, stdio: ["ignore", "pipe", "pipe"] });
+}
+function fail(message) {
+  process.stderr.write(`tasks: ${message}\n`);
+  process.exit(2);
+}
+
+// --- the scan's preconditions -------------------------------------------
+
+try {
+  git("remote", "get-url", "origin");
+} catch {
+  fail("no origin remote");
+}
+try {
+  execFileSync("timeout", ["-k", "10", "60", "git", "fetch", "--quiet", "origin"], { cwd: REPO, stdio: ["ignore", "ignore", "inherit"] });
+} catch (error) {
+  const status = error && error.status;
+  fail(status === 124 || status === 137 ? "git fetch origin timed out" : "git fetch origin failed");
+}
+try {
+  git("rev-parse", "--verify", "origin/main");
+} catch {
+  fail("origin/main is unreadable");
+}
+
+// --- reading the tree ----------------------------------------------------
+
+// One directory level only: `sdlc/tickets/` lists its own entries, so
+// archive/ and drafts/ appear as trees, not as .md paths, and drafts are
+// never visited.
+function lsTree(dir) {
+  return git("ls-tree", "--name-only", "origin/main", `${dir}/`).split("\n").filter((path) => path.endsWith(".md"));
+}
+
+// --- the frontmatter parser ----------------------------------------------
+//
+// A dependency-free reader for the small YAML a ticket is allowed: scalars,
+// inline flow lists, and block lists. Anything richer is refused by name
+// rather than guessed at, so a ticket the real parser would read one way is
+// never read a different way here.
+
+const ID_RE = /^(\d{4})(-[a-z0-9-]+)?\.md$/;
+const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
+
+function scalar(raw) {
+  const text = raw.trim();
+  if ((text.startsWith('"') && text.endsWith('"') && text.length >= 2) || (text.startsWith("'") && text.endsWith("'") && text.length >= 2)) {
+    return text.slice(1, -1);
+  }
+  if (/^-?\d+$/.test(text)) return Number(text);
+  return text;
+}
+
+function parseFrontmatter(text) {
+  const meta = {};
+  const lines = text.split("\n");
+  let key = null; // the key a block list is accumulating into
+  for (const line of lines) {
+    if (line.trim() === "" || /^\s*#/.test(line)) continue;
+    const item = /^\s*-\s*(.*)$/.exec(line);
+    if (item !== null) {
+      if (key === null || !Array.isArray(meta[key])) return { ok: false, problem: `unexpected list item "${line.trim()}"` };
+      meta[key].push(scalar(item[1]));
+      continue;
+    }
+    const pair = /^([A-Za-z][A-Za-z0-9_-]*):(.*)$/.exec(line);
+    if (pair === null) return { ok: false, problem: `not a simple "key: value" line: "${line.trim()}"` };
+    key = pair[1];
+    const value = pair[2].trim();
+    if (value === "") {
+      meta[key] = []; // an empty value opens a block list; an empty one stays empty
+    } else if (value.startsWith("[") && value.endsWith("]")) {
+      const inner = value.slice(1, -1).trim();
+      meta[key] = inner === "" ? [] : inner.split(",").map(scalar);
+    } else {
+      meta[key] = scalar(value);
+    }
+  }
+  return { ok: true, meta };
+}
+
+// --- the ticket validator ------------------------------------------------
+
+function parseTicket(path, content) {
+  const problems = [];
+  const name = path.split("/").at(-1) ?? path;
+  const idMatch = ID_RE.exec(name);
+  if (idMatch === null) problems.push(`${path}: filename is not <0000>-<slug>.md`);
+
+  const fm = FRONTMATTER_RE.exec(content);
+  if (fm === null) {
+    problems.push(`${path}: no frontmatter`);
+    return { ok: false, problems };
+  }
+  const parsed = parseFrontmatter(fm[1] ?? "");
+  if (!parsed.ok) {
+    problems.push(`${path}: frontmatter is not readable — ${parsed.problem}`);
+    return { ok: false, problems };
+  }
+  const meta = parsed.meta;
+  const body = (fm[2] ?? "").trim();
+
+  if (typeof meta.flow !== "string" || meta.flow === "") problems.push(`${path}: missing flow`);
+  if (meta.channel !== undefined && (typeof meta.channel !== "string" || meta.channel === "")) problems.push(`${path}: channel is not a string`);
+  if (meta.priority !== undefined && !Number.isInteger(meta.priority)) problems.push(`${path}: priority is not an integer`);
+  const deps = [];
+  if (meta.deps !== undefined) {
+    if (!Array.isArray(meta.deps)) problems.push(`${path}: deps is not a list`);
+    else {
+      for (const dep of meta.deps) {
+        // A bare 0001 reads as the number 1; a dep is an id, so re-pad it.
+        if (typeof dep === "string" && /^\d{4}$/.test(dep)) deps.push(dep);
+        else if (Number.isInteger(dep)) deps.push(String(dep).padStart(4, "0"));
+        else problems.push(`${path}: dep "${String(dep)}" is not a ticket id`);
+      }
+    }
+  }
+  if (meta["runs-on"] !== undefined && (typeof meta["runs-on"] !== "string" || meta["runs-on"] === "")) problems.push(`${path}: runs-on is not a string`);
+  let waitsOn;
+  if (meta["waits-on"] !== undefined) {
+    if (!Array.isArray(meta["waits-on"])) problems.push(`${path}: waits-on is not a list`);
+    else {
+      waitsOn = [];
+      for (const wait of meta["waits-on"]) {
+        if (typeof wait === "string" && /^.+\/\d{4}$/.test(wait)) waitsOn.push(wait);
+        else problems.push(`${path}: waits-on "${String(wait)}" must name a scope and four-digit ticket id`);
+      }
+    }
+  }
+  let hold;
+  if (meta.holdReason !== undefined) problems.push(`${path}: holdReason is not supported; use hold`);
+  if (meta.hold !== undefined) {
+    if (typeof meta.hold !== "string") problems.push(`${path}: hold is not a string`);
+    else {
+      hold = meta.hold.trim();
+      if (hold === "" || Buffer.byteLength(hold, "utf8") > 512) problems.push(`${path}: hold must be a nonempty single line of at most 512 UTF-8 bytes`);
+    }
+  }
+  if (body === "") problems.push(`${path}: no body — a ticket with nothing to say is not a ticket`);
+
+  if (problems.length > 0 || idMatch === null) return { ok: false, problems };
+  const ticket = { id: idMatch[1], ref: path, flow: meta.flow, priority: meta.priority ?? 0, deps };
+  if (meta.channel !== undefined) ticket.channel = meta.channel;
+  if (meta["runs-on"] !== undefined) ticket["runs-on"] = meta["runs-on"];
+  if (waitsOn !== undefined) ticket.waitsOn = waitsOn;
+  if (hold !== undefined) ticket.hold = hold;
+  return { ok: true, ticket };
+}
+
+// --- the board -----------------------------------------------------------
+
+const RECORD_ID = /^(\d{4})/;
+const done = new Set();
+for (const path of lsTree("sdlc/records")) {
+  const match = RECORD_ID.exec(path.split("/").at(-1) ?? "");
+  if (match !== null) done.add(match[1]);
+}
+
+let out = "";
+for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive", true]]) {
+  for (const path of lsTree(dir)) {
+    const content = gitBytes("show", `origin/main:${path}`).toString("utf8");
+    const parsed = parseTicket(path, content);
+    if (!parsed.ok) {
+      for (const problem of parsed.problems) process.stderr.write(`tasks: ${problem}\n`);
+      continue;
+    }
+    const t = parsed.ticket;
+    const row = {
+      id: t.id,
+      flow: t.flow,
+      priority: t.priority,
+      deps: t.deps,
+      status: archived || done.has(t.id) ? "done" : "ready",
+      ref: t.ref,
+    };
+    if (t.hold !== undefined) row.hold = t.hold;
+    if (t.channel !== undefined) row.channel = t.channel;
+    if (t["runs-on"] !== undefined) row.runsOn = t["runs-on"];
+    if (t.waitsOn !== undefined) row.waitsOn = t.waitsOn;
+    out += `${JSON.stringify(row)}\n`;
+  }
+}
+process.stdout.write(out);

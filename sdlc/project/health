@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# health — say whether this repository is fit to have work dispatched into it.
+#
+# ENVIRONMENT (this script receives NO factory variables):
+#   (none) — it starts in the repository's registered directory.
+#
+# WHAT IT CHECKS, in order, cheapest first:
+#   1. pwd is a Git repository with an origin
+#   2. origin answers `git ls-remote`, bounded by `timeout 60` — an
+#      unreachable or hanging remote is unfit, not a hung doctor
+#   3. origin/main resolves locally, because every other script reads it
+#   4. sdlc/tickets/ exists, because that is where the work is
+#
+# STDOUT:  one finding per line; nothing when everything passes.
+# EXIT:    0 fit · 1 unfit — the findings say why
+set -euo pipefail
+
+findings=0
+report() {
+	echo "$1"
+	findings=$((findings + 1))
+}
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+	report "$(pwd -P) is not a Git repository"
+	exit 1
+fi
+
+if ! git remote get-url origin >/dev/null 2>&1; then
+	report "no origin remote"
+else
+	if ! timeout 60 git ls-remote origin >/dev/null 2>&1; then
+		report "origin does not answer ls-remote within 60s"
+	fi
+fi
+
+if ! git rev-parse --verify --quiet origin/main >/dev/null; then
+	report "origin/main does not resolve; fetch has never succeeded here"
+fi
+
+if [ ! -d sdlc/tickets ]; then
+	report "sdlc/tickets/ is missing"
+fi
+
+[ "$findings" -eq 0 ] || exit 1

@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+# success — land the attempt's branch on main, then take the place away.
+#
+# ENVIRONMENT:
+#   TICKET_ID, TICKET_REF, TICKET_FLOW   as before received them
+#   ATTEMPT_DIR      the worktree before made; you are started inside it
+#   RUN_ID, RUN_CAUSE, RUN_EXIT, BOT_CMD the run's outcome and its key
+#   SDLC_REPO        baggage from before: the repository's checkout
+#   SDLC_BRANCH      baggage from before: ticket/<TICKET_ID>
+#   Both baggage values are re-derived from the worktree when absent, so a
+#   hand-run settlement standing in the tree still works.
+#
+# WHAT IT DOES
+#   1. fetch, then compare the branch tip with origin/main
+#   2. if the branch adds no commits, there is nothing to land — say so; if it
+#      does, push the tip to main
+#   3. the push is a plain `git push origin <tip>:main` — FAST-FORWARD ONLY.
+#      A rejected push means main moved under the attempt; nothing is forced,
+#      nothing is merged, and the branch and worktree are left standing for a
+#      human or a retry to look at.
+#   4. refresh origin/main, then fast-forward a clean registered main checkout
+#      when safe; leave an unsafe checkout alone without affecting settlement
+#   5. remove the worktree, delete the branch locally and on origin
+#
+# STDOUT:  "landed <base>..<tip>" or "nothing to land", an optional
+#          "checkout left alone: <reason>", plus what teardown did.
+# EXIT:    0 landed clean (or nothing to land) and torn down
+#          1 landing or teardown failed — stderr says which, and the branch
+#            is still there. The factory records it as a fault and cools the
+#            channel down; it does not silently re-fly the ticket.
+#          The factory also reads 3 as a rejected landing (retry the ticket)
+#          and 2 as a refusal a human must read; this script uses neither,
+#          and prints no `landed <receipt>` line, because it never leaves a
+#          landing half-done.
+set -euo pipefail
+
+: "${TICKET_ID:?success: TICKET_ID is required}"
+case "$TICKET_ID" in
+[0-9][0-9][0-9][0-9]) ;;
+*)
+	echo "success: TICKET_ID must be exactly four digits" >&2
+	exit 1
+	;;
+esac
+
+BRANCH=${SDLC_BRANCH:-ticket/$TICKET_ID}
+TREE=${ATTEMPT_DIR:-$(pwd -P)}
+
+resolve_repo() {
+	local from=$1 common
+	common=$(git -C "$from" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+	# The common dir is <checkout>/.git; its parent is the checkout.
+	(CDPATH= cd -- "$common/.." && pwd -P)
+}
+
+if [ -n "${SDLC_REPO-}" ]; then
+	REPO=$SDLC_REPO
+elif [ -d "$TREE" ] && REPO=$(resolve_repo "$TREE"); then
+	:
+else
+	echo "success: cannot tell which checkout owns $BRANCH — no SDLC_REPO and no readable worktree" >&2
+	exit 1
+fi
+if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
+	echo "success: $REPO is not a Git repository" >&2
+	exit 1
+fi
+if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) ||
+	! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
+	echo "success: cannot determine the Git common directory for $REPO" >&2
+	exit 1
+fi
+
+candidate_owned() {
+	local candidate=$1 top candidate_path top_path candidate_common
+	top=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null) || return 1
+	candidate_path=$(CDPATH= cd -- "$candidate" && pwd -P) || return 1
+	top_path=$(CDPATH= cd -- "$top" && pwd -P) || return 1
+	[ "$candidate_path" = "$top_path" ] || return 1
+	candidate_common=$(git -C "$candidate" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+	candidate_common=$(CDPATH= cd -- "$candidate_common" && pwd -P) || return 1
+	[ "$candidate_common" = "$REPO_COMMON" ]
+}
+
+remove_tree() {
+	local candidate=$1
+	if git -C "$REPO" worktree remove --force "$candidate" >/dev/null 2>&1; then
+		return 0
+	fi
+	[ -e "$candidate" ] || return 0
+	if ! candidate_owned "$candidate"; then
+		echo "success: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
+		return 1
+	fi
+	rm -rf "$candidate"
+}
+
+# Refuse before changing anything: a worktree that is not ours is not ours
+# to remove, and a half teardown is worse than none.
+if [ -e "$TREE" ] && ! candidate_owned "$TREE"; then
+	echo "success: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+	exit 1
+fi
+
+# 1. The tip to land.
+if ! TIP=$(git -C "$REPO" rev-parse --verify "refs/heads/$BRANCH^{commit}" 2>/dev/null); then
+	echo "success: $BRANCH has no local tip in $REPO" >&2
+	exit 1
+fi
+if [ -d "$TREE" ]; then
+	if ! HEAD_SHA=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$HEAD_SHA" != "$TIP" ]; then
+		echo "success: the worktree HEAD is not $BRANCH's tip — refusing to land a commit the attempt did not end on" >&2
+		exit 1
+	fi
+fi
+if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
+	echo "success: git fetch origin failed" >&2
+	exit 1
+fi
+BASE=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}')
+
+# 2. Land, unless the attempt added nothing to main.
+if [ "$(git -C "$REPO" rev-list --count "origin/main..$TIP")" -eq 0 ]; then
+	echo "nothing to land: $BRANCH adds no commits to main"
+else
+	if ! git -C "$REPO" push --quiet origin "$TIP:main"; then
+		echo "success: $TIP could not fast-forward main — main moved; the branch is left standing" >&2
+		exit 1
+	fi
+	echo "landed $BASE..$TIP"
+fi
+
+# 3. Deploy the registered checkout after origin/main reflects settlement.
+# Deployment is optional: any unsafe checkout remains untouched, and teardown
+# still settles the attempt.
+deploy_checkout() {
+	local branch status
+	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
+		echo "checkout left alone: could not refresh origin/main"
+		return 0
+	fi
+	if ! branch=$(git -C "$REPO" symbolic-ref --quiet --short HEAD 2>/dev/null); then
+		echo "checkout left alone: checkout is detached"
+		return 0
+	fi
+	if [ "$branch" != "main" ]; then
+		echo "checkout left alone: checkout is on $branch, not main"
+		return 0
+	fi
+	if ! status=$(git -C "$REPO" status --porcelain); then
+		echo "checkout left alone: could not inspect checkout status"
+		return 0
+	fi
+	if [ -n "$status" ]; then
+		echo "checkout left alone: checkout is dirty"
+		return 0
+	fi
+	if ! git -C "$REPO" merge --ff-only origin/main >/dev/null 2>&1; then
+		echo "checkout left alone: could not fast-forward main to origin/main"
+	fi
+}
+
+deploy_checkout
+
+# 4. Teardown. Every failure is named; none of them is silent.
+prune_worktrees() {
+	git -C "$REPO" worktree prune >/dev/null 2>&1
+}
+remove_local_branch() {
+	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+		git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1
+	fi
+}
+remove_origin_branch() {
+	if git -C "$REPO" ls-remote --exit-code --heads origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+		git -C "$REPO" push --quiet origin --delete "$BRANCH" >/dev/null 2>&1
+	fi
+}
+
+failures=
+cleanup() {
+	local name=$1
+	shift
+	if ! "$@"; then
+		failures="${failures}${failures:+, }$name"
+	fi
+}
+
+if [ -e "$TREE" ]; then
+	cleanup "worktree removal $TREE" remove_tree "$TREE"
+fi
+cleanup "worktree prune" prune_worktrees
+cleanup "local branch $BRANCH" remove_local_branch
+cleanup "origin branch $BRANCH" remove_origin_branch
+
+if [ -n "$failures" ]; then
+	echo "success: teardown failed: $failures" >&2
+	exit 1
+fi
+echo "torn down $BRANCH and $TREE"

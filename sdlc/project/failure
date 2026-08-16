@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# failure — preserve the attempt's commits as a tag before settlement.
+#
+# ENVIRONMENT:
+#   TICKET_ID, TICKET_REF, TICKET_FLOW   as before received them
+#   ATTEMPT_DIR      the worktree before made; may already be gone if the
+#                    fault struck early. You are started inside it when it
+#                    still exists.
+#   RUN_ID, RUN_CAUSE, RUN_EXIT, BOT_CMD the run's outcome and its key
+#   SETTLEMENT       the factory's disposition for this attempt
+#   SDLC_REPO        baggage from before: the repository's checkout
+#   SDLC_BRANCH      baggage from before: ticket/<TICKET_ID>
+#
+# THE RULE: nothing is deleted that is not first tagged.
+#   If the branch adds commits to main, they are tagged
+#   attempt/<TICKET_ID>-<YYYYMMDD>-<n> — the first free n for today — before
+#   the branch or the worktree is touched. If the tag cannot be written, the
+#   teardown does not happen and this script refuses (exit 2). If the branch
+#   adds nothing, there is nothing to preserve and teardown is safe.
+#
+# HONORING SETTLEMENT: when SETTLEMENT says the item is out of attempts
+#   (failed, exhausted, "attempts spent", out-of-attempts) or says leave/left,
+#   the attempt is preserved WHOLE — branch, worktree and all — and nothing
+#   is torn down, because a human is about to stand in it. Every other
+#   settlement, including an empty or unrecognized one, is treated as a
+#   retry. A rejected run tags and then tears down so the next attempt gets a
+#   clean tree. A successful run whose own ticket branch could not land keeps
+#   its tagged branch and owned worktree for the next attempt to continue.
+#
+# STDOUT:  one line per action taken or preserved thing.
+# EXIT:    0 handled — a retry may proceed per SETTLEMENT
+#          2 refuse — the evidence could not be preserved, or the worktree is
+#            not ours to remove; a human reads the reason on stderr
+#          any other nonzero would be recorded as a fault; either way the
+#            settlement the factory already decided does not change
+set -euo pipefail
+
+: "${TICKET_ID:?failure: TICKET_ID is required}"
+case "$TICKET_ID" in
+[0-9][0-9][0-9][0-9]) ;;
+*)
+	echo "failure: TICKET_ID must be exactly four digits" >&2
+	exit 2
+	;;
+esac
+
+BRANCH=${SDLC_BRANCH:-ticket/$TICKET_ID}
+REF="refs/heads/$BRANCH"
+TREE=${ATTEMPT_DIR:-}
+
+# Preserve whole, or preserve the commits and clear the bench.
+case "$(printf '%s' "${SETTLEMENT-}" | tr '[:upper:]' '[:lower:]')" in
+*leave* | *left* | *fail* | *exhaust* | *"out of attempts"* | *out-of-attempts* | *"attempts spent"*)
+	echo "settlement \"${SETTLEMENT-}\": preserving $BRANCH and ${TREE:-the worktree} untouched"
+	exit 0
+	;;
+esac
+
+resolve_repo() {
+	local from=$1 common
+	common=$(git -C "$from" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+	(CDPATH= cd -- "$common/.." && pwd -P)
+}
+
+if [ -n "${SDLC_REPO-}" ]; then
+	REPO=$SDLC_REPO
+elif [ -n "$TREE" ] && [ -d "$TREE" ] && REPO=$(resolve_repo "$TREE"); then
+	:
+elif REPO=$(resolve_repo "$(pwd -P)"); then
+	:
+else
+	echo "failure: cannot tell which checkout owns $BRANCH — no SDLC_REPO, no worktree, and pwd is not a checkout" >&2
+	exit 2
+fi
+if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
+	echo "failure: $REPO is not a Git repository" >&2
+	exit 2
+fi
+if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) ||
+	! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
+	echo "failure: cannot determine the Git common directory for $REPO" >&2
+	exit 2
+fi
+
+candidate_owned() {
+	local candidate=$1 top candidate_path top_path candidate_common
+	top=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null) || return 1
+	candidate_path=$(CDPATH= cd -- "$candidate" && pwd -P) || return 1
+	top_path=$(CDPATH= cd -- "$top" && pwd -P) || return 1
+	[ "$candidate_path" = "$top_path" ] || return 1
+	candidate_common=$(git -C "$candidate" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+	candidate_common=$(CDPATH= cd -- "$candidate_common" && pwd -P) || return 1
+	[ "$candidate_common" = "$REPO_COMMON" ]
+}
+
+# Refuse before touching anything: a worktree that is not ours is not ours to
+# remove, and a half teardown is worse than none.
+if [ -n "$TREE" ] && [ -e "$TREE" ] && ! candidate_owned "$TREE"; then
+	echo "failure: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+	exit 2
+fi
+
+LOCAL=$(git -C "$REPO" for-each-ref --format='%(objectname)' "$REF")
+if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --no-tags origin; then
+	echo "failure: git fetch origin failed — refusing to tear down without a current view of origin" >&2
+	exit 2
+fi
+REMOTE=$(git -C "$REPO" ls-remote --heads origin "$REF" | awk 'NR == 1 { print $1 }')
+
+if [ -z "$LOCAL" ] && [ -z "$REMOTE" ]; then
+	echo "$BRANCH has no local or origin tip; nothing to preserve"
+fi
+
+# 1. Preserve. A tip that adds nothing to origin/main is already in main or
+# empty, and needs no tag.
+unpreserved() {
+	local tip=$1
+	[ -n "$tip" ] || return 1
+	git -C "$REPO" cat-file -e "$tip^{commit}" 2>/dev/null || return 1
+	[ "$(git -C "$REPO" rev-list --count "origin/main..$tip" 2>/dev/null || echo 0)" -gt 0 ]
+}
+
+if [ -n "$REMOTE" ] && ! git -C "$REPO" cat-file -e "$REMOTE^{commit}" 2>/dev/null; then
+	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --no-tags origin "$REMOTE"; then
+		echo "failure: could not fetch the origin tip of $BRANCH; refusing to delete it unpreserved" >&2
+		exit 2
+	fi
+fi
+
+TAGS=()
+if [ -n "$REMOTE" ] && [ -n "$LOCAL" ] && [ "$REMOTE" != "$LOCAL" ]; then
+	# Two divergent tips are two pieces of evidence; both get preserved.
+	if unpreserved "$REMOTE"; then TAGS+=("origin:$REMOTE"); fi
+	if unpreserved "$LOCAL"; then TAGS+=("local:$LOCAL"); fi
+else
+	tip=${LOCAL:-$REMOTE}
+	if unpreserved "$tip"; then TAGS+=("only:$tip"); fi
+fi
+
+if [ "${#TAGS[@]}" -gt 0 ]; then
+	day=$(date -u +%Y%m%d)
+	slot=1
+	# A descendant name also makes the candidate uncreatable, so look for any.
+	while [ -n "$(git -C "$REPO" for-each-ref --format='%(refname)' "refs/tags/attempt/$TICKET_ID-$day-$slot*")" ]; do
+		slot=$((slot + 1))
+	done
+	base="attempt/$TICKET_ID-$day-$slot"
+	for entry in "${TAGS[@]}"; do
+		kind=${entry%%:*}
+		hash=${entry#*:}
+		case "$kind" in
+		local) tag="$base-local" ;;
+		*) tag="$base" ;;
+		esac
+		if ! git -C "$REPO" tag "$tag" "$hash" 2>/dev/null; then
+			echo "failure: could not tag $hash as $tag; refusing to tear down unpreserved work" >&2
+			exit 2
+		fi
+		echo "tagged $tag $hash"
+	done
+fi
+
+# A completed run that could not land continues from its own evidence. The
+# ownership proof above protects an existing worktree before this retention.
+if [ "${RUN_CAUSE-}" = "success" ] && [ "$BRANCH" = "ticket/$TICKET_ID" ]; then
+	if [ -n "$TREE" ] && [ -e "$TREE" ]; then
+		echo "landing fault: retaining tagged branch $BRANCH and owned worktree $TREE"
+	else
+		echo "landing fault: retaining tagged branch $BRANCH"
+	fi
+	exit 0
+fi
+
+# 2. Teardown. Only now, and only what the tags cover.
+failures=
+# Report what happened, not what was attempted: the "did" line is printed
+# only when the action returned success.
+cleanup() {
+	local name=$1 did=$2
+	shift 2
+	if "$@"; then
+		[ -z "$did" ] || echo "$did"
+	else
+		failures="${failures}${failures:+, }$name"
+	fi
+}
+
+remove_tree() {
+	local candidate=$1
+	if git -C "$REPO" worktree remove --force "$candidate" >/dev/null 2>&1; then
+		return 0
+	fi
+	[ -e "$candidate" ] || return 0
+	if ! candidate_owned "$candidate"; then
+		echo "failure: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
+		return 1
+	fi
+	rm -rf "$candidate"
+}
+prune_worktrees() {
+	git -C "$REPO" worktree prune >/dev/null 2>&1
+}
+remove_local_branch() {
+	[ -n "$LOCAL" ] || return 0
+	git -C "$REPO" update-ref -d "$REF" "$LOCAL"
+}
+remove_origin_branch() {
+	[ -n "$REMOTE" ] || return 0
+	git -C "$REPO" push --quiet "--force-with-lease=$REF:$REMOTE" origin ":$REF"
+}
+
+if [ -n "$TREE" ] && [ -e "$TREE" ]; then
+	cleanup "worktree removal $TREE" "removed worktree $TREE" remove_tree "$TREE"
+fi
+cleanup "worktree prune" "" prune_worktrees
+if [ -n "$LOCAL" ]; then
+	cleanup "local branch $BRANCH" "deleted local branch $BRANCH" remove_local_branch
+fi
+if [ -n "$REMOTE" ]; then
+	cleanup "origin branch $BRANCH" "deleted origin branch $BRANCH" remove_origin_branch
+fi
+
+if [ -n "$failures" ]; then
+	echo "failure: teardown failed: $failures" >&2
+	exit 2
+fi

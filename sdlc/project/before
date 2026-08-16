@@ -1,0 +1,320 @@
+#!/usr/bin/env bash
+# before — give the attempt a git worktree on its own ticket branch.
+#
+# ENVIRONMENT:
+#   TICKET_ID        four digits; the ticket's id as tasks reported it
+#   TICKET_REF       the repo-relative ticket path (carried, not read here)
+#   TICKET_FLOW      the procedure that will run; "quickfix" is exempt from
+#                    the green-main gate, because repairing a red main is
+#                    the whole job
+#   PRIOR_RUN_ID     ) present only on a retry. This script does not branch
+#   PRIOR_RUN_CAUSE  ) on them: it is continuation-friendly by construction —
+#   PRIOR_ATTEMPT_DIR) an existing ticket branch and worktree are REUSED.
+#   WORKTREE_ROOT    where worktrees live (default $HOME/workspace/worktrees)
+#   You start in the repository's registered directory; pwd is the repo.
+#
+# WHAT IT DOES
+#   1. fetch --prune, because everything below reads origin/main
+#   2. worktree at $WORKTREE_ROOT/<owner>/<repo>/<TICKET_ID> on branch
+#      ticket/<TICKET_ID>, branched from origin/main and NEVER from local
+#      main — a local main may be stale, dirty, or different per machine
+#   3. merge origin/main into a ticket branch that does not already contain
+#      it. A merge conflict is held for human recovery with its worktree
+#      intact; nothing prepares or gates that stale tree.
+#   4. sdlc/scripts/install in that tree, if the repo has one
+#   5. the green-main gate: sdlc/scripts/lint then sdlc/scripts/test in that
+#      tree. Skipped for the quickfix flow, and skipped when the ticket
+#      branch already carries commits of its own — a continued branch is
+#      mid-work (a red-first test is its normal state) and its redness says
+#      nothing about origin/main; the landing gate protects main instead.
+#   Steps 4 and 5 undo the tree and branch when they fail, so a refused
+#   before leaves nothing behind — but never a branch holding commits
+#   origin/main lacks; destroying a prior attempt's work is worse than
+#   leaving a tree for the retry to continue.
+#
+# STDOUT:
+#   dir: <absolute worktree path>   the attempt's directory
+#   SDLC_REPO=<absolute repo path>  baggage: where the checkout is, for
+#                                   success and failure when the worktree is
+#                                   gone and pwd can no longer say
+#   SDLC_BRANCH=ticket/<TICKET_ID>  baggage: the branch this attempt owns
+# EXIT:    0 the tree is ready
+#          3 origin/main is red, or a live bot run holds this ticket's tree:
+#            the channel backs off and a quickfix or the other run must
+#            resolve it before anything else can fly
+#          2 a merge could not complete; refuse this ticket and retain its
+#            worktree and in-progress merge for human recovery
+#          any other nonzero: a retryable fault (fetch failed, install
+#            failed, a missing gate, the path is occupied by something that
+#            is not ours).
+#
+# There is no origin claim branch and no claim commit. The old prepare
+# pushed one as a cross-machine lock and called collisions a claim status;
+# the factory's lease is that lock now, so a branch that already exists is
+# this ticket's own work to continue, not evidence of a rival.
+set -euo pipefail
+
+# stdout is reserved for the protocol lines. Everything a git or a gate
+# prints is chatter and belongs on stderr.
+exec 3>&1 1>&2
+
+: "${TICKET_ID:?before: TICKET_ID is required}"
+case "$TICKET_ID" in
+[0-9][0-9][0-9][0-9]) ;;
+*)
+	echo "before: TICKET_ID must be exactly four digits" >&2
+	exit 1
+	;;
+esac
+
+REPO=$(pwd -P)
+BRANCH="ticket/$TICKET_ID"
+WORKTREES=${WORKTREE_ROOT:-$HOME/workspace/worktrees}
+
+origin_namespace() {
+	local origin namespace
+	origin=$(git -C "$REPO" remote get-url origin 2>/dev/null) || return 1
+	namespace=$(printf '%s\n' "$origin" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/\.git$//; s/:/\//g' | awk -F/ '{ for (i = 1; i <= NF; i++) if ($i != "") part[++n] = $i } END { if (n >= 2) print part[n - 1] "/" part[n] }')
+	# The namespace becomes a path below WORKTREES; traversal components are
+	# not identities.
+	case "$namespace" in ./* | ../* | */. | */..) return 1 ;; esac
+	printf '%s\n' "$namespace"
+}
+
+if ! NAMESPACE=$(origin_namespace) || [ -z "$NAMESPACE" ]; then
+	echo "before: cannot derive owner/repository from origin" >&2
+	exit 1
+fi
+if ! common=$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) ||
+	! REPO_COMMON=$(CDPATH= cd -- "$common" && pwd -P); then
+	echo "before: cannot determine the Git common directory for $REPO" >&2
+	exit 1
+fi
+TREE="$WORKTREES/$NAMESPACE/$TICKET_ID"
+
+# A candidate is ours only if Git identifies that path itself as a worktree
+# top-level and both trees share this repository's common directory.
+candidate_owned() {
+	local candidate=$1 top candidate_path top_path candidate_common
+	top=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null) || return 1
+	candidate_path=$(CDPATH= cd -- "$candidate" && pwd -P) || return 1
+	top_path=$(CDPATH= cd -- "$top" && pwd -P) || return 1
+	[ "$candidate_path" = "$top_path" ] || return 1
+	candidate_common=$(git -C "$candidate" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 1
+	candidate_common=$(CDPATH= cd -- "$candidate_common" && pwd -P) || return 1
+	[ "$candidate_common" = "$REPO_COMMON" ]
+}
+
+# Git is the normal remover. Recursive removal is only for its known stale
+# metadata case, after ownership has been proved again at the point of use.
+remove_tree() {
+	local candidate=$1
+	if git -C "$REPO" worktree remove --force "$candidate" >/dev/null 2>&1; then
+		return 0
+	fi
+	[ -e "$candidate" ] || return 0
+	if ! candidate_owned "$candidate"; then
+		echo "before: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
+		return 1
+	fi
+	if ! rm -rf "$candidate"; then
+		echo "before: could not remove worktree $candidate" >&2
+		return 1
+	fi
+}
+
+# Bot answers 0 while a live run holds its worktree, 1 when it is idle; any
+# other result is not proof that cleanup is safe.
+worktree_liveness() {
+	bot worktree "$1"
+}
+
+# Remove the tree and the local branch. Called on every refusal below, so a
+# refused before leaves nothing behind on this machine — except a branch
+# with its own commits, which is a prior attempt's work and never ours to
+# destroy.
+undo() {
+	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH" &&
+		[ "$(git -C "$REPO" rev-list --count "origin/main..$BRANCH" 2>/dev/null || echo 1)" -gt 0 ]; then
+		echo "before: refusing to undo $BRANCH: it holds commits origin/main does not" >&2
+		return 1
+	fi
+
+	if [ -e "$TREE" ]; then
+		local liveness
+		if worktree_liveness "$TREE"; then
+			echo "before: refusing to undo $BRANCH: a live run holds worktree $TREE" >&2
+			return 3
+		else
+			liveness=$?
+		fi
+		case "$liveness" in
+		1) ;;
+		127)
+			echo "before: refusing to undo $BRANCH: bot is not installed or not on PATH" >&2
+			return 3
+			;;
+		*)
+			echo "before: refusing to undo $BRANCH: could not establish liveness for worktree $TREE" >&2
+			return 3
+			;;
+		esac
+
+		if ! candidate_owned "$TREE"; then
+			echo "before: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+			return 1
+		fi
+		remove_tree "$TREE" || return 1
+	fi
+	git -C "$REPO" worktree prune >/dev/null 2>&1 || return 1
+	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+		git -C "$REPO" branch -D "$BRANCH" >/dev/null 2>&1 || return 1
+	fi
+}
+
+# 1. Fetch. Everything below reads origin/main, so it has to be current.
+if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --prune origin; then
+	echo "before: git fetch origin failed" >&2
+	exit 1
+fi
+
+# 2. The tree. Three shapes: continue an existing tree, put a tree back on an
+# existing branch, or make both fresh from origin/main.
+tree_branch() {
+	git -C "$TREE" symbolic-ref --quiet --short HEAD 2>/dev/null
+}
+
+if [ -e "$TREE" ]; then
+	if ! candidate_owned "$TREE"; then
+		echo "before: $TREE exists and is not a worktree owned by $REPO — resolve it by hand" >&2
+		exit 1
+	fi
+	if [ "$(tree_branch || true)" != "$BRANCH" ]; then
+		echo "before: $TREE is checked out on $(tree_branch || echo 'a detached HEAD'), not $BRANCH" >&2
+		exit 1
+	fi
+	echo "before: continuing the existing worktree $TREE on $BRANCH" >&2
+elif git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+	# The branch survived a previous attempt; its commits are this ticket's
+	# own work, so put a tree back on it rather than throwing the work away.
+	mkdir -p "$WORKTREES/$NAMESPACE"
+	if ! git -C "$REPO" worktree add --quiet "$TREE" "$BRANCH"; then
+		echo "before: $BRANCH exists but a worktree for it could not be made at $TREE" >&2
+		exit 1
+	fi
+	echo "before: reattached $BRANCH to a new worktree at $TREE" >&2
+else
+	mkdir -p "$WORKTREES/$NAMESPACE"
+	if ! git -C "$REPO" worktree add --quiet -b "$BRANCH" "$TREE" origin/main; then
+		echo "before: could not create worktree $TREE on $BRANCH" >&2
+		exit 1
+	fi
+fi
+
+# 3. Continue from current main before this attempt reads the ticket or runs
+# anything project-specific. A failed merge remains in the worktree for the
+# person who can resolve it; Git's merge diagnostic stays on stderr.
+merge_main() {
+	local paths
+	if git -C "$TREE" merge origin/main; then
+		return 0
+	fi
+
+	echo "before: could not merge origin/main into $BRANCH; holding the worktree for human recovery" >&2
+	if paths=$(git -C "$TREE" diff --name-only --diff-filter=U); then
+		if [ -n "$paths" ]; then
+			echo "before: conflicting paths:" >&2
+			printf '%s\n' "$paths" >&2
+		fi
+	else
+		echo "before: could not list unmerged paths" >&2
+	fi
+	return 2
+}
+
+if git -C "$TREE" merge-base --is-ancestor origin/main "$BRANCH" >/dev/null 2>&1; then
+	:
+else
+	ancestor_status=$?
+	if [ "$ancestor_status" -ne 1 ]; then
+		echo "before: could not determine whether $BRANCH contains origin/main" >&2
+		exit 1
+	fi
+	merge_main || exit $?
+fi
+
+# How far the branch is ahead of origin/main. Zero means the tree's content
+# is main's content, so the gates below truly measure main; nonzero means
+# this is a continuation of the ticket's own work.
+AHEAD=$(git -C "$TREE" rev-list --count "origin/main..$BRANCH" 2>/dev/null || echo 0)
+
+# 4. Project preparation is optional, unlike the green-main gate. An existing
+# non-executable script is a fault rather than an absent install.
+install() {
+	local script="$TREE/sdlc/scripts/install"
+	[ -e "$script" ] || return 0
+	if [ ! -x "$script" ]; then
+		echo "before: $REPO has no executable sdlc/scripts/install" >&2
+		return 2
+	fi
+	(cd "$TREE" && SDLC_REPO="$REPO" "$script") || return 1
+}
+
+status=0
+install || status=$?
+if [ "$status" -ne 0 ]; then
+	cleanup_status=0
+	undo || cleanup_status=$?
+	if [ "$cleanup_status" -eq 3 ]; then
+		exit 3
+	fi
+	if [ "$cleanup_status" -ne 0 ]; then
+		echo "before: cleanup after a failed install failed" >&2
+	fi
+	if [ "$status" -ne 2 ]; then
+		echo "before: sdlc/scripts/install failed" >&2
+	fi
+	exit 1
+fi
+
+# 5. Green check, in that tree, using this project's own gate ladder.
+gate() {
+	local script="$TREE/sdlc/scripts/$1"
+	if [ ! -x "$script" ]; then
+		echo "before: $REPO has no executable sdlc/scripts/$1" >&2
+		return 2
+	fi
+	(cd "$TREE" && "$script") || return 1
+}
+
+if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -gt 0 ]; then
+	echo "before: skipping the green-main gate: $BRANCH carries $AHEAD commit(s) of its own work, so this tree is not origin/main" >&2
+fi
+if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -eq 0 ]; then
+	for g in lint test; do
+		status=0
+		gate "$g" || status=$?
+		if [ "$status" -eq 0 ]; then
+			continue
+		fi
+		cleanup_status=0
+		undo || cleanup_status=$?
+		if [ "$cleanup_status" -eq 3 ]; then
+			exit 3
+		fi
+		if [ "$cleanup_status" -ne 0 ]; then
+			echo "before: cleanup after the failed $g gate failed" >&2
+			exit 1
+		fi
+		if [ "$status" -eq 2 ]; then
+			exit 1 # a missing gate is a fault, not a red main
+		fi
+		echo "before: origin/main is not green — sdlc/scripts/$g failed; a quickfix has to land first" >&2
+		exit 3
+	done
+fi
+
+# 6. The place, and the two facts settlement needs when the place is gone.
+printf 'dir: %s\n' "$TREE" >&3
+printf 'SDLC_REPO=%s\n' "$REPO" >&3
+printf 'SDLC_BRANCH=%s\n' "$BRANCH" >&3
