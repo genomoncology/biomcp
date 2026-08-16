@@ -1,6 +1,7 @@
 ---
 flow: quickfix
 priority: 9
+deps: ["1019"]
 ---
 
 # Reject invalid HTTP host policies before listening

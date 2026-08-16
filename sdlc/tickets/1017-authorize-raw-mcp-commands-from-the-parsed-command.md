@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 10
+deps: ["1018"]
 ---
 
 # Authorize raw MCP commands from the parsed command
