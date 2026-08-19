@@ -57,6 +57,14 @@
 
 ### Fixes
 
+- Emitted the `servers` key VS Code actually reads from `biomcp mcp-config
+  --client vscode`, instead of the `mcpServers` key the other stdio clients
+  use. VS Code parsed the old snippet without complaint and then ignored it,
+  so the server never appeared and nothing said why. Public MCP client docs
+  now show the same corrected shape.
+- Bumped the `h2` lockfile entry to 0.4.16 for RUSTSEC-2026-0258, which
+  accepted and queued empty DATA frames without limit. `h2` is a transitive
+  dependency of hyper and tonic, so no source change was needed.
 - Hardened CLI correctness before the next development candidate: local study
   discovery now treats a missing data directory as an empty catalog and drops
   invalid survival times; phenotype search has truthful 50-result paging and a

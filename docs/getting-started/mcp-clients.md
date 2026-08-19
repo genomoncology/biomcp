@@ -151,11 +151,11 @@ Generate the VS Code config:
 biomcp mcp-config --client vscode
 ```
 
-Or add this server to your VS Code MCP configuration:
+Or add this server to `.vscode/mcp.json` in your workspace, or to the file VS Code opens with **MCP: Open User Configuration**. VS Code reads `servers` here, not the `mcpServers` key the other clients use — a snippet under the wrong key is valid JSON and is then silently ignored, so the server never shows up.
 
 ```json
 {
-  "mcpServers": {
+  "servers": {
     "biomcp": {
       "command": "biomcp",
       "args": ["serve"]

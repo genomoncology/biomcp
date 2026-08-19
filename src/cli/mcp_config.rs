@@ -12,6 +12,14 @@ struct McpServersConfig<'a> {
     mcp_servers: std::collections::BTreeMap<&'static str, McpServerConfig<'a>>,
 }
 
+/// VS Code reads `servers` in `mcp.json`, not the `mcpServers` key the other
+/// clients use. A snippet under the wrong key parses fine and is then ignored,
+/// so the server simply never appears.
+#[derive(Serialize)]
+struct VscodeServersConfig<'a> {
+    servers: std::collections::BTreeMap<&'static str, McpServerConfig<'a>>,
+}
+
 #[derive(Serialize)]
 struct McpServerConfig<'a> {
     command: &'a str,
@@ -39,24 +47,39 @@ fn render(client: Option<McpClient>, command: &str) -> anyhow::Result<String> {
         Some(McpClient::ClaudeCode) => json_config(command)?,
         Some(McpClient::Cursor) => json_config(command)?,
         Some(McpClient::Cline) => json_config(command)?,
-        Some(McpClient::Vscode) => json_config(command)?,
+        Some(McpClient::Vscode) => vscode_config(command)?,
         Some(McpClient::Json) => json_config(command)?,
         None => discovery_page(),
     })
 }
 
-fn json_config(command: &str) -> anyhow::Result<String> {
-    let mut mcp_servers = std::collections::BTreeMap::new();
-    mcp_servers.insert(
+fn server_entry(command: &str) -> std::collections::BTreeMap<&'static str, McpServerConfig<'_>> {
+    let mut servers = std::collections::BTreeMap::new();
+    servers.insert(
         SERVER_NAME,
         McpServerConfig {
             command,
             args: SERVER_ARGS.to_vec(),
         },
     );
+    servers
+}
+
+fn json_config(command: &str) -> anyhow::Result<String> {
     Ok(format!(
         "{}\n",
-        crate::render::json::to_pretty(&McpServersConfig { mcp_servers })?
+        crate::render::json::to_pretty(&McpServersConfig {
+            mcp_servers: server_entry(command),
+        })?
+    ))
+}
+
+fn vscode_config(command: &str) -> anyhow::Result<String> {
+    Ok(format!(
+        "{}\n",
+        crate::render::json::to_pretty(&VscodeServersConfig {
+            servers: server_entry(command),
+        })?
     ))
 }
 
@@ -99,7 +122,6 @@ mod tests {
             McpClient::ClaudeCode,
             McpClient::Cursor,
             McpClient::Cline,
-            McpClient::Vscode,
             McpClient::Json,
         ] {
             let value = json_value(client, DEFAULT_COMMAND);
@@ -112,6 +134,23 @@ mod tests {
                 serde_json::json!(["serve"])
             );
         }
+    }
+
+    #[test]
+    fn vscode_uses_the_servers_key_it_actually_reads() {
+        let value = json_value(McpClient::Vscode, DEFAULT_COMMAND);
+        assert_eq!(
+            value["servers"]["biomcp"]["command"],
+            serde_json::Value::String("biomcp".to_string())
+        );
+        assert_eq!(
+            value["servers"]["biomcp"]["args"],
+            serde_json::json!(["serve"])
+        );
+        assert!(
+            value.get("mcpServers").is_none(),
+            "VS Code reads `servers` in mcp.json; `mcpServers` is silently ignored"
+        );
     }
 
     #[test]
