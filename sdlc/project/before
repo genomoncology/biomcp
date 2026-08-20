@@ -127,7 +127,7 @@ remove_tree() {
 # Bot answers 0 while a live run holds its worktree, 1 when it is idle; any
 # other result is not proof that cleanup is safe.
 worktree_liveness() {
-	bot worktree "$1"
+	bot busy "$1"
 }
 
 # Remove the tree and the local branch. Called on every refusal below, so a
