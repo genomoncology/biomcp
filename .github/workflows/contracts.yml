@@ -5,6 +5,7 @@ on:
 
 jobs:
   contracts:
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

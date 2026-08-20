@@ -47,6 +47,7 @@ env:
 jobs:
   candidate-gates:
     if: inputs.mode == 'stage'
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
       - name: Check out the selected commit
@@ -141,6 +142,7 @@ jobs:
             target: aarch64-unknown-linux-gnu
             slug: linux-arm64
             container: quay.io/pypa/manylinux_2_28_aarch64@sha256:b9dd5b2d6885fae144119ac934978003bcc413087ea08f602a960257205ec246
+    timeout-minutes: 45
     runs-on: ${{ matrix.runner }}
     container: ${{ matrix.container }}
     steps:
@@ -205,6 +207,7 @@ jobs:
           - runner: windows-2022
             target: x86_64-pc-windows-msvc
             slug: windows-x86_64
+    timeout-minutes: 45
     runs-on: ${{ matrix.runner }}
     environment: biomcp-release-signing
     env:
@@ -266,6 +269,7 @@ jobs:
   container-artifact:
     if: inputs.mode == 'stage'
     needs: [linux-artifacts]
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -334,6 +338,7 @@ jobs:
   homebrew-formula:
     if: inputs.mode == 'stage'
     needs: signed-artifacts
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -369,6 +374,7 @@ jobs:
             slug: macos-x86_64
           - runner: macos-15
             slug: macos-arm64
+    timeout-minutes: 45
     runs-on: ${{ matrix.runner }}
     environment: biomcp-release-signing
     steps:
@@ -421,6 +427,7 @@ jobs:
   mcpb-artifact:
     if: inputs.mode == 'stage'
     needs: [candidate-gates, signed-artifacts]
+    timeout-minutes: 45
     runs-on: macos-15
     environment: biomcp-release-signing
     env:
@@ -539,6 +546,7 @@ jobs:
             binary: server/biomcp
           - runner: windows-2022
             binary: server/biomcp.exe
+    timeout-minutes: 45
     runs-on: ${{ matrix.runner }}
     environment: biomcp-release-signing
     steps:
@@ -582,6 +590,7 @@ jobs:
   seal-candidate:
     if: inputs.mode == 'stage'
     needs: [candidate-gates, linux-artifacts, signed-artifacts, container-artifact, homebrew-smoke, mcpb-smoke]
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -624,6 +633,7 @@ jobs:
 
   promotion-preflight:
     if: inputs.mode == 'promote'
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     environment: biomcp-release-promotion
     steps:
@@ -679,6 +689,7 @@ jobs:
 
   publish-versioned:
     needs: promotion-preflight
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     environment: biomcp-release-promotion
     permissions:
@@ -749,6 +760,7 @@ jobs:
             slug: windows-x86_64
             native: native-windows-x86_64
             wheel: wheel-windows-x86_64
+    timeout-minutes: 45
     runs-on: ${{ matrix.runner }}
     environment: biomcp-release-promotion
     steps:
@@ -804,6 +816,7 @@ jobs:
 
   public-container-smoke:
     needs: publish-versioned
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -841,6 +854,7 @@ jobs:
     strategy:
       matrix:
         runner: [macos-15-intel, macos-15]
+    timeout-minutes: 45
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -882,6 +896,7 @@ jobs:
             binary: server/biomcp
           - runner: windows-2022
             binary: server/biomcp.exe
+    timeout-minutes: 45
     runs-on: ${{ matrix.runner }}
     environment: biomcp-release-promotion
     steps:
@@ -916,6 +931,7 @@ jobs:
 
   reconcile-public-release:
     needs: [public-platform-smoke, public-container-smoke, public-homebrew-smoke, public-mcpb-smoke]
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     environment: biomcp-release-promotion
     steps:
@@ -967,6 +983,7 @@ jobs:
 
   advance-mutable-pointers:
     needs: reconcile-public-release
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     environment: biomcp-release-promotion
     permissions:
@@ -996,6 +1013,7 @@ jobs:
   promotion-failure-record:
     if: always() && inputs.mode == 'promote' && failure()
     needs: [publish-versioned, public-platform-smoke, public-container-smoke, public-homebrew-smoke, public-mcpb-smoke, reconcile-public-release]
+    timeout-minutes: 45
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
