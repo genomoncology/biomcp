@@ -14,6 +14,6 @@ This is the same failure shape as reporting zero for a source that was never rea
 ## Done when
 
 - The command's help states that the source covers germline interpretations.
-- The public documentation for the ClinGen commands states the same, and says where somatic interpretation lives instead.
+- The public documentation for the ClinGen commands states the same, and points a somatic question at CIViC, which BioMCP already serves through `get gene <symbol> civic` and its variant equivalents. Name that as the destination; do not invent or link a source BioMCP does not carry.
 - A reader who arrives with a somatic question can tell from the output or the help that they are asking the wrong source, rather than concluding no evidence exists.
 - No behaviour changes: this ticket adds no filtering, no detection of somatic intent, and no new source.

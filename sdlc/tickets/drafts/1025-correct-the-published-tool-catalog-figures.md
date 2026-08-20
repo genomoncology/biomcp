@@ -16,3 +16,9 @@ Correct the figures and say plainly which build each number describes. Do not de
 - Every catalog byte and token figure in public documentation matches a measurement of a named build, and names which build it measured.
 - Where a budget is quoted, the text says what it applies to and which builds it is enforced on.
 - No public figure claims the currently published release is inside a budget it is outside of.
+
+## The stale assertion
+
+`tests/test_documentation_consistency_audit_contract.py`, in `test_blog_try_it_and_install_copy_are_consistent`, asserts the literal string `1,628 \`cl100k_base\` tokens at the 0932 snapshot` and the literal string `16,000 bytes and 4,000 tokens`. The first of those pins a figure that is no longer true of any build, so that assertion is itself part of the defect and may be restated with the corrected figure. Say so in the commit message, as the repair stage requires. No other test file may be changed.
+
+Two other tests read the same blog file but do not assert any figure — `tests/test_mcp_tool_catalog.py` checks only that each tool name appears, and `tests/test_public_install_docs_contract.py` checks only headings and install commands. Neither should need touching; if either goes red, that is a signal the edit went wider than the figures.

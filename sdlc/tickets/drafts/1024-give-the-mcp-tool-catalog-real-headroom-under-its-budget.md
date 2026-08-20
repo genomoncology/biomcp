@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 6
+deps: ["1030"]
 hold: draft for review; do not promote until Ian releases this
 ---
 # Give the MCP tool catalog real headroom under its budget
@@ -25,3 +26,9 @@ Decide whether the answer is to reclaim space inside the current catalog, to rai
 ## Related
 
 The measurement script `scripts/measure-mcp-tools.py` currently depends on the committed tokenizer cache path and on being run from a repository checkout, so it cannot easily be pointed at an arbitrary installed binary. Making it runnable against any binary would let this be checked outside CI. Treat that as in scope only if it falls out naturally; otherwise leave it and say so.
+
+## Existing tests that pin this
+
+The budget gate itself is `tests/test_mcp_tool_catalog.py`, in `test_real_tools_list_stays_within_context_budget`, which asserts `tools/list UTF-8 bytes <= 16_000`, `tools/list cl100k_base tokens <= 4_000`, and `biomcp description UTF-8 bytes <= 4_000`. Restatement is authorized in that file, for that test by name, since changing the ceiling or the failure reporting is the point of this ticket. No other test file is authorized.
+
+Whatever the chosen ceiling is, the assertion must remain a hard failure, not a warning — the gate keeps its teeth.

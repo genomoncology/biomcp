@@ -24,3 +24,7 @@ Take care not to overstate what the count means. It is the number of assertions 
 ## Related
 
 `sdlc/tickets/drafts/1023` covers the neighbouring problem of a zero count printed for a source that was never reached. These are different: 1023 is about an unreachable source, this is about a source that answered honestly with nothing.
+
+## Existing tests that pin this
+
+None. The sentence is written at `src/cli/variant/erepo.rs:166` and no shipped test asserts it — `tests/unit/cli/variant.rs` covers only the `--gene` bounds and mutual exclusivity, which this ticket does not touch. Checked 2026-08-20. No restatement is needed or authorized.

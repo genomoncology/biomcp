@@ -22,3 +22,7 @@ The cost is not one red build. Five of the last twelve CI runs on `main` were re
 - The test passes repeatedly on Windows without a re-run.
 - Any genuinely live coverage this test was providing is either kept in the verify lane, where live failures are expected and read by a person, or is deliberately dropped with a note saying so.
 - The design states whether other tests in the deterministic gates reach live services, since a single instance and a pattern call for different responses.
+
+## Existing tests that pin this
+
+Restatement is authorized in `tests/managed_state_permissions.rs`, for `windows_cache_epoch_files_are_user_only_and_reject_hard_links` by name. This is the case where the test itself is the defect: it reaches a live service to set up a condition unrelated to what it asserts. No other test file is authorized.

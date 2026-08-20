@@ -46,3 +46,12 @@ biomcp get gene OR4F5 civic                                       # genuinely em
 ```
 
 Both exit 0 today, which is correct; the difference must be readable from the top of the section rather than from the exit code.
+
+## Existing tests that pin this
+
+The current wording and ordering are asserted in shipped tests. Restatement is authorized in these files, for these tests by name, only to the extent they assert that a no-records sentence or a zero count appears for a section whose outcome is not `data`:
+
+- `src/render/markdown/gene/tests/rendering.rs` — `gene_markdown_section_only_shows_new_gene_enrichment_sections`, which asserts the literal sentences `No GTEx expression records returned`, `No Human Protein Atlas records returned`, `No DGIdb interactions returned`, and `No ClinGen records returned`
+- `src/render/markdown/disease/tests/rendering.rs` and `src/render/markdown/disease/tests/extended.rs`, for the SEER survival wording only
+
+No other test file is authorized. Assertions that a genuinely `empty` section reads as a real zero must survive unchanged — that is the distinction this ticket exists to protect. If the design stage finds a further shipped assertion that pins the old ordering and is not named above, say so in the design output rather than restating it.

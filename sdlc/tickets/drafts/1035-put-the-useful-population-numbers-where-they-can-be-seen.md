@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 5
+deps: ["1022"]
 hold: draft for review; do not promote until Ian releases this
 ---
 # Put the useful population numbers where they can be seen
@@ -21,3 +22,12 @@ Decide between showing a summary by default with the full table behind a flag, a
 - Every row available today remains reachable through a documented route.
 - Rows where no alleles were observed are distinguishable from rows where the frequency is genuinely zero.
 - The typed JSON form is unchanged, so anything parsing it keeps working.
+
+## Existing tests that pin this
+
+Restatement is authorized in `src/render/markdown/variant/tests.rs`, for these tests by name, only to the extent they assert the current row set or row order of the population table:
+
+- `variant_markdown_renders_compact_clinvar_and_population_fields`
+- `variant_population_markdown_keeps_missing_status_compact`
+
+No other test file is authorized. Assertions about the values themselves — the grpmax FAF95 line, the caveat sentence, the quality filter status — must survive, since the data path was verified correct and is not what this ticket changes.
