@@ -1,8 +1,7 @@
 ---
 flow: build
-priority: 6
+priority: 13
 deps: ["1030"]
-hold: draft for review; do not promote until Ian releases this
 ---
 # Give the MCP tool catalog real headroom under its budget
 

@@ -1,7 +1,6 @@
 ---
 flow: quickfix
-priority: 3
-hold: draft for review; do not promote until Ian releases this
+priority: 8
 ---
 # Separate authors from affiliations in article indexing
 

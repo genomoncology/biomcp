@@ -1,8 +1,7 @@
 ---
 flow: build
-priority: 5
+priority: 12
 deps: ["1022"]
-hold: draft for review; do not promote until Ian releases this
 ---
 # Put the useful population numbers where they can be seen
 

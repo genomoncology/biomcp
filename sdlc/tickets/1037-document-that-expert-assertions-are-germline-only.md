@@ -1,7 +1,6 @@
 ---
 flow: quickfix
-priority: 4
-hold: draft for review; do not promote until Ian releases this
+priority: 5
 ---
 # Document that expert assertions are germline only
 

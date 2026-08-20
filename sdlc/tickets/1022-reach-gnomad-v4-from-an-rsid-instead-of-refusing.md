@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 8
-hold: draft for review; do not promote until Ian releases this
+priority: 18
 ---
 # Reach gnomAD v4 population data from an rsID
 

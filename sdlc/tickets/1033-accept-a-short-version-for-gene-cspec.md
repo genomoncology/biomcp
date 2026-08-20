@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 3
-hold: draft for review; do not promote until Ian releases this
+priority: 7
 ---
 # Accept a short version for gene cspec
 

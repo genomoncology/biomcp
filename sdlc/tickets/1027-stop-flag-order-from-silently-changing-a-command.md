@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 4
-hold: draft for review; do not promote until Ian releases this
+priority: 15
 ---
 # Stop flag order from silently changing a command
 

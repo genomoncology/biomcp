@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 7
-hold: draft for review; do not promote until Ian releases this
+priority: 17
 ---
 # Stop printing zero counts for a source that was never reached
 

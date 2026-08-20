@@ -1,7 +1,7 @@
 ---
 flow: quickfix
-priority: 5
-hold: draft for review; do not promote until Ian releases this
+priority: 4
+deps: ["1024"]
 ---
 # Correct the published tool catalog figures
 
