@@ -12,7 +12,10 @@
 // STDIN:   nothing.
 // STDOUT:  one JSON object per line, one line per ticket:
 //            {"id":"0068","flow":"build","priority":9,"deps":["0067"],
-//             "status":"ready","ref":"sdlc/tickets/0068-a-slug.md"}
+//             "status":"ready","ref":"sdlc/tickets/0068-a-slug.md",
+//             "contentIdentity":"<opaque>"}
+//          contentIdentity is an opaque producer value for every emitted
+//          row. Consumers must not depend on its digest format.
 //          Optional keys, present only when the frontmatter declares them:
 //            "hold":"<reason>"     the ticket holds itself out of dispatch
 //            "channel":"<name>"    concurrency-fence override
@@ -30,10 +33,11 @@
 //          2 cannot report — no origin, fetch failed, origin/main unreadable
 //
 // It is an ES module because this repository's package.json says type:
-// module and Node reads the nearest one. It imports nothing but Node's own
-// child_process, so no install has to have happened for the board to be
-// readable.
+// module and Node reads the nearest one. It imports only Node's own
+// child_process and crypto, so no install has to have happened for the board to
+// be readable.
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 
 const REPO = process.cwd();
 
@@ -154,8 +158,9 @@ function parseTicket(path, content) {
   const body = (fm[2] ?? "").trim();
 
   if (typeof meta.flow !== "string" || meta.flow === "") problems.push(`${path}: missing flow`);
+  if (meta.priority === undefined) problems.push(`${path}: missing priority`);
+  else if (!Number.isInteger(meta.priority)) problems.push(`${path}: priority is not an integer`);
   if (meta.channel !== undefined && (typeof meta.channel !== "string" || meta.channel === "")) problems.push(`${path}: channel is not a string`);
-  if (meta.priority !== undefined && !Number.isInteger(meta.priority)) problems.push(`${path}: priority is not an integer`);
   const deps = [];
   if (meta.deps !== undefined) {
     if (!Array.isArray(meta.deps)) problems.push(`${path}: deps is not a list`);
@@ -212,7 +217,9 @@ for (const path of lsTree("sdlc/records")) {
 let out = "";
 for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive", true]]) {
   for (const path of lsTree(dir)) {
-    const content = gitBytes("show", `origin/main:${path}`).toString("utf8");
+    const bytes = gitBytes("show", `origin/main:${path}`);
+    const contentIdentity = createHash("sha256").update(path).update("\0").update(bytes).digest("hex");
+    const content = bytes.toString("utf8");
     const parsed = parseTicket(path, content);
     if (!parsed.ok) {
       for (const problem of parsed.problems) process.stderr.write(`tasks: ${problem}\n`);
@@ -226,6 +233,7 @@ for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive",
       deps: t.deps,
       status: archived || done.has(t.id) ? "done" : "ready",
       ref: t.ref,
+      contentIdentity,
     };
     if (t.hold !== undefined) row.hold = t.hold;
     if (t.channel !== undefined) row.channel = t.channel;
