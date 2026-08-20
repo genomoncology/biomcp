@@ -113,13 +113,6 @@ enum FixtureContact {
 }
 
 #[cfg(windows)]
-#[derive(Clone, Copy)]
-enum ProbeMode {
-    ValidRequest,
-    NoContact,
-}
-
-#[cfg(windows)]
 struct MyGeneFixture {
     base: String,
     stop: std::sync::mpsc::Sender<()>,
@@ -254,34 +247,6 @@ fn finish_mygene_fixture(fixture: MyGeneFixture) -> Result<FixtureContact, Strin
         .server
         .join()
         .map_err(|_| "local MyGene fixture thread panicked".to_string())?
-}
-
-#[cfg(windows)]
-fn run_cached_probe(
-    root: &std::path::Path,
-    mode: ProbeMode,
-) -> (std::process::Output, Result<(), String>) {
-    let fixture = start_mygene_fixture();
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
-        .args(["search", "gene", "BRAF", "--limit", "1"])
-        .env("BIOMCP_CACHE_DIR", root)
-        .env("BIOMCP_MYGENE_BASE", &fixture.base)
-        .output()
-        .expect("run cached probe");
-    let contact = finish_mygene_fixture(fixture).and_then(|contact| {
-        if matches!(
-            (mode, contact),
-            (ProbeMode::ValidRequest, FixtureContact::ValidRequest)
-                | (ProbeMode::NoContact, FixtureContact::NoContact)
-        ) {
-            Ok(())
-        } else {
-            Err(format!(
-                "unexpected fixture contact for probe mode: {contact:?}"
-            ))
-        }
-    });
-    (output, contact)
 }
 
 #[cfg(windows)]
