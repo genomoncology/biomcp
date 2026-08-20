@@ -85,6 +85,8 @@ No expanded prediction scores reported.
 {% if source_states.population.status %}{{ source_states.population.status }}
 {% endif -%}
 {% if source_states.population.payload_allowed and population -%}
+{% if population.resolved_coordinate %}Resolved GRCh38 coordinate: {{ population.resolved_coordinate.id }} ({{ population.resolved_coordinate.source }})
+{% endif -%}
 Dataset: `{{ population.dataset }}` ({{ population.release }})
 {% if population.status != "data" -%}
 {{ population.message }}

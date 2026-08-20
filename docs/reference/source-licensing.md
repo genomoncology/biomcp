@@ -52,6 +52,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | CPIC | 1 | direct_api | none | CPIC content is published under CC0 with trademark and attribution guidance | content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions | <https://cpicpgx.org/license/> |
 | DGIdb | 1 | direct_api | none | open interaction service; aggregated claims may still reflect upstream source terms | treat DGIdb as an aggregation layer and preserve source attribution for underlying claim providers | <https://www.dgidb.org/about> |
 | DDInter | 3 | direct_api | none | CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists | reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims | <https://ddinter.scbdd.com/terms/> |
+| dbSNP | 1 | direct_api | none | NCBI public data service with attribution and non-endorsement expectations | RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement | <https://www.ncbi.nlm.nih.gov/home/about/policies/> |
 | DisGeNET | 2 | direct_api | required_env | custom provider terms for API and downloads | do not assume unrestricted redistribution; use according to the provider account terms | <https://www.disgenet.com/> |
 | EMA | 1 | direct_api | none | EMA website material may be reused with source attribution; third-party content can carry separate rights | EMA-published website data is generally reusable with attribution, but embedded third-party materials may need separate permission | <https://www.ema.europa.eu/en/about-us/about-website/legal-notice> |
 | Enrichr | 1 | direct_api | none | open web/API service with citation expectations for Enrichr and its libraries | reuse of results should preserve attribution to Enrichr and the underlying enrichment libraries | <https://maayanlab.cloud/Enrichr/> |
@@ -807,6 +808,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://ddinter.scbdd.com/terms/>
 - Reviewed on: `2026-04-25`
 - Notes: BioMCP reads the eight required DDInter CSV files from `BIOMCP_DDINTER_DIR` or the default data directory without automatic maintenance. `biomcp ddinter sync` explicitly downloads, validates, and publishes a complete replacement bundle. Reads report fresh/stale state, and empties remain current-bundle misses instead of clinical absence.
+
+### dbSNP
+
+- BioMCP surfaces: `get variant <id> population`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public API
+- License / terms summary: NCBI public data service with attribution and non-endorsement expectations
+- Redistribution / reuse summary: RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement
+- Official terms URL: <https://www.ncbi.nlm.nih.gov/home/about/policies/>
+- Reviewed on: `2026-08-20`
+- Notes: BioMCP uses the NCBI Variation RefSNP API only to recover an explicitly labeled GRCh38 chromosome coordinate for eligible identifier-based gnomAD population lookups.
 
 ### gnomAD
 

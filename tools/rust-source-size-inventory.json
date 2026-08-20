@@ -114,9 +114,14 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1128,
+      "baseline_lines": 1237,
       "floor_lines": 1128,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1022",
+        "delta": 109,
+        "reason": "Add narrow dbSNP RefSNP resolution for identifier-based GRCh38 population queries.",
+        "removal_condition": "Extract population resolution when the variant workflow is next decomposed."
+      }
     },
     {
       "path": "src/entities/variant/resolution.rs",
@@ -126,9 +131,14 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1122,
+      "baseline_lines": 1125,
       "floor_lines": 1122,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1022",
+        "delta": 3,
+        "reason": "Register dbSNP source errors with the shared provider policy.",
+        "removal_condition": "Move provider definitions into a dedicated source registry."
+      }
     },
     {
       "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
@@ -173,9 +183,14 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1820,
+      "baseline_lines": 1823,
       "floor_lines": 1820,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1022",
+        "delta": 3,
+        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD.",
+        "removal_condition": "Extract variant provenance into its own renderer module."
+      }
     },
     {
       "path": "src/sources/cbioportal_study.rs",
@@ -191,13 +206,13 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 1883,
+      "baseline_lines": 1884,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "0982",
-        "delta": 36,
-        "reason": "The middleware-compatible retry path preserves bounded retry behavior for streaming provider clients after they join the exact-origin network boundary.",
-        "removal_condition": "Move streaming retry orchestration beside the ordinary provider client policy when shared source utilities are next decomposed."
+        "ticket": "1022",
+        "delta": 37,
+        "reason": "Register dbSNP beside the existing shared source utilities.",
+        "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },
     {

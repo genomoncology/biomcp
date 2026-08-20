@@ -567,7 +567,7 @@ fn population_result_names_the_pinned_dataset_and_keeps_sources_separate() {
         }),
         genome: None,
     };
-    let result = population_result(GnomadPopulationStatus::Data, None, Some(data));
+    let result = population_result(GnomadPopulationStatus::Data, None, Some(data), None);
 
     assert_eq!(result.status, GnomadPopulationStatus::Data);
     assert_eq!(result.dataset, "gnomad_r4");
@@ -590,7 +590,8 @@ fn population_status_json_keeps_explicit_null_exome_and_genome_results() {
             GNOMAD_PROVIDER_FAILURE,
         ),
     ] {
-        let value = serde_json::to_value(population_result(status, Some(message), None)).unwrap();
+        let value =
+            serde_json::to_value(population_result(status, Some(message), None, None)).unwrap();
         assert_eq!(value["status"], serde_json::to_value(status).unwrap());
         assert!(value["exome"].is_null());
         assert!(value["genome"].is_null());

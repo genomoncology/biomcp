@@ -416,6 +416,23 @@
     "notes": "BioMCP uses Figshare only as an article-asset fallback after PMC OA and Europe PMC assets are unavailable and Semantic Scholar discovery points at a supported Figshare/AACR Figshare article URL. BioMCP downloads bytes from the Figshare API download_url and does not parse supplement contents."
   },
   {
+    "id": "dbsnp",
+    "name": "dbSNP",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["get variant <id> population"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public API",
+    "license_summary": "NCBI public data service with attribution and non-endorsement expectations",
+    "redistribution_summary": "RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/home/about/policies/",
+    "key_url": null,
+    "reviewed_on": "2026-08-20",
+    "notes": "BioMCP uses the NCBI Variation RefSNP API only to recover an explicitly labeled GRCh38 chromosome coordinate for eligible identifier-based gnomAD population lookups."
+  },
+  {
     "id": "gnomad",
     "name": "gnomAD",
     "tier": 3,
