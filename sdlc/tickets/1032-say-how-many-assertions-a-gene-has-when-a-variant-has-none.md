@@ -27,3 +27,19 @@ Take care not to overstate what the count means. It is the number of assertions 
 ## Existing tests that pin this
 
 None. The sentence is written at `src/cli/variant/erepo.rs:166` and no shipped test asserts it — `tests/unit/cli/variant.rs` covers only the `--gene` bounds and mutual exclusivity, which this ticket does not touch. Checked 2026-08-20. No restatement is needed or authorized.
+
+## Addendum, 2026-08-20 — what "when the gene is known" fences off
+
+Attempt 1's design refused to approve an implementation: an empty CAid response carries no source-backed gene context, and the authored regression required one, so passing it would have meant inventing a CAid-to-gene resolution the ticket never specified.
+
+The refusal is right and the fence is already in the ticket — the first bullet under "Done when" says "when the gene is known" — but the design read it as a goal to reach rather than a limit to respect. Stating it plainly:
+
+**No new lookup is in scope.** The count is added only when the gene is already in hand from what the command has: the caller supplied it, or the response being rendered names it. Where it is not, the original message is returned unchanged. Resolving an identifier to a gene — from a CAid or from anything else — is a different capability, is not specified here, and is not to be invented to satisfy a proof.
+
+So an empty CAid response with no gene is a case where nothing changes. That is not a gap in the behavior; it is the behavior. A design that authors a proof requiring the count for such a response has written a proof for work this ticket does not ask for, and should say so rather than reaching for an unspecified resolution.
+
+This narrows nothing that was promised. The fifth bullet already says a failed or unavailable gene lookup returns the original message rather than an error, and an absent gene is the same shape of answer.
+
+Everything else stands. In particular the care the ticket asks for keeps full strength: the count is the number of assertions the repository holds for that gene, never a coverage figure and never a statement about the variant, and the wording must not imply that an unadjudicated variant is benign.
+
+If a later ticket does want CAid-to-gene resolution, it is that ticket's to specify, including which source states the mapping and what happens when the mapping is absent.
