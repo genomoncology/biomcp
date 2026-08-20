@@ -100,7 +100,7 @@ No CIViC records returned for this drug query.
 ## Targets (ChEMBL / Open Targets)
 {% if source_states.targets.status %}{{ source_states.targets.status }}
 {% endif -%}
-{% if source_states.targets.payload_allowed and target_family or target_family_name -%}
+{% if source_states.targets.payload_allowed and (target_family or target_family_name) -%}
 Family: {{ target_family or target_family_name }}{% if target_family and target_family_name %} ({{ target_family_name }}){% endif %}
 Members: {{ targets | join(", ") }}
 {% elif source_states.targets.payload_allowed and targets -%}

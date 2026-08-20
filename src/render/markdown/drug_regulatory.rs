@@ -526,9 +526,13 @@ pub(super) fn render_safety_block(
         || "## Safety (US - OpenFDA)".to_string(),
         |status| format!("## Safety (US - OpenFDA)\n\n{status}"),
     );
+    let eu_heading = status.map_or_else(
+        || "## Safety (EU - EMA)".to_string(),
+        |status| format!("## Safety (EU - EMA)\n\n{status}"),
+    );
     match region {
         DrugRegion::Us => render_us_safety_block(drug, &us_heading),
-        DrugRegion::Eu => render_eu_safety_block("## Safety (EU - EMA)", drug.ema_safety.as_ref()),
+        DrugRegion::Eu => render_eu_safety_block(&eu_heading, drug.ema_safety.as_ref()),
         DrugRegion::Who => String::new(),
         DrugRegion::All => {
             let us = render_us_safety_block(drug, &us_heading);
