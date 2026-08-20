@@ -228,6 +228,57 @@ elif [ ! -e "$TREE" ]; then
 	fi
 fi
 
+# Retire the managed traceability hook without touching an unrelated hook.
+# A managed hook may have displaced the prior hook into the saved path, so
+# restore that hook when it exists and otherwise remove only the managed one.
+retire_commit_msg_hook() {
+	local hooks hook original grep_status
+	if ! hooks=$(git -C "$TREE" rev-parse --path-format=absolute --git-path hooks); then
+		echo "before: could not determine the Git hooks directory for $REPO" >&2
+		return 1
+	fi
+
+	hook="$hooks/commit-msg"
+	original="$hooks/commit-msg.sdlc-original"
+	if [ -e "$hook" ] || [ -L "$hook" ]; then
+		if [ ! -L "$hook" ] && grep -Fqx '# sdlc-managed-traceability-commit-msg-hook' "$hook"; then
+			if [ -e "$original" ] || [ -L "$original" ]; then
+				if ! mv "$original" "$hook"; then
+					echo "before: could not restore the saved commit-msg hook" >&2
+					return 1
+				fi
+			elif ! rm -f "$hook"; then
+				echo "before: could not remove the managed traceability commit-msg hook" >&2
+				return 1
+			fi
+		else
+			grep_status=$?
+			if [ "$grep_status" -gt 1 ]; then
+				echo "before: could not inspect the commit-msg hook" >&2
+				return 1
+			fi
+		fi
+	elif [ -e "$original" ] || [ -L "$original" ]; then
+		if ! mv "$original" "$hook"; then
+			echo "before: could not restore the saved commit-msg hook" >&2
+			return 1
+		fi
+	fi
+}
+
+if ! retire_commit_msg_hook; then
+	cleanup_status=0
+	undo || cleanup_status=$?
+	if [ "$cleanup_status" -eq 3 ]; then
+		exit 3
+	fi
+	if [ "$cleanup_status" -ne 0 ]; then
+		echo "before: cleanup after traceability hook migration failed" >&2
+	fi
+	echo "before: could not retire the traceability commit-msg hook" >&2
+	exit 1
+fi
+
 # 3. Continue from current main before this attempt reads the ticket or runs
 # anything project-specific. A failed merge remains in the worktree for the
 # person who can resolve it; Git's merge diagnostic stays on stderr.
@@ -369,57 +420,6 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 		echo "before: could not store green-main verdict for $GREEN_MAIN_SHA" >&2
 		exit 1
 	fi
-fi
-
-# Retire the managed traceability hook without touching an unrelated hook.
-# A managed hook may have displaced the prior hook into the saved path, so
-# restore that hook when it exists and otherwise remove only the managed one.
-retire_commit_msg_hook() {
-	local hooks hook original grep_status
-	if ! hooks=$(git -C "$TREE" rev-parse --path-format=absolute --git-path hooks); then
-		echo "before: could not determine the Git hooks directory for $REPO" >&2
-		return 1
-	fi
-
-	hook="$hooks/commit-msg"
-	original="$hooks/commit-msg.sdlc-original"
-	if [ -e "$hook" ] || [ -L "$hook" ]; then
-		if [ ! -L "$hook" ] && grep -Fqx '# sdlc-managed-traceability-commit-msg-hook' "$hook"; then
-			if [ -e "$original" ] || [ -L "$original" ]; then
-				if ! mv "$original" "$hook"; then
-					echo "before: could not restore the saved commit-msg hook" >&2
-					return 1
-				fi
-			elif ! rm -f "$hook"; then
-				echo "before: could not remove the managed traceability commit-msg hook" >&2
-				return 1
-			fi
-		else
-			grep_status=$?
-			if [ "$grep_status" -gt 1 ]; then
-				echo "before: could not inspect the commit-msg hook" >&2
-				return 1
-			fi
-		fi
-	elif [ -e "$original" ] || [ -L "$original" ]; then
-		if ! mv "$original" "$hook"; then
-			echo "before: could not restore the saved commit-msg hook" >&2
-			return 1
-		fi
-	fi
-}
-
-if ! retire_commit_msg_hook; then
-	cleanup_status=0
-	undo || cleanup_status=$?
-	if [ "$cleanup_status" -eq 3 ]; then
-		exit 3
-	fi
-	if [ "$cleanup_status" -ne 0 ]; then
-		echo "before: cleanup after traceability hook migration failed" >&2
-	fi
-	echo "before: could not retire the traceability commit-msg hook" >&2
-	exit 1
 fi
 
 # 6. The place, and the two facts settlement needs when the place is gone.
