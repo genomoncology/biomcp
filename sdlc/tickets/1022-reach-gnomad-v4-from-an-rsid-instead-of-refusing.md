@@ -34,3 +34,15 @@ If the design stage finds a further shipped assertion that pins the old refusal 
 ## Verification note
 
 The reference values were confirmed against the gnomAD GraphQL API for `11-5227002-T-A` in `gnomad_r4` on 2026-08-19: exomes AC 2335, AN 1458356, 31 homozygotes, grpmax FAF95 0.05474387 (afr); genomes AC 1937, AN 152294, grpmax FAF95 0.04188667 (afr). The development build already reproduces every one of these exactly when given the GRCh38 accession, so the data path is correct and only the identifier path is at fault.
+
+## Addendum, 2026-08-20 — the source inventories
+
+Attempt 1 refused at code review on traceability: commit `49d4ba10`, an ordinary `code:` commit, changed `src/cli/health/tests/catalog.rs` and `tests/test_source_licensing_docs_contract.py`. The refusal is correct — a test may only change in a commit whose message says a test-owning stage made it — and the branch was cleared rather than continued, because a commit-history refusal cannot be repaired by adding a later commit. The discarded work is preserved under the tag `attempt/1022-20260820-1`.
+
+The changes themselves were right, and the ticket should have foreseen them. This ticket makes dbSNP a registered source, and both of those files enumerate every source the project has: one lists the names the health inventory must report and what each affects, the other maps source modules to their licensing entries. Adding a source adds a line to each. That is not restating an assertion to match the code — it is an inventory acquiring the entry the work just created.
+
+Restatement is authorized in `src/cli/health/tests/catalog.rs` and `tests/test_source_licensing_docs_contract.py`, bounded strictly to adding the dbSNP entry to a list that enumerates sources — its name in the health inventory, what it affects, and its licensing module mapping. Nothing else in either file is opened. No existing entry may be removed, renamed, or weakened, and no assertion about any other source may change.
+
+These additions belong in a `design:` or `design-review:` commit, like every other test change. That is the whole of what went wrong: the content was correct and its placement was not.
+
+Everything the ticket already said stands. In particular, the two named tests in `src/entities/variant/get/tests.rs` and `src/render/markdown/variant/tests.rs` keep their existing bounds, the GRCh37-is-never-GRCh38 assertions keep full strength, and the instruction above still holds — a further shipped assertion that pins the old refusal, not named here, is a ticket amendment and not a design decision. Nothing in this addendum authorizes touching an assertion about the refusal behavior; it covers source inventories only.
