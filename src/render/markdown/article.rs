@@ -79,8 +79,8 @@ pub fn article_markdown(
         show_semantic_scholar_section => show_semantic_scholar_section,
         sections_block => format_sections_block("article", article.pmid.as_deref().or(article.pmcid.as_deref()).or(article.doi.as_deref()).unwrap_or(""), sections_article(article, requested_sections)),
         related_block => format_related_block(related_article(article)),
+        source_states => section_render_contexts("article", &article.section_outcomes),
     })?;
-    let body = append_source_state_messages(body, "article", &article.section_outcomes);
     Ok(append_evidence_urls(body, article_evidence_urls(article)))
 }
 

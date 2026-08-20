@@ -55,7 +55,9 @@ Use `--raw` for the full truncated FDA label text.
 {% if show_civic_section -%}
 ## CIViC
 
-{% if civic -%}
+{% if source_states.civic.status %}{{ source_states.civic.status }}
+{% endif -%}
+{% if source_states.civic.payload_allowed and civic -%}
 - Evidence Items: {{ civic.evidence_total_count }}
 - Assertions: {{ civic.assertion_total_count }}
 {% if civic.assertions -%}
@@ -73,7 +75,7 @@ Use `--raw` for the full truncated FDA label text.
 {% else -%}
 No CIViC records returned for this drug query.
 {% endif -%}
-{% else -%}
+{% elif source_states.civic.empty_allowed -%}
 No CIViC records returned for this drug query.
 {% endif -%}
 {% endif -%}
@@ -94,22 +96,27 @@ No CIViC records returned for this drug query.
 {{ mechanism }}
 {% endif -%}
 {% endif -%}
-{% if show_targets_section and (targets or variant_targets) -%}
+{% if show_targets_section and (targets or variant_targets or source_states.targets.status) -%}
 ## Targets (ChEMBL / Open Targets)
-{% if target_family or target_family_name -%}
+{% if source_states.targets.status %}{{ source_states.targets.status }}
+{% endif -%}
+{% if source_states.targets.payload_allowed and target_family or target_family_name -%}
 Family: {{ target_family or target_family_name }}{% if target_family and target_family_name %} ({{ target_family_name }}){% endif %}
 Members: {{ targets | join(", ") }}
-{% elif targets -%}
+{% elif source_states.targets.payload_allowed and targets -%}
 {{ targets | join(", ") }}
 {% endif -%}
-{% if variant_targets -%}
+{% if source_states.targets.payload_allowed and variant_targets -%}
 Variant Targets (CIViC): {{ variant_targets | join(", ") }}
 {% endif -%}
 {% endif -%}
-{% if show_indications_section and indications -%}
+{% if show_indications_section and (indications or source_states.indications.status) -%}
 ## Indications (Open Targets)
 
-{{ indications | join(", ") }}
+{% if source_states.indications.status %}{{ source_states.indications.status }}
+{% endif -%}
+{% if source_states.indications.payload_allowed and indications %}{{ indications | join(", ") }}
+{% endif -%}
 {% endif -%}
 {% if show_interactions_section -%}
 ## {{ drug_interactions_heading }}

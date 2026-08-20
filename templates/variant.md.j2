@@ -16,8 +16,11 @@ rsID: {% if rsid %}{{ rsid }}{% else %}Not reported{% endif %}
 Source: MyVariant.info / ClinVar
 {{ civic_actionability_pointer }}
 {% endif -%}
-{% if show_prediction_section and prediction -%}
+{% if show_prediction_section and (prediction or source_states.predict.status) -%}
 ## AlphaGenome Prediction
+{% if source_states.predict.status %}{{ source_states.predict.status }}
+{% endif -%}
+{% if source_states.predict.payload_allowed and prediction -%}
 {% if prediction.expression_lfc is not none %}Expression LFC: {{ prediction.expression_lfc | score }}{% if expression_interpretation %} ({{ expression_interpretation }}){% endif %}
 {% endif -%}
 {% if prediction.splice_score is not none %}Splice Score: {{ prediction.splice_score | score }}{% if splice_interpretation %} ({{ splice_interpretation }}){% endif %}
@@ -26,6 +29,7 @@ Source: MyVariant.info / ClinVar
 {% endif -%}
 Top Affected Gene (Ensembl ID when available): {% if prediction.top_gene %}{{ prediction.top_gene }}{% else %}-{% endif %}
 Note: AlphaGenome reports this field as a gene-level identifier from its model output.
+{% endif -%}
 {% endif -%}
 {% if show_clinvar_section and (conditions or clinvar_id or clinvar_conditions) -%}
 ## ClinVar
@@ -78,7 +82,9 @@ No expanded prediction scores reported.
 {% endif -%}
 {% if show_population_section -%}
 ## Population (direct gnomAD v4)
-{% if population -%}
+{% if source_states.population.status %}{{ source_states.population.status }}
+{% endif -%}
+{% if source_states.population.payload_allowed and population -%}
 Dataset: `{{ population.dataset }}` ({{ population.release }})
 {% if population.status != "data" -%}
 {{ population.message }}
@@ -115,7 +121,7 @@ No genome result in {{ population.release }}.
 {% endif -%}
 {{ population.faf_caveat }}
 {% endif -%}
-{% else -%}
+{% elif source_states.population.empty_allowed -%}
 Population data was not requested.
 {% endif -%}
 {% endif -%}
@@ -144,6 +150,9 @@ No CGI drug associations reported.
 {% endif -%}
 {% if show_civic_section -%}
 ## CIViC
+{% if source_states.civic.status %}{{ source_states.civic.status }}
+{% endif -%}
+{% if source_states.civic.payload_allowed -%}
 Caveat: CIViC evidence may lag current standard of care — cross-check the literature and therapy layers.
 See also: `variant articles {{ variant_command_arg }}`{% if gene %} / `gene drugs {{ gene_command_arg }}`{% endif %}
 {% if civic -%}
@@ -176,8 +185,9 @@ See also: `variant articles {{ variant_command_arg }}`{% if gene %} / `gene drug
 {% if (not civic.cached_evidence) and (not civic.graphql) -%}
 No CIViC records returned for this variant.
 {% endif -%}
-{% else -%}
+{% elif source_states.civic.empty_allowed -%}
 No CIViC records returned for this variant.
+{% endif -%}
 {% endif -%}
 {% endif -%}
 {% if not section_only and (cadd_score or sift_pred or polyphen_pred) -%}
@@ -192,36 +202,44 @@ No CIViC records returned for this variant.
 - PolyPhen: {{ polyphen_pred }}
 {% endif -%}
 {% endif -%}
-{% if show_cancerhotspots_section and cancerhotspots -%}
+{% if show_cancerhotspots_section and (cancerhotspots or source_states.cancerhotspots.status) -%}
 ## Cancerhotspots.org Recurrence
+{% if source_states.cancerhotspots.status %}{{ source_states.cancerhotspots.status }}
+{% endif -%}
+{% if source_states.cancerhotspots.payload_allowed and cancerhotspots -%}
 Source: {{ cancerhotspots.source }}
 Matched transcript: {{ cancerhotspots.matched_transcript or "Not matched" }}
 Position count: {% if cancerhotspots.position_count is not none %}{{ cancerhotspots.position_count }}{% else %}Not a cancerhotspots hotspot{% endif %}
 Same amino-acid count: {% if cancerhotspots.same_aa_count is not none %}{{ cancerhotspots.same_aa_count }}{% else %}Not a cancerhotspots hotspot{% endif %}
 {% endif -%}
+{% endif -%}
 {% if show_cbioportal_section -%}
 ## cBioPortal
-{% if cancer_frequencies -%}
+{% if source_states.cbioportal.status %}{{ source_states.cbioportal.status }}
+{% endif -%}
+{% if source_states.cbioportal.payload_allowed and cancer_frequencies -%}
 | Cancer Type | Samples | Frequency |
 |---|---|---|
 {% for cf in cancer_frequencies -%}
 | {{ cf.cancer_type }} | {{ cf.sample_count }} | {{ cf.frequency | af }} |
 {% endfor %}
-{% else -%}
+{% elif source_states.cbioportal.empty_allowed -%}
 No cBioPortal frequency data available.
 {% endif -%}
 {% endif -%}
 {% if show_gwas_section -%}
 ## GWAS (GWAS Catalog)
+{% if source_states.gwas.status %}{{ source_states.gwas.status }}
+{% endif -%}
 {% if gwas_unavailable_reason -%}
 {{ gwas_unavailable_reason }}
-{% elif gwas -%}
+{% elif source_states.gwas.payload_allowed and gwas -%}
 | rsID | Trait | p-value | Effect | Confidence | Risk AF | Risk Allele | Study | PMID | Author |
 |---|---|---|---|---|---|---|---|---|---|
 {% for row in gwas -%}
 | {{ row.rsid }} | {{ row.trait_name or "-" }} | {% if row.p_value is defined and row.p_value is not none %}{{ row.p_value.scientific }}{% else %}-{% endif %} | {% if row.effect_size is defined and row.effect_size is not none %}{{ row.effect_type or "effect" }} {{ row.effect_size | score }}{% else %}-{% endif %} | {{ row.confidence_interval or "-" }} | {% if row.risk_allele_frequency is defined and row.risk_allele_frequency is not none %}{{ row.risk_allele_frequency | af }}{% else %}-{% endif %} | {{ row.risk_allele or "-" }} | {{ row.study_accession or "-" }} | {{ row.pmid or "-" }} | {{ row.author or "-" }} |
 {% endfor -%}
-{% else -%}
+{% elif source_states.gwas.empty_allowed -%}
 No GWAS associations found for this variant.
 {% endif -%}
 {% endif -%}

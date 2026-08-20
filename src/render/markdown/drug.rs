@@ -40,6 +40,18 @@ pub fn drug_markdown_with_region(
     } else {
         None
     };
+    let source_states = section_render_contexts("drug", &drug.section_outcomes);
+    let safety_state = source_states
+        .get("safety")
+        .expect("registered drug safety state");
+    let safety_status = safety_state.status.as_deref();
+    let approvals_heading = source_states
+        .get("approvals")
+        .and_then(|state| state.status.as_deref())
+        .map_or_else(
+            || "## Drugs@FDA Approvals".to_string(),
+            |status| format!("## Drugs@FDA Approvals\n\n{status}"),
+        );
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&drug.name, requested_sections),
@@ -76,19 +88,15 @@ pub fn drug_markdown_with_region(
         show_interactions_section => show_interactions_section,
         show_civic_section => show_civic_section,
         regulatory_block => if show_regulatory_section { render_regulatory_block(drug, region) } else { String::new() },
-        safety_block => if show_safety_section { render_safety_block(drug, region) } else { String::new() },
+        safety_block => if show_safety_section { render_safety_block(drug, region, safety_status, safety_state.payload_allowed) } else { String::new() },
         shortage_block => if show_shortage_section { render_shortage_block(drug, region) } else { String::new() },
         approvals_block => if show_approvals_section {
             match drug.section_outcomes.get("approvals").map(|value| value.outcome()) {
-                Some(SectionOutcomeState::Unavailable) => format!(
-                    "## Drugs@FDA Approvals\n\n{}\n",
-                    drug.section_outcomes
-                        .get("approvals")
-                        .and_then(|value| value.message())
-                        .unwrap_or("Drugs@FDA approvals are unavailable.")
-                ),
+                Some(SectionOutcomeState::Unavailable | SectionOutcomeState::Inapplicable) => {
+                    format!("{approvals_heading}\n")
+                },
                 _ => render_us_approvals_block(
-                    "## Drugs@FDA Approvals",
+                    &approvals_heading,
                     drug.approvals.as_deref(),
                 ),
             }
@@ -97,8 +105,8 @@ pub fn drug_markdown_with_region(
         },
         sections_block => format_sections_block("drug", &drug.name, sections_drug(drug, requested_sections)),
         related_block => format_related_block(related_drug(drug)),
+        source_states => source_states,
     })?;
-    let body = append_source_state_messages(body, "drug", &drug.section_outcomes);
     Ok(append_evidence_urls(body, drug_evidence_urls(drug)))
 }
 

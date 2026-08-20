@@ -56,7 +56,9 @@ These are PubTator normalized entity mentions for standardized extraction of gen
 {% if show_fulltext_section and fulltext_outcome and fulltext_outcome.outcome != "not_requested" -%}
 ## Full Text{% if fulltext_outcome.outcome == "data" and full_text_source %} ({{ full_text_source.label }}){% endif %}
 
-{% if fulltext_outcome.outcome == "data" -%}
+{% if source_states.fulltext.status %}{{ source_states.fulltext.status }}
+{% endif -%}
+{% if source_states.fulltext.payload_allowed and fulltext_outcome.outcome == "data" -%}
 Saved to: {{ full_text_path }}
 {% if not_included -%}
 
@@ -64,19 +66,22 @@ Assets not inlined; retrieve the JSON manifest with `{{ not_included.figure_imag
 {% endif -%}
 {% elif full_text_coverage and full_text_coverage.coverage == "abstract_only" and fulltext_outcome.outcome == "unavailable" -%}
 Abstract found, but complete article-body retrieval was unavailable.
-{% elif full_text_coverage and full_text_coverage.coverage == "abstract_only" -%}
+{% elif source_states.fulltext.empty_allowed and full_text_coverage and full_text_coverage.coverage == "abstract_only" -%}
 Abstract found; article body not available.
 {% elif full_text_coverage and full_text_coverage.coverage == "metadata_only" and fulltext_outcome.outcome == "unavailable" -%}
 Article metadata found, but complete article-body retrieval was unavailable.
-{% elif full_text_coverage and full_text_coverage.coverage == "metadata_only" -%}
+{% elif source_states.fulltext.empty_allowed and full_text_coverage and full_text_coverage.coverage == "metadata_only" -%}
 Article metadata found; article body not available.
-{% else -%}
+{% elif source_states.fulltext.payload_allowed -%}
 {{ full_text_note }}
 {% endif -%}
 {% endif -%}
-{% if show_indexing_section and indexing -%}
+{% if show_indexing_section and (indexing or source_states.indexing.status) -%}
 ## Article Indexing
 
+{% if source_states.indexing.status %}{{ source_states.indexing.status }}
+{% endif -%}
+{% if source_states.indexing.payload_allowed and indexing -%}
 Status: {{ indexing.status }}
 Source: PubMed
 {% if indexing.status == "available" -%}
@@ -115,9 +120,13 @@ Failure code: {{ indexing.failure.code }}
 {% endif -%}
 {% endif -%}
 {% endif -%}
-{% if show_semantic_scholar_section and semantic_scholar -%}
+{% endif -%}
+{% if show_semantic_scholar_section and (semantic_scholar or source_states.tldr.status) -%}
 ## Semantic Scholar
 
+{% if source_states.tldr.status %}{{ source_states.tldr.status }}
+{% endif -%}
+{% if source_states.tldr.payload_allowed and semantic_scholar -%}
 {% if semantic_scholar.paper_id %}Paper ID: {{ semantic_scholar.paper_id }}{% endif %}
 {% if semantic_scholar.tldr %}TLDR: {{ semantic_scholar.tldr }}{% endif %}
 {% if semantic_scholar.citation_count is not none %}Citations: {{ semantic_scholar.citation_count }}{% endif %}
@@ -128,6 +137,7 @@ Failure code: {{ indexing.failure.code }}
 {% if semantic_scholar.open_access_pdf.url %}Open-access PDF: {{ semantic_scholar.open_access_pdf.url }}{% endif %}
 {% if semantic_scholar.open_access_pdf.status %}PDF status: {{ semantic_scholar.open_access_pdf.status }}{% endif %}
 {% if semantic_scholar.open_access_pdf.license %}PDF license: {{ semantic_scholar.open_access_pdf.license }}{% endif %}
+{% endif -%}
 {% endif -%}
 {% endif -%}
 {% if sections_block %}{{ sections_block }}

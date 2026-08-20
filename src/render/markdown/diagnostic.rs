@@ -49,18 +49,19 @@ pub fn diagnostic_markdown(
         supports("conditions") && (include_all || has_requested("conditions"));
     let show_methods_section = supports("methods") && (include_all || has_requested("methods"));
     let show_regulatory_section = supports("regulatory") && has_requested("regulatory");
-    let regulatory_unavailable =
-        diagnostic
-            .section_outcomes
-            .get("regulatory")
-            .is_some_and(|outcome| {
-                outcome.outcome()
-                    == crate::entities::section_outcome::SectionOutcomeState::Unavailable
-            });
-    let regulatory_block = if show_regulatory_section && regulatory_unavailable {
-        "## Regulatory (FDA Device)\n\n".to_string()
-    } else if show_regulatory_section {
-        render_regulatory_block(diagnostic.regulatory.as_deref())
+    let source_states = section_render_contexts("diagnostic", &diagnostic.section_outcomes);
+    let regulatory_state = source_states
+        .get("regulatory")
+        .expect("registered diagnostic regulatory state");
+    let regulatory_status = regulatory_state.status.as_deref();
+    let regulatory_block = if show_regulatory_section {
+        render_regulatory_block(
+            regulatory_state
+                .payload_allowed
+                .then_some(diagnostic.regulatory.as_deref())
+                .flatten(),
+            regulatory_status,
+        )
     } else {
         String::new()
     };
@@ -97,20 +98,25 @@ pub fn diagnostic_markdown(
             sections_diagnostic(diagnostic, requested_sections),
         ),
         related_block => format_related_block(related_diagnostic(diagnostic)),
+        source_states => source_states,
     })?;
-    Ok(append_source_state_messages(
-        body,
-        "diagnostic",
-        &diagnostic.section_outcomes,
-    ))
+    Ok(body)
 }
 
-fn render_regulatory_block(rows: Option<&[DiagnosticRegulatoryRecord]>) -> String {
+fn render_regulatory_block(
+    rows: Option<&[DiagnosticRegulatoryRecord]>,
+    status: Option<&str>,
+) -> String {
     let Some(rows) = rows else {
-        return String::new();
+        return status.map_or_else(String::new, |status| {
+            format!("## Regulatory (FDA Device)\n\n{status}\n")
+        });
     };
 
     let mut out = String::from("## Regulatory (FDA Device)\n\n");
+    if let Some(status) = status {
+        let _ = writeln!(out, "{status}\n");
+    }
     if rows.is_empty() {
         out.push_str("No FDA device 510(k) or PMA records matched this diagnostic.\n\n");
         return out;

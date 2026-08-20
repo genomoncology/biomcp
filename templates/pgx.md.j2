@@ -57,16 +57,18 @@ Next: `biomcp get pgx {{ query }} recommendations --offset {{ section_pagination
 {% if show_frequencies_section -%}
 ## Population Frequencies (CPIC)
 
-{% if frequencies -%}
+{% if source_states.frequencies.status %}{{ source_states.frequencies.status }}
+{% endif -%}
+{% if source_states.frequencies.payload_allowed and frequencies -%}
 | Gene | Allele | Population | Frequency | Subjects |
 |---|---|---|---|---|
 {% for row in frequencies -%}
 | {{ row.genesymbol }} | {{ row.allele }} | {{ row.population_group or "-" }} | {% if row.frequency is defined and row.frequency is not none %}{{ row.frequency | af }}{% else %}-{% endif %} | {% if row.subject_count is defined and row.subject_count is not none %}{{ row.subject_count }}{% else %}-{% endif %} |
 {% endfor -%}
-{% else -%}
+{% elif source_states.frequencies.empty_allowed -%}
 No CPIC population frequencies found for this query.
 {% endif -%}
-{% if section_pagination.frequencies and section_pagination.frequencies.next_offset is not none -%}
+{% if source_states.frequencies.payload_allowed and section_pagination.frequencies and section_pagination.frequencies.next_offset is not none -%}
 Next: `biomcp get pgx {{ query }} frequencies --offset {{ section_pagination.frequencies.next_offset }} --limit {{ section_pagination.frequencies.limit }}`
 {% endif -%}
 {% endif -%}
@@ -91,19 +93,21 @@ Next: `biomcp get pgx {{ query }} guidelines --offset {{ section_pagination.guid
 {% if show_annotations_section -%}
 ## PharmGKB Annotations
 
-{% if annotations -%}
+{% if source_states.annotations.status %}{{ source_states.annotations.status }}
+{% endif -%}
+{% if source_states.annotations.payload_allowed and annotations -%}
 | Source | Type | ID | Title | Level |
 |---|---|---|---|---|
 {% for row in annotations -%}
 | {{ row.source }} | {{ row.kind }} | {{ row.id }} | {% if row.url %}[{{ row.title }}]({{ row.url }}){% else %}{{ row.title }}{% endif %} | {{ row.level or "-" }} |
 {% endfor -%}
-{% elif show_annotations_empty -%}
+{% elif source_states.annotations.empty_allowed and show_annotations_empty -%}
 No PharmGKB annotations found for this query.
 {% endif -%}
-{% if annotations_note -%}
+{% if source_states.annotations.payload_allowed and annotations_note -%}
 {{ annotations_note }}
 {% endif -%}
-{% if section_pagination.annotations and section_pagination.annotations.next_offset is not none -%}
+{% if source_states.annotations.payload_allowed and section_pagination.annotations and section_pagination.annotations.next_offset is not none -%}
 Next: `biomcp get pgx {{ query }} annotations --offset {{ section_pagination.annotations.next_offset }} --limit {{ section_pagination.annotations.limit }}`
 {% endif -%}
 {% endif -%}

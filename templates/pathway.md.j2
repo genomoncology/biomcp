@@ -13,25 +13,36 @@ ID: {{ id }}
 {{ summary }}
 {% endif -%}
 {% endif -%}
-{% if show_genes_section and genes -%}
+{% if show_genes_section and (genes or source_states.genes.status) -%}
 ## Genes ({{ pathway_source_label }})
 
-{{ genes | join(", ") }}
+{% if source_states.genes.status %}{{ source_states.genes.status }}
 {% endif -%}
-{% if show_events_section and events -%}
+{% if source_states.genes.payload_allowed and genes %}{{ genes | join(", ") }}
+{% endif -%}
+{% endif -%}
+{% if show_events_section and (events or source_states.events.status) -%}
 ## Events ({{ pathway_source_label }})
+{% if source_states.events.status %}{{ source_states.events.status }}
+{% endif -%}
+{% if source_states.events.payload_allowed and events -%}
 {% for event in events -%}
 - {{ event }}
 {% endfor -%}
 {% endif -%}
-{% if show_enrichment_section and enrichment -%}
+{% endif -%}
+{% if show_enrichment_section and (enrichment or source_states.enrichment.status) -%}
 ## Enrichment (g:Profiler)
 
+{% if source_states.enrichment.status %}{{ source_states.enrichment.status }}
+{% endif -%}
+{% if source_states.enrichment.payload_allowed and enrichment -%}
 | Source | ID | Name | P-value |
 |---|---|---|---|
 {% for row in enrichment -%}
 | {{ row.source }} | {{ row.id }} | {{ row.name | truncate(55) }} | {% if row.p_value is not none %}{{ row.p_value | pval }}{% else %}-{% endif %} |
 {% endfor -%}
+{% endif -%}
 {% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}

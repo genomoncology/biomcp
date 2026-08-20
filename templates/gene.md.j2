@@ -28,18 +28,25 @@ Aliases are alternate names used in literature and databases when a paper does n
 {{ aliases | join(", ") }}
 {% endif -%}
 {% endif -%}
-{% if pathways -%}
+{% if pathways or source_states.pathways.status -%}
 ## Pathways
 
+{% if source_states.pathways.status %}{{ source_states.pathways.status }}
+{% endif -%}
+{% if source_states.pathways.payload_allowed and pathways -%}
 | Source | ID | Name |
 |---|---|---|
 {% for pathway in pathways -%}
 | {{ pathway.source }} | {{ pathway.id }} | {{ pathway.name | truncate(75) }} |
 {% endfor -%}
 {% endif -%}
-{% if ontology -%}
+{% endif -%}
+{% if ontology or source_states.ontology.status -%}
 ## Ontology (Enrichr)
 
+{% if source_states.ontology.status %}{{ source_states.ontology.status }}
+{% endif -%}
+{% if source_states.ontology.payload_allowed and ontology -%}
 Note: single-gene Enrichr p-values are exploratory and should be interpreted cautiously.
 
 | Term | P-value | Library |
@@ -50,9 +57,13 @@ Note: single-gene Enrichr p-values are exploratory and should be interpreted cau
 {% endfor -%}
 {% endfor -%}
 {% endif -%}
-{% if diseases -%}
+{% endif -%}
+{% if diseases or source_states.diseases.status -%}
 ## Diseases (Enrichr)
 
+{% if source_states.diseases.status %}{{ source_states.diseases.status }}
+{% endif -%}
+{% if source_states.diseases.payload_allowed and diseases -%}
 | Term | P-value | Library |
 |---|---|---|
 {% for lib in diseases -%}
@@ -61,24 +72,30 @@ Note: single-gene Enrichr p-values are exploratory and should be interpreted cau
 {% endfor -%}
 {% endfor -%}
 {% endif -%}
+{% endif -%}
 {% if show_diagnostics_section -%}
 ## Diagnostics
 
-{% if diagnostic_rows -%}
+{% if source_states.diagnostics.status %}{{ source_states.diagnostics.status }}
+{% endif -%}
+{% if source_states.diagnostics.payload_allowed and diagnostic_rows -%}
 | Accession | Name | Type | Manufacturer / Lab | Source | Genes | Conditions |
 |---|---|---|---|---|---|---|
 {% for row in diagnostic_rows -%}
 | {{ row.accession }} | {{ row.name }} | {{ row.test_type or "-" }} | {{ row.manufacturer_or_lab or "-" }} | {{ row.source_label }} | {{ row.genes_cell }} | {{ row.conditions_cell }} |
 {% endfor -%}
-{% elif diagnostics_note -%}
+{% elif source_states.diagnostics.payload_allowed and diagnostics_note -%}
 {{ diagnostics_note }}
-{% else -%}
+{% elif source_states.diagnostics.empty_allowed -%}
 No diagnostic tests found for this gene.
 {% endif -%}
 {% endif -%}
-{% if protein -%}
+{% if protein or source_states.protein.status -%}
 ## Protein (UniProt)
 
+{% if source_states.protein.status %}{{ source_states.protein.status }}
+{% endif -%}
+{% if source_states.protein.payload_allowed and protein -%}
 - Accession: {{ protein.accession }}
 - Name: {{ protein.name }}
 {% if protein.alternative_names %}- Also known as: {{ protein.alternative_names | join(", ") }}
@@ -87,25 +104,36 @@ No diagnostic tests found for this gene.
 {%- endif %}
 {% if protein.function %}- Function: {{ protein.function }}{% endif %}
 {% endif -%}
-{% if go_terms -%}
+{% endif -%}
+{% if go_terms or source_states.go.status -%}
 ## GO Terms (QuickGO)
 
+{% if source_states.go.status %}{{ source_states.go.status }}
+{% endif -%}
+{% if source_states.go.payload_allowed and go_terms -%}
 | ID | Name | Aspect | Evidence |
 |---|---|---|---|
 {% for term in go_terms -%}
 | {{ term.id }} | {{ term.name | truncate(42) }} | {{ term.aspect or "-" }} | {{ term.evidence or "-" }} |
 {% endfor -%}
 {% endif -%}
-{% if interactions -%}
+{% endif -%}
+{% if interactions or source_states.interactions.status -%}
 ## Interactions (STRING)
+{% if source_states.interactions.status %}{{ source_states.interactions.status }}
+{% endif -%}
+{% if source_states.interactions.payload_allowed and interactions -%}
 {% for row in interactions -%}
 {{ row.partner }}: {% if row.score is not none %}{{ row.score | score }}{% else %}-{% endif %}
 {% endfor -%}
 {% endif -%}
+{% endif -%}
 {% if show_funding_section -%}
 ## Funding (NIH Reporter)
 
-{% if funding_rows -%}
+{% if source_states.funding.status %}{{ source_states.funding.status }}
+{% endif -%}
+{% if source_states.funding.payload_allowed and funding_rows -%}
 | Project | PI | Organization | FY | Amount |
 |---|---|---|---|---|
 {% for row in funding_rows -%}
@@ -113,16 +141,18 @@ No diagnostic tests found for this gene.
 {% endfor -%}
 
 {{ funding_summary }}
-{% elif funding_note -%}
+{% elif source_states.funding.payload_allowed and funding_note -%}
 {{ funding_note }}
-{% else -%}
+{% elif source_states.funding.empty_allowed -%}
 No NIH funding data found for this query.
 {% endif -%}
 {% endif -%}
 {% if show_civic_section -%}
 ## CIViC
 
-{% if civic -%}
+{% if source_states.civic.status %}{{ source_states.civic.status }}
+{% endif -%}
+{% if source_states.civic.payload_allowed and civic -%}
 - Evidence Items: {{ civic.evidence_total_count }}
 - Assertions: {{ civic.assertion_total_count }}
 {% if civic.assertions -%}
@@ -140,27 +170,31 @@ No NIH funding data found for this query.
 {% else -%}
 No CIViC records returned for this gene query.
 {% endif -%}
-{% else -%}
+{% elif source_states.civic.empty_allowed -%}
 No CIViC records returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_expression_section -%}
 ## Expression (GTEx)
 
-{% if expression and expression.tissues -%}
+{% if source_states.expression.status %}{{ source_states.expression.status }}
+{% endif -%}
+{% if source_states.expression.payload_allowed and expression and expression.tissues -%}
 | Tissue | Median TPM |
 |---|---|
 {% for row in expression.tissues -%}
 | {{ row.tissue }} | {{ row.median_tpm | score }} |
 {% endfor -%}
-{% else -%}
+{% elif source_states.expression.empty_allowed -%}
 No GTEx expression records returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_hpa_section -%}
 ## Human Protein Atlas
 
-{% if hpa and (hpa.tissues or hpa.subcellular_main_location or hpa.subcellular_additional_location or hpa.reliability or hpa.protein_summary or hpa.rna_summary) -%}
+{% if source_states.hpa.status %}{{ source_states.hpa.status }}
+{% endif -%}
+{% if source_states.hpa.payload_allowed and hpa and (hpa.tissues or hpa.subcellular_main_location or hpa.subcellular_additional_location or hpa.reliability or hpa.protein_summary or hpa.rna_summary) -%}
 {% if hpa.tissues -%}
 | Tissue | Level |
 |---|---|
@@ -173,14 +207,16 @@ No GTEx expression records returned for this gene query.
 {% if hpa.rna_summary %}- RNA summary: {{ hpa.rna_summary }}{% endif %}
 {% if hpa.subcellular_main_location %}- Subcellular main locations: {{ hpa.subcellular_main_location | join(", ") }}{% endif %}
 {% if hpa.subcellular_additional_location %}- Subcellular additional locations: {{ hpa.subcellular_additional_location | join(", ") }}{% endif %}
-{% else -%}
+{% elif source_states.hpa.empty_allowed -%}
 No Human Protein Atlas records returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_druggability_section -%}
 ## Druggability (DGIdb / Open Targets)
 
-{% if druggability -%}
+{% if source_states.druggability.status %}{{ source_states.druggability.status }}
+{% endif -%}
+{% if source_states.druggability.payload_allowed and druggability -%}
 {% if druggability.categories -%}
 Categories: {{ druggability.categories | join(", ") }}
 {% endif -%}
@@ -211,14 +247,16 @@ Categories: {{ druggability.categories | join(", ") }}
 {% else -%}
 No DGIdb interactions returned for this gene query.
 {% endif -%}
-{% else -%}
+{% elif source_states.druggability.empty_allowed -%}
 No DGIdb interactions returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_clingen_section -%}
 ## ClinGen
 
-{% if clingen -%}
+{% if source_states.clingen.status %}{{ source_states.clingen.status }}
+{% endif -%}
+{% if source_states.clingen.payload_allowed and clingen -%}
 {% if clingen.validity -%}
 ### Gene-Disease Validity
 
@@ -237,14 +275,16 @@ No DGIdb interactions returned for this gene query.
 {% if not clingen.validity and not clingen.haploinsufficiency and not clingen.triplosensitivity -%}
 No ClinGen records returned for this gene query.
 {% endif -%}
-{% else -%}
+{% elif source_states.clingen.empty_allowed -%}
 No ClinGen records returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_constraint_section -%}
 ## Constraint (gnomAD)
 
-{% if constraint -%}
+{% if source_states.constraint.status %}{{ source_states.constraint.status }}
+{% endif -%}
+{% if source_states.constraint.payload_allowed and constraint -%}
 - Source: {{ constraint.source }}
 - Version: {{ constraint.source_version }}
 - Reference genome: {{ constraint.reference_genome }}
@@ -256,20 +296,22 @@ No ClinGen records returned for this gene query.
 {% if (constraint.pli is not defined or constraint.pli is none) and (constraint.loeuf is not defined or constraint.loeuf is none) and (constraint.mis_z is not defined or constraint.mis_z is none) and (constraint.syn_z is not defined or constraint.syn_z is none) -%}
 No gnomAD constraint metrics returned for this gene query.
 {% endif -%}
-{% else -%}
+{% elif source_states.constraint.empty_allowed -%}
 No gnomAD constraint metrics returned for this gene query.
 {% endif -%}
 {% endif -%}
 {% if show_disgenet_section -%}
 ## DisGeNET
 
-{% if disgenet and disgenet.associations -%}
+{% if source_states.disgenet.status %}{{ source_states.disgenet.status }}
+{% endif -%}
+{% if source_states.disgenet.payload_allowed and disgenet and disgenet.associations -%}
 | Disease | UMLS CUI | Score | PMIDs | Trials | EL | EI |
 |---|---|---|---|---|---|---|
 {% for row in disgenet.associations -%}
 | {{ row.disease_name | truncate(45) }} | {{ row.disease_cui }} | {{ row.score | score }} | {% if row.publication_count is defined and row.publication_count is not none %}{{ row.publication_count }}{% else %}-{% endif %} | {% if row.clinical_trial_count is defined and row.clinical_trial_count is not none %}{{ row.clinical_trial_count }}{% else %}-{% endif %} | {{ row.evidence_level or "-" }} | {% if row.evidence_index is defined and row.evidence_index is not none %}{{ row.evidence_index | score }}{% else %}-{% endif %} |
 {% endfor -%}
-{% elif show_disgenet_empty -%}
+{% elif source_states.disgenet.empty_allowed and show_disgenet_empty -%}
 No DisGeNET associations returned for this gene query.
 {% endif -%}
 {% endif -%}

@@ -17,8 +17,11 @@ Source: UniProt
 {{ function }}
 {% endif -%}
 {% endif -%}
-{% if show_structures_section and structures -%}
+{% if show_structures_section and (structures or source_states.structures.status) -%}
 ## Structures (PDB / AlphaFold via UniProt)
+{% if source_states.structures.status %}{{ source_states.structures.status }}
+{% endif -%}
+{% if source_states.structures.payload_allowed and structures -%}
 {% if structure_count and structure_count > (structures | length) -%}
 Showing top {{ structures | length }} of {{ structure_count }} structures by resolution.
 {% endif -%}
@@ -26,27 +29,39 @@ Showing top {{ structures | length }} of {{ structure_count }} structures by res
 - {{ s }}
 {% endfor -%}
 {% endif -%}
-{% if show_domains_section and domains -%}
+{% endif -%}
+{% if show_domains_section and (domains or source_states.domains.status) -%}
 ## Domains (InterPro)
 
+{% if source_states.domains.status %}{{ source_states.domains.status }}
+{% endif -%}
+{% if source_states.domains.payload_allowed and domains -%}
 | Accession | Name | Type |
 |---|---|---|
 {% for d in domains -%}
 | {{ d.accession }} | {{ d.name or "-" }} | {{ d.domain_type or "-" }} |
 {% endfor -%}
 {% endif -%}
-{% if show_interactions_section and interactions -%}
+{% endif -%}
+{% if show_interactions_section and (interactions or source_states.interactions.status) -%}
 ## Interactions (STRING)
 
+{% if source_states.interactions.status %}{{ source_states.interactions.status }}
+{% endif -%}
+{% if source_states.interactions.payload_allowed and interactions -%}
 | Partner | Score |
 |---|---|
 {% for i in interactions -%}
 | {{ i.partner }} | {% if i.score is not none %}{{ i.score | score }}{% else %}-{% endif %} |
 {% endfor -%}
 {% endif -%}
-{% if show_complexes_section and complexes -%}
+{% endif -%}
+{% if show_complexes_section and (complexes or source_states.complexes.status) -%}
 ## Complexes (ComplexPortal)
 
+{% if source_states.complexes.status %}{{ source_states.complexes.status }}
+{% endif -%}
+{% if source_states.complexes.payload_allowed and complexes -%}
 | ID | Name | Members | Curation |
 |---|---|---:|---|
 {% for c in complexes -%}
@@ -56,6 +71,7 @@ Showing top {{ structures | length }} of {{ structure_count }} structures by res
 - `{{ c.accession }}` members ({{ c.component_count }}): {{ c.component_preview }}{% if c.remaining_count > 0 %}, +{{ c.remaining_count }} more{% endif %}{% if c.description %}
   Description: {{ c.description }}{% endif %}
 {% endfor -%}
+{% endif -%}
 {% endif -%}
 {% if sections_block %}{{ sections_block }}
 {% endif -%}

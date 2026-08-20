@@ -508,13 +508,30 @@ pub(super) fn render_regulatory_block(drug: &Drug, region: DrugRegion) -> String
     }
 }
 
-pub(super) fn render_safety_block(drug: &Drug, region: DrugRegion) -> String {
+pub(super) fn render_safety_block(
+    drug: &Drug,
+    region: DrugRegion,
+    status: Option<&str>,
+    payload_allowed: bool,
+) -> String {
+    if !payload_allowed {
+        let heading = match region {
+            DrugRegion::Us | DrugRegion::All => "## Safety (US - OpenFDA)",
+            DrugRegion::Eu => "## Safety (EU - EMA)",
+            DrugRegion::Who => return String::new(),
+        };
+        return status.map_or_else(String::new, |status| format!("{heading}\n\n{status}\n"));
+    }
+    let us_heading = status.map_or_else(
+        || "## Safety (US - OpenFDA)".to_string(),
+        |status| format!("## Safety (US - OpenFDA)\n\n{status}"),
+    );
     match region {
-        DrugRegion::Us => render_us_safety_block(drug, "## Safety (US - OpenFDA)"),
+        DrugRegion::Us => render_us_safety_block(drug, &us_heading),
         DrugRegion::Eu => render_eu_safety_block("## Safety (EU - EMA)", drug.ema_safety.as_ref()),
         DrugRegion::Who => String::new(),
         DrugRegion::All => {
-            let us = render_us_safety_block(drug, "## Safety (US - OpenFDA)");
+            let us = render_us_safety_block(drug, &us_heading);
             let eu = render_eu_safety_block("## Safety (EU - EMA)", drug.ema_safety.as_ref());
             [us, eu]
                 .into_iter()

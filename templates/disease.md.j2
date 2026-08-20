@@ -15,10 +15,18 @@ Genes (Open Targets): {{ top_gene_score_labels | join(", ") }}
 {% elif top_genes -%}
 Genes (Open Targets): {{ top_genes | join(", ") }}
 {% endif -%}
-{% if treatment_landscape -%}
+{% if source_states.treatments.status -%}
+## Treatments (MyChem.info indication search)
+
+{{ source_states.treatments.status }}
+{% elif treatment_landscape -%}
 Treatments (MyChem.info indication search): {{ treatment_landscape | join(", ") }}
 {% endif -%}
-{% if recruiting_trial_count is not none -%}
+{% if source_states.recruiting_trials.status -%}
+## Recruiting Trials (ClinicalTrials.gov)
+
+{{ source_states.recruiting_trials.status }}
+{% elif recruiting_trial_count is not none -%}
 Recruiting Trials (ClinicalTrials.gov): {{ recruiting_trial_count }}
 {% endif -%}
 {% if synonyms -%}
@@ -35,33 +43,39 @@ Recruiting Trials (ClinicalTrials.gov): {{ recruiting_trial_count }}
 {% if show_genes_section -%}
 ## Associated Genes
 
-{% if gene_association_rows -%}
+{% if source_states.genes.status %}{{ source_states.genes.status }}
+{% endif -%}
+{% if source_states.genes.payload_allowed and gene_association_rows -%}
 | Gene | Relationship | Source | OpenTargets |
 |---|---|---|---|
 {% for row in gene_association_rows -%}
 | {{ row.gene }} | {{ row.relationship or "-" }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source or "-" }}{% endif %} | {{ row.opentargets or "-" }} |
 {% endfor -%}
-{% elif associated_genes -%}
+{% elif source_states.genes.payload_allowed and associated_genes -%}
 {{ associated_genes | join(", ") }}
-{% else -%}
+{% elif source_states.genes.empty_allowed -%}
 No associated genes found from active sources.
 {% endif -%}
 {% endif -%}
 {% if show_pathways_section -%}
 ## Pathways (Reactome)
 
-{% if pathways -%}
+{% if source_states.pathways.status %}{{ source_states.pathways.status }}
+{% endif -%}
+{% if source_states.pathways.payload_allowed and pathways -%}
 {% for p in pathways -%}
 - {{ p.id }} - {{ p.name }}
 {% endfor -%}
-{% else -%}
+{% elif source_states.pathways.empty_allowed -%}
 No pathways found from active sources.
 {% endif -%}
 {% endif -%}
 {% if show_phenotypes_section -%}
 ## Phenotypes
 
-{% if phenotypes -%}
+{% if source_states.phenotypes.status %}{{ source_states.phenotypes.status }}
+{% endif -%}
+{% if source_states.phenotypes.payload_allowed and phenotypes -%}
 {% if key_features -%}
 ### Key Features
 
@@ -86,7 +100,7 @@ This phenotype section is source-backed and may be incomplete for the full disea
 {% for row in phenotypes -%}
 | {{ row.hpo_id }} | {{ row.name or "-" }} | {{ row.evidence or "-" }}{% if row.qualifiers %} ({{ row.qualifiers | join(", ") }}){% endif %} | {% if row.frequency_qualifier %}{{ row.frequency_qualifier }}{% elif row.frequency %}{{ row.frequency }}{% else %}-{% endif %} | {{ row.onset_qualifier or "-" }} | {{ row.sex_qualifier or "-" }} | {{ row.stage_qualifier or "-" }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source or "-" }}{% endif %} |
 {% endfor -%}
-{% else -%}
+{% elif source_states.phenotypes.empty_allowed -%}
 No phenotype annotations found for this disease.
 {% endif -%}
 {% endif -%}
@@ -106,7 +120,9 @@ No Monarch/HPO phenotype annotations found for this disease.
 {% if show_diagnostics_section -%}
 ## Diagnostics
 
-{% if diagnostic_rows -%}
+{% if source_states.diagnostics.status %}{{ source_states.diagnostics.status }}
+{% endif -%}
+{% if source_states.diagnostics.payload_allowed and diagnostic_rows -%}
 | Accession | Name | Type | Manufacturer / Lab | Source | Genes | Conditions |
 |---|---|---|---|---|---|---|
 {% for row in diagnostic_rows -%}
@@ -120,16 +136,18 @@ No Monarch/HPO phenotype annotations found for this disease.
 
 See also: `{{ diagnostic_search_command }}`
 {% endif -%}
-{% elif diagnostics_note -%}
+{% elif source_states.diagnostics.payload_allowed and diagnostics_note -%}
 {{ diagnostics_note }}
-{% else -%}
+{% elif source_states.diagnostics.empty_allowed -%}
 No diagnostic tests found for this disease.
 {% endif -%}
 {% endif -%}
 {% if show_variants_section -%}
 ## Variants
 
-{% if variants -%}
+{% if source_states.variants.status %}{{ source_states.variants.status }}
+{% endif -%}
+{% if source_states.variants.payload_allowed and variants -%}
 {% if top_variant -%}
 Top Variant: {{ top_variant.variant }}{% if top_variant.relationship %} - {{ top_variant.relationship }}{% endif %}{% if top_variant.source or top_variant.evidence_count is not none %} ({% if top_variant.source %}{{ top_variant.source }}{% endif %}{% if top_variant.source and top_variant.evidence_count is not none %}, {% endif %}{% if top_variant.evidence_count is not none %}{{ top_variant.evidence_count }} evidence item{% if top_variant.evidence_count != 1 %}s{% endif %}{% endif %}){% endif %}
 {% endif -%}
@@ -138,42 +156,48 @@ Top Variant: {{ top_variant.variant }}{% if top_variant.relationship %} - {{ top
 {% for row in variants -%}
 | {{ row.variant }} | {{ row.relationship or "-" }} | {{ row.source or "-" }} | {% if row.evidence_count is not none %}{{ row.evidence_count }}{% else %}-{% endif %} |
 {% endfor -%}
-{% else -%}
+{% elif source_states.variants.empty_allowed -%}
 No variant associations found for this disease.
 {% endif -%}
 {% endif -%}
 {% if show_models_section -%}
 ## Models
 
-{% if models -%}
+{% if source_states.models.status %}{{ source_states.models.status }}
+{% endif -%}
+{% if source_states.models.payload_allowed and models -%}
 | Model | Organism | Relationship | Source | Evidence |
 |---|---|---|---|---|
 {% for row in models -%}
 | {{ row.model }} | {{ row.organism or "-" }} | {{ row.relationship or "-" }} | {% if row.source_url %}[{{ row.source }}]({{ row.source_url }}){% else %}{{ row.source or "-" }}{% endif %} | {% if row.evidence_count is not none %}{{ row.evidence_count }}{% else %}-{% endif %} |
 {% endfor -%}
-{% else -%}
+{% elif source_states.models.empty_allowed -%}
 No model associations found for this disease.
 {% endif -%}
 {% endif -%}
 {% if show_prevalence_section -%}
 ## Prevalence
 
-{% if prevalence -%}
+{% if source_states.prevalence.status %}{{ source_states.prevalence.status }}
+{% endif -%}
+{% if source_states.prevalence.payload_allowed and prevalence -%}
 | Estimate | Context | Source |
 |---|---|---|
 {% for row in prevalence -%}
 | {{ row.estimate }} | {{ row.context or "-" }} | {{ row.source or "-" }} |
 {% endfor -%}
-{% elif prevalence_note -%}
+{% elif source_states.prevalence.payload_allowed and prevalence_note -%}
 {{ prevalence_note }}
-{% else -%}
+{% elif source_states.prevalence.empty_allowed -%}
 No prevalence data available.
 {% endif -%}
 {% endif -%}
 {% if show_survival_section -%}
 ## Survival (SEER Explorer)
 
-{% if survival -%}
+{% if source_states.survival.status %}{{ source_states.survival.status }}
+{% endif -%}
+{% if source_states.survival.payload_allowed and survival -%}
 Source: {{ survival_source_line }}
 
 | Sex | Latest observed year | 5-year relative survival | 95% CI | Cases | Latest modeled |
@@ -189,16 +213,18 @@ Source: {{ survival_source_line }}
 {% for row in survival_history_rows -%}
 | {{ row.sex }} | {{ row.year }} | {{ row.relative_survival }} | {{ row.ci_95 or "-" }} | {% if row.cases is not none %}{{ row.cases }}{% else %}-{% endif %} |
 {% endfor -%}
-{% elif survival_note -%}
+{% elif source_states.survival.payload_allowed and survival_note -%}
 {{ survival_note }}
-{% else -%}
+{% elif source_states.survival.empty_allowed -%}
 No SEER survival data available.
 {% endif -%}
 {% endif -%}
 {% if show_funding_section -%}
 ## Funding (NIH Reporter)
 
-{% if funding_rows -%}
+{% if source_states.funding.status %}{{ source_states.funding.status }}
+{% endif -%}
+{% if source_states.funding.payload_allowed and funding_rows -%}
 | Project | PI | Organization | FY | Amount |
 |---|---|---|---|---|
 {% for row in funding_rows -%}
@@ -206,16 +232,18 @@ No SEER survival data available.
 {% endfor -%}
 
 {{ funding_summary }}
-{% elif funding_note -%}
+{% elif source_states.funding.payload_allowed and funding_note -%}
 {{ funding_note }}
-{% else -%}
+{% elif source_states.funding.empty_allowed -%}
 No NIH funding data found for this query.
 {% endif -%}
 {% endif -%}
 {% if show_civic_section -%}
 ## CIViC
 
-{% if civic -%}
+{% if source_states.civic.status %}{{ source_states.civic.status }}
+{% endif -%}
+{% if source_states.civic.payload_allowed and civic -%}
 - Evidence Items: {{ civic.evidence_total_count }}
 - Assertions: {{ civic.assertion_total_count }}
 {% if civic.assertions -%}
@@ -233,7 +261,7 @@ No NIH funding data found for this query.
 {% else -%}
 No CIViC records returned for this disease query.
 {% endif -%}
-{% else -%}
+{% elif source_states.civic.empty_allowed -%}
 No CIViC records returned for this disease query.
 {% endif -%}
 {% endif -%}

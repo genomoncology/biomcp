@@ -91,7 +91,7 @@ pub use self::variant::{
     variant_oncokb_markdown, variant_search_markdown, variant_search_markdown_with_context,
     variant_search_markdown_with_footer, variant_structure_markdown,
 };
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::fmt::Write as _;
 use std::sync::OnceLock;
 
@@ -101,28 +101,51 @@ use crate::cli::debug_plan::DebugPlan;
 use crate::entities::section_outcome::{SectionOutcomeState, SectionOutcomes};
 use crate::entities::source_state_registry::SOURCE_STATE_ROWS;
 
-fn append_source_state_messages(
-    mut body: String,
+#[derive(serde::Serialize)]
+struct SectionRenderContext {
+    status: Option<String>,
+    payload_allowed: bool,
+    empty_allowed: bool,
+}
+
+fn section_render_contexts(
     entity: &str,
     outcomes: &SectionOutcomes,
-) -> String {
-    for row in SOURCE_STATE_ROWS.iter().filter(|row| row.entity == entity) {
-        let Some(outcome) = outcomes.get(row.key) else {
-            continue;
-        };
-        let Some(state_label) = source_state_message_label(outcome.outcome()) else {
-            continue;
-        };
-        let providers = row.providers.join(" / ");
-        let message = outcome
-            .message()
-            .unwrap_or_else(|| outcome.outcome().as_str());
-        body.push_str(&format!(
-            "\n\n**{} status ({}):** {} — {}",
-            row.label, providers, state_label, message
-        ));
-    }
-    body
+) -> BTreeMap<&'static str, SectionRenderContext> {
+    SOURCE_STATE_ROWS
+        .iter()
+        .filter(|row| row.entity == entity)
+        .map(|row| {
+            let outcome = outcomes.get(row.key);
+            let state = outcome.map_or(SectionOutcomeState::NotRequested, |value| value.outcome());
+            let status = source_state_message_label(state).map(|label| {
+                let providers = row.providers.join(" / ");
+                let message = outcome
+                    .and_then(|value| value.message())
+                    .unwrap_or(state.as_str());
+                format!(
+                    "**{} status ({}):** {label} — {message}",
+                    row.label, providers
+                )
+            });
+            let payload_allowed = !matches!(
+                state,
+                SectionOutcomeState::Inapplicable | SectionOutcomeState::Unavailable
+            );
+            let empty_allowed = matches!(
+                state,
+                SectionOutcomeState::NotRequested | SectionOutcomeState::Empty
+            );
+            (
+                row.key,
+                SectionRenderContext {
+                    status,
+                    payload_allowed,
+                    empty_allowed,
+                },
+            )
+        })
+        .collect()
 }
 
 fn source_state_message_label(state: SectionOutcomeState) -> Option<&'static str> {
