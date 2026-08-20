@@ -389,15 +389,23 @@ fn windows_acl_contract_rejects_missing_and_nonexistent_paths() {
 }
 
 #[cfg(windows)]
+fn run_cache_epoch_probe(root: &std::path::Path) -> std::process::Output {
+    std::process::Command::new(env!("CARGO_BIN_EXE_biomcp"))
+        .args(["cache", "stats"])
+        .env("BIOMCP_CACHE_DIR", root)
+        .output()
+        .expect("run cache epoch probe")
+}
+
+#[cfg(windows)]
 #[test]
 fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
     let parent = tempfile::tempdir().expect("temporary parent");
     let root = parent.path().join("managed");
-    let (initial, initial_contact) = run_cached_probe(&root, ProbeMode::ValidRequest);
-    initial_contact.expect("initial MyGene fixture result");
+    let initial = run_cache_epoch_probe(&root);
     assert!(
         initial.status.success(),
-        "initial cached probe failed: {}",
+        "initial cache epoch probe failed: {}",
         String::from_utf8_lossy(&initial.stderr)
     );
     let lock = root.join(".body-limit-cache-v1.lock");
@@ -413,8 +421,7 @@ fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
         assert!(broadened.success());
     }
 
-    let (repaired, repaired_contact) = run_cached_probe(&root, ProbeMode::ValidRequest);
-    repaired_contact.expect("repaired MyGene fixture result");
+    let repaired = run_cache_epoch_probe(&root);
     assert!(
         repaired.status.success(),
         "fast-path ACL repair failed: {}",
@@ -431,8 +438,7 @@ fn windows_cache_epoch_files_are_user_only_and_reject_hard_links() {
 
     let outside = parent.path().join("outside-marker-link");
     fs::hard_link(&marker, &outside).expect("hard link marker");
-    let (rejected, rejected_contact) = run_cached_probe(&root, ProbeMode::NoContact);
-    rejected_contact.expect("hard-link MyGene fixture result");
+    let rejected = run_cache_epoch_probe(&root);
     assert!(!rejected.status.success());
     let stderr = String::from_utf8_lossy(&rejected.stderr);
     assert!(stderr.contains("managed file has 2 links"), "{stderr}");
