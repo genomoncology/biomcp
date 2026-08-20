@@ -23,10 +23,14 @@ What is missing is that a trustworthy GRCh38 coordinate is already obtainable wi
 
 ## Existing tests that pin this
 
-Restatement is authorized for the files below by name, to the extent they assert that an rsID input yields an `inapplicable` population outcome. Do not weaken any assertion that a GRCh37 coordinate is refused as GRCh38 — that is the safety property this ticket preserves.
+Restatement is authorized in these files, for these tests by name, only to the extent they assert that an rsID or a gene-and-change input yields an `inapplicable` population outcome:
 
-- Any test asserting `inapplicable` for the population section on rsID input under `tests/` — the design stage must name the exact files it touches in its commit message.
-- Spec pages under `spec/` covering `get variant ... population`.
+- `src/entities/variant/get/tests.rs` — `population_request_requires_a_grch38_genomic_coordinate`
+- `src/render/markdown/variant/tests.rs` — `variant_population_markdown_keeps_missing_status_compact`
+
+No other test file is authorized. Do not weaken any assertion that a GRCh37 coordinate is refused as GRCh38 — that is the safety property this ticket preserves, and it must still hold at the end.
+
+If the design stage finds a further shipped assertion that pins the old refusal and is not named above, stop and say so in the design output rather than restating it; that is a ticket amendment, not a design decision.
 
 ## Verification note
 
