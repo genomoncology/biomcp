@@ -371,17 +371,13 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 	fi
 fi
 
-# Install the early traceability refusal in Git's shared hooks directory.
-# Git resolves this path through the worktree's common directory, so it stays
-# with the repository after this worktree is removed.
-install_commit_msg_hook() {
-	local hooks hook original temporary preserved=0 restore_status
+# Retire the managed traceability hook without touching an unrelated hook.
+# A managed hook may have displaced the prior hook into the saved path, so
+# restore that hook when it exists and otherwise remove only the managed one.
+retire_commit_msg_hook() {
+	local hooks hook original grep_status
 	if ! hooks=$(git -C "$TREE" rev-parse --path-format=absolute --git-path hooks); then
 		echo "before: could not determine the Git hooks directory for $REPO" >&2
-		return 1
-	fi
-	if ! mkdir -p "$hooks"; then
-		echo "before: could not create the Git hooks directory for $REPO" >&2
 		return 1
 	fi
 
@@ -389,108 +385,40 @@ install_commit_msg_hook() {
 	original="$hooks/commit-msg.sdlc-original"
 	if [ -e "$hook" ] || [ -L "$hook" ]; then
 		if [ ! -L "$hook" ] && grep -Fqx '# sdlc-managed-traceability-commit-msg-hook' "$hook"; then
-			if ! chmod u+x "$hook"; then
-				echo "before: could not make the traceability commit-msg hook executable" >&2
+			if [ -e "$original" ] || [ -L "$original" ]; then
+				if ! mv "$original" "$hook"; then
+					echo "before: could not restore the saved commit-msg hook" >&2
+					return 1
+				fi
+			elif ! rm -f "$hook"; then
+				echo "before: could not remove the managed traceability commit-msg hook" >&2
 				return 1
 			fi
-			return 0
-		fi
-		if [ -e "$original" ] || [ -L "$original" ]; then
-			echo "before: cannot preserve commit-msg: its sdlc original already exists" >&2
-			return 1
-		fi
-	fi
-
-	if ! temporary=$(mktemp "$hooks/.commit-msg.sdlc.XXXXXX"); then
-		echo "before: could not create the traceability commit-msg hook" >&2
-		return 1
-	fi
-	if ! cat >"$temporary" <<'HOOK'
-#!/bin/sh
-# sdlc-managed-traceability-commit-msg-hook
-message=${1-}
-if [ -z "$message" ] || [ ! -r "$message" ]; then
-	echo "sdlc traceability commit-msg hook: cannot read the commit message" >&2
-	exit 1
-fi
-
-subject=$(sed -n '1p' "$message") || {
-	echo "sdlc traceability commit-msg hook: cannot read the commit message" >&2
-	exit 1
-}
-paths=$(git diff --cached --name-only -- \
-	'tests/*' '*/tests/*' '*.test.*' '*.spec.*' 'spec/*' '*/spec/*' \
-	'test_*' '*/test_*') || {
-	echo "sdlc traceability commit-msg hook: cannot list staged paths" >&2
-	exit 1
-}
-
-if [ -n "$paths" ]; then
-	case "$subject" in
-	'design: '* | 'design-review: '* | 'code-review: '* | 'code: fix mechanical'*) ;;
-	*)
-		echo "Test changes violate the traceability rule (the test is the spec):" >&2
-		printf '%s\n' "$paths" >&2
-		echo "Tests change only in design:, design-review:, code-review:, or 'code: fix mechanical' commits." >&2
-		exit 1
-		;;
-	esac
-fi
-
-hook_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P) || {
-	echo "sdlc traceability commit-msg hook: cannot find its original hook" >&2
-	exit 1
-}
-original="$hook_dir/commit-msg.sdlc-original"
-if [ -x "$original" ]; then
-	"$original" "$@"
-	exit $?
-fi
-exit 0
-HOOK
-	then
-		rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
-		echo "before: could not write the traceability commit-msg hook" >&2
-		return 1
-	fi
-	if ! chmod 755 "$temporary"; then
-		rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
-		echo "before: could not make the traceability commit-msg hook executable" >&2
-		return 1
-	fi
-	if [ -e "$hook" ] || [ -L "$hook" ]; then
-		if ! mv "$hook" "$original"; then
-			rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
-			echo "before: could not preserve the existing commit-msg hook" >&2
-			return 1
-		fi
-		preserved=1
-	fi
-	if ! mv "$temporary" "$hook"; then
-		restore_status=0
-		if [ "$preserved" -eq 1 ]; then
-			mv "$original" "$hook" || restore_status=$?
-		fi
-		rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
-		if [ "$restore_status" -ne 0 ]; then
-			echo "before: could not restore the existing commit-msg hook" >&2
 		else
-			echo "before: could not install the traceability commit-msg hook" >&2
+			grep_status=$?
+			if [ "$grep_status" -gt 1 ]; then
+				echo "before: could not inspect the commit-msg hook" >&2
+				return 1
+			fi
 		fi
-		return 1
+	elif [ -e "$original" ] || [ -L "$original" ]; then
+		if ! mv "$original" "$hook"; then
+			echo "before: could not restore the saved commit-msg hook" >&2
+			return 1
+		fi
 	fi
 }
 
-if ! install_commit_msg_hook; then
+if ! retire_commit_msg_hook; then
 	cleanup_status=0
 	undo || cleanup_status=$?
 	if [ "$cleanup_status" -eq 3 ]; then
 		exit 3
 	fi
 	if [ "$cleanup_status" -ne 0 ]; then
-		echo "before: cleanup after a failed traceability hook install failed" >&2
+		echo "before: cleanup after traceability hook migration failed" >&2
 	fi
-	echo "before: could not install the traceability commit-msg hook" >&2
+	echo "before: could not retire the traceability commit-msg hook" >&2
 	exit 1
 fi
 
