@@ -295,7 +295,14 @@ and a compact JSON disease anchor without bloating the default card.
 ## Population Frequency
 
 Population frequency also stays opt-in. The markdown and JSON views should keep
-the same compact gnomAD frequency story.
+the same compact gnomAD frequency story. For rsID and gene/protein input whose
+MyVariant result lacks a trustworthy GRCh38 coordinate, BioMCP resolves one
+compatible GRCh38 chromosome placement through dbSNP RefSNP before querying
+gnomAD. It reports that resolved coordinate and both dbSNP and gnomAD v4 in
+provenance without changing the top-level MyVariant identity. A GRCh37-only or
+ambiguous dbSNP placement remains missing and does not call gnomAD; dbSNP
+transport or decoding failure is unavailable. BioMCP does not liftover or infer
+an assembly from MyVariant.
 
 ## Variant Follow-Ups
 

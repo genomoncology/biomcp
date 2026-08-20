@@ -36,7 +36,7 @@ BioMCP exposes a public entity surface. Most entities support both `search` and
 | Entity | Key Sources | Representative Command |
 |--------|-------------|----------------------|
 | gene | MyGene.info, UniProt, Reactome, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, ClinGen, gnomAD, CIViC, NIH Reporter, GTR-backed diagnostics pivot | `biomcp get gene ERBB2 funding` |
-| variant | MyVariant.info, ClinVar, gnomAD, CIViC, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
+| variant | MyVariant.info, ClinVar, dbSNP, gnomAD, CIViC, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome | `biomcp get variant "BRAF V600E" clinvar` |
 | article | PubMed, PubTator3, Europe PMC, explicit LitSense2, PMC OA, NCBI ID Converter, Semantic Scholar (optional auth; `S2_API_KEY` recommended) | `biomcp search article -g BRAF --limit 5` |
 | author | Semantic Scholar provider records | `biomcp search author -q "Louis Williams" --source semanticscholar` |
 | trial | ClinicalTrials.gov, NCI CTS API | `biomcp search trial -c melanoma -s recruiting` |

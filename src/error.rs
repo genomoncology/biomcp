@@ -22,6 +22,7 @@ impl SourceProvider {
     pub const CPIC: Self = Self::new("CPIC");
     pub const CVX: Self = Self::new("CDC CVX/MVX");
     pub const DDINTER: Self = Self::new("DDInter");
+    pub const DBSNP: Self = Self::new("dbSNP");
     pub const DGIDB: Self = Self::new("DGIdb");
     pub const DISGENET: Self = Self::new("DisGeNET");
     pub const EMA: Self = Self::new("EMA");
@@ -88,6 +89,7 @@ impl SourceProvider {
         Self::CPIC,
         Self::CVX,
         Self::DDINTER,
+        Self::DBSNP,
         Self::DGIDB,
         Self::DISGENET,
         Self::EMA,

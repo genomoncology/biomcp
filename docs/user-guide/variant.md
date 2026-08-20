@@ -209,11 +209,19 @@ biomcp get variant "GRCh38:chr7:g.140753336A>T" population
 ```
 
 Population JSON exposes a direct `gnomad_r4` result with separate `exome` and
-`genome` objects. Each object preserves raw numeric allele frequencies and
-counts by ancestry, quality flags, and grpmax FAF95 when available. The result
-distinguishes a missing trustworthy GRCh38 coordinate, a variant absent from
-gnomAD v4, and a provider failure. gnomAD excludes bottlenecked genetic ancestry
-groups when selecting grpmax FAF; BioMCP repeats that caveat in the result.
+`genome` objects. For rsID and gene/protein input without a trustworthy GRCh38
+MyVariant coordinate, BioMCP resolves a compatible GRCh38 chromosome placement
+through dbSNP RefSNP before querying gnomAD. Those results include
+`resolved_coordinate` and population provenance names both dbSNP and gnomAD v4;
+the original MyVariant identity and its provider-default provenance stay intact.
+Each object preserves raw numeric allele frequencies and counts by ancestry,
+quality flags, and grpmax FAF95 when available. A GRCh37-only or ambiguous dbSNP
+placement is missing and does not query gnomAD; a dbSNP transport or decoding
+failure is unavailable. BioMCP does not liftover or infer an assembly from
+MyVariant. `--assembly` and `BIOMCP_DEFAULT_ASSEMBLY` remain preferences only
+for ambiguous chromosome-prefixed coordinates. gnomAD excludes bottlenecked
+genetic ancestry groups when selecting grpmax FAF; BioMCP repeats that caveat
+in the result.
 
 CIViC section:
 

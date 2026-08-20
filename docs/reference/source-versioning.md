@@ -22,6 +22,7 @@ This matrix tracks which upstream API endpoints are version-pinned and where unv
 | CPIC | `https://api.cpicpgx.org/v1` | Versioned (`v1`) | Endpoint already pinned | 2026-06-11 |
 | CIViC | `https://civicdb.org/api` | Unversioned | Public API root is stable without explicit major version path | 2026-06-11 |
 | DDInter downloads | `https://ddinter.scbdd.com/download/` | Unversioned download bundle | Public CSV bundle refreshes in place under stable filenames | 2026-06-11 |
+| dbSNP RefSNP | `https://api.ncbi.nlm.nih.gov/variation/v0/beta` | Beta API path | NCBI publishes RefSNP records on this stable variation API path | 2026-08-20 |
 | DGIdb GraphQL | `https://dgidb.org/api/graphql` | Unversioned | GraphQL endpoint has no URL version segment | 2026-06-11 |
 | DisGeNET | `https://api.disgenet.com/api/v1` | Versioned (`v1`) | Endpoint already pinned | 2026-06-11 |
 | Enrichr | `https://maayanlab.cloud/Enrichr` | Unversioned | Service does not publish versioned path variant for current API | 2026-02-15 |

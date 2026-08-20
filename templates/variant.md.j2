@@ -80,6 +80,9 @@ No expanded prediction scores reported.
 ## Population (direct gnomAD v4)
 {% if population -%}
 Dataset: `{{ population.dataset }}` ({{ population.release }})
+{% if population.resolved_coordinate -%}
+Resolved GRCh38 coordinate: {{ population.resolved_coordinate.id }} ({{ population.resolved_coordinate.source }})
+{% endif -%}
 {% if population.status != "data" -%}
 {{ population.message }}
 {% else -%}

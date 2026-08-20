@@ -368,6 +368,8 @@ pub struct GnomadPopulationResult {
     pub release: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolved_coordinate: Option<GnomadResolvedCoordinate>,
     pub exome: Option<crate::sources::gnomad::GnomadSequencingPopulation>,
     pub genome: Option<crate::sources::gnomad::GnomadSequencingPopulation>,
     pub faf_caveat: String,
@@ -380,6 +382,13 @@ pub enum GnomadPopulationStatus {
     Missing,
     Absent,
     ProviderFailure,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GnomadResolvedCoordinate {
+    pub id: String,
+    pub genome_build: GenomeBuild,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

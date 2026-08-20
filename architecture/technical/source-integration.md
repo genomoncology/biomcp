@@ -536,7 +536,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | variant_structure | domains | outcome-only | fallback | InterPro | `domains` outcome and provenance projection |
 | variant_structure | cancerhotspots | outcome-only | fallback | cancerhotspots.org | `cancerhotspots` outcome and provenance projection |
 | variant | predict | canonical | fallback | AlphaGenome | `predict` outcome and provenance projection |
-| variant | population | canonical | fallback | gnomAD v4 | `population` outcome and provenance projection |
+| variant | population | canonical | fallback | dbSNP / gnomAD v4 | `population` outcome and provenance projection |
 | variant | cancerhotspots | outcome-only | fallback | cancerhotspots.org | `cancerhotspots` outcome and provenance projection |
 | variant | civic | canonical | fallback | CIViC | `civic` outcome and provenance projection |
 | variant | cbioportal | canonical | fallback | cBioPortal | `cbioportal` outcome and provenance projection |

@@ -114,9 +114,14 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1128,
+      "baseline_lines": 1219,
       "floor_lines": 1128,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1022",
+        "delta": 91,
+        "reason": "dbSNP-backed population resolution belongs beside the existing gnomAD section gate and outcomes.",
+        "removal_condition": "Extract population orchestration when variant detail retrieval is next decomposed."
+      }
     },
     {
       "path": "src/entities/variant/resolution.rs",
@@ -126,9 +131,14 @@
     },
     {
       "path": "src/error.rs",
-      "baseline_lines": 1122,
+      "baseline_lines": 1124,
       "floor_lines": 1122,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1022",
+        "delta": 2,
+        "reason": "dbSNP needs the shared source-provider label and error projection registration.",
+        "removal_condition": "Retire the dbSNP provider when its population resolution path is removed."
+      }
     },
     {
       "path": "src/generated/google.gdm.gdmscience.alphagenome.v1main.rs",
@@ -173,9 +183,14 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1820,
+      "baseline_lines": 1826,
       "floor_lines": 1820,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1022",
+        "delta": 6,
+        "reason": "Population provenance selects dbSNP with gnomAD only for dbSNP-resolved coordinates.",
+        "removal_condition": "Extract variant provenance policy when the renderer is next decomposed."
+      }
     },
     {
       "path": "src/sources/cbioportal_study.rs",

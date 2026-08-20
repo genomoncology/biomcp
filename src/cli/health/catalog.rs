@@ -334,6 +334,13 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
         },
     },
     SourceDescriptor {
+        api: "dbSNP",
+        affects: Some("variant population coordinate resolution"),
+        probe: ProbeKind::Get {
+            url: "https://api.ncbi.nlm.nih.gov/variation/v0/beta/refsnp/334",
+        },
+    },
+    SourceDescriptor {
         api: "gnomAD",
         affects: Some("gene constraint section"),
         probe: ProbeKind::PostJson {

@@ -75,6 +75,7 @@ pub(crate) mod clinicaltrials;
 pub(crate) mod complexportal;
 pub(crate) mod cpic;
 pub(crate) mod cvx;
+pub(crate) mod dbsnp;
 pub(crate) mod ddinter;
 pub(crate) mod dgidb;
 pub(crate) mod disgenet;
@@ -130,7 +131,6 @@ pub(crate) mod variantvalidator;
 pub(crate) mod who_ivd;
 pub(crate) mod who_pq;
 pub(crate) mod wikipathways;
-
 const ERROR_BODY_MAX_BYTES: usize = 2048;
 const MAX_RETRY_AFTER_SLEEP: Duration = Duration::from_secs(5);
 const TOTAL_RETRY_SLEEP_BUDGET: Duration = Duration::from_secs(15);

@@ -570,15 +570,21 @@ pub(crate) fn variant_section_sources(variant: &Variant) -> Vec<SectionSource> {
         "ClinVar",
         ["ClinVar"],
     );
+    let population_sources = variant.population.as_ref().and_then(|population| {
+        (population.status == GnomadPopulationStatus::Data).then(|| {
+            if population.resolved_coordinate.is_some() {
+                vec!["dbSNP", "gnomAD v4"]
+            } else {
+                vec!["gnomAD v4"]
+            }
+        })
+    });
     push_section(
         &mut out,
-        variant
-            .population
-            .as_ref()
-            .is_some_and(|population| population.status == GnomadPopulationStatus::Data),
+        population_sources.is_some(),
         "population",
         "Population",
-        ["gnomAD v4"],
+        population_sources.unwrap_or_default(),
     );
     push_section(
         &mut out,

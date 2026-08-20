@@ -9,6 +9,7 @@ use crate::sources::alphagenome::AlphaGenomeClient;
 use crate::sources::cancerhotspots::CancerHotspotsClient;
 use crate::sources::cbioportal::CBioPortalClient;
 use crate::sources::civic::CivicClient;
+use crate::sources::dbsnp::DbSnpClient;
 use crate::sources::gnomad::{GnomadClient, GnomadVariantPopulation};
 #[cfg(feature = "alphagenome")]
 use crate::sources::mygene::MyGeneClient;
@@ -23,10 +24,10 @@ use super::gwas::mark_gwas_unavailable;
 use super::resolution::hgvs_coords_re;
 use super::resolution::parse_variant_id;
 use super::{
-    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, TreatmentImplication, Variant,
-    VariantCivicSection, VariantIdFormat, VariantInputKind, VariantNormalizationResponse,
-    VariantNormalizationStatus, VariantOncoKbResult, classify_variant_input, gnomad_variant_slug,
-    normalize_variant,
+    GenomeBuild, GnomadPopulationResult, GnomadPopulationStatus, GnomadResolvedCoordinate,
+    TreatmentImplication, Variant, VariantCivicSection, VariantIdFormat, VariantInputKind,
+    VariantNormalizationResponse, VariantNormalizationStatus, VariantOncoKbResult,
+    classify_variant_input, gnomad_variant_slug, normalize_variant,
 };
 
 const VARIANT_SECTION_PREDICT: &str = "predict";
@@ -63,6 +64,9 @@ const GNOMAD_FAF_CAVEAT: &str =
 const GNOMAD_GRCH38_REQUIRED: &str =
     "Direct gnomAD v4 population data requires a trustworthy GRCh38 coordinate.";
 const GNOMAD_PROVIDER_FAILURE: &str = "gnomAD population data is temporarily unavailable.";
+const DBSNP_GRCH38_REQUIRED: &str =
+    "Direct gnomAD v4 population data requires a trustworthy GRCh38 coordinate; tried dbSNP.";
+const DBSNP_PROVIDER_FAILURE: &str = "dbSNP coordinate resolution is temporarily unavailable.";
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct VariantWorkflowSignals {
@@ -954,6 +958,7 @@ fn population_result(
         dataset: GNOMAD_DATASET.into(),
         release: GNOMAD_RELEASE.into(),
         message: message.map(str::to_string),
+        resolved_coordinate: None,
         exome,
         genome,
         faf_caveat: GNOMAD_FAF_CAVEAT.into(),
@@ -966,8 +971,82 @@ fn population_variant_id(variant: &Variant) -> Option<String> {
         .flatten()
 }
 
-async fn add_population(variant: &mut Variant) {
-    let Some(variant_id) = population_variant_id(variant) else {
+async fn add_population(variant: &mut Variant, id_format: &VariantIdFormat) {
+    let (variant_id, resolved_coordinate) = if let Some(variant_id) = population_variant_id(variant)
+    {
+        (variant_id, None)
+    } else if matches!(
+        id_format,
+        VariantIdFormat::RsId(_) | VariantIdFormat::GeneProteinChange { .. }
+    ) && variant
+        .rsid
+        .as_deref()
+        .is_some_and(|rsid| !rsid.trim().is_empty())
+    {
+        let rsid = variant.rsid.as_deref().expect("non-empty rsID");
+        let coordinate = match DbSnpClient::new() {
+            Ok(client) => match tokio::time::timeout(
+                OPTIONAL_ENRICHMENT_TIMEOUT,
+                client.resolve_grch38(rsid, &variant.id),
+            )
+            .await
+            {
+                Ok(result) => result,
+                Err(_) => Err(BioMcpError::Api {
+                    api: "dbSNP".into(),
+                    message: "request timed out".into(),
+                }),
+            },
+            Err(error) => Err(error),
+        };
+        let coordinate = match coordinate {
+            Ok(Some(coordinate)) => coordinate,
+            Ok(None) => {
+                variant.population = Some(population_result(
+                    GnomadPopulationStatus::Missing,
+                    Some(DBSNP_GRCH38_REQUIRED),
+                    None,
+                ));
+                variant.section_outcomes.complete(
+                    VARIANT_SECTION_POPULATION,
+                    SectionOutcome::inapplicable(DBSNP_GRCH38_REQUIRED),
+                );
+                return;
+            }
+            Err(_) => {
+                variant.population = Some(population_result(
+                    GnomadPopulationStatus::ProviderFailure,
+                    Some(DBSNP_PROVIDER_FAILURE),
+                    None,
+                ));
+                variant.section_outcomes.complete(
+                    VARIANT_SECTION_POPULATION,
+                    SectionOutcome::unavailable(DBSNP_PROVIDER_FAILURE),
+                );
+                return;
+            }
+        };
+        let Some(variant_id) = gnomad_variant_slug(&coordinate.id) else {
+            variant.population = Some(population_result(
+                GnomadPopulationStatus::Missing,
+                Some(DBSNP_GRCH38_REQUIRED),
+                None,
+            ));
+            variant.section_outcomes.complete(
+                VARIANT_SECTION_POPULATION,
+                SectionOutcome::inapplicable(DBSNP_GRCH38_REQUIRED),
+            );
+            return;
+        };
+        (
+            variant_id,
+            Some(GnomadResolvedCoordinate {
+                id: coordinate.id,
+                genome_build: GenomeBuild::Grch38,
+                source: "dbSNP".into(),
+            }),
+        )
+    } else {
         variant.population = Some(population_result(
             GnomadPopulationStatus::Missing,
             Some(GNOMAD_GRCH38_REQUIRED),
@@ -998,33 +1077,45 @@ async fn add_population(variant: &mut Variant) {
     });
     match response {
         Ok(Some(data)) if data.exome.is_some() || data.genome.is_some() => {
-            variant.population = Some(population_result(
-                GnomadPopulationStatus::Data,
-                None,
-                Some(data),
-            ));
-            variant.section_outcomes.complete(
-                VARIANT_SECTION_POPULATION,
-                SectionOutcome::data("gnomAD v4"),
-            );
+            let mut population = population_result(GnomadPopulationStatus::Data, None, Some(data));
+            population.resolved_coordinate = resolved_coordinate.clone();
+            variant.population = Some(population);
+            let outcome = match variant
+                .population
+                .as_ref()
+                .and_then(|population| population.resolved_coordinate.as_ref())
+            {
+                Some(_) => SectionOutcome::data_sources(["dbSNP", "gnomAD v4"]),
+                None => SectionOutcome::data("gnomAD v4"),
+            };
+            variant
+                .section_outcomes
+                .complete(VARIANT_SECTION_POPULATION, outcome);
         }
         Ok(_) => {
-            variant.population = Some(population_result(
+            let mut population = population_result(
                 GnomadPopulationStatus::Absent,
                 Some("This variant is absent from gnomAD v4."),
                 None,
-            ));
-            variant.section_outcomes.complete(
-                VARIANT_SECTION_POPULATION,
-                SectionOutcome::empty("gnomAD v4"),
             );
+            population.resolved_coordinate = resolved_coordinate.clone();
+            variant.population = Some(population);
+            let outcome = match resolved_coordinate {
+                Some(_) => SectionOutcome::empty_sources(["dbSNP", "gnomAD v4"]),
+                None => SectionOutcome::empty("gnomAD v4"),
+            };
+            variant
+                .section_outcomes
+                .complete(VARIANT_SECTION_POPULATION, outcome);
         }
         Err(_) => {
-            variant.population = Some(population_result(
+            let mut population = population_result(
                 GnomadPopulationStatus::ProviderFailure,
                 Some(GNOMAD_PROVIDER_FAILURE),
                 None,
-            ));
+            );
+            population.resolved_coordinate = resolved_coordinate;
+            variant.population = Some(population);
             variant.section_outcomes.complete(
                 VARIANT_SECTION_POPULATION,
                 SectionOutcome::unavailable(GNOMAD_PROVIDER_FAILURE),
@@ -1106,7 +1197,7 @@ pub async fn get_with_workflow_signals(
         add_prediction(&mut variant).await?;
     }
     if section_flags.include_population {
-        add_population(&mut variant).await;
+        add_population(&mut variant, &id_format).await;
     }
     if section_flags.include_cbioportal {
         add_cbioportal(&mut variant).await;

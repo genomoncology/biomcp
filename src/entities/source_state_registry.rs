@@ -395,7 +395,7 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         "variant",
         "population",
         "Population",
-        &["gnomAD v4"],
+        &["dbSNP", "gnomAD v4"],
         Aggregation::Fallback,
     ),
     state(

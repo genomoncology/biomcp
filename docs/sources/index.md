@@ -23,6 +23,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | OpenFDA | FAERS, recalls, device events, labels, and U.S. approval context | [OpenFDA](openfda.md) |
 | CDC WONDER VAERS | Vaccine adverse-event summaries, seriousness breakdowns, and age-distribution context | [CDC WONDER VAERS](vaers.md) |
 | UniProt | Canonical protein cards and structure-linked context | [UniProt](uniprot.md) |
+| dbSNP | Authoritative RefSNP GRCh38 placement resolution for rsID population lookups | [gnomAD](gnomad.md) |
 | gnomAD | Population frequency and gene constraint context | [gnomAD](gnomad.md) |
 | Reactome | Pathway records, pathway genes, and contained events | [Reactome](reactome.md) |
 | Semantic Scholar | TLDRs, citation graphs, references, and recommendations | [Semantic Scholar](semantic-scholar.md) |

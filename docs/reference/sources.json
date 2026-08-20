@@ -260,6 +260,23 @@
     "notes": "BioMCP requires all eight DDInter CSV files. Interaction reads use the installed bundle without maintenance and report fresh/stale state. biomcp ddinter sync explicitly downloads, validates, and publishes a complete replacement bundle; empty results remain scoped to the current DDInter bundle."
   },
   {
+    "id": "dbsnp",
+    "name": "dbSNP",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["get variant <id> population"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public API",
+    "license_summary": "NCBI public variation records; preserve source attribution and review NCBI data-use terms",
+    "redistribution_summary": "querying is open; downstream reuse should retain dbSNP provenance and follow NCBI terms",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/home/about/policies/",
+    "key_url": null,
+    "reviewed_on": "2026-08-20",
+    "notes": "BioMCP reads RefSNP records only to resolve an authoritative compatible GRCh38 chromosome coordinate before a gnomAD population query."
+  },
+  {
     "id": "disgenet",
     "name": "DisGeNET",
     "tier": 2,
