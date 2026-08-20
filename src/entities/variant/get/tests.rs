@@ -73,8 +73,12 @@ async fn population_fixture_server()
                     r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh37.p13","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.9","position":5248232,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
                 } else if request.starts_with("GET /refsnp/334") {
                     r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh38.p14","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.10","position":5227001,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
-                } else if request.starts_with("POST /") {
+                } else if request.starts_with("POST /")
+                    && request.contains("\"variantId\":\"11-5227002-T-A\"")
+                {
                     r#"{"data":{"variant":{"variant_id":"11-5227002-T-A","exome":{"ac":2335,"an":1458356,"homozygote_count":31,"hemizygote_count":0,"filters":[],"faf95":{"popmax":0.05474387,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]},"genome":{"ac":1937,"an":152294,"homozygote_count":0,"hemizygote_count":0,"filters":["RF"],"faf95":{"popmax":0.04188667,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]}}}}"#
+                } else if request.starts_with("POST /") {
+                    r#"{"data":{"variant":null}}"#
                 } else {
                     r#"{"total":0,"hits":[]}"#
                 };
@@ -453,6 +457,16 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
 #[tokio::test]
 #[serial_test::serial]
 async fn population_request_requires_a_grch38_genomic_coordinate() {
+    let mut variant = braf_variant_stub();
+    assert_eq!(population_variant_id(&variant), None);
+    variant.genome_build = Some(GenomeBuild::Grch37);
+    assert_eq!(population_variant_id(&variant), None);
+    variant.genome_build = Some(GenomeBuild::Grch38);
+    assert_eq!(
+        population_variant_id(&variant).as_deref(),
+        Some("7-140453136-A-T")
+    );
+
     let (base, requests, server) = population_fixture_server().await;
     let mut env = PopulationFixtureEnv(Vec::new());
     env.set("BIOMCP_MYVARIANT_BASE", &base);
@@ -529,6 +543,11 @@ async fn population_request_requires_a_grch38_genomic_coordinate() {
         requests
             .iter()
             .any(|request| request.starts_with("GET /refsnp/335"))
+    );
+    assert!(
+        requests
+            .iter()
+            .any(|request| request.contains("\"variantId\":\"11-5227002-T-A\""))
     );
 }
 
