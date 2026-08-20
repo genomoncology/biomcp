@@ -198,8 +198,20 @@ if [ -e "$TREE" ]; then
 		echo "before: $TREE is checked out on $(tree_branch || echo 'a detached HEAD'), not $BRANCH" >&2
 		exit 1
 	fi
-	echo "before: continuing the existing worktree $TREE on $BRANCH" >&2
-elif git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+		echo "before: continuing the existing worktree $TREE on $BRANCH" >&2
+	else
+		cleanup_status=0
+		undo || cleanup_status=$?
+		if [ "$cleanup_status" -ne 0 ]; then
+			echo "before: cleanup after $BRANCH was gone failed" >&2
+			exit "$cleanup_status"
+		fi
+		echo "before: discarded worktree $TREE because its branch $BRANCH was gone" >&2
+	fi
+fi
+
+if [ ! -e "$TREE" ] && git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
 	# The branch survived a previous attempt; its commits are this ticket's
 	# own work, so put a tree back on it rather than throwing the work away.
 	mkdir -p "$WORKTREES/$NAMESPACE"
@@ -208,7 +220,7 @@ elif git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
 		exit 1
 	fi
 	echo "before: reattached $BRANCH to a new worktree at $TREE" >&2
-else
+elif [ ! -e "$TREE" ]; then
 	mkdir -p "$WORKTREES/$NAMESPACE"
 	if ! git -C "$REPO" worktree add --quiet -b "$BRANCH" "$TREE" origin/main; then
 		echo "before: could not create worktree $TREE on $BRANCH" >&2
