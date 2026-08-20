@@ -180,9 +180,16 @@ fn disease_markdown_reports_unavailable_source_state_in_band() {
     let markdown = disease_markdown(&disease, &["survival".to_string()])
         .expect("unavailable survival markdown");
 
+    let status = markdown.find("unavailable").expect("unavailability status");
+    let navigation = markdown.find("More:").expect("section navigation");
+
     assert!(markdown.contains("Survival"), "markdown={markdown}");
     assert!(markdown.contains("SEER Explorer"), "markdown={markdown}");
-    assert!(markdown.contains("unavailable"), "markdown={markdown}");
+    assert!(status < navigation, "status must precede navigation: {markdown}");
+    assert!(
+        !markdown.contains("No SEER survival data available."),
+        "an unavailable source must not claim a healthy empty result: {markdown}"
+    );
 }
 
 #[test]

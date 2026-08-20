@@ -109,8 +109,10 @@ fn ticket_406_coordinate_outputs_carry_genome_build_context() {
 
 #[test]
 fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
-    let gene = Gene {
-        section_outcomes: Default::default(),
+    let mut gene = Gene {
+        section_outcomes: crate::entities::section_outcome::SectionOutcomes::with_keys(
+            &crate::entities::source_state_registry::outcome_keys("gene"),
+        ),
         symbol: "BRAF".to_string(),
         name: "B-Raf proto-oncogene".to_string(),
         entrez_id: "673".to_string(),
@@ -143,6 +145,18 @@ fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
         diagnostics_note: None,
     };
 
+    for (key, source) in [
+        ("expression", "GTEx"),
+        ("hpa", "Human Protein Atlas"),
+        ("druggability", "DGIdb"),
+        ("clingen", "ClinGen"),
+    ] {
+        gene.section_outcomes.complete(
+            key,
+            crate::entities::section_outcome::SectionOutcome::empty(source),
+        );
+    }
+
     let markdown = gene_markdown(
         &gene,
         &[
@@ -163,6 +177,25 @@ fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
     assert!(markdown.contains("No Human Protein Atlas records returned"));
     assert!(markdown.contains("No DGIdb interactions returned"));
     assert!(markdown.contains("No ClinGen records returned"));
+
+    let mut unavailable = gene.clone();
+    unavailable.section_outcomes.complete(
+        "civic",
+        crate::entities::section_outcome::SectionOutcome::unavailable(
+            "CIViC gene evidence is unavailable.",
+        ),
+    );
+    let markdown = gene_markdown(&unavailable, &["civic".to_string()])
+        .expect("unavailable CIViC markdown");
+    let status = markdown.find("**CIViC status (CIViC):**").expect("CIViC status");
+    let navigation = markdown.find("More:").expect("section navigation");
+
+    assert!(status < navigation, "status must precede navigation: {markdown}");
+    assert!(
+        !markdown.contains("Evidence Items: 0")
+            && !markdown.contains("No CIViC records returned for this gene query."),
+        "an unavailable source must not claim an empty result: {markdown}"
+    );
 }
 
 #[test]
