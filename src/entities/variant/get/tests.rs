@@ -3,6 +3,90 @@
 use super::super::test_support::*;
 use super::*;
 use crate::sources::civic::{CivicContext, CivicEvidenceItem};
+use std::sync::{Arc, Mutex};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+struct PopulationFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl PopulationFixtureEnv {
+    fn set(&mut self, name: &'static str, value: &str) {
+        self.0.push((name, std::env::var_os(name)));
+        // SAFETY: this test holds the serial-test process-wide environment lock.
+        unsafe { std::env::set_var(name, value) };
+    }
+}
+
+impl Drop for PopulationFixtureEnv {
+    fn drop(&mut self) {
+        for (name, prior) in self.0.drain(..).rev() {
+            // SAFETY: this test holds the serial-test process-wide environment lock.
+            unsafe {
+                if let Some(value) = prior {
+                    std::env::set_var(name, value);
+                } else {
+                    std::env::remove_var(name);
+                }
+            }
+        }
+    }
+}
+
+fn fixture_response(body: &str) -> Vec<u8> {
+    format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    )
+    .into_bytes()
+}
+
+async fn population_fixture_server()
+-> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind population fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock requests")
+                    .push(request.clone());
+                let body = if request.starts_with("GET /query?") {
+                    if request.contains("rs335") {
+                        r#"{"total":1,"hits":[{"_id":"chr11:g.5248233T>A","dbsnp":{"rsid":"rs335"}}]}"#
+                    } else {
+                        r#"{"total":1,"hits":[{"_id":"chr11:g.5248232T>A","dbsnp":{"rsid":"rs334"}}]}"#
+                    }
+                } else if request.starts_with("GET /variant/") {
+                    r#"{"_id":"chr11:g.5227002T>A","dbsnp":{"rsid":"rs334"}}"#
+                } else if request.starts_with("GET /refsnp/335") {
+                    r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh37.p13","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.9","position":5248232,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
+                } else if request.starts_with("GET /refsnp/334") {
+                    r#"{"primary_snapshot_data":{"placements_with_allele":[{"is_ptlp":true,"placement_annot":{"seq_id_traits_by_assembly":[{"assembly_name":"GRCh38.p14","is_chromosome":true}]},"alleles":[{"allele":{"spdi":{"seq_id":"NC_000011.10","position":5227001,"deleted_sequence":"T","inserted_sequence":"A"}}}]}]}}"#
+                } else if request.starts_with("POST /") {
+                    r#"{"data":{"variant":{"variant_id":"11-5227002-T-A","exome":{"ac":2335,"an":1458356,"homozygote_count":31,"hemizygote_count":0,"filters":[],"faf95":{"popmax":0.05474387,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]},"genome":{"ac":1937,"an":152294,"homozygote_count":0,"hemizygote_count":0,"filters":["RF"],"faf95":{"popmax":0.04188667,"popmax_population":"afr"},"populations":[{"id":"afr","ac":1,"an":2,"homozygote_count":0,"hemizygote_count":0}]}}}}"#
+                } else {
+                    r#"{"total":0,"hits":[]}"#
+                };
+                stream
+                    .write_all(&fixture_response(body))
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    (base, requests, task)
+}
 
 fn identity_hit(
     gene: &str,
@@ -366,18 +450,85 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
     );
 }
 
-#[test]
-fn population_request_requires_a_grch38_genomic_coordinate() {
-    let mut variant = braf_variant_stub();
-    assert_eq!(population_variant_id(&variant), None);
+#[tokio::test]
+#[serial_test::serial]
+async fn population_request_requires_a_grch38_genomic_coordinate() {
+    let (base, requests, server) = population_fixture_server().await;
+    let mut env = PopulationFixtureEnv(Vec::new());
+    env.set("BIOMCP_MYVARIANT_BASE", &base);
+    env.set("BIOMCP_GNOMAD_BASE", &base);
+    env.set("BIOMCP_DBSNP_BASE", &base);
 
-    variant.genome_build = Some(GenomeBuild::Grch37);
-    assert_eq!(population_variant_id(&variant), None);
+    let sections = vec!["population".to_string()];
+    let (from_rsid, _) = get_with_workflow_signals("rs334", &sections, None)
+        .await
+        .expect("rsID response");
+    let (from_coordinate, _) =
+        get_with_workflow_signals("NC_000011.10:g.5227002T>A", &sections, None)
+            .await
+            .expect("GRCh38 coordinate response");
+    let (grch37_only, _) = get_with_workflow_signals("rs335", &sections, None)
+        .await
+        .expect("GRCh37-only rsID response");
+    server.abort();
 
-    variant.genome_build = Some(GenomeBuild::Grch38);
+    let rsid_population = serde_json::to_value(
+        from_rsid
+            .population
+            .as_ref()
+            .expect("rsID population result"),
+    )
+    .expect("serialize rsID population");
+    let coordinate_population = serde_json::to_value(
+        from_coordinate
+            .population
+            .as_ref()
+            .expect("coordinate population result"),
+    )
+    .expect("serialize coordinate population");
+
+    assert_eq!(rsid_population["status"], "data");
+    assert_eq!(rsid_population["exome"]["ac"], 2335);
+    assert_eq!(rsid_population["exome"]["an"], 1_458_356);
+    assert_eq!(rsid_population["exome"]["faf95"]["popmax"], 0.05474387);
+    assert_eq!(rsid_population["genome"]["ac"], 1937);
+    assert_eq!(rsid_population["genome"]["an"], 152_294);
+    assert_eq!(rsid_population["genome"]["faf95"]["popmax"], 0.04188667);
+    assert_eq!(rsid_population["exome"], coordinate_population["exome"]);
+    assert_eq!(rsid_population["genome"], coordinate_population["genome"]);
     assert_eq!(
-        population_variant_id(&variant).as_deref(),
-        Some("7-140453136-A-T")
+        rsid_population["resolved_coordinate"],
+        serde_json::json!({
+            "id": "chr11:g.5227002T>A",
+            "genome_build": "GRCh38",
+            "source": "dbSNP"
+        })
+    );
+
+    let grch37_population = serde_json::to_value(
+        grch37_only
+            .population
+            .as_ref()
+            .expect("GRCh37-only population result"),
+    )
+    .expect("serialize GRCh37-only population");
+    assert_eq!(grch37_population["status"], "missing");
+    assert!(
+        grch37_population["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("dbSNP"))
+    );
+
+    let requests = requests.lock().expect("lock requests");
+    assert!(
+        requests
+            .iter()
+            .any(|request| request.starts_with("GET /refsnp/334"))
+    );
+    assert!(
+        requests
+            .iter()
+            .any(|request| request.starts_with("GET /refsnp/335"))
     );
 }
 
