@@ -23,8 +23,9 @@
 #      intact; nothing prepares or gates that stale tree.
 #   4. sdlc/scripts/install in that tree, if the repo has one
 #   5. the green-main gate: sdlc/scripts/lint then sdlc/scripts/test in that
-#      tree. Skipped for the quickfix flow, and skipped when the ticket
-#      branch already carries commits of its own — a continued branch is
+#      tree. A readable verdict marker for the current origin/main skips all
+#      three commands. The gate otherwise skips for the quickfix flow and for
+#      a ticket branch carrying commits of its own — a continued branch is
 #      mid-work (a red-first test is its normal state) and its redness says
 #      nothing about origin/main; the landing gate protects main instead.
 #   Steps 4 and 5 undo the tree and branch when they fail, so a refused
@@ -177,6 +178,10 @@ if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --prune origin; then
 	echo "before: git fetch origin failed" >&2
 	exit 1
 fi
+if ! GREEN_MAIN_SHA=$(git -C "$REPO" rev-parse origin/main); then
+	echo "before: could not resolve origin/main" >&2
+	exit 1
+fi
 
 # 2. The tree. Three shapes: continue an existing tree, put a tree back on an
 # existing branch, or make both fresh from origin/main.
@@ -248,6 +253,30 @@ fi
 # this is a continuation of the ticket's own work.
 AHEAD=$(git -C "$TREE" rev-list --count "origin/main..$BRANCH" 2>/dev/null || echo 0)
 
+# A green verdict belongs to the fetched main commit, not to the rebuildable
+# queue state or to an individual ticket worktree. Snapshot trust before any
+# project-owned script runs, so install cannot create a marker and skip gates.
+GREEN_MAIN_MARKER=
+GREEN_MAIN_VERDICT_TRUSTED=0
+GREEN_MAIN_NEEDS_PROOF=0
+if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -eq 0 ]; then
+	GREEN_MAIN_MARKER="$WORKTREES/$NAMESPACE/.green-main/$GREEN_MAIN_SHA"
+	if [ -f "$GREEN_MAIN_MARKER" ] && [ ! -L "$GREEN_MAIN_MARKER" ] && [ -r "$GREEN_MAIN_MARKER" ]; then
+		GREEN_MAIN_VERDICT_TRUSTED=1
+		echo "before: trusting green-main verdict for $GREEN_MAIN_SHA" >&2
+	else
+		GREEN_MAIN_NEEDS_PROOF=1
+	fi
+fi
+
+# Project-owned setup and gates must not leave an unproven verdict behind.
+clear_unproven_marker() {
+	[ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ] || return 0
+	if [ -e "$GREEN_MAIN_MARKER" ] || [ -L "$GREEN_MAIN_MARKER" ]; then
+		rm -f "$GREEN_MAIN_MARKER"
+	fi
+}
+
 # 4. Project preparation is optional, unlike the green-main gate. An existing
 # non-executable script is a fault rather than an absent install.
 install() {
@@ -260,21 +289,24 @@ install() {
 	(cd "$TREE" && SDLC_REPO="$REPO" "$script") || return 1
 }
 
-status=0
-install || status=$?
-if [ "$status" -ne 0 ]; then
-	cleanup_status=0
-	undo || cleanup_status=$?
-	if [ "$cleanup_status" -eq 3 ]; then
-		exit 3
+if [ "$GREEN_MAIN_VERDICT_TRUSTED" -eq 0 ]; then
+	status=0
+	install || status=$?
+	if [ "$status" -ne 0 ]; then
+		clear_unproven_marker || echo "before: could not clear unproven green-main verdict" >&2
+		cleanup_status=0
+		undo || cleanup_status=$?
+		if [ "$cleanup_status" -eq 3 ]; then
+			exit 3
+		fi
+		if [ "$cleanup_status" -ne 0 ]; then
+			echo "before: cleanup after a failed install failed" >&2
+		fi
+		if [ "$status" -ne 2 ]; then
+			echo "before: sdlc/scripts/install failed" >&2
+		fi
+		exit 1
 	fi
-	if [ "$cleanup_status" -ne 0 ]; then
-		echo "before: cleanup after a failed install failed" >&2
-	fi
-	if [ "$status" -ne 2 ]; then
-		echo "before: sdlc/scripts/install failed" >&2
-	fi
-	exit 1
 fi
 
 # 5. Green check, in that tree, using this project's own gate ladder.
@@ -290,13 +322,14 @@ gate() {
 if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -gt 0 ]; then
 	echo "before: skipping the green-main gate: $BRANCH carries $AHEAD commit(s) of its own work, so this tree is not origin/main" >&2
 fi
-if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -eq 0 ]; then
+if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 	for g in lint test; do
 		status=0
 		gate "$g" || status=$?
 		if [ "$status" -eq 0 ]; then
 			continue
 		fi
+		clear_unproven_marker || echo "before: could not clear unproven green-main verdict" >&2
 		cleanup_status=0
 		undo || cleanup_status=$?
 		if [ "$cleanup_status" -eq 3 ]; then
@@ -312,6 +345,141 @@ if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -eq 0 ]; then
 		echo "before: origin/main is not green — sdlc/scripts/$g failed; a quickfix has to land first" >&2
 		exit 3
 	done
+
+	# The filename is the verdict key. Replace an unreadable stale marker only
+	# after the complete proof succeeds, so a failed proof is never remembered.
+	if ! mkdir -p "$(dirname "$GREEN_MAIN_MARKER")" ||
+		! rm -f "$GREEN_MAIN_MARKER" ||
+		! : >"$GREEN_MAIN_MARKER" ||
+		! chmod u+r "$GREEN_MAIN_MARKER" ||
+		[ ! -f "$GREEN_MAIN_MARKER" ] || [ -L "$GREEN_MAIN_MARKER" ] || [ ! -r "$GREEN_MAIN_MARKER" ]; then
+		clear_unproven_marker || true
+		echo "before: could not store green-main verdict for $GREEN_MAIN_SHA" >&2
+		exit 1
+	fi
+fi
+
+# Install the early traceability refusal in Git's shared hooks directory.
+# Git resolves this path through the worktree's common directory, so it stays
+# with the repository after this worktree is removed.
+install_commit_msg_hook() {
+	local hooks hook original temporary preserved=0 restore_status
+	if ! hooks=$(git -C "$TREE" rev-parse --path-format=absolute --git-path hooks); then
+		echo "before: could not determine the Git hooks directory for $REPO" >&2
+		return 1
+	fi
+	if ! mkdir -p "$hooks"; then
+		echo "before: could not create the Git hooks directory for $REPO" >&2
+		return 1
+	fi
+
+	hook="$hooks/commit-msg"
+	original="$hooks/commit-msg.sdlc-original"
+	if [ -e "$hook" ] || [ -L "$hook" ]; then
+		if [ ! -L "$hook" ] && grep -Fqx '# sdlc-managed-traceability-commit-msg-hook' "$hook"; then
+			if ! chmod u+x "$hook"; then
+				echo "before: could not make the traceability commit-msg hook executable" >&2
+				return 1
+			fi
+			return 0
+		fi
+		if [ -e "$original" ] || [ -L "$original" ]; then
+			echo "before: cannot preserve commit-msg: its sdlc original already exists" >&2
+			return 1
+		fi
+	fi
+
+	if ! temporary=$(mktemp "$hooks/.commit-msg.sdlc.XXXXXX"); then
+		echo "before: could not create the traceability commit-msg hook" >&2
+		return 1
+	fi
+	if ! cat >"$temporary" <<'HOOK'
+#!/bin/sh
+# sdlc-managed-traceability-commit-msg-hook
+message=${1-}
+if [ -z "$message" ] || [ ! -r "$message" ]; then
+	echo "sdlc traceability commit-msg hook: cannot read the commit message" >&2
+	exit 1
+fi
+
+subject=$(sed -n '1p' "$message") || {
+	echo "sdlc traceability commit-msg hook: cannot read the commit message" >&2
+	exit 1
+}
+paths=$(git diff --cached --name-only -- \
+	'tests/*' '*/tests/*' '*.test.*' '*.spec.*' 'spec/*' '*/spec/*' \
+	'test_*' '*/test_*') || {
+	echo "sdlc traceability commit-msg hook: cannot list staged paths" >&2
+	exit 1
+}
+
+if [ -n "$paths" ]; then
+	case "$subject" in
+	'design: '* | 'design-review: '* | 'code-review: '* | 'code: fix mechanical'*) ;;
+	*)
+		echo "Test changes violate the traceability rule (the test is the spec):" >&2
+		printf '%s\n' "$paths" >&2
+		echo "Tests change only in design:, design-review:, code-review:, or 'code: fix mechanical' commits." >&2
+		exit 1
+		;;
+	esac
+fi
+
+hook_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P) || {
+	echo "sdlc traceability commit-msg hook: cannot find its original hook" >&2
+	exit 1
+}
+original="$hook_dir/commit-msg.sdlc-original"
+if [ -x "$original" ]; then
+	"$original" "$@"
+	exit $?
+fi
+exit 0
+HOOK
+	then
+		rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
+		echo "before: could not write the traceability commit-msg hook" >&2
+		return 1
+	fi
+	if ! chmod 755 "$temporary"; then
+		rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
+		echo "before: could not make the traceability commit-msg hook executable" >&2
+		return 1
+	fi
+	if [ -e "$hook" ] || [ -L "$hook" ]; then
+		if ! mv "$hook" "$original"; then
+			rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
+			echo "before: could not preserve the existing commit-msg hook" >&2
+			return 1
+		fi
+		preserved=1
+	fi
+	if ! mv "$temporary" "$hook"; then
+		restore_status=0
+		if [ "$preserved" -eq 1 ]; then
+			mv "$original" "$hook" || restore_status=$?
+		fi
+		rm -f "$temporary" || echo "before: could not remove incomplete traceability hook" >&2
+		if [ "$restore_status" -ne 0 ]; then
+			echo "before: could not restore the existing commit-msg hook" >&2
+		else
+			echo "before: could not install the traceability commit-msg hook" >&2
+		fi
+		return 1
+	fi
+}
+
+if ! install_commit_msg_hook; then
+	cleanup_status=0
+	undo || cleanup_status=$?
+	if [ "$cleanup_status" -eq 3 ]; then
+		exit 3
+	fi
+	if [ "$cleanup_status" -ne 0 ]; then
+		echo "before: cleanup after a failed traceability hook install failed" >&2
+	fi
+	echo "before: could not install the traceability commit-msg hook" >&2
+	exit 1
 fi
 
 # 6. The place, and the two facts settlement needs when the place is gone.

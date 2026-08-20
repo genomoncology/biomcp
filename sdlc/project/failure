@@ -182,6 +182,7 @@ cleanup() {
 		[ -z "$did" ] || echo "$did"
 	else
 		failures="${failures}${failures:+, }$name"
+		return 1
 	fi
 }
 
@@ -209,15 +210,16 @@ remove_origin_branch() {
 	git -C "$REPO" push --quiet "--force-with-lease=$REF:$REMOTE" origin ":$REF"
 }
 
+tree_removed=1
 if [ -n "$TREE" ] && [ -e "$TREE" ]; then
-	cleanup "worktree removal $TREE" "removed worktree $TREE" remove_tree "$TREE"
+	cleanup "worktree removal $TREE" "removed worktree $TREE" remove_tree "$TREE" || tree_removed=0
 fi
-cleanup "worktree prune" "" prune_worktrees
-if [ -n "$LOCAL" ]; then
-	cleanup "local branch $BRANCH" "deleted local branch $BRANCH" remove_local_branch
+cleanup "worktree prune" "" prune_worktrees || :
+if [ "$tree_removed" -eq 1 ] && [ -n "$LOCAL" ]; then
+	cleanup "local branch $BRANCH" "deleted local branch $BRANCH" remove_local_branch || :
 fi
 if [ -n "$REMOTE" ]; then
-	cleanup "origin branch $BRANCH" "deleted origin branch $BRANCH" remove_origin_branch
+	cleanup "origin branch $BRANCH" "deleted origin branch $BRANCH" remove_origin_branch || :
 fi
 
 if [ -n "$failures" ]; then
