@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 3
-hold: draft for review; do not promote until Ian releases this
+priority: 6
 ---
 # Do not dump raw binary to a terminal
 

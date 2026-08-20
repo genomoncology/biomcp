@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 4
-hold: draft for review; do not promote until Ian releases this
+priority: 9
 ---
 # Make gene cspec and variant erepo flags do what they say
 

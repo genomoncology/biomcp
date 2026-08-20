@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 7
-hold: draft for review; do not promote until Ian releases this
+priority: 20
 ---
 # Fail fast when a CI step stalls
 
@@ -30,7 +29,7 @@ Whatever limit is chosen must have headroom over the observed honest duration of
 
 ## Related
 
-`sdlc/tickets/drafts/1036` covers a deterministic Windows test making a live network call. Both are the same underlying complaint — an unattended gate judged on someone else's uptime — but the fixes are unrelated and they touch different files. Neither blocks the other.
+`sdlc/tickets/1036` covers a deterministic Windows test making a live network call. Both are the same underlying complaint — an unattended gate judged on someone else's uptime — but the fixes are unrelated and they touch different files. Neither blocks the other.
 
 ## Existing tests that pin this
 

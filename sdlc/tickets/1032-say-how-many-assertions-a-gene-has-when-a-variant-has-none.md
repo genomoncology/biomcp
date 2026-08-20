@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 6
-hold: draft for review; do not promote until Ian releases this
+priority: 16
 ---
 # Say how many assertions a gene has when a variant has none
 
@@ -23,7 +22,7 @@ Take care not to overstate what the count means. It is the number of assertions 
 
 ## Related
 
-`sdlc/tickets/drafts/1023` covers the neighbouring problem of a zero count printed for a source that was never reached. These are different: 1023 is about an unreachable source, this is about a source that answered honestly with nothing.
+`sdlc/tickets/1023` covers the neighbouring problem of a zero count printed for a source that was never reached. These are different: 1023 is about an unreachable source, this is about a source that answered honestly with nothing.
 
 ## Existing tests that pin this
 

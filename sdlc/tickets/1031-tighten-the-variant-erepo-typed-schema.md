@@ -1,7 +1,6 @@
 ---
 flow: build
-priority: 5
-hold: draft for review; do not promote until Ian releases this
+priority: 10
 ---
 # Tighten the variant erepo typed schema
 

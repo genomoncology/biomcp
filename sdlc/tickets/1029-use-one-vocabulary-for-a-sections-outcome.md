@@ -1,8 +1,7 @@
 ---
 flow: build
-priority: 3
+priority: 11
 deps: ["1022", "1035"]
-hold: draft for review; do not promote until Ian releases this
 ---
 # Use one vocabulary for a section's outcome
 
