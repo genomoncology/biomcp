@@ -785,9 +785,8 @@ fn invalid(_message: &str) -> BioMcpError {
 mod tests {
     use super::*;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
     #[test]
-    fn receipted_pten_gene_page_is_compact_bounded_and_truthfully_paged() {
+    fn receipted_pten_gene_page_is_compact_bounded_and_reports_exact_count() {
         let value: Value = serde_json::from_slice(include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/testdata/sources/clingen_erepo/pten-gene-limit-26.json"
@@ -797,6 +796,8 @@ mod tests {
         assert_eq!(page.returned, 25);
         assert!(page.has_more);
         assert_eq!(page.total, None);
+        let complete_page = gene_page_from_value(&value, 0, 26).expect("complete gene page");
+        assert_eq!(complete_page.total, Some(26));
         assert_eq!(page.results[0].gene.as_deref(), Some("PTEN"));
         assert!(
             page.results[0]
@@ -812,7 +813,6 @@ mod tests {
                 .all(|value| value.len() <= GENE_PREVIEW_BYTES)
         );
     }
-
     #[test]
     fn gene_preview_omits_oversized_strings_without_cutting_them() {
         let oversized = "α".repeat(129);
