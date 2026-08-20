@@ -328,6 +328,8 @@ pub(crate) fn build_cache_stats_report(
 pub(crate) fn collect_cache_stats_report() -> Result<CacheStatsReport, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
     crate::cache::secure_managed_tree(&config.cache_root, true)?;
+    crate::cache::ensure_body_limited_cache_epoch(&config.cache_root, false)?;
+    crate::cache::secure_managed_tree(&config.cache_root.join("http"), true)?;
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|error| BioMcpError::InvalidArgument(error.to_string()))?;
