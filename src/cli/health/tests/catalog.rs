@@ -45,6 +45,7 @@ fn health_inventory_includes_all_expected_sources() {
             "ClinGen CSpec",
             "ClinGen ERepo",
             "ClinGen LDH",
+            "dbSNP",
             "gnomAD",
             "UniProt",
             "QuickGO",
@@ -123,6 +124,10 @@ fn markdown_shows_new_affects_mappings() {
     assert_eq!(
         affects_for_api("ClinGen LDH"),
         Some("variant article identity verification")
+    );
+    assert_eq!(
+        affects_for_api("dbSNP"),
+        Some("variant population coordinate resolution")
     );
     assert_eq!(affects_for_api("gnomAD"), Some("gene constraint section"));
     assert_eq!(

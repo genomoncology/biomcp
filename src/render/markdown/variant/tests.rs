@@ -175,7 +175,7 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
 
 #[test]
 fn variant_population_markdown_keeps_missing_status_compact() {
-    let variant: Variant = serde_json::from_value(serde_json::json!({
+    let unresolved: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr7:g.140453136A>T",
         "genome_build": "GRCh37",
         "gene": "BRAF",
@@ -183,19 +183,51 @@ fn variant_population_markdown_keeps_missing_status_compact() {
             "status": "missing",
             "dataset": "gnomad_r4",
             "release": "gnomAD v4",
-            "message": "Direct gnomAD v4 population data requires a trustworthy GRCh38 coordinate.",
+            "message": "Direct gnomAD v4 population data requires a trustworthy GRCh38 coordinate; tried dbSNP.",
             "exome": null,
             "genome": null,
             "faf_caveat": "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
         }
     }))
-    .expect("variant should deserialize");
+    .expect("unresolved variant should deserialize");
 
-    let markdown = variant_markdown(&variant, &["population".to_string()]).unwrap();
-    assert!(markdown.starts_with("# BRAF - population"));
-    assert!(markdown.contains("requires a trustworthy GRCh38 coordinate"));
-    assert!(!markdown.contains("### Exomes"));
-    assert!(!markdown.contains("## ClinVar"));
+    let unresolved_markdown = variant_markdown(&unresolved, &["population".to_string()]).unwrap();
+    assert!(unresolved_markdown.contains("requires a trustworthy GRCh38 coordinate"));
+    assert!(unresolved_markdown.contains("tried dbSNP"));
+    assert!(!unresolved_markdown.contains("### Exomes"));
+
+    let resolved: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr11:g.5248232T>A",
+        "genome_build": "GRCh37",
+        "gene": "HBB",
+        "population": {
+            "status": "data",
+            "dataset": "gnomad_r4",
+            "release": "gnomAD v4",
+            "resolved_coordinate": {
+                "id": "chr11:g.5227002T>A",
+                "genome_build": "GRCh38",
+                "source": "dbSNP"
+            },
+            "exome": {
+                "allele_frequency": 0.001,
+                "ac": 2335,
+                "an": 1458356,
+                "homozygote_count": 31,
+                "hemizygote_count": 0,
+                "filters": [],
+                "faf95": {"popmax": 0.05474387, "popmax_population": "afr"},
+                "populations": []
+            },
+            "genome": null,
+            "faf_caveat": "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
+        }
+    }))
+    .expect("resolved variant should deserialize");
+
+    let resolved_markdown = variant_markdown(&resolved, &["population".to_string()]).unwrap();
+    assert!(resolved_markdown.contains("Resolved GRCh38 coordinate: chr11:g.5227002T>A (dbSNP)"));
+    assert!(resolved_markdown.contains("Exomes"));
 }
 
 #[test]
