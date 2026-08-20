@@ -192,9 +192,11 @@ fn variant_population_markdown_keeps_missing_status_compact() {
     .expect("unresolved variant should deserialize");
 
     let unresolved_markdown = variant_markdown(&unresolved, &["population".to_string()]).unwrap();
+    assert!(unresolved_markdown.starts_with("# BRAF - population"));
     assert!(unresolved_markdown.contains("requires a trustworthy GRCh38 coordinate"));
     assert!(unresolved_markdown.contains("tried dbSNP"));
     assert!(!unresolved_markdown.contains("### Exomes"));
+    assert!(!unresolved_markdown.contains("## ClinVar"));
 
     let resolved: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr11:g.5248232T>A",
