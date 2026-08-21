@@ -21,11 +21,15 @@
 # HONORING SETTLEMENT: when SETTLEMENT says the item is out of attempts
 #   (failed, exhausted, "attempts spent", out-of-attempts) or says leave/left,
 #   the attempt is preserved WHOLE — branch, worktree and all — and nothing
-#   is torn down, because a human is about to stand in it. Every other
-#   settlement, including an empty or unrecognized one, is treated as a
-#   retry. A rejected run tags and then tears down so the next attempt gets a
-#   clean tree. A successful run whose own ticket branch could not land keeps
-#   its tagged branch and owned worktree for the next attempt to continue.
+#   is torn down, because a human is about to stand in it. A blocked attempt
+#   also preserves whole, but runs its optional $TREE/sdlc/scripts/clean in
+#   the worktree to shed rebuildable output. An absent clean is skipped; an
+#   existing non-executable clean faults before any other action; a failed
+#   clean is reported but does not cost the preservation. Every other
+#   settlement, including an empty or unrecognized one, is treated as a retry.
+#   A rejected run tags and then tears down so the next attempt gets a clean
+#   tree. A successful run whose own ticket branch could not land keeps its
+#   tagged branch and owned worktree for the next attempt to continue.
 #
 # STDOUT:  one line per action taken or preserved thing.
 # EXIT:    0 handled — a retry may proceed per SETTLEMENT
@@ -47,12 +51,20 @@ esac
 BRANCH=${SDLC_BRANCH:-ticket/$TICKET_ID}
 REF="refs/heads/$BRANCH"
 TREE=${ATTEMPT_DIR:-}
+BASELINE=
+if [ -n "$TREE" ]; then
+	BASELINE="$TREE.baseline"
+fi
 
 # Preserve whole, or preserve the commits and clear the bench.
+BLOCKED=0
 case "$(printf '%s' "${SETTLEMENT-}" | tr '[:upper:]' '[:lower:]')" in
 *leave* | *left* | *fail* | *exhaust* | *"out of attempts"* | *out-of-attempts* | *"attempts spent"*)
 	echo "settlement \"${SETTLEMENT-}\": preserving $BRANCH and ${TREE:-the worktree} untouched"
 	exit 0
+	;;
+blocked)
+	BLOCKED=1
 	;;
 esac
 
@@ -98,6 +110,27 @@ candidate_owned() {
 if [ -n "$TREE" ] && [ -e "$TREE" ] && ! candidate_owned "$TREE"; then
 	echo "failure: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
 	exit 2
+fi
+if [ -n "$BASELINE" ] && [ -e "$BASELINE" ] && ! candidate_owned "$BASELINE"; then
+	echo "failure: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
+	exit 2
+fi
+
+if [ "$BLOCKED" -eq 1 ]; then
+	CLEAN="$TREE/sdlc/scripts/clean"
+	if [ -n "$TREE" ] && [ -e "$CLEAN" ]; then
+		if [ ! -x "$CLEAN" ]; then
+			echo "failure: clean must be executable: $CLEAN" >&2
+			exit 2
+		fi
+		if (cd -- "$TREE" && ./sdlc/scripts/clean); then
+			:
+		else
+			echo "clean failed: preserving $BRANCH and $TREE"
+		fi
+	fi
+	echo "settlement \"${SETTLEMENT-}\": preserving $BRANCH and ${TREE:-the worktree} untouched"
+	exit 0
 fi
 
 LOCAL=$(git -C "$REPO" for-each-ref --format='%(objectname)' "$REF")
@@ -198,6 +231,13 @@ remove_tree() {
 	fi
 	rm -rf "$candidate"
 }
+remove_baseline() {
+	if ! candidate_owned "$BASELINE"; then
+		echo "failure: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
+		return 1
+	fi
+	remove_tree "$BASELINE"
+}
 prune_worktrees() {
 	git -C "$REPO" worktree prune >/dev/null 2>&1
 }
@@ -213,6 +253,9 @@ remove_origin_branch() {
 tree_removed=1
 if [ -n "$TREE" ] && [ -e "$TREE" ]; then
 	cleanup "worktree removal $TREE" "removed worktree $TREE" remove_tree "$TREE" || tree_removed=0
+fi
+if [ -n "$BASELINE" ] && [ -e "$BASELINE" ]; then
+	cleanup "baseline worktree removal $BASELINE" "removed baseline worktree $BASELINE" remove_baseline || :
 fi
 cleanup "worktree prune" "" prune_worktrees || :
 if [ "$tree_removed" -eq 1 ] && [ -n "$LOCAL" ]; then
