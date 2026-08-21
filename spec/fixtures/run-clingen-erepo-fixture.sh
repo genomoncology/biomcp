@@ -32,6 +32,7 @@ requests.touch()
 apc_summary = (root / "apc-summary.json").read_bytes()
 apc_detail = (root / "apc-detail.json").read_bytes()
 pten_gene = json.loads((root / "pten-gene-limit-26.json").read_text())
+car_tp53 = (root.parent / "clingen_allele_registry" / "tp53-nm_000546.6-c.215c-g.json").read_bytes()
 # The receipted APC page has no p.cspec-svi-text element. Keep that absence
 # explicit while still exercising the required HTML request and parser path.
 apc_guideline = b"<!doctype html><html><body></body></html>"
@@ -51,6 +52,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         requests.open("a").write(self.path + "\n")
         path, _, query = self.path.partition("?")
+        if path == "/allele/CA000072":
+            self.send_bytes(200, car_tp53); return
+        if path == "/allele/CA000073":
+            self.send_json(200, {"communityStandardTitle": []}); return
+        if path == "/allele/CA000074":
+            self.send_json(503, {"error": "fixture CAR lookup unavailable"}); return
         if path == "/evrepo/api/classifications":
             params = dict(part.split("=", 1) for part in query.split("&"))
             start = int(params["matchSkip"]); size = int(params["matchLimit"])
@@ -77,9 +84,13 @@ bash "$ownership_helper" write "$repo_root" "$kind" "$tmp" "$server_pid" "BIOMCP
 while [[ ! -s "$tmp/port" ]]; do sleep 0.05; done
 fixture_port="$(<"$tmp/port")"
 export BIOMCP_CLINGEN_EREPO_BASE="http://127.0.0.1:$fixture_port"
+export BIOMCP_CLINGEN_CAR_BASE="http://127.0.0.1:$fixture_port"
 export BIOMCP_CACHE_MODE=off
 
 markdown="$($binary variant erepo CA015543)"
+resolved_gene="$($binary variant erepo CA000072)"
+missing_gene="$($binary variant erepo CA000073)"
+unavailable_gene="$($binary variant erepo CA000074)"
 summary="$($binary --json variant erepo CA015543)"
 detail="$($binary --json variant erepo CA015543 --detail)"
 pten="$($binary --json variant erepo CA000498)"
@@ -107,8 +118,12 @@ PY
 mcp="$(<"$tmp/mcp.json")"
 gene_mcp="$(<"$tmp/mcp.json.gene")"
 requests="$(<"$tmp/requests.jsonl")"
-jq -n --arg markdown "$markdown" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
+jq -n --arg markdown "$markdown" --arg resolved_gene "$resolved_gene" --arg missing_gene "$missing_gene" --arg unavailable_gene "$unavailable_gene" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
   plain_cli_reports_summary: ($markdown | contains("ClinGen ERepo expert assertions") and contains("Classification: Pathogenic")),
+  empty_caid_resolves_its_car_gene: (($resolved_gene | contains("No expert assertions were returned.") and contains("Gene: TP53")) and ($requests | contains("/allele/CA000072?fields="))),
+  empty_caid_with_no_car_gene_keeps_the_original_message: (($missing_gene == "# ClinGen ERepo expert assertions\n\n## CA000073\n\nNo expert assertions were returned.\n\n") and ($requests | contains("/allele/CA000073?fields="))),
+  unavailable_car_gene_lookup_keeps_the_original_message: (($unavailable_gene == "# ClinGen ERepo expert assertions\n\n## CA000074\n\nNo expert assertions were returned.\n\n") and ($requests | contains("/allele/CA000074?fields="))),
+
   apc_summary_preserves_source_facts: ($summary.items[0].assertions[0].classification == "Pathogenic"),
   plain_ps4_has_no_explicit_strength: (($summary.items[0].assertions[0].criteria[] | select(.source_token == "PS4").explicit_strength) == null),
   default_strength_is_not_applied_strength: (($detail.items[0].assertions[0].detail.criteria[] | select(.code == "PS4").default_strength) == "Pathogenic Strong"),
