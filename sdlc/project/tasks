@@ -29,7 +29,8 @@
 //          Files under sdlc/tickets/drafts/ are not tickets and are ignored.
 // STDERR:  one line per malformed ticket, named by path and problem. A
 //          malformed ticket is reported and NOT emitted; the rest still are.
-// EXIT:    0 the scan completed (even with problems, even if empty)
+// EXIT:    0 the scan completed cleanly (even if empty)
+//          1 one or more tickets were malformed
 //          2 cannot report — no origin, fetch failed, origin/main unreadable
 //
 // It is an ES module because this repository's package.json says type:
@@ -215,6 +216,7 @@ for (const path of lsTree("sdlc/records")) {
 }
 
 let out = "";
+let hasProblems = false;
 for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive", true]]) {
   for (const path of lsTree(dir)) {
     const bytes = gitBytes("show", `origin/main:${path}`);
@@ -222,6 +224,7 @@ for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive",
     const content = bytes.toString("utf8");
     const parsed = parseTicket(path, content);
     if (!parsed.ok) {
+      hasProblems = true;
       for (const problem of parsed.problems) process.stderr.write(`tasks: ${problem}\n`);
       continue;
     }
@@ -243,3 +246,4 @@ for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive",
   }
 }
 process.stdout.write(out);
+if (hasProblems) process.exitCode = 1;
