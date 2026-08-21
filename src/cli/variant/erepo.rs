@@ -103,7 +103,7 @@ pub(super) async fn handle(request: Request, json: bool) -> anyhow::Result<Comma
     let text = if json {
         crate::render::json::to_pretty(&response)?
     } else {
-        render_markdown(&response)
+        render_markdown(&response, empty_caid_gene(&response).await.as_deref())
     };
     Ok(CommandOutcome::stdout(text))
 }
@@ -158,12 +158,28 @@ fn render_gene_markdown(response: &crate::entities::variant::ERepoGenePage) -> S
     out
 }
 
-fn render_markdown(response: &ERepoResponse) -> String {
+async fn empty_caid_gene(response: &ERepoResponse) -> Option<String> {
+    let [item] = response.items.as_slice() else {
+        return None;
+    };
+    if !item.assertions.is_empty() {
+        return None;
+    }
+    crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new()
+        .ok()?
+        .gene_for_caid(&item.caid)
+        .await
+}
+
+fn render_markdown(response: &ERepoResponse, empty_caid_gene: Option<&str>) -> String {
     let mut out = String::from("# ClinGen ERepo expert assertions\n\n");
     for item in &response.items {
         out.push_str(&format!("## {}\n\n", item.caid));
         if item.assertions.is_empty() {
             out.push_str("No expert assertions were returned.\n\n");
+            if let Some(gene) = empty_caid_gene {
+                out.push_str(&format!("Gene: {gene}\n\n"));
+            }
             continue;
         }
         for assertion in &item.assertions {
@@ -267,7 +283,7 @@ mod tests {
             provider: "ClinGen ERepo",
         };
 
-        let markdown = render_markdown(&response);
+        let markdown = render_markdown(&response, None);
         assert!(markdown.contains("# ClinGen ERepo expert assertions"));
         assert!(markdown.contains("Classification: Pathogenic"));
         assert!(markdown.contains("met: PS4"));

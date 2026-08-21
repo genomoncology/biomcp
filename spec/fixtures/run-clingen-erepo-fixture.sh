@@ -89,8 +89,10 @@ export BIOMCP_CACHE_MODE=off
 
 markdown="$($binary variant erepo CA015543)"
 resolved_gene="$($binary variant erepo CA000072)"
-missing_gene="$($binary variant erepo CA000073)"
-unavailable_gene="$($binary variant erepo CA000074)"
+"$binary" variant erepo CA000073 > "$tmp/missing_gene.stdout"
+head -c -1 "$tmp/missing_gene.stdout" > "$tmp/missing_gene.md"
+"$binary" variant erepo CA000074 > "$tmp/unavailable_gene.stdout"
+head -c -1 "$tmp/unavailable_gene.stdout" > "$tmp/unavailable_gene.md"
 summary="$($binary --json variant erepo CA015543)"
 detail="$($binary --json variant erepo CA015543 --detail)"
 pten="$($binary --json variant erepo CA000498)"
@@ -118,7 +120,7 @@ PY
 mcp="$(<"$tmp/mcp.json")"
 gene_mcp="$(<"$tmp/mcp.json.gene")"
 requests="$(<"$tmp/requests.jsonl")"
-jq -n --arg markdown "$markdown" --arg resolved_gene "$resolved_gene" --arg missing_gene "$missing_gene" --arg unavailable_gene "$unavailable_gene" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
+jq -n --arg markdown "$markdown" --arg resolved_gene "$resolved_gene" --rawfile missing_gene "$tmp/missing_gene.md" --rawfile unavailable_gene "$tmp/unavailable_gene.md" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
   plain_cli_reports_summary: ($markdown | contains("ClinGen ERepo expert assertions") and contains("Classification: Pathogenic")),
   empty_caid_resolves_its_car_gene: (($resolved_gene | contains("No expert assertions were returned.") and contains("Gene: TP53")) and ($requests | contains("/allele/CA000072?fields="))),
   empty_caid_with_no_car_gene_keeps_the_original_message: (($missing_gene == "# ClinGen ERepo expert assertions\n\n## CA000073\n\nNo expert assertions were returned.\n\n") and ($requests | contains("/allele/CA000073?fields="))),

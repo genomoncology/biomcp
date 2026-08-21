@@ -74,6 +74,10 @@ impl ClinGenAlleleRegistryClient {
             .query("fields", CAR_FIELDS)
     }
 
+    pub(crate) fn caid_plan(caid: &str) -> RequestPlan {
+        RequestPlan::get(caid_path(caid)).query("fields", CAR_FIELDS)
+    }
+
     pub(crate) fn normalize_batch_plan(inputs: &[String]) -> RequestPlan {
         RequestPlan::post("alleles")
             .query("file", "hgvs")
@@ -130,6 +134,26 @@ impl ClinGenAlleleRegistryClient {
         }
     }
 
+    pub(crate) async fn gene_for_caid(&self, caid: &str) -> Option<String> {
+        let response = crate::sources::apply_cache_mode(request_from_plan(
+            &self.client,
+            self.base.as_ref(),
+            &Self::caid_plan(caid),
+        ))
+        .send_with_source_context(SourceContext::retry(SourceProvider::CLINGEN_CAR))
+        .await
+        .ok()?;
+        let status = response.status();
+        let bytes = crate::sources::read_limited_source_body_with_limit(
+            response,
+            SourceContext::narrow(SourceProvider::CLINGEN_CAR),
+            CAR_BODY_LIMIT,
+        )
+        .await
+        .ok()?;
+        gene_from_caid_response(caid, status, &bytes)
+    }
+
     pub(crate) async fn normalize_batch(
         &self,
         inputs: &[String],
@@ -170,6 +194,40 @@ impl ClinGenAlleleRegistryClient {
             &bytes,
         ))
     }
+}
+
+fn caid_path(caid: &str) -> String {
+    let mut url = Url::parse(CAR_BASE).expect("static CAR origin is valid");
+    url.path_segments_mut()
+        .expect("static CAR origin accepts path segments")
+        .extend(["allele", caid]);
+    url.path().trim_start_matches('/').to_owned()
+}
+
+fn gene_from_caid_response(caid: &str, status: StatusCode, bytes: &[u8]) -> Option<String> {
+    if !status.is_success() {
+        return None;
+    }
+    let value = serde_json::from_slice::<Value>(bytes).ok()?;
+    let identity = value.get("@id").and_then(Value::as_str)?;
+    if identity.rsplit('/').next() != Some(caid) {
+        return None;
+    }
+    let titles = value.get("communityStandardTitle")?.as_array()?;
+    let [title] = titles.as_slice() else {
+        return None;
+    };
+    gene_from_title(title.as_str()?)
+}
+
+fn gene_from_title(title: &str) -> Option<String> {
+    let mut genes = title
+        .split('(')
+        .skip(1)
+        .filter_map(|component| component.split_once(')').map(|(gene, _)| gene))
+        .filter(|gene| crate::sources::is_valid_gene_symbol(gene));
+    let gene = genes.next()?;
+    genes.next().is_none().then(|| gene.to_owned())
 }
 
 fn decode_batch_response(
