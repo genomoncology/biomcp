@@ -35,6 +35,12 @@ Coverage is how a caller distinguishes "this article has no supplements" from "t
 
 `sm` is a common layout and sizing token in PMC's markup, so it matches containers with no relationship to supplementary material. Separately, nothing requires the link target to look like a retrievable file, so a link to another page or an external registry becomes a candidate with a filename derived from the last path segment.
 
+## One observation about the sample
+
+On every article examined, the real supplements were discovered through both the JATS route and the PMC HTML route, while every phantom entry was discovered through PMC HTML alone. On `PMC3040717` the two genuine supplements each carry `jats_xml` and `pmc_html` discovery routes; the eight phantom entries carry only `pmc_html`.
+
+This is an observation about a handful of articles, not a rule that has been established. It is recorded here because it means the HTML route has real headroom — the supplements that must survive this change are named independently by JATS — and not as an instruction to filter on route corroboration. Establish whether it holds before relying on it.
+
 ## The hard choice to settle
 
 Decide whether to narrow the ancestor tokens, to require the link target to look like a file, or to do both. Narrowing tokens alone still admits a genuine supplement container that links out to a registry; a file-shape test alone still admits stray files from unrelated containers. Whichever is chosen must not lose a real supplement that is currently found — `PMC3040717` and `PMC3549296` both name real supplements through this route, and both must still be named after the change even though PMC currently answers for them with a proof-of-work challenge.
