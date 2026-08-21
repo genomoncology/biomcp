@@ -202,7 +202,9 @@ fn render_markdown(response: &ERepoResponse) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cli::Cli;
     use crate::entities::variant::{ERepoAssertion, ERepoCriterion, ERepoItem, ERepoSourceStatus};
+    use clap::Parser;
 
     #[tokio::test]
     async fn input_reader_accepts_exact_limit_and_rejects_one_extra_byte() {
@@ -220,6 +222,22 @@ mod tests {
                 limit_bytes: MAX_EREPO_INPUT_BYTES
             }
         ));
+    }
+
+    #[test]
+    fn caid_lookup_accepts_caller_supplied_gene_context() {
+        let parsed = Cli::try_parse_from([
+            "biomcp",
+            "variant",
+            "erepo",
+            "CA001621",
+            "--gene-context",
+            "PTEN",
+        ]);
+        assert!(
+            parsed.is_ok(),
+            "CAid lookup with an explicit gene context should parse"
+        );
     }
 
     #[test]
