@@ -20,3 +20,19 @@ This is also the cheapest available fix to a testing gap. Today the gates check 
 ## Note on scope
 
 Whether `scripts/measure-mcp-tools.py` is then reduced to a thin wrapper, or removed in favour of the subcommand, is a design decision. Say which was chosen and why.
+
+## Addendum, 2026-08-21
+
+The first attempt was refused at the code stage because an authored
+wrapper test is internally inconsistent: its fake catalog describes
+`biomcp` as `Read-only command` — 17 UTF-8 bytes — while the test
+asserts the derived measurement is 15. The approved design is right
+that the measurement derives from the command JSON; the authored
+assertion's arithmetic is simply wrong, and the code stage is
+correctly forbidden from touching it.
+
+Authorized, exactly and only this: the design stage, continuing the
+existing branch, repairs that one authored assertion so it asserts
+the true derived measurement of its own fixture. Nothing else about
+the approved design changes, and this addendum authorizes no other
+assertion edits.
