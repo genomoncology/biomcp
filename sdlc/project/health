@@ -10,9 +10,10 @@
 #      unreachable or hanging remote is unfit, not a hung doctor
 #   3. origin/main resolves locally, because every other script reads it
 #   4. the contract folders exist, because machinery reads every one of them
-#   5. the contract zone's shape: NNNN-name.md filenames, and no number used
-#      twice across tickets and issues (sdlc ADR 0017). planning/ is
-#      deliberately unchecked — nothing reads it
+#   5. the contract zone's shape: numbered tickets and records, dated or
+#      legacy-numbered issues, and no legacy issue number used by a ticket or
+#      record (sdlc ADR 0017). planning/ is deliberately unchecked — nothing
+#      reads it
 #   6. the registered directory's filesystem has at least 10 GiB free
 #
 # STDOUT:  one finding per line; nothing when everything passes.
@@ -55,41 +56,66 @@ for folder in project scripts tickets records issues; do
 	fi
 done
 
-# Numbered artifacts, by folder. Only *.md is a numbered artifact; .gitkeep
-# and anything else a project keeps beside them is not this check's business.
-numbered_names() {
+# Only *.md is a contract artifact; .gitkeep and anything else a project
+# keeps beside them is not this check's business.
+artifact_names() {
 	find "$1" -maxdepth 1 -type f -name '*.md' -exec basename {} \; 2>/dev/null | sort
 }
 
 if [ "$contract_zone_present" -eq 1 ]; then
 	ticket_numbers=""
-	issue_numbers=""
+	record_numbers=""
+	legacy_issue_numbers=""
 
 	for folder in sdlc/tickets sdlc/tickets/drafts sdlc/tickets/archive sdlc/records sdlc/issues; do
 		[ -d "$folder" ] || continue
-		for name in $(numbered_names "$folder"); do
-			case "$name" in
-			[0-9][0-9][0-9][0-9]-*.md) ;;
-			*)
-				report "$folder/$name is not NNNN-name.md"
-				continue
-				;;
-			esac
-			number=${name%%-*}
+		for name in $(artifact_names "$folder"); do
 			case "$folder" in
-			sdlc/records) ;;
-			sdlc/issues) issue_numbers="$issue_numbers $number" ;;
-			*) ticket_numbers="$ticket_numbers $number" ;;
+			sdlc/issues)
+				# Classify dates first: their year prefix must not reserve a number.
+				case "$name" in
+				[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.md) ;;
+				[0-9][0-9][0-9][0-9]-*.md)
+					number=${name%%-*}
+					legacy_issue_numbers="$legacy_issue_numbers $number"
+					;;
+				*)
+					echo "$folder/$name is not YYYY-MM-DD-short-slug.md or NNNN-name.md"
+					;;
+				esac
+				;;
+			*)
+				case "$name" in
+				[0-9][0-9][0-9][0-9]-*.md) ;;
+				*)
+					report "$folder/$name is not NNNN-name.md"
+					continue
+					;;
+				esac
+				number=${name%%-*}
+				case "$folder" in
+				sdlc/records) record_numbers="$record_numbers $number" ;;
+				*) ticket_numbers="$ticket_numbers $number" ;;
+				esac
+				;;
 			esac
 		done
 	done
 
-	# One counter across tickets and issues: a number names one piece of work,
-	# so promotion from issues/ to tickets/ can keep it. Records are the
-	# deliberate exception and are checked against their ticket instead.
-	duplicates=$(printf '%s\n' $ticket_numbers $issue_numbers | sort | uniq -d)
+	# Legacy issues still reserve a counter number. Records share a number with
+	# their tickets, so they only collide when a legacy issue uses that number.
+	duplicates=$(
+		{
+			printf '%s\n' $ticket_numbers $legacy_issue_numbers | sort | uniq -d
+			for number in $record_numbers; do
+				if printf '%s\n' $legacy_issue_numbers | grep -qx "$number"; then
+					printf '%s\n' "$number"
+				fi
+			done
+		} | sort -u
+	)
 	for number in $duplicates; do
-		report "number $number is used more than once across sdlc/tickets/ and sdlc/issues/"
+		report "number $number is used more than once across numbered artifacts"
 	done
 
 	# A record whose ticket is absent is NOT reported. Repositories differ on
