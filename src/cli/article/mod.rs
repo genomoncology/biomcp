@@ -268,7 +268,6 @@ pub struct ArticleGetArgs {
     #[arg(long = "asset-offset", default_value_t = 0)]
     pub asset_offset: usize,
     /// Sections to include (annotations, indexing, fulltext, tldr, assets, asset <asset-key>, all)
-    #[arg(trailing_var_arg = true)]
     pub sections: Vec<String>,
 }
 

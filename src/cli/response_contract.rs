@@ -12,7 +12,6 @@ const RECOMMENDATIONS_PATH: JsonPath = &["recommendations"];
 const INTERACTIONS_PATH: JsonPath = &["interactions"];
 const STRUCTURES_PATH: JsonPath = &["structures"];
 const PATHWAYS_PATH: JsonPath = &["pathways"];
-const ASSETS_PATH: JsonPath = &["assets"];
 const DOCUMENTS_PATH: JsonPath = &["documents"];
 const CONCEPTS_PATH: JsonPath = &["concepts"];
 const DRUG_US_RESULTS_PATH: JsonPath = &["regions", "us", "results"];
@@ -70,11 +69,6 @@ impl JsonResponseContract {
     pub(super) fn for_command(command: &Commands) -> Self {
         match command {
             Commands::Search { entity } => Self::for_search(entity),
-            Commands::Get {
-                entity: GetEntity::Article(args),
-            } if sections_contain(&args.sections, "assets") => Self {
-                collection_paths: &[ASSETS_PATH],
-            },
             Commands::Get {
                 entity: GetEntity::Trial(args),
             } if sections_contain(&args.sections, "documents") => Self {
