@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import runpy
 import subprocess
+import sys
 
 import pytest
 
@@ -73,6 +74,58 @@ def test_public_inventory_matches_typed_catalog() -> None:
         text = (ROOT / path).read_text(encoding="utf-8")
         for name in TOOLS:
             assert name in text, f"{path} omitted {name}"
+
+
+def test_installed_binary_prints_the_complete_mcp_catalog(tmp_path: Path) -> None:
+    binary = Path(os.environ.get("BIOMCP_BIN", ROOT / "target" / "debug" / "biomcp"))
+    assert binary.exists(), f"missing biomcp binary: {binary}"
+
+    result = subprocess.run(
+        [str(binary), "mcp", "tools"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    tools = json.loads(result.stdout)
+    assert [tool["name"] for tool in tools] == TOOLS
+    for tool in tools:
+        assert tool["description"].strip()
+        assert isinstance(tool["inputSchema"], dict)
+        assert tool["annotations"]["readOnlyHint"] is True
+
+
+def test_measurement_reads_catalog_from_a_direct_binary_command(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    binary.write_text(
+        "\n".join(
+            [
+                f"#!{sys.executable}",
+                "import json",
+                "import sys",
+                "if sys.argv[1:] != ['mcp', 'tools']:",
+                "    raise SystemExit(f'unexpected arguments: {sys.argv[1:]}')",
+                "print(json.dumps([{'name': 'biomcp', 'description': 'Read-only command', 'inputSchema': {}, 'annotations': {'readOnlyHint': True}}]))",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    binary.chmod(0o755)
+
+    result = subprocess.run(
+        ["uv", "run", "--no-sync", "python", "scripts/measure-mcp-tools.py"],
+        cwd=ROOT,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "tools/list UTF-8 bytes:" in result.stdout
+    assert "tools/list cl100k_base tokens:" in result.stdout
 
 
 def test_real_tools_list_stays_within_context_budget(tmp_path: Path) -> None:
