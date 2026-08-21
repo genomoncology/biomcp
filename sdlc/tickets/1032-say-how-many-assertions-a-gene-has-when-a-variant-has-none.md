@@ -43,3 +43,34 @@ This narrows nothing that was promised. The fifth bullet already says a failed o
 Everything else stands. In particular the care the ticket asks for keeps full strength: the count is the number of assertions the repository holds for that gene, never a coverage figure and never a statement about the variant, and the wording must not imply that an unadjudicated variant is benign.
 
 If a later ticket does want CAid-to-gene resolution, it is that ticket's to specify, including which source states the mapping and what happens when the mapping is absent.
+
+## Deferred proofs
+
+Added 2026-08-21, after design review refused twice for a deferral
+with no named successor. The design may leave this position unproved;
+it is carried by the ticket named here:
+
+- how an empty CAid-only ERepo response obtains its gene, including a
+  missing mapping and an unavailable source — ticket 1041
+
+This ticket still proves the behavior it is about: when a gene is
+already available, from the command or from the response, an empty
+result names that gene's assertion count instead of reporting only a
+blank, and the unchanged empty message still stands when no gene is
+available. No new lookup is in scope here — that fence caused the
+code-review refusal of 2026-08-21 at 10:41 and it stays.
+
+## Addendum, 2026-08-21
+
+Three attempts, three different causes, recorded so no fourth
+rediscovers them:
+
+- The design review has twice sealed `verdict: refused` in its output
+  document while exiting successfully, so the code stage received a
+  document saying no design was approved and refused one stage late.
+  That is a fault in the assembly, not in this ticket, and it is
+  sdlc ticket 0133.
+- The code-review refusal at 10:41 was real: the implementation added
+  a ClinGen ERepo gene lookup the ticket fences out of scope. That
+  attempt's branch is preserved as tag `attempt/1032-20260821-1`.
+- The remaining gap was the deferred proof now named above.
