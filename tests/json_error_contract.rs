@@ -539,15 +539,21 @@ fn parsed_json_errors_keep_command_collection_paths_iterable() {
 }
 
 #[test]
-fn article_asset_section_errors_do_not_claim_an_empty_manifest() {
-    let result = run_biomcp(&["--json", "get", "article", "1", "assets", "fulltext"]);
+fn article_asset_errors_do_not_claim_an_empty_manifest() {
+    let commands: &[&[&str]] = &[
+        &["--json", "get", "article", "1", "assets", "fulltext"],
+        &["get", "article", "1", "assets", "--pdf", "--json"],
+    ];
 
-    assert_json_error(&result, 2, "invalid_argument");
-    let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
-    assert!(
-        value.get("assets").is_none(),
-        "an error must not look like an empty successful asset manifest: {value}"
-    );
+    for args in commands {
+        let result = run_biomcp(args);
+        assert_json_error(&result, 2, "invalid_argument");
+        let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
+        assert!(
+            value.get("assets").is_none(),
+            "an error must not look like an empty successful asset manifest: {value}"
+        );
+    }
 }
 
 #[test]
