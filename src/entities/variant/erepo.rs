@@ -146,6 +146,49 @@ pub(crate) async fn retrieve(
     assertion_id: Option<&str>,
     version: Option<&str>,
 ) -> Result<ERepoResponse, BioMcpError> {
+    let (response, _) =
+        retrieve_with_gene_context(caids, detail, assertion_id, version, None).await?;
+    Ok(response)
+}
+
+pub(crate) async fn retrieve_with_gene_context(
+    caids: Vec<String>,
+    detail: bool,
+    assertion_id: Option<&str>,
+    version: Option<&str>,
+    gene_context: Option<&str>,
+) -> Result<(ERepoResponse, Option<usize>), BioMcpError> {
+    validate_retrieve(&caids, detail, assertion_id, version)?;
+    if let Some(gene) = gene_context {
+        if !crate::sources::is_valid_gene_symbol(gene) {
+            return Err(BioMcpError::InvalidArgument(
+                "variant erepo --gene-context must be a gene symbol".into(),
+            ));
+        }
+        if caids.len() != 1 {
+            return Err(BioMcpError::InvalidArgument(
+                "variant erepo --gene-context requires one CAid".into(),
+            ));
+        }
+    }
+
+    let client = ERepoClient::new()?;
+    let response = retrieve_with_client(caids, detail, assertion_id, version, &client).await?;
+    let gene_count = match gene_context {
+        Some(gene) if response.items[0].assertions.is_empty() => {
+            supplemental_gene_count(&client, gene).await
+        }
+        _ => None,
+    };
+    Ok((response, gene_count))
+}
+
+fn validate_retrieve(
+    caids: &[String],
+    detail: bool,
+    assertion_id: Option<&str>,
+    version: Option<&str>,
+) -> Result<(), BioMcpError> {
     if caids.is_empty() || caids.len() > MAX_CAIDS {
         return Err(BioMcpError::InvalidArgument(
             "variant erepo requires between 1 and 50 CAids".into(),
@@ -166,7 +209,12 @@ pub(crate) async fn retrieve(
             "variant erepo --detail is only available for one CAid".into(),
         ));
     }
-    retrieve_with_client(caids, detail, assertion_id, version, ERepoClient::new()?).await
+    Ok(())
+}
+
+async fn supplemental_gene_count(client: &ERepoClient, gene: &str) -> Option<usize> {
+    let value = client.gene(gene, 500, 0).await.ok()?;
+    gene_page_from_value(&value, 0, 500).ok()?.total
 }
 
 pub(crate) async fn search_gene(
@@ -206,13 +254,14 @@ fn gene_page_from_value(
         .take(limit)
         .map(gene_result)
         .collect::<Result<Vec<_>, _>>()?;
+    let returned = results.len();
     Ok(ERepoGenePage {
-        returned: results.len(),
+        returned,
         results,
         offset,
         limit,
         has_more,
-        total: None,
+        total: (offset == 0 && !has_more).then_some(returned),
         source_status: vec![ERepoSourceStatus {
             source: "clingen_erepo",
             status: "available",
@@ -337,7 +386,7 @@ async fn retrieve_with_client(
     detail: bool,
     assertion_id: Option<&str>,
     version: Option<&str>,
-    client: ERepoClient,
+    client: &ERepoClient,
 ) -> Result<ERepoResponse, BioMcpError> {
     let mut items = Vec::with_capacity(caids.len());
     for caid in caids {
@@ -351,7 +400,7 @@ async fn retrieve_with_client(
         }
         let mut assertions = rows
             .iter()
-            .map(|row| summary(row, &client))
+            .map(|row| summary(row, client))
             .collect::<Result<Vec<_>, _>>()?;
         assertions.sort_by(|a, b| {
             a.assertion_id
@@ -976,7 +1025,7 @@ mod tests {
             base,
         );
 
-        let response = retrieve_with_client(vec!["CA015543".into()], true, None, None, client)
+        let response = retrieve_with_client(vec!["CA015543".into()], true, None, None, &client)
             .await
             .expect("receipt-backed detail retrieval");
         assert!(response.items[0].assertions[0].detail.is_some());

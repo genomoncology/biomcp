@@ -1,7 +1,7 @@
 use tokio::io::AsyncReadExt;
 
 use crate::cli::CommandOutcome;
-use crate::entities::variant::{ERepoBatchInput, ERepoResponse, retrieve_erepo};
+use crate::entities::variant::{ERepoBatchInput, ERepoResponse, retrieve_erepo_with_gene_context};
 use crate::error::BioMcpError;
 
 pub(crate) const MAX_EREPO_INPUT_BYTES: usize = 65_536;
@@ -39,6 +39,7 @@ pub(super) struct Request {
     pub caid: Option<String>,
     pub input: Option<String>,
     pub gene: Option<String>,
+    pub gene_context: Option<String>,
     pub limit: usize,
     pub offset: usize,
     pub detail: bool,
@@ -51,6 +52,7 @@ pub(super) async fn handle(request: Request, json: bool) -> anyhow::Result<Comma
         caid,
         input,
         gene,
+        gene_context,
         limit,
         offset,
         detail,
@@ -99,11 +101,18 @@ pub(super) async fn handle(request: Request, json: bool) -> anyhow::Result<Comma
         )
         .into());
     }
-    let response = retrieve_erepo(caids, detail, assertion.as_deref(), version.as_deref()).await?;
+    let (response, gene_count) = retrieve_erepo_with_gene_context(
+        caids,
+        detail,
+        assertion.as_deref(),
+        version.as_deref(),
+        gene_context.as_deref(),
+    )
+    .await?;
     let text = if json {
         crate::render::json::to_pretty(&response)?
     } else {
-        render_markdown(&response)
+        render_markdown(&response, gene_context.as_deref().zip(gene_count))
     };
     Ok(CommandOutcome::stdout(text))
 }
@@ -158,12 +167,17 @@ fn render_gene_markdown(response: &crate::entities::variant::ERepoGenePage) -> S
     out
 }
 
-fn render_markdown(response: &ERepoResponse) -> String {
+fn render_markdown(response: &ERepoResponse, gene_context: Option<(&str, usize)>) -> String {
     let mut out = String::from("# ClinGen ERepo expert assertions\n\n");
     for item in &response.items {
         out.push_str(&format!("## {}\n\n", item.caid));
         if item.assertions.is_empty() {
             out.push_str("No expert assertions were returned.\n\n");
+            if let Some((gene, count)) = gene_context {
+                out.push_str(&format!(
+                    "Gene context: {gene} has {count} ClinGen ERepo assertion records (repository count only; no pathogenicity or benignity conclusion is implied).\n\n"
+                ));
+            }
             continue;
         }
         for assertion in &item.assertions {
@@ -285,7 +299,7 @@ mod tests {
             provider: "ClinGen ERepo",
         };
 
-        let markdown = render_markdown(&response);
+        let markdown = render_markdown(&response, None);
         assert!(markdown.contains("# ClinGen ERepo expert assertions"));
         assert!(markdown.contains("Classification: Pathogenic"));
         assert!(markdown.contains("met: PS4"));

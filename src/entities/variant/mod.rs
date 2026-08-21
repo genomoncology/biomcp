@@ -20,7 +20,9 @@ mod test_support;
 #[allow(unused_imports)]
 pub(crate) use self::erepo::{
     ERepoAssertion, ERepoBatchInput, ERepoCriterion, ERepoGenePage, ERepoGeneResult, ERepoItem,
-    ERepoResponse, ERepoSourceStatus, retrieve as retrieve_erepo, search_gene as search_erepo_gene,
+    ERepoResponse, ERepoSourceStatus, retrieve as retrieve_erepo,
+    retrieve_with_gene_context as retrieve_erepo_with_gene_context,
+    search_gene as search_erepo_gene,
 };
 pub use self::get::{VARIANT_SECTION_NAMES, get, get_with_workflow_signals, oncokb};
 pub(crate) use self::gwas::validate_gwas_window;

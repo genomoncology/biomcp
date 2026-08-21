@@ -176,6 +176,14 @@ Note: Batch input accepts 1-50 CAids and returns summaries only. Gene search is 
         /// ClinGen Allele identifier (for example CA015543)
         #[arg(required_unless_present_any = ["input", "gene"], conflicts_with = "gene")]
         caid: Option<String>,
+        /// HGNC symbol used to count assertions when this CAid has no results
+        #[arg(
+            long,
+            requires = "caid",
+            conflicts_with_all = ["gene", "input"],
+            value_parser = parse_erepo_gene_context
+        )]
+        gene_context: Option<String>,
         /// JSON input file, or - for stdin, containing 1-50 CAids
         #[arg(long, value_name = "PATH", conflicts_with = "gene")]
         input: Option<String>,
@@ -240,6 +248,14 @@ fn parse_erepo_limit(value: &str) -> Result<usize, String> {
         Ok(limit)
     } else {
         Err("limit must be between 1 and 100".to_owned())
+    }
+}
+
+fn parse_erepo_gene_context(value: &str) -> Result<String, String> {
+    if crate::sources::is_valid_gene_symbol(value) {
+        Ok(value.to_owned())
+    } else {
+        Err("gene context must be a gene symbol".to_owned())
     }
 }
 

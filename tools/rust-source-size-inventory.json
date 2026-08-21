@@ -108,9 +108,14 @@
     },
     {
       "path": "src/entities/variant/erepo.rs",
-      "baseline_lines": 1026,
+      "baseline_lines": 1075,
       "floor_lines": 1026,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1032",
+        "delta": 49,
+        "reason": "The private context path shares ERepo parsing to retain empty summaries and report bounded counts.",
+        "removal_condition": "Extract summary and context retrieval if ERepo gains another CLI-only sidecar."
+      }
     },
     {
       "path": "src/entities/variant/get.rs",
