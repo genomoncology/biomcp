@@ -83,7 +83,8 @@ pub(super) fn list_variant() -> String {
 - `get variant <id> predict` - {alphagenome_predict}
 - `get variant <id> predictions` - expanded dbNSFP model scores (REVEL, AlphaMissense, etc.)
 - `get variant <id> clinvar` - ClinVar section details
-- `get variant <id> population` - gnomAD population frequencies
+- `get variant <id> population` - compact gnomAD population frequencies
+- `get variant <id> population-details` - full gnomAD population frequency tables
 - `get variant <id> conservation` - phyloP/phastCons/GERP conservation scores
 - `get variant <id> cosmic` - COSMIC context from cached MyVariant payload
 - `get variant <id> cgi` - CGI drug-association evidence table

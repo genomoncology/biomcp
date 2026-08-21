@@ -114,13 +114,13 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1237,
+      "baseline_lines": 1241,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022",
-        "delta": 109,
-        "reason": "Add narrow dbSNP RefSNP resolution for identifier-based GRCh38 population queries.",
-        "removal_condition": "Extract population resolution when the variant workflow is next decomposed."
+        "ticket": "1022, 1035",
+        "delta": 113,
+        "reason": "Add narrow dbSNP RefSNP resolution and population-detail selector support for GRCh38 population queries.",
+        "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed."
       }
     },
     {

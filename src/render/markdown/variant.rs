@@ -17,7 +17,21 @@ pub fn variant_markdown(
     let show_prediction_section = !section_only || include_all || has_requested("predict");
     let show_predictions_section = include_all || has_requested("predictions");
     let show_clinvar_section = !section_only || include_all || has_requested("clinvar");
-    let show_population_section = !section_only || include_all || has_requested("population");
+    let show_population_section = !section_only
+        || include_all
+        || has_requested("population")
+        || has_requested("population-details");
+    let show_population_details = has_requested("population-details");
+    let exome_highest_ancestry = variant
+        .population
+        .as_ref()
+        .and_then(|population| population.exome.as_ref())
+        .and_then(highest_ancestry_frequency);
+    let genome_highest_ancestry = variant
+        .population
+        .as_ref()
+        .and_then(|population| population.genome.as_ref())
+        .and_then(highest_ancestry_frequency);
     let show_conservation_section = include_all || has_requested("conservation");
     let show_cosmic_section = include_all || has_requested("cosmic");
     let show_cgi_section = include_all || has_requested("cgi");
@@ -88,6 +102,8 @@ pub fn variant_markdown(
         population => &variant.population,
         exome_filters => exome_filters,
         genome_filters => genome_filters,
+        exome_highest_ancestry => exome_highest_ancestry,
+        genome_highest_ancestry => genome_highest_ancestry,
         cadd_score => &variant.cadd_score,
         sift_pred => &variant.sift_pred,
         polyphen_pred => &variant.polyphen_pred,
@@ -110,6 +126,7 @@ pub fn variant_markdown(
         show_predictions_section => show_predictions_section,
         show_clinvar_section => show_clinvar_section,
         show_population_section => show_population_section,
+        show_population_details => show_population_details,
         show_conservation_section => show_conservation_section,
         show_cosmic_section => show_cosmic_section,
         show_cgi_section => show_cgi_section,
@@ -122,6 +139,20 @@ pub fn variant_markdown(
         source_states => section_render_contexts("variant", &variant.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, variant_evidence_urls(variant)))
+}
+
+fn highest_ancestry_frequency(
+    population: &crate::sources::gnomad::GnomadSequencingPopulation,
+) -> Option<&crate::sources::gnomad::GnomadAncestryPopulation> {
+    population
+        .populations
+        .iter()
+        .filter(|row| row.allele_frequency.is_some())
+        .max_by(|left, right| {
+            left.allele_frequency
+                .expect("filtered ancestry frequency")
+                .total_cmp(&right.allele_frequency.expect("filtered ancestry frequency"))
+        })
 }
 
 fn expanded_gnomad_filters(

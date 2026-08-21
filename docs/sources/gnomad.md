@@ -17,7 +17,8 @@ replaces population fields previously copied from MyVariant.info payloads.
 | Command | What BioMCP gets from this source | Integration note |
 |---|---|---|
 | `get gene <symbol> constraint` | Gene-level constraint metrics such as LOEUF-style context | Direct gnomAD-backed gene section |
-| `get variant <id> population` | Separate exome/genome frequency, ancestry counts, grpmax FAF95, and quality flags | Direct `gnomad_r4` GraphQL query for the resolved GRCh38 coordinate |
+| `get variant <id> population` | Compact exome/genome frequencies, highest ancestry frequency, grpmax FAF95, and quality flags | Direct `gnomad_r4` GraphQL query for the resolved GRCh38 coordinate |
+| `get variant <id> population-details` | Full exome/genome ancestry tables | Uses the same direct `gnomad_r4` result |
 | `search variant -g <gene> --max-frequency <value>` | Rarity-filtered variant search rows | Search filter uses population-frequency context aligned with gnomAD fields |
 
 ## Example commands
@@ -32,14 +33,15 @@ Returns a constraint section with gnomAD provenance and LOEUF-style metrics.
 biomcp get variant rs113488022 population
 ```
 
-Returns direct gnomAD v4 exome and genome population results.
+Returns compact direct gnomAD v4 exome and genome population results.
 JSON keeps raw numeric frequencies, counts, FAF95, ancestry rows, and source flag names.
 
 ```bash
 biomcp get variant "chr7:g.140453136A>T" population
+biomcp get variant "chr7:g.140453136A>T" population-details
 ```
 
-Returns the same population section after resolving a trustworthy GRCh38 identity.
+The first command returns compact frequencies; the second returns full ancestry tables.
 A GRCh37-only or unknown-build result explains the requirement and does not query gnomAD.
 
 ```bash

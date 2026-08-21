@@ -208,6 +208,14 @@ Population section:
 biomcp get variant "GRCh38:chr7:g.140753336A>T" population
 ```
 
+Population Markdown shows compact exome and genome frequencies, the highest
+reported ancestry frequency, grpmax FAF95, and quality status. Use the full-table
+route when you need every ancestry row:
+
+```bash
+biomcp get variant "GRCh38:chr7:g.140753336A>T" population-details
+```
+
 Population JSON exposes a direct `gnomad_r4` result with separate `exome` and
 `genome` objects. Each object preserves raw numeric allele frequencies and
 counts by ancestry, quality flags, and grpmax FAF95 when available. The result

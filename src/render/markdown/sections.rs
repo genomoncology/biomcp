@@ -108,6 +108,8 @@ pub(super) fn section_description(entity: &str, section: &str) -> &'static str {
         ("gene", "constraint") => "gnomAD gene constraint metrics",
         ("gene", "disgenet") => "DisGeNET scored disease links",
         ("gene", "funding") => "NIH Reporter grant support",
+        ("variant", "population") => "compact gnomAD population frequencies",
+        ("variant", "population-details") => "full gnomAD population frequency tables",
         ("article", "annotations") => "PubTator normalized entity mentions",
         ("article", "fulltext") => "cached full text when available",
         ("article", "tldr") => "Semantic Scholar summary and influence",

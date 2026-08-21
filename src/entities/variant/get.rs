@@ -34,6 +34,7 @@ const VARIANT_SECTION_PREDICT: &str = "predict";
 const VARIANT_SECTION_PREDICTIONS: &str = "predictions";
 const VARIANT_SECTION_CLINVAR: &str = "clinvar";
 const VARIANT_SECTION_POPULATION: &str = "population";
+const VARIANT_SECTION_POPULATION_DETAILS: &str = "population-details";
 const VARIANT_SECTION_CONSERVATION: &str = "conservation";
 const VARIANT_SECTION_COSMIC: &str = "cosmic";
 const VARIANT_SECTION_CGI: &str = "cgi";
@@ -47,6 +48,7 @@ pub const VARIANT_SECTION_NAMES: &[&str] = &[
     VARIANT_SECTION_PREDICTIONS,
     VARIANT_SECTION_CLINVAR,
     VARIANT_SECTION_POPULATION,
+    VARIANT_SECTION_POPULATION_DETAILS,
     VARIANT_SECTION_CONSERVATION,
     VARIANT_SECTION_COSMIC,
     VARIANT_SECTION_CGI,
@@ -104,7 +106,9 @@ fn parse_sections(sections: &[String]) -> Result<VariantSections, BioMcpError> {
             VARIANT_SECTION_PREDICT => out.include_prediction = true,
             VARIANT_SECTION_PREDICTIONS => out.include_expanded_predictions = true,
             VARIANT_SECTION_CLINVAR => out.include_clinvar = true,
-            VARIANT_SECTION_POPULATION => out.include_population = true,
+            VARIANT_SECTION_POPULATION | VARIANT_SECTION_POPULATION_DETAILS => {
+                out.include_population = true
+            }
             VARIANT_SECTION_CONSERVATION => out.include_conservation = true,
             VARIANT_SECTION_COSMIC => out.include_cosmic = true,
             VARIANT_SECTION_CGI => out.include_cgi = true,

@@ -154,6 +154,7 @@ fn is_section_like_token(token: &str) -> bool {
             | "predictions"
             | "clinvar"
             | "population"
+            | "population-details"
             | "conservation"
             | "cosmic"
             | "cgi"

@@ -664,6 +664,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         SelectorClass::Canonical,
         Some("population"),
     ),
+    selector(
+        "variant",
+        "population-details",
+        SelectorClass::Alias,
+        Some("population"),
+    ),
     selector("variant", "conservation", SelectorClass::Local, None),
     selector("variant", "cosmic", SelectorClass::Local, None),
     selector("variant", "cgi", SelectorClass::Local, None),
