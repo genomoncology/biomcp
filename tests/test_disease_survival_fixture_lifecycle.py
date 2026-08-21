@@ -6,6 +6,7 @@ import shutil
 import signal
 import subprocess
 import time
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -30,16 +31,18 @@ def _read_record(path: Path) -> dict[str, str]:
     return dict(line.split("=", 1) for line in path.read_text().splitlines())
 
 
-def _processes_with_marker(marker: str) -> list[int]:
-    matches: list[int] = []
-    for proc_dir in Path("/proc").glob("[0-9]*"):
-        try:
-            cmdline = proc_dir.joinpath("cmdline").read_bytes().replace(b"\0", b" ")
-            if marker.encode() in cmdline:
-                matches.append(int(proc_dir.name))
-        except (FileNotFoundError, PermissionError):
-            continue
-    return matches
+def _healthz_is_unavailable(url: str) -> bool:
+    try:
+        with urllib.request.urlopen(url, timeout=1) as response:
+            return response.status != 200
+    except OSError:
+        return True
+
+
+def _heartbeat_advances(path: Path) -> bool:
+    before = path.read_text()
+    time.sleep(0.2)
+    return path.read_text() != before
 
 
 def _disease_workspace(tmp_path: Path) -> Path:
@@ -87,14 +90,13 @@ def test_disease_survival_server_and_root_die_with_sigkilled_owner(
     try:
         _wait_until(lambda: ready.exists() and record_path.exists())
         record = _read_record(record_path)
-        server_pid = int(record["BIOMCP_DISEASE_SURVIVAL_PID"])
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
+        healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
 
         owner.kill()
         assert owner.wait(timeout=10) == -signal.SIGKILL
 
-        _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())
-        _wait_until(lambda: not _processes_with_marker(str(fixture_root)))
+        _wait_until(lambda: _healthz_is_unavailable(healthz_url))
         _wait_until(lambda: not fixture_root.exists())
     finally:
         if owner.poll() is None:
@@ -115,8 +117,10 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
     stale_owner_arg = (
         f"routine-fixture-owner:disease-survival:{'a' * 32}:{stale_root.resolve()}"
     )
+    stale_heartbeat = workspace / "stale-server-heartbeat"
     decoy_root = workspace / ".cache" / "spec-disease-survival.decoy"
     decoy_root.mkdir()
+    decoy_heartbeat = workspace / "decoy-server-heartbeat"
     stale_pid_file = workspace / "stale-server-pid"
     decoy_pid_file = workspace / "decoy-server-pid"
     owner = subprocess.Popen(
@@ -124,17 +128,19 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
             "bash",
             "-c",
             (
-                'setsid python3 -c "import time; time.sleep(60)" '
-                '"$1/base-url" "$2" & stale="$!"; '
-                'setsid python3 -c "import time; time.sleep(60)" '
-                '"$3/base-url" & decoy="$!"; '
-                'printf "%s\\n" "$stale" >"$4"; '
-                'printf "%s\\n" "$decoy" >"$5"; wait'
+                "setsid bash -c 'while :; do date +%s%N >\"$1\"; sleep 0.05; done' "
+                'fixture-server "$3" "$1/base-url" "$2" & stale="$!"; '
+                "setsid bash -c 'while :; do date +%s%N >\"$1\"; sleep 0.05; done' "
+                'fixture-server "$5" "$4/base-url" & decoy="$!"; '
+                'printf "%s\\n" "$stale" >"$6"; '
+                'printf "%s\\n" "$decoy" >"$7"; wait'
             ),
             "fixture-owner",
             str(stale_root),
             stale_owner_arg,
+            str(stale_heartbeat),
             str(decoy_root),
+            str(decoy_heartbeat),
             str(stale_pid_file),
             str(decoy_pid_file),
         ],
@@ -143,9 +149,16 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
     stale_pid: int | None = None
     decoy_pid: int | None = None
     try:
-        _wait_until(lambda: stale_pid_file.exists() and decoy_pid_file.exists())
+        _wait_until(
+            lambda: stale_pid_file.exists()
+            and decoy_pid_file.exists()
+            and stale_heartbeat.exists()
+            and decoy_heartbeat.exists()
+        )
         stale_pid = int(stale_pid_file.read_text().strip())
         decoy_pid = int(decoy_pid_file.read_text().strip())
+        _wait_until(lambda: _heartbeat_advances(stale_heartbeat))
+        _wait_until(lambda: _heartbeat_advances(decoy_heartbeat))
         owner.kill()
         assert owner.wait(timeout=10) == -signal.SIGKILL
 
@@ -170,9 +183,11 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
         )
 
         assert result.returncode == 0
-        _wait_until(lambda: not Path(f"/proc/{stale_pid}").exists())
         _wait_until(lambda: not stale_root.exists())
-        assert Path(f"/proc/{decoy_pid}").exists(), (
+        assert not _heartbeat_advances(stale_heartbeat), (
+            "the matching PPID-1 fixture must stop after recovery"
+        )
+        assert _heartbeat_advances(decoy_heartbeat), (
             "a PPID-1 process with only a similarly named path is not an authenticated "
             "disease-survival fixture"
         )
@@ -188,8 +203,11 @@ def test_disease_survival_setup_reaps_ppid_one_marker_orphan(tmp_path: Path) -> 
             owner.kill()
             owner.wait()
         for pid in (stale_pid, decoy_pid):
-            if pid is not None and Path(f"/proc/{pid}").exists():
-                os.killpg(os.getpgid(pid), signal.SIGKILL)
+            if pid is not None:
+                try:
+                    os.killpg(os.getpgid(pid), signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
         shutil.rmtree(stale_root, ignore_errors=True)
         shutil.rmtree(decoy_root, ignore_errors=True)
         subprocess.run(["bash", str(cleanup), str(workspace)], check=False)
@@ -341,12 +359,11 @@ def test_real_bounded_runner_timeout_reaps_disease_server_and_root(
     try:
         _wait_until(lambda: ready.exists() and record_path.exists())
         record = _read_record(record_path)
-        server_pid = int(record["BIOMCP_DISEASE_SURVIVAL_PID"])
         fixture_root = Path(record["BIOMCP_DISEASE_SURVIVAL_ROOT"])
+        healthz_url = (fixture_root / "base-url").read_text().strip() + "/healthz"
 
         assert timed_run.wait(timeout=10) == -signal.SIGKILL
-        _wait_until(lambda: not Path(f"/proc/{server_pid}").exists())
-        _wait_until(lambda: not _processes_with_marker(str(fixture_root)))
+        _wait_until(lambda: _healthz_is_unavailable(healthz_url))
         _wait_until(lambda: not fixture_root.exists())
     finally:
         if timed_run.poll() is None:
