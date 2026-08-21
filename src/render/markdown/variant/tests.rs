@@ -191,6 +191,10 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
     let compact = variant_markdown(&variant, &["population".to_string()])
         .expect("rendered compact population markdown");
     assert!(
+        compact.contains("## Population (direct gnomAD v4)"),
+        "{compact}"
+    );
+    assert!(
         compact.contains("Exome overall frequency: 0.0001"),
         "{compact}"
     );
@@ -221,6 +225,10 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
     )
     .expect("rendered detailed population markdown");
     assert!(detailed.contains("Top disease (ClinVar): Melanoma (2 reports)"));
+    assert!(
+        detailed.contains("| gnomAD v4 | Overall | 0.0001"),
+        "{detailed}"
+    );
     assert!(
         detailed.contains("| gnomAD v4 | nfe | 0.0002"),
         "{detailed}"
