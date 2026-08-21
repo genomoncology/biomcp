@@ -236,6 +236,57 @@ fn article_get_pdf_modifier_parses_after_fulltext() {
 }
 
 #[test]
+fn article_asset_paging_modifiers_parse_after_assets() {
+    let commands = [
+        [
+            "biomcp",
+            "get",
+            "article",
+            "42125600",
+            "--asset-view",
+            "coverage",
+            "--asset-limit",
+            "25",
+            "--asset-offset",
+            "3",
+            "assets",
+        ],
+        [
+            "biomcp",
+            "get",
+            "article",
+            "42125600",
+            "assets",
+            "--asset-view",
+            "coverage",
+            "--asset-limit",
+            "25",
+            "--asset-offset",
+            "3",
+        ],
+    ];
+
+    for command in commands {
+        let cli = Cli::try_parse_from(command)
+            .expect("asset paging modifiers should parse after the assets section");
+        let Cli {
+            command: Commands::Get {
+                entity: GetEntity::Article(args),
+            },
+            ..
+        } = cli
+        else {
+            panic!("expected article get command");
+        };
+
+        assert_eq!(args.sections, vec!["assets".to_string()]);
+        assert_eq!(args.asset_view, "coverage");
+        assert_eq!(args.asset_limit, Some(25));
+        assert_eq!(args.asset_offset, 3);
+    }
+}
+
+#[test]
 fn article_year_flags_parse_and_expand_to_date_bounds() {
     let cli = Cli::try_parse_from([
         "biomcp",

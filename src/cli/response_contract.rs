@@ -366,10 +366,7 @@ mod tests {
             ),
             (&["biomcp", "enrich", "BRAF,TP53"], &["results"]),
             (&["biomcp", "discover", "melanoma"], &["concepts"]),
-            (
-                &["biomcp", "get", "article", "1", "assets", "--json"],
-                &["assets"],
-            ),
+            (&["biomcp", "get", "article", "1", "assets", "--json"], &[]),
             (
                 &["biomcp", "get", "trial", "NCT1", "documents", "-j"],
                 &["documents"],
