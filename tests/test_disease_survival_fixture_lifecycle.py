@@ -33,8 +33,8 @@ def _read_record(path: Path) -> dict[str, str]:
 
 def _healthz_is_unavailable(url: str) -> bool:
     try:
-        with urllib.request.urlopen(url, timeout=1) as response:
-            return response.status != 200
+        with urllib.request.urlopen(url, timeout=1):
+            return False
     except OSError:
         return True
 
