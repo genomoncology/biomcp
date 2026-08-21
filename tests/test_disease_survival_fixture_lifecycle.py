@@ -6,6 +6,7 @@ import shutil
 import signal
 import subprocess
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -35,6 +36,8 @@ def _healthz_is_unavailable(url: str) -> bool:
     try:
         with urllib.request.urlopen(url, timeout=1):
             return False
+    except urllib.error.HTTPError:
+        return False
     except OSError:
         return True
 
