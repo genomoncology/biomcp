@@ -149,9 +149,35 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
                 "hemizygote_count": 0,
                 "filters": ["RF"],
                 "faf95": {"popmax": 0.0002, "popmax_population": "nfe"},
+                "populations": [
+                    {
+                        "id": "nfe", "allele_frequency": 0.0002,
+                        "ac": 2, "an": 10000, "homozygote_count": 0,
+                        "hemizygote_count": 0
+                    },
+                    {
+                        "id": "ac_zero", "allele_frequency": 0.0,
+                        "ac": 0, "an": 100, "homozygote_count": 0,
+                        "hemizygote_count": 0
+                    },
+                    {
+                        "id": "no_observations", "allele_frequency": null,
+                        "ac": 0, "an": 0, "homozygote_count": 0,
+                        "hemizygote_count": 0
+                    }
+                ]
+            },
+            "genome": {
+                "allele_frequency": 0.00015,
+                "ac": 3,
+                "an": 20000,
+                "homozygote_count": 0,
+                "hemizygote_count": 0,
+                "filters": [],
+                "faf95": {"popmax": 0.0003, "popmax_population": "afr"},
                 "populations": [{
-                    "id": "nfe", "allele_frequency": 0.0001,
-                    "ac": 1, "an": 10000, "homozygote_count": 0,
+                    "id": "afr", "allele_frequency": 0.0004,
+                    "ac": 2, "an": 5000, "homozygote_count": 0,
                     "hemizygote_count": 0
                 }]
             },
@@ -162,15 +188,51 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
     }))
     .expect("variant should deserialize");
 
-    let markdown = variant_markdown(&variant, &["all".to_string()]).expect("rendered markdown");
-    assert!(markdown.contains("Top disease (ClinVar): Melanoma (2 reports)"));
-    assert!(markdown.contains("## Population (direct gnomAD v4)"));
+    let compact = variant_markdown(&variant, &["population".to_string()])
+        .expect("rendered compact population markdown");
     assert!(
-        markdown.contains("gnomAD v4 | Overall | 0.0001"),
-        "{markdown}"
+        compact.contains("Exome overall frequency: 0.0001"),
+        "{compact}"
     );
-    assert!(markdown.contains("gnomAD v4 exome grpmax FAF95: 0.0002 (nfe)"));
-    assert!(markdown.contains("RF (random forest quality filter)"));
+    assert!(
+        compact.contains("Exome highest ancestry frequency: nfe (0.0002)"),
+        "{compact}"
+    );
+    assert!(compact.contains("gnomAD v4 exome grpmax FAF95: 0.0002 (nfe)"));
+    assert!(compact.contains("RF (random forest quality filter)"));
+    assert!(
+        compact.contains("Genome overall frequency: 0.00015"),
+        "{compact}"
+    );
+    assert!(
+        compact.contains("Genome highest ancestry frequency: afr (0.0004)"),
+        "{compact}"
+    );
+    assert!(compact.contains("gnomAD v4 genome grpmax FAF95: 0.0003 (afr)"));
+    assert!(compact.contains("PASS (no filter flags reported)"));
+    assert!(compact.contains(
+        "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
+    ));
+    assert!(!compact.contains("| gnomAD v4 | nfe |"), "{compact}");
+
+    let detailed = variant_markdown(
+        &variant,
+        &["all".to_string(), "population-details".to_string()],
+    )
+    .expect("rendered detailed population markdown");
+    assert!(detailed.contains("Top disease (ClinVar): Melanoma (2 reports)"));
+    assert!(
+        detailed.contains("| gnomAD v4 | nfe | 0.0002"),
+        "{detailed}"
+    );
+    assert!(
+        detailed.contains("| gnomAD v4 | ac_zero | 0 | 0 | 100"),
+        "{detailed}"
+    );
+    assert!(
+        detailed.contains("| gnomAD v4 | no_observations | - | 0 | 0"),
+        "{detailed}"
+    );
 }
 
 #[test]
