@@ -305,6 +305,9 @@ biomcp --json get article <id> assets
 biomcp get article <id> asset <asset-key>
 ```
 
+For a task-oriented walkthrough of listing, downloading, and interpreting
+these files, see [Supplementary Materials](supplementary-materials.md).
+
 `get article <id> assets` returns a JSON-only provider-labelled manifest. BioMCP
 merges PMC OA's versioned S3 metadata-declared media objects, a validated Europe PMC supplementary ZIP,
 recognized JATS/PMC HTML supplement links, and eligible Figshare/AACR metadata. PMC OA no longer uses
