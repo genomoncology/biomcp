@@ -99,6 +99,14 @@ def test_installed_binary_prints_the_complete_mcp_catalog(tmp_path: Path) -> Non
 
 def test_measurement_reads_catalog_from_a_direct_binary_command(tmp_path: Path) -> None:
     binary = tmp_path / "biomcp"
+    catalog = [
+        {
+            "name": "biomcp",
+            "description": "Read-only command",
+            "inputSchema": {},
+            "annotations": {"readOnlyHint": True},
+        }
+    ]
     binary.write_text(
         "\n".join(
             [
@@ -107,7 +115,7 @@ def test_measurement_reads_catalog_from_a_direct_binary_command(tmp_path: Path) 
                 "import sys",
                 "if sys.argv[1:] != ['mcp', 'tools']:",
                 "    raise SystemExit(f'unexpected arguments: {sys.argv[1:]}')",
-                "print(json.dumps([{'name': 'biomcp', 'description': 'Read-only command', 'inputSchema': {}, 'annotations': {'readOnlyHint': True}}]))",
+                f"print(json.dumps({catalog!r}))",
             ]
         ),
         encoding="utf-8",
@@ -124,8 +132,11 @@ def test_measurement_reads_catalog_from_a_direct_binary_command(tmp_path: Path) 
     )
 
     assert result.returncode == 0, result.stderr
-    assert "tools/list UTF-8 bytes:" in result.stdout
-    assert "tools/list cl100k_base tokens:" in result.stdout
+    serialized = json.dumps(catalog, ensure_ascii=False, separators=(",", ":"))
+    assert "tools: biomcp" in result.stdout
+    assert f"tools/list UTF-8 bytes: {len(serialized.encode())}" in result.stdout
+    assert "tools/list cl100k_base tokens: " in result.stdout
+    assert "biomcp description UTF-8 bytes: 15" in result.stdout
 
 
 def test_real_tools_list_stays_within_context_budget(tmp_path: Path) -> None:
