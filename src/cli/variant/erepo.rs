@@ -72,11 +72,6 @@ pub(super) async fn handle(request: Request, json: bool) -> anyhow::Result<Comma
         )
         .into());
     }
-    if input.is_some() && !json {
-        return Err(
-            BioMcpError::InvalidArgument("variant erepo --input requires --json".into()).into(),
-        );
-    }
     let caids = match (caid, input) {
         (Some(caid), None) => vec![caid],
         (None, Some(path)) => serde_json::from_slice::<ERepoBatchInput>(&read_input(&path).await?)
@@ -232,6 +227,12 @@ fn render_markdown(
             }
             if let Some(condition) = &assertion.condition {
                 out.push_str(&format!("- Condition: {condition}\n"));
+            }
+            if let Some(detail) = &assertion.detail {
+                if let Some(summary) = &assertion.summary_description {
+                    out.push_str(&format!("- Summary: {summary}\n"));
+                }
+                out.push_str(&format!("- Source: {}\n", detail.source_url));
             }
             out.push_str(&format!(
                 "- Unmet criteria coverage: {}\n",
