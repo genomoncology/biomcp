@@ -15,6 +15,7 @@ bash ../fixtures/run-clingen-cspec-fixture.sh ../..
 "braf_keeps_gn004_and_gn049": true
 "atm_uses_literal_full_iri_not_display_version": true
 "literal_selector_returns_matching_gene_and_specification": true
+"json_switches_cspec_manifest_and_page_output": true
 "criteria_are_deterministic_and_paged": true
 "supported_reference_objects_preserve_ordered_deduplicated_urls": true
 "disease_is_null": true

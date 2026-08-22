@@ -12,7 +12,9 @@ trap 'rm -rf "$work"' EXIT
 for gene in APC ATM BRCA1 MLH1 PALB2 PTEN TP53 BRAF; do
   "$bin" --json gene cspec "$gene" >"$work/$gene.json"
 done
+"$bin" gene cspec BRCA1 >"$work/BRCA1.md"
 "$bin" --json gene cspec ATM --version "$official" --limit 1 >"$work/selected.json"
+"$bin" gene cspec ATM --version "$official" --limit 1 >"$work/selected.md"
 capture="$(jq -er '.capture_id' "$work/selected.json")"
 requests_before_raw="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
 "$bin" gene cspec document "$capture" >"$work/raw.json"
@@ -55,6 +57,8 @@ selected, second, mcp = load('selected.json'), load('page-two.json'), load('mcp.
 files, files_reuse = load('files.json'), load('files-reuse.json')
 pten_page = load('pten-page.json')
 files_mcp = load('mcp.json.files')
+plain_manifest = (work / 'BRCA1.md').read_text()
+plain_page = (work / 'selected.md').read_text()
 series = {'APC':'GN089','ATM':'GN020','BRCA1':'GN092','MLH1':'GN115','PALB2':'GN077','PTEN':'GN003','TP53':'GN009','BRAF':'GN049'}
 def manifest_has(gene, spec): return any(f'/{spec}/version/' in iri for iri in load(f'{gene}.json')['resource_iris'])
 raw=(work/'raw.json').read_bytes()
@@ -64,6 +68,7 @@ report={
  'braf_keeps_gn004_and_gn049': manifest_has('BRAF','GN004') and manifest_has('BRAF','GN049'),
  'atm_uses_literal_full_iri_not_display_version': selected['resource_iri'].endswith('/GN020/version/1.5.1') and selected['display_version']=='1.5',
  'literal_selector_returns_matching_gene_and_specification': selected['gene']=='ATM' and selected['specification_id']=='GN020',
+ 'json_switches_cspec_manifest_and_page_output': load('BRCA1.json')['gene'] == 'BRCA1' and plain_manifest.startswith('# ') and 'BRCA1' in plain_manifest and plain_page.startswith('# ') and 'BP6' in plain_page,
  'criteria_are_deterministic_and_paged': selected['criteria'][0]['label']=='BP6' and second['criteria'][0]['label']=='PM5',
  'supported_reference_objects_preserve_ordered_deduplicated_urls': selected['criteria'][0]['citations']==['https://pubmed.ncbi.nlm.nih.gov/29543229'],
  'receipt_backed_manifest_plan_is_consumed': manifest_path in requests and document_path in requests,

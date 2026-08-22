@@ -28,6 +28,8 @@ bash ../fixtures/run-clingen-erepo-fixture.sh ../..
 ```json expect=clingen-erepo-frozen contains
 {
   "plain_cli_reports_summary": true,
+  "detail_markdown_surfaces_narrative_and_source": true,
+  "batch_input_renders_markdown": true,
   "empty_caid_resolves_its_car_gene": true,
   "empty_variant_reports_known_gene_repository_count": true,
   "zero_gene_count_is_distinct_from_no_gene_context": true,

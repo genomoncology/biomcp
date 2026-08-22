@@ -95,6 +95,7 @@ export BIOMCP_CLINGEN_CAR_BASE="http://127.0.0.1:$fixture_port"
 export BIOMCP_CACHE_MODE=off
 
 markdown="$($binary variant erepo CA015543)"
+detail_markdown="$($binary variant erepo CA015543 --detail)"
 resolved_gene="$($binary variant erepo CA000072)"
 zero_gene="$($binary variant erepo CA000075)"
 "$binary" variant erepo CA000073 > "$tmp/missing_gene.stdout"
@@ -109,6 +110,11 @@ pten="$($binary --json variant erepo CA000498)"
 miss="$($binary --json variant erepo CA001621)"
 multiple="$($binary --json variant erepo CA-MULTI)"
 printf '["CA015543","CA001621","CA015543"]' > "$tmp/caids.json"
+if batch_markdown="$($binary variant erepo --input "$tmp/caids.json")"; then
+  :
+else
+  batch_markdown=""
+fi
 batch="$($binary --json variant erepo --input "$tmp/caids.json")"
 gene="$($binary --json variant erepo --gene PTEN --limit 25 --offset 0)"
 gene_second="$($binary --json variant erepo --gene PTEN --limit 25 --offset 25)"
@@ -130,8 +136,10 @@ PY
 mcp="$(<"$tmp/mcp.json")"
 gene_mcp="$(<"$tmp/mcp.json.gene")"
 requests="$(<"$tmp/requests.jsonl")"
-jq -n --arg markdown "$markdown" --arg resolved_gene "$resolved_gene" --arg zero_gene "$zero_gene" --rawfile missing_gene "$tmp/missing_gene.md" --rawfile unavailable_gene "$tmp/unavailable_gene.md" --rawfile unavailable_count "$tmp/unavailable_count.md" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
+jq -n --arg markdown "$markdown" --arg detail_markdown "$detail_markdown" --arg batch_markdown "$batch_markdown" --arg resolved_gene "$resolved_gene" --arg zero_gene "$zero_gene" --rawfile missing_gene "$tmp/missing_gene.md" --rawfile unavailable_gene "$tmp/unavailable_gene.md" --rawfile unavailable_count "$tmp/unavailable_count.md" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
   plain_cli_reports_summary: ($markdown | contains("ClinGen ERepo expert assertions") and contains("Classification: Pathogenic")),
+  detail_markdown_surfaces_narrative_and_source: ($detail_markdown | contains("The c.847C>T (p.Arg283*)") and contains("/doc/sepio/version/1.0.0")),
+  batch_input_renders_markdown: ($batch_markdown | contains("# ClinGen ERepo expert assertions") and contains("## CA015543") and contains("## CA001621")),
   empty_caid_resolves_its_car_gene: (($resolved_gene | contains("No expert assertions were returned.") and contains("Gene: TP53")) and ($requests | contains("/allele/CA000072?fields="))),
   empty_variant_reports_known_gene_repository_count: ($resolved_gene | contains("No expert assertions were returned.") and contains("TP53") and test("26[[:space:]]+assertions"; "i") and contains("repository") and (test("pathogenic|benign"; "i") | not)),
   zero_gene_count_is_distinct_from_no_gene_context: ($zero_gene | contains("No expert assertions were returned.") and contains("ZERO") and test("0[[:space:]]+assertions"; "i") and contains("repository")),
