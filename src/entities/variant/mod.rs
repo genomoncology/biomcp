@@ -379,8 +379,11 @@ pub struct GnomadPopulationResult {
 #[serde(rename_all = "snake_case")]
 pub enum GnomadPopulationStatus {
     Data,
+    #[serde(rename = "inapplicable", alias = "missing")]
     Missing,
+    #[serde(rename = "empty", alias = "absent")]
     Absent,
+    #[serde(rename = "unavailable", alias = "provider_failure")]
     ProviderFailure,
 }
 

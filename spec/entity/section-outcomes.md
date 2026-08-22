@@ -4,6 +4,10 @@ Optional sections keep their biomedical collection fields stable for scripts,
 while a typed outcome distinguishes a confirmed zero from missing evidence. The
 same entity-owned outcome also controls source attribution in `_meta`.
 
+The retained variant `population.status` field uses the same four-state outcome
+vocabulary as `section_outcomes.population`: `data`, `empty`, `unavailable`,
+and `inapplicable`. It is not a separate provider-status vocabulary.
+
 ## A healthy empty is not an unavailable section
 
 A successful Drugs@FDA lookup can truthfully return no approvals. The empty
