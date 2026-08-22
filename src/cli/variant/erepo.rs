@@ -103,7 +103,16 @@ pub(super) async fn handle(request: Request, json: bool) -> anyhow::Result<Comma
     let text = if json {
         crate::render::json::to_pretty(&response)?
     } else {
-        render_markdown(&response, empty_caid_gene(&response).await.as_deref())
+        let empty_caid_gene = empty_caid_gene(&response).await;
+        let repository_assertion_count = match empty_caid_gene.as_deref() {
+            Some(gene) => empty_caid_repository_assertion_count(gene).await.ok(),
+            None => None,
+        };
+        render_markdown(
+            &response,
+            empty_caid_gene.as_deref(),
+            repository_assertion_count,
+        )
     };
     Ok(CommandOutcome::stdout(text))
 }
@@ -171,14 +180,39 @@ async fn empty_caid_gene(response: &ERepoResponse) -> Option<String> {
         .await
 }
 
-fn render_markdown(response: &ERepoResponse, empty_caid_gene: Option<&str>) -> String {
+async fn empty_caid_repository_assertion_count(gene: &str) -> Result<usize, BioMcpError> {
+    const MAX_GENE_SEARCH_PAGE_SIZE: usize = 100;
+
+    let mut count = 0;
+    let mut offset = 0;
+    loop {
+        let page =
+            crate::entities::variant::search_erepo_gene(gene, MAX_GENE_SEARCH_PAGE_SIZE, offset)
+                .await?;
+        count += page.returned;
+        if !page.has_more {
+            return Ok(count);
+        }
+        offset += page.returned;
+    }
+}
+
+fn render_markdown(
+    response: &ERepoResponse,
+    empty_caid_gene: Option<&str>,
+    repository_assertion_count: Option<usize>,
+) -> String {
     let mut out = String::from("# ClinGen ERepo expert assertions\n\n");
     for item in &response.items {
         out.push_str(&format!("## {}\n\n", item.caid));
         if item.assertions.is_empty() {
             out.push_str("No expert assertions were returned.\n\n");
             if let Some(gene) = empty_caid_gene {
-                out.push_str(&format!("Gene: {gene}\n\n"));
+                out.push_str(&format!("Gene: {gene}\n"));
+                if let Some(count) = repository_assertion_count {
+                    out.push_str(&format!("repository assertions: {count} assertions\n"));
+                }
+                out.push('\n');
             }
             continue;
         }
@@ -283,7 +317,7 @@ mod tests {
             provider: "ClinGen ERepo",
         };
 
-        let markdown = render_markdown(&response, None);
+        let markdown = render_markdown(&response, None, None);
         assert!(markdown.contains("# ClinGen ERepo expert assertions"));
         assert!(markdown.contains("Classification: Pathogenic"));
         assert!(markdown.contains("met: PS4"));
