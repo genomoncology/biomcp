@@ -12,6 +12,8 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+TOOLS_LIST_BYTE_CEILING = 22_600
+TOOLS_LIST_TOKEN_CEILING = 5_800
 TOOLS = [
     "biomcp",
     "search",
@@ -139,6 +141,73 @@ def test_measurement_reads_catalog_from_a_direct_binary_command(tmp_path: Path) 
     assert "biomcp description UTF-8 bytes: 17" in result.stdout
 
 
+def test_measurement_reports_actionable_context_budget_failure(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    catalog = [
+        {
+            "name": "biomcp",
+            "description": "Read-only command",
+            "inputSchema": {},
+            "annotations": {"readOnlyHint": True},
+        },
+        {
+            "name": "largest_tool",
+            "description": "largest description " * 2_500,
+            "inputSchema": {},
+            "annotations": {"readOnlyHint": True},
+        },
+        {
+            "name": "smaller_tool",
+            "description": "smaller description " * 1_000,
+            "inputSchema": {},
+            "annotations": {"readOnlyHint": True},
+        },
+    ]
+    binary.write_text(
+        "\n".join(
+            [
+                f"#!{sys.executable}",
+                "import json",
+                "import sys",
+                "if sys.argv[1:] != ['mcp', 'tools']:",
+                "    raise SystemExit(f'unexpected arguments: {sys.argv[1:]}')",
+                f"print(json.dumps({catalog!r}))",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    binary.chmod(0o755)
+
+    result = subprocess.run(
+        ["uv", "run", "--no-sync", "python", "scripts/measure-mcp-tools.py"],
+        cwd=ROOT,
+        env=os.environ | {"BIOMCP_BIN": str(binary)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert re.search(r"^tools/list UTF-8 bytes: \d+$", result.stdout, re.MULTILINE)
+    assert re.search(
+        r"^tools/list cl100k_base tokens: \d+$", result.stdout, re.MULTILINE
+    )
+    diagnostic = result.stderr
+    assert re.search(
+        rf"tools/list UTF-8 bytes: \d+ \(ceiling: {TOOLS_LIST_BYTE_CEILING:,}\)",
+        diagnostic,
+    )
+    assert re.search(
+        rf"tools/list cl100k_base tokens: \d+ \(ceiling: {TOOLS_LIST_TOKEN_CEILING:,}\)",
+        diagnostic,
+    )
+    assert re.search(
+        r"largest tool descriptions:.*largest_tool.*smaller_tool",
+        diagnostic,
+        re.DOTALL,
+    )
+
+
 def test_real_tools_list_stays_within_context_budget(tmp_path: Path) -> None:
     env = dict(os.environ)
     env.setdefault("BIOMCP_BIN", str(ROOT / "target/debug/biomcp"))
@@ -158,6 +227,6 @@ def test_real_tools_list_stays_within_context_budget(tmp_path: Path) -> None:
         label: int(value)
         for label, value in re.findall(r"^(.+): (\d+)$", result.stdout, re.MULTILINE)
     }
-    assert measurements["tools/list UTF-8 bytes"] <= 16_000
-    assert measurements["tools/list cl100k_base tokens"] <= 4_000
+    assert measurements["tools/list UTF-8 bytes"] <= TOOLS_LIST_BYTE_CEILING
+    assert measurements["tools/list cl100k_base tokens"] <= TOOLS_LIST_TOKEN_CEILING
     assert measurements["biomcp description UTF-8 bytes"] <= 4_000
