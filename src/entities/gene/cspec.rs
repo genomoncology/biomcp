@@ -229,7 +229,16 @@ fn select(manifest: &[String], value: &str) -> Result<CspecDocumentIri, BioMcpEr
     if let Ok(selected) = parse_iri(value)
         && manifest.iter().any(|candidate| candidate == value)
     {
-        return Ok(selected);
+        let normalized_matches = manifest
+            .iter()
+            .filter_map(|candidate| parse_iri(candidate).ok())
+            .filter(|candidate| candidate.url == selected.url)
+            .count();
+        return if normalized_matches == 1 {
+            Ok(selected)
+        } else {
+            Err(invalid("duplicate normalized CSpec manifest IRI"))
+        };
     }
     let mut matches = manifest
         .iter()
