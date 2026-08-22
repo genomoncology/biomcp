@@ -91,17 +91,33 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
     article.indexing = Some(crate::entities::article::ArticleIndexing {
         status: crate::entities::article::ArticleIndexingStatus::Available,
         source: ArticleSource::PubMed,
-        authors: vec![crate::entities::article::ArticleIndexingAuthor {
-            name: "Ada First".into(),
-            orcid: Some("0000-0002-1825-0097".into()),
-            affiliations: vec![crate::entities::article::ArticleAffiliation {
-                text: "Fixture University".into(),
-                identifiers: vec![crate::entities::article::ArticleAffiliationIdentifier {
-                    source: "ROR".into(),
-                    value: "shared".into(),
-                }],
-            }],
-        }],
+        authors: vec![
+            crate::entities::article::ArticleIndexingAuthor {
+                name: "Ada First".into(),
+                orcid: Some("0000-0002-1825-0097".into()),
+                affiliations: vec![
+                    crate::entities::article::ArticleAffiliation {
+                        text: "Fixture University".into(),
+                        identifiers: vec![crate::entities::article::ArticleAffiliationIdentifier {
+                            source: "ROR".into(),
+                            value: "shared".into(),
+                        }],
+                    },
+                    crate::entities::article::ArticleAffiliation {
+                        text: "Second Fixture University".into(),
+                        identifiers: vec![crate::entities::article::ArticleAffiliationIdentifier {
+                            source: "ISNI".into(),
+                            value: "000000012146438X".into(),
+                        }],
+                    },
+                ],
+            },
+            crate::entities::article::ArticleIndexingAuthor {
+                name: "Nils No Affiliation".into(),
+                orcid: None,
+                affiliations: Vec::new(),
+            },
+        ],
         failure: None,
         mesh_headings: vec![crate::entities::article::ArticleMeshHeading {
             descriptor: crate::entities::article::ArticleMeshTerm {
@@ -132,6 +148,12 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
             "missing {expected:?}: {indexing}"
         );
     }
+    assert!(
+        indexing.contains(
+            "- Ada First (ORCID: 0000-0002-1825-0097)\n  - Fixture University\n    - ROR: shared\n  - Second Fixture University\n    - ISNI: 000000012146438X\n- Nils No Affiliation"
+        ),
+        "indexing authors must retain affiliation and identifier hierarchy: {indexing}"
+    );
 
     article.indexing = Some(crate::entities::article::ArticleIndexing {
         status: crate::entities::article::ArticleIndexingStatus::Unavailable,

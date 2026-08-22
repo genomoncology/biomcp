@@ -171,9 +171,14 @@
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1207,
+      "baseline_lines": 1229,
       "floor_lines": 1207,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1034",
+        "delta": 22,
+        "reason": "The nested author fixture belongs with the article Markdown renderer regression.",
+        "removal_condition": "Extract shared article Markdown fixtures when a second renderer test needs this setup."
+      }
     },
     {
       "path": "src/render/markdown/related.rs",
