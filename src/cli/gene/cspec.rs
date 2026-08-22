@@ -74,7 +74,10 @@ fn render_manifest_markdown(
     );
     for iri in resource_iris {
         if let Some(iri) = iri.as_str() {
-            out.push_str(&format!("- {iri}\n"));
+            out.push_str(&format!(
+                "- {}\n",
+                crate::render::human::sanitize_inline(iri)
+            ));
         }
     }
     out
@@ -127,10 +130,10 @@ fn render_page_markdown(response: &serde_json::Value) -> String {
     }
     out.push_str("\n## Criteria\n\n");
     for criterion in criteria {
-        out.push_str(&format!(
-            "### {}\n\n",
-            optional_string(criterion, "label").unwrap_or("Unnamed criterion")
-        ));
+        let label = optional_string(criterion, "label")
+            .map(crate::render::human::sanitize_inline)
+            .unwrap_or_else(|| "Unnamed criterion".into());
+        out.push_str(&format!("### {label}\n\n"));
         for (label, field) in [
             ("Source ID", "source_id"),
             ("Code", "code"),
@@ -153,7 +156,10 @@ fn render_page_markdown(response: &serde_json::Value) -> String {
         {
             for citation in citations {
                 if let Some(citation) = citation.as_str() {
-                    out.push_str(&format!("- Citation: {citation}\n"));
+                    out.push_str(&format!(
+                        "- Citation: {}\n",
+                        crate::render::human::sanitize_inline(citation)
+                    ));
                 }
             }
         }
@@ -165,6 +171,7 @@ fn render_page_markdown(response: &serde_json::Value) -> String {
             let fields = fields
                 .iter()
                 .filter_map(serde_json::Value::as_str)
+                .map(crate::render::human::sanitize_inline)
                 .collect::<Vec<_>>();
             out.push_str(&format!(
                 "- Omitted oversized fields: {}\n",
@@ -178,8 +185,8 @@ fn render_page_markdown(response: &serde_json::Value) -> String {
 
 fn required_value(value: &serde_json::Value, field: &str) -> String {
     match value.get(field) {
-        Some(serde_json::Value::String(value)) => value.clone(),
-        Some(value) => value.to_string(),
+        Some(serde_json::Value::String(value)) => crate::render::human::sanitize_inline(value),
+        Some(value) => crate::render::human::sanitize_inline(&value.to_string()),
         None => "not provided".into(),
     }
 }
@@ -190,7 +197,10 @@ fn optional_string<'a>(value: &'a serde_json::Value, field: &str) -> Option<&'a 
 
 fn render_optional_fact(out: &mut String, label: &str, value: &serde_json::Value, field: &str) {
     if let Some(value) = optional_string(value, field) {
-        out.push_str(&format!("{label}: {value}\n"));
+        out.push_str(&format!(
+            "{label}: {}\n",
+            crate::render::human::sanitize_inline(value)
+        ));
     }
 }
 

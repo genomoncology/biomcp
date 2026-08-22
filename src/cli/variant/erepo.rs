@@ -230,9 +230,15 @@ fn render_markdown(
             }
             if let Some(detail) = &assertion.detail {
                 if let Some(summary) = &assertion.summary_description {
-                    out.push_str(&format!("- Summary: {summary}\n"));
+                    out.push_str(&format!(
+                        "- Summary: {}\n",
+                        crate::render::human::sanitize_inline(summary)
+                    ));
                 }
-                out.push_str(&format!("- Source: {}\n", detail.source_url));
+                out.push_str(&format!(
+                    "- Source: {}\n",
+                    crate::render::human::sanitize_inline(&detail.source_url)
+                ));
             }
             out.push_str(&format!(
                 "- Unmet criteria coverage: {}\n",
