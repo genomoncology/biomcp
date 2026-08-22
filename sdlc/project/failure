@@ -14,18 +14,19 @@
 # THE RULE: nothing is deleted that is not first tagged.
 #   If the branch adds commits to main, they are tagged
 #   attempt/<TICKET_ID>-<YYYYMMDD>-<n> — the first free n for today — before
-#   the branch or the worktree is touched. If the tag cannot be written, the
-#   teardown does not happen and this script refuses (exit 2). If the branch
-#   adds nothing, there is nothing to preserve and teardown is safe.
+#   the branch or the worktree is touched. If the tag cannot be written, a
+#   teardown does not happen and this script refuses (exit 2). A preserve-whole
+#   settlement reports a tag failure but keeps the branch and worktree. If the
+#   branch adds nothing, there is nothing to preserve and teardown is safe.
 #
 # HONORING SETTLEMENT: when SETTLEMENT says the item is out of attempts
 #   (failed, exhausted, "attempts spent", out-of-attempts) or says leave/left,
-#   the attempt is preserved WHOLE — branch, worktree and all — and nothing
-#   is torn down, because a human is about to stand in it. A blocked attempt
-#   also preserves whole, but runs its optional $TREE/sdlc/scripts/clean in
-#   the worktree to shed rebuildable output. An absent clean is skipped; an
-#   existing non-executable clean faults before any other action; a failed
-#   clean is reported but does not cost the preservation. Every other
+#   the attempt is preserved WHOLE — branch, worktree and all — after its
+#   commits are tagged, because a human is about to stand in it. A blocked
+#   attempt also preserves whole, but runs its optional $TREE/sdlc/scripts/clean
+#   after tagging to shed rebuildable output. An absent clean is skipped; an
+#   existing non-executable clean faults without settling; a failed clean is
+#   reported but does not cost the preservation. Every other
 #   settlement, including an empty or unrecognized one, is treated as a retry.
 #   A rejected run tags and then tears down so the next attempt gets a clean
 #   tree. A successful run whose own ticket branch could not land keeps its
@@ -56,15 +57,16 @@ if [ -n "$TREE" ]; then
 	BASELINE="$TREE.baseline"
 fi
 
-# Preserve whole, or preserve the commits and clear the bench.
+# Preserve whole settlements still tag their commits before they stop.
 BLOCKED=0
+PRESERVE=0
 case "$(printf '%s' "${SETTLEMENT-}" | tr '[:upper:]' '[:lower:]')" in
 *leave* | *left* | *fail* | *exhaust* | *"out of attempts"* | *out-of-attempts* | *"attempts spent"*)
-	echo "settlement \"${SETTLEMENT-}\": preserving $BRANCH and ${TREE:-the worktree} untouched"
-	exit 0
+	PRESERVE=1
 	;;
 blocked)
 	BLOCKED=1
+	PRESERVE=1
 	;;
 esac
 
@@ -114,23 +116,6 @@ fi
 if [ -n "$BASELINE" ] && [ -e "$BASELINE" ] && ! candidate_owned "$BASELINE"; then
 	echo "failure: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
 	exit 2
-fi
-
-if [ "$BLOCKED" -eq 1 ]; then
-	CLEAN="$TREE/sdlc/scripts/clean"
-	if [ -n "$TREE" ] && [ -e "$CLEAN" ]; then
-		if [ ! -x "$CLEAN" ]; then
-			echo "failure: clean must be executable: $CLEAN" >&2
-			exit 2
-		fi
-		if (cd -- "$TREE" && ./sdlc/scripts/clean); then
-			:
-		else
-			echo "clean failed: preserving $BRANCH and $TREE"
-		fi
-	fi
-	echo "settlement \"${SETTLEMENT-}\": preserving $BRANCH and ${TREE:-the worktree} untouched"
-	exit 0
 fi
 
 LOCAL=$(git -C "$REPO" for-each-ref --format='%(objectname)' "$REF")
@@ -186,11 +171,35 @@ if [ "${#TAGS[@]}" -gt 0 ]; then
 		*) tag="$base" ;;
 		esac
 		if ! git -C "$REPO" tag "$tag" "$hash" 2>/dev/null; then
-			echo "failure: could not tag $hash as $tag; refusing to tear down unpreserved work" >&2
-			exit 2
+			if [ "$PRESERVE" -eq 1 ]; then
+				echo "failure: could not tag $hash as $tag; preserving untagged work" >&2
+			else
+				echo "failure: could not tag $hash as $tag; refusing to tear down unpreserved work" >&2
+				exit 2
+			fi
+		else
+			echo "tagged $tag $hash"
 		fi
-		echo "tagged $tag $hash"
 	done
+fi
+
+if [ "$PRESERVE" -eq 1 ]; then
+	if [ "$BLOCKED" -eq 1 ]; then
+		CLEAN="$TREE/sdlc/scripts/clean"
+		if [ -n "$TREE" ] && [ -e "$CLEAN" ]; then
+			if [ ! -x "$CLEAN" ]; then
+				echo "failure: clean must be executable: $CLEAN" >&2
+				exit 2
+			fi
+			if (cd -- "$TREE" && ./sdlc/scripts/clean); then
+				:
+			else
+				echo "clean failed: preserving $BRANCH and $TREE"
+			fi
+		fi
+	fi
+	echo "settlement \"${SETTLEMENT-}\": preserving $BRANCH and ${TREE:-the worktree} untouched"
+	exit 0
 fi
 
 # A completed run that could not land continues from its own evidence. The

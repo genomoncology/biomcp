@@ -8,7 +8,7 @@
 #   1. pwd is a Git repository with an origin
 #   2. origin answers `git ls-remote`, bounded by `timeout 60` — an
 #      unreachable or hanging remote is unfit, not a hung doctor
-#   3. origin/main resolves locally, because every other script reads it
+#   3. origin/main resolves locally, then committed HEAD's deployment state
 #   4. the contract folders exist, because machinery reads every one of them
 #   5. the contract zone's shape: numbered tickets and records, dated or
 #      legacy-numbered issues, and no legacy issue number used by a ticket or
@@ -16,7 +16,7 @@
 #      reads it
 #   6. the registered directory's filesystem has at least 10 GiB free
 #
-# STDOUT:  one finding per line; nothing when everything passes.
+# STDOUT:  deployment state, then one finding per line when unfit.
 # EXIT:    0 fit · 1 unfit — the findings say why
 set -euo pipefail
 
@@ -43,6 +43,17 @@ fi
 
 if ! git rev-parse --verify --quiet origin/main >/dev/null; then
 	report "origin/main does not resolve; fetch has never succeeded here"
+else
+	behind=$(git rev-list --count HEAD..origin/main)
+	ahead=$(git rev-list --count origin/main..HEAD)
+	if [ "$behind" -gt 0 ]; then
+		echo "checkout is $behind commits behind origin/main; newest undeployed subject: $(git log -1 --format=%s HEAD..origin/main)"
+	fi
+	if [ "$ahead" -gt 0 ]; then
+		report "checkout is $ahead commits ahead of origin/main"
+	elif [ "$behind" -eq 0 ]; then
+		echo "checkout is current with origin/main"
+	fi
 fi
 
 # The contract zone: something reads each of these, so each has rules. A

@@ -20,7 +20,8 @@
 #      human or a retry to look at.
 #   4. refresh origin/main, then fast-forward a clean registered main checkout
 #      when safe; leave an unsafe checkout alone without affecting settlement
-#   5. remove the worktree, delete the branch locally and on origin
+#   5. remove the worktree and its baseline sibling, then delete the branch
+#      locally and on origin
 #
 # STDOUT:  "landed <base>..<tip>" or "nothing to land", an optional
 #          "checkout left alone: <reason>", plus what teardown did.
@@ -45,6 +46,7 @@ esac
 
 BRANCH=${SDLC_BRANCH:-ticket/$TICKET_ID}
 TREE=${ATTEMPT_DIR:-$(pwd -P)}
+BASELINE="$TREE.baseline"
 
 resolve_repo() {
 	local from=$1 common
@@ -95,10 +97,22 @@ remove_tree() {
 	rm -rf "$candidate"
 }
 
+remove_baseline() {
+	if ! candidate_owned "$BASELINE"; then
+		echo "success: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
+		return 1
+	fi
+	remove_tree "$BASELINE"
+}
+
 # Refuse before changing anything: a worktree that is not ours is not ours
 # to remove, and a half teardown is worse than none.
 if [ -e "$TREE" ] && ! candidate_owned "$TREE"; then
 	echo "success: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+	exit 1
+fi
+if [ -e "$BASELINE" ] && ! candidate_owned "$BASELINE"; then
+	echo "success: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
 	exit 1
 fi
 
@@ -188,6 +202,9 @@ cleanup() {
 
 if [ -e "$TREE" ]; then
 	cleanup "worktree removal $TREE" remove_tree "$TREE"
+fi
+if [ -e "$BASELINE" ]; then
+	cleanup "baseline worktree removal $BASELINE" remove_baseline
 fi
 cleanup "worktree prune" prune_worktrees
 cleanup "local branch $BRANCH" remove_local_branch
