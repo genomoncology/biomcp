@@ -44,7 +44,9 @@ Prefer the bounded typed tools. Use `biomcp` only as the raw read-only escape
 hatch, beginning with `biomcp list` for compact command discovery. CI measures
 the real local `tools/list` response with
 `uv run --no-sync python scripts/measure-mcp-tools.py` and rejects catalogs over
-16,000 UTF-8 bytes or 4,000 `cl100k_base` tokens.
+22,600 UTF-8 bytes or 5,800 `cl100k_base` tokens. Those ceilings combine the
+current 15,841-byte, 3,996-token catalog with the largest typed entry (`search`)
+and leave 99 bytes and 52 tokens of margin.
 
 ## Operational tips
 

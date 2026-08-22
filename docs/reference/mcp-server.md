@@ -135,9 +135,12 @@ The raw `biomcp` tool remains available for read-only CLI commands outside the f
 
 The seven-tool catalog is intentionally bounded. Reproduce its current local
 measurement with `uv run --no-sync python scripts/measure-mcp-tools.py`. CI
-rejects the full catalog above 16,000 UTF-8 bytes or 4,000 `cl100k_base` tokens,
-and rejects the raw `biomcp` description above 4,000 bytes. Exact current counts
-belong to that executable measurement rather than hand-copied documentation.
+rejects the full catalog above 22,600 UTF-8 bytes or 5,800 `cl100k_base` tokens,
+and rejects the raw `biomcp` description above 4,000 bytes. The aggregate
+ceilings combine the current 15,841-byte, 3,996-token catalog with the largest
+typed entry (`search`), leaving 99 bytes and 52 tokens of margin. Exact current
+counts belong to that executable measurement rather than hand-copied
+documentation.
 
 Mutating or workstation-local commands are blocked in MCP mode. Examples include `skill install`, `skill status`, local source sync commands, `update`, `uninstall`, and `study download <study_id>`. Status remains CLI-only because probing an arbitrary skill directory can reveal workstation-local paths. Cache-family commands such as `cache path`, `cache stats`, `cache clean`, and `cache clear` are also rejected because they reveal workstation-local paths and filesystem context.
 
