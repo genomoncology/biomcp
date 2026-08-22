@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import re
 import subprocess
 import sys
 import tarfile
+import tempfile
 import tomllib
 import zipfile
 
@@ -83,12 +85,24 @@ def test_packaged_rust_has_no_private_compile_time_includes() -> None:
     assert not violations, "private compile-time includes:\n" + "\n".join(violations)
 
 
+def test_python_contract_temporary_paths_stay_in_worktree(tmp_path: Path) -> None:
+    assert ROOT in tmp_path.parents
+    assert ROOT in Path(tempfile.gettempdir()).parents
+
+
 def test_verified_package_compiles_focused_identity_test_after_extraction(
     tmp_path: Path,
 ) -> None:
-    assert tmp_path != ROOT and ROOT not in tmp_path.parents
+    assert ROOT in tmp_path.parents
     subprocess.run(
-        ["cargo", "package", "--allow-dirty", "--locked", "--offline"],
+        [
+            "cargo",
+            "package",
+            "--allow-dirty",
+            "--locked",
+            "--offline",
+            "--no-verify",
+        ],
         cwd=ROOT,
         check=True,
     )
@@ -116,8 +130,10 @@ def test_verified_package_compiles_focused_identity_test_after_extraction(
             "package_build_identity",
         ],
         cwd=package_root,
+        env=os.environ | {"CARGO_TARGET_DIR": str(ROOT / "target")},
         check=True,
     )
+    assert not (package_root / "target").exists()
 
 
 def test_artifact_checker_rejects_renamed_fixture_bytes(tmp_path: Path) -> None:
