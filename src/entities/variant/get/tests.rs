@@ -519,14 +519,14 @@ async fn population_request_requires_a_grch38_genomic_coordinate() {
         })
     );
 
-    let grch37_population = serde_json::to_value(
-        grch37_only
-            .population
-            .as_ref()
-            .expect("GRCh37-only population result"),
-    )
-    .expect("serialize GRCh37-only population");
-    assert_eq!(grch37_population["status"], "missing");
+    let grch37_response =
+        serde_json::to_value(&grch37_only).expect("serialize GRCh37-only population response");
+    let grch37_population = &grch37_response["population"];
+    assert_eq!(grch37_population["status"], "inapplicable");
+    assert_eq!(
+        grch37_population["status"],
+        grch37_response["section_outcomes"]["population"]["outcome"]
+    );
     assert!(
         grch37_population["message"]
             .as_str()
@@ -579,20 +579,26 @@ fn population_result_names_the_pinned_dataset_and_keeps_sources_separate() {
 
 #[test]
 fn population_status_json_keeps_explicit_null_exome_and_genome_results() {
-    for (status, message) in [
-        (GnomadPopulationStatus::Missing, GNOMAD_GRCH38_REQUIRED),
+    for (status, outcome, message) in [
+        (
+            GnomadPopulationStatus::Missing,
+            "inapplicable",
+            GNOMAD_GRCH38_REQUIRED,
+        ),
         (
             GnomadPopulationStatus::Absent,
+            "empty",
             "This variant is absent from gnomAD v4.",
         ),
         (
             GnomadPopulationStatus::ProviderFailure,
+            "unavailable",
             GNOMAD_PROVIDER_FAILURE,
         ),
     ] {
         let value =
             serde_json::to_value(population_result(status, Some(message), None, None)).unwrap();
-        assert_eq!(value["status"], serde_json::to_value(status).unwrap());
+        assert_eq!(value["status"], outcome);
         assert!(value["exome"].is_null());
         assert!(value["genome"].is_null());
         assert_eq!(value["message"], message);

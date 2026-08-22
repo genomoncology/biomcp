@@ -250,7 +250,7 @@ fn variant_population_markdown_keeps_missing_status_compact() {
         "genome_build": "GRCh37",
         "gene": "BRAF",
         "population": {
-            "status": "missing",
+            "status": "inapplicable",
             "dataset": "gnomad_r4",
             "release": "gnomAD v4",
             "message": "Direct gnomAD v4 population data requires a trustworthy GRCh38 coordinate; tried dbSNP.",
