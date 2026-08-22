@@ -58,10 +58,17 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(200, {"communityStandardTitle": []}); return
         if path == "/allele/CA000074":
             self.send_json(503, {"error": "fixture CAR lookup unavailable"}); return
+        if path == "/allele/CA000075":
+            self.send_json(200, {"@id": "https://reg.genome.network/allele/CA000075", "communityStandardTitle": ["NC_000001.11:g.1A>G (ZERO)"]}); return
+        if path == "/allele/CA000076":
+            self.send_json(200, {"@id": "https://reg.genome.network/allele/CA000076", "communityStandardTitle": ["NC_000001.11:g.1A>G (FAILGEN)"]}); return
         if path == "/evrepo/api/classifications":
             params = dict(part.split("=", 1) for part in query.split("&"))
+            if params["gene"] == "FAILGEN":
+                self.send_json(503, {"error": "fixture gene lookup unavailable"}); return
             start = int(params["matchSkip"]); size = int(params["matchLimit"])
-            self.send_json(200, {"@context": pten_gene["@context"], "variantInterpretations": pten_gene["variantInterpretations"][start:start + size]}); return
+            rows = pten_gene["variantInterpretations"] if params["gene"] in ("PTEN", "TP53") else []
+            self.send_json(200, {"@context": pten_gene["@context"], "variantInterpretations": rows[start:start + size]}); return
         if path == "/evrepo/api/summary/classifications":
             caid = next((part[7:] for part in query.split("&") if part.startswith("values=")), "")
             if caid == "CA015543": self.send_bytes(200, apc_summary); return
@@ -89,10 +96,13 @@ export BIOMCP_CACHE_MODE=off
 
 markdown="$($binary variant erepo CA015543)"
 resolved_gene="$($binary variant erepo CA000072)"
+zero_gene="$($binary variant erepo CA000075)"
 "$binary" variant erepo CA000073 > "$tmp/missing_gene.stdout"
 head -c -1 "$tmp/missing_gene.stdout" > "$tmp/missing_gene.md"
 "$binary" variant erepo CA000074 > "$tmp/unavailable_gene.stdout"
 head -c -1 "$tmp/unavailable_gene.stdout" > "$tmp/unavailable_gene.md"
+"$binary" variant erepo CA000076 > "$tmp/unavailable_count.stdout"
+head -c -1 "$tmp/unavailable_count.stdout" > "$tmp/unavailable_count.md"
 summary="$($binary --json variant erepo CA015543)"
 detail="$($binary --json variant erepo CA015543 --detail)"
 pten="$($binary --json variant erepo CA000498)"
@@ -120,9 +130,12 @@ PY
 mcp="$(<"$tmp/mcp.json")"
 gene_mcp="$(<"$tmp/mcp.json.gene")"
 requests="$(<"$tmp/requests.jsonl")"
-jq -n --arg markdown "$markdown" --arg resolved_gene "$resolved_gene" --rawfile missing_gene "$tmp/missing_gene.md" --rawfile unavailable_gene "$tmp/unavailable_gene.md" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
+jq -n --arg markdown "$markdown" --arg resolved_gene "$resolved_gene" --arg zero_gene "$zero_gene" --rawfile missing_gene "$tmp/missing_gene.md" --rawfile unavailable_gene "$tmp/unavailable_gene.md" --rawfile unavailable_count "$tmp/unavailable_count.md" --argjson summary "$summary" --argjson detail "$detail" --argjson pten "$pten" --argjson miss "$miss" --argjson multiple "$multiple" --argjson batch "$batch" --argjson mcp "$mcp" --argjson gene "$gene" --argjson gene_second "$gene_second" --argjson gene_mcp "$gene_mcp" --argjson ambiguous "$ambiguous" --arg requests "$requests" '{
   plain_cli_reports_summary: ($markdown | contains("ClinGen ERepo expert assertions") and contains("Classification: Pathogenic")),
   empty_caid_resolves_its_car_gene: (($resolved_gene | contains("No expert assertions were returned.") and contains("Gene: TP53")) and ($requests | contains("/allele/CA000072?fields="))),
+  empty_variant_reports_known_gene_repository_count: ($resolved_gene | contains("No expert assertions were returned.") and contains("TP53") and test("26[[:space:]]+assertions"; "i") and contains("repository") and (test("pathogenic|benign"; "i") | not)),
+  zero_gene_count_is_distinct_from_no_gene_context: ($zero_gene | contains("No expert assertions were returned.") and contains("ZERO") and test("0[[:space:]]+assertions"; "i") and contains("repository")),
+  unavailable_gene_count_keeps_the_successful_empty_message: ($unavailable_count == "# ClinGen ERepo expert assertions\n\n## CA000076\n\nNo expert assertions were returned.\n\nGene: FAILGEN\n\n"),
   empty_caid_with_no_car_gene_keeps_the_original_message: (($missing_gene == "# ClinGen ERepo expert assertions\n\n## CA000073\n\nNo expert assertions were returned.\n\n") and ($requests | contains("/allele/CA000073?fields="))),
   unavailable_car_gene_lookup_keeps_the_original_message: (($unavailable_gene == "# ClinGen ERepo expert assertions\n\n## CA000074\n\nNo expert assertions were returned.\n\n") and ($requests | contains("/allele/CA000074?fields="))),
 

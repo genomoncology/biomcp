@@ -29,6 +29,9 @@ bash ../fixtures/run-clingen-erepo-fixture.sh ../..
 {
   "plain_cli_reports_summary": true,
   "empty_caid_resolves_its_car_gene": true,
+  "empty_variant_reports_known_gene_repository_count": true,
+  "zero_gene_count_is_distinct_from_no_gene_context": true,
+  "unavailable_gene_count_keeps_the_successful_empty_message": true,
   "empty_caid_with_no_car_gene_keeps_the_original_message": true,
   "unavailable_car_gene_lookup_keeps_the_original_message": true,
   "apc_summary_preserves_source_facts": true,
