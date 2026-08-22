@@ -42,7 +42,7 @@ async fn main() -> std::process::ExitCode {
     if cli.json
         && matches!(
             &cli.command,
-            biomcp_cli::cli::Commands::Mcp
+            biomcp_cli::cli::Commands::Mcp(biomcp_cli::cli::McpArgs { command: None })
                 | biomcp_cli::cli::Commands::Serve
                 | biomcp_cli::cli::Commands::ServeHttp(_)
                 | biomcp_cli::cli::Commands::ServeSse
@@ -54,15 +54,14 @@ async fn main() -> std::process::ExitCode {
         return std::process::ExitCode::from(outcome.exit_code);
     }
     match cli.command {
-        biomcp_cli::cli::Commands::Mcp | biomcp_cli::cli::Commands::Serve => {
-            match biomcp_cli::mcp::run_stdio().await {
-                Ok(()) => std::process::ExitCode::SUCCESS,
-                Err(err) => {
-                    eprintln!("Error: {}", human_error(&err));
-                    std::process::ExitCode::from(1)
-                }
+        biomcp_cli::cli::Commands::Mcp(biomcp_cli::cli::McpArgs { command: None })
+        | biomcp_cli::cli::Commands::Serve => match biomcp_cli::mcp::run_stdio().await {
+            Ok(()) => std::process::ExitCode::SUCCESS,
+            Err(err) => {
+                eprintln!("Error: {}", human_error(&err));
+                std::process::ExitCode::from(1)
             }
-        }
+        },
         biomcp_cli::cli::Commands::ServeHttp(args) => {
             let host = args.host;
             let port = args.port;

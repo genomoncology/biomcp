@@ -1,6 +1,6 @@
 //! Top-level CLI routing enums composed from per-family payload modules.
 
-use clap::Subcommand;
+use clap::{Args, Subcommand};
 
 use super::{
     adverse_event, article, author, cache, chart, diagnostic, disease, drug, gene, gwas, pathway,
@@ -136,7 +136,7 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
   biomcp mcp")]
-    Mcp,
+    Mcp(McpArgs),
     /// Alias for `mcp` (Claude Desktop friendly)
     #[command(after_help = "\
 EXAMPLES:
@@ -232,6 +232,24 @@ See also: biomcp list discover")]
     Discover(system::DiscoverArgs),
     /// Show version
     Version(system::VersionArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct McpArgs {
+    #[command(subcommand)]
+    pub command: Option<McpCommand>,
+}
+
+impl McpArgs {
+    pub(crate) const fn is_tools(&self) -> bool {
+        matches!(self.command, Some(McpCommand::Tools))
+    }
+}
+
+#[derive(Subcommand, Debug)]
+pub enum McpCommand {
+    /// Print the MCP tool catalog as a JSON array
+    Tools,
 }
 
 #[allow(clippy::large_enum_variant)]

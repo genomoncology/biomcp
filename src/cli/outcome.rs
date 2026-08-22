@@ -19,7 +19,6 @@ fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {
         anyhow::bail!("{}", outcome.text)
     }
 }
-
 fn outcome_to_mcp_output(outcome: CommandOutcome) -> anyhow::Result<CliOutput> {
     if outcome.bytes.is_some() {
         anyhow::bail!("binary downloads are CLI-only and cannot be returned as MCP text");
@@ -391,7 +390,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     crate::render::json::to_pretty(&serde_json::json!({"kind":"mcp_config","config":config})).map_err(Into::into)
                 } else { Ok(content) }
             }
-            Commands::Mcp | Commands::Serve | Commands::ServeHttp(_) | Commands::ServeSse => {
+            Commands::Mcp(args) if args.is_tools() => crate::mcp::tool_catalog_json(),
+            Commands::Mcp(_) | Commands::Serve | Commands::ServeHttp(_) | Commands::ServeSse => {
                 anyhow::bail!("MCP/serve commands should not go through CLI run()")
             }
             Commands::Version(args) => {

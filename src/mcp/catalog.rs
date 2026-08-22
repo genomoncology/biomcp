@@ -71,6 +71,11 @@ pub(super) fn apply<S>(router: &mut ToolRouter<S>) {
     }
 }
 
+pub(super) fn list_server_tools() -> Vec<Tool> {
+    let server = super::shell::BioMcpServer::new();
+    list(&server.tool_router)
+}
+
 pub(super) fn list<S>(router: &ToolRouter<S>) -> Vec<Tool> {
     TOOLS
         .iter()

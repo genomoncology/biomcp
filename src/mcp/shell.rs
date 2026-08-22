@@ -25,7 +25,7 @@ pub(super) use self::http_server::run_http;
 
 #[derive(Debug, Clone)]
 pub struct BioMcpServer {
-    tool_router: ToolRouter<Self>,
+    pub(super) tool_router: ToolRouter<Self>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -550,7 +550,7 @@ fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
         | Commands::Ddinter { .. }
         | Commands::Gtr { .. }
         | Commands::WhoIvd { .. }
-        | Commands::Mcp
+        | Commands::Mcp(_)
         | Commands::Serve
         | Commands::McpConfig(_)
         | Commands::ServeHttp(_)

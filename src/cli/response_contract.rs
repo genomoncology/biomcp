@@ -137,7 +137,7 @@ impl JsonResponseContract {
             | Commands::Ddinter { .. }
             | Commands::Gtr { .. }
             | Commands::WhoIvd { .. }
-            | Commands::Mcp
+            | Commands::Mcp(_)
             | Commands::Serve
             | Commands::McpConfig(_)
             | Commands::ServeHttp(_)

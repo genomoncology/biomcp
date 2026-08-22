@@ -3,6 +3,11 @@
 mod catalog;
 mod shell;
 
+/// Serializes the declared MCP tool catalog.
+pub(crate) fn tool_catalog_json() -> anyhow::Result<String> {
+    serde_json::to_string(&catalog::list_server_tools()).map_err(Into::into)
+}
+
 /// Runs the BioMCP MCP server over stdio.
 ///
 /// # Errors
