@@ -116,7 +116,7 @@ for _ in $(seq 1 40); do
 done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null || curl -fsS "http://127.0.0.1:$port/health" >/dev/null
 "${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" typed-tools "$port" | mustmatch like 'MCP tools: biomcp, search, get, variant_normalize_car, variant_erepo, gene_cspec, variant_articles
-ClinGen schemas validate their named root properties
+ClinGen schemas validate their named properties
 all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search and get schemas use entity-specific branches

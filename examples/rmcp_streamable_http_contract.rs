@@ -129,26 +129,49 @@ fn json_refs_contain(root: &serde_json::Value, value: &serde_json::Value, needle
     }
 }
 
-fn named_root_property_contains(schema: &serde_json::Value, property: &str, needle: &str) -> bool {
-    let Some(value) = schema.pointer(&format!("/properties/{property}")) else {
-        return false;
-    };
-    let value = value
-        .get("$ref")
-        .and_then(serde_json::Value::as_str)
-        .and_then(|reference| reference.strip_prefix('#'))
-        .and_then(|pointer| schema.pointer(pointer))
-        .unwrap_or(value);
-    json_contains(value, needle)
+fn named_property_contains(schema: &serde_json::Value, property: &str, needle: &str) -> bool {
+    fn visit(
+        root: &serde_json::Value,
+        value: &serde_json::Value,
+        property: &str,
+        needle: &str,
+    ) -> bool {
+        let value_contains = |value: &serde_json::Value| {
+            let value = value
+                .get("$ref")
+                .and_then(serde_json::Value::as_str)
+                .and_then(|reference| reference.strip_prefix('#'))
+                .and_then(|pointer| root.pointer(pointer))
+                .unwrap_or(value);
+            json_contains(value, needle)
+        };
+        value
+            .get("properties")
+            .and_then(serde_json::Value::as_object)
+            .and_then(|properties| properties.get(property))
+            .is_some_and(value_contains)
+            || ["oneOf", "anyOf", "allOf"].iter().any(|keyword| {
+                value
+                    .get(keyword)
+                    .and_then(serde_json::Value::as_array)
+                    .is_some_and(|branches| {
+                        branches
+                            .iter()
+                            .any(|branch| visit(root, branch, property, needle))
+                    })
+            })
+    }
+
+    visit(schema, schema, property, needle)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::named_root_property_contains;
+    use super::named_property_contains;
     use serde_json::json;
 
     #[test]
-    fn named_root_property_ignores_nested_refs() {
+    fn named_property_ignores_nested_refs() {
         let schema = json!({
             "properties": {
                 "inputs": { "items": { "$ref": "#/$defs/unrelated" } }
@@ -156,7 +179,7 @@ mod tests {
             "$defs": { "unrelated": { "maximum": 50 } }
         });
 
-        assert!(!named_root_property_contains(&schema, "inputs", "50"));
+        assert!(!named_property_contains(&schema, "inputs", "50"));
     }
 }
 
@@ -286,26 +309,26 @@ async fn print_typed_tool_surface(
         anyhow::bail!("get sections schema missing indexing enum");
     }
     for bound in ["1", "50"] {
-        if !named_root_property_contains(&variant_normalize_car_schema, "inputs", bound) {
+        if !named_property_contains(&variant_normalize_car_schema, "inputs", bound) {
             anyhow::bail!("variant_normalize_car schema missing {bound} input bound");
         }
-        if !named_root_property_contains(&gene_cspec_schema, "limit", bound) {
+        if !named_property_contains(&gene_cspec_schema, "limit", bound) {
             anyhow::bail!("gene_cspec schema missing {bound} paging bound");
         }
     }
     for selector in ["caid", "caids"] {
-        if !named_root_property_contains(&variant_erepo_schema, selector, "string") {
+        if !named_property_contains(&variant_erepo_schema, selector, "string") {
             anyhow::bail!("variant_erepo schema missing {selector} selector");
         }
     }
-    if !named_root_property_contains(&gene_cspec_schema, "capture_id", "string") {
+    if !named_property_contains(&gene_cspec_schema, "capture_id", "string") {
         anyhow::bail!("gene_cspec schema missing capture_id");
     }
     if gene_cspec_schema.pointer("/properties/raw_bytes").is_some() {
         anyhow::bail!("gene_cspec schema must not expose CLI-only raw bytes");
     }
     for control in ["verify_identity", "confirmed_only"] {
-        if !named_root_property_contains(&variant_articles_schema, control, "boolean") {
+        if !named_property_contains(&variant_articles_schema, control, "boolean") {
             anyhow::bail!("variant_articles schema missing {control} boolean");
         }
     }
@@ -313,7 +336,7 @@ async fn print_typed_tool_surface(
     println!(
         "MCP tools: biomcp, search, get, variant_normalize_car, variant_erepo, gene_cspec, variant_articles"
     );
-    println!("ClinGen schemas validate their named root properties");
+    println!("ClinGen schemas validate their named properties");
     println!("all listed MCP tools are read-only annotated");
     println!("all listed MCP tools have titles and descriptions");
     println!("search and get schemas use entity-specific branches");

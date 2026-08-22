@@ -52,6 +52,7 @@ struct TypedVariantCar {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[schemars(transform = typed_variant_erepo_schema)]
 struct TypedVariantErepo {
     #[serde(default)]
     caid: Option<String>,
@@ -286,6 +287,16 @@ fn typed_search_schema(schema: &mut schemars::Schema) {
     .map(typed_search_branch)
     .collect::<Vec<_>>();
     *schema = serde_json::from_value(json!({"oneOf":branches})).expect("valid typed search schema");
+}
+
+fn typed_variant_erepo_schema(schema: &mut schemars::Schema) {
+    let branches = [
+        json!({"type":"object","additionalProperties":false,"properties":{"caid":{"type":"string","minLength":1},"detail":{"type":"boolean"},"assertion_id":{"type":"string"},"version":{"type":"string"}},"required":["caid"]}),
+        json!({"type":"object","additionalProperties":false,"properties":{"caids":{"type":"array","minItems":1,"maxItems":50,"items":{"type":"string","minLength":1}}},"required":["caids"]}),
+        json!({"type":"object","additionalProperties":false,"properties":{"gene":{"type":"string","minLength":1},"limit":{"type":"integer","minimum":1,"maximum":100,"default":25},"offset":{"type":"integer","minimum":0,"default":0}},"required":["gene"]}),
+    ];
+    *schema = serde_json::from_value(json!({"type":"object","oneOf":branches}))
+        .expect("valid typed ERepo schema");
 }
 
 fn add_variant_article_strategy_enum(schema: &mut schemars::Schema) {
