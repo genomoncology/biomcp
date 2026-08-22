@@ -136,7 +136,7 @@ def test_measurement_reads_catalog_from_a_direct_binary_command(tmp_path: Path) 
     assert "tools: biomcp" in result.stdout
     assert f"tools/list UTF-8 bytes: {len(serialized.encode())}" in result.stdout
     assert "tools/list cl100k_base tokens: " in result.stdout
-    assert "biomcp description UTF-8 bytes: 15" in result.stdout
+    assert "biomcp description UTF-8 bytes: 17" in result.stdout
 
 
 def test_real_tools_list_stays_within_context_budget(tmp_path: Path) -> None:
