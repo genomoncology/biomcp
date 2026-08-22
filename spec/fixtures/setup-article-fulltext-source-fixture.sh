@@ -6,8 +6,12 @@ ownership_helper="$script_dir/routine-fixture-ownership.sh"
 # shellcheck source=fixture-supervisor.sh
 source "$script_dir/fixture-supervisor.sh"
 
-workspace_root="${1:-$PWD}"
-repo_root="$(git -C "$workspace_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$workspace_root")"
+workspace_root="$(cd "${1:-$PWD}" && pwd)"
+if [[ "$script_dir" == "$workspace_root/spec/fixtures" && ! -e "$workspace_root/.git" ]]; then
+  repo_root="$workspace_root"
+else
+  repo_root="$(git -C "$workspace_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$workspace_root")"
+fi
 cache_dir="$workspace_root/.cache"
 env_file="$cache_dir/spec-article-fulltext-source-env"
 lock_file="$cache_dir/spec-article-fulltext-source.lock"
