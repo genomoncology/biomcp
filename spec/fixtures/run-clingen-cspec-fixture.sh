@@ -14,6 +14,8 @@ for gene in APC ATM BRCA1 MLH1 PALB2 PTEN TP53 BRAF; do
 done
 "$bin" gene cspec BRCA1 >"$work/BRCA1.md"
 "$bin" --json gene cspec ATM --version "$official" --limit 1 >"$work/selected.json"
+"$bin" --json gene cspec ATM --version 1.5.1 --limit 1 >"$work/short-selected.json" || true
+"$bin" --json gene cspec ATM --version 9.9.9 >"$work/missing-version.json" || true
 "$bin" gene cspec ATM --version "$official" --limit 1 >"$work/selected.md"
 capture="$(jq -er '.capture_id' "$work/selected.json")"
 requests_before_raw="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
@@ -53,7 +55,7 @@ recorded_document = (repo_root / 'testdata/sources/clingen_cspec/atm-gn020-1.5.1
 manifest_path = '/cspec/Gene/id/ATM/SequenceVariantInterpretation/version'
 document_path = '/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
 def load(name): return json.loads((work/name).read_text())
-selected, second, mcp = load('selected.json'), load('page-two.json'), load('mcp.json')
+selected, short_selected, second, mcp = load('selected.json'), load('short-selected.json'), load('page-two.json'), load('mcp.json')
 files, files_reuse = load('files.json'), load('files-reuse.json')
 pten_page = load('pten-page.json')
 files_mcp = load('mcp.json.files')
@@ -68,6 +70,8 @@ report={
  'braf_keeps_gn004_and_gn049': manifest_has('BRAF','GN004') and manifest_has('BRAF','GN049'),
  'atm_uses_literal_full_iri_not_display_version': selected['resource_iri'].endswith('/GN020/version/1.5.1') and selected['display_version']=='1.5',
  'literal_selector_returns_matching_gene_and_specification': selected['gene']=='ATM' and selected['specification_id']=='GN020',
+ 'short_selector_matches_full_iri_selection': short_selected.get('resource_iri')==selected['resource_iri'] and short_selected.get('specification_id')==selected['specification_id'],
+ 'unmatched_short_version_lists_available_versions': load('missing-version.json')['error']['message'].find('1.5.1') >= 0 and load('missing-version.json')['error']['message'].find('1.5.0') >= 0,
  'json_switches_cspec_manifest_and_page_output': load('BRCA1.json')['gene'] == 'BRCA1' and plain_manifest.startswith('# ') and 'BRCA1' in plain_manifest and plain_page.startswith('# ') and 'BP6' in plain_page,
  'criteria_are_deterministic_and_paged': selected['criteria'][0]['label']=='BP6' and second['criteria'][0]['label']=='PM5',
  'supported_reference_objects_preserve_ordered_deduplicated_urls': selected['criteria'][0]['citations']==['https://pubmed.ncbi.nlm.nih.gov/29543229'],

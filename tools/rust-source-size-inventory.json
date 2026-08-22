@@ -84,9 +84,14 @@
     },
     {
       "path": "src/entities/gene/cspec.rs",
-      "baseline_lines": 1068,
+      "baseline_lines": 1096,
       "floor_lines": 1068,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1033",
+        "delta": 28,
+        "reason": "Short-version selection tests cover unique and ambiguous manifest matches.",
+        "removal_condition": "Remove when CSpec selection tests move out of this source module."
+      }
     },
     {
       "path": "src/entities/pathway.rs",

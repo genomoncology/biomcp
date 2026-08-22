@@ -829,20 +829,48 @@ mod tests {
     }
 
     #[test]
-    fn selection_requires_the_literal_manifest_iri() {
+    fn selection_accepts_a_literal_iri_or_unique_short_version() {
+        let selected_iri = "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1";
         let manifest = vec![
-            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1"
+            selected_iri.to_owned(),
+            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.0"
                 .to_owned(),
         ];
 
+        for selector in [selected_iri, "1.5.1"] {
+            assert_eq!(
+                select(&manifest, selector)
+                    .expect("manifest selector should identify one document")
+                    .raw,
+                selected_iri,
+            );
+        }
         assert!(
             select(
                 &manifest,
                 "https://CSPEC.GENOME.NET/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1",
             )
             .is_err(),
-            "normalized spelling must not select a manifest document"
+            "normalized IRI spelling must not select a manifest document"
         );
+    }
+
+    #[test]
+    fn ambiguous_short_version_lists_available_versions() {
+        let manifest = vec![
+            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1"
+                .to_owned(),
+            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN021/version/1.5.1"
+                .to_owned(),
+            "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.0"
+                .to_owned(),
+        ];
+
+        let error = select(&manifest, "1.5.1")
+            .expect_err("a version shared by multiple specifications must not select either");
+        let message = error.to_string();
+        assert!(message.contains("1.5.1"));
+        assert!(message.contains("1.5.0"));
     }
 
     #[test]
