@@ -6,7 +6,7 @@ priority: 4
 
 Find the places where a test checks that some text appears in rendered output when what the project actually cares about is how that output is arranged.
 
-The known instance: `get article <id> indexing` renders an author, that author's affiliation, and the affiliation's identifiers as three sibling bullets at column zero, so a reader cannot tell people from institutions or count the authors. The test covering that section asserts only that the affiliation text appears somewhere in the string. It passes identically whether the output is correctly nested or completely flat, so the suite stayed green while the output was wrong, and a repair flight sent to fix it found nothing red to reproduce. That instance is being fixed under 1046's sibling ticket 1034 and is not what this review is for — it is the example of the pattern.
+The known instance: `get article <id> indexing` renders an author, that author's affiliation, and the affiliation's identifiers as three sibling bullets at column zero, so a reader cannot tell people from institutions or count the authors. The test covering that section asserts only that the affiliation text appears somewhere in the string. It passes identically whether the output is correctly nested or completely flat, so the suite stayed green while the output was wrong, and a repair flight sent to fix it found nothing red to reproduce. That instance is already filed as ticket 1034 and is not what this review is for — it is the example of the pattern.
 
 ## What the worst failure looks like
 
