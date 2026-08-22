@@ -226,24 +226,24 @@ async fn manifest(gene: &str, client: &CspecClient) -> Result<CspecManifestRespo
 }
 
 fn select(manifest: &[String], value: &str) -> Result<CspecDocumentIri, BioMcpError> {
-    let selected = parse_iri(value)?;
-    if !manifest.iter().any(|candidate| candidate == value) {
-        return Err(BioMcpError::NotFound {
-            entity: "CSpec version IRI".into(),
-            id: value.into(),
-            suggestion: "rerun the manifest command and select one exact resource_iris value"
-                .into(),
-        });
+    if let Ok(selected) = parse_iri(value)
+        && manifest.iter().any(|candidate| candidate == value)
+    {
+        return Ok(selected);
     }
-    let normalized_matches = manifest
+    let mut matches = manifest
         .iter()
-        .filter_map(|candidate| parse_iri(candidate).ok())
-        .filter(|candidate| candidate.url == selected.url)
-        .count();
-    if normalized_matches != 1 {
-        return Err(invalid("duplicate normalized CSpec manifest IRI"));
+        .filter(|iri| iri.rsplit('/').next() == Some(value));
+    if let (Some(selected), None) = (matches.next(), matches.next()) {
+        return parse_iri(selected);
     }
-    Ok(selected)
+    let version = |iri: &String| iri.rsplit('/').next().map(str::to_owned);
+    let versions: Vec<_> = manifest.iter().filter_map(version).collect();
+    Err(BioMcpError::NotFound {
+        entity: "CSpec version".into(),
+        id: value.into(),
+        suggestion: format!("available version values: {}", versions.join(", ")),
+    })
 }
 
 fn parse_iri(value: &str) -> Result<CspecDocumentIri, BioMcpError> {

@@ -49,7 +49,7 @@ pub struct CspecArgs {
     pub command: Option<CspecCommand>,
     /// HGNC gene symbol
     pub gene: Option<String>,
-    /// Exact full CSpec resource IRI from the manifest
+    /// Exact manifest resource IRI or unique short version
     #[arg(long, conflicts_with = "capture_id")]
     pub version: Option<String>,
     /// Page a previously selected CSpec capture without refetching
@@ -150,7 +150,7 @@ See also: biomcp list gene")]
     },
     /// Retrieve versioned ClinGen Criteria Specification Registry source documents
     #[command(
-        after_help = "Use a full resource IRI returned by the manifest with --version. Raw capture bytes are available only through `biomcp gene cspec document <capture-id>`."
+        after_help = "Use an exact manifest resource IRI or unique short version with --version (for example, `--version 1.5.1`). Raw capture bytes are available only through `biomcp gene cspec document <capture-id>`."
     )]
     Cspec(CspecArgs),
     /// Show pathways section for this gene symbol

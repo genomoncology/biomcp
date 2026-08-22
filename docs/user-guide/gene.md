@@ -123,12 +123,14 @@ promotes a recruiting-trial search keyed to the newest reviewed disease label
 already shown on the card, ahead of the generic gene pivots.
 
 ClinGen CSpec source documents use a separate, versioned retrieval flow. List a
-gene's returned resource IRIs, select one exact IRI, then use its capture handle
-to stream the original stored bytes locally:
+gene's returned resource IRIs, select one exact IRI or a unique short version, then
+use its capture handle to stream the original stored bytes locally. The display version
+is not interchangeable with resource identity:
 
 ```bash
 biomcp --json gene cspec ATM
 biomcp --json gene cspec ATM --version https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1
+biomcp --json gene cspec ATM --version 1.5.1
 biomcp gene cspec document <capture-id>
 biomcp --json gene cspec PTEN --version <full-resource-iri> --files
 biomcp --json gene cspec PTEN --capture-id <capture-id> --files

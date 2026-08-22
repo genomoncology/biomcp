@@ -9,12 +9,12 @@ ClinGen CSpec publishes versioned VCEP criteria specifications. BioMCP preserves
 source facts and exact stored provider captures; it does not evaluate ACMG criteria
 or produce classifications.
 
-Use the full resource IRI returned by a manifest when selecting a document; its display version is a separate provider fact.
+Select a document with either an exact full resource IRI returned by a manifest or a unique short version. The display version remains a separate provider fact and is not interchangeable with resource identity.
 
 ## What BioMCP exposes
 
 - `gene cspec <gene>` lists full resource IRIs returned by the provider.
-- `gene cspec <gene> --version <full-IRI>` retrieves one exact source document and binds its normalized gene, resource IRI, and specification ID to the capture.
+- `gene cspec <gene> --version <full-IRI-or-unique-short-version>` retrieves one exact source document and binds its normalized gene, resource IRI, and specification ID to the capture.
 - `gene cspec <gene> --capture-id <capture-id>` pages that bound capture without another provider request.
 - Add `--files` to an exact version or capture selection to list bounded public
   attachment metadata without downloading files.
@@ -31,9 +31,10 @@ List every available version IRI for ATM.
 
 ```bash
 biomcp --json gene cspec ATM --version https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1
+biomcp --json gene cspec ATM --version 1.5.1
 ```
 
-Select one exact version and retain its capture provenance.
+Select one exact version or unique short version and retain its capture provenance.
 
 ```bash
 biomcp gene cspec document <capture-id>
