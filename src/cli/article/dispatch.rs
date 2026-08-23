@@ -31,6 +31,7 @@ pub(in crate::cli) async fn handle_get(
         &args.id,
         &sections,
         json_output,
+        args.output.as_deref(),
         &args.asset_view,
         args.asset_limit,
         args.asset_offset,

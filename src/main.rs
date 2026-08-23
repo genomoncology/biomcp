@@ -19,6 +19,70 @@ fn human_error(error: &dyn std::fmt::Display) -> String {
     biomcp_cli::cli::sanitize_human_diagnostic(&error.to_string())
 }
 
+fn is_mime_token(value: &str) -> bool {
+    !value.is_empty()
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric()
+                || matches!(
+                    byte,
+                    b'!' | b'#'
+                        | b'$'
+                        | b'%'
+                        | b'&'
+                        | b'\''
+                        | b'*'
+                        | b'+'
+                        | b'-'
+                        | b'.'
+                        | b'^'
+                        | b'_'
+                        | b'`'
+                        | b'|'
+                        | b'~'
+                )
+        })
+}
+
+fn is_mime_parameter(parameter: &str) -> bool {
+    let Some((name, value)) = parameter.trim().split_once('=') else {
+        return false;
+    };
+    let value = value.trim();
+    is_mime_token(name.trim())
+        && (is_mime_token(value)
+            || (value.starts_with('"')
+                && value.ends_with('"')
+                && value.len() > 2
+                && value[1..value.len() - 1]
+                    .bytes()
+                    .all(|byte| byte.is_ascii_graphic() && byte != b'"')))
+}
+
+fn is_terminal_textual_article_asset(media_type: Option<&str>) -> bool {
+    let Some(media_type) = media_type else {
+        return false;
+    };
+    let mut parts = media_type.split(';');
+    let Some((kind, subtype)) = parts.next().unwrap_or_default().trim().split_once('/') else {
+        return false;
+    };
+    if parts.any(|parameter| !is_mime_parameter(parameter))
+        || subtype.contains('/')
+        || !is_mime_token(kind)
+        || !is_mime_token(subtype)
+    {
+        return false;
+    }
+    if kind.eq_ignore_ascii_case("text") {
+        return true;
+    }
+    kind.eq_ignore_ascii_case("application")
+        && matches!(
+            subtype.to_ascii_lowercase().as_str(),
+            "json" | "xml" | "yaml" | "x-yaml" | "javascript" | "ecmascript"
+        )
+}
+
 fn init_tracing() {
     let _ = tracing_subscriber::fmt()
         .with_env_filter(
@@ -87,8 +151,31 @@ async fn main() -> std::process::ExitCode {
             Ok(output) => {
                 match output.stream {
                     biomcp_cli::cli::OutputStream::Stdout => {
-                        if let Some(bytes) = output.bytes {
-                            let _ = std::io::stdout().write_all(&bytes);
+                        if let Some(binary) = output.bytes {
+                            if binary.output_path.is_some() {
+                                if let Err(error) = binary.write_to_destination().await {
+                                    eprintln!("Error: {}", human_error(&error));
+                                    let _ = std::io::stderr().flush();
+                                    std::process::exit(i32::from(error.exit_code()));
+                                }
+                            } else {
+                                let mut stdout = std::io::stdout();
+                                if binary.is_article_asset
+                                    && stdout.is_terminal()
+                                    && !is_terminal_textual_article_asset(
+                                        binary.media_type.as_deref(),
+                                    )
+                                {
+                                    let error = biomcp_cli::error::BioMcpError::InvalidArgument(
+                                        "Article asset is binary or has an unknown media type; use --output FILE or pipe standard output."
+                                            .into(),
+                                    );
+                                    eprintln!("Error: {}", human_error(&error));
+                                    let _ = std::io::stderr().flush();
+                                    std::process::exit(i32::from(error.exit_code()));
+                                }
+                                let _ = stdout.write_all(&binary.bytes);
+                            }
                         } else {
                             println!("{}", output.text);
                         }

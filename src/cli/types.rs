@@ -280,10 +280,27 @@ pub enum OutputStream {
 }
 
 #[derive(Debug, Clone)]
+pub struct BinaryOutput {
+    pub bytes: Vec<u8>,
+    pub media_type: Option<String>,
+    pub output_path: Option<std::path::PathBuf>,
+    pub is_article_asset: bool,
+}
+
+impl BinaryOutput {
+    pub async fn write_to_destination(&self) -> Result<(), crate::error::BioMcpError> {
+        let path = self.output_path.as_deref().ok_or_else(|| {
+            crate::error::BioMcpError::InvalidArgument("binary output has no destination".into())
+        })?;
+        crate::utils::download::write_atomic_bytes(path, &self.bytes).await
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct CommandOutcome {
     pub text: String,
     pub metadata_json: Option<String>,
-    pub bytes: Option<Vec<u8>>,
+    pub bytes: Option<BinaryOutput>,
     pub svg: Option<String>,
     pub stream: OutputStream,
     pub exit_code: u8,
@@ -305,7 +322,32 @@ impl CommandOutcome {
         Self {
             text: String::new(),
             metadata_json: None,
-            bytes: Some(bytes),
+            bytes: Some(BinaryOutput {
+                bytes,
+                media_type: None,
+                output_path: None,
+                is_article_asset: false,
+            }),
+            svg: None,
+            stream: OutputStream::Stdout,
+            exit_code: 0,
+        }
+    }
+
+    pub(crate) fn stdout_article_asset(
+        bytes: Vec<u8>,
+        media_type: Option<String>,
+        output_path: Option<std::path::PathBuf>,
+    ) -> Self {
+        Self {
+            text: String::new(),
+            metadata_json: None,
+            bytes: Some(BinaryOutput {
+                bytes,
+                media_type,
+                output_path,
+                is_article_asset: true,
+            }),
             svg: None,
             stream: OutputStream::Stdout,
             exit_code: 0,

@@ -258,6 +258,9 @@ pub struct ArticleGetArgs {
     /// Return an inclusive one-based cached full-text line range (START:END)
     #[arg(long, value_name = "START:END", conflicts_with = "outline")]
     pub lines: Option<String>,
+    /// Write an article asset to a file instead of standard output
+    #[arg(long, value_name = "FILE")]
+    pub output: Option<std::path::PathBuf>,
     /// Asset manifest view
     #[arg(long = "asset-view", default_value = "compact", value_parser = ["compact", "retrievable", "coverage"])]
     pub asset_view: String,

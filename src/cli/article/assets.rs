@@ -4,13 +4,25 @@ pub(super) async fn handle_asset_get(
     id: &str,
     sections: &[String],
     json_output: bool,
+    output: Option<&std::path::Path>,
     view: &str,
     explicit_limit: Option<usize>,
     offset: usize,
 ) -> anyhow::Result<Option<CommandOutcome>> {
     if let Some(asset_name) = article_asset_request(sections)? {
-        let bytes = crate::entities::article::article_asset_bytes(id, &asset_name).await?;
-        return Ok(Some(CommandOutcome::stdout_bytes(bytes)));
+        let (bytes, media_type) =
+            crate::entities::article::article_asset_bytes(id, &asset_name).await?;
+        return Ok(Some(CommandOutcome::stdout_article_asset(
+            bytes,
+            media_type,
+            output.map(std::path::Path::to_path_buf),
+        )));
+    }
+    if output.is_some() {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "--output requires asset <asset-key> as the sole article section".into(),
+        )
+        .into());
     }
     if !article_assets_request(sections)? {
         if view != "compact" || explicit_limit.is_some() || offset != 0 {

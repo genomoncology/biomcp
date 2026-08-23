@@ -536,6 +536,8 @@ Full text defaults to the XML -> PMC HTML ladder. Abstract-only and metadata-onl
 Requested fulltext JSON includes `full_text_coverage` and sanitized per-rung attempts.
 Use `assets` for the JSON-only merged article asset manifest (PMC OA, Europe PMC, recognized JATS/PMC HTML links, and eligible Figshare siblings).
 Use `asset <asset-key>` to return one advertised asset as raw bytes with no conversion; handles stay as BioMCP commands, not provider URLs.
+Binary or unknown-type assets are refused when standard output is a terminal.
+Pipe standard output to preserve exact asset bytes, or use `--output FILE`.
 Asset keywords:
 assets
 asset <asset-key>
