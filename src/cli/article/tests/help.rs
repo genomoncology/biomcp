@@ -202,7 +202,11 @@ fn get_article_help_explains_binary_asset_file_output() {
     let help = render_article_get_long_help();
 
     assert!(help.contains("--output <FILE>"));
-    assert!(help.contains("standard output"));
+    assert!(
+        help.contains(
+            "Binary or unknown-type assets are refused when standard output is a terminal"
+        )
+    );
 }
 
 #[test]
