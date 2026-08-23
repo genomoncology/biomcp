@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 5
 ---
 # Document that expert assertions are germline only
@@ -16,3 +16,7 @@ This is the same failure shape as reporting zero for a source that was never rea
 - The public documentation for the ClinGen commands states the same, and points a somatic question at CIViC, which BioMCP already serves through `get gene <symbol> civic` and its variant equivalents. Name that as the destination; do not invent or link a source BioMCP does not carry.
 - A reader who arrives with a somatic question can tell from the output or the help that they are asking the wrong source, rather than concluding no evidence exists.
 - No behaviour changes: this ticket adds no filtering, no detection of somatic intent, and no new source.
+
+## Why this is a build and not a quickfix
+
+This was filed as a quickfix and refused on 2026-08-23: `lint` and `test` both ran green before any change, which is the quickfix flow's grounds for refusal. That refusal was correct. Nothing here is broken in a way an existing assertion can catch — the missing words were never asserted by anything. The proof has to be authored, not reproduced, which is what the build flow's design stage is for.
