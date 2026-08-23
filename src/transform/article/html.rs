@@ -91,7 +91,7 @@ pub(crate) fn extract_pmc_supplement_links(
                     && semantic_tokens(ancestor).any(|token| {
                         matches!(
                             token.to_ascii_lowercase().as_str(),
-                            "sm" | "supp" | "supplement" | "supplementary"
+                            "supp" | "supplement" | "supplementary"
                         )
                     })
             });
@@ -99,6 +99,9 @@ pub(crate) fn extract_pmc_supplement_links(
             continue;
         }
         let href = anchor.value().attr("href").unwrap_or_default().trim();
+        if !is_pmc_linked_asset_href(href) {
+            continue;
+        }
         let identity = href.split(['?', '#']).next().unwrap_or_default();
         let Some(filename) = identity
             .trim_end_matches('/')
@@ -119,6 +122,19 @@ pub(crate) fn extract_pmc_supplement_links(
     links.sort_by(|left, right| left.href.cmp(&right.href));
     links.dedup_by(|left, right| left.href == right.href);
     Ok(links)
+}
+
+fn is_pmc_linked_asset_href(href: &str) -> bool {
+    let path = href.split(['?', '#']).next().unwrap_or_default();
+    let Some((_, asset)) = path.rsplit_once("/articles/instance/") else {
+        return false;
+    };
+    let Some((article_id, asset)) = asset.split_once("/bin/") else {
+        return false;
+    };
+    !article_id.is_empty()
+        && article_id.bytes().all(|byte| byte.is_ascii_digit())
+        && asset.split('/').any(|part| !part.is_empty())
 }
 
 fn select_content_root(document: &Html) -> Option<ElementRef<'_>> {
