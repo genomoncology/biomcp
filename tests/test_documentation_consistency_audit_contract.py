@@ -354,11 +354,26 @@ def test_chart_reference_pages_use_shared_compact_shape() -> None:
 
 def test_blog_try_it_and_install_copy_are_consistent() -> None:
     blog = _read("docs/blog/we-deleted-35-tools.md")
+    blog_ws = _normalize_whitespace(blog)
 
     assert "replaced 36 narrow MCP tools with one command grammar" in blog
     assert "seven-tool catalog" in blog
-    assert "1,628 `cl100k_base` tokens at the 0932 snapshot" in blog
-    assert "16,000 bytes and 4,000 tokens" in blog
+    assert (
+        "6,707 UTF-8 bytes and 1,628 `cl100k_base` tokens at the 0932 snapshot"
+        in blog_ws
+    )
+    assert (
+        "development build measured on 2026-08-19: 15,704 UTF-8 bytes and "
+        "3,974 `cl100k_base` tokens" in blog_ws
+    )
+    assert (
+        "published 0.8.25 release: 21,701 UTF-8 bytes and 5,599 "
+        "`cl100k_base` tokens" in blog_ws
+    )
+    assert (
+        "16,000-byte / 4,000-token CI budget applied only to development builds"
+        in blog_ws
+    )
     assert "uv tool install biomcp-cli" in blog
     assert "curl -fsSL https://biomcp.org/install.sh | bash" in blog
     assert blog.index("curl -fsSL https://biomcp.org/install.sh | bash") < blog.index(
@@ -373,6 +388,17 @@ def test_blog_try_it_and_install_copy_are_consistent() -> None:
         if "## Try" in blog_text:
             assert "## Try it" in blog_text
             assert "## Try It" not in blog_text
+
+
+def test_mcp_catalog_docs_name_the_development_build_they_measure() -> None:
+    for path in (
+        "docs/getting-started/claude-desktop.md",
+        "docs/reference/mcp-server.md",
+    ):
+        text = _normalize_whitespace(_read(path))
+        assert "0.9.0-dev.5 development build" in text
+        assert "15,841-byte, 3,996-token catalog" in text
+        assert "22,600-byte / 5,800-token CI budget" in text
 
 
 def test_examples_and_operator_readmes_use_plain_runtime_copy() -> None:
