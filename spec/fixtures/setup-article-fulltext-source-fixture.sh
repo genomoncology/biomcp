@@ -168,7 +168,7 @@ ARTICLE_XML = """<?xml version="1.0" encoding="UTF-8"?>
       <supplementary-material id="s1" xlink:href="traces-s1.csv">
         <label>Supplementary Data S1</label>
         <caption><p>Measurement traces for the treatment cohort.</p></caption>
-        <media xlink:href="traces-s1.csv" />
+        <media xlink:href="traces-s1.csv" mime-type="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
       </supplementary-material>
       <supplementary-material id="s2">
         <label>Supplementary Data S2</label>

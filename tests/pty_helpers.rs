@@ -6,6 +6,11 @@ use std::process::Command;
 
 use rexpect::session::spawn_command;
 
+pub(crate) fn run_command_with_tty(command: Command) -> Result<String, Box<dyn std::error::Error>> {
+    let mut session = spawn_command(command, Some(10_000))?;
+    Ok(session.exp_eof()?)
+}
+
 pub(crate) fn run_biomcp_with_tty(
     args: &[&str],
     cache_home: &Path,

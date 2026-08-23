@@ -198,6 +198,14 @@ fn get_article_help_includes_opt_in_pdf_guidance() {
 }
 
 #[test]
+fn get_article_help_explains_binary_asset_file_output() {
+    let help = render_article_get_long_help();
+
+    assert!(help.contains("--output <FILE>"));
+    assert!(help.contains("standard output"));
+}
+
+#[test]
 fn article_get_pdf_modifier_parses_before_fulltext() {
     let cli = Cli::try_parse_from(["biomcp", "get", "article", "22663011", "--pdf", "fulltext"])
         .expect("article get should accept --pdf before fulltext");
