@@ -257,6 +257,10 @@ mod tests {
         include_str!("../../../tests/fixtures/article/fulltext/html/biorxiv_preprint_page.html");
     const NIH_NEWS_RELEASE_PAGE: &str =
         include_str!("../../../tests/fixtures/article/fulltext/html/nih_news_release.html");
+    const PMC3040717_PAGE: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/testdata/sources/pmc_article/pmc3040717.html"
+    ));
 
     #[test]
     fn extract_text_from_html_keeps_article_signals_across_fixture_family() {
@@ -292,18 +296,20 @@ mod tests {
     }
 
     #[test]
-    fn supplement_links_are_limited_to_the_selected_article_supplement_region() {
-        let html = r#"<main><article>
-          <nav><a href='/articles/instance/1/bin/nav.csv'>nav</a></nav>
-          <section class='sm'><div class='media'><a href='/articles/instance/1/bin/data.xlsx'>Workbook</a></div></section>
-          <section class='references'><a data-ga-action='click_feat_suppl' href='/articles/instance/1/bin/ref.pdf'>reference</a></section>
-          <p><a href='https://doi.org/10.1/example'>ordinary</a></p>
-        </article></main>"#;
+    fn supplement_links_ignore_page_links_in_stored_pmc_html() {
+        let links = extract_pmc_supplement_links(PMC3040717_PAGE).expect("stored article root");
+        let filenames = links
+            .iter()
+            .map(|link| link.filename.as_str())
+            .collect::<Vec<_>>();
 
-        let links = extract_pmc_supplement_links(html).expect("selected article root");
-        assert_eq!(links.len(), 1);
-        assert_eq!(links[0].filename, "data.xlsx");
-        assert_eq!(links[0].label.as_deref(), Some("Workbook"));
+        assert_eq!(
+            filenames,
+            [
+                "NIHMS265402-supplement-Supplementary_Methods__Figures__Tables.pdf",
+                "NIHMS265402-supplement-Supplementary_Tables.xls",
+            ]
+        );
     }
 
     #[test]
