@@ -81,7 +81,7 @@ def _pre_commit_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path, Pat
     for name, log in (("cargo", cargo_log), ("uv", uv_log)):
         command = root / "fake-bin" / name
         command.write_text(
-            f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >>{shlex.quote(str(log))}\n"
+            f"#!/usr/bin/env bash\nprintf 'NO_MKDOCS_2_WARNING=%s %s\\n' \"${{NO_MKDOCS_2_WARNING:-}}\" \"$*\" >>{shlex.quote(str(log))}\n"
         )
         command.chmod(0o755)
     _git(root, "init")
@@ -235,7 +235,10 @@ def test_tracked_pre_commit_skips_cargo_for_allowed_markdown(
 
     assert result.returncode == 0, result.stderr
     assert not cargo_log.exists()
-    assert "run --no-sync mkdocs build --strict" in uv_log.read_text()
+    assert (
+        "NO_MKDOCS_2_WARNING=1 run --no-sync mkdocs build --strict"
+        in uv_log.read_text()
+    )
     quality_log = root / "quality.log"
     assert quality_log.exists() == path.startswith("spec/")
     if quality_log.exists():
