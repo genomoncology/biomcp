@@ -292,7 +292,7 @@ impl BinaryOutput {
         let path = self.output_path.as_deref().ok_or_else(|| {
             crate::error::BioMcpError::InvalidArgument("binary output has no destination".into())
         })?;
-        crate::utils::download::write_atomic_bytes(path, &self.bytes).await
+        crate::utils::download::write_user_atomic_bytes(path, &self.bytes).await
     }
 }
 

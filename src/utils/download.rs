@@ -23,13 +23,21 @@ fn download_path_for_config(id: &str, config: &crate::cache::ResolvedCacheConfig
 
 async fn create_unique_sibling_temp(
     path: &Path,
+    managed: bool,
 ) -> Result<(tokio::fs::File, PathBuf), BioMcpError> {
     let Some(dir) = path.parent() else {
         return Err(BioMcpError::InvalidArgument(
-            "Invalid cache path (no parent directory)".into(),
+            "Invalid output path (no parent directory)".into(),
         ));
     };
-    crate::cache::secure_managed_tree(dir, true)?;
+    if managed {
+        crate::cache::secure_managed_tree(dir, true)?;
+    } else if !dir.is_dir() {
+        return Err(BioMcpError::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Output directory does not exist: {}", dir.display()),
+        )));
+    }
 
     let stem = path
         .file_name()
@@ -44,13 +52,18 @@ async fn create_unique_sibling_temp(
             ".{stem}.{}.tmp",
             seed.saturating_add(attempt as u128)
         ));
-        let opened = crate::cache::open_private(
-            std::fs::OpenOptions::new().write(true).create_new(true),
-            &candidate,
-        );
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        let opened = if managed {
+            crate::cache::open_private(&mut options, &candidate)
+        } else {
+            options.open(&candidate)
+        };
         match opened {
             Ok(file) => {
-                crate::cache::secure_managed_tree(dir, true)?;
+                if managed {
+                    crate::cache::secure_managed_tree(dir, true)?;
+                }
                 return Ok((tokio::fs::File::from_std(file), candidate));
             }
             Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => continue,
@@ -60,7 +73,7 @@ async fn create_unique_sibling_temp(
 
     Err(BioMcpError::Io(std::io::Error::new(
         std::io::ErrorKind::AlreadyExists,
-        "Unable to allocate secure temporary cache file",
+        "Unable to allocate temporary output file",
     )))
 }
 
@@ -68,8 +81,13 @@ async fn remove_temp_if_present(path: &Path) {
     let _ = tokio::fs::remove_file(path).await;
 }
 
-async fn existing_file_matches(path: &Path, content: &[u8]) -> bool {
-    let Ok(file) = crate::cache::open_managed_read(path) else {
+async fn existing_file_matches(path: &Path, content: &[u8], managed: bool) -> bool {
+    let file = if managed {
+        crate::cache::open_managed_read(path)
+    } else {
+        std::fs::File::open(path)
+    };
+    let Ok(file) = file else {
         return false;
     };
     let mut file = tokio::fs::File::from_std(file);
@@ -77,12 +95,22 @@ async fn existing_file_matches(path: &Path, content: &[u8]) -> bool {
     file.read_to_end(&mut existing).await.is_ok() && existing == content
 }
 
-async fn existing_regular_file(path: &Path) -> bool {
-    crate::cache::open_managed_read(path).is_ok()
+fn existing_regular_file(path: &Path, managed: bool) -> bool {
+    if managed {
+        crate::cache::open_managed_read(path).is_ok()
+    } else {
+        std::fs::symlink_metadata(path)
+            .map(|metadata| metadata.is_file())
+            .unwrap_or(false)
+    }
 }
 
-pub async fn write_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), BioMcpError> {
-    let (mut file, tmp_path) = create_unique_sibling_temp(path).await?;
+async fn write_atomic_bytes_inner(
+    path: &Path,
+    content: &[u8],
+    managed: bool,
+) -> Result<(), BioMcpError> {
+    let (mut file, tmp_path) = create_unique_sibling_temp(path, managed).await?;
     file.write_all(content).await?;
     file.flush().await?;
     file.sync_all().await?;
@@ -90,12 +118,12 @@ pub async fn write_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), BioMc
 
     match tokio::fs::rename(&tmp_path, path).await {
         Ok(()) => Ok(()),
-        Err(_err) if existing_file_matches(path, content).await => {
+        Err(_err) if existing_file_matches(path, content, managed).await => {
             remove_temp_if_present(&tmp_path).await;
             Ok(())
         }
         Err(err) => {
-            if !existing_regular_file(path).await {
+            if !existing_regular_file(path, managed) {
                 remove_temp_if_present(&tmp_path).await;
                 return Err(err.into());
             }
@@ -111,7 +139,7 @@ pub async fn write_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), BioMc
 
             match tokio::fs::rename(&tmp_path, path).await {
                 Ok(()) => Ok(()),
-                Err(_retry_err) if existing_file_matches(path, content).await => {
+                Err(_retry_err) if existing_file_matches(path, content, managed).await => {
                     remove_temp_if_present(&tmp_path).await;
                     Ok(())
                 }
@@ -122,6 +150,15 @@ pub async fn write_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), BioMc
             }
         }
     }
+}
+
+pub async fn write_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), BioMcpError> {
+    write_atomic_bytes_inner(path, content, true).await
+}
+
+/// Atomically writes a user-selected output without changing its directory permissions.
+pub async fn write_user_atomic_bytes(path: &Path, content: &[u8]) -> Result<(), BioMcpError> {
+    write_atomic_bytes_inner(path, content, false).await
 }
 
 pub async fn save_atomic(id: &str, content: &str) -> Result<PathBuf, BioMcpError> {
@@ -146,7 +183,10 @@ async fn save_atomic_to_path(path: PathBuf, content: &str) -> Result<PathBuf, Bi
 mod tests {
     use std::time::Duration;
 
-    use super::{cache_key, download_path_for_config, save_atomic_to_path, write_atomic_bytes};
+    use super::{
+        cache_key, download_path_for_config, save_atomic_to_path, write_atomic_bytes,
+        write_user_atomic_bytes,
+    };
     use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
     use crate::test_support::TempDirGuard;
 
@@ -193,6 +233,31 @@ mod tests {
                 || err.to_string().contains("directory")
                 || err.to_string().contains("Access is denied"),
             "unexpected error: {err}"
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn user_output_does_not_restrict_parent_directory() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = TempDirGuard::new("user-output-permissions");
+        let output_dir = root.path().join("output");
+        std::fs::create_dir(&output_dir).expect("output directory should be created");
+        std::fs::set_permissions(&output_dir, std::fs::Permissions::from_mode(0o755))
+            .expect("output directory permissions should be set");
+
+        write_user_atomic_bytes(&output_dir.join("asset.bin"), b"bytes")
+            .await
+            .expect("user output should be written");
+
+        assert_eq!(
+            std::fs::metadata(&output_dir)
+                .expect("output directory should exist")
+                .permissions()
+                .mode()
+                & 0o777,
+            0o755
         );
     }
 
