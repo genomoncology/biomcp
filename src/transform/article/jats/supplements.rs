@@ -127,6 +127,7 @@ mod tests {
     fn extracts_nested_and_standalone_supplement_media_with_typed_facts() {
         let xml = r#"<article xmlns:xlink="http://www.w3.org/1999/xlink"><body>
           <supplementary-material xlink:href="folder/data-s1.csv?token=hidden"><label>Data S1</label>
+            <caption><p>Cohort measurements for <italic>baseline</italic> and <xref>reference 1</xref>.</p></caption>
             <media xlink:href="folder/data-s1.csv?token=hidden" mimetype="text" mime-subtype="csv"/>
           </supplementary-material>
           <media content-type="supplement" xlink:href="standalone.xlsx" mime-type="application/xlsx"/>
@@ -137,7 +138,12 @@ mod tests {
         assert_eq!(links.len(), 2);
         assert_eq!(links[0].filename, "data-s1.csv");
         assert_eq!(links[0].label.as_deref(), Some("Data S1"));
+        assert_eq!(
+            links[0].caption.as_deref(),
+            Some("Cohort measurements for baseline and reference 1.")
+        );
         assert_eq!(links[0].media_type.as_deref(), Some("text/csv"));
         assert_eq!(links[1].filename, "standalone.xlsx");
+        assert_eq!(links[1].caption, None);
     }
 }
