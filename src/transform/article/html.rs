@@ -116,6 +116,7 @@ pub(crate) fn extract_pmc_supplement_links(
             href: href.to_string(),
             filename: filename.to_string(),
             label: (!label.is_empty()).then_some(label),
+            caption: None,
             media_type: None,
         });
     }

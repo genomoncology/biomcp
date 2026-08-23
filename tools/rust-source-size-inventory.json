@@ -16,13 +16,13 @@
     },
     {
       "path": "src/entities/article/assets.rs",
-      "baseline_lines": 2881,
+      "baseline_lines": 2909,
       "floor_lines": 2570,
       "authorized_increase": {
-        "ticket": "0974",
-        "delta": 311,
-        "reason": "Provider-wide deadlines, source outcome facts, private manifest reuse, and their local tests belong beside the existing asset-resolution ladder.",
-        "removal_condition": "Extract manifest caching and provider-attempt policy when article asset resolution is next decomposed."
+        "ticket": "1044",
+        "delta": 339,
+        "reason": "JATS-linked captions need candidate transport and field-wise asset merging beside the existing resolver.",
+        "removal_condition": "Extract linked candidate and asset merge handling when the article asset resolver is decomposed."
       }
     },
     {

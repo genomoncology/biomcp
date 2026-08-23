@@ -27,6 +27,7 @@ pub(crate) struct ArticleSupplementLink {
     pub href: String,
     pub filename: String,
     pub label: Option<String>,
+    pub caption: Option<String>,
     pub media_type: Option<String>,
 }
 

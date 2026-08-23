@@ -101,6 +101,7 @@ struct LinkedCandidate {
     href: String,
     filename: String,
     label: Option<String>,
+    caption: Option<String>,
     media_type: Option<String>,
     route: ArticleAssetDiscoveryRoute,
     additional_routes: Vec<ArticleAssetDiscoveryRoute>,
@@ -565,6 +566,7 @@ async fn resolve_article_assets(
                         href: link.href,
                         filename: link.filename,
                         label: link.label,
+                        caption: None,
                         media_type: link.media_type,
                         route: ArticleAssetDiscoveryRoute {
                             provider: linked_provider(),
@@ -818,11 +820,13 @@ async fn resolve_linked_candidates(
                             package_url: None,
                             pdf_fallback_used: false,
                         },
-                        jats: candidate.label.clone().map(|label| ArticleAssetJats {
-                            label: Some(label),
-                            caption: None,
-                            source_id: None,
-                        }),
+                        jats: (candidate.label.is_some() || candidate.caption.is_some()).then(
+                            || ArticleAssetJats {
+                                label: candidate.label.clone(),
+                                caption: candidate.caption.clone(),
+                                source_id: None,
+                            },
+                        ),
                         discovery_routes: routes,
                         handle: article_asset_command(requested_id, &candidate.filename),
                     };
@@ -893,6 +897,9 @@ fn merge_candidate(existing: &mut LinkedCandidate, candidate: LinkedCandidate) {
     if existing.label.is_none() {
         existing.label = candidate.label;
     }
+    if existing.caption.is_none() {
+        existing.caption = candidate.caption;
+    }
     if existing.media_type.is_none() {
         existing.media_type = candidate.media_type;
     }
@@ -905,10 +912,17 @@ fn merge_candidate_into_entry(entry: &mut ArticleAssetEntry, candidate: &LinkedC
     if entry.media_type.is_none() {
         entry.media_type = candidate.media_type.clone();
     }
-    if entry.jats.is_none() && candidate.label.is_some() {
+    if let Some(jats) = entry.jats.as_mut() {
+        if jats.label.is_none() {
+            jats.label = candidate.label.clone();
+        }
+        if jats.caption.is_none() {
+            jats.caption = candidate.caption.clone();
+        }
+    } else if candidate.label.is_some() || candidate.caption.is_some() {
         entry.jats = Some(ArticleAssetJats {
             label: candidate.label.clone(),
-            caption: None,
+            caption: candidate.caption.clone(),
             source_id: None,
         });
     }
@@ -928,6 +942,7 @@ fn append_jats_candidates(
         href: link.href,
         filename: link.filename,
         label: link.label,
+        caption: link.caption,
         media_type: link.media_type,
         route: route.clone(),
         additional_routes: Vec::new(),
@@ -1131,8 +1146,20 @@ fn merge_entry_facts(primary: &mut ArticleAssetEntry, other: &ArticleAssetEntry)
     if primary.media_type.is_none() {
         primary.media_type = other.media_type.clone();
     }
-    if primary.jats.is_none() {
-        primary.jats = other.jats.clone();
+    match (&mut primary.jats, &other.jats) {
+        (Some(primary_jats), Some(other_jats)) => {
+            if primary_jats.label.is_none() {
+                primary_jats.label = other_jats.label.clone();
+            }
+            if primary_jats.caption.is_none() {
+                primary_jats.caption = other_jats.caption.clone();
+            }
+            if primary_jats.source_id.is_none() {
+                primary_jats.source_id = other_jats.source_id.clone();
+            }
+        }
+        (None, Some(other_jats)) => primary.jats = Some(other_jats.clone()),
+        _ => {}
     }
 }
 
@@ -2542,6 +2569,7 @@ mod tests {
                 .to_string(),
             filename: "NIHMS265402-supplement-Supplementary_Tables.xls".to_string(),
             label: Some("Supplementary Tables".to_string()),
+            caption: None,
             media_type: Some("application/vnd.ms-excel".to_string()),
             route: ArticleAssetDiscoveryRoute {
                 provider: linked_provider(),

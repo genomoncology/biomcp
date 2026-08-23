@@ -166,8 +166,9 @@ keeps document order and deduplicates root floats by `id` when the same figure
 or table was already rendered from the body.
 
 Supplementary-material filenames and links remain display facts for the network-free
-converter. The separate asset resolver may fetch recognized JATS/PMC-HTML supplement
-links under its URL and byte budgets. Tables
+converter. Recognized JATS-linked supplement labels and captions are manifest facts;
+PMC HTML supplement links report no inferred caption. The separate asset resolver may
+fetch recognized JATS/PMC-HTML supplement links under its URL and byte budgets. Tables
 with `rowspan` or `colspan` keep their caption and render an explicit
 `*[complex table omitted: N×M, merged cells]*` marker instead of silently
 dropping the grid; full span flattening remains out of scope.
