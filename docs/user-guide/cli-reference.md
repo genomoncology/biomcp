@@ -787,7 +787,11 @@ unknown total. Structured `--input <path|->` accepts a JSON array of 1-10 varian
 objects and returns ordered compact `items`; it cannot be combined with the
 positional ID and requires JSON output. `variant erepo` accepts a CAid, preserves
 source-listed expert assertion facts, and limits detail to one explicitly selected
-versioned document. `--debug-plan` is also JSON-only and adds normalized aliases, strict and
+versioned document.
+
+ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.
+
+`--debug-plan` is also JSON-only and adds normalized aliases, strict and
 discovery provider requests (with exact query/template version), provider/call/page
 facts, ranking inputs, and fixed item and request budgets. `--verify-identity`
 adds captured-evidence identity facts without changing retrieval recall;

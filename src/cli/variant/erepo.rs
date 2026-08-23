@@ -197,7 +197,9 @@ fn render_markdown(
     empty_caid_gene: Option<&str>,
     repository_assertion_count: Option<usize>,
 ) -> String {
-    let mut out = String::from("# ClinGen ERepo expert assertions\n\n");
+    let mut out = String::from(
+        "# ClinGen ERepo expert assertions\n\nClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.\n\n",
+    );
     for item in &response.items {
         out.push_str(&format!("## {}\n\n", item.caid));
         if item.assertions.is_empty() {

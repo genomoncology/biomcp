@@ -171,6 +171,8 @@ EXAMPLES:
   biomcp --json variant erepo --input caids.json
   biomcp --json variant erepo --gene PTEN --limit 25 --offset 0
 
+ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.
+
 Note: Batch input accepts 1-50 CAids and returns summaries only. Gene search is bounded and paged. Detail requires one CAid and, when multiple assertions exist, an explicit assertion UUID.")]
     Erepo {
         /// ClinGen Allele identifier (for example CA015543)

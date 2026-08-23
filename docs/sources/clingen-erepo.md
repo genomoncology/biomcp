@@ -9,7 +9,7 @@ ClinGen ERepo provides versioned Variant Curation Expert Panel assertions keyed 
 ClinGen Allele identifier (CAid).
 
 BioMCP preserves source facts rather than applying ACMG/AMP rules or treating
-defaults and comments as applied criterion strength.
+defaults and comments as applied criterion strength. ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.
 
 ## What BioMCP exposes
 

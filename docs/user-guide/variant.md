@@ -45,6 +45,8 @@ Use a ClinGen Allele identifier (CAid) to retrieve source-faithful expert-panel
 assertion summaries. The result keeps met and unmet source lists separate and does
 not infer a criterion strength from defaults or comments.
 
+ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.
+
 ```bash
 biomcp variant erepo CA015543
 biomcp --json variant erepo CA015543 --detail
