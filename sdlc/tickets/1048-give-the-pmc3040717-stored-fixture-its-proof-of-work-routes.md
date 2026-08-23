@@ -1,5 +1,6 @@
 ---
 flow: build
+deps: ["1051"]
 priority: 28
 ---
 
