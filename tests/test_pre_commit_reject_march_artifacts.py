@@ -80,9 +80,17 @@ def _pre_commit_fixture(tmp_path: Path) -> tuple[Path, dict[str, str], Path, Pat
     uv_log = root / "uv.log"
     for name, log in (("cargo", cargo_log), ("uv", uv_log)):
         command = root / "fake-bin" / name
-        command.write_text(
-            f"#!/usr/bin/env bash\nprintf 'NO_MKDOCS_2_WARNING=%s %s\\n' \"${{NO_MKDOCS_2_WARNING:-}}\" \"$*\" >>{shlex.quote(str(log))}\n"
-        )
+        if name == "uv":
+            content = (
+                f"#!/usr/bin/env bash\nprintf 'NO_MKDOCS_2_WARNING=%s %s\\n' "
+                f"\"${{NO_MKDOCS_2_WARNING:-}}\" \"$*\" >>{shlex.quote(str(log))}\n"
+            )
+        else:
+            content = (
+                f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" "
+                f">>{shlex.quote(str(log))}\n"
+            )
+        command.write_text(content)
         command.chmod(0o755)
     _git(root, "init")
     _git(root, "config", "user.email", "tests@example.invalid")

@@ -11,7 +11,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _run_mkdocs(*args: str, cwd: Path = ROOT) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["uv", "run", "--no-sync", "mkdocs", *args],
+        [
+            "uv",
+            "run",
+            "--project",
+            str(ROOT),
+            "--no-sync",
+            "mkdocs",
+            *args,
+        ],
         cwd=cwd,
         env=os.environ | {"NO_MKDOCS_2_WARNING": "1"},
         capture_output=True,
