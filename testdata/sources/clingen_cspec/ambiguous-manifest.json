@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1"
+    },
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN021/version/1.5.1"
+    },
+    {
+      "@id": "https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.0"
+    }
+  ],
+  "metadata": {
+    "rendered": {
+      "by": "fixture",
+      "when": "2026-08-22T00:00:00Z"
+    }
+  },
+  "status": {
+    "code": 200,
+    "name": "OK"
+  }
+}

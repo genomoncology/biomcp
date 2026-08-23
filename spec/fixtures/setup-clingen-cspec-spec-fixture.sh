@@ -34,7 +34,7 @@ CAPTURES = Path(os.environ['CAPTURES'])
 READY, REQUESTS = Path(os.environ['READY']), Path(os.environ['REQUESTS'])
 MANIFESTS = {
     gene: (CAPTURES / f'{gene.lower()}-manifest.json').read_bytes()
-    for gene in ('APC', 'ATM', 'BRCA1', 'MLH1', 'PALB2', 'PTEN', 'TP53', 'BRAF')
+    for gene in ('APC', 'ATM', 'BRCA1', 'MLH1', 'PALB2', 'PTEN', 'TP53', 'BRAF', 'AMBIGUOUS')
 }
 DOCUMENTS = {
   ('GN020', '1.5.1'): (CAPTURES / 'atm-gn020-1.5.1.json').read_bytes(),

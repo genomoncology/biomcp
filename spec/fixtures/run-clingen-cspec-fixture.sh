@@ -16,6 +16,9 @@ done
 "$bin" --json gene cspec ATM --version "$official" --limit 1 >"$work/selected.json"
 "$bin" --json gene cspec ATM --version 1.5.1 --limit 1 >"$work/short-selected.json" || true
 "$bin" --json gene cspec ATM --version 9.9.9 >"$work/missing-version.json" || true
+requests_before_ambiguous="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
+"$bin" --json gene cspec AMBIGUOUS --version 1.5.1 >"$work/ambiguous-version.json" || true
+requests_after_ambiguous="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
 "$bin" gene cspec ATM --version "$official" --limit 1 >"$work/selected.md"
 capture="$(jq -er '.capture_id' "$work/selected.json")"
 requests_before_raw="$(wc -l <"${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}")"
@@ -45,17 +48,18 @@ open(os.environ['OUT']+'.files','w').write(reply['result']['content'][0]['text']
 proc.terminate(); proc.wait()
 PY
 
-uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" "$requests_before_raw" "$requests_after_raw" "$requests_before_files_reuse" "$requests_after_files_reuse" "$root" <<'PY'
+uv run --no-sync python - "$work" "${BIOMCP_CSPEC_FIXTURE_REQUESTS:?fixture requests}" "$requests_before_ambiguous" "$requests_after_ambiguous" "$requests_before_raw" "$requests_after_raw" "$requests_before_files_reuse" "$requests_after_files_reuse" "$root" <<'PY'
 import hashlib, json, sys
 from pathlib import Path
 work, request_log = map(Path, sys.argv[1:3])
-requests_before_raw, requests_after_raw, requests_before_files_reuse, requests_after_files_reuse = map(int, sys.argv[3:7])
-repo_root = Path(sys.argv[7])
+requests_before_ambiguous, requests_after_ambiguous, requests_before_raw, requests_after_raw, requests_before_files_reuse, requests_after_files_reuse = map(int, sys.argv[3:9])
+repo_root = Path(sys.argv[9])
 recorded_document = (repo_root / 'testdata/sources/clingen_cspec/atm-gn020-1.5.1.json').read_bytes()
 manifest_path = '/cspec/Gene/id/ATM/SequenceVariantInterpretation/version'
 document_path = '/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1'
 def load(name): return json.loads((work/name).read_text())
 selected, short_selected, second, mcp = load('selected.json'), load('short-selected.json'), load('page-two.json'), load('mcp.json')
+ambiguous = load('ambiguous-version.json')['error']
 files, files_reuse = load('files.json'), load('files-reuse.json')
 pten_page = load('pten-page.json')
 files_mcp = load('mcp.json.files')
@@ -72,6 +76,7 @@ report={
  'literal_selector_returns_matching_gene_and_specification': selected['gene']=='ATM' and selected['specification_id']=='GN020',
  'short_selector_matches_full_iri_selection': short_selected.get('resource_iri')==selected['resource_iri'] and short_selected.get('specification_id')==selected['specification_id'],
  'unmatched_short_version_lists_available_versions': load('missing-version.json')['error']['message'].find('1.5.1') >= 0 and load('missing-version.json')['error']['message'].find('1.5.0') >= 0,
+ 'ambiguous_short_version_lists_available_versions': ambiguous['code']=='not_found' and '1.5.1' in ambiguous['message'] and '1.5.0' in ambiguous['message'] and requests[requests_before_ambiguous:requests_after_ambiguous] == ['/cspec/Gene/id/AMBIGUOUS/SequenceVariantInterpretation/version'],
  'json_switches_cspec_manifest_and_page_output': load('BRCA1.json')['gene'] == 'BRCA1' and plain_manifest.startswith('# ') and 'BRCA1' in plain_manifest and plain_page.startswith('# ') and 'BP6' in plain_page,
  'criteria_are_deterministic_and_paged': selected['criteria'][0]['label']=='BP6' and second['criteria'][0]['label']=='PM5',
  'supported_reference_objects_preserve_ordered_deduplicated_urls': selected['criteria'][0]['citations']==['https://pubmed.ncbi.nlm.nih.gov/29543229'],

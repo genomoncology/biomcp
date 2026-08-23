@@ -125,6 +125,11 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "clingen_cspec/ambiguous-manifest.json",
+      "classification": "synthetic_and_ineligible",
+      "ineligible_reason": "Synthetic selector ambiguity fixture; no provider document is requested."
+    },
+    {
       "path": "clingen_cspec/apc-manifest.json",
       "classification": "real_and_receipted",
       "receipt": {
