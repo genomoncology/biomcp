@@ -4,3 +4,5 @@
 and `files` mode constraints are not represented in its typed MCP schema.
 This was found while surveying typed tools for ticket 1031 and is outside that
 ERepo schema change.
+
+2026-08-23: left as a watch item per Ian's triage ruling — file it only if it recurs.
