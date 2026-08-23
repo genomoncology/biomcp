@@ -852,6 +852,16 @@ the operator live contract.
 ../../tools/biomcp-ci --json get article 20516115 assets | jq 'def named_from_article_documents($suffix): any(.coverage[]?; (.filename | endswith($suffix)) and (.provider.source | type == "string" and length > 0) and (.discovery_routes | any(.source_document == "jats_xml") and any(.source_document == "pmc_html"))); (.pmid == "20516115") and named_from_article_documents("Supplementary_Methods__Figures__Tables.pdf") and named_from_article_documents("Supplementary_Tables.xls")' | mustmatch 'true'
 ```
 
+## Stored PMC3040717 Supplements Preserve Proof-of-Work Coverage
+
+The stored PMC3040717 page links two supplementary files behind the same PMC
+challenge. The fixture preserves the named coverage and its proof-of-work
+outcome rather than advertising either challenge response as an asset.
+
+```bash
+../../tools/biomcp-ci --json get article 20516115 assets | jq 'def stored_pmc_proof_of_work($filename): any(.coverage[]?; .filename == $filename and .outcome == "pmc_proof_of_work" and .handle == null and (.discovery_routes | any(.source_document == "pmc_html"))); (.pmid == "20516115") and stored_pmc_proof_of_work("NIHMS265402-supplement-Supplementary_Methods__Figures__Tables.pdf") and stored_pmc_proof_of_work("NIHMS265402-supplement-Supplementary_Tables.xls")' | mustmatch 'true'
+```
+
 ## JATS and PMC HTML Supplement Links Resolve Through Stable Handles
 
 An article document can be the only provider surface that names a supplement.
