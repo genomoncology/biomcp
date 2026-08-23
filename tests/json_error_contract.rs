@@ -299,6 +299,32 @@ struct MyGeneFixture {
     thread: Option<thread::JoinHandle<()>>,
 }
 
+struct NoProviderContactFixture {
+    base_url: String,
+    listener: TcpListener,
+}
+
+impl NoProviderContactFixture {
+    fn start() -> Self {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind provider fixture");
+        listener
+            .set_nonblocking(true)
+            .expect("make provider fixture nonblocking");
+        Self {
+            base_url: format!("http://{}", listener.local_addr().expect("fixture address")),
+            listener,
+        }
+    }
+
+    fn assert_no_request(&self) {
+        match self.listener.accept() {
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
+            Ok(_) => panic!("contradictory filters must fail before contacting MyVariant"),
+            Err(error) => panic!("check provider fixture: {error}"),
+        }
+    }
+}
+
 impl MyGeneFixture {
     fn start() -> Self {
         let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind MyGene fixture");
@@ -754,23 +780,23 @@ fn vaers_aggregate_and_pre_dispatch_errors_remain_keyless() {
 
 #[test]
 fn contradictory_variant_filters_fail_before_myvariant_contact() {
+    let fixture = NoProviderContactFixture::start();
     for args in [
         ["--has", "cadd", "--missing", "cadd"],
         ["--min-cadd", "10", "--missing", "cadd"],
         ["--max-frequency", "0.01", "--missing", "gnomad"],
         ["--significance", "pathogenic", "--missing", "clinvar"],
     ] {
-        let mut command = vec!["--json", "search", "variant"];
+        let mut command = vec!["--no-cache", "--json", "search", "variant"];
         command.extend(args);
-        let result =
-            run_biomcp_with_env(&command, &[("BIOMCP_MYVARIANT_BASE", "http://127.0.0.1:9")]);
+        let result = run_biomcp_with_env(&command, &[("BIOMCP_MYVARIANT_BASE", &fixture.base_url)]);
         assert_json_error(&result, 2, "invalid_argument");
         assert!(
             result.stdout.contains("cannot be combined with --missing"),
             "stdout={}",
             result.stdout
         );
-        assert!(!result.stdout.contains("provider"));
+        fixture.assert_no_request();
     }
 }
 
