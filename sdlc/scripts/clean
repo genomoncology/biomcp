@@ -1,0 +1,13 @@
+#!/bin/sh
+# clean — discard rebuildable Cargo output from this checkout.
+set -eu
+
+REPO=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+TARGET=$REPO/target
+
+if [ -d "$TARGET" ]; then
+	rm -rf -- "$TARGET"
+	echo "removed target"
+else
+	echo "nothing to remove"
+fi
