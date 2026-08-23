@@ -28,14 +28,15 @@ bash ../fixtures/run-clingen-erepo-fixture.sh ../..
 ```json expect=clingen-erepo-frozen contains
 {
   "plain_cli_reports_summary": true,
+  "markdown_labels_germline_scope_and_routes_somatic_questions_to_civic": true,
   "detail_markdown_surfaces_narrative_and_source": true,
   "batch_input_renders_markdown": true,
   "empty_caid_resolves_its_car_gene": true,
   "empty_variant_reports_known_gene_repository_count": true,
   "zero_gene_count_is_distinct_from_no_gene_context": true,
-  "unavailable_gene_count_keeps_the_successful_empty_message": true,
-  "empty_caid_with_no_car_gene_keeps_the_original_message": true,
-  "unavailable_car_gene_lookup_keeps_the_original_message": true,
+  "unavailable_gene_count_keeps_the_successful_empty_result": true,
+  "empty_caid_with_no_car_gene_keeps_the_empty_result": true,
+  "unavailable_car_gene_lookup_keeps_the_empty_result": true,
   "apc_summary_preserves_source_facts": true,
   "plain_ps4_has_no_explicit_strength": true,
   "default_strength_is_not_applied_strength": true,

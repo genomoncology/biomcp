@@ -280,6 +280,29 @@ mod tests {
     }
 
     #[test]
+    fn empty_markdown_labels_germline_scope_and_routes_somatic_questions_to_civic() {
+        let response = ERepoResponse {
+            items: vec![ERepoItem {
+                caid: "CA000000".into(),
+                assertions: Vec::new(),
+                complete: true,
+            }],
+            complete: true,
+            source_status: vec![ERepoSourceStatus {
+                source: "clingen_erepo",
+                status: "available",
+            }],
+            provider: "ClinGen ERepo",
+        };
+
+        let markdown = render_markdown(&response, None, None);
+        assert!(markdown.contains("No expert assertions were returned."));
+        assert!(markdown.contains("germline"));
+        assert!(markdown.contains("get gene <symbol> civic"));
+        assert!(markdown.contains("get variant <id> civic"));
+    }
+
+    #[test]
     fn markdown_reports_source_facts_without_json() {
         let response = ERepoResponse {
             items: vec![ERepoItem {

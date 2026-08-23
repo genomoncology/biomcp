@@ -915,6 +915,18 @@ def test_each_source_page_has_required_front_matter_headings_intro_and_examples(
             )
 
 
+def test_clingen_erepo_docs_label_germline_scope_and_civic_destination() -> None:
+    for path in [
+        "docs/sources/clingen-erepo.md",
+        "docs/user-guide/variant.md",
+        "docs/user-guide/cli-reference.md",
+    ]:
+        page = _read(path)
+        assert "germline" in page, f"{path} must state the ERepo germline scope"
+        assert "get gene <symbol> civic" in page, f"{path} must route somatic questions to CIViC"
+        assert "get variant <id> civic" in page, f"{path} must route somatic questions to CIViC"
+
+
 def test_each_source_page_includes_expected_surface_auth_and_official_link() -> None:
     for filename, spec in SOURCE_PAGE_SPECS.items():
         page = _read_source_page(filename)

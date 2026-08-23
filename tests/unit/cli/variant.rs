@@ -65,6 +65,17 @@ fn variant_trials_parses_source_flag() {
 }
 
 #[test]
+fn erepo_help_labels_germline_scope_and_civic_destination() {
+    let help = Cli::try_parse_from(["biomcp", "variant", "erepo", "--help"])
+        .expect_err("help should stop parsing")
+        .to_string();
+
+    assert!(help.contains("germline"));
+    assert!(help.contains("get gene <symbol> civic"));
+    assert!(help.contains("get variant <id> civic"));
+}
+
+#[test]
 fn erepo_gene_mode_is_bounded_and_mutually_exclusive() {
     let cli = Cli::try_parse_from([
         "biomcp", "variant", "erepo", "--gene", "PTEN", "--limit", "25", "--offset", "50",
