@@ -176,13 +176,13 @@
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1229,
+      "baseline_lines": 1231,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1034",
-        "delta": 22,
-        "reason": "The nested author fixture belongs with the article Markdown renderer regression.",
-        "removal_condition": "Extract shared article Markdown fixtures when a second renderer test needs this setup."
+        "ticket": "1047",
+        "delta": 24,
+        "reason": "The two complete article result-row assertions bind each title, source, rationale, and citation count to its identifier.",
+        "removal_condition": "Extract reusable article search row fixtures when another renderer test needs the same row shape."
       }
     },
     {

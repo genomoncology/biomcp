@@ -231,15 +231,41 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
         ],
     )
     .expect("trial markdown");
-    assert!(markdown.contains("## Contacts (ClinicalTrials.gov)"));
-    assert!(markdown.contains("Central Contact"));
-    assert!(markdown.contains("central@example.test"));
-    assert!(markdown.contains("Sex: Female"));
-    assert!(markdown.contains("Eligible Ages: 2 Years to 18 Years"));
-    assert!(markdown.contains("site@example.test"));
-    assert!(markdown.contains("Posted trial documents"));
-    assert!(markdown.contains("may contain additional eligibility detail"));
-    assert!(markdown.contains("biomcp --json get trial NCT41300001 documents"));
+    let contacts = markdown
+        .split_once("## Contacts (ClinicalTrials.gov)\n")
+        .expect("contacts section")
+        .1
+        .split_once("## Eligibility (ClinicalTrials.gov)\n")
+        .expect("eligibility section after contacts")
+        .0;
+    let eligibility = markdown
+        .split_once("## Eligibility (ClinicalTrials.gov)\n")
+        .expect("eligibility section")
+        .1
+        .split_once("## Locations (ClinicalTrials.gov)\n")
+        .expect("locations section after eligibility")
+        .0;
+    let locations = markdown
+        .split_once("## Locations (ClinicalTrials.gov)\n")
+        .expect("locations section")
+        .1;
+
+    assert!(contacts.contains(
+        "### Central Contact\n- Name: Central Coordinator\n- Role: CONTACT\n- Email: central@example.test\n- Phone: 555-0100"
+    ));
+    assert!(!contacts.contains("site@example.test"));
+    assert!(
+        eligibility.contains("Sex: Female\nEligible Ages: 2 Years to 18 Years\nKey inclusion.")
+    );
+    assert!(eligibility.contains(
+        "**Posted trial documents:** Posted trial documents are available and may contain additional eligibility detail: `biomcp --json get trial NCT41300001 documents`"
+    ));
+    assert!(!eligibility.contains("central@example.test"));
+    assert!(!eligibility.contains("site@example.test"));
+    assert!(locations.contains(
+        "| Rare Disease Center | Ann Arbor, Michigan | United States | Recruiting | Site Coordinator (CONTACT) site@example.test |"
+    ));
+    assert!(!locations.contains("central@example.test"));
 
     let json = serde_json::to_value(&trial).expect("trial json");
     assert_eq!(json["contacts"][0]["email"], "central@example.test");

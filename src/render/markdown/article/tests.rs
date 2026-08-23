@@ -575,9 +575,11 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
     assert!(markdown.contains("Semantic Scholar: enabled"));
     assert!(markdown.contains("Ranking: calibrated PubMed rescue + lexical directness"));
     assert!(markdown.contains("| Identifier | Title | Source(s) | Date | Why | Cit. |"));
-    assert!(markdown.contains("PubTator3, Semantic Scholar"));
-    assert!(markdown.contains("title 2/2"));
-    assert!(markdown.contains("title+abstract 2/2"));
+    assert!(
+        markdown
+            .contains("|PMID 1|Entity-ranked|PubTator3, Semantic Scholar|2025-01-01|title 2/2|10|")
+    );
+    assert!(markdown.contains("|PMID 2|Field-ranked|Europe PMC|2025-01-02|title+abstract 2/2|12|"));
     assert!(
         markdown
             .contains("--date-from/--date-to <YYYY|YYYY-MM|YYYY-MM-DD> (alias: --since/--until)")

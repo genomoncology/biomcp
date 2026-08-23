@@ -264,9 +264,37 @@ fn disease_markdown_links_source_cells_and_footer_evidence_urls() {
     };
 
     let markdown = disease_markdown(&disease, &["all".to_string()]).expect("markdown");
-    assert!(markdown.contains("[infores:orphanet](https://www.orpha.net/en/disease/detail/586)"));
-    assert!(markdown.contains("[infores:omim](https://www.omim.org/entry/219700)"));
-    assert!(markdown.contains("[infores:mgi](https://www.informatics.jax.org/accession/MGI:"));
+    let genes = markdown
+        .split_once("## Associated Genes\n")
+        .expect("associated genes section")
+        .1
+        .split("\n## ")
+        .next()
+        .expect("associated genes section body");
+    let phenotypes = markdown
+        .split_once("## Phenotypes\n")
+        .expect("phenotypes section")
+        .1
+        .split("\n## ")
+        .next()
+        .expect("phenotypes section body");
+    let models = markdown
+        .split_once("## Models\n")
+        .expect("models section")
+        .1
+        .split("\n## ")
+        .next()
+        .expect("models section body");
+
+    assert!(genes.contains(
+        "| CFTR | gene associated with condition | [infores:orphanet](https://www.orpha.net/en/disease/detail/586) | - |"
+    ));
+    assert!(phenotypes.contains(
+        "| HP:0001945 | Dehydration | - | - | - | - | - | [infores:omim](https://www.omim.org/entry/219700) |"
+    ));
+    assert!(models.contains(
+        "| Cftr tm1Unc | Mus musculus | model of | [infores:mgi](https://www.informatics.jax.org/accession/MGI:3698752) | 3 |"
+    ));
     assert!(markdown.contains("[Orphanet](https://www.orpha.net/en/disease/detail/586)"));
     assert!(markdown.contains("[OMIM](https://www.omim.org/entry/219700)"));
     assert!(markdown.contains("[MGI](https://www.informatics.jax.org/accession/MGI:"));
@@ -279,12 +307,9 @@ fn disease_markdown_renders_clinical_features_section() {
     let markdown =
         disease_markdown(&disease, &["clinical_features".to_string()]).expect("markdown");
 
-    assert!(markdown.contains("## Clinical Features (Monarch / HPO)"));
-    assert!(markdown.contains("| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |"));
-    assert!(markdown.contains("HP:0000132"));
-    assert!(markdown.contains("Menorrhagia"));
-    assert!(markdown.contains("Frequent"));
-    assert!(markdown.contains("infores:hpo-annotations"));
+    assert!(markdown.contains(
+        "## Clinical Features (Monarch / HPO)\n\n| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |\n|---|---|---|---|---|---|---|---|\n| HP:0000132 | Menorrhagia | IEA | Frequent | - | Female | - | infores:hpo-annotations |"
+    ));
 }
 
 #[test]

@@ -362,23 +362,45 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
 
     let markdown = drug_markdown_with_region(&drug, &["all".to_string()], DrugRegion::All, false)
         .expect("markdown");
-    assert!(markdown.contains("## Regulatory (US - Drugs@FDA)"));
-    assert!(markdown.contains("## Regulatory (EU - EMA)"));
-    assert!(markdown.contains("## Safety (US - OpenFDA)"));
-    assert!(markdown.contains("## Safety (EU - EMA)"));
-    assert!(markdown.contains("## Shortage (US - OpenFDA Drug Shortages)"));
-    assert!(markdown.contains("## Shortage (EU - EMA)"));
-    assert!(markdown.contains("BLA125514"));
-    assert!(markdown.contains("EMEA/H/C/003820"));
-    assert!(
+    let section = |heading: &str| {
         markdown
-            .contains("| Medicine | Active Substance | EMA Number | Status | Auth Date | Holder |")
+            .split_once(heading)
+            .expect("regional section")
+            .1
+            .split("\n## ")
+            .next()
+            .expect("regional section body")
+    };
+    let us_regulatory = section("## Regulatory (US - Drugs@FDA)\n");
+    let eu_regulatory = section("## Regulatory (EU - EMA)\n");
+    let us_safety = section("## Safety (US - OpenFDA)\n");
+    let eu_safety = section("## Safety (EU - EMA)\n");
+    let us_shortage = section("## Shortage (US - OpenFDA Drug Shortages)\n");
+    let eu_shortage = section("## Shortage (EU - EMA)\n");
+
+    assert!(us_regulatory.contains("### BLA125514"));
+    assert!(!us_regulatory.contains("EMEA/H/C/003820"));
+    assert!(eu_regulatory.contains(
+        "| Keytruda | pembrolizumab | EMEA/H/C/003820 | Authorised | 17/07/2015 | Merck Sharp & Dohme B.V. |"
+    ));
+    assert!(eu_regulatory.contains(
+        "- **Keytruda:** Keytruda as monotherapy is indicated for the treatment of adults and adolescents aged 12 years and older with advanced (unresectable or metastatic) melanoma."
+    ));
+    assert!(!eu_regulatory.contains("BLA125514"));
+    assert!(us_safety.contains(
+        "### Top adverse events (FAERS)\nRash\n\n### FDA label warnings\nImmune-mediated adverse reactions."
+    ));
+    assert!(!us_safety.contains("Updated safety communication"));
+    assert!(
+        eu_safety.contains("| Keytruda | DHPC | Updated safety communication | 15/01/2026 | - |")
     );
-    assert!(markdown.contains("17/07/2015"));
-    assert!(markdown.contains("### Authorized indications"));
-    assert!(markdown.contains("advanced (unresectable or metastatic) melanoma"));
-    assert!(markdown.contains("Immune-mediated adverse reactions."));
-    assert!(markdown.contains("Resolved"));
+    assert!(!eu_safety.contains("Immune-mediated adverse reactions."));
+    assert!(us_shortage.contains(
+        "| Current | Limited | Example Pharma | 2026-01-13 | https://example.org/us-shortage |"
+    ));
+    assert!(!us_shortage.contains("Resolved"));
+    assert!(eu_shortage.contains("| Keytruda | Resolved | Yes | 10/01/2026 | 13/01/2026 |"));
+    assert!(!eu_shortage.contains("Example Pharma"));
 }
 
 #[test]

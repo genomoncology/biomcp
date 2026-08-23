@@ -23,11 +23,9 @@ making live MyDisease, OLS4, Open Targets, GTR, or trial calls.
 The routine ontology fixture grounds chronic myeloid leukemia and serves the recorded Monarch association response locally. This proves that the public card carries a decoded HPO feature and its provenance, rather than merely rendering an empty clinical-features shell.
 
 ```bash
-../../tools/biomcp-ci get disease "chronic myeloid leukemia" clinical_features | mustmatch like '## Clinical Features (Monarch / HPO)
-| HPO ID | Name | Evidence | Frequency | Onset | Sex | Stage | Source |
-HP:0005547
-Myeloproliferative disorder
-infores:orphanet'
+../../tools/biomcp-ci get disease "chronic myeloid leukemia" clinical_features \
+  | awk '/^## Clinical Features/{inside=1; next} inside && /^## /{exit} inside' \
+  | mustmatch like '| HP:0005547 | Myeloproliferative disorder | has phenotype | Obligate | - | - | - | [infores:orphanet](https://www.orpha.net/en/disease/detail/521) |'
 ```
 
 ## Captured NIH Funding Context

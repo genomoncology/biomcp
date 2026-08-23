@@ -152,16 +152,21 @@ should show the action-critical central contact, site email, structured sex/age
 eligibility, and full criteria without requiring raw ClinicalTrials.gov JSON.
 
 ```bash
-../../tools/biomcp-ci get trial NCT41300001 contacts eligibility locations | mustmatch like '## Contacts (ClinicalTrials.gov)
-Central Contact
-Central Coordinator
-central@example.test
-site@example.test
-## Eligibility (ClinicalTrials.gov)
-Sex: Female
+../../tools/biomcp-ci get trial NCT41300001 contacts eligibility locations \
+  | awk '/^## Contacts/{inside=1} /^## Eligibility/{exit} inside' \
+  | mustmatch like '### Central Contact
+- Name: Central Coordinator
+- Role: CONTACT
+- Email: central@example.test
+- Phone: 555-0100'
+../../tools/biomcp-ci get trial NCT41300001 contacts eligibility locations \
+  | awk '/^## Eligibility/{inside=1} /^## Locations/{exit} inside' \
+  | mustmatch like 'Sex: Female
 Eligible Ages: 2 Years to 18 Years
-Key inclusion: confirmed SHANK3-related neurodevelopmental disorder.
-## Locations (ClinicalTrials.gov)'
+Key inclusion: confirmed SHANK3-related neurodevelopmental disorder.'
+../../tools/biomcp-ci get trial NCT41300001 contacts eligibility locations \
+  | awk '/^## Locations/{inside=1} inside && /^## / && !/^## Locations/{exit} inside' \
+  | mustmatch like '| Rare Disease Center | Ann Arbor, Michigan | United States | RECRUITING | Site Coordinator (CONTACT) 555-0199 site@example.test |'
 ```
 
 The `contacts` section needs site context to label site contacts, but JSON should
