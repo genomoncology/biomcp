@@ -82,6 +82,13 @@ async fn remove_temp_if_present(path: &Path) {
 }
 
 async fn existing_file_matches(path: &Path, content: &[u8], managed: bool) -> bool {
+    if !managed
+        && !std::fs::symlink_metadata(path)
+            .map(|metadata| metadata.is_file())
+            .unwrap_or(false)
+    {
+        return false;
+    }
     let file = if managed {
         crate::cache::open_managed_read(path)
     } else {
