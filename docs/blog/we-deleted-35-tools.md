@@ -76,10 +76,10 @@ UTF-8 bytes and 3,974 `cl100k_base` tokens. The published 0.8.25 release:
 21,701 UTF-8 bytes and 5,599 `cl100k_base` tokens. Reproduce the current
 measurement with `uv run --no-sync python scripts/measure-mcp-tools.py`. The
 former 16,000-byte / 4,000-token CI budget applied only to development builds,
-not the published release. Current CI keeps it at or below 22,600 bytes and
-5,800 tokens, combining the current 15,841-byte, 3,996-token catalog with the
-largest typed entry (`search`) and 99 bytes and 52 tokens of margin. These are
-measurements, not a claimed percentage.
+not the published release. Current CI keeps the 0.9.0-dev.5 development build
+at or below 22,600 bytes and 5,800 tokens, combining its 15,841-byte,
+3,996-token catalog with the largest typed entry (`search`) and 99 bytes and 52
+tokens of margin. These are measurements, not a claimed percentage.
 
 We still support MCP — local stdio and remote server modes — but the MCP server is now a thin proxy over the CLI. You don't have to choose. Build the CLI first, serve it over MCP second.
 
