@@ -90,10 +90,8 @@ Source: PubMed
 {% if indexing.authors -%}
 {% for author in indexing.authors -%}
 - {{ author.name }}{% if author.orcid %} (ORCID: {{ author.orcid }}){% endif %}
-{% for affiliation in author.affiliations -%}
-  - {{ affiliation.text }}
-{% for identifier in affiliation.identifiers -%}
-    - {{ identifier.source }}: {{ identifier.value }}
+{% for affiliation in author.affiliations %}  - {{ affiliation.text }}
+{% for identifier in affiliation.identifiers %}    - {{ identifier.source }}: {{ identifier.value }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
