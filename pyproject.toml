@@ -32,7 +32,8 @@ dev = [
   "pytest-timeout>=2.3",
   "pytest-xdist",
   "tiktoken>=0.12,<0.13",
-  "mkdocs-material>=9.5",
+  "mkdocs>=1.6,<2",
+  "mkdocs-material>=9.5,<10",
   "pymdown-extensions>=10.0",
 ]
 

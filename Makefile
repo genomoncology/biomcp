@@ -47,7 +47,7 @@ test-contracts: prepare-test-contracts
 
 test-contracts-prepared:
 	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync pytest tests/ -v $(PYTEST_XDIST_ARGS) $(if $(BIOMCP_ROUTINE_TEST_LANE),--basetemp "$(PYTEST_BASETEMP)")
-	tools/run-offline -- env $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
+	tools/run-offline -- env NO_MKDOCS_2_WARNING=1 $(if $(BIOMCP_ROUTINE_TEST_LANE),TMPDIR="$(TMPDIR)") BIOMCP_BIN="$(SPEC_RUN_BIN)" uv run --no-sync mkdocs build --strict
 
 lint:
 	@tool_dir="$$(tools/bootstrap-lint-tools)" && \

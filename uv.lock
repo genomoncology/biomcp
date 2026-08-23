@@ -51,6 +51,7 @@ source = { editable = "." }
 [package.optional-dependencies]
 dev = [
     { name = "jsonschema" },
+    { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "pymdown-extensions" },
     { name = "pytest" },
@@ -63,7 +64,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "jsonschema", marker = "extra == 'dev'", specifier = ">=4.26" },
-    { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.5" },
+    { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6,<2" },
+    { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.5,<10" },
     { name = "pymdown-extensions", marker = "extra == 'dev'", specifier = ">=10.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },

@@ -69,7 +69,13 @@ def main() -> int:
             env = os.environ.copy()
             env["QUALITY_RATCHET_AUDITS"] = "spec_lint"
             run(root, [str(root / "tools/check-quality-ratchet.sh")], env=env)
-        run(root, ["uv", "run", "--no-sync", "mkdocs", "build", "--strict"])
+        docs_env = os.environ.copy()
+        docs_env["NO_MKDOCS_2_WARNING"] = "1"
+        run(
+            root,
+            ["uv", "run", "--no-sync", "mkdocs", "build", "--strict"],
+            env=docs_env,
+        )
         print("pre-commit: documentation-only change; Rust checks skipped")
         return 0
 
