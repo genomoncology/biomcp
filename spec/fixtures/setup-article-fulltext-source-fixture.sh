@@ -864,6 +864,13 @@ class Handler(BaseHTTPRequestHandler):
             send_bytes(self, 200, POW_INTERSTITIAL, "text/html; charset=utf-8")
             return
 
+        if decoded_path in {
+            "/articles/instance/3040717/bin/NIHMS265402-supplement-Supplementary_Methods__Figures__Tables.pdf",
+            "/articles/instance/3040717/bin/NIHMS265402-supplement-Supplementary_Tables.xls",
+        }:
+            send_bytes(self, 200, POW_INTERSTITIAL, "text/html; charset=utf-8")
+            return
+
         if decoded_path == "/articles/instance/123457/bin/linked-html-s1.xlsx":
             send_bytes(
                 self,
