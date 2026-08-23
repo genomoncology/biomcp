@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 9
+priority: 31
 ---
 # Make the variant-filter contract test reliable under load
 
