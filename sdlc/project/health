@@ -6,15 +6,19 @@
 #
 # WHAT IT CHECKS, in order, cheapest first:
 #   1. pwd is a Git repository with an origin
-#   2. origin answers `git ls-remote`, bounded by `timeout 60` — an
-#      unreachable or hanging remote is unfit, not a hung doctor
-#   3. origin/main resolves locally, then committed HEAD's deployment state
-#   4. the contract folders exist, because machinery reads every one of them
-#   5. the contract zone's shape: numbered tickets and records, dated or
-#      legacy-numbered issues, and no legacy issue number used by a ticket or
-#      record (sdlc ADR 0017). planning/ is deliberately unchecked — nothing
-#      reads it
-#   6. the registered directory's filesystem has at least 10 GiB free
+#   2. origin refreshes with `timeout -k 10 60 git fetch --quiet origin`,
+#      retrying one timeout — an unreachable or hanging remote is unfit, not
+#      a hung doctor
+#   3. the refreshed origin/main resolves, then committed HEAD's deployment
+#      state
+#   4. the active contract folders exist: project, scripts, tickets, and records
+#   5. the contract zone's shape: numbered tickets and records, plus dated or
+#      legacy-numbered issues when a transitional issues folder exists; no legacy
+#      issue number may be used by a ticket or record (sdlc ADR 0018).
+#      planning/ is deliberately unchecked — nothing reads it
+#   6. each dispatchable origin ticket's opens declaration through the canonical
+#      build path policy
+#   7. the registered directory's filesystem has at least 10 GiB free
 #
 # STDOUT:  deployment state, then one finding per line when unfit.
 # EXIT:    0 fit · 1 unfit — the findings say why
@@ -23,6 +27,7 @@ set -euo pipefail
 MINIMUM_FREE_SPACE_KIB=10485760
 
 findings=0
+origin_main_ready=0
 report() {
 	echo "$1"
 	findings=$((findings + 1))
@@ -36,23 +41,32 @@ fi
 if ! git remote get-url origin >/dev/null 2>&1; then
 	report "no origin remote"
 else
-	if ! timeout 60 git ls-remote origin >/dev/null 2>&1; then
-		report "origin does not answer ls-remote within 60s"
+	fetch_status=0
+	timeout -k 10 60 git fetch --quiet origin >/dev/null 2>&1 || fetch_status=$?
+	if [ "$fetch_status" -eq 124 ] || [ "$fetch_status" -eq 137 ]; then
+		fetch_status=0
+		timeout -k 10 60 git fetch --quiet origin >/dev/null 2>&1 || fetch_status=$?
 	fi
-fi
-
-if ! git rev-parse --verify --quiet origin/main >/dev/null; then
-	report "origin/main does not resolve; fetch has never succeeded here"
-else
-	behind=$(git rev-list --count HEAD..origin/main)
-	ahead=$(git rev-list --count origin/main..HEAD)
-	if [ "$behind" -gt 0 ]; then
-		echo "checkout is $behind commits behind origin/main; newest undeployed subject: $(git log -1 --format=%s HEAD..origin/main)"
-	fi
-	if [ "$ahead" -gt 0 ]; then
-		report "checkout is $ahead commits ahead of origin/main"
-	elif [ "$behind" -eq 0 ]; then
-		echo "checkout is current with origin/main"
+	if [ "$fetch_status" -ne 0 ]; then
+		if [ "$fetch_status" -eq 124 ] || [ "$fetch_status" -eq 137 ]; then
+			report "git fetch origin timed out"
+		else
+			report "git fetch origin failed"
+		fi
+	elif ! git rev-parse --verify --quiet origin/main >/dev/null; then
+		report "origin/main does not resolve; fetch has never succeeded here"
+	else
+		origin_main_ready=1
+		behind=$(git rev-list --count HEAD..origin/main)
+		ahead=$(git rev-list --count origin/main..HEAD)
+		if [ "$behind" -gt 0 ]; then
+			echo "checkout is $behind commits behind origin/main; newest undeployed subject: $(git log -1 --format=%s HEAD..origin/main)"
+		fi
+		if [ "$ahead" -gt 0 ]; then
+			report "checkout is $ahead commits ahead of origin/main"
+		elif [ "$behind" -eq 0 ]; then
+			echo "checkout is current with origin/main"
+		fi
 	fi
 fi
 
@@ -60,13 +74,14 @@ fi
 # missing folder is reported and its shape is then not inspected, because
 # every finding below would repeat the same fact.
 contract_zone_present=1
-for folder in project scripts tickets records issues; do
+for folder in project scripts tickets records; do
 	if [ ! -d "sdlc/$folder" ]; then
 		report "sdlc/$folder/ is missing"
 		contract_zone_present=0
 	fi
 done
 
+# A legacy issues folder is optional while existing repositories drain it.
 # Only *.md is a contract artifact; .gitkeep and anything else a project
 # keeps beside them is not this check's business.
 artifact_names() {
@@ -134,6 +149,24 @@ if [ "$contract_zone_present" -eq 1 ]; then
 	# this script cannot tell a deliberately deleted ticket from a lost one.
 	# Reporting the difference would mark a healthy repository unfit for
 	# following its own convention.
+fi
+
+# Reuse the final build gate's declaration check rather than maintaining a
+# second list of permitted opening prefixes. Draft and archive tickets are not
+# dispatchable, so only direct children of sdlc/tickets are checked.
+path_policy=assembly/flows/build/05-verify/gate/05-path-policy
+if [ "$origin_main_ready" -eq 1 ] && [ -f "$path_policy" ]; then
+	while IFS= read -r ticket_ref; do
+		case "$ticket_ref" in
+		sdlc/tickets/[0-9][0-9][0-9][0-9]-*.md)
+			ticket_id=${ticket_ref#sdlc/tickets/}
+			ticket_id=${ticket_id%%-*}
+			if ! diagnostic=$(TICKET_ID="$ticket_id" TICKET_REF="$ticket_ref" PATH_POLICY_VALIDATE_DECLARATION=1 sh "$path_policy" 2>&1); then
+				report "$ticket_ref: $diagnostic"
+			fi
+			;;
+		esac
+	done < <(git ls-tree --name-only origin/main -- sdlc/tickets/)
 fi
 
 registered_directory=$(pwd -P)

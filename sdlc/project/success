@@ -13,22 +13,23 @@
 # WHAT IT DOES
 #   1. fetch, then compare the branch tip with origin/main
 #   2. if the branch adds no commits, there is nothing to land — say so; if it
-#      does, push the tip to main
+#      does, push the tip to main. A moved main may merge only ticket-only
+#      changes that do not touch this attempt's ticket.
 #   3. the push is a plain `git push origin <tip>:main` — FAST-FORWARD ONLY.
-#      A rejected push means main moved under the attempt; nothing is forced,
-#      nothing is merged, and the branch and worktree are left standing for a
-#      human or a retry to look at.
+#      A rejected push leaves the branch and worktree standing for a human or
+#      a retry to look at.
 #   4. refresh origin/main, then fast-forward a clean registered main checkout
-#      when safe; leave an unsafe checkout alone without affecting settlement
+#      when safe; invoke its deploy hook only when it reaches this attempt's tip
 #   5. remove the worktree and its baseline sibling, then delete the branch
 #      locally and on origin
 #
 # STDOUT:  "landed <base>..<tip>" or "nothing to land", an optional
 #          "checkout left alone: <reason>", plus what teardown did.
 # EXIT:    0 landed clean (or nothing to land) and torn down
-#          1 landing or teardown failed — stderr says which, and the branch
-#            is still there. The factory records it as a fault and cools the
-#            channel down; it does not silently re-fly the ticket.
+#          1 landing, activation, or teardown failed — stderr says which.
+#            Activation failure still completes safe teardown after landing.
+#            The factory records it as a fault and cools the channel down; it
+#            does not silently re-fly the ticket.
 #          The factory also reads 3 as a rejected landing (retry the ticket)
 #          and 2 as a refusal a human must read; this script uses neither,
 #          and prints no `landed <receipt>` line, because it never leaves a
@@ -84,13 +85,62 @@ candidate_owned() {
 	[ "$candidate_common" = "$REPO_COMMON" ]
 }
 
+lexical_path() {
+	local path=$1 part
+	local -a parts=() source=()
+	case "$path" in
+	/*) ;;
+	*) return 1 ;;
+	esac
+	IFS=/ read -r -a source <<< "$path"
+	for part in "${source[@]}"; do
+		case "$part" in
+		'' | .) ;;
+		..)
+			if [ "${#parts[@]}" -gt 0 ]; then
+				unset 'parts[${#parts[@]} - 1]'
+			fi
+			;;
+		*) parts+=("$part") ;;
+		esac
+	done
+	local IFS=/
+	printf '/%s\n' "${parts[*]}"
+}
+
+orphan_owned() {
+	local candidate=$1 candidate_path pointer normalized
+	local -a lines=()
+	[ -d "$candidate" ] || return 1
+	[ -f "$candidate/.git" ] && [ ! -L "$candidate/.git" ] || return 1
+	mapfile -t lines <"$candidate/.git" || return 1
+	[ "${#lines[@]}" -eq 1 ] || return 1
+	case "${lines[0]}" in
+	"gitdir: "?*) pointer=${lines[0]#gitdir: } ;;
+	*) return 1 ;;
+	esac
+	candidate_path=$(CDPATH='' cd -- "$candidate" && pwd -P) || return 1
+	case "$pointer" in
+	/*) normalized=$(lexical_path "$pointer") ;;
+	*) normalized=$(lexical_path "$candidate_path/$pointer") ;;
+	esac
+	case "$normalized" in
+	"$REPO_COMMON"/*) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+owned_worktree() {
+	candidate_owned "$1" || orphan_owned "$1"
+}
+
 remove_tree() {
 	local candidate=$1
 	if git -C "$REPO" worktree remove --force "$candidate" >/dev/null 2>&1; then
 		return 0
 	fi
 	[ -e "$candidate" ] || return 0
-	if ! candidate_owned "$candidate"; then
+	if ! owned_worktree "$candidate"; then
 		echo "success: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
 		return 1
 	fi
@@ -98,7 +148,7 @@ remove_tree() {
 }
 
 remove_baseline() {
-	if ! candidate_owned "$BASELINE"; then
+	if ! owned_worktree "$BASELINE"; then
 		echo "success: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
 		return 1
 	fi
@@ -107,11 +157,18 @@ remove_baseline() {
 
 # Refuse before changing anything: a worktree that is not ours is not ours
 # to remove, and a half teardown is worse than none.
-if [ -e "$TREE" ] && ! candidate_owned "$TREE"; then
-	echo "success: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
-	exit 1
+TREE_ORPHAN=0
+if [ -e "$TREE" ]; then
+	if candidate_owned "$TREE"; then
+		:
+	elif orphan_owned "$TREE"; then
+		TREE_ORPHAN=1
+	else
+		echo "success: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+		exit 1
+	fi
 fi
-if [ -e "$BASELINE" ] && ! candidate_owned "$BASELINE"; then
+if [ -e "$BASELINE" ] && ! owned_worktree "$BASELINE"; then
 	echo "success: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
 	exit 1
 fi
@@ -121,7 +178,7 @@ if ! TIP=$(git -C "$REPO" rev-parse --verify "refs/heads/$BRANCH^{commit}" 2>/de
 	echo "success: $BRANCH has no local tip in $REPO" >&2
 	exit 1
 fi
-if [ -d "$TREE" ]; then
+if [ -d "$TREE" ] && [ "$TREE_ORPHAN" -eq 0 ]; then
 	if ! HEAD_SHA=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$HEAD_SHA" != "$TIP" ]; then
 		echo "success: the worktree HEAD is not $BRANCH's tip — refusing to land a commit the attempt did not end on" >&2
 		exit 1
@@ -137,6 +194,77 @@ BASE=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}')
 if [ "$(git -C "$REPO" rev-list --count "origin/main..$TIP")" -eq 0 ]; then
 	echo "nothing to land: $BRANCH adds no commits to main"
 else
+	if [ "$TREE_ORPHAN" -eq 1 ]; then
+		echo "success: cannot verify the unregistered worktree HEAD before landing" >&2
+		exit 1
+	fi
+	if git -C "$REPO" merge-base --is-ancestor origin/main "$TIP"; then
+		:
+	else
+		ANCESTRY_STATUS=$?
+		if [ "$ANCESTRY_STATUS" -ne 1 ]; then
+			echo "success: cannot compare the candidate with origin/main" >&2
+			exit 1
+		fi
+		if [ -z "${TICKET_REF-}" ]; then
+			echo "success: cannot identify the active ticket for moved main" >&2
+			exit 1
+		fi
+		if ! ATTEMPT_BASE=$(git -C "$REPO" merge-base "$TIP" origin/main); then
+			echo "success: cannot determine the attempt base for moved main" >&2
+			exit 1
+		fi
+		inspect_main_move() {
+			local status path
+			while IFS= read -r -d '' status; do
+				case "$status" in
+				A | M)
+					if ! IFS= read -r -d '' path; then
+						echo "success: moved main diff ended before its path" >&2
+						return 1
+					fi
+					case "$path" in
+					sdlc/tickets/*)
+						if [ "$path" = "$TICKET_REF" ]; then
+							echo "success: moved main changes the active ticket $path" >&2
+							return 1
+						fi
+						;;
+					*)
+						echo "success: moved main changes unverified path $path" >&2
+						return 1
+						;;
+					esac
+					;;
+				*)
+					echo "success: moved main has unsupported diff status $status" >&2
+					return 1
+					;;
+				esac
+			done
+		}
+		if ! git -C "$REPO" diff --no-ext-diff --find-renames --find-copies --find-copies-harder --name-status -z "$ATTEMPT_BASE" origin/main | inspect_main_move; then
+			echo "success: refusing moved main because ticket-only changes cannot be verified" >&2
+			exit 1
+		fi
+		if ! git -C "$TREE" merge --no-edit origin/main >/dev/null 2>&1; then
+			if ! git -C "$TREE" merge --abort >/dev/null 2>&1; then
+				echo "success: could not abort the moved-main merge" >&2
+				exit 1
+			fi
+			if ! HEAD_SHA=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) ||
+				[ "$HEAD_SHA" != "$TIP" ] || ! status=$(git -C "$TREE" status --porcelain) || [ -n "$status" ]; then
+				echo "success: moved-main merge did not restore the candidate" >&2
+				exit 1
+			fi
+			echo "success: moved-main merge conflicted; the branch is left standing" >&2
+			exit 1
+		fi
+		if ! TIP=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null); then
+			echo "success: cannot determine the moved-main merge tip" >&2
+			exit 1
+		fi
+	fi
 	if ! git -C "$REPO" push --quiet origin "$TIP:main"; then
 		echo "success: $TIP could not fast-forward main — main moved; the branch is left standing" >&2
 		exit 1
@@ -147,8 +275,9 @@ fi
 # 3. Deploy the registered checkout after origin/main reflects settlement.
 # Deployment is optional: any unsafe checkout remains untouched, and teardown
 # still settles the attempt.
+failures=
 deploy_checkout() {
-	local branch status
+	local branch status head hook
 	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
 		echo "checkout left alone: could not refresh origin/main"
 		return 0
@@ -171,6 +300,15 @@ deploy_checkout() {
 	fi
 	if ! git -C "$REPO" merge --ff-only origin/main >/dev/null 2>&1; then
 		echo "checkout left alone: could not fast-forward main to origin/main"
+		return 0
+	fi
+	if ! head=$(git -C "$REPO" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$head" != "$TIP" ]; then
+		return 0
+	fi
+	hook="$REPO/sdlc/scripts/deploy"
+	if [ -x "$hook" ] && ! (cd "$REPO" && LANDED_BASE="$BASE" LANDED_TIP="$TIP" "$hook"); then
+		echo "success: deploy hook failed" >&2
+		failures="${failures}${failures:+, }deploy hook"
 	fi
 }
 
@@ -191,7 +329,6 @@ remove_origin_branch() {
 	fi
 }
 
-failures=
 cleanup() {
 	local name=$1
 	shift
@@ -211,7 +348,7 @@ cleanup "local branch $BRANCH" remove_local_branch
 cleanup "origin branch $BRANCH" remove_origin_branch
 
 if [ -n "$failures" ]; then
-	echo "success: teardown failed: $failures" >&2
+	echo "success: settlement failed: $failures" >&2
 	exit 1
 fi
 echo "torn down $BRANCH and $TREE"

@@ -24,9 +24,10 @@
 //                                  cross-project waits in authored order
 //          status is "done" for a ticket that has a completion record in
 //          sdlc/records/ with the same id, and for anything under
-//          sdlc/tickets/archive/; every other ticket is "ready". Scheduling
-//          is the factory's job — this script filters nothing.
-//          Files under sdlc/tickets/drafts/ are not tickets and are ignored.
+//          sdlc/tickets/archive/; drafts are "draft" and every other ticket is
+//          "ready". Scheduling is the factory's job — this script filters
+//          nothing.
+//          Files under sdlc/tickets/drafts/ are visible but never dispatchable.
 // STDERR:  one line per malformed ticket, named by path and problem. A
 //          malformed ticket is reported and NOT emitted; the rest still are.
 // EXIT:    0 the scan completed cleanly (even if empty)
@@ -83,9 +84,9 @@ try {
 
 // --- reading the tree ----------------------------------------------------
 
-// One directory level only: `sdlc/tickets/` lists its own entries, so
-// archive/ and drafts/ appear as trees, not as .md paths, and drafts are
-// never visited.
+// One directory level only: each listed ticket directory contributes its own
+// .md entries. The three locations are explicit so a draft never becomes ready
+// merely by being visible to the factory.
 function lsTree(dir) {
   return git("ls-tree", "--name-only", "origin/main", `${dir}/`).split("\n").filter((path) => path.endsWith(".md"));
 }
@@ -98,7 +99,7 @@ function lsTree(dir) {
 // never read a different way here.
 
 const ID_RE = /^(\d{4})(-[a-z0-9-]+)?\.md$/;
-const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
+const FRONTMATTER_RE = /^---\n(?:([\s\S]*?)\n)?---\n?([\s\S]*)$/;
 
 function scalar(raw) {
   const text = raw.trim();
@@ -139,7 +140,7 @@ function parseFrontmatter(text) {
 
 // --- the ticket validator ------------------------------------------------
 
-function parseTicket(path, content) {
+function parseTicket(path, content, draft = false) {
   const problems = [];
   const name = path.split("/").at(-1) ?? path;
   const idMatch = ID_RE.exec(name);
@@ -158,9 +159,10 @@ function parseTicket(path, content) {
   const meta = parsed.meta;
   const body = (fm[2] ?? "").trim();
 
-  if (typeof meta.flow !== "string" || meta.flow === "") problems.push(`${path}: missing flow`);
-  if (meta.priority === undefined) problems.push(`${path}: missing priority`);
-  else if (!Number.isInteger(meta.priority)) problems.push(`${path}: priority is not an integer`);
+  if (!draft && (typeof meta.flow !== "string" || meta.flow === "")) problems.push(`${path}: missing flow`);
+  else if (meta.flow !== undefined && (typeof meta.flow !== "string" || meta.flow === "")) problems.push(`${path}: flow is not a string`);
+  if (!draft && meta.priority === undefined) problems.push(`${path}: missing priority`);
+  else if (meta.priority !== undefined && !Number.isInteger(meta.priority)) problems.push(`${path}: priority is not an integer`);
   if (meta.channel !== undefined && (typeof meta.channel !== "string" || meta.channel === "")) problems.push(`${path}: channel is not a string`);
   const deps = [];
   if (meta.deps !== undefined) {
@@ -198,7 +200,8 @@ function parseTicket(path, content) {
   if (body === "") problems.push(`${path}: no body — a ticket with nothing to say is not a ticket`);
 
   if (problems.length > 0 || idMatch === null) return { ok: false, problems };
-  const ticket = { id: idMatch[1], ref: path, flow: meta.flow, priority: meta.priority ?? 0, deps };
+  const ticket = { id: idMatch[1], ref: path, priority: meta.priority ?? 0, deps };
+  if (meta.flow !== undefined) ticket.flow = meta.flow;
   if (meta.channel !== undefined) ticket.channel = meta.channel;
   if (meta["runs-on"] !== undefined) ticket["runs-on"] = meta["runs-on"];
   if (waitsOn !== undefined) ticket.waitsOn = waitsOn;
@@ -217,12 +220,12 @@ for (const path of lsTree("sdlc/records")) {
 
 let out = "";
 let hasProblems = false;
-for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive", true]]) {
+for (const [dir, archived, draft] of [["sdlc/tickets", false, false], ["sdlc/tickets/archive", true, false], ["sdlc/tickets/drafts", false, true]]) {
   for (const path of lsTree(dir)) {
     const bytes = gitBytes("show", `origin/main:${path}`);
     const contentIdentity = createHash("sha256").update(path).update("\0").update(bytes).digest("hex");
     const content = bytes.toString("utf8");
-    const parsed = parseTicket(path, content);
+    const parsed = parseTicket(path, content, draft);
     if (!parsed.ok) {
       hasProblems = true;
       for (const problem of parsed.problems) process.stderr.write(`tasks: ${problem}\n`);
@@ -231,13 +234,13 @@ for (const [dir, archived] of [["sdlc/tickets", false], ["sdlc/tickets/archive",
     const t = parsed.ticket;
     const row = {
       id: t.id,
-      flow: t.flow,
       priority: t.priority,
       deps: t.deps,
-      status: archived || done.has(t.id) ? "done" : "ready",
+      status: draft ? "draft" : archived || done.has(t.id) ? "done" : "ready",
       ref: t.ref,
       contentIdentity,
     };
+    if (t.flow !== undefined) row.flow = t.flow;
     if (t.hold !== undefined) row.hold = t.hold;
     if (t.channel !== undefined) row.channel = t.channel;
     if (t["runs-on"] !== undefined) row.runsOn = t["runs-on"];

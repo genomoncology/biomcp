@@ -49,7 +49,17 @@ case "$TICKET_ID" in
 	;;
 esac
 
+WITHDRAWN=0
+case "$(printf '%s' "${SETTLEMENT-}" | tr '[:upper:]' '[:lower:]')" in
+withdrawn) WITHDRAWN=1 ;;
+esac
+
 BRANCH=${SDLC_BRANCH:-ticket/$TICKET_ID}
+if [ "$WITHDRAWN" -eq 1 ]; then
+	# Withdrawal has no attempt baggage. Its branch name is the exact ticket
+	# ref, never a caller-provided approximation.
+	BRANCH="ticket/$TICKET_ID"
+fi
 REF="refs/heads/$BRANCH"
 TREE=${ATTEMPT_DIR:-}
 BASELINE=
@@ -76,7 +86,13 @@ resolve_repo() {
 	(CDPATH='' cd -- "$common/.." && pwd -P)
 }
 
-if [ -n "${SDLC_REPO-}" ]; then
+if [ "$WITHDRAWN" -eq 1 ]; then
+	if ! REPO=$(git -C "$(pwd -P)" rev-parse --show-toplevel 2>/dev/null) ||
+		! REPO=$(CDPATH='' cd -- "$REPO" && pwd -P); then
+		echo "failure: cannot tell which registered checkout owns $BRANCH" >&2
+		exit 2
+	fi
+elif [ -n "${SDLC_REPO-}" ]; then
 	REPO=$SDLC_REPO
 elif [ -n "$TREE" ] && [ -d "$TREE" ] && REPO=$(resolve_repo "$TREE"); then
 	:
@@ -107,25 +123,149 @@ candidate_owned() {
 	[ "$candidate_common" = "$REPO_COMMON" ]
 }
 
+lexical_path() {
+	local path=$1 part
+	local -a parts=() source=()
+	case "$path" in
+	/*) ;;
+	*) return 1 ;;
+	esac
+	IFS=/ read -r -a source <<< "$path"
+	for part in "${source[@]}"; do
+		case "$part" in
+		'' | .) ;;
+		..)
+			if [ "${#parts[@]}" -gt 0 ]; then
+				unset 'parts[${#parts[@]} - 1]'
+			fi
+			;;
+		*) parts+=("$part") ;;
+		esac
+	done
+	local IFS=/
+	printf '/%s\n' "${parts[*]}"
+}
+
+orphan_owned() {
+	local candidate=$1 candidate_path pointer normalized
+	local -a lines=()
+	[ -d "$candidate" ] || return 1
+	[ -f "$candidate/.git" ] && [ ! -L "$candidate/.git" ] || return 1
+	mapfile -t lines <"$candidate/.git" || return 1
+	[ "${#lines[@]}" -eq 1 ] || return 1
+	case "${lines[0]}" in
+	"gitdir: "?*) pointer=${lines[0]#gitdir: } ;;
+	*) return 1 ;;
+	esac
+	candidate_path=$(CDPATH='' cd -- "$candidate" && pwd -P) || return 1
+	case "$pointer" in
+	/*) normalized=$(lexical_path "$pointer") ;;
+	*) normalized=$(lexical_path "$candidate_path/$pointer") ;;
+	esac
+	case "$normalized" in
+	"$REPO_COMMON"/*) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+owned_worktree() {
+	candidate_owned "$1" || orphan_owned "$1"
+}
+
+withdrawn_registered_worktree() {
+	local listing line current=
+	listing=$(mktemp) || return 1
+	if ! git -C "$REPO" worktree list --porcelain -z >"$listing"; then
+		rm -f -- "$listing"
+		return 1
+	fi
+	while IFS= read -r -d '' line; do
+		case "$line" in
+		"worktree "*) current=${line#worktree } ;;
+		"branch $REF")
+			[ -n "$current" ] || {
+				rm -f -- "$listing"
+				return 1
+			}
+			REGISTERED+=("$current")
+			;;
+		esac
+	done <"$listing"
+	rm -f -- "$listing"
+}
+
+# Withdrawal starts in the registered project checkout, not an attempt. Git's
+# exact branch registrations are the only authority for choosing a tree.
+if [ "$WITHDRAWN" -eq 1 ]; then
+	REGISTERED=()
+	if ! withdrawn_registered_worktree; then
+		echo "failure: could not read worktree registrations for $BRANCH" >&2
+		exit 2
+	fi
+	if [ "${#REGISTERED[@]}" -gt 1 ]; then
+		echo "failure: refusing withdrawal: multiple worktrees are registered for $BRANCH" >&2
+		exit 2
+	fi
+	TREE=
+	BASELINE=
+	if [ "${#REGISTERED[@]}" -eq 1 ]; then
+		TREE=${REGISTERED[0]}
+		if [ ! -d "$TREE" ] || [ -L "$TREE" ] || ! candidate_owned "$TREE"; then
+			echo "failure: refusing withdrawal: registered worktree $TREE is not safely owned by $REPO" >&2
+			exit 2
+		fi
+		BASELINE="$TREE.baseline"
+		if [ -e "$BASELINE" ] || [ -L "$BASELINE" ]; then
+			if [ ! -d "$BASELINE" ] || [ -L "$BASELINE" ] || ! owned_worktree "$BASELINE"; then
+				echo "failure: refusing withdrawal: baseline $BASELINE is not safely owned by $REPO" >&2
+				exit 2
+			fi
+		fi
+		if [ -z "${BOT_CMD-}" ] || [ ! -x "$BOT_CMD" ]; then
+			echo "failure: could not establish liveness for worktree $TREE: BOT_CMD is unavailable" >&2
+			exit 2
+		fi
+		if "$BOT_CMD" busy "$TREE"; then
+			echo "failure: refusing withdrawal: a live run holds worktree $TREE" >&2
+			exit 2
+		else
+			liveness=$?
+		fi
+		if [ "$liveness" -ne 1 ]; then
+			echo "failure: could not establish liveness for worktree $TREE" >&2
+			exit 2
+		fi
+	fi
+fi
+
 # Refuse before touching anything: a worktree that is not ours is not ours to
 # remove, and a half teardown is worse than none.
-if [ -n "$TREE" ] && [ -e "$TREE" ] && ! candidate_owned "$TREE"; then
+if [ -n "$TREE" ] && [ -e "$TREE" ] && ! owned_worktree "$TREE"; then
 	echo "failure: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
 	exit 2
 fi
-if [ -n "$BASELINE" ] && [ -e "$BASELINE" ] && ! candidate_owned "$BASELINE"; then
+if [ -n "$BASELINE" ] && [ -e "$BASELINE" ] && ! owned_worktree "$BASELINE"; then
 	echo "failure: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
 	exit 2
 fi
 
-LOCAL=$(git -C "$REPO" for-each-ref --format='%(objectname)' "$REF")
+if [ "$WITHDRAWN" -eq 1 ]; then
+	# show-ref --verify and the ref-name comparison below avoid prefix matches.
+	LOCAL=$(git -C "$REPO" show-ref --verify --hash "$REF" 2>/dev/null || :)
+else
+	LOCAL=$(git -C "$REPO" for-each-ref --format='%(objectname)' "$REF")
+fi
 if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --no-tags origin; then
 	echo "failure: git fetch origin failed — refusing to tear down without a current view of origin" >&2
 	exit 2
 fi
-REMOTE=$(git -C "$REPO" ls-remote --heads origin "$REF" | awk 'NR == 1 { print $1 }')
+if [ "$WITHDRAWN" -eq 1 ]; then
+	REMOTE=$(git -C "$REPO" ls-remote --heads origin "$REF" | awk -v ref="$REF" '$2 == ref { print $1; exit }')
+else
+	REMOTE=$(git -C "$REPO" ls-remote --heads origin "$REF" | awk 'NR == 1 { print $1 }')
+fi
 
-if [ -z "$LOCAL" ] && [ -z "$REMOTE" ]; then
+if [ -z "$LOCAL" ] && [ -z "$REMOTE" ] && [ "$WITHDRAWN" -ne 1 ]; then
 	echo "$BRANCH has no local or origin tip; nothing to preserve"
 fi
 
@@ -177,7 +317,7 @@ if [ "${#TAGS[@]}" -gt 0 ]; then
 				echo "failure: could not tag $hash as $tag; refusing to tear down unpreserved work" >&2
 				exit 2
 			fi
-		else
+		elif [ "$WITHDRAWN" -ne 1 ]; then
 			echo "tagged $tag $hash"
 		fi
 	done
@@ -221,7 +361,9 @@ cleanup() {
 	local name=$1 did=$2
 	shift 2
 	if "$@"; then
-		[ -z "$did" ] || echo "$did"
+		if [ "$WITHDRAWN" -ne 1 ]; then
+			[ -z "$did" ] || echo "$did"
+		fi
 	else
 		failures="${failures}${failures:+, }$name"
 		return 1
@@ -234,14 +376,14 @@ remove_tree() {
 		return 0
 	fi
 	[ -e "$candidate" ] || return 0
-	if ! candidate_owned "$candidate"; then
+	if ! owned_worktree "$candidate"; then
 		echo "failure: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
 		return 1
 	fi
 	rm -rf "$candidate"
 }
 remove_baseline() {
-	if ! candidate_owned "$BASELINE"; then
+	if ! owned_worktree "$BASELINE"; then
 		echo "failure: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
 		return 1
 	fi
@@ -277,4 +419,7 @@ fi
 if [ -n "$failures" ]; then
 	echo "failure: teardown failed: $failures" >&2
 	exit 2
+fi
+if [ "$WITHDRAWN" -eq 1 ]; then
+	printf 'withdrawal-cleaned %s\n' "$TICKET_ID"
 fi

@@ -106,6 +106,55 @@ candidate_owned() {
 	[ "$candidate_common" = "$REPO_COMMON" ]
 }
 
+lexical_path() {
+	local path=$1 part
+	local -a parts=() source=()
+	case "$path" in
+	/*) ;;
+	*) return 1 ;;
+	esac
+	IFS=/ read -r -a source <<< "$path"
+	for part in "${source[@]}"; do
+		case "$part" in
+		'' | .) ;;
+		..)
+			if [ "${#parts[@]}" -gt 0 ]; then
+				unset 'parts[${#parts[@]} - 1]'
+			fi
+			;;
+		*) parts+=("$part") ;;
+		esac
+	done
+	local IFS=/
+	printf '/%s\n' "${parts[*]}"
+}
+
+orphan_owned() {
+	local candidate=$1 candidate_path pointer normalized
+	local -a lines=()
+	[ -d "$candidate" ] || return 1
+	[ -f "$candidate/.git" ] && [ ! -L "$candidate/.git" ] || return 1
+	mapfile -t lines <"$candidate/.git" || return 1
+	[ "${#lines[@]}" -eq 1 ] || return 1
+	case "${lines[0]}" in
+	"gitdir: "?*) pointer=${lines[0]#gitdir: } ;;
+	*) return 1 ;;
+	esac
+	candidate_path=$(CDPATH='' cd -- "$candidate" && pwd -P) || return 1
+	case "$pointer" in
+	/*) normalized=$(lexical_path "$pointer") ;;
+	*) normalized=$(lexical_path "$candidate_path/$pointer") ;;
+	esac
+	case "$normalized" in
+	"$REPO_COMMON"/*) return 0 ;;
+	*) return 1 ;;
+	esac
+}
+
+owned_worktree() {
+	candidate_owned "$1" || orphan_owned "$1"
+}
+
 # Git is the normal remover. Recursive removal is only for its known stale
 # metadata case, after ownership has been proved again at the point of use.
 remove_tree() {
@@ -114,7 +163,7 @@ remove_tree() {
 		return 0
 	fi
 	[ -e "$candidate" ] || return 0
-	if ! candidate_owned "$candidate"; then
+	if ! owned_worktree "$candidate"; then
 		echo "before: refusing to remove $candidate: it is not a worktree owned by $REPO" >&2
 		return 1
 	fi
@@ -161,7 +210,7 @@ undo() {
 			;;
 		esac
 
-		if ! candidate_owned "$TREE"; then
+		if ! owned_worktree "$TREE"; then
 			echo "before: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
 			return 1
 		fi
@@ -190,24 +239,33 @@ tree_branch() {
 }
 
 if [ -e "$TREE" ]; then
-	if ! candidate_owned "$TREE"; then
-		echo "before: $TREE exists and is not a worktree owned by $REPO — resolve it by hand" >&2
-		exit 1
-	fi
-	if [ "$(tree_branch || true)" != "$BRANCH" ]; then
-		echo "before: $TREE is checked out on $(tree_branch || echo 'a detached HEAD'), not $BRANCH" >&2
-		exit 1
-	fi
-	if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
-		echo "before: continuing the existing worktree $TREE on $BRANCH" >&2
-	else
+	if candidate_owned "$TREE"; then
+		if [ "$(tree_branch || true)" != "$BRANCH" ]; then
+			echo "before: $TREE is checked out on $(tree_branch || echo 'a detached HEAD'), not $BRANCH" >&2
+			exit 1
+		fi
+		if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
+			echo "before: continuing the existing worktree $TREE on $BRANCH" >&2
+		else
+			cleanup_status=0
+			undo || cleanup_status=$?
+			if [ "$cleanup_status" -ne 0 ]; then
+				echo "before: cleanup after $BRANCH was gone failed" >&2
+				exit "$cleanup_status"
+			fi
+			echo "before: discarded worktree $TREE because its branch $BRANCH was gone" >&2
+		fi
+	elif orphan_owned "$TREE"; then
 		cleanup_status=0
 		undo || cleanup_status=$?
 		if [ "$cleanup_status" -ne 0 ]; then
-			echo "before: cleanup after $BRANCH was gone failed" >&2
+			echo "before: cleanup after unregistered worktree $TREE failed" >&2
 			exit "$cleanup_status"
 		fi
-		echo "before: discarded worktree $TREE because its branch $BRANCH was gone" >&2
+		echo "before: reclaimed unregistered worktree $TREE" >&2
+	else
+		echo "before: $TREE exists and is not a worktree owned by $REPO — resolve it by hand" >&2
+		exit 1
 	fi
 fi
 
