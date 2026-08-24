@@ -383,6 +383,7 @@ fn drug_markdown_with_region_all_keeps_us_and_eu_blocks_separate() {
     assert!(eu_regulatory.contains(
         "| Keytruda | pembrolizumab | EMEA/H/C/003820 | Authorised | 17/07/2015 | Merck Sharp & Dohme B.V. |"
     ));
+    assert!(eu_regulatory.contains("### Authorized indications"));
     assert!(eu_regulatory.contains(
         "- **Keytruda:** Keytruda as monotherapy is indicated for the treatment of adults and adolescents aged 12 years and older with advanced (unresectable or metastatic) melanoma."
     ));
