@@ -1,3 +1,6 @@
+---
+---
+
 # Investigate intermittent variant-filter contract timeout
 
 `json_error_contract::contradictory_variant_filters_fail_before_myvariant_contact`
