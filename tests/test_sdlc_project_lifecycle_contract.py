@@ -1,0 +1,267 @@
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import subprocess
+from pathlib import Path
+
+# The lifecycle scripts always act on the checkout in which they run. Keeping
+# this as cwd lets baseline execute this same test module against origin/main.
+REPO_ROOT = Path.cwd()
+PROJECT = REPO_ROOT / "sdlc" / "project"
+
+
+def _git(repo: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def _run(repo: Path, script: str, environment: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["bash", str(PROJECT / script)],
+        cwd=repo,
+        env=os.environ | environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _fixture(tmp_path: Path) -> tuple[Path, Path]:
+    origin = tmp_path / "origin.git"
+    repo = tmp_path / "registered"
+    subprocess.run(
+        ["git", "init", "--bare", "--initial-branch=main", str(origin)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "clone", "--quiet", str(origin), str(repo)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    _git(repo, "config", "user.name", "Lifecycle contract")
+    _git(repo, "config", "user.email", "lifecycle@example.invalid")
+    (repo / "sdlc" / "project").mkdir(parents=True)
+    (repo / "sdlc" / "scripts").mkdir()
+    for folder in ("tickets", "records", "issues"):
+        (repo / "sdlc" / folder).mkdir()
+    for script in ("before", "success", "failure", "health"):
+        shutil.copy2(PROJECT / script, repo / "sdlc" / "project" / script)
+    for script in ("lint", "test"):
+        target = repo / "sdlc" / "scripts" / script
+        target.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        target.chmod(0o755)
+    (repo / "Makefile").write_text(".PHONY: lint test\nlint:\n\t@:\ntest:\n\t@:\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "--quiet", "-m", "fixture: add lifecycle contracts")
+    _git(repo, "push", "--quiet", "-u", "origin", "main")
+    return repo, origin
+
+
+def _bot(tmp_path: Path) -> Path:
+    command = tmp_path / "bot"
+    command.write_text("#!/bin/sh\n[ \"$1\" = busy ] && exit 1\nexit 2\n", encoding="utf-8")
+    command.chmod(0o755)
+    return command
+
+
+def _before(repo: Path, tmp_path: Path, ticket_id: str) -> tuple[subprocess.CompletedProcess[str], Path | None]:
+    bot = _bot(tmp_path)
+    result = _run(
+        repo,
+        "before",
+        {
+            "TICKET_ID": ticket_id,
+            "TICKET_FLOW": "quickfix",
+            "WORKTREE_ROOT": str(tmp_path / "worktrees"),
+            "PATH": f"{bot.parent}:{os.environ['PATH']}",
+        },
+    )
+    match = re.search(r"^dir: (.+)$", result.stdout, re.MULTILINE)
+    return result, Path(match.group(1)) if match is not None else None
+
+
+def _commit(repo: Path, path: str, contents: str, message: str) -> str:
+    target = repo / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(contents, encoding="utf-8")
+    _git(repo, "add", path)
+    _git(repo, "commit", "--quiet", "-m", message)
+    return _git(repo, "rev-parse", "HEAD")
+
+
+def _clone(origin: Path, destination: Path) -> Path:
+    subprocess.run(
+        ["git", "clone", "--quiet", str(origin), str(destination)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    _git(destination, "config", "user.name", "Lifecycle contract")
+    _git(destination, "config", "user.email", "lifecycle@example.invalid")
+    return destination
+
+
+def test_before_reclaims_an_owned_orphaned_worktree(tmp_path: Path) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1052"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    marker = tree / "orphan-marker"
+    marker.write_text("discard this abandoned worktree\n", encoding="utf-8")
+
+    tree.chmod(0o555)
+    try:
+        removal = subprocess.run(
+            ["git", "-C", str(repo), "worktree", "remove", "--force", str(tree)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    finally:
+        tree.chmod(0o755)
+    assert removal.returncode != 0
+    assert marker.exists()
+
+    retried, replacement = _before(repo, tmp_path, ticket_id)
+
+    assert retried.returncode == 0, retried.stderr
+    assert replacement == tree
+    assert not marker.exists()
+
+
+def test_success_lands_after_unrelated_ticket_only_main_movement(tmp_path: Path) -> None:
+    repo, origin = _fixture(tmp_path)
+    ticket_id = "1052"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    _commit(tree, "CANDIDATE", "keep this verified change\n", "candidate: retain verified change")
+
+    publisher = _clone(origin, tmp_path / "publisher")
+    _commit(
+        publisher,
+        "sdlc/tickets/2001-unrelated.md",
+        "# Unrelated ticket\n",
+        "ticket: add unrelated ticket",
+    )
+    _git(publisher, "push", "--quiet", "origin", "main")
+
+    settled = _run(
+        repo,
+        "success",
+        {
+            "TICKET_ID": ticket_id,
+            "ATTEMPT_DIR": str(tree),
+            "SDLC_REPO": str(repo),
+            "SDLC_BRANCH": f"ticket/{ticket_id}",
+            "TICKET_REF": "sdlc/tickets/1052-adopt-lifecycle.md",
+        },
+    )
+
+    assert settled.returncode == 0, settled.stderr
+    _git(repo, "fetch", "--quiet", "origin")
+    assert _git(repo, "show", "origin/main:CANDIDATE") == "keep this verified change"
+    assert _git(repo, "show", "origin/main:sdlc/tickets/2001-unrelated.md") == "# Unrelated ticket"
+    assert not tree.exists()
+
+
+def test_failure_withdrawal_receipt_preserves_evidence_and_cleans_up(tmp_path: Path) -> None:
+    repo, origin = _fixture(tmp_path)
+    ticket_id = "1052"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    baseline = Path(f"{tree}.baseline")
+    _git(repo, "worktree", "add", "--quiet", "--detach", str(baseline), "origin/main")
+
+    _commit(tree, "LOCAL_FIRST", "first local evidence\n", "candidate: save first evidence")
+    _git(tree, "push", "--quiet", "origin", f"ticket/{ticket_id}")
+    publisher = _clone(origin, tmp_path / "withdrawal-publisher")
+    _git(publisher, "checkout", "--quiet", "-b", "remote-evidence", f"origin/ticket/{ticket_id}")
+    remote = _commit(publisher, "REMOTE_EVIDENCE", "remote evidence\n", "candidate: save remote evidence")
+    _git(publisher, "push", "--quiet", "origin", f"HEAD:ticket/{ticket_id}")
+    local = _commit(tree, "LOCAL_EVIDENCE", "local evidence\n", "candidate: save local evidence")
+
+    settled = _run(
+        repo,
+        "failure",
+        {
+            "TICKET_ID": ticket_id,
+            "SETTLEMENT": "withdrawn",
+            "BOT_CMD": str(_bot(tmp_path)),
+        },
+    )
+
+    assert settled.returncode == 0, settled.stderr
+    assert settled.stdout == f"withdrawal-cleaned {ticket_id}\n"
+    assert any(tag.endswith("-local") for tag in _git(repo, "tag", "--points-at", local).splitlines())
+    assert any(not tag.endswith("-local") for tag in _git(repo, "tag", "--points-at", remote).splitlines())
+    assert not tree.exists()
+    assert not baseline.exists()
+    assert _git(repo, "branch", "--list", f"ticket/{ticket_id}") == ""
+    assert _git(repo, "ls-remote", "--heads", "origin", f"ticket/{ticket_id}") == ""
+
+
+def test_health_reports_malformed_opens_from_origin_main(tmp_path: Path) -> None:
+    repo, _origin = _fixture(tmp_path)
+    policy = repo / "assembly" / "flows" / "build" / "05-verify" / "gate" / "05-path-policy"
+    policy.parent.mkdir(parents=True)
+    policy.write_text(
+        "#!/bin/sh\n"
+        "git show \"origin/main:$TICKET_REF\" | grep -Fq 'opens: sdlc/scripts/*' || exit 0\n"
+        "echo \"path policy: opens must name exact file paths: sdlc/scripts/*\" >&2\n"
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    ticket = "sdlc/tickets/2002-malformed-opening.md"
+    _commit(
+        repo,
+        ticket,
+        "---\nflow: build\npriority: 1\nopens: sdlc/scripts/*\n---\n# Invalid opening\n",
+        "ticket: add malformed opening",
+    )
+    _git(repo, "add", str(policy.relative_to(repo)))
+    _git(repo, "commit", "--quiet", "-m", "fixture: add path policy")
+    _git(repo, "push", "--quiet", "origin", "main")
+
+    health = _run(repo, "health", {})
+
+    assert health.returncode == 1
+    assert ticket in health.stdout
+    assert "sdlc/scripts/*" in health.stdout
+
+
+def test_success_without_deploy_hook_is_quiet(tmp_path: Path) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1052"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    _commit(tree, "LANDED", "no deployment extension is needed\n", "candidate: settle without deploy")
+
+    settled = _run(
+        repo,
+        "success",
+        {
+            "TICKET_ID": ticket_id,
+            "ATTEMPT_DIR": str(tree),
+            "SDLC_REPO": str(repo),
+            "SDLC_BRANCH": f"ticket/{ticket_id}",
+        },
+    )
+
+    assert not (repo / "sdlc" / "scripts" / "deploy").exists()
+    assert settled.returncode == 0, settled.stderr
+    assert settled.stderr == ""
