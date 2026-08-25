@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import os
 import re
+import shlex
 import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 # The lifecycle scripts always act on the checkout in which they run. Keeping
 # this as cwd lets baseline execute this same test module against origin/main.
@@ -265,3 +268,164 @@ def test_success_without_deploy_hook_is_quiet(tmp_path: Path) -> None:
     assert not (repo / "sdlc" / "scripts" / "deploy").exists()
     assert settled.returncode == 0, settled.stderr
     assert settled.stderr == ""
+
+
+def test_success_reports_pending_activation_for_a_dirty_checkout(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1053"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    base = _git(repo, "rev-parse", "HEAD")
+    tip = _commit(
+        tree,
+        "LANDED",
+        "the ticket must activate after landing\n",
+        "candidate: await activation",
+    )
+    local_work = repo / "LOCAL"
+    local_work.write_text("do not overwrite this checkout work\n", encoding="utf-8")
+
+    settled = _run(
+        repo,
+        "success",
+        {
+            "TICKET_ID": ticket_id,
+            "ATTEMPT_DIR": str(tree),
+            "SDLC_REPO": str(repo),
+            "SDLC_BRANCH": f"ticket/{ticket_id}",
+        },
+    )
+
+    assert settled.returncode == 4, settled.stderr
+    assert settled.stdout == f"activation-pending {base}..{tip}\n"
+    assert "checkout left alone: checkout is dirty" in settled.stderr
+    assert _git(repo, "rev-parse", "HEAD") == base
+    assert (
+        local_work.read_text(encoding="utf-8")
+        == "do not overwrite this checkout work\n"
+    )
+    _git(repo, "fetch", "--quiet", "origin")
+    assert _git(repo, "rev-parse", "origin/main") == tip
+    assert not tree.exists()
+    assert _git(repo, "branch", "--list", f"ticket/{ticket_id}") == ""
+
+
+def test_success_activates_a_durable_landing_without_republishing(
+    tmp_path: Path,
+) -> None:
+    repo, origin = _fixture(tmp_path)
+    deployed = tmp_path / "activated"
+    hook = repo / "sdlc" / "scripts" / "deploy"
+    hook.write_text(
+        "#!/bin/sh\n"
+        f'printf \'%s %s %s\\n\' "$LANDED_BASE" "$LANDED_TIP" "$(git rev-parse HEAD)" > {shlex.quote(str(deployed))}\n',
+        encoding="utf-8",
+    )
+    hook.chmod(0o755)
+    base = _commit(
+        repo,
+        "sdlc/scripts/deploy",
+        hook.read_text(encoding="utf-8"),
+        "fixture: add deploy hook",
+    )
+    _git(repo, "push", "--quiet", "origin", "main")
+    publisher = _clone(origin, tmp_path / "publisher")
+    tip = _commit(
+        publisher,
+        "LANDED",
+        "this commit is already durable\n",
+        "fixture: land activation",
+    )
+    _git(publisher, "push", "--quiet", "origin", "main")
+
+    activated = _run(
+        repo,
+        "success",
+        {
+            "SDLC_REPO": str(repo),
+            "ACTIVATION_BASE": base,
+            "ACTIVATION_TIP": tip,
+        },
+    )
+
+    assert activated.returncode == 0, activated.stderr
+    assert activated.stdout == f"activated {base}..{tip}\n"
+    assert _git(repo, "rev-parse", "HEAD") == tip
+    assert deployed.read_text(encoding="utf-8") == f"{base} {tip} {tip}\n"
+
+
+@pytest.mark.parametrize("identity", ["ACTIVATION_BASE", "ACTIVATION_TIP"])
+def test_success_rejects_incomplete_activation_before_settlement(
+    tmp_path: Path, identity: str
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1053"
+    deployed = tmp_path / "deployed"
+    hook = repo / "sdlc" / "scripts" / "deploy"
+    hook.write_text(
+        f"#!/bin/sh\ntouch {shlex.quote(str(deployed))}\n", encoding="utf-8"
+    )
+    hook.chmod(0o755)
+    _commit(
+        repo,
+        "sdlc/scripts/deploy",
+        hook.read_text(encoding="utf-8"),
+        "fixture: add deploy hook",
+    )
+    _git(repo, "push", "--quiet", "origin", "main")
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    candidate = _commit(
+        tree,
+        "CANDIDATE",
+        "an incomplete request must not settle\n",
+        "candidate: await activation",
+    )
+    main = _git(repo, "rev-parse", "origin/main")
+    checkout = _git(repo, "rev-parse", "HEAD")
+    fetched = tmp_path / "fetched"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git_command = shutil.which("git")
+    assert git_command is not None
+    (bin_dir / "git").write_text(
+        "#!/bin/sh\n"
+        f'if [ "$1" = -C ] && [ "$3" = fetch ]; then touch {shlex.quote(str(fetched))}; fi\n'
+        f'exec {shlex.quote(git_command)} "$@"\n',
+        encoding="utf-8",
+    )
+    (bin_dir / "git").chmod(0o755)
+
+    refused = _run(
+        repo,
+        "success",
+        {
+            "TICKET_ID": ticket_id,
+            "ATTEMPT_DIR": str(tree),
+            "SDLC_REPO": str(repo),
+            "SDLC_BRANCH": f"ticket/{ticket_id}",
+            identity: candidate,
+            "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        },
+    )
+
+    assert refused.returncode != 0
+    assert (
+        "ACTIVATION_BASE and ACTIVATION_TIP must be supplied together" in refused.stderr
+    )
+    assert not re.search(
+        r"^(?:landed|activated|activation-pending|nothing to land)\b",
+        refused.stdout,
+        re.MULTILINE,
+    )
+    assert not fetched.exists()
+    assert _git(repo, "rev-parse", "origin/main") == main
+    assert _git(repo, "rev-parse", "HEAD") == checkout
+    assert not deployed.exists()
+    assert tree.exists()
+    assert _git(tree, "rev-parse", "HEAD") == candidate
+    assert _git(repo, "rev-parse", f"ticket/{ticket_id}") == candidate
