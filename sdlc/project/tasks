@@ -38,7 +38,7 @@
 // module and Node reads the nearest one. It imports only Node's own
 // child_process and crypto, so no install has to have happened for the board to
 // be readable.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 
 const REPO = process.cwd();
@@ -64,18 +64,31 @@ try {
   fail("no origin remote");
 }
 function fetchOrigin() {
-  try {
-    execFileSync("timeout", ["-k", "10", "60", "git", "fetch", "--quiet", "origin"], { cwd: REPO, stdio: ["ignore", "ignore", "ignore"] });
-    return 0;
-  } catch (error) {
-    return error && error.status;
+  const result = spawnSync("timeout", ["-k", "10", "60", "git", "fetch", "--quiet", "origin"], { cwd: REPO, stdio: ["ignore", "ignore", "pipe"] });
+  return {
+    status: Number.isInteger(result.status) ? result.status : 1,
+    stderr: result.stderr?.toString("utf8") ?? "",
+  };
+}
+function fetchFailureMessage({ status, stderr }) {
+  const line = stderr.split("\n").findLast((candidate) => /\S/.test(candidate));
+  const diagnostic = line?.replace(/[\u0000-\u001f\u007f-\u009f]/g, "").trim() ?? "";
+  if (diagnostic !== "") {
+    let bounded = "";
+    let remaining = 1024 - Buffer.byteLength("tasks: ", "utf8");
+    for (const character of diagnostic) {
+      const bytes = Buffer.byteLength(character, "utf8");
+      if (bytes > remaining) break;
+      bounded += character;
+      remaining -= bytes;
+    }
+    return bounded;
   }
+  return status === 124 || status === 137 ? "git fetch origin timed out" : "git fetch origin failed";
 }
-let fetchStatus = fetchOrigin();
-if (fetchStatus === 124 || fetchStatus === 137) fetchStatus = fetchOrigin();
-if (fetchStatus !== 0) {
-  fail(fetchStatus === 124 || fetchStatus === 137 ? "git fetch origin timed out" : "git fetch origin failed");
-}
+let fetch = fetchOrigin();
+if (fetch.status !== 0) fetch = fetchOrigin();
+if (fetch.status !== 0) fail(fetchFailureMessage(fetch));
 try {
   git("rev-parse", "--verify", "origin/main");
 } catch {
