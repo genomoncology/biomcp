@@ -23,18 +23,123 @@
 #   5. remove the worktree and its baseline sibling, then delete the branch
 #      locally and on origin
 #
-# STDOUT:  "landed <base>..<tip>" or "nothing to land", an optional
-#          "checkout left alone: <reason>", plus what teardown did.
-# EXIT:    0 landed clean (or nothing to land) and torn down
-#          1 landing, activation, or teardown failed — stderr says which.
-#            Activation failure still completes safe teardown after landing.
-#            The factory records it as a fault and cools the channel down; it
-#            does not silently re-fly the ticket.
-#          The factory also reads 3 as a rejected landing (retry the ticket)
-#          and 2 as a refusal a human must read; this script uses neither,
-#          and prints no `landed <receipt>` line, because it never leaves a
-#          landing half-done.
+# STDOUT:  "landed <base>..<tip>" for a settled landing, "nothing to
+#          land" for a no-op, or one activation receipt: "activated" or
+#          "activation-pending <base>..<tip>". Pending is the only stdout
+#          after a durable landing whose checkout remains unsafe.
+# EXIT:    0 settled or no-op; 1 landing, deploy, or teardown failure; 4 a
+#          durable landing whose checkout activation remains pending. The
+#          factory also reads 3 as a rejected landing and 2 as a refusal; this
+#          script uses neither.
 set -euo pipefail
+
+ACTIVATION_BASE=${ACTIVATION_BASE-}
+ACTIVATION_TIP=${ACTIVATION_TIP-}
+if ([ -n "$ACTIVATION_BASE" ] && [ -z "$ACTIVATION_TIP" ]) ||
+	([ -z "$ACTIVATION_BASE" ] && [ -n "$ACTIVATION_TIP" ]); then
+	echo "success: ACTIVATION_BASE and ACTIVATION_TIP must be supplied together" >&2
+	exit 1
+fi
+
+checkout_left_alone() {
+	if [ "${CHECKOUT_NOTICE_STREAM:-stderr}" = "stdout" ]; then
+		echo "checkout left alone: $1"
+	else
+		echo "checkout left alone: $1" >&2
+	fi
+}
+
+deploy_checkout() {
+	local branch status head hook
+	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
+		checkout_left_alone "could not refresh origin/main"
+		return 4
+	fi
+	if ! branch=$(git -C "$REPO" symbolic-ref --quiet --short HEAD 2>/dev/null); then
+		checkout_left_alone "checkout is detached"
+		return 4
+	fi
+	if [ "$branch" != "main" ]; then
+		checkout_left_alone "checkout is on $branch, not main"
+		return 4
+	fi
+	if ! status=$(git -C "$REPO" status --porcelain); then
+		checkout_left_alone "could not inspect checkout status"
+		return 4
+	fi
+	if [ -n "$status" ]; then
+		checkout_left_alone "checkout is dirty"
+		return 4
+	fi
+	if ! git -C "$REPO" merge --ff-only origin/main >/dev/null 2>&1; then
+		checkout_left_alone "could not fast-forward main to origin/main"
+		return 4
+	fi
+	if ! head=$(git -C "$REPO" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$head" != "$TIP" ]; then
+		checkout_left_alone "checkout did not reach the requested tip"
+		return 4
+	fi
+	hook="$REPO/sdlc/scripts/deploy"
+	if [ -x "$hook" ] && ! (cd "$REPO" && LANDED_BASE="$BASE" LANDED_TIP="$TIP" "$hook" >&2); then
+		echo "success: deploy hook failed" >&2
+		return 1
+	fi
+}
+
+activate_only() {
+	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
+		checkout_left_alone "could not refresh origin/main"
+		printf 'activation-pending %s..%s\n' "$ACTIVATION_BASE" "$ACTIVATION_TIP"
+		return 4
+	fi
+	if ! BASE=$(git -C "$REPO" rev-parse --verify "${ACTIVATION_BASE}^{commit}" 2>/dev/null) ||
+		[ "$BASE" != "$ACTIVATION_BASE" ]; then
+		echo "success: ACTIVATION_BASE is not a commit identity" >&2
+		return 1
+	fi
+	if ! TIP=$(git -C "$REPO" rev-parse --verify "${ACTIVATION_TIP}^{commit}" 2>/dev/null) ||
+		[ "$TIP" != "$ACTIVATION_TIP" ]; then
+		echo "success: ACTIVATION_TIP is not a commit identity" >&2
+		return 1
+	fi
+	if ! git -C "$REPO" merge-base --is-ancestor "$BASE" "$TIP"; then
+		echo "success: ACTIVATION_BASE is not an ancestor of ACTIVATION_TIP" >&2
+		return 1
+	fi
+	if ! origin_tip=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}' 2>/dev/null) ||
+		[ "$origin_tip" != "$TIP" ]; then
+		echo "success: origin/main does not name ACTIVATION_TIP" >&2
+		return 1
+	fi
+	local activation_status
+	if deploy_checkout; then
+		activation_status=0
+	else
+		activation_status=$?
+	fi
+	if [ "$activation_status" -eq 4 ]; then
+		printf 'activation-pending %s..%s\n' "$BASE" "$TIP"
+		return 4
+	fi
+	if [ "$activation_status" -ne 0 ]; then
+		return "$activation_status"
+	fi
+	printf 'activated %s..%s\n' "$BASE" "$TIP"
+}
+
+if [ -n "$ACTIVATION_BASE" ] && [ -n "$ACTIVATION_TIP" ]; then
+	: "${SDLC_REPO:?success: SDLC_REPO is required for activation}"
+	REPO=$SDLC_REPO
+	if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
+		echo "success: $REPO is not a Git repository" >&2
+		exit 1
+	fi
+	if activate_only; then
+		exit 0
+	else
+		exit $?
+	fi
+fi
 
 : "${TICKET_ID:?success: TICKET_ID is required}"
 case "$TICKET_ID" in
@@ -189,6 +294,8 @@ if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
 	exit 1
 fi
 BASE=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}')
+DURABLE_LANDING=0
+LANDING_RECEIPT=
 
 # 2. Land, unless the attempt added nothing to main.
 if [ "$(git -C "$REPO" rev-list --count "origin/main..$TIP")" -eq 0 ]; then
@@ -269,50 +376,35 @@ else
 		echo "success: $TIP could not fast-forward main — main moved; the branch is left standing" >&2
 		exit 1
 	fi
-	echo "landed $BASE..$TIP"
+	DURABLE_LANDING=1
+	LANDING_RECEIPT="landed $BASE..$TIP"
 fi
 
 # 3. Deploy the registered checkout after origin/main reflects settlement.
-# Deployment is optional: any unsafe checkout remains untouched, and teardown
-# still settles the attempt.
+# A durable landing remains pending when a safe checkout cannot activate it.
 failures=
-deploy_checkout() {
-	local branch status head hook
-	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
-		echo "checkout left alone: could not refresh origin/main"
-		return 0
-	fi
-	if ! branch=$(git -C "$REPO" symbolic-ref --quiet --short HEAD 2>/dev/null); then
-		echo "checkout left alone: checkout is detached"
-		return 0
-	fi
-	if [ "$branch" != "main" ]; then
-		echo "checkout left alone: checkout is on $branch, not main"
-		return 0
-	fi
-	if ! status=$(git -C "$REPO" status --porcelain); then
-		echo "checkout left alone: could not inspect checkout status"
-		return 0
-	fi
-	if [ -n "$status" ]; then
-		echo "checkout left alone: checkout is dirty"
-		return 0
-	fi
-	if ! git -C "$REPO" merge --ff-only origin/main >/dev/null 2>&1; then
-		echo "checkout left alone: could not fast-forward main to origin/main"
-		return 0
-	fi
-	if ! head=$(git -C "$REPO" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$head" != "$TIP" ]; then
-		return 0
-	fi
-	hook="$REPO/sdlc/scripts/deploy"
-	if [ -x "$hook" ] && ! (cd "$REPO" && LANDED_BASE="$BASE" LANDED_TIP="$TIP" "$hook"); then
-		echo "success: deploy hook failed" >&2
-		failures="${failures}${failures:+, }deploy hook"
-	fi
-}
 
-deploy_checkout
+# The no-op path remains successful when its checkout is unsafe, as it did
+# before activation became a distinct settlement result.
+if [ "$DURABLE_LANDING" -eq 0 ]; then
+	CHECKOUT_NOTICE_STREAM=stdout
+fi
+if deploy_checkout; then
+	ACTIVATION_STATUS=0
+else
+	ACTIVATION_STATUS=$?
+fi
+if [ "$DURABLE_LANDING" -eq 0 ] && [ "$ACTIVATION_STATUS" -eq 4 ]; then
+	ACTIVATION_STATUS=0
+fi
+if [ "$ACTIVATION_STATUS" -eq 1 ]; then
+	failures="${failures}${failures:+, }deploy hook"
+fi
+if [ "$DURABLE_LANDING" -eq 1 ] && [ "$ACTIVATION_STATUS" -eq 4 ]; then
+	printf 'activation-pending %s..%s\n' "$BASE" "$TIP"
+elif [ -n "$LANDING_RECEIPT" ]; then
+	echo "$LANDING_RECEIPT"
+fi
 
 # 4. Teardown. Every failure is named; none of them is silent.
 prune_worktrees() {
@@ -350,5 +442,8 @@ cleanup "origin branch $BRANCH" remove_origin_branch
 if [ -n "$failures" ]; then
 	echo "success: settlement failed: $failures" >&2
 	exit 1
+fi
+if [ "$DURABLE_LANDING" -eq 1 ] && [ "$ACTIVATION_STATUS" -eq 4 ]; then
+	exit 4
 fi
 echo "torn down $BRANCH and $TREE"
