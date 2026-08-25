@@ -465,6 +465,63 @@ def test_success_activates_a_durable_landing_without_republishing(
     assert deployed.read_text(encoding="utf-8") == f"{base} {tip} {tip}\n"
 
 
+def test_success_activates_the_current_main_descendant_with_the_stored_receipt(
+    tmp_path: Path,
+) -> None:
+    repo, origin = _fixture(tmp_path)
+    deployed = tmp_path / "activated-descendant"
+    hook = repo / "sdlc" / "scripts" / "deploy"
+    hook.write_text(
+        "#!/bin/sh\n"
+        f'printf \'%s %s %s\\n\' "$(git rev-parse HEAD)" "$LANDED_BASE" "$LANDED_TIP" > {shlex.quote(str(deployed))}\n',
+        encoding="utf-8",
+    )
+    hook.chmod(0o755)
+    base = _commit(
+        repo,
+        "sdlc/scripts/deploy",
+        hook.read_text(encoding="utf-8"),
+        "fixture: add deploy hook",
+    )
+    _git(repo, "push", "--quiet", "origin", "main")
+    publisher = _clone(origin, tmp_path / "descendant-publisher")
+    stored_tip = _commit(
+        publisher,
+        "LANDED",
+        "this is the stored durable landing\n",
+        "fixture: land stored activation tip",
+    )
+    _git(publisher, "push", "--quiet", "origin", "main")
+    current_tip = _commit(
+        publisher,
+        "LATER_MAIN",
+        "main advanced after the durable landing\n",
+        "fixture: advance main after stored tip",
+    )
+    _git(publisher, "push", "--quiet", "origin", "main")
+    _git(repo, "pull", "--quiet", "--ff-only")
+
+    activated = _run(
+        repo,
+        "success",
+        {
+            "SDLC_REPO": str(repo),
+            "ACTIVATION_BASE": base,
+            "ACTIVATION_TIP": stored_tip,
+        },
+    )
+
+    assert activated.returncode == 0, activated.stderr
+    assert activated.stdout == f"activated {base}..{stored_tip}\n"
+    assert _git(repo, "rev-parse", "HEAD") == current_tip
+    assert _git(repo, "rev-parse", "origin/main") == current_tip
+    assert _git(repo, "status", "--porcelain") == ""
+    assert (
+        deployed.read_text(encoding="utf-8")
+        == f"{current_tip} {base} {stored_tip}\n"
+    )
+
+
 @pytest.mark.parametrize("identity", ["ACTIVATION_BASE", "ACTIVATION_TIP"])
 def test_success_rejects_incomplete_activation_before_settlement(
     tmp_path: Path, identity: str
