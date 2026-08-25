@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 19
+priority: 29
 waits-on: ["botassembly/sdlc/0166"]
 ---
 # BioMCP adopts activation-aware project settlement
