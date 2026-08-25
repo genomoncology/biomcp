@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import shlex
@@ -35,6 +36,50 @@ def _run(repo: Path, script: str, environment: dict[str, str]) -> subprocess.Com
         text=True,
         check=False,
     )
+
+
+def _tasks(repo: Path, environment: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [str(PROJECT / "tasks")],
+        cwd=repo,
+        env=os.environ | environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _path_with_fetch_failures(
+    tmp_path: Path,
+    failures: list[tuple[int, str]],
+    calls: Path,
+) -> str:
+    bin_dir = tmp_path / "fetch-failure-bin"
+    bin_dir.mkdir()
+    timeout_command = shutil.which("timeout")
+    assert timeout_command is not None
+    cases = []
+    for attempt, (status, stderr) in enumerate(failures, start=1):
+        output = tmp_path / f"fetch-failure-{attempt}.stderr"
+        output.write_text(stderr, encoding="utf-8")
+        cases.append(
+            f"  {attempt}) cat {shlex.quote(str(output))} >&2; exit {status} ;;"
+        )
+    wrapper = bin_dir / "timeout"
+    wrapper.write_text(
+        "#!/bin/sh\n"
+        "count=0\n"
+        f"[ ! -f {shlex.quote(str(calls))} ] || count=$(cat {shlex.quote(str(calls))})\n"
+        "count=$((count + 1))\n"
+        f"printf '%s\\n' \"$count\" > {shlex.quote(str(calls))}\n"
+        'case "$count" in\n'
+        + "\n".join(cases)
+        + "\nesac\n"
+        + f'exec {shlex.quote(timeout_command)} "$@"\n',
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
+    return f"{bin_dir}:{os.environ['PATH']}"
 
 
 def _fixture(tmp_path: Path) -> tuple[Path, Path]:
@@ -113,6 +158,69 @@ def _clone(origin: Path, destination: Path) -> Path:
     _git(destination, "config", "user.name", "Lifecycle contract")
     _git(destination, "config", "user.email", "lifecycle@example.invalid")
     return destination
+
+
+def test_tasks_retries_an_ordinary_fetch_failure_before_scanning(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket = "sdlc/tickets/2054-transient-fetch.md"
+    _commit(
+        repo,
+        ticket,
+        "---\nflow: build\npriority: 5\n---\n# Retry a transient fetch\n",
+        "ticket: add transient fetch fixture",
+    )
+    _git(repo, "push", "--quiet", "origin", "main")
+    calls = tmp_path / "fetch-calls"
+
+    result = _tasks(
+        repo,
+        {
+            "PATH": _path_with_fetch_failures(
+                tmp_path, [(1, "connection refused\n")], calls
+            )
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+    row = json.loads(result.stdout)
+    assert (row["id"], row["ref"], row["status"]) == ("2054", ticket, "ready")
+    assert calls.read_text(encoding="utf-8").strip() == "2"
+
+
+def test_tasks_double_fetch_failure_keeps_a_bounded_final_diagnostic(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    calls = tmp_path / "fetch-calls"
+    final_line = f"final refusal\x07 {'é' * 600}"
+
+    result = _tasks(
+        repo,
+        {
+            "PATH": _path_with_fetch_failures(
+                tmp_path,
+                [
+                    (1, "first attempt failed\n"),
+                    (1, f"discard this line\n{final_line}\n\n"),
+                ],
+                calls,
+            )
+        },
+    )
+    diagnostic = result.stderr.removesuffix("\n")
+
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "final refusal " in diagnostic
+    assert "first attempt failed" not in diagnostic
+    assert "discard this line" not in diagnostic
+    assert not re.search(r"[\x00-\x1f\x7f]", diagnostic)
+    assert len(result.stderr.splitlines()) == 1
+    assert len(diagnostic.encode("utf-8")) <= 1024
+    assert calls.read_text(encoding="utf-8").strip() == "2"
 
 
 def test_before_reclaims_an_owned_orphaned_worktree(tmp_path: Path) -> None:
