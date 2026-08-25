@@ -1,7 +1,7 @@
 ---
 flow: quickfix
 priority: 26
-deps: ["1021", "1047", "1048", "1049"]
+deps: ["1021", "1047", "1048", "1049", "1056"]
 ---
 
 # Advance the development identity to dev.6
@@ -20,8 +20,9 @@ current-private references in `CHANGELOG.md`,
 and `tests/test_docs_changelog_refresh.py`. Add a truthful dev.6 changelog
 entry covering the batch — the documentation toolchain pin and silenced
 Material banner (1021), the Markdown row and block assertion binding (1047),
-the PMC3040717 stored-fixture proof-of-work routes (1048), and the supported
-test lane declaration (1049) — while preserving dev.2 through dev.5 history.
+the PMC3040717 stored-fixture proof-of-work routes (1048), the supported
+test lane declaration (1049), and the indel ID round-trip fix (1056) — while
+preserving dev.2 through dev.5 history.
 
 Ticket 1021 changes `pyproject.toml` and `uv.lock` dependency bounds; this
 ticket changes the version fields only. Land 1021 first (the `deps` above
