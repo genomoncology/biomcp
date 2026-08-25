@@ -19,7 +19,7 @@
 #      A rejected push leaves the branch and worktree standing for a human or
 #      a retry to look at.
 #   4. refresh origin/main, then fast-forward a clean registered main checkout
-#      when safe; invoke its deploy hook only when it reaches this attempt's tip
+#      when safe; invoke its deploy hook only at the expected deployment commit
 #   5. remove the worktree and its baseline sibling, then delete the branch
 #      locally and on origin
 #
@@ -50,7 +50,7 @@ checkout_left_alone() {
 }
 
 deploy_checkout() {
-	local branch status head hook
+	local expected_tip=$1 branch status head hook
 	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
 		checkout_left_alone "could not refresh origin/main"
 		return 4
@@ -75,7 +75,7 @@ deploy_checkout() {
 		checkout_left_alone "could not fast-forward main to origin/main"
 		return 4
 	fi
-	if ! head=$(git -C "$REPO" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$head" != "$TIP" ]; then
+	if ! head=$(git -C "$REPO" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$head" != "$expected_tip" ]; then
 		checkout_left_alone "checkout did not reach the requested tip"
 		return 4
 	fi
@@ -107,12 +107,12 @@ activate_only() {
 		return 1
 	fi
 	if ! origin_tip=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}' 2>/dev/null) ||
-		[ "$origin_tip" != "$TIP" ]; then
-		echo "success: origin/main does not name ACTIVATION_TIP" >&2
+		! git -C "$REPO" merge-base --is-ancestor "$TIP" "$origin_tip"; then
+		echo "success: origin/main does not contain ACTIVATION_TIP" >&2
 		return 1
 	fi
 	local activation_status
-	if deploy_checkout; then
+	if deploy_checkout "$origin_tip"; then
 		activation_status=0
 	else
 		activation_status=$?
@@ -389,7 +389,7 @@ failures=
 if [ "$DURABLE_LANDING" -eq 0 ]; then
 	CHECKOUT_NOTICE_STREAM=stdout
 fi
-if deploy_checkout; then
+if deploy_checkout "$TIP"; then
 	ACTIVATION_STATUS=0
 else
 	ACTIVATION_STATUS=$?
