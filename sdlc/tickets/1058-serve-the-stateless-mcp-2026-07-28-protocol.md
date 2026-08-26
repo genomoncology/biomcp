@@ -6,7 +6,10 @@ deps: ["1057"]
 
 # Serve the stateless MCP 2026-07-28 protocol
 
-Successor to 1057 (whose `## Deferred proofs` names this ticket). GitHub
+Successor to 1057 (whose `## Deferred proofs` names this ticket). Filed
+from `sdlc/issues/2026-08-25-the-server-does-not-implement-mcp-revision-2026-07-28.md`
+— 1057 landed the discover half and deliberately left this issue file for
+this ticket to close. GitHub
 issue #248 reported non-conformance with the 2026-07-28 revision; 1057
 implements `server/discover` with a truthful version advertisement; this
 ticket makes the server actually serve the 2026-07-28 revision and add it
