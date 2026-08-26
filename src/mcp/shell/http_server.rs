@@ -388,7 +388,7 @@ async fn modern_http_response(
         .and_then(Value::as_i64)
     {
         Some(-32601) => StatusCode::NOT_FOUND,
-        Some(-32020 | -32022 | -32602) => StatusCode::BAD_REQUEST,
+        Some(-32020 | -32022 | -32600 | -32602) => StatusCode::BAD_REQUEST,
         _ => StatusCode::OK,
     };
     Some(modern_json_response(status, response))

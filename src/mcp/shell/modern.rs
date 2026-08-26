@@ -31,10 +31,23 @@ pub(in crate::mcp::shell) fn has_protocol_metadata(request: &Value) -> bool {
 }
 
 pub(in crate::mcp::shell) async fn dispatch(request: &Value) -> Value {
-    let id = request.get("id").cloned().unwrap_or(Value::Null);
-    let Some(method) = request.get("method").and_then(Value::as_str) else {
-        return error(id, -32602, "Missing method", None);
-    };
+    let id = request
+        .get("id")
+        .filter(|id| id.is_null() || id.is_string() || id.is_number())
+        .cloned()
+        .unwrap_or(Value::Null);
+    let valid_envelope = request.as_object().is_some()
+        && request.get("jsonrpc").and_then(Value::as_str) == Some("2.0")
+        && request.get("method").is_some_and(Value::is_string)
+        && request
+            .get("id")
+            .is_none_or(|id| id.is_null() || id.is_string() || id.is_number());
+    if !valid_envelope {
+        return error(id, -32600, "Invalid Request", None);
+    }
+    let method = request["method"]
+        .as_str()
+        .expect("validated JSON-RPC method");
     let Some(params) = request.get("params").and_then(Value::as_object) else {
         return error(id, -32602, "Missing request params", None);
     };
