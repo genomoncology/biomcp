@@ -1,11 +1,11 @@
 ---
 flow: build
 priority: 24
-waits-on: ["botassembly/sdlc/0169", "botassembly/sdlc/0170", "botassembly/sdlc/0171"]
+waits-on: ["botassembly/sdlc/0169", "botassembly/sdlc/0170", "botassembly/sdlc/0171", "botassembly/sdlc/0176"]
 ---
 # BioMCP adopts the stabilized settlement scripts
 
-SDLC 0169 corrects withdrawal liveness, while SDLC 0170 and 0171 preserve activation across teardown failure and an interrupted landing. BioMCP carries copied `failure` and `success` scripts, so its deployed checkout must adopt the complete settled contract after all three changes land.
+SDLC 0169 corrects withdrawal liveness, SDLC 0170 and 0171 preserve activation across teardown failure and an interrupted landing, and SDLC 0176 keeps a retryable fault's candidate aligned with its resumed sealed stages. BioMCP carries copied `failure` and `success` scripts, so its deployed checkout must adopt the complete settled contract after all four changes land.
 
 Done, observably: all five `sdlc/project` files match the deployed SDLC canonical bytes and executable modes; propagation proves each replaced file is a historical canonical version; consumer checks cover the changed withdrawal and activation outcomes without changing BioMCP behavior; and Doctor reports no lifecycle-script drift afterward.
 
