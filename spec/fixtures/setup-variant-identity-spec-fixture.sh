@@ -50,6 +50,11 @@ GRID1_GRCH37_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch37_202
 GRID1_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_grid1_grch38_20260806.json").read_bytes()
 PTEN_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_pten_grch38_20260806.json").read_bytes()
 PTEN_DELETION_GRCH38_RESPONSE = (ROOT / "testdata/sources/myvariant/get_pten_deletion_grch38_20260806.json").read_bytes()
+SMARCA4_REPEAT_RESPONSE = json.dumps({
+    "_id": "chr19:g.11106928AAG[1]",
+    "dbsnp": {"rsid": "rs876657378"},
+    "clinvar": {"gene": {"symbol": "SMARCA4"}},
+}).encode("utf-8")
 MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
 CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
@@ -109,10 +114,16 @@ class Handler(BaseHTTPRequestHandler):
                 return
             send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
             return
+        if parsed.path == "/v1/variant/chr19:g.11106928AAG%5B1%5D":
+            send_json(self, 200, SMARCA4_REPEAT_RESPONSE)
+            return
 
         if parsed.path == "/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
             expected_proteins = ('dbnsfp.hgvsp:"p.M1783I"', 'dbnsfp.hgvsp:"p.M16I"')
+            if query == "dbsnp.rsid:rs876657378":
+                send_json(self, 200, {"total": 1, "hits": [json.loads(SMARCA4_REPEAT_RESPONSE)]})
+                return
             if "dbnsfp.genename:BRCA1" in query and any(
                 protein in query for protein in expected_proteins
             ):

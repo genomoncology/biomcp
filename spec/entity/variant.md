@@ -215,6 +215,72 @@ NC_000010.11:87925511:G:A
 NC_000010.11:g.87925512del'
 ```
 
+## Genomic indel round trips
+
+A variant card resolved from an rsID keeps MyVariant.info's repeat-notation
+identity in every variant follow-up. The same printed identity is accepted as a
+direct lookup and resolves back to that source record.
+
+```bash run id=indel-card-follow-ups
+card="$(biomcp --no-cache get variant rs876657378)"
+for command in \
+  'get variant "chr19:g.11106928AAG[1]" civic' \
+  'biomcp get variant "chr19:g.11106928AAG[1]" all' \
+  'biomcp variant trials "chr19:g.11106928AAG[1]"' \
+  'biomcp variant articles "chr19:g.11106928AAG[1]"'
+do
+  printf '%s\n' "$card" | grep -Fq "$command"
+done
+printf 'all indel follow-ups preserve the fetchable ID\n'
+```
+
+```text expect=indel-card-follow-ups
+all indel follow-ups preserve the fetchable ID
+```
+
+```bash
+biomcp --json --no-cache get variant 'chr19:g.11106928AAG[1]' \
+  | jq '{id, rsid}' \
+  | mustmatch like '{"id":"chr19:g.11106928AAG[1]","rsid":"rs876657378"}'
+```
+
+## Indel grammar surfaces agree
+
+The CLI help, invalid-input recovery text, and user guide advertise the same
+representative genomic indel forms accepted by the exact-ID parser.
+
+```bash run id=indel-grammar-surfaces
+help="$(biomcp get variant --help)"
+error="$(biomcp get variant not-a-variant 2>&1 || true)"
+guide="$(cat ../../docs/user-guide/variant.md)"
+for surface in help error guide; do
+  text="${!surface}"
+  missing=false
+  for form in \
+    'chr19:g.11106928AAG[1]' \
+    'chr2:g.47641567_47641569del' \
+    'chr19:g.11106928delAAG' \
+    'chr19:g.11106928dup' \
+    'chr2:g.47641567_47641568insA' \
+    'chr2:g.47641567_47641569inv' \
+    'chr2:g.47641567_47641569delinsA'
+  do
+    grep -Fq "$form" <<<"$text" || missing=true
+  done
+  if $missing; then
+    printf '%s is missing genomic indel forms\n' "$surface"
+  else
+    printf '%s lists genomic indel forms\n' "$surface"
+  fi
+done
+```
+
+```text expect=indel-grammar-surfaces
+help lists genomic indel forms
+error lists genomic indel forms
+guide lists genomic indel forms
+```
+
 ## Captured CancerHotspots Recurrence
 
 The same routine fixture replays observed MyVariant identity searches and

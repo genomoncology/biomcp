@@ -96,6 +96,48 @@ fn parse_variant_id_examples() {
 }
 
 #[test]
+fn parse_variant_id_accepts_genomic_indel_and_repeat_forms() {
+    let accepted = [
+        "chr19:g.11106928AAG[1]",
+        "chr2:g.47641567_47641569del",
+        "chr19:g.11106928delAAG",
+        "chr19:g.11106928dup",
+        "chr2:g.47641567_47641568insA",
+        "chr2:g.47641567_47641569inv",
+        "chr2:g.47641567_47641569delinsA",
+        "chr19:g.11106928_11106930AAG[1]",
+    ];
+
+    for id in accepted {
+        match parse_variant_id(id) {
+            Ok(VariantIdFormat::HgvsGenomic(parsed)) => assert_eq!(parsed, id),
+            other => panic!("expected genomic HGVS support for {id}, got {other:?}"),
+        }
+    }
+    assert!(parse_variant_id("chr19:g.11106928AAG[1_3]").is_err());
+}
+
+#[test]
+fn unsupported_variant_error_lists_supported_indel_forms() {
+    let message = parse_variant_id("not-a-variant").unwrap_err().to_string();
+
+    for example in [
+        "chr19:g.11106928AAG[1]",
+        "chr2:g.47641567_47641569del",
+        "chr19:g.11106928delAAG",
+        "chr19:g.11106928dup",
+        "chr2:g.47641567_47641568insA",
+        "chr2:g.47641567_47641569inv",
+        "chr2:g.47641567_47641569delinsA",
+    ] {
+        assert!(
+            message.contains(example),
+            "supported-format guidance omitted {example}: {message}"
+        );
+    }
+}
+
+#[test]
 fn parse_variant_id_egfr_l858r() {
     match parse_variant_id("EGFR L858R").unwrap() {
         VariantIdFormat::GeneProteinChange { gene, change } => {

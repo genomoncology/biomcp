@@ -132,6 +132,65 @@ fn variant_markdown_next_commands_quote_variant_ids_with_spaces() {
 }
 
 #[test]
+fn rsid_indel_card_only_prints_variant_ids_accepted_by_the_parser() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "chr19:g.11106928AAG[1]",
+        "rsid": "rs876657378",
+        "gene": "SMARCA4"
+    }))
+    .expect("rsID-resolved indel should deserialize");
+
+    let markdown = variant_markdown(&variant, &[]).expect("rendered indel card");
+    let mut checked_routes = std::collections::BTreeSet::new();
+
+    let mut check_command = |command: &str| {
+        let argv = shlex::split(command)
+            .unwrap_or_else(|| panic!("rendered command is not shell-safe: {command}"));
+        let (route, id) = match argv.as_slice() {
+            [biomcp, get, variant, id, ..]
+                if biomcp == "biomcp" && get == "get" && variant == "variant" =>
+            {
+                ("get", id)
+            }
+            [biomcp, variant, subcommand, id, ..]
+                if biomcp == "biomcp"
+                    && variant == "variant"
+                    && matches!(subcommand.as_str(), "trials" | "articles" | "oncokb") =>
+            {
+                (subcommand.as_str(), id)
+            }
+            _ => return,
+        };
+        checked_routes.insert(route.to_string());
+        assert!(
+            crate::entities::variant::parse_variant_id(id).is_ok(),
+            "card printed an unreadable variant ID in `{command}`"
+        );
+    };
+
+    for line in markdown.lines() {
+        if let Some(start) = line.find("biomcp ") {
+            let command = line[start..]
+                .split_once("   -")
+                .map_or(&line[start..], |(command, _)| command);
+            check_command(command.trim());
+        }
+        for inline in line.split('`').skip(1).step_by(2) {
+            if inline.starts_with("get variant ") || inline.starts_with("variant ") {
+                check_command(&format!("biomcp {inline}"));
+            }
+        }
+    }
+
+    for route in ["get", "trials", "articles"] {
+        assert!(
+            checked_routes.contains(route),
+            "indel card did not exercise the {route} follow-up producer"
+        );
+    }
+}
+
+#[test]
 fn variant_markdown_renders_compact_clinvar_and_population_fields() {
     let variant: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr7:g.140453136A>T",
