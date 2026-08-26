@@ -33,31 +33,34 @@ where
             anyhow::bail!(super::mcp_stdio_guidance());
         }
 
-        let request: Value = match serde_json::from_slice(&frame) {
+        // rmcp accepts a UTF-8 BOM on stdio, so preserve that compatibility
+        // while retaining the original bytes for initialize replay.
+        let payload = frame.strip_prefix(b"\xef\xbb\xbf").unwrap_or(&frame);
+        let request: Value = match serde_json::from_slice(payload) {
             Ok(request) => request,
             Err(_) => {
-                write_response(
-                    &mut writer,
-                    &json!({
-                        "jsonrpc": "2.0",
-                        "id": null,
-                        "error": {"code": -32700, "message": "Parse error"}
-                    }),
-                )
-                .await?;
+                write_error(&mut writer, None, -32700, "Parse error").await?;
                 continue;
             }
         };
         let Some(object) = request.as_object() else {
-            write_invalid_request(&mut writer, Value::Null).await?;
+            write_invalid_request(&mut writer, None).await?;
             continue;
         };
-        let id = object.get("id").cloned();
+        let id = match object.get("id") {
+            Some(Value::String(id)) => Some(Value::String(id.clone())),
+            Some(Value::Number(id)) if id.as_i64().is_some() => Some(Value::Number(id.clone())),
+            Some(_) => {
+                write_invalid_request(&mut writer, None).await?;
+                continue;
+            }
+            None => None,
+        };
         let method = object.get("method").and_then(Value::as_str);
         let valid =
             object.get("jsonrpc").and_then(Value::as_str) == Some("2.0") && method.is_some();
         if !valid {
-            write_invalid_request(&mut writer, id.unwrap_or(Value::Null)).await?;
+            write_invalid_request(&mut writer, id).await?;
             continue;
         }
 
@@ -69,17 +72,18 @@ where
         };
         if method == Some("server/discover") {
             write_response(&mut writer, &discovery_response(id)).await?;
-        } else {
+        } else if method == Some("ping") {
             write_response(
                 &mut writer,
-                &json!({
-                    "jsonrpc": "2.0",
-                    "id": id,
-                    "error": {
-                        "code": -32602,
-                        "message": "MCP initialization is required before this request"
-                    }
-                }),
+                &json!({"jsonrpc": "2.0", "id": id, "result": {}}),
+            )
+            .await?;
+        } else {
+            write_error(
+                &mut writer,
+                Some(id),
+                -32602,
+                "MCP initialization is required before this request",
             )
             .await?;
         }
@@ -106,19 +110,30 @@ fn discovery_response(id: Value) -> Value {
     })
 }
 
-async fn write_invalid_request<W>(writer: &mut W, id: Value) -> anyhow::Result<()>
+async fn write_invalid_request<W>(writer: &mut W, id: Option<Value>) -> anyhow::Result<()>
 where
     W: AsyncWrite + Unpin,
 {
-    write_response(
-        writer,
-        &json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "error": {"code": -32600, "message": "Invalid Request"}
-        }),
-    )
-    .await
+    write_error(writer, id, -32600, "Invalid Request").await
+}
+
+async fn write_error<W>(
+    writer: &mut W,
+    id: Option<Value>,
+    code: i32,
+    message: &str,
+) -> anyhow::Result<()>
+where
+    W: AsyncWrite + Unpin,
+{
+    let mut response = json!({
+        "jsonrpc": "2.0",
+        "error": {"code": code, "message": message}
+    });
+    if let Some(id) = id {
+        response["id"] = id;
+    }
+    write_response(writer, &response).await
 }
 
 async fn write_response<W>(writer: &mut W, response: &Value) -> anyhow::Result<()>
