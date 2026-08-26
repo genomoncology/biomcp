@@ -186,6 +186,19 @@ fn search_adverse_event_device_rejects_positional_drug_alias() {
 }
 
 #[test]
+fn search_plan_count_without_source_uses_faers() {
+    let args = adverse_event_search_args(&["pembrolizumab", "--count", "reaction"]);
+
+    let plan = super::dispatch::search_plan_from_args(&args)
+        .expect("a count aggregation should select FAERS");
+
+    assert_eq!(
+        plan.source_filter,
+        crate::entities::adverse_event::AdverseEventSourceFilter::Faers
+    );
+}
+
+#[test]
 fn search_plan_rejects_count_for_vaers_source() {
     for count in ["reaction", ""] {
         let cli = Cli::try_parse_from([
@@ -217,7 +230,7 @@ fn search_plan_rejects_count_for_vaers_source() {
             .expect_err("vaers search should reject count");
         assert!(
             err.to_string()
-                .contains("--count requires explicit --source faers")
+                .contains("--source vaers does not support: --count")
         );
     }
 }
@@ -321,10 +334,6 @@ fn search_plan_rejects_every_inapplicable_route_filter() {
         (
             &["MMR vaccine", "--source", "vaers", "--offset", "1"],
             "--offset",
-        ),
-        (
-            &["aspirin", "--count", "reaction"],
-            "--count requires explicit --source faers",
         ),
         (
             &[

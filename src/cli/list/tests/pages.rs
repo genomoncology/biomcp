@@ -122,6 +122,15 @@ fn list_variant_json_keeps_helper_commands_discoverable() {
 }
 
 #[test]
+fn list_adverse_event_documents_source_free_count_invocation() {
+    let out = render(Some("adverse-event")).expect("list adverse-event should render");
+
+    assert!(out.lines().any(|line| {
+        line.starts_with("- `search adverse-event --drug <name> --count <field>`")
+    }));
+}
+
+#[test]
 fn list_root_primary_discovery_lines_stay_terminal_friendly() {
     let out = render(None).expect("list root should render");
     let overwide: Vec<_> = out

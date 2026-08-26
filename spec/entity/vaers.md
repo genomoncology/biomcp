@@ -62,6 +62,7 @@ source, instead of being silently ignored.
 
 ```bash
 ../../tools/biomcp-ci search adverse-event --drug 'COVID-19 vaccine' --source vaers --outcome death 2>&1 | mustmatch like '--source vaers does not support: --outcome'
+../../tools/biomcp-ci search adverse-event --drug 'COVID-19 vaccine' --source vaers --count reaction 2>&1 | mustmatch like '--source vaers does not support: --count'
 ```
 
 ## FAERS Count Field Validation
@@ -80,7 +81,7 @@ requested field without pinning volatile bucket values or counts.
 
 ```bash
 set -o pipefail
-../../tools/biomcp-ci --json search adverse-event --drug pembrolizumab --source faers --count reaction --limit 1 \
+../../tools/biomcp-ci --json search adverse-event --drug pembrolizumab --count reaction --limit 1 \
   | jq '.count_field == "reaction" and (.buckets | length) > 0' \
   | mustmatch 'true'
 ```
