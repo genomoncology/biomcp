@@ -41,13 +41,14 @@ recommendations <id>` — not a new pattern:
   compact by default, with `_meta.next_commands`, evidence URLs, and
   pagination, like every other list surface.
 - `biomcp article authors <id>` pivots from a paper (any id form the
-  article family already accepts) to its author records — the reverse
-  pivot, closing the paper-to-person gap.
+  article family already accepts — settled, do not narrow) to its author
+  records — the reverse pivot, closing the paper-to-person gap.
 - `get author <id>` gains truthful `next_commands` pointing at the new
   pivot, so the card finally leads somewhere.
-- Command naming (`author papers` vs `get author papers`) and any section
-  split are design-stage decisions; the grammar precedent above is the
-  default, not a ruling.
+- **Naming is settled (2026-08-26):** `author papers` and `article
+  authors`, locked to the article-citations grammar above. The design
+  stage does not reopen naming; a section split remains a design-stage
+  choice.
 
 ## Boundary for the design stage — do not rebuild what exists
 
@@ -74,24 +75,26 @@ convention as today; no local identity resolution, no same-name merging.
 These are live today with an optional key and are the contract the design
 should wrap (`$S2_API_KEY` is the existing env var):
 
-An author's papers — the forward pivot:
+An author's papers — the forward pivot (`<s2-author-id>` is the
+Semantic Scholar authorId, the same id `get author semanticscholar:<id>`
+resolves today):
 
 ```bash
-curl 'https://api.semanticscholar.org/graph/v1/author/50978539/papers?fields=title,year,venue,externalIds,abstract,openAccessPdf,authors&limit=50' -H "x-api-key: $S2_API_KEY"
+curl 'https://api.semanticscholar.org/graph/v1/author/$S2_AUTHOR_ID/papers?fields=title,year,venue,externalIds,abstract,openAccessPdf,authors&limit=50' -H "x-api-key: $S2_API_KEY"
 ```
 
 Paper-to-authors — the reverse pivot (works from an arXiv id; PMID and DOI
 forms exist too):
 
 ```bash
-curl 'https://api.semanticscholar.org/graph/v1/paper/arXiv:2110.01406?fields=title,year,authors.name,authors.affiliations,authors.paperCount,authors.hIndex' -H "x-api-key: $S2_API_KEY"
+curl 'https://api.semanticscholar.org/graph/v1/paper/arXiv:$ARXIV_ID?fields=title,year,authors.name,authors.affiliations,authors.paperCount,authors.hIndex' -H "x-api-key: $S2_API_KEY"
 ```
 
 The OpenAlex complement, for the follow-up ticket (no signup; the mailto
 is the whole auth):
 
 ```bash
-curl 'https://api.openalex.org/authors?search=Renato%20Umeton&mailto=ian@imaurer.com'
+curl 'https://api.openalex.org/authors?search=<author-name>&mailto=<contact-email>'
 ```
 
 ## Out of scope
@@ -107,5 +110,7 @@ curl 'https://api.openalex.org/authors?search=Renato%20Umeton&mailto=ian@imaurer
 - Compact cards matter here more than usual: author paper lists run long,
   and the v0.8.16 token measurements showed compact output is the property
   agents actually consume.
-- Filed as a draft pending Ian's shape discussion (including Renato's take
-  on the M3 angle); promotion is approval.
+- Filed as a draft pending BioMCP team review before promotion; promotion
+  is approval. The two open review questions are settled in this draft —
+  naming (above) and id forms (any form the article family accepts) — so
+  review should focus on the boundary and the contract examples.
