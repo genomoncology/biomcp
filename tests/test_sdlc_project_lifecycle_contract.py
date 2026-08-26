@@ -49,6 +49,30 @@ def _tasks(repo: Path, environment: dict[str, str]) -> subprocess.CompletedProce
     )
 
 
+def _path_with_blocked_worktree_removal(tmp_path: Path, tree: Path) -> str:
+    bin_dir = tmp_path / "blocked-worktree-removal-bin"
+    bin_dir.mkdir()
+    git_command = shutil.which("git")
+    rm_command = shutil.which("rm")
+    assert git_command is not None
+    assert rm_command is not None
+    (bin_dir / "git").write_text(
+        "#!/bin/sh\n"
+        'if [ "$1" = -C ] && [ "$3" = worktree ] && [ "$4" = remove ]; then exit 1; fi\n'
+        f'exec {shlex.quote(git_command)} "$@"\n',
+        encoding="utf-8",
+    )
+    (bin_dir / "rm").write_text(
+        "#!/bin/sh\n"
+        f'if [ "$1" = -rf ] && [ "$2" = {shlex.quote(str(tree))} ]; then exit 1; fi\n'
+        f'exec {shlex.quote(rm_command)} "$@"\n',
+        encoding="utf-8",
+    )
+    (bin_dir / "git").chmod(0o755)
+    (bin_dir / "rm").chmod(0o755)
+    return f"{bin_dir}:{os.environ['PATH']}"
+
+
 def _path_with_fetch_failures(
     tmp_path: Path,
     failures: list[tuple[int, str]],
@@ -594,3 +618,155 @@ def test_success_rejects_incomplete_activation_before_settlement(
     assert tree.exists()
     assert _git(tree, "rev-parse", "HEAD") == candidate
     assert _git(repo, "rev-parse", f"ticket/{ticket_id}") == candidate
+
+
+def test_failure_resolves_the_withdrawal_bot_command_through_path(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1059"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    bot = _bot(tmp_path)
+
+    settled = _run(
+        repo,
+        "failure",
+        {
+            "TICKET_ID": ticket_id,
+            "SETTLEMENT": "withdrawn",
+            "BOT_CMD": "bot",
+            "PATH": f"{bot.parent}:{os.environ['PATH']}",
+        },
+    )
+
+    assert settled.returncode == 0, settled.stderr
+    assert settled.stdout == f"withdrawal-cleaned {ticket_id}\n"
+    assert not tree.exists()
+
+
+def test_success_keeps_pending_activation_authoritative_after_teardown_fails(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1059"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    base = _git(repo, "rev-parse", "HEAD")
+    tip = _commit(
+        tree,
+        "LANDED",
+        "this durable landing still needs checkout activation\n",
+        "candidate: await activation after teardown",
+    )
+    (repo / "LOCAL").write_text("keep this checkout dirty\n", encoding="utf-8")
+
+    settled = _run(
+        repo,
+        "success",
+        {
+            "TICKET_ID": ticket_id,
+            "ATTEMPT_DIR": str(tree),
+            "SDLC_REPO": str(repo),
+            "SDLC_BRANCH": f"ticket/{ticket_id}",
+            "PATH": _path_with_blocked_worktree_removal(tmp_path, tree),
+        },
+    )
+
+    assert settled.returncode == 4
+    assert settled.stdout == f"activation-pending {base}..{tip}\n"
+    assert f"settlement failed: worktree removal {tree}" in settled.stderr
+    assert _git(repo, "rev-parse", "origin/main") == tip
+    assert tree.exists()
+
+
+def test_success_deploys_an_interrupted_landing_after_main_advances(
+    tmp_path: Path,
+) -> None:
+    repo, origin = _fixture(tmp_path)
+    deployed = tmp_path / "interrupted-landing-deployed"
+    hook = repo / "sdlc" / "scripts" / "deploy"
+    hook.write_text(
+        "#!/bin/sh\n"
+        f"git rev-parse HEAD > {shlex.quote(str(deployed))}\n",
+        encoding="utf-8",
+    )
+    hook.chmod(0o755)
+    _git(repo, "add", "sdlc/scripts/deploy")
+    _git(repo, "commit", "--quiet", "-m", "fixture: add deploy hook")
+    _git(repo, "push", "--quiet", "origin", "main")
+    ticket_id = "1059"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    landed_tip = _commit(
+        tree,
+        "LANDED",
+        "the push completed before settlement stopped\n",
+        "candidate: survive interrupted settlement",
+    )
+    _git(tree, "push", "--quiet", "origin", f"{landed_tip}:main")
+    publisher = _clone(origin, tmp_path / "post-interruption-publisher")
+    current_tip = _commit(
+        publisher,
+        "LATER_MAIN",
+        "main advanced before settlement retried\n",
+        "fixture: advance main after interruption",
+    )
+    _git(publisher, "push", "--quiet", "origin", "main")
+
+    settled = _run(
+        repo,
+        "success",
+        {
+            "TICKET_ID": ticket_id,
+            "ATTEMPT_DIR": str(tree),
+            "SDLC_REPO": str(repo),
+            "SDLC_BRANCH": f"ticket/{ticket_id}",
+        },
+    )
+
+    assert settled.returncode == 0, settled.stderr
+    assert deployed.read_text(encoding="utf-8").strip() == current_tip
+    assert _git(repo, "rev-parse", "HEAD") == current_tip
+    assert _git(repo, "merge-base", "--is-ancestor", landed_tip, current_tip) == ""
+    assert not tree.exists()
+
+
+def test_failure_keeps_a_ready_fault_candidate_for_the_retry(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1059"
+    prepared, tree = _before(repo, tmp_path, ticket_id)
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree is not None
+    sealed_tip = _commit(
+        tree,
+        "SEALED_CODE",
+        "the retry must resume this candidate\n",
+        "code: seal candidate output",
+    )
+
+    settled = _run(
+        repo,
+        "failure",
+        {
+            "TICKET_ID": ticket_id,
+            "ATTEMPT_DIR": str(tree),
+            "RUN_CAUSE": "fault",
+            "SDLC_BRANCH": f"ticket/{ticket_id}",
+            "SDLC_REPO": str(repo),
+            "SETTLEMENT": "ready",
+        },
+    )
+    retried, replacement = _before(repo, tmp_path, ticket_id)
+
+    assert settled.returncode == 0, settled.stderr
+    assert retried.returncode == 0, retried.stderr
+    assert replacement == tree
+    assert tree.exists()
+    assert _git(tree, "rev-parse", "HEAD") == sealed_tip
+    assert _git(repo, "rev-parse", f"ticket/{ticket_id}") == sealed_tip
