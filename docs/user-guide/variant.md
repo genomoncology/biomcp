@@ -9,6 +9,13 @@ BioMCP supports multiple input forms:
 
 - rsID: `rs113488022`
 - HGVS genomic: `chr7:g.140453136A>T`
+- exact-copy repeat: `chr19:g.11106928AAG[1]`
+- range deletion: `chr2:g.47641567_47641569del`
+- sequence-qualified deletion: `chr19:g.11106928delAAG`
+- duplication: `chr19:g.11106928dup`
+- insertion: `chr2:g.47641567_47641568insA`
+- inversion: `chr2:g.47641567_47641569inv`
+- delins: `chr2:g.47641567_47641569delinsA`
 - build-qualified genomic: `GRCh38:chr7:g.140753336A>T` or `hg19:chr7:g.140453136A>T`
 - versioned RefSeq HGVS: `NC_000010.11:g.87925512G>A`
 - VCF-like: `chr10:87925512:G:A`

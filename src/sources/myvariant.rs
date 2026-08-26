@@ -708,6 +708,7 @@ impl MyVariantClient {
             ));
         }
 
+        let id = id.replace('[', "%5B").replace(']', "%5D");
         let plan = RequestPlan::get(format!("variant/{id}")).query("fields", MYVARIANT_FIELDS_GET);
         Ok(match genome_build {
             Some(build) => plan.query("assembly", build.provider_value()),

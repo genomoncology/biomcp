@@ -22,20 +22,33 @@ pub(crate) fn is_rsid(value: &str) -> bool {
     rsid_re().is_match(value.trim())
 }
 
+const CHROMOSOME_PATTERN: &str = r"chr(?:[1-9]|1[0-9]|2[0-2]|X|Y)";
+const GENOMIC_CHANGE_PATTERN: &str = concat!(
+    r"(?:[ACGT]>[ACGT]",
+    r"|(?:_\d+)?del(?:[ACGT]+)?",
+    r"|(?:_\d+)?dup(?:[ACGT]+)?",
+    r"|_\d+ins[ACGT]+",
+    r"|_\d+inv",
+    r"|(?:_\d+)?delins[ACGT]+",
+    r"|(?:_\d+)?[ACGT]+\[[1-9]\d*\])",
+);
+
 fn hgvs_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"^(chr(?:[1-9]|1[0-9]|2[0-2]|X|Y):g\.\d+(?:[ACGT]>[ACGT]|del))$")
-            .expect("valid regex")
+        Regex::new(&format!(
+            r"^({CHROMOSOME_PATTERN}:g\.\d+{GENOMIC_CHANGE_PATTERN})$"
+        ))
+        .expect("valid regex")
     })
 }
 
 fn coordinate_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(
-            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?(chr(?:[1-9]|1[0-9]|2[0-2]|X|Y)):g\.(\d+)([ACGT]>[ACGT]|del)$",
-        )
+        Regex::new(&format!(
+            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?({CHROMOSOME_PATTERN}):g\.(\d+)({GENOMIC_CHANGE_PATTERN})$"
+        ))
         .expect("valid regex")
     })
 }
@@ -138,8 +151,10 @@ pub(crate) fn normalize_genomic_coordinate(
         }
         let change = if change.eq_ignore_ascii_case("del") {
             "del".to_string()
-        } else {
+        } else if change.len() == 3 && change.as_bytes()[1] == b'>' {
             change.to_ascii_uppercase()
+        } else {
+            change.to_string()
         };
         Ok(Some(NormalizedGenomicCoordinate {
             id: format!(
@@ -435,6 +450,7 @@ Use `biomcp search variant \"{id}\"` to search, or pass an exact rsID/HGVS/gene+
 Supported formats:\n\
 - rsID: rs113488022\n\
 - HGVS genomic: chr7:g.140453136A>T\n\
+- Genomic indels: exact-copy repeat, range deletion, sequence-qualified deletion, duplication, insertion, inversion, and delins\n\
 - Transcript HGVS: NM_004333.6:c.1799T>A\n\
 - Gene + protein: BRAF V600E, BRAF p.Val600Glu"
     )))
@@ -831,9 +847,7 @@ impl RequestedVariantIdentity {
                     ..Self::default()
                 })
             }
-            _ => Err(BioMcpError::InvalidArgument(format!(
-                "Unrecognized variant format: '{supplied}'"
-            ))),
+            _ => Err(parse_variant_id(supplied).unwrap_err()),
         }
     }
 

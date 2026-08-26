@@ -612,6 +612,9 @@ EXAMPLES:
   biomcp get variant \"BRAF p.Val600Glu\"
   biomcp get variant 'NM_004333.6:c.1799T>A'
 
+Chromosome HGVS accepts exact-copy repeats, range deletions,
+sequence-qualified deletions, duplications, insertions, inversions, and delins.
+
 Shorthand like \"PTPN22 620W\" or \"R620W\" should go through `biomcp search variant`.
 
 See also: biomcp list variant")]

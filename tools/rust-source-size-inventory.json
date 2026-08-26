@@ -130,9 +130,14 @@
     },
     {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1291,
+      "baseline_lines": 1305,
       "floor_lines": 1291,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1056",
+        "delta": 14,
+        "reason": "Shared genomic HGVS suffix grammar and indel guidance keep emitted complex variant IDs parseable.",
+        "removal_condition": "Remove this allowance when variant identity resolution is decomposed."
+      }
     },
     {
       "path": "src/error.rs",
@@ -227,9 +232,14 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1033,
+      "baseline_lines": 1034,
       "floor_lines": 1033,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1056",
+        "delta": 1,
+        "reason": "MyVariant document paths encode repeat-notation brackets for exact-ID lookup.",
+        "removal_condition": "Remove this allowance when MyVariant request planning is decomposed."
+      }
     },
     {
       "path": "src/sources/opentargets.rs",
