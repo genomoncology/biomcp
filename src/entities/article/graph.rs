@@ -213,7 +213,7 @@ pub async fn authors(id: &str) -> Result<ArticleAuthorsResult, BioMcpError> {
     let europe = EuropePmcClient::new()?;
     let lookup_id = resolve_semantic_scholar_input_id(id, &europe).await?;
     let paper = client
-        .paper_detail(&lookup_id)
+        .paper_authors(&lookup_id)
         .await
         .map_err(sanitized_provider_error)?;
     let article = related_paper_from_semantic_scholar(&paper);

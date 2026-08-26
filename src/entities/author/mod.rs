@@ -170,13 +170,23 @@ pub(crate) fn nonblank(value: Option<String>) -> Option<String> {
 }
 
 pub(crate) fn sanitized_provider_error(err: BioMcpError) -> BioMcpError {
+    sanitized_provider_error_with_message(
+        err,
+        "Semantic Scholar author data is unavailable; retry later",
+    )
+}
+
+pub(crate) fn sanitized_provider_error_with_message(
+    err: BioMcpError,
+    message: &'static str,
+) -> BioMcpError {
     match err {
         BioMcpError::WithSourceContext { context, source } => {
-            sanitized_provider_error(*source).with_source_context(context)
+            sanitized_provider_error_with_message(*source, message).with_source_context(context)
         }
         _ => BioMcpError::Api {
             api: "semantic_scholar".into(),
-            message: "Semantic Scholar author data is unavailable; retry later".into(),
+            message: message.into(),
         },
     }
 }

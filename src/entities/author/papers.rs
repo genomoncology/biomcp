@@ -1,6 +1,7 @@
 use super::*;
 use crate::entities::article::ArticleRelatedPaper;
 use crate::error::BioMcpError;
+use crate::next_command::NextCommand;
 use crate::sources::semantic_scholar::SemanticScholarAuthorPaper;
 use serde::Serialize;
 
@@ -101,7 +102,12 @@ fn map_paper(
         } else {
             id.to_string()
         };
-        next_commands.push(format!("biomcp get article {id}"));
+        next_commands.push(
+            NextCommand::biomcp()
+                .args(["get", "article"])
+                .arg(id)
+                .render_shell(),
+        );
     }
     Some(ArticleRelatedPaper {
         paper_id: Some(paper_id),
@@ -112,4 +118,28 @@ fn map_paper(
         journal: nonblank(paper.venue),
         year: paper.year,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn provider_article_ids_are_shell_quoted_in_next_commands() {
+        let paper = SemanticScholarAuthorPaper {
+            paper_id: Some("0123456789abcdef0123456789abcdef01234567".into()),
+            external_ids: Some(serde_json::Map::from_iter([(
+                "DOI".into(),
+                serde_json::json!("10/example;echo unsafe"),
+            )])),
+            title: Some("Safe title".into()),
+            ..Default::default()
+        };
+        let mut commands = Vec::new();
+        let mut evidence = Vec::new();
+
+        map_paper(paper, &mut commands, &mut evidence).expect("valid paper");
+
+        assert_eq!(commands, ["biomcp get article \"10/example;echo unsafe\""]);
+    }
 }

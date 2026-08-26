@@ -13,7 +13,9 @@ const SEMANTIC_SCHOLAR_BASE: &str = "https://api.semanticscholar.org";
 const SEMANTIC_SCHOLAR_API: &str = "semantic_scholar";
 const SEMANTIC_SCHOLAR_BASE_ENV: &str = "BIOMCP_S2_BASE";
 const SEMANTIC_SCHOLAR_DOCS_URL: &str = "https://www.semanticscholar.org/product/api";
-const GRAPH_PAPER_FIELDS: &str = "paperId,externalIds,title,venue,year,tldr,citationCount,influentialCitationCount,referenceCount,isOpenAccess,openAccessPdf,authors.authorId,authors.name,authors.affiliations,authors.paperCount,authors.citationCount,authors.hIndex";
+const GRAPH_PAPER_FIELDS: &str = "paperId,externalIds,title,venue,year,tldr,citationCount,influentialCitationCount,referenceCount,isOpenAccess,openAccessPdf";
+const ARTICLE_AUTHOR_FIELDS: &str =
+    "paperId,externalIds,title,venue,year,authors.authorId,authors.name,authors.affiliations";
 const BATCH_PAPER_FIELDS: &str = "paperId,externalIds,title,venue,year";
 const BATCH_PAPER_COMPACT_FIELDS: &str =
     "paperId,externalIds,title,venue,year,tldr,citationCount,influentialCitationCount";
@@ -299,22 +301,45 @@ impl SemanticScholarClient {
 }
 
 impl SemanticScholarClient {
-    pub(crate) fn paper_detail_plan(
+    fn paper_detail_plan_with_fields(
         id: &str,
+        fields: &'static str,
         api_key: Option<&str>,
     ) -> Result<RequestPlan, BioMcpError> {
         let id = validate_paper_id(id)?;
         Ok(with_s2_api_key(
             RequestPlan::get(format!("graph/v1/paper/{}", encode_path_segment(id)))
-                .query("fields", GRAPH_PAPER_FIELDS),
+                .query("fields", fields),
             api_key,
         ))
+    }
+
+    pub(crate) fn paper_detail_plan(
+        id: &str,
+        api_key: Option<&str>,
+    ) -> Result<RequestPlan, BioMcpError> {
+        Self::paper_detail_plan_with_fields(id, GRAPH_PAPER_FIELDS, api_key)
+    }
+
+    async fn paper_detail_with_fields(
+        &self,
+        id: &str,
+        fields: &'static str,
+    ) -> Result<SemanticScholarPaper, BioMcpError> {
+        let plan = Self::paper_detail_plan_with_fields(id, fields, self.api_key.as_deref())?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.send_json(req).await
     }
 
     pub async fn paper_detail(&self, id: &str) -> Result<SemanticScholarPaper, BioMcpError> {
         let plan = Self::paper_detail_plan(id, self.api_key.as_deref())?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.send_json(req).await
+    }
+
+    pub async fn paper_authors(&self, id: &str) -> Result<SemanticScholarPaper, BioMcpError> {
+        self.paper_detail_with_fields(id, ARTICLE_AUTHOR_FIELDS)
+            .await
     }
 
     pub async fn paper_batch(

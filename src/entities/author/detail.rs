@@ -93,7 +93,7 @@ fn contract_error() -> crate::error::BioMcpError {
 }
 
 fn sanitized_detail_error(err: crate::error::BioMcpError) -> crate::error::BioMcpError {
-    sanitized_provider_error(err)
+    sanitized_provider_error_with_message(err, "author detail is unavailable; retry later")
 }
 
 #[cfg(test)]
