@@ -140,7 +140,7 @@ pub(super) fn search_plan_from_args(
         "--drug",
     )?;
     let query_type = AdverseEventQueryType::from_flag(&args.r#type)?;
-    let source_filter = AdverseEventSourceFilter::from_flag(&args.source)?;
+    let mut source_filter = AdverseEventSourceFilter::from_flag(&args.source)?;
 
     if args.limit == 0 || args.limit > 50 {
         return Err(BioMcpError::InvalidArgument(
@@ -151,18 +151,16 @@ pub(super) fn search_plan_from_args(
     let device_seriousness = match query_type {
         AdverseEventQueryType::Faers => {
             reject_inapplicable_filters("--type faers", faers_invalid_filters(args))?;
-            if args.count.is_some() && source_filter != AdverseEventSourceFilter::Faers {
-                return Err(BioMcpError::InvalidArgument(
-                    "--count requires explicit --source faers".into(),
-                ));
+            if args.count.is_some() && source_filter == AdverseEventSourceFilter::All {
+                source_filter = AdverseEventSourceFilter::Faers;
+            }
+            if source_filter == AdverseEventSourceFilter::Vaers {
+                reject_inapplicable_filters("--source vaers", vaers_invalid_filters(args))?;
             }
             if args.count.is_some() && args.offset > 0 {
                 return Err(BioMcpError::InvalidArgument(
                     "--count requires --offset 0".into(),
                 ));
-            }
-            if source_filter == AdverseEventSourceFilter::Vaers {
-                reject_inapplicable_filters("--source vaers", vaers_invalid_filters(args))?;
             }
             None
         }
