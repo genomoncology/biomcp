@@ -41,14 +41,14 @@ initialized request'
 done
 ```
 
-## Stdio Discovery Precedes The Legacy Handshake
+## Discovery Advertises Stateless And Legacy Revisions
 
-Stdio clients may ask what BioMCP serves before initializing a session.
-Discovery advertises only the two supported legacy revisions, together with the
-same tools, resources, and package identity used by initialization. Because this
-answer is public and static, clients may cache it for five minutes. This does
-not provide modern stateless serving; clients still initialize before ordinary
-MCP requests.
+Stdio clients may ask what BioMCP serves before sending any ordinary request.
+Discovery advertises the stateless 2026-07-28 revision alongside the two legacy
+revisions, together with the same tools, resources, and package identity used by
+both eras. Because this answer is public and static, clients may cache it for
+five minutes. Modern clients send their version and capabilities on every
+request; legacy clients retain their initialization handshake.
 
 ```bash
 response_file="$(mktemp)"
@@ -57,7 +57,7 @@ set +e
 {"jsonrpc":"2.0","id":"discover","method":"server/discover","params":{}}
 EOF
 set -e
-head -n 1 "$response_file" | mustmatch like '"supportedVersions":["2025-06-18","2025-11-25"]
+head -n 1 "$response_file" | mustmatch like '"supportedVersions":["2025-06-18","2025-11-25","2026-07-28"]
 "capabilities":{"resources":{},"tools":{}}
 "io.modelcontextprotocol/serverInfo":{"name":"biomcp"
 "resultType":"complete"
