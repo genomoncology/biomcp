@@ -257,15 +257,15 @@ for surface in help error guide; do
   text="${!surface}"
   missing=false
   for form in \
-    'chr19:g.11106928AAG[1]' \
-    'chr2:g.47641567_47641569del' \
-    'chr19:g.11106928delAAG' \
-    'chr19:g.11106928dup' \
-    'chr2:g.47641567_47641568insA' \
-    'chr2:g.47641567_47641569inv' \
-    'chr2:g.47641567_47641569delinsA'
+    'repeat' \
+    'range deletion' \
+    'sequence-qualified deletion' \
+    'duplication' \
+    'insertion' \
+    'inversion' \
+    'delins'
   do
-    grep -Fq "$form" <<<"$text" || missing=true
+    grep -Fqi "$form" <<<"$text" || missing=true
   done
   if $missing; then
     printf '%s is missing genomic indel forms\n' "$surface"

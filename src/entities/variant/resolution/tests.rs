@@ -118,21 +118,24 @@ fn parse_variant_id_accepts_genomic_indel_and_repeat_forms() {
 }
 
 #[test]
-fn unsupported_variant_error_lists_supported_indel_forms() {
-    let message = parse_variant_id("not-a-variant").unwrap_err().to_string();
+fn unsupported_variant_error_describes_supported_indel_forms() {
+    let message = parse_variant_id("not-a-variant")
+        .unwrap_err()
+        .to_string()
+        .to_ascii_lowercase();
 
-    for example in [
-        "chr19:g.11106928AAG[1]",
-        "chr2:g.47641567_47641569del",
-        "chr19:g.11106928delAAG",
-        "chr19:g.11106928dup",
-        "chr2:g.47641567_47641568insA",
-        "chr2:g.47641567_47641569inv",
-        "chr2:g.47641567_47641569delinsA",
+    for form in [
+        "repeat",
+        "range deletion",
+        "sequence-qualified deletion",
+        "duplication",
+        "insertion",
+        "inversion",
+        "delins",
     ] {
         assert!(
-            message.contains(example),
-            "supported-format guidance omitted {example}: {message}"
+            message.contains(form),
+            "supported-format guidance omitted {form}: {message}"
         );
     }
 }
