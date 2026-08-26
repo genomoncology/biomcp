@@ -103,6 +103,32 @@ AUTHOR_FORBIDDEN = {"email": "private-author@example.invalid", "homepage": "http
 for row in AUTHOR_ENTITY_SEARCH["data"]:
     row.update(AUTHOR_FORBIDDEN)
 AUTHOR_ENTITY_DETAIL.update(AUTHOR_FORBIDDEN)
+AUTHOR_ENTITY_PAPERS = {
+    "offset": 0,
+    "next": 1,
+    "data": [{
+        **AUTHOR_FORBIDDEN,
+        "paperId": "paper-identity-1",
+        "corpusId": 277710284,
+        "externalIds": {"PubMed": "40215974", "DOI": "10.1016/j.fixture.2024.01.001", "ORCID": "0000-0002-7433-2740"},
+        "title": "A compact author paper fixture",
+        "venue": "Fixture Medicine",
+        "year": 2024,
+        "abstract": "fixture-long-abstract-sentinel",
+        "authors": [{**AUTHOR_FORBIDDEN, "authorId": "1716151", "name": "A. Butte"}],
+    }],
+}
+ARTICLE_ENTITY_AUTHORS = {
+    **AUTHOR_FORBIDDEN,
+    "paperId": "paper-byline-1",
+    "externalIds": {"ArXiv": "2110.01406", "ORCID": "0000-0002-7433-2740"},
+    "title": "A paper with provider-exact authors",
+    "year": 2021,
+    "authors": [
+        {**AUTHOR_FORBIDDEN, "authorId": "1716151", "name": "A. Butte", "affiliations": ["University of California, San Francisco"], "paperCount": 548, "citationCount": 50000, "hIndex": 100},
+        {**AUTHOR_FORBIDDEN, "authorId": "2269573451", "name": "Louis S. Williams", "affiliations": ["Cleveland Clinic"], "paperCount": 42, "citationCount": 900, "hIndex": 15},
+    ],
+}
 
 AUTHOR_SEARCH = {
     "europepmc": {
@@ -748,6 +774,14 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/graph/v1/author/1716151":
             send_json(self, 200, AUTHOR_ENTITY_DETAIL)
+            return
+
+        if decoded_path == "/graph/v1/author/1716151/papers":
+            send_json(self, 200, AUTHOR_ENTITY_PAPERS)
+            return
+
+        if decoded_path == "/graph/v1/paper/ARXIV:2110.01406":
+            send_json(self, 200, ARTICLE_ENTITY_AUTHORS)
             return
 
         if decoded_path == "/graph/v1/paper/search" and query.get("query") == ["Williams LS"]:

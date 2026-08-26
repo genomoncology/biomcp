@@ -83,7 +83,7 @@ Use the qualified ID from search to retrieve exactly that Semantic Scholar recor
   "_meta": {
     "source_status": [{"source": "semantic_scholar", "status": "available"}],
     "evidence_urls": [{"url": "https://www.semanticscholar.org/author/1716151"}],
-    "next_commands": []
+    "next_commands": ["biomcp author papers semanticscholar:1716151"]
   }
 }
 ```
@@ -91,6 +91,116 @@ Use the qualified ID from search to retrieve exactly that Semantic Scholar recor
 The allowlisted detail projection applies the same privacy boundary as search.
 
 ```text expect=author-detail not-contains
+"email":
+"homepage":
+"private_profile":
+"gender":
+"race":
+"ethnicity":
+"externalIds":
+"external_ids":
+private-author@example.invalid
+https://private.example.invalid/author
+fixture-private-profile
+fixture-inferred-demographic
+0000-0002-7433-2740
+```
+
+## Provider-exact pivots connect authors and papers
+
+An author record leads to compact papers with provider-owned pagination. Paper
+identifiers remain usable by the article family, and metadata supplies evidence
+and executable next steps.
+
+<!-- mustmatch-lint: skip -->
+
+```bash run id=author-papers exit=0
+../../tools/biomcp-ci --json author papers semanticscholar:1716151 --limit 1
+```
+
+```json expect=author-papers contains
+{
+  "author": {"kind": "exact_provider", "id": "semanticscholar:1716151"},
+  "papers": [{
+    "paper_id": "paper-identity-1",
+    "pmid": "40215974",
+    "doi": "10.1016/j.fixture.2024.01.001",
+    "title": "A compact author paper fixture",
+    "journal": "Fixture Medicine",
+    "year": 2024
+  }],
+  "pagination": {"offset": 0, "limit": 1, "next": 1},
+  "_meta": {
+    "source_status": [{"source": "semantic_scholar", "status": "available"}],
+    "evidence_urls": [{"url": "https://www.semanticscholar.org/paper/paper-identity-1"}],
+    "next_commands": [
+      "biomcp get article 40215974",
+      "biomcp author papers semanticscholar:1716151 --limit 1 --offset 1"
+    ]
+  }
+}
+```
+
+The reverse pivot accepts an article-family identifier and returns separate,
+provider-qualified author records rather than merging a byline into names.
+Affiliations remain sourced assertions, and each author leads to exact detail.
+
+<!-- mustmatch-lint: skip -->
+
+```bash run id=article-authors exit=0
+../../tools/biomcp-ci --json article authors arXiv:2110.01406
+```
+
+```json expect=article-authors contains
+{
+  "article": {"paper_id": "paper-byline-1", "arxiv_id": "2110.01406", "title": "A paper with provider-exact authors", "year": 2021},
+  "authors": [
+    {
+      "identity": {"kind": "exact_provider", "id": "semanticscholar:1716151"},
+      "display_name": "A. Butte",
+      "affiliations": [{"value": "University of California, San Francisco", "evidence": {"source": "semantic_scholar"}}]
+    },
+    {
+      "identity": {"kind": "exact_provider", "id": "semanticscholar:2269573451"},
+      "display_name": "Louis S. Williams",
+      "affiliations": [{"value": "Cleveland Clinic", "evidence": {"source": "semantic_scholar"}}]
+    }
+  ],
+  "_meta": {
+    "source_status": [{"source": "semantic_scholar", "status": "available"}],
+    "evidence_urls": [
+      {"url": "https://www.semanticscholar.org/author/1716151"},
+      {"url": "https://www.semanticscholar.org/author/2269573451"}
+    ],
+    "next_commands": [
+      "biomcp get author semanticscholar:1716151",
+      "biomcp get author semanticscholar:2269573451"
+    ]
+  }
+}
+```
+
+Both pivots keep the detail surface's allowlist. Provider extras nested on a
+paper or byline author do not cross the public boundary.
+
+```text expect=author-papers not-contains
+"email":
+"homepage":
+"private_profile":
+"gender":
+"race":
+"ethnicity":
+"externalIds":
+"external_ids":
+private-author@example.invalid
+https://private.example.invalid/author
+fixture-private-profile
+fixture-inferred-demographic
+fixture-long-abstract-sentinel
+0000-0002-7433-2740
+```
+
+```text expect=article-authors not-contains
 "email":
 "homepage":
 "private_profile":
