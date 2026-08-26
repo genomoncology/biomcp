@@ -47,7 +47,7 @@ fn coordinate_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         Regex::new(&format!(
-            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?({CHROMOSOME_PATTERN}):g\.(\d+)({GENOMIC_CHANGE_PATTERN})$"
+            r"(?i)^(?:(GRCh37|GRCh38|hg19|hg38):)?({CHROMOSOME_PATTERN}):g\.(\d+)([ACGT]>[ACGT]|del)$"
         ))
         .expect("valid regex")
     })
@@ -151,10 +151,8 @@ pub(crate) fn normalize_genomic_coordinate(
         }
         let change = if change.eq_ignore_ascii_case("del") {
             "del".to_string()
-        } else if change.len() == 3 && change.as_bytes()[1] == b'>' {
-            change.to_ascii_uppercase()
         } else {
-            change.to_string()
+            change.to_ascii_uppercase()
         };
         Ok(Some(NormalizedGenomicCoordinate {
             id: format!(

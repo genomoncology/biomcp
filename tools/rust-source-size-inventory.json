@@ -130,12 +130,12 @@
     },
     {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1305,
+      "baseline_lines": 1303,
       "floor_lines": 1291,
       "authorized_increase": {
         "ticket": "1056",
-        "delta": 14,
-        "reason": "Shared genomic HGVS suffix grammar and indel guidance keep emitted complex variant IDs parseable.",
+        "delta": 12,
+        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable.",
         "removal_condition": "Remove this allowance when variant identity resolution is decomposed."
       }
     },
