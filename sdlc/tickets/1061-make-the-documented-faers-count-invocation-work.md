@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 15
+priority: 10
 ---
 
 # Make the documented FAERS --count invocation work
