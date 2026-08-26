@@ -102,7 +102,11 @@ def test_discover_is_truthful_and_cacheable_before_handshake(
     request["id"] = "discover-2"
     second = stdio_mcp.call(request)["result"]
 
-    assert set(first["supportedVersions"]) == {"2025-06-18", "2025-11-25"}
+    assert set(first["supportedVersions"]) == {
+        "2025-06-18",
+        "2025-11-25",
+        "2026-07-28",
+    }
     assert first["capabilities"]["tools"] == {}
     assert first["capabilities"]["resources"] == {}
     server_info = first["_meta"]["io.modelcontextprotocol/serverInfo"]
