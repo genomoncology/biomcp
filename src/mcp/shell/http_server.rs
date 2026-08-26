@@ -10,10 +10,10 @@ use axum::{
 use rmcp::transport::streamable_http_server::{
     StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
 };
-use serde_json::json;
+use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
-use super::BioMcpServer;
+use super::{BioMcpServer, pre_session::modern};
 
 const MCP_HTTP_BODY_LIMIT: usize = 65_536;
 
@@ -229,7 +229,7 @@ async fn enforce_host_policy(
         )
             .into_response();
     }
-    enforce_mcp_body_limit(request, next).await
+    enforce_mcp_body_limit(request, next, &policy).await
 }
 
 fn payload_too_large() -> Response {
@@ -269,7 +269,7 @@ fn mcp_body_error_response(error: McpBodyReadError) -> Response {
     }
 }
 
-async fn enforce_mcp_body_limit(request: Request, next: Next) -> Response {
+async fn enforce_mcp_body_limit(request: Request, next: Next, policy: &HostPolicy) -> Response {
     if request.method() != Method::POST || request.uri().path() != "/mcp" {
         return next.run(request).await;
     }
@@ -287,11 +287,143 @@ async fn enforce_mcp_body_limit(request: Request, next: Next) -> Response {
     let (parts, body) = request.into_parts();
     match collect_mcp_body(body).await {
         Ok(bytes) => {
-            next.run(Request::from_parts(parts, Body::from(bytes)))
-                .await
+            if let Some(response) = modern_http_response(&parts.headers, &bytes, policy).await {
+                response
+            } else {
+                next.run(Request::from_parts(parts, Body::from(bytes)))
+                    .await
+            }
         }
         Err(error) => mcp_body_error_response(error),
     }
+}
+
+async fn modern_http_response(
+    headers: &HeaderMap,
+    body: &Bytes,
+    policy: &HostPolicy,
+) -> Option<Response> {
+    let request = serde_json::from_slice::<Value>(body).ok();
+    let header_version = header_text(headers, "mcp-protocol-version");
+    let attempted = header_version == Some(modern::MODERN_PROTOCOL_VERSION)
+        || headers.contains_key("mcp-method")
+        || request
+            .as_ref()
+            .and_then(modern::protocol_version)
+            .is_some_and(|version| version == modern::MODERN_PROTOCOL_VERSION);
+    if !attempted {
+        return None;
+    }
+
+    if let Some(origin) = headers.get(axum::http::header::ORIGIN) {
+        let allowed = origin
+            .to_str()
+            .ok()
+            .and_then(origin_authority)
+            .is_some_and(|origin| normalized_host_is_allowed(&origin, &policy.allowed_hosts));
+        if !allowed {
+            return Some(StatusCode::FORBIDDEN.into_response());
+        }
+    }
+
+    let id = request
+        .as_ref()
+        .and_then(|request| request.get("id"))
+        .cloned()
+        .unwrap_or(Value::Null);
+    let Some(header_version) = header_version else {
+        return Some(header_mismatch(
+            id,
+            "Missing or malformed MCP-Protocol-Version",
+        ));
+    };
+    let Some(header_method) = header_text(headers, "mcp-method") else {
+        return Some(header_mismatch(id, "Missing or malformed Mcp-Method"));
+    };
+    let Some(request) = request else {
+        return Some(modern_json_response(
+            StatusCode::BAD_REQUEST,
+            modern::error(id, -32602, "Malformed JSON-RPC request", None),
+        ));
+    };
+    if modern::protocol_version(&request).is_some_and(|version| version != header_version) {
+        return Some(header_mismatch(
+            id,
+            "Protocol header does not match request metadata",
+        ));
+    }
+    let body_method = request.get("method").and_then(Value::as_str);
+    if body_method != Some(header_method) {
+        return Some(header_mismatch(
+            id,
+            "Method header does not match request method",
+        ));
+    }
+    if matches!(header_method, "tools/call" | "resources/read") {
+        let Some(header_name) = header_text(headers, "mcp-name") else {
+            return Some(header_mismatch(id, "Missing or malformed Mcp-Name"));
+        };
+        let body_name = request
+            .get("params")
+            .and_then(|params| {
+                params.get(if header_method == "resources/read" {
+                    "uri"
+                } else {
+                    "name"
+                })
+            })
+            .and_then(Value::as_str);
+        if body_name != Some(header_name) {
+            return Some(header_mismatch(
+                id,
+                "Name header does not match request name",
+            ));
+        }
+    }
+
+    let response = modern::dispatch(&request).await;
+    let status = match response
+        .get("error")
+        .and_then(|error| error.get("code"))
+        .and_then(Value::as_i64)
+    {
+        Some(-32601) => StatusCode::NOT_FOUND,
+        Some(-32020 | -32022 | -32602) => StatusCode::BAD_REQUEST,
+        _ => StatusCode::OK,
+    };
+    Some(modern_json_response(status, response))
+}
+
+fn header_text<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
+    headers
+        .get(name)
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| !value.is_empty())
+}
+
+fn origin_authority(origin: &str) -> Option<NormalizedAuthority> {
+    let uri = origin.parse::<Uri>().ok()?;
+    if uri.path_and_query().is_some() {
+        return None;
+    }
+    uri.scheme()?;
+    normalized_authority(uri.authority()?.as_str())
+}
+
+fn header_mismatch(id: Value, message: &str) -> Response {
+    modern_json_response(
+        StatusCode::BAD_REQUEST,
+        modern::error(
+            id,
+            -32020,
+            "HeaderMismatchError",
+            Some(json!({"detail": message})),
+        ),
+    )
+}
+
+fn modern_json_response(status: StatusCode, payload: Value) -> Response {
+    (status, Json(payload)).into_response()
 }
 
 pub(in crate::mcp) async fn run_http(

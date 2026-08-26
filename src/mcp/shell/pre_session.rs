@@ -9,7 +9,10 @@ use tokio::io::{
 
 use super::BioMcpServer;
 
-pub(super) const STDIO_DISCOVERY_VERSIONS: [&str; 2] = ["2025-06-18", "2025-11-25"];
+#[path = "modern.rs"]
+pub(super) mod modern;
+
+pub(super) const STDIO_DISCOVERY_VERSIONS: [&str; 3] = modern::SUPPORTED_VERSIONS;
 
 pub(super) async fn stdio_transport() -> anyhow::Result<(
     Chain<Cursor<Vec<u8>>, BufReader<tokio::io::Stdin>>,
@@ -70,7 +73,9 @@ where
         let Some(id) = id else {
             continue;
         };
-        if method == Some("server/discover") {
+        if modern::has_protocol_metadata(&request) {
+            write_response(&mut writer, &modern::dispatch(&request).await).await?;
+        } else if method == Some("server/discover") {
             write_response(&mut writer, &discovery_response(id)).await?;
         } else if method == Some("ping") {
             write_response(

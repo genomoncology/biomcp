@@ -1365,7 +1365,7 @@ impl ServerHandler for BioMcpServer {
     }
 }
 
-fn read_resource_markdown(uri: &str) -> Result<ReadResourceResult, McpError> {
+pub(super) fn read_resource_markdown(uri: &str) -> Result<ReadResourceResult, McpError> {
     if uri == RESOURCE_HELP_URI {
         let content = crate::cli::skill::show_overview()
             .map_err(|e| McpError::internal_error(format!("Failed to render {uri}: {e}"), None))?;
@@ -1384,7 +1384,7 @@ fn read_resource_markdown(uri: &str) -> Result<ReadResourceResult, McpError> {
     ))
 }
 
-fn build_resource_list() -> Vec<RawResource> {
+pub(super) fn build_resource_list() -> Vec<RawResource> {
     let mut resources = vec![
         RawResource::new(RESOURCE_HELP_URI, "BioMCP Overview").with_mime_type("text/markdown"),
     ];
