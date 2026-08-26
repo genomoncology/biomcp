@@ -51,6 +51,11 @@ EXAMPLES:
         #[command(subcommand)]
         cmd: article::ArticleCommand,
     },
+    /// Provider-exact author helpers
+    Author {
+        #[command(subcommand)]
+        cmd: author::AuthorCommand,
+    },
     /// Gene cross-entity helpers
     Gene {
         #[command(subcommand)]

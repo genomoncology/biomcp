@@ -45,7 +45,10 @@ pub use self::article::{
     article_search_markdown_with_footer_and_context,
 };
 #[allow(unused_imports)]
-pub use self::author::{author_detail_markdown, author_search_markdown};
+pub use self::author::{
+    article_authors_markdown, author_detail_markdown, author_papers_markdown,
+    author_search_markdown,
+};
 #[allow(unused_imports)]
 pub use self::diagnostic::{
     diagnostic_markdown, diagnostic_search_markdown, diagnostic_search_markdown_with_footer,

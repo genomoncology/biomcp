@@ -1,11 +1,13 @@
 //! Public, provider-exact author identity types.
 
 mod detail;
+mod papers;
 mod search;
 
 #[cfg(test)]
 pub(crate) use detail::ProviderAuthorRecord;
 pub use detail::{AuthorDetail, detail};
+pub use papers::{AuthorPapersResult, papers};
 pub use search::{AuthorSearchResponse, search};
 
 use crate::error::BioMcpError;
@@ -133,6 +135,20 @@ pub struct AuthorMeta {
     pub next_commands: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ArticleAuthorRecord {
+    pub identity: AuthorIdentity,
+    pub display_name: String,
+    pub affiliations: Vec<AuthorAssertion<String>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ArticleAuthorsResult {
+    pub article: crate::entities::article::ArticleRelatedPaper,
+    pub authors: Vec<ArticleAuthorRecord>,
+    pub _meta: AuthorMeta,
+}
+
 pub(crate) fn evidence_url(value: &str) -> String {
     format!("https://www.semanticscholar.org/author/{value}")
 }
@@ -151,6 +167,18 @@ pub(crate) fn nonblank(value: Option<String>) -> Option<String> {
     value
         .map(|v| v.trim().to_string())
         .filter(|v| !v.is_empty())
+}
+
+pub(crate) fn sanitized_provider_error(err: BioMcpError) -> BioMcpError {
+    match err {
+        BioMcpError::WithSourceContext { context, source } => {
+            sanitized_provider_error(*source).with_source_context(context)
+        }
+        _ => BioMcpError::Api {
+            api: "semantic_scholar".into(),
+            message: "Semantic Scholar author data is unavailable; retry later".into(),
+        },
+    }
 }
 
 #[cfg(test)]

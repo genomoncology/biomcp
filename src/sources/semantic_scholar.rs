@@ -13,7 +13,7 @@ const SEMANTIC_SCHOLAR_BASE: &str = "https://api.semanticscholar.org";
 const SEMANTIC_SCHOLAR_API: &str = "semantic_scholar";
 const SEMANTIC_SCHOLAR_BASE_ENV: &str = "BIOMCP_S2_BASE";
 const SEMANTIC_SCHOLAR_DOCS_URL: &str = "https://www.semanticscholar.org/product/api";
-const GRAPH_PAPER_FIELDS: &str = "paperId,externalIds,title,venue,year,tldr,citationCount,influentialCitationCount,referenceCount,isOpenAccess,openAccessPdf";
+const GRAPH_PAPER_FIELDS: &str = "paperId,externalIds,title,venue,year,tldr,citationCount,influentialCitationCount,referenceCount,isOpenAccess,openAccessPdf,authors.authorId,authors.name,authors.affiliations,authors.paperCount,authors.citationCount,authors.hIndex";
 const BATCH_PAPER_FIELDS: &str = "paperId,externalIds,title,venue,year";
 const BATCH_PAPER_COMPACT_FIELDS: &str =
     "paperId,externalIds,title,venue,year,tldr,citationCount,influentialCitationCount";
@@ -31,7 +31,7 @@ const AUTHOR_FIELDS: &str =
 // dead-code reason: semantic_scholar::AUTHOR_PAPER_FIELDS preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 const AUTHOR_PAPER_FIELDS: &str =
-    "paperId,corpusId,externalIds,title,year,authors.authorId,authors.name";
+    "paperId,corpusId,externalIds,title,venue,year,authors.authorId,authors.name";
 // dead-code reason: semantic_scholar::SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX preserves the provider shape used by source contract fixtures
 #[allow(dead_code)]
 const SEMANTIC_SCHOLAR_AUTHOR_PAGE_MAX: usize = 100;
@@ -713,6 +713,7 @@ pub struct SemanticScholarAuthorPaper {
     #[serde(rename = "externalIds")]
     pub external_ids: Option<serde_json::Map<String, serde_json::Value>>,
     pub title: Option<String>,
+    pub venue: Option<String>,
     pub year: Option<u32>,
     pub authors: Option<Vec<SemanticScholarAuthorPaperAuthor>>,
 }
@@ -768,6 +769,7 @@ pub struct SemanticScholarPaper {
     pub is_open_access: Option<bool>,
     #[serde(rename = "openAccessPdf")]
     pub open_access_pdf: Option<SemanticScholarOpenAccessPdf>,
+    pub authors: Option<Vec<SemanticScholarAuthor>>,
     pub tldr: Option<SemanticScholarTldr>,
 }
 

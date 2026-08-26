@@ -81,7 +81,7 @@ fn map_detail(
                 source: "semantic_scholar",
                 url,
             }],
-            next_commands: vec![],
+            next_commands: vec![format!("biomcp author papers {requested}")],
         },
     })
 }
@@ -93,15 +93,7 @@ fn contract_error() -> crate::error::BioMcpError {
 }
 
 fn sanitized_detail_error(err: crate::error::BioMcpError) -> crate::error::BioMcpError {
-    match err {
-        crate::error::BioMcpError::WithSourceContext { context, source } => {
-            sanitized_detail_error(*source).with_source_context(context)
-        }
-        _ => crate::error::BioMcpError::Api {
-            api: "semantic_scholar".into(),
-            message: "author detail is unavailable; retry later".into(),
-        },
-    }
+    sanitized_provider_error(err)
 }
 
 #[cfg(test)]

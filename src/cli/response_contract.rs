@@ -9,6 +9,8 @@ const ITEMS_PATH: JsonPath = &["items"];
 const BUCKETS_PATH: JsonPath = &["buckets"];
 const EDGES_PATH: JsonPath = &["edges"];
 const RECOMMENDATIONS_PATH: JsonPath = &["recommendations"];
+const PAPERS_PATH: JsonPath = &["papers"];
+const AUTHORS_PATH: JsonPath = &["authors"];
 const INTERACTIONS_PATH: JsonPath = &["interactions"];
 const STRUCTURES_PATH: JsonPath = &["structures"];
 const PATHWAYS_PATH: JsonPath = &["pathways"];
@@ -101,6 +103,9 @@ impl JsonResponseContract {
             },
             Commands::Disease { .. } | Commands::Pathway { .. } => Self::RESULTS,
             Commands::Article { cmd } => match cmd {
+                super::article::ArticleCommand::Authors { .. } => Self {
+                    collection_paths: &[AUTHORS_PATH],
+                },
                 super::article::ArticleCommand::Citations { .. }
                 | super::article::ArticleCommand::References { .. } => Self {
                     collection_paths: &[EDGES_PATH],
@@ -110,6 +115,9 @@ impl JsonResponseContract {
                 },
                 super::article::ArticleCommand::Entities { .. }
                 | super::article::ArticleCommand::Batch { .. } => Self::NONE,
+            },
+            Commands::Author { .. } => Self {
+                collection_paths: &[PAPERS_PATH],
             },
             Commands::Gene { cmd } => match cmd {
                 super::GeneCommand::Trials { .. }

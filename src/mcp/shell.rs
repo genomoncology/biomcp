@@ -324,7 +324,6 @@ const RESOURCE_HELP_URI: &str = "biomcp://help";
 const GENERIC_MCP_REJECTION_MESSAGE: &str = "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).";
 const CACHE_FAMILY_MCP_REJECTION_MESSAGE: &str = "Error: biomcp cache commands are CLI-only over MCP because they reveal workstation-local filesystem paths.";
 const LOCAL_INPUT_MCP_REJECTION_MESSAGE: &str = "Error: --input file and stdin arguments are CLI-only over raw MCP because they read server-local state; use the matching typed MCP tool instead.";
-
 impl BioMcpServer {
     pub fn new() -> Self {
         let mut tool_router = Self::tool_router();
@@ -467,7 +466,7 @@ fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
     };
 
     match &cli.command {
-        Commands::Search { .. } | Commands::Get { .. } => true,
+        Commands::Search { .. } | Commands::Get { .. } | Commands::Author { .. } => true,
         Commands::Variant { cmd } => !variant_command_reads_local_input(cmd),
         Commands::Drug {
             cmd:
@@ -483,7 +482,8 @@ fn is_allowed_mcp_command(cli: &crate::cli::Cli) -> bool {
         }
         | Commands::Article {
             cmd:
-                ArticleCommand::Entities { .. }
+                ArticleCommand::Authors { .. }
+                | ArticleCommand::Entities { .. }
                 | ArticleCommand::Batch { .. }
                 | ArticleCommand::Citations { .. }
                 | ArticleCommand::References { .. }

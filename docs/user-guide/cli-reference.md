@@ -929,6 +929,8 @@ biomcp study co-occurrence --study msk_impact_2017 --genes TP53,KRAS
 ```bash
 biomcp search author -q "Louis Williams" --source semanticscholar --limit 5 --offset 0
 biomcp get author semanticscholar:1716151
+biomcp author papers semanticscholar:1716151 --limit 10 --offset 0
+biomcp article authors arXiv:2110.01406
 ```
 
-Author identities are exact Semantic Scholar provider records, not BioMCP-global people. `--affiliation`, PubMed/ORCID author lookup, publications, coauthors, and topics are not available in this release.
+Author identities are exact Semantic Scholar provider records, not BioMCP-global people. Author paper lists preserve provider order and pagination, while article author lists preserve separate provider-qualified byline identities and sourced affiliations. `--affiliation`, PubMed/ORCID author lookup, coauthor aggregation, and topics are not available in this release.

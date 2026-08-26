@@ -15,6 +15,11 @@ use super::detail::{
 use super::{
     ArticleGraphEdge, ArticleGraphResult, ArticleRecommendationsResult, ArticleRelatedPaper,
 };
+use crate::entities::author::{
+    ArticleAuthorRecord, ArticleAuthorsResult, AuthorAssertion, AuthorEvidence, AuthorEvidenceUrl,
+    AuthorIdentity, AuthorMeta, AuthorSourceStatus, ProviderStatus, TemporalAnchor, evidence_url,
+    nonblank, provider_id, sanitized_provider_error, valid_wire_id,
+};
 
 fn is_semantic_scholar_paper_id(id: &str) -> bool {
     id.len() == 40 && id.chars().all(|ch| ch.is_ascii_hexdigit())
@@ -201,6 +206,78 @@ fn article_recommendations_from_response(
             .map(|paper| related_paper_from_semantic_scholar(&paper))
             .collect(),
     }
+}
+
+pub async fn authors(id: &str) -> Result<ArticleAuthorsResult, BioMcpError> {
+    let client = SemanticScholarClient::new()?;
+    let europe = EuropePmcClient::new()?;
+    let lookup_id = resolve_semantic_scholar_input_id(id, &europe).await?;
+    let paper = client
+        .paper_detail(&lookup_id)
+        .await
+        .map_err(sanitized_provider_error)?;
+    let article = related_paper_from_semantic_scholar(&paper);
+    let observed_at = chrono::Utc::now().to_rfc3339();
+    let authors = paper
+        .authors
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|row| {
+            let author_id = valid_wire_id(row.author_id)?;
+            let display_name = nonblank(row.name)?;
+            let url = evidence_url(&author_id);
+            let affiliations = row
+                .affiliations
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|value| nonblank(Some(value)))
+                .map(|value| AuthorAssertion {
+                    value,
+                    evidence: AuthorEvidence {
+                        source: "semantic_scholar",
+                        url: url.clone(),
+                    },
+                    temporal: TemporalAnchor::ObservedAt(observed_at.clone()),
+                })
+                .collect();
+            Some(ArticleAuthorRecord {
+                identity: AuthorIdentity::ExactProvider {
+                    id: provider_id(author_id),
+                },
+                display_name,
+                affiliations,
+            })
+        })
+        .collect::<Vec<_>>();
+    let evidence_urls = authors
+        .iter()
+        .map(|author| {
+            let AuthorIdentity::ExactProvider { id } = &author.identity;
+            AuthorEvidenceUrl {
+                source: "semantic_scholar",
+                url: evidence_url(&id.value),
+            }
+        })
+        .collect();
+    let next_commands = authors
+        .iter()
+        .map(|author| {
+            let AuthorIdentity::ExactProvider { id } = &author.identity;
+            format!("biomcp get author {id}")
+        })
+        .collect();
+    Ok(ArticleAuthorsResult {
+        article,
+        authors,
+        _meta: AuthorMeta {
+            source_status: vec![AuthorSourceStatus {
+                source: "semantic_scholar",
+                status: ProviderStatus::Available,
+            }],
+            evidence_urls,
+            next_commands,
+        },
+    })
 }
 
 pub async fn citations(id: &str, limit: usize) -> Result<ArticleGraphResult, BioMcpError> {

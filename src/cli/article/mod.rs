@@ -276,6 +276,17 @@ pub struct ArticleGetArgs {
 
 #[derive(Subcommand, Debug)]
 pub enum ArticleCommand {
+    /// List provider-exact Semantic Scholar authors for one article
+    #[command(after_help = "\
+EXAMPLES:
+  biomcp article authors 22663011
+  biomcp article authors arXiv:2110.01406
+
+See also: biomcp list article")]
+    Authors {
+        /// PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
+        id: String,
+    },
     /// Surface annotated entities from PubTator as discoverable commands
     #[command(after_help = "\
 EXAMPLES:

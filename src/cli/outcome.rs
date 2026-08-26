@@ -1,5 +1,4 @@
 //! CLI outcome execution seam and MCP chart argument rewriting.
-
 use super::response_contract::{
     JsonResponseContract, command_requests_json, finalize_structured_error,
 };
@@ -171,6 +170,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             Commands::Article { cmd } => {
                 outcome_to_string(super::article::handle_command(cmd, json).await?)
             }
+            Commands::Author { cmd } => outcome_to_string(super::author::handle(cmd, json).await?),
             Commands::Gene { cmd } => {
                 outcome_to_string(super::gene::handle_command(cmd, json, false).await?)
             }

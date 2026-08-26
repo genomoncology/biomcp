@@ -1,5 +1,50 @@
-use crate::entities::author::{AuthorDetail, AuthorIdentity, AuthorSearchResponse, ProviderStatus};
+use crate::entities::author::{
+    ArticleAuthorsResult, AuthorDetail, AuthorIdentity, AuthorPapersResult, AuthorSearchResponse,
+    ProviderStatus,
+};
 use std::fmt::Write as _;
+
+pub fn author_papers_markdown(response: &AuthorPapersResult) -> String {
+    let AuthorIdentity::ExactProvider { id } = &response.author;
+    let mut out = format!("# Papers for `{id}`\n\n");
+    for paper in &response.papers {
+        let identifier = paper
+            .pmid
+            .as_deref()
+            .or(paper.doi.as_deref())
+            .or(paper.arxiv_id.as_deref())
+            .or(paper.paper_id.as_deref())
+            .unwrap_or("unknown");
+        let _ = writeln!(out, "## {}\n\n- ID: `{identifier}`", paper.title);
+        if let Some(journal) = &paper.journal {
+            let _ = writeln!(out, "- Journal: {journal}");
+        }
+        if let Some(year) = paper.year {
+            let _ = writeln!(out, "- Year: {year}");
+        }
+        out.push('\n');
+    }
+    out
+}
+
+pub fn article_authors_markdown(response: &ArticleAuthorsResult) -> String {
+    let mut out = format!("# Authors for {}\n\n", response.article.title);
+    for author in &response.authors {
+        let AuthorIdentity::ExactProvider { id } = &author.identity;
+        let _ = writeln!(out, "## {}\n\n- ID: `{id}`", author.display_name);
+        if !author.affiliations.is_empty() {
+            let values = author
+                .affiliations
+                .iter()
+                .map(|assertion| assertion.value.as_str())
+                .collect::<Vec<_>>()
+                .join("; ");
+            let _ = writeln!(out, "- Affiliations: {values}");
+        }
+        out.push('\n');
+    }
+    out
+}
 
 pub fn author_search_markdown(response: &AuthorSearchResponse) -> String {
     let mut out = format!(

@@ -374,6 +374,14 @@ pub(in crate::cli) async fn handle_command(
     json: bool,
 ) -> anyhow::Result<CommandOutcome> {
     let text = match cmd {
+        ArticleCommand::Authors { id } => {
+            let result = crate::entities::article::authors(&id).await?;
+            if json {
+                crate::render::json::to_pretty(&result)?
+            } else {
+                crate::render::markdown::article_authors_markdown(&result)
+            }
+        }
         ArticleCommand::Entities { pmid, limit } => {
             let limit = super::super::paged_fetch_limit(limit, 0, 50)?;
             let sections = vec!["annotations".to_string()];

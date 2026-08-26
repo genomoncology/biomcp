@@ -8,12 +8,14 @@ Semantic Scholar author records remain provider-exact. BioMCP does not merge sam
 
 - `search author -q <name> --source semanticscholar [--limit N] [--offset N]`
 - `get author semanticscholar:<id>`
+- `author papers semanticscholar:<id> [--limit N] [--offset N]`
 
 ## Notes
 
 - `--source semanticscholar` is the only source in this release.
 - IDs are case-sensitive and always provider-qualified.
-- Publication, coauthor, topic, affiliation-filter, and PubMed operations are future work; ORCID remains citation-supplied identity evidence.
+- Paper lists preserve Semantic Scholar order and provider pagination.
+- Coauthor aggregation, topic, affiliation-filter, and PubMed operations are future work; ORCID remains citation-supplied identity evidence.
 "#.to_string()
 }
 pub(super) fn list_article() -> String {
@@ -42,6 +44,7 @@ get article <id> assets
 get article <id> asset <asset-key>
 raw bytes
 - `get article <id> all` - include all article sections, including PubMed indexing
+- `article authors <id>` - provider-exact Semantic Scholar authors for a PMID, PMCID, DOI, arXiv ID, or Semantic Scholar paper ID
 - `article entities <pmid> --limit <N>` - annotated entities with next commands
 - `article batch <id> [<id>...]` - compact multi-article summary cards
 - `article citations <id> --limit <N>` - citation graph with contexts/intents (optional auth; shared pool without `S2_API_KEY`)

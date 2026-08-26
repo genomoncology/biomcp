@@ -1,12 +1,39 @@
 //! Provider-exact author CLI.
 
 mod detail;
+mod papers;
 mod search;
+
+use clap::Subcommand;
 
 pub use detail::AuthorGetArgs;
 pub(in crate::cli) use detail::handle_get;
+pub(in crate::cli) use papers::handle_papers;
 pub use search::AuthorSearchArgs;
 pub(in crate::cli) use search::handle_search;
+
+#[derive(Subcommand, Debug)]
+pub enum AuthorCommand {
+    /// List compact papers for one exact Semantic Scholar author record
+    Papers {
+        /// Provider-qualified author ID (`semanticscholar:<id>`)
+        id: String,
+        /// Maximum papers, 1-100 (default: 10)
+        #[arg(short, long, default_value = "10")]
+        limit: usize,
+        /// Zero-based provider offset
+        #[arg(long, default_value = "0")]
+        offset: usize,
+    },
+}
+
+pub(in crate::cli) async fn handle(
+    command: AuthorCommand,
+    json: bool,
+) -> anyhow::Result<crate::cli::CommandOutcome> {
+    let AuthorCommand::Papers { id, limit, offset } = command;
+    handle_papers(id, limit, offset, json).await
+}
 
 #[cfg(test)]
 mod tests {

@@ -18,6 +18,7 @@ fn semantic_paper(
         reference_count: None,
         is_open_access: None,
         open_access_pdf: None,
+        authors: None,
         tldr: None,
     }
 }

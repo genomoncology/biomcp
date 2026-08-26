@@ -41,6 +41,7 @@ pub mod update;
 mod variant;
 
 pub use self::article::ArticleCommand;
+pub use self::author::AuthorCommand;
 pub use self::commands::{Commands, GetEntity, McpArgs, McpCommand, SearchEntity};
 pub use self::disease::DiseaseCommand;
 pub use self::drug::DrugCommand;
