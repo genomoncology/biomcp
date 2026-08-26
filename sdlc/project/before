@@ -437,7 +437,7 @@ gate() {
 		echo "before: $REPO has no executable sdlc/scripts/$1" >&2
 		return 2
 	fi
-	(cd "$TREE" && "$script") || return 1
+	(cd "$TREE" && "$script")
 }
 
 if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -gt 0 ]; then
@@ -460,8 +460,12 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 			echo "before: cleanup after the failed $g gate failed" >&2
 			exit 1
 		fi
-		if [ "$status" -eq 2 ]; then
-			exit 1 # a missing gate is a fault, not a red main
+		# Missing, unstartable, and signal-killed gates are faults, not red main.
+		case "$status" in
+		2 | 126 | 127) exit 1 ;;
+		esac
+		if [ "$status" -gt 128 ]; then
+			exit 1
 		fi
 		echo "before: origin/main is not green — sdlc/scripts/$g failed; a quickfix has to land first" >&2
 		exit 3

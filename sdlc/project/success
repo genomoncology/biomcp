@@ -24,11 +24,11 @@
 #      locally and on origin
 #
 # STDOUT:  "landed <base>..<tip>" for a settled landing, "nothing to
-#          land" for a no-op, or one activation receipt: "activated" or
-#          "activation-pending <base>..<tip>". Pending is the only stdout
-#          after a durable landing whose checkout remains unsafe.
-# EXIT:    0 settled or no-op; 1 landing, deploy, or teardown failure; 4 a
-#          durable landing whose checkout activation remains pending. The
+#          land" for a settled no-op, or one activation receipt: "activated"
+#          or "activation-pending <base>..<tip>". Pending is the only stdout
+#          when the durable snapshot's checkout remains unsafe.
+# EXIT:    0 settled or no-op; 1 landing, deploy, or teardown failure; 4 when
+#          the durable snapshot's checkout activation remains pending. The
 #          factory also reads 3 as a rejected landing and 2 as a refusal; this
 #          script uses neither.
 set -euo pipefail
@@ -283,6 +283,7 @@ if ! TIP=$(git -C "$REPO" rev-parse --verify "refs/heads/$BRANCH^{commit}" 2>/de
 	echo "success: $BRANCH has no local tip in $REPO" >&2
 	exit 1
 fi
+ATTEMPT_TIP=$TIP
 if [ -d "$TREE" ] && [ "$TREE_ORPHAN" -eq 0 ]; then
 	if ! HEAD_SHA=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$HEAD_SHA" != "$TIP" ]; then
 		echo "success: the worktree HEAD is not $BRANCH's tip — refusing to land a commit the attempt did not end on" >&2
@@ -294,12 +295,14 @@ if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
 	exit 1
 fi
 BASE=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}')
-DURABLE_LANDING=0
+FETCHED_MAIN_TIP=$BASE
 LANDING_RECEIPT=
 
 # 2. Land, unless the attempt added nothing to main.
 if [ "$(git -C "$REPO" rev-list --count "origin/main..$TIP")" -eq 0 ]; then
-	echo "nothing to land: $BRANCH adds no commits to main"
+	LANDING_RECEIPT="nothing to land: $BRANCH adds no commits to main"
+	BASE=$ATTEMPT_TIP
+	TIP=$FETCHED_MAIN_TIP
 else
 	if [ "$TREE_ORPHAN" -eq 1 ]; then
 		echo "success: cannot verify the unregistered worktree HEAD before landing" >&2
@@ -376,33 +379,24 @@ else
 		echo "success: $TIP could not fast-forward main — main moved; the branch is left standing" >&2
 		exit 1
 	fi
-	DURABLE_LANDING=1
 	LANDING_RECEIPT="landed $BASE..$TIP"
 fi
 
 # 3. Deploy the registered checkout after origin/main reflects settlement.
-# A durable landing remains pending when a safe checkout cannot activate it.
+# A durable snapshot remains pending when a safe checkout cannot activate it.
 failures=
 
-# The no-op path remains successful when its checkout is unsafe, as it did
-# before activation became a distinct settlement result.
-if [ "$DURABLE_LANDING" -eq 0 ]; then
-	CHECKOUT_NOTICE_STREAM=stdout
-fi
 if deploy_checkout "$TIP"; then
 	ACTIVATION_STATUS=0
 else
 	ACTIVATION_STATUS=$?
 fi
-if [ "$DURABLE_LANDING" -eq 0 ] && [ "$ACTIVATION_STATUS" -eq 4 ]; then
-	ACTIVATION_STATUS=0
-fi
 if [ "$ACTIVATION_STATUS" -eq 1 ]; then
 	failures="${failures}${failures:+, }deploy hook"
 fi
-if [ "$DURABLE_LANDING" -eq 1 ] && [ "$ACTIVATION_STATUS" -eq 4 ]; then
+if [ "$ACTIVATION_STATUS" -eq 4 ]; then
 	printf 'activation-pending %s..%s\n' "$BASE" "$TIP"
-elif [ -n "$LANDING_RECEIPT" ]; then
+elif [ "$ACTIVATION_STATUS" -eq 0 ] && [ -n "$LANDING_RECEIPT" ]; then
 	echo "$LANDING_RECEIPT"
 fi
 
@@ -441,9 +435,11 @@ cleanup "origin branch $BRANCH" remove_origin_branch
 
 if [ -n "$failures" ]; then
 	echo "success: settlement failed: $failures" >&2
-	exit 1
 fi
-if [ "$DURABLE_LANDING" -eq 1 ] && [ "$ACTIVATION_STATUS" -eq 4 ]; then
+if [ "$ACTIVATION_STATUS" -eq 4 ]; then
 	exit 4
+fi
+if [ -n "$failures" ]; then
+	exit 1
 fi
 echo "torn down $BRANCH and $TREE"

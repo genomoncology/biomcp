@@ -26,11 +26,12 @@
 #   attempt also preserves whole, but runs its optional $TREE/sdlc/scripts/clean
 #   after tagging to shed rebuildable output. An absent clean is skipped; an
 #   existing non-executable clean faults without settling; a failed clean is
-#   reported but does not cost the preservation. Every other
-#   settlement, including an empty or unrecognized one, is treated as a retry.
-#   A rejected run tags and then tears down so the next attempt gets a clean
-#   tree. A successful run whose own ticket branch could not land keeps its
-#   tagged branch and owned worktree for the next attempt to continue.
+#   reported but does not cost the preservation. A ready fault on the owned
+#   ticket branch keeps that branch and worktree for the retry. Every other
+#   retry settlement, including an empty or unrecognized one, tears down. A
+#   rejected run therefore gets a clean tree. A successful run whose own ticket
+#   branch could not land keeps its tagged branch and owned worktree for the
+#   next attempt to continue.
 #
 # STDOUT:  one line per action taken or preserved thing.
 # EXIT:    0 handled — a retry may proceed per SETTLEMENT
@@ -221,7 +222,7 @@ if [ "$WITHDRAWN" -eq 1 ]; then
 				exit 2
 			fi
 		fi
-		if [ -z "${BOT_CMD-}" ] || [ ! -x "$BOT_CMD" ]; then
+		if [ -z "${BOT_CMD-}" ] || ! command -v "$BOT_CMD" >/dev/null 2>&1; then
 			echo "failure: could not establish liveness for worktree $TREE: BOT_CMD is unavailable" >&2
 			exit 2
 		fi
@@ -339,6 +340,21 @@ if [ "$PRESERVE" -eq 1 ]; then
 		fi
 	fi
 	echo "settlement \"${SETTLEMENT-}\": preserving $BRANCH and ${TREE:-the worktree} untouched"
+	exit 0
+fi
+
+# A retryable fault continues from its own evidence. The ownership proof above
+# protects an existing worktree before this retention.
+if [ "${RUN_CAUSE-}" = "fault" ] &&
+	[ "$(printf '%s' "${SETTLEMENT-}" | tr '[:upper:]' '[:lower:]')" = "ready" ] &&
+	[ "$WITHDRAWN" -eq 0 ] && [ "$BRANCH" = "ticket/$TICKET_ID" ]; then
+	if [ -n "$TREE" ] && [ -e "$TREE" ]; then
+		echo "ready fault: retaining tagged branch $BRANCH and owned worktree $TREE"
+	elif [ -n "$LOCAL" ] || [ -n "$REMOTE" ]; then
+		echo "ready fault: retaining tagged branch $BRANCH"
+	else
+		echo "ready fault: no owned branch or worktree to retain"
+	fi
 	exit 0
 fi
 
