@@ -424,7 +424,7 @@ biomcp search adverse-event --type device --product-code PQP --limit 5
 biomcp search adverse-event --type device --device "insulin pump" --serious death --limit 5
 ```
 
-Each adverse-event route rejects filters it cannot apply before contacting a provider. VAERS-only accepts a vaccine query and `--limit`; recall accepts a drug query and classification; device accepts device identity fields, `--date-from`, and `--serious any|death|injury`, with broad `any` output labeled `death_or_injury`. FAERS counts require explicit `--source faers` and offset zero.
+Each adverse-event route rejects filters it cannot apply before contacting a provider. VAERS-only accepts a vaccine query and `--limit`; recall accepts a drug query and classification; device accepts device identity fields, `--date-from`, and `--serious any|death|injury`, with broad `any` output labeled `death_or_injury`. FAERS counts select FAERS when `--source` is omitted and require offset zero; explicit `--source vaers` is rejected.
 
 FAERS `--count` accepts `reaction` and `reactionmeddrapt` as aliases for
 `patient.reaction.reactionmeddrapt.exact`; `patient.reaction.reactionmeddrapt`
