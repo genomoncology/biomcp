@@ -80,6 +80,13 @@
 - Made global CLI modifiers truthful: cache commands now reject `--no-cache`
   before managed-state access, while JSON help and version flags return
   successful typed output instead of `invalid_argument` errors.
+- Advanced the private package identity to Rust `0.9.0-dev.6` and Python
+  `0.9.0.dev6` after pinning the documentation toolchain and silencing the
+  Material banner, binding Markdown assertions to their owning row and block,
+  preserving both PMC3040717 stored-fixture proof-of-work routes, declaring the
+  supported test lane, and fixing the indel ID round trip. Public citation,
+  directory, updater, and release metadata remain at the latest published
+  release, v0.8.25.
 - Advanced the private package identity to Rust `0.9.0-dev.5` and Python
   `0.9.0.dev5` after parsed-command MCP authorization, pre-bind HTTP host-policy
   validation, and complete HTTP build-identity reporting. Public citation,
