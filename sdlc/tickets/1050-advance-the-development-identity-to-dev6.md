@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 26
 deps: ["1021", "1047", "1048", "1049", "1056"]
 ---
