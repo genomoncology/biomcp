@@ -166,7 +166,10 @@ mod tests {
         assert_eq!(value["citation_count"], 50_000);
         assert_eq!(value["h_index"], 100);
         assert_eq!(value["warnings"][0]["code"], "orcid_link_not_established");
-        assert_eq!(value["_meta"]["next_commands"], serde_json::json!([]));
+        assert_eq!(
+            value["_meta"]["next_commands"],
+            serde_json::json!(["biomcp author papers semanticscholar:1"])
+        );
         assert_eq!(
             value["affiliations"][0]["evidence"]["source"],
             "semantic_scholar"
