@@ -32,6 +32,14 @@ pinned `protoc` 28.3 and run `scripts/regenerate-alphagenome-proto`, while CI
 runs `scripts/regenerate-alphagenome-proto --check` without editing the tree.
 
 `make test` uses `cargo nextest run` plus the Python/docs contract lane.
+`make test` is the supported Rust test lane: the existing offline,
+`--no-default-features` nextest lane. Direct bare `cargo test` invocations are
+unsupported. The known direct full-suite failure,
+`sources::provider_url_policy::tests::selected_fixture_origin_allows_only_exact_ip_loopback`,
+is order-dependent: it fails in the direct full suite but passes in isolation.
+If you encounter it, run `make test` instead. On 2026-08-23, reconciliation of
+direct-run expectations was considered and declined.
+
 `make lint` bootstraps the repository's checksum-verified pinned ShellCheck and
 actionlint binaries on supported hosts, then runs the repo lint script and the
 quality ratchet. Unsupported hosts receive explicit manual installation
