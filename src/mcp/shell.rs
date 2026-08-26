@@ -22,7 +22,7 @@ mod typed_get;
 use self::typed_get::typed_get_schema;
 mod http_server;
 pub(super) use self::http_server::run_http;
-
+mod pre_session;
 #[derive(Debug, Clone)]
 pub struct BioMcpServer {
     pub(super) tool_router: ToolRouter<Self>,
@@ -1434,17 +1434,17 @@ pub async fn run_stdio() -> anyhow::Result<()> {
             cancel.cancel();
         }
     });
-
-    let startup = tokio::time::timeout(
-        Duration::from_secs(5),
-        BioMcpServer::new().serve_with_ct(rmcp::transport::stdio(), shutdown),
-    )
+    let startup = tokio::time::timeout(Duration::from_secs(5), async {
+        let transport = pre_session::stdio_transport().await?;
+        BioMcpServer::new()
+            .serve_with_ct(transport, shutdown)
+            .await
+            .map_err(anyhow::Error::new)
+    })
     .await;
-
     let running = match startup {
         Ok(Ok(running)) => running,
         Ok(Err(err)) => {
-            let err = anyhow::Error::new(err);
             if is_handshake_startup_error(&err) {
                 anyhow::bail!("{}", mcp_stdio_guidance());
             }

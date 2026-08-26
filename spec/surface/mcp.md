@@ -41,6 +41,31 @@ initialized request'
 done
 ```
 
+## Stdio Discovery Precedes The Legacy Handshake
+
+Stdio clients may ask what BioMCP serves before initializing a session.
+Discovery advertises only the two supported legacy revisions, together with the
+same tools, resources, and package identity used by initialization. Because this
+answer is public and static, clients may cache it for five minutes. This does
+not provide modern stateless serving; clients still initialize before ordinary
+MCP requests.
+
+```bash
+response_file="$(mktemp)"
+set +e
+"${BIOMCP_BIN:-../../target/release/biomcp}" serve >"$response_file" 2>/dev/null <<'EOF'
+{"jsonrpc":"2.0","id":"discover","method":"server/discover","params":{}}
+EOF
+set -e
+head -n 1 "$response_file" | mustmatch like '"supportedVersions":["2025-06-18","2025-11-25"]
+"capabilities":{"resources":{},"tools":{}}
+"io.modelcontextprotocol/serverInfo":{"name":"biomcp"
+"resultType":"complete"
+"ttlMs":300000
+"cacheScope":"public"'
+rm -f "$response_file"
+```
+
 ## MCP Client Config Generator Prints Local Stdio Snippets
 
 Client setup should not depend on hand-written JSON blocks drifting away from the
