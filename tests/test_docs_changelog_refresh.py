@@ -472,6 +472,29 @@ def test_changelog_has_backfilled_releases_and_release_header() -> None:
         assert "\n- " in _markdown_section_block(changelog, header)
 
 
+def test_unreleased_records_the_complete_dev6_batch_and_preserves_history() -> None:
+    changelog = _read("CHANGELOG.md")
+    unreleased = _markdown_section_block(changelog, "## Unreleased")
+    dev6_match = re.search(
+        r"(?ms)^- (?=[^\n]*0\.9\.0-dev\.6\b).*?(?=^- |\Z)", unreleased
+    )
+
+    assert dev6_match is not None, "missing the dev.6 changelog entry"
+    dev6_entry = dev6_match.group(0).lower()
+    dev6_words = set(re.sub(r"[^a-z0-9]+", " ", dev6_entry).split())
+    assert "0.9.0.dev6" in dev6_entry
+    assert {"material", "banner"} <= dev6_words
+    assert "documentation" in dev6_words or "docs" in dev6_words
+    assert {"markdown", "row", "block"} <= dev6_words
+    assert {"pmc3040717", "proof", "work"} <= dev6_words
+    assert {"supported", "test", "lane"} <= dev6_words
+    assert {"indel", "round", "trip"} <= dev6_words
+
+    for development_number in range(2, 6):
+        assert f"0.9.0-dev.{development_number}" in unreleased
+        assert f"0.9.0.dev{development_number}" in unreleased
+
+
 def test_v0_8_25_release_block_matches_the_published_tag_boundary() -> None:
     current_changelog = _read("CHANGELOG.md")
     header = "## 0.8.25 — 2026-07-07"
@@ -824,7 +847,7 @@ def test_changelog_audit_backfills_rust_release_gaps() -> None:
 def test_release_overview_describes_committed_metadata_and_protected_promotion() -> None:
     overview = _read("architecture/technical/overview.md")
 
-    assert "**Development candidate:** Rust `0.9.0-dev.5`; Python `0.9.0.dev5`" in overview
+    assert "**Development candidate:** Rust `0.9.0-dev.6`; Python `0.9.0.dev6`" in overview
     assert "validates that mapping and its lock roots" in overview
     assert "both `server.json` version fields" in overview
     assert "`CITATION.cff`" in overview
