@@ -148,7 +148,7 @@ Affiliations remain sourced assertions, and each author leads to exact detail.
 <!-- mustmatch-lint: skip -->
 
 ```bash run id=article-authors exit=0
-../../tools/biomcp-ci --json article authors arXiv:2110.01406
+../../tools/biomcp-ci --json article authors 2110.01406
 ```
 
 ```json expect=article-authors contains
