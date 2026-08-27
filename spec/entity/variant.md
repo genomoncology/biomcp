@@ -137,6 +137,36 @@ biomcp --json --no-cache get variant --assembly hg38 'chr7:g.140753336A>T' \
   | mustmatch like '{"gene":"BRAF","id":"chr7:g.140753336A>T","genome_build":"GRCh38"}'
 ```
 
+## One coordinate build per variant card
+
+When population lookup resolves an rsID's GRCh37 source identity to a GRCh38
+coordinate, the card uses that displayed GRCh38 spelling in every variant
+follow-up command. It does not silently switch command coordinates back to the
+source identity. The printed coordinate remains a fetchable `get variant`
+input.
+
+```bash run id=population-card-coordinate-consistency
+card="$(biomcp --no-cache get variant rs334 population)"
+commands="$(printf '%s\n' "$card" | grep -E 'biomcp (get variant|variant (trials|articles|oncokb))')"
+printf '%s\n' "$card" | grep -Fq 'Resolved GRCh38 coordinate: chr11:g.5227002T>A (dbSNP)'
+test -n "$commands"
+while IFS= read -r command; do
+  grep -Fq 'chr11:g.5227002T>A' <<<"$command"
+  ! grep -Fq 'chr11:g.5248232T>A' <<<"$command"
+done <<<"$commands"
+printf 'all variant follow-ups use the displayed GRCh38 coordinate\n'
+```
+
+```text expect=population-card-coordinate-consistency
+all variant follow-ups use the displayed GRCh38 coordinate
+```
+
+```bash
+biomcp --json --no-cache get variant 'GRCh38:chr11:g.5227002T>A' \
+  | jq '{id, rsid, genome_build}' \
+  | mustmatch like '{"id":"chr11:g.5227002T>A","rsid":"rs334","genome_build":"GRCh38"}'
+```
+
 ## Inferred genome builds for genomic variants
 
 Genome-qualified coordinates do not require a separate `--assembly` flag. BioMCP

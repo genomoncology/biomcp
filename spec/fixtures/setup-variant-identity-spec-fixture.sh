@@ -55,6 +55,16 @@ SMARCA4_REPEAT_RESPONSE = json.dumps({
     "dbsnp": {"rsid": "rs876657378"},
     "clinvar": {"gene": {"symbol": "SMARCA4"}},
 }).encode("utf-8")
+RS334_GRCH37_RESPONSE = {
+    "_id": "chr11:g.5248232T>A",
+    "dbsnp": {"rsid": "rs334"},
+    "clinvar": {"gene": {"symbol": "HBB"}},
+}
+RS334_GRCH38_RESPONSE = {
+    "_id": "chr11:g.5227002T>A",
+    "dbsnp": {"rsid": "rs334"},
+    "clinvar": {"gene": {"symbol": "HBB"}},
+}
 MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
 CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
@@ -117,12 +127,35 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/v1/variant/chr19:g.11106928AAG%5B1%5D":
             send_json(self, 200, SMARCA4_REPEAT_RESPONSE)
             return
+        if parsed.path == "/v1/variant/chr11:g.5227002T%3EA":
+            if parse_qs(parsed.query).get("assembly") == ["hg38"]:
+                send_json(self, 200, RS334_GRCH38_RESPONSE)
+                return
+            send_json(self, 404, {"code": 404, "success": False, "error": "Not Found."})
+            return
+        if parsed.path == "/refsnp/334":
+            send_json(self, 200, {
+                "primary_snapshot_data": {"placements_with_allele": [{
+                    "is_ptlp": True,
+                    "placement_annot": {"seq_id_traits_by_assembly": [{
+                        "assembly_name": "GRCh38.p14", "is_chromosome": True
+                    }]},
+                    "alleles": [{"allele": {"spdi": {
+                        "seq_id": "NC_000011.10", "position": 5227001,
+                        "deleted_sequence": "T", "inserted_sequence": "A"
+                    }}}],
+                }]}
+            })
+            return
 
         if parsed.path == "/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
             expected_proteins = ('dbnsfp.hgvsp:"p.M1783I"', 'dbnsfp.hgvsp:"p.M16I"')
             if query == "dbsnp.rsid:rs876657378":
                 send_json(self, 200, {"total": 1, "hits": [json.loads(SMARCA4_REPEAT_RESPONSE)]})
+                return
+            if query == "dbsnp.rsid:rs334":
+                send_json(self, 200, {"total": 1, "hits": [RS334_GRCH37_RESPONSE]})
                 return
             if "dbnsfp.genename:BRCA1" in query and any(
                 protein in query for protein in expected_proteins
@@ -152,6 +185,24 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         send_json(self, 404, {"error": "fixture path not found"})
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        body = self.rfile.read(length)
+        with REQUEST_LOG.open("a", encoding="utf-8") as log:
+            log.write(f"POST {self.path} {body.decode('utf-8')}\n")
+        if b'"variantId":"11-5227002-T-A"' in body:
+            send_json(self, 200, {"data": {"variant": {
+                "variant_id": "11-5227002-T-A",
+                "exome": {
+                    "ac": 2, "an": 2000, "homozygote_count": 0,
+                    "hemizygote_count": 0, "filters": [], "faf95": None,
+                    "populations": [],
+                },
+                "genome": None,
+            }}})
+            return
+        send_json(self, 400, {"error": "unexpected fixture query"})
 
     def log_message(self, format, *args):
         return
@@ -219,6 +270,8 @@ PY
 
 {
   printf 'export BIOMCP_MYVARIANT_BASE=%q\n' "$base_url/v1"
+  printf 'export BIOMCP_DBSNP_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_GNOMAD_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CANCERHOTSPOTS_BASE=%q\n' "$base_url"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_VARIANT_IDENTITY_REQUEST_LOG=%q\n' "$request_log"
