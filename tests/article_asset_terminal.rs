@@ -70,6 +70,7 @@ impl Drop for ArticleFixture {
 
 #[cfg(unix)]
 #[test]
+#[serial_test::serial(article_output_fixture)]
 fn binary_article_assets_protect_terminals_and_preserve_files() {
     let fixture = ArticleFixture::start();
     let args = ["get", "article", "22663011", "asset", "traces-s1.csv"];
@@ -122,5 +123,140 @@ fn binary_article_assets_protect_terminals_and_preserve_files() {
     assert_eq!(
         fs::read(destination).expect("destination should exist"),
         expected
+    );
+}
+
+fn successful_output(fixture: &ArticleFixture, args: &[&str]) -> std::process::Output {
+    let output = fixture
+        .biomcp_command(args)
+        .output()
+        .expect("article command should run");
+    assert!(
+        output.status.success(),
+        "article command should succeed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    output
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn article_fulltext_out_uses_findable_name_and_frontmatter() {
+    let fixture = ArticleFixture::start();
+    let output_dir = fixture.root.join("owned-library");
+    fs::create_dir(&output_dir).expect("owned output directory should be created");
+
+    successful_output(
+        &fixture,
+        &[
+            "get",
+            "article",
+            "22663011",
+            "fulltext",
+            "--out",
+            output_dir
+                .to_str()
+                .expect("output directory should be UTF-8"),
+        ],
+    );
+
+    let saved = output_dir.join("22663011-europe-full-text-winner.md");
+    let document = fs::read_to_string(&saved).expect("findable fulltext file should exist");
+    let (frontmatter, body) = document
+        .strip_prefix("---\n")
+        .and_then(|value| value.split_once("\n---\n"))
+        .expect("fulltext should start with YAML frontmatter");
+    let fields = frontmatter
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .map(|(key, value)| (key.trim(), value.trim().trim_matches('"')))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    for (key, expected) in [
+        ("pmid", "22663011"),
+        ("pmcid", "PMC123456"),
+        ("title", "Europe full text winner"),
+        ("journal", "Journal One"),
+        ("date", "2025-01-01"),
+        ("source-rung", "Europe PMC XML"),
+    ] {
+        assert_eq!(fields.get(key), Some(&expected), "wrong {key} frontmatter");
+    }
+    assert!(
+        fields.contains_key("doi"),
+        "frontmatter should retain the DOI field"
+    );
+    let retrieved_at = fields
+        .get("retrieved-at")
+        .expect("frontmatter should record retrieval time");
+    chrono::DateTime::parse_from_rfc3339(retrieved_at)
+        .expect("retrieved-at should be an RFC 3339 timestamp");
+    assert!(
+        body.contains("Europe PMC body text"),
+        "saved document should retain the resolved article body"
+    );
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn article_asset_out_preserves_its_name_and_bytes() {
+    let fixture = ArticleFixture::start();
+    let output_dir = fixture.root.join("owned-assets");
+    fs::create_dir(&output_dir).expect("owned output directory should be created");
+
+    successful_output(
+        &fixture,
+        &[
+            "get",
+            "article",
+            "22663011",
+            "asset",
+            "traces-s1.csv",
+            "--out",
+            output_dir
+                .to_str()
+                .expect("output directory should be UTF-8"),
+        ],
+    );
+
+    assert_eq!(
+        fs::read(output_dir.join("traces-s1.csv"))
+            .expect("asset should be saved under its own name"),
+        b"time,value\n0,1\n"
+    );
+}
+
+#[test]
+#[serial_test::serial(article_output_fixture)]
+fn article_fulltext_without_out_keeps_the_managed_cache_path() {
+    let fixture = ArticleFixture::start();
+
+    let output = successful_output(&fixture, &["get", "article", "22663011", "fulltext"]);
+    let stdout = String::from_utf8(output.stdout).expect("article output should be UTF-8");
+    let saved_path = stdout
+        .lines()
+        .find_map(|line| line.strip_prefix("Saved to: "))
+        .map(PathBuf::from)
+        .expect("default summary should report its cache path");
+
+    assert_eq!(
+        saved_path.parent(),
+        Some(fixture.root.join("cache/downloads").as_path())
+    );
+    assert_eq!(
+        saved_path.extension().and_then(|value| value.to_str()),
+        Some("txt")
+    );
+    assert!(
+        saved_path.is_file(),
+        "default fulltext should remain in the managed cache"
+    );
+    assert!(
+        !fixture
+            .root
+            .join("22663011-europe-full-text-winner.md")
+            .exists(),
+        "default retrieval should not create a user-library copy"
     );
 }
