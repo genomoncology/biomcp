@@ -8,17 +8,29 @@ mod pty_helpers;
 
 struct ArticleFixture {
     root: PathBuf,
+    workspace: PathBuf,
     env_file: PathBuf,
 }
 
 impl ArticleFixture {
     fn start() -> Self {
         let repo = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let workspace = repo.join(".cache").join(format!(
+            "article-asset-terminal.{}.{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("system clock should follow the Unix epoch")
+                .as_nanos()
+        ));
+        fs::create_dir_all(&workspace).expect("fixture workspace should be created");
         let output = Command::new("bash")
             .current_dir(repo)
             .args([
                 "spec/fixtures/setup-article-fulltext-source-fixture.sh",
-                repo.to_str().expect("repository path should be UTF-8"),
+                workspace
+                    .to_str()
+                    .expect("fixture workspace path should be UTF-8"),
             ])
             .output()
             .expect("article fixture setup should run");
@@ -33,9 +45,13 @@ impl ArticleFixture {
                 .expect("fixture root should be UTF-8")
                 .trim(),
         );
-        let env_file = repo.join(".cache/spec-article-fulltext-source-env");
+        let env_file = workspace.join(".cache/spec-article-fulltext-source-env");
         assert!(env_file.is_file(), "fixture environment should exist");
-        Self { root, env_file }
+        Self {
+            root,
+            workspace,
+            env_file,
+        }
     }
 
     fn biomcp_command(&self, args: &[&str]) -> Command {
@@ -61,10 +77,12 @@ impl Drop for ArticleFixture {
             .current_dir(repo)
             .args([
                 "spec/fixtures/cleanup-article-fulltext-source-fixture.sh",
-                repo.to_str().expect("repository path should be UTF-8"),
+                self.workspace
+                    .to_str()
+                    .expect("fixture workspace path should be UTF-8"),
             ])
             .status();
-        let _ = fs::remove_dir_all(&self.root);
+        let _ = fs::remove_dir_all(&self.workspace);
     }
 }
 
