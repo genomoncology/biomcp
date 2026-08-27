@@ -642,6 +642,67 @@ mod tests {
     use super::*;
 
     #[test]
+    fn search_mechanism_ranking_prefers_kinase_moa_and_rejects_metabolism_only() {
+        let fixtures = [
+            serde_json::json!({
+                "_id": "dabrafenib",
+                "drugbank": {"name": "Dabrafenib"},
+                "ndc": {"pharm_classes": [
+                    "Cytochrome P450 2C9 Inducers [MoA]",
+                    "Protein Kinase Inhibitors [MoA]"
+                ]}
+            }),
+            serde_json::json!({
+                "_id": "vemurafenib",
+                "drugbank": {"name": "Vemurafenib"},
+                "ndc": {"pharm_classes": [
+                    "Inhibitor of Serine/threonine-protein kinase B-raf [MoA]"
+                ]}
+            }),
+            serde_json::json!({
+                "_id": "metabolism-only",
+                "drugbank": {"name": "Example drug"},
+                "ndc": {"pharm_classes": [
+                    "Cytochrome P450 2C9 Inducers [MoA]"
+                ]}
+            }),
+        ];
+
+        let mechanisms = fixtures
+            .into_iter()
+            .map(|fixture| {
+                let hit: MyChemHit = serde_json::from_value(fixture).expect("valid search hit");
+                from_mychem_search_hit(&hit).and_then(|row| row.mechanism)
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            mechanisms,
+            vec![
+                Some("Protein Kinase Inhibitors".to_string()),
+                Some("Inhibitor of Serine/threonine-protein kinase B-raf".to_string()),
+                None,
+            ]
+        );
+    }
+
+    #[test]
+    fn search_mechanism_prefers_chembl_over_ranked_moa_fallback() {
+        let hit: MyChemHit = serde_json::from_value(serde_json::json!({
+            "_id": "dabrafenib-with-chembl",
+            "drugbank": {"name": "Dabrafenib"},
+            "chembl": {"drug_mechanisms": [{
+                "mechanism_of_action": "BRAF inhibitor"
+            }]},
+            "ndc": {"pharm_classes": ["Protein Kinase Inhibitors [MoA]"]}
+        }))
+        .expect("valid search hit");
+
+        let row = from_mychem_search_hit(&hit).expect("named hit should render");
+        assert_eq!(row.mechanism.as_deref(), Some("BRAF inhibitor"));
+    }
+
+    #[test]
     fn merge_mychem_hits_collects_deduped_mechanisms() {
         let hit: MyChemHit = serde_json::from_value(serde_json::json!({
             "_id": "1",
