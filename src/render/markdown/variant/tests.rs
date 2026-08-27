@@ -303,6 +303,76 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
 }
 
 #[test]
+fn variant_population_markdown_labels_residual_group_but_json_keeps_raw_id() {
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "id": "rs1426654",
+        "gene": "SLC24A5",
+        "population": {
+            "status": "data",
+            "dataset": "gnomad_r4",
+            "release": "gnomAD v4",
+            "exome": {
+                "allele_frequency": 0.001,
+                "ac": 2,
+                "an": 2000,
+                "homozygote_count": 0,
+                "hemizygote_count": 0,
+                "filters": [],
+                "faf95": null,
+                "populations": [
+                    {
+                        "id": "afr", "allele_frequency": 0.001,
+                        "ac": 1, "an": 1000, "homozygote_count": 0,
+                        "hemizygote_count": 0
+                    },
+                    {
+                        "id": "remaining", "allele_frequency": 0.002,
+                        "ac": 2, "an": 1000, "homozygote_count": 0,
+                        "hemizygote_count": 0
+                    }
+                ]
+            },
+            "genome": null,
+            "faf_caveat": "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
+        }
+    }))
+    .expect("variant should deserialize");
+
+    let detailed = variant_markdown(&variant, &["population-details".to_string()])
+        .expect("rendered detailed population markdown");
+    assert!(
+        detailed.contains(
+            "| gnomAD v4 | Other / not assigned (gnomAD residual) | 0.002 | 2 | 1000 | 0 | 0 |"
+        ),
+        "{detailed}"
+    );
+    assert!(
+        detailed.contains("| gnomAD v4 | afr | 0.001 | 1 | 1000 | 0 | 0 |"),
+        "{detailed}"
+    );
+    assert!(
+        !detailed.contains("| gnomAD v4 | remaining |"),
+        "{detailed}"
+    );
+
+    let compact = variant_markdown(&variant, &["population".to_string()])
+        .expect("rendered compact population markdown");
+    assert!(
+        compact.contains(
+            "Exome highest ancestry frequency: Other / not assigned (gnomAD residual) (0.002)"
+        ),
+        "{compact}"
+    );
+    assert!(!compact.contains("frequency: remaining"), "{compact}");
+
+    let json = serde_json::to_value(&variant).expect("variant should serialize");
+    assert_eq!(
+        json["population"]["exome"]["populations"][1]["id"],
+        "remaining"
+    );
+}
+
+#[test]
 fn variant_population_markdown_keeps_missing_status_compact() {
     let unresolved: Variant = serde_json::from_value(serde_json::json!({
         "id": "chr7:g.140453136A>T",
