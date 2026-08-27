@@ -42,6 +42,14 @@ pub(super) fn semantic_scholar_lookup_id(id: &str) -> Option<String> {
     if let Some(arxiv) = parse_arxiv_id(id) {
         return Some(arxiv);
     }
+    if let Some((year_month, sequence)) = id.split_once('.')
+        && !year_month.is_empty()
+        && year_month.chars().all(|ch| ch.is_ascii_digit())
+        && !sequence.is_empty()
+        && sequence.chars().all(|ch| ch.is_ascii_digit())
+    {
+        return Some(format!("ARXIV:{id}"));
+    }
     if is_semantic_scholar_paper_id(id) {
         return Some(id.to_string());
     }
