@@ -235,8 +235,31 @@ orphan_owned() {
 	esac
 }
 
+registered_worktree() {
+	local candidate=$1 candidate_path listing line registered
+	candidate_path=$(lexical_path "$candidate") || return 1
+	listing=$(mktemp) || return 1
+	if ! git -C "$REPO" worktree list --porcelain -z >"$listing"; then
+		rm -f -- "$listing"
+		return 1
+	fi
+	while IFS= read -r -d '' line; do
+		case "$line" in
+		"worktree "*)
+			registered=$(lexical_path "${line#worktree }") || continue
+			if [ "$registered" = "$candidate_path" ]; then
+				rm -f -- "$listing"
+				return 0
+			fi
+			;;
+		esac
+	done <"$listing"
+	rm -f -- "$listing"
+	return 1
+}
+
 owned_worktree() {
-	candidate_owned "$1" || orphan_owned "$1"
+	candidate_owned "$1" || orphan_owned "$1" || registered_worktree "$1"
 }
 
 remove_tree() {
