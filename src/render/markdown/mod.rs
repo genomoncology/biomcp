@@ -631,6 +631,13 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
         }
     });
     env.add_filter("score", |v: f64| -> String { format!("{v:.3}") });
+    env.add_filter("gnomad_ancestry_label", |id: String| -> String {
+        if id == "remaining" {
+            "Other / not assigned (gnomAD residual)".to_string()
+        } else {
+            id
+        }
+    });
     env.add_filter("af", |v: f64| -> String {
         let mut out = format!("{v:.6}");
         while out.contains('.') && out.ends_with('0') {

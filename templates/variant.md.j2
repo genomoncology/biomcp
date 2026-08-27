@@ -94,13 +94,13 @@ Dataset: `{{ population.dataset }}` ({{ population.release }})
 {% if population.exome -%}
 ### Exomes
 Exome overall frequency: {% if population.exome.allele_frequency is not none %}{{ population.exome.allele_frequency | af }}{% else %}-{% endif %}
-Exome highest ancestry frequency: {% if exome_highest_ancestry %}{{ exome_highest_ancestry.id }} ({{ exome_highest_ancestry.allele_frequency | af }}){% else %}Not reported{% endif %}
+Exome highest ancestry frequency: {% if exome_highest_ancestry %}{{ exome_highest_ancestry.id | gnomad_ancestry_label }} ({{ exome_highest_ancestry.allele_frequency | af }}){% else %}Not reported{% endif %}
 {% if show_population_details -%}
 | Dataset | Ancestry | Raw allele frequency | Allele count | Allele number | Homozygotes | Hemizygotes |
 |---|---|---:|---:|---:|---:|---:|
 | {{ population.release }} | Overall | {% if population.exome.allele_frequency is not none %}{{ population.exome.allele_frequency | af }}{% else %}-{% endif %} | {{ population.exome.ac }} | {{ population.exome.an }} | {{ population.exome.homozygote_count }} | {{ population.exome.hemizygote_count }} |
 {% for row in population.exome.populations -%}
-| {{ population.release }} | {{ row.id }} | {% if row.allele_frequency is not none %}{{ row.allele_frequency | af }}{% else %}-{% endif %} | {{ row.ac }} | {{ row.an }} | {{ row.homozygote_count }} | {{ row.hemizygote_count }} |
+| {{ population.release }} | {{ row.id | gnomad_ancestry_label }} | {% if row.allele_frequency is not none %}{{ row.allele_frequency | af }}{% else %}-{% endif %} | {{ row.ac }} | {{ row.an }} | {{ row.homozygote_count }} | {{ row.hemizygote_count }} |
 {% endfor -%}
 {% endif -%}
 {% if population.exome.faf95 %}{{ population.release }} exome grpmax FAF95: {% if population.exome.faf95.popmax is not none %}{{ population.exome.faf95.popmax | af }}{% else %}Not reported{% endif %}{% if population.exome.faf95.popmax_population %} ({{ population.exome.faf95.popmax_population }}){% endif %}
@@ -113,13 +113,13 @@ No exome result in {{ population.release }}.
 {% if population.genome -%}
 ### Genomes
 Genome overall frequency: {% if population.genome.allele_frequency is not none %}{{ population.genome.allele_frequency | af }}{% else %}-{% endif %}
-Genome highest ancestry frequency: {% if genome_highest_ancestry %}{{ genome_highest_ancestry.id }} ({{ genome_highest_ancestry.allele_frequency | af }}){% else %}Not reported{% endif %}
+Genome highest ancestry frequency: {% if genome_highest_ancestry %}{{ genome_highest_ancestry.id | gnomad_ancestry_label }} ({{ genome_highest_ancestry.allele_frequency | af }}){% else %}Not reported{% endif %}
 {% if show_population_details -%}
 | Dataset | Ancestry | Raw allele frequency | Allele count | Allele number | Homozygotes | Hemizygotes |
 |---|---|---:|---:|---:|---:|---:|
 | {{ population.release }} | Overall | {% if population.genome.allele_frequency is not none %}{{ population.genome.allele_frequency | af }}{% else %}-{% endif %} | {{ population.genome.ac }} | {{ population.genome.an }} | {{ population.genome.homozygote_count }} | {{ population.genome.hemizygote_count }} |
 {% for row in population.genome.populations -%}
-| {{ population.release }} | {{ row.id }} | {% if row.allele_frequency is not none %}{{ row.allele_frequency | af }}{% else %}-{% endif %} | {{ row.ac }} | {{ row.an }} | {{ row.homozygote_count }} | {{ row.hemizygote_count }} |
+| {{ population.release }} | {{ row.id | gnomad_ancestry_label }} | {% if row.allele_frequency is not none %}{{ row.allele_frequency | af }}{% else %}-{% endif %} | {{ row.ac }} | {{ row.an }} | {{ row.homozygote_count }} | {{ row.hemizygote_count }} |
 {% endfor -%}
 {% endif -%}
 {% if population.genome.faf95 %}{{ population.release }} genome grpmax FAF95: {% if population.genome.faf95.popmax is not none %}{{ population.genome.faf95.popmax | af }}{% else %}Not reported{% endif %}{% if population.genome.faf95.popmax_population %} ({{ population.genome.faf95.popmax_population }}){% endif %}
