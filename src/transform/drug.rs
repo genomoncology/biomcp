@@ -221,7 +221,22 @@ fn chembl_mechanisms_from_hit(hit: &MyChemHit) -> Vec<String> {
 }
 
 fn fallback_mechanism_from_hit(hit: &MyChemHit) -> Option<String> {
-    moa_pharm_classes(hit).into_iter().next()
+    let classes = moa_pharm_classes(hit);
+    classes
+        .iter()
+        .find(|class| {
+            let class = class.to_ascii_lowercase();
+            class.contains("kinase") || class.contains("braf") || class.contains("b-raf")
+        })
+        .cloned()
+        .or_else(|| {
+            classes.into_iter().find(|class| {
+                let class = class.to_ascii_lowercase();
+                !(class.contains("cytochrome p450")
+                    || class.contains("metabol")
+                    || class.contains("enzyme") && class.contains("induc"))
+            })
+        })
 }
 
 fn normalize_approval_date(value: &str) -> Option<String> {
