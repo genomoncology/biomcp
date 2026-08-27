@@ -493,6 +493,10 @@ fn push_ranked_hits(
             continue;
         }
 
+        let match_tier = pathway_title_match_tier(&name, query);
+        if match_tier == 0 {
+            continue;
+        }
         let dedupe_key = format!(
             "{}:{}",
             source.to_ascii_lowercase(),
@@ -503,7 +507,7 @@ fn push_ranked_hits(
         }
 
         ranked.push((
-            pathway_title_match_tier(&name, query),
+            match_tier,
             upstream_idx,
             id.clone(),
             PathwaySearchResult { source, id, name },
@@ -537,11 +541,7 @@ fn finalize_pathway_search_results(
         wikipathways_error,
     } = source_results;
 
-    if reactome_hits.is_empty()
-        && kegg_hits.is_empty()
-        && wikipathways_hits.is_empty()
-        && let Some(err) = reactome_error.or(kegg_error).or(wikipathways_error)
-    {
+    if let Some(err) = reactome_error.or(kegg_error).or(wikipathways_error) {
         return Err(err);
     }
 
@@ -1285,10 +1285,10 @@ mod tests {
         );
 
         let error = result.expect_err("a partial answer must report its missing source");
-        assert!(
-            error.to_string().contains("HTTP 504"),
-            "partial failure should preserve the source reason"
-        );
+        match error {
+            BioMcpError::Api { message, .. } => assert_eq!(message, "HTTP 504"),
+            other => panic!("expected the recorded API failure, got {other:?}"),
+        }
     }
 
     #[test]

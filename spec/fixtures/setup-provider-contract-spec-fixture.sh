@@ -106,7 +106,7 @@ REACTOME_SEARCH = {
 REACTOME_DETAIL = fixture("reactome/get_r_hsa_5673001_20260811.json")
 REACTOME_PARTICIPANTS = fixture("reactome/participants_r_hsa_5673001_20260811.json")
 REACTOME_EVENTS = fixture("reactome/events_r_hsa_5673001_20260811.json")
-WIKIPATHWAYS_UNAVAILABLE = fixture("wikipathways/search_unavailable_20260811.html")
+WIKIPATHWAYS_SEARCH = b'{"result":[]}'
 NCI_MELANOMA = fixture("nci_cts/search_melanoma_20260811.json")
 
 
@@ -211,7 +211,7 @@ class Handler(BaseHTTPRequestHandler):
             send(self, 200, REACTOME_EVENTS)
             return
         if parsed.path == "/wikipathways/findPathwaysByText.json":
-            send(self, 404, WIKIPATHWAYS_UNAVAILABLE, "text/html; charset=utf-8")
+            send(self, 200, WIKIPATHWAYS_SEARCH)
             return
         if parsed.path == "/nci/api/v2/trials":
             query = parse_qs(parsed.query)
