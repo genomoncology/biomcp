@@ -153,7 +153,7 @@ function parseFrontmatter(text) {
 
 // --- the ticket validator ------------------------------------------------
 
-function parseTicket(path, content, draft = false) {
+function parseTicket(path, content, routingOptional = false) {
   const problems = [];
   const name = path.split("/").at(-1) ?? path;
   const idMatch = ID_RE.exec(name);
@@ -172,9 +172,9 @@ function parseTicket(path, content, draft = false) {
   const meta = parsed.meta;
   const body = (fm[2] ?? "").trim();
 
-  if (!draft && (typeof meta.flow !== "string" || meta.flow === "")) problems.push(`${path}: missing flow`);
+  if (!routingOptional && (typeof meta.flow !== "string" || meta.flow === "")) problems.push(`${path}: missing flow`);
   else if (meta.flow !== undefined && (typeof meta.flow !== "string" || meta.flow === "")) problems.push(`${path}: flow is not a string`);
-  if (!draft && meta.priority === undefined) problems.push(`${path}: missing priority`);
+  if (!routingOptional && meta.priority === undefined) problems.push(`${path}: missing priority`);
   else if (meta.priority !== undefined && !Number.isInteger(meta.priority)) problems.push(`${path}: priority is not an integer`);
   if (meta.channel !== undefined && (typeof meta.channel !== "string" || meta.channel === "")) problems.push(`${path}: channel is not a string`);
   const deps = [];
@@ -238,7 +238,7 @@ for (const [dir, archived, draft] of [["sdlc/tickets", false, false], ["sdlc/tic
     const bytes = gitBytes("show", `origin/main:${path}`);
     const contentIdentity = createHash("sha256").update(path).update("\0").update(bytes).digest("hex");
     const content = bytes.toString("utf8");
-    const parsed = parseTicket(path, content, draft);
+    const parsed = parseTicket(path, content, archived || draft);
     if (!parsed.ok) {
       hasProblems = true;
       for (const problem of parsed.problems) process.stderr.write(`tasks: ${problem}\n`);
