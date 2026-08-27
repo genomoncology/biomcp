@@ -270,8 +270,8 @@ pub(super) fn related_variant(variant: &Variant) -> Vec<String> {
         out.push(format!("biomcp search drug --target {gene}"));
     }
 
-    if !variant.id.trim().is_empty() {
-        let id = quote_arg(&variant.id);
+    let id = quote_arg(preferred_variant_follow_up_id(variant));
+    if !id.is_empty() {
         out.push(format!("biomcp variant trials {id}"));
         out.push(format!("biomcp variant articles {id}"));
         let has_oncokb_token = std::env::var("ONCOKB_TOKEN")

@@ -55,7 +55,8 @@ pub fn variant_markdown(
         .map(prediction_interpretations)
         .unwrap_or((None, None, None));
     let civic_actionability_pointer = civic_actionability_pointer(variant);
-    let variant_command_arg = quote_arg(&variant.id);
+    let follow_up_id = preferred_variant_follow_up_id(variant);
+    let variant_command_arg = quote_arg(follow_up_id);
     let gene_command_arg = quote_arg(&variant.gene);
     let genome_build_provider_default = variant
         .genome_build_provenance
@@ -134,7 +135,7 @@ pub fn variant_markdown(
         show_cancerhotspots_section => show_cancerhotspots_section,
         show_cbioportal_section => show_cbioportal_section,
         show_gwas_section => show_gwas_section,
-        sections_block => format_sections_block("variant", &variant.id, sections_variant(variant, requested_sections)),
+        sections_block => format_sections_block("variant", follow_up_id, sections_variant(variant, requested_sections)),
         related_block => format_related_block(related_variant(variant)),
         source_states => section_render_contexts("variant", &variant.section_outcomes),
     })?;
@@ -179,7 +180,10 @@ fn expanded_gnomad_filters(
 }
 
 fn civic_actionability_pointer(variant: &Variant) -> String {
-    let command = format!("get variant {} civic", quote_arg(&variant.id));
+    let command = format!(
+        "get variant {} civic",
+        quote_arg(preferred_variant_follow_up_id(variant))
+    );
     let Some(civic) = variant.civic.as_ref() else {
         return format!("Therapeutic evidence: see `{command}`");
     };
