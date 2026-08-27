@@ -1,24 +1,46 @@
 use crate::cli::CommandOutcome;
 
+#[derive(Clone, Copy)]
+pub(super) enum AssetOutput<'a> {
+    Exact(&'a std::path::Path),
+    Directory(&'a std::path::Path),
+}
+
+impl<'a> AssetOutput<'a> {
+    pub(super) fn from_paths(
+        output: Option<&'a std::path::Path>,
+        out: Option<&'a std::path::Path>,
+    ) -> Option<Self> {
+        output.map(Self::Exact).or_else(|| out.map(Self::Directory))
+    }
+}
+
 pub(super) async fn handle_asset_get(
     id: &str,
     sections: &[String],
     json_output: bool,
-    output: Option<&std::path::Path>,
+    destination: Option<AssetOutput<'_>>,
     view: &str,
     explicit_limit: Option<usize>,
     offset: usize,
 ) -> anyhow::Result<Option<CommandOutcome>> {
     if let Some(asset_name) = article_asset_request(sections)? {
-        let (bytes, media_type) =
+        let (bytes, media_type, filename) =
             crate::entities::article::article_asset_bytes(id, &asset_name).await?;
+        let output_path = match destination {
+            Some(AssetOutput::Exact(path)) => Some(path.to_path_buf()),
+            Some(AssetOutput::Directory(directory)) => {
+                Some(asset_export_path(directory, &filename)?)
+            }
+            None => None,
+        };
         return Ok(Some(CommandOutcome::stdout_article_asset(
             bytes,
             media_type,
-            output.map(std::path::Path::to_path_buf),
+            output_path,
         )));
     }
-    if output.is_some() {
+    if matches!(destination, Some(AssetOutput::Exact(_))) {
         return Err(crate::error::BioMcpError::InvalidArgument(
             "--output requires asset <asset-key> as the sole article section".into(),
         )
@@ -202,6 +224,21 @@ fn pagination(
         "returned": returned, "total": total, "has_more": has_more, "next_offset": next_offset,
         "continuation_command": next_offset.map(|next| format!("biomcp --json get article {} --asset-view {view} --asset-limit {limit} --asset-offset {next} assets", crate::render::markdown::shell_quote_arg(id)))
     })
+}
+
+fn asset_export_path(
+    directory: &std::path::Path,
+    filename: &str,
+) -> Result<std::path::PathBuf, crate::error::BioMcpError> {
+    let mut components = std::path::Path::new(filename).components();
+    if !matches!(components.next(), Some(std::path::Component::Normal(_)))
+        || components.next().is_some()
+    {
+        return Err(crate::error::BioMcpError::InvalidArgument(
+            "Article asset filename must be one non-empty normal path component".into(),
+        ));
+    }
+    Ok(directory.join(filename))
 }
 
 pub(super) fn article_asset_route(sections: &[String]) -> bool {

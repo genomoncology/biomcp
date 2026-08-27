@@ -532,9 +532,11 @@ EXAMPLES:
   biomcp get article 22663011
   biomcp get article 22663011 annotations
   biomcp get article 22663011 fulltext
+  biomcp get article 22663011 fulltext --out ./articles
   biomcp get article 22663011 fulltext --pdf
   biomcp --json get article <id> assets
   biomcp get article <id> asset <asset-key>
+  biomcp get article <id> asset <asset-key> --out ./assets
   biomcp get article 22663011 tldr
 
 Full text defaults to the XML -> PMC HTML ladder. Abstract-only and metadata-only responses are partial results, so later rungs continue until an article body wins.
@@ -542,7 +544,8 @@ Requested fulltext JSON includes `full_text_coverage` and sanitized per-rung att
 Use `assets` for the JSON-only merged article asset manifest (PMC OA, Europe PMC, recognized JATS/PMC HTML links, and eligible Figshare siblings).
 Use `asset <asset-key>` to return one advertised asset as raw bytes with no conversion; handles stay as BioMCP commands, not provider URLs.
 Binary or unknown-type assets are refused when standard output is a terminal.
-Pipe standard output to preserve exact asset bytes, or use `--output FILE`.
+Pipe standard output to preserve exact asset bytes, or use `--output FILE` for an exact destination.
+Use `--out DIR` to export resolved full text with a findable name or an asset under its advertised filename. The directory must already exist.
 Asset keywords:
 assets
 asset <asset-key>

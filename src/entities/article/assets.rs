@@ -280,7 +280,7 @@ fn source_attempt_record<T>(
 pub async fn article_asset_bytes(
     requested_id: &str,
     asset_key: &str,
-) -> Result<(Vec<u8>, Option<String>), BioMcpError> {
+) -> Result<(Vec<u8>, Option<String>, String), BioMcpError> {
     let article = super::detail::get_article_base(requested_id).await?;
     let resolved = resolve_article_assets(requested_id, article).await?;
     article_asset_bytes_from_resolution(requested_id, asset_key.trim(), resolved)
@@ -290,7 +290,7 @@ fn article_asset_bytes_from_resolution(
     requested_id: &str,
     wanted: &str,
     mut resolved: ResolvedArticleAssets,
-) -> Result<(Vec<u8>, Option<String>), BioMcpError> {
+) -> Result<(Vec<u8>, Option<String>, String), BioMcpError> {
     let assets = &resolved.manifest.assets;
     // Asset keys take precedence over unambiguous filename matches.
     let asset = assets
@@ -300,11 +300,11 @@ fn article_asset_bytes_from_resolution(
             let mut matches = assets.iter().filter(|asset| asset.filename == wanted);
             matches.next().filter(|_| matches.next().is_none())
         })
-        .map(|asset| (asset.asset_key.clone(), asset.media_type.clone()));
-    if let Some((asset_key, media_type)) = asset
-        && let Some(bytes) = resolved.bytes.remove(&asset_key)
+        .map(|asset| (&asset.asset_key, &asset.media_type, &asset.filename));
+    if let Some((asset_key, media_type, filename)) = asset
+        && let Some(bytes) = resolved.bytes.remove(asset_key)
     {
-        return Ok((bytes, media_type));
+        return Ok((bytes, media_type.clone(), filename.clone()));
     }
     let matches = resolved
         .manifest

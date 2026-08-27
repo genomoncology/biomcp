@@ -18,6 +18,7 @@ pub(in crate::cli) async fn handle_get(
     let (sections, outline, lines) =
         super::fulltext_view::extract_controls(&sections, args.outline, args.lines)?;
     super::fulltext_view::validate_controls(&sections, outline, lines.as_deref())?;
+    super::export::validate_request(args.out.is_some(), &sections, outline, lines.as_deref())?;
     let json_output = json || json_override;
     if super::assets::article_asset_route(&sections) && (args.pdf || pdf_from_sections) {
         return Err(crate::error::BioMcpError::InvalidArgument(
@@ -27,11 +28,13 @@ pub(in crate::cli) async fn handle_get(
         .into());
     }
 
+    let asset_destination =
+        super::assets::AssetOutput::from_paths(args.output.as_deref(), args.out.as_deref());
     if let Some(outcome) = super::assets::handle_asset_get(
         &args.id,
         &sections,
         json_output,
-        args.output.as_deref(),
+        asset_destination,
         &args.asset_view,
         args.asset_limit,
         args.asset_offset,
@@ -50,6 +53,7 @@ pub(in crate::cli) async fn handle_get(
         },
     )
     .await?;
+    super::export::export_fulltext(&article, args.out.as_deref()).await?;
     if let Some(response) = super::fulltext_view::requested_response(
         &article,
         &args.id,

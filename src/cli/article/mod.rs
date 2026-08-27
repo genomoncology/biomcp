@@ -258,9 +258,12 @@ pub struct ArticleGetArgs {
     /// Return an inclusive one-based cached full-text line range (START:END)
     #[arg(long, value_name = "START:END", conflicts_with = "outline")]
     pub lines: Option<String>,
-    /// Write an article asset to a file instead of standard output
-    #[arg(long, value_name = "FILE")]
+    /// Write an article asset to an exact file instead of standard output
+    #[arg(long, value_name = "FILE", conflicts_with = "out")]
     pub output: Option<std::path::PathBuf>,
+    /// Export full text or one article asset into an existing directory
+    #[arg(long, value_name = "DIR", conflicts_with = "output")]
+    pub out: Option<std::path::PathBuf>,
     /// Asset manifest view
     #[arg(long = "asset-view", default_value = "compact", value_parser = ["compact", "retrievable", "coverage"])]
     pub asset_view: String,
@@ -374,6 +377,7 @@ See also: biomcp list article")]
 
 mod assets;
 mod dispatch;
+mod export;
 pub(crate) mod session;
 mod workflow;
 pub(super) use self::dispatch::{handle_command, handle_get, handle_search};

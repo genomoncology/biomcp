@@ -202,7 +202,7 @@ pub(super) fn summary(path: &Path) -> Result<(usize, usize, usize), BioMcpError>
     Ok((text.len(), lines, sections))
 }
 
-fn read_managed_text(path: &Path) -> Result<String, BioMcpError> {
+pub(super) fn read_managed_text(path: &Path) -> Result<String, BioMcpError> {
     let mut file = crate::cache::open_managed_read(path).map_err(BioMcpError::Io)?;
     let mut text = String::new();
     file.read_to_string(&mut text).map_err(BioMcpError::Io)?;
