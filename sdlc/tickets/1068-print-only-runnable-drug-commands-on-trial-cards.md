@@ -27,4 +27,10 @@ this extends it to the trial→drug pivot.
 - A test pins the JAG201 case: the exact card must print commands that all
   run, with the failing form absent.
 
+Additional repro evidence (same sweep, 2026-08-27): the derivation is
+ordering-dependent — `trial.interventions.first()` is registration order,
+and `get drug Placebo` / `get drug Saline` both fail, so any trial listing
+a placebo or saline arm first prints a broken command. NNZ-2591's card
+(NCT07281079) only works because the drug happens to be listed first.
+
 Filed as build, not quickfix: green suite, authored proof.
