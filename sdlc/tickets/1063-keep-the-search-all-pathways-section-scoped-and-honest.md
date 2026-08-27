@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 15
+priority: 10
 ---
 
 # Keep the search-all Pathways section scoped and honest about partial failure

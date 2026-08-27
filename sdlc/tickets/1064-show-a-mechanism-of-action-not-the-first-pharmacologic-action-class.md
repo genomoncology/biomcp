@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 14
+priority: 9
 ---
 
 # Show a mechanism of action, not the first pharmacologic-action class
