@@ -1176,7 +1176,7 @@ mod tests {
     }
 
     #[test]
-    fn rerank_pathway_search_results_floats_exact_match_across_sources() {
+    fn rerank_pathway_search_results_drops_rows_unrelated_to_query() {
         let ranked = rerank_pathway_search_results(
             "Pathways in cancer",
             vec![PathwaySearchResult {
@@ -1198,7 +1198,7 @@ mod tests {
         );
 
         let ids = ranked.iter().map(|row| row.id.as_str()).collect::<Vec<_>>();
-        assert_eq!(ids, vec!["hsa05200", "R-HSA-9824443", "WP254"]);
+        assert_eq!(ids, vec!["hsa05200"]);
     }
 
     #[test]
@@ -1209,7 +1209,7 @@ mod tests {
                 PathwaySearchResult {
                     source: "Reactome".to_string(),
                     id: "R-HSA-0002".to_string(),
-                    name: "Cell cycle".to_string(),
+                    name: "Cell cycle MAPK".to_string(),
                 },
                 PathwaySearchResult {
                     source: "Reactome".to_string(),
@@ -1266,8 +1266,8 @@ mod tests {
     }
 
     #[test]
-    fn finalize_pathway_search_results_tolerates_reactome_failure_when_other_sources_succeed() {
-        let (results, total) = finalize_pathway_search_results(
+    fn finalize_pathway_search_results_surfaces_partial_source_failure() {
+        let result = finalize_pathway_search_results(
             "apoptosis",
             5,
             PathwaySearchSourceResults {
@@ -1282,13 +1282,13 @@ mod tests {
                 }],
                 ..Default::default()
             },
-        )
-        .unwrap();
+        );
 
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].id, "WP254");
-        assert_eq!(results[0].source, "WikiPathways");
-        assert_eq!(total, None);
+        let error = result.expect_err("a partial answer must report its missing source");
+        assert!(
+            error.to_string().contains("HTTP 504"),
+            "partial failure should preserve the source reason"
+        );
     }
 
     #[test]
