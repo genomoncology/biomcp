@@ -60,6 +60,7 @@ AUDIT_NAMES = [
     "cli_line_cap",
     "section_outcome_policy_line_cap",
     "experiment_results",
+    "renderer_next_command_source",
     "terminal_output_boundaries",
     "cli_surface_contract",
     "remote_resource_bounds",
@@ -673,6 +674,28 @@ def _rust_production_text(text: str) -> str:
         text = text[: match.start()] + (" " * (cursor - match.start())) + text[cursor:]
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
     return re.sub(r"//[^\n]*", "", text)
+
+
+def check_renderer_next_command_source(root_dir: Path) -> dict[str, object]:
+    # Ticket 1069 dropped author follow-ups, which earned this one-source guard.
+    forbidden = "next_commands: vec![]"
+    findings: list[dict[str, object]] = []
+    for path in sorted((root_dir / "src" / "render").rglob("*.rs")):
+        if forbidden in path.read_text(encoding="utf-8"):
+            findings.append(
+                {
+                    "path": path.relative_to(root_dir).as_posix(),
+                    "message": (
+                        "one-source policy violation: take next commands from the "
+                        "shared source used by JSON _meta.next_commands"
+                    ),
+                }
+            )
+    return {
+        "name": "renderer_next_command_source",
+        "status": "fail" if findings else "pass",
+        "findings": findings,
+    }
 
 
 def check_terminal_output_boundaries(root_dir: Path) -> dict[str, object]:
@@ -2598,6 +2621,10 @@ def main() -> int:
         "experiment_results": (
             "quality-ratchet-experiment-results.json",
             lambda: check_architecture_experiment_results(args.root_dir),
+        ),
+        "renderer_next_command_source": (
+            "quality-ratchet-renderer-next-command-source.json",
+            lambda: check_renderer_next_command_source(args.root_dir),
         ),
         "terminal_output_boundaries": (
             "quality-ratchet-terminal-output-boundaries.json",
