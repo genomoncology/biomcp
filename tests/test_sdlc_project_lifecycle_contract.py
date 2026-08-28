@@ -247,6 +247,61 @@ def test_tasks_double_fetch_failure_keeps_a_bounded_final_diagnostic(
     assert calls.read_text(encoding="utf-8").strip() == "2"
 
 
+def test_before_returns_raw_gate_output_and_ends_with_a_bounded_verdict(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    assertion = f"expected fixture bytes {'x' * 3_000} assertion-tail"
+    tap = "\n".join(
+        [
+            "TAP version 13",
+            "# Subtest: passing contract",
+            "ok 1 - passing contract",
+            "# Subtest: fixture drift",
+            "not ok 2 - fixture drift",
+            "  ---",
+            "  name: 'AssertionError'",
+            f"  error: '{assertion}'",
+            "  ...",
+            "1..2",
+            "# tests 2",
+            "# pass 1",
+            "# fail 1",
+        ]
+    )
+    test_script = repo / "sdlc" / "scripts" / "test"
+    test_script.write_text(
+        f"#!/bin/sh\ncat <<'TAP'\n{tap}\nTAP\nexit 1\n",
+        encoding="utf-8",
+    )
+    _git(repo, "add", "sdlc/scripts/test")
+    _git(repo, "commit", "--quiet", "-m", "fixture: add failing gate")
+    _git(repo, "push", "--quiet", "origin", "main")
+    main = _git(repo, "rev-parse", "origin/main")
+    bot = _bot(tmp_path)
+
+    failed = _run(
+        repo,
+        "before",
+        {
+            "TICKET_ID": "1077",
+            "TICKET_FLOW": "build",
+            "WORKTREE_ROOT": str(tmp_path / "worktrees"),
+            "PATH": f"{bot.parent}:{os.environ['PATH']}",
+        },
+    )
+    verdict = failed.stderr.rstrip().splitlines()[-1]
+
+    assert failed.returncode == 3
+    assert f"{tap}\n" in failed.stderr
+    assert re.search(
+        r"test: 1/2 passed; failed: fixture drift: .*expected fixture bytes",
+        verdict,
+    )
+    assert main in verdict
+    assert len(verdict.encode("utf-8")) <= 1_024
+
+
 def test_before_reclaims_an_owned_orphaned_worktree(tmp_path: Path) -> None:
     repo, _origin = _fixture(tmp_path)
     ticket_id = "1052"
