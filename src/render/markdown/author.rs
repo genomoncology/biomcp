@@ -131,6 +131,10 @@ pub fn author_detail_markdown(author: &AuthorDetail) -> String {
             let _ = writeln!(out, "- {}: {}", conflict.field, conflict.values.join(", "));
         }
     }
+    let related_block = super::format_related_block(author._meta.next_commands.clone());
+    if !related_block.is_empty() {
+        let _ = write!(out, "\n{related_block}\n");
+    }
     out
 }
 fn status(value: ProviderStatus) -> &'static str {
