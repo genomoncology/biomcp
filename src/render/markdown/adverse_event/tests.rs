@@ -68,6 +68,30 @@ fn adverse_event_card_searches_unverified_report_drug_name() {
         date: Some("2024-01-01".to_string()),
     };
 
+    let guidance = adverse_event_guidance_commands(&event);
+    assert!(
+        guidance
+            .iter()
+            .any(|command| command == "biomcp search drug -q JAG201")
+    );
+    assert!(
+        !guidance
+            .iter()
+            .any(|command| command == "biomcp get drug JAG201")
+    );
+
+    let related = related_adverse_event(&event);
+    assert!(
+        related
+            .iter()
+            .any(|command| command == "biomcp search drug -q JAG201")
+    );
+    assert!(
+        !related
+            .iter()
+            .any(|command| command == "biomcp get drug JAG201")
+    );
+
     let markdown = adverse_event_markdown(&event, &[]).expect("faers card");
     assert!(markdown.contains("biomcp search drug -q JAG201"));
     assert!(!markdown.contains("biomcp get drug JAG201"));

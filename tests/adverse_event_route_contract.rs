@@ -203,7 +203,7 @@ fn faers_subset_json_process_contract_is_bounded_and_truthful() {
         value["_meta"]["next_commands"],
         serde_json::json!([
             "biomcp drug adverse-events \"drug name\"",
-            "biomcp get drug \"drug name\"",
+            "biomcp search drug -q \"drug name\"",
             "biomcp drug trials \"drug name\"",
             "biomcp search disease --query \"LUNG CANCER\""
         ])
