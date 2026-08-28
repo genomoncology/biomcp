@@ -187,9 +187,13 @@ fn detail_card_commands_parse() {
 #[test]
 fn detail_card_contract_rejects_malformed_command() {
     let malformed = "See also: `biomcp get --definitely-not-a-real-option value`";
-    let error = parse_printed_commands(malformed).expect_err("malformed command must be rejected");
+    assert_eq!(
+        printed_commands(malformed).len(),
+        1,
+        "the malformed command must first be extracted"
+    );
     assert!(
-        error.contains("does not parse"),
-        "unexpected error: {error}"
+        parse_printed_commands(malformed).is_err(),
+        "the extracted malformed command must be rejected"
     );
 }
