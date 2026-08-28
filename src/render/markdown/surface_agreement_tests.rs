@@ -52,9 +52,23 @@ fn entity_json<T: serde::Serialize>(entity: &T, commands: Vec<String>) -> String
 }
 
 #[test]
-fn compact_card_markdown_and_json_commands_agree() {
-    // Full expansion has its own `All:` heading in Markdown. It is navigation,
-    // not a follow-up in the More/See-also contract represented by JSON metadata.
+fn every_detail_card_markdown_and_json_commands_agree() {
+    // Keep this list exhaustive for detail-card families that ship
+    // `_meta.next_commands`. Full expansion has its own `All:` heading in
+    // Markdown. It is navigation, not a follow-up in the More/See-also
+    // contract represented by JSON metadata, so each such asymmetry is named.
+    let variant: Variant = serde_json::from_value(serde_json::json!({
+        "gene": "BRAF", "id": "chr7:g.140453136A>T",
+        "hgvs_p": "p.Val600Glu", "rsid": "rs113488022"
+    }))
+    .unwrap();
+    assert_command_surfaces(
+        "variant",
+        variant_markdown(&variant, &[]).unwrap(),
+        entity_json(&variant, related_variant(&variant)),
+        &["biomcp get variant \"chr7:g.140453136A>T\" all"],
+    );
+
     let gene: Gene = serde_json::from_value(serde_json::json!({
         "symbol": "BRAF", "name": "B-Raf", "entrez_id": "673",
         "aliases": []
@@ -152,5 +166,51 @@ fn compact_card_markdown_and_json_commands_agree() {
         author_detail_markdown(&author),
         serde_json::to_string(&author).unwrap(),
         &[],
+    );
+
+    let diagnostic: Diagnostic = serde_json::from_value(serde_json::json!({
+        "source": "gtr", "source_id": "GTR000000001.1",
+        "accession": "GTR000000001.1", "name": "Diagnostic fixture"
+    }))
+    .unwrap();
+    assert_command_surfaces(
+        "diagnostic",
+        diagnostic_markdown(&diagnostic, &[]).unwrap(),
+        entity_json(&diagnostic, diagnostic_next_commands(&diagnostic, &[])),
+        &["biomcp get diagnostic GTR000000001.1 all"],
+    );
+
+    let protein: Protein = serde_json::from_value(serde_json::json!({
+        "accession": "P15056", "name": "BRAF protein", "gene_symbol": "BRAF"
+    }))
+    .unwrap();
+    assert_command_surfaces(
+        "protein",
+        protein_markdown(&protein, &[]).unwrap(),
+        entity_json(&protein, related_protein(&protein, &[])),
+        &["biomcp get protein P15056 all"],
+    );
+
+    let pgx: Pgx = serde_json::from_value(serde_json::json!({
+        "query": "drug with space", "gene": "CYP2D6", "drug": "drug with space"
+    }))
+    .unwrap();
+    assert_command_surfaces(
+        "PGx",
+        pgx_markdown(&pgx, &[]).unwrap(),
+        entity_json(&pgx, related_pgx(&pgx)),
+        &["biomcp get pgx \"drug with space\" all"],
+    );
+
+    let pathway: Pathway = serde_json::from_value(serde_json::json!({
+        "source": "Reactome", "id": "R-HSA-5673001",
+        "name": "RAF/MAP kinase cascade"
+    }))
+    .unwrap();
+    assert_command_surfaces(
+        "pathway",
+        pathway_markdown(&pathway, &[]).unwrap(),
+        entity_json(&pathway, related_pathway(&pathway)),
+        &["biomcp get pathway R-HSA-5673001 all"],
     );
 }
