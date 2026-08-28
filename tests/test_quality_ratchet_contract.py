@@ -866,6 +866,63 @@ def test_wrapper_can_run_only_the_named_spec_lint_audit(tmp_path: Path) -> None:
     assert "mcp_allowlist" not in summary
 
 
+def test_renderer_next_command_source_audit_rejects_pre_1069_pattern(
+    tmp_path: Path,
+) -> None:
+    def run_audit(root: Path, output_dir: Path) -> subprocess.CompletedProcess[str]:
+        return _run_python_script(
+            RATCHET_TOOL,
+            "--root-dir",
+            str(root),
+            "--output-dir",
+            str(output_dir),
+            "--spec-glob",
+            str(root / "spec/**/*.md"),
+            "--cli-file",
+            str(REPO_ROOT / "src/cli/mod.rs"),
+            "--shell-file",
+            str(REPO_ROOT / "src/mcp/shell.rs"),
+            "--catalog-file",
+            str(REPO_ROOT / "src/mcp/catalog.rs"),
+            "--sources-dir",
+            str(REPO_ROOT / "src/sources"),
+            "--sources-mod",
+            str(REPO_ROOT / "src/sources/mod.rs"),
+            "--health-file",
+            str(REPO_ROOT / "src/cli/health/catalog.rs"),
+            "--audit",
+            "renderer_next_command_source",
+        )
+
+    clean_output = tmp_path / "clean-output"
+    clean_result = run_audit(REPO_ROOT, clean_output)
+    assert clean_result.returncode == 0, clean_result.stderr
+
+    fixture_root = tmp_path / "pre-1069"
+    author = fixture_root / "src/render/markdown/author.rs"
+    author.parent.mkdir(parents=True)
+    author.write_text(
+        "let meta = AuthorMeta { next_commands: vec![] };\n", encoding="utf-8"
+    )
+
+    fixture_output = tmp_path / "fixture-output"
+    fixture_result = run_audit(fixture_root, fixture_output)
+    assert fixture_result.returncode == 1, fixture_result.stderr
+    payload = json.loads(
+        (fixture_output / "quality-ratchet-renderer-next-command-source.json").read_text()
+    )
+    assert payload["status"] == "fail"
+    finding = next(
+        finding
+        for finding in payload["findings"]
+        if finding["path"] == "src/render/markdown/author.rs"
+    )
+    message = finding["message"].lower()
+    assert "one-source policy" in message
+    assert "shared source" in message
+    assert "_meta.next_commands" in message
+
+
 def test_terminal_output_boundary_ratchet_detects_removed_seams_and_pretty_bypass(
     tmp_path: Path,
 ) -> None:
