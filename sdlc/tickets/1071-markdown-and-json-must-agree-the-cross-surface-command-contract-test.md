@@ -29,3 +29,23 @@ the card suggests next. Nothing today fails a build when they diverge.
 
 This makes "the two surfaces disagree" a build failure instead of a
 support ticket.
+
+## Operator amendment — 2026-08-28
+
+The first design-review refusal is correct. The phrase "includes at least"
+did not authorize a seven-family sample. The contract must cover every current
+detail-card family that ships `_meta.next_commands`: variant, gene, disease,
+drug, trial, article, author, adverse-event, diagnostic, protein, PGx, and
+pathway. One fixture per named family is the minimum acceptable proof.
+
+Use each family's real CLI dispatch and Markdown renderer path. Compare command
+sets rather than descriptions or order. Encode only reviewed per-family
+asymmetries, including a Markdown-only `All:` navigation command where that
+family renders one. Preserve the existing section commands, related pivots,
+evidence URLs, source labels, requested-section behavior, and ticket 1069's
+author-papers fix.
+
+This ticket does not cover search-result guidance, discovery responses,
+pagination continuations, or command execution. Do not add a runtime option,
+dependency, or new command-building abstraction unless the existing section
+and related-command helpers cannot be composed at the output boundaries.
