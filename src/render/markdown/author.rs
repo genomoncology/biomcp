@@ -150,9 +150,9 @@ mod tests {
     };
 
     #[test]
-    fn detail_markdown_keeps_provider_identity_and_uncertainty_visible() {
+    fn detail_markdown_and_json_present_the_same_follow_up_commands() {
         let id: ProviderAuthorId = "semanticscholar:1716151".parse().unwrap();
-        let output = author_detail_markdown(&AuthorDetail {
+        let author = AuthorDetail {
             identity: AuthorIdentity::ExactProvider { id: id.clone() },
             display_name: "A. Butte".into(),
             provider_records: vec![ProviderAuthorRecord {
@@ -175,9 +175,11 @@ mod tests {
                     source: "semantic_scholar",
                     url: "https://www.semanticscholar.org/author/1716151".into(),
                 }],
-                next_commands: vec![],
+                next_commands: vec!["biomcp author papers semanticscholar:1716151".to_string()],
             },
-        });
+        };
+
+        let output = author_detail_markdown(&author);
         for expected in [
             "Source: Semantic Scholar",
             "Identity: exact provider",
@@ -186,6 +188,24 @@ mod tests {
         ] {
             assert!(output.contains(expected));
         }
+
+        let json = serde_json::to_value(&author).unwrap();
+        let json_commands: std::collections::BTreeSet<_> = json["_meta"]["next_commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|command| command.as_str().unwrap().to_string())
+            .collect();
+        let markdown_commands: std::collections::BTreeSet<_> = output
+            .lines()
+            .filter_map(|line| line.strip_prefix("  biomcp "))
+            .map(|command| {
+                let command = command.split("   - ").next().unwrap();
+                format!("biomcp {command}")
+            })
+            .collect();
+
+        assert_eq!(markdown_commands, json_commands);
     }
 
     #[test]
