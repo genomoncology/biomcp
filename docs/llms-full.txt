@@ -1,0 +1,113 @@
+# BioMCP Documentation Index
+
+An expanded index of the BioMCP documentation.
+
+- [Generate Charts Easily from Study Data](https://biomcp.org/blog/biomcp-charts/): An article about Generate Charts Easily from Study Data.
+- [Kuva Charting Examples](https://biomcp.org/blog/biomcp-kuva-charts/): An article about Kuva Charting Examples.
+- [Navigate 200 Million Published Articles with BioMCP](https://biomcp.org/blog/biomcp-pubmed-articles/): An article about Navigate 200 Million Published Articles with BioMCP.
+- [cBioPortal Study Analytics in BioMCP](https://biomcp.org/blog/cbioportal-study-analytics/): An article about cBioPortal Study Analytics in BioMCP.
+- [Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands](https://biomcp.org/blog/daraxonrasib-six-commands/): An article about Daraxonrasib: Exploring a Breakthrough Cancer Drug in 6 BioMCP Commands.
+- [KRAS G12C Treatment Landscape in 7 Commands](https://biomcp.org/blog/kras-g12c-treatment-landscape/): An article about KRAS G12C Treatment Landscape in 7 Commands.
+- [Healthcare Agents Need Skills, Not Just Models](https://biomcp.org/blog/skillbench-biomcp-skills/): An article about Healthcare Agents Need Skills, Not Just Models.
+- [From BRAF V600E to 3D Protein Context in 3 BioMCP Commands](https://biomcp.org/blog/variant-structure-in-commands/): An article about From BRAF V600E to 3D Protein Context in 3 BioMCP Commands.
+- [We Deleted 35 Tools and Our Agent Got Better](https://biomcp.org/blog/we-deleted-35-tools/): An article about We Deleted 35 Tools and Our Agent Got Better.
+- [Bar Chart](https://biomcp.org/charts/bar/): Guidance for creating and interpreting the Bar Chart visualization.
+- [Box Plot](https://biomcp.org/charts/box/): Guidance for creating and interpreting the Box Plot visualization.
+- [Density Plot (KDE)](https://biomcp.org/charts/density/): Guidance for creating and interpreting the Density Plot (KDE) visualization.
+- [Heatmap](https://biomcp.org/charts/heatmap/): Guidance for creating and interpreting the Heatmap visualization.
+- [Histogram](https://biomcp.org/charts/histogram/): Guidance for creating and interpreting the Histogram visualization.
+- [BioMCP Charts](https://biomcp.org/charts/): Overview of charts generated from BioMCP study data.
+- [Pie Chart](https://biomcp.org/charts/pie/): Guidance for creating and interpreting the Pie Chart visualization.
+- [Ridgeline Plot](https://biomcp.org/charts/ridgeline/): Guidance for creating and interpreting the Ridgeline Plot visualization.
+- [Scatter](https://biomcp.org/charts/scatter/): Guidance for creating and interpreting the Scatter visualization.
+- [Stacked Bar Chart](https://biomcp.org/charts/stacked-bar/): Guidance for creating and interpreting the Stacked Bar Chart visualization.
+- [Survival Chart](https://biomcp.org/charts/survival/): Guidance for creating and interpreting the Survival Chart visualization.
+- [Violin Plot](https://biomcp.org/charts/violin/): Guidance for creating and interpreting the Violin Plot visualization.
+- [Waterfall](https://biomcp.org/charts/waterfall/): Guidance for creating and interpreting the Waterfall visualization.
+- [Progressive Disclosure](https://biomcp.org/concepts/progressive-disclosure/): An explanation of Progressive Disclosure and its role in BioMCP.
+- [What Is BioMCP?](https://biomcp.org/concepts/what-is-biomcp/): An explanation of What Is BioMCP? and its role in BioMCP.
+- [API Keys](https://biomcp.org/getting-started/api-keys/): Setup guidance for API Keys.
+- [Claude Desktop (MCP) Setup](https://biomcp.org/getting-started/claude-desktop/): Setup guidance for Claude Desktop (MCP) Setup.
+- [First Query](https://biomcp.org/getting-started/first-query/): Setup guidance for First Query.
+- [Installation](https://biomcp.org/getting-started/installation/): Setup guidance for Installation.
+- [Add BioMCP to your MCP client](https://biomcp.org/getting-started/mcp-clients/): Setup guidance for Add BioMCP to your MCP client.
+- [Remote Streamable HTTP Server](https://biomcp.org/getting-started/remote-http/): Setup guidance for Remote Streamable HTTP Server.
+- [Skills](https://biomcp.org/getting-started/skills/): Setup guidance for Skills.
+- [Annotate variant structure context](https://biomcp.org/how-to/annotate-variant-structure/): A practical BioMCP workflow for Annotate variant structure context.
+- [How to: annotate variants](https://biomcp.org/how-to/annotate-variants/): A practical BioMCP workflow for How to: annotate variants.
+- [How to: use cross-entity pivots](https://biomcp.org/how-to/cross-entity-pivots/): A practical BioMCP workflow for How to: use cross-entity pivots.
+- [How to: find articles](https://biomcp.org/how-to/find-articles/): A practical BioMCP workflow for How to: find articles.
+- [How to: find trials](https://biomcp.org/how-to/find-trials/): A practical BioMCP workflow for How to: find trials.
+- [How to: follow guide workflows](https://biomcp.org/how-to/guide-workflows/): A practical BioMCP workflow for How to: follow guide workflows.
+- [How to: predict variant effects](https://biomcp.org/how-to/predict-effects/): A practical BioMCP workflow for How to: predict variant effects.
+- [How to: reproduce paper workflows](https://biomcp.org/how-to/reproduce-papers/): A practical BioMCP workflow for How to: reproduce paper workflows.
+- [How to: orient with search all](https://biomcp.org/how-to/search-all-workflow/): A practical BioMCP workflow for How to: orient with search all.
+- [Skill authoring](https://biomcp.org/how-to/skill-authoring/): A practical BioMCP workflow for Skill authoring.
+- [How to: validate skill runs](https://biomcp.org/how-to/skill-validation/): A practical BioMCP workflow for How to: validate skill runs.
+- [BioMCP](https://biomcp.org/): Overview of BioMCP and its biomedical data interfaces.
+- [Privacy Policy](https://biomcp.org/policies/): Privacy policy for the BioMCP website and software.
+- [Article Keyword Search](https://biomcp.org/reference/article-keyword-search/): Reference details for Article Keyword Search.
+- [Benchmarks](https://biomcp.org/reference/benchmarks/): Reference details for Benchmarks.
+- [BioASQ Benchmark](https://biomcp.org/reference/bioasq-benchmark/): Reference details for BioASQ Benchmark.
+- [CIViC Sections](https://biomcp.org/reference/civic-sections/): Reference details for CIViC Sections.
+- [Configuration Reference](https://biomcp.org/reference/configuration/): Reference details for Configuration Reference.
+- [Data Sources](https://biomcp.org/reference/data-sources/): Reference details for Data Sources.
+- [Dependencies](https://biomcp.org/reference/dependencies/): Reference details for Dependencies.
+- [Drug Approvals and Adverse-Event Summary](https://biomcp.org/reference/drug-approvals-and-ae-summary/): Reference details for Drug Approvals and Adverse-Event Summary.
+- [Error Codes](https://biomcp.org/reference/error-codes/): Reference details for Error Codes.
+- [FAQ](https://biomcp.org/reference/faq/): Reference details for FAQ.
+- [MCP Server Reference](https://biomcp.org/reference/mcp-server/): Reference details for MCP Server Reference.
+- [Quick Reference](https://biomcp.org/reference/quick-reference/): Reference details for Quick Reference.
+- [Release Process](https://biomcp.org/reference/release-process/): Reference details for Release Process.
+- [Source Licensing and Terms](https://biomcp.org/reference/source-licensing/): Reference details for Source Licensing and Terms.
+- [Source Versioning Matrix](https://biomcp.org/reference/source-versioning/): Reference details for Source Versioning Matrix.
+- [cBioPortal](https://biomcp.org/sources/cbioportal/): Access details and query guidance for the cBioPortal data source.
+- [CDC CVX/MVX](https://biomcp.org/sources/cdc-cvx/): Access details and query guidance for the CDC CVX/MVX data source.
+- [ChEMBL](https://biomcp.org/sources/chembl/): Access details and query guidance for the ChEMBL data source.
+- [CIViC](https://biomcp.org/sources/civic/): Access details and query guidance for the CIViC data source.
+- [ClinGen Allele Registry](https://biomcp.org/sources/clingen-allele-registry/): Access details and query guidance for the ClinGen Allele Registry data source.
+- [ClinGen Criteria Specification Registry](https://biomcp.org/sources/clingen-cspec/): Access details and query guidance for the ClinGen Criteria Specification Registry data source.
+- [ClinGen Evidence Repository](https://biomcp.org/sources/clingen-erepo/): Access details and query guidance for the ClinGen Evidence Repository data source.
+- [ClinGen Linked Data Hub](https://biomcp.org/sources/clingen-ldh/): Access details and query guidance for the ClinGen Linked Data Hub data source.
+- [ClinicalTrials.gov](https://biomcp.org/sources/clinicaltrials-gov/): Access details and query guidance for the ClinicalTrials.gov data source.
+- [ClinVar](https://biomcp.org/sources/clinvar/): Access details and query guidance for the ClinVar data source.
+- [DDInter](https://biomcp.org/sources/ddinter/): Access details and query guidance for the DDInter data source.
+- [EMA](https://biomcp.org/sources/ema/): Access details and query guidance for the EMA data source.
+- [gnomAD](https://biomcp.org/sources/gnomad/): Access details and query guidance for the gnomAD data source.
+- [NCBI Genetic Testing Registry](https://biomcp.org/sources/gtr/): Access details and query guidance for the NCBI Genetic Testing Registry data source.
+- [Human Protein Atlas](https://biomcp.org/sources/human-protein-atlas/): Access details and query guidance for the Human Protein Atlas data source.
+- [Biomedical Data Sources for AI Agents](https://biomcp.org/sources/): Overview of biomedical data sources available through BioMCP.
+- [KEGG](https://biomcp.org/sources/kegg/): Access details and query guidance for the KEGG data source.
+- [MedlinePlus](https://biomcp.org/sources/medlineplus/): Access details and query guidance for the MedlinePlus data source.
+- [Monarch Initiative](https://biomcp.org/sources/monarch-initiative/): Access details and query guidance for the Monarch Initiative data source.
+- [OncoKB](https://biomcp.org/sources/oncokb/): Access details and query guidance for the OncoKB data source.
+- [OpenFDA](https://biomcp.org/sources/openfda/): Access details and query guidance for the OpenFDA data source.
+- [OpenTargets](https://biomcp.org/sources/opentargets/): Access details and query guidance for the OpenTargets data source.
+- [PharmGKB / CPIC](https://biomcp.org/sources/pharmgkb/): Access details and query guidance for the PharmGKB / CPIC data source.
+- [PubMed](https://biomcp.org/sources/pubmed/): Access details and query guidance for the PubMed data source.
+- [Reactome](https://biomcp.org/sources/reactome/): Access details and query guidance for the Reactome data source.
+- [SEER Explorer](https://biomcp.org/sources/seer/): Access details and query guidance for the SEER Explorer data source.
+- [Semantic Scholar](https://biomcp.org/sources/semantic-scholar/): Access details and query guidance for the Semantic Scholar data source.
+- [UniProt](https://biomcp.org/sources/uniprot/): Access details and query guidance for the UniProt data source.
+- [CDC WONDER VAERS](https://biomcp.org/sources/vaers/): Access details and query guidance for the CDC WONDER VAERS data source.
+- [WHO Prequalified IVD](https://biomcp.org/sources/who-ivd/): Access details and query guidance for the WHO Prequalified IVD data source.
+- [WHO Prequalification](https://biomcp.org/sources/who-prequalification/): Access details and query guidance for the WHO Prequalification data source.
+- [Troubleshooting](https://biomcp.org/troubleshooting/): Solutions for common BioMCP setup and usage problems.
+- [Adverse Event](https://biomcp.org/user-guide/adverse-event/): BioMCP usage guidance for Adverse Event.
+- [Article](https://biomcp.org/user-guide/article/): BioMCP usage guidance for Article.
+- [Author](https://biomcp.org/user-guide/author/): BioMCP usage guidance for Author.
+- [CLI Reference](https://biomcp.org/user-guide/cli-reference/): BioMCP usage guidance for CLI Reference.
+- [Diagnostic](https://biomcp.org/user-guide/diagnostic/): BioMCP usage guidance for Diagnostic.
+- [Discover](https://biomcp.org/user-guide/discover/): BioMCP usage guidance for Discover.
+- [Disease](https://biomcp.org/user-guide/disease/): BioMCP usage guidance for Disease.
+- [Drug](https://biomcp.org/user-guide/drug/): BioMCP usage guidance for Drug.
+- [Gene](https://biomcp.org/user-guide/gene/): BioMCP usage guidance for Gene.
+- [GWAS](https://biomcp.org/user-guide/gwas/): BioMCP usage guidance for GWAS.
+- [Pathway](https://biomcp.org/user-guide/pathway/): BioMCP usage guidance for Pathway.
+- [PGX](https://biomcp.org/user-guide/pgx/): BioMCP usage guidance for PGX.
+- [Phenotype](https://biomcp.org/user-guide/phenotype/): BioMCP usage guidance for Phenotype.
+- [Protein](https://biomcp.org/user-guide/protein/): BioMCP usage guidance for Protein.
+- [Supplementary Materials](https://biomcp.org/user-guide/supplementary-materials/): BioMCP usage guidance for Supplementary Materials.
+- [Trial](https://biomcp.org/user-guide/trial/): BioMCP usage guidance for Trial.
+- [Variant](https://biomcp.org/user-guide/variant/): BioMCP usage guidance for Variant.
+- [Install script](https://biomcp.org/install.sh): Supported shell installer for BioMCP.

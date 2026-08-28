@@ -1,0 +1,22 @@
+# BioMCP
+
+BioMCP is a biomedical CLI and MCP server for searching biomedical data sources.
+
+## Get started
+
+Install BioMCP:
+
+    curl -fsSL https://biomcp.org/install.sh | bash
+
+Read the [installation guide](https://biomcp.org/getting-started/installation/) or begin with the [documentation](https://biomcp.org/).
+
+## Interfaces
+
+The CLI uses these entity command forms:
+
+- `search <entity> [filters]`
+- `get <entity> <id> [section...]`
+
+The current MCP tools are `biomcp`, `search`, `get`, `variant_normalize_car`, `variant_erepo`, `gene_cspec`, and `variant_articles`. See the [CLI reference](https://biomcp.org/user-guide/cli-reference/) and [MCP server reference](https://biomcp.org/reference/mcp-server/).
+
+The Markdown source is at https://github.com/genomoncology/biomcp/tree/main/docs
