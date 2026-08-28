@@ -6,21 +6,23 @@
 #
 # WHAT IT CHECKS, in order, cheapest first:
 #   1. pwd is a Git repository with an origin
-#   2. origin refreshes with `timeout -k 10 60 git fetch --quiet origin`,
+#   2. the local working tree's clean or uncommitted state
+#   3. origin refreshes with `timeout -k 10 60 git fetch --quiet origin`,
 #      retrying one timeout — an unreachable or hanging remote is unfit, not
 #      a hung doctor
-#   3. the refreshed origin/main resolves, then committed HEAD's deployment
+#   4. the refreshed origin/main resolves, then committed HEAD's deployment
 #      state
-#   4. the active contract folders exist: project, scripts, tickets, and records
-#   5. the contract zone's shape: numbered tickets and records, plus dated or
+#   5. the active contract folders exist: project, scripts, tickets, and records
+#   6. the contract zone's shape: numbered tickets and records, plus dated or
 #      legacy-numbered issues when a transitional issues folder exists; no legacy
 #      issue number may be used by a ticket or record (sdlc ADR 0018).
 #      planning/ is deliberately unchecked — nothing reads it
-#   6. each dispatchable origin ticket's opens declaration through the canonical
+#   7. each dispatchable origin ticket's opens declaration through the canonical
 #      build path policy
-#   7. the registered directory's filesystem has at least 10 GiB free
+#   8. the registered directory's filesystem has at least 10 GiB free
 #
-# STDOUT:  deployment state, then one finding per line when unfit.
+# STDOUT:  local working-tree and deployment state, plus one finding per line
+#          when unfit.
 # EXIT:    0 fit · 1 unfit — the findings say why
 set -euo pipefail
 
@@ -36,6 +38,12 @@ report() {
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
 	report "$(pwd -P) is not a Git repository"
 	exit 1
+fi
+
+if [ -z "$(git status --porcelain)" ]; then
+	echo "working tree is clean"
+else
+	echo "working tree has uncommitted changes"
 fi
 
 if ! git remote get-url origin >/dev/null 2>&1; then
