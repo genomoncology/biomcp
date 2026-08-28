@@ -349,6 +349,39 @@ def test_failure_withdrawal_receipt_preserves_evidence_and_cleans_up(tmp_path: P
     assert _git(repo, "ls-remote", "--heads", "origin", f"ticket/{ticket_id}") == ""
 
 
+def test_health_distinguishes_clean_and_dirty_working_trees(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+
+    clean = _run(repo, "health", {})
+    (repo / "UNTRACKED").write_text("local work\n", encoding="utf-8")
+    dirty = _run(repo, "health", {})
+
+    assert clean.returncode == dirty.returncode == 0
+    clean_lines = clean.stdout.splitlines()
+    dirty_lines = dirty.stdout.splitlines()
+    differences = [
+        (clean_line, dirty_line)
+        for clean_line, dirty_line in zip(clean_lines, dirty_lines, strict=True)
+        if clean_line != dirty_line
+    ]
+    assert len(differences) == 1
+    clean_line, dirty_line = differences[0]
+    assert "working tree" in clean_line
+    assert "clean" in clean_line
+    assert "working tree" in dirty_line
+    assert "uncommitted" in dirty_line
+
+    _git(repo, "remote", "set-url", "origin", str(tmp_path / "missing-origin.git"))
+    fetch_failed = _run(repo, "health", {})
+    assert fetch_failed.returncode == 1
+    assert any(
+        "working tree" in line and "uncommitted" in line
+        for line in fetch_failed.stdout.splitlines()
+    )
+
+
 def test_health_reports_malformed_opens_from_origin_main(tmp_path: Path) -> None:
     repo, _origin = _fixture(tmp_path)
     policy = repo / "assembly" / "flows" / "build" / "05-verify" / "gate" / "05-path-policy"
