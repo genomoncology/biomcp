@@ -431,22 +431,117 @@ if [ "$GREEN_MAIN_VERDICT_TRUSTED" -eq 0 ]; then
 fi
 
 # 5. Green check, in that tree, using this project's own gate ladder.
+emit_gate_verdict() {
+	check=$1
+	capture=$2
+	suffix=${3-}
+	parsed=$(awk '
+		/^TAP version [0-9]+$/ { tap = 1 }
+		/^1\.\.[0-9]+$/ { plan = $0; sub(/^1\.\./, "", plan); total = plan }
+		/^# tests [0-9]+$/ { total = $3 }
+		/^# pass [0-9]+$/ { passed = $3 }
+		/^# Subtest: / { pending = substr($0, 12); in_failure = 0; next }
+		/^not ok [0-9]+ - / {
+			name = pending
+			if (name == "") {
+				name = $0
+				sub(/^not ok [0-9]+ - /, "", name)
+				sub(/[[:space:]]+#.*/, "", name)
+			}
+			failures++
+			failed[failures] = name
+			in_failure = 1
+			next
+		}
+		in_failure && /^[[:space:]]+error: / && message[failures] == "" {
+			text = $0
+			sub(/^[[:space:]]+error: [[:space:]]*/, "", text)
+			if (text == "|" || text == "|-" || text == ">" || text == ">-") {
+				assertion_block = 1
+				next
+			}
+			if ((substr(text, 1, 1) == "\047" && substr(text, length(text), 1) == "\047") ||
+			    (substr(text, 1, 1) == "\"" && substr(text, length(text), 1) == "\""))
+				text = substr(text, 2, length(text) - 2)
+			# Assertion detail yields first when the verdict needs space for
+			# failure names and counts.
+			if (length(text) > 160) text = substr(text, 1, 157) "..."
+			message[failures] = text
+			next
+		}
+		in_failure && assertion_block && /^[[:space:]]+/ && message[failures] == "" {
+			text = $0
+			sub(/^[[:space:]]+/, "", text)
+			if (text == "") next
+			if (length(text) > 160) text = substr(text, 1, 157) "..."
+			message[failures] = text
+			assertion_block = 0
+		}
+		END {
+			if (!tap || total == "" || failures == 0) exit
+			if (passed == "") passed = total - failures
+			printf "%s/%s passed; failed: ", passed, total
+			for (i = 1; i <= failures; i++) {
+				if (i > 1) printf "; "
+				printf "%s", failed[i]
+				if (message[i] != "") printf ": %s", message[i]
+			}
+		}
+	' "$capture")
+
+	if [ -n "$parsed" ]; then
+		# Reserve the suffix before bounding detail. iconv removes only a
+		# partial final character at the cut.
+		limit=$((1024 - ${#suffix}))
+		{ printf '%s: %s' "$check" "$parsed" | head -c "$limit" | iconv -f UTF-8 -t UTF-8 -c; printf '%s\n' "$suffix"; } >&2
+		return
+	fi
+
+	header="$check: failed; unparsed$suffix"
+	printf '%s\n' "$header" >&2
+	# Share the remaining bytes across all twenty lines. This preserves their
+	# order and line count even when individual lines need truncation.
+	tail -n 20 "$capture" | awk -v budget="$((1024 - ${#header}))" '
+		{ line[++count] = $0 }
+		END {
+			for (i = 1; i <= count; i++) {
+				remaining = count - i + 1
+				allowance = int((budget - remaining) / remaining)
+				if (allowance < 0) allowance = 0
+				used = length(line[i])
+				if (used > allowance) used = allowance
+				if (i > 1) printf "\n"
+				printf "%s", substr(line[i], 1, used)
+				budget -= used + 1
+			}
+			if (count > 0) printf "\n"
+		}
+	' | iconv -f UTF-8 -t UTF-8 -c >&2
+}
+
 gate() {
 	local script="$TREE/sdlc/scripts/$1"
 	if [ ! -x "$script" ]; then
 		echo "before: $REPO has no executable sdlc/scripts/$1" >&2
 		return 2
 	fi
-	(cd "$TREE" && "$script")
+	(cd "$TREE" && "$script") >"$GATE_OUTPUT" 2>&1
 }
 
 if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -gt 0 ]; then
 	echo "before: skipping the green-main gate: $BRANCH carries $AHEAD commit(s) of its own work, so this tree is not origin/main" >&2
 fi
 if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
+	GATE_OUTPUT=$(mktemp) || {
+		echo "before: could not capture green-main gate output" >&2
+		exit 1
+	}
+	trap 'rm -f "${GATE_OUTPUT-}"' EXIT
 	for g in lint test; do
+		: >"$GATE_OUTPUT"
 		status=0
 		gate "$g" || status=$?
+		cat "$GATE_OUTPUT" >&2
 		if [ "$status" -eq 0 ]; then
 			continue
 		fi
@@ -468,6 +563,7 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 			exit 1
 		fi
 		echo "before: origin/main is not green — sdlc/scripts/$g failed; a quickfix has to land first" >&2
+		emit_gate_verdict "$g" "$GATE_OUTPUT" "; origin/main $GREEN_MAIN_SHA"
 		exit 3
 	done
 
