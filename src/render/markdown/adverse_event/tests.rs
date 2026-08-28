@@ -53,6 +53,27 @@ fn adverse_event_markdown_includes_openfda_sections() {
 }
 
 #[test]
+fn adverse_event_card_searches_unverified_report_drug_name() {
+    let event = AdverseEvent {
+        report_id: "10329882".to_string(),
+        drug: "JAG201".to_string(),
+        reactions: vec!["Cough".to_string()],
+        outcomes: Vec::new(),
+        patient: None,
+        concomitant_medications: Vec::new(),
+        reporter_type: None,
+        reporter_country: None,
+        indication: None,
+        serious: false,
+        date: Some("2024-01-01".to_string()),
+    };
+
+    let markdown = adverse_event_markdown(&event, &[]).expect("faers card");
+    assert!(markdown.contains("biomcp search drug -q JAG201"));
+    assert!(!markdown.contains("biomcp get drug JAG201"));
+}
+
+#[test]
 fn adverse_event_subset_markdown_keeps_identity_and_only_selected_bodies() {
     let event = AdverseEvent {
         report_id: "10329882".to_string(),

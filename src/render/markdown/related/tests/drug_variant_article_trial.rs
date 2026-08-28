@@ -398,8 +398,8 @@ fn related_article_uses_article_entities_helper_command() {
         .expect("disease pivot should be promoted");
     let trametinib = related
         .iter()
-        .position(|cmd| cmd == "biomcp get drug trametinib")
-        .expect("drug pivot should be promoted");
+        .position(|cmd| cmd == "biomcp search drug -q trametinib")
+        .expect("unverified chemical annotation should use a drug search pivot");
     let references = related
         .iter()
         .position(|cmd| cmd == "biomcp article references 22663011 --limit 3")
@@ -496,6 +496,45 @@ fn related_trial_promotes_results_search_for_completed_or_terminated_studies() {
         related_command_description("biomcp search article --drug pembrolizumab --limit 5"),
         None
     );
+}
+
+#[test]
+fn related_trial_searches_unverified_jag201_intervention() {
+    let trial = crate::entities::trial::Trial {
+        nct_id: "NCT06662188".to_string(),
+        source: Some("ClinicalTrials.gov".to_string()),
+        title: "JAG201 in Phelan-McDermid syndrome".to_string(),
+        status: "Recruiting".to_string(),
+        phase: None,
+        study_type: Some("Interventional".to_string()),
+        age_range: None,
+        conditions: vec!["Phelan-McDermid syndrome".to_string()],
+        interventions: vec!["JAG201".to_string()],
+        intervention_details: Vec::new(),
+        sponsor: None,
+        enrollment: None,
+        summary: None,
+        start_date: None,
+        completion_date: None,
+        eligibility_text: None,
+        eligibility: None,
+        eligibility_provenance: None,
+        contacts: None,
+        locations: None,
+        outcomes: None,
+        arms: Some(vec![crate::entities::trial::TrialArm {
+            label: "JAG201 arm".to_string(),
+            arm_type: Some("Experimental".to_string()),
+            description: None,
+            interventions: vec!["JAG201".to_string()],
+        }]),
+        references: None,
+    };
+
+    let rendered = format_related_block(related_trial(&trial));
+    assert!(rendered.contains("biomcp search drug -q JAG201"));
+    assert!(rendered.contains("biomcp drug trials JAG201"));
+    assert!(!rendered.contains("biomcp get drug JAG201"));
 }
 
 #[test]
