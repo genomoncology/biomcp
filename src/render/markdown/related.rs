@@ -798,7 +798,7 @@ pub(super) fn related_trial(trial: &Trial) -> Vec<String> {
     } else if let Some(intervention) = trial.interventions.first().map(String::as_str) {
         let name = quote_arg(intervention);
         if !name.is_empty() {
-            out.push(format!("biomcp get drug {name}"));
+            out.push(format!("biomcp search drug -q {name}"));
             out.push(format!("biomcp drug trials {name}"));
         }
     }
@@ -1102,7 +1102,7 @@ pub(super) fn related_adverse_event(event: &AdverseEvent) -> Vec<String> {
         return Vec::new();
     }
     vec![
-        format!("biomcp get drug {drug}"),
+        format!("biomcp search drug -q {drug}"),
         format!("biomcp drug adverse-events {drug}"),
         format!("biomcp drug trials {drug}"),
     ]

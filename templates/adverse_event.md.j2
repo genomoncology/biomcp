@@ -54,7 +54,7 @@ No concomitant drugs reported.
 {% else -%}
 {% if guidance_drug -%}
 - Drug safety profile: `biomcp drug adverse-events {{ guidance_drug }}`
-- Drug details: `biomcp get drug {{ guidance_drug }}`
+- Drug search: `biomcp search drug -q {{ guidance_drug }}`
 - Related trials: `biomcp drug trials {{ guidance_drug }}`
 {% endif -%}
 {% if guidance_indication -%}

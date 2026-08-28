@@ -60,7 +60,7 @@ pub(super) fn article_annotation_command(
     Some(match bucket {
         ArticleAnnotationBucket::Gene => format!("biomcp search gene -q {quoted}"),
         ArticleAnnotationBucket::Disease => format!("biomcp search disease --query {quoted}"),
-        ArticleAnnotationBucket::Chemical => format!("biomcp get drug {quoted}"),
+        ArticleAnnotationBucket::Chemical => format!("biomcp search drug -q {quoted}"),
         ArticleAnnotationBucket::Mutation => format!("biomcp get variant {quoted}"),
     })
 }

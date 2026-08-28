@@ -60,7 +60,7 @@ pub fn adverse_event_guidance_commands(event: &AdverseEvent) -> Vec<String> {
     }
     let mut commands = vec![
         format!("biomcp drug adverse-events {drug}"),
-        format!("biomcp get drug {drug}"),
+        format!("biomcp search drug -q {drug}"),
         format!("biomcp drug trials {drug}"),
     ];
     if let Some(indication) = event
