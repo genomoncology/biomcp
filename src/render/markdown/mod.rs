@@ -21,6 +21,8 @@ mod sections;
 mod study;
 mod support;
 #[cfg(test)]
+mod surface_agreement_tests;
+#[cfg(test)]
 mod test_support;
 #[cfg(test)]
 pub(crate) mod tests;
