@@ -61,13 +61,18 @@ def _agent_inventory() -> dict[str, bytes]:
     return inventory
 
 
-def _assert_agent_inventory(files: dict[str, bytes]) -> None:
-    expected = {
+def _packaged_agent_inventory() -> dict[str, bytes]:
+    return {
         f"share/biomcp/{relative}": content
         for relative, content in _agent_inventory().items()
     }
+
+
+def _assert_agent_inventory(files: dict[str, bytes]) -> None:
     missing_or_changed = [
-        name for name, content in expected.items() if files.get(name) != content
+        name
+        for name, content in _packaged_agent_inventory().items()
+        if files.get(name) != content
     ]
     assert not missing_or_changed, (
         f"missing or changed agent files: {missing_or_changed}"
@@ -99,20 +104,20 @@ def test_native_archives_carry_the_complete_agent_surface(tmp_path: Path) -> Non
     linux = tmp_path / "biomcp-linux-x86_64.tar.gz"
     packaging.native_archive(binary, linux, False)
     with tarfile.open(linux, "r:gz") as archive:
-        _assert_agent_inventory(
-            {
-                member.name: archive.extractfile(member).read()
-                for member in archive.getmembers()
-                if member.isfile()
-            }
-        )
+        files = {
+            member.name: archive.extractfile(member).read()
+            for member in archive.getmembers()
+            if member.isfile()
+        }
+        _assert_agent_inventory(files)
+        assert set(files) == {"biomcp", *_packaged_agent_inventory()}
 
     windows = tmp_path / "biomcp-windows-x86_64.zip"
     packaging.native_archive(binary, windows, True)
     with zipfile.ZipFile(windows) as archive:
-        _assert_agent_inventory(
-            {name: archive.read(name) for name in archive.namelist()}
-        )
+        files = {name: archive.read(name) for name in archive.namelist()}
+        _assert_agent_inventory(files)
+        assert set(files) == {"biomcp.exe", *_packaged_agent_inventory()}
 
 
 def test_wheel_contains_binaries_and_complete_agent_surface(tmp_path: Path) -> None:
@@ -138,6 +143,16 @@ def test_wheel_contains_binaries_and_complete_agent_surface(tmp_path: Path) -> N
                 if name.startswith(data_prefix)
             }
         )
+        dist = "biomcp_cli-1.2.3"
+        expected = {
+            f"{dist}.data/scripts/biomcp",
+            f"{dist}.data/scripts/biomcp-cli",
+            f"{dist}.dist-info/METADATA",
+            f"{dist}.dist-info/WHEEL",
+            f"{dist}.dist-info/RECORD",
+            *(f"{data_prefix}{name}" for name in _packaged_agent_inventory()),
+        }
+        assert set(archive.namelist()) == expected
 
 
 def test_packaged_agent_index_maps_local_and_live_topics(tmp_path: Path) -> None:
