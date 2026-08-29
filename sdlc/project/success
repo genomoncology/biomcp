@@ -33,6 +33,14 @@
 #          script uses neither.
 set -euo pipefail
 
+git_with_optional_timeout() {
+	if command -v timeout >/dev/null 2>&1; then
+		timeout -k 10 60 git "$@"
+	else
+		git "$@"
+	fi
+}
+
 ACTIVATION_BASE=${ACTIVATION_BASE-}
 ACTIVATION_TIP=${ACTIVATION_TIP-}
 if ([ -n "$ACTIVATION_BASE" ] && [ -z "$ACTIVATION_TIP" ]) ||
@@ -51,7 +59,7 @@ checkout_left_alone() {
 
 deploy_checkout() {
 	local expected_tip=$1 branch status head hook hook_status
-	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
+	if ! git_with_optional_timeout -C "$REPO" fetch --quiet origin; then
 		checkout_left_alone "could not refresh origin/main"
 		return 4
 	fi
@@ -95,7 +103,7 @@ deploy_checkout() {
 }
 
 activate_only() {
-	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
+	if ! git_with_optional_timeout -C "$REPO" fetch --quiet origin; then
 		checkout_left_alone "could not refresh origin/main"
 		printf 'activation-pending %s..%s\n' "$ACTIVATION_BASE" "$ACTIVATION_TIP"
 		return 4
@@ -321,7 +329,7 @@ if [ -d "$TREE" ] && [ "$TREE_ORPHAN" -eq 0 ]; then
 		exit 1
 	fi
 fi
-if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
+if ! git_with_optional_timeout -C "$REPO" fetch --quiet origin; then
 	echo "success: git fetch origin failed" >&2
 	exit 1
 fi

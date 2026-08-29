@@ -41,6 +41,14 @@
 #            settlement the factory already decided does not change
 set -euo pipefail
 
+git_with_optional_timeout() {
+	if command -v timeout >/dev/null 2>&1; then
+		timeout -k 10 60 git "$@"
+	else
+		git "$@"
+	fi
+}
+
 : "${TICKET_ID:?failure: TICKET_ID is required}"
 case "$TICKET_ID" in
 [0-9][0-9][0-9][0-9]) ;;
@@ -279,7 +287,7 @@ if [ "$WITHDRAWN" -eq 1 ]; then
 else
 	LOCAL=$(git -C "$REPO" for-each-ref --format='%(objectname)' "$REF")
 fi
-if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --no-tags origin; then
+if ! git_with_optional_timeout -C "$REPO" fetch --quiet --no-tags origin; then
 	echo "failure: git fetch origin failed — refusing to tear down without a current view of origin" >&2
 	exit 2
 fi
@@ -303,7 +311,7 @@ unpreserved() {
 }
 
 if [ -n "$REMOTE" ] && ! git -C "$REPO" cat-file -e "$REMOTE^{commit}" 2>/dev/null; then
-	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --no-tags origin "$REMOTE"; then
+	if ! git_with_optional_timeout -C "$REPO" fetch --quiet --no-tags origin "$REMOTE"; then
 		echo "failure: could not fetch the origin tip of $BRANCH; refusing to delete it unpreserved" >&2
 		exit 2
 	fi

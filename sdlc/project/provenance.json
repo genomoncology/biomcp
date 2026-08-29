@@ -1,29 +1,29 @@
 {
-  "canonicalCommit": "8598ca84427535a86b4d27eb89988892548b2270",
+  "canonicalCommit": "ceb33bd397680b3e2a6819516e7cd25a7d5c48ba",
   "scripts": [
     {
       "name": "tasks",
-      "sha256": "3d92800cc52eeecda3b613d5dbf56dc37dbdaf575367b33ba282586fe6077bc6",
+      "sha256": "e8e862034c0c3b46e3a6e937a026d82d83d3e2809bbfe45d1dce1ce5d26e5545",
       "executable": true
     },
     {
       "name": "before",
-      "sha256": "df4a7b5c18bfe8a51088b26caee951299d6ea376728836327c90f0ac7b423869",
+      "sha256": "d7070670a2922ecae40e7f445dd575d509efb5b834a9fb8d8cdc93032f10e1fa",
       "executable": true
     },
     {
       "name": "success",
-      "sha256": "eb885867090f92c17a0e3f00107302447065c23599689ecd0fad911473fdb859",
+      "sha256": "2309d4a1d2e220a3b2f5f353023d30b9bcf8eb806c91a76d74db4b2ae58f9ad1",
       "executable": true
     },
     {
       "name": "failure",
-      "sha256": "172d5bf77fc0770fb92a10187d371e6737afea6b106d4632f5003e3b4340a9bb",
+      "sha256": "b513850fc6e07560a7f204a6d8b3ec50aeed95e345f9686dd79fa0592753246d",
       "executable": true
     },
     {
       "name": "health",
-      "sha256": "5239558ca74672d6b7dadefadc945bbd62d81bfb3fdeb3c179357da555afce60",
+      "sha256": "d937ce107219e2bddc879f1a04ff4e2f7a37e392b08373c24c1b2ab92194ec59",
       "executable": true
     }
   ]

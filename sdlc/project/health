@@ -7,9 +7,9 @@
 # WHAT IT CHECKS, in order, cheapest first:
 #   1. pwd is a Git repository with an origin
 #   2. the local working tree's clean or uncommitted state
-#   3. origin refreshes with `timeout -k 10 60 git fetch --quiet origin`,
-#      retrying one timeout — an unreachable or hanging remote is unfit, not
-#      a hung doctor
+#   3. origin refreshes with `timeout -k 10 60 git fetch --quiet origin`
+#      when timeout is available, or directly with Git otherwise; one timeout
+#      is retried so an unreachable remote is unfit, not a hung doctor
 #   4. the refreshed origin/main resolves, then committed HEAD's deployment
 #      state
 #   5. the active contract folders exist: project, scripts, tickets, and records
@@ -26,6 +26,14 @@
 #          findings when unfit.
 # EXIT:    0 fit · 1 unfit — the findings say why
 set -euo pipefail
+
+git_with_optional_timeout() {
+	if command -v timeout >/dev/null 2>&1; then
+		timeout -k 10 60 git "$@"
+	else
+		git "$@"
+	fi
+}
 
 MINIMUM_FREE_SPACE_KIB=10485760
 
@@ -51,10 +59,10 @@ if ! git remote get-url origin >/dev/null 2>&1; then
 	report "no origin remote"
 else
 	fetch_status=0
-	timeout -k 10 60 git fetch --quiet origin >/dev/null 2>&1 || fetch_status=$?
+	git_with_optional_timeout fetch --quiet origin >/dev/null 2>&1 || fetch_status=$?
 	if [ "$fetch_status" -eq 124 ] || [ "$fetch_status" -eq 137 ]; then
 		fetch_status=0
-		timeout -k 10 60 git fetch --quiet origin >/dev/null 2>&1 || fetch_status=$?
+		git_with_optional_timeout fetch --quiet origin >/dev/null 2>&1 || fetch_status=$?
 	fi
 	if [ "$fetch_status" -ne 0 ]; then
 		if [ "$fetch_status" -eq 124 ] || [ "$fetch_status" -eq 137 ]; then

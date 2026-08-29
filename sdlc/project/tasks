@@ -6,8 +6,8 @@
 //   It reads the TIP OF origin/main, never the working tree: a landing or a
 //   teammate changes origin without touching the checkout we stand in, and a
 //   dirty checkout must not change what the factory believes about the board.
-//   It fetches first, bounded by `timeout -k 10 60`, so a hung transport
-//   fails rather than hangs.
+//   It fetches first, bounded by `timeout -k 10 60` when that command is
+//   available, so a hung transport fails rather than hangs on capable hosts.
 //
 // STDIN:   nothing.
 // STDOUT:  one JSON object per line, one line per ticket:
@@ -64,7 +64,12 @@ try {
   fail("no origin remote");
 }
 function fetchOrigin() {
-  const result = spawnSync("timeout", ["-k", "10", "60", "git", "fetch", "--quiet", "origin"], { cwd: REPO, stdio: ["ignore", "ignore", "pipe"] });
+  const timeoutAvailable = spawnSync("sh", ["-c", "command -v timeout >/dev/null 2>&1"], { cwd: REPO, stdio: "ignore" }).status === 0;
+  const command = timeoutAvailable ? "timeout" : "git";
+  const args = timeoutAvailable
+    ? ["-k", "10", "60", "git", "fetch", "--quiet", "origin"]
+    : ["fetch", "--quiet", "origin"];
+  const result = spawnSync(command, args, { cwd: REPO, stdio: ["ignore", "ignore", "pipe"] });
   return {
     status: Number.isInteger(result.status) ? result.status : 1,
     stderr: result.stderr?.toString("utf8") ?? "",

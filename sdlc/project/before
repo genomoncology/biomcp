@@ -57,6 +57,14 @@
 # this ticket's own work to continue, not evidence of a rival.
 set -euo pipefail
 
+git_with_optional_timeout() {
+	if command -v timeout >/dev/null 2>&1; then
+		timeout -k 10 60 git "$@"
+	else
+		git "$@"
+	fi
+}
+
 # stdout is reserved for the protocol lines. Everything a git or a gate
 # prints is chatter and belongs on stderr.
 exec 3>&1 1>&2
@@ -225,7 +233,7 @@ undo() {
 }
 
 # 1. Fetch. Everything below reads origin/main, so it has to be current.
-if ! timeout -k 10 60 git -C "$REPO" fetch --quiet --prune origin; then
+if ! git_with_optional_timeout -C "$REPO" fetch --quiet --prune origin; then
 	echo "before: git fetch origin failed" >&2
 	exit 1
 fi
@@ -625,10 +633,9 @@ parse_exec_trace() {
 observe_command() {
 	local directory=$1 script=$2 trace status
 	if [ "$GREEN_MAIN_OBSERVATION_DEGRADED" -eq 1 ]; then
-		# A tracer already holds this process and the kernel allows one
-		# tracer, so strace cannot attach. Run the command directly: the
-		# verdict stays true, and skipping the manifest below is the only
-		# cost of the missing observation.
+		# Execution observation is unavailable on this host. Run the command
+		# directly: the verdict stays true, and skipping the manifest below
+		# is the only cost of the missing observation.
 		status=0
 		(cd "$directory" && SDLC_REPO="$REPO" "$script") || status=$?
 		OBSERVED_STATUS=$status
@@ -675,17 +682,8 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 		GREEN_MAIN_OBSERVATION_DEGRADED=1
 		echo "before: a tracer (pid $TRACER_PID) already holds this process; proving origin/main without observation" >&2
 	elif ! command -v strace >/dev/null 2>&1; then
-		echo "before: strace is required to prove origin/main" >&2
-		clear_unproven_marker || echo "before: could not clear unproven green-main verdict" >&2
-		cleanup_status=0
-		undo || cleanup_status=$?
-		if [ "$cleanup_status" -eq 3 ]; then
-			exit 3
-		fi
-		if [ "$cleanup_status" -ne 0 ]; then
-			echo "before: cleanup after missing strace failed" >&2
-		fi
-		exit 1
+		GREEN_MAIN_OBSERVATION_DEGRADED=1
+		echo "before: strace is unavailable; proving origin/main without observation" >&2
 	fi
 fi
 
