@@ -26,9 +26,9 @@
 # STDOUT:  "landed <base>..<tip>" for a settled landing, "nothing to
 #          land" for a settled no-op, or one activation receipt: "activated"
 #          or "activation-pending <base>..<tip>". Pending is the only stdout
-#          when the durable snapshot's checkout remains unsafe.
+#          when the durable snapshot's checkout or deployment cannot activate.
 # EXIT:    0 settled or no-op; 1 landing, deploy, or teardown failure; 4 when
-#          the durable snapshot's checkout activation remains pending. The
+#          the durable snapshot's checkout or deployment remains pending. The
 #          factory also reads 3 as a rejected landing and 2 as a refusal; this
 #          script uses neither.
 set -euo pipefail
@@ -50,7 +50,7 @@ checkout_left_alone() {
 }
 
 deploy_checkout() {
-	local expected_tip=$1 branch status head hook
+	local expected_tip=$1 branch status head hook hook_status
 	if ! timeout -k 10 60 git -C "$REPO" fetch --quiet origin; then
 		checkout_left_alone "could not refresh origin/main"
 		return 4
@@ -80,9 +80,17 @@ deploy_checkout() {
 		return 4
 	fi
 	hook="$REPO/sdlc/scripts/deploy"
-	if [ -x "$hook" ] && ! (cd "$REPO" && LANDED_BASE="$BASE" LANDED_TIP="$TIP" "$hook" >&2); then
-		echo "success: deploy hook failed" >&2
-		return 1
+	if [ -x "$hook" ]; then
+		if (cd "$REPO" && LANDED_BASE="$BASE" LANDED_TIP="$TIP" "$hook" >&2); then
+			:
+		else
+			hook_status=$?
+			if [ "$hook_status" -eq 4 ]; then
+				return 4
+			fi
+			echo "success: deploy hook failed" >&2
+			return 1
+		fi
 	fi
 }
 
@@ -406,7 +414,8 @@ else
 fi
 
 # 3. Deploy the registered checkout after origin/main reflects settlement.
-# A durable snapshot remains pending when a safe checkout cannot activate it.
+# A durable snapshot remains pending when its checkout or deployment cannot
+# activate it.
 failures=
 
 if deploy_checkout "$TIP"; then
