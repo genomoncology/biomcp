@@ -8,6 +8,7 @@ import textwrap
 import tomllib
 
 import pytest
+import yaml
 
 ROOT = Path(
     os.environ.get("BIOMCP_TEST_ROOT", Path(__file__).resolve().parents[1])
@@ -92,7 +93,16 @@ def test_docs_edge_announces_and_serves_every_markdown_twin(
                 {"url": f"https://biomcp.org{markdown_route}"},
             ]
         )
-        expected[html_route] = (markdown_route, source.read_text(encoding="utf-8"))
+        html_file = (
+            built_site / "index.html"
+            if html_route == "/"
+            else built_site / html_route.removeprefix("/") / "index.html"
+        )
+        expected[html_route] = (
+            markdown_route,
+            source.read_text(encoding="utf-8"),
+            html_file.read_text(encoding="utf-8"),
+        )
 
     harness = tmp_path / "exercise-worker.mjs"
     harness.write_text(
@@ -152,14 +162,17 @@ def test_docs_edge_announces_and_serves_every_markdown_twin(
     assert completed.returncode == 0, completed.stderr
     results = iter(json.loads(completed.stdout))
 
-    for html_route, (markdown_route, source) in expected.items():
+    for html_route, (markdown_route, source, html_source) in expected.items():
         html = next(results)
         negotiated = next(results)
         direct = next(results)
         markdown_url = f"https://biomcp.org{markdown_route}"
 
         assert html["status"] == 200, html_route
+        assert html["body"] == html_source, html_route
+        assert html["headers"]["content-type"].startswith("text/html"), html_route
         assert html["headers"].get("x-markdown-url") == markdown_url, html_route
+        assert "accept" in html["headers"].get("vary", "").lower(), html_route
         assert negotiated["status"] == 200, html_route
         assert negotiated["body"] == source, html_route
         assert negotiated["headers"]["content-type"].startswith("text/markdown"), (
@@ -181,9 +194,22 @@ def test_llms_txt_documents_markdown_content_negotiation() -> None:
 
 
 def test_docs_deployment_builds_strictly_and_deploys_the_edge() -> None:
-    workflow_path = ROOT / ".github/workflows/docs.yml"
-    assert workflow_path.is_file(), "the docs edge has no deployment workflow"
-    workflow = workflow_path.read_text(encoding="utf-8")
+    deployment_jobs = []
+    for workflow_path in (ROOT / ".github/workflows").glob("*.yml"):
+        workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+        for job_name, job in workflow.get("jobs", {}).items():
+            commands = "\n".join(
+                step.get("run", "") for step in job.get("steps", [])
+            )
+            if "wrangler deploy" in commands:
+                deployment_jobs.append((workflow_path, job_name, commands))
 
-    assert "mkdocs build --strict" in workflow
-    assert "wrangler deploy" in workflow
+    assert deployment_jobs, "the docs edge has no deployment workflow"
+    assert len(deployment_jobs) == 1, deployment_jobs
+    workflow_path, job_name, commands = deployment_jobs[0]
+    strict_build = commands.find("mkdocs build --strict")
+    deployment = commands.find("wrangler deploy")
+    assert strict_build >= 0, f"{workflow_path.name}:{job_name} bypasses strict docs build"
+    assert strict_build < deployment, (
+        f"{workflow_path.name}:{job_name} deploys before its strict docs build"
+    )
