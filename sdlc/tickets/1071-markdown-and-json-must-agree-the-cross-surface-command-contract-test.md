@@ -49,3 +49,27 @@ This ticket does not cover search-result guidance, discovery responses,
 pagination continuations, or command execution. Do not add a runtime option,
 dependency, or new command-building abstraction unless the existing section
 and related-command helpers cannot be composed at the output boundaries.
+
+## Operator amendment 2 — 2026-08-29
+
+The second design-review refusal (2026-08-29, attempt at 02-design-review) is
+also correct, and the fix is a redesign of the test's evidence source, not of
+the renderers. Directing, dated, and narrowing:
+
+- The contract test must exercise the **real dispatch surface**: construct
+  each family's card through the actual CLI dispatch path (or the same
+  entity-build function the CLI dispatch calls), then render both ways.
+  Hand-constructed JSON — a test calling `entity_json(&variant, related_variant(&variant))`
+  with hand-selected helpers — is exactly the drift the ticket exists to catch
+  hiding inside the test itself. Synthetic construction is forbidden for the
+  agreement assertion.
+- Do **not** modify the related_* helpers, the generic serializer, or markdown
+  output to make a synthetic test pass. The refusal named that escape; it is
+  explicitly denied. If the real-dispatch JSON lacks commands the design
+  expected (`clinvar`, `predict`, `predictions` for variant; the same shape
+  question for drug, trial, article, adverse-event, protein, PGx, pathway),
+  the honest outcomes are: file the gap as a named asymmetry with a reason, or
+  file it as a separate draft ticket — the contract test records what is, it
+  does not paper over it.
+- Everything else in the ticket stands: every family listed in the 2026-08-28
+  amendment, one fixture each, teeth against pre-1069 author code.
