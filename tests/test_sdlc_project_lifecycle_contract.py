@@ -185,24 +185,49 @@ def _clone(origin: Path, destination: Path) -> Path:
     return destination
 
 
-def test_success_matches_canonical_adoption() -> None:
-    success = PROJECT / "success"
+@pytest.mark.parametrize(
+    ("name", "expected_hash", "expected_executable"),
+    [
+        (
+            "before",
+            "d7070670a2922ecae40e7f445dd575d509efb5b834a9fb8d8cdc93032f10e1fa",
+            True,
+        ),
+        (
+            "failure",
+            "b513850fc6e07560a7f204a6d8b3ec50aeed95e345f9686dd79fa0592753246d",
+            True,
+        ),
+        (
+            "health",
+            "d937ce107219e2bddc879f1a04ff4e2f7a37e392b08373c24c1b2ab92194ec59",
+            True,
+        ),
+        (
+            "success",
+            "2309d4a1d2e220a3b2f5f353023d30b9bcf8eb806c91a76d74db4b2ae58f9ad1",
+            True,
+        ),
+        (
+            "tasks",
+            "e8e862034c0c3b46e3a6e937a026d82d83d3e2809bbfe45d1dce1ce5d26e5545",
+            True,
+        ),
+        (
+            "provenance.json",
+            "14182aeab89d5ff9cf85a06adc46121fde48c4711989b5a3dadaf351b4df2782",
+            None,
+        ),
+    ],
+)
+def test_project_files_match_canonical_adoption(
+    name: str, expected_hash: str, expected_executable: bool | None
+) -> None:
+    adopted = PROJECT / name
 
-    assert (
-        hashlib.sha256(success.read_bytes()).hexdigest(),
-        bool(success.stat().st_mode & 0o111),
-    ) == (
-        "eb885867090f92c17a0e3f00107302447065c23599689ecd0fad911473fdb859",
-        True,
-    )
-
-
-def test_provenance_matches_canonical_adoption() -> None:
-    provenance = PROJECT / "provenance.json"
-
-    assert hashlib.sha256(provenance.read_bytes()).hexdigest() == (
-        "2c42b83ac137bfe158dfbafd7200a62b05961e4679745a26113c75da4f6cddf4"
-    )
+    assert hashlib.sha256(adopted.read_bytes()).hexdigest() == expected_hash
+    if expected_executable is not None:
+        assert bool(adopted.stat().st_mode & 0o111) is expected_executable
 
 
 def test_tasks_retries_an_ordinary_fetch_failure_before_scanning(
