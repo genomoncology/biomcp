@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -182,6 +183,26 @@ def _clone(origin: Path, destination: Path) -> Path:
     _git(destination, "config", "user.name", "Lifecycle contract")
     _git(destination, "config", "user.email", "lifecycle@example.invalid")
     return destination
+
+
+def test_success_matches_canonical_adoption() -> None:
+    success = PROJECT / "success"
+
+    assert (
+        hashlib.sha256(success.read_bytes()).hexdigest(),
+        bool(success.stat().st_mode & 0o111),
+    ) == (
+        "eb885867090f92c17a0e3f00107302447065c23599689ecd0fad911473fdb859",
+        True,
+    )
+
+
+def test_provenance_matches_canonical_adoption() -> None:
+    provenance = PROJECT / "provenance.json"
+
+    assert hashlib.sha256(provenance.read_bytes()).hexdigest() == (
+        "2c42b83ac137bfe158dfbafd7200a62b05961e4679745a26113c75da4f6cddf4"
+    )
 
 
 def test_tasks_retries_an_ordinary_fetch_failure_before_scanning(
