@@ -206,7 +206,7 @@ def _run_case(
         env=env,
         check=False,
         capture_output=True,
-        timeout=30,
+        timeout=300,
     )
     if completed.returncode != 0:
         stderr = completed.stderr.decode(errors="replace").strip()

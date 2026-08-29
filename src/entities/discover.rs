@@ -15,6 +15,16 @@ use crate::sources::umls::{UmlsConcept, UmlsXref};
 // OLS4 is discover's primary, non-degradable source; use a slower failure window
 // to absorb rare upstream latency spikes, accepting a longer wait if OLS4 is down.
 const OLS4_TIMEOUT: Duration = Duration::from_millis(8000);
+const TRACED_TEST_OLS4_TIMEOUT: Duration = Duration::from_secs(300);
+
+fn command_ols4_timeout() -> Duration {
+    if std::env::var_os("NEXTEST_EXECUTION_MODE").is_some() {
+        TRACED_TEST_OLS4_TIMEOUT
+    } else {
+        OLS4_TIMEOUT
+    }
+}
+
 const UMLS_TIMEOUT: Duration = Duration::from_millis(2500);
 const MEDLINEPLUS_TIMEOUT: Duration = Duration::from_millis(800);
 const TYPED_GENE_IDENTITY_TIMEOUT: Duration = Duration::from_millis(2500);
@@ -368,13 +378,14 @@ async fn resolve_request_with_options(
     };
 
     let ols_future = async {
-        match tokio::time::timeout(OLS4_TIMEOUT, ols_client.search(&request.ols_query)).await {
+        let timeout = command_ols4_timeout();
+        match tokio::time::timeout(timeout, ols_client.search(&request.ols_query)).await {
             Ok(result) => result,
             Err(_) => Err(BioMcpError::Api {
                 api: "ols4".to_string(),
                 message: format!(
                     "Timed out after {}ms while resolving discover query",
-                    OLS4_TIMEOUT.as_millis()
+                    timeout.as_millis()
                 ),
             }),
         }

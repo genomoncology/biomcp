@@ -56,12 +56,12 @@
     },
     {
       "path": "src/entities/discover.rs",
-      "baseline_lines": 4001,
+      "baseline_lines": 4012,
       "floor_lines": 3694,
       "authorized_increase": {
-        "ticket": "0979",
-        "delta": 307,
-        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, and pagination contract.",
+        "ticket": "0979, 1086",
+        "delta": 318,
+        "reason": "Bounded typed identity and page-scoped executable guidance participate directly in the existing concurrent discovery merge, ranking, pagination, and traced-test timing contract.",
         "removal_condition": "Extract discovery provider orchestration and its tests when the discovery entity is next decomposed."
       }
     },
@@ -119,12 +119,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1241,
+      "baseline_lines": 1251,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035",
-        "delta": 113,
-        "reason": "Add narrow dbSNP RefSNP resolution and population-detail selector support for GRCh38 population queries.",
+        "ticket": "1022, 1035, 1086",
+        "delta": 123,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, and traced-test timing support for GRCh38 population queries.",
         "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed."
       }
     },

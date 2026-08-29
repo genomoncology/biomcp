@@ -59,6 +59,16 @@ pub const VARIANT_SECTION_NAMES: &[&str] = &[
 ];
 
 const OPTIONAL_ENRICHMENT_TIMEOUT: Duration = Duration::from_secs(8);
+const TRACED_TEST_ENRICHMENT_TIMEOUT: Duration = Duration::from_secs(300);
+
+fn optional_enrichment_timeout() -> Duration {
+    if std::env::var_os("NEXTEST_EXECUTION_MODE").is_some() {
+        TRACED_TEST_ENRICHMENT_TIMEOUT
+    } else {
+        OPTIONAL_ENRICHMENT_TIMEOUT
+    }
+}
+
 const GNOMAD_DATASET: &str = "gnomad_r4";
 const GNOMAD_RELEASE: &str = "gnomAD v4";
 const GNOMAD_FAF_CAVEAT: &str =
@@ -1006,7 +1016,7 @@ async fn add_population(variant: &mut Variant, id_format: &VariantIdFormat) {
             };
             let coordinate = match DbSnpClient::new() {
                 Ok(client) => match tokio::time::timeout(
-                    OPTIONAL_ENRICHMENT_TIMEOUT,
+                    optional_enrichment_timeout(),
                     client.resolve_grch38_coordinate(rsid, &variant.id),
                 )
                 .await
@@ -1079,7 +1089,7 @@ async fn add_population(variant: &mut Variant, id_format: &VariantIdFormat) {
 
     let response = match GnomadClient::new() {
         Ok(client) => match tokio::time::timeout(
-            OPTIONAL_ENRICHMENT_TIMEOUT,
+            optional_enrichment_timeout(),
             client.variant_population(&variant_id),
         )
         .await

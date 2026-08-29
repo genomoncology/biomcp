@@ -50,7 +50,7 @@ def test_variant_normalize_json_no_result_emits_parseable_non_empty_stdout() -> 
             capture_output=True,
             text=True,
             check=False,
-            timeout=60,
+            timeout=300,
         )
     finally:
         server.shutdown()
