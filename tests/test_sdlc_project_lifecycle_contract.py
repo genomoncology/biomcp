@@ -437,6 +437,24 @@ def test_health_distinguishes_clean_and_dirty_working_trees(
     )
 
 
+def test_health_surfaces_a_failing_project_extension(tmp_path: Path) -> None:
+    repo, _origin = _fixture(tmp_path)
+    extension = repo / "sdlc" / "scripts" / "health"
+    extension.write_text(
+        "#!/bin/sh\n"
+        "[ \"$(pwd -P)\" = \"$(git rev-parse --show-toplevel)\" ] || exit 2\n"
+        "printf '%s\\n' 'upstream checkout is behind its origin'\n"
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    extension.chmod(0o755)
+
+    health = _run(repo, "health", {})
+
+    assert health.returncode == 1
+    assert "upstream checkout is behind its origin" in health.stdout
+
+
 def test_health_reports_malformed_opens_from_origin_main(tmp_path: Path) -> None:
     repo, _origin = _fixture(tmp_path)
     policy = repo / "assembly" / "flows" / "build" / "05-verify" / "gate" / "05-path-policy"
