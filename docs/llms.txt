@@ -19,4 +19,8 @@ The CLI uses these entity command forms:
 
 The current MCP tools are `biomcp`, `search`, `get`, `variant_normalize_car`, `variant_erepo`, `gene_cspec`, and `variant_articles`. See the [CLI reference](https://biomcp.org/user-guide/cli-reference/) and [MCP server reference](https://biomcp.org/reference/mcp-server/).
 
-The Markdown source is at https://github.com/genomoncology/biomcp/tree/main/docs
+## Markdown pages
+
+Agents can read any documentation page as Markdown by appending `.md` to its
+page path, or by sending `Accept: text/markdown` to the ordinary page URL. The
+source is at https://github.com/genomoncology/biomcp/tree/main/docs.

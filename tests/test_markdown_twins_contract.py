@@ -47,6 +47,8 @@ def _page_routes(source: Path) -> tuple[str, str]:
     markdown_route = "/" + relative.as_posix()
     if relative == Path("index.md"):
         return "/", markdown_route
+    if relative.name == "index.md":
+        return "/" + relative.parent.as_posix() + "/", markdown_route
     return "/" + relative.with_suffix("").as_posix() + "/", markdown_route
 
 
