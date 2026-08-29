@@ -16,6 +16,17 @@ from pathlib import Path
 from candidate import ARTIFACTS, canonical_bytes, sha256_file
 
 EPOCH = (1980, 1, 1, 0, 0, 0)
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _agent_inventory() -> list[tuple[str, bytes]]:
+    sources = [ROOT / "AGENTS.md"]
+    sources.extend((ROOT / "docs").rglob("*.md"))
+    sources.extend((ROOT / "skills").rglob("*.md"))
+    return [
+        (f"share/biomcp/{source.relative_to(ROOT).as_posix()}", source.read_bytes())
+        for source in sorted(sources)
+    ]
 
 
 def _zip_entry(archive: zipfile.ZipFile, name: str, data: bytes, mode: int) -> None:
@@ -27,17 +38,24 @@ def _zip_entry(archive: zipfile.ZipFile, name: str, data: bytes, mode: int) -> N
 
 def native_archive(binary: Path, output: Path, windows: bool) -> None:
     data = binary.read_bytes()
+    inventory = _agent_inventory()
     if windows:
         with zipfile.ZipFile(output, "w") as archive:
             _zip_entry(archive, "biomcp.exe", data, 0o100755)
+            for name, content in inventory:
+                _zip_entry(archive, name, content, 0o100644)
         return
     tar_buffer = io.BytesIO()
     with tarfile.open(fileobj=tar_buffer, mode="w") as archive:
-        info = tarfile.TarInfo("biomcp")
-        info.size = len(data)
-        info.mode = 0o755
-        info.mtime = 0
-        archive.addfile(info, io.BytesIO(data))
+        entries = [("biomcp", data, 0o755), *(
+            (name, content, 0o644) for name, content in inventory
+        )]
+        for name, content, mode in entries:
+            info = tarfile.TarInfo(name)
+            info.size = len(content)
+            info.mode = mode
+            info.mtime = 0
+            archive.addfile(info, io.BytesIO(content))
     with output.open("wb") as raw:
         with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed:
             compressed.write(tar_buffer.getvalue())
@@ -79,6 +97,10 @@ def wheel(
             0o100644,
         ),
     ]
+    entries.extend(
+        (f"{dist}.data/data/{name}", content, 0o100644)
+        for name, content in _agent_inventory()
+    )
     rows = [[name, _record_hash(data), str(len(data))] for name, data, _ in entries]
     record_name = f"{dist}.dist-info/RECORD"
     record = io.StringIO(newline="")

@@ -4,6 +4,26 @@ BioMCP is a Rust CLI and MCP server with a Python docs/contract harness. The
 Rust runtime lives under `src/`; Python tests, docs checks, and executable
 contracts exercise the shipped CLI/MCP surface.
 
+## Packaged agent guide
+
+BioMCP is a biomedical CLI and MCP server. For example, search from the CLI
+with `biomcp search articles --gene BRAF`.
+
+Installed packages place agent skills in `share/biomcp/skills/`. Packaged
+Markdown documentation is available locally and on the canonical site at
+https://biomcp.org/:
+
+| Topic | Packaged documentation | Website |
+| --- | --- | --- |
+| Blog | `share/biomcp/docs/blog/` | https://biomcp.org/blog/ |
+| Charts | `share/biomcp/docs/charts/` | https://biomcp.org/charts/ |
+| Concepts | `share/biomcp/docs/concepts/` | https://biomcp.org/concepts/ |
+| Getting started | `share/biomcp/docs/getting-started/` | https://biomcp.org/getting-started/ |
+| How-to | `share/biomcp/docs/how-to/` | https://biomcp.org/how-to/ |
+| Reference | `share/biomcp/docs/reference/` | https://biomcp.org/reference/ |
+| Sources | `share/biomcp/docs/sources/` | https://biomcp.org/sources/ |
+| User guide | `share/biomcp/docs/user-guide/` | https://biomcp.org/user-guide/ |
+
 ## Repository contract shape
 
 - Behavioral contracts are mustmatch executable docs at:

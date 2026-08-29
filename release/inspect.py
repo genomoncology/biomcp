@@ -11,6 +11,7 @@ import io
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tarfile
@@ -62,6 +63,17 @@ TARGETS = {
     },
 }
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _agent_inventory() -> dict[str, bytes]:
+    sources = [ROOT / "AGENTS.md"]
+    sources.extend((ROOT / "docs").rglob("*.md"))
+    sources.extend((ROOT / "skills").rglob("*.md"))
+    return {
+        f"share/biomcp/{source.relative_to(ROOT).as_posix()}": source.read_bytes()
+        for source in sorted(sources)
+    }
 
 
 class InspectionError(ValueError):
@@ -134,34 +146,59 @@ def inspect_native(path: Path, target: str) -> dict[str, object]:
     if path.name != settings["archive"]:
         raise InspectionError("native archive filename does not match target")
     windows = settings["os"] == "windows"
-    expected = "biomcp.exe" if windows else "biomcp"
+    executable = "biomcp.exe" if windows else "biomcp"
+    inventory = _agent_inventory()
+    expected_names = {executable, *inventory}
     if windows:
         with zipfile.ZipFile(path) as archive:
-            names = archive.namelist()
+            infos = archive.infolist()
+            names = [info.filename for info in infos]
             if len(names) != len(set(names)):
                 raise InspectionError("native archive contains duplicate members")
             for name in names:
                 _safe_name(name)
-            if names != [expected] or not (binary := archive.read(expected)):
-                raise InspectionError("native archive must contain exactly biomcp.exe")
+            if set(names) != expected_names:
+                raise InspectionError("native archive member set is invalid")
+            contents = {name: archive.read(name) for name in names}
+            modes = {info.filename: info.external_attr >> 16 for info in infos}
+        if not (binary := contents[executable]):
+            raise InspectionError("native archive contains an empty executable")
+        if not stat.S_ISREG(modes[executable]) or modes[executable] & 0o111 == 0:
+            raise InspectionError("native executable lacks execute permission")
+        if any(
+            not stat.S_ISREG(modes[name]) or modes[name] & 0o111
+            for name in inventory
+        ):
+            raise InspectionError("native data file mode is invalid")
     else:
         with tarfile.open(path, "r:gz") as archive:
             members = archive.getmembers()
-            for member in members:
-                _safe_name(member.name)
-            if (
-                len(members) != 1
-                or members[0].name != expected
-                or not members[0].isfile()
+            names = [member.name for member in members]
+            if len(names) != len(set(names)):
+                raise InspectionError("native archive contains duplicate members")
+            for name in names:
+                _safe_name(name)
+            if set(names) != expected_names or any(
+                not member.isfile() for member in members
             ):
-                raise InspectionError("native archive must contain exactly biomcp")
-            if members[0].mode & 0o111 == 0:
+                raise InspectionError("native archive member set is invalid")
+            by_name = {member.name: member for member in members}
+            if by_name[executable].mode & 0o111 == 0:
                 raise InspectionError("native executable lacks execute permission")
-            extracted = archive.extractfile(members[0])
-            if extracted is None or not (binary := extracted.read()):
+            if any(by_name[name].mode & 0o111 for name in inventory):
+                raise InspectionError("native data file mode is invalid")
+            contents = {}
+            for member in members:
+                extracted = archive.extractfile(member)
+                if extracted is None:
+                    raise InspectionError("native archive member cannot be read")
+                contents[member.name] = extracted.read()
+            if not (binary := contents[executable]):
                 raise InspectionError("native archive contains an empty executable")
+    if any(contents[name] != content for name, content in inventory.items()):
+        raise InspectionError("native archive data does not match the agent inventory")
     return {
-        "archive_members": 1,
+        "archive_members": len(names),
         "executable_count": 1,
         "assembled_binary_sha256": hashlib.sha256(binary).hexdigest(),
         "inspected": True,
@@ -199,7 +236,18 @@ def inspect_wheel(
     metadata_name = f"{dist}.dist-info/METADATA"
     wheel_name = f"{dist}.dist-info/WHEEL"
     record_name = f"{dist}.dist-info/RECORD"
-    expected_names = {full_name, shim_name, metadata_name, wheel_name, record_name}
+    inventory = {
+        f"{dist}.data/data/{name}": content
+        for name, content in _agent_inventory().items()
+    }
+    expected_names = {
+        full_name,
+        shim_name,
+        metadata_name,
+        wheel_name,
+        record_name,
+        *inventory,
+    }
     with zipfile.ZipFile(path) as archive:
         infos = archive.infolist()
         names = [info.filename for info in infos]
@@ -213,6 +261,12 @@ def inspect_wheel(
         modes = {info.filename: info.external_attr >> 16 for info in infos}
     if modes[full_name] & 0o111 == 0 or modes[shim_name] & 0o111 == 0:
         raise InspectionError("wheel executables lack execute permission")
+    if any(
+        not stat.S_ISREG(modes[name]) or modes[name] & 0o111 for name in inventory
+    ):
+        raise InspectionError("wheel data file mode is invalid")
+    if any(contents[name] != content for name, content in inventory.items()):
+        raise InspectionError("wheel data does not match the agent inventory")
     _one_header(contents[metadata_name], "Name", "biomcp-cli")
     _one_header(contents[metadata_name], "Version", python_version)
     _one_header(contents[wheel_name], "Root-Is-Purelib", "false")
