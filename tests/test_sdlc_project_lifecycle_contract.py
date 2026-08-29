@@ -302,6 +302,70 @@ def test_before_returns_raw_gate_output_and_ends_with_a_bounded_verdict(
     assert len(verdict.encode("utf-8")) <= 1_024
 
 
+def test_before_allows_canonical_adoption_to_repair_red_main(
+    tmp_path: Path,
+) -> None:
+    repo, _origin = _fixture(tmp_path)
+    ticket_id = "1083"
+    ticket = f"sdlc/tickets/{ticket_id}-adopt-canonical-lifecycle.md"
+    _commit(
+        repo,
+        ticket,
+        "---\n"
+        "flow: build\n"
+        "priority: 10\n"
+        "---\n"
+        "# Adopt canonical lifecycle scripts\n\n"
+        "Adoption identity: "
+        "sdlc/tickets/0220-consumer-adoption-reaches-a-red-main-consumer.md@"
+        "7d0c4bad86cd64d8b556a2182d0a60a8aec342c1\n\n"
+        "Adopt the canonical lifecycle changes landed by "
+        "`sdlc/tickets/0220-consumer-adoption-reaches-a-red-main-consumer.md` "
+        "at exact commit `7d0c4bad86cd64d8b556a2182d0a60a8aec342c1`.\n"
+        "Apply exactly these bytes and executable states:\n\n"
+        "- path: sdlc/project/before\n"
+        f"  sha256: {'a' * 64}\n"
+        "  executable: true\n\n"
+        "Adopt the matching provenance manifest:\n\n"
+        "- path: sdlc/project/provenance.json\n"
+        f"  sha256: {'b' * 64}\n",
+        "ticket: add canonical adoption fixture",
+    )
+    test_script = repo / "sdlc" / "scripts" / "test"
+    test_script.write_text(
+        "#!/bin/sh\n"
+        "printf '%s\\n' 'TAP version 13' "
+        "'# Subtest: canonical lifecycle drift' "
+        "'not ok 1 - canonical lifecycle drift' "
+        "'1..1' '# tests 1' '# pass 0' '# fail 1'\n"
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    _git(repo, "add", "sdlc/scripts/test")
+    _git(repo, "commit", "--quiet", "-m", "fixture: make lifecycle drift red")
+    _git(repo, "push", "--quiet", "origin", "main")
+    bot = _bot(tmp_path)
+
+    prepared = _run(
+        repo,
+        "before",
+        {
+            "TICKET_ID": ticket_id,
+            "TICKET_REF": ticket,
+            "TICKET_FLOW": "build",
+            "WORKTREE_ROOT": str(tmp_path / "worktrees"),
+            "PATH": f"{bot.parent}:{os.environ['PATH']}",
+        },
+    )
+    tree_match = re.search(r"^dir: (.+)$", prepared.stdout, re.MULTILINE)
+
+    assert prepared.returncode == 0, prepared.stderr
+    assert tree_match is not None
+    assert Path(tree_match.group(1)).is_dir()
+    assert "canonical lifecycle adoption" in prepared.stderr
+    assert "sdlc/scripts/test" in prepared.stderr
+
+
 def test_before_reclaims_an_owned_orphaned_worktree(tmp_path: Path) -> None:
     repo, _origin = _fixture(tmp_path)
     ticket_id = "1052"
