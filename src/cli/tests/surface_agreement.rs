@@ -2,7 +2,7 @@ use crate::entities::adverse_event::{AdverseEvent, AdverseEventReport};
 use crate::entities::article::Article;
 use crate::entities::diagnostic::Diagnostic;
 use crate::entities::disease::Disease;
-use crate::entities::drug::Drug;
+use crate::entities::drug::{Drug, DrugRegion};
 use crate::entities::gene::Gene;
 use crate::entities::pathway::Pathway;
 use crate::entities::pgx::Pgx;
@@ -132,8 +132,8 @@ fn every_detail_card_markdown_and_json_commands_agree() {
     .unwrap();
     assert_command_surfaces(
         "drug",
-        crate::cli::drug::render_loaded_card(&drug, &[], false).unwrap(),
-        crate::cli::drug::render_loaded_card(&drug, &[], true).unwrap(),
+        crate::cli::drug::render_loaded_card(&drug, &[], DrugRegion::Us, false, false).unwrap(),
+        crate::cli::drug::render_loaded_card(&drug, &[], DrugRegion::Us, false, true).unwrap(),
         &[
             (
                 "biomcp get drug osimertinib all",
