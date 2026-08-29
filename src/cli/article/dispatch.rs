@@ -1,5 +1,5 @@
 pub(super) use super::ArticleSuggestion;
-use super::render::render_loaded_card;
+use super::render::{render_loaded_card, render_loaded_card_with_summary};
 pub(super) use super::workflow::article_entity_suggestion;
 #[cfg(test)]
 use super::workflow::article_follow_up_workflow;
@@ -71,11 +71,12 @@ pub(in crate::cli) async fn handle_get(
             &article, &sections, false,
         )?));
     }
-    let structured = render_loaded_card(&article, &sections, true)?;
+    let fulltext_summary = super::fulltext_view::article_summary(&article)?;
+    let structured = render_loaded_card_with_summary(&article, &sections, true, fulltext_summary)?;
     let text = if json_output {
         structured.clone()
     } else {
-        render_loaded_card(&article, &sections, false)?
+        render_loaded_card_with_summary(&article, &sections, false, fulltext_summary)?
     };
     Ok(CommandOutcome::stdout(text).with_metadata_json(structured))
 }

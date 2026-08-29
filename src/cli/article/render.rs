@@ -6,6 +6,15 @@ pub(crate) fn render_loaded_card(
     json_output: bool,
 ) -> anyhow::Result<String> {
     let fulltext_summary = super::fulltext_view::article_summary(article)?;
+    render_loaded_card_with_summary(article, sections, json_output, fulltext_summary)
+}
+
+pub(super) fn render_loaded_card_with_summary(
+    article: &crate::entities::article::Article,
+    sections: &[String],
+    json_output: bool,
+    fulltext_summary: Option<super::fulltext_view::FulltextSummary>,
+) -> anyhow::Result<String> {
     if json_output {
         let mut next_commands = crate::render::markdown::related_article(article);
         if let Some(not_included) = article.not_included.as_ref() {
