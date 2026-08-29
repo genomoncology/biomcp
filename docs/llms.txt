@@ -21,6 +21,8 @@ The current MCP tools are `biomcp`, `search`, `get`, `variant_normalize_car`, `v
 
 ## Markdown pages
 
-Agents can read any documentation page as Markdown by appending `.md` to its
-page path, or by sending `Accept: text/markdown` to the ordinary page URL. The
-source is at https://github.com/genomoncology/biomcp/tree/main/docs.
+Agents can read any documentation page as Markdown by replacing its trailing
+slash with `.md`, or by sending `Accept: text/markdown` to the ordinary page
+URL. Section overview pages use `/path/index.md`, and the home page uses
+`/index.md`. The source is at
+https://github.com/genomoncology/biomcp/tree/main/docs.
