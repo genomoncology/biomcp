@@ -3,7 +3,8 @@
 #
 # ENVIRONMENT:
 #   TICKET_ID        four digits; the ticket's id as tasks reported it
-#   TICKET_REF       the repo-relative ticket path (carried, not read here)
+#   TICKET_REF       the repo-relative ticket path; fresh build preparation
+#                    reads it from origin/main to recognize canonical adoption
 #   TICKET_FLOW      the procedure that will run; "quickfix" is exempt from
 #                    the green-main gate, because repairing a red main is
 #                    the whole job
@@ -23,8 +24,9 @@
 #      intact; nothing prepares or gates that stale tree.
 #   4. sdlc/scripts/install in that tree, if the repo has one
 #   5. the green-main gate: sdlc/scripts/lint then sdlc/scripts/test in that
-#      tree. A readable verdict marker for the current origin/main skips all
-#      three commands. The gate otherwise skips for the quickfix flow and for
+#      tree. A valid verdict manifest for the current origin/main skips all
+#      three commands while its recorded executable bytes remain unchanged.
+#      The gate otherwise skips for the quickfix flow and for
 #      a ticket branch carrying commits of its own — a continued branch is
 #      mid-work (a red-first test is its normal state) and its redness says
 #      nothing about origin/main; the landing gate protects main instead.
@@ -374,15 +376,158 @@ fi
 # this is a continuation of the ticket's own work.
 AHEAD=$(git -C "$TREE" rev-list --count "origin/main..$BRANCH" 2>/dev/null || echo 0)
 
-# A green verdict belongs to the fetched main commit, not to the rebuildable
-# queue state or to an individual ticket worktree. Snapshot trust before any
-# project-owned script runs, so install cannot create a marker and skip gates.
+# Deployment emits one exact ticket shape for canonical lifecycle adoption.
+# Recognize only that committed shape for this ticket. An unreadable or
+# malformed ref is an ordinary build ticket, never an exemption or a fault.
+canonical_adoption_ticket() {
+	local ticket
+	[ "${TICKET_FLOW-}" = build ] && [ "$AHEAD" -eq 0 ] || return 1
+	case "${TICKET_REF-}" in
+	"sdlc/tickets/$TICKET_ID-"*.md) ;;
+	*) return 1 ;;
+	esac
+	case "$TICKET_REF" in *[!A-Za-z0-9_./-]* | *..*) return 1 ;; esac
+	ticket=$(mktemp) || return 1
+	if ! git -C "$REPO" cat-file blob "origin/main:$TICKET_REF" >"$ticket" 2>/dev/null ||
+		[ "$(tail -c 1 "$ticket" | od -An -tu1 | tr -d ' ')" != 10 ]; then
+		rm -f "$ticket"
+		return 1
+	fi
+	awk '
+		function hash(value) { return length(value) == 64 && value !~ /[^0-9a-f]/ }
+		function source(value, parts) {
+			if (value !~ /^sdlc\/tickets\/[0-9][0-9][0-9][0-9]-[A-Za-z0-9._-]+\.md@[0-9a-f]+$/) return 0
+			split(value, parts, "@")
+			if (length(parts[2]) != 40) return 0
+			source_ref = parts[1]
+			commit = parts[2]
+			return 1
+		}
+		function target(line, name) {
+			if (line !~ /^- path: sdlc\/project\/(tasks|before|success|failure|health)$/) return 0
+			name = line
+			sub(/^- path: sdlc\/project\//, "", name)
+			if (seen[name]++) return 0
+			targets++
+			return 1
+		}
+		BEGIN { state = 0; valid = 1 }
+		{
+			if (!valid) next
+			if (state == 0) valid = ($0 == "---")
+			else if (state == 1) valid = ($0 == "flow: build")
+			else if (state == 2) valid = ($0 == "priority: 10")
+			else if (state == 3) valid = ($0 == "---")
+			else if (state == 4) valid = ($0 == "# Adopt canonical lifecycle scripts")
+			else if (state == 5) valid = ($0 == "")
+			else if (state == 6) {
+				valid = ($0 ~ /^Adoption identity: /)
+				identity = substr($0, 20)
+				if (valid) valid = source(identity)
+			}
+			else if (state == 7) valid = ($0 == "")
+			else if (state == 8) valid = ($0 == "Adopt the canonical lifecycle changes landed by `" source_ref "` at exact commit `" commit "`.")
+			else if (state == 9) valid = ($0 == "Apply exactly these bytes and executable states:")
+			else if (state == 10) valid = ($0 == "")
+			else if (state == 11) valid = target($0)
+			else if (state == 12) valid = ($0 ~ /^  sha256: / && hash(substr($0, 11)))
+			else if (state == 13) valid = ($0 == "  executable: true" || $0 == "  executable: false")
+			else if (state == 14) {
+				if ($0 == "") state = 15
+				else { valid = target($0); state = 12 }
+				next
+			}
+			else if (state == 15) valid = ($0 == "Adopt the matching provenance manifest:")
+			else if (state == 16) valid = ($0 == "")
+			else if (state == 17) valid = ($0 == "- path: sdlc/project/provenance.json")
+			else if (state == 18) valid = ($0 ~ /^  sha256: / && hash(substr($0, 11)))
+			else valid = 0
+			state++
+		}
+		END { exit !(valid && targets > 0 && state == 19) }
+	' "$ticket"
+	local status=$?
+	rm -f "$ticket"
+	return "$status"
+}
+
+CANONICAL_ADOPTION=0
+if canonical_adoption_ticket; then
+	CANONICAL_ADOPTION=1
+fi
+
+# A green verdict belongs to the fetched main commit and the executable bytes
+# observed during its proof. Snapshot trust before any project-owned script
+# runs, so install cannot create a marker and skip gates.
 GREEN_MAIN_MARKER=
+GREEN_MAIN_STATE=
 GREEN_MAIN_VERDICT_TRUSTED=0
 GREEN_MAIN_NEEDS_PROOF=0
+GREEN_MAIN_OBSERVATION_DEGRADED=0
+GATE_OUTPUT=
+MARKER_TEMP=
+trap 'rm -rf "${GREEN_MAIN_STATE-}"; rm -f "${GATE_OUTPUT-}" "${MARKER_TEMP-}"' EXIT
+
+hash_executable() {
+	local path=$1 digest
+	[ -f "$path" ] && [ -r "$path" ] || return 1
+	digest=$(sha256sum -- "$path") || return 1
+	digest=${digest%% *}
+	case "$digest" in
+	????????????????????????????????????????????????????????????????) ;;
+	*) return 1 ;;
+	esac
+	case "$digest" in *[!0-9a-f]*) return 1 ;; esac
+	printf '%s\n' "$digest"
+}
+
+# Build the only accepted representation. Comparing a readable marker with
+# this rendering rejects malformed, duplicate, and unsorted records together.
+build_manifest() {
+	local paths=$1 output=$2 path digest sorted
+	sorted=$(mktemp "$GREEN_MAIN_STATE/sorted-paths.XXXXXX") || return 1
+	LC_ALL=C sort -u -- "$paths" >"$sorted" || return 1
+	printf 'sdlc-green-main-v1\n' >"$output" || return 1
+	while IFS= read -r path; do
+		[ -n "$path" ] || continue
+		digest=$(hash_executable "$path") || return 1
+		printf '%s  %s\n' "$digest" "$path" >>"$output" || return 1
+	done <"$sorted"
+	rm -f "$sorted"
+}
+
+validate_manifest() {
+	local marker=$1 line path digest actual
+	local paths="$GREEN_MAIN_STATE/manifest-paths"
+	local expected="$GREEN_MAIN_STATE/expected-manifest"
+	: >"$paths" || return 1
+	{
+		IFS= read -r line || return 1
+		[ "$line" = sdlc-green-main-v1 ] || return 1
+		while IFS= read -r line || [ -n "$line" ]; do
+			if [[ ! "$line" =~ ^([0-9a-f]{64})\ \ (/.+)$ ]]; then
+				return 1
+			fi
+			digest=${BASH_REMATCH[1]}
+			path=${BASH_REMATCH[2]}
+			case "$path" in *$'\n'*) return 1 ;; esac
+			actual=$(hash_executable "$path") || return 1
+			[ "$actual" = "$digest" ] || return 1
+			printf '%s\n' "$path" >>"$paths" || return 1
+		done
+	} <"$marker"
+	build_manifest "$paths" "$expected" || return 1
+	cmp -s -- "$marker" "$expected"
+}
+
 if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -eq 0 ]; then
 	GREEN_MAIN_MARKER="$WORKTREES/$NAMESPACE/.green-main/$GREEN_MAIN_SHA"
-	if [ -f "$GREEN_MAIN_MARKER" ] && [ ! -L "$GREEN_MAIN_MARKER" ] && [ -r "$GREEN_MAIN_MARKER" ]; then
+	GREEN_MAIN_STATE=$(mktemp -d) || {
+		echo "before: could not prepare green-main verdict state" >&2
+		exit 1
+	}
+	if [ -f "$GREEN_MAIN_MARKER" ] && [ ! -L "$GREEN_MAIN_MARKER" ] && [ -r "$GREEN_MAIN_MARKER" ] &&
+		validate_manifest "$GREEN_MAIN_MARKER"; then
 		GREEN_MAIN_VERDICT_TRUSTED=1
 		echo "before: trusting green-main verdict for $GREEN_MAIN_SHA" >&2
 	else
@@ -398,6 +543,113 @@ clear_unproven_marker() {
 	fi
 }
 
+# Decode successful execve records from strace's byte-escaped form. Failed
+# PATH probes are valid observations but do not identify invoked executables.
+# strace -f interleaves concurrent processes, splitting an execve into an
+# "<unfinished ...>" line and a "<... execve resumed>" line; merge each pair
+# back into one record first, or a busy run reads as an invalid observation.
+# A pending execve that never resumes passes through unmerged and fails the
+# strict parse below, which is the safe verdict for an ambiguous record.
+merge_exec_trace() {
+	awk '
+		/execve\(/ && / <unfinished \.\.\.>$/ {
+			line = $0
+			sub(/ <unfinished \.\.\.>$/, "", line)
+			pending[$1] = line
+			next
+		}
+		/<\.\.\. execve resumed>/ && ($1 in pending) {
+			tail = $0
+			sub(/^[0-9]+[ \t]+<\.\.\. execve resumed>/, "", tail)
+			print pending[$1] tail
+			delete pending[$1]
+			next
+		}
+		{ print }
+		END { for (pid in pending) print pending[pid] }
+	' "$1"
+}
+parse_exec_trace() {
+	local trace=$1 line encoded path resolved
+	local seen=0
+	local merged
+	merged=$(mktemp "$GREEN_MAIN_STATE/execve-merged.XXXXXX") || return 1
+	merge_exec_trace "$trace" >"$merged" || return 1
+	trace=$merged
+	while IFS= read -r line || [ -n "$line" ]; do
+		case "$line" in
+		*'execve('*)
+			seen=1
+			if [[ "$line" =~ ^[0-9]+[[:space:]]+execve\(\"((\\x[0-9a-f]{2})+)\".*\)[[:space:]]+=[[:space:]]+0$ ]]; then
+				encoded=${BASH_REMATCH[1]}
+				printf -v path '%b' "$encoded"
+				case "$path" in
+				/*) ;;
+				*)
+					# A relative execve resolves against the child's
+					# cwd, which the trace does not record; it cannot
+					# be re-verified and earns no manifest entry.
+					continue
+					;;
+				esac
+				case "$path" in *$'\n'*) return 1 ;; esac
+				case "$path" in
+				"$TREE" | "$TREE"/*) ;;
+				*)
+					if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+						# Executed and already gone: a transient test
+						# fixture cannot be re-verified, cannot run
+						# again, and cannot be hashed into the
+						# manifest. It earns no entry.
+						:
+					else
+						resolved=$(readlink -f -- "$path") || return 1
+						case "$resolved" in
+						"$TREE" | "$TREE"/*) ;;
+						*) printf '%s\n' "$path" >>"$GREEN_MAIN_STATE/observed-paths" || return 1 ;;
+						esac
+					fi
+					;;
+				esac
+			elif [[ "$line" =~ ^[0-9]+[[:space:]]+execve\(\"((\\x[0-9a-f]{2})+)\".*\)[[:space:]]+=[[:space:]]+-1([[:space:]].*)?$ ]]; then
+				:
+			else
+				return 1
+			fi
+			;;
+		esac
+	done <"$trace"
+	[ "$seen" -eq 1 ]
+}
+
+observe_command() {
+	local directory=$1 script=$2 trace status
+	if [ "$GREEN_MAIN_OBSERVATION_DEGRADED" -eq 1 ]; then
+		# A tracer already holds this process and the kernel allows one
+		# tracer, so strace cannot attach. Run the command directly: the
+		# verdict stays true, and skipping the manifest below is the only
+		# cost of the missing observation.
+		status=0
+		(cd "$directory" && SDLC_REPO="$REPO" "$script") || status=$?
+		OBSERVED_STATUS=$status
+		OBSERVATION_VALID=1
+		return 0
+	fi
+	trace=$(mktemp "$GREEN_MAIN_STATE/execve.XXXXXX") || {
+		OBSERVATION_VALID=0
+		OBSERVED_STATUS=1
+		return 0
+	}
+	status=0
+	(cd "$directory" && SDLC_REPO="$REPO" strace -f -qq -e trace=execve -s 0 -xx -o "$trace" -- "$script") || status=$?
+	OBSERVED_STATUS=$status
+	if parse_exec_trace "$trace"; then
+		OBSERVATION_VALID=1
+	else
+		OBSERVATION_VALID=0
+	fi
+}
+
 # 4. Project preparation is optional, unlike the green-main gate. An existing
 # non-executable script is a fault rather than an absent install.
 install() {
@@ -407,8 +659,35 @@ install() {
 		echo "before: $REPO has no executable sdlc/scripts/install" >&2
 		return 2
 	fi
-	(cd "$TREE" && SDLC_REPO="$REPO" "$script") || return 1
+	if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
+		observe_command "$TREE" "$script"
+		[ "$OBSERVATION_VALID" -eq 1 ] || return 3
+		[ "$OBSERVED_STATUS" -eq 0 ] || return 1
+	else
+		(cd "$TREE" && SDLC_REPO="$REPO" "$script") || return 1
+	fi
 }
+
+if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
+	: >"$GREEN_MAIN_STATE/observed-paths"
+	TRACER_PID=$(awk '$1 == "TracerPid:" { print $2; exit }' /proc/self/status 2>/dev/null) || TRACER_PID=
+	if [ -n "$TRACER_PID" ] && [ "$TRACER_PID" != "0" ]; then
+		GREEN_MAIN_OBSERVATION_DEGRADED=1
+		echo "before: a tracer (pid $TRACER_PID) already holds this process; proving origin/main without observation" >&2
+	elif ! command -v strace >/dev/null 2>&1; then
+		echo "before: strace is required to prove origin/main" >&2
+		clear_unproven_marker || echo "before: could not clear unproven green-main verdict" >&2
+		cleanup_status=0
+		undo || cleanup_status=$?
+		if [ "$cleanup_status" -eq 3 ]; then
+			exit 3
+		fi
+		if [ "$cleanup_status" -ne 0 ]; then
+			echo "before: cleanup after missing strace failed" >&2
+		fi
+		exit 1
+	fi
+fi
 
 if [ "$GREEN_MAIN_VERDICT_TRUSTED" -eq 0 ]; then
 	status=0
@@ -423,7 +702,9 @@ if [ "$GREEN_MAIN_VERDICT_TRUSTED" -eq 0 ]; then
 		if [ "$cleanup_status" -ne 0 ]; then
 			echo "before: cleanup after a failed install failed" >&2
 		fi
-		if [ "$status" -ne 2 ]; then
+		if [ "$status" -eq 3 ]; then
+			echo "before: could not observe sdlc/scripts/install executables" >&2
+		elif [ "$status" -ne 2 ]; then
 			echo "before: sdlc/scripts/install failed" >&2
 		fi
 		exit 1
@@ -493,7 +774,8 @@ emit_gate_verdict() {
 		# Reserve the suffix before bounding detail. iconv removes only a
 		# partial final character at the cut.
 		limit=$((1024 - ${#suffix}))
-		{ printf '%s: %s' "$check" "$parsed" | head -c "$limit" | iconv -f UTF-8 -t UTF-8 -c; printf '%s\n' "$suffix"; } >&2
+		bounded=$(head -c "$limit" <<< "$check: $parsed" | iconv -f UTF-8 -t UTF-8 -c)
+		printf '%s%s\n' "$bounded" "$suffix" >&2
 		return
 	fi
 
@@ -525,7 +807,8 @@ gate() {
 		echo "before: $REPO has no executable sdlc/scripts/$1" >&2
 		return 2
 	fi
-	(cd "$TREE" && "$script") >"$GATE_OUTPUT" 2>&1
+	observe_command "$TREE" "$script" >"$GATE_OUTPUT" 2>&1
+	return "$OBSERVED_STATUS"
 }
 
 if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -gt 0 ]; then
@@ -536,16 +819,34 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 		echo "before: could not capture green-main gate output" >&2
 		exit 1
 	}
-	trap 'rm -f "${GATE_OUTPUT-}"' EXIT
 	for g in lint test; do
 		: >"$GATE_OUTPUT"
 		status=0
 		gate "$g" || status=$?
 		cat "$GATE_OUTPUT" >&2
-		if [ "$status" -eq 0 ]; then
+		if [ "$OBSERVATION_VALID" -eq 1 ] && [ "$status" -eq 0 ]; then
 			continue
 		fi
 		clear_unproven_marker || echo "before: could not clear unproven green-main verdict" >&2
+		# Missing, unstartable, signal-killed, and unobservable gates are
+		# faults, not red main, and adoption does not exempt them.
+		gate_fault=0
+		if [ "$OBSERVATION_VALID" -ne 1 ]; then
+			gate_fault=1
+		else
+			case "$status" in
+			2 | 126 | 127) gate_fault=1 ;;
+			esac
+			if [ "$status" -gt 128 ]; then
+				gate_fault=1
+			fi
+		fi
+		if [ "$gate_fault" -eq 0 ] && [ "$CANONICAL_ADOPTION" -eq 1 ]; then
+			emit_gate_verdict "$g" "$GATE_OUTPUT" "; origin/main $GREEN_MAIN_SHA"
+			echo "before: canonical lifecycle adoption is proceeding despite failing gate sdlc/scripts/$g" >&2
+			ADOPTION_RED=1
+			break
+		fi
 		cleanup_status=0
 		undo || cleanup_status=$?
 		if [ "$cleanup_status" -eq 3 ]; then
@@ -555,11 +856,10 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 			echo "before: cleanup after the failed $g gate failed" >&2
 			exit 1
 		fi
-		# Missing, unstartable, and signal-killed gates are faults, not red main.
-		case "$status" in
-		2 | 126 | 127) exit 1 ;;
-		esac
-		if [ "$status" -gt 128 ]; then
+		if [ "$gate_fault" -eq 1 ]; then
+			if [ "$OBSERVATION_VALID" -ne 1 ]; then
+				echo "before: could not observe sdlc/scripts/$g executables" >&2
+			fi
 			exit 1
 		fi
 		echo "before: origin/main is not green — sdlc/scripts/$g failed; a quickfix has to land first" >&2
@@ -567,16 +867,32 @@ if [ "$GREEN_MAIN_NEEDS_PROOF" -eq 1 ]; then
 		exit 3
 	done
 
-	# The filename is the verdict key. Replace an unreadable stale marker only
-	# after the complete proof succeeds, so a failed proof is never remembered.
-	if ! mkdir -p "$(dirname "$GREEN_MAIN_MARKER")" ||
-		! rm -f "$GREEN_MAIN_MARKER" ||
-		! : >"$GREEN_MAIN_MARKER" ||
-		! chmod u+r "$GREEN_MAIN_MARKER" ||
-		[ ! -f "$GREEN_MAIN_MARKER" ] || [ -L "$GREEN_MAIN_MARKER" ] || [ ! -r "$GREEN_MAIN_MARKER" ]; then
-		clear_unproven_marker || true
-		echo "before: could not store green-main verdict for $GREEN_MAIN_SHA" >&2
-		exit 1
+	if [ "${ADOPTION_RED-0}" -eq 1 ]; then
+		:
+	# The filename remains the commit key. Rename a complete private manifest
+	# over stale state only after every gate and executable identity succeeds.
+	# A degraded run observed nothing, so it earns no cached verdict.
+	elif [ "$GREEN_MAIN_OBSERVATION_DEGRADED" -eq 1 ]; then
+		echo "before: not caching the green-main verdict for $GREEN_MAIN_SHA: observation was degraded" >&2
+	else
+		marker_dir=$(dirname "$GREEN_MAIN_MARKER")
+		if ! mkdir -p "$marker_dir" ||
+			! MARKER_TEMP=$(mktemp "$marker_dir/.green-main-v1.XXXXXX") ||
+			! build_manifest "$GREEN_MAIN_STATE/observed-paths" "$MARKER_TEMP" ||
+			! chmod u+r "$MARKER_TEMP" ||
+			! mv -fT -- "$MARKER_TEMP" "$GREEN_MAIN_MARKER"; then
+			rm -f "${MARKER_TEMP-}"
+			MARKER_TEMP=
+			clear_unproven_marker || true
+			echo "before: could not store green-main verdict for $GREEN_MAIN_SHA" >&2
+			exit 1
+		fi
+		MARKER_TEMP=
+		if [ ! -f "$GREEN_MAIN_MARKER" ] || [ -L "$GREEN_MAIN_MARKER" ] || [ ! -r "$GREEN_MAIN_MARKER" ]; then
+			clear_unproven_marker || true
+			echo "before: could not store green-main verdict for $GREEN_MAIN_SHA" >&2
+			exit 1
+		fi
 	fi
 fi
 
