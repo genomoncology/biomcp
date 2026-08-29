@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tarfile
@@ -52,6 +53,27 @@ def _lock(path: Path) -> Path:
     return path
 
 
+def _agent_inventory() -> dict[str, bytes]:
+    inventory = {"AGENTS.md": (ROOT / "AGENTS.md").read_bytes()}
+    for directory in ("docs", "skills"):
+        for source in sorted((ROOT / directory).rglob("*.md")):
+            inventory[source.relative_to(ROOT).as_posix()] = source.read_bytes()
+    return inventory
+
+
+def _assert_agent_inventory(files: dict[str, bytes]) -> None:
+    expected = {
+        f"share/biomcp/{relative}": content
+        for relative, content in _agent_inventory().items()
+    }
+    missing_or_changed = [
+        name for name, content in expected.items() if files.get(name) != content
+    ]
+    assert not missing_or_changed, (
+        f"missing or changed agent files: {missing_or_changed}"
+    )
+
+
 def test_native_archive_is_deterministic_minimal_and_executable(tmp_path: Path) -> None:
     binary = tmp_path / "input"
     binary.write_bytes(b"full executable")
@@ -70,18 +92,30 @@ def test_native_archive_is_deterministic_minimal_and_executable(tmp_path: Path) 
         assert member.mode == 0o755
 
 
-def test_windows_native_archive_contains_only_executable(tmp_path: Path) -> None:
-    binary = tmp_path / "biomcp.exe"
-    binary.write_bytes(b"MZ full")
-    archive = tmp_path / "biomcp-windows-x86_64.zip"
-    packaging.native_archive(binary, archive, True)
-    assert (
-        inspection.inspect_native(archive, "x86_64-pc-windows-msvc")["archive_members"]
-        == 1
-    )
+def test_native_archives_carry_the_complete_agent_surface(tmp_path: Path) -> None:
+    binary = tmp_path / "biomcp"
+    binary.write_bytes(b"full executable")
+
+    linux = tmp_path / "biomcp-linux-x86_64.tar.gz"
+    packaging.native_archive(binary, linux, False)
+    with tarfile.open(linux, "r:gz") as archive:
+        _assert_agent_inventory(
+            {
+                member.name: archive.extractfile(member).read()
+                for member in archive.getmembers()
+                if member.isfile()
+            }
+        )
+
+    windows = tmp_path / "biomcp-windows-x86_64.zip"
+    packaging.native_archive(binary, windows, True)
+    with zipfile.ZipFile(windows) as archive:
+        _assert_agent_inventory(
+            {name: archive.read(name) for name in archive.namelist()}
+        )
 
 
-def test_wheel_contains_full_binary_and_small_shim_once(tmp_path: Path) -> None:
+def test_wheel_contains_binaries_and_complete_agent_surface(tmp_path: Path) -> None:
     full = tmp_path / "biomcp"
     shim = tmp_path / "biomcp-cli"
     full.write_bytes(b"full executable bytes")
@@ -96,6 +130,69 @@ def test_wheel_contains_full_binary_and_small_shim_once(tmp_path: Path) -> None:
         assert not any(
             "testdata" in name or "sdlc" in name for name in archive.namelist()
         )
+        data_prefix = "biomcp_cli-1.2.3.data/data/"
+        _assert_agent_inventory(
+            {
+                name.removeprefix(data_prefix): archive.read(name)
+                for name in archive.namelist()
+                if name.startswith(data_prefix)
+            }
+        )
+
+
+def test_packaged_agent_index_maps_local_and_live_topics(tmp_path: Path) -> None:
+    full = tmp_path / "biomcp"
+    shim = tmp_path / "biomcp-cli"
+    full.write_bytes(b"full executable bytes")
+    shim.write_bytes(b"shim")
+    wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-any.whl"
+    packaging.wheel(full, shim, wheel, "1.2.3", "py3-none-any", False)
+
+    with zipfile.ZipFile(wheel) as archive:
+        index = archive.read(
+            "biomcp_cli-1.2.3.data/data/share/biomcp/AGENTS.md"
+        ).decode()
+
+    words = set(index.lower().replace("/", " ").replace("`", " ").split())
+    assert {"biomcp", "biomedical", "cli", "mcp"} <= words
+    assert "biomcp search" in index
+    assert "share/biomcp/skills/" in index
+    assert "https://biomcp.org/" in index
+    topic_directories = {
+        path.parent.relative_to(ROOT / "docs").as_posix()
+        for path in (ROOT / "docs").rglob("*.md")
+    } - {"."}
+    for topic in topic_directories:
+        assert f"share/biomcp/docs/{topic}/" in index
+        assert f"https://biomcp.org/{topic}/" in index
+
+
+def test_wheel_installs_skills_without_network(tmp_path: Path) -> None:
+    binary = Path(os.environ["BIOMCP_BIN"])
+    wheel = tmp_path / "biomcp_cli-1.2.3-py3-none-any.whl"
+    packaging.wheel(binary, binary, wheel, "1.2.3", "py3-none-any", False)
+    environment = tmp_path / "environment"
+    subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
+    scripts = environment / ("Scripts" if os.name == "nt" else "bin")
+    subprocess.run(
+        [str(scripts / "python"), "-m", "pip", "install", "--no-index", wheel],
+        check=True,
+    )
+    target = tmp_path / "agent"
+    subprocess.run(
+        [
+            str(ROOT / "tools" / "run-offline"),
+            "--",
+            str(scripts / "biomcp"),
+            "skill",
+            "install",
+            str(target),
+        ],
+        check=True,
+    )
+    assert (target / "skills/biomcp/SKILL.md").read_bytes() == (
+        ROOT / "skills/SKILL.md"
+    ).read_bytes()
 
 
 def test_development_wheel_uses_exact_pep440_identity(tmp_path: Path) -> None:
@@ -114,9 +211,7 @@ def test_development_wheel_uses_exact_pep440_identity(tmp_path: Path) -> None:
         False,
     )
 
-    evidence = inspection.inspect_wheel(
-        wheel, "wheel-linux-x86_64", "0.9.0.dev1"
-    )
+    evidence = inspection.inspect_wheel(wheel, "wheel-linux-x86_64", "0.9.0.dev1")
     assert evidence["python_version"] == "0.9.0.dev1"
     with zipfile.ZipFile(wheel) as archive:
         metadata = archive.read("biomcp_cli-0.9.0.dev1.dist-info/METADATA")
@@ -285,7 +380,6 @@ def test_final_inspector_owns_complete_wheel_evidence(
 
     evidence = json.loads(output.read_text())["evidence"]
     assert evidence["artifact_sha256"] == hashlib.sha256(wheel.read_bytes()).hexdigest()
-    assert evidence["archive_members"] == 5
     assert evidence["executable_count"] == 2
     assert evidence["python_version"] == "1.2.3"
     assert evidence["version_help_json_smoke"] is True
