@@ -1,5 +1,5 @@
 {
-  "canonicalCommit": "fb3de75c328f9a63493e54068168161d099768d1",
+  "canonicalCommit": "7a027e2582094a80961f8af05354a61fc1c4b7f7",
   "scripts": [
     {
       "name": "tasks",
@@ -8,7 +8,7 @@
     },
     {
       "name": "before",
-      "sha256": "401f846ffe7b55a6d21f439c04e4451b13a652a400cb4eca82a3a33985f710ee",
+      "sha256": "0c011a7c05a45b1d39edeee8ce5b88b689516241875de4faf58a69e606070e52",
       "executable": true
     },
     {
@@ -23,7 +23,7 @@
     },
     {
       "name": "health",
-      "sha256": "2fdcea7560d84af471352f8d9d13722421dad107bc66551b53d44400a19e41cd",
+      "sha256": "5239558ca74672d6b7dadefadc945bbd62d81bfb3fdeb3c179357da555afce60",
       "executable": true
     }
   ]

@@ -20,9 +20,10 @@
 #   7. each dispatchable origin ticket's opens declaration through the canonical
 #      build path policy
 #   8. the registered directory's filesystem has at least 10 GiB free
+#   9. an optional executable sdlc/scripts/health project extension
 #
-# STDOUT:  local working-tree and deployment state, plus one finding per line
-#          when unfit.
+# STDOUT:  local working-tree and deployment state, plus canonical and project
+#          findings when unfit.
 # EXIT:    0 fit · 1 unfit — the findings say why
 set -euo pipefail
 
@@ -197,6 +198,11 @@ EOF
 			;;
 		esac
 	fi
+fi
+
+project_health=sdlc/scripts/health
+if [ -x "$project_health" ] && ! "$project_health"; then
+	findings=$((findings + 1))
 fi
 
 [ "$findings" -eq 0 ] || exit 1
