@@ -39,16 +39,27 @@ pub(crate) async fn handle_get(
 ) -> anyhow::Result<CommandOutcome> {
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let json_output = json || json_override;
-    let parsed_sections = crate::entities::adverse_event::parse_sections(&sections)?;
+    crate::entities::adverse_event::parse_sections(&sections)?;
+    let sections_requested = !sections.is_empty();
+    let event = crate::entities::adverse_event::get(&args.report_id).await?;
+    validate_resolved_sections(&event, sections_requested)?;
+    let text = render_loaded_card(&event, &sections, json_output)?;
+    Ok(CommandOutcome::stdout(text))
+}
+
+pub(crate) fn render_loaded_card(
+    event: &crate::entities::adverse_event::AdverseEventReport,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    let parsed_sections = crate::entities::adverse_event::parse_sections(sections)?;
     let sections_requested = !sections.is_empty();
     let subset_requested = sections_requested
         && !sections
             .iter()
             .any(|section| section.eq_ignore_ascii_case("all"));
-    let event = crate::entities::adverse_event::get(&args.report_id).await?;
-    validate_resolved_sections(&event, sections_requested)?;
-    let text = if json_output {
-        match &event {
+    if json_output {
+        match event {
             crate::entities::adverse_event::AdverseEventReport::Faers(report)
                 if subset_requested =>
             {
@@ -57,7 +68,7 @@ pub(crate) async fn handle_get(
                 } else {
                     Vec::new()
                 };
-                crate::render::json::to_entity_json(
+                Ok(crate::render::json::to_entity_json(
                     &crate::entities::adverse_event::FaersSubsetReport::new(
                         report,
                         parsed_sections,
@@ -68,37 +79,36 @@ pub(crate) async fn handle_get(
                         report,
                         parsed_sections,
                     ),
-                )?
+                )?)
             }
             crate::entities::adverse_event::AdverseEventReport::Faers(report) => {
-                crate::render::json::to_entity_json(
-                    &event,
+                Ok(crate::render::json::to_entity_json(
+                    event,
                     crate::render::markdown::adverse_event_evidence_urls(report),
                     crate::render::markdown::related_adverse_event(report),
-                    crate::render::provenance::adverse_event_report_section_sources(&event),
-                )?
+                    crate::render::provenance::adverse_event_report_section_sources(event),
+                )?)
             }
             crate::entities::adverse_event::AdverseEventReport::Device(report) => {
-                crate::render::json::to_entity_json(
-                    &event,
+                Ok(crate::render::json::to_entity_json(
+                    event,
                     crate::render::markdown::device_event_evidence_urls(report),
                     crate::render::markdown::related_device_event(report),
-                    crate::render::provenance::adverse_event_report_section_sources(&event),
-                )?
+                    crate::render::provenance::adverse_event_report_section_sources(event),
+                )?)
             }
         }
     } else {
-        match &event {
-            crate::entities::adverse_event::AdverseEventReport::Faers(report) => {
-                crate::render::markdown::adverse_event_markdown(report, &sections)?
-            }
+        match event {
+            crate::entities::adverse_event::AdverseEventReport::Faers(report) => Ok(
+                crate::render::markdown::adverse_event_markdown(report, sections)?,
+            ),
             crate::entities::adverse_event::AdverseEventReport::Device(report) => {
                 debug_assert!(!sections_requested);
-                crate::render::markdown::device_event_markdown(report)?
+                Ok(crate::render::markdown::device_event_markdown(report)?)
             }
         }
-    };
-    Ok(CommandOutcome::stdout(text))
+    }
 }
 
 pub(crate) async fn handle_search(

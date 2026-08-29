@@ -194,6 +194,8 @@ mod dispatch;
 mod render;
 mod workflow;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
+#[cfg(test)]
+pub(crate) use self::render::render_loaded_card;
 
 #[cfg(test)]
 mod alias_alignment_tests;

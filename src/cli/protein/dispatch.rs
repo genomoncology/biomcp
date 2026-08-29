@@ -30,12 +30,21 @@ pub(in crate::cli) async fn handle_get(
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let json_output = json || json_override;
     let protein = crate::entities::protein::get(&args.accession, &sections).await?;
-    let text = if json_output {
-        let evidence_urls = crate::render::markdown::protein_evidence_urls(&protein);
-        let next_commands = crate::render::markdown::related_protein(&protein, &sections);
-        let section_sources = crate::render::provenance::protein_section_sources(&protein);
+    let text = render_loaded_card(&protein, &sections, json_output)?;
+    Ok(CommandOutcome::stdout(text))
+}
+
+pub(crate) fn render_loaded_card(
+    protein: &crate::entities::protein::Protein,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        let evidence_urls = crate::render::markdown::protein_evidence_urls(protein);
+        let next_commands = crate::render::markdown::related_protein(protein, sections);
+        let section_sources = crate::render::provenance::protein_section_sources(protein);
         let mut value = crate::render::json::to_entity_json_value(
-            &protein,
+            protein,
             evidence_urls,
             next_commands,
             section_sources,
@@ -51,11 +60,12 @@ pub(in crate::cli) async fn handle_get(
                 serde_json::json!({ "evidence_urls": provenance_urls }),
             );
         }
-        crate::render::json::to_pretty(&value)?
+        Ok(crate::render::json::to_pretty(&value)?)
     } else {
-        crate::render::markdown::protein_markdown(&protein, &sections)?
-    };
-    Ok(CommandOutcome::stdout(text))
+        Ok(crate::render::markdown::protein_markdown(
+            protein, sections,
+        )?)
+    }
 }
 
 pub(in crate::cli) async fn handle_search(

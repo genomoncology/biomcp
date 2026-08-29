@@ -67,6 +67,8 @@ See also: biomcp list protein")]
 }
 
 mod dispatch;
+#[cfg(test)]
+pub(crate) use self::dispatch::render_loaded_card;
 pub(super) use self::dispatch::{handle_command, handle_get, handle_search};
 
 #[cfg(test)]

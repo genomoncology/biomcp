@@ -19,11 +19,7 @@ pub(in crate::cli) async fn handle_get(
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let json_output = json || json_override;
     let diagnostic = crate::entities::diagnostic::get(&args.accession, &sections).await?;
-    let text = if json_output {
-        diagnostic_get_json(&diagnostic, &sections)?
-    } else {
-        crate::render::markdown::diagnostic_markdown(&diagnostic, &sections)?
-    };
+    let text = render_loaded_card(&diagnostic, &sections, json_output)?;
     Ok(CommandOutcome::stdout(text))
 }
 
@@ -84,6 +80,20 @@ pub(super) fn diagnostic_search_json(
         next_commands,
         suggestions,
     )
+}
+
+pub(crate) fn render_loaded_card(
+    entity: &crate::entities::diagnostic::Diagnostic,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        diagnostic_get_json(entity, sections)
+    } else {
+        Ok(crate::render::markdown::diagnostic_markdown(
+            entity, sections,
+        )?)
+    }
 }
 
 pub(in crate::cli) async fn handle_search(

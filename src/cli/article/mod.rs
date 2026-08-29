@@ -378,9 +378,12 @@ See also: biomcp list article")]
 mod assets;
 mod dispatch;
 mod export;
+mod render;
 pub(crate) mod session;
 mod workflow;
 pub(super) use self::dispatch::{handle_command, handle_get, handle_search};
+#[cfg(test)]
+pub(crate) use self::render::render_loaded_card;
 
 #[cfg(test)]
 mod tests;

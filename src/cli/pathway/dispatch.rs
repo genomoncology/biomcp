@@ -18,17 +18,25 @@ pub(in crate::cli) async fn handle_get(
     let (sections, json_override) = super::super::extract_json_from_sections(&args.sections);
     let json_output = json || json_override;
     let pathway = crate::entities::pathway::get(&args.id, &sections).await?;
-    let text = if json_output {
-        crate::render::json::to_entity_json(
-            &pathway,
-            crate::render::markdown::pathway_evidence_urls(&pathway),
-            crate::render::markdown::related_pathway(&pathway),
-            crate::render::provenance::pathway_section_sources(&pathway),
-        )?
-    } else {
-        crate::render::markdown::pathway_markdown(&pathway, &sections)?
-    };
+    let text = render_loaded_card(&pathway, &sections, json_output)?;
     Ok(CommandOutcome::stdout(text))
+}
+
+pub(crate) fn render_loaded_card(
+    entity: &crate::entities::pathway::Pathway,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        Ok(crate::render::json::to_entity_json(
+            entity,
+            crate::render::markdown::pathway_evidence_urls(entity),
+            crate::render::markdown::related_pathway(entity),
+            crate::render::provenance::pathway_section_sources(entity),
+        )?)
+    } else {
+        Ok(crate::render::markdown::pathway_markdown(entity, sections)?)
+    }
 }
 
 pub(in crate::cli) async fn handle_search(

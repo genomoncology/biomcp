@@ -22,26 +22,13 @@ pub(super) async fn render_drug_card_outcome(
     )
     .await
     {
-        Ok(drug) => {
-            let text = if json_output {
-                let workflow = drug_pharmacogene_workflow(&drug)?;
-                crate::render::json::to_entity_json_with_workflow(
-                    &drug,
-                    crate::render::markdown::drug_evidence_urls(&drug),
-                    crate::render::markdown::related_drug(&drug),
-                    crate::render::provenance::drug_section_sources(&drug),
-                    workflow,
-                )?
-            } else {
-                crate::render::markdown::drug_markdown_with_region(
-                    &drug,
-                    sections,
-                    effective_region,
-                    raw_label,
-                )?
-            };
-            Ok(CommandOutcome::stdout(text))
-        }
+        Ok(drug) => Ok(CommandOutcome::stdout(render_loaded_card(
+            &drug,
+            sections,
+            effective_region,
+            raw_label,
+            json_output,
+        )?)),
         Err(err @ crate::error::BioMcpError::NotFound { .. }) => {
             if let Some(outcome) = super::super::try_alias_fallback_outcome(
                 name,
@@ -56,6 +43,31 @@ pub(super) async fn render_drug_card_outcome(
             }
         }
         Err(err) => Err(err.into()),
+    }
+}
+
+pub(crate) fn render_loaded_card(
+    drug: &crate::entities::drug::Drug,
+    sections: &[String],
+    effective_region: DrugRegion,
+    raw_label: bool,
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        Ok(crate::render::json::to_entity_json_with_workflow(
+            drug,
+            crate::render::markdown::drug_evidence_urls(drug),
+            crate::render::markdown::related_drug(drug),
+            crate::render::provenance::drug_section_sources(drug),
+            drug_pharmacogene_workflow(drug)?,
+        )?)
+    } else {
+        Ok(crate::render::markdown::drug_markdown_with_region(
+            drug,
+            sections,
+            effective_region,
+            raw_label,
+        )?)
     }
 }
 

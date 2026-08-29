@@ -1,5 +1,7 @@
 pub(super) use super::ArticleSuggestion;
+use super::render::render_loaded_card;
 pub(super) use super::workflow::article_entity_suggestion;
+#[cfg(test)]
 use super::workflow::article_follow_up_workflow;
 use super::{
     ArticleCommand, ArticleGetArgs, ArticleSearchArgs, ArticleSearchCompactResult,
@@ -64,31 +66,16 @@ pub(in crate::cli) async fn handle_get(
     )? {
         return Ok(CommandOutcome::stdout(response));
     }
-    let fulltext_summary = super::fulltext_view::article_summary(&article)?;
-    let human = super::fulltext_view::decorate_human(
-        &article,
-        crate::render::markdown::article_markdown(&article, &sections)?,
-        fulltext_summary,
-    );
     if !json_output && !include_metadata {
-        return Ok(CommandOutcome::stdout(human));
+        return Ok(CommandOutcome::stdout(render_loaded_card(
+            &article, &sections, false,
+        )?));
     }
-    let mut next_commands = crate::render::markdown::related_article(&article);
-    if let Some(not_included) = article.not_included.as_ref() {
-        next_commands.extend(not_included.next_commands.clone());
-    }
-    let mut structured = crate::render::json::to_entity_json_with_workflow(
-        &article,
-        crate::render::markdown::article_evidence_urls(&article),
-        next_commands,
-        crate::render::provenance::article_section_sources(&article),
-        article_follow_up_workflow(&article)?,
-    )?;
-    structured = super::fulltext_view::decorate_json(structured, fulltext_summary)?;
+    let structured = render_loaded_card(&article, &sections, true)?;
     let text = if json_output {
         structured.clone()
     } else {
-        human
+        render_loaded_card(&article, &sections, false)?
     };
     Ok(CommandOutcome::stdout(text).with_metadata_json(structured))
 }

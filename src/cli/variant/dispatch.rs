@@ -501,6 +501,34 @@ pub(super) fn resolve_variant_query(
     }))
 }
 
+pub(crate) fn render_loaded_card(
+    variant: &crate::entities::variant::Variant,
+    has_clinvar_signal: bool,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        let workflow = has_clinvar_signal
+            .then(|| {
+                crate::workflow_ladders::meta_for(
+                    crate::workflow_ladders::Workflow::VariantPathogenicity,
+                )
+            })
+            .transpose()?;
+        Ok(crate::render::json::to_entity_json_with_workflow(
+            variant,
+            crate::render::markdown::variant_evidence_urls(variant),
+            crate::render::markdown::related_variant(variant),
+            crate::render::provenance::variant_section_sources(variant),
+            workflow,
+        )?)
+    } else {
+        Ok(crate::render::markdown::variant_markdown(
+            variant, sections,
+        )?)
+    }
+}
+
 async fn render_variant_card_outcome(
     args: VariantGetArgs,
     json: bool,
@@ -530,28 +558,12 @@ async fn render_variant_card_outcome(
     }
 
     match crate::entities::variant::get_with_workflow_signals(&args.id, &sections, assembly).await {
-        Ok((variant, signals)) => {
-            let text = if json_output {
-                let workflow = signals
-                    .has_clinvar_signal
-                    .then(|| {
-                        crate::workflow_ladders::meta_for(
-                            crate::workflow_ladders::Workflow::VariantPathogenicity,
-                        )
-                    })
-                    .transpose()?;
-                crate::render::json::to_entity_json_with_workflow(
-                    &variant,
-                    crate::render::markdown::variant_evidence_urls(&variant),
-                    crate::render::markdown::related_variant(&variant),
-                    crate::render::provenance::variant_section_sources(&variant),
-                    workflow,
-                )?
-            } else {
-                crate::render::markdown::variant_markdown(&variant, &sections)?
-            };
-            Ok(CommandOutcome::stdout(text))
-        }
+        Ok((variant, signals)) => Ok(CommandOutcome::stdout(render_loaded_card(
+            &variant,
+            signals.has_clinvar_signal,
+            &sections,
+            json_output,
+        )?)),
         Err(err) => Err(err.into()),
     }
 }

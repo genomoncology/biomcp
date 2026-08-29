@@ -8,6 +8,8 @@ use clap::Subcommand;
 
 pub use detail::AuthorGetArgs;
 pub(in crate::cli) use detail::handle_get;
+#[cfg(test)]
+pub(crate) use detail::render_loaded_card;
 pub(in crate::cli) use papers::handle_papers;
 pub use search::AuthorSearchArgs;
 pub(in crate::cli) use search::handle_search;

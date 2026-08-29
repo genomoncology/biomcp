@@ -23,17 +23,25 @@ pub(in crate::cli) async fn handle_get(
         full: args.full,
     };
     let pgx = crate::entities::pgx::get_with_options(&args.query, &options).await?;
-    let text = if json_output {
-        crate::render::json::to_entity_json(
-            &pgx,
-            crate::render::markdown::pgx_evidence_urls(&pgx),
-            crate::render::markdown::related_pgx(&pgx),
-            crate::render::provenance::pgx_section_sources(&pgx),
-        )?
-    } else {
-        crate::render::markdown::pgx_markdown(&pgx, &sections)?
-    };
+    let text = render_loaded_card(&pgx, &sections, json_output)?;
     Ok(CommandOutcome::stdout(text))
+}
+
+pub(crate) fn render_loaded_card(
+    entity: &crate::entities::pgx::Pgx,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        Ok(crate::render::json::to_entity_json(
+            entity,
+            crate::render::markdown::pgx_evidence_urls(entity),
+            crate::render::markdown::related_pgx(entity),
+            crate::render::provenance::pgx_section_sources(entity),
+        )?)
+    } else {
+        Ok(crate::render::markdown::pgx_markdown(entity, sections)?)
+    }
 }
 
 pub(in crate::cli) async fn handle_search(

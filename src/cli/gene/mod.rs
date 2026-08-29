@@ -178,6 +178,8 @@ See also: biomcp list gene")]
 pub(super) mod cspec;
 mod dispatch;
 mod related;
+#[cfg(test)]
+pub(crate) use self::dispatch::render_loaded_card;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 
 #[cfg(test)]

@@ -23,18 +23,28 @@ pub(in crate::cli) async fn handle_get(
     let (sections, json_override) = super::super::extract_json_from_sections(raw_sections);
     let json_output = json || json_override;
     let disease = crate::entities::disease::get(name_or_id, &sections).await?;
-    let text = if json_output {
-        crate::render::json::to_entity_json_with_suggestions(
-            &disease,
-            crate::render::markdown::disease_evidence_urls(&disease),
-            crate::render::markdown::disease_next_commands(&disease, &sections),
-            crate::render::markdown::related_disease(&disease),
-            crate::render::provenance::disease_section_sources(&disease),
-        )?
-    } else {
-        crate::render::markdown::disease_markdown(&disease, &sections)?
-    };
+    let text = render_loaded_card(&disease, &sections, json_output)?;
     Ok(CommandOutcome::stdout(text))
+}
+
+pub(crate) fn render_loaded_card(
+    disease: &crate::entities::disease::Disease,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        Ok(crate::render::json::to_entity_json_with_suggestions(
+            disease,
+            crate::render::markdown::disease_evidence_urls(disease),
+            crate::render::markdown::disease_next_commands(disease, sections),
+            crate::render::markdown::related_disease(disease),
+            crate::render::provenance::disease_section_sources(disease),
+        )?)
+    } else {
+        Ok(crate::render::markdown::disease_markdown(
+            disease, sections,
+        )?)
+    }
 }
 
 pub(in crate::cli) async fn handle_search(

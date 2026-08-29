@@ -148,6 +148,8 @@ pub struct TrialGetArgs {
 mod dispatch;
 mod documents;
 mod zero_result;
+#[cfg(test)]
+pub(crate) use self::dispatch::render_loaded_card;
 pub(super) use self::dispatch::{handle_get, handle_search};
 
 #[cfg(test)]

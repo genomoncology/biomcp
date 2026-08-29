@@ -288,6 +288,8 @@ mod erepo;
 mod guidance;
 mod normalization_json;
 mod trial;
+#[cfg(test)]
+pub(crate) use self::dispatch::render_loaded_card;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 
 #[cfg(test)]

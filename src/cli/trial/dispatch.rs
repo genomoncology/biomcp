@@ -61,20 +61,10 @@ pub(in crate::cli) async fn handle_get(
         location_pagination = Some(paginate_trial_locations(&mut trial, offset, limit));
     }
 
-    let text = if json_output {
-        if let Some(loc_page) = location_pagination {
-            trial_locations_json(&trial, loc_page)?
-        } else {
-            crate::render::json::to_entity_json(
-                &trial,
-                crate::render::markdown::trial_evidence_urls(&trial),
-                crate::render::markdown::related_trial(&trial),
-                crate::render::provenance::trial_section_sources(&trial),
-            )?
-        }
-    } else {
-        let mut md = crate::render::markdown::trial_markdown(&trial, &sections)?;
-        if let Some(loc_page) = location_pagination {
+    let text = match (json_output, location_pagination) {
+        (true, Some(loc_page)) => trial_locations_json(&trial, loc_page)?,
+        (false, Some(loc_page)) => {
+            let mut md = render_loaded_card(&trial, &sections, false)?;
             md.push_str(&format!(
                 "\n\n---\n*Locations: showing {} of {} (offset {}, limit {}{})*",
                 trial.locations.as_ref().map_or(0, |value| value.len()),
@@ -87,11 +77,29 @@ pub(in crate::cli) async fn handle_get(
                     ""
                 },
             ));
+            md
         }
-        md
+        (_, None) => render_loaded_card(&trial, &sections, json_output)?,
     };
 
     Ok(CommandOutcome::stdout(text))
+}
+
+pub(crate) fn render_loaded_card(
+    trial: &crate::entities::trial::Trial,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        Ok(crate::render::json::to_entity_json(
+            trial,
+            crate::render::markdown::trial_evidence_urls(trial),
+            crate::render::markdown::related_trial(trial),
+            crate::render::provenance::trial_section_sources(trial),
+        )?)
+    } else {
+        Ok(crate::render::markdown::trial_markdown(trial, sections)?)
+    }
 }
 
 pub(in crate::cli) async fn handle_search(

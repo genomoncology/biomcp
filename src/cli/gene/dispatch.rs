@@ -113,23 +113,16 @@ pub(super) async fn render_gene_card_outcome(
 ) -> anyhow::Result<CommandOutcome> {
     match crate::gene::get(symbol, sections).await {
         Ok(gene) => {
-            let human = crate::render::markdown::gene_markdown(&gene, sections)?;
             if !json_output && !alias_suggestions_as_json {
-                return Ok(CommandOutcome::stdout(human));
+                return Ok(CommandOutcome::stdout(render_loaded_card(
+                    &gene, sections, false,
+                )?));
             }
-            let workflow = gene_mechanism_workflow(&gene)?;
-            let structured = crate::render::json::to_entity_json_with_suggestions_and_workflow(
-                &gene,
-                crate::render::markdown::gene_evidence_urls(&gene),
-                crate::render::markdown::gene_next_commands(&gene, sections),
-                crate::render::markdown::related_gene(&gene),
-                crate::render::provenance::gene_section_sources(&gene),
-                workflow,
-            )?;
+            let structured = render_loaded_card(&gene, sections, true)?;
             let text = if json_output {
                 structured.clone()
             } else {
-                human
+                render_loaded_card(&gene, sections, false)?
             };
             Ok(CommandOutcome::stdout(text).with_metadata_json(structured))
         }
@@ -147,6 +140,27 @@ pub(super) async fn render_gene_card_outcome(
             }
         }
         Err(err) => Err(err.into()),
+    }
+}
+
+pub(crate) fn render_loaded_card(
+    gene: &crate::entities::gene::Gene,
+    sections: &[String],
+    json_output: bool,
+) -> anyhow::Result<String> {
+    if json_output {
+        Ok(
+            crate::render::json::to_entity_json_with_suggestions_and_workflow(
+                gene,
+                crate::render::markdown::gene_evidence_urls(gene),
+                crate::render::markdown::gene_next_commands(gene, sections),
+                crate::render::markdown::related_gene(gene),
+                crate::render::provenance::gene_section_sources(gene),
+                gene_mechanism_workflow(gene)?,
+            )?,
+        )
+    } else {
+        Ok(crate::render::markdown::gene_markdown(gene, sections)?)
     }
 }
 
