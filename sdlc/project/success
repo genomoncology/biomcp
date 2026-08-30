@@ -414,6 +414,40 @@ else
 			exit 1
 		fi
 	fi
+	validate_ticket_tree() {
+		local state tasks_status
+		if [ ! -x "$REPO/sdlc/project/tasks" ]; then
+			echo "success: deployed tasks reader is not executable" >&2
+			return 1
+		fi
+		if ! state=$(mktemp -d); then
+			echo "success: cannot create an isolated ticket-tree view" >&2
+			return 1
+		fi
+		if ! git init --bare --quiet "$state/origin.git" >/dev/null 2>&1 ||
+			! git -C "$REPO" push --quiet "$state/origin.git" "$TIP:refs/heads/main" >/dev/null 2>&1 ||
+			! git init --quiet "$state/view" >/dev/null 2>&1 ||
+			! git -C "$state/view" remote add origin "$state/origin.git" >/dev/null 2>&1; then
+			rm -rf -- "$state"
+			echo "success: cannot prepare the isolated ticket-tree view" >&2
+			return 1
+		fi
+		if (cd "$state/view" && "$REPO/sdlc/project/tasks" >/dev/null 2>"$state/tasks.stderr"); then
+			rm -rf -- "$state"
+			return 0
+		else
+			tasks_status=$?
+		fi
+		cat "$state/tasks.stderr" >&2
+		if ! grep -q '^tasks:' "$state/tasks.stderr"; then
+			echo "success: deployed tasks reader failed without a diagnostic" >&2
+		fi
+		rm -rf -- "$state"
+		return "$tasks_status"
+	}
+	if ! validate_ticket_tree; then
+		exit 1
+	fi
 	if ! git -C "$REPO" push --quiet origin "$TIP:main"; then
 		echo "success: $TIP could not fast-forward main — main moved; the branch is left standing" >&2
 		exit 1
