@@ -128,7 +128,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path]:
     (repo / "sdlc" / "scripts").mkdir()
     for folder in ("tickets", "records", "issues"):
         (repo / "sdlc" / folder).mkdir()
-    for script in ("before", "success", "failure", "health"):
+    for script in ("before", "success", "failure", "health", "tasks"):
         shutil.copy2(PROJECT / script, repo / "sdlc" / "project" / script)
     for script in ("lint", "test"):
         target = repo / "sdlc" / "scripts" / script
@@ -453,7 +453,7 @@ def test_success_lands_after_unrelated_ticket_only_main_movement(tmp_path: Path)
     _commit(
         publisher,
         "sdlc/tickets/2001-unrelated.md",
-        "# Unrelated ticket\n",
+        "---\nflow: build\npriority: 1\n---\n# Unrelated ticket\n",
         "ticket: add unrelated ticket",
     )
     _git(publisher, "push", "--quiet", "origin", "main")
@@ -473,7 +473,9 @@ def test_success_lands_after_unrelated_ticket_only_main_movement(tmp_path: Path)
     assert settled.returncode == 0, settled.stderr
     _git(repo, "fetch", "--quiet", "origin")
     assert _git(repo, "show", "origin/main:CANDIDATE") == "keep this verified change"
-    assert _git(repo, "show", "origin/main:sdlc/tickets/2001-unrelated.md") == "# Unrelated ticket"
+    assert _git(repo, "show", "origin/main:sdlc/tickets/2001-unrelated.md") == (
+        "---\nflow: build\npriority: 1\n---\n# Unrelated ticket"
+    )
     assert not tree.exists()
 
 
