@@ -9,8 +9,9 @@ use super::super::catalog::{
     WHO_IVD_LOCAL_DATA_AFFECTS, WHO_LOCAL_DATA_AFFECTS,
 };
 use super::super::local::{
-    check_cache_dir_with, check_cache_limits_with, cvx_local_data_outcome, ema_local_data_outcome,
-    gtr_local_data_outcome, probe_cache_dir, who_ivd_local_data_outcome, who_local_data_outcome,
+    check_cache_dir_with, check_cache_limits_with, cvx_local_data_outcome,
+    ddinter_local_data_outcome, ema_local_data_outcome, gtr_local_data_outcome, probe_cache_dir,
+    who_ivd_local_data_outcome, who_local_data_outcome,
 };
 use super::super::runner::{ProbeClass, report_from_outcomes};
 use super::{
@@ -22,6 +23,22 @@ use super::{
 use crate::cache::{CachePlannerError, DiskFreeThreshold, FilesystemSpace};
 use crate::error::BioMcpError;
 use crate::test_support::TempDirGuard;
+
+#[test]
+fn ddinter_local_data_reports_available_when_default_root_is_complete() {
+    let root = TempDirGuard::new("health");
+    for file_name in crate::sources::ddinter::DDINTER_REQUIRED_FILES {
+        std::fs::write(root.path().join(file_name), b"fixture").expect("write DDInter file");
+    }
+
+    let outcome = ddinter_local_data_outcome(root.path(), false);
+
+    assert_eq!(outcome.class, ProbeClass::Healthy);
+    assert_eq!(outcome.row.status, HealthStatus::Available);
+    assert_eq!(outcome.row.affects, None);
+    assert!(outcome.row.api.starts_with("DDInter local data ("));
+}
+
 #[test]
 fn ema_local_data_not_configured_when_default_root_is_empty() {
     let root = TempDirGuard::new("health");

@@ -32,6 +32,16 @@ severity-and-name order, and does not offer a dead continuation command.
 ../../tools/biomcp-ci --json drug interactions warfarin --limit 25 --offset 25 | jq -c '{pagination, first: .interactions[0].drug, last: .interactions[-1].drug, next_command: (.pagination.next_command // null)}' | mustmatch like '{"pagination":{"total":27,"count":2,"offset":25,"limit":25},"first":"Partner 24","last":"Atorvastatin","next_command":null}'
 ```
 
+## Cite the local DDInter records
+
+Interaction rows retain their DDInter identities so the human-readable report
+links the answer back to the corresponding provider records, not only to the
+generic download page.
+
+```bash
+../../tools/biomcp-ci drug interactions warfarin --limit 1 | mustmatch like 'https://ddinter.scbdd.com/ddinter/drug-detail/DDInterAMX/'
+```
+
 ## Bound the standard drug section
 
 `get drug <name> interactions` provides the same bounded first page and directs
@@ -43,4 +53,11 @@ path.
 Returned: 25 of 27
 DDInter bundle freshness: fresh
 biomcp drug interactions warfarin --limit 25 --offset 25'
+```
+
+The embedded drug-card section preserves the same record-level DDInter
+citation as the dedicated helper.
+
+```bash
+../../tools/biomcp-ci get drug warfarin interactions | mustmatch like 'https://ddinter.scbdd.com/ddinter/drug-detail/DDInterAMX/'
 ```
