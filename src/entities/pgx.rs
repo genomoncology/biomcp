@@ -1119,9 +1119,9 @@ mod tests {
     }
 
     #[test]
-    fn likely_gene_recognizes_hgnc_style_symbol() {
-        assert!(is_likely_gene("CYP2D6"));
-        assert!(!is_likely_gene("type 2 diabetes"));
+    fn likely_gene_uses_input_case_and_rejects_multi_word_queries() {
+        assert!(is_likely_gene("CYP2D6") && !is_likely_gene("type 2 diabetes"));
+        assert!(!is_likely_gene("warfarin") & !is_likely_gene("codeine"));
     }
 
     #[test]
