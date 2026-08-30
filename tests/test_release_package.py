@@ -103,10 +103,9 @@ def test_native_archives_carry_the_complete_agent_surface(tmp_path: Path) -> Non
 
     linux = tmp_path / "biomcp-linux-x86_64.tar.gz"
     packaging.native_archive(binary, linux, False)
-    assert (
-        inspection.inspect_native(linux, "x86_64-unknown-linux-gnu")["executable_count"]
-        == 1
-    )
+    linux_evidence = inspection.inspect_native(linux, "x86_64-unknown-linux-gnu")
+    assert linux_evidence["archive_members"] == 1 + len(_packaged_agent_inventory())
+    assert linux_evidence["executable_count"] == 1
     with tarfile.open(linux, "r:gz") as archive:
         files = {
             member.name: archive.extractfile(member).read()
@@ -118,10 +117,11 @@ def test_native_archives_carry_the_complete_agent_surface(tmp_path: Path) -> Non
 
     windows = tmp_path / "biomcp-windows-x86_64.zip"
     packaging.native_archive(binary, windows, True)
-    assert (
-        inspection.inspect_native(windows, "x86_64-pc-windows-msvc")["executable_count"]
-        == 1
+    windows_evidence = inspection.inspect_native(windows, "x86_64-pc-windows-msvc")
+    assert windows_evidence["archive_members"] == 1 + len(
+        _packaged_agent_inventory()
     )
+    assert windows_evidence["executable_count"] == 1
     with zipfile.ZipFile(windows) as archive:
         files = {name: archive.read(name) for name in archive.namelist()}
         _assert_agent_inventory(files)
@@ -403,6 +403,7 @@ def test_final_inspector_owns_complete_wheel_evidence(
 
     evidence = json.loads(output.read_text())["evidence"]
     assert evidence["artifact_sha256"] == hashlib.sha256(wheel.read_bytes()).hexdigest()
+    assert evidence["archive_members"] == 2 + 3 + len(_packaged_agent_inventory())
     assert evidence["executable_count"] == 2
     assert evidence["python_version"] == "1.2.3"
     assert evidence["version_help_json_smoke"] is True
