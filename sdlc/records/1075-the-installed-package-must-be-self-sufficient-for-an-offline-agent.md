@@ -1,10 +1,10 @@
 ---
-base: 06731b132f8eeb4124f8e043cf2a619960bae0d8
-head: 6ebce58ba6288feb8350a5e56fb1815937af7320
+base: e3c8260b94097b021ac8a760e07c97498fd45d34
+head: b21475c5ca851e385acff8f7b8f67b860cf07f49
 ---
 
 # Offline agent package surface
 
-Release wheels and native archives now carry the complete skills, documentation,
-and agent index inventory. Artifact inspection enforces that inventory, and the
-wheel contract proves skill installation succeeds without network access.
+Release wheels and native archives carry the complete skills, documentation,
+and agent index inventory. Independent artifact inspection protects that
+inventory, and the wheel contract proves offline skill installation succeeds.
