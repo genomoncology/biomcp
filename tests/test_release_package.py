@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 import tarfile
@@ -176,7 +177,7 @@ def test_packaged_agent_index_maps_local_and_live_topics(tmp_path: Path) -> None
             "biomcp_cli-1.2.3.data/data/share/biomcp/AGENTS.md"
         ).decode()
 
-    words = set(index.lower().replace("/", " ").replace("`", " ").split())
+    words = set(re.findall(r"[a-z0-9]+", index.lower()))
     assert {"biomcp", "biomedical", "cli", "mcp"} <= words
     assert "biomcp search" in index
     assert "share/biomcp/skills/" in index
