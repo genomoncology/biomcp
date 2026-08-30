@@ -190,7 +190,7 @@ def _clone(origin: Path, destination: Path) -> Path:
     [
         (
             "before",
-            "d7070670a2922ecae40e7f445dd575d509efb5b834a9fb8d8cdc93032f10e1fa",
+            "ca147b413fd8faa82d00206fcac341fa50ed5cb4b23b9e2262d46338acc3f907",
             True,
         ),
         (
@@ -215,7 +215,7 @@ def _clone(origin: Path, destination: Path) -> Path:
         ),
         (
             "provenance.json",
-            "e1d54a92a792b41fc3e03b28df5344f133e1ed6dc2162a676a60407724a44974",
+            "3d3fc4a8ffd823f96cb14e41609b83b954efb4c5dcd3201b7fccef7af2967740",
             None,
         ),
     ],
