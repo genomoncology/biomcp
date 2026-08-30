@@ -30,3 +30,13 @@ The success metric the reference material claims for this shape is real
 token savings for every agent that reaches for the package; we measure
 what we can — presence, completeness, offline success — and the rest
 follows.
+
+Amendment (2026-08-30, answering the code-review refusal): the
+release evidence assertions stay. Tests must keep asserting the
+inspector's `archive_members` evidence field, with the expected
+count computed dynamically from the executable set plus the
+packaged inventory this ticket adds — never a deleted assertion
+and never a hardcoded count that the new content invalidates.
+Independent exact-member checks are welcome additions, not
+replacements. Do not remove or weaken any other shipped evidence
+field's assertion.
