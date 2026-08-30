@@ -781,7 +781,7 @@ emit_gate_verdict() {
 	printf '%s\n' "$header" >&2
 	# Share the remaining bytes across all twenty lines. This preserves their
 	# order and line count even when individual lines need truncation.
-	tail -n 20 "$capture" | awk -v budget="$((1024 - ${#header}))" '
+	tail -n 20 "$capture" | awk -v budget="$((1024 - ${#header} - 1))" '
 		{ line[++count] = $0 }
 		END {
 			for (i = 1; i <= count; i++) {
