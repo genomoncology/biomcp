@@ -1,4 +1,6 @@
 ---
+flow: build
+priority: 4
 ---
 # Bound the unparsed gate verdict to 1,024 bytes
 
