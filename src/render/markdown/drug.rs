@@ -112,15 +112,7 @@ pub fn drug_markdown_with_region(
         .map(|(label, url)| (label.to_string(), url))
         .collect::<Vec<_>>();
     if show_interactions_section {
-        evidence_urls.extend(drug.interactions.iter().filter_map(|interaction| {
-            let id = interaction.ddinter_id.as_deref()?.trim();
-            (!id.is_empty()).then(|| {
-                (
-                    format!("DDInter record: {}", interaction.drug),
-                    format!("https://ddinter.scbdd.com/ddinter/drug-detail/{id}/"),
-                )
-            })
-        }));
+        evidence_urls.extend(ddinter_interaction_evidence_urls(&drug.interactions));
     }
     Ok(append_evidence_urls(body, evidence_urls))
 }

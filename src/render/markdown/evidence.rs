@@ -340,6 +340,23 @@ pub(super) fn drug_evidence_urls(drug: &Drug) -> Vec<(&'static str, String)> {
     urls
 }
 
+pub(super) fn ddinter_interaction_evidence_urls(
+    interactions: &[crate::entities::drug::DrugInteraction],
+) -> Vec<(String, String)> {
+    interactions
+        .iter()
+        .filter_map(|interaction| {
+            let id = interaction.ddinter_id.as_deref()?.trim();
+            (!id.is_empty()).then(|| {
+                (
+                    format!("DDInter record: {}", interaction.drug),
+                    format!("https://ddinter.scbdd.com/ddinter/drug-detail/{id}/"),
+                )
+            })
+        })
+        .collect()
+}
+
 pub(super) fn drug_interaction_report_evidence_urls(
     report: &crate::entities::drug::DrugInteractionReport,
 ) -> Vec<(String, String)> {
@@ -366,15 +383,7 @@ pub(super) fn drug_interaction_report_evidence_urls(
             format!("https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id}"),
         ));
     }
-    urls.extend(report.interactions.iter().filter_map(|interaction| {
-        let id = interaction.ddinter_id.as_deref()?.trim();
-        (!id.is_empty()).then(|| {
-            (
-                format!("DDInter record: {}", interaction.drug),
-                format!("https://ddinter.scbdd.com/ddinter/drug-detail/{id}/"),
-            )
-        })
-    }));
+    urls.extend(ddinter_interaction_evidence_urls(&report.interactions));
     urls.push((
         "DDInter download bundle".to_string(),
         "https://ddinter.scbdd.com/download/".to_string(),
