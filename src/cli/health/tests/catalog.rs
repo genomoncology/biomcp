@@ -68,6 +68,23 @@ fn health_inventory_includes_all_expected_sources() {
 }
 
 #[test]
+fn pharmgkb_health_row_probes_and_explains_the_clinpgx_move() {
+    let source = health_sources()
+        .iter()
+        .find(|source| source.api == "PharmGKB")
+        .expect("PharmGKB health source");
+
+    let ProbeKind::Get { url } = source.probe else {
+        panic!("PharmGKB health source should use a GET probe");
+    };
+
+    assert!(url.starts_with("https://api.clinpgx.org/v1/data/labelAnnotation?"));
+    let affects = source.affects.expect("PharmGKB regression note");
+    assert!(affects.contains("get pgx") && affects.contains("annotations"));
+    assert!(affects.contains("api.pharmgkb.org") && affects.contains("api.clinpgx.org"));
+}
+
+#[test]
 fn nci_health_probe_uses_keyword_query() {
     let source = health_sources()
         .iter()

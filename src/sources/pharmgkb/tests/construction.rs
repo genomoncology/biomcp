@@ -6,6 +6,18 @@ use crate::error::BioMcpError;
 use crate::sources::HttpMethod;
 
 #[test]
+fn clinpgx_default_and_annotation_queries_follow_the_live_contract() {
+    assert_eq!(PHARMGKB_BASE, "https://api.clinpgx.org/v1");
+
+    let plans = PharmGkbClient::drug_annotation_plans("warfarin", 10).expect("drug plans");
+    assert!(plans.iter().all(|plan| {
+        plan.request.query_value("view") == Some("min")
+            && plan.request.query_value("limit").is_none()
+            && plan.request.query_value("offset").is_none()
+    }));
+}
+
+#[test]
 fn drug_annotation_plans_cover_three_annotation_kinds() {
     let plans = PharmGkbClient::drug_annotation_plans(" warfarin ", 250).expect("drug plans");
 
