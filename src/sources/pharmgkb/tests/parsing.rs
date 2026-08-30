@@ -25,7 +25,7 @@ fn annotation_response_maps_ids_titles_levels_and_urls() {
     )
     .expect("decode")
     .expect("some response");
-    let rows = PharmGkbClient::annotations_from_response(resp, "Clinical Annotation", 10);
+    let rows = PharmGkbClient::annotations_from_response(resp, "Clinical Annotation", 0, 10);
 
     assert_eq!(rows.len(), 3);
     assert_eq!(rows[0].id, "981239556");
@@ -35,6 +35,24 @@ fn annotation_response_maps_ids_titles_levels_and_urls() {
     assert_eq!(rows[1].kind, "Guideline Annotation");
     assert!(rows[1].url.as_deref().unwrap().starts_with("https://"));
     assert_eq!(rows[2].kind, "Label Annotation");
+}
+
+#[test]
+fn annotation_response_applies_the_local_page_after_mapping() {
+    let content_type = HeaderValue::from_static("application/json");
+    let resp: PharmGkbDataResponse = PharmGkbClient::decode_json_optional(
+        StatusCode::OK,
+        Some(&content_type),
+        fixture!("warfarin_annotations.json"),
+    )
+    .expect("decode")
+    .expect("some response");
+
+    let rows = PharmGkbClient::annotations_from_response(resp, "Clinical Annotation", 1, 1);
+
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].id, "PA166104949");
+    assert_eq!(rows[0].kind, "Guideline Annotation");
 }
 
 #[test]

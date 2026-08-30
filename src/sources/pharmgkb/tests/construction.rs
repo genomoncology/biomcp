@@ -9,11 +9,13 @@ use crate::sources::HttpMethod;
 fn clinpgx_default_and_annotation_queries_follow_the_live_contract() {
     assert_eq!(PHARMGKB_BASE, "https://api.clinpgx.org/v1");
 
-    let plans = PharmGkbClient::drug_annotation_plans("warfarin", 10).expect("drug plans");
+    let plans = PharmGkbClient::drug_annotation_page_plans("warfarin", 10, 4).expect("drug plans");
     assert!(plans.iter().all(|plan| {
         plan.request.query_value("view") == Some("min")
             && plan.request.query_value("limit").is_none()
             && plan.request.query_value("offset").is_none()
+            && plan.limit == 10
+            && plan.offset == 4
     }));
 }
 
