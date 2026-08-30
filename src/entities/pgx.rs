@@ -750,9 +750,9 @@ fn is_likely_gene(value: &str) -> bool {
     if token.is_empty() || token.contains(char::is_whitespace) {
         return false;
     }
-    let upper = token.to_ascii_uppercase();
-    crate::sources::is_valid_gene_symbol(&upper)
-        && upper
+    // Preserve input case so lowercase drug names stay on the drug path.
+    crate::sources::is_valid_gene_symbol(token)
+        && token
             .chars()
             .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '-')
 }
