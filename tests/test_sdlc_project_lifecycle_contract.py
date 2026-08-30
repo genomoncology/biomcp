@@ -348,6 +348,39 @@ def test_before_returns_raw_gate_output_and_ends_with_a_bounded_verdict(
     assert len(verdict.encode("utf-8")) <= 1_024
 
 
+def test_before_bounds_the_complete_unparsed_gate_verdict(tmp_path: Path) -> None:
+    repo, _origin = _fixture(tmp_path)
+    gate_output = "\n".join(f"non-TAP failure {line}: {'x' * 100}" for line in range(20))
+    test_script = repo / "sdlc" / "scripts" / "test"
+    test_script.write_text(
+        f"#!/bin/sh\ncat <<'OUTPUT'\n{gate_output}\nOUTPUT\nexit 1\n",
+        encoding="utf-8",
+    )
+    _git(repo, "add", "sdlc/scripts/test")
+    _git(repo, "commit", "--quiet", "-m", "fixture: add unparsed gate failure")
+    _git(repo, "push", "--quiet", "origin", "main")
+    main = _git(repo, "rev-parse", "origin/main")
+    bot = _bot(tmp_path)
+
+    failed = _run(
+        repo,
+        "before",
+        {
+            "TICKET_ID": "1078",
+            "TICKET_FLOW": "build",
+            "WORKTREE_ROOT": str(tmp_path / "worktrees"),
+            "PATH": f"{bot.parent}:{os.environ['PATH']}",
+        },
+    )
+    header = f"test: failed; unparsed; origin/main {main}\n"
+    verdict_start = failed.stderr.rfind(header)
+
+    assert failed.returncode == 3
+    assert f"{gate_output}\n" in failed.stderr
+    assert verdict_start >= 0
+    assert len(failed.stderr[verdict_start:].encode("utf-8")) <= 1_024
+
+
 def test_before_allows_canonical_adoption_to_repair_red_main(
     tmp_path: Path,
 ) -> None:
