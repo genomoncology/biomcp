@@ -140,6 +140,8 @@ where
 pub struct DrugInteraction {
     pub drug: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub ddinter_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,

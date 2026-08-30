@@ -366,6 +366,15 @@ pub(super) fn drug_interaction_report_evidence_urls(
             format!("https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id}"),
         ));
     }
+    urls.extend(report.interactions.iter().filter_map(|interaction| {
+        let id = interaction.ddinter_id.as_deref()?.trim();
+        (!id.is_empty()).then(|| {
+            (
+                format!("DDInter record: {}", interaction.drug),
+                format!("https://ddinter.scbdd.com/ddinter/drug-detail/{id}/"),
+            )
+        })
+    }));
     urls.push((
         "DDInter download bundle".to_string(),
         "https://ddinter.scbdd.com/download/".to_string(),

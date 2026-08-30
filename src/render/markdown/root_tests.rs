@@ -138,6 +138,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         indications: vec!["Cystic fibrosis".to_string()],
         interactions: vec![crate::entities::drug::DrugInteraction {
             drug: "rifampin".to_string(),
+            ddinter_id: None,
             level: None,
             description: Some("May reduce ivacaftor exposure.".to_string()),
             partner_classes: Vec::new(),

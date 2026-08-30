@@ -365,6 +365,7 @@ fn interactions_from_hit(hit: &MyChemHit) -> Vec<DrugInteraction> {
             .and_then(json_first_string);
         out.push(DrugInteraction {
             drug,
+            ddinter_id: None,
             level: None,
             description,
             partner_classes: Vec::new(),

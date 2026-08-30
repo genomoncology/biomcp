@@ -107,7 +107,22 @@ pub fn drug_markdown_with_region(
         related_block => format_related_block(related_drug(drug)),
         source_states => source_states,
     })?;
-    Ok(append_evidence_urls(body, drug_evidence_urls(drug)))
+    let mut evidence_urls = drug_evidence_urls(drug)
+        .into_iter()
+        .map(|(label, url)| (label.to_string(), url))
+        .collect::<Vec<_>>();
+    if show_interactions_section {
+        evidence_urls.extend(drug.interactions.iter().filter_map(|interaction| {
+            let id = interaction.ddinter_id.as_deref()?.trim();
+            (!id.is_empty()).then(|| {
+                (
+                    format!("DDInter record: {}", interaction.drug),
+                    format!("https://ddinter.scbdd.com/ddinter/drug-detail/{id}/"),
+                )
+            })
+        }));
+    }
+    Ok(append_evidence_urls(body, evidence_urls))
 }
 
 pub fn drug_markdown(drug: &Drug, requested_sections: &[String]) -> Result<String, BioMcpError> {

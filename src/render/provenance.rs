@@ -1193,6 +1193,7 @@ mod tests {
             chembl_id: None,
             interactions: vec![crate::entities::drug::DrugInteraction {
                 drug: "aspirin".to_string(),
+                ddinter_id: None,
                 level: Some("Major".to_string()),
                 description: Some("May increase bleeding risk.".to_string()),
                 partner_classes: vec!["antiplatelets".to_string()],
@@ -1215,7 +1216,6 @@ mod tests {
             coverage_note: None,
             label_interaction_text: None,
         };
-
         let sources = drug_interaction_report_section_sources(&report);
         assert_eq!(sources.len(), 1);
         assert_eq!(

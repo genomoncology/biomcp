@@ -77,6 +77,7 @@ pub struct DrugInteractionReport {
 #[derive(Debug, Clone)]
 struct InteractionAggregation {
     drug: String,
+    ddinter_id: Option<String>,
     level: Option<String>,
 }
 
@@ -113,6 +114,7 @@ pub(crate) async fn interaction_report_from_base(
         .map(|interaction| DrugInteraction {
             description: interaction_description(&legacy_descriptions, &interaction.drug),
             drug: interaction.drug,
+            ddinter_id: interaction.ddinter_id,
             level: interaction.level,
             partner_classes: Vec::new(),
         })
@@ -189,6 +191,7 @@ fn aggregate_rows(
             .entry(key)
             .or_insert_with(|| InteractionAggregation {
                 drug: partner_name.to_string(),
+                ddinter_id: (!partner_id.trim().is_empty()).then(|| partner_id.to_string()),
                 level: row.level.clone(),
             });
         if severity_rank(row.level.as_deref()) > severity_rank(entry.level.as_deref()) {
@@ -279,6 +282,7 @@ mod tests {
         .into_iter()
         .map(|(drug, level)| DrugInteraction {
             drug: drug.to_string(),
+            ddinter_id: None,
             level: Some(level.to_string()),
             description: Some(format!("{drug} evidence")),
             partner_classes: Vec::new(),
