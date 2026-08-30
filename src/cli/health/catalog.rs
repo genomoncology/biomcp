@@ -227,9 +227,9 @@ pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
     },
     SourceDescriptor {
         api: "PharmGKB",
-        affects: Some("pgx recommendations and annotations"),
+        affects: Some("get pgx annotations (moved from api.pharmgkb.org to api.clinpgx.org)"),
         probe: ProbeKind::Get {
-            url: "https://api.pharmgkb.org/v1/data/labelAnnotation?relatedChemicals.name=warfarin&view=min",
+            url: "https://api.clinpgx.org/v1/data/labelAnnotation?relatedChemicals.name=warfarin&view=min",
         },
     },
     SourceDescriptor {

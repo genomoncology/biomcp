@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
-const PHARMGKB_BASE: &str = "https://api.pharmgkb.org/v1";
+const PHARMGKB_BASE: &str = "https://api.clinpgx.org/v1";
 const PHARMGKB_BASE_ENV: &str = "BIOMCP_PHARMGKB_BASE";
 
 pub struct PharmGkbClient {
@@ -133,18 +133,15 @@ impl PharmGkbClient {
     pub(crate) fn annotations_from_response(
         resp: PharmGkbDataResponse,
         fallback_kind: &str,
+        offset: usize,
         limit: usize,
     ) -> Vec<PharmGkbAnnotation> {
-        let mut out = Vec::new();
-        for row in resp.data {
-            if let Some(annotation) = map_annotation(&row, fallback_kind) {
-                out.push(annotation);
-            }
-            if out.len() >= limit {
-                break;
-            }
-        }
-        out
+        resp.data
+            .iter()
+            .filter_map(|row| map_annotation(row, fallback_kind))
+            .skip(offset)
+            .take(limit)
+            .collect()
     }
 
     async fn get_json_optional<T: DeserializeOwned>(
@@ -209,6 +206,7 @@ impl PharmGkbClient {
         Ok(Self::annotations_from_response(
             resp,
             plan.fallback_kind,
+            plan.offset,
             plan.limit,
         ))
     }
@@ -219,6 +217,7 @@ pub(crate) struct AnnotationPlan {
     pub request: RequestPlan,
     pub fallback_kind: &'static str,
     pub limit: usize,
+    pub offset: usize,
 }
 
 fn annotation_plan(
@@ -232,11 +231,10 @@ fn annotation_plan(
     AnnotationPlan {
         request: RequestPlan::get(format!("data/{endpoint}"))
             .query(criteria_key, criteria_value)
-            .query("view", "min")
-            .query("limit", limit.to_string())
-            .query("offset", offset.to_string()),
+            .query("view", "min"),
         fallback_kind,
         limit,
+        offset,
     }
 }
 
