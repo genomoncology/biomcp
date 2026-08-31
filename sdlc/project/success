@@ -6,6 +6,7 @@
 #   ATTEMPT_DIR      the worktree before made; unset means the current directory,
 #                    while an empty value means no attempt tree exists
 #   RUN_ID, RUN_CAUSE, RUN_EXIT, BOT_CMD the run's outcome and its key
+#   BOT_HOME         the home containing the named run's retained evidence
 #   SDLC_REPO        baggage from before: the repository's checkout
 #   SDLC_BRANCH      baggage from before: ticket/<TICKET_ID>
 #   Both baggage values are re-derived from the worktree when absent, so a
@@ -14,9 +15,9 @@
 #
 # WHAT IT DOES
 #   1. resolve the local branch tip, fetch, then compare it with origin/main
-#   2. if the branch adds no commits, there is nothing to land — say so; if it
-#      does, push the tip to main. A moved main may merge only ticket-only
-#      changes that do not touch this attempt's ticket.
+#   2. if the branch adds no commits, there is nothing to land — say so. If it
+#      does, require the flow's sealed run witness to name this exact tip.
+#      Refuse a moved main rather than creating history after verification.
 #   3. the push is a plain `git push origin <tip>:main` — FAST-FORWARD ONLY.
 #      A rejected push leaves the branch and worktree standing for a human or
 #      a retry to look at.
@@ -29,10 +30,9 @@
 #          land" for a settled no-op, or one activation receipt: "activated"
 #          or "activation-pending <base>..<tip>". Pending is the only stdout
 #          when the durable snapshot's checkout or deployment cannot activate.
-# EXIT:    0 settled or no-op; 1 landing, deploy, or teardown failure; 4 when
-#          the durable snapshot's checkout or deployment remains pending. The
-#          factory also reads 3 as a rejected landing and 2 as a refusal; this
-#          script uses neither.
+# EXIT:    0 settled or no-op; 1 landing, deploy, or teardown failure; 2 when
+#          run evidence is missing or does not identify the candidate; 3 when
+#          main moved; 4 when durable activation remains pending.
 set -euo pipefail
 
 git_with_optional_timeout() {
@@ -354,6 +354,184 @@ BASE=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}')
 FETCHED_MAIN_TIP=$BASE
 LANDING_RECEIPT=
 
+# Parse JSONL records and select one event whose proof fields match. Reject
+# malformed lines rather than extracting text that only resembles run evidence.
+select_witness_capture() {
+	awk -v witness_file="$1" '
+	function ws() { while (i <= n && substr(line, i, 1) ~ /[ \t\r\n]/) i++ }
+	function string(    c, esc, hex) {
+		if (substr(line, i, 1) != "\"") return 0
+		i++; value = ""
+		while (i <= n) {
+			c = substr(line, i++, 1)
+			if (c == "\"") { type = "string"; return 1 }
+			if (c == "\\") {
+				if (i > n) return 0
+				esc = substr(line, i++, 1)
+				if (esc == "u") {
+					hex = substr(line, i, 4)
+					if (length(hex) != 4 || hex !~ /^[0-9a-fA-F]{4}$/) return 0
+					i += 4; value = value "?"
+				} else if (esc ~ /^[\"\\\/bfnrt]$/) {
+					value = value ((esc == "\"" || esc == "\\" || esc == "/") ? esc : "?")
+				} else return 0
+			} else {
+				if (c ~ /[[:cntrl:]]/) return 0
+				value = value c
+			}
+		}
+		return 0
+	}
+	function scalar(    rest, token) {
+		ws(); rest = substr(line, i)
+		if (substr(rest, 1, 1) == "\"") return string()
+		if (match(rest, /^-?(0|[1-9][0-9]*)([.][0-9]+)?([eE][+-]?[0-9]+)?/)) {
+			token = substr(rest, 1, RLENGTH); i += RLENGTH; type = "number"; value = token; return 1
+		}
+		if (substr(rest, 1, 4) == "true") { i += 4; type = "true"; value = "true"; return 1 }
+		if (substr(rest, 1, 5) == "false") { i += 5; type = "false"; value = "false"; return 1 }
+		if (substr(rest, 1, 4) == "null") { i += 4; type = "null"; value = "null"; return 1 }
+		return 0
+	}
+	function any_value(    c) {
+		ws(); c = substr(line, i, 1)
+		if (c == "{") return object()
+		if (c == "[") return array()
+		return scalar()
+	}
+	function object(    key) {
+		if (substr(line, i++, 1) != "{") return 0
+		ws(); if (substr(line, i, 1) == "}") { i++; type = "object"; return 1 }
+		while (i <= n) {
+			if (!string()) return 0; ws()
+			if (substr(line, i++, 1) != ":" || !any_value()) return 0
+			ws(); if (substr(line, i, 1) == "}") { i++; type = "object"; value = ""; return 1 }
+			if (substr(line, i++, 1) != ",") return 0
+			ws()
+		}
+		return 0
+	}
+	function array() {
+		if (substr(line, i++, 1) != "[") return 0
+		ws(); if (substr(line, i, 1) == "]") { i++; type = "array"; return 1 }
+		while (i <= n) {
+			if (!any_value()) return 0
+			ws(); if (substr(line, i, 1) == "]") { i++; type = "array"; value = ""; return 1 }
+			if (substr(line, i++, 1) != ",") return 0
+			ws()
+		}
+		return 0
+	}
+	function parse(    key, saved_type, saved_value) {
+		ws(); if (substr(line, i++, 1) != "{") return 0
+		ws(); if (substr(line, i, 1) == "}") { i++; return 1 }
+		while (i <= n) {
+			if (!string()) return 0; key = value; ws()
+			if (substr(line, i++, 1) != ":" || !any_value()) return 0
+			saved_type = type; saved_value = value; seen[key]++; field_type[key] = saved_type
+			if (saved_type == "string" || saved_type == "number") field[key] = saved_value
+			ws(); if (substr(line, i, 1) == "}") { i++; return 1 }
+			if (substr(line, i++, 1) != ",") return 0
+			ws()
+		}
+		return 0
+	}
+	{
+		line = $0; n = length(line); i = 1; delete field; delete field_type; delete seen
+		if (!parse()) bad = 1
+		ws(); if (i <= n) bad = 1
+		if (seen["event"] == 1 && field_type["event"] == "string" && field["event"] == "check" &&
+			seen["check"] == 1 && field_type["check"] == "string" && field["check"] == "gate" &&
+			seen["file"] == 1 && field_type["file"] == "string" && field["file"] == witness_file &&
+			seen["exit"] == 1 && field_type["exit"] == "number" && field["exit"] == "0" &&
+			seen["capture"] == 1 && field_type["capture"] == "string") {
+			matches++; capture = field["capture"]
+		}
+	}
+	END {
+		if (bad) exit 2
+		if (matches != 1) exit 1
+		print capture
+	}'
+}
+
+verify_run_witness() {
+	local witness_file record capture run_parent run_dir path part current bytes line
+	local -a parts=()
+	case "${TICKET_FLOW-}" in
+	build) witness_file=flows/build/05-verify/gate/06-witness ;;
+	quickfix) witness_file=flows/quickfix/02-land/gate/05-witness ;;
+	review) witness_file=flows/review/02-file/gate/04-witness ;;
+	plan) witness_file=flows/plan/03-land/gate/06-witness ;;
+	repair) witness_file=flows/repair/02-land/gate/05-witness ;;
+	*) echo "success: no final witness gate for flow ${TICKET_FLOW-<missing>}" >&2; return 1 ;;
+	esac
+	if [ -z "${RUN_ID-}" ] || [ -z "${BOT_CMD-}" ] || [ -z "${BOT_HOME-}" ]; then
+		echo "success: RUN_ID, BOT_CMD, and BOT_HOME are required to verify a landing" >&2
+		return 1
+	fi
+	case "$RUN_ID" in '' | . | .. | /* | */*) echo "success: RUN_ID does not name one run directory" >&2; return 1 ;; esac
+	if ! record=$(mktemp); then
+		echo "success: cannot capture run evidence" >&2
+		return 1
+	fi
+	if ! "$BOT_CMD" show "$RUN_ID" --json >"$record"; then
+		rm -f -- "$record"
+		echo "success: bot show failed for run $RUN_ID" >&2
+		return 1
+	fi
+	if ! capture=$(select_witness_capture "$witness_file" <"$record"); then
+		rm -f -- "$record"
+		echo "success: run $RUN_ID does not contain exactly one successful $witness_file event" >&2
+		return 1
+	fi
+	rm -f -- "$record"
+
+	case "$capture" in '' | /*) echo "success: run witness capture path is invalid" >&2; return 1 ;; esac
+	IFS=/ read -r -a source <<< "$capture"
+	for part in "${source[@]}"; do
+		case "$part" in
+		'' | .) ;;
+		..)
+			if [ "${#parts[@]}" -eq 0 ]; then
+				echo "success: run witness capture escapes its run directory" >&2
+				return 1
+			fi
+			unset 'parts[${#parts[@]} - 1]'
+			;;
+		*) parts+=("$part") ;;
+		esac
+	done
+	[ "${#parts[@]}" -gt 0 ] || { echo "success: run witness capture path is empty" >&2; return 1; }
+	run_parent=$BOT_HOME/runs
+	if ! run_parent=$(CDPATH='' cd -- "$run_parent" 2>/dev/null && pwd -P) ||
+		! run_dir=$(CDPATH='' cd -- "$run_parent/$RUN_ID" 2>/dev/null && pwd -P); then
+		echo "success: run $RUN_ID has no readable run directory" >&2
+		return 1
+	fi
+	case "$run_dir" in "$run_parent"/*) ;; *) echo "success: run directory escapes BOT_HOME" >&2; return 1 ;; esac
+	current=$run_dir
+	for part in "${parts[@]}"; do
+		path=$current/$part
+		if [ -L "$path" ]; then
+			echo "success: run witness capture uses a symbolic link" >&2
+			return 1
+		fi
+		current=$path
+	done
+	path=$current
+	if [ ! -f "$path" ]; then
+		echo "success: run witness capture is missing or not a regular file" >&2
+		return 1
+	fi
+	bytes=$(LC_ALL=C wc -c <"$path") || { echo "success: cannot read run witness capture" >&2; return 1; }
+	if [ "$bytes" -ne 50 ] || ! IFS= read -r line <"$path" || [[ ! "$line" =~ ^verified\ [0-9a-f]{40}$ ]]; then
+		echo "success: run witness capture must be exactly one lowercase verified SHA line" >&2
+		return 1
+	fi
+	WITNESSED_TIP=${line#verified }
+}
+
 # 2. Land, unless the attempt added nothing to main.
 if [ "$(git -C "$REPO" rev-list --count "origin/main..$TIP")" -eq 0 ]; then
 	LANDING_RECEIPT="nothing to land: $BRANCH adds no commits to main"
@@ -364,6 +542,13 @@ else
 		echo "success: cannot verify the unregistered worktree HEAD before landing" >&2
 		exit 1
 	fi
+	if ! verify_run_witness; then
+		exit 2
+	fi
+	if [ "$WITNESSED_TIP" != "$TIP" ]; then
+		echo "success: witnessed candidate $WITNESSED_TIP does not match push candidate $TIP" >&2
+		exit 2
+	fi
 	if git -C "$REPO" merge-base --is-ancestor origin/main "$TIP"; then
 		:
 	else
@@ -372,68 +557,8 @@ else
 			echo "success: cannot compare the candidate with origin/main" >&2
 			exit 1
 		fi
-		if [ "$ATTEMPT_TREE_PRESENT" -eq 0 ]; then
-			echo "success: cannot reconcile moved main without an attempt tree" >&2
-			exit 1
-		fi
-		if [ -z "${TICKET_REF-}" ]; then
-			echo "success: cannot identify the active ticket for moved main" >&2
-			exit 1
-		fi
-		if ! ATTEMPT_BASE=$(git -C "$REPO" merge-base "$TIP" origin/main); then
-			echo "success: cannot determine the attempt base for moved main" >&2
-			exit 1
-		fi
-		inspect_main_move() {
-			local status path
-			while IFS= read -r -d '' status; do
-				case "$status" in
-				A | M)
-					if ! IFS= read -r -d '' path; then
-						echo "success: moved main diff ended before its path" >&2
-						return 1
-					fi
-					case "$path" in
-					sdlc/tickets/*)
-						if [ "$path" = "$TICKET_REF" ]; then
-							echo "success: moved main changes the active ticket $path" >&2
-							return 1
-						fi
-						;;
-					*)
-						echo "success: moved main changes unverified path $path" >&2
-						return 1
-						;;
-					esac
-					;;
-				*)
-					echo "success: moved main has unsupported diff status $status" >&2
-					return 1
-					;;
-				esac
-			done
-		}
-		if ! git -C "$REPO" diff --no-ext-diff --find-renames --find-copies --find-copies-harder --name-status -z "$ATTEMPT_BASE" origin/main | inspect_main_move; then
-			echo "success: refusing moved main because ticket-only changes cannot be verified" >&2
-			exit 1
-		fi
-		if ! git -C "$TREE" merge --no-edit origin/main >/dev/null 2>&1; then
-			if ! git -C "$TREE" merge --abort >/dev/null 2>&1; then
-				echo "success: could not abort the moved-main merge" >&2
-				exit 1
-			fi
-			if ! HEAD_SHA=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) ||
-				[ "$HEAD_SHA" != "$TIP" ] || ! status=$(git -C "$TREE" status --porcelain) || [ -n "$status" ]; then
-				echo "success: moved-main merge did not restore the candidate" >&2
-				exit 1
-			fi
-			echo "success: moved-main merge conflicted; the branch is left standing" >&2
-			exit 1
-		fi
-		if ! TIP=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null); then
-			echo "success: cannot determine the moved-main merge tip" >&2
-			exit 1
-		fi
+		echo "success: origin/main moved beyond witnessed candidate $TIP; the branch is left standing" >&2
+		exit 3
 	fi
 	validate_ticket_tree() {
 		local state tasks_status
@@ -471,7 +596,7 @@ else
 	fi
 	if ! git -C "$REPO" push --quiet origin "$TIP:main"; then
 		echo "success: $TIP could not fast-forward main — main moved; the branch is left standing" >&2
-		exit 1
+		exit 3
 	fi
 	LANDING_RECEIPT="landed $BASE..$TIP"
 fi
