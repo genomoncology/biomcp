@@ -148,6 +148,37 @@ def _bot(tmp_path: Path) -> Path:
     return command
 
 
+def _witness_environment(tmp_path: Path, tip: str) -> dict[str, str]:
+    run_id = "witnessed-run"
+    bot_home = tmp_path / "bot-home"
+    capture = bot_home / "runs" / run_id / "captures" / "witness"
+    capture.parent.mkdir(parents=True)
+    capture.write_text(f"verified {tip}\n", encoding="utf-8")
+    event = json.dumps(
+        {
+            "event": "check",
+            "check": "gate",
+            "file": "flows/build/05-verify/gate/06-witness",
+            "exit": 0,
+            "capture": "captures/witness",
+        }
+    )
+    bot = tmp_path / "witness-bot"
+    bot.write_text(
+        "#!/bin/sh\n"
+        f"[ \"$1 $2 $3\" = \"show {run_id} --json\" ] || exit 2\n"
+        f"printf '%s\\n' {shlex.quote(event)}\n",
+        encoding="utf-8",
+    )
+    bot.chmod(0o755)
+    return {
+        "TICKET_FLOW": "build",
+        "RUN_ID": run_id,
+        "BOT_CMD": str(bot),
+        "BOT_HOME": str(bot_home),
+    }
+
+
 def _before(repo: Path, tmp_path: Path, ticket_id: str) -> tuple[subprocess.CompletedProcess[str], Path | None]:
     bot = _bot(tmp_path)
     result = _run(
@@ -474,13 +505,18 @@ def test_before_reclaims_an_owned_orphaned_worktree(tmp_path: Path) -> None:
     assert not marker.exists()
 
 
-def test_success_lands_after_unrelated_ticket_only_main_movement(tmp_path: Path) -> None:
+def test_success_refuses_after_unrelated_ticket_only_main_movement(tmp_path: Path) -> None:
     repo, origin = _fixture(tmp_path)
     ticket_id = "1052"
     prepared, tree = _before(repo, tmp_path, ticket_id)
     assert prepared.returncode == 0, prepared.stderr
     assert tree is not None
-    _commit(tree, "CANDIDATE", "keep this verified change\n", "candidate: retain verified change")
+    candidate = _commit(
+        tree,
+        "CANDIDATE",
+        "keep this verified change\n",
+        "candidate: retain verified change",
+    )
 
     publisher = _clone(origin, tmp_path / "publisher")
     _commit(
@@ -500,16 +536,17 @@ def test_success_lands_after_unrelated_ticket_only_main_movement(tmp_path: Path)
             "SDLC_REPO": str(repo),
             "SDLC_BRANCH": f"ticket/{ticket_id}",
             "TICKET_REF": "sdlc/tickets/1052-adopt-lifecycle.md",
-        },
+        }
+        | _witness_environment(tmp_path, candidate),
     )
 
-    assert settled.returncode == 0, settled.stderr
+    assert settled.returncode == 3
     _git(repo, "fetch", "--quiet", "origin")
-    assert _git(repo, "show", "origin/main:CANDIDATE") == "keep this verified change"
+    assert _git(repo, "ls-tree", "--name-only", "origin/main", "CANDIDATE") == ""
     assert _git(repo, "show", "origin/main:sdlc/tickets/2001-unrelated.md") == (
         "---\nflow: build\npriority: 1\n---\n# Unrelated ticket"
     )
-    assert not tree.exists()
+    assert tree.exists()
 
 
 def test_failure_withdrawal_receipt_preserves_evidence_and_cleans_up(tmp_path: Path) -> None:
@@ -635,7 +672,12 @@ def test_success_without_deploy_hook_is_quiet(tmp_path: Path) -> None:
     prepared, tree = _before(repo, tmp_path, ticket_id)
     assert prepared.returncode == 0, prepared.stderr
     assert tree is not None
-    _commit(tree, "LANDED", "no deployment extension is needed\n", "candidate: settle without deploy")
+    tip = _commit(
+        tree,
+        "LANDED",
+        "no deployment extension is needed\n",
+        "candidate: settle without deploy",
+    )
 
     settled = _run(
         repo,
@@ -645,7 +687,8 @@ def test_success_without_deploy_hook_is_quiet(tmp_path: Path) -> None:
             "ATTEMPT_DIR": str(tree),
             "SDLC_REPO": str(repo),
             "SDLC_BRANCH": f"ticket/{ticket_id}",
-        },
+        }
+        | _witness_environment(tmp_path, tip),
     )
 
     assert not (repo / "sdlc" / "scripts" / "deploy").exists()
@@ -679,7 +722,8 @@ def test_success_reports_pending_activation_for_a_dirty_checkout(
             "ATTEMPT_DIR": str(tree),
             "SDLC_REPO": str(repo),
             "SDLC_BRANCH": f"ticket/{ticket_id}",
-        },
+        }
+        | _witness_environment(tmp_path, tip),
     )
 
     assert settled.returncode == 4, settled.stderr
@@ -923,7 +967,8 @@ def test_success_keeps_pending_activation_authoritative_after_teardown_fails(
             "SDLC_REPO": str(repo),
             "SDLC_BRANCH": f"ticket/{ticket_id}",
             "PATH": _path_with_blocked_worktree_removal(tmp_path, tree),
-        },
+        }
+        | _witness_environment(tmp_path, tip),
     )
 
     assert settled.returncode == 4
