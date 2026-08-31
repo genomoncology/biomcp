@@ -3,15 +3,17 @@
 #
 # ENVIRONMENT:
 #   TICKET_ID, TICKET_REF, TICKET_FLOW   as before received them
-#   ATTEMPT_DIR      the worktree before made; you are started inside it
+#   ATTEMPT_DIR      the worktree before made; unset means the current directory,
+#                    while an empty value means no attempt tree exists
 #   RUN_ID, RUN_CAUSE, RUN_EXIT, BOT_CMD the run's outcome and its key
 #   SDLC_REPO        baggage from before: the repository's checkout
 #   SDLC_BRANCH      baggage from before: ticket/<TICKET_ID>
 #   Both baggage values are re-derived from the worktree when absent, so a
-#   hand-run settlement standing in the tree still works.
+#   hand-run settlement standing in the tree still works. On a no-tree retry,
+#   the local ticket branch tip is the identity checked and pushed.
 #
 # WHAT IT DOES
-#   1. fetch, then compare the branch tip with origin/main
+#   1. resolve the local branch tip, fetch, then compare it with origin/main
 #   2. if the branch adds no commits, there is nothing to land — say so; if it
 #      does, push the tip to main. A moved main may merge only ticket-only
 #      changes that do not touch this attempt's ticket.
@@ -167,8 +169,19 @@ case "$TICKET_ID" in
 esac
 
 BRANCH=${SDLC_BRANCH:-ticket/$TICKET_ID}
-TREE=${ATTEMPT_DIR:-$(pwd -P)}
-BASELINE="$TREE.baseline"
+ATTEMPT_TREE_PRESENT=1
+if [ "${ATTEMPT_DIR+x}" = x ]; then
+	TREE=$ATTEMPT_DIR
+	if [ -z "$TREE" ]; then
+		ATTEMPT_TREE_PRESENT=0
+	fi
+else
+	TREE=$(pwd -P)
+fi
+BASELINE=
+if [ "$ATTEMPT_TREE_PRESENT" -eq 1 ]; then
+	BASELINE="$TREE.baseline"
+fi
 
 resolve_repo() {
 	local from=$1 common
@@ -179,7 +192,7 @@ resolve_repo() {
 
 if [ -n "${SDLC_REPO-}" ]; then
 	REPO=$SDLC_REPO
-elif [ -d "$TREE" ] && REPO=$(resolve_repo "$TREE"); then
+elif [ "$ATTEMPT_TREE_PRESENT" -eq 1 ] && [ -d "$TREE" ] && REPO=$(resolve_repo "$TREE"); then
 	:
 else
 	echo "success: cannot tell which checkout owns $BRANCH — no SDLC_REPO and no readable worktree" >&2
@@ -302,19 +315,21 @@ remove_baseline() {
 # Refuse before changing anything: a worktree that is not ours is not ours
 # to remove, and a half teardown is worse than none.
 TREE_ORPHAN=0
-if [ -e "$TREE" ]; then
-	if candidate_owned "$TREE"; then
-		:
-	elif orphan_owned "$TREE"; then
-		TREE_ORPHAN=1
-	else
-		echo "success: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+if [ "$ATTEMPT_TREE_PRESENT" -eq 1 ]; then
+	if [ -e "$TREE" ]; then
+		if candidate_owned "$TREE"; then
+			:
+		elif orphan_owned "$TREE"; then
+			TREE_ORPHAN=1
+		else
+			echo "success: refusing to remove $TREE: it is not a worktree owned by $REPO" >&2
+			exit 1
+		fi
+	fi
+	if [ -e "$BASELINE" ] && ! owned_worktree "$BASELINE"; then
+		echo "success: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
 		exit 1
 	fi
-fi
-if [ -e "$BASELINE" ] && ! owned_worktree "$BASELINE"; then
-	echo "success: refusing to remove $BASELINE: it is not a worktree owned by $REPO" >&2
-	exit 1
 fi
 
 # 1. The tip to land.
@@ -323,7 +338,9 @@ if ! TIP=$(git -C "$REPO" rev-parse --verify "refs/heads/$BRANCH^{commit}" 2>/de
 	exit 1
 fi
 ATTEMPT_TIP=$TIP
-if [ -d "$TREE" ] && [ "$TREE_ORPHAN" -eq 0 ]; then
+if [ "$ATTEMPT_TREE_PRESENT" -eq 0 ]; then
+	echo "success: no attempt tree supplied; skipping worktree HEAD check" >&2
+elif [ "$TREE_ORPHAN" -eq 0 ]; then
 	if ! HEAD_SHA=$(git -C "$TREE" rev-parse --verify 'HEAD^{commit}' 2>/dev/null) || [ "$HEAD_SHA" != "$TIP" ]; then
 		echo "success: the worktree HEAD is not $BRANCH's tip — refusing to land a commit the attempt did not end on" >&2
 		exit 1
@@ -353,6 +370,10 @@ else
 		ANCESTRY_STATUS=$?
 		if [ "$ANCESTRY_STATUS" -ne 1 ]; then
 			echo "success: cannot compare the candidate with origin/main" >&2
+			exit 1
+		fi
+		if [ "$ATTEMPT_TREE_PRESENT" -eq 0 ]; then
+			echo "success: cannot reconcile moved main without an attempt tree" >&2
 			exit 1
 		fi
 		if [ -z "${TICKET_REF-}" ]; then
@@ -497,11 +518,13 @@ cleanup() {
 	fi
 }
 
-if [ -e "$TREE" ]; then
-	cleanup "worktree removal $TREE" remove_tree "$TREE"
-fi
-if [ -e "$BASELINE" ]; then
-	cleanup "baseline worktree removal $BASELINE" remove_baseline
+if [ "$ATTEMPT_TREE_PRESENT" -eq 1 ]; then
+	if [ -e "$TREE" ]; then
+		cleanup "worktree removal $TREE" remove_tree "$TREE"
+	fi
+	if [ -e "$BASELINE" ]; then
+		cleanup "baseline worktree removal $BASELINE" remove_baseline
+	fi
 fi
 cleanup "worktree prune" prune_worktrees
 cleanup "local branch $BRANCH" remove_local_branch
@@ -516,4 +539,8 @@ fi
 if [ -n "$failures" ]; then
 	exit 1
 fi
-echo "torn down $BRANCH and $TREE"
+if [ "$ATTEMPT_TREE_PRESENT" -eq 1 ]; then
+	echo "torn down $BRANCH and $TREE"
+else
+	echo "torn down $BRANCH"
+fi

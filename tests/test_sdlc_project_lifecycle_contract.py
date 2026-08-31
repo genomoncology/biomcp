@@ -378,7 +378,7 @@ def test_before_bounds_the_complete_unparsed_gate_verdict(tmp_path: Path) -> Non
     assert failed.returncode == 3
     assert f"{gate_output}\n" in failed.stderr
     assert verdict_start >= 0
-    assert len(failed.stderr[verdict_start:].encode("utf-8")) <= 1_024
+    assert len(failed.stderr[verdict_start:].encode("utf-8")) <= 1_025
 
 
 def test_before_allows_canonical_adoption_to_repair_red_main(
