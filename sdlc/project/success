@@ -354,7 +354,7 @@ BASE=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}')
 FETCHED_MAIN_TIP=$BASE
 LANDING_RECEIPT=
 
-# Parse JSONL records and select one event whose proof fields match. Reject
+# Parse JSONL records and select the common capture from matching events. Reject
 # malformed lines rather than extracting text that only resembles run evidence.
 select_witness_capture() {
 	awk -v witness_file="$1" '
@@ -445,18 +445,22 @@ select_witness_capture() {
 			seen["file"] == 1 && field_type["file"] == "string" && field["file"] == witness_file &&
 			seen["exit"] == 1 && field_type["exit"] == "number" && field["exit"] == "0" &&
 			seen["capture"] == 1 && field_type["capture"] == "string") {
-			matches++; capture = field["capture"]
+			matches++
+			if (matches == 1) capture = field["capture"]
+			else if (capture != field["capture"]) conflict = 1
+			if (seen["sha256"] == 1 && field_type["sha256"] == "string" && !digests[field["sha256"]]++) digest_count++
 		}
 	}
 	END {
 		if (bad) exit 2
-		if (matches != 1) exit 1
+		if (!matches) exit 1
+		if (conflict || digest_count > 1) exit 3
 		print capture
 	}'
 }
 
 verify_run_witness() {
-	local witness_file record capture run_parent run_dir path part current bytes line
+	local witness_file record capture selector_status run_parent run_dir path part current bytes line
 	local -a parts=()
 	case "${TICKET_FLOW-}" in
 	build) witness_file=flows/build/05-verify/gate/06-witness ;;
@@ -480,9 +484,16 @@ verify_run_witness() {
 		echo "success: bot show failed for run $RUN_ID" >&2
 		return 1
 	fi
-	if ! capture=$(select_witness_capture "$witness_file" <"$record"); then
+	if capture=$(select_witness_capture "$witness_file" <"$record"); then
+		:
+	else
+		selector_status=$?
 		rm -f -- "$record"
-		echo "success: run $RUN_ID does not contain exactly one successful $witness_file event" >&2
+		case "$selector_status" in
+		1) echo "success: no successful $witness_file witness event was found in run $RUN_ID" >&2 ;;
+		3) echo "success: run $RUN_ID carries conflicting witnesses" >&2 ;;
+		*) echo "success: run $RUN_ID contains malformed witness records" >&2 ;;
+		esac
 		return 1
 	fi
 	rm -f -- "$record"

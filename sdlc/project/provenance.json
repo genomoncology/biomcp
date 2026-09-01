@@ -1,5 +1,5 @@
 {
-  "canonicalCommit": "626cbf2096c1de0ae774e24dd8cf6c36469ff0b1",
+  "canonicalCommit": "f5b5cb7f1746f6e1d18f2daf1b45011582b168b0",
   "scripts": [
     {
       "name": "tasks",
@@ -13,7 +13,7 @@
     },
     {
       "name": "success",
-      "sha256": "a2ad568ae5e7e0f83328fd88aa2ae303a8ffe4d039f6ee4e2985196eaaee34fd",
+      "sha256": "19714c78fb267ee6747b7ea21380ecc68fa141f6bae5dd00142f565cc8e9cbf1",
       "executable": true
     },
     {
