@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 8
+priority: 6
 ---
 
 # `search variant` returns a silent zero when a filter value is not the one the provider indexes

@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 7
+priority: 9
 ---
 
 # `get pgx` collapses multi-gene CPIC phenotypes onto one label and hides two Level A drugs
@@ -128,3 +128,17 @@ Do not round-robin the rows across drugs and do not add a drug filter to `get pg
 May change: `src/entities/pgx.rs` (`map_recommendations`, `pick_lookup_value`, the `PgxRecommendation` struct, the recommendations branch of `get_with_cpic`), `src/sources/cpic.rs` for the added drug-coverage request plan, `templates/pgx.md.j2` recommendations table, `src/render/markdown/pgx.rs`, `spec/entity/pgx.md`, and the tests for those.
 
 Must not change: `src/entities/pgx.rs::is_likely_gene` and the gene-versus-drug classifier, `map_pair_rows` and the interactions section, `map_frequencies`, `map_guidelines`, the annotations section, `PgxSectionPagination` and the `--offset` contract, `src/sources/cpic.rs::recommendations_by_gene_page_plan` ordering, and the `search pgx` surface.
+
+## Addendum 2026-09-01: measured agent behavior raises this ticket's priority
+
+An agent study ran 31 tasks against this server over stdio MCP, driven as a real agent loop rather than from a shell. It changes what this defect is worth.
+
+Both faults produce confidently wrong clinical answers, and a capable agent hides rather than reports them.
+
+**The truncation produces a false provenance claim.** Asked whether the server holds evidence that TPMT genotype affects thioguanine dosing, an agent read the 30 azathioprine rows, inferred that the sibling thiopurines must carry the same rows, and answered that the framework is "shown for azathioprine and mercaptopurine." The table holds zero rows for either. The agent did not invent a fact. It invented a provenance, and it reported the inference in the same voice as the retrieval. Truncation is therefore not only a coverage gap; it actively invites a wrong claim about what the record contains.
+
+**The collapse is silently repaired downstream.** Handed all five mutually contradictory `Strong` rows for `(azathioprine, Normal Metabolizer)` in one result, an agent picked the correct one and presented it as the recommendation without mentioning that the source contradicted itself. The output looks clean. Nobody downstream will ever report this defect, because the surface that reaches a reader is already repaired. A defect that cannot be observed from its output is worth fixing sooner, not later.
+
+For contrast, the silent-zero defects in ticket 1091 were recovered every time they were hit, 31 times across 18 runs, with zero wrong answers. They cost roughly 3.1x the tool calls. This ticket's faults cost correctness. That is why this ticket now carries the higher priority of the two.
+
+The coverage line required by "The rule" above is what closes the false-provenance case: a reader who is told which drugs are held and not on this page cannot infer that absent drugs are present.
