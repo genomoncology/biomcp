@@ -374,7 +374,7 @@ alias retry happened.
 
 ```bash
 biomcp --json search variant -g H3F3A --limit 1 \
-  | jq -c '{count, total: .pagination.total, diagnostics: (.diagnostics // [])}' \
+  | jq -c '{count, total: .pagination.total, diagnostics}' \
   | mustmatch like '{"count":1,"total":1156,"diagnostics":[]}'
 ```
 
@@ -402,7 +402,7 @@ position probe.
 
 ```bash
 biomcp --json search variant -g H3F3A --hgvsp K28M --limit 1 \
-  | jq -c '{count, status: .resolution.status, diagnostics: (.diagnostics // [])}' \
+  | jq -c '{count, status: .resolution.status, diagnostics}' \
   | mustmatch like '{"count":1,"status":"resolved","diagnostics":[]}'
 ```
 
