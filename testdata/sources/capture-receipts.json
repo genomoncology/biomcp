@@ -519,6 +519,16 @@
       }
     },
     {
+      "path": "cpic/recommendation_drugs_cyp2d6_20260901.json",
+      "classification": "pending_verification",
+      "ineligible_reason": "Authored minimal CPIC response has no receipt-backed provider provenance."
+    },
+    {
+      "path": "cpic/recommendation_tpmt_20260901.json",
+      "classification": "synthetic_and_ineligible",
+      "ineligible_reason": "Authored recommendation mapping fixture includes a deliberately synthetic row."
+    },
+    {
       "path": "cpic/recommendations_codeine.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."

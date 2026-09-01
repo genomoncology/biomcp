@@ -105,6 +105,14 @@ impl CpicClient {
         Self::recommendations_by_drug_page_plan(drug_name, limit, 0)
     }
 
+    fn recommendation_drugs_by_gene_plan(gene_symbol: &str) -> Result<RequestPlan, BioMcpError> {
+        let gene_symbol = normalize_gene_symbol(gene_symbol)?;
+        Ok(RequestPlan::get("recommendation_view")
+            .query(format!("lookupkey->>{gene_symbol}"), "not.is.null")
+            .query("select", "drugname")
+            .query("limit", "200"))
+    }
+
     pub(crate) fn recommendations_by_drug_page_plan(
         drug_name: &str,
         limit: usize,
@@ -259,6 +267,30 @@ impl CpicClient {
                 .header("Prefer", "count=exact"),
         )
         .await
+    }
+
+    pub async fn recommendation_drugs_by_gene(
+        &self,
+        gene_symbol: &str,
+    ) -> Result<Vec<String>, BioMcpError> {
+        let plan = Self::recommendation_drugs_by_gene_plan(gene_symbol)?;
+        let mut drugs: Vec<_> = self
+            .get_json_with_total::<Vec<CpicRecommendationRow>>(request_from_plan(
+                &self.client,
+                self.base.as_ref(),
+                &plan,
+            ))
+            .await?
+            .rows
+            .into_iter()
+            .filter_map(|row| {
+                let drug = row.drugname.trim();
+                (!drug.is_empty()).then(|| drug.to_string())
+            })
+            .collect();
+        drugs.sort();
+        drugs.dedup();
+        Ok(drugs)
     }
 
     pub async fn recommendations_by_drug_page(

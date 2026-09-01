@@ -22,6 +22,16 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
         .as_deref()
         .or(pgx.drug.as_deref())
         .unwrap_or(pgx.query.as_str());
+    let page_recommendation_drugs: std::collections::BTreeSet<_> = pgx
+        .recommendations
+        .iter()
+        .map(|row| row.drugname.as_str())
+        .collect();
+    let held_recommendation_drugs: Vec<_> = pgx
+        .recommendation_drugs
+        .iter()
+        .filter(|drug| !page_recommendation_drugs.contains(drug.as_str()))
+        .collect();
 
     let body = tmpl.render(context! {
         section_only => section_only,
@@ -31,6 +41,9 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
         drug => &pgx.drug,
         interactions => &pgx.interactions,
         recommendations => &pgx.recommendations,
+        recommendation_drugs => &pgx.recommendation_drugs,
+        page_recommendation_drugs => page_recommendation_drugs,
+        held_recommendation_drugs => held_recommendation_drugs,
         frequencies => &pgx.frequencies,
         guidelines => &pgx.guidelines,
         annotations => &pgx.annotations,

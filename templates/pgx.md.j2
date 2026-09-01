@@ -41,11 +41,14 @@ Next: `biomcp get pgx {{ query }} interactions --offset {{ section_pagination.in
 ## Recommendations (CPIC)
 
 {% if recommendations -%}
-| Drug | Phenotype | Activity Score | Recommendation | Classification |
+| Drug | Genotype | Activity Score | Recommendation | Classification |
 |---|---|---|---|---|
 {% for row in recommendations -%}
-| {{ row.drugname }} | {{ row.phenotype or "-" }} | {{ row.activity_score or "-" }} | {{ row.recommendation or "-" }} | {{ row.classification or "-" }} |
+| {{ row.drugname }} | {% if row.genotype %}{% for pair in row.genotype %}{{ pair[0] }} {{ pair[1] }}{% if not loop.last %}; {% endif %}{% endfor %}{% else %}-{% endif %} | {% if row.activity_score %}{% for pair in row.activity_score %}{{ pair[0] }} {{ pair[1] }}{% if not loop.last %}; {% endif %}{% endfor %}{% else %}-{% endif %} | {{ row.recommendation or "-" }} | {{ row.classification or "-" }} |
 {% endfor -%}
+{% if gene -%}
+Drugs on this page: {% for drug in page_recommendation_drugs %}{{ drug }}{% if not loop.last %}, {% endif %}{% endfor %}.{% if recommendation_drugs and held_recommendation_drugs %} Also held for {{ gene }}: {% for drug in held_recommendation_drugs %}{{ drug }}{% if not loop.last %}, {% endif %}{% endfor %}.{% endif %}
+{% endif -%}
 {% else -%}
 No CPIC recommendations found for this query.
 {% endif -%}

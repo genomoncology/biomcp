@@ -63,6 +63,8 @@ pub struct Pgx {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<PgxRecommendation>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub recommendation_drugs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub frequencies: Vec<PgxFrequency>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub guidelines: Vec<PgxGuideline>,
@@ -140,12 +142,12 @@ pub struct PgxInteraction {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PgxRecommendation {
     pub drugname: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub phenotype: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub activity_score: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub implication: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub genotype: Vec<(String, String)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub activity_score: Vec<(String, String)>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub implication: Vec<(String, String)>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -372,6 +374,7 @@ async fn get_with_cpic(
         drug: mode_drug.clone(),
         interactions: Vec::new(),
         recommendations: Vec::new(),
+        recommendation_drugs: Vec::new(),
         frequencies: Vec::new(),
         guidelines: Vec::new(),
         annotations: Vec::new(),
@@ -427,6 +430,9 @@ async fn get_with_cpic(
             PgxSectionPagination::new(offset, limit, rows.len(), page.total, extra),
         );
         out.recommendations = rows;
+        if let Some(gene) = mode_gene.as_deref() {
+            out.recommendation_drugs = cpic.recommendation_drugs_by_gene(gene).await?;
+        }
     }
 
     if parsed_sections.include_frequencies {
@@ -821,15 +827,11 @@ fn map_recommendations(
             continue;
         }
 
-        let phenotype = pick_lookup_value(&row.phenotypes, preferred_gene);
-        let activity_score = pick_lookup_value(&row.activityscore, preferred_gene);
-        let implication = pick_lookup_value(&row.implications, preferred_gene);
-
         out.push(PgxRecommendation {
             drugname: drugname.to_string(),
-            phenotype,
-            activity_score,
-            implication,
+            genotype: map_lookup_pairs(&row.phenotypes, preferred_gene),
+            activity_score: map_lookup_pairs(&row.activityscore, preferred_gene),
+            implication: map_lookup_pairs(&row.implications, preferred_gene),
             recommendation: row
                 .drugrecommendation
                 .as_deref()
@@ -852,31 +854,29 @@ fn map_recommendations(
             guidelineurl: row.guidelineurl.clone(),
         });
     }
-
-    out.sort_by(|a, b| a.drugname.cmp(&b.drugname));
-    out.truncate(30);
     out
 }
-
-fn pick_lookup_value(
+fn map_lookup_pairs(
     map: &std::collections::HashMap<String, String>,
     preferred_gene: Option<&str>,
-) -> Option<String> {
-    if let Some(gene) = preferred_gene
-        && let Some(value) = map
-            .iter()
-            .find(|(k, _)| k.eq_ignore_ascii_case(gene))
-            .map(|(_, v)| v)
-            .map(String::as_str)
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-    {
-        return Some(value.to_string());
-    }
-
-    map.values()
-        .find(|v| !v.trim().is_empty())
-        .map(|v| v.trim().to_string())
+) -> Vec<(String, String)> {
+    let mut pairs: Vec<_> = map
+        .iter()
+        .filter_map(|(gene, value)| {
+            let gene = gene.trim();
+            let value = value.trim();
+            (!gene.is_empty() && !value.is_empty()).then(|| (gene.to_string(), value.to_string()))
+        })
+        .collect();
+    pairs.sort_by(|a, b| {
+        let a_preferred = preferred_gene.is_some_and(|gene| a.0.eq_ignore_ascii_case(gene));
+        let b_preferred = preferred_gene.is_some_and(|gene| b.0.eq_ignore_ascii_case(gene));
+        b_preferred
+            .cmp(&a_preferred)
+            .then_with(|| a.0.cmp(&b.0))
+            .then_with(|| a.1.cmp(&b.1))
+    });
+    pairs
 }
 
 #[cfg(test)]
