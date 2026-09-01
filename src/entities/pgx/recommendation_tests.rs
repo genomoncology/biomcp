@@ -105,7 +105,8 @@ async fn recommendations_fetch_bounded_gene_drug_coverage() {
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/cpic/recommendation_cyp2d6_20260803.json"
     ));
-    let coverage = r#"[{"drugname":"amitriptyline"},{"drugname":"codeine"}]"#;
+    let coverage =
+        r#"[{"drugname":"codeine"},{"drugname":"amitriptyline"},{"drugname":"codeine"}]"#;
     let server = tokio::spawn(async move {
         let mut requests = Vec::new();
         for body in [recommendations, coverage] {
@@ -170,6 +171,7 @@ async fn recommendations_fetch_bounded_gene_drug_coverage() {
     let json = serde_json::to_value(result).expect("PGx JSON");
     assert_eq!(
         json["recommendation_drugs"],
-        serde_json::json!(["amitriptyline", "codeine"])
+        serde_json::json!(["amitriptyline", "codeine"]),
+        "coverage drugs must be unique and deterministic"
     );
 }

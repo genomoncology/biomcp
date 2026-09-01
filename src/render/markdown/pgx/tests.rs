@@ -50,6 +50,20 @@ fn recommendations_render_genotypes_and_page_drug_coverage() {
         json["recommendation_drugs"],
         serde_json::json!(["azathioprine", "mercaptopurine", "thioguanine"])
     );
+
+    let single_gene: Pgx = serde_json::from_value(serde_json::json!({
+        "query": "CYP2D6",
+        "gene": "CYP2D6",
+        "recommendations": [{
+            "drugname": "codeine",
+            "genotype": [["CYP2D6", "Poor Metabolizer"]]
+        }]
+    }))
+    .expect("single-gene PGx fixture");
+    let single_markdown =
+        pgx_markdown(&single_gene, &["recommendations".into()]).expect("single-gene markdown");
+    assert!(single_markdown.contains("| codeine | CYP2D6 Poor Metabolizer | - | - | - |"));
+    assert!(!single_markdown.contains("Poor Metabolizer;"));
 }
 
 #[test]

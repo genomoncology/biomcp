@@ -56,6 +56,11 @@ def expected(path, query):
         "offset": ["0"], "order": ["drugname.asc,recommendationid.asc"],
     }:
         return "recommendation_cyp2d6_20260803.json", None
+    if path == "/recommendation_view" and query == {
+        "lookupkey->>CYP2D6": ["not.is.null"], "select": ["drugname"],
+        "limit": ["200"],
+    }:
+        return "recommendation_drugs_cyp2d6_20260901.json", None
     if path == "/population_frequency_view" and query == {
         "genesymbol": ["eq.CYP2D6"], "select": ["*"], "limit": ["11"],
         "offset": ["0"], "order": ["genesymbol.asc,allele.asc"],
