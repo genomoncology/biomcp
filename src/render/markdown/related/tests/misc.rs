@@ -1,18 +1,11 @@
 #[test]
 fn related_pgx_uses_search_flags() {
-    let pgx = Pgx {
-        section_pagination: std::collections::BTreeMap::new(),
-        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
-        query: "CYP2D6".to_string(),
-        gene: Some("CYP2D6".to_string()),
-        drug: Some("warfarin sodium".to_string()),
-        interactions: Vec::new(),
-        recommendations: Vec::new(),
-        frequencies: Vec::new(),
-        guidelines: Vec::new(),
-        annotations: Vec::new(),
-        annotations_note: None,
-    };
+    let pgx: Pgx = serde_json::from_value(serde_json::json!({
+        "query": "CYP2D6",
+        "gene": "CYP2D6",
+        "drug": "warfarin sodium"
+    }))
+    .expect("PGx fixture");
 
     let related = related_pgx(&pgx);
     assert!(related.contains(&"biomcp search pgx -g CYP2D6".to_string()));

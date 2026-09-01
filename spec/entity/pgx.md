@@ -56,7 +56,7 @@ interaction card stays readable.
 ...
 ## Recommendations (CPIC)
 ...
-| Drug | Phenotype | Activity Score | Recommendation | Classification |'
+| Drug | Genotype | Activity Score | Recommendation | Classification |'
 ```
 
 ## Guideline Summaries

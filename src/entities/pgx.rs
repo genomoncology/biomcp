@@ -879,6 +879,10 @@ fn pick_lookup_value(
         .map(|v| v.trim().to_string())
 }
 
+#[cfg(test)]
+#[path = "pgx/recommendation_tests.rs"]
+mod recommendation_mapping_tests;
+
 fn map_frequencies(rows: &[CpicFrequencyRow]) -> Vec<PgxFrequency> {
     rows.iter()
         .filter_map(|row| {
@@ -1004,7 +1008,6 @@ fn cpic_level_rank(level: Option<&str>) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     #[test]
     fn parse_sections_supports_all() {
@@ -1047,62 +1050,6 @@ mod tests {
             ))
             .expect_err("multi-section offset must fail");
         assert!(error.to_string().contains("exactly one"));
-    }
-
-    #[tokio::test]
-    async fn recommendations_only_uses_one_bounded_recommendation_request() {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("bind CPIC fixture");
-        let base = format!("http://{}", listener.local_addr().expect("fixture address"));
-        let body = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/testdata/sources/cpic/recommendation_cyp2d6_20260803.json"
-        ));
-        let server = tokio::spawn(async move {
-            let (mut stream, _) = listener.accept().await.expect("accept CPIC request");
-            let mut request = Vec::new();
-            loop {
-                let mut chunk = [0_u8; 4096];
-                let read = stream.read(&mut chunk).await.expect("read CPIC request");
-                request.extend_from_slice(&chunk[..read]);
-                if read == 0 || request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
-                    break;
-                }
-            }
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Range: 0-0/1\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-                body.len(),
-                body
-            );
-            stream
-                .write_all(response.as_bytes())
-                .await
-                .expect("write CPIC response");
-            String::from_utf8(request).expect("request text")
-        });
-        let client =
-            CpicClient::with_test_client(crate::sources::test_client().expect("test client"), base);
-        let result = get_with_cpic(
-            "CYP2D6",
-            &PgxGetOptions {
-                sections: vec!["recommendations".into()],
-                limit: 10,
-                offset: 0,
-                full: false,
-            },
-            &client,
-        )
-        .await
-        .expect("focused recommendations");
-
-        assert!(result.interactions.is_empty());
-        assert!(!result.recommendations.is_empty());
-        let request = server.await.expect("CPIC fixture server");
-        assert!(request.starts_with("GET /recommendation_view?"));
-        assert!(request.contains("limit=11"));
-        assert!(request.contains("offset=0"));
-        assert!(!request.contains("pair_view"));
     }
 
     #[test]

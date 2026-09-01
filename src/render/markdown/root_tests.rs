@@ -444,49 +444,36 @@ fn markdown_detail_outputs_label_variant_protein_pgx_and_openfda_sources() {
     assert!(protein_markdown.contains("## Interactions (STRING)"));
     assert!(protein_markdown.contains("## Complexes (ComplexPortal)"));
 
-    let pgx = Pgx {
-        section_pagination: std::collections::BTreeMap::new(),
-        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
-        query: "CYP2D6".to_string(),
-        gene: Some("CYP2D6".to_string()),
-        drug: Some("codeine".to_string()),
-        interactions: vec![crate::entities::pgx::PgxInteraction {
-            genesymbol: "CYP2D6".to_string(),
-            drugname: "codeine".to_string(),
-            cpiclevel: Some("A".to_string()),
-            pgxtesting: Some("Recommended".to_string()),
-            guidelinename: None,
-            guidelineurl: None,
+    let pgx: Pgx = serde_json::from_value(serde_json::json!({
+        "query": "CYP2D6",
+        "gene": "CYP2D6",
+        "drug": "codeine",
+        "interactions": [{
+            "genesymbol": "CYP2D6",
+            "drugname": "codeine",
+            "cpiclevel": "A",
+            "pgxtesting": "Recommended"
         }],
-        recommendations: vec![crate::entities::pgx::PgxRecommendation {
-            drugname: "codeine".to_string(),
-            phenotype: Some("Poor metabolizer".to_string()),
-            activity_score: None,
-            implication: None,
-            recommendation: Some("Avoid codeine".to_string()),
-            classification: Some("Strong".to_string()),
-            population: None,
-            guidelinename: None,
-            guidelineurl: None,
+        "recommendations": [{
+            "drugname": "codeine",
+            "genotype": [["CYP2D6", "Poor metabolizer"]],
+            "recommendation": "Avoid codeine",
+            "classification": "Strong"
         }],
-        frequencies: vec![crate::entities::pgx::PgxFrequency {
-            genesymbol: "CYP2D6".to_string(),
-            allele: "*4".to_string(),
-            population_group: Some("European".to_string()),
-            subject_count: None,
-            frequency: None,
-            min_frequency: None,
-            max_frequency: None,
+        "frequencies": [{
+            "genesymbol": "CYP2D6",
+            "allele": "*4",
+            "population_group": "European"
         }],
-        guidelines: vec![crate::entities::pgx::PgxGuideline {
-            name: "CPIC Guideline".to_string(),
-            url: Some("https://example.org/guideline".to_string()),
-            genes: vec!["CYP2D6".to_string()],
-            drugs: vec!["codeine".to_string()],
+        "guidelines": [{
+            "name": "CPIC Guideline",
+            "url": "https://example.org/guideline",
+            "genes": ["CYP2D6"],
+            "drugs": ["codeine"]
         }],
-        annotations: Vec::new(),
-        annotations_note: Some("PharmGKB note.".to_string()),
-    };
+        "annotations_note": "PharmGKB note."
+    }))
+    .expect("PGx fixture");
     let pgx_markdown = pgx_markdown(&pgx, &["all".to_string()]).expect("pgx");
     assert!(pgx_markdown.contains("Source: CPIC"));
     assert!(pgx_markdown.contains("## Interactions (CPIC)"));

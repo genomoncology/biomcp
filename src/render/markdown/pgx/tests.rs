@@ -1,25 +1,55 @@
 use super::*;
 
+fn empty_pgx(query: &str) -> Pgx {
+    serde_json::from_value(serde_json::json!({"query": query})).expect("empty PGx")
+}
+
 #[test]
 fn pgx_markdown_includes_evidence_links() {
-    let pgx = Pgx {
-        section_pagination: std::collections::BTreeMap::new(),
-        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
-        query: "CYP2D6".to_string(),
-        gene: Some("CYP2D6".to_string()),
-        drug: Some("warfarin".to_string()),
-        interactions: Vec::new(),
-        recommendations: Vec::new(),
-        frequencies: Vec::new(),
-        guidelines: Vec::new(),
-        annotations: Vec::new(),
-        annotations_note: None,
-    };
+    let mut pgx = empty_pgx("CYP2D6");
+    pgx.gene = Some("CYP2D6".to_string());
+    pgx.drug = Some("warfarin".to_string());
 
     let markdown = pgx_markdown(&pgx, &[]).expect("rendered markdown");
     assert!(markdown.contains("[CPIC](https://cpicpgx.org/genes/cyp2d6/)"));
     assert!(markdown.contains("[PharmGKB](https://www.pharmgkb.org/gene/CYP2D6)"));
     assert!(markdown.contains("[PharmGKB](https://www.pharmgkb.org/chemical/warfarin)"));
+}
+
+#[test]
+fn recommendations_render_genotypes_and_page_drug_coverage() {
+    let pgx: Pgx = serde_json::from_value(serde_json::json!({
+        "query": "TPMT",
+        "gene": "TPMT",
+        "recommendations": [{
+            "drugname": "azathioprine",
+            "genotype": [
+                ["TPMT", "Normal Metabolizer"],
+                ["NUDT15", "Poor Metabolizer"]
+            ],
+            "recommendation": "Consider alternative nonthiopurine therapy.",
+            "classification": "Strong"
+        }],
+        "recommendation_drugs": ["azathioprine", "mercaptopurine", "thioguanine"]
+    }))
+    .expect("PGx fixture");
+
+    let markdown = pgx_markdown(&pgx, &["recommendations".into()]).expect("markdown");
+    assert!(
+        markdown.contains("| Drug | Genotype | Activity Score | Recommendation | Classification |")
+    );
+    assert!(markdown.contains(
+        "| azathioprine | TPMT Normal Metabolizer; NUDT15 Poor Metabolizer | - | Consider alternative nonthiopurine therapy. | Strong |"
+    ));
+    assert!(markdown.contains(
+        "Drugs on this page: azathioprine. Also held for TPMT: mercaptopurine, thioguanine."
+    ));
+
+    let json = serde_json::to_value(&pgx).expect("PGx JSON");
+    assert_eq!(
+        json["recommendation_drugs"],
+        serde_json::json!(["azathioprine", "mercaptopurine", "thioguanine"])
+    );
 }
 
 #[test]
@@ -36,19 +66,9 @@ fn recommendations_only_hides_interactions_and_advertises_its_offset() {
             next_offset: Some(10),
         },
     );
-    let pgx = Pgx {
-        section_pagination: pagination,
-        section_outcomes: crate::entities::pgx::default_pgx_section_outcomes(),
-        query: "CYP2D6".into(),
-        gene: Some("CYP2D6".into()),
-        drug: None,
-        interactions: Vec::new(),
-        recommendations: Vec::new(),
-        frequencies: Vec::new(),
-        guidelines: Vec::new(),
-        annotations: Vec::new(),
-        annotations_note: None,
-    };
+    let mut pgx = empty_pgx("CYP2D6");
+    pgx.section_pagination = pagination;
+    pgx.gene = Some("CYP2D6".into());
 
     let markdown = pgx_markdown(&pgx, &["recommendations".into()]).expect("markdown");
     assert!(!markdown.contains("## Interactions"));

@@ -101,8 +101,8 @@
     },
     {
       "path": "src/entities/pgx.rs",
-      "baseline_lines": 1192,
-      "floor_lines": 1192,
+      "baseline_lines": 1139,
+      "floor_lines": 1139,
       "authorized_increase": null
     },
     {

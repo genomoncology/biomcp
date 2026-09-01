@@ -1,0 +1,35 @@
+[
+  {
+    "recommendationid": 8480053,
+    "lookupkey": {"TPMT": "Normal Metabolizer", "NUDT15": "Normal Metabolizer"},
+    "drugname": "azathioprine",
+    "implications": {"TPMT": "Normal thiopurine metabolism", "NUDT15": "Normal thiopurine metabolism"},
+    "drugrecommendation": "Initiate therapy with standard starting dose.",
+    "classification": "Strong",
+    "phenotypes": {"TPMT": "Normal Metabolizer", "NUDT15": "Normal Metabolizer"},
+    "activityscore": {"TPMT": "n/a", "NUDT15": "n/a"},
+    "population": "general"
+  },
+  {
+    "recommendationid": 8480061,
+    "lookupkey": {"TPMT": "Normal Metabolizer", "NUDT15": "Poor Metabolizer"},
+    "drugname": "azathioprine",
+    "implications": {"TPMT": "Normal thiopurine metabolism", "NUDT15": "Greatly increased risk of toxicity"},
+    "drugrecommendation": "Consider alternative nonthiopurine immunosuppressant therapy.",
+    "classification": "Strong",
+    "phenotypes": {"TPMT": "Normal Metabolizer", "NUDT15": "Poor Metabolizer"},
+    "activityscore": {"TPMT": "n/a", "NUDT15": "n/a"},
+    "population": "general"
+  },
+  {
+    "recommendationid": 9000001,
+    "lookupkey": {"VKORC1": "-1639 G>A", "CYP2C9": "*1/*3"},
+    "drugname": "warfarin",
+    "implications": {"VKORC1": "Increased sensitivity", "CYP2C9": "Reduced metabolism"},
+    "drugrecommendation": "Use genotype-guided dosing.",
+    "classification": "Strong",
+    "phenotypes": {"VKORC1": "Increased Sensitivity", "CYP2C9": "Intermediate Metabolizer"},
+    "activityscore": {"VKORC1": "n/a", "CYP2C9": "1.0"},
+    "population": "general"
+  }
+]
