@@ -819,7 +819,7 @@ pub(crate) fn looks_like_symbol(query: &str) -> bool {
         && query.chars().any(|c| c.is_ascii_uppercase())
 }
 
-fn mygene_query_term(query: &str) -> String {
+pub(crate) fn mygene_query_term(query: &str) -> String {
     if looks_like_symbol(query) {
         let escaped = MyGeneClient::escape_query_value(query);
         format!("(symbol:{escaped} OR alias:{escaped})")

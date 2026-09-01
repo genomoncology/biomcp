@@ -6,6 +6,10 @@ use crate::sources::myvariant::{MyVariantClient, MyVariantHit, VariantSearchPara
 use crate::transform;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
+mod diagnostics;
+pub(crate) use diagnostics::SearchDiagnostic;
+use diagnostics::{classify_provider_zero, search_params};
+
 use super::{
     RequestedVariantIdentity, SourceVariantIdentity, VariantArticleResolution,
     VariantArticleResolutionBasis, VariantArticleResolutionContext, VariantIdentityComparison,
@@ -20,6 +24,7 @@ pub(crate) struct VariantSearchPage {
     pub requested_variant: Option<RequestedVariantIdentity>,
     pub resolution: Option<VariantSearchResolution>,
     pub has_more: Option<bool>,
+    pub diagnostics: Vec<SearchDiagnostic>,
 }
 
 fn search_result_quality_score(row: &VariantSearchResult) -> i32 {
@@ -650,34 +655,18 @@ async fn search_page_with_execution(
         (limit.saturating_mul(40)).clamp(limit, 200)
     };
 
-    let params_at = |page_limit, page_offset| VariantSearchParams {
-        gene: filters.gene.clone(),
-        hgvsp: filters.hgvsp.clone(),
-        hgvsc: filters.hgvsc.clone(),
-        rsid: filters.rsid.clone(),
-        protein_alias: filters.protein_alias.clone(),
-        significance: filters.significance.clone(),
-        max_frequency: filters.max_frequency,
-        min_cadd: filters.min_cadd,
-        consequence: filters.consequence.clone(),
-        review_status: filters.review_status.clone(),
-        population: filters.population.clone(),
-        revel_min: filters.revel_min,
-        gerp_min: filters.gerp_min,
-        tumor_site: filters.tumor_site.clone(),
-        condition: filters.condition.clone(),
-        impact: filters.impact.clone(),
-        lof: filters.lof,
-        has: filters.has.clone(),
-        missing: filters.missing.clone(),
-        therapy: filters.therapy.clone(),
-        limit: page_limit,
-        offset: page_offset,
+    let params_at = |page_limit, page_offset| {
+        search_params(filters, filters.gene.clone(), page_limit, page_offset)
     };
 
     let client = MyVariantClient::new()?;
     let Some(requested) = filters.requested_identity.as_ref() else {
-        let resp = client.search(&params_at(fetch_limit, offset)).await?;
+        let initial = client.search(&params_at(fetch_limit, offset)).await?;
+        let (resp, diagnostics) = if initial.total == Some(0) {
+            classify_provider_zero(&client, filters, initial, fetch_limit, offset).await?
+        } else {
+            (initial, Vec::new())
+        };
         let mut out = resp
             .hits
             .iter()
@@ -692,6 +681,7 @@ async fn search_page_with_execution(
             requested_variant: None,
             resolution: None,
             has_more: None,
+            diagnostics,
         });
     };
 
@@ -702,6 +692,7 @@ async fn search_page_with_execution(
     let mut seen = HashSet::new();
     let mut saw_indeterminate = false;
     let mut exhaustive = false;
+    let mut diagnostics = Vec::new();
     while provider_offset < MAX_CANDIDATES {
         let started = execution.and_then(|execution| execution.reserve("resolution"));
         if execution.is_some() && started.is_none() {
@@ -719,7 +710,13 @@ async fn search_page_with_execution(
                 usize::from(result.is_ok()),
             );
         }
-        let resp = result?;
+        let initial = result?;
+        let (resp, classified) = if provider_offset == 0 && initial.total == Some(0) {
+            classify_provider_zero(&client, filters, initial, SOURCE_PAGE, provider_offset).await?
+        } else {
+            (initial, Vec::new())
+        };
+        diagnostics.extend(classified);
         let provider_total = resp.total;
         let hit_count = resp.hits.len();
         let examined_count = hit_count.min(MAX_CANDIDATES - provider_offset);
@@ -735,14 +732,16 @@ async fn search_page_with_execution(
             break;
         }
     }
-    Ok(finalize_exact_page(
+    let mut page = finalize_exact_page(
         requested,
         retained,
         offset,
         limit,
         saw_indeterminate,
         exhaustive,
-    ))
+    );
+    page.diagnostics = diagnostics;
+    Ok(page)
 }
 
 fn candidate_scan_exhaustive(
@@ -802,6 +801,7 @@ fn finalize_exact_page(
             exhaustive,
         }),
         has_more: Some(has_more),
+        diagnostics: Vec::new(),
     }
 }
 

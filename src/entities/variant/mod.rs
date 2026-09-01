@@ -52,7 +52,7 @@ pub(crate) use self::resolution::{
     VariantSearchResolution, compare_variant_identity, gnomad_variant_slug, is_rsid,
     normalize_genomic_coordinate, normalize_protein_change, protein_change_segment,
 };
-pub(crate) use self::search::resolve_article_variant_identity;
+pub(crate) use self::search::{SearchDiagnostic, resolve_article_variant_identity};
 
 pub(crate) fn default_variant_section_outcomes() -> SectionOutcomes {
     SectionOutcomes::with_keys(&outcome_keys("variant"))

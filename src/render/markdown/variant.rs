@@ -256,7 +256,7 @@ pub fn variant_search_markdown_with_footer(
     results: &[VariantSearchResult],
     pagination_footer: &str,
 ) -> Result<String, BioMcpError> {
-    variant_search_markdown_with_context(query, results, pagination_footer, None, None)
+    variant_search_markdown_with_context(query, results, pagination_footer, None, None, &[])
 }
 
 pub fn variant_search_markdown_with_context(
@@ -265,12 +265,14 @@ pub fn variant_search_markdown_with_context(
     pagination_footer: &str,
     gene_filter: Option<&str>,
     condition_filter: Option<&str>,
+    diagnostics: &[crate::entities::variant::SearchDiagnostic],
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("variant_search.md.j2")?;
     let body = tmpl.render(context! {
         query => query,
         count => results.len(),
         results => results,
+        diagnostics => diagnostics,
         related_block => format_related_block(related_variant_search_results(
             results,
             gene_filter,

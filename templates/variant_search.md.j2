@@ -3,6 +3,12 @@
 Found: {{ count }} variant(s)
 {% if query %}Query: {{ query }}{% endif %}
 
+{% if diagnostics %}
+## Filter diagnostics
+{% for diagnostic in diagnostics %}
+{{ diagnostic }}
+{% endfor %}
+{% endif %}
 {% if count == 0 -%}
 No variants found matching the filters.
 {% else -%}

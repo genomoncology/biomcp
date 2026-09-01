@@ -565,6 +565,7 @@ fn variant_search_markdown_renders_related_commands_from_context() {
         "",
         Some("SCN5A"),
         Some("Brugada"),
+        &[],
     )
     .expect("rendered markdown");
 
