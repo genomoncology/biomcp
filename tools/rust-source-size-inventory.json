@@ -232,12 +232,12 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1034,
+      "baseline_lines": 1051,
       "floor_lines": 1033,
       "authorized_increase": {
-        "ticket": "1056",
-        "delta": 1,
-        "reason": "MyVariant document paths encode repeat-notation brackets for exact-ID lookup.",
+        "ticket": "1091",
+        "delta": 18,
+        "reason": "Probe trusted MyGene aliases without weakening validation of user-supplied gene symbols.",
         "removal_condition": "Remove this allowance when MyVariant request planning is decomposed."
       }
     },

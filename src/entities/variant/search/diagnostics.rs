@@ -267,7 +267,9 @@ pub(super) async fn classify_provider_zero(
                     if candidate.is_empty() || key == requested_key || !seen.insert(key) {
                         continue;
                     }
-                    let alias_response = client.search(&gene_only_params(candidate)).await?;
+                    let alias_response = client
+                        .search_gene_alias(&gene_only_params(candidate))
+                        .await?;
                     let alias_total = alias_response.total.unwrap_or(alias_response.hits.len());
                     if alias_total == 0 {
                         continue;
@@ -280,7 +282,7 @@ pub(super) async fn classify_provider_zero(
                         total: alias_total,
                     });
                     response = client
-                        .search(&search_params(
+                        .search_gene_alias(&search_params(
                             filters,
                             Some(candidate.to_string()),
                             limit,

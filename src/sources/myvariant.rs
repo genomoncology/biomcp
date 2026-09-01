@@ -441,6 +441,13 @@ impl MyVariantClient {
 
     /// Build the outbound filter-driven `/query` request (pure — Tier-2 testable).
     pub(crate) fn search_plan(params: &VariantSearchParams) -> Result<RequestPlan, BioMcpError> {
+        Self::search_plan_inner(params, true)
+    }
+
+    fn search_plan_inner(
+        params: &VariantSearchParams,
+        validate_gene: bool,
+    ) -> Result<RequestPlan, BioMcpError> {
         crate::sources::validate_biothings_result_window(
             "MyVariant search",
             params.limit,
@@ -456,7 +463,7 @@ impl MyVariantClient {
             .filter(|v| !v.is_empty());
 
         if let Some(gene) = gene {
-            if !is_valid_gene_symbol(gene) {
+            if validate_gene && !is_valid_gene_symbol(gene) {
                 return Err(BioMcpError::InvalidArgument(
                     "Gene symbol filter must contain only letters, numbers, '_' or '-'".into(),
                 ));
@@ -687,6 +694,16 @@ impl MyVariantClient {
         params: &VariantSearchParams,
     ) -> Result<MyVariantSearchResponse, BioMcpError> {
         let plan = Self::search_plan(params)?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        self.get_json(req).await
+    }
+
+    /// Search with a trusted alias returned by MyGene rather than user input.
+    pub(crate) async fn search_gene_alias(
+        &self,
+        params: &VariantSearchParams,
+    ) -> Result<MyVariantSearchResponse, BioMcpError> {
+        let plan = Self::search_plan_inner(params, false)?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         self.get_json(req).await
     }
