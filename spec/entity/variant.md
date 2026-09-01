@@ -355,6 +355,67 @@ default card without scraping markdown helper text.
 Long-form protein filters should normalize to the same compact spelling that the
 short-form query uses, rather than leaking a second variant identifier shape.
 
+## Variant filter diagnostics
+
+A current gene symbol that dbNSFP does not index should retry a known MyGene
+alias, return the alias-backed rows, and make that substitution explicit in the
+JSON envelope.
+
+```bash
+current="$(biomcp --json search variant -g H3-3A --limit 1)"
+indexed="$(biomcp --json search variant -g H3F3A --limit 1)"
+jq -cn --argjson current "$current" --argjson indexed "$indexed" \
+  '{same_rows: ($current.results == $indexed.results), total: $current.pagination.total, diagnostics: $current.diagnostics}' \
+  | mustmatch like '{"same_rows":true,"total":1156,"diagnostics":["gene H3-3A matched no dbNSFP records; retried as H3F3A and matched 1156"]}'
+```
+
+An already indexed gene must keep its direct result without claiming that an
+alias retry happened.
+
+```bash
+biomcp --json search variant -g H3F3A --limit 1 \
+  | jq -c '{count, total: .pagination.total, diagnostics: (.diagnostics // [])}' \
+  | mustmatch like '{"count":1,"total":1156,"diagnostics":[]}'
+```
+
+If neither a symbol nor any known alias has dbNSFP rows, Markdown should explain
+that the zero is a checked absence and render the common diagnostics section.
+
+```bash
+biomcp search variant -g NOTAREALGENE1091 --limit 1 \
+  | grep -E '^## Filter diagnostics$|^gene NOTAREALGENE1091 matched no dbNSFP records under any known symbol or alias$' \
+  | mustmatch like '## Filter diagnostics
+gene NOTAREALGENE1091 matched no dbNSFP records under any known symbol or alias'
+```
+
+A parseable protein change that has no exact row may report bounded positions
+for the same residue pair, but it must not silently renumber the request.
+
+```bash
+biomcp --json search variant -g H3F3A --hgvsp K27M --limit 1 \
+  | jq -c '{count, status: .resolution.status, diagnostics}' \
+  | mustmatch like '{"count":0,"status":"unresolved","diagnostics":["no dbNSFP record for H3F3A p.K27M; dbNSFP holds K to M at positions 19, 28, 37, 57"]}'
+```
+
+The indexed coordinate remains resolved and does not run or report the
+position probe.
+
+```bash
+biomcp --json search variant -g H3F3A --hgvsp K28M --limit 1 \
+  | jq -c '{count, status: .resolution.status, diagnostics: (.diagnostics // [])}' \
+  | mustmatch like '{"count":1,"status":"resolved","diagnostics":[]}'
+```
+
+When each filter has provider rows but their intersection does not, the empty
+result should be reported as an applied-filter answer rather than a broken
+lookup.
+
+```bash
+biomcp --json search variant -g H3F3A --min-cadd 99 --limit 1 \
+  | jq -c '{count, diagnostics}' \
+  | mustmatch like '{"count":0,"diagnostics":["filters applied; no record matched"]}'
+```
+
 ## Strict exact variant identity
 
 Exact protein search keeps the supplied identity separate from its normalized

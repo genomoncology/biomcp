@@ -66,6 +66,21 @@ RS334_GRCH38_RESPONSE = {
     "clinvar": {"gene": {"symbol": "HBB"}},
 }
 MYD88_L265P_RESPONSE = (ROOT / "testdata/sources/myvariant/search_myd88_l265p_20260806.json").read_bytes()
+H3F3A_K28M_HIT = {
+    "_id": "chr1:g.226252135A>T",
+    "dbnsfp": {
+        "genename": "H3F3A",
+        "hgvsp": "p.K28M",
+        "hgvsc": "NM_002107.4:c.83A>T",
+    },
+}
+H3F3A_POSITION_HITS = [
+    {
+        "_id": f"chr1:g.{position}A>T",
+        "dbnsfp": {"genename": "H3F3A", "hgvsp": f"p.K{position}M"},
+    }
+    for position in (19, 28, 37, 57)
+]
 CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
     "/api/hotspots/single/byGene/MYD88": (ROOT / "testdata/sources/cancerhotspots/by_gene_myd88_20260805.json").read_bytes(),
@@ -151,6 +166,36 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/v1/query":
             query = parse_qs(parsed.query).get("q", [""])[0]
             expected_proteins = ('dbnsfp.hgvsp:"p.M1783I"', 'dbnsfp.hgvsp:"p.M16I"')
+            if query == "dbnsfp.genename:H3\\-3A":
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
+            if query == "dbnsfp.genename:H3F3A":
+                send_json(self, 200, {"total": 1156, "hits": [H3F3A_K28M_HIT]})
+                return
+            if query == 'dbnsfp.genename:H3F3A AND dbnsfp.hgvsp:"p.K27M"':
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
+            if query == 'dbnsfp.genename:H3F3A AND dbnsfp.hgvsp:"p.K28M"':
+                send_json(self, 200, {"total": 1, "hits": [H3F3A_K28M_HIT]})
+                return
+            if query == "dbnsfp.genename:H3F3A AND dbnsfp.hgvsp:p.K*M":
+                send_json(self, 200, {"total": 4, "hits": H3F3A_POSITION_HITS})
+                return
+            if query == "dbnsfp.genename:NOTAREALGENE1091":
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
+            if query == "dbnsfp.genename:H3F3A AND cadd.phred:[99 TO *]":
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
+            if query == "cadd.phred:[99 TO *]":
+                send_json(self, 200, {
+                    "total": 1,
+                    "hits": [{
+                        "_id": "chr2:g.1091A>T",
+                        "dbnsfp": {"genename": "OTHER", "hgvsp": "p.A1V"},
+                    }],
+                })
+                return
             if query == "dbsnp.rsid:rs876657378":
                 send_json(self, 200, {"total": 1, "hits": [json.loads(SMARCA4_REPEAT_RESPONSE)]})
                 return

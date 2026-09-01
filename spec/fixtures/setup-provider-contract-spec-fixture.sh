@@ -65,6 +65,11 @@ MYCHEM = {
 }
 MYGENE = {
     "(symbol:BRAF OR alias:BRAF)": fixture("mygene/search_braf_20260811.json"),
+    "(symbol:H3\\-3A OR alias:H3\\-3A)": json.dumps({
+        "total": 1,
+        "hits": [{"_id": "3020", "symbol": "H3-3A", "alias": ["H3F3A"]}],
+    }).encode("utf-8"),
+    "(symbol:NOTAREALGENE1091 OR alias:NOTAREALGENE1091)": b'{"total":0,"hits":[]}',
     'symbol:"BRAF"': fixture("mygene/get_braf_20260811.json"),
     'symbol:"PD\\-L1"': fixture("mygene/get_pdl1_empty_20260811.json"),
     "(symbol:PD\\-L1 OR alias:PD\\-L1)": fixture("mygene/search_pdl1_20260811.json"),
