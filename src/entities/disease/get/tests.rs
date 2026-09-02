@@ -103,6 +103,9 @@ async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
     // caller's differently cased term to survive the detail fetch.
     assert_eq!(disease.name, "Medulloblastoma");
     assert_eq!(disease.recruiting_trial_count, Some(36));
+    let markdown = crate::render::markdown::disease_markdown(&disease, &[])
+        .expect("resolved disease card should render");
+    assert!(markdown.contains("Disease label unavailable; using the requested term."));
     let commands = crate::render::markdown::related_disease(&disease);
     for command in [
         "biomcp search trial -c \"Medulloblastoma\"",
