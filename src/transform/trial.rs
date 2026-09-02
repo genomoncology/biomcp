@@ -852,8 +852,9 @@ mod tests {
 
             let markdown =
                 crate::render::markdown::trial_markdown(&trial, &[]).expect("trial markdown");
-            assert!(markdown.contains(&format!("Status: {status}")));
-            assert!(markdown.contains(&reason));
+            assert!(markdown.contains(&format!(
+                "Status: {status} | Why stopped: {reason}"
+            )));
         }
     }
 
@@ -878,13 +879,32 @@ mod tests {
         );
         assert!(json["why_stopped"].is_null());
 
-        let markdown = crate::render::markdown::trial_markdown(&trial, &[])
-            .expect("trial markdown")
-            .to_ascii_lowercase();
-        assert!(
-            markdown.contains("not provided"),
-            "stopped trial Markdown must say when the registry provided no reason"
-        );
+        let markdown =
+            crate::render::markdown::trial_markdown(&trial, &[]).expect("trial markdown");
+        assert!(markdown.contains(
+            "Status: WITHDRAWN | Why stopped: Not provided by ClinicalTrials.gov"
+        ));
+
+        let ordinary_study: CtGovStudy = serde_json::from_value(json!({
+            "protocolSection": {
+                "identificationModule": {
+                    "nctId": "NCT03515786",
+                    "briefTitle": "Recruiting trial"
+                },
+                "statusModule": {"overallStatus": "RECRUITING"}
+            }
+        }))
+        .expect("ordinary study");
+        let ordinary_trial = from_ctgov_study(&ordinary_study);
+        let ordinary_json = serde_json::to_value(&ordinary_trial).expect("ordinary trial JSON");
+        assert!(!ordinary_json
+            .as_object()
+            .expect("ordinary trial object")
+            .contains_key("why_stopped"));
+        let ordinary_markdown =
+            crate::render::markdown::trial_markdown(&ordinary_trial, &[])
+                .expect("ordinary trial Markdown");
+        assert!(!ordinary_markdown.contains("Why stopped:"));
     }
 
     #[test]
