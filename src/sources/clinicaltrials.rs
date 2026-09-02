@@ -24,6 +24,7 @@ const CTGOV_GET_FIELDS_BASE: &[&str] = &[
     "Condition",
     "InterventionName",
     "InterventionOtherName",
+    "InterventionType",
     "LeadSponsorName",
     "EnrollmentCount",
     "BriefSummary",
@@ -464,6 +465,7 @@ pub struct CtGovArmsInterventionsModule {
 #[serde(rename_all = "camelCase")]
 pub struct CtGovIntervention {
     pub name: Option<String>,
+    #[serde(rename = "type")]
     pub intervention_type: Option<String>,
     pub description: Option<String>,
     #[serde(default)]
@@ -476,6 +478,7 @@ pub struct CtGovIntervention {
 #[serde(rename_all = "camelCase")]
 pub struct CtGovArmGroup {
     pub label: Option<String>,
+    #[serde(rename = "type")]
     pub arm_group_type: Option<String>,
     pub description: Option<String>,
     #[serde(default)]
@@ -579,6 +582,7 @@ pub struct CtGovOutcomesModule {
 #[serde(rename_all = "camelCase")]
 pub struct CtGovReference {
     pub pmid: Option<String>,
+    #[serde(rename = "type")]
     pub reference_type: Option<String>,
     pub citation: Option<String>,
 }
