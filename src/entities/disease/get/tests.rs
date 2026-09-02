@@ -65,7 +65,7 @@ async fn disease_card_fixture_server()
                     r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
                 } else if request.starts_with("GET /disease/MONDO:0007959") {
                     r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]}}"#
-                } else if request.contains("query.cond=medulloblastoma") {
+                } else if request.contains("query.cond=Medulloblastoma") {
                     r#"{"studies":[],"totalCount":36}"#
                 } else {
                     r#"{"studies":[],"totalCount":0}"#
@@ -94,24 +94,26 @@ async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
         "://unavailable-opentargets-fixture",
     );
 
-    let disease = get("medulloblastoma", &[])
+    let disease = get("Medulloblastoma", &[])
         .await
         .expect("resolved disease card");
     server.abort();
 
-    assert_eq!(disease.name, "medulloblastoma");
+    // The resolving hit's label is lowercase. These expectations require the
+    // caller's differently cased term to survive the detail fetch.
+    assert_eq!(disease.name, "Medulloblastoma");
     assert_eq!(disease.recruiting_trial_count, Some(36));
     let commands = crate::render::markdown::related_disease(&disease);
     for command in [
-        "biomcp search trial -c \"medulloblastoma\"",
-        "biomcp search article -d \"medulloblastoma\"",
-        "biomcp search diagnostic --disease \"medulloblastoma\"",
-        "biomcp search drug --indication \"medulloblastoma\"",
+        "biomcp search trial -c \"Medulloblastoma\"",
+        "biomcp search article -d \"Medulloblastoma\"",
+        "biomcp search diagnostic --disease \"Medulloblastoma\"",
+        "biomcp search drug --indication \"Medulloblastoma\"",
     ] {
         assert!(commands.iter().any(|candidate| candidate == command));
     }
     let requests = requests.lock().expect("lock fixture requests").join("\n");
-    assert!(requests.contains("query.cond=medulloblastoma"));
+    assert!(requests.contains("query.cond=Medulloblastoma"));
 }
 
 #[test]
