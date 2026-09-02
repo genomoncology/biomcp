@@ -1,6 +1,8 @@
 use super::{DiseaseCommand, DiseaseGetArgs, DiseaseSearchArgs};
 use crate::cli::CommandOutcome;
 
+const DISEASE_LABEL_FALLBACK_NOTICE: &str = "Disease label unavailable; using the requested term.";
+
 pub(super) fn validate_related_limit(
     command_name: &str,
     limit: usize,
@@ -22,8 +24,13 @@ pub(in crate::cli) async fn handle_get(
     };
     let (sections, json_override) = super::super::extract_json_from_sections(raw_sections);
     let json_output = json || json_override;
-    let disease = crate::entities::disease::get(name_or_id, &sections).await?;
-    let text = render_loaded_card(&disease, &sections, json_output)?;
+    let context = crate::entities::disease::get_with_context(name_or_id, &sections).await?;
+    let text = render_loaded_card_with_context(
+        &context.disease,
+        &sections,
+        json_output,
+        context.used_requested_label,
+    )?;
     Ok(CommandOutcome::stdout(text))
 }
 
@@ -44,6 +51,32 @@ pub(crate) fn render_loaded_card(
         Ok(crate::render::markdown::disease_markdown(
             disease, sections,
         )?)
+    }
+}
+
+fn render_loaded_card_with_context(
+    disease: &crate::entities::disease::Disease,
+    sections: &[String],
+    json_output: bool,
+    used_requested_label: bool,
+) -> anyhow::Result<String> {
+    if !used_requested_label {
+        return render_loaded_card(disease, sections, json_output);
+    }
+    if json_output {
+        let mut card: serde_json::Value =
+            serde_json::from_str(&render_loaded_card(disease, sections, true)?)?;
+        card["_meta"]["identity_notice"] =
+            serde_json::Value::String(DISEASE_LABEL_FALLBACK_NOTICE.to_string());
+        Ok(crate::render::json::to_pretty(&card)?)
+    } else {
+        Ok(
+            crate::render::markdown::disease_markdown_with_identity_notice(
+                disease,
+                sections,
+                Some(DISEASE_LABEL_FALLBACK_NOTICE),
+            )?,
+        )
     }
 }
 

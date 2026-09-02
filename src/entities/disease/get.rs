@@ -130,7 +130,19 @@ fn unknown_disease_section_message(
     )
 }
 
+pub(crate) struct DiseaseGetContext {
+    pub(crate) disease: Disease,
+    pub(crate) used_requested_label: bool,
+}
+
 pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMcpError> {
+    Ok(get_with_context(name_or_id, sections).await?.disease)
+}
+
+pub(crate) async fn get_with_context(
+    name_or_id: &str,
+    sections: &[String],
+) -> Result<DiseaseGetContext, BioMcpError> {
     let parsed_sections = parse_sections_for_name(name_or_id, sections)?;
     let name_or_id = name_or_id.trim();
     if name_or_id.is_empty() {
@@ -158,7 +170,10 @@ pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMc
                 enrich_base_context(&mut disease).await;
             }
             apply_requested_sections(&mut disease, parsed_sections, Some(name_or_id)).await?;
-            return Ok(disease);
+            return Ok(DiseaseGetContext {
+                disease,
+                used_requested_label: false,
+            });
         }
         DiseaseLookupInput::CrosswalkId(kind, value) => {
             let resp = client
@@ -179,7 +194,10 @@ pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMc
                 enrich_base_context(&mut disease).await;
             }
             apply_requested_sections(&mut disease, parsed_sections, Some(name_or_id)).await?;
-            return Ok(disease);
+            return Ok(DiseaseGetContext {
+                disease,
+                used_requested_label: false,
+            });
         }
         DiseaseLookupInput::FreeText => {}
     }
@@ -191,12 +209,20 @@ pub async fn get(name_or_id: &str, sections: &[String]) -> Result<Disease, BioMc
     if let Err(err) = enrich_sparse_disease_identity(&mut disease).await {
         warn!("OLS4 unavailable for sparse disease identity repair: {err}");
     }
+    let used_requested_label = disease.name.trim().is_empty()
+        || disease.name.trim().eq_ignore_ascii_case(disease.id.trim());
+    if used_requested_label {
+        disease.name = name_or_id.to_string();
+    }
     disease.parents = resolve_parent_names(&client, &disease.parents).await;
     if !parsed_sections.explicit {
         enrich_base_context(&mut disease).await;
     }
     apply_requested_sections(&mut disease, parsed_sections, Some(name_or_id)).await?;
-    Ok(disease)
+    Ok(DiseaseGetContext {
+        disease,
+        used_requested_label,
+    })
 }
 
 async fn resolve_parent_label(client: &MyDiseaseClient, parent_id: &str) -> String {

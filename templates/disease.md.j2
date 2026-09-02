@@ -5,6 +5,10 @@
 
 ID: {{ id }}
 
+{% if identity_notice -%}
+{{ identity_notice }}
+
+{% endif -%}
 {% if definition -%}
 ## Definition (MyDisease.info)
 

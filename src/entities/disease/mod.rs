@@ -335,6 +335,7 @@ pub(crate) mod tests;
 
 pub(crate) use self::fallback::fallback_search_page;
 pub use self::get::get;
+pub(crate) use self::get::get_with_context;
 pub(crate) use self::resolution::resolve_disease_hit_by_name;
 pub(crate) use self::search::validate_phenotype_search_window;
 #[allow(unused_imports)]

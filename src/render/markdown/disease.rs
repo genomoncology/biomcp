@@ -237,6 +237,14 @@ pub fn disease_markdown(
     disease: &Disease,
     requested_sections: &[String],
 ) -> Result<String, BioMcpError> {
+    disease_markdown_with_identity_notice(disease, requested_sections, None)
+}
+
+pub(crate) fn disease_markdown_with_identity_notice(
+    disease: &Disease,
+    requested_sections: &[String],
+    identity_notice: Option<&str>,
+) -> Result<String, BioMcpError> {
     let mut xrefs: Vec<XrefRow> = disease
         .xrefs
         .iter()
@@ -309,6 +317,7 @@ pub fn disease_markdown(
         section_header => section_header(disease_label, requested_sections),
         id => &disease.id,
         name => &disease.name,
+        identity_notice => identity_notice,
         definition => &disease.definition,
         synonyms => &disease.synonyms,
         parents => &disease.parents,

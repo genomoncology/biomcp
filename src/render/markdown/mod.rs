@@ -55,6 +55,7 @@ pub use self::diagnostic::{
 };
 #[allow(unused_imports)]
 pub use self::discovery::{render_discover, search_all_markdown};
+pub(crate) use self::disease::disease_markdown_with_identity_notice;
 #[allow(unused_imports)]
 pub use self::disease::{
     disease_markdown, disease_search_markdown, disease_search_markdown_with_footer,
