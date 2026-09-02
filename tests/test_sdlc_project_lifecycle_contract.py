@@ -154,20 +154,13 @@ def _witness_environment(tmp_path: Path, tip: str) -> dict[str, str]:
     capture = bot_home / "runs" / run_id / "captures" / "witness"
     capture.parent.mkdir(parents=True)
     capture.write_text(f"verified {tip}\n", encoding="utf-8")
-    event = json.dumps(
-        {
-            "event": "check",
-            "check": "gate",
-            "file": "flows/build/05-verify/gate/06-witness",
-            "exit": 0,
-            "capture": "captures/witness",
-        }
-    )
     bot = tmp_path / "witness-bot"
     bot.write_text(
         "#!/bin/sh\n"
-        f"[ \"$1 $2 $3\" = \"show {run_id} --json\" ] || exit 2\n"
-        f"printf '%s\\n' {shlex.quote(event)}\n",
+        f'[ "$1 $2 $3" = "show {run_id} --check" ] || exit 2\n'
+        '[ "$4" = flows/build/05-verify/gate/06-witness ] || exit 2\n'
+        f'[ "$5 $6" = "--home {bot_home}" ] || exit 2\n'
+        f"cat {shlex.quote(str(capture))}\n",
         encoding="utf-8",
     )
     bot.chmod(0o755)
@@ -221,12 +214,12 @@ def _clone(origin: Path, destination: Path) -> Path:
     [
         (
             "before",
-            "d7070670a2922ecae40e7f445dd575d509efb5b834a9fb8d8cdc93032f10e1fa",
+            "1eb6fa35d30737896a8f108c9c61336b276686c83b675c87e283844f93152c61",
             True,
         ),
         (
             "failure",
-            "b513850fc6e07560a7f204a6d8b3ec50aeed95e345f9686dd79fa0592753246d",
+            "820a832cbfd30653611522b717afea88c9d68be78efaf3833eeb0686a5917c06",
             True,
         ),
         (
@@ -236,7 +229,7 @@ def _clone(origin: Path, destination: Path) -> Path:
         ),
         (
             "success",
-            "19714c78fb267ee6747b7ea21380ecc68fa141f6bae5dd00142f565cc8e9cbf1",
+            "8e86643e5618b9ea0cffd5ea76631b69fe9ca1cb53ad39f7715ffdbd5a95ef1c",
             True,
         ),
         (
@@ -246,7 +239,7 @@ def _clone(origin: Path, destination: Path) -> Path:
         ),
         (
             "provenance.json",
-            "4335498a6dc52cddee1b4e7fc560af5bdca5ff8456a7bfd631cbb8f7302ad6aa",
+            "b0255fad1430cc30fd376a9cfbc7e38f8d30fdcb2d0fbbd8ef8c3131b218cb33",
             None,
         ),
     ],

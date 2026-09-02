@@ -39,6 +39,11 @@
 #            not ours to remove; a human reads the reason on stderr
 #          any other nonzero would be recorded as a fault; either way the
 #            settlement the factory already decided does not change
+if ((BASH_VERSINFO[0] < 3 || (BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] < 2))); then
+	printf 'Bash %s is unsupported; Bash 3.2 or newer is required\n' "$BASH_VERSION" >&2
+	exit 2
+fi
+
 set -euo pipefail
 
 git_with_optional_timeout() {
@@ -156,14 +161,17 @@ lexical_path() {
 }
 
 orphan_owned() {
-	local candidate=$1 candidate_path pointer normalized
-	local -a lines=()
+	local candidate=$1 candidate_path pointer normalized extra
 	[ -d "$candidate" ] || return 1
 	[ -f "$candidate/.git" ] && [ ! -L "$candidate/.git" ] || return 1
-	mapfile -t lines <"$candidate/.git" || return 1
-	[ "${#lines[@]}" -eq 1 ] || return 1
-	case "${lines[0]}" in
-	"gitdir: "?*) pointer=${lines[0]#gitdir: } ;;
+	{
+		IFS= read -r pointer || [ -n "$pointer" ] || return 1
+		if IFS= read -r extra || [ -n "$extra" ]; then
+			return 1
+		fi
+	} <"$candidate/.git" || return 1
+	case "$pointer" in
+	"gitdir: "?*) pointer=${pointer#gitdir: } ;;
 	*) return 1 ;;
 	esac
 	candidate_path=$(CDPATH='' cd -- "$candidate" && pwd -P) || return 1
