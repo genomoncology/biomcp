@@ -21,17 +21,21 @@ So a user who writes `--status active` against NCI receives trials closed to acc
 
 Verified in `src/entities/trial/search/normalization.rs` and `src/entities/trial/search/nci.rs` on 2026-09-02 against `0.9.0-dev.6`.
 
-## Why this is a draft
+## The ruling
 
-The fix requires a ruling Ian owns, because both answers cost something outward-facing.
+Ian ruled on 2026-09-02: **refuse `active` as ambiguous.** Both sources, one behavior.
 
-**Refuse `active` as ambiguous**, with an error naming `recruiting` and `active_not_recruiting`, applied to both sources. This is BioData's recommendation. The cost is that a working input becomes an error, so any script passing `--status active` breaks.
+`--status active` returns a non-zero exit and an error naming the two unambiguous tokens. Write the error so a clinician can act on it without reading the source:
 
-**Map `active` to NCI's meaning.** Nothing breaks today. The cost is that one token keeps meaning opposite things depending on which source answered, which relocates the trap rather than removing it.
+```
+--status active is ambiguous: NCI uses "active" for a trial that is open and accruing, ClinicalTrials.gov uses it for one that has stopped accruing. Use --status recruiting for open and accruing, or --status active_not_recruiting for enrolled and no longer accruing.
+```
 
-My recommendation is to refuse. A token that silently means the opposite of what a clinician intends is worse than an error that names the two unambiguous words, and 0.9 before a 1.0 rebuild is the cheapest moment this change will ever have. The cost is real and it is a public CLI contract change, which is why it is Ian's call and not mine.
+The refusal applies to both sources, and it applies before any request goes out. Do not map the token on one source and refuse it on the other.
 
-Whichever way it goes, write the decision into this ticket before promoting it, because the agent cannot ask.
+This breaks any script that passes `--status active` today. That cost is accepted. A token that silently returns the opposite of what a clinician asked for is worse than an error naming the two words that work, and 0.9 before a 1.0 rebuild is the cheapest moment this change will ever have.
+
+Note the release: the change belongs in the changelog as a breaking CLI change, with the two replacement tokens named.
 
 ## Required behavior
 
