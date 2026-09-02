@@ -362,114 +362,13 @@ BASE=$(git -C "$REPO" rev-parse --verify 'origin/main^{commit}')
 FETCHED_MAIN_TIP=$BASE
 LANDING_RECEIPT=
 
-# Parse JSONL records and select the common capture from matching events. Reject
-# malformed lines rather than extracting text that only resembles run evidence.
-select_witness_capture() {
-	awk -v witness_file="$1" '
-	function ws() { while (i <= n && substr(line, i, 1) ~ /[ \t\r\n]/) i++ }
-	function string(    c, esc, hex) {
-		if (substr(line, i, 1) != "\"") return 0
-		i++; value = ""
-		while (i <= n) {
-			c = substr(line, i++, 1)
-			if (c == "\"") { type = "string"; return 1 }
-			if (c == "\\") {
-				if (i > n) return 0
-				esc = substr(line, i++, 1)
-				if (esc == "u") {
-					hex = substr(line, i, 4)
-					if (length(hex) != 4 || hex !~ /^[0-9a-fA-F]{4}$/) return 0
-					i += 4; value = value "?"
-				} else if (esc ~ /^[\"\\\/bfnrt]$/) {
-					value = value ((esc == "\"" || esc == "\\" || esc == "/") ? esc : "?")
-				} else return 0
-			} else {
-				if (c ~ /[[:cntrl:]]/) return 0
-				value = value c
-			}
-		}
-		return 0
-	}
-	function scalar(    rest, token) {
-		ws(); rest = substr(line, i)
-		if (substr(rest, 1, 1) == "\"") return string()
-		if (match(rest, /^-?(0|[1-9][0-9]*)([.][0-9]+)?([eE][+-]?[0-9]+)?/)) {
-			token = substr(rest, 1, RLENGTH); i += RLENGTH; type = "number"; value = token; return 1
-		}
-		if (substr(rest, 1, 4) == "true") { i += 4; type = "true"; value = "true"; return 1 }
-		if (substr(rest, 1, 5) == "false") { i += 5; type = "false"; value = "false"; return 1 }
-		if (substr(rest, 1, 4) == "null") { i += 4; type = "null"; value = "null"; return 1 }
-		return 0
-	}
-	function any_value(    c) {
-		ws(); c = substr(line, i, 1)
-		if (c == "{") return object()
-		if (c == "[") return array()
-		return scalar()
-	}
-	function object(    key) {
-		if (substr(line, i++, 1) != "{") return 0
-		ws(); if (substr(line, i, 1) == "}") { i++; type = "object"; return 1 }
-		while (i <= n) {
-			if (!string()) return 0; ws()
-			if (substr(line, i++, 1) != ":" || !any_value()) return 0
-			ws(); if (substr(line, i, 1) == "}") { i++; type = "object"; value = ""; return 1 }
-			if (substr(line, i++, 1) != ",") return 0
-			ws()
-		}
-		return 0
-	}
-	function array() {
-		if (substr(line, i++, 1) != "[") return 0
-		ws(); if (substr(line, i, 1) == "]") { i++; type = "array"; return 1 }
-		while (i <= n) {
-			if (!any_value()) return 0
-			ws(); if (substr(line, i, 1) == "]") { i++; type = "array"; value = ""; return 1 }
-			if (substr(line, i++, 1) != ",") return 0
-			ws()
-		}
-		return 0
-	}
-	function parse(    key, saved_type, saved_value) {
-		ws(); if (substr(line, i++, 1) != "{") return 0
-		ws(); if (substr(line, i, 1) == "}") { i++; return 1 }
-		while (i <= n) {
-			if (!string()) return 0; key = value; ws()
-			if (substr(line, i++, 1) != ":" || !any_value()) return 0
-			saved_type = type; saved_value = value; seen[key]++; field_type[key] = saved_type
-			if (saved_type == "string" || saved_type == "number") field[key] = saved_value
-			ws(); if (substr(line, i, 1) == "}") { i++; return 1 }
-			if (substr(line, i++, 1) != ",") return 0
-			ws()
-		}
-		return 0
-	}
-	{
-		line = $0; n = length(line); i = 1; delete field; delete field_type; delete seen
-		if (!parse()) bad = 1
-		ws(); if (i <= n) bad = 1
-		if (seen["event"] == 1 && field_type["event"] == "string" && field["event"] == "check" &&
-			seen["check"] == 1 && field_type["check"] == "string" && field["check"] == "gate" &&
-			seen["file"] == 1 && field_type["file"] == "string" && field["file"] == witness_file &&
-			seen["exit"] == 1 && field_type["exit"] == "number" && field["exit"] == "0" &&
-			seen["capture"] == 1 && field_type["capture"] == "string") {
-			matches++
-			if (matches == 1) capture = field["capture"]
-			else if (capture != field["capture"]) conflict = 1
-			if (seen["sha256"] == 1 && field_type["sha256"] == "string" && !digests[field["sha256"]]++) digest_count++
-		}
-	}
-	END {
-		if (bad) exit 2
-		if (!matches) exit 1
-		if (conflict || digest_count > 1) exit 3
-		print capture
-	}'
-}
-
+# Read the flow's sealed witness back out of the run record. `bot show --check`
+# owns the record format and the multi-recording rules: it prints the sealed
+# capture when the record holds one successful recording of the named check, or
+# several that agree, and refuses with a diagnostic for absence, conflict, or a
+# malformed record. The shell only compares its one printed line to one sha.
 verify_run_witness() {
-	local witness_file record capture selector_status run_parent run_dir path part current bytes line
-	local -a parts=()
+	local witness_file witness accessor_stderr
 	case "${TICKET_FLOW-}" in
 	build) witness_file=flows/build/05-verify/gate/06-witness ;;
 	quickfix) witness_file=flows/quickfix/02-land/gate/05-witness ;;
@@ -483,72 +382,21 @@ verify_run_witness() {
 		return 1
 	fi
 	case "$RUN_ID" in '' | . | .. | /* | */*) echo "success: RUN_ID does not name one run directory" >&2; return 1 ;; esac
-	if ! record=$(mktemp); then
+	if ! accessor_stderr=$(mktemp); then
 		echo "success: cannot capture run evidence" >&2
 		return 1
 	fi
-	if ! "$BOT_CMD" show "$RUN_ID" --json >"$record"; then
-		rm -f -- "$record"
-		echo "success: bot show failed for run $RUN_ID" >&2
+	if ! witness=$("$BOT_CMD" show "$RUN_ID" --check "$witness_file" --home "$BOT_HOME" 2>"$accessor_stderr"); then
+		echo "success: bot show --check $witness_file failed for run $RUN_ID: $(cat "$accessor_stderr")" >&2
+		rm -f -- "$accessor_stderr"
 		return 1
 	fi
-	if capture=$(select_witness_capture "$witness_file" <"$record"); then
-		:
-	else
-		selector_status=$?
-		rm -f -- "$record"
-		case "$selector_status" in
-		1) echo "success: no successful $witness_file witness event was found in run $RUN_ID" >&2 ;;
-		3) echo "success: run $RUN_ID carries conflicting witnesses" >&2 ;;
-		*) echo "success: run $RUN_ID contains malformed witness records" >&2 ;;
-		esac
+	rm -f -- "$accessor_stderr"
+	if [[ ! "$witness" =~ ^verified\ [0-9a-f]{40}$ ]]; then
+		echo "success: run witness must be exactly one lowercase verified SHA line" >&2
 		return 1
 	fi
-	rm -f -- "$record"
-
-	case "$capture" in '' | /*) echo "success: run witness capture path is invalid" >&2; return 1 ;; esac
-	IFS=/ read -r -a source <<< "$capture"
-	for part in "${source[@]}"; do
-		case "$part" in
-		'' | .) ;;
-		..)
-			if [ "${#parts[@]}" -eq 0 ]; then
-				echo "success: run witness capture escapes its run directory" >&2
-				return 1
-			fi
-			unset 'parts[${#parts[@]} - 1]'
-			;;
-		*) parts+=("$part") ;;
-		esac
-	done
-	[ "${#parts[@]}" -gt 0 ] || { echo "success: run witness capture path is empty" >&2; return 1; }
-	run_parent=$BOT_HOME/runs
-	if ! run_parent=$(CDPATH='' cd -- "$run_parent" 2>/dev/null && pwd -P) ||
-		! run_dir=$(CDPATH='' cd -- "$run_parent/$RUN_ID" 2>/dev/null && pwd -P); then
-		echo "success: run $RUN_ID has no readable run directory" >&2
-		return 1
-	fi
-	case "$run_dir" in "$run_parent"/*) ;; *) echo "success: run directory escapes BOT_HOME" >&2; return 1 ;; esac
-	current=$run_dir
-	for part in "${parts[@]}"; do
-		path=$current/$part
-		if [ -L "$path" ]; then
-			echo "success: run witness capture uses a symbolic link" >&2
-			return 1
-		fi
-		current=$path
-	done
-	path=$current
-	if [ ! -f "$path" ]; then
-		echo "success: run witness capture is missing or not a regular file" >&2
-		return 1
-	fi
-	bytes=$(LC_ALL=C wc -c <"$path") || { echo "success: cannot read run witness capture" >&2; return 1; }
-	if [ "$bytes" -ne 50 ] || ! IFS= read -r line <"$path" || [[ ! "$line" =~ ^verified\ [0-9a-f]{40}$ ]]; then
-		echo "success: run witness capture must be exactly one lowercase verified SHA line" >&2
-		return 1
-	fi
-	WITNESSED_TIP=${line#verified }
+	WITNESSED_TIP=${witness#verified }
 }
 
 # 2. Land, unless the attempt added nothing to main.
