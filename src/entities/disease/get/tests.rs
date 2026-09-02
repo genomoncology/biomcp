@@ -94,26 +94,28 @@ async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
         "://unavailable-opentargets-fixture",
     );
 
-    let disease = get("Medulloblastoma", &[])
-        .await
-        .expect("resolved disease card");
+    let card = crate::cli::execute(vec![
+        "biomcp".to_string(),
+        "get".to_string(),
+        "disease".to_string(),
+        "Medulloblastoma".to_string(),
+    ])
+    .await
+    .expect("resolved disease card");
     server.abort();
 
     // The resolving hit's label is lowercase. These expectations require the
     // caller's differently cased term to survive the detail fetch.
-    assert_eq!(disease.name, "Medulloblastoma");
-    assert_eq!(disease.recruiting_trial_count, Some(36));
-    let markdown = crate::render::markdown::disease_markdown(&disease, &[])
-        .expect("resolved disease card should render");
-    assert!(markdown.contains("Disease label unavailable; using the requested term."));
-    let commands = crate::render::markdown::related_disease(&disease);
+    assert!(card.starts_with("# Medulloblastoma\n"));
+    assert!(card.contains("Recruiting Trials (ClinicalTrials.gov): 36"));
+    assert!(card.contains("Disease label unavailable; using the requested term."));
     for command in [
         "biomcp search trial -c \"Medulloblastoma\"",
         "biomcp search article -d \"Medulloblastoma\"",
         "biomcp search diagnostic --disease \"Medulloblastoma\"",
         "biomcp search drug --indication \"Medulloblastoma\"",
     ] {
-        assert!(commands.iter().any(|candidate| candidate == command));
+        assert!(card.contains(command));
     }
     let requests = requests.lock().expect("lock fixture requests").join("\n");
     assert!(requests.contains("query.cond=Medulloblastoma"));
