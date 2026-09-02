@@ -3,7 +3,7 @@
 {% else -%}
 # {{ nct_id }}
 
-Status: {{ status }}{% if phase %} | Phase: {{ phase }}{% endif %}{% if study_type %} | Study Type: {{ study_type }}{% endif %}{% if sponsor %} | Sponsor: {{ sponsor }}{% endif %}
+Status: {{ status }}{% if why_stopped_checked %} | Why stopped: {% if why_stopped %}{{ why_stopped }}{% else %}Not provided by ClinicalTrials.gov{% endif %}{% endif %}{% if phase %} | Phase: {{ phase }}{% endif %}{% if study_type %} | Study Type: {{ study_type }}{% endif %}{% if sponsor %} | Sponsor: {{ sponsor }}{% endif %}
 
 Title: {{ title }}
 {% if enrollment %}Target Enrollment: {{ enrollment }}{% endif %}

@@ -396,6 +396,7 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
         source: None,
         title: "Completed trial".to_string(),
         status: "TERMINATED".to_string(),
+        why_stopped: None,
         phase: None,
         study_type: None,
         age_range: None,

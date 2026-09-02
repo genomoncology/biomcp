@@ -288,6 +288,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         source: Some("ClinicalTrials.gov".to_string()),
         title: "Example trial".to_string(),
         status: "Recruiting".to_string(),
+        why_stopped: None,
         phase: Some("Phase 2".to_string()),
         study_type: Some("Interventional".to_string()),
         age_range: Some("18 Years and older".to_string()),

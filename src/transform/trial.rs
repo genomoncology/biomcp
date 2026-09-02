@@ -346,6 +346,13 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         .unwrap_or_default()
         .trim()
         .to_string();
+    let why_stopped = ["TERMINATED", "WITHDRAWN", "SUSPENDED"]
+        .iter()
+        .any(|stopped| status.eq_ignore_ascii_case(stopped))
+        .then(|| {
+            p.and_then(|p| p.status_module.as_ref())
+                .and_then(|m| clean_opt(m.why_stopped.as_deref()))
+        });
     let phase = p
         .and_then(|p| p.design_module.as_ref())
         .and_then(|m| m.phases.as_ref())
@@ -438,6 +445,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         source: None,
         title,
         status,
+        why_stopped,
         phase,
         study_type,
         age_range,
@@ -615,6 +623,7 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Trial {
         source: None,
         title,
         status,
+        why_stopped: None,
         phase,
         study_type,
         age_range,

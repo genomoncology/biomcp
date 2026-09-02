@@ -265,6 +265,7 @@ fn trial_json_next_commands_parse() {
         source: None,
         title: "Example trial".to_string(),
         status: "Completed".to_string(),
+        why_stopped: None,
         phase: None,
         study_type: None,
         age_range: None,

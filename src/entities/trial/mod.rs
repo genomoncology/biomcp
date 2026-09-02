@@ -29,6 +29,8 @@ pub struct Trial {
     pub title: String,
     pub status: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub why_stopped: Option<Option<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub phase: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub study_type: Option<String>,

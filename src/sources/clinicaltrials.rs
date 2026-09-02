@@ -19,6 +19,7 @@ const CTGOV_GET_FIELDS_BASE: &[&str] = &[
     "NCTId",
     "BriefTitle",
     "OverallStatus",
+    "WhyStopped",
     "Phase",
     "StudyType",
     "Condition",
@@ -405,6 +406,7 @@ pub struct CtGovIdentificationModule {
 #[serde(rename_all = "camelCase")]
 pub struct CtGovStatusModule {
     pub overall_status: Option<String>,
+    pub why_stopped: Option<String>,
     pub start_date_struct: Option<CtGovDateStruct>,
     pub completion_date_struct: Option<CtGovDateStruct>,
 }

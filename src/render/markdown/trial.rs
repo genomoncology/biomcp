@@ -34,6 +34,8 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         nct_id => &trial.nct_id,
         title => &trial.title,
         status => &trial.status,
+        why_stopped_checked => trial.why_stopped.is_some(),
+        why_stopped => trial.why_stopped.as_ref().and_then(|reason| reason.as_deref()),
         phase => &trial.phase,
         study_type => &trial.study_type,
         age_range => &trial.age_range,
