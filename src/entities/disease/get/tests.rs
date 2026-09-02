@@ -1,4 +1,118 @@
 use super::*;
+use std::sync::{Arc, Mutex};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+struct DiseaseCardFixtureEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl DiseaseCardFixtureEnv {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn set(&mut self, key: &'static str, value: &str) {
+        self.0.push((key, std::env::var_os(key)));
+        // SAFETY: this test holds the serial-test process-wide environment lock.
+        unsafe { std::env::set_var(key, value) };
+    }
+}
+
+impl Drop for DiseaseCardFixtureEnv {
+    fn drop(&mut self) {
+        for (key, previous) in self.0.drain(..).rev() {
+            // SAFETY: this test holds the serial-test process-wide environment lock.
+            unsafe {
+                if let Some(value) = previous {
+                    std::env::set_var(key, value);
+                } else {
+                    std::env::remove_var(key);
+                }
+            }
+        }
+    }
+}
+
+fn disease_card_fixture_response(body: &str) -> Vec<u8> {
+    format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    )
+    .into_bytes()
+}
+
+async fn disease_card_fixture_server()
+-> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind disease card fixture");
+    let base = format!("http://{}", listener.local_addr().expect("fixture address"));
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = requests.clone();
+    let task = tokio::spawn(async move {
+        while let Ok((mut stream, _)) = listener.accept().await {
+            let captured = captured.clone();
+            tokio::spawn(async move {
+                let mut request = vec![0_u8; 16 * 1024];
+                let len = stream
+                    .read(&mut request)
+                    .await
+                    .expect("read fixture request");
+                let request = String::from_utf8_lossy(&request[..len]).into_owned();
+                captured
+                    .lock()
+                    .expect("lock fixture requests")
+                    .push(request.clone());
+                let body = if request.starts_with("GET /query?") {
+                    r#"{"total":1,"hits":[{"_id":"MONDO:0007959","mondo":{"name":"medulloblastoma"}}]}"#
+                } else if request.starts_with("GET /disease/MONDO:0007959") {
+                    r#"{"_id":"MONDO:0007959","mondo":{"synonym":["cerebellum embryonal neoplasm"]}}"#
+                } else if request.contains("query.cond=medulloblastoma") {
+                    r#"{"studies":[],"totalCount":36}"#
+                } else {
+                    r#"{"studies":[],"totalCount":0}"#
+                };
+                stream
+                    .write_all(&disease_card_fixture_response(body))
+                    .await
+                    .expect("write fixture response");
+            });
+        }
+    });
+    (base, requests, task)
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn disease_card_keeps_the_resolving_term_when_detail_label_is_missing() {
+    let (base, requests, server) = disease_card_fixture_server().await;
+    let mut env = DiseaseCardFixtureEnv::new();
+    env.set("BIOMCP_MYDISEASE_BASE", &base);
+    env.set("BIOMCP_CTGOV_BASE", &base);
+    env.set("BIOMCP_OLS4_BASE", "://unavailable-ols-fixture");
+    env.set("BIOMCP_MYCHEM_BASE", "://unavailable-mychem-fixture");
+    env.set(
+        "BIOMCP_OPENTARGETS_BASE",
+        "://unavailable-opentargets-fixture",
+    );
+
+    let disease = get("medulloblastoma", &[])
+        .await
+        .expect("resolved disease card");
+    server.abort();
+
+    assert_eq!(disease.name, "medulloblastoma");
+    assert_eq!(disease.recruiting_trial_count, Some(36));
+    let commands = crate::render::markdown::related_disease(&disease);
+    for command in [
+        "biomcp search trial -c \"medulloblastoma\"",
+        "biomcp search article -d \"medulloblastoma\"",
+        "biomcp search diagnostic --disease \"medulloblastoma\"",
+        "biomcp search drug --indication \"medulloblastoma\"",
+    ] {
+        assert!(commands.iter().any(|candidate| candidate == command));
+    }
+    let requests = requests.lock().expect("lock fixture requests").join("\n");
+    assert!(requests.contains("query.cond=medulloblastoma"));
+}
 
 #[test]
 fn parse_sections_supports_new_disease_sections() {
