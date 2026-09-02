@@ -765,7 +765,7 @@ mod tests {
     }
 
     #[test]
-    fn from_ctgov_study_extracts_arms_and_outcomes() {
+    fn from_ctgov_study_preserves_provider_type_fields_in_json() {
         let study: CtGovStudy = serde_json::from_value(json!({
             "protocolSection": {
                 "identificationModule": {"nctId": "NCT09876543", "briefTitle": "Arms Trial"},
@@ -774,48 +774,58 @@ mod tests {
                     "interventions": [
                         {
                             "name": "Pembrolizumab",
+                            "type": "BIOLOGICAL",
                             "armGroupLabels": ["Experimental Arm"]
                         }
                     ],
                     "armGroups": [
                         {
                             "label": "Experimental Arm",
-                            "armGroupType": "EXPERIMENTAL",
+                            "type": "EXPERIMENTAL",
                             "description": "Experimental group",
                             "interventionNames": []
                         }
                     ]
                 },
+                "referencesModule": {
+                    "references": [{
+                        "pmid": "12345678",
+                        "type": "BACKGROUND",
+                        "citation": "Prior evidence"
+                    }]
+                },
                 "outcomesModule": {
-                    "primaryOutcomes": [
-                        {
-                            "measure": "Overall survival",
-                            "description": "OS at 12 months",
-                            "timeFrame": "12 months"
-                        }
-                    ],
-                    "secondaryOutcomes": [
-                        {
-                            "measure": "Progression-free survival",
-                            "description": "PFS",
-                            "timeFrame": "6 months"
-                        }
-                    ]
+                    "primaryOutcomes": [{"measure": "Overall survival"}],
+                    "secondaryOutcomes": [{"measure": "Progression-free survival"}]
                 }
             }
         }))
         .unwrap();
 
         let trial = from_ctgov_study(&study);
-        let arms = trial.arms.expect("arms");
+        let arms = trial.arms.as_ref().expect("arms");
         assert_eq!(arms.len(), 1);
         assert_eq!(arms[0].label, "Experimental Arm");
         assert_eq!(arms[0].interventions, vec!["Pembrolizumab"]);
-
-        let outcomes = trial.outcomes.expect("outcomes");
+        let outcomes = trial.outcomes.as_ref().expect("outcomes");
         assert_eq!(outcomes.primary.len(), 1);
         assert_eq!(outcomes.primary[0].measure, "Overall survival");
         assert_eq!(outcomes.secondary.len(), 1);
+        assert_eq!(outcomes.secondary[0].measure, "Progression-free survival");
+
+        let json = serde_json::to_value(trial).expect("trial JSON");
+        assert_eq!(
+            [
+                &json["intervention_details"][0]["intervention_type"],
+                &json["arms"][0]["arm_type"],
+                &json["references"][0]["reference_type"],
+            ],
+            [
+                &json!("BIOLOGICAL"),
+                &json!("EXPERIMENTAL"),
+                &json!("BACKGROUND"),
+            ]
+        );
     }
 
     #[test]

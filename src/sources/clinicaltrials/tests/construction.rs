@@ -102,6 +102,16 @@ fn search_plan_includes_geo_facility_agg_and_field_override() {
 }
 
 #[test]
+fn default_get_fields_request_visible_intervention_types() {
+    let fields = build_get_fields(&[]);
+
+    assert!(
+        fields.split(',').any(|field| field == "InterventionType"),
+        "default trial details must request the type they expose"
+    );
+}
+
+#[test]
 fn get_plan_builds_study_path_and_section_fields() {
     let sections = vec!["contacts".to_string(), "eligibility".to_string()];
     let plan = ClinicalTrialsClient::get_plan("NCT41300001", &sections);

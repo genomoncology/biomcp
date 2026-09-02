@@ -106,7 +106,12 @@ fn trial_markdown_includes_source_labeled_sections() {
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
         interventions: vec!["ivacaftor".to_string()],
-        intervention_details: Vec::new(),
+        intervention_details: vec![crate::entities::trial::TrialIntervention {
+            name: "ivacaftor".to_string(),
+            intervention_type: Some("BIOLOGICAL".to_string()),
+            description: None,
+            other_names: Vec::new(),
+        }],
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(42),
         summary: Some("Trial summary.".to_string()),
@@ -160,6 +165,12 @@ fn trial_markdown_includes_source_labeled_sections() {
     assert!(markdown.contains("## Outcomes (ClinicalTrials.gov)"));
     assert!(markdown.contains("## Arms (ClinicalTrials.gov)"));
     assert!(markdown.contains("## References (ClinicalTrials.gov)"));
+    for provider_type in ["BIOLOGICAL", "Experimental", "background"] {
+        assert!(
+            markdown.contains(provider_type),
+            "missing provider type {provider_type} from Markdown"
+        );
+    }
     assert!(!markdown.contains("Posted trial documents"));
 }
 
