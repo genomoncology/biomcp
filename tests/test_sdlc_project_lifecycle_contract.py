@@ -151,16 +151,30 @@ def _bot(tmp_path: Path) -> Path:
 def _witness_environment(tmp_path: Path, tip: str) -> dict[str, str]:
     run_id = "witnessed-run"
     bot_home = tmp_path / "bot-home"
-    capture = bot_home / "runs" / run_id / "captures" / "witness"
+    run = bot_home / "runs" / run_id
+    capture_name = "captures/witness"
+    capture = run / capture_name
     capture.parent.mkdir(parents=True)
     capture.write_text(f"verified {tip}\n", encoding="utf-8")
+    record = run / "record.jsonl"
+    record.write_text(
+        json.dumps(
+            {
+                "event": "check",
+                "check": "gate",
+                "file": "flows/build/05-verify/gate/06-witness",
+                "exit": 0,
+                "capture": capture_name,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     bot = tmp_path / "witness-bot"
     bot.write_text(
         "#!/bin/sh\n"
-        f'[ "$1 $2 $3" = "show {run_id} --check" ] || exit 2\n'
-        '[ "$4" = flows/build/05-verify/gate/06-witness ] || exit 2\n'
-        f'[ "$5 $6" = "--home {bot_home}" ] || exit 2\n'
-        f"cat {shlex.quote(str(capture))}\n",
+        f'[ "$1 $2 $3" = "show {run_id} --json" ] || exit 2\n'
+        f"cat {shlex.quote(str(record))}\n",
         encoding="utf-8",
     )
     bot.chmod(0o755)
