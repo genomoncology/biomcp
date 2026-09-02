@@ -57,11 +57,7 @@ if ([ -n "$ACTIVATION_BASE" ] && [ -z "$ACTIVATION_TIP" ]) ||
 fi
 
 checkout_left_alone() {
-	if [ "${CHECKOUT_NOTICE_STREAM:-stderr}" = "stdout" ]; then
-		echo "checkout left alone: $1"
-	else
-		echo "checkout left alone: $1" >&2
-	fi
+	echo "checkout left alone: $1" >&2
 }
 
 deploy_checkout() {

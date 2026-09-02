@@ -1,5 +1,5 @@
 {
-  "canonicalCommit": "864d2cc9bcbf55e866cf929b9c7daa61102dd59d",
+  "canonicalCommit": "4f321d0d55c33f6caaca3e4f958e1361a0bfc3f5",
   "scripts": [
     {
       "name": "tasks",
@@ -8,12 +8,12 @@
     },
     {
       "name": "before",
-      "sha256": "5a5a99f832c6ad045b3385aac18e0ac61fc2c6f186caf310664a2de943d75f26",
+      "sha256": "296dd7c9bdac5b722c1ec5aa95930836f2b0f9af24c5e1d8e9e620807f8a5f11",
       "executable": true
     },
     {
       "name": "success",
-      "sha256": "8e86643e5618b9ea0cffd5ea76631b69fe9ca1cb53ad39f7715ffdbd5a95ef1c",
+      "sha256": "5fc164f482b048bd795900de9c22753fab9cb83d1e7b802da326aa7a69b26c88",
       "executable": true
     },
     {

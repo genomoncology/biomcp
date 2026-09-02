@@ -8,9 +8,6 @@
 #   TICKET_FLOW      the procedure that will run; "quickfix" is exempt from
 #                    the green-main gate, because repairing a red main is
 #                    the whole job
-#   PRIOR_RUN_ID     ) present only on a retry. This script does not branch
-#   PRIOR_RUN_CAUSE  ) on them: it is continuation-friendly by construction —
-#   PRIOR_ATTEMPT_DIR) an existing ticket branch and worktree are REUSED.
 #   WORKTREE_ROOT    where worktrees live (default $HOME/workspace/worktrees)
 #   You start in the repository's registered directory; pwd is the repo.
 #
@@ -24,8 +21,9 @@
 #      intact; nothing prepares or gates that stale tree.
 #   4. sdlc/scripts/install in that tree, if the repo has one
 #   5. the green-main gate: sdlc/scripts/lint then sdlc/scripts/test in that
-#      tree. An empty regular marker named for the current origin/main skips
-#      all three commands. The gate otherwise skips for the quickfix flow and
+#      tree. An empty regular marker named for the current origin/main and
+#      younger than 24 hours skips all three commands. The gate otherwise
+#      skips for the quickfix flow and
 #      for a ticket branch carrying commits of its own — a continued branch is
 #      mid-work (a red-first test is its normal state) and its redness says
 #      nothing about origin/main; the landing gate protects main instead.
@@ -498,9 +496,20 @@ trap 'rm -f "${GATE_OUTPUT-}" "${MARKER_TEMP-}"' EXIT
 if [ "${TICKET_FLOW-}" != "quickfix" ] && [ "$AHEAD" -eq 0 ]; then
 	GREEN_MAIN_MARKER="$WORKTREES/$NAMESPACE/.green-main/$GREEN_MAIN_SHA"
 	if [ -f "$GREEN_MAIN_MARKER" ] && [ ! -L "$GREEN_MAIN_MARKER" ] && [ ! -s "$GREEN_MAIN_MARKER" ]; then
-		GREEN_MAIN_VERDICT_TRUSTED=1
-		echo "before: trusting green-main verdict for $GREEN_MAIN_SHA" >&2
-	else
+		marker_now=$(date +%s 2>/dev/null || true)
+		marker_mtime=$(stat -c %Y "$GREEN_MAIN_MARKER" 2>/dev/null || stat -f %m "$GREEN_MAIN_MARKER" 2>/dev/null || true)
+		case "$marker_now:$marker_mtime" in
+		*[!0-9:]* | :* | *:) ;;
+		*)
+			marker_age=$((marker_now - marker_mtime))
+			if [ "$marker_age" -ge 0 ] && [ "$marker_age" -lt 86400 ]; then
+				GREEN_MAIN_VERDICT_TRUSTED=1
+				echo "before: trusting green-main verdict for $GREEN_MAIN_SHA; age ${marker_age}s" >&2
+			fi
+			;;
+		esac
+	fi
+	if [ "$GREEN_MAIN_VERDICT_TRUSTED" -eq 0 ]; then
 		GREEN_MAIN_NEEDS_PROOF=1
 	fi
 fi
@@ -550,89 +559,30 @@ emit_gate_verdict() {
 	check=$1
 	capture=$2
 	suffix=${3-}
-	parsed=$(awk '
-		/^TAP version [0-9]+$/ { tap = 1 }
-		/^1\.\.[0-9]+$/ { plan = $0; sub(/^1\.\./, "", plan); total = plan }
-		/^# tests [0-9]+$/ { total = $3 }
-		/^# pass [0-9]+$/ { passed = $3 }
-		/^# Subtest: / { pending = substr($0, 12); in_failure = 0; next }
-		/^not ok [0-9]+ - / {
-			name = pending
-			if (name == "") {
-				name = $0
-				sub(/^not ok [0-9]+ - /, "", name)
-				sub(/[[:space:]]+#.*/, "", name)
-			}
-			failures++
-			failed[failures] = name
-			in_failure = 1
-			next
-		}
-		in_failure && /^[[:space:]]+error: / && message[failures] == "" {
-			text = $0
-			sub(/^[[:space:]]+error: [[:space:]]*/, "", text)
-			if (text == "|" || text == "|-" || text == ">" || text == ">-") {
-				assertion_block = 1
-				next
-			}
-			if ((substr(text, 1, 1) == "\047" && substr(text, length(text), 1) == "\047") ||
-			    (substr(text, 1, 1) == "\"" && substr(text, length(text), 1) == "\""))
-				text = substr(text, 2, length(text) - 2)
-			# Assertion detail yields first when the verdict needs space for
-			# failure names and counts.
-			if (length(text) > 160) text = substr(text, 1, 157) "..."
-			message[failures] = text
-			next
-		}
-		in_failure && assertion_block && /^[[:space:]]+/ && message[failures] == "" {
-			text = $0
-			sub(/^[[:space:]]+/, "", text)
-			if (text == "") next
-			if (length(text) > 160) text = substr(text, 1, 157) "..."
-			message[failures] = text
-			assertion_block = 0
-		}
-		END {
-			if (!tap || total == "" || failures == 0) exit
-			if (passed == "") passed = total - failures
-			printf "%s/%s passed; failed: ", passed, total
-			for (i = 1; i <= failures; i++) {
-				if (i > 1) printf "; "
-				printf "%s", failed[i]
-				if (message[i] != "") printf ": %s", message[i]
-			}
-		}
-	' "$capture")
-
-	if [ -n "$parsed" ]; then
-		# Reserve the suffix before bounding detail. iconv removes only a
-		# partial final character at the cut.
-		limit=$((1024 - ${#suffix}))
-		bounded=$(head -c "$limit" <<< "$check: $parsed" | iconv -f UTF-8 -t UTF-8 -c)
-		printf '%s%s\n' "$bounded" "$suffix" >&2
+	header="$check: failed; unparsed$suffix"
+	limit=$((1024 - $(printf '%s\n' "$header" | wc -c)))
+	failure_lines=$(mktemp) || return 1
+	grep_status=0
+	LC_ALL=C grep -a '^not ok ' "$capture" >"$failure_lines" || grep_status=$?
+	if [ "$grep_status" -eq 1 ]; then
+		rm -f "$failure_lines"
+		printf '%s\n' "$header" >&2
+		tail -c "$limit" "$capture" | iconv -f UTF-8 -t UTF-8 -c >&2
 		return
 	fi
-
-	header="$check: failed; unparsed$suffix"
+	if [ "$grep_status" -ne 0 ]; then
+		rm -f "$failure_lines"
+		return 1
+	fi
+	failure_bytes=$(wc -c <"$failure_lines")
+	if [ "$failure_bytes" -gt "$limit" ]; then
+		failure_bytes=$limit
+	fi
+	tail_bytes=$((limit - failure_bytes))
 	printf '%s\n' "$header" >&2
-	# Share the remaining bytes across all twenty lines. This preserves their
-	# order and line count even when individual lines need truncation.
-	tail -n 20 "$capture" | awk -v budget="$((1024 - ${#header}))" '
-		{ line[++count] = $0 }
-		END {
-			for (i = 1; i <= count; i++) {
-				remaining = count - i + 1
-				allowance = int((budget - remaining) / remaining)
-				if (allowance < 0) allowance = 0
-				used = length(line[i])
-				if (used > allowance) used = allowance
-				if (i > 1) printf "\n"
-				printf "%s", substr(line[i], 1, used)
-				budget -= used + 1
-			}
-			if (count > 0) printf "\n"
-		}
-	' | iconv -f UTF-8 -t UTF-8 -c >&2
+	head -c "$failure_bytes" "$failure_lines" | iconv -f UTF-8 -t UTF-8 -c >&2
+	rm -f "$failure_lines"
+	tail -c "$tail_bytes" "$capture" | iconv -f UTF-8 -t UTF-8 -c >&2
 }
 
 gate() {
