@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
+use std::future::Future;
 #[cfg(test)]
 use std::path::Path;
 use std::time::Duration;
@@ -18,7 +19,7 @@ use super::{
     optional_text, preferred_diagnostic_name, supported_diagnostic_sections_for_source,
 };
 
-const OPTIONAL_REGULATORY_TIMEOUT: Duration = Duration::from_secs(8);
+pub(super) const OPTIONAL_REGULATORY_TIMEOUT: Duration = Duration::from_secs(8);
 const REGULATORY_ALIAS_LIMIT: usize = 6;
 const REGULATORY_ENDPOINT_LIMIT: usize = 25;
 const REGULATORY_RESULT_LIMIT: usize = 8;
@@ -507,7 +508,9 @@ async fn fetch_fda_regulatory(
         return Ok(Vec::new());
     }
 
-    let client = OpenFdaClient::new()?;
+    // This optional overlay must not pay the synchronous managed-cache scan before
+    // its timeout can be polled.
+    let client = OpenFdaClient::new_uncached()?;
     let (device_rows, pma_rows) = tokio::join!(
         async {
             if device_query.is_empty() {
@@ -550,10 +553,14 @@ pub(super) fn regulatory_records_from_fda_rows(
     ranked.into_iter().map(|row| row.record).collect()
 }
 
-async fn load_regulatory_records(
-    ctx: &DiagnosticRegulatoryLookupContext,
-) -> (Vec<DiagnosticRegulatoryRecord>, SectionOutcome) {
-    match tokio::time::timeout(OPTIONAL_REGULATORY_TIMEOUT, fetch_fda_regulatory(ctx)).await {
+pub(super) async fn load_regulatory_records_with<F>(
+    lookup: F,
+    timeout: Duration,
+) -> (Vec<DiagnosticRegulatoryRecord>, SectionOutcome)
+where
+    F: Future<Output = Result<Vec<DiagnosticRegulatoryRecord>, BioMcpError>>,
+{
+    match tokio::time::timeout(timeout, lookup).await {
         Ok(Ok(records)) => {
             let outcome = if records.is_empty() {
                 SectionOutcome::empty("OpenFDA Device 510(k) / PMA")
@@ -569,6 +576,12 @@ async fn load_regulatory_records(
             ),
         ),
     }
+}
+
+async fn load_regulatory_records(
+    ctx: &DiagnosticRegulatoryLookupContext,
+) -> (Vec<DiagnosticRegulatoryRecord>, SectionOutcome) {
+    load_regulatory_records_with(fetch_fda_regulatory(ctx), OPTIONAL_REGULATORY_TIMEOUT).await
 }
 
 pub async fn get(accession: &str, sections: &[String]) -> Result<Diagnostic, BioMcpError> {

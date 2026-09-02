@@ -661,6 +661,61 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn regulatory_overlay_bounds_unavailable_work_and_preserves_data() {
+        assert_eq!(
+            super::get::OPTIONAL_REGULATORY_TIMEOUT,
+            std::time::Duration::from_secs(8)
+        );
+
+        let expected = DiagnosticRegulatoryRecord {
+            submission_type: "510(k)".into(),
+            number: "K123456".into(),
+            display_name: "Reachable device".into(),
+            trade_name: None,
+            generic_name: None,
+            applicant: None,
+            decision_date: None,
+            decision_description: None,
+            advisory_committee: None,
+            product_code: None,
+            supplement_count: None,
+        };
+        let (records, outcome) = super::get::load_regulatory_records_with(
+            std::future::ready(Ok(vec![expected.clone()])),
+            super::get::OPTIONAL_REGULATORY_TIMEOUT,
+        )
+        .await;
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].number, expected.number);
+        assert_eq!(records[0].display_name, expected.display_name);
+        assert_eq!(
+            outcome,
+            crate::entities::section_outcome::SectionOutcome::data("OpenFDA Device 510(k) / PMA")
+        );
+
+        let unavailable = crate::entities::section_outcome::SectionOutcome::unavailable(
+            "OpenFDA diagnostic regulatory data is temporarily unavailable.",
+        );
+        let (records, outcome) = super::get::load_regulatory_records_with(
+            std::future::ready(Err(crate::error::BioMcpError::InvalidArgument(
+                "unreachable OpenFDA".into(),
+            ))),
+            super::get::OPTIONAL_REGULATORY_TIMEOUT,
+        )
+        .await;
+        assert!(records.is_empty());
+        assert_eq!(outcome, unavailable);
+
+        let (records, outcome) = super::get::load_regulatory_records_with(
+            std::future::pending(),
+            std::time::Duration::ZERO,
+        )
+        .await;
+        assert!(records.is_empty());
+        assert_eq!(outcome, unavailable);
+    }
+
+    #[tokio::test]
     async fn get_who_ivd_rejects_unsupported_sections_with_recovery_hint() {
         let root = fixture_who_ivd_root("diagnostic-get-who-sections");
 

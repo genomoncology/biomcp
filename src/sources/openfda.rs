@@ -20,8 +20,19 @@ pub struct OpenFdaClient {
 
 impl OpenFdaClient {
     pub fn new() -> Result<Self, BioMcpError> {
+        Self::with_client(crate::sources::shared_client()?)
+    }
+
+    pub(crate) fn new_uncached() -> Result<Self, BioMcpError> {
+        Self::with_client(crate::sources::build_uncached_http_client(
+            crate::sources::SharedHttpClientKind::Default,
+            None,
+        )?)
+    }
+
+    fn with_client(client: reqwest_middleware::ClientWithMiddleware) -> Result<Self, BioMcpError> {
         Ok(Self {
-            client: crate::sources::shared_client()?,
+            client,
             base: crate::sources::env_base(OPENFDA_BASE, OPENFDA_BASE_ENV),
             api_key: std::env::var("OPENFDA_API_KEY")
                 .ok()

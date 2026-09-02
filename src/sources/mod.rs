@@ -480,7 +480,7 @@ fn next_retry_sleep(
 ///   (`BIOMCP_CACHE_DIR`, `cache.toml`, or XDG default)
 /// - Cache TTL: `Cache-Control: max-stale=86400` makes “no caching headers” responses usable for 24h
 #[derive(Clone, Copy)]
-enum SharedHttpClientKind {
+pub(crate) enum SharedHttpClientKind {
     Default,
     SemanticScholarSharedPool,
 }
@@ -661,7 +661,7 @@ fn build_http_client(kind: SharedHttpClientKind) -> Result<ClientWithMiddleware,
     build_http_client_with_config(kind, config, None)
 }
 
-fn build_uncached_http_client(
+pub(crate) fn build_uncached_http_client(
     kind: SharedHttpClientKind,
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
