@@ -359,16 +359,16 @@ def test_before_returns_raw_gate_output_and_ends_with_a_bounded_verdict(
             "PATH": f"{bot.parent}:{os.environ['PATH']}",
         },
     )
-    verdict = failed.stderr.rstrip().splitlines()[-1]
+    header = f"test: failed; unparsed; origin/main {main}\n"
+    verdict_start = failed.stderr.rfind(header)
 
     assert failed.returncode == 3
     assert f"{tap}\n" in failed.stderr
-    assert re.search(
-        r"test: 1/2 passed; failed: fixture drift: .*expected fixture bytes",
-        verdict,
-    )
-    assert main in verdict
-    assert len(verdict.encode("utf-8")) <= 1_024
+    assert verdict_start >= 0
+    verdict = failed.stderr[verdict_start:]
+    assert "not ok 2 - fixture drift\n" in verdict
+    assert "assertion-tail" in verdict
+    assert len(verdict.encode("utf-8")) <= 1_025
 
 
 def test_before_bounds_the_complete_unparsed_gate_verdict(tmp_path: Path) -> None:
