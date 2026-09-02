@@ -355,6 +355,41 @@ default card without scraping markdown helper text.
 Long-form protein filters should normalize to the same compact spelling that the
 short-form query uses, rather than leaking a second variant identifier shape.
 
+## Variant filter resolution
+
+Every submitted filter reports whether BioMCP resolved its value independently
+of whether the combined query returned rows. The same per-filter outcome is
+available in JSON and Markdown: an unindexed gene is not presented as a true
+negative, while recognized gene and protein filters can truthfully produce an
+empty intersection. A non-identity threshold filter uses the same channel.
+
+```bash
+unresolved_json="$(biomcp --json search variant -g H3-3A --limit 1)"
+unresolved_markdown="$(biomcp search variant -g H3-3A --limit 1)"
+resolved_json="$(biomcp --json search variant -g RB1 --hgvsp Q999X --limit 1)"
+resolved_markdown="$(biomcp search variant -g RB1 --hgvsp Q999X --limit 1)"
+threshold_json="$(biomcp --json search variant -g H3F3A --min-cadd 99 --limit 1)"
+
+jq -cn \
+  --argjson unresolved "$unresolved_json" \
+  --argjson resolved "$resolved_json" \
+  --argjson threshold "$threshold_json" \
+  --arg unresolved_markdown "$unresolved_markdown" \
+  --arg resolved_markdown "$resolved_markdown" \
+  '{
+    unresolved_gene_json: ($unresolved.filter_resolution == {gene: "unresolved"}),
+    unresolved_gene_markdown: ($unresolved_markdown | test("gene[^\\n]*unresolved|unresolved[^\\n]*gene"; "i")),
+    resolved_empty_count: ($resolved.count == 0),
+    resolved_filters_json: ($resolved.filter_resolution == {gene: "resolved", hgvsp: "resolved"}),
+    resolved_filters_markdown: (
+      ($resolved_markdown | test("gene[^\\n]*resolved|resolved[^\\n]*gene"; "i")) and
+      ($resolved_markdown | test("hgvsp[^\\n]*resolved|resolved[^\\n]*hgvsp"; "i"))
+    ),
+    threshold_uses_common_channel: ($threshold.filter_resolution == {gene: "resolved", min_cadd: "resolved"})
+  }' \
+  | mustmatch like '{"unresolved_gene_json":true,"unresolved_gene_markdown":true,"resolved_empty_count":true,"resolved_filters_json":true,"resolved_filters_markdown":true,"threshold_uses_common_channel":true}'
+```
+
 ## Variant filter diagnostics
 
 A current gene symbol that dbNSFP does not index should retry a known MyGene

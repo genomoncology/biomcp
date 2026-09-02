@@ -172,6 +172,22 @@ class Handler(BaseHTTPRequestHandler):
             if query == "dbnsfp.genename:H3F3A":
                 send_json(self, 200, {"total": 1156, "hits": [H3F3A_K28M_HIT]})
                 return
+            if query == "dbnsfp.genename:RB1":
+                send_json(self, 200, {
+                    "total": 1,
+                    "hits": [{
+                        "_id": "chr13:g.1C>T",
+                        "dbnsfp": {"genename": "RB1", "hgvsp": "p.R1W"},
+                    }],
+                })
+                return
+            if query in (
+                'dbnsfp.genename:RB1 AND dbnsfp.hgvsp:"p.Q999X"',
+                'dbnsfp.genename:RB1 AND dbnsfp.hgvsp:"p.Q999\\*"',
+                "dbnsfp.genename:RB1 AND dbnsfp.hgvsp:p.Q**",
+            ):
+                send_json(self, 200, {"total": 0, "hits": []})
+                return
             if query == 'dbnsfp.genename:H3F3A AND dbnsfp.hgvsp:"p.K27M"':
                 send_json(self, 200, {"total": 0, "hits": []})
                 return
