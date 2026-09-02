@@ -33,3 +33,11 @@ Reported by the BioData lead in `notes/biomcp/feedback/2026-09-02-seventeen-tria
 ## Boundary
 
 Do not change contact ordering or which contact is treated as primary.
+
+## Fixture provenance, 2026-09-02
+
+BioData reports that this case will be satisfied by an authored fixture rather than a recorded capture. ADR 0024 in that repository makes a trial contact patient-bearing, and their fixture policy refuses a recorded capture carrying one. The receipt will read authored.
+
+Nothing about what this ticket tests changes. Across the ten existing captures in `testdata/sources/ctgov/`, twenty-five studies, there are zero central contacts and zero location contacts, so every contact byte already tested against is synthetic on `example.test` addresses.
+
+Source: `notes/biomcp/feedback/2026-09-02-two-fixture-details-before-the-payloads-land.md`.
