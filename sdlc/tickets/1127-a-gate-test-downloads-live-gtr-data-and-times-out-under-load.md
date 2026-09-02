@@ -3,63 +3,73 @@ flow: quickfix
 priority: 10
 ---
 
-# A gate test downloads live GTR data and times out under load, so no ticket can land
+# The regulatory section overruns its own eight-second guard and stops the channel
 
-`tests/test_public_example_accessions.py::test_public_gtr_examples_resolve_against_live_gtr_bundle` fails in the factory's `before` stage. `make test` returns non-zero, `before` hands the ticket back as ready without consuming an attempt, and the ticket is claimed again. Nothing has landed on this channel since 2026-09-02T13:12Z. Ticket 1125 was claimed three times and spent about 76 minutes in `before` across those attempts, with `attempts consumed: 0` throughout.
+`biomcp get diagnostic <accession> regulatory` takes about fifteen seconds against an endpoint that refuses connections instantly. Its declared guard is eight seconds. Every other section of the same command returns in thirty milliseconds.
 
-The refund is correct behavior. A ticket that fails a gate through no fault of its own should not burn an attempt. The consequence is that the failure is invisible: the board shows a ticket that keeps looking ready, and only the before-evidence log says why.
+That overrun is what makes `tests/test_public_example_accessions.py::test_public_gtr_examples_resolve_against_live_gtr_bundle` fail in the factory's `before` stage. The test caps each command at sixty seconds and loops over more than six of them. Fifteen seconds on an idle machine, under a factory running four channels of Rust builds at once, crosses sixty.
+
+When it crosses, `make test` returns non-zero, `before` hands the ticket back as ready without consuming an attempt, and the ticket is claimed again. Ticket 1125 was claimed four times and spent about seventy-six minutes in `before` before one attempt got through. The board showed a ticket that kept looking ready and nothing else said why.
+
+## Reproduction
+
+Prepare the bundle the way the test prepares it, then run the section against a dead endpoint:
 
 ```
-FAILED tests/test_public_example_accessions.py::test_public_gtr_examples_resolve_against_live_gtr_bundle
-  - subprocess.TimeoutExpired: Command '[... 'get', 'diagnostic', 'GTR000006692.3', 'regulatory']'
-    timed out after 60 seconds
-1 failed, 818 passed, 3 skipped in 551.20s
-make[1]: *** [Makefile:49: test-contracts-prepared] Error 1
+D=$(mktemp -d)
+python3 - "$D" <<'PY'
+import gzip, shutil, sys
+from pathlib import Path
+t = Path(sys.argv[1]) / "gtr"
+shutil.copytree("spec/fixtures/gtr", t)
+p = t / "test_condition_gene.txt"
+p.write_text(p.read_text(encoding="utf-8").replace("GTR000000001.1", "GTR000006692.3"), encoding="utf-8")
+v = t / "test_version.gz"
+with gzip.open(v, "rt", encoding="utf-8") as fh: payload = fh.read()
+with gzip.open(v, "wt", encoding="utf-8") as fh: fh.write(payload.replace("GTR000000001.1", "GTR000006692.3"))
+PY
+
+time env BIOMCP_GTR_DIR="$D/gtr" BIOMCP_OPENFDA_BASE=http://127.0.0.1:9 \
+  ./target/debug/biomcp get diagnostic GTR000006692.3 regulatory
 ```
 
-## Why this is a quickfix
-
-`sdlc/project/before` documents the answer to a red main directly: exit 3 means "origin/main is red ... the channel backs off and a quickfix or the other run must resolve it before anything else can fly." The green-main gate skips for the quickfix flow, so this ticket can run while the gate it repairs is failing. A build ticket could not; it would fail the same test it exists to fix.
-
-Priority 10 so it runs ahead of everything, because nothing else on this channel can land until it does.
+Measured on `0.9.0-dev.6` on 2026-09-02, three consecutive runs: 14.34s, 15.82s, 14.96s. Port 9 refuses immediately, so none of that time is a slow network. The same bundle with `regulatory` replaced by `all`, `genes`, `conditions` or `methods` returns in 0.03s.
 
 ## Cause
 
-The test intends to run against a local bundle. `_prepare_public_gtr_bundle` at line 100 copies `GTR_FIXTURE_DIR` into a fresh temp directory and points `BIOMCP_GTR_DIR` at the copy. The copied bundle is old enough to read as stale, so the tool refreshes it from the network instead of using it. The first line of output is `Refreshing stale GTR data...`.
+`src/entities/diagnostic/get.rs:21` declares the bound:
 
-Measured against the repository build on 2026-09-02:
-
-```
-$ time biomcp get diagnostic GTR000006692.3 regulatory   # cold
-73.5s wall
-$ time biomcp get diagnostic GTR000006692.3 regulatory   # warm
-33.5s wall
+```rust
+const OPTIONAL_REGULATORY_TIMEOUT: Duration = Duration::from_secs(8);
 ```
 
-The test caps each command at 60 seconds, at line 157, and loops over more than six commands. The cold path is 73 seconds on an idle machine. In the factory the bundle is always cold, because the temp directory is new every run, and the machine is running several channels at once. So the cap is straddled rather than exceeded by a clear margin, which is why this passed for a while and now does not.
+and `:556` applies it:
 
-A gate test whose outcome depends on network speed and machine load is not a gate. It is a coin flip that stops the queue when it lands wrong.
+```rust
+match tokio::time::timeout(OPTIONAL_REGULATORY_TIMEOUT, fetch_fda_regulatory(ctx)).await {
+```
 
-## Required behavior
+The measured wall time is roughly twice that bound, so work is happening outside what the timeout wraps. The OpenFDA client retries transient failures, and a connection refused is transient, so the retry ladder and its backoff are the first place to look. The environment override at `src/sources/openfda.rs:25` is honoured, so the test's stub does take effect and the overrun is not a live call sneaking through.
 
-No test in the gate ladder reaches the network for data it already has a fixture for.
-
-The prepared bundle is used as prepared. A test that hands the tool a fixture bundle gets that bundle's contents, not a refreshed copy of them.
+The section is optional by design. `:568` already has the language for its absence: `OpenFDA diagnostic regulatory data is temporarily unavailable.` An optional section that costs fifteen seconds to decline is not optional in any way a caller can feel.
 
 ## Done, observably
 
-- `make test` passes with the network unavailable. Verified by running it with outbound traffic blocked, not by observing that it happened to pass.
-- The test no longer prints `Refreshing stale GTR data...`, and a test pins that the prepared bundle is read without a refresh.
-- The staleness refresh still works on the real path. A user with a genuinely stale bundle still gets fresh data, and a test pins that.
-- No per-command timeout in this file is raised to accommodate a download. If a timeout changes, it changes because the work got smaller.
-- The full suite is green.
+- The reproduction above completes within the declared eight-second guard. A test pins the bound rather than a wall-clock figure, so a future retry change cannot quietly reintroduce it.
+- The section still degrades rather than failing. An unreachable OpenFDA still produces the `temporarily unavailable` line and a zero exit, and a test pins that.
+- A reachable OpenFDA still returns real regulatory data. A test pins that the fast path is unchanged.
+- `sh sdlc/scripts/test` passes.
 
 ## Boundary
 
-Do not delete the test or mark it skipped. It covers the public accessions named in the tool's own help, and that coverage is the reason it exists.
+Do not delete or skip `test_public_example_accessions.py`. It covers the public accessions named in the tool's own help, and that coverage is why it exists.
 
-Do not raise the 60-second cap as the fix. A larger number moves the coin flip rather than removing it.
+Do not raise the sixty-second cap in that test. The command should fit the bound it already declares.
 
-Do not change what `get diagnostic` returns, or the GTR refresh behavior a real user sees.
+Do not change what a successful `regulatory` section returns, and do not change the other four sections.
 
-Whether the fixture bundle should carry a version that never reads as stale, or whether the tool should honor an explicit "use this bundle as given" signal, is a design choice. Either satisfies this ticket. The second is the more honest one if a test ever needs to pin refresh behavior itself.
+Whether the fix is to move the timeout so it wraps the retry ladder, to stop retrying a refused connection, or to bound the ladder itself, is a design choice. Any of them satisfies this ticket.
+
+## Correction to this ticket's first draft
+
+The first version of this ticket blamed a stale GTR bundle triggering a network refresh. That was wrong. A bundle prepared the way the test prepares it is honoured, and the command succeeds with the network unreachable. The `Refreshing stale GTR data...` line seen while investigating came from the default cache directory, not from the test's path. The timing evidence above replaces that account.
