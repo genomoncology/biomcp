@@ -152,3 +152,20 @@ So the branch `ticket/1092` carries real work from that attempt, and `before` wi
 **Read the standing branch before writing anything.** Its commits are this ticket's own prior work, not someone else's. Treat them as a starting point to verify against current main and correct where the merge or the intervening changes require it. Do not assume the tree is empty, and do not discard the prior work without reading it.
 
 Nothing about the required behaviour above changes. The acceptance criteria are unchanged, and they are what this attempt must satisfy against current `origin/main`.
+
+## Addendum, 2026-09-02: held as a draft while a storage ceiling is resolved
+
+This ticket is parked in `sdlc/tickets/drafts/` deliberately. Nothing is wrong with its content and nothing about the required behavior has changed. Promote it back to `sdlc/tickets/` once the condition below is cleared.
+
+Two consecutive runs faulted before reaching an outcome:
+
+```
+run 2026-09-02T14-01-19-d255  $TMP exceeded its 4294967296 bytes ceiling: 4649657542 bytes
+run 2026-09-02T13-14-11-9ed3  $TMP exceeded its 4294967296 bytes ceiling: 4427922915 bytes
+```
+
+Each fault refunded the attempt and set a channel-wide backoff. This ticket carries priority 9, so it is claimed first on every cycle, faults, and stalls the whole channel again. Eighteen ready tickets behind it never got dispatched. The attempt counter never advances, so the loop does not end on its own.
+
+The ceiling lives in the shared assembly and is not this repository's to change. The work already done for this ticket is safe: `ticket/1092` carries the merge of origin/main and the design stage's commit, and each faulted attempt was tagged (`attempt/1092-20260902-1`, `attempt/1092-20260902-2`).
+
+Held on 2026-09-02 by the BioMCP lead, as a reversible measure so the rest of the channel runs. Reported in `notes/botassembly/feedback/2026-09-02-a-tmp-ceiling-fault-refunds-forever-and-stalls-the-channel.md`.
