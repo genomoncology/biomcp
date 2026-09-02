@@ -12,17 +12,19 @@ fn tpmt_rows() -> Vec<CpicRecommendationRow> {
 
 #[test]
 fn recommendations_keep_complete_deterministic_genotypes() {
-    let recommendations = map_recommendations(&tpmt_rows(), Some("TPMT"));
+    let source_rows = tpmt_rows();
+    let target_recommendation = source_rows
+        .iter()
+        .find(|row| row.recommendationid == Some(8_480_061))
+        .and_then(|row| row.drugrecommendation.as_deref())
+        .expect("target source recommendation");
+    let recommendations = map_recommendations(&source_rows, Some("TPMT"));
     let values = serde_json::to_value(recommendations).expect("recommendation JSON");
     let rows = values.as_array().expect("recommendation array");
     let alternative = rows
         .iter()
-        .find(|row| {
-            row["recommendation"]
-                .as_str()
-                .is_some_and(|text| text.contains("alternative nonthiopurine"))
-        })
-        .expect("alternative recommendation");
+        .find(|row| row["recommendation"].as_str() == Some(target_recommendation))
+        .expect("mapped target recommendation");
 
     assert_eq!(
         alternative["genotype"],
