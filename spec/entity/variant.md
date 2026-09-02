@@ -359,35 +359,45 @@ short-form query uses, rather than leaking a second variant identifier shape.
 
 Every submitted filter reports whether BioMCP resolved its value independently
 of whether the combined query returned rows. The same per-filter outcome is
-available in JSON and Markdown: an unindexed gene is not presented as a true
-negative, while recognized gene and protein filters can truthfully produce an
-empty intersection. A non-identity threshold filter uses the same channel.
+available in JSON and Markdown: a gene unavailable under its symbol or aliases
+is not presented as a true negative, while a recognized gene and a valid
+protein filter can truthfully produce an empty intersection. A successfully
+retried gene alias and a non-identity threshold filter use the same channel.
 
 ```bash
-unresolved_json="$(biomcp --json search variant -g H3-3A --limit 1)"
-unresolved_markdown="$(biomcp search variant -g H3-3A --limit 1)"
+unresolved_json="$(biomcp --json search variant -g NOTAREALGENE1091 --limit 1)"
+unresolved_markdown="$(biomcp search variant -g NOTAREALGENE1091 --limit 1)"
+alias_json="$(biomcp --json search variant -g H3-3A --limit 1)"
 resolved_json="$(biomcp --json search variant -g RB1 --hgvsp Q999X --limit 1)"
 resolved_markdown="$(biomcp search variant -g RB1 --hgvsp Q999X --limit 1)"
 threshold_json="$(biomcp --json search variant -g H3F3A --min-cadd 99 --limit 1)"
 
 jq -cn \
   --argjson unresolved "$unresolved_json" \
+  --argjson alias "$alias_json" \
   --argjson resolved "$resolved_json" \
   --argjson threshold "$threshold_json" \
   --arg unresolved_markdown "$unresolved_markdown" \
   --arg resolved_markdown "$resolved_markdown" \
-  '{
+  'def outcome($text; $name; $status):
+    $text | split("\\n") | any(
+      (test($name; "i")) and
+      (test("(^|[^[:alpha:]])" + $status + "([^[:alpha:]]|$)"; "i"))
+    );
+  {
     unresolved_gene_json: ($unresolved.filter_resolution == {gene: "unresolved"}),
-    unresolved_gene_markdown: ($unresolved_markdown | test("gene[^\\n]*unresolved|unresolved[^\\n]*gene"; "i")),
+    unresolved_gene_markdown: outcome($unresolved_markdown; "gene"; "unresolved"),
+    alias_gene_resolved: ($alias.filter_resolution == {gene: "resolved"}),
+    alias_rows_preserved: ($alias.count == 1 and $alias.pagination.total == 1156),
     resolved_empty_count: ($resolved.count == 0),
     resolved_filters_json: ($resolved.filter_resolution == {gene: "resolved", hgvsp: "resolved"}),
     resolved_filters_markdown: (
-      ($resolved_markdown | test("gene[^\\n]*resolved|resolved[^\\n]*gene"; "i")) and
-      ($resolved_markdown | test("hgvsp[^\\n]*resolved|resolved[^\\n]*hgvsp"; "i"))
+      outcome($resolved_markdown; "gene"; "resolved") and
+      outcome($resolved_markdown; "hgvsp"; "resolved")
     ),
     threshold_uses_common_channel: ($threshold.filter_resolution == {gene: "resolved", min_cadd: "resolved"})
   }' \
-  | mustmatch like '{"unresolved_gene_json":true,"unresolved_gene_markdown":true,"resolved_empty_count":true,"resolved_filters_json":true,"resolved_filters_markdown":true,"threshold_uses_common_channel":true}'
+  | mustmatch like '{"unresolved_gene_json":true,"unresolved_gene_markdown":true,"alias_gene_resolved":true,"alias_rows_preserved":true,"resolved_empty_count":true,"resolved_filters_json":true,"resolved_filters_markdown":true,"threshold_uses_common_channel":true}'
 ```
 
 ## Variant filter diagnostics
