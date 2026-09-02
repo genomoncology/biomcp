@@ -13,27 +13,15 @@ When it crosses, `make test` returns non-zero, `before` hands the ticket back as
 
 ## Reproduction
 
-Prepare the bundle the way the test prepares it, then run the section against a dead endpoint:
-
 ```
-D=$(mktemp -d)
-python3 - "$D" <<'PY'
-import gzip, shutil, sys
-from pathlib import Path
-t = Path(sys.argv[1]) / "gtr"
-shutil.copytree("spec/fixtures/gtr", t)
-p = t / "test_condition_gene.txt"
-p.write_text(p.read_text(encoding="utf-8").replace("GTR000000001.1", "GTR000006692.3"), encoding="utf-8")
-v = t / "test_version.gz"
-with gzip.open(v, "rt", encoding="utf-8") as fh: payload = fh.read()
-with gzip.open(v, "wt", encoding="utf-8") as fh: fh.write(payload.replace("GTR000000001.1", "GTR000006692.3"))
-PY
-
-time env BIOMCP_GTR_DIR="$D/gtr" BIOMCP_OPENFDA_BASE=http://127.0.0.1:9 \
-  ./target/debug/biomcp get diagnostic GTR000006692.3 regulatory
+timeout 8 env BIOMCP_GTR_DIR=spec/fixtures/gtr BIOMCP_OPENFDA_BASE=http://127.0.0.1:9 ./target/debug/biomcp get diagnostic GTR000000001.1 regulatory
 ```
 
-Measured on `0.9.0-dev.6` on 2026-09-02, three consecutive runs: 14.34s, 15.82s, 14.96s. Port 9 refuses immediately, so none of that time is a slow network. The same bundle with `regulatory` replaced by `all`, `genes`, `conditions` or `methods` returns in 0.03s.
+Exits 124 on `0.9.0-dev.6`, three runs out of three on 2026-09-02. It needs no setup: `spec/fixtures/gtr` is the repository's own fixture directory and `GTR000000001.1` is the accession that fixture carries.
+
+Eight seconds is not an arbitrary cap. It is the bound the code declares for this section, so the command asks only that the section honour its own contract. Port 9 refuses connections instantly, so nothing in that time is a slow network.
+
+Supporting measurement, taken with the bundle prepared the way the test prepares it and the live accession `GTR000006692.3`: `regulatory` took 14.34s, 15.82s and 14.96s across three runs, while `all`, `genes`, `conditions` and `methods` each returned in 0.03s. That isolates the cost to the regulatory fetch rather than to loading the bundle.
 
 ## Cause
 
