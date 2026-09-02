@@ -142,3 +142,13 @@ Both faults produce confidently wrong clinical answers, and a capable agent hide
 For contrast, the silent-zero defects in ticket 1091 were recovered every time they were hit, 31 times across 18 runs, with zero wrong answers. They cost roughly 3.1x the tool calls. This ticket's faults cost correctness. That is why this ticket now carries the higher priority of the two.
 
 The coverage line required by "The rule" above is what closes the false-provenance case: a reader who is told which drugs are held and not on this page cannot infer that absent drugs are present.
+
+## Addendum, 2026-09-02: a prior attempt's work is standing on this ticket's branch
+
+An earlier attempt ran this ticket to completion on 2026-09-01. Every stage passed and the run ended `cause=success` with exit 0. It did not land. Settlement refused because `origin/main` moved past the witnessed candidate `e6657025942c6339b2902f8b2c76c0c9846e17f9` while the channel was held for an unrelated repair, and twelve commits landed inside that window. Two later settlement retries refused identically, because a fixed branch tip cannot catch a moving main by being retried.
+
+So the branch `ticket/1092` carries real work from that attempt, and `before` will reattach to it and merge `origin/main` into it rather than starting an empty tree.
+
+**Read the standing branch before writing anything.** Its commits are this ticket's own prior work, not someone else's. Treat them as a starting point to verify against current main and correct where the merge or the intervening changes require it. Do not assume the tree is empty, and do not discard the prior work without reading it.
+
+Nothing about the required behaviour above changes. The acceptance criteria are unchanged, and they are what this attempt must satisfy against current `origin/main`.
