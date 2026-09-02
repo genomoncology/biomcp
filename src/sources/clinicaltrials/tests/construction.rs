@@ -102,13 +102,15 @@ fn search_plan_includes_geo_facility_agg_and_field_override() {
 }
 
 #[test]
-fn default_get_fields_request_visible_intervention_types() {
+fn default_get_fields_request_visible_status_context() {
     let fields = build_get_fields(&[]);
 
-    assert!(
-        fields.split(',').any(|field| field == "InterventionType"),
-        "default trial details must request the type they expose"
-    );
+    for field in ["InterventionType", "WhyStopped"] {
+        assert!(
+            fields.split(',').any(|actual| actual == field),
+            "default trial details must request {field} before exposing it"
+        );
+    }
 }
 
 #[test]

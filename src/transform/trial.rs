@@ -829,6 +829,65 @@ mod tests {
     }
 
     #[test]
+    fn stopped_ctgov_trials_explain_their_status_in_json_and_markdown() {
+        for status in ["TERMINATED", "WITHDRAWN", "SUSPENDED"] {
+            let reason = format!("Registry reason for {status}");
+            let study: CtGovStudy = serde_json::from_value(json!({
+                "protocolSection": {
+                    "identificationModule": {
+                        "nctId": "NCT03515785",
+                        "briefTitle": "Stopped trial"
+                    },
+                    "statusModule": {
+                        "overallStatus": status,
+                        "whyStopped": reason
+                    }
+                }
+            }))
+            .expect("stopped study");
+
+            let trial = from_ctgov_study(&study);
+            let json = serde_json::to_value(&trial).expect("trial JSON");
+            assert_eq!(json["why_stopped"], reason);
+
+            let markdown =
+                crate::render::markdown::trial_markdown(&trial, &[]).expect("trial markdown");
+            assert!(markdown.contains(&format!("Status: {status}")));
+            assert!(markdown.contains(&reason));
+        }
+    }
+
+    #[test]
+    fn stopped_ctgov_trial_without_reason_reports_checked_absence() {
+        let study: CtGovStudy = serde_json::from_value(json!({
+            "protocolSection": {
+                "identificationModule": {
+                    "nctId": "NCT03515785",
+                    "briefTitle": "Stopped trial without a reason"
+                },
+                "statusModule": {"overallStatus": "WITHDRAWN"}
+            }
+        }))
+        .expect("stopped study without reason");
+        let trial = from_ctgov_study(&study);
+        let json = serde_json::to_value(&trial).expect("trial JSON");
+        assert!(
+            json.as_object()
+                .is_some_and(|object| object.contains_key("why_stopped")),
+            "stopped trial JSON must distinguish a missing registry reason from an unrequested field"
+        );
+        assert!(json["why_stopped"].is_null());
+
+        let markdown = crate::render::markdown::trial_markdown(&trial, &[])
+            .expect("trial markdown")
+            .to_ascii_lowercase();
+        assert!(
+            markdown.contains("not provided"),
+            "stopped trial Markdown must say when the registry provided no reason"
+        );
+    }
+
+    #[test]
     fn from_nci_trial_maps_alias_fields_and_age_range() {
         let trial = from_nci_trial(&json!({
             "nctId": "NCT11111111",
