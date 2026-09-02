@@ -169,3 +169,12 @@ Each fault refunded the attempt and set a channel-wide backoff. This ticket carr
 The ceiling lives in the shared assembly and is not this repository's to change. The work already done for this ticket is safe: `ticket/1092` carries the merge of origin/main and the design stage's commit, and each faulted attempt was tagged (`attempt/1092-20260902-1`, `attempt/1092-20260902-2`).
 
 Held on 2026-09-02 by the BioMCP lead, as a reversible measure so the rest of the channel runs. Reported in `notes/botassembly/feedback/2026-09-02-a-tmp-ceiling-fault-refunds-forever-and-stalls-the-channel.md`.
+
+## Addendum, 2026-09-02: released from drafts
+
+sdlc 0240 landed and is deployed; the sdlc checkout is at `a03f66b`. The design-review stage now uses the shared `baseline` tool and never creates a checkout of its own, which is what filled `$TMP` on the two faulted attempts. factory 0213, the loop-detector fix that let those faults refund forever, landed and deployed the same day.
+
+Promoted back to `sdlc/tickets/` on 2026-09-02. The next design-review run is the real test of the fix. If it faults on the ceiling again, `bot session <run> 02-design-review --raw` is the evidence to capture.
+
+Note that `ticket/1092` already carries its own prior work, so read that branch rather than assuming an empty tree. Both faulted attempts are tagged `attempt/1092-20260902-1` and `attempt/1092-20260902-2`.
+

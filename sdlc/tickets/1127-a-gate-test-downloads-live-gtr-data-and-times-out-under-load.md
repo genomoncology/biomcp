@@ -1,6 +1,6 @@
 ---
-flow: build
-priority: 9
+flow: quickfix
+priority: 10
 ---
 
 # A gate test downloads live GTR data and times out under load, so no ticket can land
@@ -16,6 +16,12 @@ FAILED tests/test_public_example_accessions.py::test_public_gtr_examples_resolve
 1 failed, 818 passed, 3 skipped in 551.20s
 make[1]: *** [Makefile:49: test-contracts-prepared] Error 1
 ```
+
+## Why this is a quickfix
+
+`sdlc/project/before` documents the answer to a red main directly: exit 3 means "origin/main is red ... the channel backs off and a quickfix or the other run must resolve it before anything else can fly." The green-main gate skips for the quickfix flow, so this ticket can run while the gate it repairs is failing. A build ticket could not; it would fail the same test it exists to fix.
+
+Priority 10 so it runs ahead of everything, because nothing else on this channel can land until it does.
 
 ## Cause
 
