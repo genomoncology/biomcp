@@ -1,7 +1,8 @@
 ---
-base: 60f5377e59648a1557d7b30d18a27b1d54c12a83
-head: 996cbb4ad76bfe4d2afd4a4032040af3272bcbab
+base: be7f5b4279bc3588b60ad48dbfb1dab71ce5f18e
+head: 78eb8777f0adbcf87a44adc140d152da40caa4ab
 ---
 
-Preserved every CPIC genotype pair and rendered the queried gene first so dosing advice retains its clinical context.
-Removed the hidden recommendation cap and added bounded drug coverage so paged results disclose guidance held beyond the current page.
+Preserved every CPIC genotype pair and rendered the queried gene first, so
+recommendations retain their clinical context. Removed the hidden row cap and
+added bounded drug coverage, so paged results disclose held guidance.
