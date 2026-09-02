@@ -635,6 +635,7 @@ fn ticket_377_variant_renderer_envelope_contracts() {
         "",
         Some("BRAF"),
         Some("melanoma"),
+        &Default::default(),
         &[],
     )
     .expect("variant markdown");

@@ -33,13 +33,13 @@ pub(crate) fn with_variant_search_resolution(
     output: String,
     requested: Option<crate::entities::variant::RequestedVariantIdentity>,
     resolution: Option<crate::entities::variant::VariantSearchResolution>,
+    filters: crate::entities::variant::VariantFilterResolution,
     diagnostics: Vec<crate::entities::variant::SearchDiagnostic>,
 ) -> Result<String, BioMcpError> {
     let mut value: serde_json::Value = serde_json::from_str(&output)?;
-    let object = value
-        .as_object_mut()
-        .expect("search response serialization produces an object");
+    let object = value.as_object_mut().expect("search response is an object");
     object.insert("diagnostics".into(), serde_json::to_value(diagnostics)?);
+    object.insert("filter_resolution".into(), serde_json::json!(filters));
     if let (Some(requested), Some(resolution)) = (requested, resolution) {
         object.insert("requested_variant".into(), serde_json::to_value(requested)?);
         object.insert("resolution".into(), serde_json::to_value(resolution)?);

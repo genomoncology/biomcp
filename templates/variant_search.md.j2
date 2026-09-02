@@ -3,6 +3,12 @@
 Found: {{ count }} variant(s)
 {% if query %}Query: {{ query }}{% endif %}
 
+{% if filter_resolution %}
+## Filter resolution
+{% for name in filter_resolution %}
+{{ name }}: {{ filter_resolution[name] }}
+{% endfor %}
+{% endif %}
 {% if diagnostics %}
 ## Filter diagnostics
 {% for diagnostic in diagnostics %}

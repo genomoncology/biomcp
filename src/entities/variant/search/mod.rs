@@ -4,6 +4,7 @@ use crate::entities::SearchPage;
 use crate::error::BioMcpError;
 use crate::sources::myvariant::{MyVariantClient, MyVariantHit, VariantSearchParams};
 use crate::transform;
+use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 mod diagnostics;
@@ -17,14 +18,85 @@ use super::{
     VariantSearchFilters, VariantSearchResolution, VariantSearchResult, compare_variant_identity,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum VariantFilterResolutionStatus {
+    Resolved,
+    Unresolved,
+}
+
+pub(crate) type VariantFilterResolution = BTreeMap<&'static str, VariantFilterResolutionStatus>;
+
 #[derive(Debug, Clone)]
 pub(crate) struct VariantSearchPage {
     pub results: Vec<VariantSearchResult>,
     pub total: Option<usize>,
     pub requested_variant: Option<RequestedVariantIdentity>,
     pub resolution: Option<VariantSearchResolution>,
+    pub filter_resolution: VariantFilterResolution,
     pub has_more: Option<bool>,
     pub diagnostics: Vec<SearchDiagnostic>,
+}
+
+fn filter_resolution(
+    filters: &VariantSearchFilters,
+    diagnostics: &[SearchDiagnostic],
+) -> VariantFilterResolution {
+    let mut resolution = BTreeMap::new();
+    let resolved = VariantFilterResolutionStatus::Resolved;
+    macro_rules! string_filter {
+        ($field:ident) => {
+            if filters
+                .$field
+                .as_deref()
+                .map(str::trim)
+                .is_some_and(|value| !value.is_empty())
+            {
+                resolution.insert(stringify!($field), resolved);
+            }
+        };
+    }
+
+    string_filter!(gene);
+    string_filter!(hgvsp);
+    string_filter!(hgvsc);
+    string_filter!(rsid);
+    if filters.protein_alias.is_some() {
+        resolution.insert("residue_alias", resolved);
+    }
+    string_filter!(significance);
+    if filters.max_frequency.is_some() {
+        resolution.insert("max_frequency", resolved);
+    }
+    if filters.min_cadd.is_some() {
+        resolution.insert("min_cadd", resolved);
+    }
+    string_filter!(consequence);
+    string_filter!(review_status);
+    string_filter!(population);
+    if filters.revel_min.is_some() {
+        resolution.insert("revel_min", resolved);
+    }
+    if filters.gerp_min.is_some() {
+        resolution.insert("gerp_min", resolved);
+    }
+    string_filter!(tumor_site);
+    string_filter!(condition);
+    string_filter!(impact);
+    if filters.lof {
+        resolution.insert("lof", resolved);
+    }
+    string_filter!(has);
+    string_filter!(missing);
+    string_filter!(therapy);
+
+    if diagnostics
+        .iter()
+        .any(|diagnostic| matches!(diagnostic, SearchDiagnostic::GeneUnavailable { .. }))
+    {
+        resolution.insert("gene", VariantFilterResolutionStatus::Unresolved);
+    }
+    resolution
 }
 
 fn search_result_quality_score(row: &VariantSearchResult) -> i32 {
@@ -680,6 +752,7 @@ async fn search_page_with_execution(
             total: page.total,
             requested_variant: None,
             resolution: None,
+            filter_resolution: filter_resolution(filters, &diagnostics),
             has_more: None,
             diagnostics,
         });
@@ -740,6 +813,7 @@ async fn search_page_with_execution(
         saw_indeterminate,
         exhaustive,
     );
+    page.filter_resolution = filter_resolution(filters, &diagnostics);
     page.diagnostics = diagnostics;
     Ok(page)
 }
@@ -800,6 +874,7 @@ fn finalize_exact_page(
             normalized_aliases: requested.normalized_aliases(),
             exhaustive,
         }),
+        filter_resolution: BTreeMap::new(),
         has_more: Some(has_more),
         diagnostics: Vec::new(),
     }

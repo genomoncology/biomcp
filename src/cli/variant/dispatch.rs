@@ -653,6 +653,7 @@ async fn render_variant_search_outcome(
                 output,
                 page.requested_variant,
                 page.resolution,
+                page.filter_resolution,
                 page.diagnostics,
             )?,
         ));
@@ -665,6 +666,7 @@ async fn render_variant_search_outcome(
         &footer,
         filters.gene.as_deref(),
         filters.condition.as_deref(),
+        &page.filter_resolution,
         &page.diagnostics,
     )?;
     let body = match (page.requested_variant, page.resolution) {
