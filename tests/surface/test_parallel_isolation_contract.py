@@ -116,6 +116,143 @@ def _has_base_url_probe(text: str) -> bool:
     )
 
 
+def _write_executable(path: Path, source: str) -> None:
+    path.write_text(source, encoding="utf-8")
+    path.chmod(0o755)
+
+
+def test_ctgov_parallel_pages_receive_private_mutable_logs(tmp_path: Path) -> None:
+    runner_source = _read_repo("scripts/run-specs.sh")
+    routine_paths = _runner_array_paths("SPEC_ROUTINE_PATHS")
+    mutable_log_consumers = [
+        path
+        for path in routine_paths
+        if path.endswith(".md")
+        and (
+            "BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" in _read_repo(path)
+            or "spec/fixtures/ctgov-request-log" in _read_repo(path)
+        )
+    ]
+    assert len(mutable_log_consumers) > 1, (
+        "this contract needs the parallel CTGov pages that observe mutable request logs"
+    )
+
+    workspace = tmp_path / "workspace"
+    (workspace / "scripts").mkdir(parents=True)
+    fixtures = workspace / "spec" / "fixtures"
+    fixtures.mkdir(parents=True)
+    routine_body = "\n".join(f"  {path}" for path in mutable_log_consumers)
+    runner_source = re.sub(
+        r"(?ms)^SPEC_ROUTINE_PATHS=\(\n.*?^\)",
+        f"SPEC_ROUTINE_PATHS=(\n{routine_body}\n)",
+        runner_source,
+        count=1,
+    )
+    _write_executable(workspace / "scripts" / "run-specs.sh", runner_source)
+
+    noop_setups = (
+        "setup-article-fulltext-source-fixture.sh",
+        "setup-study-spec-fixture.sh",
+        "setup-ddinter-spec-fixture.sh",
+        "setup-disease-survival-spec-fixture.sh",
+        "setup-vaers-spec-fixture.sh",
+        "setup-provider-contract-spec-fixture.sh",
+        "setup-variant-identity-spec-fixture.sh",
+        "setup-clingen-cspec-spec-fixture.sh",
+        "setup-cpic-spec-fixture.sh",
+    )
+    noop_cleanups = (
+        "cleanup-article-fulltext-source-fixture.sh",
+        "cleanup-ctgov-intervention-alias-spec-fixture.sh",
+        "cleanup-disease-survival-spec-fixture.sh",
+        "cleanup-provider-contract-spec-fixture.sh",
+        "cleanup-vaers-spec-fixture.sh",
+        "cleanup-variant-identity-spec-fixture.sh",
+        "cleanup-clingen-cspec-spec-fixture.sh",
+        "cleanup-cpic-spec-fixture.sh",
+    )
+    for name in (*noop_setups, *noop_cleanups):
+        _write_executable(fixtures / name, "#!/usr/bin/env bash\nexit 0\n")
+    _write_executable(
+        fixtures / "setup-ctgov-intervention-alias-spec-fixture.sh",
+        """#!/usr/bin/env bash
+set -euo pipefail
+root="$1"
+mkdir -p "$root/.cache"
+fixture_root="$(mktemp -d "$root/.cache/ctgov-page.XXXXXX")"
+cat >"$root/.cache/spec-ctgov-intervention-alias-env" <<EOF
+export BIOMCP_CTGOV_BASE=http://127.0.0.1/ctgov
+export BIOMCP_CTGOV_CDN_BASE=http://127.0.0.1
+export BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT=$fixture_root
+export BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG=$fixture_root/request.log
+EOF
+: >"$fixture_root/request.log"
+""",
+    )
+
+    bin_dir = workspace / "bin"
+    bin_dir.mkdir()
+    observations = workspace / "worker-environments"
+    _write_executable(
+        bin_dir / "mustmatch",
+        """#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == --version ]]; then
+  echo 'mustmatch 1.0.0'
+  exit 0
+fi
+printf '%s|%s\\n' "$2" "${BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG:-missing}" >>"$OBSERVATIONS"
+sleep 0.1
+""",
+    )
+
+    result = subprocess.run(
+        ["bash", "scripts/run-specs.sh", "spec"],
+        cwd=workspace,
+        env=os.environ
+        | {
+            "MUSTMATCH_BIN": str(bin_dir / "mustmatch"),
+            "BIOMCP_BIN": "/bin/true",
+            "BIOMCP_SPEC_WORKERS": str(len(mutable_log_consumers)),
+            "OBSERVATIONS": str(observations),
+        },
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    page_logs = dict(
+        line.split("|", 1)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    )
+    assert set(page_logs) == set(mutable_log_consumers)
+    assert "missing" not in page_logs.values()
+    assert len(set(page_logs.values())) == len(page_logs), (
+        "parallel CTGov pages share mutable request logs: " + repr(page_logs)
+    )
+
+
+def test_ctgov_parallel_isolation_keeps_request_shape_and_no_request_proofs() -> None:
+    numeric = _markdown_heading_body(
+        "spec/entity/trial-numeric-filters.md",
+        2,
+        "Zero distance is rejected before ClinicalTrials.gov work",
+    )
+    assert "exit=2" in numeric and 'test "$status" -eq 2' in numeric
+    assert "test ! -s" in numeric
+
+    observed = _markdown_heading_body(
+        "spec/entity/trial.md", 2, "Observed Trial Provider Requests"
+    )
+    for request_behavior in (
+        "query.cond=Phelan-McDermid+Syndrome",
+        "query.cond=non-small+cell+lung+cancer",
+        "/api/v2/studies/NCT02576665?fields=",
+    ):
+        assert request_behavior in observed
+
+
 def test_wikipathways_parallel_contract_serializes_shared_mock_env() -> None:
     context = _read_repo("src/cli/search_all/tests/dispatch.rs")
     assert "dispatch_section_pathway_surfaces_sanitized_wikipathways_404_without_timeout" not in context
