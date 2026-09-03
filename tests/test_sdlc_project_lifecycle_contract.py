@@ -253,8 +253,15 @@ def test_project_files_match_canonical_adoption(
         assert bool(adopted.stat().st_mode & 0o111) is expected_executable
 
 
-def test_superseded_adoption_record_names_its_replacement() -> None:
-    record = REPO_ROOT / "sdlc/records/1130-adopt-e6c34b4cbb0db3248625.md"
+@pytest.mark.parametrize(
+    "record_name",
+    [
+        "1130-adopt-e6c34b4cbb0db3248625.md",
+        "1131-adopt-3e66f4eaf7a538775567.md",
+    ],
+)
+def test_superseded_adoption_record_names_its_replacement(record_name: str) -> None:
+    record = REPO_ROOT / "sdlc/records" / record_name
     expected = (
         "Superseding adoption identity: "
         "sdlc/tickets/0243-green-main-marker-expires.md@"
