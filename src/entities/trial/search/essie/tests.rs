@@ -1,6 +1,47 @@
 //! Tests for ESSIE trial search helpers.
 
+use super::super::eligibility::collect_eligibility_keywords;
 use super::*;
+
+#[test]
+fn criteria_query_and_verification_share_case_sensitive_operator_rules() {
+    let corpus = [
+        (
+            "patients not previously treated",
+            "\"patients not previously treated\"",
+            true,
+        ),
+        (
+            "measurable disease and adequate organ function",
+            "\"measurable disease and adequate organ function\"",
+            true,
+        ),
+        (
+            "chemotherapy or radiotherapy",
+            "\"chemotherapy or radiotherapy\"",
+            true,
+        ),
+        ("BRAF OR NRAS", "\"BRAF\" OR \"NRAS\"", false),
+        ("BRAF AND NOT EGFR", "\"BRAF\" AND NOT \"EGFR\"", false),
+    ];
+
+    for (criteria, expected_query, verification_enabled) in corpus {
+        assert_eq!(
+            essie_escape_boolean_expression(criteria),
+            expected_query,
+            "unexpected ESSIE query for {criteria:?}"
+        );
+        let filters = TrialSearchFilters {
+            criteria: Some(criteria.into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            collect_eligibility_keywords(&filters).contains(&criteria.to_string()),
+            verification_enabled,
+            "query and eligibility verification disagree for {criteria:?}"
+        );
+    }
+}
 
 #[test]
 fn essie_escape_boolean_expression_preserves_or_operators() {
