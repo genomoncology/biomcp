@@ -66,3 +66,24 @@ The receipt is in `testdata/sources/capture-receipts.json`, classified `real_and
 So this check is provable today against a capture in this repository. Nothing about the ticket's requirement changes.
 
 The related check running the other direction — no key list in the code may name a field absent from every recorded capture — is ticket 1138, and it is **not** independent of this one. Both checks read the same provenance record. This ticket lands first and builds it; 1138 depends on this ticket and extends what it leaves. Build the record so a second reader can use it, and say in the record what 1138 will need from it.
+## The first real instance, and it is not an exception. Added 2026-09-03
+
+The first attempt refused, correctly, on a contradiction this ticket created. The checker it built found `secondaryOutcomes` in `src/transform/trial/tests.rs` and no recorded capture under `testdata/sources` contains that key. The ticket forbids changing fixture bytes, requires the tree to pass, and requires this ticket to name every pre-existing failure. It named none, so the attempt had no authority to resolve the one it found. That is a defect in this ticket, not in the work.
+
+**`secondaryOutcomes` is a real ClinicalTrials.gov v2 key. It is not an invented one and it must not be declared an exception.**
+
+It sits at `protocolSection.outcomesModule.secondaryOutcomes`, a sibling of `primaryOutcomes`. It is absent from `get_nct02576665_full_20260903.json` because NCT02576665 states no secondary outcomes. A trial without one omits the key. A capture of one trial cannot prove a provider never sends a field.
+
+The evidence is a recorded, receipted, unrestricted ClinicalTrials.gov v2 response for **NCT00791778** held in the sibling BioData repository. **An attempt cannot read that repository**, so the finding is restated here and this copy is authoritative for this ticket: that payload carries both `protocolSection.outcomesModule.primaryOutcomes` and `protocolSection.outcomesModule.secondaryOutcomes`. ClinicalTrials.gov v2 needs no key and no authentication, so the same request can be made from this repository.
+
+### What this changes
+
+Record an unrestricted capture of `https://clinicaltrials.gov/api/v2/studies/NCT00791778?format=json` alongside the NCT02576665 capture, with a receipt, and `secondaryOutcomes` becomes attested by a recorded capture like every other key. No exception is written and no fixture byte changes.
+
+Treat that as the pattern rather than a one-off. When the checker names a key, the first question is whether the provider sends it and this repository never captured a record that has one. Only a key the provider genuinely does not send is a defect or an exception.
+
+### The rule this ticket states is too strong, and this is the correction
+
+"Present in a recorded capture" is the right evidence for admitting a key. It is not evidence for rejecting one, because a capture covers the trials it captured and nothing else. A key the checker cannot attest is a prompt to look, not a verdict.
+
+So the check still fails the build on an unattested key, and the resolution order is: record a capture that carries it, or file it as a defect, or declare an exception with a written reason. Only the last two need this ticket's permission, and both are now granted for any key the attempt finds, provided the attempt states which it chose and why. This ticket no longer requires that it enumerate failures in advance, because it could not have known them.
