@@ -1,6 +1,8 @@
 //! Tests for trial search normalization helpers.
 
+use super::super::validate_trial_search;
 use super::*;
+use crate::entities::trial::{TrialSearchFilters, TrialSource};
 
 #[test]
 fn status_priority_prefers_recruiting_over_completed() {
@@ -61,7 +63,6 @@ fn normalize_status_accepts_ctgov_wording_and_aliases() {
         normalize_status("active, not recruiting").unwrap(),
         "ACTIVE_NOT_RECRUITING"
     );
-    assert_eq!(normalize_status("active").unwrap(), "ACTIVE_NOT_RECRUITING");
     assert_eq!(normalize_status("recruiting").unwrap(), "RECRUITING");
     assert_eq!(
         normalize_status("enrolling_by_invitation").unwrap(),
@@ -76,9 +77,34 @@ fn normalize_status_accepts_comma_separated_values() {
         "RECRUITING,ACTIVE_NOT_RECRUITING"
     );
     assert_eq!(
-        normalize_status("recruiting,active").unwrap(),
-        "RECRUITING,ACTIVE_NOT_RECRUITING"
+        normalize_status("recruiting,completed").unwrap(),
+        "RECRUITING,COMPLETED"
     );
+}
+
+#[test]
+fn trial_sources_reject_ambiguous_active_status_with_replacements() {
+    for input in ["active", "recruiting,active"] {
+        let errors = [TrialSource::ClinicalTrialsGov, TrialSource::NciCts].map(|source| {
+            validate_trial_search(&TrialSearchFilters {
+                source,
+                status: Some(input.into()),
+                ..Default::default()
+            })
+            .err()
+            .map(|error| error.to_string())
+        });
+
+        assert!(
+            errors.iter().all(Option::is_some),
+            "active must be refused before either provider is queried; got {errors:?}"
+        );
+        let [ctgov_error, nci_error] = errors.map(Option::unwrap);
+        assert_eq!(ctgov_error, nci_error);
+        assert!(ctgov_error.contains("active is ambiguous"));
+        assert!(ctgov_error.contains("--status recruiting"));
+        assert!(ctgov_error.contains("--status active_not_recruiting"));
+    }
 }
 
 #[test]

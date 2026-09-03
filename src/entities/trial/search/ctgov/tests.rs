@@ -228,7 +228,7 @@ fn build_ctgov_search_params_maps_all_shared_fields() {
         condition: Some("melanoma".into()),
         intervention: Some("HRS 4642".into()),
         facility: Some("Mayo Clinic".into()),
-        status: Some("active".into()),
+        status: Some("active_not_recruiting".into()),
         phase: Some("1/2".into()),
         study_type: Some("Interventional".into()),
         sex: Some("female".into()),
