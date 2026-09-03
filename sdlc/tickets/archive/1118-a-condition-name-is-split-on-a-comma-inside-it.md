@@ -1,9 +1,18 @@
 ---
 flow: build
 priority: 5
-hold: Retired 2026-09-03. The behavior cannot occur and the requirement lives on ticket 1107. Kept as a held draft so the board does not read it as done.
+hold: Retired 2026-09-03. The behavior cannot occur and the requirement lives on ticket 1107. Archived.
 ---
 
+**Retired 2026-09-03. Archived, not held.**
+
+The comma-splitting branch of `json_get_string_list` cannot execute. The reader takes `["diseases", "conditions"]` and NCI always sends `diseases` as an array, which matches the array branch first. No provider can produce the scalar payload, so no fixture can prove the correction and no failing test can be written.
+
+Its requirement moved to ticket 1107, which rewrote the same function: whatever replaces the array reading must not reintroduce a comma split on a single condition name. 1107 landed on 2026-09-03 carrying that acceptance line.
+
+This was briefly parked in `drafts/` instead of here, to avoid the factory recording an archived ticket as done. That was the wrong trade — a permanent draft is litter in the live queue, and the archive is what ADR 0016 provides for a ticket retired without landing. The mislabel is filed as feedback instead.
+
+---
 **Retired 2026-09-03. Not done, and not abandoned either.**
 
 The comma-splitting branch of `json_get_string_list` is unreachable. No provider BioMCP supports sends a condition as a scalar string, so the branch this ticket describes can never run and the defect can never be exercised. A ticket nothing can prove does not belong on the board.
