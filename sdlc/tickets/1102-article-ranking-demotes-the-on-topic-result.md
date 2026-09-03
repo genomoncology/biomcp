@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 5
+priority: 3
 ---
 
 # Article search ranks an off-topic paper above the one that matches the query

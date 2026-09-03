@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 5
+priority: 6
 ---
 
 # Intervention type and description are null unless the arms section was requested

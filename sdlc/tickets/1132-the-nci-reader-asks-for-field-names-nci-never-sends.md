@@ -1,30 +1,9 @@
 ---
 flow: build
-priority: 8
+priority: 9
 hold: Superseded 2026-09-03. It carried five behaviors on one ticket. Each is now its own ticket. Kept as a held draft so the board does not read it as done.
 ---
 
-**Superseded 2026-09-03, hours after it was filed. Not done.**
-
-This ticket bundled five separate defects and a class check into one body. That breaks the one-behavior-per-ticket rule, and the rule exists for a reason this repository had already paid for: ticket 1107 bundled conditions with interventions, an attempt could not tell which of two conflicting statements to follow, and it refused. A bundle of five is that risk five times over.
-
-Each behavior is now its own ticket, with its own citation and its own observable success list:
-
-- interventions nested in the arms, ticket 1133
-- study type falling through to primary purpose, ticket 1134
-- age bounds in structured eligibility, ticket 1135
-- the stop reason hardcoded absent, ticket 1137
-- enrollment reading three names NCI does not send, ticket 1119, restated and promoted rather than absorbed
-
-The class check this ticket carried in prose is ticket 1138, filed as a sibling of ticket 1126 rather than folded into either. A sixth NCI defect found in the same audit, eligibility text read with `as_str()` on an object, is ticket 1136; it never appeared here.
-
-`sdlc/planning/notes/2026-09-03-splitting-the-nci-field-name-bundle.md` carries the mapping and how the priorities were chosen.
-
-Nothing measured here is withdrawn. Every field-name finding below was verified against `testdata/sources/nci_cts/search_melanoma.json` and holds. The successors carry the same evidence.
-
-**Why this is a held draft and not an archived ticket.** `sdlc/project/tasks` reports everything under `sdlc/tickets/archive/` as `done`. Archiving this would tell the board that five defects were fixed when none were. The convention is written down in `sdlc/planning/notes/retiring-a-ticket.md`.
-
----
 
 # The NCI reader asks for five field names NCI never sends, so five fields are always empty or wrong
 
@@ -34,11 +13,11 @@ Measured against this repository's own recorded capture, `testdata/sources/nci_c
 
 | What | Code asks for | Payload actually carries | Result today |
 | --- | --- | --- | --- |
-| Interventions | `interventions` at the top level, `src/transform/trial.rs:619` | `arms[].interventions[].name` | always empty |
-| Age range | `minimum_age`, `minimumAge`, `min_age` at the top level, `:599`–`:600` | `eligibility.structured.min_age` = `"18 Years"`, `max_age` = `"999 Years"` | always empty |
-| Study type | `study_type`, `studyType`, `primary_purpose`, `:596` | `study_protocol_type` = `"Interventional"` | falls through to `primary_purpose` and reports `"TREATMENT"` |
-| Enrollment | `enrollment`, `enrollment_target`, `target_enrollment`, `:609` | `minimum_target_accrual_number` | always absent |
-| Why stopped | nothing; hardcoded `None` at `:626` | `why_study_stopped` | always absent |
+| Interventions | `interventions` at the top level, `src/transform/trial.rs:662` | `arms[].interventions[].name` | always empty |
+| Age range | `minimum_age`, `minimumAge`, `min_age` at the top level, `:642`–`:643` | `eligibility.structured.min_age` = `"18 Years"`, `max_age` = `"999 Years"` | always empty |
+| Study type | `study_type`, `studyType`, `primary_purpose`, `:639` | `study_protocol_type` = `"Interventional"` | falls through to `primary_purpose` and reports `"TREATMENT"` |
+| Enrollment | `enrollment`, `enrollment_target`, `target_enrollment`, `:652` | `minimum_target_accrual_number` | always absent |
+| Why stopped | nothing; hardcoded `None` at `:669` | `why_study_stopped` | always absent |
 
 None of these is a parsing bug. In every case the reader asks a question the payload cannot answer and takes silence for an answer.
 
@@ -46,8 +25,8 @@ None of these is a parsing bug. In every case the reader asks a question the pay
 
 Two unit tests in the same file keep the enrollment path green by feeding it key names no provider sends:
 
-- `src/transform/trial.rs:930` supplies `"target_enrollment": "120"` and asserts `Some(120)`.
-- `src/transform/trial.rs:963` supplies `"enrollment_target": "420"` and asserts `Some(420)`.
+- `src/transform/trial/tests.rs:280` supplies `"target_enrollment": "120"` and asserts `Some(120)`.
+- `src/transform/trial/tests.rs:315` supplies `"enrollment_target": "420"` and asserts `Some(420)`.
 
 Both keys are invented. The test proves the reader can read a payload nobody sends, so the suite stays green while the field is dead in production. That is defect 17's failure exactly, in a second place: a test written against the code's own shape rather than the provider's.
 
@@ -85,3 +64,17 @@ Do not change the display of any of these fields. This ticket is about the value
 Absorbs draft 1118 and draft 1119, both archived on 2026-09-03. 1119 described the enrollment failure as a float-parsing bug; the parse is never reached, because the key is never found. 1118's requirement moved to 1107.
 
 Found by the BioData lead on 2026-09-03 while auditing the conformance cases, and verified here independently against `testdata/sources/nci_cts/search_melanoma.json` on 2026-09-03. BioData is asked to carry these as conformance cases so both versions are held to them.
+
+## Re-merged 2026-09-03, and why the split was undone
+
+This ticket was split into 1133, 1134, 1135, 1137 and 1119 earlier today, one per field. All five are archived and the work is back here.
+
+The split was a reasonable call and the reason for reversing it is throughput, not correctness. All five defects live in one thirty-line block of `from_nci_trial`, they share one recorded fixture, and each is a one-line change to a key list. Five tickets means five design stages, five design reviews, five code reviews and five verifications for one commit's worth of work, and each of the last four rebases onto the one before it because they edit the same function.
+
+The acceptance test carries five assertions against one payload. That is one test file, not a bundle of unrelated work, and the claim underneath them is single: **the NCI reader reads the payload where NCI puts it.**
+
+Ticket 1136 stays separate. Its defect is a type mismatch rather than a key name — the reader calls `as_str` on an object — and it needs the eligibility structure understood rather than a key renamed.
+
+Ticket 1138 also stays separate. It is the guard that stops this class returning, not a fix, and it must land **after** this ticket. Its check fails on `["interventions"]` and on the enrollment list, so landing it first would turn main red and block every ticket in the channel.
+
+All line citations above were refreshed on 2026-09-03 after ticket 1107 rewrote this file. The five defects were re-verified against `testdata/sources/nci_cts/search_melanoma.json` at that time.

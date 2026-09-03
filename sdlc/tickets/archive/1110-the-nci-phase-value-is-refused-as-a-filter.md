@@ -3,6 +3,11 @@ flow: build
 priority: 6
 ---
 
+**Archived 2026-09-03. Merged into ticket 1109, not abandoned.**
+
+The same defect on the NCI side: the tool emits a phase value it then refuses as a filter. Both fail in `normalize_phase` at `normalization.rs:155`, and one fix must satisfy both or the round trip is not fixed. 1109 now states the requirement for both sources and lists both observable outcomes.
+
+---
 # The phase value emitted for an NCI trial is refused when passed back as a filter
 
 An NCI payload carries a phase of `"III"`. That value is emitted and then matches no arm when supplied as a phase filter.

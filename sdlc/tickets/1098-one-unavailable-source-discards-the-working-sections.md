@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 6
+priority: 5
 ---
 
 # One unavailable source discards four working sections

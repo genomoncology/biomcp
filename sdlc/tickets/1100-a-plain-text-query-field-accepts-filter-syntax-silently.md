@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 5
+priority: 3
 ---
 
 # A plain-text query field accepts filter syntax and answers as though it were text

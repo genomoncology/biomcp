@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 8
+priority: 9
 ---
 
 # `--status active` asks for open trials and returns closed ones

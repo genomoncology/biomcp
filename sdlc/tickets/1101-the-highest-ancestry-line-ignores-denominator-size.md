@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 5
+priority: 3
 ---
 
 # The highest-ancestry frequency line invites an overclaim the same card disclaims

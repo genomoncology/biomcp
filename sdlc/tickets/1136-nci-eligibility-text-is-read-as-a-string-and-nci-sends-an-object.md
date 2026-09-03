@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 7
+priority: 8
 ---
 
 # NCI eligibility text is always absent, because the reader calls as_str on an object

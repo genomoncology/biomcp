@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 3
+priority: 2
 ---
 
 # The adverse-event percent column reads as an incidence rate and is not one

@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 8
+priority: 9
 ---
 
 # Lowercase "not", "and" and "or" in a criteria phrase invert the query and disable verification

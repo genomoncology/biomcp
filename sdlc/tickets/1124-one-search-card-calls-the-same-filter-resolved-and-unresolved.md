@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 3
+priority: 2
 ---
 
 # One search card calls the same filter resolved and unresolved

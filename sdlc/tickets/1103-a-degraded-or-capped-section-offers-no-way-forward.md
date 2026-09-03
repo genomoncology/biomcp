@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 4
+priority: 3
 ---
 
 # A degraded, failed or capped section reports its state and offers no way forward

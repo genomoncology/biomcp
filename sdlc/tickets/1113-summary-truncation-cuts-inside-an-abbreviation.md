@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 4
+priority: 5
 ---
 
 # A period inside an abbreviation ends a sentence, and the summary loses its content

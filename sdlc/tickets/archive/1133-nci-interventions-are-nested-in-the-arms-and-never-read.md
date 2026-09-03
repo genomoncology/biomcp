@@ -3,6 +3,13 @@ flow: build
 priority: 8
 ---
 
+**Archived 2026-09-03. Re-merged into ticket 1132, not abandoned.**
+
+This defect is real and still reproduces. It moved because all five NCI key-name defects live in one thirty-line block of `from_nci_trial`, share one recorded fixture, and are each a one-line change to a key list. Five separate flows would cost five design stages, five reviews and five verifications for one commit's worth of work, and each would rebase onto the last.
+
+Ticket 1132 carries this defect's row in its table, its required behavior, and its assertion.
+
+---
 # Every NCI trial reports no interventions, because the reader looks for a top-level key NCI does not have
 
 `from_nci_trial` reads interventions at `src/transform/trial.rs:619`:

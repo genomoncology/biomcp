@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 5
+priority: 6
 ---
 
 # The same trial reports a different number of conditions depending on how it was fetched

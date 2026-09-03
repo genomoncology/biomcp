@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 4
+priority: 5
 ---
 
 # The location postal code is requested, parsed, and then thrown away

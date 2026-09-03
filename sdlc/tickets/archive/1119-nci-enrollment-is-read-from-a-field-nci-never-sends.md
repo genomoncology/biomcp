@@ -3,6 +3,11 @@ flow: build
 priority: 5
 ---
 
+**Archived 2026-09-03. Re-merged into ticket 1132, not abandoned.**
+
+NCI enrollment is absent because the reader asks for `enrollment`, `enrollment_target` and `target_enrollment` and NCI sends `minimum_target_accrual_number`. That is one of five key-name defects in the same thirty-line block, and 1132 fixes all five in one pass against one fixture.
+
+---
 # NCI enrollment is always absent, because the reader asks for three names NCI never sends
 
 `from_nci_trial` reads enrollment at `src/transform/trial.rs:607-611`:

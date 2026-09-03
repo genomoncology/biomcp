@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 4
+priority: 5
 deps: ["1121", "1126", "1138"]
 ---
 
@@ -30,7 +30,7 @@ No payload in this repository has a site with more than one contact. Counted 202
 
 The payload exists one repository over, authored rather than captured, with a receipt: `tests/fixtures/clinical-trial-parity/case-13-location-contacts.json` in the sibling BioData repository. It is a one-site study whose site lists two contacts, and it is the input this ticket's test needs.
 
-Copying that payload into `testdata/sources/` with a receipt classified as authored is part of this ticket, not a precondition someone else satisfies. Without it the parity assertion is vacuously true, because no site in the corpus has any contact at all.
+Copying that payload into `testdata/sources/clinicaltrials/` with a receipt is part of this ticket, not a precondition someone else satisfies. Without it the parity assertion is vacuously true, because no site in the corpus has any contact at all.
 
 A trial contact is patient-bearing, so this fixture is authored by policy and will never be a recorded capture. That is the intended state, not a gap waiting to be filled.
 

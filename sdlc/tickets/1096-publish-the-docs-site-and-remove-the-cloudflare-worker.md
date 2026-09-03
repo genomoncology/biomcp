@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 7
+priority: 5
 ---
 
 # Publish the documentation site on every push, and remove the Cloudflare worker

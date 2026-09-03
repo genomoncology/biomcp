@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 3
+priority: 4
 ---
 
 # The conversion path renders English prose where a consumer needs structure

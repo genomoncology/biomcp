@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 6
+priority: 5
 ---
 
 # The MCP tool schema does not name the sections it accepts, and agents invent them

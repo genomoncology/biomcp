@@ -1,6 +1,7 @@
 ---
 flow: build
-priority: 5
+priority: 8
+deps: ["1132"]
 ---
 
 # No key list in the code may name a field no provider sends
@@ -70,3 +71,11 @@ A new Rust test runs under the existing `make test` lane and needs no path openi
 ## History
 
 Proposed by the BioMCP lead on 2026-09-03 after the NCI field-name audit found five instances in one pass, and approved as a ticket in its own right rather than as an amendment to 1126. The class check that ticket 1132 carried in prose lives here instead; 1132 was superseded for bundling.
+
+## This ticket must land after 1132
+
+Its check fails on `main` today. `["interventions"]` names no key the NCI payload carries, and `["enrollment", "enrollment_target", "target_enrollment"]` names three. Both are real defects and both are fixed by ticket 1132.
+
+Landing this guard before those fixes would turn `main` red and block every ticket in the channel, because the green-main gate runs before any ticket starts. That is the opposite of what a guard is for.
+
+Land 1132 first. Then this check passes on the corrected code and holds the class shut.

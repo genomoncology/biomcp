@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 5
+priority: 8
 ---
 
 # No fixture may carry a key the provider does not send

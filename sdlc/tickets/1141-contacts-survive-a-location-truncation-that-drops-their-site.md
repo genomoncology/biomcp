@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 4
+priority: 5
 ---
 
 # Contacts survive a truncation that drops the sites they belong to

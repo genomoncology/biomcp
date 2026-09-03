@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 3
+priority: 2
 ---
 
 # Living content names projects outside this repo
