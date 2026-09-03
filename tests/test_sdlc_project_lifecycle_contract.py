@@ -254,19 +254,32 @@ def test_project_files_match_canonical_adoption(
 
 
 @pytest.mark.parametrize(
-    "record_name",
+    ("record_name", "expected"),
     [
-        "1130-adopt-e6c34b4cbb0db3248625.md",
-        "1131-adopt-3e66f4eaf7a538775567.md",
+        (
+            "1130-adopt-e6c34b4cbb0db3248625.md",
+            "Superseding adoption identity: "
+            "sdlc/tickets/0243-green-main-marker-expires.md@"
+            "0860374f986f9f1651b141e238a6d8437f9637dd",
+        ),
+        (
+            "1131-adopt-3e66f4eaf7a538775567.md",
+            "Superseding adoption identity: "
+            "sdlc/tickets/0243-green-main-marker-expires.md@"
+            "0860374f986f9f1651b141e238a6d8437f9637dd",
+        ),
+        (
+            "1140-adopt-ce417f323b192ba3aa62.md",
+            "Superseding adoption identity: "
+            "sdlc/tickets/0247-failure-protects-registered-worktree.md@"
+            "f66c6f35e4935f90507551f2c516a18d6aa4ff00",
+        ),
     ],
 )
-def test_superseded_adoption_record_names_its_replacement(record_name: str) -> None:
+def test_superseded_adoption_record_names_its_replacement(
+    record_name: str, expected: str
+) -> None:
     record = REPO_ROOT / "sdlc/records" / record_name
-    expected = (
-        "Superseding adoption identity: "
-        "sdlc/tickets/0243-green-main-marker-expires.md@"
-        "0860374f986f9f1651b141e238a6d8437f9637dd"
-    )
 
     assert record.is_file(), "completion record is missing"
     identity_lines = [
