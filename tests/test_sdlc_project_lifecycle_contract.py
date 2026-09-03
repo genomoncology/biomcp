@@ -253,6 +253,23 @@ def test_project_files_match_canonical_adoption(
         assert bool(adopted.stat().st_mode & 0o111) is expected_executable
 
 
+def test_superseded_adoption_record_names_its_replacement() -> None:
+    record = REPO_ROOT / "sdlc/records/1130-adopt-e6c34b4cbb0db3248625.md"
+    expected = (
+        "Superseding adoption identity: "
+        "sdlc/tickets/0243-green-main-marker-expires.md@"
+        "0860374f986f9f1651b141e238a6d8437f9637dd"
+    )
+
+    assert record.is_file(), "completion record is missing"
+    identity_lines = [
+        line
+        for line in record.read_text(encoding="utf-8").splitlines()
+        if line.startswith("Superseding adoption identity:")
+    ]
+    assert identity_lines == [expected]
+
+
 def test_tasks_retries_an_ordinary_fetch_failure_before_scanning(
     tmp_path: Path,
 ) -> None:
