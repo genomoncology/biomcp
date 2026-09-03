@@ -43,7 +43,7 @@ Copying that payload into `testdata/sources/ctgov/` with its receipt is part of 
 
 ## Done, observably
 
-- Converting the 59-location payload yields 59 locations, each carrying the city, state and country the provider supplied, with facility absent.
+- Converting the 59-location payload yields 59 locations, each carrying the city and country the provider supplied, with state where present and facility absent. 37 of the 59 have no state.
 - A trial whose sites are all incompletely described does not report zero locations.
 - The recorded payload is in `testdata/sources/ctgov/` with its receipt, so the assertion has a case it catches.
 
@@ -59,7 +59,7 @@ That reaches the markdown table at `templates/trial.md.j2:81`, which renders all
 
 Do not change site ordering or which sites the provider returns.
 
-Do not change how contacts are emitted.
+Do not change which contacts are emitted, or their order. The shared-site-list mechanism offered above necessarily restructures `extract_contacts` at `src/transform/trial.rs:185-208`; that is permitted. Changing what it produces is not.
 
 The related symptom — the output listing a contact for a site it says does not exist — is removed **inside the conversion** by keeping the site, because the site the contact belongs to now appears in `from_ctgov_study`'s output. What remains at that layer is only a site with no identifying field at all, no facility, no city and no country, that still carries a contact. No such site exists in 225 fixtures across both repositories or in 1,600 live studies sampled 2026-09-03, so there is no failing test to write and no ticket for it. Case 12's rule already covers it if one ever appears.
 
