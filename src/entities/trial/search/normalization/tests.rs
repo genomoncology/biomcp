@@ -102,8 +102,12 @@ fn trial_sources_reject_ambiguous_active_status_with_replacements() {
         let [ctgov_error, nci_error] = errors.map(Option::unwrap);
         assert_eq!(ctgov_error, nci_error);
         assert!(ctgov_error.contains("active is ambiguous"));
+        assert!(ctgov_error.contains("NCI"));
+        assert!(ctgov_error.contains("ClinicalTrials.gov"));
         assert!(ctgov_error.contains("--status recruiting"));
+        assert!(ctgov_error.contains("open and accruing"));
         assert!(ctgov_error.contains("--status active_not_recruiting"));
+        assert!(ctgov_error.contains("enrolled and no longer accruing"));
     }
 }
 
