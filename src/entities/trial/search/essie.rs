@@ -43,7 +43,7 @@ pub(super) fn quote_essie_literal(value: &str) -> String {
 
 fn boolean_operator_regex() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"(?i)\b(OR|AND|NOT)\b").expect("valid boolean operator regex"))
+    RE.get_or_init(|| Regex::new(r"\b(OR|AND|NOT)\b").expect("valid boolean operator regex"))
 }
 
 fn split_boolean_expression(value: &str) -> Option<(Vec<String>, Vec<String>)> {
