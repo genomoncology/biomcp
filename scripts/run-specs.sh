@@ -376,6 +376,22 @@ validate_routine_spec_workers() {
   fi
 }
 
+ctgov_page_consumes_request_log() {
+  local path="$1"
+  grep -Fq 'BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG' "$path" ||
+    grep -Fq 'spec/fixtures/ctgov-request-log' "$path"
+}
+
+prepare_ctgov_page_request_log() {
+  local fixture_root="${BIOMCP_CTGOV_INTERVENTION_ALIAS_ROOT:?CTGov fixture root is not configured}"
+  local fixture_base="${BIOMCP_CTGOV_BASE:?CTGov fixture base is not configured}"
+  local request_log namespace
+  request_log="$(mktemp "$fixture_root/request-log.XXXXXX")"
+  namespace="${request_log##*/}"
+  export BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG="$request_log"
+  export BIOMCP_CTGOV_BASE="${fixture_base%/api/v2}/__biomcp_ctgov_worker/$namespace/api/v2"
+}
+
 run_markdown_specs() {
   ((${#MD_PATHS[@]})) || return 0
 
@@ -397,7 +413,12 @@ run_markdown_specs() {
     # Monitor mode gives each background page its own process group. That lets
     # interruption reap Mustmatch and any command it currently owns.
     set -m
-    (8>&- exec mustmatch test "$path" --lang bash "${timeout_args[@]}") >"$log_path" 2>&1 &
+    (
+      if ctgov_page_consumes_request_log "$path"; then
+        prepare_ctgov_page_request_log
+      fi
+      8>&- exec mustmatch test "$path" --lang bash "${timeout_args[@]}"
+    ) >"$log_path" 2>&1 &
     pid=$!
     set +m
     PARALLEL_SPEC_PIDS+=("$pid")

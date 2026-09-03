@@ -42,12 +42,13 @@ trap 'exit 129' HUP
 
 prepare_fixture_supervisor_owner
 start_fixture_supervisor "ctgov-intervention-alias" "$cache_dir" "$fixture_root" "spec-ctgov-intervention-alias." "$server_pid_file" \
-  python3 - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" "$workspace_root" <<'PY' >"$server_log" 2>&1 &
+  python3 - "$ready_file" "$request_log" "$server_pid_file" "$owner_arg" "$workspace_root" "$fixture_root" <<'PY' >"$server_log" 2>&1 &
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 import json
 import os
+import re
 import sys
 
 SOURCES = Path(sys.argv[5]) / "testdata/sources"
@@ -378,13 +379,31 @@ def study_payload_for_request(parsed, study):
 
 
 REQUEST_LOG = Path(sys.argv[2])
+FIXTURE_ROOT = Path(sys.argv[6])
+WORKER_NAMESPACE = re.compile(r"^/__biomcp_ctgov_worker/(request-log\.[A-Za-z0-9]{6,})(/api/v2(?:/.*)?)$")
 SERVER_PID_FILE = Path(sys.argv[3])
 SERVER_PID_FILE.write_text(f"{os.getpid()}\n", encoding="utf-8")
 
 
+def ctgov_request_target(request_target):
+    parsed = urlparse(request_target)
+    match = WORKER_NAMESPACE.fullmatch(parsed.path)
+    if not match:
+        return parsed, request_target, REQUEST_LOG
+    request_log = FIXTURE_ROOT / match.group(1)
+    if not request_log.is_file():
+        return None
+    canonical = parsed._replace(path=match.group(2))
+    return canonical, canonical.geturl(), request_log
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        parsed = urlparse(self.path)
+        routed = ctgov_request_target(self.path)
+        if routed is None:
+            send_json(self, 404, {"error": "unknown CTGov worker namespace"})
+            return
+        parsed, request_target, request_log = routed
         query = parse_qs(parsed.query)
         if parsed.path == "/large-docs/48/NCT03361748/Prot_SAP_000.pdf":
             send_bytes(self, 200, KARMMA_DOCUMENT_BYTES, "application/pdf")
@@ -396,8 +415,8 @@ class Handler(BaseHTTPRequestHandler):
                 send_json(self, 200, {"total": 0, "hits": []})
             return
         if parsed.path == "/api/v2/studies":
-            with REQUEST_LOG.open("a", encoding="utf-8") as log:
-                log.write(f"{self.path}\n")
+            with request_log.open("a", encoding="utf-8") as log:
+                log.write(f"{request_target}\n")
             intervention = " ".join(query.get("query.intr", [])).strip()
             condition = " ".join(query.get("query.cond", [])).strip()
             page_size = query.get("pageSize", [""])[0]
@@ -487,8 +506,8 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, {"studies": [study_payload_for_request(parsed, CONTACTS_ELIGIBILITY_STUDY)], "totalCount": 1})
             return
         if parsed.path.startswith("/api/v2/studies/"):
-            with REQUEST_LOG.open("a", encoding="utf-8") as log:
-                log.write(f"{self.path}\n")
+            with request_log.open("a", encoding="utf-8") as log:
+                log.write(f"{request_target}\n")
             nct_id = parsed.path.rsplit("/", 1)[-1].lower()
             if nct_id in CTGOV_DETAIL:
                 send_bytes(self, 200, CTGOV_DETAIL[nct_id], "application/json")

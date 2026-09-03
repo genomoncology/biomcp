@@ -141,6 +141,10 @@ def test_ctgov_parallel_pages_receive_private_mutable_logs(tmp_path: Path) -> No
     (workspace / "scripts").mkdir(parents=True)
     fixtures = workspace / "spec" / "fixtures"
     fixtures.mkdir(parents=True)
+    for path in mutable_log_consumers:
+        copied_page = workspace / path
+        copied_page.parent.mkdir(parents=True, exist_ok=True)
+        copied_page.write_text(_read_repo(path), encoding="utf-8")
     routine_body = "\n".join(f"  {path}" for path in mutable_log_consumers)
     runner_source = re.sub(
         r"(?ms)^SPEC_ROUTINE_PATHS=\(\n.*?^\)",
