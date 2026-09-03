@@ -76,3 +76,19 @@ If case 4 has already been amended by the time you read it, follow the amended c
 Do not change how CTGov conditions are read; that path works. Do not change the shape of the condition list on the output side.
 
 Do not touch interventions, age range, study type, enrollment or `why_stopped`. All five are ticket 1132.
+
+## Addendum, 2026-09-03: case 7 is retired and its requirement is now stated here in full
+
+BioData retired case 7 on 2026-09-03. The `retired` block of `cases.json` records the reason, and it matches the amendment above: the comma-splitting branch is unreachable from every provider BioMCP supports, so no fixture can prove a correction to it.
+
+The retirement moved one requirement onto this ticket. Stated in full so no reader has to reconstruct it:
+
+**A condition name is never split on a comma, and the scalar and array forms of one value agree.**
+
+Both halves matter. The first says `"Lung Cancer, Non-Small Cell"` is one condition, whatever shape it arrives in. The second says a payload that carries that name as a bare string and a payload that carries it as a single-element array convert to the same condition list. Today they do not: the array form yields the name and the scalar form yields two names that no registry lists.
+
+This is a constraint on the rewrite, not extra work. This ticket already replaces the array reading in `json_get_string_list`. Whatever replaces it must satisfy the sentence above.
+
+Add it to the observable success list at the top: alongside the existing comma assertion, a scalar condition string and a one-element array of the same string convert to the same result.
+
+Draft 1118 is held retired rather than archived, because an archived ticket reads as `done` to the board and nothing about it was done.

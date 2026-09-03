@@ -1,6 +1,19 @@
 ---
 flow: build
 priority: 8
+hold: Superseded 2026-09-03. It carried five behaviors on one ticket. Each is now its own ticket. Kept as a held draft so the board does not read it as done.
+---
+
+**Superseded 2026-09-03, hours after it was filed. Not done.**
+
+This ticket bundled five separate defects and a class check into one body. That breaks the one-behavior-per-ticket rule, and the rule exists for a reason this repository had already paid for: ticket 1107 bundled conditions with interventions, an attempt could not tell which of two conflicting statements to follow, and it refused. A bundle of five is that risk five times over.
+
+Each behavior is now its own ticket, with its own citation and its own observable success list. See `sdlc/planning/notes/2026-09-03-splitting-the-nci-field-name-bundle.md` for the mapping.
+
+Nothing measured here is withdrawn. Every field-name finding below was verified against `testdata/sources/nci_cts/search_melanoma.json` and holds. The successors carry the same evidence.
+
+**Why this is a held draft and not an archived ticket.** `sdlc/project/tasks` reports everything under `sdlc/tickets/archive/` as `done`. Archiving this would tell the board that five defects were fixed when none were. The convention is written down in `sdlc/planning/notes/retiring-a-ticket.md`.
+
 ---
 
 # The NCI reader asks for five field names NCI never sends, so five fields are always empty or wrong
