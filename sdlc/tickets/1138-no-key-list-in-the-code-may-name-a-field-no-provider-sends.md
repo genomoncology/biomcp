@@ -13,7 +13,9 @@ One in ClinicalTrials.gov, fixed by ticket 1095. Three structs sought `intervent
 
 Five in the NCI reader, all found in one pass on 2026-09-03 and each filed as its own ticket. `interventions` (1133) sought at the top level while NCI nests it in the arms. `minimum_age` and its variants (1135) sought at the top level while NCI nests them in structured eligibility. `study_type` (1134) sought and absent, so every trial falls through and reports its primary purpose instead. `enrollment`, `enrollment_target` and `target_enrollment` (1119) all sought, all absent, while NCI sends `minimum_target_accrual_number`. And a stop reason (1137) hardcoded absent while NCI sends `why_study_stopped`.
 
-Six instances of one class. None of them raised an error, because a key that is missing and a value that is empty are the same answer to `json_get_string`. Every one was found by a person reading a provider's own response beside the code, which is not a check.
+A seventh, found 2026-09-03 while an agent measured the live provider to check a different ticket's premise. `CtGovLocation` at `src/sources/clinicaltrials.rs:547` carries `central_contacts`, and ClinicalTrials.gov never sends it. Across 9,230 locations in 1,600 live studies the location key set is exactly `city`, `contacts`, `country`, `facility`, `geoPoint`, `state`, `status` and `zip`. Both `extract_locations` at `src/transform/trial.rs:132` and `extract_contacts` at `:197` chain onto that always-empty field. It is the quietest instance yet: it produces no wrong value, only a contact that could never appear, so nothing looks missing at all. This one has no separate ticket, because removing an always-empty field changes no observable behavior and there is no failing test to write. The check this ticket builds is the only thing that can catch it, which is exactly the argument for the check.
+
+Seven instances of one class. None of them raised an error, because a key that is missing and a value that is empty are the same answer to `json_get_string`. Every one was found by a person reading a provider's own response beside the code, which is not a check.
 
 Worse, the suite actively defended four of them. Tests at `src/transform/trial.rs:930`, `:935`, `:959`, `:960`, `:963` and `:965` supply `target_enrollment`, `enrollment_target`, a top-level `interventions`, a top-level `minimum_age` and a top-level `study_type`. Every one of those keys is invented. A test written against the reader's own shape passes forever while the field is dead in production.
 
@@ -40,7 +42,7 @@ Do not resolve either by loosening the rule until the current tree passes. A che
 ## Done, observably
 
 - Adding a key name to a conversion key list that no recorded capture for its endpoint supports fails the check, and the message names the key, its group and the endpoint.
-- Each of the six instances above fails the check when reintroduced. Tests pin that, so the check is proven against the defects it was built for rather than against invented examples.
+- Each of the seven instances above fails the check when reintroduced, `central_contacts` included. Tests pin that, so the check is proven against the defects it was built for rather than against invented examples.
 - For NCI, the check rests on a capture that both carries the field names and has a provider receipt. Recording one is in scope.
 - For ClinicalTrials.gov, a correct field name that no capture requested does not fail the check, and a field name that a capture requested and the provider did not return does fail it.
 - Every exception carries a written reason naming the field and why no capture can attest it.
