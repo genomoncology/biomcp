@@ -40,18 +40,33 @@ The reporting half of this fix is already built and working. What is missing is 
 
 The limit, stated plainly: that is a **later-page** response, and the line above reads a **first-page** response. No recorded first-page response omits `totalCount`.
 
-So this fix is defensive. It rests on two things: the field is `Option` on the wire, and the provider is on record omitting it when asked on a neighbouring request. That is the ticket's position, and it is not a claim that a first-page omission has been observed. Do not treat the absence of a first-page example as a reason to refuse; treat it as the reason the ticket says "defensive" rather than "reproduced in production."
+That provenance is why we believe the provider can omit the field. It is a separate question from whether the code can be shown mishandling it, and the answer to the second question is yes, today.
+
+## The reproducing input, which exists
+
+`src/sources/clinicaltrials.rs:11` defines `BIOMCP_CTGOV_BASE`. The repository already drives the whole CLI against a local fixture server through it, in Rust: `src/entities/disease/get/tests.rs` stands up a listener, writes CTGov bytes back — including a literal `{"studies":[],"totalCount":0}` at line 71 — sets the variable, and calls `crate::cli::execute`. `spec/fixtures/setup-ctgov-intervention-alias-spec-fixture.sh:547` does the same at spec scale.
+
+So serving a first-page body carrying `studies` and no `totalCount`, then running the count path, is reachable with no new harness and no new dependency. Today it yields a total of zero. After the fix it yields unknown.
+
+**The red must be an assertion on rendered output, not a compile failure.** Unit-testing `ctgov_count_from_native_total` directly would require widening its first parameter before the test compiles, which proves a signature is missing rather than a behavior wrong. Go through the rendered result instead.
+
+Serve a composed first-page body with the field omitted. That is a synthetic body reproducing a real optionality, and it is the honest choice here. Serving the recorded later-page bytes in answer to a first-page count request would pair real bytes with a request that never produced them, which is a different and worse thing. Neither is a recorded first-page omission, and the ticket is not pretending otherwise.
 
 ## Done, observably
 
 - Converting a response with no `totalCount` yields an unknown total rather than `Exact(0)`.
-- A response carrying a total still reports that number, and the `Approximate` behavior under an age filter is unchanged.
+- A response carrying a total still reports that number, and the `Approximate` behavior under an age filter is unchanged when a total is present.
+- A response omitting the total **while an age filter is set** reports unknown, not `Approximate(0)`. A number the provider never sent cannot be approximated.
 
 ## Boundary
 
 Do not change paging or how many rows a search requests.
 
-Do not change the rendering of an unknown total. It already works and this ticket does not touch it.
+Do not change the rendering of the traversal-cap case.
+
+The text surface at `src/cli/trial/dispatch.rs:232` currently reads `Total: unknown (traversal limit reached)`. That string names a cause, and today `Unknown` has exactly one cause, so it is true. This ticket gives it a second cause with a different reason: the provider did not supply a total and no traversal limit was reached. Left alone, the fix would make the tool state a reason that did not happen.
+
+So that line may change. It must not assert a cause that does not apply. Whether the parenthetical is dropped, or the variant carries its reason, is design's call. The JSON surface at `:223` emits a bare `total: null` and states no cause, so it needs nothing.
 
 This ticket is ClinicalTrials.gov only. The NCI half of case 9 is retired; see below.
 
@@ -59,7 +74,7 @@ This ticket is ClinicalTrials.gov only. The NCI half of case 9 is retired; see b
 
 The original ticket also claimed the NCI branch reports a total of one because `src/entities/trial/search/mod.rs:372` falls back to `page.results.len()` on a single-row request.
 
-That claim is withdrawn. Case 9 in the sibling BioData repository carries its own correction of 2026-09-02: measured against the live provider, every NCI response carries `total` at the top level, in both fifty-record and one-record samples. Both recorded NCI payloads in this repository agree, carrying totals of 2094 and 2112. A live request on 2026-09-03 agreed again.
+That claim is withdrawn. Case 9 in the sibling BioData repository carries its own correction of 2026-09-02: measured against the live provider, every NCI response carries `total` at the top level, in both fifty-record and one-record samples. Both recorded NCI payloads in this repository agree, carrying totals of 2094 and 2112.
 
 No NCI response omits the total, so there is no failing test to write and no payload that could ever be recorded to produce one. Making that branch return unknown would be a guard against a shape the provider does not produce.
 
