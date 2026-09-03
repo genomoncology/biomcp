@@ -1,7 +1,6 @@
 ---
 flow: build
 priority: 9
-hold: Superseded 2026-09-03. It carried five behaviors on one ticket. Each is now its own ticket. Kept as a held draft so the board does not read it as done.
 ---
 
 
