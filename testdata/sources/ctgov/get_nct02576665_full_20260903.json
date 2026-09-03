@@ -1,0 +1,527 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT02576665",
+      "orgStudyIdInfo": {
+        "id": "Tg 511-15-02"
+      },
+      "organization": {
+        "fullName": "Tocagen Inc.",
+        "class": "INDUSTRY"
+      },
+      "briefTitle": "A Study of Toca 511, a Retroviral Replicating Vector, Combined With Toca FC in Patients With Solid Tumors or Lymphoma (Toca 6)",
+      "officialTitle": "A Phase 1b Study of Toca 511, a Retroviral Replicating Vector, Combined With Toca FC in Patients With Solid Tumors or Lymphoma"
+    },
+    "statusModule": {
+      "statusVerifiedDate": "2020-02",
+      "overallStatus": "TERMINATED",
+      "whyStopped": "Sponsor decision",
+      "expandedAccessInfo": {
+        "hasExpandedAccess": false
+      },
+      "startDateStruct": {
+        "date": "2016-07",
+        "type": "ACTUAL"
+      },
+      "primaryCompletionDateStruct": {
+        "date": "2019-05",
+        "type": "ACTUAL"
+      },
+      "completionDateStruct": {
+        "date": "2019-12-20",
+        "type": "ACTUAL"
+      },
+      "studyFirstSubmitDate": "2015-10-12",
+      "studyFirstSubmitQcDate": "2015-10-13",
+      "studyFirstPostDateStruct": {
+        "date": "2015-10-15",
+        "type": "ESTIMATED"
+      },
+      "lastUpdateSubmitDate": "2020-02-05",
+      "lastUpdatePostDateStruct": {
+        "date": "2020-02-07",
+        "type": "ACTUAL"
+      }
+    },
+    "sponsorCollaboratorsModule": {
+      "responsibleParty": {
+        "type": "SPONSOR"
+      },
+      "leadSponsor": {
+        "name": "Tocagen Inc.",
+        "class": "INDUSTRY"
+      }
+    },
+    "oversightModule": {
+      "oversightHasDmc": false
+    },
+    "descriptionModule": {
+      "briefSummary": "The purpose of this trial is to evaluate changes in immune activity relative to baseline following treatment with Toca 511 and Toca FC in patients with solid tumors (including recurrent high grade glioma \\[rHGG\\]) or lymphoma. This is a multicenter, open-label study of Toca 511 and Toca FC. Patients with advanced solid tumors or lymphoma, for whom curative options are not available, will be enrolled into the study, subject to all entry criteria. Tumors must be accessible to biopsy and/or resection. Patients will be qualified based on the presence of specific molecular characteristics, documented by Foundation Medicine (or equivalent) genomic profile report, and specific tumor types.\n\nToca 511 will be administered by IV injection followed by (1) intratumoral injection following biopsy or (2) injection into the resection cavity wall following planned resection in the case of rHGG or brain metastases. Toca FC will be administered orally in cycles of therapy.\n\nPatients not undergoing resection of brain tumors will undergo 2 biopsies to allow assessment of baseline and follow-up immune activity in the tumor. Changes in immune activity in peripheral blood will be measured in all patients."
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Colorectal Cancer",
+        "Triple Negative Breast Cancer",
+        "Pancreatic Cancer",
+        "Non-Small Cell Lung Cancer",
+        "Head and Neck Cancer",
+        "Ovarian Cancer",
+        "Lymphoma",
+        "Sarcoma",
+        "Bladder Cancer",
+        "Melanoma",
+        "IDH1 Mutated Solid Tumors",
+        "IDH1 Mutated or MGMT Methylated Recurrent HGG (Not Recruiting)"
+      ],
+      "keywords": [
+        "Anaplastic Astrocytoma, Glioblastoma"
+      ]
+    },
+    "designModule": {
+      "studyType": "INTERVENTIONAL",
+      "phases": [
+        "PHASE1"
+      ],
+      "designInfo": {
+        "allocation": "NA",
+        "interventionModel": "SINGLE_GROUP",
+        "primaryPurpose": "TREATMENT",
+        "maskingInfo": {
+          "masking": "NONE"
+        }
+      },
+      "enrollmentInfo": {
+        "count": 21,
+        "type": "ACTUAL"
+      }
+    },
+    "armsInterventionsModule": {
+      "armGroups": [
+        {
+          "label": "Toca 511/Toca FC",
+          "type": "EXPERIMENTAL",
+          "description": "Toca 511: 14 mL intravenously daily for 3 days followed by up to 4 mL intratumorally or into resection cavity walls following biopsy or resection. Cutaneous melanoma patients may receive intralesional injections (up to 4 mL) daily for 5 days.\n\nToca FC: 220 mg/kg/day orally starting at Week 5-6. Cycles are 5- to 7- day courses of treatment every 4 to 6 weeks.",
+          "interventionNames": [
+            "Biological: Toca 511",
+            "Drug: Toca FC"
+          ]
+        }
+      ],
+      "interventions": [
+        {
+          "type": "BIOLOGICAL",
+          "name": "Toca 511",
+          "description": "Toca 511 consists of a purified retroviral replicating vector encoding a modified yeast cytosine deaminase (CD) gene. The CD gene converts the antifungal 5-fluorocytosine (5FC) to the anticancer drug 5-FU in cells that have been infected by the Toca 511 vector",
+          "armGroupLabels": [
+            "Toca 511/Toca FC"
+          ],
+          "otherNames": [
+            "vocimagene amiretrorepvec",
+            "RRV",
+            "retroviral replicating viral"
+          ]
+        },
+        {
+          "type": "DRUG",
+          "name": "Toca FC",
+          "description": "Toca FC is an extended-release formulation of flucytosine. Toca FC is supplied as 500 mg white, oblong tablets with \"TOCA FC\" embossed on one side and \"500\" embossed on the other side",
+          "armGroupLabels": [
+            "Toca 511/Toca FC"
+          ],
+          "otherNames": [
+            "Flucytosine",
+            "5-FC",
+            "5-Fluorocytosine"
+          ]
+        }
+      ]
+    },
+    "outcomesModule": {
+      "primaryOutcomes": [
+        {
+          "measure": "Changes from baseline in immune activity in tumor and peripheral blood",
+          "timeFrame": "Baseline to Weeks 9-10"
+        }
+      ]
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "Inclusion Criteria:\n\n1. Patient has given written informed consent.\n2. Patient is between 18 and 75 years of age, inclusive.\n3. Patient has an advanced malignancy that has progressed or recurred following standard therapy for advanced disease, and for which no curative therapies are available.\n4. Patient has histologically confirmed (1) colorectal cancer, triple negative breast cancer, pancreatic cancer, non-small cell lung cancer, head and neck cancer, ovarian cancer, lymphoma, sarcoma, bladder cancer, or melanoma with defects in one or more of the following genes: ABL2, ACVR1B, APC, ASXL1, ATM, ATR, BLM, BRCA1, BRCA2, CDK12, CDKN1A, CDKN1B, CDKN2A, CHD4, CYLD, DICER1, DNMT3A, ERBB3, EZH2, FGFR2, FLT3, GATA3, HGF, KDM6A, KDR, KEAP1, KIT, KMT2D, KRAS, MAGI2, MAP3K1, MED12, MET, MSH-2, MSH-6, MYC, NA, NF1, NF2, NOTCH1, NOTCH2, NRAS, NSD1, PIK3C2B, PIK3CA, PIK3CB, PIK3R1, PTCH1, PTPN11, RB1, RUNX1, SETD2, SMARCA4, SOX9, STAG2, TAF1, TBX3, TET2, TP53, XPO1; (2) documented IDH1 mutated solid tumor (other than glioma); or (3) documented IDH1 mutated or MGMT promoter methylation positive glioblastoma multiforme (GBM) or anaplastic astrocytoma. Note: Genetic abnormalities must be documented by Foundation Medicine (or equivalent) genomic profile report.\n5. Patient has an estimated life expectancy of at least 6 months.\n6. Patient has adequate organ function, as indicated by the following laboratory values\n\n   * Bone marrow: hemoglobin \u2265 10 g/dL, platelet count \u2265 100,000/mm3, absolute neutrophil count \u2265 1,500/ mm3, absolute lymphocyte count \u2265 500/ mm3.\n   * Liver: total bilirubin \u2264 1.5 x the upper limit of normal (ULN; unless known Gilbert's syndrome); alanine aminotransferase \u2264 2.5 x ULN (\u2264 5.0 x ULN in patients with liver metastases).\n   * Kidney: estimated glomerular filtration rate (Cockcroft-Gault) \u2265 50 mL/min.\n7. Women of childbearing potential (defined as not postmenopausal \\[ie, \u2265 12 months of non-therapy-induced amenorrhea\\] or not surgically sterile) must have a negative serum pregnancy test within 21 days prior to initiation of Toca 511, and be willing to use an effective means of contraception in addition to barrier methods (condoms).\n8. Patient and partner are willing to use condoms for 12 months after receiving Toca 511 or until there is no evidence of the virus in his/her blood, whichever is longer.\n9. Patients with solid tumors or lymphoma must have 1 or more tumors accessible to biopsy or resection, including biopsy allowing multiple cores from at least 1 lesion (fine needle aspiration is excluded), incisional or excisional biopsy, and/or resection. Note: Patients with resectable brain metastases must be undergoing planned resection. Patients with rHGG must be undergoing planned subtotal or gross total resection.\n10. Patient has a tumor amenable to injection of Toca 511 (ie, \u2265 2 cm and not close to or invading major vessels).\n11. Patient has an ECOG Performance Status score of 0 or 1 (solid tumors) or KPS score \u2265 70 (rHGG).\n12. Patient has measurable disease by RECIST version 1.1 (solid tumors) or Lugano (lymphoma) criteria or evaluable or measureable disease by Macdonald criteria (rHGG).\n13. Patients with GBM or anaplastic astrocytoma must be at first or second recurrence (including this recurrence) or have progressed following initial definitive multimodal therapy with surgery, temozolomide, and radiation (confirmed by diagnostic biopsy with local pathology review or contrast-enhanced magnetic resonance imaging \\[MRI\\]). If first recurrence is documented by MRI, an interval of at least 12 weeks after the end of prior radiation therapy is required, unless there is either histopathologic confirmation of recurrent tumor or new enhancement on MRI outside the radiotherapy treatment field.\n\nExclusion Criteria:\n\n1. Patient has a history of other malignancy, unless the patient has been disease free for at least 5 years. Adequately treated basal cell carcinoma or squamous cell skin cancer is acceptable regardless of time, as well as localized prostate carcinoma or cervical carcinoma in situ, after curative treatment.\n2. Patient has or had any active infection requiring antibiotic, antifungal, or antiviral therapy within the 2 weeks prior to administration of Toca 511.\n3. Patient received chemotherapy within 2 weeks prior to initiation of treatment with Toca 511 (6 weeks for nitrosoureas).\n4. Patient received investigational treatment within 2 weeks or immunotherapy or antibody therapy within 28 days prior to initiation of treatment with Toca 511, and/or has not recovered from toxicities associated with such treatment.\n5. For patients with rHGG, the patient intends to undergo treatment with the Gliadel\u00ae wafer at the time of planned resection (ie, on-study surgery) or has received the Gliadel wafer \\< 30 days from the date of planned resection.\n6. Patient has any bleeding diathesis, or must take anticoagulants or antiplatelet agents, including nonsteroidal anti inflammatory drugs, that cannot be stopped for biopsy or surgery.\n7. Patient has severe pulmonary, cardiac, or other systemic disease, specifically:\n\n   * New York Heart Association \\> Class II congestive heart failure that is not controlled on standard therapy within 6 months prior to initiation of treatment with Toca 511.\n   * Uncontrolled or significant cardiovascular disease, clinically significant ventricular arrhythmia (such as ventricular tachycardia, ventricular fibrillation, or Torsades de pointes), clinically significant pulmonary disease (such as \u2265 Grade 2 dyspnea, according to CTCAE 4.03).\n   * Any other disease, either metabolic or psychological, that as per Investigator assessment may affect the patient's compliance or place the patient at an increased risk of potential treatment complications.\n8. Patient has a history of allergy or intolerance to flucytosine.\n9. Patient has a condition that would prevent him or her from being able to swallow Toca FC tablets or absorb flucytosine.\n10. Patient is human immunodeficiency virus seropositive.\n11. Patient is breast feeding.\n12. Patient has previously participated in the Toca 5 trial (Tg 511-15-01).",
+      "healthyVolunteers": false,
+      "sex": "ALL",
+      "minimumAge": "18 Years",
+      "maximumAge": "75 Years",
+      "stdAges": [
+        "ADULT",
+        "OLDER_ADULT"
+      ]
+    },
+    "contactsLocationsModule": {
+      "overallOfficials": [
+        {
+          "name": "Jaime R Merchan, MD",
+          "affiliation": "University of Miami",
+          "role": "PRINCIPAL_INVESTIGATOR"
+        }
+      ],
+      "locations": [
+        {
+          "facility": "Sarah Cannon Research Institute",
+          "city": "Denver",
+          "state": "Colorado",
+          "zip": "80218",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 39.73915,
+            "lon": -104.9847
+          }
+        },
+        {
+          "facility": "University of Miami",
+          "city": "Miami",
+          "state": "Florida",
+          "zip": "33136",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 25.77427,
+            "lon": -80.19366
+          }
+        },
+        {
+          "facility": "MD Anderson Cancer Center",
+          "city": "Houston",
+          "state": "Texas",
+          "zip": "77030",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 29.76328,
+            "lon": -95.36327
+          }
+        }
+      ]
+    },
+    "referencesModule": {
+      "references": [
+        {
+          "pmid": "29735994",
+          "type": "DERIVED",
+          "citation": "Inoko K, Hiraoka K, Inagaki A, Takahashi M, Kushibiki T, Hontani K, Takano H, Sato S, Takeuchi S, Nakamura T, Tsuchikawa T, Shichinohe T, Gruber HE, Jolly DJ, Kasahara N, Hirano S. Therapeutic activity of retroviral replicating vector-mediated prodrug activator gene therapy for pancreatic cancer. Cancer Gene Ther. 2018 Aug;25(7-8):184-195. doi: 10.1038/s41417-018-0020-7. Epub 2018 May 8."
+        },
+        {
+          "pmid": "29322091",
+          "type": "DERIVED",
+          "citation": "Yagiz K, Rodriguez-Aguirre ME, Lopez Espinoza F, Montellano TT, Mendoza D, Mitchell LA, Ibanez CE, Kasahara N, Gruber HE, Jolly DJ, Robbins JM. A Retroviral Replicating Vector Encoding Cytosine Deaminase and 5-FC Induces Immune Memory in Metastatic Colorectal Cancer Models. Mol Ther Oncolytics. 2017 Dec 5;8:14-26. doi: 10.1016/j.omto.2017.12.001. eCollection 2018 Mar 30."
+        }
+      ]
+    }
+  },
+  "derivedSection": {
+    "miscInfoModule": {
+      "versionHolder": "2026-09-03"
+    },
+    "conditionBrowseModule": {
+      "meshes": [
+        {
+          "id": "D015179",
+          "term": "Colorectal Neoplasms"
+        },
+        {
+          "id": "D064726",
+          "term": "Triple Negative Breast Neoplasms"
+        },
+        {
+          "id": "D010190",
+          "term": "Pancreatic Neoplasms"
+        },
+        {
+          "id": "D002289",
+          "term": "Carcinoma, Non-Small-Cell Lung"
+        },
+        {
+          "id": "D006258",
+          "term": "Head and Neck Neoplasms"
+        },
+        {
+          "id": "D010051",
+          "term": "Ovarian Neoplasms"
+        },
+        {
+          "id": "D008223",
+          "term": "Lymphoma"
+        },
+        {
+          "id": "D012509",
+          "term": "Sarcoma"
+        },
+        {
+          "id": "D001749",
+          "term": "Urinary Bladder Neoplasms"
+        },
+        {
+          "id": "D008545",
+          "term": "Melanoma"
+        },
+        {
+          "id": "D001254",
+          "term": "Astrocytoma"
+        },
+        {
+          "id": "D005909",
+          "term": "Glioblastoma"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D007414",
+          "term": "Intestinal Neoplasms"
+        },
+        {
+          "id": "D005770",
+          "term": "Gastrointestinal Neoplasms"
+        },
+        {
+          "id": "D004067",
+          "term": "Digestive System Neoplasms"
+        },
+        {
+          "id": "D009371",
+          "term": "Neoplasms by Site"
+        },
+        {
+          "id": "D009369",
+          "term": "Neoplasms"
+        },
+        {
+          "id": "D004066",
+          "term": "Digestive System Diseases"
+        },
+        {
+          "id": "D005767",
+          "term": "Gastrointestinal Diseases"
+        },
+        {
+          "id": "D003108",
+          "term": "Colonic Diseases"
+        },
+        {
+          "id": "D007410",
+          "term": "Intestinal Diseases"
+        },
+        {
+          "id": "D012002",
+          "term": "Rectal Diseases"
+        },
+        {
+          "id": "D001943",
+          "term": "Breast Neoplasms"
+        },
+        {
+          "id": "D001941",
+          "term": "Breast Diseases"
+        },
+        {
+          "id": "D012871",
+          "term": "Skin Diseases"
+        },
+        {
+          "id": "D017437",
+          "term": "Skin and Connective Tissue Diseases"
+        },
+        {
+          "id": "D004701",
+          "term": "Endocrine Gland Neoplasms"
+        },
+        {
+          "id": "D010182",
+          "term": "Pancreatic Diseases"
+        },
+        {
+          "id": "D004700",
+          "term": "Endocrine System Diseases"
+        },
+        {
+          "id": "D002283",
+          "term": "Carcinoma, Bronchogenic"
+        },
+        {
+          "id": "D001984",
+          "term": "Bronchial Neoplasms"
+        },
+        {
+          "id": "D008175",
+          "term": "Lung Neoplasms"
+        },
+        {
+          "id": "D012142",
+          "term": "Respiratory Tract Neoplasms"
+        },
+        {
+          "id": "D013899",
+          "term": "Thoracic Neoplasms"
+        },
+        {
+          "id": "D008171",
+          "term": "Lung Diseases"
+        },
+        {
+          "id": "D012140",
+          "term": "Respiratory Tract Diseases"
+        },
+        {
+          "id": "D010049",
+          "term": "Ovarian Diseases"
+        },
+        {
+          "id": "D000291",
+          "term": "Adnexal Diseases"
+        },
+        {
+          "id": "D005831",
+          "term": "Genital Diseases, Female"
+        },
+        {
+          "id": "D052776",
+          "term": "Female Urogenital Diseases"
+        },
+        {
+          "id": "D005261",
+          "term": "Female Urogenital Diseases and Pregnancy Complications"
+        },
+        {
+          "id": "D000091642",
+          "term": "Urogenital Diseases"
+        },
+        {
+          "id": "D005833",
+          "term": "Genital Neoplasms, Female"
+        },
+        {
+          "id": "D014565",
+          "term": "Urogenital Neoplasms"
+        },
+        {
+          "id": "D000091662",
+          "term": "Genital Diseases"
+        },
+        {
+          "id": "D006058",
+          "term": "Gonadal Disorders"
+        },
+        {
+          "id": "D009370",
+          "term": "Neoplasms by Histologic Type"
+        },
+        {
+          "id": "D008232",
+          "term": "Lymphoproliferative Disorders"
+        },
+        {
+          "id": "D008206",
+          "term": "Lymphatic Diseases"
+        },
+        {
+          "id": "D006425",
+          "term": "Hemic and Lymphatic Diseases"
+        },
+        {
+          "id": "D007160",
+          "term": "Immunoproliferative Disorders"
+        },
+        {
+          "id": "D007154",
+          "term": "Immune System Diseases"
+        },
+        {
+          "id": "D018204",
+          "term": "Neoplasms, Connective and Soft Tissue"
+        },
+        {
+          "id": "D014571",
+          "term": "Urologic Neoplasms"
+        },
+        {
+          "id": "D001745",
+          "term": "Urinary Bladder Diseases"
+        },
+        {
+          "id": "D014570",
+          "term": "Urologic Diseases"
+        },
+        {
+          "id": "D052801",
+          "term": "Male Urogenital Diseases"
+        },
+        {
+          "id": "D018358",
+          "term": "Neuroendocrine Tumors"
+        },
+        {
+          "id": "D017599",
+          "term": "Neuroectodermal Tumors"
+        },
+        {
+          "id": "D009373",
+          "term": "Neoplasms, Germ Cell and Embryonal"
+        },
+        {
+          "id": "D009380",
+          "term": "Neoplasms, Nerve Tissue"
+        },
+        {
+          "id": "D018326",
+          "term": "Nevi and Melanomas"
+        },
+        {
+          "id": "D012878",
+          "term": "Skin Neoplasms"
+        },
+        {
+          "id": "D005910",
+          "term": "Glioma"
+        },
+        {
+          "id": "D018302",
+          "term": "Neoplasms, Neuroepithelial"
+        },
+        {
+          "id": "D009375",
+          "term": "Neoplasms, Glandular and Epithelial"
+        }
+      ]
+    },
+    "interventionBrowseModule": {
+      "meshes": [
+        {
+          "id": "C000630228",
+          "term": "vocimagene amiretrorepvec"
+        },
+        {
+          "id": "D005437",
+          "term": "Flucytosine"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D003596",
+          "term": "Cytosine"
+        },
+        {
+          "id": "D011744",
+          "term": "Pyrimidinones"
+        },
+        {
+          "id": "D011743",
+          "term": "Pyrimidines"
+        },
+        {
+          "id": "D006573",
+          "term": "Heterocyclic Compounds, 1-Ring"
+        },
+        {
+          "id": "D006571",
+          "term": "Heterocyclic Compounds"
+        }
+      ]
+    }
+  },
+  "hasResults": false
+}

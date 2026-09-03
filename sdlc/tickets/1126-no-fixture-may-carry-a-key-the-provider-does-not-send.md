@@ -39,14 +39,24 @@ Do not change any fixture's contents to make the check pass. A fixture that fail
 
 Do not change the deserialization behavior fixed by 1095.
 
-## Held as a draft, 2026-09-03: the check has nothing to check
+## The capture this check needs, recorded 2026-09-03
 
-Parked because it would land as a check that passes by having no input, which is the failure it exists to prevent.
+Held as a draft for two hours this morning on the belief that no recorded capture carried the arm and reference sections, and that another project had to supply one. Both halves were wrong, and the correction is worth reading before working this ticket.
 
-The check needs a recorded ClinicalTrials.gov capture carrying the arm and reference sections. This repository has none. Measured on 2026-09-03: no file under `testdata/sources/` carries an `armGroups` key. The two files that match a search for `references` are ClinGen specifications and are unrelated.
+The gap was self-inflicted. Every ClinicalTrials.gov capture in `testdata/sources/ctgov/` was recorded with a restricted `fields=` list, and not one of those lists ever asked for the arms module. The provider was never withholding anything. We were never asking.
 
-BioData holds two recorded payloads that do carry `armGroups`, `references` and `type`, and correctly do not carry the invented `armGroupType`. Their ticket 0057 recorded them for exactly this purpose. Until those payloads are in this repository, the check has no capture to attest a key against, so every fixture key becomes an undeclared exception or the check reports success over an empty set.
+ClinicalTrials.gov v2 is a public API with no key and no authentication. One request with no field restriction returns everything.
 
-Release this draft the day the payloads land. Nothing about the ticket's requirement changes; only its ability to be proven.
+`testdata/sources/ctgov/get_nct02576665_full_20260903.json` is that request, recorded from `https://clinicaltrials.gov/api/v2/studies/NCT02576665?format=json` with no minimization. It carries all three keys this check exists to attest:
 
-The related check that runs the other direction — no key list in the code may name a field absent from every recorded capture — does not depend on those payloads and is carried by ticket 1132.
+- `protocolSection.armsInterventionsModule.armGroups[0].type` = `EXPERIMENTAL`
+- `protocolSection.armsInterventionsModule.interventions[0].type` = `BIOLOGICAL`
+- `protocolSection.referencesModule.references[0].type` = `DERIVED`
+
+And it does not carry `armGroupType` anywhere, which is the invented key that started this.
+
+The receipt is in `testdata/sources/capture-receipts.json`, classified `real_and_receipted`. The record carries no central contact, no location contact, and no telephone or electronic address. The only named person is the overall official, a principal investigator published with name, affiliation and role, which is the same class of information as a paper byline.
+
+So this check is provable today against a capture in this repository. Nothing about the ticket's requirement changes.
+
+The related check running the other direction — no key list in the code may name a field absent from every recorded capture — is ticket 1132 and is independent of this one.

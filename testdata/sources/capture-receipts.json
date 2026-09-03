@@ -2158,6 +2158,18 @@
         "minimization_or_redaction": "Reduced to fields decoded by the bounded association search plus provider pagination, retaining the provider's exact p-value mantissa and exponent; JSON whitespace was normalized.",
         "provider_origin_statement": "Bytes were recorded from the public GWAS Catalog v2 response produced by BioMCP's RequestPlan shape before the stated minimization."
       }
+    },
+    {
+      "path": "ctgov/get_nct02576665_full_20260903.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies/NCT02576665?format=json",
+        "captured_at": "2026-09-03T12:05:00Z",
+        "sha256": "902041a836bbf764ad158ca9f6ad395b5b3db49358714ca4f8a70f1f71c8b6cf",
+        "minimization_or_redaction": "No fields removed. The complete study record as returned; JSON whitespace normalized after capture. The record carries no central contact, no location contact, and no telephone or electronic address. The only named person is the overall official, a principal investigator published with name, affiliation and role.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov v2 API on 2026-09-03 with no field restriction, so the arms, references and eligibility modules are present as the provider sends them."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,
