@@ -1,43 +1,53 @@
 ---
 flow: build
 priority: 4
+deps: ["1121"]
 ---
 
 # Locations keep one contact per site while contacts keeps them all
 
-Locations take only the first contact a site lists. The contacts section keeps every one. CTGov routinely lists a primary and a backup, so one payload produces two different contact counts depending on which part of the output a reader looks at.
+Locations take only the first contact a site lists. The contacts section keeps every one. So one payload produces two different contact counts for the same site depending on which part of the output a reader looks at.
 
-Verified in `src/transform/trial.rs` on 2026-09-02 against `0.9.0-dev.6`.
+`extract_locations` at `src/transform/trial.rs:129-132` takes `loc.contacts.first()`, and lines 139-142 fold that one contact into four scalar fields. `TrialLocation` at `src/entities/trial/mod.rs:85-105` has room for exactly one. `extract_contacts` at `:197` iterates every contact the site lists. Verified 2026-09-03 against `0.9.0-dev.6`.
 
 ## Required behavior
 
-Every contact a site lists is kept.
+Every contact a site lists is reachable from that site's location, in the order the provider lists them.
 
 The two views of the same site agree about how many contacts it has.
 
-## Why this is a draft
+## Correct behavior
 
-The conformance case needs a recorded provider payload that does not exist in `testdata/sources/` yet: a CTGov trial carrying a site that lists two contacts.
+A site's contacts are the same set on both paths. Locations and contacts are derived from the same sites, so a per-site contact count taken from locations equals the count taken from contacts, and both equal the number the payload states.
 
-ADR 0017 requires fixtures recorded from the provider rather than hand-written, and defect 17 is what happens when that rule is broken. This ticket waits on a decision Ian owns: who records the missing payloads, and whether both projects share one recorded set. Promote it once that payload exists.
+Write that as a failing test, then fix. Red before green.
+
+This behavior is held against both 0.9 and 1.0 alike. It is recorded as case 13 of the clinical-trial conformance cases in the sibling BioData repository. **An attempt cannot read that repository**, so the statement above is this ticket's own authoritative copy. If it looks wrong, stop and say so rather than implementing something different.
+
+## The fixture is part of this work
+
+No payload in this repository has a site with more than one contact. Counted 2026-09-03: eleven captures under `testdata/sources/ctgov/`, twenty-six studies, zero central contacts and zero location contacts. Every contact byte tested against today is synthetic on `example.test`.
+
+The payload exists one repository over, authored rather than captured, with a receipt: `tests/fixtures/clinical-trial-parity/case-13-location-contacts.json` in the sibling BioData repository. It is a one-site study whose site lists two contacts, and it is the input this ticket's test needs.
+
+Copying that payload into `testdata/sources/` with a receipt classified as authored is part of this ticket, not a precondition someone else satisfies. Without it the parity assertion is vacuously true, because no site in the corpus has any contact at all.
+
+A trial contact is patient-bearing, so this fixture is authored by policy and will never be a recorded capture. That is the intended state, not a gap waiting to be filled.
+
 ## Done, observably
 
-- A site listing two contacts reports two in both views.
-- The counts agree for every site on the trial.
+- A site listing two contacts reports two on both paths, in the order the payload lists them.
+- The per-site counts agree for every site on the trial.
+- The authored two-contact payload is in `testdata/sources/` with a receipt, so the assertion above has a case it catches rather than passing over an empty set.
 
-## Where correct behavior is written
+## What this replaces
 
-`repos/biodata/sdlc/planning/clinical-trial-conformance/cases.json`, case 13. Take the assertion from that case, write it as a failing test, then fix. Do not copy the expected behavior into this repository as a second statement of it.
+The current single-contact locations rendering is being replaced deliberately. The change reaches the JSON shape of a location, the locations table in `templates/trial.md.j2`, and the pinned locations assertion in `spec/entity/trial.md`. Assertions in `src/transform/trial/tests.rs`, `src/cli/trial/tests_locations.rs` and `src/render/markdown/trial/tests.rs` pin one contact per location today and are expected to be restated.
 
-Reported by the BioData lead in `notes/biomcp/feedback/2026-09-02-seventeen-trial-defects-to-fix-in-0-9.md`, defect 13 of seventeen.
+The new shape is not specified here. Design owns it.
+
 ## Boundary
 
 Do not change contact ordering or which contact is treated as primary.
 
-## Fixture provenance, 2026-09-02
-
-BioData reports that this case will be satisfied by an authored fixture rather than a recorded capture. ADR 0024 in that repository makes a trial contact patient-bearing, and their fixture policy refuses a recorded capture carrying one. The receipt will read authored.
-
-Nothing about what this ticket tests changes. Across the ten existing captures in `testdata/sources/ctgov/`, twenty-five studies, there are zero central contacts and zero location contacts, so every contact byte already tested against is synthetic on `example.test` addresses.
-
-Source: `notes/biomcp/feedback/2026-09-02-two-fixture-details-before-the-payloads-land.md`.
+Do not change which sites appear. Ticket 1121 settles that, and this ticket depends on it: until every site appears on both paths, a per-site parity assertion is not well defined.
