@@ -80,7 +80,7 @@ pub(super) async fn search_page_with_nci_clients(
         resp.hits()
             .iter()
             .map(transform::trial::from_nci_hit)
-            .collect(),
+            .collect::<Result<Vec<_>, _>>()?,
         resp.total,
     ))
 }

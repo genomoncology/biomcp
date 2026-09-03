@@ -171,7 +171,7 @@ pub async fn get(
         TrialSource::NciCts => {
             let client = NciCtsClient::new()?;
             let resp = client.get(nct_id).await?;
-            let mut trial = transform::trial::from_nci_trial(&resp);
+            let mut trial = transform::trial::from_nci_trial(&resp)?;
             trial.source = Some("NCI CTS".into());
 
             if section_flags.include_eligibility {

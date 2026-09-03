@@ -5,6 +5,7 @@ use crate::entities::trial::{
     Trial, TrialArm, TrialContact, TrialEligibility, TrialIntervention, TrialLocation,
     TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult,
 };
+use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::CtGovStudy;
 
 fn truncate_utf8(s: &str, max_bytes: usize, suffix: &str) -> String {
@@ -561,7 +562,49 @@ fn json_get_string_list(value: &serde_json::Value, keys: &[&str], max: usize) ->
     vec![]
 }
 
-pub fn from_nci_hit(hit: &serde_json::Value) -> TrialSearchResult {
+fn nci_conditions(
+    value: &serde_json::Value,
+    keys: &[&str],
+    max: usize,
+) -> Result<Vec<String>, BioMcpError> {
+    let Some(obj) = value.as_object() else {
+        return Ok(Vec::new());
+    };
+
+    for key in keys {
+        let Some(value) = obj.get(*key) else {
+            continue;
+        };
+        match value {
+            serde_json::Value::Array(values) => {
+                let names = values
+                    .iter()
+                    .map(|value| {
+                        value
+                            .as_str()
+                            .or_else(|| value.get("name").and_then(serde_json::Value::as_str))
+                            .map(str::trim)
+                            .filter(|name| !name.is_empty())
+                            .map(str::to_string)
+                            .ok_or_else(|| BioMcpError::Api {
+                                api: "nci_cts".to_string(),
+                                message: "NCI condition has no readable name".to_string(),
+                            })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                return Ok(names.into_iter().take(max).collect());
+            }
+            serde_json::Value::String(name) if !name.trim().is_empty() => {
+                return Ok(vec![name.trim().to_string()]);
+            }
+            _ => {}
+        }
+    }
+
+    Ok(Vec::new())
+}
+
+pub fn from_nci_hit(hit: &serde_json::Value) -> Result<TrialSearchResult, BioMcpError> {
     let nct_id = json_get_string(hit, &["nct_id", "nctId", "nctID"]).unwrap_or_default();
     let title = json_get_string(hit, &["brief_title", "briefTitle", "title"]).unwrap_or_default();
     let status = json_get_string(hit, &["current_trial_status", "status", "overallStatus"])
@@ -573,9 +616,9 @@ pub fn from_nci_hit(hit: &serde_json::Value) -> TrialSearchResult {
         &["lead_org", "lead_organization", "leadSponsor", "sponsor"],
     )
     .filter(|s| !s.is_empty());
-    let conditions = json_get_string_list(hit, &["diseases", "conditions"], 10);
+    let conditions = nci_conditions(hit, &["diseases", "conditions"], 10)?;
 
-    TrialSearchResult {
+    Ok(TrialSearchResult {
         nct_id,
         title,
         status,
@@ -583,10 +626,10 @@ pub fn from_nci_hit(hit: &serde_json::Value) -> TrialSearchResult {
         conditions,
         sponsor,
         matched_intervention_label: None,
-    }
+    })
 }
 
-pub fn from_nci_trial(trial: &serde_json::Value) -> Trial {
+pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
     let nct_id = json_get_string(trial, &["nct_id", "nctId", "nctID"]).unwrap_or_default();
     let title = json_get_string(trial, &["brief_title", "briefTitle", "title"]).unwrap_or_default();
     let status = json_get_string(trial, &["current_trial_status", "status", "overallStatus"])
@@ -615,10 +658,10 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Trial {
     let summary = json_get_string(trial, &["brief_summary", "briefSummary", "summary"])
         .map(|s| truncate_summary(&s))
         .filter(|s| !s.is_empty());
-    let conditions = json_get_string_list(trial, &["diseases", "conditions"], 25);
+    let conditions = nci_conditions(trial, &["diseases", "conditions"], 25)?;
     let interventions = json_get_string_list(trial, &["interventions"], 25);
 
-    Trial {
+    Ok(Trial {
         nct_id,
         source: None,
         title,
@@ -643,7 +686,7 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Trial {
         outcomes: None,
         arms: None,
         references: None,
-    }
+    })
 }
 
 #[cfg(test)]
