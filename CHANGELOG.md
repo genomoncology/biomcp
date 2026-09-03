@@ -4,6 +4,9 @@
 
 ### Breaking changes
 
+- Trial searches now refuse ambiguous `--status active` values for both NCI and
+  ClinicalTrials.gov. Use `--status recruiting` for open and accruing trials or
+  `--status active_not_recruiting` for enrolled trials that are no longer accruing.
 - Replaced the legacy MyVariant/ExAC variant-detail population fields with a
   direct, GRCh38-only gnomAD v4 population result. Exomes and genomes now keep
   raw numeric allele frequencies and counts, ancestry rows, grpmax FAF95, and

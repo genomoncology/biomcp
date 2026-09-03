@@ -30,8 +30,18 @@ fn invalid_status_error(raw: &str) -> BioMcpError {
     BioMcpError::InvalidArgument(format!(
         "Unrecognized --status value '{raw}'. Expected one of: \
 NOT_YET_RECRUITING, RECRUITING, ENROLLING_BY_INVITATION, ACTIVE_NOT_RECRUITING, \
-COMPLETED, SUSPENDED, TERMINATED, WITHDRAWN. Aliases: active, comma/space forms."
+COMPLETED, SUSPENDED, TERMINATED, WITHDRAWN. Aliases: comma/space forms."
     ))
+}
+
+fn ambiguous_active_status_error() -> BioMcpError {
+    BioMcpError::InvalidArgument(
+        "--status active is ambiguous: NCI uses \"active\" for a trial that is open and \
+accruing, ClinicalTrials.gov uses it for one that has stopped accruing. Use --status \
+recruiting for open and accruing, or --status active_not_recruiting for enrolled and no \
+longer accruing."
+            .into(),
+    )
 }
 
 fn normalize_single_status(value: &str) -> Result<&'static str, BioMcpError> {
@@ -40,7 +50,8 @@ fn normalize_single_status(value: &str) -> Result<&'static str, BioMcpError> {
         "NOT_YET_RECRUITING" => Ok("NOT_YET_RECRUITING"),
         "RECRUITING" => Ok("RECRUITING"),
         "ENROLLING_BY_INVITATION" | "ENROLLING" => Ok("ENROLLING_BY_INVITATION"),
-        "ACTIVE_NOT_RECRUITING" | "ACTIVE" => Ok("ACTIVE_NOT_RECRUITING"),
+        "ACTIVE_NOT_RECRUITING" => Ok("ACTIVE_NOT_RECRUITING"),
+        "ACTIVE" => Err(ambiguous_active_status_error()),
         "COMPLETED" | "COMPLETE" => Ok("COMPLETED"),
         "SUSPENDED" => Ok("SUSPENDED"),
         "TERMINATED" => Ok("TERMINATED"),
@@ -59,9 +70,10 @@ fn normalize_status(value: &str) -> Result<String, BioMcpError> {
 
     // Preserve existing single-value aliases, including
     // "active, not recruiting".
-    if let Ok(single) = normalize_single_status(raw) {
-        return Ok(single.to_string());
-    }
+    let single_error = match normalize_single_status(raw) {
+        Ok(single) => return Ok(single.to_string()),
+        Err(error) => error,
+    };
 
     let parts = raw
         .split(',')
@@ -69,7 +81,7 @@ fn normalize_status(value: &str) -> Result<String, BioMcpError> {
         .filter(|part| !part.is_empty())
         .collect::<Vec<_>>();
     if parts.len() < 2 {
-        return Err(invalid_status_error(raw));
+        return Err(single_error);
     }
 
     let mut normalized = Vec::with_capacity(parts.len());
