@@ -46,3 +46,15 @@ BioMCP no longer depends on Cloudflare to serve documentation, and it carries no
 Do not change the content of any documentation page, `llms.txt`, or `llms-full.txt`. Do not change which pages get markdown twins. Do not change the site's theme or navigation. Do not touch DNS: `biomcp.org` resolves through Cloudflare to the GitHub Pages origin today, and that stays as it is. Do not change any other job in `release.yml`. Ticket 1075 covers the installed package carrying its own documentation, which is a separate delivery path and stays as it is.
 
 Publishing credentials are in scope only to the extent that the work must need none beyond what GitHub Actions already grants a workflow in this repository. If the work turns out to require a new secret, stop and say so rather than adding one.
+
+## Addendum, 2026-09-03: the missing Cloudflare secrets are the premise, not a blocker
+
+The first attempt refused in `01-design` on 2026-09-02 at 11:31. It ran the mandatory declaration preflight, observed that `.github/workflows/docs-edge.yml` needs `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, observed that `gh secret list --repo genomoncology/biomcp` lists neither, and refused on a missing required declaration.
+
+That observation is correct and it is exactly why this ticket exists. Read it as the premise.
+
+`docs-edge.yml` is not this ticket's settlement path. It is one of the files this ticket deletes. After the change the documentation site publishes through GitHub Pages using the `GITHUB_TOKEN` that Actions already grants a workflow in this repository, plus the `pages: write` and `id-token: write` permissions a workflow declares for itself. No repository secret is involved.
+
+So the declaration preflight is satisfied by observing the settlement path this ticket creates, not the one it removes. Do not refuse on the absence of the two Cloudflare secrets. Their absence is the defect.
+
+If the work turns out to need a secret that does not exist, that instruction at the end of the Boundary section still stands: stop and say so.
