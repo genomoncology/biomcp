@@ -87,3 +87,35 @@ Treat that as the pattern rather than a one-off. When the checker names a key, t
 "Present in a recorded capture" is the right evidence for admitting a key. It is not evidence for rejecting one, because a capture covers the trials it captured and nothing else. A key the checker cannot attest is a prompt to look, not a verdict.
 
 So the check still fails the build on an unattested key, and the resolution order is: record a capture that carries it, or file it as a defect, or declare an exception with a written reason. Only the last two need this ticket's permission, and both are now granted for any key the attempt finds, provided the attempt states which it chose and why. This ticket no longer requires that it enumerate failures in advance, because it could not have known them.
+
+## The first attempt refused, correctly, and here is what it found
+
+Attempt 1 refused in `03-code` on 2026-09-03 at 23:47. The reason: `src/transform/trial/tests.rs` carries the key `secondaryOutcomes`, and no file under `testdata/sources` attested it. The attempt would not weaken the rule and would not edit fixture bytes, so it stopped. That is the right call and the check behaved as designed on its first real test.
+
+The finding was a capture gap, not a defect. `secondaryOutcomes` is a genuine ClinicalTrials.gov key. Five of five melanoma studies sampled from the live API on 2026-09-03 carry it. The capture recorded earlier that day, `get_nct02576665_full_20260903.json`, is a trial that has no secondary outcomes, so its `outcomesModule` holds only `primaryOutcomes`.
+
+**One trial cannot attest a provider's optional keys.** The attested set is the union across captures, never one capture's key set.
+
+`testdata/sources/ctgov/get_nct06131398_full_20260903.json` is now recorded to close that gap. Full record, 13 modules, `secondaryOutcomes` present, receipted, no redaction needed because the record carries no email address and no telephone number.
+
+## The nine keys still unattested, and what is known about each
+
+A scan on 2026-09-03 compared every key in `src/transform/trial/tests.rs` against the union of all `testdata/sources/ctgov` captures. Nine keys remain unattested. They are not one problem and must not be resolved as one.
+
+**Keys that are NCI-shaped, not ClinicalTrials.gov.** `diseases` and `phaseCode`. The test file holds fixtures for both providers. NCI does send these. The scan called them dead only because it compared them against the wrong endpoint's captures. This is direct evidence for a requirement the ticket already carries: the check is endpoint-aware, and a fixture declares which endpoint it claims to come from. A check that unions all captures regardless of provider gives wrong answers in both directions.
+
+**Keys where the fixture and the provider disagree on the name.** `startDate`, `completionDate` and `status`. ClinicalTrials.gov sends `startDateStruct`, `completionDateStruct` and `overallStatus` inside `statusModule`, confirmed in both full captures. If these fixture keys claim to be ClinicalTrials.gov, they are the defect class this ticket exists to catch, and they are the fourth, fifth and sixth instances. Determine which endpoint each fixture claims before ruling.
+
+**Keys that need a capture this repository does not have.** `contacts`, `email` and `phone`. These are real ClinicalTrials.gov location-contact keys. Neither recorded capture carries them, because neither trial publishes site contacts.
+
+Recording one is deliberately not done, and this is a decision rather than an oversight. A capture that attests these keys carries working email addresses and telephone numbers for named people, and this repository is public. Do not record one to make the check pass. Declare these three as exceptions with that reason written down. The reason is durable and belongs in the provenance record beside the key.
+
+**The key that is the seventh instance.** `centralContacts`. Ticket 1138 records that ClinicalTrials.gov never sends it: across 9,230 locations in 1,600 live studies the location key set is exactly `city`, `contacts`, `country`, `facility`, `geoPoint`, `state`, `status` and `zip`. If a fixture supplies `centralContacts` it is attesting a key the provider does not send, which is precisely this ticket's defect. Do not except it.
+
+## What this changes about the work
+
+Nothing in the requirement. The rule stands as written and none of the above weakens it.
+
+Two things are now settled that the first attempt had to discover: the attested set is a union across captures, and the check must know which endpoint a fixture claims. Both were implicit before and both are now stated.
+
+The ruling on `contacts`, `email` and `phone` is the one judgment the ticket should not make on its own. It is made here: they are exceptions, the reason is that attesting them would publish real people's contact details from a public repository, and that reason is written into the provenance record rather than left as a bare exemption.

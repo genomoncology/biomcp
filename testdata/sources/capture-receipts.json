@@ -2182,6 +2182,18 @@
         "minimization_or_redaction": "No field was removed. All 58 top-level keys the provider sends are present, including arms, eligibility, study_protocol_type, minimum_target_accrual_number and why_study_stopped. Two reductions were made and neither removes a key name. The sites array was cut from 1261 entries to the first 3, and every site key the provider sends is still present on each. Within those 3 sites the seven person-bearing and organization-contact values are replaced with the literal string REDACTED: contact_email, contact_name, contact_phone, org_email, org_phone, org_fax and org_tty. The unredacted response carried 326 distinct email addresses and 1028 distinct telephone numbers across 1261 sites, and this repository is public.",
         "provider_origin_statement": "Bytes were recorded from the NCI Clinical Trials Search API v2 on 2026-09-03 with no field restriction, so this capture attests every key name the provider sends for a trial record. Values inside the seven redacted site fields are not attested; every key name in the capture, that of the redacted fields included, is."
       }
+    },
+    {
+      "path": "ctgov/get_nct06131398_full_20260903.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies/NCT06131398?format=json",
+        "captured_at": "2026-09-03T19:52:00Z",
+        "sha256": "ae0d35b732fe4f6236a4d251860ce12c0d731972dd6ad77d128a5cb8b9f7fc82",
+        "minimization_or_redaction": "No fields removed and no values redacted. The complete study record as returned; JSON whitespace normalized after capture. The record carries no email address and no telephone number. The only named people are overall officials, published with name, affiliation and role.",
+        "provider_origin_statement": "Recorded from the public ClinicalTrials.gov v2 API on 2026-09-03 with no field restriction. Recorded as a second full capture because the first, NCT02576665, is a trial with no secondary outcomes, so its outcomesModule carries only primaryOutcomes and cannot attest secondaryOutcomes. This record carries both. One trial cannot attest a provider's optional keys; the attested key set is the union across captures."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,
