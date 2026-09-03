@@ -239,16 +239,27 @@ def test_ctgov_parallel_isolation_keeps_request_shape_and_no_request_proofs() ->
         2,
         "Zero distance is rejected before ClinicalTrials.gov work",
     )
-    assert "exit=2" in numeric and 'test "$status" -eq 2' in numeric
-    assert "test ! -s" in numeric
+    for no_request_behavior in (
+        ': >"$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"',
+        "--lat=1 --lon=2 --distance=0",
+        'test "$status" -eq 2',
+        'test ! -s "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG"',
+        'exit "$status"',
+    ):
+        assert no_request_behavior in numeric
 
     observed = _markdown_heading_body(
         "spec/entity/trial.md", 2, "Observed Trial Provider Requests"
     )
     for request_behavior in (
-        "query.cond=Phelan-McDermid+Syndrome",
+        "query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=50",
+        "fields=NCTId%2CBriefTitle",
         "query.cond=non-small+cell+lung+cancer",
+        "pageSize=50",
+        "EGFR+L858R",
         "/api/v2/studies/NCT02576665?fields=",
+        "LocationFacility",
+        "EligibilityCriteria",
     ):
         assert request_behavior in observed
 
