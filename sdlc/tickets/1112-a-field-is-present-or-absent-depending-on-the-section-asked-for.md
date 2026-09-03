@@ -22,13 +22,16 @@ Where a field genuinely is not fetched on a path, the output says so rather than
 - Intervention type and description carry the same values for the same trial whichever section was requested.
 - A caller can distinguish "the source has no value" from "this path did not fetch it".
 
-## Where correct behavior is written
+## Correct behavior
 
-`repos/biodata/sdlc/planning/clinical-trial-conformance/cases.json`, case 16. That file is the shared statement of correct behavior for this defect, held against both 0.9 and 1.0.
+The request asks for every field the conversion populates. A field absent from the converted value means the source did not supply it.
 
-Take the assertion from that case, write it as a failing test, then fix. Red before green. Do not copy the expected behavior into this repository as a second statement of it. If the case looks wrong, stop and say so rather than implementing something different.
+Write that as a failing test, then fix. Red before green.
 
-Reported by the BioData lead in `notes/biomcp/feedback/2026-09-02-seventeen-trial-defects-to-fix-in-0-9.md`, defect 16 of seventeen.
+The assertion to write: The same trial converted from the base request and from the full request carries the same intervention fields.
+
+This behavior is held against both 0.9 and 1.0 alike. It is recorded as case 16 of the clinical-trial conformance cases in the sibling BioData repository. **An attempt cannot read that repository**, so the statement above is this ticket's own authoritative copy, reconciled against the case when the ticket was filed. If it looks wrong, stop and say so rather than implementing something different.
+
 ## Boundary
 
 Do not add fields to the base request that nothing reads. Ticket 1095 fixed the separate defect where these keys never deserialized at all; this ticket is about which paths request them.

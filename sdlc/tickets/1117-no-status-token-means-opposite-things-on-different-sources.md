@@ -46,11 +46,16 @@ No status token means one thing on one source and the opposite on another.
 - `--status active` does not return trials closed to accrual.
 - Every status token selects the equivalent set of trials whichever source answered, or is refused on both.
 
-## Where correct behavior is written
+## Correct behavior
 
-`repos/biodata/sdlc/planning/clinical-trial-conformance/cases.json`, case 5. Take the assertion from that case, write it as a failing test, then fix. Do not copy the expected behavior into this repository as a second statement of it.
+The ambiguous token 'active' is refused for both sources, with an error naming the two unambiguous tokens: recruiting and active_not_recruiting. Every accepted token means one thing on every source.
 
-Reported by the BioData lead in `notes/biomcp/feedback/2026-09-02-seventeen-trial-defects-to-fix-in-0-9.md`, defect 5 of seventeen.
+Write that as a failing test, then fix. Red before green.
+
+The assertion to write: 'active' is refused with an error naming both replacements. 'recruiting' returns trials whose recorded status is open and accruing on both sources. No accepted token maps to opposite meanings across sources.
+
+This behavior is held against both 0.9 and 1.0 alike. It is recorded as case 5 of the clinical-trial conformance cases in the sibling BioData repository. **An attempt cannot read that repository**, so the statement above is this ticket's own authoritative copy, reconciled against the case when the ticket was filed. If it looks wrong, stop and say so rather than implementing something different.
+
 ## Boundary
 
 Do not change `recruiting` or `active_not_recruiting`. Do not change how a trial's status is displayed.

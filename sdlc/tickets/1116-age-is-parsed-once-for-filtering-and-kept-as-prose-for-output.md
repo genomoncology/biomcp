@@ -23,13 +23,16 @@ The source text stays available beside the parsed value, so a caller can see wha
 - Filtering and output agree about the bounds of the same trial.
 - The provider's original text is still reachable.
 
-## Where correct behavior is written
+## Correct behavior
 
-`repos/biodata/sdlc/planning/clinical-trial-conformance/cases.json`, case 3. That file is the shared statement of correct behavior for this defect, held against both 0.9 and 1.0.
+One parse. The value carries the number, the unit, and the original text, per ADR 0019.
 
-Take the assertion from that case, write it as a failing test, then fix. Red before green. Do not copy the expected behavior into this repository as a second statement of it. If the case looks wrong, stop and say so rather than implementing something different.
+Write that as a failing test, then fix. Red before green.
 
-Reported by the BioData lead in `notes/biomcp/feedback/2026-09-02-seventeen-trial-defects-to-fix-in-0-9.md`, defect 3 of seventeen.
+The assertion to write: Output and filtering read age through the same parse. A trial's minimum age compares equal whether reached from the output or from the filter path.
+
+This behavior is held against both 0.9 and 1.0 alike. It is recorded as case 3 of the clinical-trial conformance cases in the sibling BioData repository. **An attempt cannot read that repository**, so the statement above is this ticket's own authoritative copy, reconciled against the case when the ticket was filed. If it looks wrong, stop and say so rather than implementing something different.
+
 ## Boundary
 
 Do not change which trials an age filter selects. Do not change how an age range is displayed to a reader.

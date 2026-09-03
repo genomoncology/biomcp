@@ -29,7 +29,13 @@ The check runs in the gate ladder, so it fails a build rather than producing a r
 
 ## Where this comes from
 
-The BioData lead, in `notes/biomcp/feedback/2026-09-02-two-fixture-details-before-the-payloads-land.md`, second of two items. Case 17 in `sdlc/planning/clinical-trial-conformance/cases.json` in that repository carries the assertion. Take it from there rather than restating the expected behavior here.
+This guard exists to hold case 17 of the clinical-trial conformance cases, recorded in the sibling BioData repository. **An attempt cannot read that repository**, so the behavior is restated here and this copy is authoritative for this ticket.
+
+Correct behavior: All three read the key 'type'. Every fixture is recorded from the provider, never written to match the parser.
+
+The assertion: Converting a recorded CTGov payload yields non-empty intervention type, arm type, and reference type. No fixture contains a key absent from the pinned provider contract, checked mechanically.
+
+If that looks wrong, stop and say so rather than implementing something different.
 
 ## Boundary
 

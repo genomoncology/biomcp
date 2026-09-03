@@ -27,13 +27,16 @@ Current rendered output does not change; the same sentence a reader sees today i
 - A consumer can reach the untruncated summary.
 - The Markdown a reader sees is unchanged.
 
-## Where correct behavior is written
+## Correct behavior
 
-`repos/biodata/sdlc/planning/clinical-trial-conformance/cases.json`, case 2. That file is the shared statement of correct behavior for this defect, held against both 0.9 and 1.0.
+Conversion emits the age bounds and the full summary. Truncation and English phrasing happen in the renderer, which keeps its current output bytes.
 
-Take the assertion from that case, write it as a failing test, then fix. Red before green. Do not copy the expected behavior into this repository as a second statement of it. If the case looks wrong, stop and say so rather than implementing something different.
+Write that as a failing test, then fix. Red before green.
 
-Reported by the BioData lead in `notes/biomcp/feedback/2026-09-02-seventeen-trial-defects-to-fix-in-0-9.md`, defect 2 of seventeen.
+The assertion to write: The converted value carries an unabridged summary and structured age bounds. Rendered output for the corpus is byte-identical to 0.9 before the fix.
+
+This behavior is held against both 0.9 and 1.0 alike. It is recorded as case 2 of the clinical-trial conformance cases in the sibling BioData repository. **An attempt cannot read that repository**, so the statement above is this ticket's own authoritative copy, reconciled against the case when the ticket was filed. If it looks wrong, stop and say so rather than implementing something different.
+
 ## Boundary
 
 Do not change what a card looks like. Do not change age filtering. One case for this defect may need a recorded payload that does not exist yet; if so, say which and stop rather than hand-writing a fixture.
