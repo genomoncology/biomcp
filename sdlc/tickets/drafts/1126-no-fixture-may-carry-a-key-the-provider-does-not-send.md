@@ -38,3 +38,15 @@ The BioData lead, in `notes/biomcp/feedback/2026-09-02-two-fixture-details-befor
 Do not change any fixture's contents to make the check pass. A fixture that fails is either a defect to file or an exception to justify.
 
 Do not change the deserialization behavior fixed by 1095.
+
+## Held as a draft, 2026-09-03: the check has nothing to check
+
+Parked because it would land as a check that passes by having no input, which is the failure it exists to prevent.
+
+The check needs a recorded ClinicalTrials.gov capture carrying the arm and reference sections. This repository has none. Measured on 2026-09-03: no file under `testdata/sources/` carries an `armGroups` key. The two files that match a search for `references` are ClinGen specifications and are unrelated.
+
+BioData holds two recorded payloads that do carry `armGroups`, `references` and `type`, and correctly do not carry the invented `armGroupType`. Their ticket 0057 recorded them for exactly this purpose. Until those payloads are in this repository, the check has no capture to attest a key against, so every fixture key becomes an undeclared exception or the check reports success over an empty set.
+
+Release this draft the day the payloads land. Nothing about the ticket's requirement changes; only its ability to be proven.
+
+The related check that runs the other direction — no key list in the code may name a field absent from every recorded capture — does not depend on those payloads and is carried by ticket 1132.

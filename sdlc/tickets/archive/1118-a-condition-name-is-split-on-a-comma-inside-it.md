@@ -1,3 +1,12 @@
+**Archived 2026-09-03. Superseded, not abandoned.**
+
+The comma-splitting branch of `json_get_string_list` is unreachable. No provider sends a condition as a scalar string, so the branch this ticket describes can never run and the defect can never be exercised. A ticket that cannot be proven does not belong on the board.
+
+Its requirement moved to ticket 1107, which rewrites the same function: whatever replaces the array reading must not reintroduce a comma split on a single condition name.
+
+BioData is asked to retire the matching conformance case for the same reason.
+
+---
 ---
 flow: build
 priority: 5

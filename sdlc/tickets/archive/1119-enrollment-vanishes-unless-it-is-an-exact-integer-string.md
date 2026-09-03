@@ -1,3 +1,12 @@
+**Archived 2026-09-03. Superseded, not abandoned.**
+
+This ticket described enrollment vanishing because a float renders as `120.0` and the integer parse fails. The parse is never reached. The reader asks for `enrollment`, `enrollment_target` and `target_enrollment` at `src/transform/trial.rs:609`, and NCI sends none of the three. It sends `minimum_target_accrual_number`. The field has always been absent for a simpler reason than the one written here.
+
+Absorbed into ticket 1132, which fixes the field name along with four others of the same kind and adds the check that catches the class.
+
+BioData is asked to restate the matching conformance case against the measured field name.
+
+---
 ---
 flow: build
 priority: 5
