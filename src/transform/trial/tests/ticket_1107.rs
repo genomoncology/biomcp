@@ -41,11 +41,10 @@ fn recorded_nci_trial_reports_its_disease_names() {
     ))
     .expect("recorded NCI response");
     let record = &response["data"][0];
-    let expected = record["diseases"]
+    let names = record["diseases"]
         .as_array()
         .expect("recorded diseases")
         .iter()
-        .take(25)
         .map(|disease| {
             disease["name"]
                 .as_str()
@@ -57,26 +56,33 @@ fn recorded_nci_trial_reports_its_disease_names() {
     let trial = from_nci_trial(record)
         .into_test_result()
         .expect("valid recorded NCI trial");
+    let hit = from_nci_hit(record)
+        .into_test_result()
+        .expect("valid recorded NCI hit");
 
-    assert!(!trial.conditions.is_empty());
-    assert_eq!(trial.conditions, expected);
+    assert_eq!(trial.conditions, names[..25]);
+    assert_eq!(hit.conditions, names[..10]);
 }
 
 #[test]
 fn unreadable_nci_disease_is_an_error() {
-    let result = from_nci_trial(&json!({
+    let mut diseases = (0..25)
+        .map(|index| json!({"name": format!("Condition {index}")}))
+        .collect::<Vec<_>>();
+    diseases.push(json!({"nci_thesaurus_concept_id": "C000000"}));
+    let record = json!({
         "nct_id": "NCT00000001",
-        "diseases": [
-            {"name": "Melanoma"},
-            {"nci_thesaurus_concept_id": "C000000"}
-        ]
-    }))
-    .into_test_result();
+        "diseases": diseases
+    });
+
+    let trial = from_nci_trial(&record).into_test_result();
+    let hit = from_nci_hit(&record).into_test_result();
 
     assert!(
-        result.is_err(),
+        trial.is_err(),
         "an unreadable disease must reject the trial"
     );
+    assert!(hit.is_err(), "an unreadable disease must reject the hit");
 }
 
 #[test]
