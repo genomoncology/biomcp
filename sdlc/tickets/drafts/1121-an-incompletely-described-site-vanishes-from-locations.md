@@ -15,7 +15,7 @@ let country = clean_opt(loc.country.as_deref())?;
 
 Line 161 then turns a trial whose sites are all incomplete into `locations: None`. A trial that runs at 59 real hospitals reports that it has no sites.
 
-This is not a rare shape. NCT00791778 carries 59 locations and every one of them has `facility: null`. Across 800 completed studies sampled from the live provider on 2026-09-03, 346 of 6,275 locations were incomplete.
+This is not a rare shape. NCT00791778 carries 59 locations and every one of them has `facility: null`. Across 1,000 completed studies sampled from the live provider on 2026-09-03, 346 of 6,275 locations were incomplete.
 
 Verified against `0.9.0-dev.6`.
 
@@ -49,7 +49,11 @@ Copying that payload into `testdata/sources/ctgov/` with its receipt is part of 
 
 ## What this replaces
 
-Assertions that pin the current drop-the-site behavior are expected to be restated. The change reaches the JSON shape of a location, since facility, city and country become optional on it.
+Assertions that pin the current drop-the-site behavior are expected to be restated.
+
+`TrialLocation` at `src/entities/trial/mod.rs:85-90` declares `facility`, `city` and `country` as `String` rather than `Option`. They are required today precisely because the three guards this ticket removes were what guaranteed them, so the type changes and the JSON shape changes with it.
+
+That reaches the markdown table at `templates/trial.md.j2:81`, which renders all three unguarded. `status` on the same row has an explicit `or "-"` fallback and the other three have none, because until now they could not be absent.
 
 ## Boundary
 
@@ -57,4 +61,6 @@ Do not change site ordering or which sites the provider returns.
 
 Do not change how contacts are emitted.
 
-The related symptom — the output listing a contact for a site it says does not exist — is not a separate ticket. Keeping the site removes it, because the site the contact belongs to now appears. What remains after this fix is the narrower case of a site with **no** identifying field at all, no facility, no city and no country, that nonetheless carries a contact. No such site exists in 225 fixtures across both repositories or in 1,600 live studies sampled 2026-09-03, so there is no failing test to write and therefore no ticket. Case 12's requirement that locations and contacts derive from the same set of sites already states the rule if one ever appears.
+The related symptom — the output listing a contact for a site it says does not exist — is removed **inside the conversion** by keeping the site, because the site the contact belongs to now appears in `from_ctgov_study`'s output. What remains at that layer is only a site with no identifying field at all, no facility, no city and no country, that still carries a contact. No such site exists in 225 fixtures across both repositories or in 1,600 live studies sampled 2026-09-03, so there is no failing test to write and no ticket for it. Case 12's rule already covers it if one ever appears.
+
+That is a statement about the conversion and not about what a caller receives. Two surfaces downstream truncate locations while leaving contacts whole, and both keep the symptom: `templates/trial.md.j2:80` caps the table at twenty locations with no overflow line, and `paginate_trial_locations` at `src/cli/trial/dispatch.rs:389-405` slices locations without touching contacts. Ticket 1141 carries that. Do not fix it here.
