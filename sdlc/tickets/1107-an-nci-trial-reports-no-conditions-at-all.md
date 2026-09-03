@@ -53,6 +53,24 @@ Fixing this ticket as written would have repaired conditions, left interventions
 
 The `diseases` half of this ticket is unchanged and confirmed. `diseases` is present, it is an array of objects, and every element is dropped.
 
+## The disagreement with case 4 is settled. Proceed.
+
+The first attempt refused on 2026-09-03 at 14:18, and it was right to. This ticket names BioData's case 4 as the authoritative statement and tells you to stop if that statement looks wrong. Case 4 still reads "Interventions are read the same way." The amendment above says the opposite. An attempt cannot pick between two statements of correct behavior, and it must not.
+
+**That disagreement has now been settled between the two leads, and this section records the outcome so no attempt has to settle it.**
+
+The measurement that decided it: `testdata/sources/nci_cts/search_melanoma.json`, this repository's own recorded capture, carries 58 fields per record. `diseases` is present and is an array of objects. There is **no top-level `interventions` key at all**. So conditions and interventions fail for two different reasons, and only one of them is `as_str()` discarding objects.
+
+The settlement:
+
+- **Case 4's conditions half stands unchanged.** It is correct and it is what this ticket implements.
+- **Case 4's interventions half is superseded.** Interventions are nested at `arms[].interventions[].name`. That is a field-name defect and it belongs to ticket 1132, which fixes it alongside four more of the same kind.
+- BioData has been asked to amend case 4 accordingly. The written record is `notes/biodata/feedback/2026-09-03-five-nci-field-names-and-three-cases-to-change.md`.
+
+**You are authorized to implement case 4's conditions half alone.** Doing so is not a second statement of expected behavior and it is not a conditions-only reinterpretation made by an attempt. It is the settled statement, recorded here by the BioMCP lead on 2026-09-03 before you were dispatched.
+
+If case 4 has already been amended by the time you read it, follow the amended case and this section becomes redundant. If any *other* part of case 4 looks wrong, the original instruction still applies: stop and say so.
+
 ## Boundary
 
 Do not change how CTGov conditions are read; that path works. Do not change the shape of the condition list on the output side.
