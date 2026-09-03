@@ -13,7 +13,7 @@ Regex::new(r"(?i)\b(OR|AND|NOT)\b")
 
 So `--criteria "patients not previously treated"` parses as `"patients" NOT "previously treated"`. The user asks for untreated patients and the query excludes the thing they asked about.
 
-The same phrase then does something worse. `has_boolean_operators` answers true for it, and `src/entities/trial/search/eligibility.rs:255` and `:265` skip client-side eligibility verification whenever it does. So the inverted query runs and its results come back unverified, presented as matches.
+The same phrase then does something worse. `has_boolean_operators` answers true for it, and `src/entities/trial/search/eligibility.rs` skips client-side eligibility verification at both of the places it consults that answer. So the inverted query runs and its results come back unverified, presented as matches.
 
 Ordinary clinical English carries these words constantly. "Patients not previously treated", "measurable disease and adequate organ function", "chemotherapy or radiotherapy" all read as operator expressions today.
 

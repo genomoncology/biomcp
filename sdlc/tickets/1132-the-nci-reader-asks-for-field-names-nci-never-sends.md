@@ -13,7 +13,7 @@ Measured against this repository's own recorded capture, `testdata/sources/nci_c
 
 | What | Code asks for | Payload actually carries | Result today |
 | --- | --- | --- | --- |
-| Interventions | `interventions` at the top level, `src/transform/trial.rs:662` | `arms[].interventions[].name` | always empty |
+| Interventions | `interventions` at the top level, `src/transform/trial.rs`, in `from_nci_trial` | `arms[].interventions[].name` | always empty |
 | Age range | `minimum_age`, `minimumAge`, `min_age` at the top level, `:642`–`:643` | `eligibility.structured.min_age` = `"18 Years"`, `max_age` = `"999 Years"` | always empty |
 | Study type | `study_type`, `studyType`, `primary_purpose`, `:639` | `study_protocol_type` = `"Interventional"` | falls through to `primary_purpose` and reports `"TREATMENT"` |
 | Enrollment | `enrollment`, `enrollment_target`, `target_enrollment`, `:652` | `minimum_target_accrual_number` | always absent |
@@ -25,8 +25,8 @@ None of these is a parsing bug. In every case the reader asks a question the pay
 
 Two unit tests in the same file keep the enrollment path green by feeding it key names no provider sends:
 
-- `src/transform/trial/tests.rs:280` supplies `"target_enrollment": "120"` and asserts `Some(120)`.
-- `src/transform/trial/tests.rs:315` supplies `"enrollment_target": "420"` and asserts `Some(420)`.
+- `src/transform/trial/tests.rs`, in `from_nci_trial_maps_alias_fields_and_age_range` supplies `"target_enrollment": "120"` and asserts `Some(120)`.
+- `src/transform/trial/tests.rs`, in `trial_sections_maps_nci_format` supplies `"enrollment_target": "420"` and asserts `Some(420)`.
 
 Both keys are invented. The test proves the reader can read a payload nobody sends, so the suite stays green while the field is dead in production. That is defect 17's failure exactly, in a second place: a test written against the code's own shape rather than the provider's.
 

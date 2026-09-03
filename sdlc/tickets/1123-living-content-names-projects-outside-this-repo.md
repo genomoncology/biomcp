@@ -7,12 +7,12 @@ priority: 2
 
 Four lines in living, non-ticket content name a private project or a path in another workspace repository. A reader outside the ecosystem cannot resolve either, and the repository is meant to read self-contained.
 
-The four lines, verified on 2026-09-02:
+The four places, verified on 2026-09-02 and re-verified on 2026-09-03. Each is named by file and by what the sentence says, not by line number, because a line number rots the moment anything above it moves:
 
-- `architecture/experiments/structural-variant-article-annotations/explore.md:114` names two private projects in the phrase describing an alteration grammar.
-- `architecture/experiments/structural-variant-article-annotations/harden.md:14` names the same two projects in the sentence listing consumers.
-- `sdlc/issues/2026-08-26-drug-mechanism-shows-pharmacologic-action.md:14` cites a capture file by its path in another workspace repository.
-- `sdlc/issues/2026-08-26-search-all-pathways-ignores-query.md:11` cites the same capture file the same way.
+- `architecture/experiments/structural-variant-article-annotations/explore.md` names two private projects in its schema-alignment bullet, in the phrase describing an alteration grammar.
+- `architecture/experiments/structural-variant-article-annotations/harden.md` names the same two projects in the sentence listing consumers, and in the same sentence cites a spike plan by its path in another workspace repository.
+- `sdlc/issues/2026-08-26-drug-mechanism-shows-pharmacologic-action.md` cites a capture file by its path in another workspace repository.
+- `sdlc/issues/2026-08-26-search-all-pathways-ignores-query.md` cites the same capture file the same way.
 
 ## Required behavior
 
@@ -30,7 +30,7 @@ For the two capture citations, either copy the capture into this repository and 
 
 ## Boundary
 
-Change only the four files listed above.
+Change only the four files listed above. Find each occurrence by searching the file for the private name; do not rely on a line number.
 
 Do not touch `sdlc/records/` or `sdlc/tickets/archive/`. History is append-only and stays exactly as written.
 

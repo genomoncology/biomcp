@@ -36,7 +36,7 @@ Do not change how phases render. The NCI Roman-numeral form of the same round-tr
 
 ## Absorbs ticket 1110, 2026-09-03
 
-Ticket 1110 held the same defect on the NCI side and is archived. Both fail in `normalize_phase` at `src/entities/trial/search/normalization.rs:155`, both are the tool refusing a value it emitted, and a single fix has to satisfy both or it has not fixed the round trip.
+Ticket 1110 held the same defect on the NCI side and is archived. Both fail in `normalize_phase` at `src/entities/trial/search/normalization.rs`, in `normalize_phase`, both are the tool refusing a value it emitted, and a single fix has to satisfy both or it has not fixed the round trip.
 
 - **ClinicalTrials.gov** emits `PHASE1/PHASE2` for a two-phase trial. Fed back as a filter, `normalize_enum_key` drops the slash and the call refuses.
 - **NCI** emits `III`. Roman numerals match no arm of the same matcher.

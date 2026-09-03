@@ -5,13 +5,13 @@ priority: 9
 
 # `--status active` asks for open trials and returns closed ones
 
-`normalization.rs:43` folds the token:
+`normalization.rs` folds the token:
 
 ```rust
 "ACTIVE_NOT_RECRUITING" | "ACTIVE" => Ok("ACTIVE_NOT_RECRUITING"),
 ```
 
-and `nci.rs:105` turns that into an NCI request parameter:
+and `nci.rs` turns that into an NCI request parameter:
 
 ```rust
 "ACTIVE_NOT_RECRUITING" => NciStatusFilter::SiteRecruitmentStatus("CLOSED_TO_ACCRUAL".into())

@@ -5,7 +5,7 @@ priority: 8
 
 # NCI eligibility text is always absent, because the reader calls as_str on an object
 
-`get_trial` reads NCI eligibility at `src/entities/trial/get.rs:179-183`:
+`get_trial` reads NCI eligibility at `src/entities/trial/get.rs`, in `get`:
 
 ```rust
 let criteria = resp
@@ -44,7 +44,7 @@ A payload shape the reader cannot handle is reported to the caller as a conversi
 - Requesting the eligibility section for a trial whose recorded NCI payload carries an eligibility object yields non-empty eligibility text.
 - A payload whose eligibility is a shape the reader cannot handle produces a conversion failure the caller can see, distinct from a payload that carries no eligibility at all.
 - The assertion is made against a recorded capture, not against an object written by hand.
-- The `warn!` at `src/entities/trial/get.rs:186` no longer fires on a payload that does carry criteria.
+- The `warn!` at `src/entities/trial/get.rs`, in `get` no longer fires on a payload that does carry criteria.
 
 ## The fixture, honestly
 
