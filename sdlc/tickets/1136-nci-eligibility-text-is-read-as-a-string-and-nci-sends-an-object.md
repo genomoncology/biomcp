@@ -31,7 +31,7 @@ Note that the criteria arrive as a list of entries rather than one block of pros
 
 ## This one is a type mismatch, not a name mismatch
 
-Four sibling defects filed the same day are all the same shape: the reader asks for a key name the provider does not send. This one asks for the right key and mishandles its type. The outcome is identical, silent absence, which is why it travels with them. The cause is different, which is why it is its own ticket.
+Four sibling defects, tickets 1119, 1133, 1134 and 1135, are all the same shape: the reader asks for a key name the provider does not send. This one asks for the right key and mishandles its type. The outcome is identical, silent absence, which is why it travels with them. The cause is different, which is why it is its own ticket.
 
 ## Required behavior
 
@@ -50,7 +50,7 @@ A payload shape the reader cannot handle is reported to the caller as a conversi
 
 `testdata/sources/nci_cts/search_melanoma.json` carries the eligibility object and proves the shape. Two caveats, both worth knowing before the design stage starts.
 
-It is classified `pending_verification` in `testdata/sources/capture-receipts.json`, so it has no provider receipt. The one receipted NCI capture was recorded minimized to six fields and carries no eligibility object. That gap has its own ticket, filed the same day, and closing it is not this ticket's job.
+It is classified `pending_verification` in `testdata/sources/capture-receipts.json`, so it has no provider receipt. The one receipted NCI capture was recorded minimized to six fields and carries no eligibility object. That gap is ticket 1138, and closing it is not this ticket's job.
 
 It is also a search response, and the code path this ticket fixes is the single-trial get. Whether the get endpoint nests eligibility identically is worth confirming from the payload rather than assumed. If the two differ, say so in the record.
 
@@ -68,9 +68,9 @@ Do not change the ClinicalTrials.gov eligibility read in the same function. Its 
 
 Do not change `truncate_inline_text` or `ELIGIBILITY_MAX_CHARS`. Truncation behavior stays as it is.
 
-Do not change age reading. NCI's structured eligibility also holds the age bounds, and those are a separate ticket filed the same day. Reading the criteria text here must not also start populating the age range, or two tickets land one change and the record for the other is a claim about work nobody did.
+Do not change age reading. NCI's structured eligibility also holds the age bounds, and those are ticket 1135. Reading the criteria text here must not also start populating the age range, or two tickets land one change and the record for the other is a claim about work nobody did.
 
-Do not touch interventions, study type, enrollment or the stop reason. Each is its own ticket.
+Do not touch interventions (1133), study type (1134), enrollment (1119) or the stop reason (1137).
 
 ## History
 

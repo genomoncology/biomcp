@@ -11,7 +11,7 @@ Ticket 1126 checks that a fixture cannot attest to a key the provider does not s
 
 One in ClinicalTrials.gov, fixed by ticket 1095. Three structs sought `interventionType`, `armGroupType` and `referenceType` while the provider names all three `type`. Three fields were permanently empty.
 
-Five in the NCI reader, all found in one pass on 2026-09-03 and each filed as its own ticket. `interventions` sought at the top level while NCI nests it in the arms. `minimum_age` and its variants sought at the top level while NCI nests them in structured eligibility. `study_type` sought and absent, so every trial falls through and reports its primary purpose instead. `enrollment`, `enrollment_target` and `target_enrollment` all sought, all absent, while NCI sends `minimum_target_accrual_number`. And a stop reason hardcoded absent while NCI sends `why_study_stopped`.
+Five in the NCI reader, all found in one pass on 2026-09-03 and each filed as its own ticket. `interventions` (1133) sought at the top level while NCI nests it in the arms. `minimum_age` and its variants (1135) sought at the top level while NCI nests them in structured eligibility. `study_type` (1134) sought and absent, so every trial falls through and reports its primary purpose instead. `enrollment`, `enrollment_target` and `target_enrollment` (1119) all sought, all absent, while NCI sends `minimum_target_accrual_number`. And a stop reason (1137) hardcoded absent while NCI sends `why_study_stopped`.
 
 Six instances of one class. None of them raised an error, because a key that is missing and a value that is empty are the same answer to `json_get_string`. Every one was found by a person reading a provider's own response beside the code, which is not a check.
 
@@ -59,7 +59,7 @@ This is a sibling of ticket 1126, not a part of it. 1126 guards fixtures; this g
 
 `testdata/sources/capture-receipts.json` already classifies fixtures by provenance and carries each capture's request URL. Extend it or sit beside it. Do not build a second, competing record of where captures came from.
 
-Do not fix any of the six instances here. Each has its own ticket and its own record. This ticket makes them fail; the others make them pass. If the check is landed first and the tree is red, that is the expected order, and the check may be landed with the known-failing groups declared as exceptions that name their owning ticket.
+Do not fix any of the six instances here. Ticket 1095 landed the ClinicalTrials.gov one; the five NCI ones are tickets 1119, 1133, 1134, 1135 and 1137. Each has its own record. This ticket makes them fail; the others make them pass. If the check is landed first and the tree is red, that is the expected order, and the check may be landed with the known-failing groups declared as exceptions that name their owning ticket.
 
 Do not change any converter's behavior, and do not change a capture's contents to make the check pass.
 

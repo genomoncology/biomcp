@@ -65,7 +65,7 @@ Do not change the ClinicalTrials.gov enrollment path at `src/transform/trial.rs:
 
 Do not remove the numeric-encoding handling in `json_get_string`.
 
-Do not touch interventions, age range, study type or the stop reason. Each is its own ticket.
+Do not touch interventions (1133), age range (1135), study type (1134) or the stop reason (1137).
 
 ## History
 

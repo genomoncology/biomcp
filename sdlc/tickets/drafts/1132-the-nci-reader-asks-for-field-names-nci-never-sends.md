@@ -8,7 +8,17 @@ hold: Superseded 2026-09-03. It carried five behaviors on one ticket. Each is no
 
 This ticket bundled five separate defects and a class check into one body. That breaks the one-behavior-per-ticket rule, and the rule exists for a reason this repository had already paid for: ticket 1107 bundled conditions with interventions, an attempt could not tell which of two conflicting statements to follow, and it refused. A bundle of five is that risk five times over.
 
-Each behavior is now its own ticket, with its own citation and its own observable success list. See `sdlc/planning/notes/2026-09-03-splitting-the-nci-field-name-bundle.md` for the mapping.
+Each behavior is now its own ticket, with its own citation and its own observable success list:
+
+- interventions nested in the arms, ticket 1133
+- study type falling through to primary purpose, ticket 1134
+- age bounds in structured eligibility, ticket 1135
+- the stop reason hardcoded absent, ticket 1137
+- enrollment reading three names NCI does not send, ticket 1119, restated and promoted rather than absorbed
+
+The class check this ticket carried in prose is ticket 1138, filed as a sibling of ticket 1126 rather than folded into either. A sixth NCI defect found in the same audit, eligibility text read with `as_str()` on an object, is ticket 1136; it never appeared here.
+
+`sdlc/planning/notes/2026-09-03-splitting-the-nci-field-name-bundle.md` carries the mapping and how the priorities were chosen.
 
 Nothing measured here is withdrawn. Every field-name finding below was verified against `testdata/sources/nci_cts/search_melanoma.json` and holds. The successors carry the same evidence.
 

@@ -15,7 +15,7 @@ NCI sends neither `study_type` nor `studyType`. Every NCI trial falls through to
 
 In this repository's recorded capture, record `NCT05929768` carries `study_protocol_type` = `"Interventional"` and `primary_purpose` = `"TREATMENT"`. BioMCP reports the study type of that trial as `TREATMENT`.
 
-This is the one field in the group that is worse than empty. The other NCI field-name defects filed the same day produce absence, and absence at least looks like absence. This one produces a confident wrong answer in a field that looks populated, and a reader has no signal that the value came from a different question. "Interventional" and "TREATMENT" are answers to two different questions, and substituting one for the other is a category error, not a formatting difference.
+This is the one field in the group that is worse than empty. The other NCI field-name defects, tickets 1119, 1133, 1135 and 1137, produce absence, and absence at least looks like absence. This one produces a confident wrong answer in a field that looks populated, and a reader has no signal that the value came from a different question. "Interventional" and "TREATMENT" are answers to two different questions, and substituting one for the other is a category error, not a formatting difference.
 
 Measured against `testdata/sources/nci_cts/search_melanoma.json`, which carries 58 field names per record. The BioData lead's live query of `clinicaltrialsapi.cancer.gov/api/v2/trials` on 2026-09-02 reported the same 58 names independently.
 
@@ -42,7 +42,7 @@ A key list that matches nothing in any recorded capture from that provider is a 
 
 `testdata/sources/nci_cts/search_melanoma.json` carries both fields and proves the substitution. It is classified `pending_verification` in `testdata/sources/capture-receipts.json`, so it has no provider receipt. The one receipted NCI capture was recorded minimized to six fields and carries neither name.
 
-That gap is real and it is not this ticket's job to close. Use the capture that carries both fields, and say in the record which capture the proof rests on. The receipting gap has its own ticket, filed the same day.
+That gap is real and it is not this ticket's job to close. Use the capture that carries both fields, and say in the record which capture the proof rests on. The receipting gap is ticket 1138.
 
 ## Where correct behavior is written
 
@@ -58,7 +58,7 @@ Do not change the ClinicalTrials.gov study-type path at `src/transform/trial.rs:
 
 Do not change how study type is displayed, filtered or sorted, and do not add a primary-purpose field to the output. Whether BioMCP should also carry primary purpose as a fact of its own is a separate question and not this ticket.
 
-Do not touch interventions, age range, enrollment or the stop reason. Each is its own ticket.
+Do not touch interventions (1133), age range (1135), enrollment (1119) or the stop reason (1137).
 
 ## History
 

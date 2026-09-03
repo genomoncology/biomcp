@@ -39,9 +39,9 @@ A field is absent because the source lacks it, never because the converter never
 
 Read this before planning the proof. `testdata/sources/nci_cts/search_melanoma.json` proves the key exists in an NCI trial record, and in that record its value is `null`, because the trial has not stopped. So the repository can prove today that the key is part of the record shape and that a null reads as absent. It cannot yet prove that a stated reason converts, because no recorded NCI capture holds a stopped trial.
 
-Do not invent a value to close that gap. A hand-written payload asserting a reason the provider never sent is the exact failure that kept ticket 1095's defect alive for months, and it is the failure the receipting work filed the same day exists to prevent. Either record a capture of a stopped NCI trial, or prove the half that the recorded evidence supports and say plainly in the record which half is proven and which is not.
+Do not invent a value to close that gap. A hand-written payload asserting a reason the provider never sent is the exact failure that kept ticket 1095's defect alive for months, and it is the failure ticket 1138 exists to prevent. Either record a capture of a stopped NCI trial, or prove the half that the recorded evidence supports and say plainly in the record which half is proven and which is not.
 
-The 58-field capture is also classified `pending_verification` in `testdata/sources/capture-receipts.json` and has no provider receipt. That gap has its own ticket, filed the same day.
+The 58-field capture is also classified `pending_verification` in `testdata/sources/capture-receipts.json` and has no provider receipt. That gap is ticket 1138.
 
 ## Where correct behavior is written
 
@@ -57,7 +57,7 @@ Do not change how the stop reason is displayed, and do not change which statuses
 
 Do not change the ClinicalTrials.gov stop-reason path at `src/transform/trial.rs:349-354`. It is correct.
 
-Do not touch interventions, age range, study type, enrollment or eligibility text. Each is its own ticket.
+Do not touch interventions (1133), age range (1135), study type (1134), enrollment (1119) or eligibility text (1136).
 
 ## History
 

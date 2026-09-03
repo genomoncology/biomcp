@@ -45,7 +45,7 @@ A key list that matches nothing in any recorded capture from that provider is a 
 
 `testdata/sources/nci_cts/search_melanoma.json` carries the structured eligibility object and proves the shape. It is classified `pending_verification` in `testdata/sources/capture-receipts.json`, so it has no provider receipt. The one receipted NCI capture was recorded minimized to six fields and carries no eligibility object.
 
-That gap is real and it is not this ticket's job to close. Use the capture that carries the shape, and say in the record which capture the proof rests on. The receipting gap has its own ticket, filed the same day.
+That gap is real and it is not this ticket's job to close. Use the capture that carries the shape, and say in the record which capture the proof rests on. The receipting gap is ticket 1138.
 
 ## Where correct behavior is written
 
@@ -63,7 +63,7 @@ Do not change the ClinicalTrials.gov age path at `src/transform/trial.rs:368`. I
 
 Do not change age filtering, and do not change how the age range is displayed.
 
-Do not touch interventions, study type, enrollment, eligibility text or the stop reason. Each is its own ticket. In particular, do not start reading eligibility criteria text here; that is the eligibility-text ticket filed the same day.
+Do not touch interventions (1133), study type (1134), enrollment (1119) or the stop reason (1137). In particular, do not start reading eligibility criteria text here; that is ticket 1136.
 
 ## History
 

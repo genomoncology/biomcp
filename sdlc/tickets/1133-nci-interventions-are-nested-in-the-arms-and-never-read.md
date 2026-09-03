@@ -42,7 +42,7 @@ A key list that matches nothing in any recorded capture from that provider is a 
 
 `testdata/sources/nci_cts/search_melanoma.json` carries the nested arms and proves the shape. It is classified `pending_verification` in `testdata/sources/capture-receipts.json`, so it has no provider receipt. The one receipted NCI capture, `search_melanoma_20260811.json`, was recorded with the response minimized to six fields and carries no arms at all.
 
-That gap is real and it is not this ticket's job to close. Use the capture that carries the shape, and say in the record which capture the proof rests on. The receipting gap is the subject of its own ticket, filed the same day, on checking the reader's key lists against recorded captures.
+That gap is real and it is not this ticket's job to close. Use the capture that carries the shape, and say in the record which capture the proof rests on. The receipting gap is ticket 1138, which checks the reader's key lists against recorded captures and takes recording a receipted NCI capture as part of its work.
 
 ## Where correct behavior is written
 
@@ -62,7 +62,7 @@ Do not change the ClinicalTrials.gov intervention path at `src/transform/trial.r
 
 Do not change how interventions are displayed or how `intervention_details` is populated. This ticket is about the values reaching the caller.
 
-Do not touch age range, study type, enrollment or the stop reason. Each is its own ticket.
+Do not touch age range (1135), study type (1134), enrollment (1119) or the stop reason (1137).
 
 ## History
 
