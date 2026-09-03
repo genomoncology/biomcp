@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 4
-deps: ["1121"]
+deps: ["1121", "1126", "1138"]
 ---
 
 # Locations keep one contact per site while contacts keeps them all
@@ -34,15 +34,21 @@ Copying that payload into `testdata/sources/` with a receipt classified as autho
 
 A trial contact is patient-bearing, so this fixture is authored by policy and will never be a recorded capture. That is the intended state, not a gap waiting to be filled.
 
-It lands in `testdata/sources/clinicaltrials/`, beside the other authored fixtures, and not in `testdata/sources/ctgov/`, which is named for recorded captures. Its entry in `testdata/sources/capture-receipts.json` is classified as authored.
+It lands in `testdata/sources/clinicaltrials/`, not in `testdata/sources/ctgov/`, which is named for recorded captures.
 
-**Ticket 1126 lands first.** It builds the check that every fixture key be attested by a recorded capture or declared an exception, and its own required behavior names this fixture as the authored case it must accept. Declaring an authored fixture in whatever form 1126 builds is part of this ticket. Landing this one first would put an undeclared authored fixture into the tree 1126 then has to pass over.
+Its entry in `testdata/sources/capture-receipts.json` declares it authored in whatever form ticket 1126 establishes. Do not invent a classification: that file today carries exactly `real_and_receipted`, `pending_verification` and `synthetic_and_ineligible`, and no value meaning authored exists yet. 1126 is where that vocabulary is settled, which is the second reason it lands first.
+
+**Tickets 1126 and 1138 both land first, and both are declared as dependencies.**
+
+1138 removes `central_contacts` from `CtGovLocation`, a key ClinicalTrials.gov never sends. It edits `src/transform/trial.rs:132`, which is the `.or_else(|| loc.central_contacts.first())` fallback inside the block this ticket rewrites, and `:197`, which is the `chain(loc.central_contacts.iter())` this ticket also rewrites. **Do not carry that fallback forward into the new multi-contact shape.** It is dead and 1138 deletes it.
+
+1126 lands first for its own reason. It builds the check that every fixture key be attested by a recorded capture or declared an exception, and its own required behavior names this fixture as the authored case it must accept. Declaring an authored fixture in whatever form 1126 builds is part of this ticket. Landing this one first would put an undeclared authored fixture into the tree 1126 then has to pass over.
 
 ## Done, observably
 
 - A site listing two contacts reports two on both paths, in the order the payload lists them.
 - The per-site counts agree for every site on the trial.
-- The authored two-contact payload is in `testdata/sources/` with a receipt, so the assertion above has a case it catches rather than passing over an empty set.
+- The authored two-contact payload is in `testdata/sources/clinicaltrials/` with a receipt, so the assertion above has a case it catches rather than passing over an empty set.
 
 ## What this replaces
 
