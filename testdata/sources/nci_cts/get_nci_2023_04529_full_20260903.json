@@ -1,0 +1,2453 @@
+{
+  "data": [
+    {
+      "_current_trial_status_sort_order": 0,
+      "_phase_sort_order": 0,
+      "_primary_purpose_sort_order": 0,
+      "_study_protocol_type_sort_order": 0,
+      "acronym": null,
+      "active_sites_count": 1128,
+      "amendment_date": "2023-07-27",
+      "anatomic_sites": [
+        "Breast"
+      ],
+      "arms": [
+        {
+          "description": "Patients receive a GnRH agonist via injection and an AI PO per the study investigator's choice. Treatment with AI continues for up to 5 years in the absence of disease progression or unacceptable toxicity. Patients also undergo mammogram or MRI scans during screening and then every 12 months on study and during follow up, and DEXA scans every 2 years on study. Patients may also undergo collection of tumor tissue within 90 days after randomization and at time of disease recurrence, and collection of blood samples before randomization, at 12, 24, 36, 48, and 60 months, and at time of disease recurrence.",
+          "interventions": [
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Supportive Care",
+              "nci_thesaurus_concept_id": "C15747",
+              "parents": [
+                "C49236"
+              ],
+              "synonyms": [
+                "Supportive Therapy",
+                "Symptom Management",
+                "Therapy, Supportive"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Activity",
+              "nci_thesaurus_concept_id": "C43431",
+              "parents": [],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Dual X-ray Absorptiometry",
+              "nci_thesaurus_concept_id": "C48789",
+              "parents": [
+                "C190514"
+              ],
+              "synonyms": [
+                "Dual X-Ray Absorptometry",
+                "DXA",
+                "Dual X-Ray Absorptiometry",
+                "DEXA",
+                "Dual Energy X-ray Absorptiometry"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Aromatase Inhibition Therapy",
+              "nci_thesaurus_concept_id": "C1740",
+              "parents": [
+                "C481",
+                "C129825"
+              ],
+              "synonyms": [
+                "Aromatase Inhibitor"
+              ],
+              "type": "Drug"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Imaging Technique",
+              "nci_thesaurus_concept_id": "C17369",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Imaging Procedures",
+                "Imaging",
+                "Imaging Procedure",
+                "Diagnostic Imaging Technique",
+                "Medical Imaging"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Clinical Pathology Procedure",
+              "nci_thesaurus_concept_id": "C74944",
+              "parents": [
+                "C25294"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Clinical or Research Activity",
+              "nci_thesaurus_concept_id": "C16203",
+              "parents": [
+                "C43431"
+              ],
+              "synonyms": [],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Therapeutic Procedure",
+              "nci_thesaurus_concept_id": "C49236",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Therapy",
+                "Therapeutic Interventions",
+                "TX",
+                "Therapeutic Method",
+                "Therapeutic Technique"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Biospecimen Collection",
+              "nci_thesaurus_concept_id": "C70945",
+              "parents": [
+                "C74944"
+              ],
+              "synonyms": [
+                "Biological Sample Collection"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent",
+              "description": "A synthetic analog of the endogenous hormone gonadotropin-releasing hormone (GnRH), with potential antineoplastic activity. Upon administration, GnRH analog mimics endogenous GnRH and strongly binds to and activates pituitary GnRH receptors, which stimulates the synthesis and secretion of the gonadotropic hormones, follicle stimulating hormone (FSH) and luteinizing hormone (LH). Continuous, prolonged activation by the GnRH analog results in pituitary GnRH receptor desensitization and receptor downregulation. This causes inhibition of pituitary gonadotropin secretion of LH and FSH. In males, the inhibition of LH secretion prevents the production and release of testosterone from Leydig cells in the testes and causes a significant decline in testosterone production that is near the levels seen after castration. This may inhibit androgen receptor-positive tumor progression. In females, this results in a decrease in estradiol production. GnRH, also called luteinizing hormone-releasing hormo",
+              "inclusion_indicator": "TRIAL",
+              "name": "Gonadotropin-releasing Hormone Analog",
+              "nci_thesaurus_concept_id": "C1910",
+              "parents": [
+                "C548"
+              ],
+              "synonyms": [],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Clinical or Research Activity",
+              "nci_thesaurus_concept_id": "C16203",
+              "parents": [
+                "C43431"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Diagnostic Imaging",
+              "nci_thesaurus_concept_id": "C16502",
+              "parents": [
+                "C18020",
+                "C17369"
+              ],
+              "synonyms": [
+                "Diagnostic Imaging Testing"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Pharmacologic Substance",
+              "nci_thesaurus_concept_id": "C1909",
+              "parents": [
+                "C1908"
+              ],
+              "synonyms": [
+                "Drug Substance",
+                "Pharmaceuticals",
+                "Agent",
+                "Pharmaceutical Agent",
+                "Pharmacologic Agent",
+                "Pharmacological Substance",
+                "Drug"
+              ],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Quality-of-Life Assessment",
+              "nci_thesaurus_concept_id": "C15584",
+              "parents": [
+                "C15747"
+              ],
+              "synonyms": [
+                "Quality of Life Assessment"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Intervention or Procedure",
+              "nci_thesaurus_concept_id": "C25218",
+              "parents": [
+                "C16203"
+              ],
+              "synonyms": [
+                "Intervention Strategies",
+                "Intervention",
+                "Procedure",
+                "Clinical Intervention or Procedure"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Mammography",
+              "nci_thesaurus_concept_id": "C16818",
+              "parents": [
+                "C16502"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Activity",
+              "nci_thesaurus_concept_id": "C43431",
+              "parents": [],
+              "synonyms": [],
+              "type": "Other"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Drug, Food, Chemical or Biomedical Material",
+              "nci_thesaurus_concept_id": "C1908",
+              "parents": [],
+              "synonyms": [],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Intervention or Procedure",
+              "nci_thesaurus_concept_id": "C25218",
+              "parents": [
+                "C16203"
+              ],
+              "synonyms": [
+                "Intervention Strategies",
+                "Intervention",
+                "Procedure",
+                "Clinical Intervention or Procedure"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Magnetic Resonance Imaging",
+              "nci_thesaurus_concept_id": "C16809",
+              "parents": [
+                "C16502"
+              ],
+              "synonyms": [
+                "MRI Scan",
+                "MRI",
+                "Nuclear Magnetic Resonance Imaging",
+                "NMRI",
+                "NMR Imaging",
+                "MR Imaging",
+                "Magnetic Resonance Imaging Scan",
+                "Medical Imaging, Magnetic Resonance / Nuclear Magnetic Resonance"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Bone Mineral Densitometry",
+              "nci_thesaurus_concept_id": "C190514",
+              "parents": [
+                "C16502"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Therapeutic Hormone",
+              "nci_thesaurus_concept_id": "C548",
+              "parents": [
+                "C147908"
+              ],
+              "synonyms": [
+                "Synthetic Hormone"
+              ],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Diagnostic Procedure",
+              "nci_thesaurus_concept_id": "C18020",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Diagnostic Technique",
+                "Diagnostic Method",
+                "Diagnostic Test"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Laboratory Procedure",
+              "nci_thesaurus_concept_id": "C25294",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Lab Tests",
+                "Lab Test",
+                "Test",
+                "Tests",
+                "Laboratory Test"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Hormone Therapy",
+              "nci_thesaurus_concept_id": "C147908",
+              "parents": [
+                "C1909"
+              ],
+              "synonyms": [
+                "Hormone Therapy Agent",
+                "Hormonal Therapy Agent"
+              ],
+              "type": "Biological/Vaccine"
+            }
+          ],
+          "name": "Arm 1 (GnRH agonist, AI)",
+          "type": "EXPERIMENTAL"
+        },
+        {
+          "description": "Patients receive adjuvant chemotherapy regimen, a GnRH agonist via injection, and an AI PO per the study investigator's choice. Treatment with AI continues for up to 5 years in the absence of disease progression or unacceptable toxicity. Patients also undergo mammogram or MRI scans during screening and then every 12 months on study and during follow up, and DEXA scans every 2 years on study. Patients may also undergo collection of tumor tissue within 90 days after randomization and at time of disease recurrence, and collection of blood samples before randomization, at 12, 24, 36, 48, and 60 months, and at time of disease recurrence.",
+          "interventions": [
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Supportive Care",
+              "nci_thesaurus_concept_id": "C15747",
+              "parents": [
+                "C49236"
+              ],
+              "synonyms": [
+                "Supportive Therapy",
+                "Symptom Management",
+                "Therapy, Supportive"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Activity",
+              "nci_thesaurus_concept_id": "C43431",
+              "parents": [],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Dual X-ray Absorptiometry",
+              "nci_thesaurus_concept_id": "C48789",
+              "parents": [
+                "C190514"
+              ],
+              "synonyms": [
+                "Dual X-Ray Absorptometry",
+                "DXA",
+                "Dual X-Ray Absorptiometry",
+                "DEXA",
+                "Dual Energy X-ray Absorptiometry"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Pharmacologic Substance",
+              "nci_thesaurus_concept_id": "C1909",
+              "parents": [
+                "C1908"
+              ],
+              "synonyms": [
+                "Drug Substance",
+                "Pharmaceuticals",
+                "Agent",
+                "Pharmaceutical Agent",
+                "Pharmacologic Agent",
+                "Pharmacological Substance",
+                "Drug"
+              ],
+              "type": "Drug"
+            },
+            {
+              "category": "agent",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Aromatase Inhibition Therapy",
+              "nci_thesaurus_concept_id": "C1740",
+              "parents": [
+                "C481",
+                "C129825"
+              ],
+              "synonyms": [
+                "Aromatase Inhibitor"
+              ],
+              "type": "Drug"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Imaging Technique",
+              "nci_thesaurus_concept_id": "C17369",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Imaging Procedures",
+                "Imaging",
+                "Imaging Procedure",
+                "Diagnostic Imaging Technique",
+                "Medical Imaging"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Clinical Pathology Procedure",
+              "nci_thesaurus_concept_id": "C74944",
+              "parents": [
+                "C25294"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Clinical or Research Activity",
+              "nci_thesaurus_concept_id": "C16203",
+              "parents": [
+                "C43431"
+              ],
+              "synonyms": [],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Therapeutic Procedure",
+              "nci_thesaurus_concept_id": "C49236",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Therapy",
+                "Therapeutic Interventions",
+                "TX",
+                "Therapeutic Method",
+                "Therapeutic Technique"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Biospecimen Collection",
+              "nci_thesaurus_concept_id": "C70945",
+              "parents": [
+                "C74944"
+              ],
+              "synonyms": [
+                "Biological Sample Collection"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent",
+              "description": "A synthetic analog of the endogenous hormone gonadotropin-releasing hormone (GnRH), with potential antineoplastic activity. Upon administration, GnRH analog mimics endogenous GnRH and strongly binds to and activates pituitary GnRH receptors, which stimulates the synthesis and secretion of the gonadotropic hormones, follicle stimulating hormone (FSH) and luteinizing hormone (LH). Continuous, prolonged activation by the GnRH analog results in pituitary GnRH receptor desensitization and receptor downregulation. This causes inhibition of pituitary gonadotropin secretion of LH and FSH. In males, the inhibition of LH secretion prevents the production and release of testosterone from Leydig cells in the testes and causes a significant decline in testosterone production that is near the levels seen after castration. This may inhibit androgen receptor-positive tumor progression. In females, this results in a decrease in estradiol production. GnRH, also called luteinizing hormone-releasing hormo",
+              "inclusion_indicator": "TRIAL",
+              "name": "Gonadotropin-releasing Hormone Analog",
+              "nci_thesaurus_concept_id": "C1910",
+              "parents": [
+                "C548"
+              ],
+              "synonyms": [],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Clinical or Research Activity",
+              "nci_thesaurus_concept_id": "C16203",
+              "parents": [
+                "C43431"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Diagnostic Imaging",
+              "nci_thesaurus_concept_id": "C16502",
+              "parents": [
+                "C18020",
+                "C17369"
+              ],
+              "synonyms": [
+                "Diagnostic Imaging Testing"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Pharmacologic Substance",
+              "nci_thesaurus_concept_id": "C1909",
+              "parents": [
+                "C1908"
+              ],
+              "synonyms": [
+                "Drug Substance",
+                "Pharmaceuticals",
+                "Agent",
+                "Pharmaceutical Agent",
+                "Pharmacologic Agent",
+                "Pharmacological Substance",
+                "Drug"
+              ],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Drug, Food, Chemical or Biomedical Material",
+              "nci_thesaurus_concept_id": "C1908",
+              "parents": [],
+              "synonyms": [],
+              "type": "Drug"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Quality-of-Life Assessment",
+              "nci_thesaurus_concept_id": "C15584",
+              "parents": [
+                "C15747"
+              ],
+              "synonyms": [
+                "Quality of Life Assessment"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Intervention or Procedure",
+              "nci_thesaurus_concept_id": "C25218",
+              "parents": [
+                "C16203"
+              ],
+              "synonyms": [
+                "Intervention Strategies",
+                "Intervention",
+                "Procedure",
+                "Clinical Intervention or Procedure"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Mammography",
+              "nci_thesaurus_concept_id": "C16818",
+              "parents": [
+                "C16502"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Activity",
+              "nci_thesaurus_concept_id": "C43431",
+              "parents": [],
+              "synonyms": [],
+              "type": "Other"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Drug, Food, Chemical or Biomedical Material",
+              "nci_thesaurus_concept_id": "C1908",
+              "parents": [],
+              "synonyms": [],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Intervention or Procedure",
+              "nci_thesaurus_concept_id": "C25218",
+              "parents": [
+                "C16203"
+              ],
+              "synonyms": [
+                "Intervention Strategies",
+                "Intervention",
+                "Procedure",
+                "Clinical Intervention or Procedure"
+              ],
+              "type": "Other"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Magnetic Resonance Imaging",
+              "nci_thesaurus_concept_id": "C16809",
+              "parents": [
+                "C16502"
+              ],
+              "synonyms": [
+                "MRI Scan",
+                "MRI",
+                "Nuclear Magnetic Resonance Imaging",
+                "NMRI",
+                "NMR Imaging",
+                "MR Imaging",
+                "Magnetic Resonance Imaging Scan",
+                "Medical Imaging, Magnetic Resonance / Nuclear Magnetic Resonance"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Bone Mineral Densitometry",
+              "nci_thesaurus_concept_id": "C190514",
+              "parents": [
+                "C16502"
+              ],
+              "synonyms": [],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Therapeutic Hormone",
+              "nci_thesaurus_concept_id": "C548",
+              "parents": [
+                "C147908"
+              ],
+              "synonyms": [
+                "Synthetic Hormone"
+              ],
+              "type": "Biological/Vaccine"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Diagnostic Procedure",
+              "nci_thesaurus_concept_id": "C18020",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Diagnostic Technique",
+                "Diagnostic Method",
+                "Diagnostic Test"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "other",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Laboratory Procedure",
+              "nci_thesaurus_concept_id": "C25294",
+              "parents": [
+                "C25218"
+              ],
+              "synonyms": [
+                "Lab Tests",
+                "Lab Test",
+                "Test",
+                "Tests",
+                "Laboratory Test"
+              ],
+              "type": "Procedure/Surgery"
+            },
+            {
+              "category": "agent",
+              "description": null,
+              "inclusion_indicator": "TRIAL",
+              "name": "Antineoplastic Agent",
+              "nci_thesaurus_concept_id": "C274",
+              "parents": [
+                "C1909"
+              ],
+              "synonyms": [],
+              "type": "Drug"
+            },
+            {
+              "category": "agent category",
+              "description": null,
+              "inclusion_indicator": "TREE",
+              "name": "Hormone Therapy",
+              "nci_thesaurus_concept_id": "C147908",
+              "parents": [
+                "C1909"
+              ],
+              "synonyms": [
+                "Hormone Therapy Agent",
+                "Hormonal Therapy Agent"
+              ],
+              "type": "Biological/Vaccine"
+            }
+          ],
+          "name": "Arm 2 (adjuvant chemotherapy, GnRH agonist, AI)",
+          "type": "EXPERIMENTAL"
+        }
+      ],
+      "associated_studies": [],
+      "biomarkers": [
+        {
+          "ancestors": [
+            "C20709",
+            "C177692",
+            "C3367",
+            "C20103",
+            "C28656",
+            "C21295",
+            "C188928",
+            "C36292",
+            "C35682",
+            "C94299",
+            "C20420",
+            "C77140",
+            "C54362",
+            "C16612",
+            "C38349"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Hormone Receptor Positive",
+          "nci_thesaurus_concept_id": "C101267",
+          "parents": [
+            "C177692",
+            "C188928",
+            "C28656",
+            "C38349"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C54362",
+            "C20420",
+            "C21295",
+            "C20103",
+            "C20709",
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "ESR1 Gene",
+          "nci_thesaurus_concept_id": "C38349",
+          "parents": [
+            "C20709"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [
+            "ER",
+            "ESR1",
+            "Estrogen Receptor 1 Gene"
+          ],
+          "type": [
+            "reference_gene"
+          ]
+        },
+        {
+          "ancestors": [
+            "C3367",
+            "C77140"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Laboratory Test Result",
+          "nci_thesaurus_concept_id": "C36292",
+          "parents": [
+            "C77140"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "LAB_RESULT",
+            "Lab Findings",
+            "Lab Value",
+            "Laboratory Finding",
+            "Laboratory Report",
+            "Labs",
+            "Test Result",
+            "test_result"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C36292",
+            "C38349",
+            "C188928",
+            "C20420",
+            "C16612",
+            "C94299",
+            "C3367",
+            "C20103",
+            "C54362",
+            "C20709",
+            "C77140",
+            "C21295"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Estrogen Receptor Status",
+          "nci_thesaurus_concept_id": "C16150",
+          "parents": [
+            "C188928",
+            "C38349"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "ER Alpha Status",
+            "ER Status",
+            "ER-Alpha Status",
+            "ERA Status",
+            "ESR Status",
+            "ESR1 Status",
+            "ESRA Status",
+            "ESTRR Status",
+            "Estrogen Receptor",
+            "Estrogen Receptor 1 Status",
+            "Estrogen Receptor Alpha Status",
+            "NR3A1 Status",
+            "Nuclear Receptor Subfamily 3 Group A Member 1 Status"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C21281",
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Transferase Gene",
+          "nci_thesaurus_concept_id": "C25870",
+          "parents": [
+            "C21281"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C21281",
+            "C25870",
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Phosphotransferase Gene",
+          "nci_thesaurus_concept_id": "C25871",
+          "parents": [
+            "C25870"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Enzyme Gene",
+          "nci_thesaurus_concept_id": "C21281",
+          "parents": [
+            "C16612"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C36292",
+            "C35682",
+            "C77140",
+            "C3367"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Expression Positive",
+          "nci_thesaurus_concept_id": "C177692",
+          "parents": [
+            "C35682"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "Expressed",
+            "Expression Detected"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C25871",
+            "C20719",
+            "C21295",
+            "C20103",
+            "C25872",
+            "C25870",
+            "C16612",
+            "C21281"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "ERBB2 Gene",
+          "nci_thesaurus_concept_id": "C17756",
+          "parents": [
+            "C20719"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [
+            "ERBB2",
+            "Erb-b2 Receptor Tyrosine Kinase 2 Gene",
+            "HER2",
+            "HER2/Neu",
+            "NEU"
+          ],
+          "type": [
+            "reference_gene"
+          ]
+        },
+        {
+          "ancestors": [
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Ligand Binding Protein Gene",
+          "nci_thesaurus_concept_id": "C21295",
+          "parents": [
+            "C16612"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C16149",
+            "C28656",
+            "C35682",
+            "C188928",
+            "C101267",
+            "C36292",
+            "C21295",
+            "C77140",
+            "C54362",
+            "C3367",
+            "C20709",
+            "C94299",
+            "C38349",
+            "C16612",
+            "C20103",
+            "C177692",
+            "C20420"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TRIAL",
+          "name": "Progesterone Receptor Positive",
+          "nci_thesaurus_concept_id": "C15496",
+          "parents": [
+            "C101267",
+            "C16149",
+            "C28656"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "PGR Positive",
+            "PR Positive",
+            "PR+",
+            "Positive"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C36292",
+            "C3367",
+            "C77140"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Receptor Status",
+          "nci_thesaurus_concept_id": "C94299",
+          "parents": [
+            "C36292"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C3367"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Clinical Test Result",
+          "nci_thesaurus_concept_id": "C77140",
+          "parents": [
+            "C3367"
+          ],
+          "semantic_types": [
+            "Finding"
+          ],
+          "synonyms": [
+            "Clinical Measurement",
+            "Diagnostic Test Result"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C36292",
+            "C3367",
+            "C77140"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Positive Laboratory Test Result",
+          "nci_thesaurus_concept_id": "C35682",
+          "parents": [
+            "C36292"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "Positive",
+            "positive test result"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C16612",
+            "C21295"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Receptor Gene",
+          "nci_thesaurus_concept_id": "C20103",
+          "parents": [
+            "C21295"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Transcription Regulation Gene",
+          "nci_thesaurus_concept_id": "C54362",
+          "parents": [
+            "C16612"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Gene",
+          "nci_thesaurus_concept_id": "C16612",
+          "parents": [],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [
+            "Genes"
+          ],
+          "type": [
+            "branch"
+          ]
+        },
+        {
+          "ancestors": [
+            "C54362",
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Transcription Factor Gene",
+          "nci_thesaurus_concept_id": "C20420",
+          "parents": [
+            "C54362"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [
+            "Proto-Oncogene, Transcription Factor"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C54362",
+            "C20420",
+            "C21295",
+            "C20103",
+            "C20709",
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "PGR Gene",
+          "nci_thesaurus_concept_id": "C28656",
+          "parents": [
+            "C20709"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [
+            "PGR",
+            "PR",
+            "Progesterone Receptor Gene"
+          ],
+          "type": [
+            "reference_gene"
+          ]
+        },
+        {
+          "ancestors": [],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Finding",
+          "nci_thesaurus_concept_id": "C3367",
+          "parents": [],
+          "semantic_types": [
+            "Finding"
+          ],
+          "synonyms": [
+            "Observable Entity"
+          ],
+          "type": [
+            "branch"
+          ]
+        },
+        {
+          "ancestors": [
+            "C3367",
+            "C77140"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Negative Test Result",
+          "nci_thesaurus_concept_id": "C35681",
+          "parents": [
+            "C77140"
+          ],
+          "semantic_types": [
+            "Finding"
+          ],
+          "synonyms": [
+            "Negative"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C21281",
+            "C16612",
+            "C25870",
+            "C25871"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Kinase Family Gene",
+          "nci_thesaurus_concept_id": "C25872",
+          "parents": [
+            "C25871"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C17756",
+            "C25870",
+            "C36292",
+            "C21295",
+            "C77140",
+            "C3367",
+            "C94299",
+            "C21281",
+            "C16612",
+            "C25871",
+            "C20103",
+            "C25872",
+            "C20719"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "HER2/Neu Status",
+          "nci_thesaurus_concept_id": "C16152",
+          "parents": [
+            "C17756",
+            "C94299"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "ERBB2 Status",
+            "Her2/Neu Value"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C3367",
+            "C77140",
+            "C35681"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Expression Negative",
+          "nci_thesaurus_concept_id": "C165233",
+          "parents": [
+            "C35681"
+          ],
+          "semantic_types": [
+            "Cell or Molecular Dysfunction"
+          ],
+          "synonyms": [
+            "Absent",
+            "LOST",
+            "Loss of Expression",
+            "Negative",
+            "Not Expressed"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C36292",
+            "C94299",
+            "C3367",
+            "C77140"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Hormone Receptor Status",
+          "nci_thesaurus_concept_id": "C188928",
+          "parents": [
+            "C94299"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "HR Status"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C165233",
+            "C17756",
+            "C25870",
+            "C36292",
+            "C21295",
+            "C77140",
+            "C16152",
+            "C3367",
+            "C35681",
+            "C94299",
+            "C21281",
+            "C16612",
+            "C25871",
+            "C20103",
+            "C25872",
+            "C20719"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TRIAL",
+          "name": "HER2/Neu Negative",
+          "nci_thesaurus_concept_id": "C68749",
+          "parents": [
+            "C16152",
+            "C165233",
+            "C17756"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "ERBB2 Negative",
+            "HER-2 Negative",
+            "HER2 Negative"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C54362",
+            "C20420",
+            "C21295",
+            "C20103",
+            "C16612"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Nuclear Receptor Gene",
+          "nci_thesaurus_concept_id": "C20709",
+          "parents": [
+            "C20103",
+            "C20420"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C16612",
+            "C25871",
+            "C25872",
+            "C25870",
+            "C20103",
+            "C21295",
+            "C21281"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Receptor Tyrosine Kinase Gene",
+          "nci_thesaurus_concept_id": "C20719",
+          "parents": [
+            "C20103",
+            "C25872"
+          ],
+          "semantic_types": [
+            "Gene or Genome"
+          ],
+          "synonyms": [
+            "RTK Family Gene"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C28656",
+            "C35682",
+            "C188928",
+            "C101267",
+            "C16150",
+            "C36292",
+            "C21295",
+            "C77140",
+            "C54362",
+            "C3367",
+            "C20709",
+            "C94299",
+            "C38349",
+            "C177692",
+            "C16612",
+            "C20103",
+            "C20420"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TRIAL",
+          "name": "Estrogen Receptor Positive",
+          "nci_thesaurus_concept_id": "C15492",
+          "parents": [
+            "C101267",
+            "C16150",
+            "C38349"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "ER Alpha Positive",
+            "ER Positive",
+            "ER+",
+            "ER-Alpha Positive",
+            "ERA Positive",
+            "ESR Positive",
+            "ESR1 Positive",
+            "ESRA Positive",
+            "ESTRR Positive",
+            "Estrogen Receptor 1 Positive",
+            "Estrogen Receptor Alpha Positive",
+            "NR3A1 Positive",
+            "Nuclear Receptor Subfamily 3 Group A Member 1 Positive",
+            "Positive",
+            "Positive Estrogen Receptor"
+          ],
+          "type": []
+        },
+        {
+          "ancestors": [
+            "C36292",
+            "C188928",
+            "C20420",
+            "C16612",
+            "C28656",
+            "C94299",
+            "C3367",
+            "C20103",
+            "C54362",
+            "C20709",
+            "C77140",
+            "C21295"
+          ],
+          "assay_purpose": "Eligibility Criterion - Inclusion",
+          "eligibility_criterion": "inclusion",
+          "inclusion_indicator": "TREE",
+          "name": "Progesterone Receptor Status",
+          "nci_thesaurus_concept_id": "C16149",
+          "parents": [
+            "C188928",
+            "C28656"
+          ],
+          "semantic_types": [
+            "Laboratory or Test Result"
+          ],
+          "synonyms": [
+            "PgR Status",
+            "Progesterone Receptor"
+          ],
+          "type": []
+        }
+      ],
+      "brief_summary": "This phase III trial compares the addition of chemotherapy to usual treatment (ovarian function suppression plus hormonal therapy) to usual treatment alone in treating premenopausal estrogen receptor (ER)-positive/HER2-negative breast cancer patients who are at high risk of their cancer returning. One of the likely benefits of chemotherapy is that it can stop the ovaries from releasing eggs and hormones in women who are premenopausal. This study may help researchers determine if adding chemotherapy to ovarian suppression and hormonal therapy has similar effectiveness to ovarian suppression and hormonal therapy alone in preventing cancer from returning.",
+      "brief_title": "Testing the Addition of Chemotherapy to the Usual Treatment of Ovarian Function Suppression plus Hormonal Therapy in Premenopausal ER-Positive/HER2-Negative Breast Cancer Patients Who Are At High Risk of Cancer Returning, OFSET Trial",
+      "ccr_id": null,
+      "central_contact": {
+        "email": null,
+        "name": null,
+        "phone": null,
+        "type": null
+      },
+      "classification_code": null,
+      "collaborators": [
+        {
+          "functional_role": "FUNDING_SOURCE",
+          "name": "NRG Oncology"
+        }
+      ],
+      "completion_date": "2030-02-28",
+      "completion_date_type_code": "ANTICIPATED",
+      "ctep_id": "NRG-BR009",
+      "current_trial_status": "Active",
+      "current_trial_status_date": "2023-08-31",
+      "dcp_id": null,
+      "detail_description": "PRIMARY OBJECTIVE:\r\nI. To determine whether adjuvant chemotherapy (ACT) added to ovarian function suppression (OFS) plus endocrine therapy (ET) is superior to OFS plus ET in improving invasive breast cancer-free survival (IBCFS) among premenopausal, early- stage breast cancer (EBC) patients with estrogen receptor (ER)-positive, HER2-negative tumors and 21-gene recurrence score (RS) between 16-25 (for pN0 patients) and 0-25 (for pN1 patients).\r\n\r\nSECONDARY OBJECTIVES:\r\nI. To determine whether ACT added to OFS plus ET is superior to OFS plus ET in improving invasive disease-free survival (IDFS) among premenopausal, EBC patients with ER-positive, HER2-negative tumors and 21-gene RS between 16-25 (for pN0 patients) and 0-25 (for pN1 patients).\r\nII. To determine whether ACT added to OFS plus ET is superior to OFS plus ET in improving overall survival (OS) among premenopausal, EBC patients with ER-positive, HER2-negative tumors and 21-gene RS between 16-25 (for pN0 patients) and 0-25 (for pN1 patients).\r\nIII. To determine whether ACT added to OFS plus ET is superior to OFS plus ET in improving distant recurrence-free interval (DRFI) among premenopausal, EBC patients with ER-positive, HER2-negative tumors and 21-gene RS between 16-25 (for pN0 patients) and 0-25 (for pN1 patients).\r\nIV. To determine whether ACT added to OFS plus ET is superior to OFS plus ET in improving breast cancer-free interval (BCFI) among premenopausal, EBC patients with ER-positive, HER2-negative tumors and 21-gene RS between 16-25 (for pN0 patients) and 0-25 (for pN1 patients).\r\nV. To determine whether patients who receive ACT added to OFS plus ET will have more severe menopausal symptoms, measured by the Functional Assessment of Cancer Therapy-Endocrine Symptoms Subscale (FACT ESS)-19 score, compared to those who do not receive ACT.\r\nVI. To determine whether patients who receive ACT added to OFS plus ET will have increased pain during aromatase inhibitor (AI) therapy compared to patients who do not receive ACT.\r\n\r\nEXPLORATORY OBJECTIVES:\r\nI. To determine if there are differences in adherence to long-term OFS plus ET by treatment arm assignment.\r\nII. To determine if there are differences in the degree of ovarian suppression between treatment arms.\r\nIII. To determine if ACT added to OFS plus ET increases the long-term toxicities of OFS plus ET in premenopausal women with EBC.\r\nIV. To determine whether patients who receive ACT added to OFS plus ET will have similar selected quality of life (QOL) outcomes during OFS plus ET compared to patients who do not receive ACT.\r\nV. To assess if survival outcomes differ by race/ethnicity.\r\nVI. To determine if body mass index (BMI) contributes to outcome in this study population.\r\n\r\nOUTLINE: Patients are randomized to 1 of 2 arms.\r\n\r\nARM 1: Patients receive a gonadotropin-releasing hormone (GnRH) agonist via injection and an AI orally (PO) per the study investigator's choice. Treatment with AI continues for up to 5 years in the absence of disease progression or unacceptable toxicity. Patients also undergo mammogram or magnetic resonance imaging (MRI) scans during screening and then every 12 months on study and during follow up, and dual X-ray absorptiometry (DEXA) scans every 2 years on study. Patients may also undergo collection of tumor tissue within 90 days after randomization and at time of disease recurrence, and collection of blood samples before randomization, at 12, 24, 36, 48, and 60 months, and at time of disease recurrence.\r\n\r\nARM 2: Patients receive adjuvant chemotherapy regimen, a GnRH agonist via injection, and an AI PO per the study investigator's choice. Treatment with AI continues for up to 5 years in the absence of disease progression or unacceptable toxicity. Patients also undergo mammogram or MRI scans during screening and then every 12 months on study and during follow up, and DEXA scans every 2 years on study. Patients may also undergo collection of tumor tissue within 90 days after randomization and at time of disease recurrence, and collection of blood samples before randomization, at 12, 24, 36, 48, and 60 months, and at time of disease recurrence.\r\n\r\nAfter completion of study treatment, patients are followed every 12 months for 10 years.",
+      "diseases": [
+        {
+          "inclusion_indicator": "TRIAL",
+          "is_lead_disease": true,
+          "name": "Stage I Breast Cancer",
+          "nci_thesaurus_concept_id": "C139535",
+          "parents": [
+            "C139533"
+          ],
+          "synonyms": [
+            "Anatomic Stage I Breast Cancer AJCC v8",
+            "Anatomic Stage I Breast Carcinoma AJCC v8"
+          ],
+          "type": [
+            "stage"
+          ]
+        },
+        {
+          "inclusion_indicator": "TRIAL",
+          "is_lead_disease": false,
+          "name": "Stage II Breast Cancer",
+          "nci_thesaurus_concept_id": "C139538",
+          "parents": [
+            "C139533"
+          ],
+          "synonyms": [
+            "Anatomic Stage II Breast Cancer AJCC v8",
+            "Anatomic Stage II Breast Carcinoma AJCC v8"
+          ],
+          "type": [
+            "stage"
+          ]
+        },
+        {
+          "inclusion_indicator": "TRIAL",
+          "is_lead_disease": false,
+          "name": "Stage IIIA Breast Cancer",
+          "nci_thesaurus_concept_id": "C139542",
+          "parents": [
+            "C139541"
+          ],
+          "synonyms": [
+            "Anatomic Stage IIIA Breast Cancer AJCC v8",
+            "Anatomic Stage IIIA Breast Carcinoma AJCC v8"
+          ],
+          "type": [
+            "stage"
+          ]
+        },
+        {
+          "inclusion_indicator": "TRIAL",
+          "is_lead_disease": false,
+          "name": "Hormone Receptor Positive Breast Carcinoma",
+          "nci_thesaurus_concept_id": "C157056",
+          "parents": [
+            "C5214"
+          ],
+          "synonyms": [
+            "Hormone Receptor Positive Breast Adenocarcinoma",
+            "Hormone Receptor-Positive Breast Carcinoma",
+            "HR-positive Breast cancer"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TRIAL",
+          "is_lead_disease": false,
+          "name": "HER2 Negative Breast Carcinoma",
+          "nci_thesaurus_concept_id": "C168519",
+          "parents": [
+            "C5214"
+          ],
+          "synonyms": [
+            "HER2 Negative Breast Adenocarcinoma",
+            "HER2-Negative Breast Carcinoma"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Neoplasm by Site",
+          "nci_thesaurus_concept_id": "C3263",
+          "parents": [
+            "C3262"
+          ],
+          "synonyms": [],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Malignant Neoplasm",
+          "nci_thesaurus_concept_id": "C9305",
+          "parents": [
+            "C7062"
+          ],
+          "synonyms": [
+            "CA",
+            "Cancer",
+            "Malignancy",
+            "Malignant Growth",
+            "Malignant Neoplastic Disease",
+            "Malignant Tumor",
+            "Neoplasm, malignant",
+            "Tumor, malignant, NOS",
+            "Unclassified tumor, malignant"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Other Disease",
+          "nci_thesaurus_concept_id": "C2991",
+          "parents": [],
+          "synonyms": [
+            "Condition",
+            "Diagnosis",
+            "Disease",
+            "Disease or Disorder",
+            "Disease or Disorder, Non-Neoplastic",
+            "disease term",
+            "disease type",
+            "disease_term",
+            "disease_type",
+            "Diseases",
+            "Diseases and Disorders",
+            "Disorder",
+            "Disorders"
+          ],
+          "type": [
+            "maintype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Malignant Breast Neoplasm",
+          "nci_thesaurus_concept_id": "C9335",
+          "parents": [
+            "C2910",
+            "C9305"
+          ],
+          "synonyms": [
+            "Breast Cancer",
+            "Cancer of the Breast",
+            "Malignant Breast Tumor",
+            "Malignant Neoplasm of Breast",
+            "Malignant Neoplasm of the Breast",
+            "Malignant Tumor of Breast",
+            "Malignant Tumor of the Breast"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Breast Neoplasm",
+          "nci_thesaurus_concept_id": "C2910",
+          "parents": [
+            "C26709",
+            "C3263"
+          ],
+          "synonyms": [
+            "Breast Tumor",
+            "Neoplasm of Breast",
+            "Neoplasm of the Breast",
+            "Tumor of Breast",
+            "Tumor of the Breast"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Epithelial Neoplasm",
+          "nci_thesaurus_concept_id": "C3709",
+          "parents": [
+            "C4741"
+          ],
+          "synonyms": [
+            "Epithelial Neoplasms, NOS",
+            "Epithelioma",
+            "Epithelioma, malignant"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Other Carcinoma",
+          "nci_thesaurus_concept_id": "C2916",
+          "parents": [
+            "C9305",
+            "C3709"
+          ],
+          "synonyms": [
+            "Carcinoma",
+            "CARCINOMA, MALIGNANT",
+            "Carcinoma, NOS",
+            "Epithelial Carcinoma",
+            "Epithelial tumor, malignant",
+            "Epithelioma Malignant",
+            "Malignant Epithelial Neoplasm",
+            "Malignant Epithelial Tumor",
+            "Malignant Epithelioma"
+          ],
+          "type": [
+            "maintype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Disease, Disorder or Finding",
+          "nci_thesaurus_concept_id": "C7057",
+          "parents": [],
+          "synonyms": [],
+          "type": [
+            "finding"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Other Neoplasm",
+          "nci_thesaurus_concept_id": "C3262",
+          "parents": [
+            "C2991"
+          ],
+          "synonyms": [
+            "Neoplasia",
+            "Neoplasm",
+            "Neoplasm, NOS",
+            "Neoplasms, NOS",
+            "Neoplastic Disease",
+            "Neoplastic Growth",
+            "tumor",
+            "Tumor, NOS"
+          ],
+          "type": [
+            "maintype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Breast Disorder",
+          "nci_thesaurus_concept_id": "C26709",
+          "parents": [
+            "C27551"
+          ],
+          "synonyms": [
+            "Breast Disease",
+            "Breast Diseases"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Disorder by Site",
+          "nci_thesaurus_concept_id": "C27551",
+          "parents": [
+            "C2991"
+          ],
+          "synonyms": [
+            "Disease by Site"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Breast Cancer by AJCC v8 Stage",
+          "nci_thesaurus_concept_id": "C139532",
+          "parents": [
+            "C4872"
+          ],
+          "synonyms": [
+            "Breast Carcinoma by AJCC v8 Stage"
+          ],
+          "type": [
+            "stage"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Breast Cancer",
+          "nci_thesaurus_concept_id": "C4872",
+          "parents": [
+            "C2916",
+            "C9335"
+          ],
+          "synonyms": [
+            "Breast cancer, NOS",
+            "Breast Carcinoma",
+            "Carcinoma of Breast",
+            "Carcinoma of the Breast",
+            "Mammary Carcinoma"
+          ],
+          "type": [
+            "maintype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Breast Cancer by AJCC v8 Anatomic Stage",
+          "nci_thesaurus_concept_id": "C139533",
+          "parents": [
+            "C139532"
+          ],
+          "synonyms": [
+            "Breast Carcinoma by AJCC v8 Anatomic Stage"
+          ],
+          "type": [
+            "stage"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Neoplasm by Special Category",
+          "nci_thesaurus_concept_id": "C7062",
+          "parents": [
+            "C3262"
+          ],
+          "synonyms": [],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": true,
+          "name": "Neoplasm by Morphology",
+          "nci_thesaurus_concept_id": "C4741",
+          "parents": [
+            "C3262"
+          ],
+          "synonyms": [
+            "Tumor Morphology",
+            "Tumor_Morphology"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": false,
+          "name": "Breast Adenocarcinoma",
+          "nci_thesaurus_concept_id": "C5214",
+          "parents": [
+            "C4872",
+            "C2852"
+          ],
+          "synonyms": [
+            "Adenocarcinoma of Breast",
+            "Adenocarcinoma of the Breast",
+            "Mammary adenocarcinoma"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": false,
+          "name": "Stage III Breast Cancer",
+          "nci_thesaurus_concept_id": "C139541",
+          "parents": [
+            "C139533"
+          ],
+          "synonyms": [
+            "Anatomic Stage III Breast Cancer AJCC v8",
+            "Anatomic Stage III Breast Carcinoma AJCC v8"
+          ],
+          "type": [
+            "stage"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": false,
+          "name": "Glandular Cell Neoplasm",
+          "nci_thesaurus_concept_id": "C7132",
+          "parents": [
+            "C3709"
+          ],
+          "synonyms": [
+            "Glandular Cell Epithelial Neoplasm",
+            "Glandular Cell Epithelium Neoplasm"
+          ],
+          "type": [
+            "subtype"
+          ]
+        },
+        {
+          "inclusion_indicator": "TREE",
+          "is_lead_disease": false,
+          "name": "Adenocarcinoma",
+          "nci_thesaurus_concept_id": "C2852",
+          "parents": [
+            "C2916",
+            "C7132"
+          ],
+          "synonyms": [
+            "ADENOCARCINOMA, MALIGNANT",
+            "Adenocarcinoma, NOS"
+          ],
+          "type": [
+            "subtype"
+          ]
+        }
+      ],
+      "eligibility": {
+        "structured": {
+          "accepts_healthy_volunteers": false,
+          "max_age": "999 Years",
+          "max_age_in_years": 999.0,
+          "max_age_number": 999.0,
+          "max_age_unit": "Years",
+          "min_age": "18 Years",
+          "min_age_in_years": 18.0,
+          "min_age_number": 18.0,
+          "min_age_unit": "Years",
+          "sex": "FEMALE"
+        },
+        "unstructured": [
+          {
+            "description": "The patient or a legally authorized representative must provide study-specific informed consent prior to pre-entry and, for patients treated in the United States (U.S.), authorization permitting release of personal health information",
+            "display_order": 1,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Female patients must be >= 18 years of age",
+            "display_order": 2,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Patients must be premenopausal (evidence of functioning ovaries) at the time of pre-entry. For study purposes, premenopausal is defined as:\r\n* Age 50 years or under with spontaneous menses within 12 months; or\r\n* Age > 50-60 years with spontaneous menses within 12 months plus follicle-stimulating hormone (FSH) and estradiol levels in the premenopausal range; or\r\n* Patients with amenorrhea due to intrauterine device (IUD) or prior uterine ablation must have FSH and estradiol levels in the premenopausal range; or\r\n* Patients with prior hysterectomy must have FSH and estradiol levels in the premenopausal range",
+            "display_order": 3,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "The patient must have an Eastern Cooperative Oncology Group (ECOG) performance status of =< 2 (or Karnofsky >= 60%)",
+            "display_order": 4,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Patients may have ipsilateral or contralateral synchronous breast cancer if the highest stage tumor meets entry criteria, and the other sites of disease would not require chemotherapy or HER2-directed therapy",
+            "display_order": 5,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Patients may have multicentric or multifocal breast cancer if the highest stage tumor meets entry criteria, and the other sites of disease would not require chemotherapy or HER2-directed therapy",
+            "display_order": 6,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Patient may have undergone a total mastectomy, skin-sparing mastectomy, nipple-sparing mastectomy, or a lumpectomy",
+            "display_order": 7,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "For patients who undergo a lumpectomy, the margins of the resected specimen or re-excision must be histologically free of invasive tumor and ductal carcinoma in situ (DCIS) with no ink on tumor as determined by the local pathologist. If pathologic examination demonstrates tumor at the line of resection, additional excisions may be performed to obtain clear margins. Positive posterior margin is allowed if surgeon deems no further resection possible. (Patients with margins positive for lobular carcinoma in situ [LCIS] are eligible without additional resection.)",
+            "display_order": 8,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "For patients who undergo mastectomy, the margins must be free of residual gross tumor. (Patients with microscopic positive margins are eligible if post-mastectomy radiation therapy [RT] of the chest wall will be administered.)",
+            "display_order": 9,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Patient must have undergone axillary staging with sentinel node biopsy (SNB), targeted axillary dissection (TAD), or axillary lymph node dissection (ALND)",
+            "display_order": 10,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "The following staging criteria must be met postoperatively according to American Joint Committee on Cancer (AJCC) 8th edition criteria:\r\n* By pathologic evaluation, primary tumor must be pT1-3. (If N0, must be T1c or higher.)\r\n* By pathologic evaluation, ipsilateral nodes must be pN0 or pN1 (pN1mi, pN1a, pN1b, pN1c). \r\n* Patients with positive isolated tumor cells (ITCs) in axillary nodes will be considered N0 for eligibility purposes\r\n* Patients with micrometastatic nodal involvement (0.2-2 mm) will be considered N1",
+            "display_order": 11,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Oncotype DX RS requirements:\r\n* If node-negative:\r\n** Oncotype DX RS must be RS 21-25, or \r\n** Oncotype DX RS must be 16-20 and disease must be high clinical risk, defined as: low histologic grade with primary tumor size > 3 cm, intermediate histologic grade with primary tumor size > 2 cm, or high histologic grade with primary tumor size > 1 cm\r\n* If 1-3 nodes involved:\r\n** Oncotype DX RS must be < 26\r\n*** Patients with a \u201cLow Risk\u201d or \u201cMP1\u201d MammaPrint result must have eligibility assessed with an Oncotype DX RS at pre-entry. Blocks or unstained slides must be sent to the Genomic Health centralized laboratory for testing at no cost to these patients. If MammaPrint High Risk or MP2, these patients are not eligible",
+            "display_order": 12,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "The tumor must be ER and/or PgR-positive by current American Society of Clinical Oncology/College of American Pathologists (ASCO/CAP) guidelines based on local testing results. Patients with >= 1% ER and/or PgR staining by immunohistochemistry (IHC) will be classified as positive",
+            "display_order": 13,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "The tumor must be HER2-negative by current ASCO/CAP guidelines based on local testing results",
+            "display_order": 14,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "The interval between the last surgery for breast cancer (including re-excision of margins) and pre-entry must be no more than 16 weeks",
+            "display_order": 15,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Short course of endocrine therapy of less than 6 weeks duration before pre-entry is acceptable either as neoadjuvant or adjuvant therapy. An Oncotype DX RS must be performed on core biopsy specimen obtained prior to initiation of neoadjuvant endocrine therapy if received",
+            "display_order": 16,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Patients with a prior or concurrent non-breast malignancy whose natural history or treatment does not have the potential to interfere with the safety or efficacy assessment of the investigational regimen are eligible for this trial. This would include prior cancers treated with curative intent",
+            "display_order": 17,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Human immunodeficiency virus (HIV)-infected patients on effective anti-retroviral therapy with undetectable viral load within 6 months are eligible for this trial",
+            "display_order": 18,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Radiation therapy should be used according to standard guidelines; the intended radiation therapy should be declared prior to pre-entry",
+            "display_order": 19,
+            "inclusion_indicator": true
+          },
+          {
+            "description": "Definitive clinical or radiologic evidence of metastatic disease",
+            "display_order": 20,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "pT4 tumors, including inflammatory breast cancer",
+            "display_order": 21,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "History of ipsilateral or contralateral invasive breast cancer. (Patients with synchronous and/or previous DCIS or LCIS are eligible.)\r\n* If prior ipsilateral DCIS was treated with lumpectomy and external radiation therapy (XRT), a mastectomy must have been performed for the current cancer",
+            "display_order": 22,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Life expectancy of < 10 years due to co-morbid conditions in the opinion of the investigator",
+            "display_order": 23,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Absolute neutrophil count (ANC) < 1200/mm^3 (obtained as part of routine care prior to study entry)",
+            "display_order": 24,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Platelet count < 100,000/mm^3 (obtained as part of routine care prior to study entry)",
+            "display_order": 25,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Hemoglobin < 10 g/dL (obtained as part of routine care prior to study entry)",
+            "display_order": 26,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Total bilirubin > upper limit of normal (ULN) for the lab or > 1.5 x ULN for patients who have a bilirubin elevation due to Gilbert\u2019s disease or similar syndrome involving slow conjugation of bilirubin (obtained as part of routine care prior to study entry)",
+            "display_order": 27,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Aspartate aminotransferase (AST)(serum glutamic oxaloacetic transaminase [SGOT])/alanine aminotransferase (ALT)(serum glutamate pyruvate transaminase [SGPT]): > 3 \u00d7 institutional ULN (obtained as part of routine care prior to study entry)",
+            "display_order": 28,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Renal function of glomerular filtration rate (GFR) < 30 mL/min/1.73m^2 (obtained as part of routine care prior to study entry)",
+            "display_order": 29,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Patients with known history or current symptoms of cardiac disease, or history of treatment with cardiotoxic agents, should have a clinical risk assessment of cardiac function using the New York Heart Association Functional Classification. To be eligible for this trial, patients should be class 2B or better",
+            "display_order": 30,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Non-epithelial breast malignancies such as sarcoma or lymphoma",
+            "display_order": 31,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Any treatment with radiation therapy, chemotherapy, or biotherapy administered for the currently diagnosed breast cancer prior to pre-entry. (Patients with prior ET of more than 6 weeks duration for treatment of this cancer are not eligible.) Prior tamoxifen given for breast cancer prevention is allowed. Prior AI or gonadotrophin releasing hormone (GnRH) for fertility preservation is allowed",
+            "display_order": 32,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Hormonally based contraceptive measures must be discontinued prior to pre-entry (including progestin/progesterone IUDs)",
+            "display_order": 33,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Patients with evidence of chronic hepatitis B virus (HBV) infection are ineligible unless the HBV viral load is undetectable on suppressive therapy. Patients with a history of hepatitis C virus (HCV) infection are ineligible unless they have been treated and cured or have an undetectable HCV viral load if still on active therapy",
+            "display_order": 34,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Pregnancy or lactation at the time of pre-entry. (Note: Pregnancy testing according to institutional standards for women of childbearing potential must be performed within 2 weeks prior to pre-entry.)",
+            "display_order": 35,
+            "inclusion_indicator": false
+          },
+          {
+            "description": "Other conditions that, in the opinion of the investigator, would preclude the patient from meeting the study requirements or interfere with interpretation of study results",
+            "display_order": 36,
+            "inclusion_indicator": false
+          }
+        ]
+      },
+      "interventional_model": "Parallel",
+      "keywords": null,
+      "lead_org": "NRG Oncology",
+      "lead_org_cancer_center": null,
+      "masking": {
+        "allocation_code": "Randomized Controlled Trial",
+        "masking": null,
+        "role_caregiver": null,
+        "role_investigator": null,
+        "role_outcome_assessor": null,
+        "role_subject": null
+      },
+      "minimum_target_accrual_number": 3960,
+      "nci_funded": "Direct",
+      "nci_id": "NCI-2023-04529",
+      "nci_programs": [
+        "NCTN"
+      ],
+      "nct_id": "NCT05879926",
+      "number_of_arms": 2,
+      "official_title": "A Phase III Adjuvant Trial Evaluating the Addition of Adjuvant Chemotherapy to Ovarian Function Suppression plus Endocrine Therapy in Premenopausal Patients with pN0-1, ER-Positive/HER2-Negative Breast Cancer and an Oncotype Recurrence Score </= 25 (OFSET)",
+      "other_ids": [],
+      "outcome_measures": [
+        {
+          "description": "Comparisons between the two treatment arms will be performed among the ITT population following the same analysis strategy as that for the IBCFS endpoint at the definitive analysis of this study.",
+          "name": "Breast cancer-free interval",
+          "timeframe": "Time from randomization until the first diagnosis of local invasive recurrence, regional recurrence, distant recurrence, contralateral breast cancer, or death from breast cancer, assessed up to 10 years after completion of study treatment",
+          "type_code": "SECONDARY"
+        },
+        {
+          "description": "defined as time from randomization until the first diagnosis of distant metastasis or death from breast cancer, regardless of occurrence of any intervening local or regional recurrences, contralateral breast cancers, or non-breast second primary cancers. This endpoint is censored at the time of death from causes other than breast cancer. Comparisons between the two treatment arms will be performed among the ITT population following the same analysis strategy as that for the IBCFS endpoint at the definitive analysis of this study.",
+          "name": "Distant recurrence-free interval",
+          "timeframe": "Time from randomization to distant metastasis or death from breast cancer, assessed up to 10 years after completion of study treatment",
+          "type_code": "SECONDARY"
+        },
+        {
+          "description": "Will compare the proportion of patients who have achieved optimal ovarian function suppression with estradiol levels completely suppressed on AI at 1 year between the two treatment arms.",
+          "name": "Estradiol levels",
+          "timeframe": "Pre-entry, and at 3, 6, 12, 18, 24, 36, 48, and 60 months from randomization",
+          "type_code": "OTHER_PRE_SPECIFIED"
+        },
+        {
+          "description": "Will be categorized using the National Cancer Institute Common Terminology Criteria for Adverse Events Version 5.0. Comparisons of the adverse events between the two treatment arms will be done by the Fisher's exact test among the safety population.",
+          "name": "Frequencies of adverse events",
+          "timeframe": "At 6, 12, 18, and 24 months from randomization and every 12 months from years 3 through 10 from randomization",
+          "type_code": "SECONDARY"
+        },
+        {
+          "description": "Will be compared between the two study arms using analysis of covariance (ANCOVA) adjusting for the corresponding baseline (pre-randomization) measurement.",
+          "name": "Functional Assessment of Cancer Therapy-Endocrine Symptoms Subscale score",
+          "timeframe": "At one year after randomization",
+          "type_code": "SECONDARY"
+        },
+        {
+          "description": "Defined as time from randomization to the first diagnosis of local invasive recurrence following mastectomy, local invasive recurrence in the ipsilateral breast following lumpectomy, regional recurrence, distant recurrence, contralateral invasive breast cancer, second non-breast primary cancer (excluding squamous or basal cell carcinoma of the skin), or death from any cause prior to recurrence or second primary cancer. the stratified log-rank test will be used to test the difference between treatment arms with the stratification factors as nodal status and recurrence score, intent to receive CDK4/6 inhibitor, and age. The Kaplan-Meier estimates will also be calculated separately for patients under these two treatment regimens. The stratified Cox proportional hazards models will be used to study the association between IBCFS and treatment with adjusting for potential confounders such as age, number of positive nodes, recurrence score, tumor size, and tumor grade.",
+          "name": "Invasive breast cancer-free survival (IBCFS)",
+          "timeframe": "Time from randomization to recurrence, contralateral invasive breast cancer, or death from any cause, assessed up to 10 years after completion of study treatment",
+          "type_code": "PRIMARY"
+        },
+        {
+          "description": "Defined as time from randomization to the first diagnosis of local invasive recurrence following mastectomy, local invasive recurrence in the ipsilateral breast following lumpectomy, regional recurrence, distant recurrence, contralateral invasive breast cancer, second non-breast primary cancer (excluding squamous or basal cell carcinoma of the skin), or death from any cause prior to recurrence or second primary cancer. Comparisons between the two treatment arms will be performed among the intent-to-treat (ITT) population following the same analysis strategy as that for the IBCFS endpoint at the definitive analysis of this study.",
+          "name": "Invasive disease-free survival",
+          "timeframe": "Time from randomization to recurrence, contralateral invasive breast cancer, second non-breast primary cancer, or death from any cause, assessed up to 10 years after completion of study treatment",
+          "type_code": "SECONDARY"
+        },
+        {
+          "description": "Comparisons between the two treatment arms will be performed among the ITT population following the same analysis strategy as that for the IBCFS endpoint at the definitive analysis of this study.",
+          "name": "Overall survival",
+          "timeframe": "Time from randomization to death from any cause, assessed up to 10 years after completion of study treatment",
+          "type_code": "SECONDARY"
+        },
+        {
+          "description": "Assessed using the Patient Reported Outcomes Measurement Information System-29 Profile. Will be compared between the study arms using ANCOVA with adjustment for the corresponding baseline measure. Each comparison will be performed at the significance level of 0.025.",
+          "name": "Pain severity score",
+          "timeframe": "At one year after randomization",
+          "type_code": "SECONDARY"
+        },
+        {
+          "description": "Will regularly monitor treatment adherence within each of the following groups: (1) patients on the control arm with a RS between 0 and 15; (2) patients on the control arm with a RS between 16 and 25; (3) patients on the chemotherapy arm with a RS between 0 and 15; and (4) patients on the chemotherapy arm with a RS between 16 and 25.",
+          "name": "Treatment adherence",
+          "timeframe": "Up to 5 years",
+          "type_code": "OTHER_PRE_SPECIFIED"
+        }
+      ],
+      "phase": "III",
+      "primary_purpose": "TREATMENT",
+      "principal_investigator": "Eleftherios (Terry) Paul Mamounas",
+      "prior_therapy": [],
+      "protocol_id": "NRG-BR009",
+      "record_verification_date": "2024-06-03",
+      "sampling_method_code": null,
+      "sites": [
+        {
+          "contact_email": "REDACTED",
+          "contact_name": "REDACTED",
+          "contact_phone": "REDACTED",
+          "org_address_line_1": "2901 Squalicum Parkway",
+          "org_address_line_2": null,
+          "org_city": "Bellingham",
+          "org_coordinates": {
+            "lat": 48.7531,
+            "lon": -122.5024
+          },
+          "org_country": "United States",
+          "org_email": "REDACTED",
+          "org_family": null,
+          "org_fax": null,
+          "org_name": "PeaceHealth Saint Joseph Medical Center",
+          "org_phone": null,
+          "org_postal_code": "98225",
+          "org_state_or_province": "WA",
+          "org_tty": null,
+          "org_va": false,
+          "recruitment_status": "ACTIVE",
+          "recruitment_status_date": "2026-07-15"
+        },
+        {
+          "contact_email": "REDACTED",
+          "contact_name": "REDACTED",
+          "contact_phone": "REDACTED",
+          "org_address_line_1": "2000 Hospital Drive",
+          "org_address_line_2": null,
+          "org_city": "Sedro-Woolley",
+          "org_coordinates": {
+            "lat": 48.514,
+            "lon": -121.9901
+          },
+          "org_country": "United States",
+          "org_email": "REDACTED",
+          "org_family": null,
+          "org_fax": null,
+          "org_name": "PeaceHealth United General Medical Center",
+          "org_phone": null,
+          "org_postal_code": "98284",
+          "org_state_or_province": "WA",
+          "org_tty": null,
+          "org_va": false,
+          "recruitment_status": "ACTIVE",
+          "recruitment_status_date": "2026-07-15"
+        },
+        {
+          "contact_email": "REDACTED",
+          "contact_name": "REDACTED",
+          "contact_phone": "REDACTED",
+          "org_address_line_1": "301 Saint Paul Place",
+          "org_address_line_2": null,
+          "org_city": "Baltimore",
+          "org_coordinates": {
+            "lat": 39.2974,
+            "lon": -76.6074
+          },
+          "org_country": "United States",
+          "org_email": "REDACTED",
+          "org_family": null,
+          "org_fax": null,
+          "org_name": "Mercy Medical Center",
+          "org_phone": null,
+          "org_postal_code": "21202",
+          "org_state_or_province": "MD",
+          "org_tty": null,
+          "org_va": false,
+          "recruitment_status": "ACTIVE",
+          "recruitment_status_date": "2026-06-05"
+        }
+      ],
+      "start_date": "2023-10-18",
+      "start_date_type_code": "ACTUAL",
+      "status_history": [
+        {
+          "status": "ACTIVE",
+          "status_date": "2023-08-31T00:00:00.000002"
+        },
+        {
+          "status": "APPROVED",
+          "status_date": "2023-08-29T00:00:00.000001"
+        },
+        {
+          "status": "IN_REVIEW",
+          "status_date": "2023-06-02T00:00:00"
+        }
+      ],
+      "study_model_code": null,
+      "study_model_other_text": null,
+      "study_population_description": null,
+      "study_protocol_type": "Interventional",
+      "study_source": "National",
+      "study_subtype_code": null,
+      "why_study_stopped": null
+    }
+  ],
+  "total": 6546
+}

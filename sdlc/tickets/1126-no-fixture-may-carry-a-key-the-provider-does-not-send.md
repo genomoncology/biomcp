@@ -65,4 +65,4 @@ The receipt is in `testdata/sources/capture-receipts.json`, classified `real_and
 
 So this check is provable today against a capture in this repository. Nothing about the ticket's requirement changes.
 
-The related check running the other direction — no key list in the code may name a field absent from every recorded capture — is ticket 1132 and is independent of this one.
+The related check running the other direction — no key list in the code may name a field absent from every recorded capture — is ticket 1138, and it is **not** independent of this one. Both checks read the same provenance record. This ticket lands first and builds it; 1138 depends on this ticket and extends what it leaves. Build the record so a second reader can use it, and say in the record what 1138 will need from it.

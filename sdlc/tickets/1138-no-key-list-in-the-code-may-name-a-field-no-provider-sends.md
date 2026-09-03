@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 8
-deps: ["1132"]
+deps: ["1132", "1126"]
 ---
 
 # No key list in the code may name a field no provider sends
@@ -36,7 +36,7 @@ Absence in a capture does not always mean the provider does not send it. Two way
 
 **A capture recorded with a restricted field list proves nothing about the fields it did not request.** Every ClinicalTrials.gov capture under `testdata/sources/ctgov/` except one was recorded with a `fields=` list, and none of those lists ever asked for the arms module. A naive union of keys would call correct field names dead. The receipts already record each capture's request URL, which carries the list that was asked for, so the evidence needed to tell "the provider did not send it" from "we never asked" is on disk.
 
-**A capture can be minimized after recording.** The only receipted NCI capture, `testdata/sources/nci_cts/search_melanoma_20260811.json`, holds six fields. The capture that carries all 58, `search_melanoma.json`, is classified `pending_verification` and has no receipt. So for NCI the repository today has evidence without provenance and provenance without evidence, and a check that trusts only receipts would pass everything while a check that trusts only content would rest on an unreceipted file. Resolving that is part of this ticket.
+**A capture can be minimized after recording.** This was a real gap for NCI and it is now closed. `search_melanoma_20260811.json` had a receipt and six fields; `search_melanoma.json` had all 58 fields and no receipt. The repository held evidence without provenance and provenance without evidence. Recording a capture that has both is no longer part of this ticket, because one was recorded on 2026-09-03. Read the section below.
 
 Do not resolve either by loosening the rule until the current tree passes. A check that passes because it was weakened is worth less than no check.
 
@@ -44,7 +44,7 @@ Do not resolve either by loosening the rule until the current tree passes. A che
 
 - Adding a key name to a conversion key list that no recorded capture for its endpoint supports fails the check, and the message names the key, its group and the endpoint.
 - Each of the seven instances above fails the check when reintroduced, `central_contacts` included. Tests pin that, so the check is proven against the defects it was built for rather than against invented examples.
-- For NCI, the check rests on a capture that both carries the field names and has a provider receipt. Recording one is in scope.
+- For NCI, the check rests on `testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json`, which carries the field names and has a provider receipt. Recording it is done and is not in scope.
 - For ClinicalTrials.gov, a correct field name that no capture requested does not fail the check, and a field name that a capture requested and the provider did not return does fail it.
 - Every exception carries a written reason naming the field and why no capture can attest it.
 - The current tree passes with the exceptions it needs and no others. For each failure found on the way, the ticket's record says whether it was a real defect of this class or an exception, and why.
@@ -58,9 +58,9 @@ The behavior is restated above in full, because an attempt runs in a worktree wh
 
 ## Boundary
 
-This is a sibling of ticket 1126, not a part of it. 1126 guards fixtures; this guards the code. They will want the same provenance record and should share it rather than each building one.
+This is a sibling of ticket 1126, not a part of it. 1126 guards fixtures; this guards the code. Both need the same provenance record, so 1126 lands first and builds it. This ticket extends what 1126 left. Do not build a second, competing record of where captures came from, and do not rebuild the one 1126 delivered.
 
-`testdata/sources/capture-receipts.json` already classifies fixtures by provenance and carries each capture's request URL. Extend it or sit beside it. Do not build a second, competing record of where captures came from.
+`testdata/sources/capture-receipts.json` already classifies fixtures by provenance and carries each capture's request URL. It is the record both checks read.
 
 Do not fix any of the six instances here. Ticket 1095 landed the ClinicalTrials.gov one; the five NCI ones are tickets 1119, 1133, 1134, 1135 and 1137. Each has its own record. This ticket makes them fail; the others make them pass. If the check is landed first and the tree is red, that is the expected order, and the check may be landed with the known-failing groups declared as exceptions that name their owning ticket.
 
@@ -79,3 +79,13 @@ Its check fails on `main` today. `["interventions"]` names no key the NCI payloa
 Landing this guard before those fixes would turn `main` red and block every ticket in the channel, because the green-main gate runs before any ticket starts. That is the opposite of what a guard is for.
 
 Land 1132 first. Then this check passes on the corrected code and holds the class shut.
+
+## The NCI capture this check needs, recorded 2026-09-03
+
+`testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json`, recorded from `https://clinicaltrialsapi.cancer.gov/api/v2/trials?size=1&current_trial_status=Active` with no field restriction. It carries all 58 top-level keys the provider sends. The receipt is in `testdata/sources/capture-receipts.json`, classified `real_and_receipted`.
+
+It attests every field name the five NCI defects turn on. `arms[].interventions` is present. `eligibility.structured.min_age` is present and reads `"18 Years"`. `study_protocol_type`, `minimum_target_accrual_number` and `why_study_stopped` are all present. None of `interventions`, `study_type`, `enrollment`, `enrollment_target`, `target_enrollment` or `minimum_age` appears at the top level.
+
+Two reductions were made and neither removes a key name. The sites array was cut from 1261 entries to the first 3, each carrying every site key the provider sends. Within those 3 sites the seven person-bearing and organization-contact values read `REDACTED`. The unredacted response carried 326 distinct email addresses and 1028 distinct telephone numbers, and this repository is public. The receipt states both reductions.
+
+The check reads key names, so the redaction costs it nothing. If the design finds it needs an attested *value* from one of the seven redacted fields, stop and say so rather than recording an unredacted capture.

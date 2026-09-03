@@ -33,3 +33,7 @@ This behavior is held against both 0.9 and 1.0 alike. It is recorded as case 14 
 ## Boundary
 
 Do not add other location fields. Do not change which sites are returned or their order.
+
+**Fix the one field. Do not build the mechanical check here.** Case 14's assertion asks that every field in the request list be reachable from the converted value, checked mechanically. That check is the same class of work as tickets 1126 and 1138, it spans every source, and it is carried there. This ticket's job is smaller: zip is fetched and discarded, so expose it, with a test that pins zip specifically.
+
+If the design concludes the mechanical check cannot wait, stop and say so rather than building it inside this ticket.
