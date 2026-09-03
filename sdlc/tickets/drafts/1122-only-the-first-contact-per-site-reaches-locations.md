@@ -18,7 +18,7 @@ The two views of the same site agree about how many contacts it has.
 
 ## Correct behavior
 
-A site's contacts are the same set on both paths. Locations and contacts are derived from the same sites, so a per-site contact count taken from locations equals the count taken from contacts, and both equal the number the payload states.
+A site's contacts are the same set on both paths. A per-site contact count taken from locations equals the count taken from contacts, and both equal the number the payload states.
 
 Write that as a failing test, then fix. Red before green.
 
@@ -34,6 +34,10 @@ Copying that payload into `testdata/sources/` with a receipt classified as autho
 
 A trial contact is patient-bearing, so this fixture is authored by policy and will never be a recorded capture. That is the intended state, not a gap waiting to be filled.
 
+It lands in `testdata/sources/clinicaltrials/`, beside the other authored fixtures, and not in `testdata/sources/ctgov/`, which is named for recorded captures. Its entry in `testdata/sources/capture-receipts.json` is classified as authored.
+
+**Ticket 1126 lands first.** It builds the check that every fixture key be attested by a recorded capture or declared an exception, and its own required behavior names this fixture as the authored case it must accept. Declaring an authored fixture in whatever form 1126 builds is part of this ticket. Landing this one first would put an undeclared authored fixture into the tree 1126 then has to pass over.
+
 ## Done, observably
 
 - A site listing two contacts reports two on both paths, in the order the payload lists them.
@@ -42,7 +46,7 @@ A trial contact is patient-bearing, so this fixture is authored by policy and wi
 
 ## What this replaces
 
-The current single-contact locations rendering is being replaced deliberately. The change reaches the JSON shape of a location, the locations table in `templates/trial.md.j2`, and the pinned locations assertion in `spec/entity/trial.md`. Assertions in `src/transform/trial/tests.rs`, `src/cli/trial/tests_locations.rs` and `src/render/markdown/trial/tests.rs` pin one contact per location today and are expected to be restated.
+The current single-contact locations rendering is being replaced deliberately. The change reaches the JSON shape of a location, the locations table in `templates/trial.md.j2`, and the pinned locations assertion in `spec/entity/trial.md`. Tests that assert a single contact on a location are expected to be restated. They are not listed here, because no list written before the code is read is complete.
 
 The new shape is not specified here. Design owns it.
 
@@ -51,3 +55,5 @@ The new shape is not specified here. Design owns it.
 Do not change contact ordering or which contact is treated as primary.
 
 Do not change which sites appear. Ticket 1121 settles that, and this ticket depends on it: until every site appears on both paths, a per-site parity assertion is not well defined.
+
+Do not rework how the two paths derive their site list. 1121 owns that mechanism and deliberately leaves it open. This ticket is about the contact count per site and nothing wider.
