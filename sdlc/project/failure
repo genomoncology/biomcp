@@ -465,7 +465,14 @@ if [ -n "$BASELINE" ] && [ -e "$BASELINE" ]; then
 fi
 cleanup "worktree prune" "" prune_worktrees || :
 if [ "$tree_removed" -eq 1 ] && [ -n "$LOCAL" ]; then
-	cleanup "local branch $BRANCH" "deleted local branch $BRANCH" remove_local_branch || :
+	REGISTERED=()
+	if ! withdrawn_registered_worktree; then
+		failures="${failures}${failures:+, }worktree registration read for $BRANCH"
+	elif [ "${#REGISTERED[@]}" -gt 0 ]; then
+		failures="${failures}${failures:+, }registered worktree for $BRANCH"
+	else
+		cleanup "local branch $BRANCH" "deleted local branch $BRANCH" remove_local_branch || :
+	fi
 fi
 if [ -n "$REMOTE" ]; then
 	cleanup "origin branch $BRANCH" "deleted origin branch $BRANCH" remove_origin_branch || :
