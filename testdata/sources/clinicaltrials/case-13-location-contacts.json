@@ -1,0 +1,44 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT00000000",
+      "briefTitle": "Synthetic contact-bearing trial"
+    },
+    "statusModule": {
+      "overallStatus": "RECRUITING"
+    },
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {
+        "name": "Synthetic Sponsor"
+      }
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Synthetic condition"
+      ]
+    },
+    "designModule": {
+      "studyType": "INTERVENTIONAL"
+    },
+    "contactsLocationsModule": {
+      "locations": [
+        {
+          "facility": "Synthetic Research Site",
+          "status": "RECRUITING",
+          "city": "Example City",
+          "country": "United States",
+          "contacts": [
+            {
+              "name": "First Synthetic Contact",
+              "role": "CONTACT"
+            },
+            {
+              "name": "Second Synthetic Contact",
+              "role": "BACKUP"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

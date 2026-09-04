@@ -2,10 +2,10 @@ use std::collections::HashSet;
 
 use crate::entities::trial::{
     Trial, TrialArm, TrialContact, TrialEligibility, TrialIntervention, TrialLocation,
-    TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult,
+    TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult, TrialSiteContact,
 };
 use crate::error::BioMcpError;
-use crate::sources::clinicaltrials::{CtGovLocation, CtGovStudy};
+use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
 
 fn truncate_utf8(s: &str, max_bytes: usize, suffix: &str) -> String {
     if s.len() <= max_bytes {
@@ -120,6 +120,15 @@ fn is_meaningful_site(location: &CtGovLocation) -> bool {
             .any(|contact| clean_opt(contact.name.as_deref()).is_some())
 }
 
+fn clean_site_contact(contact: &CtGovContact) -> Option<TrialSiteContact> {
+    Some(TrialSiteContact {
+        name: clean_opt(contact.name.as_deref())?,
+        role: clean_opt(contact.role.as_deref()),
+        phone: clean_opt(contact.phone.as_deref()),
+        email: clean_opt(contact.email.as_deref()),
+    })
+}
+
 fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
     let locations = study
         .protocol_section
@@ -141,6 +150,7 @@ fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
                 postal_code: clean_opt(loc.zip.as_deref()),
                 country: clean_opt(loc.country.as_deref()),
                 status: clean_opt(loc.status.as_deref()),
+                contacts: loc.contacts.iter().filter_map(clean_site_contact).collect(),
                 contact_name: contact.and_then(|c| clean_opt(c.name.as_deref())),
                 contact_role: contact.and_then(|c| clean_opt(c.role.as_deref())),
                 contact_phone: contact.and_then(|c| clean_opt(c.phone.as_deref())),
@@ -176,7 +186,7 @@ fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
 
 fn extract_contact(
     level: &str,
-    contact: &crate::sources::clinicaltrials::CtGovContact,
+    contact: &CtGovContact,
     facility: Option<&str>,
     city: Option<&str>,
     state: Option<&str>,
@@ -211,15 +221,18 @@ fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
             continue;
         }
         for contact in &loc.contacts {
-            if let Some(contact) = extract_contact(
-                "site",
-                contact,
-                loc.facility.as_deref(),
-                loc.city.as_deref(),
-                loc.state.as_deref(),
-                loc.country.as_deref(),
-            ) {
-                out.push(contact);
+            if let Some(site_contact) = clean_site_contact(contact) {
+                out.push(TrialContact {
+                    level: "site".to_string(),
+                    name: site_contact.name,
+                    role: site_contact.role,
+                    phone: site_contact.phone,
+                    email: site_contact.email,
+                    facility: clean_opt(loc.facility.as_deref()),
+                    city: clean_opt(loc.city.as_deref()),
+                    state: clean_opt(loc.state.as_deref()),
+                    country: clean_opt(loc.country.as_deref()),
+                });
             }
         }
     }

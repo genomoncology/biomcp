@@ -422,6 +422,11 @@
       }
     },
     {
+      "path": "clinicaltrials/case-13-location-contacts.json",
+      "classification": "authored",
+      "authored_reason": "Authored provider-shaped fixture copied byte-identically from MIT-licensed BioData clinical-trial parity case 13; recording equivalent person-bearing site-contact values is unsuitable for the public repository. The verified SHA-256 is f1c6e779e842ca3a1f1dae52264ba6e2015b205624ad32a96370a75d934d9e2e. Authorship does not exempt its keys from ClinicalTrials.gov schema attestation."
+    },
+    {
       "path": "clinicaltrials/search.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
@@ -2238,6 +2243,7 @@
       }
     ],
     "on_disk": [
+      {"path": "clinicaltrials/case-13-location-contacts.json", "selector": "/", "endpoint": "ctgov"},
       {"path": "clinicaltrials/search.json", "selector": "/studies/*", "endpoint": "ctgov"},
       {"path": "clinicaltrials/study_contacts.json", "selector": "/", "endpoint": "ctgov"},
       {"path": "ctgov/get_nct00791778_20260902.json", "selector": "/", "endpoint": "ctgov"},
@@ -2257,6 +2263,7 @@
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:2", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown:json:1", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "ctgov_location_aliases_stay_bound_to_literal_first_source_contact:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_attested_fields:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_sections_maps_supported_nci_fields:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "endpoint": "nci"},

@@ -359,6 +359,7 @@ CTGOV_SEARCH = {
     "age-count": source_bytes("ctgov/search_age_count_20260811.json"),
 }
 CTGOV_DETAIL = {
+    "nct00000000": source_bytes("clinicaltrials/case-13-location-contacts.json"),
     "nct00791778": source_bytes("ctgov/get_nct00791778_20260902.json"),
     "nct02576665": source_bytes("ctgov/get_nct02576665_20260811.json"),
     "nct06382129": source_bytes("ctgov/get_nct06382129_20260811.json"),

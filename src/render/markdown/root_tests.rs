@@ -320,6 +320,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             postal_code: None,
             country: Some("United States".to_string()),
             status: Some("Recruiting".to_string()),
+            contacts: Vec::new(),
             contact_name: None,
             contact_role: None,
             contact_phone: None,

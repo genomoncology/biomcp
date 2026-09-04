@@ -82,6 +82,17 @@ pub struct TrialIntervention {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrialSiteContact {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrialLocation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub facility: Option<String>,
@@ -95,6 +106,8 @@ pub struct TrialLocation {
     pub country: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub contacts: Vec<TrialSiteContact>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub contact_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

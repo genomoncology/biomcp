@@ -2,6 +2,7 @@ use super::*;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use reqwest::StatusCode;
 use serde_json::json;
+
 #[path = "tests/ticket_1107.rs"]
 mod ticket_1107;
 #[path = "tests/ticket_1111.rs"]
@@ -21,10 +22,7 @@ fn receipted_ctgov_partial_sites_preserve_all_locations() {
     let study = ClinicalTrialsClient::decode_get_response(
         "NCT00791778",
         StatusCode::OK,
-        include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/testdata/sources/ctgov/get_nct00791778_20260902.json"
-        )),
+        include_bytes!("../../../testdata/sources/ctgov/get_nct00791778_20260902.json"),
     )
     .expect("receipted NCT00791778 capture");
 
@@ -71,6 +69,180 @@ fn receipted_ctgov_partial_sites_preserve_all_locations() {
     let markdown = crate::render::markdown::trial_markdown(&trial, &["locations".to_string()])
         .expect("locations Markdown");
     assert!(markdown.contains("| - | La Jolla, California | 92037 | United States |"));
+}
+
+#[test]
+fn ctgov_case_13_preserves_every_site_contact_in_provider_order() {
+    let study = ClinicalTrialsClient::decode_get_response(
+        "NCT00000000",
+        StatusCode::OK,
+        include_bytes!("../../../testdata/sources/clinicaltrials/case-13-location-contacts.json"),
+    )
+    .expect("byte-pinned BioData case 13 fixture");
+    let provider_count = study
+        .protocol_section
+        .as_ref()
+        .and_then(|section| section.contacts_locations_module.as_ref())
+        .and_then(|module| module.locations.first())
+        .expect("provider site")
+        .contacts
+        .len();
+
+    let trial = from_ctgov_study(&study);
+    let locations = trial.locations.as_ref().expect("typed locations");
+    assert_eq!(locations.len(), 1);
+    let location = &locations[0];
+    assert_eq!(location.contacts.len(), 2);
+    assert_eq!(provider_count, location.contacts.len());
+    assert_eq!(
+        location
+            .contacts
+            .iter()
+            .map(|contact| (contact.name.as_str(), contact.role.as_deref()))
+            .collect::<Vec<_>>(),
+        vec![
+            ("First Synthetic Contact", Some("CONTACT")),
+            ("Second Synthetic Contact", Some("BACKUP")),
+        ]
+    );
+
+    let site_contacts = trial
+        .contacts
+        .as_ref()
+        .expect("top-level contacts")
+        .iter()
+        .filter(|contact| contact.level == "site")
+        .collect::<Vec<_>>();
+    assert_eq!(site_contacts.len(), provider_count);
+    assert_eq!(
+        site_contacts
+            .iter()
+            .map(|contact| (
+                contact.name.as_str(),
+                contact.role.as_deref(),
+                contact.phone.as_deref(),
+                contact.email.as_deref(),
+            ))
+            .collect::<Vec<_>>(),
+        location
+            .contacts
+            .iter()
+            .map(|contact| (
+                contact.name.as_str(),
+                contact.role.as_deref(),
+                contact.phone.as_deref(),
+                contact.email.as_deref(),
+            ))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        location.contact_name.as_deref(),
+        Some("First Synthetic Contact")
+    );
+    assert_eq!(location.contact_role.as_deref(), Some("CONTACT"));
+    assert_eq!(location.contact_phone, None);
+    assert_eq!(location.contact_email, None);
+
+    let serialized = serde_json::to_value(&trial).expect("structured trial JSON");
+    assert_eq!(
+        serialized["locations"][0]["contacts"],
+        json!([
+            {"name": "First Synthetic Contact", "role": "CONTACT"},
+            {"name": "Second Synthetic Contact", "role": "BACKUP"}
+        ])
+    );
+    assert_eq!(
+        serialized["locations"][0]["contact_name"],
+        "First Synthetic Contact"
+    );
+    assert_eq!(serialized["locations"][0]["contact_role"], "CONTACT");
+}
+
+#[test]
+fn trial_location_nested_contacts_are_additive_serde_compatibility() {
+    let location = TrialLocation {
+        facility: Some("Legacy Site".to_string()),
+        city: None,
+        state: None,
+        postal_code: None,
+        country: None,
+        status: None,
+        contacts: Vec::new(),
+        contact_name: Some("Legacy Contact".to_string()),
+        contact_role: None,
+        contact_phone: None,
+        contact_email: None,
+        latitude: None,
+        longitude: None,
+    };
+    let serialized = serde_json::to_value(&location).expect("serialize location");
+    assert!(!serialized.as_object().unwrap().contains_key("contacts"));
+
+    let legacy: TrialLocation = serde_json::from_value(json!({
+        "facility": "Legacy Site",
+        "contact_name": "Legacy Contact"
+    }))
+    .expect("deserialize legacy location JSON");
+    assert!(legacy.contacts.is_empty());
+    assert_eq!(legacy.contact_name.as_deref(), Some("Legacy Contact"));
+}
+
+#[test]
+fn ctgov_location_aliases_stay_bound_to_literal_first_source_contact() {
+    let study: CtGovStudy = serde_json::from_value(json!({
+        "protocolSection": {
+            "identificationModule": {
+                "nctId": "NCT11220001",
+                "briefTitle": "Literal first contact compatibility"
+            },
+            "contactsLocationsModule": {
+                "locations": [{
+                    "facility": "Compatibility Site",
+                    "contacts": [
+                        {
+                            "name": "  ",
+                            "role": "  BACKUP  ",
+                            "phone": "  555-0100  ",
+                            "email": "  "
+                        },
+                        {
+                            "name": "  Named Second Contact  ",
+                            "role": "  CONTACT  ",
+                            "phone": "  555-0101  ",
+                            "email": "  second@example.test  "
+                        }
+                    ]
+                }]
+            }
+        }
+    }))
+    .expect("provider-shaped blank-first contact site");
+
+    let trial = from_ctgov_study(&study);
+    let location = &trial.locations.as_ref().expect("locations")[0];
+    assert_eq!(location.contacts.len(), 1);
+    assert_eq!(location.contacts[0].name, "Named Second Contact");
+    assert_eq!(location.contacts[0].role.as_deref(), Some("CONTACT"));
+    assert_eq!(location.contacts[0].phone.as_deref(), Some("555-0101"));
+    assert_eq!(
+        location.contacts[0].email.as_deref(),
+        Some("second@example.test")
+    );
+    assert_eq!(location.contact_name, None);
+    assert_eq!(location.contact_role.as_deref(), Some("BACKUP"));
+    assert_eq!(location.contact_phone.as_deref(), Some("555-0100"));
+    assert_eq!(location.contact_email, None);
+
+    let site_contacts = trial.contacts.as_ref().expect("top-level contacts");
+    assert_eq!(site_contacts.len(), 1);
+    assert_eq!(site_contacts[0].level, "site");
+    assert_eq!(site_contacts[0].name, "Named Second Contact");
+    assert_eq!(site_contacts[0].role.as_deref(), Some("CONTACT"));
+    assert_eq!(site_contacts[0].phone.as_deref(), Some("555-0101"));
+    assert_eq!(
+        site_contacts[0].email.as_deref(),
+        Some("second@example.test")
+    );
 }
 
 #[test]
@@ -142,6 +314,14 @@ fn ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown() {
             .collect::<Vec<_>>(),
         vec!["First Contact", "Second Contact"]
     );
+    assert_eq!(
+        locations[6]
+            .contacts
+            .iter()
+            .map(|contact| contact.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["First Contact", "Second Contact"]
+    );
 
     let structured = serde_json::to_value(&trial).expect("structured trial JSON");
     let serialized = structured["locations"]
@@ -153,6 +333,13 @@ fn ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown() {
     assert_eq!(serialized[1]["facility"], "Pipe | Facility\n\u{7}");
     assert!(!serialized[1].as_object().unwrap().contains_key("city"));
     assert!(!serialized[1].as_object().unwrap().contains_key("country"));
+    assert_eq!(
+        serialized[6]["contacts"],
+        json!([
+            {"name": "First Contact", "email": "first@example.test"},
+            {"name": "Second Contact", "phone": "555-0102"}
+        ])
+    );
 
     let markdown = crate::render::markdown::trial_markdown(&trial, &["locations".to_string()])
         .expect("locations Markdown");

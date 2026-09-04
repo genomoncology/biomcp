@@ -130,6 +130,7 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
             postal_code: None,
             country: Some("United States".to_string()),
             status: Some("Recruiting".to_string()),
+            contacts: Vec::new(),
             contact_name: None,
             contact_role: None,
             contact_phone: None,

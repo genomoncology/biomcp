@@ -273,6 +273,7 @@ fn trial_markdown_includes_source_labeled_sections() {
             postal_code: None,
             country: Some("United States".to_string()),
             status: Some("Recruiting".to_string()),
+            contacts: Vec::new(),
             contact_name: None,
             contact_role: None,
             contact_phone: None,
@@ -369,6 +370,20 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
             postal_code: None,
             country: Some("United States".to_string()),
             status: Some("Recruiting".to_string()),
+            contacts: vec![
+                crate::entities::trial::TrialSiteContact {
+                    name: "Site Coordinator".to_string(),
+                    role: Some("CONTACT".to_string()),
+                    phone: None,
+                    email: Some("site@example.test".to_string()),
+                },
+                crate::entities::trial::TrialSiteContact {
+                    name: "Backup | Coordinator\n\u{7}".to_string(),
+                    role: Some("BACK|UP".to_string()),
+                    phone: Some("555\n0101".to_string()),
+                    email: Some("backup|site@example.test".to_string()),
+                },
+            ],
             contact_name: Some("Site Coordinator".to_string()),
             contact_role: Some("CONTACT".to_string()),
             contact_phone: None,
@@ -425,7 +440,7 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
         "| Facility | City | Postal code | Country | Status | Contact |\n|---|---|---|---|---|---|"
     ));
     assert!(locations.contains(
-        "| Rare Disease Center | Ann Arbor, Michigan | - | United States | Recruiting | Site Coordinator (CONTACT) site@example.test |"
+        "| Rare Disease Center | Ann Arbor, Michigan | - | United States | Recruiting | Site Coordinator (CONTACT) site@example.test<br>Backup \\| Coordinator (BACK\\|UP) 555 0101 backup\\|site@example.test |"
     ));
     assert!(!locations.contains("central@example.test"));
 
@@ -433,6 +448,13 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
     assert_eq!(json["contacts"][0]["email"], "central@example.test");
     assert_eq!(json["eligibility"]["sex"], "Female");
     assert_eq!(json["locations"][0]["contact_email"], "site@example.test");
+
+    trial.locations.as_mut().unwrap()[0].contacts.clear();
+    let legacy_markdown = trial_markdown(&trial, &["locations".to_string()])
+        .expect("legacy-compatible location markdown");
+    assert!(legacy_markdown.contains(
+        "| Rare Disease Center | Ann Arbor, Michigan | - | United States | Recruiting | Site Coordinator (CONTACT) site@example.test |"
+    ));
 
     trial.eligibility_provenance = Some(crate::entities::trial::TrialEligibilityProvenance {
         source_kind: "registry".to_string(),
