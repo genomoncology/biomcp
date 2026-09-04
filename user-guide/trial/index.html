@@ -4383,7 +4383,18 @@ fields. After broad discovery, simple mutation text receives a registry eligibil
 check that removes exclusion-only matches. Trials where the term is absent remain
 discoverable, and boolean expressions are discovery-only.</p>
 <p><code>--age</code> accepts finite patient ages from 0 through 150 years, including
-fractional ages.</p>
+fractional ages. A registry bound must match the exact numeric grammar
+<code>[0-9]+(?:\.[0-9]+)?</code>, followed by either no unit or one recognized singular or
+plural unit: years, months, weeks, days, hours, or minutes (case-insensitive).
+One or more Unicode whitespace characters may surround the numeric/unit tokens
+and, when a unit is present, must separate it from the number. Only outer
+whitespace is removed from <code>original</code>; internal whitespace is retained exactly.
+A missing unit means years. Signs, leading or trailing decimal points, exponent
+notation, <code>NaN</code>, positive infinity spellings (<code>inf</code>, <code>Infinity</code>, <code>+inf</code>,
+<code>+Infinity</code>), negative infinity spellings (<code>-inf</code>, <code>-Infinity</code>), punctuation,
+trailing tokens, numeric overflow, and unknown units are rejected as malformed.
+Filtering compares years, months, weeks, and days; hours, minutes, <code>N/A</code>, and
+malformed provider text fail open rather than excluding a trial.</p>
 <p>Geographic filtering:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--lat<span class="w"> </span><span class="m">42</span>.36<span class="w"> </span>--lon<span class="w"> </span>-71.06<span class="w"> </span>--distance<span class="w"> </span><span class="m">50</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
@@ -4455,6 +4466,11 @@ that provenance and reports whether posted trial documents are available. When
 documents exist, Markdown offers a cautious follow-up because they may contain
 additional eligibility detail; BioMCP does not claim that a protocol resolves
 any criterion.</p>
+<p>Age bounds in JSON are objects, not strings. For example, <code>6 Months</code> is
+<code>{"number":6.0,"unit":"months","original":"6 Months"}</code>. All three members
+are always present. A retained no-limit or malformed bound has null <code>number</code>
+and <code>unit</code> while preserving its nonblank <code>original</code>; absent or blank bounds are
+omitted. Human-readable age ranges retain the provider notation.</p>
 <p>Posted CTGov documents use standalone manifest and retrieval forms:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>documents
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>document<span class="w"> </span>Prot_SAP_000.pdf<span class="w"> </span>&gt;<span class="w"> </span>protocol.pdf
