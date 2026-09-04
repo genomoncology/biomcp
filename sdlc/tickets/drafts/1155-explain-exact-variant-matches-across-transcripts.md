@@ -7,7 +7,7 @@ priority: 8
 
 ## Goal
 
-An exact variant search explains why a result matched when the displayed transcript uses different HGVS descriptions. On 2026-09-04, `biomcp search variant -g HSD17B4 --hgvsp H540R --limit 10` matched `p.His540Arg` but displayed `NM_000414.3`, `c.1544A>G`, and `p.His515Arg`. The provider record contains the matching `NM_001199291.2`, `c.1619A>G`, and `p.His540Arg` annotation. BioMCP flattened the alternate annotations and lost their transcript relationship. The reproduction and source analysis appear in `sdlc/issues/feature-explain-exact-variant-matches-with-paired-transcript-annotations.md`.
+An exact variant search explains why a result matched when the displayed transcript uses different HGVS descriptions. On 2026-09-04, `biomcp search variant -g HSD17B4 --hgvsp H540R --limit 10` matched `p.His540Arg` but displayed `NM_000414.3`, `c.1544A>G`, and `p.His515Arg`. The provider record contains the matching `NM_001199291.2`, `c.1619A>G`, and `p.His540Arg` annotation. BioMCP flattened the alternate annotations and lost their transcript relationship. The reproduction and source analysis appear in `sdlc/issues/feature-explain-exact-variant-matches-with-paired-transcript-annotations.md` at commit `84f2343f`.
 
 ## Desired functionality
 

@@ -7,7 +7,7 @@ priority: 9
 
 ## Goal
 
-Phenotype search does not present ontology similarity as proof that a disease has the requested phenotype. On 2026-09-04, `biomcp --no-cache search phenotype HP:0000256 --limit 5` ranked isolated microcephaly first for a macrocephaly query. Monarch's direct disease associations contained microcephaly and did not contain macrocephaly. BioMCP still recommended the first row as the next disease to open. The reproduction and provider evidence appear in `sdlc/issues/2026-09-04-phenotype-similarity-ranks-an-opposite-phenotype-without-warning.md`.
+Phenotype search does not present ontology similarity as proof that a disease has the requested phenotype. On 2026-09-04, `biomcp --no-cache search phenotype HP:0000256 --limit 5` ranked isolated microcephaly first for a macrocephaly query. Monarch's direct disease associations contained microcephaly and did not contain macrocephaly. BioMCP still recommended the first row as the next disease to open. The reproduction and provider evidence appear in `sdlc/issues/2026-09-04-phenotype-similarity-ranks-an-opposite-phenotype-without-warning.md` at commit `84f2343f`.
 
 ## Desired functionality
 

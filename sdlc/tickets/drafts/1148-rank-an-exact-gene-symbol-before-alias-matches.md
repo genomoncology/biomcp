@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 8
 ---
 

@@ -7,7 +7,7 @@ priority: 9
 
 ## Goal
 
-An explicit ClinVar variant request returns the current NCBI record and shows each submitted assertion separately. On 2026-09-04, `biomcp --json get variant rs1753477498 clinvar` reported one submitter and a one-star review status from MyVariant. NCBI EFetch reported two submitters and a multiple-submitter aggregate for ClinVar Variation ID 974782. The reproduction and source analysis appear in `sdlc/issues/clinvar-section-can-report-stale-review-strength-without-a-date-or-warning.md`.
+An explicit ClinVar variant request returns the current NCBI record and shows each submitted assertion separately. On 2026-09-04, `biomcp --json get variant rs1753477498 clinvar` reported one submitter and a one-star review status from MyVariant. NCBI EFetch reported two submitters and a multiple-submitter aggregate for ClinVar Variation ID 974782. The reproduction and source analysis appear in `sdlc/issues/clinvar-section-can-report-stale-review-strength-without-a-date-or-warning.md` at commit `84f2343f`.
 
 ## Desired functionality
 

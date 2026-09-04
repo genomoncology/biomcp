@@ -5,7 +5,7 @@ priority: 6
 
 # Open an exact author record and claimed works by ORCID
 
-BioMCP accepts exact Semantic Scholar author identifiers, but it rejects ORCID identifiers. A researcher knowledge-base run had to call ORCID outside BioMCP to establish each researcher’s claimed works. Name search could not replace that evidence because it selected a wrong same-name person in one case and found two valid Semantic Scholar profiles in another. The current behavior and provider evidence appear in `sdlc/issues/feature-support-orcid-as-an-exact-author-provider.md`.
+BioMCP accepts exact Semantic Scholar author identifiers, but it rejects ORCID identifiers. A researcher knowledge-base run had to call ORCID outside BioMCP to establish each researcher’s claimed works. Name search could not replace that evidence because it selected a wrong same-name person in one case and found two valid Semantic Scholar profiles in another. The current behavior and provider evidence appear in `sdlc/issues/feature-support-orcid-as-an-exact-author-provider.md` at commit `995fa87e`.
 
 ORCID’s version 3.0 Public API exposes public person, record, and works endpoints. Live works requests for `0000-0002-1678-5864` and `0000-0002-5561-6932` returned 176 and 222 work groups during verification on 2026-09-04. ORCID documents Public API credentials and a public-read token as the supported access method. Anonymous requests happened to work during verification, but BioMCP cannot rely on that behavior as the provider contract.
 
@@ -27,3 +27,7 @@ Done, observably:
 - Existing Semantic Scholar author commands keep their current behavior.
 
 Boundary: this ticket covers public ORCID author records and claimed works. It does not resolve identity across providers, search ORCID by name, read restricted ORCID data, create a BioMCP person identifier, or treat a claimed work as proof that two provider records describe the same person.
+
+## Promotion blocker
+
+BioMCP record 0581 established a product boundary of no ORCID API calls. This draft cannot move to the ready queue until a new BioMCP decision explicitly replaces that boundary.

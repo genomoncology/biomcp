@@ -5,7 +5,7 @@ priority: 7
 
 # Continue citation and reference pages without losing coverage
 
-`biomcp article citations` and `biomcp article references` return only the first requested page. They expose no offset, continuation, or completion state. A researcher knowledge-base run stopped after a fixed number of edges because it could not request later pages or tell whether the provider had more results. A live one-edge request returned no continuation even though the anchor had more citations. The current behavior and provider evidence appear in `sdlc/issues/feature-make-citation-pages-complete-and-continuable.md`.
+`biomcp article citations` and `biomcp article references` return only the first requested page. They expose no offset, continuation, or completion state. A researcher knowledge-base run stopped after a fixed number of edges because it could not request later pages or tell whether the provider had more results. A live one-edge request returned no continuation even though the anchor had more citations. The current behavior and provider evidence appear in `sdlc/issues/feature-make-citation-pages-complete-and-continuable.md` at commit `995fa87e`.
 
 ## Required behavior
 

@@ -7,7 +7,7 @@ priority: 8
 
 ## Goal
 
-A slow or failed ClinGen request does not erase evidence returned by another ClinGen dataset. On 2026-09-04, two no-cache TP53 requests returned no ClinGen facts after the combined section timed out. Direct ClinGen requests responded separately, and the implementation can discard completed validity or dosage data when its sibling request fails. The reproduction and code path appear in `sdlc/issues/2026-09-04-one-clingen-failure-erases-other-results.md`.
+A slow or failed ClinGen request does not erase evidence returned by another ClinGen dataset. On 2026-09-04, two no-cache TP53 requests returned no ClinGen facts after the combined section timed out. Direct ClinGen requests responded separately, and the implementation can discard completed validity or dosage data when its sibling request fails. The reproduction and code path appear in `sdlc/issues/2026-09-04-one-clingen-failure-erases-other-results.md` at commit `d9d29dd1`.
 
 ## Desired functionality
 

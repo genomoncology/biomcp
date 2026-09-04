@@ -5,7 +5,7 @@ priority: 5
 
 # Return an opt-in rich page of papers for an exact author
 
-`biomcp author papers` returns compact identifiers, titles, venues, and years. A researcher knowledge-base run needed abstracts, full publication dates, citation data, open-access facts, research fields, publication types, and complete bylines. The run called Semantic Scholar outside BioMCP and rebuilt BioMCP’s pagination, retry, provenance, and normalization work. The current behavior and provider evidence appear in `sdlc/issues/feature-add-a-full-record-mode-to-author-paper-pages.md`.
+`biomcp author papers` returns compact identifiers, titles, venues, and years. A researcher knowledge-base run needed abstracts, full publication dates, citation data, open-access facts, research fields, publication types, and complete bylines. The run called Semantic Scholar outside BioMCP and rebuilt BioMCP’s pagination, retry, provenance, and normalization work. The current behavior and provider evidence appear in `sdlc/issues/feature-add-a-full-record-mode-to-author-paper-pages.md` at commit `995fa87e`.
 
 Semantic Scholar’s author-papers endpoint returns these fields in one caller-selected response and already supplies offset continuation. A live request confirmed that support on 2026-09-04.
 
@@ -17,7 +17,7 @@ The existing command remains compact when `--full` is absent. Rich pages use the
 
 Done, observably:
 
-- A rich paper page includes available abstracts, publication dates, citation and reference counts, open-access facts, research fields, publication types, stable identifiers, and complete author lists.
+- A rich paper page includes available abstracts, publication dates, citation and reference counts, open-access facts, research fields, publication types, stable identifiers, and every author supplied by Semantic Scholar.
 - The response distinguishes an absent source field from an empty value.
 - A rich page returns the same papers in the same order as the matching compact page.
 - The continuation from a rich page requests the next rich page.

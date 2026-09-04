@@ -1,5 +1,5 @@
 ---
-flow: quickfix
+flow: build
 priority: 7
 ---
 
@@ -11,17 +11,17 @@ An exact drug-name search does not return unrelated EMA products because a chemi
 
 ## Desired functionality
 
-An exact drug-name query returns EMA products whose product name, active substance, or trusted drug identity matches the requested drug. Chemical and systematic names do not create matches through isolated common tokens. Structured results explain which drug identity matched. Vetted special aliases retain their existing coverage without admitting unrelated products.
+An exact drug-name query returns EMA products whose product name, active substance, or verified brand name matches the requested drug. Chemical and systematic names do not create matches through isolated common tokens. Structured results explain which name matched. Existing CVX vaccine aliases retain their coverage without admitting unrelated products.
 
 ## Success criteria
 
 - The European eflornithine results include Vaniqa.
 - The European eflornithine results exclude Prasugrel Viatris and other products matched only through a common chemical-name token.
-- Exact product, active-substance, and trusted alias matches retain their existing order.
+- Exact product, active-substance, verified brand-name, and existing CVX vaccine alias matches retain their existing order.
 - Structured output identifies the matching name and match type.
 - Existing vaccine alias behavior remains covered without accepting unrelated one-token matches.
 - Explicit indication searches retain their current behavior.
 
 ## Boundaries
 
-This ticket corrects EMA drug-name matching. It does not redesign indication search, change the EMA data feed, remove trusted aliases, or alter U.S. drug results.
+This ticket corrects EMA drug-name matching. It does not redesign indication search, change the EMA data feed, remove verified brand names or existing CVX vaccine aliases, or alter U.S. drug results.

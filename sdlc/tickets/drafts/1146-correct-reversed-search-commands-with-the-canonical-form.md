@@ -5,11 +5,11 @@ priority: 3
 
 # Correct reversed search commands with the canonical form
 
-`biomcp article search` suggests `article batch`, and `biomcp trial search` suggests `article`. Neither suggestion fixes the command. BioMCP already knows that article and trial are searchable entities, so it can direct the caller to `biomcp search article` or `biomcp search trial`. The current behavior and parser cause appear in `sdlc/issues/reversed-search-grammar-suggests-an-unrelated-command.md`.
+`biomcp article search` suggests `article batch`, and `biomcp trial search` suggests `article`. Neither suggestion fixes the command. BioMCP already knows that article and trial are searchable entities, so it can direct the caller to `biomcp search article` or `biomcp search trial`. The current behavior and parser cause appear in `sdlc/issues/reversed-search-grammar-suggests-an-unrelated-command.md` at commit `fe2f9fc1`.
 
 ## Required behavior
 
-When a caller enters `<searchable-entity> search`, BioMCP reports the canonical `biomcp search <entity>` form and preserves any remaining arguments in the example when it can do so safely. The correction replaces unrelated similarity suggestions in human-readable and JSON errors.
+When a caller enters `<searchable-entity> search`, BioMCP reports the canonical `biomcp search <entity>` form. BioMCP preserves the remaining arguments when the reordered canonical command parses. The correction replaces unrelated similarity suggestions in human-readable and JSON errors.
 
 The canonical grammar remains `biomcp search <entity>`. BioMCP does not accept every reversed command as an alias.
 

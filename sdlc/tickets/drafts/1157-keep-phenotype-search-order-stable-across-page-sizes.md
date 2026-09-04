@@ -7,7 +7,7 @@ priority: 7
 
 ## Goal
 
-One phenotype query returns one stable result order across supported page sizes and offsets. On 2026-09-04, direct Monarch requests for `HP:0000256` returned different first diseases with limits of two and three. BioMCP derives the provider limit from the requested output window and then pages the changing candidate set locally. The reproduction and code path appear in `sdlc/issues/2026-09-04-phenotype-result-order-changes-with-limit.md`.
+One phenotype query returns one stable result order across supported page sizes and offsets. On 2026-09-04, direct Monarch requests for `HP:0000256` returned different first diseases with limits of two and three. BioMCP derives the provider limit from the requested output window and then pages the changing candidate set locally. The reproduction and code path appear in `sdlc/issues/2026-09-04-phenotype-result-order-changes-with-limit.md` at commit `62575a99`.
 
 ## Desired functionality
 
