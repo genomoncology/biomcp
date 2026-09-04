@@ -529,39 +529,6 @@ fn json_get_string(value: &serde_json::Value, keys: &[&str]) -> Option<String> {
     None
 }
 
-fn json_get_string_list(value: &serde_json::Value, keys: &[&str], max: usize) -> Vec<String> {
-    let obj = match value.as_object() {
-        Some(o) => o,
-        None => return vec![],
-    };
-    for key in keys {
-        let Some(v) = obj.get(*key) else { continue };
-        match v {
-            serde_json::Value::Array(arr) => {
-                return arr
-                    .iter()
-                    .filter_map(|v| v.as_str())
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .take(max)
-                    .map(|s| s.to_string())
-                    .collect();
-            }
-            serde_json::Value::String(s) if !s.trim().is_empty() => {
-                return s
-                    .split(',')
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .take(max)
-                    .map(|s| s.to_string())
-                    .collect();
-            }
-            _ => {}
-        }
-    }
-    vec![]
-}
-
 fn nci_conditions(
     value: &serde_json::Value,
     keys: &[&str],
@@ -636,22 +603,22 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
         .unwrap_or_default();
     let phase =
         json_get_string(trial, &["phase", "phase_code", "phaseCode"]).filter(|s| !s.is_empty());
-    let study_type = json_get_string(trial, &["study_type", "studyType", "primary_purpose"])
-        .filter(|s| !s.is_empty());
-    let age_range = format_age_range(
-        json_get_string(trial, &["minimum_age", "minimumAge", "min_age"]).as_deref(),
-        json_get_string(trial, &["maximum_age", "maximumAge", "max_age"]).as_deref(),
-    );
+    let study_type = json_get_string(trial, &["study_protocol_type"]);
+    let structured_eligibility = trial
+        .get("eligibility")
+        .and_then(|value| value.get("structured"));
+    let min_age = structured_eligibility.and_then(|value| json_get_string(value, &["min_age"]));
+    let max_age = structured_eligibility
+        .and_then(|value| json_get_string(value, &["max_age"]))
+        .filter(|age| !age.eq_ignore_ascii_case("999 Years"));
+    let age_range = format_age_range(min_age.as_deref(), max_age.as_deref());
     let sponsor = json_get_string(
         trial,
         &["lead_org", "lead_organization", "leadSponsor", "sponsor"],
     )
     .filter(|s| !s.is_empty());
-    let enrollment = json_get_string(
-        trial,
-        &["enrollment", "enrollment_target", "target_enrollment"],
-    )
-    .and_then(|s| s.parse::<i32>().ok());
+    let enrollment = json_get_string(trial, &["minimum_target_accrual_number"])
+        .and_then(|s| s.parse::<i32>().ok());
     let start_date = json_get_string(trial, &["start_date", "startDate"]).filter(|s| !s.is_empty());
     let completion_date =
         json_get_string(trial, &["completion_date", "completionDate"]).filter(|s| !s.is_empty());
@@ -659,14 +626,28 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
         .map(|s| truncate_summary(&s))
         .filter(|s| !s.is_empty());
     let conditions = nci_conditions(trial, &["diseases", "conditions"], 25)?;
-    let interventions = json_get_string_list(trial, &["interventions"], 25);
+    let interventions = trial
+        .get("arms")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .flat_map(|arm| {
+            arm.get("interventions")
+                .and_then(serde_json::Value::as_array)
+                .into_iter()
+                .flatten()
+        })
+        .filter_map(|intervention| json_get_string(intervention, &["name"]))
+        .take(25)
+        .collect();
+    let why_stopped = json_get_string(trial, &["why_study_stopped"]).map(Some);
 
     Ok(Trial {
         nct_id,
         source: None,
         title,
         status,
-        why_stopped: None,
+        why_stopped,
         phase,
         study_type,
         age_range,
