@@ -493,8 +493,41 @@ pub struct CtGovArmGroup {
 pub struct CtGovEligibilityModule {
     pub eligibility_criteria: Option<String>,
     pub sex: Option<String>,
-    pub minimum_age: Option<String>,
-    pub maximum_age: Option<String>,
+    pub minimum_age: Option<NormalizedTimeWire>,
+    pub maximum_age: Option<NormalizedTimeWire>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NormalizedTimeWire(String, Option<crate::entities::trial::TrialAge>);
+
+impl NormalizedTimeWire {
+    pub(crate) fn parsed(&self) -> Option<&crate::entities::trial::TrialAge> {
+        self.1.as_ref()
+    }
+
+    pub(crate) fn original(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Serialize for NormalizedTimeWire {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.original())
+    }
+}
+
+impl<'de> Deserialize<'de> for NormalizedTimeWire {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let original = String::deserialize(deserializer)?;
+        let parsed = crate::entities::trial::TrialAge::from_provider(&original);
+        Ok(Self(original, parsed))
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -246,9 +246,28 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
     )
     .await
     .expect("NCI trial detail");
-    server.abort();
-
+    let eligibility = serde_json::to_value(trial.eligibility.as_ref().expect("typed eligibility"))
+        .expect("eligibility JSON");
+    assert_eq!(
+        eligibility["minimum_age"],
+        serde_json::json!({
+            "number": 18.0, "unit": "years", "original": "18 Years"
+        })
+    );
+    assert_eq!(
+        eligibility["maximum_age"],
+        serde_json::json!({
+            "number": null, "unit": null, "original": "999 Years"
+        })
+    );
     let text = trial.eligibility_text.expect("NCI eligibility text");
     assert!(text.starts_with("Inclusion Criteria:\n- "));
     assert!(text.contains("Exclusion Criteria:\n- Definitive clinical or radiologic evidence"));
+
+    let overview = get("NCT05879926", &[], TrialSource::NciCts)
+        .await
+        .expect("NCI overview");
+    server.abort();
+    assert!(overview.eligibility.is_none());
+    assert_eq!(overview.age_range.as_deref(), Some("18 Years to Any age"));
 }

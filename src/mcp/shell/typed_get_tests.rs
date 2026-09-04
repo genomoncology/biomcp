@@ -1,9 +1,34 @@
 use std::collections::BTreeSet;
 
+use axum::{Json, Router, routing::get as axum_get};
 use clap::CommandFactory;
 use serde_json::json;
 
-use super::{TypedGet, TypedVariantErepo, get_args};
+use super::{BioMcpServer, ShellCommand, TypedGet, TypedVariantErepo, get_args};
+
+struct CtGovAgeMcpEnv(Option<std::ffi::OsString>);
+
+impl CtGovAgeMcpEnv {
+    fn set(base: &str) -> Self {
+        let previous = std::env::var_os("BIOMCP_CTGOV_BASE");
+        // SAFETY: callers hold the serial-test process-wide environment lock.
+        unsafe { std::env::set_var("BIOMCP_CTGOV_BASE", base) };
+        Self(previous)
+    }
+}
+
+impl Drop for CtGovAgeMcpEnv {
+    fn drop(&mut self) {
+        // SAFETY: callers hold the serial-test process-wide environment lock.
+        unsafe {
+            if let Some(previous) = self.0.take() {
+                std::env::set_var("BIOMCP_CTGOV_BASE", previous);
+            } else {
+                std::env::remove_var("BIOMCP_CTGOV_BASE");
+            }
+        }
+    }
+}
 
 #[test]
 fn cli_catalog_gettable_inventory_matches_clap_get_subcommands() {
@@ -233,4 +258,57 @@ fn typed_variant_erepo_schema_prevents_selector_mixing_before_calls() {
     assert_eq!(gene["properties"]["limit"]["default"], 25);
     assert_eq!(gene["properties"]["offset"]["minimum"], 0);
     assert_eq!(gene["properties"]["offset"]["default"], 0);
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn typed_and_raw_trial_get_return_exact_age_objects() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let study = json!({"protocolSection": {
+        "identificationModule": {"nctId":"NCT60000001","briefTitle":"Infant trial"},
+        "statusModule": {"overallStatus":"RECRUITING"},
+        "eligibilityModule": {"minimumAge":"6 Months","maximumAge":"N/A"}
+    }});
+    let router = Router::new().route(
+        "/studies/{id}",
+        axum_get(move || {
+            let study = study.clone();
+            async move { Json(study) }
+        }),
+    );
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let _env = CtGovAgeMcpEnv::set(&base);
+
+    let typed = BioMcpServer::new()
+        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
+            json!({
+                "entity":"trial", "id":"NCT60000001", "sections":["eligibility"], "json":true
+            }),
+        )))
+        .await
+        .unwrap();
+    let raw = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp get trial NCT60000001 eligibility".into(),
+            json: true,
+        }))
+        .await
+        .unwrap();
+
+    server.abort();
+    let response_json = |result| {
+        let value = serde_json::to_value(result).unwrap();
+        serde_json::from_str::<serde_json::Value>(value["content"][0]["text"].as_str().unwrap())
+            .unwrap()
+    };
+    let typed = response_json(typed);
+    let raw = response_json(raw);
+    let expected_minimum = json!({"number":6.0,"unit":"months","original":"6 Months"});
+    let expected_maximum = json!({"number":null,"unit":null,"original":"N/A"});
+    assert_eq!(typed["eligibility"]["minimum_age"], expected_minimum);
+    assert_eq!(typed["eligibility"]["maximum_age"], expected_maximum);
+    assert_eq!(typed["eligibility"], raw["eligibility"]);
+    assert!(!typed["eligibility"]["minimum_age"].is_string());
+    assert!(!raw["eligibility"]["maximum_age"].is_string());
 }

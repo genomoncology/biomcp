@@ -369,24 +369,6 @@ pub(super) async fn verify_detail_filters(
     verified
 }
 
-fn parse_age_years(value: &str) -> Option<f64> {
-    let mut parts = value.split_whitespace();
-    let amount = parts.next()?.parse::<f64>().ok()?;
-    let unit = parts.next().map(|token| {
-        token
-            .trim_matches(|c: char| !c.is_ascii_alphabetic())
-            .to_ascii_lowercase()
-    });
-
-    match unit.as_deref() {
-        None | Some("year") | Some("years") => Some(amount),
-        Some("month") | Some("months") => Some(amount / 12.0),
-        Some("week") | Some("weeks") => Some(amount / 52.0),
-        Some("day") | Some("days") => Some(amount / 365.0),
-        _ => None,
-    }
-}
-
 pub(super) fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: f64) -> Vec<CtGovStudy> {
     studies
         .into_iter()
@@ -396,12 +378,14 @@ pub(super) fn verify_age_eligibility(studies: Vec<CtGovStudy>, age: f64) -> Vec<
                 .as_ref()
                 .and_then(|s| s.eligibility_module.as_ref());
             let min_ok = module
-                .and_then(|m| m.minimum_age.as_deref())
-                .and_then(parse_age_years)
+                .and_then(|m| m.minimum_age.as_ref())
+                .and_then(|bound| bound.parsed())
+                .and_then(crate::entities::trial::TrialAge::comparable_years)
                 .is_none_or(|min| age >= min);
             let max_ok = module
-                .and_then(|m| m.maximum_age.as_deref())
-                .and_then(parse_age_years)
+                .and_then(|m| m.maximum_age.as_ref())
+                .and_then(|bound| bound.parsed())
+                .and_then(crate::entities::trial::TrialAge::comparable_years)
                 .is_none_or(|max| age <= max);
             min_ok && max_ok
         })

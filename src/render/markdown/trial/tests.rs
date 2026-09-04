@@ -343,8 +343,8 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
         eligibility_text: Some("Key inclusion.".to_string()),
         eligibility: Some(crate::entities::trial::TrialEligibility {
             sex: Some("Female".to_string()),
-            minimum_age: Some("2 Years".to_string()),
-            maximum_age: Some("18 Years".to_string()),
+            minimum_age: crate::entities::trial::TrialAge::from_provider("2 Years"),
+            maximum_age: crate::entities::trial::TrialAge::from_provider("18 Years"),
         }),
         eligibility_provenance: Some(crate::entities::trial::TrialEligibilityProvenance {
             source_kind: "registry".to_string(),

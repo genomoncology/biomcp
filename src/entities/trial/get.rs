@@ -267,6 +267,8 @@ pub async fn get(
 
             if section_flags.include_eligibility {
                 trial.eligibility_text = nci_eligibility_text(&resp)?;
+            } else {
+                trial.eligibility = None;
             }
             if section_flags.include_references && trial.references.is_none() {
                 trial.references = Some(Vec::new());

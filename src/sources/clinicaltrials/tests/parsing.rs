@@ -66,6 +66,50 @@ fn parses_contacts_and_eligibility_fixture() {
 }
 
 #[test]
+fn ctgov_age_wire_round_trips_only_provider_strings() {
+    let module: CtGovEligibilityModule = serde_json::from_value(serde_json::json!({
+        "minimumAge": " 6 Months ",
+        "maximumAge": "N/A"
+    }))
+    .unwrap();
+    let minimum = module.minimum_age.as_ref().unwrap();
+    assert_eq!(minimum.original(), " 6 Months ");
+    assert_eq!(minimum.parsed().unwrap().original(), "6 Months");
+    assert_eq!(
+        serde_json::to_value(&module).unwrap(),
+        serde_json::json!({
+            "eligibilityCriteria": null,
+            "sex": null,
+            "minimumAge": " 6 Months ",
+            "maximumAge": "N/A"
+        })
+    );
+    assert!(
+        serde_json::from_value::<CtGovEligibilityModule>(serde_json::json!({
+            "minimumAge": {"number": 6.0, "unit": "months", "original": "6 Months"}
+        }))
+        .is_err()
+    );
+}
+
+#[test]
+fn ctgov_age_wire_distinguishes_absent_null_and_blank() {
+    for input in [
+        serde_json::json!({}),
+        serde_json::json!({"minimumAge": null}),
+    ] {
+        let module: CtGovEligibilityModule = serde_json::from_value(input).unwrap();
+        assert!(module.minimum_age.is_none());
+    }
+    let module: CtGovEligibilityModule =
+        serde_json::from_value(serde_json::json!({"minimumAge": " \t"})).unwrap();
+    let wire = module.minimum_age.as_ref().unwrap();
+    assert_eq!(wire.original(), " \t");
+    assert!(wire.parsed().is_none());
+    assert_eq!(serde_json::to_value(wire).unwrap(), " \t");
+}
+
+#[test]
 fn parses_large_document_module() {
     let study = ClinicalTrialsClient::decode_get_response(
         "NCT03361748",

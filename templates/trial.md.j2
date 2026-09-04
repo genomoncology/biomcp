@@ -62,7 +62,7 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 {% if eligibility -%}
 {% if eligibility.sex %}Sex: {{ eligibility.sex }}
 {% endif -%}
-{% if eligibility.minimum_age or eligibility.maximum_age %}Eligible Ages: {{ eligibility.minimum_age or "Any age" }} to {{ eligibility.maximum_age or "Any age" }}
+{% if age_range %}Eligible Ages: {{ age_range }}
 {% endif -%}
 {% endif -%}
 {% if eligibility_text %}{{ eligibility_text }}

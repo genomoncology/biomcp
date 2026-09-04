@@ -129,24 +129,6 @@ fn eligibility_keyword_in_inclusion_rejects_mixed_context_without_exclusion_sect
 }
 
 #[test]
-fn parse_age_years_handles_standard_formats() {
-    assert_eq!(parse_age_years("18 Years"), Some(18.0));
-    assert_eq!(parse_age_years("75 Years"), Some(75.0));
-    assert_eq!(parse_age_years("18"), Some(18.0));
-    assert_eq!(parse_age_years("6 Months"), Some(0.5));
-    assert!(
-        (parse_age_years("2 Weeks").expect("weeks should parse") - (2.0 / 52.0)).abs()
-            < f64::EPSILON
-    );
-    assert!(
-        (parse_age_years("30 Days").expect("days should parse") - (30.0 / 365.0)).abs()
-            < f64::EPSILON
-    );
-    assert_eq!(parse_age_years("N/A"), None);
-    assert_eq!(parse_age_years(""), None);
-}
-
-#[test]
 fn verify_age_eligibility_handles_sub_year_minimum_age() {
     let study: CtGovStudy = serde_json::from_value(ctgov_search_study_fixture(
         "NCT00000001",
@@ -167,6 +149,48 @@ fn verify_age_eligibility_handles_sub_year_maximum_age() {
 
     assert_eq!(verify_age_eligibility(vec![study.clone()], 0.5).len(), 1);
     assert!(verify_age_eligibility(vec![study], 1.0).is_empty());
+}
+
+#[test]
+fn verify_age_eligibility_fails_open_for_noncomparable_and_malformed_bounds() {
+    for (index, bound) in [
+        "4 Hours",
+        "+18",
+        "-1",
+        ".5",
+        "5.",
+        "1e2",
+        "NaN",
+        "Infinity",
+        "1e9999",
+        "18, Years",
+        "18 Years,",
+        "18 Years old",
+        "18 Fortnights",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let study: CtGovStudy = serde_json::from_value(ctgov_search_study_fixture(
+            &format!("NCT{index:08}"),
+            bound,
+            bound,
+        ))
+        .unwrap();
+        assert_eq!(
+            verify_age_eligibility(vec![study], 10.0).len(),
+            1,
+            "{bound}"
+        );
+    }
+    let overflow = "9".repeat(400);
+    let study: CtGovStudy = serde_json::from_value(ctgov_search_study_fixture(
+        "NCT99999999",
+        &overflow,
+        &overflow,
+    ))
+    .unwrap();
+    assert_eq!(verify_age_eligibility(vec![study], 10.0).len(), 1);
 }
 
 #[test]

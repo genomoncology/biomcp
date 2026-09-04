@@ -4,6 +4,10 @@ use super::super::validate_trial_search;
 use super::*;
 use crate::entities::trial::TrialSource;
 use crate::sources::nci_cts::NciCtsClient;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 
 fn mydisease_hit(value: serde_json::Value) -> crate::sources::mydisease::MyDiseaseHit {
     serde_json::from_value(value).expect("valid MyDisease hit")
@@ -286,6 +290,74 @@ fn nci_public_filter_table_is_explicit() {
     for (name, filters, mapped) in cases {
         assert_eq!(validate_trial_search(&filters).is_ok(), mapped, "{name}");
     }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn nci_age_rejection_precedes_both_provider_requests() {
+    async fn counter_server() -> (String, Arc<AtomicUsize>, tokio::task::JoinHandle<()>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let count = Arc::new(AtomicUsize::new(0));
+        let observed = count.clone();
+        let task = tokio::spawn(async move {
+            while listener.accept().await.is_ok() {
+                observed.fetch_add(1, Ordering::SeqCst);
+            }
+        });
+        (base, count, task)
+    }
+    struct Restore(Vec<(&'static str, Option<std::ffi::OsString>)>);
+    impl Restore {
+        fn set(&mut self, key: &'static str, value: &str) {
+            self.0.push((key, std::env::var_os(key)));
+            // SAFETY: this test holds the serial-test process-wide environment lock.
+            unsafe { std::env::set_var(key, value) };
+        }
+    }
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            for (key, value) in self.0.drain(..).rev() {
+                // SAFETY: this test holds the serial-test process-wide environment lock.
+                unsafe {
+                    if let Some(value) = value {
+                        std::env::set_var(key, value)
+                    } else {
+                        std::env::remove_var(key)
+                    }
+                }
+            }
+        }
+    }
+
+    let (nci_base, nci_count, nci_server) = counter_server().await;
+    let (disease_base, disease_count, disease_server) = counter_server().await;
+    let mut restore = Restore(Vec::new());
+    restore.set("BIOMCP_NCI_CTS_BASE", &nci_base);
+    restore.set("BIOMCP_MYDISEASE_BASE", &disease_base);
+    let error = super::super::search_page(
+        &TrialSearchFilters {
+            source: TrialSource::NciCts,
+            condition: Some("melanoma".into()),
+            age: Some(67.0),
+            ..Default::default()
+        },
+        5,
+        0,
+        None,
+    )
+    .await
+    .expect_err("NCI age must be rejected");
+    tokio::task::yield_now().await;
+    nci_server.abort();
+    disease_server.abort();
+    assert!(
+        error
+            .to_string()
+            .contains("--age is only supported for --source ctgov")
+    );
+    assert_eq!(nci_count.load(Ordering::SeqCst), 0);
+    assert_eq!(disease_count.load(Ordering::SeqCst), 0);
 }
 
 #[test]

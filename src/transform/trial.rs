@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
 use crate::entities::trial::{
-    Trial, TrialArm, TrialContact, TrialEligibility, TrialIntervention, TrialLocation,
+    Trial, TrialAge, TrialArm, TrialContact, TrialEligibility, TrialIntervention, TrialLocation,
     TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult, TrialSiteContact,
+    format_age_range,
 };
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
@@ -45,25 +46,6 @@ fn clean_conditions(values: &[String]) -> Vec<String> {
         .filter(|s| !s.is_empty())
         .map(str::to_string)
         .collect()
-}
-
-fn normalize_age(value: Option<&str>) -> Option<String> {
-    value
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .filter(|v| !v.eq_ignore_ascii_case("n/a"))
-        .map(str::to_string)
-}
-
-fn format_age_range(min_age: Option<&str>, max_age: Option<&str>) -> Option<String> {
-    let min_age = normalize_age(min_age);
-    let max_age = normalize_age(max_age);
-    match (min_age, max_age) {
-        (Some(min), Some(max)) => Some(format!("{min} to {max}")),
-        (Some(min), None) => Some(format!("{min} to Any age")),
-        (None, Some(max)) => Some(format!("Any age to {max}")),
-        (None, None) => None,
-    }
 }
 
 pub(crate) fn format_conditions(conditions: &[String]) -> String {
@@ -256,8 +238,14 @@ fn extract_eligibility(study: &CtGovStudy) -> Option<TrialEligibility> {
         .and_then(|p| p.eligibility_module.as_ref())?;
     let eligibility = TrialEligibility {
         sex: format_sex(module.sex.as_deref()),
-        minimum_age: normalize_age(module.minimum_age.as_deref()),
-        maximum_age: normalize_age(module.maximum_age.as_deref()),
+        minimum_age: module
+            .minimum_age
+            .as_ref()
+            .and_then(|age| age.parsed().cloned()),
+        maximum_age: module
+            .maximum_age
+            .as_ref()
+            .and_then(|age| age.parsed().cloned()),
     };
     (eligibility.sex.is_some()
         || eligibility.minimum_age.is_some()
@@ -395,7 +383,12 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         .map(str::to_string);
     let age_range = p
         .and_then(|p| p.eligibility_module.as_ref())
-        .and_then(|m| format_age_range(m.minimum_age.as_deref(), m.maximum_age.as_deref()));
+        .and_then(|module| {
+            format_age_range(
+                module.minimum_age.as_ref().and_then(|age| age.parsed()),
+                module.maximum_age.as_ref().and_then(|age| age.parsed()),
+            )
+        });
     let sponsor = p
         .and_then(|p| p.sponsor_collaborators_module.as_ref())
         .and_then(|m| m.lead_sponsor.as_ref())
@@ -621,12 +614,31 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
     let study_type = json_get_string(trial, &["study_protocol_type"]);
     let structured_eligibility = trial
         .get("eligibility")
-        .and_then(|value| value.get("structured"));
-    let min_age = structured_eligibility.and_then(|value| json_get_string(value, &["min_age"]));
+        .and_then(|value| value.as_object())
+        .and_then(|value| value.get("structured"))
+        .and_then(|value| value.as_object());
+    let min_age = structured_eligibility
+        .and_then(|value| json_get_string(&serde_json::Value::Object(value.clone()), &["min_age"]))
+        .and_then(|value| TrialAge::from_provider(&value));
     let max_age = structured_eligibility
-        .and_then(|value| json_get_string(value, &["max_age"]))
-        .filter(|age| !age.eq_ignore_ascii_case("999 Years"));
-    let age_range = format_age_range(min_age.as_deref(), max_age.as_deref());
+        .and_then(|value| json_get_string(&serde_json::Value::Object(value.clone()), &["max_age"]))
+        .and_then(|value| {
+            if value.eq_ignore_ascii_case("999 Years") {
+                TrialAge::retained_unparsed(value)
+            } else {
+                TrialAge::from_provider(&value)
+            }
+        });
+    let age_range = format_age_range(min_age.as_ref(), max_age.as_ref());
+    let sex = structured_eligibility
+        .and_then(|value| json_get_string(&serde_json::Value::Object(value.clone()), &["sex"]))
+        .and_then(|value| format_sex(Some(&value)));
+    let eligibility =
+        (sex.is_some() || min_age.is_some() || max_age.is_some()).then_some(TrialEligibility {
+            sex,
+            minimum_age: min_age,
+            maximum_age: max_age,
+        });
     let sponsor = json_get_string(trial, &["lead_org"]).filter(|s| !s.is_empty());
     let enrollment = json_get_string(trial, &["minimum_target_accrual_number"])
         .and_then(|s| s.parse::<i32>().ok());
@@ -671,7 +683,7 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
         start_date,
         completion_date,
         eligibility_text: None,
-        eligibility: None,
+        eligibility,
         eligibility_provenance: None,
         contacts: None,
         locations: None,

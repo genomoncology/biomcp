@@ -72,7 +72,18 @@ check that removes exclusion-only matches. Trials where the term is absent remai
 discoverable, and boolean expressions are discovery-only.
 
 `--age` accepts finite patient ages from 0 through 150 years, including
-fractional ages.
+fractional ages. A registry bound must match the exact numeric grammar
+`[0-9]+(?:\.[0-9]+)?`, followed by either no unit or one recognized singular or
+plural unit: years, months, weeks, days, hours, or minutes (case-insensitive).
+One or more Unicode whitespace characters may surround the numeric/unit tokens
+and, when a unit is present, must separate it from the number. Only outer
+whitespace is removed from `original`; internal whitespace is retained exactly.
+A missing unit means years. Signs, leading or trailing decimal points, exponent
+notation, `NaN`, positive infinity spellings (`inf`, `Infinity`, `+inf`,
+`+Infinity`), negative infinity spellings (`-inf`, `-Infinity`), punctuation,
+trailing tokens, numeric overflow, and unknown units are rejected as malformed.
+Filtering compares years, months, weeks, and days; hours, minutes, `N/A`, and
+malformed provider text fail open rather than excluding a trial.
 
 Geographic filtering:
 
@@ -172,6 +183,12 @@ that provenance and reports whether posted trial documents are available. When
 documents exist, Markdown offers a cautious follow-up because they may contain
 additional eligibility detail; BioMCP does not claim that a protocol resolves
 any criterion.
+
+Age bounds in JSON are objects, not strings. For example, `6 Months` is
+`{"number":6.0,"unit":"months","original":"6 Months"}`. All three members
+are always present. A retained no-limit or malformed bound has null `number`
+and `unit` while preserving its nonblank `original`; absent or blank bounds are
+omitted. Human-readable age ranges retain the provider notation.
 
 Posted CTGov documents use standalone manifest and retrieval forms:
 

@@ -355,12 +355,29 @@ CONTACTS_ELIGIBILITY_STUDY = {
     }
 }
 
+CANONICAL_AGE_STUDY = {
+    "protocolSection": {
+        "identificationModule": {
+            "nctId": "NCT60000001",
+            "briefTitle": "Canonical Age Contract Fixture",
+        },
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "conditionsModule": {"conditions": ["Canonical Age Fixture"]},
+        "eligibilityModule": {
+            "minimumAge": "6 Months",
+            "maximumAge": "N/A",
+            "sex": "ALL",
+        },
+    }
+}
+
 
 STUDIES = {
     "nct02136914": NCT02136914_STUDY,
     "nct03361748": KARMMA_STUDY,
     "nct35700001": SHELL_SAFE_STUDY,
     "nct41300001": CONTACTS_ELIGIBILITY_STUDY,
+    "nct60000001": CANONICAL_AGE_STUDY,
     "nct51000001": VENETOCLAX_STUDY,
     "nct51000002": VENCLEXTA_STUDY,
     "nct51000003": CONTINUATION_REJECTED_STUDY,
@@ -453,6 +470,9 @@ class Handler(BaseHTTPRequestHandler):
                     send_bytes(self, 200, CTGOV_SEARCH["phelan-50"], "application/json")
                 else:
                     send_bytes(self, 200, CTGOV_SEARCH["phelan-5"], "application/json")
+                return
+            if condition == "Canonical Age Fixture":
+                send_json(self, 200, {"studies": [CANONICAL_AGE_STUDY], "totalCount": 1})
                 return
             if condition == "non-small cell lung cancer" and "EGFR L858R" in " ".join(query.get("query.term", [])):
                 send_bytes(self, 200, CTGOV_SEARCH["mutation"], "application/json")
