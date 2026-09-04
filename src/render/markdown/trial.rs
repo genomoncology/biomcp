@@ -5,6 +5,48 @@ use super::*;
 #[cfg(test)]
 mod tests;
 
+fn abbreviation_at_period(summary: &str, period_index: usize) -> Option<bool> {
+    const ABBREVIATIONS: [(&str, bool); 6] = [
+        ("pts.", false),
+        ("vs.", false),
+        ("approx.", false),
+        ("e.g.", false),
+        ("i.v.", false),
+        ("Dr.", true),
+    ];
+
+    let bytes = summary.as_bytes();
+    let token_end = period_index + 1;
+    ABBREVIATIONS
+        .iter()
+        .find_map(|(token, continues_before_uppercase)| {
+            let token_start = token_end.checked_sub(token.len())?;
+            if !bytes[token_start..token_end].eq_ignore_ascii_case(token.as_bytes()) {
+                return None;
+            }
+            let is_complete_token = summary[..token_start]
+                .chars()
+                .next_back()
+                .is_none_or(|character| !character.is_alphanumeric());
+            is_complete_token.then_some(*continues_before_uppercase)
+        })
+}
+
+fn abbreviation_continues_sentence(summary: &str, period_index: usize) -> bool {
+    let Some(continues_before_uppercase) = abbreviation_at_period(summary, period_index) else {
+        return false;
+    };
+    let next_lexical_character = summary[period_index + 1..]
+        .chars()
+        .find(|character| character.is_alphanumeric());
+
+    next_lexical_character.is_some_and(|character| {
+        character.is_lowercase()
+            || character.is_numeric()
+            || (continues_before_uppercase && character.is_uppercase())
+    })
+}
+
 fn bounded_trial_summary(summary: &str) -> String {
     const MAX_SENTENCES: usize = 2;
     const MAX_BYTES: usize = 500;
@@ -19,6 +61,9 @@ fn bounded_trial_summary(summary: &str) -> String {
         }
         let next = index + 1;
         if next == bytes.len() || bytes.get(next).is_some_and(|b| b.is_ascii_whitespace()) {
+            if abbreviation_continues_sentence(trimmed, index) {
+                continue;
+            }
             sentence_count += 1;
             if sentence_count == MAX_SENTENCES {
                 sentence_end = Some(next);
@@ -28,16 +73,23 @@ fn bounded_trial_summary(summary: &str) -> String {
     }
 
     let bounded_sentences = &trimmed[..sentence_end.unwrap_or(trimmed.len())];
-    if bounded_sentences.len() <= MAX_BYTES {
-        return bounded_sentences.to_string();
+    let sentence_truncated = bounded_sentences.len() < trimmed.len();
+    let byte_truncated = bounded_sentences.len() > MAX_BYTES;
+    let mut bounded = if byte_truncated {
+        let mut boundary = MAX_BYTES;
+        while boundary > 0 && !bounded_sentences.is_char_boundary(boundary) {
+            boundary -= 1;
+        }
+        bounded_sentences[..boundary].trim_end().to_string()
+    } else {
+        bounded_sentences.to_string()
+    };
+    if sentence_truncated || byte_truncated {
+        if bounded.ends_with('.') {
+            bounded.pop();
+        }
+        bounded.push_str("...");
     }
-
-    let mut boundary = MAX_BYTES;
-    while boundary > 0 && !bounded_sentences.is_char_boundary(boundary) {
-        boundary -= 1;
-    }
-    let mut bounded = bounded_sentences[..boundary].trim_end().to_string();
-    bounded.push_str("...");
     bounded
 }
 

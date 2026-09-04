@@ -143,4 +143,40 @@ No later trial-field ticket is a prerequisite.
   scoped and compatible. With 1115 landed to that seam contract, this ticket is
   implementation-ready without provider captures, documentation changes, or a
   new parser dependency.
-- Code review: pending
+- Implementation evidence (2026-09-04): the failing-first renderer lane had
+  the expected four failures: supported abbreviations stopped early, sentence-
+  only omissions had no marker, the sentence-final/suffix controls lacked the
+  marker, and the public Markdown path lost the clause after `pts.`. The
+  renderer-local helper now matches only complete supported tokens ASCII-case-
+  insensitively, uses the accepted lowercase/numeric lookahead plus the `Dr.`
+  uppercase rule, and records sentence and byte omission before adding exactly
+  one marker. A strengthened multibyte run exposed and corrected an
+  implementation-order bug: token suffix matching must happen before examining
+  the preceding Unicode character so an unrelated period cannot create an
+  invalid UTF-8 slice. No design assumption changed. The final focused renderer
+  lane passed all 12 tests; the three 1115 conversion/JSON preservation tests,
+  formatting, renderer-library clippy with warnings denied, and the supported
+  static specification lane (8 cases) also passed. No provider capture,
+  converter, model, template, age behavior, or other renderer changed.
+- Code review: ACCEPT (2026-09-04). The reviewer verified all six exact
+  abbreviation forms, suffix-collision and sentence-final controls, repeated
+  abbreviations, deterministic lookahead, whitespace/punctuation handling,
+  honest single-marker behavior, UTF-8-safe indexing, and the 500-content-byte
+  bound. Markdown is the only changed surface; the complete `Trial`/JSON value
+  established by 1115 remains intact. No blocking findings remain. The
+  documented `Dr.` followed by uppercase text ambiguity is the accepted
+  deterministic tradeoff.
+
+## Completed 2026-09-04
+
+Trial Markdown summaries no longer count the periods inside `pts.`, `vs.`,
+`approx.`, `e.g.`, `i.v.`, or `Dr.` as sentence boundaries under the accepted
+lookahead rules. Any sentence- or byte-limited omission now ends in exactly
+one `...`, while complete summaries remain unchanged and full JSON is
+preserved.
+
+Final primary gates passed on the independently accepted tree: `make lint`;
+`make test`, including the complete offline Rust lane, 883 Python tests passed
+and 3 skipped, and strict documentation; and `make spec`, including all routine
+mustmatch pages, 38 isolation contracts, fixture cleanup, and the 8-case static
+lane.

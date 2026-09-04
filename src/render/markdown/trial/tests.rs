@@ -30,9 +30,59 @@ fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
 }
 
 #[test]
-fn bounded_trial_summary_preserves_the_pre_1113_sentence_bytes() {
+fn bounded_trial_summary_keeps_supported_mid_sentence_abbreviations() {
+    let cases = [
+        (
+            "pts.",
+            "This study enrolls 40 pts. with relapsed disease and compares two regimens.",
+        ),
+        (
+            "vs.",
+            "This study compares treatment vs. placebo in relapsed disease.",
+        ),
+        (
+            "approx.",
+            "This study enrolls approx. 40 participants with relapsed disease.",
+        ),
+        (
+            "e.g.",
+            "This study includes tumors, e.g. relapsed melanoma, in two regimens.",
+        ),
+        (
+            "i.v.",
+            "This study compares i.v. therapy with an oral regimen.",
+        ),
+        (
+            "Dr.",
+            "This study is led by Dr. Smith and compares two regimens.",
+        ),
+    ];
+
+    for (abbreviation, second_sentence) in cases {
+        let summary =
+            format!("Background is established. {second_sentence} The endpoint is survival.");
+        let expected = format!(
+            "Background is established. {}...",
+            &second_sentence[..second_sentence.len() - 1]
+        );
+        let bounded = bounded_trial_summary(&summary);
+
+        assert_eq!(bounded, expected, "abbreviation: {abbreviation}");
+        assert!(!bounded.contains("The endpoint is survival"));
+        assert!(bounded.ends_with("..."));
+        assert!(!bounded.ends_with("...."));
+        assert_eq!(bounded.matches("...").count(), 1);
+    }
+}
+
+#[test]
+fn bounded_trial_summary_marks_sentence_omission_but_not_complete_input() {
     assert_eq!(
         bounded_trial_summary("  Sentence one. Sentence two. Sentence three.  "),
+        "Sentence one. Sentence two..."
+    );
+    assert_eq!(
+        bounded_trial_summary("  Sentence one. Sentence two.  "),
         "Sentence one. Sentence two."
     );
     assert_eq!(
@@ -42,19 +92,40 @@ fn bounded_trial_summary_preserves_the_pre_1113_sentence_bytes() {
 }
 
 #[test]
-fn bounded_trial_summary_preserves_the_pre_1113_multibyte_bytes() {
-    let summary = "€".repeat(400);
-    let expected = format!("{}...", "€".repeat(166));
+fn bounded_trial_summary_is_utf8_safe_when_both_limits_omit_content() {
+    let summary = format!("{}. Second sentence. Third sentence.", "€".repeat(167));
     let bounded = bounded_trial_summary(&summary);
-    assert_eq!(bounded, expected);
+
     assert!(bounded.is_char_boundary(bounded.len()));
-    assert_eq!(bounded.len(), 501);
+    assert!(bounded.ends_with("..."));
+    assert!(!bounded.ends_with("...."));
+    assert!(bounded.strip_suffix("...").expect("marker").len() <= 500);
+    assert_eq!(bounded, format!("{}...", "€".repeat(166)));
 }
 
 #[test]
-fn trial_markdown_uses_the_same_bounded_summary_bytes() {
-    let full = "Sentence one. Sentence two. Sentence three.";
-    let markdown = trial_markdown(&summary_trial(Some(full)), &[]).expect("trial markdown");
+fn bounded_trial_summary_distinguishes_sentence_final_and_suffix_collisions() {
+    assert_eq!(
+        bounded_trial_summary("Two attempts. Participants recovered. Follow-up continued."),
+        "Two attempts. Participants recovered..."
+    );
+    assert_eq!(
+        bounded_trial_summary("Route was i.v. Participants recovered. Follow-up continued."),
+        "Route was i.v. Participants recovered..."
+    );
+    assert_eq!(
+        bounded_trial_summary(
+            "Background is established. The study enrolls 40 PTS. with disease. Tail omitted."
+        ),
+        "Background is established. The study enrolls 40 PTS. with disease..."
+    );
+}
+
+#[test]
+fn trial_markdown_keeps_the_post_abbreviation_clause_and_json_stays_full() {
+    let full = "Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens. The endpoint is survival.";
+    let trial = summary_trial(Some(full));
+    let markdown = trial_markdown(&trial, &[]).expect("trial markdown");
     let rendered_summary = markdown
         .split_once("## Summary (ClinicalTrials.gov)\n\n")
         .expect("summary section")
@@ -62,8 +133,15 @@ fn trial_markdown_uses_the_same_bounded_summary_bytes() {
         .split_once("\nMore:\n")
         .expect("end of summary section")
         .0;
-    assert_eq!(rendered_summary, "Sentence one. Sentence two.");
-    assert!(!markdown.contains("Sentence three."));
+    assert_eq!(
+        rendered_summary,
+        "Background is established. This study enrolls 40 pts. with relapsed disease and compares two regimens..."
+    );
+    assert!(!markdown.contains("The endpoint is survival."));
+    assert_eq!(
+        serde_json::to_value(&trial).expect("trial JSON")["summary"],
+        full
+    );
 }
 
 #[test]
