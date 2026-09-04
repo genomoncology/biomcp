@@ -347,20 +347,31 @@ be escaped in the emitted commands while preserving the visible source strings.
 
 ```bash run id=ctgov-shell-safe-next-commands
 rm -f /tmp/biomcp-357-pwned
+rm -f /tmp/biomcp-trial-title-expanded
+trap 'rm -f /tmp/biomcp-trial-title-expanded' EXIT
+markdown_out="$(../../tools/biomcp-ci get trial NCT35700001)"
 json_out="$(../../tools/biomcp-ci --json get trial NCT35700001)"
 condition_cmd="$(printf '%s\n' "$json_out" | jq -r '._meta.next_commands[]? | select(startswith("biomcp search disease --query "))')"
 alias_cmd="$(printf '%s\n' "$json_out" | jq -r '._meta.next_commands[]? | select(startswith("biomcp search drug -q "))')"
-printf '%s\n' "$condition_cmd" "$alias_cmd"
+markdown_publication_cmd="$(printf '%s\n' "$markdown_out" | sed -n 's/^  \(biomcp search article .* --limit 5\)   - find publications.*/\1/p')"
+json_publication_cmd="$(printf '%s\n' "$json_out" | jq -r '._meta.next_commands[]? | select(startswith("biomcp search article ") and endswith(" --limit 5"))')"
+test "$markdown_publication_cmd" = "$json_publication_cmd"
+expected_query="NCT35700001 Alpha\\path's \$(touch /tmp/biomcp-trial-title-expanded) \"quoted\" \$HOME; \`uname\`"
+printf '%s\n' "$condition_cmd" "$alias_cmd" "$markdown_publication_cmd" "$json_publication_cmd"
 bash -c 'condition_cmd="$1"; alias_cmd="$2"; eval "set -- $condition_cmd"; printf "condition=%s\n" "$5"; eval "set -- $alias_cmd"; printf "alias=%s\n" "$5"' _ "$condition_cmd" "$alias_cmd"
+bash -c 'set -eu; command="$1"; expected="$2"; HOME=/tmp/biomcp-fixed-home; export HOME; trap "rm -f /tmp/biomcp-trial-title-expanded" EXIT; eval "set -- $command"; test "$#" -eq 9; test "$7" = "$expected"; test ! -e /tmp/biomcp-trial-title-expanded; printf "publication=%s\n" "$7"' _ "$json_publication_cmd" "$expected_query"
 test ! -e /tmp/biomcp-357-pwned
+test ! -e /tmp/biomcp-trial-title-expanded
 rm -f /tmp/biomcp-357-pwned
 ```
 
 ```text expect=ctgov-shell-safe-next-commands contains
 biomcp search disease --query "quoted \$(touch /tmp/biomcp-357-pwned) \"condition\""
 biomcp search drug -q "alias \$(touch /tmp/biomcp-357-pwned) \"dose\""
+biomcp search article --drug SAFE-357 -q "NCT35700001 Alpha\\path's \$(touch /tmp/biomcp-trial-title-expanded) \"quoted\" \$HOME; \`uname\`" --limit 5
 condition=quoted $(touch /tmp/biomcp-357-pwned) "condition"
 alias=alias $(touch /tmp/biomcp-357-pwned) "dose"
+publication=NCT35700001 Alpha\path's $(touch /tmp/biomcp-trial-title-expanded) "quoted" $HOME; `uname`
 ```
 
 ## Observed Trial Provider Requests

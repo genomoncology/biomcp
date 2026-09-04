@@ -126,9 +126,9 @@ SHELL_SAFE_STUDY = {
     "protocolSection": {
         "identificationModule": {
             "nctId": "NCT35700001",
-            "briefTitle": "Shell Safety Fixture",
+            "briefTitle": "Alpha\\path's $(touch /tmp/biomcp-trial-title-expanded) \"quoted\" $HOME; `uname` tail",
         },
-        "statusModule": {"overallStatus": "RECRUITING"},
+        "statusModule": {"overallStatus": "COMPLETED"},
         "descriptionModule": {"briefSummary": "Fixture study for source-derived command text."},
         "conditionsModule": {
             "conditions": ["quoted $(touch /tmp/biomcp-357-pwned) \"condition\""]

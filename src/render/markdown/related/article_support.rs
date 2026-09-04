@@ -118,7 +118,7 @@ pub(super) fn trial_results_search_command(trial: &Trial) -> Option<String> {
     } else {
         format!("{nct_id} {title_seed}")
     };
-    let seed_q = format!("\"{}\"", seed.replace('\"', "\\\""));
+    let seed_q = force_quote_arg(&seed);
     if seed_q.is_empty() {
         return None;
     }

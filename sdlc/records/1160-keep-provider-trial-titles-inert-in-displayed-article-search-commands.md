@@ -55,3 +55,14 @@ Do not change trial parsing, provider requests, source records, article search b
 ## Evidence
 
 `src/render/markdown/related/article_support.rs` contains the incomplete escaping rule. `src/render/markdown/support.rs` contains the existing complete helper. The shared trial renderer and dispatch paths establish that the same generated string reaches Markdown, JSON, pagination, batch, and MCP surfaces. Ticket 1070 proves parser syntax only, and ticket 1071 proves cross-surface agreement. Neither contract evaluates shell expansion. No active, draft, archived ticket, or issue owns this defect.
+
+## Result
+
+The shared results-search renderer now quotes the complete provider-derived query through `force_quote_arg`. The regression test and executable specification preserve the hostile title as one literal argument, enforce the six-title-token cap, validate the production command parser, and prove that command substitution, environment expansion, and backticks remain inert. Existing completed, blank-title, and recruiting behavior remains unchanged.
+
+`make lint`, `make test`, and `make spec` passed after independent code review.
+
+## Review
+
+- Design review: accepted after revalidation against the ticket 1141 landing.
+- Code review: accepted with no findings.

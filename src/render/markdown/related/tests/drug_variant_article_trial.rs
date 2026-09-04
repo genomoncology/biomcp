@@ -500,6 +500,62 @@ fn related_trial_promotes_results_search_for_completed_or_terminated_studies() {
 }
 
 #[test]
+fn provider_trial_title_shell_syntax_stays_inert_in_results_search() {
+    use clap::Parser;
+
+    let trial = crate::entities::trial::Trial {
+        nct_id: "NCT35700001".to_string(),
+        source: None,
+        title: "Alpha\\path's $(touch /tmp/biomcp-trial-title-expanded) \"quoted\" $HOME; `uname` tail"
+            .to_string(),
+        status: "COMPLETED".to_string(),
+        why_stopped: None,
+        phase: None,
+        study_type: None,
+        age_range: None,
+        conditions: Vec::new(),
+        interventions: vec!["SAFE-357".to_string()],
+        intervention_details: Vec::new(),
+        sponsor: None,
+        enrollment: None,
+        summary: None,
+        start_date: None,
+        completion_date: None,
+        eligibility_text: None,
+        eligibility: None,
+        eligibility_provenance: None,
+        contacts: None,
+        locations: None,
+        outcomes: None,
+        arms: None,
+        references: None,
+    };
+
+    let related = related_trial(&trial);
+    assert_eq!(
+        related[0],
+        "biomcp search article --drug SAFE-357 -q \"NCT35700001 Alpha\\\\path's \\$(touch /tmp/biomcp-trial-title-expanded) \\\"quoted\\\" \\$HOME; \\`uname\\`\" --limit 5"
+    );
+
+    let argv = shlex::split(&related[0]).expect("results search should have valid shell syntax");
+    assert_eq!(
+        argv,
+        [
+            "biomcp",
+            "search",
+            "article",
+            "--drug",
+            "SAFE-357",
+            "-q",
+            "NCT35700001 Alpha\\path's $(touch /tmp/biomcp-trial-title-expanded) \"quoted\" $HOME; `uname`",
+            "--limit",
+            "5",
+        ]
+    );
+    crate::cli::Cli::try_parse_from(argv).expect("results search should satisfy the CLI parser");
+}
+
+#[test]
 fn related_trial_searches_unverified_jag201_intervention() {
     let trial = crate::entities::trial::Trial {
         nct_id: "NCT06662188".to_string(),
