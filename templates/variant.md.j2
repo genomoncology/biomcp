@@ -94,7 +94,7 @@ Dataset: `{{ population.dataset }}` ({{ population.release }})
 {% if population.exome -%}
 ### Exomes
 Exome overall frequency: {% if population.exome.allele_frequency is not none %}{{ population.exome.allele_frequency | af }}{% else %}-{% endif %}
-Exome highest ancestry frequency: {% if exome_highest_ancestry %}{{ exome_highest_ancestry.id | gnomad_ancestry_label }} ({{ exome_highest_ancestry.allele_frequency | af }}){% else %}Not reported{% endif %}
+Exome highest observed population-row frequency: {% if exome_highest_ancestry %}{{ exome_highest_ancestry.id | gnomad_ancestry_label }} ({{ exome_highest_ancestry.allele_frequency | af }}; allele count {{ exome_highest_ancestry.ac }} / allele number {{ exome_highest_ancestry.an }}){% else %}Not reported{% endif %}
 {% if show_population_details -%}
 | Dataset | Ancestry | Raw allele frequency | Allele count | Allele number | Homozygotes | Hemizygotes |
 |---|---|---:|---:|---:|---:|---:|
@@ -113,7 +113,7 @@ No exome result in {{ population.release }}.
 {% if population.genome -%}
 ### Genomes
 Genome overall frequency: {% if population.genome.allele_frequency is not none %}{{ population.genome.allele_frequency | af }}{% else %}-{% endif %}
-Genome highest ancestry frequency: {% if genome_highest_ancestry %}{{ genome_highest_ancestry.id | gnomad_ancestry_label }} ({{ genome_highest_ancestry.allele_frequency | af }}){% else %}Not reported{% endif %}
+Genome highest observed population-row frequency: {% if genome_highest_ancestry %}{{ genome_highest_ancestry.id | gnomad_ancestry_label }} ({{ genome_highest_ancestry.allele_frequency | af }}; allele count {{ genome_highest_ancestry.ac }} / allele number {{ genome_highest_ancestry.an }}){% else %}Not reported{% endif %}
 {% if show_population_details -%}
 | Dataset | Ancestry | Raw allele frequency | Allele count | Allele number | Homozygotes | Hemizygotes |
 |---|---|---:|---:|---:|---:|---:|

@@ -258,7 +258,9 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
         "{compact}"
     );
     assert!(
-        compact.contains("Exome highest ancestry frequency: nfe (0.0002)"),
+        compact.contains(
+            "Exome highest observed population-row frequency: nfe (0.0002; allele count 2 / allele number 10000)"
+        ),
         "{compact}"
     );
     assert!(compact.contains("gnomAD v4 exome grpmax FAF95: 0.0002 (nfe)"));
@@ -268,7 +270,9 @@ fn variant_markdown_renders_compact_clinvar_and_population_fields() {
         "{compact}"
     );
     assert!(
-        compact.contains("Genome highest ancestry frequency: afr (0.0004)"),
+        compact.contains(
+            "Genome highest observed population-row frequency: afr (0.0004; allele count 2 / allele number 5000)"
+        ),
         "{compact}"
     );
     assert!(compact.contains("gnomAD v4 genome grpmax FAF95: 0.0003 (afr)"));
@@ -359,7 +363,7 @@ fn variant_population_markdown_labels_residual_group_but_json_keeps_raw_id() {
         .expect("rendered compact population markdown");
     assert!(
         compact.contains(
-            "Exome highest ancestry frequency: Other / not assigned (gnomAD residual) (0.002)"
+            "Exome highest observed population-row frequency: Other / not assigned (gnomAD residual) (0.002; allele count 2 / allele number 1000)"
         ),
         "{compact}"
     );
@@ -370,6 +374,164 @@ fn variant_population_markdown_labels_residual_group_but_json_keeps_raw_id() {
         json["population"]["exome"]["populations"][1]["id"],
         "remaining"
     );
+}
+
+fn population_test_variant(
+    exome_rows: serde_json::Value,
+    genome_rows: serde_json::Value,
+) -> Variant {
+    serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.100A>T",
+        "gene": "TST",
+        "population": {
+            "status": "data",
+            "dataset": "gnomad_r4",
+            "release": "gnomAD v4",
+            "exome": {
+                "allele_frequency": 0.25, "ac": 50, "an": 200,
+                "homozygote_count": 0, "hemizygote_count": 0,
+                "filters": ["RF"],
+                "faf95": {"popmax": 0.2, "popmax_population": "nfe"},
+                "populations": exome_rows
+            },
+            "genome": {
+                "allele_frequency": 0.2, "ac": 40, "an": 200,
+                "homozygote_count": 0, "hemizygote_count": 0,
+                "filters": [], "faf95": null,
+                "populations": genome_rows
+            },
+            "faf_caveat": "gnomAD excludes bottlenecked genetic ancestry groups when selecting grpmax FAF."
+        }
+    }))
+    .expect("population test variant")
+}
+
+fn ancestry_row(
+    id: &str,
+    allele_frequency: Option<f64>,
+    ac: u64,
+    an: u64,
+) -> crate::sources::gnomad::GnomadAncestryPopulation {
+    crate::sources::gnomad::GnomadAncestryPopulation {
+        id: id.into(),
+        allele_frequency,
+        ac,
+        an,
+        homozygote_count: 0,
+        hemizygote_count: 0,
+    }
+}
+
+#[test]
+fn variant_population_maximum_is_order_independent_by_an_then_raw_id() {
+    let smaller = serde_json::json!({
+        "id": "small", "allele_frequency": 0.5, "ac": 5, "an": 10,
+        "homozygote_count": 0, "hemizygote_count": 0
+    });
+    let broader = serde_json::json!({
+        "id": "broad", "allele_frequency": 0.5, "ac": 100, "an": 200,
+        "homozygote_count": 0, "hemizygote_count": 0
+    });
+    let raw_id_first = serde_json::json!({
+        "id": "Alpha", "allele_frequency": 0.5, "ac": 100, "an": 200,
+        "homozygote_count": 0, "hemizygote_count": 0
+    });
+    let raw_id_last = serde_json::json!({
+        "id": "alpha", "allele_frequency": 0.5, "ac": 100, "an": 200,
+        "homozygote_count": 0, "hemizygote_count": 0
+    });
+
+    for (exome_rows, genome_rows) in [
+        (
+            serde_json::json!([smaller.clone(), broader.clone()]),
+            serde_json::json!([raw_id_last.clone(), raw_id_first.clone()]),
+        ),
+        (
+            serde_json::json!([broader.clone(), smaller.clone()]),
+            serde_json::json!([raw_id_first.clone(), raw_id_last.clone()]),
+        ),
+    ] {
+        let variant = population_test_variant(exome_rows.clone(), genome_rows.clone());
+        let compact = variant_markdown(&variant, &["population".to_string()]).unwrap();
+        assert!(compact.contains(
+            "Exome highest observed population-row frequency: broad (0.5; allele count 100 / allele number 200)"
+        ));
+        assert!(compact.contains(
+            "Genome highest observed population-row frequency: Alpha (0.5; allele count 100 / allele number 200)"
+        ));
+        assert!(!compact.contains("| gnomAD v4 | small |"));
+
+        let detailed = variant_markdown(&variant, &["population-details".to_string()]).unwrap();
+        assert!(detailed.contains(
+            "Exome highest observed population-row frequency: broad (0.5; allele count 100 / allele number 200)"
+        ));
+        let json = serde_json::to_value(&variant).unwrap();
+        assert_eq!(
+            detailed.find("| gnomAD v4 | small |") < detailed.find("| gnomAD v4 | broad |"),
+            exome_rows[0]["id"] == "small"
+        );
+        assert_eq!(
+            detailed.find("| gnomAD v4 | Alpha |") < detailed.find("| gnomAD v4 | alpha |"),
+            genome_rows[0]["id"] == "Alpha"
+        );
+        assert_eq!(json["population"]["exome"]["populations"], exome_rows);
+        assert_eq!(json["population"]["genome"]["populations"], genome_rows);
+        assert!(
+            json["population"]
+                .get("highest_population_frequency")
+                .is_none()
+        );
+    }
+}
+
+#[test]
+fn variant_population_maximum_keeps_zero_and_handles_null_nonfinite_and_partial_sides() {
+    let variant = population_test_variant(
+        serde_json::json!([
+            {"id": "null", "allele_frequency": null, "ac": 0, "an": 0,
+             "homozygote_count": 0, "hemizygote_count": 0},
+            {"id": "zero", "allele_frequency": 0.0, "ac": 0, "an": 80,
+             "homozygote_count": 0, "hemizygote_count": 0}
+        ]),
+        serde_json::json!([
+            {"id": "null", "allele_frequency": null, "ac": 0, "an": 0,
+             "homozygote_count": 0, "hemizygote_count": 0}
+        ]),
+    );
+    let compact = variant_markdown(&variant, &["population".to_string()]).unwrap();
+    assert!(compact.contains(
+        "Exome highest observed population-row frequency: zero (0; allele count 0 / allele number 80)"
+    ));
+    assert!(compact.contains("Genome highest observed population-row frequency: Not reported"));
+
+    let mut partial = variant.clone();
+    partial.population.as_mut().unwrap().exome = None;
+    let partial = variant_markdown(&partial, &["population".to_string()]).unwrap();
+    assert!(partial.contains("No exome result in gnomAD v4."));
+    assert!(partial.contains("Genome highest observed population-row frequency: Not reported"));
+
+    let sequencing = crate::sources::gnomad::GnomadSequencingPopulation {
+        allele_frequency: None,
+        ac: 0,
+        an: 0,
+        homozygote_count: 0,
+        hemizygote_count: 0,
+        filters: vec![],
+        faf95: None,
+        populations: vec![
+            ancestry_row("infinite", Some(f64::INFINITY), 1, 1),
+            ancestry_row("finite", Some(0.25), 1, 4),
+        ],
+    };
+    assert_eq!(
+        highest_ancestry_frequency(&sequencing).unwrap().id,
+        "finite"
+    );
+    let only_nan = crate::sources::gnomad::GnomadSequencingPopulation {
+        populations: vec![ancestry_row("nan", Some(f64::NAN), 0, 1)],
+        ..sequencing
+    };
+    assert!(highest_ancestry_frequency(&only_nan).is_none());
 }
 
 #[test]
@@ -429,6 +591,7 @@ fn variant_population_markdown_keeps_missing_status_compact() {
     let resolved_markdown = variant_markdown(&resolved, &["population".to_string()]).unwrap();
     assert!(resolved_markdown.contains("Resolved GRCh38 coordinate: chr11:g.5227002T>A (dbSNP)"));
     assert!(resolved_markdown.contains("Exomes"));
+    assert!(resolved_markdown.contains("highest observed population-row frequency: Not reported"));
 }
 
 #[test]

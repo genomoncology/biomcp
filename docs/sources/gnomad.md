@@ -17,7 +17,7 @@ replaces population fields previously copied from MyVariant.info payloads.
 | Command | What BioMCP gets from this source | Integration note |
 |---|---|---|
 | `get gene <symbol> constraint` | Gene-level constraint metrics such as LOEUF-style context | Direct gnomAD-backed gene section |
-| `get variant <id> population` | Compact exome/genome frequencies, highest ancestry frequency, grpmax FAF95, and quality flags | Direct `gnomad_r4` GraphQL query for the resolved GRCh38 coordinate |
+| `get variant <id> population` | Compact exome/genome frequencies, highest observed population-row frequency with AC/AN, grpmax FAF95, and quality flags | Direct `gnomad_r4` GraphQL query for the resolved GRCh38 coordinate |
 | `get variant <id> population-details` | Full exome/genome ancestry tables | Uses the same direct `gnomad_r4` result |
 | `search variant -g <gene> --max-frequency <value>` | Rarity-filtered variant search rows | Search filter uses population-frequency context aligned with gnomAD fields |
 
@@ -34,6 +34,9 @@ biomcp get variant rs113488022 population
 ```
 
 Returns compact direct gnomAD v4 exome and genome population results.
+For the highest observed population-row frequency, allele count (AC) is shown
+over allele number (AN). AN is the AF denominator: the number of alleles with a
+defined genotype call at that site, not a count of samples or people.
 JSON keeps raw numeric frequencies, counts, FAF95, ancestry rows, and source flag names.
 
 ```bash

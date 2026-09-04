@@ -148,11 +148,19 @@ fn highest_ancestry_frequency(
     population
         .populations
         .iter()
-        .filter(|row| row.allele_frequency.is_some())
+        .filter(|row| row.allele_frequency.is_some_and(f64::is_finite))
         .max_by(|left, right| {
-            left.allele_frequency
-                .expect("filtered ancestry frequency")
-                .total_cmp(&right.allele_frequency.expect("filtered ancestry frequency"))
+            let frequency_order = left
+                .allele_frequency
+                .expect("filtered finite ancestry frequency")
+                .total_cmp(
+                    &right
+                        .allele_frequency
+                        .expect("filtered finite ancestry frequency"),
+                );
+            frequency_order
+                .then_with(|| left.an.cmp(&right.an))
+                .then_with(|| right.id.as_str().cmp(left.id.as_str()))
         })
 }
 
