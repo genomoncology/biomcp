@@ -116,8 +116,8 @@ pub(super) fn sort_trials_by_status_priority(rows: &mut [TrialSearchResult]) {
 
 fn invalid_phase_error(raw: &str) -> BioMcpError {
     BioMcpError::InvalidArgument(format!(
-        "Unrecognized --phase value '{raw}'. Expected one of: NA, EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4. \
-Aliases: 1-4, 1/2, early_phase1, early1, n/a."
+        "Unrecognized --phase value '{raw}'. Expected one of: NA, EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4, PHASE1/PHASE2, PHASE2/PHASE3. \
+Aliases: 1-4, I-IV, 1/2, 2/3, I_II, II_III, early_phase1, early1, n/a."
     ))
 }
 
@@ -172,38 +172,21 @@ fn normalize_phase(value: &str) -> Result<Vec<String>, BioMcpError> {
         ));
     }
 
-    let compact = v
-        .chars()
-        .filter(|c| !c.is_ascii_whitespace())
-        .collect::<String>()
-        .to_ascii_uppercase();
-    if compact == "1/2" {
-        return Ok(vec!["PHASE1".to_string(), "PHASE2".to_string()]);
-    }
-    if matches!(compact.as_str(), "EARLY_PHASE1" | "EARLYPHASE1" | "EARLY1") {
-        return Ok(vec!["EARLY_PHASE1".to_string()]);
-    }
-    if matches!(compact.as_str(), "NA" | "N/A") {
-        return Ok(vec!["NA".to_string()]);
-    }
-    if compact.chars().all(|c| c.is_ascii_digit()) {
-        return match compact.as_str() {
-            "1" => Ok(vec!["PHASE1".to_string()]),
-            "2" => Ok(vec!["PHASE2".to_string()]),
-            "3" => Ok(vec!["PHASE3".to_string()]),
-            "4" => Ok(vec!["PHASE4".to_string()]),
-            _ => Err(invalid_phase_error(v)),
-        };
-    }
-
-    let key = normalize_enum_key(v);
-    match key.as_str() {
-        "PHASE1" => Ok(vec!["PHASE1".to_string()]),
-        "PHASE2" => Ok(vec!["PHASE2".to_string()]),
-        "PHASE3" => Ok(vec!["PHASE3".to_string()]),
-        "PHASE4" => Ok(vec!["PHASE4".to_string()]),
+    let upper = v.to_ascii_uppercase();
+    let slash_normalized = upper
+        .split('/')
+        .map(str::trim)
+        .collect::<Vec<_>>()
+        .join("/");
+    match slash_normalized.as_str() {
+        "NA" | "N/A" => Ok(vec!["NA".to_string()]),
         "EARLY_PHASE1" | "EARLY1" => Ok(vec!["EARLY_PHASE1".to_string()]),
-        "NA" => Ok(vec!["NA".to_string()]),
+        "PHASE1" | "1" | "I" => Ok(vec!["PHASE1".to_string()]),
+        "PHASE2" | "2" | "II" => Ok(vec!["PHASE2".to_string()]),
+        "PHASE3" | "3" | "III" => Ok(vec!["PHASE3".to_string()]),
+        "PHASE4" | "4" | "IV" => Ok(vec!["PHASE4".to_string()]),
+        "PHASE1/PHASE2" | "1/2" | "I_II" => Ok(vec!["PHASE1".to_string(), "PHASE2".to_string()]),
+        "PHASE2/PHASE3" | "2/3" | "II_III" => Ok(vec!["PHASE2".to_string(), "PHASE3".to_string()]),
         _ => Err(invalid_phase_error(v)),
     }
 }

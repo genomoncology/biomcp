@@ -18,7 +18,7 @@ pub(super) const TOOLS: &[ToolCatalogEntry] = &[
     ToolCatalogEntry {
         name: "search",
         title: "BioMCP search",
-        description: "Search one biomedical entity with typed, bounded inputs.",
+        description: "Search a biomedical entity with typed, bounded inputs.",
     },
     ToolCatalogEntry {
         name: "get",

@@ -22,7 +22,7 @@ pub(super) fn list_trial() -> String {
 - `--intervention <name>` (or `-i`)
 - `--no-alias-expand`
 - `--status <status>` (or `-s`)
-- `--phase <NA|1|1/2|2|3|4>` (or `-p`)
+- `--phase <NA|1|1/2|2|2/3|3|4>` (or `-p`); named `PHASEn` and Roman forms are accepted
 - `--facility <name>`
 - `--age <years>` (finite 0-150; decimals accepted, e.g. `0.5`)
 - `--sex <female|male|all>`
@@ -40,6 +40,12 @@ pub(super) fn list_trial() -> String {
 - `--date-from <YYYY-MM-DD> --date-to <YYYY-MM-DD>`
 - `--count-only`
 - `--limit <N> --offset <N>`
+
+## Phase values
+
+- Scalars: `NA`/`N/A`; `EARLY_PHASE1`/`early_phase1`/`early1`; `PHASE1`/`1`/`I` through `PHASE4`/`4`/`IV`.
+- Combined: `PHASE1/PHASE2`/`1/2`/`I_II` and `PHASE2/PHASE3`/`2/3`/`II_III`.
+- Matching is case-insensitive. A combined value is one combined provider label, not an OR search.
 
 ## CTGov alias expansion
 
@@ -61,7 +67,8 @@ pub(super) fn list_trial() -> String {
 
 - `--source nci --condition <name>` first tries to ground the name to an NCI disease ID and falls back to CTS `keyword`; there is no separate NCI keyword flag.
 - `--source nci --status <status>` accepts one normalized status at a time and maps it to CTS recruitment or lifecycle filters.
-- `--source nci --phase 1/2` maps to CTS `I_II`; `--phase early_phase1` is not supported.
+- Combined inputs `PHASE1/PHASE2`, `1/2`, or `I_II` mean one Phase 1/2 label; `PHASE2/PHASE3`, `2/3`, or `II_III` mean one Phase 2/3 label, not an OR search.
+- On NCI those combinations map to CTS `I_II` and `II_III`; scalar Roman `I` through `IV` map to the corresponding single phase. `--phase early_phase1` is not supported.
 - `--source nci --lat/--lon/--distance` uses direct `sites.org_coordinates_*` CTS filters and serializes distance with the required `mi` suffix.
 - NCI accepts one quoted value total across `--biomarker`, `--mutation`, and `--criteria`; it rejects repeated or combined values.
 - NCI rejects CTGov-only `--study-type`, `--sponsor`, and update-date filters before making a request.

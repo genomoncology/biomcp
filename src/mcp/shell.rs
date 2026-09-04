@@ -23,6 +23,7 @@ use self::typed_get::typed_get_schema;
 mod http_server;
 pub(super) use self::http_server::run_http;
 mod pre_session;
+mod trial_phase;
 #[derive(Debug, Clone)]
 pub struct BioMcpServer {
     pub(super) tool_router: ToolRouter<Self>,
@@ -260,7 +261,7 @@ fn typed_search_branch(entity: &str) -> Value {
                 json!({"enum":["all","pubtator","europepmc","pubmed","semanticscholar","litsense2"]})
             }
             "sort" => json!({"enum":["date","citations","relevance"]}),
-            "phase" => json!({"enum":["NA","1","1/2","2","3","4"]}),
+            "phase" => trial_phase::schema(),
             "status" => {
                 json!({"enum":["recruiting","not_yet_recruiting","enrolling_by_invitation","active_not_recruiting","completed","suspended","terminated","withdrawn"]})
             }
@@ -1606,7 +1607,6 @@ mod tests {
             .unwrap();
         assert!(gwas["properties"].get("trait").is_some());
         assert!(gwas["properties"].get("region").is_none());
-
         let get = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
         assert_eq!(get["oneOf"].as_array().unwrap().len(), 12);
         let author = get["oneOf"]

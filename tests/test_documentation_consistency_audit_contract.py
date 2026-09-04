@@ -302,6 +302,8 @@ def test_entity_guides_keep_canonical_section_flow_and_note_missing_families() -
     assert "biomcp disease drugs melanoma" in disease
     assert 'biomcp disease articles "Lynch syndrome"' in disease
     assert "no direct `trial <helper>` family" in trial
+    for phase in ("PHASE1/PHASE2", "PHASE2/PHASE3", "I_II", "II_III"):
+        assert phase in trial
     assert "`biomcp drug adverse-events <name>`" in adverse_event
     assert "PGX does not expose a separate helper family" in pgx
     assert "GWAS is search-only." in gwas
@@ -309,6 +311,14 @@ def test_entity_guides_keep_canonical_section_flow_and_note_missing_families() -
     assert "## Practical tips" in pathway
     assert "## Practical tips" in protein
     assert "## Practical tips" in variant
+
+
+def test_quick_reference_advertises_the_bounded_trial_phase_contract() -> None:
+    quick_reference = _read("docs/reference/quick-reference.md")
+    for phase in ("PHASE1/PHASE2", "PHASE2/PHASE3", "I_II", "II_III"):
+        assert phase in quick_reference
+    assert "early_phase1" in quick_reference
+    assert "unsupported on NCI" in quick_reference
 
 
 def test_discover_guide_uses_direct_copy_and_related_guides() -> None:

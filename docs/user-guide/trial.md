@@ -111,10 +111,19 @@ NCI status handling is source-specific. Use one normalized status at a time:
 
 NCI phase handling is also source-specific:
 
-- `1`, `2`, `3`, and `4` map to CTS `I`, `II`, `III`, and `IV`
-- `1/2` maps to CTS `I_II`
-- `NA` stays `NA`
-- `early_phase1` is rejected for `--source nci`
+- shared input also accepts `NA`/`N/A` and the early-phase aliases
+  `EARLY_PHASE1`, `early_phase1`, and `early1`; matching is case-insensitive
+- canonical `PHASE1` through `PHASE4`, numeric `1` through `4`, and Roman `I`
+  through `IV` normalize to the same four scalar phases
+- `PHASE1/PHASE2`, `1/2`, and `I_II` denote the single combined Phase 1/2
+  label and map to CTS `I_II`
+- `PHASE2/PHASE3`, `2/3`, and `II_III` denote the single combined Phase 2/3
+  label and map to CTS `II_III`
+- `NA` and `N/A` become `NA`
+- scalar NCI requests stay scalar rather than expanding to overlapping
+  combined labels
+- `EARLY_PHASE1`, `early_phase1`, and `early1` are accepted shared inputs but
+  rejected for `--source nci`; CTGov accepts them
 
 ```bash
 biomcp search trial -c melanoma --source nci --status recruiting --phase 1/2 --limit 5

@@ -156,6 +156,7 @@ fn nci_phase_mapping_uses_i_ii_for_combined_phase() {
         ("4", vec!["IV"]),
         ("na", vec!["NA"]),
         ("1/2", vec!["I_II"]),
+        ("2/3", vec!["II_III"]),
     ];
 
     for (input_phase, expected) in cases {
@@ -173,9 +174,58 @@ fn nci_phase_mapping_uses_i_ii_for_combined_phase() {
 }
 
 #[test]
+fn recorded_provider_phase_output_round_trips_to_exact_nci_request() {
+    let ctgov: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../testdata/sources/ctgov/search_keytruda_limit3_20260811.json"
+    ))
+    .expect("receipted CTGov response");
+    let ctgov_study: crate::sources::clinicaltrials::CtGovStudy =
+        serde_json::from_value(ctgov["studies"][0].clone()).expect("recorded CTGov study");
+    let ctgov_phase = crate::transform::trial::from_ctgov_hit(&ctgov_study)
+        .phase
+        .expect("recorded CTGov phase");
+    assert_eq!(ctgov_phase, "PHASE1/PHASE2");
+
+    let nci: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../testdata/sources/nci_cts/search_melanoma_20260811.json"
+    ))
+    .expect("receipted NCI response");
+    let nci_phase = crate::transform::trial::from_nci_hit(&nci["data"][0])
+        .expect("recorded NCI hit")
+        .phase
+        .expect("recorded NCI phase");
+    assert_eq!(nci_phase, "III");
+
+    for (phase, expected) in [(ctgov_phase, "I_II"), (nci_phase, "III")] {
+        let normalized = validate_trial_search(&TrialSearchFilters {
+            source: TrialSource::NciCts,
+            phase: Some(phase),
+            ..Default::default()
+        })
+        .expect("emitted phase should pass public validation");
+        let phases = nci_phase_filters(normalized.normalized_phase.as_deref())
+            .expect("normalized phase should translate");
+        let plan = NciCtsClient::search_plan(
+            "test-key",
+            &NciSearchParams {
+                phases,
+                size: 1,
+                ..NciSearchParams::default()
+            },
+        );
+        assert_eq!(plan.query_value("phase"), Some(expected));
+    }
+}
+
+#[test]
 fn nci_source_rejects_early_phase1() {
-    let err = nci_phase_filters(Some(&["EARLY_PHASE1".to_string()]))
-        .expect_err("NCI should reject early_phase1");
+    let err = validate_trial_search(&TrialSearchFilters {
+        source: TrialSource::NciCts,
+        phase: Some("EARLY_PHASE1".into()),
+        ..Default::default()
+    })
+    .err()
+    .expect("NCI should reject early_phase1 during public validation");
     assert!(err.to_string().contains("early_phase1"));
     assert!(err.to_string().contains("--source nci"));
 }

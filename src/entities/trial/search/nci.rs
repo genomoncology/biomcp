@@ -126,6 +126,9 @@ fn nci_phase_filters(value: Option<&[String]>) -> Result<Vec<String>, BioMcpErro
     if phases == ["PHASE1", "PHASE2"] {
         return Ok(vec!["I_II".to_string()]);
     }
+    if phases == ["PHASE2", "PHASE3"] {
+        return Ok(vec!["II_III".to_string()]);
+    }
 
     phases
         .iter()

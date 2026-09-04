@@ -54,7 +54,7 @@
     },
     {
       "name": "search",
-      "description": "Search one biomedical entity with typed, bounded inputs."
+      "description": "Search a biomedical entity with typed, bounded inputs."
     },
     {
       "name": "get",

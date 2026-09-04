@@ -234,18 +234,24 @@ biomcp search trial -c melanoma --lat 42.3601 --lon -71.0589 --distance 50 --lim
 
 ## Trial phase values
 
-`--phase` accepts either numeric shorthand or explicit phase labels.
+`--phase` accepts numeric, canonical, or Roman labels. Matching is
+case-insensitive. A combined value means the provider's single combined phase
+label, not Phase 1 OR Phase 2 (or Phase 2 OR Phase 3).
 
 | Input | Interpreted as |
 |-------|----------------|
-| `1` | `PHASE1` |
-| `2` | `PHASE2` |
-| `3` | `PHASE3` |
-| `4` | `PHASE4` |
-| `phase1` | `PHASE1` |
-| `phase2` | `PHASE2` |
-| `phase3` | `PHASE3` |
-| `phase4` | `PHASE4` |
+| `NA`, `N/A` | `NA` |
+| `EARLY_PHASE1`, `early_phase1`, `early1` | `EARLY_PHASE1` |
+| `PHASE1`, `1`, `I` | `PHASE1` |
+| `PHASE2`, `2`, `II` | `PHASE2` |
+| `PHASE3`, `3`, `III` | `PHASE3` |
+| `PHASE4`, `4`, `IV` | `PHASE4` |
+| `PHASE1/PHASE2`, `1/2`, `I_II` | `PHASE1` + `PHASE2` combined label |
+| `PHASE2/PHASE3`, `2/3`, `II_III` | `PHASE2` + `PHASE3` combined label |
+
+CTGov translates combined values to an `AND` of the two phase terms. NCI maps
+them to CTS `I_II` and `II_III`. NCI keeps scalar requests scalar and rejects
+`early_phase1`; it does not broaden a scalar phase to overlapping combinations.
 
 ## NCI CTS trial notes
 
@@ -258,7 +264,7 @@ to NCI CTS semantics:
   NCI keyword flag.
 - `--status` accepts one normalized value at a time and maps it to CTS
   recruitment or lifecycle filters instead of sending raw CTGov status values.
-- `--phase 1/2` becomes CTS `I_II`; `early_phase1` is unsupported on NCI.
+- `--phase 1/2` / `2/3` become CTS `I_II` / `II_III`; `early_phase1` is unsupported on NCI.
 - `--lat/--lon/--distance` becomes `sites.org_coordinates_lat`,
   `sites.org_coordinates_lon`, and `sites.org_coordinates_dist=<N>mi`.
 

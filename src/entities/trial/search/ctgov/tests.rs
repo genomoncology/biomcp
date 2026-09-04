@@ -216,10 +216,64 @@ fn ctgov_query_term_joins_multi_phase_filters_with_and() {
         ..Default::default()
     };
 
-    let query = ctgov_query_term(&filters, Some(&["PHASE1".into(), "PHASE2".into()]))
-        .expect("query term should build")
-        .expect("query term should not be empty");
-    assert!(query.contains("(AREA[Phase]PHASE1 AND AREA[Phase]PHASE2)"));
+    for (phases, expected) in [
+        (
+            ["PHASE1".into(), "PHASE2".into()],
+            "(AREA[Phase]PHASE1 AND AREA[Phase]PHASE2)",
+        ),
+        (
+            ["PHASE2".into(), "PHASE3".into()],
+            "(AREA[Phase]PHASE2 AND AREA[Phase]PHASE3)",
+        ),
+    ] {
+        let query = ctgov_query_term(&filters, Some(&phases))
+            .expect("query term should build")
+            .expect("query term should not be empty");
+        assert!(query.contains(expected));
+    }
+}
+
+#[test]
+fn recorded_provider_phase_output_round_trips_to_exact_ctgov_request() {
+    let ctgov: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../testdata/sources/ctgov/search_keytruda_limit3_20260811.json"
+    ))
+    .expect("receipted CTGov response");
+    let ctgov_study: CtGovStudy =
+        serde_json::from_value(ctgov["studies"][0].clone()).expect("recorded CTGov study");
+    let ctgov_phase = crate::transform::trial::from_ctgov_hit(&ctgov_study)
+        .phase
+        .expect("recorded CTGov phase");
+    assert_eq!(ctgov_phase, "PHASE1/PHASE2");
+
+    let nci: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../testdata/sources/nci_cts/search_melanoma_20260811.json"
+    ))
+    .expect("receipted NCI response");
+    let nci_phase = crate::transform::trial::from_nci_hit(&nci["data"][0])
+        .expect("recorded NCI hit")
+        .phase
+        .expect("recorded NCI phase");
+    assert_eq!(nci_phase, "III");
+
+    for (phase, expected) in [
+        (ctgov_phase, "(AREA[Phase]PHASE1 AND AREA[Phase]PHASE2)"),
+        (nci_phase, "AREA[Phase]PHASE3"),
+    ] {
+        let filters = TrialSearchFilters {
+            source: TrialSource::ClinicalTrialsGov,
+            phase: Some(phase),
+            ..Default::default()
+        };
+        let normalized =
+            validate_trial_search(&filters).expect("emitted phase should pass public validation");
+        assert_eq!(
+            ctgov_query_term(&filters, normalized.normalized_phase.as_deref())
+                .expect("phase request should build")
+                .as_deref(),
+            Some(expected)
+        );
+    }
 }
 
 #[test]

@@ -31,11 +31,14 @@ pub struct TrialSearchArgs {
     /// mode is materially more expensive, especially with `--count-only`.
     #[arg(long, num_args = 1..)]
     pub facility: Vec<String>,
-    /// Filter by phase. Canonical CLI forms: NA, 1, 1/2, 2, 3, 4.
-    /// Accepted aliases: EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4.
+    /// Filter by phase. Canonical CLI forms: NA, 1, 1/2, 2, 2/3, 3, 4.
+    /// Scalar aliases: N/A; EARLY_PHASE1, early_phase1, early1; PHASE1 through
+    /// PHASE4; and Roman I through IV. Combined Roman aliases: I_II, II_III.
     ///
-    /// `1/2` matches the ClinicalTrials.gov combined Phase 1/Phase 2 label
-    /// (studies tagged as both phases), not Phase 1 OR Phase 2.
+    /// `1/2` matches the combined Phase 1/Phase 2 label and `2/3` matches the
+    /// combined Phase 2/Phase 3 label. Each means both phases, not Phase 1 OR
+    /// Phase 2. NCI maps them to `I_II` and `II_III`; early_phase1 is rejected
+    /// by NCI.
     #[arg(short = 'p', long)]
     pub phase: Option<String>,
     /// CTGov-only study type (e.g., interventional, observational)

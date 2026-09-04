@@ -33,6 +33,12 @@ fn trial_phase_help_explains_combined_phase_label() {
     assert!(help.contains("1/2"));
     assert!(help.contains("combined Phase 1/Phase 2 label"));
     assert!(help.contains("not Phase 1 OR Phase 2"));
+    assert!(help.contains("2/3"));
+    assert!(help.contains("I_II"));
+    assert!(help.contains("II_III"));
+    assert!(help.contains("N/A"));
+    assert!(help.contains("early1"));
+    assert!(help.contains("early_phase1 is rejected by NCI"));
 }
 
 #[test]
@@ -47,8 +53,8 @@ fn trial_sex_help_explains_all_means_no_restriction() {
 fn trial_phase_help_explains_canonical_numeric_forms_and_aliases() {
     let help = render_trial_search_long_help();
 
-    assert!(help.contains("Canonical CLI forms: NA, 1, 1/2, 2, 3, 4."));
-    assert!(help.contains("Accepted aliases: EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4."));
+    assert!(help.contains("Canonical CLI forms: NA, 1, 1/2, 2, 2/3, 3, 4."));
+    assert!(help.contains("Roman I through IV"));
 }
 
 #[test]

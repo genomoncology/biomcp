@@ -414,10 +414,10 @@ Source-specific notes:
   - CTGov: `--next-page` is not supported when intervention alias expansion fans out to multiple queries; use `--offset` or `--no-alias-expand`.
   - CTGov: `--mutation` broadly searches eligibility, title, summary, and keywords. After broad discovery, simple mutation text is checked against registry eligibility to remove exclusion-only matches; trials where the term is absent remain discoverable, while boolean expressions are discovery-only.
   - CTGov: `--biomarker` is a phrase search over keyword, intervention, and condition; try it for gene-level broadening when a specific `--mutation` returns zero rows.
-  - CTGov: `--phase 1/2` keeps the combined Phase 1/Phase 2 label semantics, not Phase 1 OR Phase 2.
+  - CTGov: `--phase 1/2` and `--phase 2/3` keep combined-label semantics, not an OR search.
   - NCI: `--condition` grounds to an NCI disease ID when available and otherwise falls back to CTS `keyword`.
   - NCI: `--status` accepts one mapped status at a time; comma-separated status lists are rejected.
-  - NCI: `--phase 1/2` maps to CTS `I_II`; `early_phase1` is not supported on `--source nci`.
+  - NCI: `--phase 1/2` / `2/3` map to CTS `I_II` / `II_III`; `early_phase1` is not supported on `--source nci`.
   - NCI: `--lat`/`--lon`/`--distance` use direct `sites.org_coordinates_*` CTS filters.
   - NCI: use one quoted value total across `--biomarker`, `--mutation`, and `--criteria`.
   - NCI: `--study-type`, `--sponsor`, and update-date filters are rejected rather than ignored.
