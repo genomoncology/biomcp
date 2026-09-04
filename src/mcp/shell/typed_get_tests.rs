@@ -1,8 +1,131 @@
 use std::collections::BTreeSet;
 
+use clap::CommandFactory;
 use serde_json::json;
 
 use super::{TypedGet, TypedVariantErepo, get_args};
+
+#[test]
+fn cli_catalog_gettable_inventory_matches_clap_get_subcommands() {
+    let catalog = crate::cli::list::catalog::entities()
+        .into_iter()
+        .filter(|entity| entity.gettable)
+        .map(|entity| entity.name)
+        .collect::<BTreeSet<_>>();
+    let command = crate::cli::Cli::command();
+    let clap = command
+        .find_subcommand("get")
+        .expect("get command")
+        .get_subcommands()
+        .map(clap::Command::get_name)
+        .collect::<BTreeSet<_>>();
+
+    assert_eq!(catalog, clap);
+}
+
+#[test]
+fn typed_get_schema_and_mapper_match_independent_cli_catalog_oracle() {
+    let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
+    let branches = schema["oneOf"].as_array().expect("typed get branches");
+    let catalog = crate::cli::list::catalog::entities()
+        .into_iter()
+        .filter(|entity| entity.gettable)
+        .collect::<Vec<_>>();
+
+    let branch_entities = branches
+        .iter()
+        .map(|branch| {
+            branch["properties"]["entity"]["const"]
+                .as_str()
+                .expect("branch entity")
+        })
+        .collect::<BTreeSet<_>>();
+    let expected_entities = catalog
+        .iter()
+        .map(|entity| entity.name)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(branches.len(), expected_entities.len());
+    assert_eq!(branch_entities, expected_entities);
+
+    let article_catalog = crate::cli::list::catalog::sections("article");
+    assert!(article_catalog.contains(&"asset"));
+    assert_eq!(
+        catalog
+            .iter()
+            .flat_map(|entity| entity
+                .sections
+                .iter()
+                .map(move |section| (entity.name, *section)))
+            .filter(|(entity, section)| *entity == "article" && *section == "asset")
+            .collect::<Vec<_>>(),
+        [("article", "asset")]
+    );
+
+    for entity in catalog {
+        let branch = branches
+            .iter()
+            .find(|branch| branch["properties"]["entity"]["const"] == entity.name)
+            .unwrap_or_else(|| panic!("missing {} branch", entity.name));
+        if entity.name == "author" {
+            assert!(branch["properties"].get("sections").is_none());
+            continue;
+        }
+
+        let expected_sections = entity
+            .sections
+            .iter()
+            .copied()
+            .filter(|section| !(entity.name == "article" && *section == "asset"))
+            .collect::<BTreeSet<_>>();
+        let advertised_sections = branch["properties"]["sections"]["items"]["enum"]
+            .as_array()
+            .expect("section enum")
+            .iter()
+            .map(|section| section.as_str().expect("string section"))
+            .collect::<BTreeSet<_>>();
+        assert_eq!(advertised_sections, expected_sections, "{}", entity.name);
+
+        for section in expected_sections {
+            get_args(TypedGet(json!({
+                "entity": entity.name,
+                "id": "fixture-id",
+                "sections": [section]
+            })))
+            .unwrap_or_else(|error| panic!("{} {section} did not map: {error}", entity.name));
+        }
+    }
+
+    let assets = get_args(TypedGet(json!({
+        "entity": "article",
+        "id": "22663011",
+        "sections": ["assets"]
+    })))
+    .expect("article asset manifest remains typed-MCP safe");
+    assert_eq!(assets, ["biomcp", "get", "article", "22663011", "assets"]);
+
+    for (entity, section, filename) in [
+        ("article", "asset", "fixture.bin"),
+        ("trial", "document", "fixture.pdf"),
+    ] {
+        let error = get_args(TypedGet(json!({
+            "entity": entity,
+            "id": "fixture-id",
+            "sections": [section, filename]
+        })))
+        .expect_err("typed binary download must be rejected");
+        assert!(error.to_string().contains("CLI-only"));
+    }
+
+    let trial = branches
+        .iter()
+        .find(|branch| branch["properties"]["entity"]["const"] == "trial")
+        .expect("trial branch");
+    let trial_sections = trial["properties"]["sections"]["items"]["enum"]
+        .as_array()
+        .expect("trial sections");
+    assert!(!trial_sections.contains(&json!("document")));
+    assert!(!trial_sections.contains(&json!("documents")));
+}
 
 #[test]
 fn adverse_event_schema_and_mapper_deduplicate_sections_only_for_that_entity() {

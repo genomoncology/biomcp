@@ -19,7 +19,7 @@ use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
 mod typed_get;
-use self::typed_get::typed_get_schema;
+use self::typed_get::{typed_get_capabilities, typed_get_schema};
 mod http_server;
 pub(super) use self::http_server::run_http;
 mod pre_session;
@@ -775,31 +775,31 @@ fn search_args(input: TypedSearch) -> Result<Vec<String>, McpError> {
     Ok(args)
 }
 
+/// Maps typed get input onto the existing CLI grammar without doing provider work.
+///
+/// The accepted entity, section, and duplicate policies come from the same MCP
+/// capability projection that generates the schema. That projection starts from
+/// the CLI catalog but deliberately excludes article `asset`: it is a variadic
+/// binary download that can name server-local output and is therefore CLI-only.
+/// The safe article `assets` manifest remains an ordinary typed section. Trial
+/// terminal document forms remain outside the typed projection as well. Their
+/// explicit checks below run before ordinary section validation so callers keep
+/// the established CLI-only guidance instead of receiving a generic bad-section
+/// error. Adverse-event's repeated-section behavior remains intentionally
+/// idempotent; all other section-bearing entities reject duplicates.
 fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
     let object = input
         .0
         .as_object()
         .ok_or_else(|| input_error("typed get input must be an object"))?;
     let entity = checked_text(object.get("entity").unwrap_or(&Value::Null), "entity", 256)?;
-    let allowed_entities = [
-        "author",
-        "gene",
-        "article",
-        "disease",
-        "diagnostic",
-        "pgx",
-        "trial",
-        "variant",
-        "drug",
-        "pathway",
-        "protein",
-        "adverse-event",
-    ];
-    if !allowed_entities.contains(&entity.as_str()) {
-        return Err(input_error("invalid typed get entity"));
-    }
+    let capabilities = typed_get_capabilities();
+    let capability = capabilities
+        .iter()
+        .find(|capability| capability.entity == entity)
+        .ok_or_else(|| input_error("invalid typed get entity"))?;
     let id = checked_text(object.get("id").unwrap_or(&Value::Null), "id", 512)?;
-    let allowed_keys = if entity == "author" {
+    let allowed_keys = if capability.sections.is_none() {
         &["entity", "id", "json"][..]
     } else if entity == "variant" {
         &["entity", "id", "sections", "assembly", "json"][..]
@@ -844,14 +844,14 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
             None,
         ));
     }
-    let allowed_sections = crate::cli::list::catalog::sections(&entity);
+    let allowed_sections = capability.sections.as_deref().unwrap_or_default();
     let mut seen = BTreeSet::new();
     for section in sections {
         if !allowed_sections.contains(&section.as_str()) {
             return Err(input_error(format!("invalid {entity} section: {section}")));
         }
         if !seen.insert(section.clone()) {
-            if entity == "adverse-event" {
+            if !capability.reject_duplicate_sections {
                 continue;
             }
             return Err(input_error(format!(

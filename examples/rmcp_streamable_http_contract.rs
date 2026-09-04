@@ -65,6 +65,36 @@ fn tool_schema(tool: &Tool) -> serde_json::Value {
     serde_json::to_value(&tool.input_schema).unwrap_or_else(|_| json!({}))
 }
 
+fn get_schema_branch<'a>(
+    schema: &'a serde_json::Value,
+    entity: &str,
+) -> anyhow::Result<&'a serde_json::Value> {
+    schema["oneOf"]
+        .as_array()
+        .and_then(|branches| {
+            branches
+                .iter()
+                .find(|branch| branch["properties"]["entity"]["const"] == entity)
+        })
+        .ok_or_else(|| anyhow::anyhow!("get schema missing {entity} branch"))
+}
+
+fn get_schema_sections<'a>(
+    schema: &'a serde_json::Value,
+    entity: &str,
+) -> anyhow::Result<Vec<&'a str>> {
+    get_schema_branch(schema, entity)?["properties"]["sections"]["items"]["enum"]
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("get schema {entity} branch missing sections enum"))?
+        .iter()
+        .map(|section| {
+            section
+                .as_str()
+                .ok_or_else(|| anyhow::anyhow!("get schema {entity} branch has non-string section"))
+        })
+        .collect()
+}
+
 fn json_contains(value: &serde_json::Value, needle: &str) -> bool {
     match value {
         serde_json::Value::String(text) => text == needle,
@@ -280,33 +310,48 @@ async fn print_typed_tool_surface(
     {
         anyhow::bail!("search schema must have eight entity-specific branches");
     }
-    if get_schema
-        .get("oneOf")
-        .and_then(serde_json::Value::as_array)
-        .is_none_or(|branches| branches.len() != 12)
-    {
-        anyhow::bail!("get schema must have twelve entity-specific branches");
-    }
     if !json_property_contains(&search_schema, "entity", "gwas") {
         anyhow::bail!("search entity schema missing gwas branch");
     }
     if !json_property_contains(&search_schema, "entity", "author") {
         anyhow::bail!("search entity schema missing author enum");
     }
-    if !json_property_contains(&get_schema, "entity", "author") {
-        anyhow::bail!("get entity schema missing author enum");
+    if get_schema_branch(&get_schema, "author")?["properties"]
+        .get("sections")
+        .is_some()
+    {
+        anyhow::bail!("get schema author branch must not accept sections");
     }
     if !json_property_contains(&search_schema, "limit", "25") {
         anyhow::bail!("search limit schema missing 25 bound");
     }
-    if !json_property_contains(&get_schema, "entity", "gene") {
-        anyhow::bail!("get entity schema missing gene enum");
+    for (section, owner) in [
+        ("ontology", "gene"),
+        ("conditions", "diagnostic"),
+        ("guidelines", "pgx"),
+        ("guidance", "adverse-event"),
+    ] {
+        let owners = get_schema["oneOf"]
+            .as_array()
+            .expect("get schema branches")
+            .iter()
+            .filter_map(|branch| {
+                let entity = branch["properties"]["entity"]["const"].as_str()?;
+                let sections = branch["properties"]["sections"]["items"]["enum"].as_array()?;
+                sections.contains(&json!(section)).then_some(entity)
+            })
+            .collect::<Vec<_>>();
+        if owners != [owner] {
+            anyhow::bail!("get section {section} must belong only to {owner}; got {owners:?}");
+        }
     }
-    if !json_property_contains(&get_schema, "sections", "pathways") {
-        anyhow::bail!("get sections schema missing pathways enum");
+    let article_sections = get_schema_sections(&get_schema, "article")?;
+    if !article_sections.contains(&"assets") || article_sections.contains(&"asset") {
+        anyhow::bail!("article get schema must expose assets but not CLI-only asset");
     }
-    if !json_property_contains(&get_schema, "sections", "indexing") {
-        anyhow::bail!("get sections schema missing indexing enum");
+    let trial_sections = get_schema_sections(&get_schema, "trial")?;
+    if trial_sections.contains(&"document") || trial_sections.contains(&"documents") {
+        anyhow::bail!("trial get schema must not expose terminal document forms");
     }
     for bound in ["1", "50"] {
         if !named_property_contains(&variant_normalize_car_schema, "inputs", bound) {
@@ -342,7 +387,8 @@ async fn print_typed_tool_surface(
     println!("search and get schemas use entity-specific branches");
     println!("search schema includes a bounded limit");
     println!("search and get schemas include author entity");
-    println!("get schema includes entity and sections enum");
+    println!("get schema assigns sections only to their owning entities");
+    println!("article schema exposes assets manifest but not asset download");
     println!("variant_articles schema includes identity verification controls");
     println!("indexing");
     Ok(())

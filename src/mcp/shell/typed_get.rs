@@ -1,16 +1,43 @@
 use serde_json::{Map, json};
 
+#[derive(Debug)]
+pub(super) struct TypedGetCapability {
+    pub(super) entity: &'static str,
+    pub(super) sections: Option<Vec<&'static str>>,
+    pub(super) reject_duplicate_sections: bool,
+}
+
+pub(super) fn typed_get_capabilities() -> Vec<TypedGetCapability> {
+    crate::cli::list::catalog::entities()
+        .into_iter()
+        .filter(|entity| entity.gettable)
+        .map(|entity| TypedGetCapability {
+            entity: entity.name,
+            sections: (entity.name != "author").then(|| {
+                entity
+                    .sections
+                    .iter()
+                    .copied()
+                    .filter(|section| !(entity.name == "article" && *section == "asset"))
+                    .collect()
+            }),
+            reject_duplicate_sections: entity.name != "adverse-event",
+        })
+        .collect()
+}
+
 pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
-    let branches = ["author", "gene", "article", "disease", "diagnostic", "pgx", "trial", "variant", "drug", "pathway", "protein", "adverse-event"]
-        .into_iter().map(|entity| {
+    let branches = typed_get_capabilities()
+        .into_iter().map(|capability| {
+            let entity = capability.entity;
             let mut properties = Map::from_iter([
                 ("entity".into(), json!({"const":entity})),
                 ("id".into(), json!({"type":"string","minLength":1,"maxLength":512})),
                 ("json".into(), json!({"type":"boolean","default":false})),
             ]);
-            if entity != "author" {
-                let mut sections = json!({"type":"array","maxItems":16,"items":{"enum":crate::cli::list::catalog::sections(entity)}});
-                if entity != "adverse-event" {
+            if let Some(section_names) = capability.sections {
+                let mut sections = json!({"type":"array","maxItems":16,"items":{"enum":section_names}});
+                if capability.reject_duplicate_sections {
                     sections["uniqueItems"] = json!(true);
                 }
                 properties.insert("sections".into(), sections);

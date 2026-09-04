@@ -146,7 +146,8 @@ all listed MCP tools are read-only annotated
 all listed MCP tools have titles and descriptions
 search and get schemas use entity-specific branches
 search schema includes a bounded limit
-get schema includes entity and sections enum
+get schema assigns sections only to their owning entities
+article schema exposes assets manifest but not asset download
 search and get schemas include author entity
 variant_articles schema includes identity verification controls
 indexing'
