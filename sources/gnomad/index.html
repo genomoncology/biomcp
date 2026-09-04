@@ -4211,7 +4211,7 @@ replaces population fields previously copied from MyVariant.info payloads.</p>
 </tr>
 <tr>
 <td><code>get variant &lt;id&gt; population</code></td>
-<td>Compact exome/genome frequencies, highest ancestry frequency, grpmax FAF95, and quality flags</td>
+<td>Compact exome/genome frequencies, highest observed population-row frequency with AC/AN, grpmax FAF95, and quality flags</td>
 <td>Direct <code>gnomad_r4</code> GraphQL query for the resolved GRCh38 coordinate</td>
 </tr>
 <tr>
@@ -4233,6 +4233,9 @@ replaces population fields previously copied from MyVariant.info payloads.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>population
 </code></pre></div>
 <p>Returns compact direct gnomAD v4 exome and genome population results.
+For the highest observed population-row frequency, allele count (AC) is shown
+over allele number (AN). AN is the AF denominator: the number of alleles with a
+defined genotype call at that site, not a count of samples or people.
 JSON keeps raw numeric frequencies, counts, FAF95, ancestry rows, and source flag names.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>population
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>population-details

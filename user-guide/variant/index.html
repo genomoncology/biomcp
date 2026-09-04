@@ -4543,8 +4543,10 @@ fallback.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;GRCh38:chr7:g.140753336A&gt;T&quot;</span><span class="w"> </span>population
 </code></pre></div>
 <p>Population Markdown shows compact exome and genome frequencies, the highest
-reported ancestry frequency, grpmax FAF95, and quality status. Use the full-table
-route when you need every ancestry row:</p>
+observed population-row frequency with its allele count and allele number,
+grpmax FAF95, and quality status. Allele number is the AF denominator: the
+number of alleles with a defined genotype call at that site. Use the full-table
+route when you need every population row:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;GRCh38:chr7:g.140753336A&gt;T&quot;</span><span class="w"> </span>population-details
 </code></pre></div>
 <p>Population JSON exposes a direct <code>gnomad_r4</code> result with separate <code>exome</code> and

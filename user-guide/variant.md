@@ -218,8 +218,10 @@ biomcp get variant "GRCh38:chr7:g.140753336A>T" population
 ```
 
 Population Markdown shows compact exome and genome frequencies, the highest
-reported ancestry frequency, grpmax FAF95, and quality status. Use the full-table
-route when you need every ancestry row:
+observed population-row frequency with its allele count and allele number,
+grpmax FAF95, and quality status. Allele number is the AF denominator: the
+number of alleles with a defined genotype call at that site. Use the full-table
+route when you need every population row:
 
 ```bash
 biomcp get variant "GRCh38:chr7:g.140753336A>T" population-details
