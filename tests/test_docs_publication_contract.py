@@ -204,6 +204,10 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
     assert all("biomcp_verify=" in url for url in urls)
     assert all(request.get_header("Cache-control") == "no-cache" for request in seen)
     assert all(request.get_header("Pragma") == "no-cache" for request in seen)
+    assert all(
+        request.get_header("User-agent") == "BioMCP-docs-publication-verifier/1"
+        for request in seen
+    )
     assert all(0 < timeout <= verifier.REQUEST_TIMEOUT_SECONDS for timeout in timeouts)
 
     def redirected(request, timeout):

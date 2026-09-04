@@ -20,6 +20,7 @@ BIOMCP_URL = re.compile(r"https://biomcp\.org(?:/[^\s)>`\]]*)?")
 REVISION_DIRECTORY = "__biomcp_revision__"
 MAX_TIMEOUT_SECONDS = 600.0
 REQUEST_TIMEOUT_SECONDS = 20.0
+USER_AGENT = "BioMCP-docs-publication-verifier/1"
 
 
 class VerificationError(RuntimeError):
@@ -62,7 +63,11 @@ def _fetch(
     target = urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
     request = Request(
         _cache_busted(target, attempt),
-        headers={"Cache-Control": "no-cache", "Pragma": "no-cache"},
+        headers={
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "User-Agent": USER_AGENT,
+        },
     )
     with opener(
         request, timeout=min(REQUEST_TIMEOUT_SECONDS, timeout_seconds)

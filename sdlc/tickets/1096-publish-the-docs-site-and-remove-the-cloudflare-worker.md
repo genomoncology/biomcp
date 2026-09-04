@@ -118,9 +118,15 @@ any documentation page, the set or bytes of Markdown twins, theme, or navigation
    `docs-edge-worker.mjs` and `wrangler.toml`; do not add an edge replacement.
 8. After the Pages build request, poll the SHA-named witness URL for at most ten
    minutes. Every probe must carry a unique cache-busting query and request
-   revalidation/no-cache so the Cloudflare proxy cannot turn a stale response
-   into success. Require the normalized scheme/host/port origin and URL path to
-   remain exact across redirects, as well as the exact SHA body. Once the
+   revalidation/no-cache plus the stable non-browser user agent
+   `BioMCP-docs-publication-verifier/1`. The explicit user agent is required on
+   every live request because hosted run 33842254673 for revision
+   `ab063ef3b8e371b540fa508d775b9d38d0f8387a` received HTTP 403 from the
+   Cloudflare-fronted host with Python urllib's
+   default identity, while a direct read-only probe of the same witness returned
+   200 with that explicit identity. Require the normalized scheme/host/port
+   origin and URL path to remain exact across redirects, as well as the exact
+   SHA body. Once the
    witness is exact, fetch the published `llms.txt`, compare it byte-for-byte to
    the trusted local build before parsing only that local copy, then fetch
    `llms-full.txt` and explicit Markdown routes with the same cache controls and
@@ -209,3 +215,9 @@ branch, locked MkDocs toolchain, and ordinary Actions token are already present.
   parsing only the local copy, and confine every resolved expected file beneath
   the resolved build directory. Remediation and adversarial regressions applied;
   independent re-review then ACCEPTED the implementation on 2026-09-04.
+- Hosted verification: FAIL 2026-09-04 — run 33842254673 at
+  `ab063ef3b8e371b540fa508d775b9d38d0f8387a` remained stuck retrying HTTP 403
+  responses to urllib's default user agent and could not pass; the same live
+  witness was 200 with `BioMCP-docs-publication-verifier/1`. The stable explicit
+  user-agent contract and all-request regression were added; remediation is
+  applied and re-review is pending.
