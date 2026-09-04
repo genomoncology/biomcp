@@ -78,7 +78,7 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 | Facility | City | Postal code | Country | Status | Contact |
 |---|---|---|---|---|---|
 {% for loc in locations[:20] -%}
-| {{ loc.facility | truncate(40) }} | {{ loc.city }}{% if loc.state %}, {{ loc.state }}{% endif %} | {{ loc.postal_code or "-" }} | {{ loc.country }} | {{ loc.status or "-" }} | {% if loc.contact_name %}{{ loc.contact_name }}{% if loc.contact_role %} ({{ loc.contact_role }}){% endif %}{% if loc.contact_phone %} {{ loc.contact_phone }}{% endif %}{% if loc.contact_email %} {{ loc.contact_email }}{% endif %}{% else %}-{% endif %} |
+| {{ (loc.facility or "-") | truncate(40) | markdown_cell }} | {% if loc.city and loc.state %}{{ (loc.city ~ ", " ~ loc.state) | markdown_cell }}{% elif loc.city %}{{ loc.city | markdown_cell }}{% elif loc.state %}{{ loc.state | markdown_cell }}{% else %}-{% endif %} | {{ (loc.postal_code or "-") | markdown_cell }} | {{ (loc.country or "-") | markdown_cell }} | {{ (loc.status or "-") | markdown_cell }} | {% if loc.contact_name %}{{ loc.contact_name | markdown_cell }}{% if loc.contact_role %} ({{ loc.contact_role | markdown_cell }}){% endif %}{% if loc.contact_phone %} {{ loc.contact_phone | markdown_cell }}{% endif %}{% if loc.contact_email %} {{ loc.contact_email | markdown_cell }}{% endif %}{% else %}-{% endif %} |
 {% endfor -%}
 {% endif -%}
 {% if show_outcomes_section and outcomes -%}

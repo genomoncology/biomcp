@@ -238,6 +238,8 @@ def _write_fixture_contract_repo(
     declare_inline: bool = True,
     disk_fixture: object | None = None,
     declare_disk: bool = True,
+    disk_directory: str = "clinicaltrials",
+    disk_selector: str = "/",
 ) -> Path:
     source_root = repository_root / "testdata" / "sources"
     schema = [
@@ -316,12 +318,13 @@ def _write_fixture_contract_repo(
     on_disk: list[dict[str, str]] = []
     if disk_fixture is not None:
         body = json.dumps(disk_fixture).encode()
-        destination = source_root / "clinicaltrials" / "authored.json"
+        fixture_path = f"{disk_directory}/authored.json"
+        destination = source_root / fixture_path
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(body)
         entries.append(
             {
-                "path": "clinicaltrials/authored.json",
+                "path": fixture_path,
                 "classification": "authored",
                 "authored_reason": "Person-bearing values cannot be recorded.",
             }
@@ -329,14 +332,14 @@ def _write_fixture_contract_repo(
         parsing = repository_root / "src" / "sources" / "clinicaltrials" / "tests.rs"
         parsing.parent.mkdir(parents=True, exist_ok=True)
         parsing.write_text(
-            'include_str!("../../../../testdata/sources/clinicaltrials/authored.json");\n',
+            f'include_str!("../../../../testdata/sources/{fixture_path}");\n',
             encoding="utf-8",
         )
         if declare_disk:
             on_disk.append(
                 {
-                    "path": "clinicaltrials/authored.json",
-                    "selector": "/",
+                    "path": fixture_path,
+                    "selector": disk_selector,
                     "endpoint": "ctgov",
                 }
             )
@@ -442,13 +445,13 @@ def _write_fixture_contract_repo(
                 {
                     "endpoint": "ctgov",
                     "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lat",
-                    "limitation": "The CTGov schema has an opaque GeoPoint leaf.",
+                    "limitation": "The recorded CTGov schema exposes geoPoint as an opaque GeoPoint leaf.",
                     "evidence_path": "ctgov/get_nct06131398_full_20260903.json",
                 },
                 {
                     "endpoint": "ctgov",
                     "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lon",
-                    "limitation": "The CTGov schema has an opaque GeoPoint leaf.",
+                    "limitation": "The recorded CTGov schema exposes geoPoint as an opaque GeoPoint leaf.",
                     "evidence_path": "ctgov/get_nct06131398_full_20260903.json",
                 },
             ],
@@ -500,6 +503,8 @@ def _copy_current_trial_contract(repository_root: Path) -> Path:
         "src/transform/trial.rs",
         "src/entities/trial/get.rs",
         "src/entities/trial/get/tests.rs",
+        "src/entities/trial/search/ctgov/tests.rs",
+        "src/entities/trial/search/nci/tests.rs",
         "src/sources/clinicaltrials/tests/parsing.rs",
         "src/sources/nci_cts/tests/parsing.rs",
     ):
@@ -696,6 +701,52 @@ def test_fixture_key_contract_fails_closed_on_undeclared_consumed_file(
     assert "consumed trial fixture is undeclared" in result.stderr
 
 
+def test_fixture_key_contract_discovers_declared_ctgov_capture(tmp_path: Path) -> None:
+    source_root = _write_fixture_contract_repo(
+        tmp_path / "repo",
+        '{"protocolSection": {}}',
+        disk_fixture={"protocolSection": {}},
+        disk_directory="ctgov",
+    )
+
+    result = _audit(source_root)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_fixture_key_contract_accepts_ctgov_search_record_selector(
+    tmp_path: Path,
+) -> None:
+    source_root = _write_fixture_contract_repo(
+        tmp_path / "repo",
+        '{"protocolSection": {}}',
+        disk_fixture={"studies": [{"protocolSection": {}}]},
+        disk_directory="ctgov",
+        disk_selector="/studies/*",
+    )
+
+    result = _audit(source_root)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_fixture_key_contract_rejects_undeclared_consumed_ctgov_capture(
+    tmp_path: Path,
+) -> None:
+    source_root = _write_fixture_contract_repo(
+        tmp_path / "repo",
+        '{"protocolSection": {}}',
+        disk_fixture={"protocolSection": {}},
+        disk_directory="ctgov",
+        declare_disk=False,
+    )
+
+    result = _audit(source_root)
+
+    assert result.returncode != 0
+    assert "ctgov/authored.json: consumed trial fixture is undeclared" in result.stderr
+
+
 def test_fixture_key_contract_rejects_dynamic_consumed_fixture_reference(
     tmp_path: Path,
 ) -> None:
@@ -716,6 +767,53 @@ def test_fixture_key_contract_rejects_dynamic_consumed_fixture_reference(
     assert result.returncode != 0
     assert "dynamic fixture! reference is unsupported" in result.stderr
     assert "clinicaltrials" in result.stderr
+
+
+def test_fixture_key_contract_rejects_dynamic_ctgov_fixture_reference(
+    tmp_path: Path,
+) -> None:
+    source_root = _write_fixture_contract_repo(
+        tmp_path / "repo", '{"protocolSection": {}}'
+    )
+    parsing = tmp_path / "repo" / "src" / "sources" / "clinicaltrials" / "tests.rs"
+    parsing.parent.mkdir(parents=True, exist_ok=True)
+    parsing.write_text(
+        'const ROOT: &str = "/testdata/sources/ctgov/";\n'
+        "fn dynamic(name: &str) { let _ = fixture!(name); }\n",
+        encoding="utf-8",
+    )
+
+    result = _audit(source_root)
+
+    assert result.returncode != 0
+    assert "dynamic fixture! reference is unsupported for ctgov" in result.stderr
+
+
+def test_fixture_key_contract_accepts_closed_ctgov_geo_supplement(
+    tmp_path: Path,
+) -> None:
+    source_root = _write_fixture_contract_repo(
+        tmp_path / "repo",
+        '{"protocolSection": {"contactsLocationsModule": {"locations": '
+        '[{"geoPoint": {"lat": 1.0, "lon": 2.0}}]}}}',
+    )
+
+    result = _audit(source_root)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_fixture_key_contract_rejects_unknown_opaque_geo_child(tmp_path: Path) -> None:
+    source_root = _write_fixture_contract_repo(
+        tmp_path / "repo",
+        '{"protocolSection": {"contactsLocationsModule": {"locations": '
+        '[{"geoPoint": {"altitude": 1.0}}]}}}',
+    )
+
+    result = _audit(source_root)
+
+    assert result.returncode != 0
+    assert "geoPoint.altitude" in result.stderr
 
 
 def test_consumed_fixture_discovery_assembles_split_concat_literal_path(
@@ -1029,7 +1127,9 @@ def test_code_key_contract_boundary_is_closed(tmp_path: Path, change: str) -> No
     assert "code-key boundar" in result.stderr
 
 
-@pytest.mark.parametrize("change", ("missing", "altered", "duplicate", "extra"))
+@pytest.mark.parametrize(
+    "change", ("missing", "altered", "limitation", "duplicate", "extra")
+)
 def test_code_key_contract_supplemental_attestations_are_closed(
     tmp_path: Path, change: str
 ) -> None:
@@ -1041,6 +1141,8 @@ def test_code_key_contract_supplemental_attestations_are_closed(
         supplements.pop()
     elif change == "altered":
         supplements[0]["evidence_path"] = "ctgov/wrong.json"
+    elif change == "limitation":
+        supplements[0]["limitation"] = "Opaque enough to sound plausible."
     elif change == "duplicate":
         supplements.append(dict(supplements[0]))
     else:
@@ -1056,6 +1158,8 @@ def test_code_key_contract_supplemental_attestations_are_closed(
     result = _audit(source_root)
     assert result.returncode != 0
     assert "supplement" in result.stderr.lower()
+    if change == "limitation":
+        assert "altered supplemental declaration" in result.stderr
 
 
 def test_code_key_discovery_ignores_commented_fake_reads_and_declarations(

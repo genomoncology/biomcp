@@ -22,7 +22,7 @@ fn receipted_ctgov_location_preserves_postal_code_in_json_and_markdown() {
         .as_ref()
         .expect("locations")
         .iter()
-        .find(|location| location.facility == "Sarah Cannon Research Institute")
+        .find(|location| location.facility.as_deref() == Some("Sarah Cannon Research Institute"))
         .expect("Sarah Cannon location");
 
     assert_eq!(sarah_cannon.postal_code.as_deref(), Some("80218"));
@@ -80,15 +80,15 @@ fn ctgov_postal_codes_are_trimmed_and_blank_values_are_omitted() {
     let locations = trial.locations.as_ref().expect("locations");
     let trimmed = locations
         .iter()
-        .find(|location| location.facility == "Trimmed Postal Site")
+        .find(|location| location.facility.as_deref() == Some("Trimmed Postal Site"))
         .expect("trimmed postal location");
     let blank = locations
         .iter()
-        .find(|location| location.facility == "Blank Postal Site")
+        .find(|location| location.facility.as_deref() == Some("Blank Postal Site"))
         .expect("blank postal location");
     let absent = locations
         .iter()
-        .find(|location| location.facility == "Absent Postal Site")
+        .find(|location| location.facility.as_deref() == Some("Absent Postal Site"))
         .expect("absent postal location");
 
     assert_eq!(trimmed.postal_code.as_deref(), Some("SW1A 1AA"));

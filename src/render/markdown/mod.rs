@@ -585,6 +585,9 @@ fn env() -> Result<&'static Environment<'static>, BioMcpError> {
     }
 
     let mut env = Environment::new();
+    env.add_filter("markdown_cell", |value: String| -> String {
+        support::markdown_cell(&value)
+    });
     env.add_filter("truncate", |s: String, max_bytes: usize| -> String {
         if s.len() <= max_bytes {
             return s;

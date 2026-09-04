@@ -83,13 +83,16 @@ pub struct TrialIntervention {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrialLocation {
-    pub facility: String,
-    pub city: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub facility: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub postal_code: Option<String>,
-    pub country: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

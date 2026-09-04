@@ -1,4 +1,6 @@
 use super::*;
+use crate::sources::clinicaltrials::ClinicalTrialsClient;
+use reqwest::StatusCode;
 use serde_json::json;
 #[path = "tests/ticket_1107.rs"]
 mod ticket_1107;
@@ -13,6 +15,157 @@ mod ticket_1115;
 #[path = "tests/ticket_1132.rs"]
 mod ticket_1132;
 use ticket_1107::{IntoTrialSearchTestResult, IntoTrialTestResult};
+
+#[test]
+fn receipted_ctgov_partial_sites_preserve_all_locations() {
+    let study = ClinicalTrialsClient::decode_get_response(
+        "NCT00791778",
+        StatusCode::OK,
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/testdata/sources/ctgov/get_nct00791778_20260902.json"
+        )),
+    )
+    .expect("receipted NCT00791778 capture");
+
+    let trial = from_ctgov_study(&study);
+    let locations = trial.locations.as_ref().expect("locations");
+    assert_eq!(locations.len(), 59);
+    assert!(locations.iter().all(|location| location.facility.is_none()));
+    assert!(locations.iter().all(|location| {
+        location
+            .city
+            .as_deref()
+            .is_some_and(|city| !city.is_empty())
+            && location
+                .country
+                .as_deref()
+                .is_some_and(|country| !country.is_empty())
+    }));
+    assert_eq!(
+        locations
+            .iter()
+            .filter(|location| location.state.is_none())
+            .count(),
+        37
+    );
+
+    let structured = serde_json::to_value(&trial).expect("structured trial JSON");
+    let serialized_locations = structured["locations"]
+        .as_array()
+        .expect("serialized locations");
+    assert_eq!(serialized_locations.len(), 59);
+    assert!(serialized_locations.iter().all(|location| {
+        !location
+            .as_object()
+            .expect("serialized location object")
+            .contains_key("facility")
+            && location["city"]
+                .as_str()
+                .is_some_and(|city| !city.is_empty())
+            && location["country"]
+                .as_str()
+                .is_some_and(|country| !country.is_empty())
+    }));
+
+    let markdown = crate::render::markdown::trial_markdown(&trial, &["locations".to_string()])
+        .expect("locations Markdown");
+    assert!(markdown.contains("| - | La Jolla, California | 92037 | United States |"));
+}
+
+#[test]
+fn ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown() {
+    let study: CtGovStudy = serde_json::from_value(json!({
+        "protocolSection": {
+            "identificationModule": {
+                "nctId": "NCT11210000",
+                "briefTitle": "Partial site boundary"
+            },
+            "contactsLocationsModule": {
+                "locations": [
+                    {"facility": "  Pipe | Facility\n\u{0007}  ", "status": "COMPLETED"},
+                    {"city": "  City only  "},
+                    {"state": "  State only  ", "status": "RECRUITING"},
+                    {"zip": "  12345  "},
+                    {"country": "  Country only  "},
+                    {"geoPoint": {"lat": 42.0}},
+                    {"contacts": [
+                        {"name": "  First Contact  ", "email": "first@example.test"},
+                        {"name": "Second Contact", "phone": "555-0102"}
+                    ]},
+                    {"status": "RECRUITING"},
+                    {
+                        "facility": "  ",
+                        "city": "\n",
+                        "state": "\t",
+                        "zip": " ",
+                        "country": "  ",
+                        "contacts": [{"name": "  ", "email": "orphan@example.test"}]
+                    }
+                ]
+            }
+        }
+    }))
+    .expect("provider-shaped partial sites");
+
+    let trial = from_ctgov_study(&study);
+    let locations = trial.locations.as_ref().expect("meaningful locations");
+    assert_eq!(locations.len(), 7);
+    assert_eq!(locations[0].state.as_deref(), Some("State only"));
+    assert_eq!(
+        locations[1..]
+            .iter()
+            .map(|location| (
+                location.facility.as_deref(),
+                location.city.as_deref(),
+                location.postal_code.as_deref(),
+                location.country.as_deref(),
+                location.latitude,
+                location.contact_name.as_deref(),
+            ))
+            .collect::<Vec<_>>(),
+        vec![
+            (Some("Pipe | Facility\n\u{7}"), None, None, None, None, None),
+            (None, Some("City only"), None, None, None, None),
+            (None, None, Some("12345"), None, None, None),
+            (None, None, None, Some("Country only"), None, None),
+            (None, None, None, None, Some(42.0), None),
+            (None, None, None, None, None, Some("First Contact")),
+        ]
+    );
+
+    let contacts = trial.contacts.as_ref().expect("site contacts");
+    assert_eq!(
+        contacts
+            .iter()
+            .map(|contact| contact.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["First Contact", "Second Contact"]
+    );
+
+    let structured = serde_json::to_value(&trial).expect("structured trial JSON");
+    let serialized = structured["locations"]
+        .as_array()
+        .expect("serialized meaningful locations");
+    assert!(!serialized[0].as_object().unwrap().contains_key("facility"));
+    assert!(!serialized[0].as_object().unwrap().contains_key("city"));
+    assert!(!serialized[0].as_object().unwrap().contains_key("country"));
+    assert_eq!(serialized[1]["facility"], "Pipe | Facility\n\u{7}");
+    assert!(!serialized[1].as_object().unwrap().contains_key("city"));
+    assert!(!serialized[1].as_object().unwrap().contains_key("country"));
+
+    let markdown = crate::render::markdown::trial_markdown(&trial, &["locations".to_string()])
+        .expect("locations Markdown");
+    assert!(markdown.contains("| - | State only | - | - | RECRUITING | - |"));
+    assert!(!markdown.contains("| - | , State only |"));
+    let escaped_row = markdown
+        .lines()
+        .find(|line| line.contains("Pipe \\| Facility"))
+        .expect("escaped facility row");
+    assert!(!escaped_row.contains('\n'));
+    assert!(!escaped_row.contains('\u{7}'));
+    assert_eq!(escaped_row.matches(" | ").count(), 5);
+}
 #[test]
 fn format_age_range_handles_missing_bounds() {
     assert_eq!(
@@ -64,7 +217,7 @@ fn from_ctgov_study_extracts_age_and_locations_sorted() {
     assert_eq!(trial.age_range.as_deref(), Some("18 Years to 75 Years"));
     let locations = trial.locations.expect("locations");
     assert_eq!(locations.len(), 2);
-    assert_eq!(locations[0].facility, "Site A");
+    assert_eq!(locations[0].facility.as_deref(), Some("Site A"));
     assert_eq!(locations[0].contact_name.as_deref(), Some("Lead Contact"));
 }
 

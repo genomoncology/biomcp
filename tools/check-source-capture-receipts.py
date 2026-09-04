@@ -52,6 +52,9 @@ EXPECTED_SUPPLEMENTAL_PATHS = {
     "protocolSection.contactsLocationsModule.locations[].geoPoint.lon",
 }
 SUPPLEMENTAL_EVIDENCE = "ctgov/get_nct06131398_full_20260903.json"
+SUPPLEMENTAL_LIMITATION = (
+    "The recorded CTGov schema exposes geoPoint as an opaque GeoPoint leaf."
+)
 UNSAFE_REQUEST_FIELDS = {
     "access_token",
     "api_key",
@@ -517,7 +520,7 @@ def _consumed_trial_files(repo_root: Path) -> tuple[set[str], list[str]]:
             continue
         text = _mask_rust_comments(path.read_text(encoding="utf-8"))
         file_literals = "".join(_rust_string_values(text))
-        for directory in ("clinicaltrials", "nci_cts"):
+        for directory in ("clinicaltrials", "ctgov", "nci_cts"):
             marker = f"testdata/sources/{directory}/"
             for match in re.finditer(
                 rf"testdata/sources/{directory}/([A-Za-z0-9_.-]+\.json)", text
@@ -565,6 +568,81 @@ def _consumed_trial_files(repo_root: Path) -> tuple[set[str], list[str]]:
                         f"{path.relative_to(repo_root)}: dynamic include fixture reference is unsupported for {directory}"
                     )
     return consumed, errors
+
+
+def _validated_ctgov_supplement_paths(
+    root: Path, manifest: dict[str, object]
+) -> tuple[set[str], list[str]]:
+    contract = manifest.get("code_key_contract")
+    supplements = (
+        contract.get("supplemental_attestations")
+        if isinstance(contract, dict)
+        else None
+    )
+    if not isinstance(supplements, list):
+        return set(), ["code_key_contract requires supplemental_attestations array"]
+
+    errors: list[str] = []
+    supplement_paths: list[str] = []
+    receipt_entries = {
+        item.get("path"): item
+        for item in manifest.get("entries", [])
+        if isinstance(item, dict)
+    }
+    for item in supplements:
+        if not isinstance(item, dict):
+            errors.append("invalid CTGov supplemental attestation")
+            continue
+        path = item.get("path")
+        evidence_path = item.get("evidence_path")
+        limitation = item.get("limitation")
+        if not all(
+            isinstance(value, str) and value
+            for value in (path, evidence_path, limitation)
+        ):
+            errors.append(
+                "CTGov supplemental attestation requires path, evidence_path, and limitation"
+            )
+            continue
+        if item.get("endpoint") != "ctgov":
+            errors.append(f"altered supplemental endpoint for {path}")
+        supplement_paths.append(path)
+        expected_declaration = {
+            "endpoint": "ctgov",
+            "path": path,
+            "limitation": SUPPLEMENTAL_LIMITATION,
+            "evidence_path": SUPPLEMENTAL_EVIDENCE,
+        }
+        if path not in EXPECTED_SUPPLEMENTAL_PATHS or item != expected_declaration:
+            errors.append(f"altered supplemental declaration for {path}")
+        if evidence_path != SUPPLEMENTAL_EVIDENCE:
+            errors.append(f"altered supplemental evidence for {path}")
+            continue
+        if (
+            receipt_entries.get(evidence_path, {}).get("classification")
+            != "real_and_receipted"
+        ):
+            errors.append(
+                f"supplemental evidence {evidence_path} must be real_and_receipted"
+            )
+            continue
+        try:
+            evidence = json.loads((root / evidence_path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            errors.append(f"cannot read supplemental evidence {evidence_path}: {error}")
+            continue
+        if path not in _json_paths(evidence):
+            errors.append(
+                f"supplemental evidence {evidence_path} does not contain {path}"
+            )
+    if (
+        set(supplement_paths) != EXPECTED_SUPPLEMENTAL_PATHS
+        or len(supplement_paths) != 2
+    ):
+        errors.append(
+            "CTGov supplemental attestations differ from the required closed set"
+        )
+    return set(supplement_paths), errors
 
 
 def _audit_fixture_keys(
@@ -638,7 +716,12 @@ def _audit_fixture_keys(
     if set(allowed) != TRIAL_ENDPOINTS:
         return 0, 0, ["fixture-key contract requires one CTGov and one NCI attestor"]
 
-    errors: list[str] = []
+    supplement_paths, supplement_errors = _validated_ctgov_supplement_paths(
+        root, manifest
+    )
+    allowed["ctgov"].update(supplement_paths)
+
+    errors: list[str] = list(supplement_errors)
     exception_map: dict[tuple[str, str, str], str] = {}
     for exception in exceptions:
         required = ("path", "selector", "checked_path", "reason")
@@ -1116,61 +1199,10 @@ def _audit_code_keys(root: Path, manifest: dict[str, object]) -> tuple[int, list
                 key for record in records if isinstance(record, dict) for key in record
             }
 
-    supplement_paths: list[str] = []
-    receipt_entries = {
-        item.get("path"): item
-        for item in manifest.get("entries", [])
-        if isinstance(item, dict)
-    }
-    for item in supplements:
-        if not isinstance(item, dict):
-            errors.append("invalid CTGov supplemental attestation")
-            continue
-        path = item.get("path")
-        evidence_path = item.get("evidence_path")
-        limitation = item.get("limitation")
-        if not all(
-            isinstance(value, str) and value
-            for value in (path, evidence_path, limitation)
-        ):
-            errors.append(
-                "CTGov supplemental attestation requires path, evidence_path, and limitation"
-            )
-            continue
-        if item.get("endpoint") != "ctgov":
-            errors.append(f"altered supplemental endpoint for {path}")
-        supplement_paths.append(path)
-        if evidence_path != SUPPLEMENTAL_EVIDENCE:
-            errors.append(f"altered supplemental evidence for {path}")
-            continue
-        if "opaque" not in limitation.lower():
-            errors.append(
-                f"supplemental attestation {path} must name the opaque-schema limitation"
-            )
-        if (
-            receipt_entries.get(evidence_path, {}).get("classification")
-            != "real_and_receipted"
-        ):
-            errors.append(
-                f"supplemental evidence {evidence_path} must be real_and_receipted"
-            )
-            continue
-        try:
-            evidence = json.loads((root / evidence_path).read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as error:
-            errors.append(f"cannot read supplemental evidence {evidence_path}: {error}")
-            continue
-        if path not in _json_paths(evidence):
-            errors.append(
-                f"supplemental evidence {evidence_path} does not contain {path}"
-            )
-    if (
-        set(supplement_paths) != EXPECTED_SUPPLEMENTAL_PATHS
-        or len(supplement_paths) != 2
-    ):
-        errors.append(
-            "CTGov supplemental attestations differ from the required closed set"
-        )
+    supplement_paths, supplement_errors = _validated_ctgov_supplement_paths(
+        root, manifest
+    )
+    errors.extend(supplement_errors)
 
     checked = 0
     used_supplements: set[str] = set()

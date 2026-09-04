@@ -2100,6 +2100,18 @@
       }
     },
     {
+      "path": "ctgov/get_nct00791778_20260902.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies/NCT00791778",
+        "captured_at": "2026-09-02T22:50:57.611106Z",
+        "sha256": "d220af8b0a55ca2a907fb660afea4bf972f04ec42c395a50db35d7ebc4f9f5d9",
+        "minimization_or_redaction": "No fields removed and no values redacted; the committed bytes are byte-for-byte identical to the captured response.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinicalTrials.gov v2 API study detail endpoint."
+      }
+    },
+    {
       "path": "ctgov/search_age_count_20260811.json",
       "classification": "real_and_receipted",
       "receipt": {
@@ -2228,6 +2240,11 @@
     "on_disk": [
       {"path": "clinicaltrials/search.json", "selector": "/studies/*", "endpoint": "ctgov"},
       {"path": "clinicaltrials/study_contacts.json", "selector": "/", "endpoint": "ctgov"},
+      {"path": "ctgov/get_nct00791778_20260902.json", "selector": "/", "endpoint": "ctgov"},
+      {"path": "ctgov/get_nct02576665_20260811.json", "selector": "/", "endpoint": "ctgov"},
+      {"path": "ctgov/get_nct02576665_full_20260903.json", "selector": "/", "endpoint": "ctgov"},
+      {"path": "ctgov/search_keytruda_limit3_20260811.json", "selector": "/studies/*", "endpoint": "ctgov"},
+      {"path": "ctgov/search_phelan_limit5_20260811.json", "selector": "/studies/*", "endpoint": "ctgov"},
       {"path": "nci_cts/get_nci_2023_04529_full_20260903.json", "selector": "/data/*", "endpoint": "nci"},
       {"path": "nci_cts/search_melanoma.json", "selector": "/data/*", "endpoint": "nci"},
       {"path": "nci_cts/search_melanoma_20260811.json", "selector": "/data/*", "endpoint": "nci"}
@@ -2239,6 +2256,7 @@
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trials_explain_their_status_in_json_and_markdown:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:2", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_attested_fields:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_sections_maps_supported_nci_fields:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "endpoint": "nci"},

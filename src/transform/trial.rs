@@ -5,7 +5,7 @@ use crate::entities::trial::{
     TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult,
 };
 use crate::error::BioMcpError;
-use crate::sources::clinicaltrials::CtGovStudy;
+use crate::sources::clinicaltrials::{CtGovLocation, CtGovStudy};
 
 fn truncate_utf8(s: &str, max_bytes: usize, suffix: &str) -> String {
     if s.len() <= max_bytes {
@@ -101,6 +101,25 @@ fn normalize_summary(value: Option<&str>) -> Option<String> {
     clean_opt(value)
 }
 
+fn is_meaningful_site(location: &CtGovLocation) -> bool {
+    [
+        location.facility.as_deref(),
+        location.city.as_deref(),
+        location.state.as_deref(),
+        location.zip.as_deref(),
+        location.country.as_deref(),
+    ]
+    .into_iter()
+    .any(|value| clean_opt(value).is_some())
+        || location.geo_point.as_ref().is_some_and(|point| {
+            point.lat.is_some_and(f64::is_finite) || point.lon.is_some_and(f64::is_finite)
+        })
+        || location
+            .contacts
+            .iter()
+            .any(|contact| clean_opt(contact.name.as_deref()).is_some())
+}
+
 fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
     let locations = study
         .protocol_section
@@ -111,23 +130,31 @@ fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
     let mut out = locations
         .iter()
         .filter_map(|loc| {
-            let facility = clean_opt(loc.facility.as_deref())?;
-            let city = clean_opt(loc.city.as_deref())?;
-            let country = clean_opt(loc.country.as_deref())?;
+            if !is_meaningful_site(loc) {
+                return None;
+            }
             let contact = loc.contacts.first();
             Some(TrialLocation {
-                facility,
-                city,
+                facility: clean_opt(loc.facility.as_deref()),
+                city: clean_opt(loc.city.as_deref()),
                 state: clean_opt(loc.state.as_deref()),
                 postal_code: clean_opt(loc.zip.as_deref()),
-                country,
+                country: clean_opt(loc.country.as_deref()),
                 status: clean_opt(loc.status.as_deref()),
                 contact_name: contact.and_then(|c| clean_opt(c.name.as_deref())),
                 contact_role: contact.and_then(|c| clean_opt(c.role.as_deref())),
                 contact_phone: contact.and_then(|c| clean_opt(c.phone.as_deref())),
                 contact_email: contact.and_then(|c| clean_opt(c.email.as_deref())),
-                latitude: loc.geo_point.as_ref().and_then(|geo| geo.lat),
-                longitude: loc.geo_point.as_ref().and_then(|geo| geo.lon),
+                latitude: loc
+                    .geo_point
+                    .as_ref()
+                    .and_then(|geo| geo.lat)
+                    .filter(|value| value.is_finite()),
+                longitude: loc
+                    .geo_point
+                    .as_ref()
+                    .and_then(|geo| geo.lon)
+                    .filter(|value| value.is_finite()),
             })
         })
         .collect::<Vec<_>>();
@@ -180,6 +207,9 @@ fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
         .collect::<Vec<_>>();
 
     for loc in &module.locations {
+        if !is_meaningful_site(loc) {
+            continue;
+        }
         for contact in &loc.contacts {
             if let Some(contact) = extract_contact(
                 "site",
