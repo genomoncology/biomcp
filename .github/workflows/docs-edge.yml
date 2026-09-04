@@ -1,26 +1,31 @@
-name: Deploy documentation edge
+name: Publish documentation
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
-permissions:
-  contents: read
+concurrency:
+  group: publish-biomcp-docs
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: 3.12.3
   UV_VERSION: 0.8.0
-  WRANGLER_VERSION: 4.32.0
-
 jobs:
-  deploy-docs-edge:
+  publish-docs:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pages: write
     steps:
-      - name: Check out the exact revision
+      - name: Check out the exact revision and publication history
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Fetch the existing Pages history
+        run: git fetch origin gh-pages:refs/remotes/origin/gh-pages
       - name: Install pinned Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
@@ -29,16 +34,34 @@ jobs:
         uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a
         with:
           version: ${{ env.UV_VERSION }}
-      - name: Install the locked Python environment and pinned Wrangler
-        run: |
-          uv sync --extra dev --no-install-project --locked
-          npm install --global "wrangler@$WRANGLER_VERSION"
+      - name: Install the locked Python environment
+        run: uv sync --extra dev --no-install-project --locked
       - name: Build documentation strictly
         env:
+          BIOMCP_DOCS_REVISION: ${{ github.sha }}
           NO_MKDOCS_2_WARNING: "1"
         run: uv run --no-sync mkdocs build --strict
-      - name: Deploy the validated site and edge worker
+      - name: Prove this run still represents current main
+        run: |
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse refs/remotes/origin/main)" = "$GITHUB_SHA"
+      - name: Publish the validated site to the Pages branch
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: wrangler deploy
+          BIOMCP_DOCS_REVISION: ${{ github.sha }}
+          NO_MKDOCS_2_WARNING: "1"
+        run: uv run --no-sync mkdocs gh-deploy --strict --force
+      - name: Request a Pages build from the configured branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          curl --fail-with-body --silent --show-error --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $GITHUB_TOKEN" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/pages/builds"
+      - name: Verify the exact revision and static documentation are live
+        run: |
+          uv run --no-sync python scripts/verify-docs-publication.py \
+            --revision "$GITHUB_SHA" \
+            --site-dir site \
+            --timeout-seconds 600

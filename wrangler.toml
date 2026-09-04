@@ -1,8 +1,0 @@
-name = "biomcp-docs"
-main = "docs-edge-worker.mjs"
-compatibility_date = "2026-08-29"
-routes = [{ pattern = "biomcp.org", custom_domain = true }]
-
-[assets]
-directory = "./site"
-binding = "ASSETS"
