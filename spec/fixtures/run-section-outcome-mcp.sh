@@ -2,6 +2,7 @@
 set -euo pipefail
 
 workspace_root="${1:-$PWD}"
+mode="${2:-section-outcome}"
 workspace_root="$(cd "$workspace_root" && pwd)"
 biomcp_bin="${BIOMCP_BIN:-$workspace_root/target/spec/biomcp}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -48,4 +49,4 @@ done
 curl -fsS "http://127.0.0.1:$port/readyz" >/dev/null
 
 "${BIOMCP_SPEC_MCP_EXAMPLE_BIN:?spec preparation did not export MCP example}" \
-  section-outcome "$port"
+  "$mode" "$port"

@@ -15,10 +15,7 @@ pub(crate) use self::get::{
     resolve_trial_canonical_name,
 };
 pub use self::get::{get, get_with_region};
-pub(crate) use self::interactions::{
-    DrugInteractionReport, apply_interaction_report, interaction_report,
-    interaction_report_from_base,
-};
+pub(crate) use self::interactions::{DrugInteractionReport, interaction_report};
 pub use self::query::search_query_summary;
 #[allow(unused_imports)]
 pub use self::search::{
@@ -655,7 +652,14 @@ mod outcome_tests {
         let keys = outcomes.iter().map(|(key, _)| key).collect::<Vec<_>>();
         assert_eq!(
             keys,
-            vec!["approvals", "civic", "indications", "safety", "targets",]
+            vec![
+                "approvals",
+                "civic",
+                "indications",
+                "interactions",
+                "safety",
+                "targets",
+            ]
         );
         assert!(
             outcomes

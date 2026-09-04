@@ -44,17 +44,17 @@ struct DrugSections {
     requested_all: bool,
     requested_safety: bool,
     requested_shortage: bool,
+    allow_partial_interactions: bool,
 }
-
 #[cfg(test)]
 fn parse_sections(sections: &[String]) -> Result<DrugSections, BioMcpError> {
     parse_sections_for_name("", sections)
 }
-
 fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSections, BioMcpError> {
     let mut out = DrugSections::default();
     let mut include_all = false;
     let mut any_section = false;
+    let mut distinct_sections = HashSet::new();
 
     for raw in sections {
         let section = raw.trim().to_ascii_lowercase();
@@ -65,6 +65,7 @@ fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSectio
             continue;
         }
         any_section = true;
+        distinct_sections.insert(section.clone());
         match section.as_str() {
             DRUG_SECTION_LABEL => {
                 out.include_label = true;
@@ -107,10 +108,11 @@ fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSectio
     } else if !any_section {
         out.include_targets = true;
     }
+    out.allow_partial_interactions =
+        include_all || (out.include_interactions && distinct_sections.len() > 1);
 
     Ok(out)
 }
-
 fn unknown_drug_section_message(
     name: &str,
     sections: &[String],
@@ -156,14 +158,12 @@ fn unknown_drug_section_message(
         "Unknown section \"{normalized_section}\" for drug. Available: {available}. If \"{raw_section}\" is part of a multi-word drug name, use `{next}`."
     )
 }
-
 fn is_section_only_requested(sections: &[String]) -> bool {
     !sections
         .iter()
         .any(|section| section.trim().eq_ignore_ascii_case(DRUG_SECTION_ALL))
         && sections.iter().any(|section| !section.trim().is_empty())
 }
-
 async fn fetch_civic_therapy_context(name: &str) -> (Option<CivicContext>, SectionOutcome) {
     let name = name.trim();
     if name.is_empty() {
@@ -193,7 +193,6 @@ async fn fetch_civic_therapy_context(name: &str) -> (Option<CivicContext>, Secti
         ),
     }
 }
-
 fn apply_approvals_result(drug: &mut Drug, result: Result<Vec<DrugApproval>, BioMcpError>) {
     match result {
         Ok(rows) => {
@@ -726,6 +725,7 @@ async fn populate_common_sections(
     requested_name: &str,
     drug: &mut Drug,
     label_response: Option<&serde_json::Value>,
+    label_attempt_failed: bool,
     section_flags: &DrugSections,
     raw_label: bool,
 ) -> Result<(), BioMcpError> {
@@ -746,15 +746,14 @@ async fn populate_common_sections(
     };
 
     if section_flags.include_interactions {
-        let report = super::interaction_report_from_base(
-            requested_name.to_string(),
-            drug.clone(),
-            label_response.cloned(),
-            super::interactions::DEFAULT_INTERACTION_LIMIT,
-            0,
+        super::interactions::populate_card_interactions(
+            requested_name,
+            drug,
+            label_response,
+            label_attempt_failed,
+            section_flags.allow_partial_interactions,
         )
         .await?;
-        super::apply_interaction_report(drug, &report);
     } else {
         drug.interactions.clear();
         drug.interaction_text = None;
@@ -984,6 +983,7 @@ async fn get_with_region_owned(
         &name,
         &mut resolved.drug,
         resolved.label_response.as_ref(),
+        resolved.label_attempt_failed,
         &section_flags,
         raw_label,
     )

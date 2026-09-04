@@ -518,6 +518,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | drug | safety | canonical | additive | OpenFDA FAERS / OpenFDA label / EMA | `safety` outcome and provenance projection |
 | drug | targets | canonical | additive | Guide to PHARMACOLOGY / ChEMBL / Open Targets | `targets` outcome and provenance projection |
 | drug | indications | canonical | additive | DrugCentral / Open Targets | `indications` outcome and provenance projection |
+| drug | interactions | canonical | additive | DDInter / DrugBank / OpenFDA label | `interactions` outcome and provenance projection |
 | drug | civic | canonical | fallback | CIViC | `civic` outcome and provenance projection |
 | adverse_event | faers | outcome-only | additive | OpenFDA FAERS | `faers` outcome and provenance projection |
 | adverse_event | vaers | outcome-only | additive | CDC CVX / CDC VAERS | `vaers` outcome and provenance projection |

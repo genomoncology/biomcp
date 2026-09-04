@@ -252,30 +252,37 @@ pub(crate) fn pathway_source_label(source: &str) -> String {
     }
 }
 
-pub(crate) fn drug_interaction_sources(drug: &Drug) -> Vec<String> {
-    let mut sources = vec!["DDInter".to_string()];
-    if drug
-        .interactions
-        .iter()
-        .any(|row| row.description.as_deref().is_some_and(has_text))
-    {
-        sources.push("DrugBank".to_string());
-    }
-    if has_opt_text(&drug.interaction_text) {
-        sources.push("OpenFDA label".to_string());
-    }
-    normalize_sources(sources)
-}
-
 pub(crate) fn drug_interaction_heading_label(drug: &Drug) -> String {
-    if drug.interactions.is_empty() && !has_opt_text(&drug.interaction_text) {
-        "Interactions".to_string()
-    } else {
+    // A provider named in a card heading is a provenance claim. Use only the
+    // canonical successful-contributor list: payload presence cannot establish
+    // that DDInter completed, especially when label evidence survives its
+    // failure. The dedicated pageable interaction report has its own heading
+    // and provenance contract and does not use this drug-card projection.
+    // Keep this decision adjacent to the projection that consumes it.
+    if drug
+        .section_outcomes
+        .get("interactions")
+        .is_some_and(|outcome| outcome.sources().iter().any(|source| source == "DDInter"))
+    {
         "Interactions (DDInter)".to_string()
+    } else {
+        "Interactions".to_string()
     }
 }
 
 pub(crate) fn drug_interaction_note(drug: &Drug) -> Option<String> {
+    if drug
+        .section_outcomes
+        .get("interactions")
+        .is_some_and(|outcome| {
+            matches!(
+                outcome.outcome(),
+                SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+            )
+        })
+    {
+        return None;
+    }
     if !drug.interactions.is_empty() {
         Some(
             "Structured rows come from the current DDInter download bundle. DDInter warns that missing rows do not prove no interaction exists."
@@ -432,14 +439,6 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
         "Variant Targets",
         ["CIViC"],
     );
-    let interaction_sources = drug_interaction_sources(drug);
-    push_section(
-        &mut out,
-        !drug.interactions.is_empty() || has_opt_text(&drug.interaction_text),
-        "interactions",
-        "Interactions",
-        interaction_sources.iter().map(String::as_str),
-    );
     push_section(
         &mut out,
         drug.label.is_some(),
@@ -469,6 +468,7 @@ pub(crate) fn drug_section_sources(drug: &Drug) -> Vec<SectionSource> {
             ("safety", "Safety"),
             ("targets", "Targets"),
             ("indications", "Indications"),
+            ("interactions", "Interactions"),
             ("civic", "CIViC"),
         ],
     ));

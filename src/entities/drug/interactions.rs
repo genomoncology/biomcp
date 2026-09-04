@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::entities::drug::{Drug, DrugInteraction};
+use crate::entities::section_outcome::SectionOutcome;
 use crate::error::BioMcpError;
 use crate::sources::ddinter::{
     DdinterBundleFreshness, DdinterClient, DdinterIdentity, DdinterInteractionRow,
@@ -90,7 +91,7 @@ pub(crate) async fn interaction_report(
     interaction_report_from_base(name, resolved.drug, resolved.label_response, limit, offset).await
 }
 
-pub(crate) async fn interaction_report_from_base(
+async fn interaction_report_from_base(
     requested_name: String,
     anchor: Drug,
     label_response: Option<serde_json::Value>,
@@ -159,11 +160,108 @@ pub(crate) async fn interaction_report_from_base(
     })
 }
 
-pub(crate) fn apply_interaction_report(drug: &mut Drug, report: &DrugInteractionReport) {
+fn apply_interaction_report(drug: &mut Drug, report: &DrugInteractionReport) {
     drug.interactions = report.interactions.clone();
     drug.interaction_text = report.label_interaction_text.clone();
     drug.interaction_pagination = Some(report.pagination.clone());
     drug.interaction_bundle_freshness = Some(report.bundle_freshness.clone());
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum LabelInteractionResult {
+    Data(String),
+    Empty,
+    Unavailable,
+}
+
+fn label_interaction_result(
+    label_response: Option<&serde_json::Value>,
+    label_attempt_failed: bool,
+) -> LabelInteractionResult {
+    if label_attempt_failed {
+        return LabelInteractionResult::Unavailable;
+    }
+    label_response
+        .and_then(extract_interaction_text_from_label)
+        .filter(|value| !value.trim().is_empty())
+        .map_or(LabelInteractionResult::Empty, LabelInteractionResult::Data)
+}
+
+pub(super) fn apply_interactions_result(
+    drug: &mut Drug,
+    result: Result<DrugInteractionReport, BioMcpError>,
+    label_result: LabelInteractionResult,
+) {
+    let label_failed = matches!(label_result, LabelInteractionResult::Unavailable);
+    let label_text = match label_result {
+        LabelInteractionResult::Data(text) => Some(text),
+        LabelInteractionResult::Empty | LabelInteractionResult::Unavailable => None,
+    };
+
+    let ddinter_failed = result.is_err();
+    if let Ok(report) = result {
+        apply_interaction_report(drug, &report);
+    } else {
+        drug.interactions.clear();
+        drug.interaction_pagination = None;
+        drug.interaction_bundle_freshness = None;
+    }
+    drug.interaction_text = label_text;
+
+    let mut contributors = Vec::new();
+    if !drug.interactions.is_empty() {
+        contributors.push("DDInter");
+        if drug.interactions.iter().any(|row| {
+            row.description
+                .as_deref()
+                .is_some_and(|value| !value.trim().is_empty())
+        }) {
+            contributors.push("DrugBank");
+        }
+    }
+    if drug.interaction_text.is_some() {
+        contributors.push("OpenFDA label");
+    }
+
+    let outcome = if ddinter_failed || label_failed {
+        if contributors.is_empty() {
+            SectionOutcome::unavailable("Drug interaction evidence is temporarily unavailable.")
+        } else {
+            SectionOutcome::degraded(
+                contributors,
+                "Drug interaction evidence is incomplete because a source was unavailable.",
+            )
+        }
+    } else if contributors.is_empty() {
+        SectionOutcome::empty_sources(["DDInter", "OpenFDA label"])
+    } else {
+        SectionOutcome::data_sources(contributors)
+    };
+    drug.section_outcomes.complete("interactions", outcome);
+}
+
+pub(super) async fn populate_card_interactions(
+    requested_name: &str,
+    drug: &mut Drug,
+    label_response: Option<&serde_json::Value>,
+    label_attempt_failed: bool,
+    allow_partial: bool,
+) -> Result<(), BioMcpError> {
+    let report = interaction_report_from_base(
+        requested_name.to_string(),
+        drug.clone(),
+        label_response.cloned(),
+        DEFAULT_INTERACTION_LIMIT,
+        0,
+    )
+    .await;
+    let report = if allow_partial { report } else { Ok(report?) };
+    apply_interactions_result(
+        drug,
+        report,
+        label_interaction_result(label_response, label_attempt_failed),
+    );
+    Ok(())
 }
 
 fn aggregate_rows(

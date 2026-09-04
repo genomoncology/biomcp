@@ -121,6 +121,8 @@ Variant Targets (CIViC): {{ variant_targets | join(", ") }}
 {% if show_interactions_section -%}
 ## {{ drug_interactions_heading }}
 
+{% if source_states.interactions.status %}{{ source_states.interactions.status }}
+{% endif -%}
 {% if drug_interactions_note -%}
 {{ drug_interactions_note }}
 
@@ -131,7 +133,7 @@ Returned: {{ interaction_pagination.count }} of {{ interaction_pagination.total 
 DDInter bundle freshness: {{ interaction_bundle_freshness }}
 
 {% endif -%}
-{% if interactions -%}
+{% if source_states.interactions.payload_allowed and interactions -%}
 | Interacting Drug | Level | Classes | Description |
 |---|---|---|---|
 {% for row in interactions -%}
@@ -142,7 +144,7 @@ DDInter bundle freshness: {{ interaction_bundle_freshness }}
 
 Continue with `{{ interaction_pagination.next_command }}`.
 {% endif -%}
-{% if interaction_text -%}
+{% if source_states.interactions.payload_allowed and interaction_text -%}
 
 ## Additive Label Text (OpenFDA)
 

@@ -96,6 +96,7 @@ class Handler(BaseHTTPRequestHandler):
                     },
                 )
                 return
+            fixture_name = query if query in {"fixture-drug", "fixture-drug-label", "fixture-drug-empty"} else "fixture-drug"
             send_json(
                 self,
                 200,
@@ -103,11 +104,11 @@ class Handler(BaseHTTPRequestHandler):
                     "total": 1,
                     "hits": [
                         {
-                            "_id": "fixture-drug",
+                            "_id": fixture_name,
                             "_score": 10.0,
                             "drugbank": {
                                 "id": "DBFIXTURE",
-                                "name": "fixture-drug",
+                                "name": fixture_name,
                                 "synonyms": [],
                                 "drug_interactions": [],
                             },
@@ -115,6 +116,16 @@ class Handler(BaseHTTPRequestHandler):
                     ],
                 },
             )
+            return
+        if path == "/drug/label.json":
+            search = parse_qs(urlparse(self.path).query).get("search", [""])[0].lower()
+            payload = {"results": [{
+                "indications_and_usage": ["Fixture indication survives."],
+                "drug_interactions": ["Label interaction evidence survives DDInter failure."],
+            }]}
+            if "empty" in search:
+                payload = {"results": [{"indications_and_usage": ["Fixture indication survives."]}]}
+            send_json(self, 200, payload)
             return
         if path == "/v1/variant/chr7:g.140453136A>T":
             send_json(
@@ -134,6 +145,22 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "meta": {"results": {"skip": 0, "limit": 8, "total": 0}},
                     "results": [],
+                },
+            )
+            return
+        send_json(self, 404, {"error": "not found"})
+
+    def do_POST(self):
+        path = unquote(urlparse(self.path).path)
+        if path == "/api/graphql":
+            send_json(
+                self,
+                200,
+                {
+                    "data": {
+                        "evidenceItems": {"totalCount": 0, "nodes": []},
+                        "assertions": {"totalCount": 0, "nodes": []},
+                    }
                 },
             )
             return
@@ -167,13 +194,18 @@ done
 test -s "$ready_file"
 base_url="$(cat "$ready_file")"
 curl -fsS "$base_url/v1/query?q=fixture-drug" >/dev/null
+ddinter_unavailable_dir="$fixture_root/ddinter-unavailable"
+mkdir -p "$ddinter_unavailable_dir"
 
 printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/v1" >"$env_file"
 printf 'export BIOMCP_MYVARIANT_BASE=%q\n' "$base_url/v1" >>"$env_file"
 printf 'export BIOMCP_OPENFDA_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export BIOMCP_CIVIC_BASE=%q\n' "$base_url/api" >>"$env_file"
+printf 'export BIOMCP_CACHE_MODE=off\n' >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_PID=%q\n' "$server_pid" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
+printf 'export BIOMCP_DDINTER_UNAVAILABLE_DIR=%q\n' "$ddinter_unavailable_dir" >>"$env_file"
 
 bash "$ownership_helper" write "$workspace_root" "section-outcomes" "$fixture_root" "$server_pid" "BIOMCP_SECTION_OUTCOMES_FIXTURE" "$owner_arg" >/dev/null
 trap - EXIT

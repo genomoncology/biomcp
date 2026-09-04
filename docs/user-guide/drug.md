@@ -381,7 +381,7 @@ that ordering is applied only within the region, never across providers.
 ## Source-section outcomes
 
 JSON and MCP drug records include outcomes for `approvals`, `safety`, `targets`,
-`indications`, and `civic`. `empty` credits the providers that completed without
+`indications`, `interactions`, and `civic`. `empty` credits the providers that completed without
 evidence, `degraded` preserves usable evidence when an additive provider fails,
 and `unavailable` carries no failed-provider credit. Existing biomedical fields,
 including the compatible `approvals` array, remain at their current paths.

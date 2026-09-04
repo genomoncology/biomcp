@@ -271,6 +271,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
         &["DrugCentral", "Open Targets"],
         Aggregation::Additive,
     ),
+    state(
+        "drug",
+        "interactions",
+        "Interactions",
+        &["DDInter", "DrugBank", "OpenFDA label"],
+        Aggregation::Additive,
+    ),
     state("drug", "civic", "CIViC", &["CIViC"], Aggregation::Fallback),
     state(
         "adverse_event",
@@ -578,7 +585,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         SelectorClass::Canonical,
         Some("indications"),
     ),
-    selector("drug", "interactions", SelectorClass::Local, None),
+    selector(
+        "drug",
+        "interactions",
+        SelectorClass::Canonical,
+        Some("interactions"),
+    ),
     selector("drug", "civic", SelectorClass::Canonical, Some("civic")),
     selector(
         "drug",

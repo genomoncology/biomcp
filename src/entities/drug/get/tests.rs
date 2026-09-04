@@ -1,7 +1,13 @@
 //! Get-module tests split from the legacy drug facade.
 
 use super::*;
-use crate::entities::drug::DrugApproval;
+use crate::entities::drug::interactions::{
+    DrugInteractionBundleFreshness, DrugInteractionCoverageStatus, DrugInteractionFreshnessStatus,
+    DrugInteractionPagination,
+};
+use crate::entities::drug::interactions::{LabelInteractionResult, apply_interactions_result};
+use crate::entities::drug::{DrugApproval, DrugInteractionReport};
+use crate::entities::section_outcome::SectionOutcomeState;
 
 #[test]
 fn parse_sections_supports_all_and_rejects_unknown() {
@@ -36,6 +42,30 @@ fn parse_sections_unknown_value_suggests_name_flag_for_multi_word_drugs() {
 fn parse_sections_all_with_explicit_label_keeps_label() {
     let flags = parse_sections(&["all".to_string(), "label".to_string()]).unwrap();
     assert!(flags.include_label);
+}
+
+#[test]
+fn interaction_partial_success_requires_a_distinct_second_section() {
+    assert!(
+        parse_sections(&["all".to_string()])
+            .unwrap()
+            .allow_partial_interactions
+    );
+    assert!(
+        parse_sections(&["label".to_string(), "interactions".to_string()])
+            .unwrap()
+            .allow_partial_interactions
+    );
+    assert!(
+        !parse_sections(&["interactions".to_string()])
+            .unwrap()
+            .allow_partial_interactions
+    );
+    assert!(
+        !parse_sections(&["interactions".to_string(), " INTERACTIONS ".to_string()])
+            .unwrap()
+            .allow_partial_interactions
+    );
 }
 
 #[test]
@@ -267,6 +297,169 @@ fn trial_alias_resolution_keeps_generic_requests_canonical() {
 
 fn test_approval_drug() -> Drug {
     crate::transform::drug::merge_mychem_hits(&[], "fixture-drug")
+}
+
+fn interaction_report(
+    rows: Vec<super::super::DrugInteraction>,
+    label: Option<&str>,
+) -> DrugInteractionReport {
+    let count = rows.len();
+    DrugInteractionReport {
+        name: "fixture-drug".to_string(),
+        drugbank_id: Some("DB00000".to_string()),
+        chembl_id: None,
+        interactions: rows,
+        pagination: DrugInteractionPagination {
+            total: count,
+            count,
+            offset: 0,
+            limit: 25,
+            next_command: None,
+        },
+        bundle_freshness: DrugInteractionBundleFreshness {
+            status: DrugInteractionFreshnessStatus::Fresh,
+        },
+        coverage_status: DrugInteractionCoverageStatus::InDdinterCoverage,
+        source_note: None,
+        coverage_note: None,
+        label_interaction_text: label.map(str::to_string),
+    }
+}
+
+fn interaction_row(description: Option<&str>) -> super::super::DrugInteraction {
+    super::super::DrugInteraction {
+        drug: "aspirin".to_string(),
+        ddinter_id: Some("DDInter1".to_string()),
+        level: Some("Major".to_string()),
+        description: description.map(str::to_string),
+        partner_classes: Vec::new(),
+    }
+}
+
+fn interaction_failure(kind: &str) -> BioMcpError {
+    match kind {
+        "connection" => BioMcpError::Api {
+            api: "DDInter".to_string(),
+            message: "SENSITIVE-UPSTREAM-DETAIL connection refused".to_string(),
+        },
+        "timeout" => BioMcpError::SourceUnavailable {
+            source_name: "DDInter".to_string(),
+            reason: "SENSITIVE-UPSTREAM-DETAIL request timed out".to_string(),
+            suggestion: "retry".to_string(),
+        },
+        "malformed" => BioMcpError::ApiJson {
+            api: "DDInter".to_string(),
+            source: serde_json::from_str::<serde_json::Value>("{")
+                .expect_err("fixture body must be malformed"),
+        },
+        other => panic!("unknown failure {other}"),
+    }
+}
+
+fn assert_interaction_outcome(drug: &Drug, state: SectionOutcomeState, sources: &[&str]) {
+    let outcome = drug
+        .section_outcomes
+        .get("interactions")
+        .expect("registered interaction outcome");
+    assert_eq!(outcome.outcome(), state);
+    assert_eq!(
+        outcome.sources(),
+        sources
+            .iter()
+            .map(|value| value.to_string())
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn interaction_failure_preserves_only_surviving_label_evidence_without_leaking_errors() {
+    for kind in ["connection", "timeout", "malformed"] {
+        let mut with_label = test_approval_drug();
+        apply_interactions_result(
+            &mut with_label,
+            Err(interaction_failure(kind)),
+            LabelInteractionResult::Data("Warfarin precaution".to_string()),
+        );
+        assert!(with_label.interactions.is_empty());
+        assert_eq!(
+            with_label.interaction_text.as_deref(),
+            Some("Warfarin precaution")
+        );
+        assert!(with_label.interaction_pagination.is_none());
+        assert!(with_label.interaction_bundle_freshness.is_none());
+        assert_interaction_outcome(
+            &with_label,
+            SectionOutcomeState::Degraded,
+            &["OpenFDA label"],
+        );
+        assert_eq!(
+            crate::render::provenance::drug_interaction_heading_label(&with_label),
+            "Interactions"
+        );
+        assert!(
+            !serde_json::to_string(&with_label)
+                .unwrap()
+                .contains("SENSITIVE-UPSTREAM-DETAIL")
+        );
+
+        let mut without_label = test_approval_drug();
+        apply_interactions_result(
+            &mut without_label,
+            Err(interaction_failure(kind)),
+            LabelInteractionResult::Empty,
+        );
+        assert_interaction_outcome(&without_label, SectionOutcomeState::Unavailable, &[]);
+    }
+}
+
+#[test]
+fn interaction_additive_source_state_matrix_is_truthful() {
+    let cases = [
+        (
+            interaction_report(vec![interaction_row(Some("DrugBank narrative"))], None),
+            LabelInteractionResult::Unavailable,
+            SectionOutcomeState::Degraded,
+            vec!["DDInter", "DrugBank"],
+        ),
+        (
+            interaction_report(Vec::new(), None),
+            LabelInteractionResult::Unavailable,
+            SectionOutcomeState::Unavailable,
+            vec![],
+        ),
+        (
+            interaction_report(vec![interaction_row(None)], None),
+            LabelInteractionResult::Empty,
+            SectionOutcomeState::Data,
+            vec!["DDInter"],
+        ),
+        (
+            interaction_report(Vec::new(), None),
+            LabelInteractionResult::Empty,
+            SectionOutcomeState::Empty,
+            vec!["DDInter", "OpenFDA label"],
+        ),
+        (
+            interaction_report(Vec::new(), Some("Label evidence")),
+            LabelInteractionResult::Data("Label evidence".to_string()),
+            SectionOutcomeState::Data,
+            vec!["OpenFDA label"],
+        ),
+    ];
+
+    for (report, label, state, sources) in cases {
+        let mut drug = test_approval_drug();
+        apply_interactions_result(&mut drug, Ok(report), label);
+        assert_interaction_outcome(&drug, state, &sources);
+        assert_eq!(
+            crate::render::provenance::drug_interaction_heading_label(&drug),
+            if sources.contains(&"DDInter") {
+                "Interactions (DDInter)"
+            } else {
+                "Interactions"
+            }
+        );
+    }
 }
 
 fn injected_approval_failure(kind: &str) -> BioMcpError {

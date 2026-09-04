@@ -2,8 +2,16 @@ use super::*;
 
 #[test]
 fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback() {
+    let mut section_outcomes = crate::entities::drug::default_drug_section_outcomes();
+    section_outcomes.complete(
+        "interactions",
+        crate::entities::section_outcome::SectionOutcome::degraded(
+            ["OpenFDA label"],
+            "Drug interaction evidence is incomplete because a source was unavailable.",
+        ),
+    );
     let drug = Drug {
-        section_outcomes: Default::default(),
+        section_outcomes,
         name: "warfarin".to_string(),
         drugbank_id: Some("DB00682".to_string()),
         chembl_id: None,
@@ -42,7 +50,8 @@ fn drug_markdown_uses_label_interaction_text_before_public_unavailable_fallback(
     };
 
     let markdown = drug_markdown(&drug, &["interactions".to_string()]).expect("markdown");
-    assert!(markdown.contains("## Interactions (DDInter)"));
+    assert!(markdown.contains("## Interactions\n"));
+    assert!(!markdown.contains("## Interactions (DDInter)"));
     assert!(markdown.contains("DRUG INTERACTIONS"));
     assert!(!markdown.contains("No known drug-drug interactions found."));
 }

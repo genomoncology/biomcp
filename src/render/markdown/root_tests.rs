@@ -117,7 +117,16 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
     assert!(gene_markdown.contains("biomcp search variant -g CFTR"));
 
     let drug = Drug {
-        section_outcomes: crate::entities::drug::default_drug_section_outcomes(),
+        section_outcomes: {
+            let mut outcomes = crate::entities::drug::default_drug_section_outcomes();
+            outcomes.complete(
+                "interactions",
+                crate::entities::section_outcome::SectionOutcome::data_sources([
+                    "DDInter", "DrugBank",
+                ]),
+            );
+            outcomes
+        },
         name: "ivacaftor".to_string(),
         drugbank_id: Some("DB08820".to_string()),
         chembl_id: Some("CHEMBL1200749".to_string()),

@@ -353,17 +353,17 @@ async fn main() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     let mode = args.next().ok_or_else(|| {
         anyhow::anyhow!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions> <port>"
         )
     })?;
     let port = args.next().ok_or_else(|| {
         anyhow::anyhow!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions> <port>"
         )
     })?;
     if args.next().is_some() {
         anyhow::bail!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions> <port>"
         );
     }
 
@@ -395,6 +395,29 @@ async fn main() -> anyhow::Result<()> {
         "section-outcome" => {
             let result = call_typed_get(&client, "drug", "fixture-drug", &["approvals"]).await?;
             println!("{}", first_text(&result)?);
+        }
+        "section-outcome-interactions" => {
+            let with_label = call_typed_get(
+                &client,
+                "drug",
+                "fixture-drug-label",
+                &["label", "interactions"],
+            )
+            .await?;
+            let without_label = call_typed_get(
+                &client,
+                "drug",
+                "fixture-drug-empty",
+                &["label", "interactions"],
+            )
+            .await?;
+            let documents = [with_label, without_label]
+                .iter()
+                .map(|result| -> anyhow::Result<serde_json::Value> {
+                    Ok(serde_json::from_str(first_text(result)?)?)
+                })
+                .collect::<anyhow::Result<Vec<_>>>()?;
+            println!("{}", serde_json::to_string(&documents)?);
         }
         _ => anyhow::bail!("unknown mode: {mode}"),
     }
