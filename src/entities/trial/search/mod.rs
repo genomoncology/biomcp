@@ -365,7 +365,7 @@ pub async fn count_all(filters: &TrialSearchFilters) -> Result<TrialCount, BioMc
     match filters.source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
-            count_all_with_ctgov_client(&client, filters).await
+            count_all_with_ctgov_client(&client, filters, ctgov::COUNT_TRAVERSAL_PAGE_CAP).await
         }
         TrialSource::NciCts => {
             let page = search_page(filters, 1, 0, None).await?;

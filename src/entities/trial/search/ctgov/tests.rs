@@ -3,6 +3,7 @@
 use super::super::super::test_support::*;
 use super::super::{prepare_ctgov_search_context, validate_trial_search};
 use super::*;
+use crate::entities::trial::TrialCountUnknownReason;
 
 fn trial_alias(label: &str, source: TrialAliasSource) -> TrialAlias {
     TrialAlias {
@@ -588,7 +589,7 @@ fn age_filter_total_returns_native_total_when_exhausted() {
 #[test]
 fn count_all_returns_approximate_for_age_only_filters() {
     assert_eq!(
-        ctgov_count_from_native_total(250, true),
+        ctgov_count_from_native_total(Some(250), true),
         TrialCount::Approximate(250)
     );
 }
@@ -596,19 +597,101 @@ fn count_all_returns_approximate_for_age_only_filters() {
 #[test]
 fn count_all_returns_exact_for_no_post_filters() {
     assert_eq!(
-        ctgov_count_from_native_total(494, false),
+        ctgov_count_from_native_total(Some(494), false),
         TrialCount::Exact(494)
     );
 }
 
-#[test]
-fn count_all_returns_unknown_when_expensive_post_filter_hits_page_cap() {
-    assert!(!ctgov_single_count_page_cap_reached(
-        COUNT_TRAVERSAL_PAGE_CAP - 1
-    ));
-    assert!(ctgov_single_count_page_cap_reached(
-        COUNT_TRAVERSAL_PAGE_CAP
-    ));
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn count_all_keeps_an_omitted_provider_total_unknown() {
+    // Synthetic first-page envelope reproducing receipted provider optionality.
+    let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
+    let _env = CtGovFixtureEnv::set(&base);
+    let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
+    for filters in [
+        TrialSearchFilters {
+            condition: Some("melanoma".into()),
+            ..Default::default()
+        },
+        TrialSearchFilters {
+            condition: Some("melanoma".into()),
+            age: Some(0.5),
+            ..Default::default()
+        },
+    ] {
+        let count = count_all_with_ctgov_client(&client, &filters, COUNT_TRAVERSAL_PAGE_CAP)
+            .await
+            .expect("synthetic CTGov count response");
+        assert_eq!(
+            count,
+            TrialCount::Unknown(TrialCountUnknownReason::ProviderOmittedTotal)
+        );
+    }
+    server.abort();
+    let requests = requests.lock().expect("lock fixture requests");
+    assert_eq!(requests.len(), 2);
+    assert!(
+        requests
+            .iter()
+            .all(|request| request.contains("countTotal=true") && request.contains("pageSize=1"))
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn expensive_single_query_returns_the_traversal_limit_reason_at_its_cap() {
+    let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
+    let _env = CtGovFixtureEnv::set(&base);
+    let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
+    let filters = TrialSearchFilters {
+        condition: Some("melanoma".into()),
+        criteria: Some("BRAF V600E".into()),
+        ..Default::default()
+    };
+    let count = count_all_with_ctgov_client(&client, &filters, 0)
+        .await
+        .expect("bounded expensive CTGov count");
+    assert_eq!(
+        count,
+        TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached)
+    );
+    server.abort();
+    assert!(requests.lock().expect("lock fixture requests").is_empty());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn alias_union_returns_the_traversal_limit_reason_at_its_cap() {
+    let (base, requests, server) = ctgov_json_fixture(r#"{"studies":[]}"#).await;
+    let _env = CtGovFixtureEnv::set(&base);
+    let client = ClinicalTrialsClient::new().expect("CTGov fixture client");
+    let filters = TrialSearchFilters {
+        condition: Some("melanoma".into()),
+        ..Default::default()
+    };
+    let normalized = validate_trial_search(&filters).expect("valid CTGov filters");
+    let context = prepare_ctgov_search_context(&filters, &normalized).expect("CTGov context");
+    let aliases = [
+        trial_alias("requested", TrialAliasSource::Requested),
+        trial_alias("expanded", TrialAliasSource::DrugBankSynonym),
+    ];
+    let count = count_all_with_ctgov_union(
+        &client,
+        &filters,
+        &context,
+        raw_condition_query(&filters),
+        &aliases,
+        1,
+    )
+    .await
+    .expect("bounded alias-union CTGov count");
+    assert_eq!(
+        count,
+        TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached)
+    );
+    server.abort();
+    assert!(requests.lock().expect("lock fixture requests").is_empty());
 }
 
 #[test]
@@ -870,12 +953,6 @@ fn alias_union_count_returns_exact_unique_total_when_exhausted() {
 }
 
 #[test]
-fn alias_union_count_returns_unknown_when_page_cap_is_hit() {
-    assert!(!ctgov_count_page_cap_would_be_exceeded(48, 2));
-    assert!(ctgov_count_page_cap_would_be_exceeded(50, 2));
-}
-
-#[test]
 fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
     let mut workers = ctgov_workers(
         None,
@@ -891,5 +968,8 @@ fn skipped_expanded_worker_makes_search_and_count_totals_unknown() {
     assert_eq!(ctgov_union_total(false, false, &workers, 2), Some(2));
     assert_eq!(ctgov_union_total(true, false, &workers, 2), None);
     assert_eq!(completed_ctgov_union_count(false, 2), TrialCount::Exact(2));
-    assert_eq!(completed_ctgov_union_count(true, 2), TrialCount::Unknown);
+    assert_eq!(
+        completed_ctgov_union_count(true, 2),
+        TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage)
+    );
 }

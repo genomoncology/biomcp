@@ -261,6 +261,17 @@ pub enum TrialCount {
     Exact(usize),
     /// Upstream CTGov total before client-side age post-filtering.
     Approximate(usize),
-    /// Traversal cap was hit, so the exact total is unknown.
-    Unknown,
+    /// The total is unknown for the stated reason.
+    Unknown(TrialCountUnknownReason),
+}
+
+/// Explains why a trial count could not be stated numerically.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrialCountUnknownReason {
+    /// ClinicalTrials.gov omitted the requested total from its response.
+    ProviderOmittedTotal,
+    /// Bounded post-filter traversal reached its page limit.
+    TraversalLimitReached,
+    /// An expanded ClinicalTrials.gov worker failed, leaving coverage incomplete.
+    IncompleteCoverage,
 }

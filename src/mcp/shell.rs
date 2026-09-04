@@ -1471,9 +1471,9 @@ mod tests {
         TypedVariantArticles, TypedVariantCar, binary_download_rejection_for_args,
         cli_may_return_article_fulltext, get_args, is_allowed_mcp_args,
         mcp_rejection_message_for_args, redact_mcp_json_text, redact_mcp_text, search_args,
-        to_resource_result,
     };
     use serde_json::json;
+    mod ticket_1120;
 
     #[test]
     fn binary_downloads_are_rejected_but_manifests_remain_allowed() {
@@ -1550,7 +1550,7 @@ mod tests {
             "Error: bad\u{9b}31m identifier\u{202e}",
         ))
         .expect("serialize MCP error");
-        let resource = serde_json::to_value(to_resource_result(
+        let resource = serde_json::to_value(super::to_resource_result(
             "biomcp://help",
             "# Help\nBad\u{1b}]8;;https://example.test\u{7}label\u{1b}]8;;\u{7}".into(),
         ))

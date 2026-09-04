@@ -207,33 +207,7 @@ pub(in crate::cli) async fn handle_search(
 
     let text = if args.count_only {
         let count = crate::entities::trial::count_all(&filters).await?;
-        if json {
-            use crate::entities::trial::TrialCount;
-
-            #[derive(serde::Serialize)]
-            struct TrialCountOnlyJson {
-                total: Option<usize>,
-                #[serde(skip_serializing_if = "Option::is_none")]
-                approximate: Option<bool>,
-            }
-
-            let (total, approximate) = match count {
-                TrialCount::Exact(total) => (Some(total), None),
-                TrialCount::Approximate(total) => (Some(total), Some(true)),
-                TrialCount::Unknown => (None, None),
-            };
-            crate::render::json::to_pretty(&TrialCountOnlyJson { total, approximate })?
-        } else {
-            match count {
-                crate::entities::trial::TrialCount::Exact(total) => format!("Total: {total}"),
-                crate::entities::trial::TrialCount::Approximate(total) => {
-                    format!("Total: {total} (approximate, age post-filtered)")
-                }
-                crate::entities::trial::TrialCount::Unknown => {
-                    "Total: unknown (traversal limit reached)".to_string()
-                }
-            }
-        }
+        render_count_only(count, json)?
     } else {
         let page =
             crate::entities::trial::search_page(&filters, args.limit, args.offset, args.next_page)
@@ -288,6 +262,48 @@ pub(in crate::cli) async fn handle_search(
     };
 
     Ok(CommandOutcome::stdout(text))
+}
+
+pub(super) fn render_count_only(
+    count: crate::entities::trial::TrialCount,
+    json: bool,
+) -> anyhow::Result<String> {
+    use crate::entities::trial::{TrialCount, TrialCountUnknownReason};
+
+    if json {
+        #[derive(serde::Serialize)]
+        struct TrialCountOnlyJson {
+            total: Option<usize>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            approximate: Option<bool>,
+        }
+
+        let (total, approximate) = match count {
+            TrialCount::Exact(total) => (Some(total), None),
+            TrialCount::Approximate(total) => (Some(total), Some(true)),
+            TrialCount::Unknown(_) => (None, None),
+        };
+        Ok(crate::render::json::to_pretty(&TrialCountOnlyJson {
+            total,
+            approximate,
+        })?)
+    } else {
+        Ok(match count {
+            TrialCount::Exact(total) => format!("Total: {total}"),
+            TrialCount::Approximate(total) => {
+                format!("Total: {total} (approximate, age post-filtered)")
+            }
+            TrialCount::Unknown(TrialCountUnknownReason::ProviderOmittedTotal) => {
+                "Total: unknown (provider omitted the requested total)".to_string()
+            }
+            TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached) => {
+                "Total: unknown (traversal limit reached)".to_string()
+            }
+            TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage) => {
+                "Total: unknown (expanded CTGov coverage incomplete)".to_string()
+            }
+        })
+    }
 }
 
 fn parse_usize_arg(flag: &str, value: &str) -> Result<usize, crate::error::BioMcpError> {
@@ -499,4 +515,60 @@ pub(super) fn should_show_trial_zero_result_nickname_hint(
             crate::entities::trial::TrialSource::ClinicalTrialsGov
         )
         && result_count == 0
+}
+
+#[cfg(test)]
+mod count_tests {
+    use super::render_count_only;
+    use crate::entities::trial::{TrialCount, TrialCountUnknownReason};
+
+    #[test]
+    fn json_preserves_precision_and_omits_unknown_approximation() {
+        let approximate =
+            render_count_only(TrialCount::Approximate(23), true).expect("approximate count JSON");
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&approximate).expect("count JSON"),
+            serde_json::json!({"total": 23, "approximate": true})
+        );
+        for reason in [
+            TrialCountUnknownReason::ProviderOmittedTotal,
+            TrialCountUnknownReason::TraversalLimitReached,
+            TrialCountUnknownReason::IncompleteCoverage,
+        ] {
+            let rendered =
+                render_count_only(TrialCount::Unknown(reason), true).expect("unknown count JSON");
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(&rendered).expect("count JSON"),
+                serde_json::json!({"total": null})
+            );
+        }
+    }
+
+    #[test]
+    fn text_explains_each_unknown_reason_truthfully() {
+        assert_eq!(
+            render_count_only(
+                TrialCount::Unknown(TrialCountUnknownReason::TraversalLimitReached),
+                false,
+            )
+            .expect("cap count text"),
+            "Total: unknown (traversal limit reached)"
+        );
+        for (reason, expected) in [
+            (
+                TrialCountUnknownReason::ProviderOmittedTotal,
+                "provider omitted the requested total",
+            ),
+            (
+                TrialCountUnknownReason::IncompleteCoverage,
+                "expanded CTGov coverage incomplete",
+            ),
+        ] {
+            let rendered =
+                render_count_only(TrialCount::Unknown(reason), false).expect("unknown count text");
+            assert!(rendered.contains(expected));
+            assert!(!rendered.contains("Total: 0"));
+            assert!(!rendered.contains("traversal limit reached"));
+        }
+    }
 }

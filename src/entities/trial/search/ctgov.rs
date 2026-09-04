@@ -12,6 +12,7 @@ use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovSearchParams, Ct
 use crate::transform;
 use crate::utils::date::validate_since;
 
+use super::super::TrialCountUnknownReason;
 use super::super::{TrialCount, TrialSearchFilters, TrialSearchResult, TrialSource};
 use super::eligibility::ctgov_nct_id;
 use super::{
@@ -23,7 +24,7 @@ use super::{
 
 pub(super) const CTGOV_COUNT_PAGE_SIZE: usize = 1000;
 const CTGOV_MAX_PAGE_FETCHES: usize = 20;
-const COUNT_TRAVERSAL_PAGE_CAP: usize = 50;
+pub(super) const COUNT_TRAVERSAL_PAGE_CAP: usize = 50;
 
 pub(super) fn ctgov_agg_filters(
     filters: &TrialSearchFilters,
@@ -628,19 +629,13 @@ fn add_unique_ctgov_nct_ids(unique_nct_ids: &mut HashSet<String>, studies: Vec<C
     }
 }
 
-fn ctgov_count_page_cap_would_be_exceeded(fetched_pages: usize, active_workers: usize) -> bool {
-    fetched_pages.saturating_add(active_workers) > COUNT_TRAVERSAL_PAGE_CAP
-}
+const COUNT_CAP_REASON: TrialCountUnknownReason = TrialCountUnknownReason::TraversalLimitReached;
 
-fn ctgov_single_count_page_cap_reached(page_count: usize) -> bool {
-    page_count >= COUNT_TRAVERSAL_PAGE_CAP
-}
-
-fn ctgov_count_from_native_total(total: usize, has_age_filter: bool) -> TrialCount {
-    if has_age_filter {
-        TrialCount::Approximate(total)
-    } else {
-        TrialCount::Exact(total)
+fn ctgov_count_from_native_total(total: Option<usize>, has_age_filter: bool) -> TrialCount {
+    match (total, has_age_filter) {
+        (Some(total), true) => TrialCount::Approximate(total),
+        (Some(total), false) => TrialCount::Exact(total),
+        (None, _) => TrialCount::Unknown(TrialCountUnknownReason::ProviderOmittedTotal),
     }
 }
 
@@ -664,7 +659,7 @@ fn ctgov_union_total(
 
 fn completed_ctgov_union_count(degraded_coverage: bool, unique_count: usize) -> TrialCount {
     if degraded_coverage {
-        TrialCount::Unknown
+        TrialCount::Unknown(TrialCountUnknownReason::IncompleteCoverage)
     } else {
         TrialCount::Exact(unique_count)
     }
@@ -847,6 +842,7 @@ async fn count_all_with_ctgov_union(
     context: &CtGovSearchContext,
     condition_query: Option<&str>,
     intervention_aliases: &[TrialAlias],
+    traversal_page_cap: usize,
 ) -> Result<TrialCount, BioMcpError> {
     let mut workers = ctgov_workers(condition_query, intervention_aliases);
     let mut seen_nct_ids: HashSet<String> = HashSet::new();
@@ -867,8 +863,8 @@ async fn count_all_with_ctgov_union(
             ));
         }
 
-        if ctgov_count_page_cap_would_be_exceeded(fetched_pages, active_indices.len()) {
-            return Ok(TrialCount::Unknown);
+        if fetched_pages.saturating_add(active_indices.len()) > traversal_page_cap {
+            return Ok(TrialCount::Unknown(COUNT_CAP_REASON));
         }
 
         let pages = join_all(active_indices.iter().map(|index| {
@@ -924,6 +920,7 @@ async fn count_all_with_ctgov_union(
 pub(super) async fn count_all_with_ctgov_client(
     client: &ClinicalTrialsClient,
     filters: &TrialSearchFilters,
+    traversal_page_cap: usize,
 ) -> Result<TrialCount, BioMcpError> {
     if !matches!(filters.source, TrialSource::ClinicalTrialsGov) {
         return Err(BioMcpError::InvalidArgument(
@@ -937,8 +934,15 @@ pub(super) async fn count_all_with_ctgov_client(
     let aliases = resolve_ctgov_intervention_aliases(filters).await?;
 
     if aliases.len() > 1 {
-        return count_all_with_ctgov_union(client, filters, &context, condition_query, &aliases)
-            .await;
+        return count_all_with_ctgov_union(
+            client,
+            filters,
+            &context,
+            condition_query,
+            &aliases,
+            traversal_page_cap,
+        )
+        .await;
     }
 
     if !context.uses_expensive_post_filters {
@@ -953,7 +957,7 @@ pub(super) async fn count_all_with_ctgov_client(
                 true,
             ))
             .await?;
-        let total = resp.total_count.unwrap_or(0) as usize;
+        let total = resp.total_count.map(|total| total as usize);
         return Ok(ctgov_count_from_native_total(total, filters.age.is_some()));
     }
 
@@ -962,8 +966,8 @@ pub(super) async fn count_all_with_ctgov_client(
     let mut page_count = 0usize;
 
     loop {
-        if ctgov_single_count_page_cap_reached(page_count) {
-            return Ok(TrialCount::Unknown);
+        if page_count >= traversal_page_cap {
+            return Ok(TrialCount::Unknown(COUNT_CAP_REASON));
         }
 
         let resp = client
