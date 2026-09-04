@@ -640,7 +640,9 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
         .filter_map(|intervention| json_get_string(intervention, &["name"]))
         .take(25)
         .collect();
-    let why_stopped = json_get_string(trial, &["why_study_stopped"]).map(Some);
+    let why_stopped = trial
+        .get("why_study_stopped")
+        .map(|_| json_get_string(trial, &["why_study_stopped"]));
 
     Ok(Trial {
         nct_id,
