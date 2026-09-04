@@ -58,7 +58,7 @@ Change only the NCI conversion path and its tests. Do not change the ClinicalTri
 
 Do not change how conditions are read. `diseases` is present and the failure there has a different cause, filed as ticket 1107.
 
-Do not change the display of any of these fields. This ticket is about the values reaching the caller, not how they are shown. `format_age_range` rendering English is filed as ticket 1115 and stays as it is here.
+Do not change the display of any of these fields. This ticket is about the values reaching the caller, not how they are shown. The remaining cross-provider age representation and rendering work is filed as ticket 1116 and stays as it is here.
 
 Absorbs draft 1118 and draft 1119, both archived on 2026-09-03. 1119 described the enrollment failure as a float-parsing bug; the parse is never reached, because the key is never found. 1118's requirement moved to 1107.
 

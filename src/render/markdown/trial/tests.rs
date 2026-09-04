@@ -1,5 +1,71 @@
 use super::*;
 
+fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
+    crate::entities::trial::Trial {
+        nct_id: "NCT00000001".to_string(),
+        source: Some("ClinicalTrials.gov".to_string()),
+        title: "Summary trial".to_string(),
+        status: "Recruiting".to_string(),
+        why_stopped: None,
+        phase: None,
+        study_type: None,
+        age_range: None,
+        conditions: vec![],
+        interventions: vec![],
+        intervention_details: vec![],
+        sponsor: None,
+        enrollment: None,
+        summary: summary.map(str::to_string),
+        start_date: None,
+        completion_date: None,
+        eligibility_text: None,
+        eligibility: None,
+        eligibility_provenance: None,
+        contacts: None,
+        locations: None,
+        outcomes: None,
+        arms: None,
+        references: None,
+    }
+}
+
+#[test]
+fn bounded_trial_summary_preserves_the_pre_1113_sentence_bytes() {
+    assert_eq!(
+        bounded_trial_summary("  Sentence one. Sentence two. Sentence three.  "),
+        "Sentence one. Sentence two."
+    );
+    assert_eq!(
+        bounded_trial_summary("  One sentence only.  "),
+        "One sentence only."
+    );
+}
+
+#[test]
+fn bounded_trial_summary_preserves_the_pre_1113_multibyte_bytes() {
+    let summary = "€".repeat(400);
+    let expected = format!("{}...", "€".repeat(166));
+    let bounded = bounded_trial_summary(&summary);
+    assert_eq!(bounded, expected);
+    assert!(bounded.is_char_boundary(bounded.len()));
+    assert_eq!(bounded.len(), 501);
+}
+
+#[test]
+fn trial_markdown_uses_the_same_bounded_summary_bytes() {
+    let full = "Sentence one. Sentence two. Sentence three.";
+    let markdown = trial_markdown(&summary_trial(Some(full)), &[]).expect("trial markdown");
+    let rendered_summary = markdown
+        .split_once("## Summary (ClinicalTrials.gov)\n\n")
+        .expect("summary section")
+        .1
+        .split_once("\nMore:\n")
+        .expect("end of summary section")
+        .0;
+    assert_eq!(rendered_summary, "Sentence one. Sentence two.");
+    assert!(!markdown.contains("Sentence three."));
+}
+
 #[test]
 fn trial_search_markdown_with_footer_shows_scoped_zero_result_nickname_hint() {
     let markdown = trial_search_markdown_with_footer(

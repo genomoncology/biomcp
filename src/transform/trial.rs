@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::HashSet;
 
 use crate::entities::trial::{
@@ -20,38 +19,6 @@ fn truncate_utf8(s: &str, max_bytes: usize, suffix: &str) -> String {
     let mut out = s[..boundary].trim_end().to_string();
     out.push_str(suffix);
     out
-}
-
-fn first_n_sentences(text: &str, n: usize) -> Cow<'_, str> {
-    let trimmed = text.trim();
-    if trimmed.is_empty() || n == 0 {
-        return Cow::Borrowed("");
-    }
-
-    let mut end = 0;
-    let mut count = 0;
-    let bytes = trimmed.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'.' {
-            // Sentence boundary: '.' followed by whitespace or end-of-string.
-            let next = i + 1;
-            if next == bytes.len() || bytes.get(next).is_some_and(|b| b.is_ascii_whitespace()) {
-                count += 1;
-                if count >= n {
-                    end = next;
-                    break;
-                }
-            }
-        }
-        i += 1;
-    }
-
-    if end == 0 {
-        Cow::Borrowed(trimmed)
-    } else {
-        Cow::Borrowed(&trimmed[..end])
-    }
 }
 
 fn normalize_phase(phases: &[String]) -> Option<String> {
@@ -99,11 +66,6 @@ fn format_age_range(min_age: Option<&str>, max_age: Option<&str>) -> Option<Stri
     }
 }
 
-pub(crate) fn truncate_summary(s: &str) -> String {
-    let short = first_n_sentences(s, 2);
-    truncate_utf8(short.trim(), 500, "...")
-}
-
 pub(crate) fn format_conditions(conditions: &[String]) -> String {
     const MAX_ITEMS: usize = 10;
     const MAX_BYTES: usize = 80;
@@ -133,6 +95,10 @@ fn clean_opt(value: Option<&str>) -> Option<String> {
         .map(str::trim)
         .filter(|v| !v.is_empty())
         .map(str::to_string)
+}
+
+fn normalize_summary(value: Option<&str>) -> Option<String> {
+    clean_opt(value)
 }
 
 fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
@@ -398,9 +364,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         .and_then(|e| e.count);
     let summary = p
         .and_then(|p| p.description_module.as_ref())
-        .and_then(|m| m.brief_summary.as_deref())
-        .map(truncate_summary)
-        .filter(|s| !s.is_empty());
+        .and_then(|m| normalize_summary(m.brief_summary.as_deref()));
     let start_date = p
         .and_then(|p| p.status_module.as_ref())
         .and_then(|m| m.start_date_struct.as_ref())
@@ -624,9 +588,8 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
         .and_then(|s| s.parse::<i32>().ok());
     let start_date = json_get_string(trial, &["start_date"]).filter(|s| !s.is_empty());
     let completion_date = json_get_string(trial, &["completion_date"]).filter(|s| !s.is_empty());
-    let summary = json_get_string(trial, &["brief_summary"])
-        .map(|s| truncate_summary(&s))
-        .filter(|s| !s.is_empty());
+    let raw_summary = json_get_string(trial, &["brief_summary"]);
+    let summary = normalize_summary(raw_summary.as_deref());
     let conditions = nci_conditions(trial, &["diseases"])?;
     let interventions = trial
         .get("arms")

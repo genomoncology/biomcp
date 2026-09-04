@@ -5,6 +5,42 @@ use super::*;
 #[cfg(test)]
 mod tests;
 
+fn bounded_trial_summary(summary: &str) -> String {
+    const MAX_SENTENCES: usize = 2;
+    const MAX_BYTES: usize = 500;
+
+    let trimmed = summary.trim();
+    let mut sentence_end = None;
+    let mut sentence_count = 0;
+    let bytes = trimmed.as_bytes();
+    for (index, byte) in bytes.iter().enumerate() {
+        if *byte != b'.' {
+            continue;
+        }
+        let next = index + 1;
+        if next == bytes.len() || bytes.get(next).is_some_and(|b| b.is_ascii_whitespace()) {
+            sentence_count += 1;
+            if sentence_count == MAX_SENTENCES {
+                sentence_end = Some(next);
+                break;
+            }
+        }
+    }
+
+    let bounded_sentences = &trimmed[..sentence_end.unwrap_or(trimmed.len())];
+    if bounded_sentences.len() <= MAX_BYTES {
+        return bounded_sentences.to_string();
+    }
+
+    let mut boundary = MAX_BYTES;
+    while boundary > 0 && !bounded_sentences.is_char_boundary(boundary) {
+        boundary -= 1;
+    }
+    let mut bounded = bounded_sentences[..boundary].trim_end().to_string();
+    bounded.push_str("...");
+    bounded
+}
+
 pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("trial.md.j2")?;
     let section_only = is_section_only_requested(requested_sections);
@@ -27,6 +63,11 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         || requested
             .iter()
             .any(|s| s.eq_ignore_ascii_case("references"));
+    let summary = trial
+        .summary
+        .as_deref()
+        .map(bounded_trial_summary)
+        .filter(|summary| !summary.is_empty());
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&trial.nct_id, requested_sections),
@@ -44,7 +85,7 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         intervention_details => &trial.intervention_details,
         sponsor => &trial.sponsor,
         enrollment => &trial.enrollment,
-        summary => &trial.summary,
+        summary => &summary,
         start_date => &trial.start_date,
         completion_date => &trial.completion_date,
         eligibility_text => &trial.eligibility_text,

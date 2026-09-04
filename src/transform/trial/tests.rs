@@ -6,21 +6,11 @@ mod ticket_1107;
 mod ticket_1111;
 #[path = "tests/ticket_1112.rs"]
 mod ticket_1112;
+#[path = "tests/ticket_1115.rs"]
+mod ticket_1115;
 #[path = "tests/ticket_1132.rs"]
 mod ticket_1132;
 use ticket_1107::{IntoTrialSearchTestResult, IntoTrialTestResult};
-#[test]
-fn truncate_summary_two_sentences_and_length() {
-    let s = "Sentence one. Sentence two. Sentence three.";
-    let out = truncate_summary(s);
-    assert_eq!(out, "Sentence one. Sentence two.");
-
-    let long = "€".repeat(400);
-    let out2 = truncate_summary(&long);
-    assert!(out2.ends_with("..."));
-    assert!(out2.len() <= 503);
-}
-
 #[test]
 fn format_age_range_handles_missing_bounds() {
     assert_eq!(
@@ -291,11 +281,9 @@ fn from_nci_trial_maps_attested_fields() {
     assert_eq!(trial.nct_id, "NCT11111111");
     assert_eq!(trial.phase.as_deref(), Some("PHASE3"));
     assert_eq!(trial.conditions, vec!["Melanoma"]);
-    assert!(
-        trial
-            .summary
-            .as_deref()
-            .is_some_and(|v| v.contains("Sentence one. Sentence two."))
+    assert_eq!(
+        trial.summary.as_deref(),
+        Some("Sentence one. Sentence two. Sentence three.")
     );
 }
 

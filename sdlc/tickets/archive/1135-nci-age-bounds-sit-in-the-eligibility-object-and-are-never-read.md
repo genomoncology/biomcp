@@ -64,7 +64,7 @@ The behavior is restated above in full, because an attempt runs in a worktree wh
 
 Change only the NCI age read and its tests.
 
-Do not change `format_age_range`. That it renders English rather than structure is ticket 1115, and it stays as it is here. This ticket is about whether the bounds reach it at all.
+Do not change `format_age_range`. The remaining cross-provider age representation and rendering work is ticket 1116, and it stays as it is here. This ticket is about whether the bounds reach it at all.
 
 Do not change the ClinicalTrials.gov age path at `src/transform/trial.rs:368`. Its names are correct.
 
