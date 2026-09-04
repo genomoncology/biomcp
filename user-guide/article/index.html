@@ -4373,9 +4373,10 @@ as free text.</p>
 <h2 id="query-formulation">Query formulation<a class="headerlink" href="#query-formulation" title="Permanent link">&para;</a></h2>
 <p>Turn a natural-language literature question into two parts:</p>
 <ul>
-<li>Put a known gene, disease, or drug in <code>-g/--gene</code>, <code>-d/--disease</code>, or <code>--drug</code>.</li>
+<li>Put a known gene, disease, or drug in <code>-g/--gene</code>, <code>-d/--disease</code>, or <code>--drug</code>. Article <code>--gene</code> accepts one nonempty symbol without whitespace; put extra concepts in <code>--keyword</code>.</li>
 <li>Put mechanisms, phenotypes, outcomes, datasets, and other provider-neutral free-text concepts in <code>-k/--keyword</code>.</li>
 <li>Put a known author in <code>-a/--author</code> and a known journal in <code>--journal</code>; do not put PubMed or Europe PMC field grammar in <code>-k/--keyword</code>.</li>
+<li>Keyword also rejects <code>gene:</code>, <code>disease:</code>, and <code>drug:</code> labels at the start or after whitespace/<code>(</code>. Literal quote bytes keep those phrases literal; shell or JSON quoting alone does not add quote bytes.</li>
 <li>If the question is asking which gene, disease, or drug fits the evidence and you do not know the entity yet, do not guess a typed flag. Start with keyword-only article search or run <code>biomcp discover "&lt;question&gt;"</code> first.</li>
 <li>Question-format article terms are acceptable: PubMed ESearch cleans bounded filler words from unfielded gene, disease, drug, and keyword terms provider-locally, while query echoes and non-PubMed sources keep the original wording.</li>
 <li>Use <code>--type review</code> for synthesis questions, list-style questions, and dataset surveys.</li>

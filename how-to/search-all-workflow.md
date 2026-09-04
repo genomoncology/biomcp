@@ -95,6 +95,12 @@ Prefer named slots in new docs, scripts, and demos. They are the primary
 teaching path and avoid ambiguity about whether a term is a gene, disease,
 drug, variant, or general keyword.
 
+`--gene` accepts one nonempty symbol without whitespace. `--keyword` is
+provider-neutral and rejects `gene:`, `disease:`, or `drug:` expressions at the
+same boundary as direct article search, before any fan-out begins. Use the
+matching typed slot. Literal quote bytes preserve such text as a keyword;
+ordinary shell or JSON delimiters do not add those bytes.
+
 ## Related
 
 - [CLI Reference - All (cross-entity)](../user-guide/cli-reference.md#all-cross-entity)

@@ -5251,9 +5251,11 @@ to Europe PMC. Select either capable source directly when needed; PubTator3,
 Semantic Scholar, and LitSense2 reject author filters rather than interpreting
 the name as free text.</p>
 <p><code>-k/--keyword</code> is provider-neutral text, not raw PubMed or Europe PMC grammar.
-Use <code>--author</code> or <code>--journal</code> for those fields. Recognized provider field
+Use <code>--gene</code>, <code>--disease</code>, <code>--drug</code>, <code>--author</code>, or <code>--journal</code> for those fields.
+Article <code>--gene</code> accepts one nonempty symbol without whitespace. Recognized field
 expressions are rejected, while ordinary biomedical bracket and colon notation
-remains literal keyword text.</p>
+remains literal keyword text. Literal quote bytes around reserved field text keep
+it literal; shell or JSON quoting alone does not add those bytes.</p>
 <p><code>--session &lt;token&gt;</code> is article-local and optional. Use it as a short
 non-secret local label when a caller may repeat keyword searches for one task;
 JSON responses can then add loop-breaker <code>_meta.suggestions[]</code> if consecutive

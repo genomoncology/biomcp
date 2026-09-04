@@ -278,9 +278,11 @@ Semantic Scholar, and LitSense2 reject author filters rather than interpreting
 the name as free text.
 
 `-k/--keyword` is provider-neutral text, not raw PubMed or Europe PMC grammar.
-Use `--author` or `--journal` for those fields. Recognized provider field
+Use `--gene`, `--disease`, `--drug`, `--author`, or `--journal` for those fields.
+Article `--gene` accepts one nonempty symbol without whitespace. Recognized field
 expressions are rejected, while ordinary biomedical bracket and colon notation
-remains literal keyword text.
+remains literal keyword text. Literal quote bytes around reserved field text keep
+it literal; shell or JSON quoting alone does not add those bytes.
 
 `--session <token>` is article-local and optional. Use it as a short
 non-secret local label when a caller may repeat keyword searches for one task;

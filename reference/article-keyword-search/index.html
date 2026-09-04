@@ -4352,6 +4352,12 @@ are rejected with guidance to use <code>--author</code>, <code>--journal</code>,
 keyword text. Matching is case-insensitive. Other bracket and colon forms remain
 literal, so biomedical text such as <code>NM_004333.6:c.1799T&gt;A</code>, <code>BRAF[variant]</code>,
 and <code>protein:protein interaction</code> remains searchable.</p>
+<p>The case-insensitive labels <code>gene:</code>, <code>disease:</code>, and <code>drug:</code> are also rejected
+when they begin the trimmed keyword or follow whitespace or <code>(</code>. Use the
+matching typed field instead. Prefixes such as <code>oncogene:</code> and <code>MYGENE:</code> stay
+literal. Literal quote bytes around a value such as <code>"gene:gene interaction"</code>
+also keep it literal; ordinary shell or JSON delimiters do not become bytes in
+the runtime value.</p>
 <p>PubMed-specific behavior: direct <code>--source pubmed</code> searches and the compatible
 federated PubMed leg clean bounded question-format filler words from
 unfielded gene, disease, drug, and keyword terms before PubMed ESearch.
@@ -4364,7 +4370,9 @@ LitSense2 query behavior.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;large language model clinical trials&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="phrase-behavior-for-entity-filters">Phrase behavior for entity filters<a class="headerlink" href="#phrase-behavior-for-entity-filters" title="Permanent link">&para;</a></h2>
-<p>Entity-oriented filters retain phrase quoting behavior:</p>
+<p>Article <code>--gene</code> accepts one nonempty symbol without whitespace; put any
+additional concept in <code>--keyword</code>. Other entity-oriented filters retain phrase
+quoting behavior:</p>
 <ul>
 <li><code>--gene</code></li>
 <li><code>--disease</code></li>
@@ -4374,7 +4382,7 @@ LitSense2 query behavior.</p>
   and LitSense2 author searches are rejected)</li>
 </ul>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--author<span class="w"> </span><span class="s2">&quot;Jane Doe&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-k<span class="w"> </span>V600E<span class="w"> </span>--author<span class="w"> </span><span class="s2">&quot;Jane Doe&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="combined-filters">Combined filters<a class="headerlink" href="#combined-filters" title="Permanent link">&para;</a></h2>
 <p>Filters can also be combined with typed anchors and other article controls:</p>

@@ -4275,6 +4275,11 @@ controlled fallback instead of duplicating it across downstream commands.</p>
 <p>Prefer named slots in new docs, scripts, and demos. They are the primary
 teaching path and avoid ambiguity about whether a term is a gene, disease,
 drug, variant, or general keyword.</p>
+<p><code>--gene</code> accepts one nonempty symbol without whitespace. <code>--keyword</code> is
+provider-neutral and rejects <code>gene:</code>, <code>disease:</code>, or <code>drug:</code> expressions at the
+same boundary as direct article search, before any fan-out begins. Use the
+matching typed slot. Literal quote bytes preserve such text as a keyword;
+ordinary shell or JSON delimiters do not add those bytes.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../user-guide/cli-reference/#all-cross-entity">CLI Reference - All (cross-entity)</a></li>
