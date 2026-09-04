@@ -368,7 +368,7 @@ def _write_fixture_contract_repo(
     transform_source.parent.mkdir(parents=True, exist_ok=True)
     transform_source.write_text(
         'fn from_nci_hit(hit: &Value) { json_get_string(hit, &["nct_id", "brief_title"]); }\n'
-        'fn from_nci_trial(trial: &Value) { nci_conditions(trial, &["diseases"], 10); }\n',
+        'fn from_nci_trial(trial: &Value) { nci_conditions(trial, &["diseases"]); }\n',
         encoding="utf-8",
     )
     get_source = repository_root / "src" / "entities" / "trial" / "get.rs"
@@ -1140,8 +1140,8 @@ def test_nci_helper_does_not_discover_commented_key_literal(tmp_path: Path) -> N
             'json_get_string(/* hit */ hit, &["nct_id"])',
         ),
         (
-            'nci_conditions(hit, &["diseases"], 10)',
-            'nci_conditions(/* hit */ hit, &["diseases"], 10)',
+            'nci_conditions(hit, &["diseases"])',
+            'nci_conditions(/* hit */ hit, &["diseases"])',
         ),
     ),
 )

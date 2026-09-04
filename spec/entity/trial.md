@@ -83,6 +83,31 @@ condition-planning path.
   | mustmatch 'true'
 ```
 
+## Complete JSON Conditions and Disclosed Markdown Abbreviation
+
+JSON search results retain every condition in the recorded provider response.
+
+```bash
+../../tools/biomcp-ci --json search trial -i Keytruda --no-alias-expand --limit 3 \
+  | jq -e '[.results[] | select(.nct_id == "NCT03590054") | .conditions | length] == [21]' \
+  | mustmatch 'true'
+```
+
+```bash
+"$BIOMCP_BIN" --json search trial -c melanoma --source nci --limit 1 \
+  | jq -e '[.results[] | select(.nct_id == "NCT05929768") | .conditions | length] == [26]' \
+  | mustmatch 'true'
+```
+
+The bounded Markdown table names the complete count when it abbreviates the
+same CTGov result.
+
+```bash
+../../tools/biomcp-ci search trial -i Keytruda --no-alias-expand --limit 3 \
+  | awk -F'|' '$2 == "NCT03590054" {print}' \
+  | mustmatch like 'abridged; 21 conditions total'
+```
+
 ## Alias-Normalized Intervention Search
 
 Brand-name intervention searches should normalize to the same shared drug

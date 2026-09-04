@@ -60,8 +60,8 @@ fn recorded_nci_trial_reports_its_disease_names() {
         .into_test_result()
         .expect("valid recorded NCI hit");
 
-    assert_eq!(trial.conditions, names[..25]);
-    assert_eq!(hit.conditions, names[..10]);
+    assert_eq!(trial.conditions, names);
+    assert_eq!(hit.conditions, names);
 }
 
 #[test]

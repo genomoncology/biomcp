@@ -71,6 +71,15 @@ fn clean_list(values: &[String], max: usize) -> Vec<String> {
         .collect()
 }
 
+fn clean_conditions(values: &[String]) -> Vec<String> {
+    values
+        .iter()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
 fn normalize_age(value: Option<&str>) -> Option<String> {
     value
         .map(str::trim)
@@ -96,14 +105,27 @@ pub(crate) fn truncate_summary(s: &str) -> String {
 }
 
 pub(crate) fn format_conditions(conditions: &[String]) -> String {
-    let joined = conditions
+    const MAX_ITEMS: usize = 10;
+    const MAX_BYTES: usize = 80;
+
+    let cleaned = conditions
         .iter()
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
-        .take(10)
+        .collect::<Vec<_>>();
+    let joined = cleaned
+        .iter()
+        .take(MAX_ITEMS)
+        .copied()
         .collect::<Vec<_>>()
         .join(", ");
-    truncate_utf8(&joined, 80, "…")
+    if cleaned.len() <= MAX_ITEMS && joined.len() <= MAX_BYTES {
+        return joined;
+    }
+
+    let suffix = format!("… [abridged; {} conditions total]", cleaned.len());
+    let prefix = truncate_utf8(&joined, MAX_BYTES.saturating_sub(suffix.len()), "");
+    format!("{prefix}{suffix}")
 }
 
 fn clean_opt(value: Option<&str>) -> Option<String> {
@@ -393,7 +415,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         .filter(|s| !s.is_empty());
     let conditions = p
         .and_then(|p| p.conditions_module.as_ref())
-        .map(|m| clean_list(&m.conditions, 25))
+        .map(|m| clean_conditions(&m.conditions))
         .unwrap_or_default();
     let interventions = p
         .and_then(|p| p.arms_interventions_module.as_ref())
@@ -497,7 +519,7 @@ pub fn from_ctgov_hit(study: &CtGovStudy) -> TrialSearchResult {
         .filter(|s| !s.is_empty());
     let conditions = p
         .and_then(|p| p.conditions_module.as_ref())
-        .map(|m| clean_list(&m.conditions, 10))
+        .map(|m| clean_conditions(&m.conditions))
         .unwrap_or_default();
 
     TrialSearchResult {
@@ -526,11 +548,7 @@ fn json_get_string(value: &serde_json::Value, keys: &[&str]) -> Option<String> {
     None
 }
 
-fn nci_conditions(
-    value: &serde_json::Value,
-    keys: &[&str],
-    max: usize,
-) -> Result<Vec<String>, BioMcpError> {
+fn nci_conditions(value: &serde_json::Value, keys: &[&str]) -> Result<Vec<String>, BioMcpError> {
     let Some(obj) = value.as_object() else {
         return Ok(Vec::new());
     };
@@ -556,7 +574,7 @@ fn nci_conditions(
                             })
                     })
                     .collect::<Result<Vec<_>, _>>()?;
-                return Ok(names.into_iter().take(max).collect());
+                return Ok(names);
             }
             serde_json::Value::String(name) if !name.trim().is_empty() => {
                 return Ok(vec![name.trim().to_string()]);
@@ -574,7 +592,7 @@ pub fn from_nci_hit(hit: &serde_json::Value) -> Result<TrialSearchResult, BioMcp
     let status = json_get_string(hit, &["current_trial_status"]).unwrap_or_default();
     let phase = json_get_string(hit, &["phase"]).filter(|s| !s.is_empty());
     let sponsor = json_get_string(hit, &["lead_org"]).filter(|s| !s.is_empty());
-    let conditions = nci_conditions(hit, &["diseases"], 10)?;
+    let conditions = nci_conditions(hit, &["diseases"])?;
 
     Ok(TrialSearchResult {
         nct_id,
@@ -609,7 +627,7 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
     let summary = json_get_string(trial, &["brief_summary"])
         .map(|s| truncate_summary(&s))
         .filter(|s| !s.is_empty());
-    let conditions = nci_conditions(trial, &["diseases"], 25)?;
+    let conditions = nci_conditions(trial, &["diseases"])?;
     let interventions = trial
         .get("arms")
         .and_then(serde_json::Value::as_array)

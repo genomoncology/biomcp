@@ -54,6 +54,11 @@ BioMCP keeps successful requested-name results and leaves the exact total unknow
 intervention expansion fans out to multiple CTGov queries, `--next-page` is
 unavailable; use `--offset` or `--no-alias-expand`.
 
+JSON search and detail output preserve the complete provider condition array.
+Markdown detail lists every condition, while the search table keeps its compact
+condition cell; when that cell is abridged, it states the complete condition
+count.
+
 Add biomarker filters:
 
 ```bash
