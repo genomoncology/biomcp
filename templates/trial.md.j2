@@ -75,10 +75,10 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 {% if show_locations_section and locations -%}
 ## Locations ({{ trial_source_label }})
 
-| Facility | City | Country | Status | Contact |
-|---|---|---|---|---|
+| Facility | City | Postal code | Country | Status | Contact |
+|---|---|---|---|---|---|
 {% for loc in locations[:20] -%}
-| {{ loc.facility | truncate(40) }} | {{ loc.city }}{% if loc.state %}, {{ loc.state }}{% endif %} | {{ loc.country }} | {{ loc.status or "-" }} | {% if loc.contact_name %}{{ loc.contact_name }}{% if loc.contact_role %} ({{ loc.contact_role }}){% endif %}{% if loc.contact_phone %} {{ loc.contact_phone }}{% endif %}{% if loc.contact_email %} {{ loc.contact_email }}{% endif %}{% else %}-{% endif %} |
+| {{ loc.facility | truncate(40) }} | {{ loc.city }}{% if loc.state %}, {{ loc.state }}{% endif %} | {{ loc.postal_code or "-" }} | {{ loc.country }} | {{ loc.status or "-" }} | {% if loc.contact_name %}{{ loc.contact_name }}{% if loc.contact_role %} ({{ loc.contact_role }}){% endif %}{% if loc.contact_phone %} {{ loc.contact_phone }}{% endif %}{% if loc.contact_email %} {{ loc.contact_email }}{% endif %}{% else %}-{% endif %} |
 {% endfor -%}
 {% endif -%}
 {% if show_outcomes_section and outcomes -%}

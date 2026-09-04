@@ -167,7 +167,11 @@ sections directly instead of forcing a second fetch or a hidden pagination path.
 ```bash
 ../../tools/biomcp-ci get trial NCT02576665 eligibility locations | mustmatch like '## Eligibility (ClinicalTrials.gov)
 ## Locations (ClinicalTrials.gov)
-| Facility | City | Country | Status | Contact |'
+| Facility | City | Postal code | Country | Status | Contact |
+| Sarah Cannon Research Institute | Denver, Colorado | 80218 | United States | - | - |'
+../../tools/biomcp-ci --json get trial NCT02576665 locations \
+  | jq -r '.locations[] | select(.facility == "Sarah Cannon Research Institute") | .postal_code' \
+  | mustmatch '80218'
 ```
 
 ## Trial Contacts Preserve Email and Structured Eligibility
@@ -191,7 +195,7 @@ Eligible Ages: 2 Years to 18 Years
 Key inclusion: confirmed SHANK3-related neurodevelopmental disorder.'
 ../../tools/biomcp-ci get trial NCT41300001 contacts eligibility locations \
   | awk '/^## Locations/{inside=1} inside && /^## / && !/^## Locations/{exit} inside' \
-  | mustmatch like '| Rare Disease Center | Ann Arbor, Michigan | United States | RECRUITING | Site Coordinator (CONTACT) 555-0199 site@example.test |'
+  | mustmatch like '| Rare Disease Center | Ann Arbor, Michigan | - | United States | RECRUITING | Site Coordinator (CONTACT) 555-0199 site@example.test |'
 ```
 
 The `contacts` section needs site context to label site contacts, but JSON should

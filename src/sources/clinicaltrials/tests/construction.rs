@@ -114,6 +114,26 @@ fn default_get_fields_request_visible_status_context() {
 }
 
 #[test]
+fn location_postal_code_is_requested_only_for_location_projections() {
+    for (sections, expected_count) in [
+        (vec![], 0),
+        (vec!["contacts".to_string()], 0),
+        (vec!["locations".to_string()], 1),
+        (vec!["all".to_string()], 1),
+    ] {
+        let fields = build_get_fields(&sections);
+        assert_eq!(
+            fields
+                .split(',')
+                .filter(|field| *field == "LocationZip")
+                .count(),
+            expected_count,
+            "LocationZip count for sections {sections:?}"
+        );
+    }
+}
+
+#[test]
 fn intervention_detail_fields_are_requested_once_with_or_without_arms() {
     for sections in [vec![], vec!["arms".to_string()]] {
         let plan = ClinicalTrialsClient::get_plan("NCT02576665", &sections);

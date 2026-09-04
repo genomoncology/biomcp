@@ -270,6 +270,7 @@ fn trial_markdown_includes_source_labeled_sections() {
             facility: "Example Hospital".to_string(),
             city: "Boston".to_string(),
             state: Some("MA".to_string()),
+            postal_code: None,
             country: "United States".to_string(),
             status: Some("Recruiting".to_string()),
             contact_name: None,
@@ -365,6 +366,7 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
             facility: "Rare Disease Center".to_string(),
             city: "Ann Arbor".to_string(),
             state: Some("Michigan".to_string()),
+            postal_code: None,
             country: "United States".to_string(),
             status: Some("Recruiting".to_string()),
             contact_name: Some("Site Coordinator".to_string()),
@@ -420,7 +422,10 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
     assert!(!eligibility.contains("central@example.test"));
     assert!(!eligibility.contains("site@example.test"));
     assert!(locations.contains(
-        "| Rare Disease Center | Ann Arbor, Michigan | United States | Recruiting | Site Coordinator (CONTACT) site@example.test |"
+        "| Facility | City | Postal code | Country | Status | Contact |\n|---|---|---|---|---|---|"
+    ));
+    assert!(locations.contains(
+        "| Rare Disease Center | Ann Arbor, Michigan | - | United States | Recruiting | Site Coordinator (CONTACT) site@example.test |"
     ));
     assert!(!locations.contains("central@example.test"));
 

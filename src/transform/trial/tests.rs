@@ -6,6 +6,8 @@ mod ticket_1107;
 mod ticket_1111;
 #[path = "tests/ticket_1112.rs"]
 mod ticket_1112;
+#[path = "tests/ticket_1114.rs"]
+mod ticket_1114;
 #[path = "tests/ticket_1115.rs"]
 mod ticket_1115;
 #[path = "tests/ticket_1132.rs"]

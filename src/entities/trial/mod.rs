@@ -87,6 +87,8 @@ pub struct TrialLocation {
     pub city: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
     pub country: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,

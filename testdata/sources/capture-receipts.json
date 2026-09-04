@@ -2245,7 +2245,8 @@
       {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "endpoint": "nci"},
       {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "unreadable_nci_disease_is_an_error:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "nci_condition_shape_does_not_change_a_comma_in_a_name:json:1", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "nci_condition_shape_does_not_change_a_comma_in_a_name:json:2", "endpoint": "nci"}
+      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "nci_condition_shape_does_not_change_a_comma_in_a_name:json:2", "endpoint": "nci"},
+      {"path": "src/transform/trial/tests/ticket_1114.rs", "selector": "ctgov_postal_codes_are_trimmed_and_blank_values_are_omitted:json:1", "endpoint": "ctgov"}
     ],
     "exceptions": []
   },

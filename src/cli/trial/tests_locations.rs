@@ -127,6 +127,7 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
             facility: "Example Hospital".to_string(),
             city: "Boston".to_string(),
             state: Some("MA".to_string()),
+            postal_code: None,
             country: "United States".to_string(),
             status: Some("Recruiting".to_string()),
             contact_name: None,

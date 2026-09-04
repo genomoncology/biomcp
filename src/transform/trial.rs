@@ -119,6 +119,7 @@ fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
                 facility,
                 city,
                 state: clean_opt(loc.state.as_deref()),
+                postal_code: clean_opt(loc.zip.as_deref()),
                 country,
                 status: clean_opt(loc.status.as_deref()),
                 contact_name: contact.and_then(|c| clean_opt(c.name.as_deref())),
