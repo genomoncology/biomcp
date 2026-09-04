@@ -94,6 +94,56 @@ fn bounded_trial_summary(summary: &str) -> String {
 }
 
 pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<String, BioMcpError> {
+    const LOCATION_DISPLAY_CAP: usize = 20;
+
+    let include_all = has_all_section(requested_sections);
+    let requested = requested_section_names(requested_sections);
+    let show_contacts_section =
+        include_all || requested.iter().any(|s| s.eq_ignore_ascii_case("contacts"));
+    let show_locations_section = include_all
+        || requested
+            .iter()
+            .any(|s| s.eq_ignore_ascii_case("locations"));
+    let mut projected = trial.clone();
+    let location_disclosure = if show_locations_section {
+        projected.locations.as_mut().and_then(|locations| {
+            let total = locations.len();
+            locations.truncate(LOCATION_DISPLAY_CAP);
+            (total > locations.len()).then(|| {
+                format!(
+                    "Locations: showing {} of {total} (display cap {LOCATION_DISPLAY_CAP}).",
+                    locations.len()
+                )
+            })
+        })
+    } else {
+        None
+    };
+    if show_contacts_section && show_locations_section {
+        crate::entities::trial::project_contacts_to_locations(
+            &mut projected.contacts,
+            projected.locations.as_deref().unwrap_or_default(),
+        );
+    }
+    render_trial_markdown(
+        &projected,
+        requested_sections,
+        location_disclosure.as_deref(),
+    )
+}
+
+pub(crate) fn trial_paginated_markdown(
+    trial: &Trial,
+    requested_sections: &[String],
+) -> Result<String, BioMcpError> {
+    render_trial_markdown(trial, requested_sections, None)
+}
+
+fn render_trial_markdown(
+    trial: &Trial,
+    requested_sections: &[String],
+    location_disclosure: Option<&str>,
+) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("trial.md.j2")?;
     let section_only = is_section_only_requested(requested_sections);
     let include_all = has_all_section(requested_sections);
@@ -145,6 +195,7 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         eligibility_provenance => &trial.eligibility_provenance,
         contacts => &trial.contacts,
         locations => &trial.locations,
+        location_disclosure => location_disclosure,
         outcomes => &trial.outcomes,
         arms => &trial.arms,
         references => &trial.references,

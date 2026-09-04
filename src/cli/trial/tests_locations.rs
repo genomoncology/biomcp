@@ -6,6 +6,262 @@ use super::dispatch::{
     should_show_trial_zero_result_nickname_hint, trial_locations_json, trial_search_query_summary,
 };
 
+fn contact(
+    level: &str,
+    name: &str,
+    facility: Option<&str>,
+) -> crate::entities::trial::TrialContact {
+    crate::entities::trial::TrialContact {
+        level: level.to_string(),
+        name: name.to_string(),
+        role: Some("CONTACT".to_string()),
+        phone: None,
+        email: Some(format!(
+            "{}@example.test",
+            name.to_ascii_lowercase().replace(' ', "-")
+        )),
+        facility: facility.map(str::to_string),
+        city: facility.map(|_| "Example City".to_string()),
+        state: None,
+        country: facility.map(|_| "United States".to_string()),
+    }
+}
+
+fn location(index: usize) -> crate::entities::trial::TrialLocation {
+    let facility = format!("Site {index:02}");
+    let name = format!("Contact {index:02}");
+    let email = format!(
+        "{}@example.test",
+        name.to_ascii_lowercase().replace(' ', "-")
+    );
+    crate::entities::trial::TrialLocation {
+        facility: Some(facility),
+        city: Some("Example City".to_string()),
+        state: None,
+        postal_code: None,
+        country: Some("United States".to_string()),
+        status: Some("RECRUITING".to_string()),
+        contacts: vec![crate::entities::trial::TrialSiteContact {
+            name: name.clone(),
+            role: Some("CONTACT".to_string()),
+            phone: None,
+            email: Some(email.clone()),
+        }],
+        contact_name: Some(name),
+        contact_role: Some("CONTACT".to_string()),
+        contact_phone: None,
+        contact_email: Some(email),
+        latitude: None,
+        longitude: None,
+    }
+}
+
+fn paged_contact_trial() -> crate::entities::trial::Trial {
+    let locations: Vec<_> = (0..25).map(location).collect();
+    let mut contacts = vec![contact("central", "Central Coordinator", None)];
+    contacts.extend((0..25).map(|index| {
+        contact(
+            "site",
+            &format!("Contact {index:02}"),
+            Some(&format!("Site {index:02}")),
+        )
+    }));
+    crate::entities::trial::Trial {
+        nct_id: "NCT00000001".to_string(),
+        source: Some("ctgov".to_string()),
+        title: "Example trial".to_string(),
+        status: "Recruiting".to_string(),
+        why_stopped: None,
+        phase: None,
+        study_type: None,
+        age_range: None,
+        conditions: vec![],
+        interventions: vec![],
+        intervention_details: vec![],
+        sponsor: None,
+        enrollment: None,
+        summary: None,
+        start_date: None,
+        completion_date: None,
+        eligibility_text: None,
+        eligibility: None,
+        eligibility_provenance: None,
+        contacts: Some(contacts),
+        locations: Some(locations),
+        outcomes: None,
+        arms: None,
+        references: None,
+    }
+}
+
+#[test]
+fn paginate_trial_locations_aligns_site_contacts_to_the_page() {
+    let mut trial = paged_contact_trial();
+
+    let meta = paginate_trial_locations(&mut trial, 20, 3);
+
+    assert_eq!(meta.total, 25);
+    assert_eq!(meta.offset, 20);
+    assert_eq!(meta.limit, 3);
+    assert!(meta.has_more);
+    assert_eq!(
+        trial
+            .locations
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|location| location.facility.as_deref().unwrap())
+            .collect::<Vec<_>>(),
+        ["Site 20", "Site 21", "Site 22"]
+    );
+    assert_eq!(
+        trial
+            .contacts
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|contact| contact.name.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "Central Coordinator",
+            "Contact 20",
+            "Contact 21",
+            "Contact 22"
+        ]
+    );
+}
+
+#[test]
+fn paginate_trial_locations_uses_counted_exact_membership_and_legacy_boundaries() {
+    let duplicate = location(0);
+    let mut second_duplicate = duplicate.clone();
+    second_duplicate.status = Some("ACTIVE_NOT_RECRUITING".to_string());
+    let mut optional = location(4);
+    optional.facility = None;
+    optional.city = None;
+    optional.country = None;
+    let mut legacy = location(5);
+    legacy.contacts.clear();
+    let mut blank_legacy = location(6);
+    blank_legacy.contacts.clear();
+    blank_legacy.contact_name = Some("   ".to_string());
+    let mut authoritative = location(7);
+    authoritative.contact_name = Some("Stale Alias".to_string());
+    let mut omitted_same_place = location(8);
+    omitted_same_place.facility = Some("Site 00".to_string());
+    omitted_same_place.contacts[0].name = "Wrong Person".to_string();
+    omitted_same_place.contacts[0].email = Some("wrong-person@example.test".to_string());
+    omitted_same_place.contact_name = Some("Wrong Person".to_string());
+    omitted_same_place.contact_email = Some("wrong-person@example.test".to_string());
+    let locations = vec![
+        duplicate,
+        second_duplicate,
+        optional.clone(),
+        legacy.clone(),
+        blank_legacy,
+        authoritative.clone(),
+        omitted_same_place,
+    ];
+    let mut trial = paged_contact_trial();
+    trial.locations = Some(locations);
+    let duplicate_contact = contact("site", "Contact 00", Some("Site 00"));
+    let optional_contact = crate::entities::trial::TrialContact {
+        level: "SITE".to_string(),
+        facility: None,
+        city: None,
+        country: None,
+        ..contact("site", "Contact 04", None)
+    };
+    let blank_legacy_contact = crate::entities::trial::TrialContact {
+        name: "   ".to_string(),
+        ..contact("site", "Contact 06", Some("Site 06"))
+    };
+    let stale_legacy_alias_contact = crate::entities::trial::TrialContact {
+        name: "Stale Alias".to_string(),
+        ..contact("site", "Contact 07", Some("Site 07"))
+    };
+    trial.contacts = Some(vec![
+        duplicate_contact.clone(),
+        contact("central", "Central", None),
+        contact("site", "Wrong Person", Some("Site 00")),
+        duplicate_contact.clone(),
+        duplicate_contact,
+        contact("future", "Unknown", None),
+        optional_contact,
+        contact("site", "Contact 05", Some("Site 05")),
+        blank_legacy_contact,
+        stale_legacy_alias_contact,
+        contact("site", "Contact 07", Some("Site 07")),
+    ]);
+
+    paginate_trial_locations(&mut trial, 0, 6);
+
+    assert!(
+        !trial
+            .contacts
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|contact| contact.name == "   ")
+    );
+    assert!(
+        !trial
+            .contacts
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|contact| contact.name == "Stale Alias")
+    );
+    assert_eq!(
+        trial
+            .contacts
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|contact| contact.name.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "Contact 00",
+            "Central",
+            "Contact 00",
+            "Unknown",
+            "Contact 04",
+            "Contact 05",
+            "Contact 07"
+        ]
+    );
+}
+
+#[test]
+fn paginate_trial_locations_empty_page_keeps_non_site_contacts_and_normalizes_empty() {
+    let mut mixed = paged_contact_trial();
+    mixed.contacts = Some(vec![
+        contact("site", "Contact 00", Some("Site 00")),
+        contact("central", "Central", None),
+        contact("unknown", "Unknown", None),
+    ]);
+    paginate_trial_locations(&mut mixed, 99, 3);
+    assert_eq!(
+        mixed
+            .contacts
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|contact| contact.name.as_str())
+            .collect::<Vec<_>>(),
+        ["Central", "Unknown"]
+    );
+
+    let mut sites_only = paged_contact_trial();
+    sites_only
+        .contacts
+        .as_mut()
+        .unwrap()
+        .retain(|contact| contact.level.eq_ignore_ascii_case("site"));
+    paginate_trial_locations(&mut sites_only, 99, 3);
+    assert!(sites_only.contacts.is_none());
+}
+
 #[test]
 fn parse_trial_location_paging_extracts_offset_limit_flags() {
     let sections = vec![

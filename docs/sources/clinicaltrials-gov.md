@@ -55,11 +55,23 @@ biomcp get trial NCT02576665 --limit 3 locations
 
 Returns a locations table with facility, city, country, status, and contact fields.
 
+Location requests return a 20-site page by default. Use `--offset` and
+`--limit` to select another page; an explicit Markdown page renders every site
+selected by that limit and reports the shown count, total, offset, and limit.
+When `contacts` and `locations` are requested together, top-level site contacts
+belong only to sites on that page, while central contacts remain visible.
+Contacts-only output remains complete.
+
 In JSON, each location's `contacts` array contains every named site contact in
 the order ClinicalTrials.gov provides them. The older `contact_name`,
 `contact_role`, `contact_phone`, and `contact_email` fields remain first-contact
 aliases for compatibility. Markdown keeps one row per site and renders all of
 that site's contacts in the Contact cell, separated by `<br>`.
+
+Standalone `all` JSON and batch JSON remain complete and unpaginated. For
+readability, unpaginated `all` and batch Markdown show at most 20 sites, state
+the display cap when it truncates the table, and limit top-level site contacts
+to those displayed sites.
 
 ## Runtime behavior
 

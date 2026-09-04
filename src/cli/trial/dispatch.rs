@@ -64,7 +64,7 @@ pub(in crate::cli) async fn handle_get(
     let text = match (json_output, location_pagination) {
         (true, Some(loc_page)) => trial_locations_json(&trial, loc_page)?,
         (false, Some(loc_page)) => {
-            let mut md = render_loaded_card(&trial, &sections, false)?;
+            let mut md = crate::render::markdown::trial_paginated_markdown(&trial, &sections)?;
             md.push_str(&format!(
                 "\n\n---\n*Locations: showing {} of {} (offset {}, limit {}{})*",
                 trial.locations.as_ref().map_or(0, |value| value.len()),
@@ -411,6 +411,7 @@ pub(super) fn paginate_trial_locations(
     let total = locations.len();
     let paged: Vec<_> = locations.into_iter().skip(offset).take(limit).collect();
     let has_more = offset.saturating_add(paged.len()) < total;
+    crate::entities::trial::project_contacts_to_locations(&mut trial.contacts, &paged);
     trial.locations = Some(paged);
     LocationPaginationMeta {
         total,

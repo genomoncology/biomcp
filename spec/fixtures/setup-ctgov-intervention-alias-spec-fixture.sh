@@ -333,6 +333,23 @@ CONTACTS_ELIGIBILITY_STUDY = {
                         }
                     ],
                 }
+            ] + [
+                {
+                    "facility": f"Fixture Site {site_number:02}",
+                    "city": f"Fixture City {site_number:02}",
+                    "state": "Michigan",
+                    "country": "United States",
+                    "status": "RECRUITING",
+                    "contacts": [
+                        {
+                            "name": f"Site Coordinator {site_number:02}",
+                            "role": "CONTACT",
+                            "phone": f"555-{site_number:04}",
+                            "email": f"site-{site_number:02}@example.test",
+                        }
+                    ],
+                }
+                for site_number in range(2, 26)
             ],
         },
     }

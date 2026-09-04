@@ -1,5 +1,7 @@
 //! Trial entity models and workflows exposed through the stable trial facade.
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
@@ -140,6 +142,93 @@ pub struct TrialContact {
     pub state: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
+}
+
+#[derive(Debug, Eq, Hash, PartialEq)]
+struct SiteContactKey {
+    facility: Option<String>,
+    city: Option<String>,
+    state: Option<String>,
+    country: Option<String>,
+    name: String,
+    role: Option<String>,
+    phone: Option<String>,
+    email: Option<String>,
+}
+
+pub(crate) fn project_contacts_to_locations(
+    contacts: &mut Option<Vec<TrialContact>>,
+    locations: &[TrialLocation],
+) {
+    let Some(current_contacts) = contacts.take() else {
+        return;
+    };
+    let mut authorized = HashMap::<SiteContactKey, usize>::new();
+    for location in locations {
+        if location.contacts.is_empty() {
+            if let Some(name) = location
+                .contact_name
+                .as_deref()
+                .filter(|name| !name.trim().is_empty())
+            {
+                *authorized
+                    .entry(SiteContactKey {
+                        facility: location.facility.clone(),
+                        city: location.city.clone(),
+                        state: location.state.clone(),
+                        country: location.country.clone(),
+                        name: name.to_string(),
+                        role: location.contact_role.clone(),
+                        phone: location.contact_phone.clone(),
+                        email: location.contact_email.clone(),
+                    })
+                    .or_default() += 1;
+            }
+        } else {
+            for contact in &location.contacts {
+                *authorized
+                    .entry(SiteContactKey {
+                        facility: location.facility.clone(),
+                        city: location.city.clone(),
+                        state: location.state.clone(),
+                        country: location.country.clone(),
+                        name: contact.name.clone(),
+                        role: contact.role.clone(),
+                        phone: contact.phone.clone(),
+                        email: contact.email.clone(),
+                    })
+                    .or_default() += 1;
+            }
+        }
+    }
+
+    let retained: Vec<_> = current_contacts
+        .into_iter()
+        .filter(|contact| {
+            if !contact.level.eq_ignore_ascii_case("site") {
+                return true;
+            }
+            let key = SiteContactKey {
+                facility: contact.facility.clone(),
+                city: contact.city.clone(),
+                state: contact.state.clone(),
+                country: contact.country.clone(),
+                name: contact.name.clone(),
+                role: contact.role.clone(),
+                phone: contact.phone.clone(),
+                email: contact.email.clone(),
+            };
+            let Some(remaining) = authorized.get_mut(&key) else {
+                return false;
+            };
+            if *remaining == 0 {
+                return false;
+            }
+            *remaining -= 1;
+            true
+        })
+        .collect();
+    *contacts = (!retained.is_empty()).then_some(retained);
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

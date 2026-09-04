@@ -222,6 +222,42 @@ false
 false'
 ```
 
+When contacts and locations are requested together, the top-level site
+contacts follow the selected location page while central contacts remain.
+
+```bash
+../../tools/biomcp-ci --json get trial NCT41300001 --offset 20 --limit 3 contacts locations \
+  | jq -e '(.locations | length == 3) and ([.locations[].facility] == ["Fixture Site 21", "Fixture Site 22", "Fixture Site 23"]) and ([.contacts[].name] == ["Central Coordinator", "Site Coordinator 21", "Site Coordinator 22", "Site Coordinator 23"]) and (.location_pagination == {"total": 25, "offset": 20, "limit": 3, "has_more": true})' \
+  | mustmatch 'true'
+../../tools/biomcp-ci get trial NCT41300001 --offset 20 --limit 3 contacts locations \
+  | grep -E '^- Name: (Central Coordinator|Site Coordinator 2[1-3])$|^\*Locations:' \
+  | mustmatch like '- Name: Central Coordinator
+- Name: Site Coordinator 21
+- Name: Site Coordinator 22
+- Name: Site Coordinator 23
+*Locations: showing 3 of 25 (offset 20, limit 3, more available)*'
+../../tools/biomcp-ci get trial NCT41300001 --offset 20 --limit 3 contacts locations \
+  | mustmatch not like 'site@example.test'
+```
+
+An explicit locations page is rendered in full, even above the default
+20-site page size. Generic `all` Markdown keeps its disclosed display cap and
+does not show a top-level contact for a hidden site.
+
+```bash
+../../tools/biomcp-ci get trial NCT41300001 --limit 25 contacts locations \
+  | awk '/^## Locations/{inside=1} inside{print}' \
+  | mustmatch like '| Fixture Site 25 | Fixture City 25, Michigan | - | United States | RECRUITING | Site Coordinator 25 (CONTACT) 555-0025 site-25@example.test |
+*Locations: showing 25 of 25 (offset 0, limit 25)*'
+../../tools/biomcp-ci get trial NCT41300001 all \
+  | mustmatch like 'Locations: showing 20 of 25 (display cap 20).'
+../../tools/biomcp-ci get trial NCT41300001 all \
+  | awk '/^## Locations/{inside=1; next} inside && /^\| (Rare Disease Center|Fixture Site)/{count++} END{print count}' \
+  | mustmatch '20'
+../../tools/biomcp-ci get trial NCT41300001 all \
+  | mustmatch not like 'site-21@example.test'
+```
+
 ## Every Named Site Contact Reaches Its Location
 
 Location JSON preserves every named site contact in provider order while the

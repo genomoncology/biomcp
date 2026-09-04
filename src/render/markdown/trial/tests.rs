@@ -465,3 +465,117 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
     let markdown = trial_markdown(&trial, &["eligibility".to_string()]).expect("trial markdown");
     assert!(!markdown.contains("Posted trial documents"));
 }
+
+fn markdown_location(index: usize) -> crate::entities::trial::TrialLocation {
+    crate::entities::trial::TrialLocation {
+        facility: Some(format!("Facility {index:02}")),
+        city: Some("Example City".to_string()),
+        state: None,
+        postal_code: None,
+        country: Some("United States".to_string()),
+        status: Some("RECRUITING".to_string()),
+        contacts: vec![crate::entities::trial::TrialSiteContact {
+            name: format!("Person {index:02}"),
+            role: Some("CONTACT".to_string()),
+            phone: None,
+            email: Some(format!("person-{index:02}@example.test")),
+        }],
+        contact_name: Some(format!("Person {index:02}")),
+        contact_role: Some("CONTACT".to_string()),
+        contact_phone: None,
+        contact_email: Some(format!("person-{index:02}@example.test")),
+        latitude: None,
+        longitude: None,
+    }
+}
+
+fn markdown_contact(index: usize) -> crate::entities::trial::TrialContact {
+    crate::entities::trial::TrialContact {
+        level: "site".to_string(),
+        name: format!("Person {index:02}"),
+        role: Some("CONTACT".to_string()),
+        phone: None,
+        email: Some(format!("person-{index:02}@example.test")),
+        facility: Some(format!("Facility {index:02}")),
+        city: Some("Example City".to_string()),
+        state: None,
+        country: Some("United States".to_string()),
+    }
+}
+
+fn markdown_location_trial(count: usize) -> crate::entities::trial::Trial {
+    let mut trial = summary_trial(None);
+    let mut contacts = vec![crate::entities::trial::TrialContact {
+        level: "central".to_string(),
+        name: "Central Person".to_string(),
+        role: None,
+        phone: None,
+        email: Some("central@example.test".to_string()),
+        facility: None,
+        city: None,
+        state: None,
+        country: None,
+    }];
+    contacts.extend((0..count).map(markdown_contact));
+    trial.contacts = Some(contacts);
+    trial.locations = Some((0..count).map(markdown_location).collect());
+    trial
+}
+
+#[test]
+fn generic_trial_markdown_caps_locations_discloses_and_aligns_contacts() {
+    let trial = markdown_location_trial(21);
+
+    let markdown = trial_markdown(&trial, &["all".to_string()]).expect("trial markdown");
+
+    assert_eq!(
+        markdown
+            .lines()
+            .filter(|line| line.starts_with("| Facility ")
+                && *line != "| Facility | City | Postal code | Country | Status | Contact |")
+            .count(),
+        20
+    );
+    assert!(markdown.contains("Locations: showing 20 of 21 (display cap 20)."));
+    assert!(markdown.contains("Central Person"));
+    assert!(markdown.contains("Person 19"));
+    assert!(!markdown.contains("Facility 20"));
+    assert!(!markdown.contains("Person 20"));
+}
+
+#[test]
+fn generic_trial_markdown_omits_cap_disclosure_when_locations_fit() {
+    let markdown =
+        trial_markdown(&markdown_location_trial(20), &["all".to_string()]).expect("trial markdown");
+
+    assert_eq!(
+        markdown
+            .lines()
+            .filter(|line| line.starts_with("| Facility ")
+                && *line != "| Facility | City | Postal code | Country | Status | Contact |")
+            .count(),
+        20
+    );
+    assert!(!markdown.contains("display cap"));
+}
+
+#[test]
+fn paginated_trial_markdown_does_not_apply_a_second_cap() {
+    let trial = markdown_location_trial(25);
+
+    let markdown =
+        trial_paginated_markdown(&trial, &["contacts".to_string(), "locations".to_string()])
+            .expect("paginated trial markdown");
+
+    assert_eq!(
+        markdown
+            .lines()
+            .filter(|line| line.starts_with("| Facility ")
+                && *line != "| Facility | City | Postal code | Country | Status | Contact |")
+            .count(),
+        25
+    );
+    assert!(markdown.contains("Facility 24"));
+    assert!(markdown.contains("Person 24"));
+    assert!(!markdown.contains("display cap"));
+}

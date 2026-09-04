@@ -83,6 +83,7 @@ pub use self::study::{
     study_filter_markdown, study_list_markdown, study_query_markdown, study_survival_markdown,
     study_top_mutated_markdown,
 };
+pub(crate) use self::trial::trial_paginated_markdown;
 #[allow(unused_imports)]
 pub use self::trial::{
     trial_markdown, trial_search_markdown, trial_search_markdown_with_footer,
