@@ -55,6 +55,12 @@ biomcp get trial NCT02576665 --limit 3 locations
 
 Returns a locations table with facility, city, country, status, and contact fields.
 
+In JSON, each location's `contacts` array contains every named site contact in
+the order ClinicalTrials.gov provides them. The older `contact_name`,
+`contact_role`, `contact_phone`, and `contact_email` fields remain first-contact
+aliases for compatibility. Markdown keeps one row per site and renders all of
+that site's contacts in the Contact cell, separated by `<br>`.
+
 ## Runtime behavior
 
 Posted-document retrieval validates the fixed ClinicalTrials.gov CDN HTTPS
