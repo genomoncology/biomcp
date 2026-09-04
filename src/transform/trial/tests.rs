@@ -2,6 +2,8 @@ use super::*;
 use serde_json::json;
 #[path = "tests/ticket_1107.rs"]
 mod ticket_1107;
+#[path = "tests/ticket_1132.rs"]
+mod ticket_1132;
 use ticket_1107::{IntoTrialSearchTestResult, IntoTrialTestResult};
 #[test]
 fn truncate_summary_two_sentences_and_length() {
@@ -267,32 +269,24 @@ fn stopped_ctgov_trial_without_reason_reports_checked_absence() {
 }
 
 #[test]
-fn from_nci_trial_maps_alias_fields_and_age_range() {
+fn from_nci_trial_maps_supported_alias_fields() {
     let trial = from_nci_trial(&json!({
         "nctId": "NCT11111111",
         "briefTitle": "NCI trial",
         "overallStatus": "RECRUITING",
         "phaseCode": "PHASE3",
-        "studyType": "Interventional",
-        "minimumAge": "21 Years",
-        "maximumAge": "80 Years",
         "leadSponsor": "NCI",
-        "target_enrollment": "120",
         "startDate": "2020-01-01",
         "completionDate": "2024-12-31",
         "briefSummary": "Sentence one. Sentence two. Sentence three.",
-        "diseases": ["Melanoma"],
-        "interventions": ["Drug X"]
+        "diseases": ["Melanoma"]
     }))
     .into_test_result()
     .expect("valid NCI trial");
 
     assert_eq!(trial.nct_id, "NCT11111111");
     assert_eq!(trial.phase.as_deref(), Some("PHASE3"));
-    assert_eq!(trial.age_range.as_deref(), Some("21 Years to 80 Years"));
-    assert_eq!(trial.enrollment, Some(120));
     assert_eq!(trial.conditions, vec!["Melanoma"]);
-    assert_eq!(trial.interventions, vec!["Drug X"]);
     assert!(
         trial
             .summary
@@ -302,19 +296,14 @@ fn from_nci_trial_maps_alias_fields_and_age_range() {
 }
 
 #[test]
-fn trial_sections_maps_nci_format() {
+fn trial_sections_maps_supported_nci_fields() {
     let trial = from_nci_trial(&json!({
         "nct_id": "NCT02296125",
         "brief_title": "Osimertinib in EGFR-mutant NSCLC",
         "current_trial_status": "ACTIVE",
         "phase_code": "PHASE3",
-        "study_type": "Interventional",
-        "minimum_age": "18 Years",
-        "maximum_age": "75 Years",
         "lead_org": "AstraZeneca",
-        "enrollment_target": "420",
-        "diseases": ["Non-small cell lung cancer"],
-        "interventions": ["Osimertinib"]
+        "diseases": ["Non-small cell lung cancer"]
     }))
     .into_test_result()
     .expect("valid NCI trial");
@@ -322,7 +311,6 @@ fn trial_sections_maps_nci_format() {
     assert_eq!(trial.nct_id, "NCT02296125");
     assert_eq!(trial.phase.as_deref(), Some("PHASE3"));
     assert_eq!(trial.sponsor.as_deref(), Some("AstraZeneca"));
-    assert_eq!(trial.enrollment, Some(420));
     assert_eq!(trial.conditions, vec!["Non-small cell lung cancer"]);
 }
 
