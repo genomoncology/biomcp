@@ -1,10 +1,15 @@
 ---
 flow: build
 priority: 8
-deps: ["1132", "1126"]
 ---
 
 # No key list in the code may name a field no provider sends
+
+Tickets 1126 and 1132 are complete as of 2026-09-04, so their dependency edges
+are satisfied and removed from the front matter. This ticket now extends the
+shipped `fixture_key_contract` in `capture-receipts.json`; it does not recreate
+the attestors, fixture inventory, compatibility exceptions, or NCI top-level
+evidence limitation that 1126 delivered.
 
 Ticket 1126 checks that a fixture cannot attest to a key the provider does not send. This is the same rule pointed the other way: the code cannot read a key the provider does not send. Both failures are silent, and between them they have produced six dead fields in this repository that nobody noticed for months.
 

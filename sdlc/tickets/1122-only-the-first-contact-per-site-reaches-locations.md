@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 5
-deps: ["1121", "1126", "1138"]
+deps: ["1121", "1138"]
 ---
 
 # Locations keep one contact per site while contacts keeps them all
@@ -36,13 +36,18 @@ A trial contact is patient-bearing, so this fixture is authored by policy and wi
 
 It lands in `testdata/sources/clinicaltrials/`, not in `testdata/sources/ctgov/`, which is named for recorded captures.
 
-Its entry in `testdata/sources/capture-receipts.json` declares it authored in whatever form ticket 1126 establishes. Do not invent a classification: that file today carries exactly `real_and_receipted`, `pending_verification` and `synthetic_and_ineligible`, and no value meaning authored exists yet. 1126 is where that vocabulary is settled, which is the second reason it lands first.
+Ticket 1126 has now established the `authored` classification and requires an
+`authored_reason`; authored fixtures remain checked against provider paths. Add
+the copied fixture to `testdata/sources/capture-receipts.json` using that shipped
+contract rather than inventing another provenance form.
 
-**Tickets 1126 and 1138 both land first, and both are declared as dependencies.**
+**Ticket 1126 is complete. Tickets 1121 and 1138 remain declared dependencies.**
 
 1138 removes `central_contacts` from `CtGovLocation`, a key ClinicalTrials.gov never sends. It edits `src/transform/trial.rs:132`, which is the `.or_else(|| loc.central_contacts.first())` fallback inside the block this ticket rewrites, and `:197`, which is the `chain(loc.central_contacts.iter())` this ticket also rewrites. **Do not carry that fallback forward into the new multi-contact shape.** It is dead and 1138 deletes it.
 
-1126 lands first for its own reason. It builds the check that every fixture key be attested by a recorded capture or declared an exception, and its own required behavior names this fixture as the authored case it must accept. Declaring an authored fixture in whatever form 1126 builds is part of this ticket. Landing this one first would put an undeclared authored fixture into the tree 1126 then has to pass over.
+1126 already built the fixture-key audit. This ticket must declare its new
+authored fixture and selector in that existing inventory, with no exception for
+provider-invalid keys.
 
 ## Done, observably
 
