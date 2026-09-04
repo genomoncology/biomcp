@@ -1,5 +1,7 @@
 # Phenotype similarity ranks an opposite phenotype without warning
 
+Severity: should-fix
+
 BioMCP 0.9.0-dev.6 returned isolated microcephaly as the first candidate disease for an exact macrocephaly HPO query:
 
 ```text

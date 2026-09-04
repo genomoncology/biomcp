@@ -1,5 +1,7 @@
 # GenCC can fill public gene-disease validity gaps
 
+Severity: nice-to-have
+
 BioMCP 0.9.0-dev.6 returned an honest empty ClinGen section for ODC1 on 2026-09-04:
 
 ```console
