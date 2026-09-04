@@ -35,46 +35,23 @@ INLINE_CONVERTERS = {
     "from_nci_trial": "nci",
     "from_nci_hit": "nci",
 }
-LEGACY_EXCEPTION_POLICY = "ticket-1126-legacy-nci-aliases"
-LEGACY_EXCEPTION_REASON = (
-    "Synthetic unit input pins an accepted legacy alias and does not attest the NCI "
-    "wire contract; ticket 1138 owns its code-side disposition."
-)
-LEGACY_EXCEPTION_KEYS = {
+EXPECTED_CODE_BOUNDARIES = {
+    ("ctgov", "src/sources/clinicaltrials.rs", "CtGovStudy", None, None),
+    ("nci", "src/transform/trial.rs", None, "from_nci_hit", "hit"),
+    ("nci", "src/transform/trial.rs", None, "from_nci_trial", "trial"),
     (
-        "src/transform/trial/tests.rs",
-        "from_nci_trial_maps_supported_alias_fields:json:1",
-        key,
-    )
-    for key in (
-        "nctId",
-        "briefTitle",
-        "overallStatus",
-        "phaseCode",
-        "leadSponsor",
-        "startDate",
-        "completionDate",
-        "briefSummary",
-    )
-} | {
-    (
-        "src/transform/trial/tests.rs",
-        "trial_sections_maps_supported_nci_fields:json:1",
-        "phase_code",
+        "nci",
+        "src/entities/trial/get.rs",
+        None,
+        "nci_eligibility_text",
+        "trial",
     ),
-    *{
-        (
-            "src/transform/trial/tests.rs",
-            f"trial_status_normalization_variants:json:{number}",
-            key,
-        )
-        for number, keys in (
-            (1, ("nctId", "briefTitle", "status")),
-            (2, ("nctId", "briefTitle", "overallStatus")),
-        )
-        for key in keys
-    },
 }
+EXPECTED_SUPPLEMENTAL_PATHS = {
+    "protocolSection.contactsLocationsModule.locations[].geoPoint.lat",
+    "protocolSection.contactsLocationsModule.locations[].geoPoint.lon",
+}
+SUPPLEMENTAL_EVIDENCE = "ctgov/get_nct06131398_full_20260903.json"
 UNSAFE_REQUEST_FIELDS = {
     "access_token",
     "api_key",
@@ -181,6 +158,67 @@ def _mask_rust_comments(text: str) -> str:
             continue
         index += 1
     return "".join(masked)
+
+
+def _rust_code_mask(text: str) -> tuple[str, list[str]]:
+    """Mask comments and literals while retaining source offsets and newlines."""
+    masked = list(text)
+    errors: list[str] = []
+    index = 0
+    while index < len(text):
+        raw_literal = re.match(r"(?:br|r)(?P<hashes>#{0,255})\"", text[index:])
+        literal_end = (
+            _rust_literal_end(text, index)
+            if text[index] in {"r", "b", '"', "'"}
+            else None
+        )
+        if literal_end is not None:
+            raw_unclosed = bool(
+                raw_literal
+                and text.find(
+                    '"' + raw_literal.group("hashes"), index + raw_literal.end()
+                )
+                == -1
+            )
+            ordinary_unclosed = bool(
+                not raw_literal
+                and literal_end == len(text)
+                and (index == len(text) - 1 or text[-1] != text[index])
+            )
+            if raw_unclosed or ordinary_unclosed:
+                errors.append(f"unclosed Rust literal at byte {index}")
+            for position in range(index, literal_end):
+                if masked[position] != "\n":
+                    masked[position] = " "
+            index = literal_end
+            continue
+        if text.startswith("//", index):
+            end = text.find("\n", index)
+            end = len(text) if end == -1 else end
+            masked[index:end] = " " * (end - index)
+            index = end
+            continue
+        if text.startswith("/*", index):
+            depth = 1
+            end = index + 2
+            while end < len(text) and depth:
+                if text.startswith("/*", end):
+                    depth += 1
+                    end += 2
+                elif text.startswith("*/", end):
+                    depth -= 1
+                    end += 2
+                else:
+                    end += 1
+            if depth:
+                errors.append(f"unclosed block comment at byte {index}")
+            for position in range(index, end):
+                if masked[position] != "\n":
+                    masked[position] = " "
+            index = end
+            continue
+        index += 1
+    return "".join(masked), errors
 
 
 def _matching_delimiter(text: str, start: int, opener: str, closer: str) -> int:
@@ -620,23 +658,10 @@ def _audit_fixture_keys(
         if key in exception_map:
             errors.append(f"duplicate fixture-key exception: {':'.join(key)}")
         exception_map[key] = exception["reason"]
-    policy = contract.get("exception_policy")
     if exception_map:
-        if policy != LEGACY_EXCEPTION_POLICY:
-            errors.append(
-                f"fixture-key exceptions require policy {LEGACY_EXCEPTION_POLICY}"
-            )
-        if set(exception_map) != LEGACY_EXCEPTION_KEYS:
-            errors.append(
-                "fixture-key exceptions differ from the authorized ticket 1126 set"
-            )
-        for key, reason in exception_map.items():
-            if reason != LEGACY_EXCEPTION_REASON:
-                errors.append(
-                    f"fixture-key exception has unauthorized reason: {':'.join(key)}"
-                )
-    elif policy is not None:
-        errors.append("fixture-key exception policy is present without exceptions")
+        errors.append("fixture-key exceptions are closed and must be empty")
+    if contract.get("exception_policy") is not None:
+        errors.append("fixture-key exception policy is not authorized")
 
     declared_disk: set[str] = set()
     seen_disk_declarations: set[tuple[str, str, str]] = set()
@@ -755,6 +780,440 @@ def _audit_fixture_keys(
     return checked, len(used_exceptions), errors
 
 
+def _camel_case(name: str) -> str:
+    head, *tail = name.split("_")
+    return head + "".join(word[:1].upper() + word[1:] for word in tail)
+
+
+def _serde_attributes(source: str, code: str) -> list[str]:
+    return [
+        match.group(1)
+        for match in re.finditer(r"#\[serde\((.*?)\)\]", source, re.DOTALL)
+        if code[match.start()] == "#"
+    ]
+
+
+def _ctgov_code_paths(
+    source: str, root_type: str
+) -> tuple[list[tuple[str, str, int]], list[str]]:
+    code, errors = _rust_code_mask(source)
+    structs: dict[
+        str, tuple[bool, list[tuple[str, str, str | None, int]], list[str]]
+    ] = {}
+    matches = list(re.finditer(r"\bpub\s+struct\s+([A-Za-z_]\w*)\s*\{", code))
+    for match in matches:
+        name = match.group(1)
+        try:
+            end = _matching_delimiter(code, match.end() - 1, "{", "}")
+        except ValueError as error:
+            errors.append(str(error))
+            continue
+        prefix_start = max(
+            code.rfind("}", 0, match.start()), code.rfind(";", 0, match.start())
+        )
+        prefix = source[prefix_start + 1 : match.start()]
+        serde_attrs = _serde_attributes(prefix, code[prefix_start + 1 : match.start()])
+        struct_errors: list[str] = []
+        unsupported_struct = [
+            attr for attr in serde_attrs if attr.strip() != 'rename_all = "camelCase"'
+        ]
+        if unsupported_struct:
+            struct_errors.append(f"ctgov {name}: unsupported struct serde attribute")
+        rename_all = any(
+            attr.strip() == 'rename_all = "camelCase"' for attr in serde_attrs
+        )
+        body = source[match.end() : end]
+        body_code = code[match.end() : end]
+        fields: list[tuple[str, str, str | None, int]] = []
+        cursor = 0
+        field_pattern = re.compile(
+            r"(?P<attrs>(?:\s*#\[[^\]]*\]\s*)*)\s*pub\s+(?P<name>[A-Za-z_]\w*)\s*:\s*(?P<type>[^,]+),",
+            re.DOTALL,
+        )
+        for field in field_pattern.finditer(body_code):
+            if body_code[cursor : field.start()].strip():
+                struct_errors.append(f"ctgov {name}: unsupported field declaration")
+            attrs = body[field.start("attrs") : field.end("attrs")]
+            serde = _serde_attributes(
+                attrs, body_code[field.start("attrs") : field.end("attrs")]
+            )
+            explicit: str | None = None
+            for attr in serde:
+                stripped = attr.strip()
+                if stripped == "default":
+                    continue
+                rename = re.fullmatch(r'rename\s*=\s*"([^"]+)"', stripped)
+                if rename:
+                    explicit = rename.group(1)
+                else:
+                    struct_errors.append(
+                        f"ctgov {name}.{field.group('name')}: unsupported serde attribute"
+                    )
+            fields.append(
+                (
+                    field.group("name"),
+                    body[field.start("type") : field.end("type")].strip(),
+                    explicit,
+                    source.count("\n", 0, match.end() + field.start("name")) + 1,
+                )
+            )
+            cursor = field.end()
+        if body_code[cursor:].strip():
+            struct_errors.append(f"ctgov {name}: unsupported field declaration")
+        if name in structs:
+            errors.append(f"ctgov duplicate root type {name}")
+        structs[name] = (rename_all, fields, struct_errors)
+
+    if root_type not in structs:
+        return [], [*errors, f"ctgov root type {root_type} was not discovered"]
+    paths: list[tuple[str, str, int]] = []
+    active: set[str] = set()
+
+    def walk(type_name: str, prefix: str) -> None:
+        if type_name in active:
+            errors.append(f"ctgov {type_name}: recursive local struct graph")
+            return
+        active.add(type_name)
+        rename_all, fields, struct_errors = structs[type_name]
+        errors.extend(struct_errors)
+        for rust_name, rust_type, explicit, source_line in fields:
+            provider_name = explicit or (
+                _camel_case(rust_name) if rename_all else rust_name
+            )
+            path = f"{prefix}.{provider_name}" if prefix else provider_name
+            paths.append((path, f"{type_name}.{rust_name}", source_line))
+            compact = re.sub(r"\s+", "", rust_type)
+            vector = False
+            inner = compact
+            option = re.fullmatch(r"Option<(.+)>", inner)
+            if option:
+                inner = option.group(1)
+            sequence = re.fullmatch(r"Vec<(.+)>", inner)
+            if sequence:
+                vector = True
+                inner = sequence.group(1)
+            if "<" in inner or ">" in inner:
+                errors.append(
+                    f"ctgov {type_name}.{rust_name}: unsupported container {rust_type}"
+                )
+                continue
+            if inner in structs:
+                walk(inner, f"{path}[]" if vector else path)
+            elif inner.startswith("CtGov"):
+                errors.append(
+                    f"ctgov {type_name}.{rust_name}: unresolved local field type {inner}"
+                )
+        active.remove(type_name)
+
+    walk(root_type, "")
+    return paths, errors
+
+
+def _function_body(source: str, name: str) -> tuple[str, int, list[str]]:
+    code, errors = _rust_code_mask(source)
+    matches = list(re.finditer(rf"\bfn\s+{re.escape(name)}\s*\(", code))
+    if len(matches) != 1:
+        return "", 0, [*errors, f"function {name} must exist exactly once"]
+    match = matches[0]
+    try:
+        params_end = _matching_delimiter(code, match.end() - 1, "(", ")")
+        brace = code.find("{", params_end)
+        if brace == -1:
+            raise ValueError(f"function {name} has no body")
+        body_end = _matching_delimiter(code, brace, "{", "}")
+    except ValueError as error:
+        return "", 0, [*errors, str(error)]
+    return source[brace + 1 : body_end], brace + 1, errors
+
+
+def _literal_string(token: str) -> str | None:
+    token = token.strip()
+    if re.fullmatch(r'"(?:\\.|[^"\\])*"', token, re.DOTALL):
+        try:
+            return json.loads(token)
+        except json.JSONDecodeError:
+            return None
+    raw = re.fullmatch(r'(?:br|r)(#{0,255})"(.*?)"\1', token, re.DOTALL)
+    return raw.group(2) if raw else None
+
+
+def _nci_code_reads(
+    source: str, source_path: str, function: str, root: str
+) -> tuple[list[tuple[str, str, int]], list[str]]:
+    body, offset, errors = _function_body(source, function)
+    if not body:
+        return [], errors
+    source_code, _ = _rust_code_mask(source)
+    declaration = re.search(rf"\bfn\s+{re.escape(function)}\s*\(", source_code)
+    if declaration:
+        params_end = _matching_delimiter(source_code, declaration.end() - 1, "(", ")")
+        parameters = source_code[declaration.end() : params_end]
+        if not re.search(rf"\b{re.escape(root)}\s*:", parameters):
+            errors.append(
+                f"{source_path}:{function}: declared root parameter {root} does not exist"
+            )
+    code, lexical_errors = _rust_code_mask(body)
+    errors.extend(lexical_errors)
+    covered: set[int] = set()
+    reads: list[tuple[str, str, int]] = []
+    group_counts: dict[str, int] = {}
+
+    def line(position: int) -> int:
+        return source.count("\n", 0, offset + position) + 1
+
+    for helper in ("json_get_string", "nci_conditions"):
+        for call in re.finditer(rf"\b{helper}\s*\(", code):
+            try:
+                end = _matching_delimiter(code, call.end() - 1, "(", ")")
+            except ValueError as error:
+                errors.append(f"{source_path}:{function}: {error}")
+                continue
+            arguments = body[call.end() : end]
+            arguments_code, _ = _rust_code_mask(arguments)
+            arguments_without_comments = _mask_rust_comments(arguments)
+            comma = arguments_code.find(",")
+            first = arguments_without_comments[:comma].strip() if comma >= 0 else ""
+            if first != root:
+                continue
+            root_position = call.end() + arguments_without_comments.find(root)
+            covered.add(root_position)
+            remainder_start = comma + 1
+            remainder_code = arguments_code[remainder_start:]
+            array = re.match(r"\s*&\s*\[", remainder_code)
+            if not array:
+                errors.append(
+                    f"{source_path}:{function}:{line(call.start())}: {helper} has nonliteral candidate list"
+                )
+                continue
+            bracket = remainder_start + array.end() - 1
+            try:
+                bracket_end = _matching_delimiter(arguments_code, bracket, "[", "]")
+            except ValueError as error:
+                errors.append(f"{source_path}:{function}: {error}")
+                continue
+            candidate_source = arguments[bracket + 1 : bracket_end]
+            candidate_without_comments = _mask_rust_comments(candidate_source)
+            candidate_code, candidate_errors = _rust_code_mask(candidate_source)
+            errors.extend(
+                f"{source_path}:{function}: {item}" for item in candidate_errors
+            )
+            strings = list(
+                re.finditer(
+                    r'(?:br|r)#{0,255}".*?"#{0,255}|"(?:\\.|[^"\\])*"',
+                    candidate_without_comments,
+                    re.DOTALL,
+                )
+            )
+            residue = list(candidate_code)
+            for string in strings:
+                residue[string.start() : string.end()] = " " * (
+                    string.end() - string.start()
+                )
+            if re.sub(r"[\s,]", "", "".join(residue)) or not strings:
+                errors.append(
+                    f"{source_path}:{function}:{line(call.start())}: {helper} has nonliteral candidate list"
+                )
+                continue
+            group_counts[helper] = group_counts.get(helper, 0) + 1
+            group = f"{helper}#{group_counts[helper]}"
+            for string in strings:
+                key = _literal_string(string.group(0))
+                if key is None:
+                    errors.append(
+                        f"{source_path}:{function}:{line(call.start())}: malformed literal in {group}"
+                    )
+                else:
+                    reads.append((group, key, line(call.start())))
+
+    for access in re.finditer(rf"\b{re.escape(root)}\s*\.\s*get\s*\(", code):
+        covered.add(access.start())
+        try:
+            end = _matching_delimiter(code, access.end() - 1, "(", ")")
+        except ValueError as error:
+            errors.append(f"{source_path}:{function}: {error}")
+            continue
+        key = _literal_string(_mask_rust_comments(body[access.end() : end]))
+        if key is None:
+            errors.append(
+                f"{source_path}:{function}:{line(access.start())}: direct root .get has computed key"
+            )
+        else:
+            group_counts["get"] = group_counts.get("get", 0) + 1
+            reads.append((f"get#{group_counts['get']}", key, line(access.start())))
+
+    for occurrence in re.finditer(rf"\b{re.escape(root)}\b", code):
+        if occurrence.start() not in covered:
+            errors.append(
+                f"{source_path}:{function}:{line(occurrence.start())}: unsupported root access for {root}"
+            )
+    if not reads:
+        errors.append(f"{source_path}:{function}: selected zero NCI reads")
+    return reads, errors
+
+
+def _audit_code_keys(root: Path, manifest: dict[str, object]) -> tuple[int, list[str]]:
+    repo_root = root.parent.parent
+    contract = manifest.get("code_key_contract")
+    if not isinstance(contract, dict):
+        return 0, ["manifest requires code_key_contract object"]
+    boundaries = contract.get("boundaries")
+    supplements = contract.get("supplemental_attestations")
+    exceptions = contract.get("exceptions")
+    if (
+        not isinstance(boundaries, list)
+        or not isinstance(supplements, list)
+        or exceptions != []
+    ):
+        return 0, [
+            "code_key_contract requires boundaries and supplemental_attestations arrays and an empty closed exceptions array"
+        ]
+    errors: list[str] = []
+    declared: list[tuple[str, str, str | None, str | None, str | None]] = []
+    for item in boundaries:
+        if not isinstance(item, dict):
+            errors.append("invalid code-key boundary declaration")
+            continue
+        declared.append(
+            (
+                str(item.get("endpoint")),
+                str(item.get("source")),
+                item.get("root_type")
+                if isinstance(item.get("root_type"), str)
+                else None,
+                item.get("function") if isinstance(item.get("function"), str) else None,
+                item.get("root_parameter")
+                if isinstance(item.get("root_parameter"), str)
+                else None,
+            )
+        )
+    if len(declared) != len(set(declared)):
+        errors.append("duplicate code-key boundary declaration")
+    if set(declared) != EXPECTED_CODE_BOUNDARIES or len(declared) != 4:
+        errors.append("code-key boundaries differ from the required closed set")
+
+    fixture = manifest.get("fixture_key_contract", {})
+    attestors = fixture.get("attestors", []) if isinstance(fixture, dict) else []
+    allowed: dict[str, set[str]] = {}
+    labels: dict[str, str] = {}
+    for attestor in attestors:
+        if not isinstance(attestor, dict):
+            continue
+        endpoint = attestor.get("endpoint")
+        try:
+            evidence = json.loads(
+                (root / str(attestor.get("path"))).read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError):
+            continue
+        labels[str(endpoint)] = str(attestor.get("label", endpoint))
+        if endpoint == "ctgov" and attestor.get("kind") == "ctgov_schema":
+            allowed["ctgov"] = _schema_paths(evidence)
+        elif endpoint == "nci" and attestor.get("kind") == "nci_top_level_capture":
+            records = _select_records(
+                evidence, str(attestor.get("selector", "/data/*"))
+            )
+            allowed["nci"] = {
+                key for record in records if isinstance(record, dict) for key in record
+            }
+
+    supplement_paths: list[str] = []
+    receipt_entries = {
+        item.get("path"): item
+        for item in manifest.get("entries", [])
+        if isinstance(item, dict)
+    }
+    for item in supplements:
+        if not isinstance(item, dict):
+            errors.append("invalid CTGov supplemental attestation")
+            continue
+        path = item.get("path")
+        evidence_path = item.get("evidence_path")
+        limitation = item.get("limitation")
+        if not all(
+            isinstance(value, str) and value
+            for value in (path, evidence_path, limitation)
+        ):
+            errors.append(
+                "CTGov supplemental attestation requires path, evidence_path, and limitation"
+            )
+            continue
+        if item.get("endpoint") != "ctgov":
+            errors.append(f"altered supplemental endpoint for {path}")
+        supplement_paths.append(path)
+        if evidence_path != SUPPLEMENTAL_EVIDENCE:
+            errors.append(f"altered supplemental evidence for {path}")
+            continue
+        if "opaque" not in limitation.lower():
+            errors.append(
+                f"supplemental attestation {path} must name the opaque-schema limitation"
+            )
+        if (
+            receipt_entries.get(evidence_path, {}).get("classification")
+            != "real_and_receipted"
+        ):
+            errors.append(
+                f"supplemental evidence {evidence_path} must be real_and_receipted"
+            )
+            continue
+        try:
+            evidence = json.loads((root / evidence_path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            errors.append(f"cannot read supplemental evidence {evidence_path}: {error}")
+            continue
+        if path not in _json_paths(evidence):
+            errors.append(
+                f"supplemental evidence {evidence_path} does not contain {path}"
+            )
+    if (
+        set(supplement_paths) != EXPECTED_SUPPLEMENTAL_PATHS
+        or len(supplement_paths) != 2
+    ):
+        errors.append(
+            "CTGov supplemental attestations differ from the required closed set"
+        )
+
+    checked = 0
+    used_supplements: set[str] = set()
+    for endpoint, source_path, root_type, function, root_parameter in declared:
+        path = repo_root / source_path
+        try:
+            source = path.read_text(encoding="utf-8")
+        except OSError as error:
+            errors.append(
+                f"{endpoint}:{source_path}: cannot read declared source: {error}"
+            )
+            continue
+        if endpoint == "ctgov" and root_type:
+            reads, discovery_errors = _ctgov_code_paths(source, root_type)
+            errors.extend(f"{source_path}: {item}" for item in discovery_errors)
+            if not reads:
+                errors.append(f"ctgov:{source_path}:{root_type}: selected zero reads")
+            for provider_path, field, line in sorted(reads):
+                checked += 1
+                if provider_path in allowed.get("ctgov", set()):
+                    continue
+                if provider_path in supplement_paths:
+                    used_supplements.add(provider_path)
+                    continue
+                errors.append(
+                    f"ctgov:{source_path}:{root_type}:{line}:{field}: unattested provider path {provider_path} for {labels.get('ctgov', 'ctgov')}"
+                )
+        elif endpoint == "nci" and function and root_parameter:
+            reads, discovery_errors = _nci_code_reads(
+                source, source_path, function, root_parameter
+            )
+            errors.extend(discovery_errors)
+            for group, provider_path, line in reads:
+                checked += 1
+                if provider_path not in allowed.get("nci", set()):
+                    errors.append(
+                        f"nci:{source_path}:{function}:{line}:{group}: unattested provider path {provider_path} for {labels.get('nci', 'nci')}"
+                    )
+    for path in sorted(set(supplement_paths) - used_supplements):
+        errors.append(f"unused CTGov supplemental attestation: {path}")
+    return checked, errors
+
+
 def audit(root: Path) -> dict[str, object]:
     manifest_path = root / MANIFEST_NAME
     errors: list[str] = []
@@ -842,6 +1301,9 @@ def audit(root: Path) -> dict[str, object]:
     )
     if fixture_errors:
         raise ValueError("\n".join(fixture_errors))
+    code_keys_checked, code_errors = _audit_code_keys(root, manifest)
+    if code_errors:
+        raise ValueError("\n".join(code_errors))
 
     corrections = manifest.get("historical_corrections")
     if not isinstance(corrections, list):
@@ -852,6 +1314,7 @@ def audit(root: Path) -> dict[str, object]:
         "classifications": classifications,
         "fixture_keys_checked": fixture_keys_checked,
         "fixture_key_exceptions": fixture_key_exceptions,
+        "code_keys_checked": code_keys_checked,
         "confirmed_byte_unfaithful": manifest.get("confirmed_byte_unfaithful"),
         "historical_corrections": corrections,
     }

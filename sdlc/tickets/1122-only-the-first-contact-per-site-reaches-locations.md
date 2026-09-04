@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 5
-deps: ["1121", "1138"]
+deps: ["1121"]
 ---
 
 # Locations keep one contact per site while contacts keeps them all
@@ -41,9 +41,13 @@ Ticket 1126 has now established the `authored` classification and requires an
 the copied fixture to `testdata/sources/capture-receipts.json` using that shipped
 contract rather than inventing another provenance form.
 
-**Ticket 1126 is complete. Tickets 1121 and 1138 remain declared dependencies.**
+**Tickets 1126 and 1138 are complete. Ticket 1121 remains the declared dependency.**
 
-1138 removes `central_contacts` from `CtGovLocation`, a key ClinicalTrials.gov never sends. It edits `src/transform/trial.rs:132`, which is the `.or_else(|| loc.central_contacts.first())` fallback inside the block this ticket rewrites, and `:197`, which is the `chain(loc.central_contacts.iter())` this ticket also rewrites. **Do not carry that fallback forward into the new multi-contact shape.** It is dead and 1138 deletes it.
+1138 removed `central_contacts` from `CtGovLocation`, a key ClinicalTrials.gov
+does not send at the location path, and removed both unreachable fallbacks.
+`extract_locations` now selects `loc.contacts.first()` and `extract_contacts`
+iterates `loc.contacts`. Build the new multi-contact shape from those real site
+contacts; do not recreate the deleted location-level central-contact path.
 
 1126 already built the fixture-key audit. This ticket must declare its new
 authored fixture and selector in that existing inventory, with no exception for

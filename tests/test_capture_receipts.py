@@ -203,7 +203,8 @@ def test_repository_audit_classifies_every_source_file_and_preserves_erepo_histo
     report = json.loads(result.stdout)
     assert report["classified_files"] == report["audited_files"]
     assert report["fixture_keys_checked"] > 0
-    assert report["fixture_key_exceptions"] == 15
+    assert report["fixture_key_exceptions"] == 0
+    assert report["code_keys_checked"] == 124
     assert report["confirmed_byte_unfaithful"] == 0
     assert set(report["classifications"]) == {
         "authored",
@@ -266,16 +267,37 @@ def _write_fixture_contract_repo(
                         {
                             "name": "locations",
                             "type": "Location[]",
-                            "children": [{"name": "facility", "type": "text"}],
+                            "children": [
+                                {"name": "facility", "type": "text"},
+                                {"name": "geoPoint", "type": "GeoPoint"},
+                            ],
                         },
                     ],
                 },
             ],
         }
     ]
-    nci_capture = {"data": [{"nct_id": "NCI-1", "diseases": []}], "total": 1}
+    nci_capture = {
+        "data": [
+            {
+                "nct_id": "NCI-1",
+                "brief_title": "Trial",
+                "diseases": [],
+                "eligibility": {},
+            }
+        ],
+        "total": 1,
+    }
+    ctgov_full = {
+        "protocolSection": {
+            "contactsLocationsModule": {
+                "locations": [{"geoPoint": {"lat": 1.0, "lon": 2.0}}]
+            }
+        }
+    }
     payloads = {
         "ctgov/schema.json": json.dumps(schema).encode(),
+        "ctgov/get_nct06131398_full_20260903.json": json.dumps(ctgov_full).encode(),
         "nci_cts/full.json": json.dumps(nci_capture).encode(),
     }
     entries: list[dict[str, object]] = []
@@ -328,6 +350,33 @@ def _write_fixture_contract_repo(
         "}\n",
         encoding="utf-8",
     )
+    ctgov_source = repository_root / "src" / "sources" / "clinicaltrials.rs"
+    ctgov_source.parent.mkdir(parents=True, exist_ok=True)
+    ctgov_source.write_text(
+        '#[serde(rename_all = "camelCase")]\n'
+        "pub struct CtGovStudy { pub protocol_section: Option<CtGovProtocolSection>, }\n"
+        '#[serde(rename_all = "camelCase")]\n'
+        "pub struct CtGovProtocolSection { pub contacts_locations_module: Option<CtGovContactsLocationsModule>, }\n"
+        '#[serde(rename_all = "camelCase")]\n'
+        "pub struct CtGovContactsLocationsModule { pub central_contacts: Vec<String>, pub locations: Vec<CtGovLocation>, }\n"
+        '#[serde(rename_all = "camelCase")]\n'
+        "pub struct CtGovLocation { pub facility: Option<String>, pub geo_point: Option<CtGovGeoPoint>, }\n"
+        "pub struct CtGovGeoPoint { pub lat: Option<f64>, pub lon: Option<f64>, }\n",
+        encoding="utf-8",
+    )
+    transform_source = repository_root / "src" / "transform" / "trial.rs"
+    transform_source.parent.mkdir(parents=True, exist_ok=True)
+    transform_source.write_text(
+        'fn from_nci_hit(hit: &Value) { json_get_string(hit, &["nct_id", "brief_title"]); }\n'
+        'fn from_nci_trial(trial: &Value) { nci_conditions(trial, &["diseases"], 10); }\n',
+        encoding="utf-8",
+    )
+    get_source = repository_root / "src" / "entities" / "trial" / "get.rs"
+    get_source.parent.mkdir(parents=True, exist_ok=True)
+    get_source.write_text(
+        'fn nci_eligibility_text(trial: &Value) { trial.get("eligibility"); }\n',
+        encoding="utf-8",
+    )
     inline = (
         [
             {
@@ -361,6 +410,48 @@ def _write_fixture_contract_repo(
             ],
             "on_disk": on_disk,
             "inline": inline,
+            "exceptions": [],
+        },
+        "code_key_contract": {
+            "boundaries": [
+                {
+                    "endpoint": "ctgov",
+                    "source": "src/sources/clinicaltrials.rs",
+                    "root_type": "CtGovStudy",
+                },
+                {
+                    "endpoint": "nci",
+                    "source": "src/transform/trial.rs",
+                    "function": "from_nci_hit",
+                    "root_parameter": "hit",
+                },
+                {
+                    "endpoint": "nci",
+                    "source": "src/transform/trial.rs",
+                    "function": "from_nci_trial",
+                    "root_parameter": "trial",
+                },
+                {
+                    "endpoint": "nci",
+                    "source": "src/entities/trial/get.rs",
+                    "function": "nci_eligibility_text",
+                    "root_parameter": "trial",
+                },
+            ],
+            "supplemental_attestations": [
+                {
+                    "endpoint": "ctgov",
+                    "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lat",
+                    "limitation": "The CTGov schema has an opaque GeoPoint leaf.",
+                    "evidence_path": "ctgov/get_nct06131398_full_20260903.json",
+                },
+                {
+                    "endpoint": "ctgov",
+                    "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lon",
+                    "limitation": "The CTGov schema has an opaque GeoPoint leaf.",
+                    "evidence_path": "ctgov/get_nct06131398_full_20260903.json",
+                },
+            ],
             "exceptions": [],
         },
         "confirmed_byte_unfaithful": 0,
@@ -403,8 +494,12 @@ def test_fixture_key_contract_rejects_unknown_and_wrong_path(
 def _copy_current_trial_contract(repository_root: Path) -> Path:
     shutil.copytree(SOURCES_ROOT, repository_root / "testdata" / "sources")
     for relative in (
+        "src/sources/clinicaltrials.rs",
         "src/transform/trial/tests.rs",
         "src/transform/trial/tests",
+        "src/transform/trial.rs",
+        "src/entities/trial/get.rs",
+        "src/entities/trial/get/tests.rs",
         "src/sources/clinicaltrials/tests/parsing.rs",
         "src/sources/nci_cts/tests/parsing.rs",
     ):
@@ -724,30 +819,41 @@ def test_fixture_key_contract_rejects_unattested_nci_top_level_key(
     assert "NCI test endpoint" in result.stderr
 
 
-def test_fixture_key_contract_rejects_altered_authorized_exception_reason(
+def test_fixture_key_contract_rejects_any_exception(
     tmp_path: Path,
 ) -> None:
-    source_root = _copy_current_trial_contract(tmp_path / "repo")
+    source_root = _write_fixture_contract_repo(
+        tmp_path / "repo", '{"protocolSection": {}}'
+    )
     manifest_path = source_root / "capture-receipts.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest["fixture_key_contract"]["exceptions"][0]["reason"] += " Altered."
+    manifest["fixture_key_contract"]["exceptions"].append(
+        {
+            "path": "src/transform/trial/tests.rs",
+            "selector": "fixture:json:1",
+            "checked_path": "invented",
+            "reason": "No exceptions are authorized.",
+        }
+    )
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
     result = _audit(source_root)
 
     assert result.returncode != 0
-    assert "fixture-key exception has unauthorized reason" in result.stderr
+    assert "fixture-key exceptions are closed and must be empty" in result.stderr
 
 
 def test_fixture_key_contract_rejects_extra_used_exception(tmp_path: Path) -> None:
     repository_root = tmp_path / "repo"
-    source_root = _copy_current_trial_contract(repository_root)
+    source_root = _write_fixture_contract_repo(
+        repository_root, '{"protocolSection": {}}'
+    )
     rust_path = repository_root / "src" / "transform" / "trial" / "tests.rs"
     source = rust_path.read_text(encoding="utf-8")
     rust_path.write_text(
         source.replace(
-            '"diseases": ["Melanoma"]',
-            '"diseases": ["Melanoma"], "extraLegacyAlias": true',
+            '"protocolSection": {}',
+            '"protocolSection": {}, "extraLegacyAlias": true',
             1,
         ),
         encoding="utf-8",
@@ -757,7 +863,7 @@ def test_fixture_key_contract_rejects_extra_used_exception(tmp_path: Path) -> No
     manifest["fixture_key_contract"]["exceptions"].append(
         {
             "path": "src/transform/trial/tests.rs",
-            "selector": "from_nci_trial_maps_supported_alias_fields:json:1",
+            "selector": "fixture:json:1",
             "checked_path": "extraLegacyAlias",
             "reason": (
                 "Synthetic unit input pins an accepted legacy alias and does not attest the "
@@ -770,10 +876,280 @@ def test_fixture_key_contract_rejects_extra_used_exception(tmp_path: Path) -> No
     result = _audit(source_root)
 
     assert result.returncode != 0
-    assert (
-        "fixture-key exceptions differ from the authorized ticket 1126 set"
-        in result.stderr
+    assert "fixture-key exceptions are closed and must be empty" in result.stderr
+
+
+def _mutate_current_contract(
+    tmp_path: Path, relative: str, old: str, new: str
+) -> subprocess.CompletedProcess[str]:
+    repository_root = tmp_path / "repo"
+    source_root = _copy_current_trial_contract(repository_root)
+    path = repository_root / relative
+    source = path.read_text(encoding="utf-8")
+    assert old in source
+    path.write_text(source.replace(old, new, 1), encoding="utf-8")
+    return _audit(source_root)
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "expected"),
+    (
+        ('&["nct_id"]', '&["nct_id", "nctId"]', "nctId"),
+        ('&["nct_id"]', '&["invented_only"]', "invented_only"),
+    ),
+)
+def test_code_key_contract_checks_each_nci_alternative_independently(
+    tmp_path: Path, old: str, new: str, expected: str
+) -> None:
+    result = _mutate_current_contract(tmp_path, "src/transform/trial.rs", old, new)
+    assert result.returncode != 0
+    assert "nci:src/transform/trial.rs:from_nci_hit" in result.stderr
+    assert "json_get_string#1" in result.stderr
+    assert expected in result.stderr
+
+
+def test_code_key_contract_rejects_unattested_direct_root_get(tmp_path: Path) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/entities/trial/get.rs",
+        'trial.get("eligibility")',
+        'trial.get("inventedEligibility")',
     )
+    assert result.returncode != 0
+    assert "nci_eligibility_text" in result.stderr
+    assert "get#1" in result.stderr
+    assert "inventedEligibility" in result.stderr
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "expected"),
+    (
+        (
+            '#[serde(rename = "type")]\n    pub intervention_type',
+            "pub intervention_type",
+            "interventionType",
+        ),
+        (
+            '#[serde(rename = "type")]\n    pub arm_group_type',
+            "pub arm_group_type",
+            "armGroupType",
+        ),
+        (
+            '#[serde(rename = "type")]\n    pub reference_type',
+            "pub reference_type",
+            "referenceType",
+        ),
+        (
+            "pub contacts: Vec<CtGovContact>,\n    pub geo_point",
+            "pub contacts: Vec<CtGovContact>,\n    pub central_contacts: Vec<CtGovContact>,\n    pub geo_point",
+            "protocolSection.contactsLocationsModule.locations[].centralContacts",
+        ),
+    ),
+)
+def test_code_key_contract_rejects_historical_ctgov_wrong_paths(
+    tmp_path: Path, old: str, new: str, expected: str
+) -> None:
+    result = _mutate_current_contract(
+        tmp_path, "src/sources/clinicaltrials.rs", old, new
+    )
+    assert result.returncode != 0
+    assert "CtGovStudy" in result.stderr
+    assert expected in result.stderr
+
+
+def test_code_key_contract_accepts_module_level_central_contacts(
+    tmp_path: Path,
+) -> None:
+    source_root = _copy_current_trial_contract(tmp_path / "repo")
+    result = _audit(source_root)
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    ("replacement", "expected"),
+    (
+        (
+            'let alias = hit; json_get_string(alias, &["nct_id"]);',
+            "unsupported root access",
+        ),
+        ('let _ = hit["nct_id"].clone();', "unsupported root access"),
+        ('let _ = hit.pointer("/nct_id");', "unsupported root access"),
+        ('let key = "nct_id"; let _ = hit.get(key);', "computed key"),
+        ("let _ = unknown_helper(hit);", "unsupported root access"),
+    ),
+)
+def test_code_key_contract_fails_closed_on_unsupported_nci_root_forms(
+    tmp_path: Path, replacement: str, expected: str
+) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/transform/trial.rs",
+        'let nct_id = json_get_string(hit, &["nct_id"]).unwrap_or_default();',
+        replacement,
+    )
+    assert result.returncode != 0
+    assert "from_nci_hit" in result.stderr
+    assert expected in result.stderr
+
+
+def test_code_key_contract_checks_root_of_chained_read_only(tmp_path: Path) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/entities/trial/get.rs",
+        'trial.get("eligibility")',
+        'trial.get("eligibility").and_then(|value| value.get("not_top_level"))',
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("change", ("missing", "altered", "duplicate", "extra"))
+def test_code_key_contract_boundary_is_closed(tmp_path: Path, change: str) -> None:
+    source_root = _copy_current_trial_contract(tmp_path / "repo")
+    manifest_path = source_root / "capture-receipts.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    boundaries = manifest["code_key_contract"]["boundaries"]
+    if change == "missing":
+        boundaries.pop()
+    elif change == "altered":
+        boundaries[1]["function"] = "not_a_function"
+    elif change == "duplicate":
+        boundaries.append(dict(boundaries[0]))
+    else:
+        boundaries.append(
+            {
+                "endpoint": "nci",
+                "source": "src/transform/trial.rs",
+                "function": "extra",
+                "root_parameter": "trial",
+            }
+        )
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    result = _audit(source_root)
+    assert result.returncode != 0
+    assert "code-key boundar" in result.stderr
+
+
+@pytest.mark.parametrize("change", ("missing", "altered", "duplicate", "extra"))
+def test_code_key_contract_supplemental_attestations_are_closed(
+    tmp_path: Path, change: str
+) -> None:
+    source_root = _copy_current_trial_contract(tmp_path / "repo")
+    manifest_path = source_root / "capture-receipts.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    supplements = manifest["code_key_contract"]["supplemental_attestations"]
+    if change == "missing":
+        supplements.pop()
+    elif change == "altered":
+        supplements[0]["evidence_path"] = "ctgov/wrong.json"
+    elif change == "duplicate":
+        supplements.append(dict(supplements[0]))
+    else:
+        supplements.append(
+            {
+                "endpoint": "ctgov",
+                "path": "protocolSection.invented",
+                "limitation": "opaque schema leaf",
+                "evidence_path": "ctgov/get_nct06131398_full_20260903.json",
+            }
+        )
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    result = _audit(source_root)
+    assert result.returncode != 0
+    assert "supplement" in result.stderr.lower()
+
+
+def test_code_key_discovery_ignores_commented_fake_reads_and_declarations(
+    tmp_path: Path,
+) -> None:
+    source_root = _copy_current_trial_contract(tmp_path / "repo")
+    path = tmp_path / "repo" / "src" / "transform" / "trial.rs"
+    source = path.read_text(encoding="utf-8")
+    path.write_text(
+        '// fn from_nci_hit(hit: &Value) { hit.get("invented"); }\n'
+        '/* fn from_nci_hit(hit: &Value) { hit.get("inventedBlock"); } */\n'
+        'const FAKE: &str = r#"fn from_nci_hit(hit: &Value) { hit.get("invented"); }"#;\n'
+        'const FAKE_BYTES: &[u8] = br#"hit.get("inventedBytes")"#;\n'
+        "const FAKE_CHAR: char = '}';\n" + source,
+        encoding="utf-8",
+    )
+    result = _audit(source_root)
+    assert result.returncode == 0, result.stderr
+
+
+def test_code_key_discovery_rejects_unclosed_covered_construct(tmp_path: Path) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/entities/trial/get.rs",
+        'trial.get("eligibility")',
+        'trial.get("eligibility"',
+    )
+    assert result.returncode != 0
+    assert "unclosed" in result.stderr
+
+
+def test_code_key_discovery_requires_declared_root_parameter_in_source(
+    tmp_path: Path,
+) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/entities/trial/get.rs",
+        "fn nci_eligibility_text(trial: &serde_json::Value)",
+        "fn nci_eligibility_text(record: &serde_json::Value)",
+    )
+    assert result.returncode != 0
+    assert "declared root parameter trial does not exist" in result.stderr
+
+
+def test_ctgov_attribute_prefix_ignores_comment_delimiters(tmp_path: Path) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/sources/clinicaltrials.rs",
+        '#[serde(rename_all = "camelCase")]\npub struct CtGovStudy',
+        '#[serde(alias = "inventedStudy")]\n/* } ; */\n'
+        '#[serde(rename_all = "camelCase")]\npub struct CtGovStudy',
+    )
+    assert result.returncode != 0
+    assert "CtGovStudy: unsupported struct serde attribute" in result.stderr
+
+
+def test_nci_direct_get_treats_comments_as_whitespace(tmp_path: Path) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/entities/trial/get.rs",
+        'trial.get("eligibility")',
+        'trial.get(/* provider top-level key */ "eligibility")',
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_nci_helper_does_not_discover_commented_key_literal(tmp_path: Path) -> None:
+    result = _mutate_current_contract(
+        tmp_path,
+        "src/transform/trial.rs",
+        'json_get_string(hit, &["nct_id"])',
+        'json_get_string(hit, &["nct_id", /* "inventedCommentKey" */])',
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    (
+        (
+            'json_get_string(hit, &["nct_id"])',
+            'json_get_string(/* hit */ hit, &["nct_id"])',
+        ),
+        (
+            'nci_conditions(hit, &["diseases"], 10)',
+            'nci_conditions(/* hit */ hit, &["diseases"], 10)',
+        ),
+    ),
+)
+def test_nci_helpers_track_live_root_after_comment(
+    tmp_path: Path, old: str, new: str
+) -> None:
+    result = _mutate_current_contract(tmp_path, "src/transform/trial.rs", old, new)
+    assert result.returncode == 0, result.stderr
 
 
 def _write_real_capture_inventory(

@@ -269,16 +269,16 @@ fn stopped_ctgov_trial_without_reason_reports_checked_absence() {
 }
 
 #[test]
-fn from_nci_trial_maps_supported_alias_fields() {
+fn from_nci_trial_maps_attested_fields() {
     let trial = from_nci_trial(&json!({
-        "nctId": "NCT11111111",
-        "briefTitle": "NCI trial",
-        "overallStatus": "RECRUITING",
-        "phaseCode": "PHASE3",
-        "leadSponsor": "NCI",
-        "startDate": "2020-01-01",
-        "completionDate": "2024-12-31",
-        "briefSummary": "Sentence one. Sentence two. Sentence three.",
+        "nct_id": "NCT11111111",
+        "brief_title": "NCI trial",
+        "current_trial_status": "RECRUITING",
+        "phase": "PHASE3",
+        "lead_org": "NCI",
+        "start_date": "2020-01-01",
+        "completion_date": "2024-12-31",
+        "brief_summary": "Sentence one. Sentence two. Sentence three.",
         "diseases": ["Melanoma"]
     }))
     .into_test_result()
@@ -301,7 +301,7 @@ fn trial_sections_maps_supported_nci_fields() {
         "nct_id": "NCT02296125",
         "brief_title": "Osimertinib in EGFR-mutant NSCLC",
         "current_trial_status": "ACTIVE",
-        "phase_code": "PHASE3",
+        "phase": "PHASE3",
         "lead_org": "AstraZeneca",
         "diseases": ["Non-small cell lung cancer"]
     }))
@@ -317,16 +317,16 @@ fn trial_sections_maps_supported_nci_fields() {
 #[test]
 fn trial_status_normalization_variants() {
     let hit_a = from_nci_hit(&json!({
-        "nctId": "NCT02000622",
-        "briefTitle": "Olaparib Study",
-        "status": "recruiting"
+        "nct_id": "NCT02000622",
+        "brief_title": "Olaparib Study",
+        "current_trial_status": "recruiting"
     }))
     .into_test_result()
     .expect("valid NCI hit");
     let hit_b = from_nci_hit(&json!({
-        "nctId": "NCT04303780",
-        "briefTitle": "KRAS G12C Study",
-        "overallStatus": "RECRUITING"
+        "nct_id": "NCT04303780",
+        "brief_title": "KRAS G12C Study",
+        "current_trial_status": "RECRUITING"
     }))
     .into_test_result()
     .expect("valid NCI hit");

@@ -543,8 +543,6 @@ pub struct CtGovLocation {
     pub country: Option<String>,
     #[serde(default)]
     pub contacts: Vec<CtGovContact>,
-    #[serde(default)]
-    pub central_contacts: Vec<CtGovContact>,
     pub geo_point: Option<CtGovGeoPoint>,
 }
 

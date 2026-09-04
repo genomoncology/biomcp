@@ -126,10 +126,7 @@ fn extract_locations(study: &CtGovStudy) -> Option<Vec<TrialLocation>> {
             let facility = clean_opt(loc.facility.as_deref())?;
             let city = clean_opt(loc.city.as_deref())?;
             let country = clean_opt(loc.country.as_deref())?;
-            let contact = loc
-                .contacts
-                .first()
-                .or_else(|| loc.central_contacts.first());
+            let contact = loc.contacts.first();
             Some(TrialLocation {
                 facility,
                 city,
@@ -194,7 +191,7 @@ fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
         .collect::<Vec<_>>();
 
     for loc in &module.locations {
-        for contact in loc.contacts.iter().chain(loc.central_contacts.iter()) {
+        for contact in &loc.contacts {
             if let Some(contact) = extract_contact(
                 "site",
                 contact,
@@ -572,18 +569,12 @@ fn nci_conditions(
 }
 
 pub fn from_nci_hit(hit: &serde_json::Value) -> Result<TrialSearchResult, BioMcpError> {
-    let nct_id = json_get_string(hit, &["nct_id", "nctId", "nctID"]).unwrap_or_default();
-    let title = json_get_string(hit, &["brief_title", "briefTitle", "title"]).unwrap_or_default();
-    let status = json_get_string(hit, &["current_trial_status", "status", "overallStatus"])
-        .unwrap_or_default();
-    let phase =
-        json_get_string(hit, &["phase", "phase_code", "phaseCode"]).filter(|s| !s.is_empty());
-    let sponsor = json_get_string(
-        hit,
-        &["lead_org", "lead_organization", "leadSponsor", "sponsor"],
-    )
-    .filter(|s| !s.is_empty());
-    let conditions = nci_conditions(hit, &["diseases", "conditions"], 10)?;
+    let nct_id = json_get_string(hit, &["nct_id"]).unwrap_or_default();
+    let title = json_get_string(hit, &["brief_title"]).unwrap_or_default();
+    let status = json_get_string(hit, &["current_trial_status"]).unwrap_or_default();
+    let phase = json_get_string(hit, &["phase"]).filter(|s| !s.is_empty());
+    let sponsor = json_get_string(hit, &["lead_org"]).filter(|s| !s.is_empty());
+    let conditions = nci_conditions(hit, &["diseases"], 10)?;
 
     Ok(TrialSearchResult {
         nct_id,
@@ -597,12 +588,10 @@ pub fn from_nci_hit(hit: &serde_json::Value) -> Result<TrialSearchResult, BioMcp
 }
 
 pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
-    let nct_id = json_get_string(trial, &["nct_id", "nctId", "nctID"]).unwrap_or_default();
-    let title = json_get_string(trial, &["brief_title", "briefTitle", "title"]).unwrap_or_default();
-    let status = json_get_string(trial, &["current_trial_status", "status", "overallStatus"])
-        .unwrap_or_default();
-    let phase =
-        json_get_string(trial, &["phase", "phase_code", "phaseCode"]).filter(|s| !s.is_empty());
+    let nct_id = json_get_string(trial, &["nct_id"]).unwrap_or_default();
+    let title = json_get_string(trial, &["brief_title"]).unwrap_or_default();
+    let status = json_get_string(trial, &["current_trial_status"]).unwrap_or_default();
+    let phase = json_get_string(trial, &["phase"]).filter(|s| !s.is_empty());
     let study_type = json_get_string(trial, &["study_protocol_type"]);
     let structured_eligibility = trial
         .get("eligibility")
@@ -612,20 +601,15 @@ pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
         .and_then(|value| json_get_string(value, &["max_age"]))
         .filter(|age| !age.eq_ignore_ascii_case("999 Years"));
     let age_range = format_age_range(min_age.as_deref(), max_age.as_deref());
-    let sponsor = json_get_string(
-        trial,
-        &["lead_org", "lead_organization", "leadSponsor", "sponsor"],
-    )
-    .filter(|s| !s.is_empty());
+    let sponsor = json_get_string(trial, &["lead_org"]).filter(|s| !s.is_empty());
     let enrollment = json_get_string(trial, &["minimum_target_accrual_number"])
         .and_then(|s| s.parse::<i32>().ok());
-    let start_date = json_get_string(trial, &["start_date", "startDate"]).filter(|s| !s.is_empty());
-    let completion_date =
-        json_get_string(trial, &["completion_date", "completionDate"]).filter(|s| !s.is_empty());
-    let summary = json_get_string(trial, &["brief_summary", "briefSummary", "summary"])
+    let start_date = json_get_string(trial, &["start_date"]).filter(|s| !s.is_empty());
+    let completion_date = json_get_string(trial, &["completion_date"]).filter(|s| !s.is_empty());
+    let summary = json_get_string(trial, &["brief_summary"])
         .map(|s| truncate_summary(&s))
         .filter(|s| !s.is_empty());
-    let conditions = nci_conditions(trial, &["diseases", "conditions"], 25)?;
+    let conditions = nci_conditions(trial, &["diseases"], 25)?;
     let interventions = trial
         .get("arms")
         .and_then(serde_json::Value::as_array)
