@@ -129,16 +129,26 @@ any documentation page, the set or bytes of Markdown twins, theme, or navigation
    link, and require every resolved comparison file to remain beneath the
    resolved build directory. Require the normalized scheme/host/port origin and
    URL path to remain exact across redirects. Within one global deadline of at
-   most ten minutes, retry a complete attempt consisting of the exact SHA
-   witness, byte-exact `llms.txt`, and every expected index, Markdown twin, and
-   advertised route until one complete attempt matches. This whole-publication
+   most ten minutes, retry a complete attempt consisting of the byte-exact SHA
+   witness, `llms.txt`, `llms-full.txt`, every explicit `.md` twin, and every
+   other advertised non-HTML asset, plus a successful status/origin/path check
+   for actual HTML targets advertised by the trusted index. Determine that
+   exception from the trusted resolved local target: only `.html` files,
+   including the
+   `index.html` resolved for root and directory routes, may differ in body. This
+   whole-publication
    convergence is required because hosted run 33843221076 for revision
    `69a17318add8e688f80256d816e968816f78b935` observed the current witness while
    `/` was temporarily stale; an explicit-UA cache-busted diagnostic moments
    later showed `/` byte-identical to the local 93,168-byte build. Transient
-   network, HTTP status, or body mismatches retry from the witness, but invalid
-   local inventory, path traversal, cross-origin redirects, and unexpected
-   response paths fail closed immediately.
+   network, HTTP status, or exact-asset body mismatches retry from the witness,
+   but invalid local inventory, path traversal, cross-origin redirects, and
+   unexpected response paths fail closed immediately. Hosted run 33844251288 at
+   `9ea3941581245bd41e1115cfdfade89909a30227` established this distinction:
+   Cloudflare intermittently injected its Web Analytics beacon immediately
+   before the closing body tag on `/`, producing 93,535 live bytes from the
+   93,168-byte local HTML while another request was unmodified. DNS and proxy
+   configuration remain out of scope.
 9. At closure, reconcile the duplicate live planning state: remove the stale
    live 1073 ticket and update its existing record as satisfied by the published
    indexes; remove the stale live 1074 ticket and update its existing record as
@@ -233,3 +243,19 @@ branch, locked MkDocs toolchain, and ordinary Actions token are already present.
   bounded retries of the complete trusted inventory. Deterministic convergence,
   non-convergence, and pre-network inventory regressions were added; remediation
   is applied and re-review is pending.
+- Hosted verification: FAIL 2026-09-04 — run 33844251288 at
+  `9ea3941581245bd41e1115cfdfade89909a30227` could not converge because the
+  Cloudflare proxy intermittently injected the
+  `static.cloudflareinsights.com/beacon.min.js` analytics script into `/` before
+  the closing body tag. The live response was 93,535 bytes versus the
+  byte-identical local/unmodified response's 93,168 bytes. Keep byte equality
+  for immutable witnesses, indexes, and explicit Markdown twins; require only
+  status/origin/path for actual HTML targets. Deterministic injected-HTML,
+  changed-Markdown, and changed-index regressions were added; remediation was
+  applied.
+- Code review: REJECT 2026-09-04 — classifying every non-`.md` advertised URL as
+  availability-only let an adversarially changed `/install.sh` pass. Classify
+  from the trusted resolved local target instead: only actual `.html` files may
+  tolerate body transformation; the installer and every other non-HTML asset
+  remain byte-exact. Installer and generic non-HTML classification regressions
+  were added; remediation is applied and re-review is pending.

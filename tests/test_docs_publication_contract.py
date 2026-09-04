@@ -291,19 +291,29 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
         )
 
 
-def test_live_verifier_retries_the_whole_inventory_until_it_converges(
+def test_live_verifier_allows_injected_html_but_retries_changed_markdown(
     tmp_path: Path,
 ) -> None:
     verifier = _load_verifier()
     site = tmp_path / "site"
     site.mkdir()
     (site / "llms.txt").write_text(
-        "# BioMCP\n\n[Home](https://biomcp.org/)\n", encoding="utf-8"
+        "# BioMCP\n\n[Home](https://biomcp.org/)\n"
+        "[Guide](https://biomcp.org/guide.md)\n"
+        "[Installer](https://biomcp.org/install.sh)\n"
+        "[Data](https://biomcp.org/data.json)\n",
+        encoding="utf-8",
     )
     (site / "llms-full.txt").write_text("full\n", encoding="utf-8")
     (site / "index.html").write_text("current root\n", encoding="utf-8")
+    (site / "guide.md").write_text("current guide\n", encoding="utf-8")
+    (site / "install.sh").write_text("current installer\n", encoding="utf-8")
+    (site / "data.json").write_text('{"current": true}\n', encoding="utf-8")
     requests = []
     root_requests = 0
+    guide_requests = 0
+    full_index_requests = 0
+    installer_requests = 0
 
     class Response:
         status = 200
@@ -329,40 +339,78 @@ def test_live_verifier_retries_the_whole_inventory_until_it_converges(
         "/llms.txt": (site / "llms.txt").read_bytes(),
         "/llms-full.txt": b"full\n",
         "/": b"current root\n",
+        "/guide.md": b"current guide\n",
+        "/install.sh": b"current installer\n",
+        "/data.json": b'{"current": true}\n',
     }
 
     def opener(request, timeout):
-        nonlocal root_requests
+        nonlocal full_index_requests, guide_requests, installer_requests, root_requests
         del timeout
         requests.append(request)
         path = verifier.urlsplit(request.full_url).path
         body = expected[path]
         if path == "/":
             root_requests += 1
-            if root_requests == 1:
-                body = b"stale root\n"
+            body = b"current root<script src='beacon.js'></script>\n"
+        if path == "/guide.md":
+            guide_requests += 1
+            if guide_requests == 1:
+                body = b"injected guide\n"
+        if path == "/llms-full.txt":
+            full_index_requests += 1
+            if full_index_requests == 1:
+                body = b"changed full index\n"
+        if path == "/install.sh":
+            installer_requests += 1
+            if installer_requests == 1:
+                body = b"changed installer\n"
         return Response(request, body)
 
     sleeps = []
+    now = 0.0
+
+    def monotonic() -> float:
+        nonlocal now
+        now += 0.01
+        return now
+
+    def advance(seconds: float) -> None:
+        nonlocal now
+        sleeps.append(seconds)
+        now += seconds
+
     verifier.verify_publication(
         revision=SHA,
         site_dir=site,
         base_url="https://biomcp.org",
-        timeout_seconds=10,
+        timeout_seconds=20,
         opener=opener,
-        sleep=sleeps.append,
-        monotonic=lambda: 0.0,
+        sleep=advance,
+        monotonic=monotonic,
     )
     witness_path = f"/__biomcp_revision__/{SHA}.txt"
-    assert root_requests == 2
+    inventory = verifier._expected_publication(site, expected["/llms.txt"])
+    assert {asset.path for asset in inventory.exact_assets} >= {
+        "/guide.md",
+        "/install.sh",
+        "/data.json",
+        "/llms-full.txt",
+        "/llms.txt",
+    }
+    assert inventory.html_paths == ("/",)
+    assert root_requests == 1
+    assert guide_requests == 4
+    assert installer_requests == 3
+    assert full_index_requests == 2
     assert (
         sum(
             verifier.urlsplit(request.full_url).path == witness_path
             for request in requests
         )
-        == 2
+        == 4
     )
-    assert sleeps == [5.0]
+    assert sleeps == [5.0, 5.0, 5.0]
     assert len({request.full_url for request in requests}) == len(requests)
     assert all(
         request.get_header("Cache-control") == "no-cache" for request in requests
@@ -391,8 +439,8 @@ def test_live_verifier_retries_the_whole_inventory_until_it_converges(
             timeout_seconds=2,
             opener=lambda request, timeout: Response(
                 request,
-                b"stale root\n"
-                if verifier.urlsplit(request.full_url).path == "/"
+                b"changed installer\n"
+                if verifier.urlsplit(request.full_url).path == "/install.sh"
                 else expected[verifier.urlsplit(request.full_url).path],
             ),
             sleep=advance,

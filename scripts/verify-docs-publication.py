@@ -11,6 +11,7 @@ import re
 import secrets
 import sys
 import time
+from typing import NamedTuple
 from urllib.error import URLError
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
@@ -38,6 +39,16 @@ class TransientVerificationError(VerificationError):
 
 class DeadlineExceeded(TransientVerificationError):
     """The single live-verification deadline has elapsed."""
+
+
+class ExactAsset(NamedTuple):
+    path: str
+    body: bytes
+
+
+class PublicationInventory(NamedTuple):
+    exact_assets: tuple[ExactAsset, ...]
+    html_paths: tuple[str, ...]
 
 
 def _origin(url: str) -> tuple[str, str, int | None]:
@@ -118,27 +129,42 @@ def _resolved_site_file(site_dir: Path, path: str) -> Path:
     return local
 
 
-def _expected_publication(site_dir: Path, trusted_llms: bytes) -> dict[str, bytes]:
-    expected_paths = {"/llms.txt", "/llms-full.txt"}
-    expected_paths.update(
+def _expected_publication(site_dir: Path, trusted_llms: bytes) -> PublicationInventory:
+    exact_paths = {"/llms.txt", "/llms-full.txt"}
+    exact_paths.update(
         "/" + path.relative_to(site_dir).as_posix() for path in site_dir.rglob("*.md")
     )
     try:
         index_text = trusted_llms.decode("utf-8")
     except UnicodeDecodeError as error:
         raise VerificationError("trusted local llms.txt is not valid UTF-8") from error
+    html_paths = set()
     for url in BIOMCP_URL.findall(index_text):
-        expected_paths.add(urlsplit(url).path or "/")
-
-    expected = {}
-    for path in sorted(expected_paths):
+        path = urlsplit(url).path or "/"
         local = _resolved_site_file(site_dir, path)
         if not local.is_file():
             raise VerificationError(
                 f"published llms.txt advertises an unbuilt path: {path}"
             )
-        expected[path] = local.read_bytes()
-    return expected
+        if local.suffix.lower() == ".html":
+            html_paths.add(path)
+        else:
+            exact_paths.add(path)
+
+    exact_assets = []
+    for path in sorted(exact_paths):
+        local = _resolved_site_file(site_dir, path)
+        if not local.is_file():
+            raise VerificationError(
+                f"published llms.txt advertises an unbuilt path: {path}"
+            )
+        exact_assets.append(ExactAsset(path=path, body=local.read_bytes()))
+
+    html_paths.difference_update(exact_paths)
+    return PublicationInventory(
+        exact_assets=tuple(exact_assets),
+        html_paths=tuple(sorted(html_paths)),
+    )
 
 
 def verify_publication(
@@ -202,14 +228,16 @@ def verify_publication(
                     "live bytes do not match the built site: /llms.txt"
                 )
 
-            for path, body in expected.items():
-                if path == "/llms.txt":
+            for asset in expected.exact_assets:
+                if asset.path == "/llms.txt":
                     continue
-                observed = fetch(path)
-                if observed != body:
+                observed = fetch(asset.path)
+                if observed != asset.body:
                     raise TransientVerificationError(
-                        f"live bytes do not match the built site: {path}"
+                        f"live bytes do not match the built site: {asset.path}"
                     )
+            for path in expected.html_paths:
+                fetch(path)
             return
         except SecurityViolation:
             raise
