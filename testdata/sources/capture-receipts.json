@@ -2228,6 +2228,7 @@
     "on_disk": [
       {"path": "clinicaltrials/search.json", "selector": "/studies/*", "endpoint": "ctgov"},
       {"path": "clinicaltrials/study_contacts.json", "selector": "/", "endpoint": "ctgov"},
+      {"path": "nci_cts/get_nci_2023_04529_full_20260903.json", "selector": "/data/*", "endpoint": "nci"},
       {"path": "nci_cts/search_melanoma.json", "selector": "/data/*", "endpoint": "nci"},
       {"path": "nci_cts/search_melanoma_20260811.json", "selector": "/data/*", "endpoint": "nci"}
     ],
