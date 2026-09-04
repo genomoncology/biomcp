@@ -117,3 +117,19 @@ The capture-union approach has now produced two wrong answers in one evening. It
 ClinicalTrials.gov has a schema. NCI does not publish an equivalent, so NCI keeps the capture path and keeps `get_nci_2023_04529_full_20260903.json` as its evidence. Say in the provenance record which source attests each endpoint.
 
 Cost of this decision. The schema is a network dependency the gate ladder must not acquire, so the schema is recorded into `testdata/sources/` like any other capture, with a receipt, and refreshed deliberately. A field the provider adds after the recording reads as unattested until someone re-records. That is the same staleness captures already have, and the schema is one file instead of a growing set of sampled trials.
+
+## The seventh instance is repaired here, and nothing else is
+
+Ian ruled on 2026-09-03 that the dead `central_contacts` field on `CtGovLocation` gets no ticket of its own. Removing it changes no output, so a build ticket would spend five stages on a two-line deletion. This ticket carries it instead.
+
+That ruling needs an explicit authorization, because the Boundary above forbids changing any converter's behavior, and without this section a correct attempt would find the defect and have no legal move. Ticket 1126 refused that way earlier the same day.
+
+**Authorized, and only this.** Delete the `central_contacts` member of `CtGovLocation` in `src/sources/clinicaltrials.rs`, and delete the two fallbacks that read it: the `.or_else(|| loc.central_contacts.first())` in `extract_locations` and the `.chain(loc.central_contacts.iter())` in `extract_contacts`, both in `src/transform/trial.rs`.
+
+**Forbidden.** Every other converter change. In particular do not touch `CtGovContactsLocationsModule.central_contacts`, which is correct, nor the module-level read in `extract_contacts` that produces the `central` contacts. That path works and carries real data.
+
+**The proof this is safe.** Both fallbacks are unreachable. `Location` has no `centralContacts` member in the provider's recorded schema, so `loc.central_contacts` deserializes empty on every payload. Output is identical before and after. Say so in the record rather than claiming a behavior change.
+
+**The proof this is worth doing.** All 20 recruiting melanoma trials sampled on 2026-09-03 publish a module-level central contact. A reader of `CtGovLocation` today reasonably concludes that a location carries central contacts and that the fallback fires. Neither is true. The field is a false statement about the provider sitting in a struct that exists to describe the provider.
+
+**If the check cannot catch it, say so rather than deleting it quietly.** The correction above shows a flat key-name check passes this defect, because `centralContacts` is attested at module level. The deletion and the check landing together is the point. A deletion without a check that would have caught it leaves the class open.
