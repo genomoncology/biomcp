@@ -1,5 +1,6 @@
 use super::super::*;
 use super::ticket_1107::IntoTrialTestResult;
+use serde_json::json;
 
 #[test]
 fn recorded_nci_trial_maps_provider_field_locations() {
@@ -44,5 +45,24 @@ fn recorded_nci_trial_maps_provider_field_locations() {
             Some("Interventional"),
             Some(2400),
         )
+    );
+}
+
+#[test]
+fn nci_trial_maps_provider_stop_reason() {
+    let response: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../testdata/sources/nci_cts/search_melanoma.json"
+    ))
+    .expect("recorded NCI response");
+    let mut record = response["data"][0].clone();
+    record["why_study_stopped"] = json!("Enrollment target was not met");
+
+    let trial = from_nci_trial(&record)
+        .into_test_result()
+        .expect("valid stopped NCI trial");
+
+    assert_eq!(
+        trial.why_stopped,
+        Some(Some("Enrollment target was not met".to_string()))
     );
 }
