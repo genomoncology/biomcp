@@ -30,9 +30,7 @@ def _copy_lint_fixture(tmp_path: Path) -> Path:
     (fixture_root / "docs").mkdir()
     shutil.copy2(LINT_SCRIPT, fixture_root / "bin" / "lint")
     shutil.copy2(TEXT_LINT_SCRIPT, fixture_root / "tools" / "check-tracked-text")
-    shutil.copy2(
-        BUILD_IDENTITY_WRAPPER, fixture_root / "tools" / "with-build-identity"
-    )
+    shutil.copy2(BUILD_IDENTITY_WRAPPER, fixture_root / "tools" / "with-build-identity")
     subprocess.run(["git", "init"], cwd=fixture_root, check=True, capture_output=True)
     return fixture_root
 
@@ -71,6 +69,61 @@ def _require_ruff() -> str:
     return ruff
 
 
+def test_lint_skips_source_fixture_contract_when_pair_is_absent(tmp_path: Path) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(repo_root, {"README.md": "reduced repository\n"})
+
+    result = _run_lint(repo_root)
+
+    assert result.returncode == 0
+    assert (
+        "[SKIP] Source capture and fixture-key contract (not configured)"
+        in result.stdout
+    )
+
+
+@pytest.mark.parametrize(
+    "configured_path",
+    (
+        "tools/check-source-capture-receipts.py",
+        "testdata/sources/capture-receipts.json",
+    ),
+)
+def test_lint_rejects_partial_source_fixture_contract_configuration(
+    tmp_path: Path, configured_path: str
+) -> None:
+    repo_root = _copy_lint_fixture(tmp_path)
+    contents = "raise SystemExit(0)\n" if configured_path.endswith(".py") else "{}\n"
+    _track_files(repo_root, {configured_path: contents})
+
+    result = _run_lint(repo_root)
+
+    assert result.returncode == 1
+    assert "[FAIL] Source capture and fixture-key contract" in result.stdout
+    assert "checker and manifest are both required" in result.stdout
+
+
+def test_lint_runs_source_fixture_contract_when_pair_is_present(tmp_path: Path) -> None:
+    ruff = _require_ruff()
+    repo_root = _copy_lint_fixture(tmp_path)
+    _track_files(
+        repo_root,
+        {
+            "tools/check-source-capture-receipts.py": "print('fixture audit ran')\n",
+            "testdata/sources/capture-receipts.json": "{}\n",
+        },
+    )
+
+    result = _run_lint(
+        repo_root,
+        env={"PATH": f"{Path(ruff).parent}:/usr/bin:/bin"},
+    )
+
+    assert result.returncode == 0
+    assert "fixture audit ran" in result.stdout
+    assert "[PASS] Source capture and fixture-key contract" in result.stdout
+
+
 @pytest.mark.parametrize("relative_path", ["README.md", "docs/install.md"])
 def test_lint_rejects_deprecated_public_doc_tokens(
     tmp_path: Path, relative_path: str
@@ -89,7 +142,9 @@ def test_lint_ignores_historical_biomcp_python_mentions_in_changelog(
     tmp_path: Path,
 ) -> None:
     repo_root = _copy_lint_fixture(tmp_path)
-    _track_files(repo_root, {"CHANGELOG.md": "Historical note: biomcp-python hotfix.\n"})
+    _track_files(
+        repo_root, {"CHANGELOG.md": "Historical note: biomcp-python hotfix.\n"}
+    )
 
     result = _run_lint(repo_root)
 
@@ -117,7 +172,7 @@ def test_lint_rejects_credentials_tbd_and_tracked_pycache_in_one_pass(
     _track_files(
         repo_root,
         {
-            "src/unsafe.rs": "const API_KEY = \"fixture-secret\";\nfn work() { TBD(); }\n",
+            "src/unsafe.rs": 'const API_KEY = "fixture-secret";\nfn work() { TBD(); }\n',
             "src/comment.rs": "// TBD: comments are allowed\n",
             "tests/fixtures/allowed.py": "TBD = 'fixture marker'\n",
             "pkg/__pycache__/stale.pyc": "tracked stale bytecode\n",
@@ -154,9 +209,7 @@ def test_lint_rejects_credentials_tbd_and_tracked_pycache_in_one_pass(
         "ACCESS_KEY=fixture-access-key",
     ],
 )
-def test_lint_retains_each_credential_pattern(
-    tmp_path: Path, credential: str
-) -> None:
+def test_lint_retains_each_credential_pattern(tmp_path: Path, credential: str) -> None:
     repo_root = _copy_lint_fixture(tmp_path)
     _track_files(repo_root, {"config.txt": f"{credential}\n"})
 
@@ -255,7 +308,7 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
     log_file = tmp_path / "cargo-deny.log"
     _write_executable(
         tool_dir / "cargo",
-        "#!/usr/bin/env bash\nif [ \"$1\" = \"deny\" ]; then\n  shift\n  exec cargo-deny \"$@\"\nfi\nexit 0\n",
+        '#!/usr/bin/env bash\nif [ "$1" = "deny" ]; then\n  shift\n  exec cargo-deny "$@"\nfi\nexit 0\n',
     )
     _write_executable(
         tool_dir / "cargo-deny",
@@ -263,7 +316,7 @@ def test_lint_runs_cargo_deny_license_and_advisory_checks_when_present(
         # out of the log so the log still says exactly which checks ran.
         '#!/usr/bin/env bash\nif [ "$1" = "--version" ]; then\n'
         '  echo "cargo-deny 0.0.0-fixture"\n  exit 0\nfi\n'
-        "printf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\n",
+        'printf \'%s\\n\' "$*" >> "$CARGO_DENY_LOG"\n',
     )
 
     result = _run_lint(
@@ -293,13 +346,13 @@ def test_lint_fails_when_cargo_deny_advisory_check_fails(tmp_path: Path) -> None
     log_file = tmp_path / "cargo-deny.log"
     _write_executable(
         tool_dir / "cargo",
-        "#!/usr/bin/env bash\nif [ \"$1\" = \"deny\" ]; then\n  shift\n  exec cargo-deny \"$@\"\nfi\nexit 0\n",
+        '#!/usr/bin/env bash\nif [ "$1" = "deny" ]; then\n  shift\n  exec cargo-deny "$@"\nfi\nexit 0\n',
     )
     _write_executable(
         tool_dir / "cargo-deny",
         '#!/usr/bin/env bash\nif [ "$1" = "--version" ]; then\n'
         '  echo "cargo-deny 0.0.0-fixture"\n  exit 0\nfi\n'
-        "printf '%s\\n' \"$*\" >> \"$CARGO_DENY_LOG\"\n"
+        'printf \'%s\\n\' "$*" >> "$CARGO_DENY_LOG"\n'
         'if [ "$*" = "check advisories" ]; then\n  exit 1\nfi\n',
     )
 

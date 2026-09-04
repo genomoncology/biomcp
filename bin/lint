@@ -48,6 +48,16 @@ has_tracked_files() {
 }
 
 run_tracked_text_checks
+capture_checker='tools/check-source-capture-receipts.py'
+capture_manifest='testdata/sources/capture-receipts.json'
+if [ -f "$capture_checker" ] && [ -f "$capture_manifest" ]; then
+  run_required 'Source capture and fixture-key contract' \
+    python3 "$capture_checker" --root testdata/sources
+elif [ ! -f "$capture_checker" ] && [ ! -f "$capture_manifest" ]; then
+  skip 'Source capture and fixture-key contract (not configured)'
+else
+  fail 'Source capture and fixture-key contract (incomplete configuration; checker and manifest are both required)'
+fi
 if [ -f scripts/check-mcp-registry-server.sh ]; then
   run_required 'MCP registry metadata check' bash scripts/check-mcp-registry-server.sh
 else

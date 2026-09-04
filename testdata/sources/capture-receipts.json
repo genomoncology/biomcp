@@ -428,8 +428,8 @@
     },
     {
       "path": "clinicaltrials/study_contacts.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+      "classification": "authored",
+      "authored_reason": "Authored provider-shaped contact fixture; recording equivalent person-bearing contact values is unsuitable for the public repository. Authorship does not exempt its keys from ClinicalTrials.gov schema attestation."
     },
     {
       "path": "cpic/frequency_cyp2d6.json",
@@ -2208,6 +2208,63 @@
       }
     }
   ],
+  "fixture_key_contract": {
+    "attestors": [
+      {
+        "endpoint": "ctgov",
+        "label": "ClinicalTrials.gov v2 study detail",
+        "kind": "ctgov_schema",
+        "path": "ctgov/field_metadata_20260903.json"
+      },
+      {
+        "endpoint": "nci",
+        "label": "NCI Clinical Trials Search trial record",
+        "kind": "nci_top_level_capture",
+        "path": "nci_cts/get_nci_2023_04529_full_20260903.json",
+        "selector": "/data/*",
+        "limitation": "Only top-level NCI trial keys are attested. NCI publishes no field schema, and one unrestricted capture cannot prove optional nested paths absent. Ticket 1138 may reuse this attestor but must not claim recursive NCI proof."
+      }
+    ],
+    "on_disk": [
+      {"path": "clinicaltrials/search.json", "selector": "/studies/*", "endpoint": "ctgov"},
+      {"path": "clinicaltrials/study_contacts.json", "selector": "/", "endpoint": "ctgov"},
+      {"path": "nci_cts/search_melanoma.json", "selector": "/data/*", "endpoint": "nci"},
+      {"path": "nci_cts/search_melanoma_20260811.json", "selector": "/data/*", "endpoint": "nci"}
+    ],
+    "inline": [
+      {"path": "src/transform/trial/tests.rs", "selector": "from_ctgov_study_extracts_age_and_locations_sorted:json:1", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_ctgov_study_preserves_contacts_and_structured_eligibility:json:1", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_ctgov_study_preserves_provider_type_fields_in_json:json:1", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trials_explain_their_status_in_json_and_markdown:json:1", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:1", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:2", "endpoint": "ctgov"},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "endpoint": "nci"},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_sections_maps_supported_nci_fields:json:1", "endpoint": "nci"},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "endpoint": "nci"},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "endpoint": "nci"},
+      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "unreadable_nci_disease_is_an_error:json:1", "endpoint": "nci"},
+      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "nci_condition_shape_does_not_change_a_comma_in_a_name:json:1", "endpoint": "nci"},
+      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "nci_condition_shape_does_not_change_a_comma_in_a_name:json:2", "endpoint": "nci"}
+    ],
+    "exception_policy": "ticket-1126-legacy-nci-aliases",
+    "exceptions": [
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "nctId", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "briefTitle", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "overallStatus", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "phaseCode", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "leadSponsor", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "startDate", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "completionDate", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_supported_alias_fields:json:1", "checked_path": "briefSummary", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_sections_maps_supported_nci_fields:json:1", "checked_path": "phase_code", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "checked_path": "nctId", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "checked_path": "briefTitle", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "checked_path": "status", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "checked_path": "nctId", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "checked_path": "briefTitle", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."},
+      {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "checked_path": "overallStatus", "reason": "Synthetic unit input pins an accepted legacy alias and does not attest the NCI wire contract; ticket 1138 owns its code-side disposition."}
+    ]
+  },
   "confirmed_byte_unfaithful": 0,
   "historical_corrections": [
     {
