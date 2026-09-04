@@ -124,17 +124,21 @@ any documentation page, the set or bytes of Markdown twins, theme, or navigation
    `ab063ef3b8e371b540fa508d775b9d38d0f8387a` received HTTP 403 from the
    Cloudflare-fronted host with Python urllib's
    default identity, while a direct read-only probe of the same witness returned
-   200 with that explicit identity. Require the normalized scheme/host/port
-   origin and URL path to remain exact across redirects, as well as the exact
-   SHA body. Once the
-   witness is exact, fetch the published `llms.txt`, compare it byte-for-byte to
-   the trusted local build before parsing only that local copy, then fetch
-   `llms-full.txt` and explicit Markdown routes with the same cache controls and
-   require expected bytes/statuses. Validate every link advertised by the
-   trusted index, and require every resolved comparison file to remain beneath
-   the resolved build directory. Any timeout, cross-origin or wrong-path
-   redirect, 404, stale witness, byte mismatch, escaped local path, or broken
-   advertised link fails the workflow.
+   200 with that explicit identity. Before any live request, construct the full
+   expected inventory from the trusted local build, validate every advertised
+   link, and require every resolved comparison file to remain beneath the
+   resolved build directory. Require the normalized scheme/host/port origin and
+   URL path to remain exact across redirects. Within one global deadline of at
+   most ten minutes, retry a complete attempt consisting of the exact SHA
+   witness, byte-exact `llms.txt`, and every expected index, Markdown twin, and
+   advertised route until one complete attempt matches. This whole-publication
+   convergence is required because hosted run 33843221076 for revision
+   `69a17318add8e688f80256d816e968816f78b935` observed the current witness while
+   `/` was temporarily stale; an explicit-UA cache-busted diagnostic moments
+   later showed `/` byte-identical to the local 93,168-byte build. Transient
+   network, HTTP status, or body mismatches retry from the witness, but invalid
+   local inventory, path traversal, cross-origin redirects, and unexpected
+   response paths fail closed immediately.
 9. At closure, reconcile the duplicate live planning state: remove the stale
    live 1073 ticket and update its existing record as satisfied by the published
    indexes; remove the stale live 1074 ticket and update its existing record as
@@ -221,3 +225,11 @@ branch, locked MkDocs toolchain, and ordinary Actions token are already present.
   witness was 200 with `BioMCP-docs-publication-verifier/1`. The stable explicit
   user-agent contract and all-request regression were added; remediation is
   applied and re-review is pending.
+- Hosted verification: FAIL 2026-09-04 — run 33843221076 at
+  `69a17318add8e688f80256d816e968816f78b935` reached the exact witness, then
+  found stale `/` bytes at 06:10:34 UTC. A cache-busted explicit-UA diagnostic
+  around 06:11 UTC found live `/` byte-identical to the local build (SHA-256 and
+  93,168-byte length), proving non-atomic CDN propagation across paths. Require
+  bounded retries of the complete trusted inventory. Deterministic convergence,
+  non-convergence, and pre-network inventory regressions were added; remediation
+  is applied and re-review is pending.

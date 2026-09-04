@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+from http.client import HTTPException
 from pathlib import Path
 import re
 import secrets
@@ -27,6 +28,18 @@ class VerificationError(RuntimeError):
     """The live host did not serve the expected publication."""
 
 
+class SecurityViolation(VerificationError):
+    """A live response crossed the configured trust boundary."""
+
+
+class TransientVerificationError(VerificationError):
+    """A live response may still converge before the deadline."""
+
+
+class DeadlineExceeded(TransientVerificationError):
+    """The single live-verification deadline has elapsed."""
+
+
 def _origin(url: str) -> tuple[str, str, int | None]:
     parsed = urlsplit(url)
     scheme = parsed.scheme.lower()
@@ -34,7 +47,7 @@ def _origin(url: str) -> tuple[str, str, int | None]:
     try:
         port = parsed.port
     except ValueError as error:
-        raise VerificationError(f"invalid URL origin: {url}") from error
+        raise SecurityViolation(f"invalid URL origin: {url}") from error
     if port is None:
         port = {"http": 80, "https": 443}.get(scheme)
     return scheme, hostname, port
@@ -74,15 +87,15 @@ def _fetch(
     ) as response:
         status = getattr(response, "status", None)
         if status != 200:
-            raise VerificationError(f"{path} returned HTTP {status}")
+            raise TransientVerificationError(f"{path} returned HTTP {status}")
         final_url = response.geturl()
         if _origin(final_url) != _origin(base_url):
-            raise VerificationError(
+            raise SecurityViolation(
                 f"{path} resolved to unexpected origin {_origin(final_url)}"
             )
         final_path = urlsplit(final_url).path
         if final_path != path:
-            raise VerificationError(f"{path} resolved to unexpected path {final_path}")
+            raise SecurityViolation(f"{path} resolved to unexpected path {final_path}")
         return response.read()
 
 
@@ -110,7 +123,11 @@ def _expected_publication(site_dir: Path, trusted_llms: bytes) -> dict[str, byte
     expected_paths.update(
         "/" + path.relative_to(site_dir).as_posix() for path in site_dir.rglob("*.md")
     )
-    for url in BIOMCP_URL.findall(trusted_llms.decode("utf-8")):
+    try:
+        index_text = trusted_llms.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise VerificationError("trusted local llms.txt is not valid UTF-8") from error
+    for url in BIOMCP_URL.findall(index_text):
         expected_paths.add(urlsplit(url).path or "/")
 
     expected = {}
@@ -145,20 +162,24 @@ def verify_publication(
     if not site_dir.is_dir():
         raise VerificationError(f"site directory does not exist: {site_dir}")
 
+    deadline = monotonic() + timeout_seconds
+    trusted_llms = _resolved_site_file(site_dir, "/llms.txt").read_bytes()
+    expected = _expected_publication(site_dir, trusted_llms)
     witness_path = f"/{REVISION_DIRECTORY}/{revision}.txt"
     expected_witness = f"{revision}\n".encode()
-    deadline = monotonic() + timeout_seconds
-    attempt = 0
+    request_number = 0
     last_error = "no response"
 
-    def fetch(path: str, fetch_attempt: int) -> bytes:
+    def fetch(path: str) -> bytes:
+        nonlocal request_number
         remaining = deadline - monotonic()
         if remaining <= 0:
-            raise VerificationError("live verification exceeded its deadline")
+            raise DeadlineExceeded("live verification exceeded its deadline")
+        request_number += 1
         return _fetch(
             base_url=base_url,
             path=path,
-            attempt=fetch_attempt,
+            attempt=request_number,
             timeout_seconds=remaining,
             opener=opener,
         )
@@ -166,35 +187,47 @@ def verify_publication(
     while True:
         if deadline - monotonic() <= 0:
             raise VerificationError(
-                f"exact revision witness unavailable after {timeout_seconds:g}s: "
-                f"{last_error}"
+                f"publication did not converge after {timeout_seconds:g}s: {last_error}"
             )
-        attempt += 1
         try:
-            observed = fetch(witness_path, attempt)
-            if observed == expected_witness:
-                break
-            last_error = f"stale or malformed witness body: {observed!r}"
-        except (OSError, URLError, VerificationError) as error:
+            observed = fetch(witness_path)
+            if observed != expected_witness:
+                raise TransientVerificationError(
+                    f"stale or malformed witness body: {observed!r}"
+                )
+
+            live_llms = fetch("/llms.txt")
+            if live_llms != trusted_llms:
+                raise TransientVerificationError(
+                    "live bytes do not match the built site: /llms.txt"
+                )
+
+            for path, body in expected.items():
+                if path == "/llms.txt":
+                    continue
+                observed = fetch(path)
+                if observed != body:
+                    raise TransientVerificationError(
+                        f"live bytes do not match the built site: {path}"
+                    )
+            return
+        except SecurityViolation:
+            raise
+        except DeadlineExceeded as error:
+            if last_error == "no response":
+                last_error = str(error)
+            raise VerificationError(
+                f"publication did not converge after {timeout_seconds:g}s: {last_error}"
+            ) from error
+        except (OSError, HTTPException, URLError, TransientVerificationError) as error:
             last_error = str(error)
 
         remaining = deadline - monotonic()
         if remaining <= 0:
             raise VerificationError(
-                f"exact revision witness unavailable after {timeout_seconds:g}s: "
-                f"{last_error}"
+                f"publication did not converge after {timeout_seconds:g}s: {last_error}"
             )
         sleep(min(5.0, remaining))
-
-    live_llms = fetch("/llms.txt", attempt + 1)
-    trusted_llms = _resolved_site_file(site_dir, "/llms.txt").read_bytes()
-    if live_llms != trusted_llms:
-        raise VerificationError("live bytes do not match the built site: /llms.txt")
-    expected = _expected_publication(site_dir, trusted_llms)
-    for offset, (path, body) in enumerate(expected.items(), start=attempt + 2):
-        observed = fetch(path, offset)
-        if observed != body:
-            raise VerificationError(f"live bytes do not match the built site: {path}")
 
 
 def main() -> int:

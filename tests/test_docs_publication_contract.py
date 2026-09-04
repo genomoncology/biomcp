@@ -254,6 +254,13 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
             body = b"[Outside](https://biomcp.org/../../outside-secret)\n"
         return Response(request, body)
 
+    mismatch_now = 0.0
+
+    def mismatch_clock() -> float:
+        nonlocal mismatch_now
+        mismatch_now += 0.1
+        return mismatch_now
+
     with pytest.raises(
         verifier.VerificationError, match="live bytes do not match.*llms.txt"
     ):
@@ -264,6 +271,7 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
             timeout_seconds=1,
             opener=mismatched_index,
             sleep=lambda _: None,
+            monotonic=mismatch_clock,
         )
 
     outside = tmp_path / "outside-secret"
@@ -274,24 +282,145 @@ def test_live_verifier_cache_busts_and_fails_closed_on_wrong_paths(
             b"[Outside](https://biomcp.org/../../outside-secret)\n",
         )
 
-    clock = iter([0.0, 0.1, 0.2, 1.1])
-    with pytest.raises(verifier.VerificationError, match="exceeded its deadline"):
-        verifier.verify_publication(
-            revision=SHA,
-            site_dir=site,
-            base_url="https://biomcp.org",
-            timeout_seconds=1,
-            opener=opener,
-            sleep=lambda _: None,
-            monotonic=lambda: next(clock),
-        )
-
     with pytest.raises(verifier.VerificationError, match="at most 600"):
         verifier.verify_publication(
             revision=SHA,
             site_dir=site,
             base_url="https://biomcp.org",
             timeout_seconds=601,
+        )
+
+
+def test_live_verifier_retries_the_whole_inventory_until_it_converges(
+    tmp_path: Path,
+) -> None:
+    verifier = _load_verifier()
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "llms.txt").write_text(
+        "# BioMCP\n\n[Home](https://biomcp.org/)\n", encoding="utf-8"
+    )
+    (site / "llms-full.txt").write_text("full\n", encoding="utf-8")
+    (site / "index.html").write_text("current root\n", encoding="utf-8")
+    requests = []
+    root_requests = 0
+
+    class Response:
+        status = 200
+
+        def __init__(self, request, body: bytes):
+            self.request = request
+            self.body = body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def read(self) -> bytes:
+            return self.body
+
+        def geturl(self) -> str:
+            return self.request.full_url
+
+    expected = {
+        f"/__biomcp_revision__/{SHA}.txt": f"{SHA}\n".encode(),
+        "/llms.txt": (site / "llms.txt").read_bytes(),
+        "/llms-full.txt": b"full\n",
+        "/": b"current root\n",
+    }
+
+    def opener(request, timeout):
+        nonlocal root_requests
+        del timeout
+        requests.append(request)
+        path = verifier.urlsplit(request.full_url).path
+        body = expected[path]
+        if path == "/":
+            root_requests += 1
+            if root_requests == 1:
+                body = b"stale root\n"
+        return Response(request, body)
+
+    sleeps = []
+    verifier.verify_publication(
+        revision=SHA,
+        site_dir=site,
+        base_url="https://biomcp.org",
+        timeout_seconds=10,
+        opener=opener,
+        sleep=sleeps.append,
+        monotonic=lambda: 0.0,
+    )
+    witness_path = f"/__biomcp_revision__/{SHA}.txt"
+    assert root_requests == 2
+    assert (
+        sum(
+            verifier.urlsplit(request.full_url).path == witness_path
+            for request in requests
+        )
+        == 2
+    )
+    assert sleeps == [5.0]
+    assert len({request.full_url for request in requests}) == len(requests)
+    assert all(
+        request.get_header("Cache-control") == "no-cache" for request in requests
+    )
+    assert all(request.get_header("Pragma") == "no-cache" for request in requests)
+    assert all(
+        request.get_header("User-agent") == verifier.USER_AGENT for request in requests
+    )
+
+    now = 0.0
+
+    def monotonic() -> float:
+        nonlocal now
+        now += 0.1
+        return now
+
+    def advance(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    with pytest.raises(verifier.VerificationError, match="did not converge"):
+        verifier.verify_publication(
+            revision=SHA,
+            site_dir=site,
+            base_url="https://biomcp.org",
+            timeout_seconds=2,
+            opener=lambda request, timeout: Response(
+                request,
+                b"stale root\n"
+                if verifier.urlsplit(request.full_url).path == "/"
+                else expected[verifier.urlsplit(request.full_url).path],
+            ),
+            sleep=advance,
+            monotonic=monotonic,
+        )
+
+
+def test_live_verifier_rejects_invalid_local_inventory_before_network(
+    tmp_path: Path,
+) -> None:
+    verifier = _load_verifier()
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "llms.txt").write_text(
+        "[Outside](https://biomcp.org/../../outside-secret)\n", encoding="utf-8"
+    )
+    (site / "llms-full.txt").write_text("full\n", encoding="utf-8")
+
+    def forbidden_network(*args, **kwargs):
+        raise AssertionError("network was contacted before inventory validation")
+
+    with pytest.raises(verifier.VerificationError, match="escapes the built site"):
+        verifier.verify_publication(
+            revision=SHA,
+            site_dir=site,
+            base_url="https://biomcp.org",
+            timeout_seconds=1,
+            opener=forbidden_network,
         )
 
 
