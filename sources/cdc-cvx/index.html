@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1491,6 +1547,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3246,6 +3414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4024,6 +4220,11 @@
 <td><code>search drug &lt;vaccine_brand&gt;</code></td>
 <td>Default plain-name U.S.+EU+WHO search</td>
 <td>The CDC bridge affects the EU bucket on this path; WHO aliases stay unchanged unless the user explicitly selects WHO vaccine search</td>
+</tr>
+<tr>
+<td><code>search adverse-event &lt;vaccine_query&gt; --source vaers\|all</code></td>
+<td>Vaccine identity classification before VAERS aggregation</td>
+<td>A healthy no-match may classify the query; missing, unreadable, or unsynchronized CVX data reports <code>vaers.status: unavailable</code> instead of <code>query_not_vaccine</code></td>
 </tr>
 <tr>
 <td><code>biomcp health</code></td>

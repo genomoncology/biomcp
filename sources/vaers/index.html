@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1491,6 +1547,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3246,6 +3414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4002,7 +4198,10 @@ vaccine.</p>
 <p>Vaccine identity can flow through the local CDC CVX/MVX bridge when the query
 needs help resolving to the CDC WONDER D8 code space, so brand-heavy inputs can
 still land on the right vaccine family without exposing the raw CDC codes to
-the operator.</p>
+the operator. JSON from <code>--source all</code> keeps independent
+<code>section_outcomes.faers</code> and <code>.vaers</code> states. CVX or VAERS failure is
+<code>unavailable</code>; only a healthy CVX classification can produce
+<code>query_not_vaccine</code> or <code>unmapped_vaccine</code> in <code>vaers.status</code>.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <p>The VAERS-only path supports only the vaccine query text from <code>--drug</code> or the
 positional argument. FAERS-specific filters such as reaction, seriousness,

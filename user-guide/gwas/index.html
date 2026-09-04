@@ -1088,6 +1088,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1615,6 +1671,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3268,6 +3436,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4045,31 +4241,31 @@
 <p>By gene:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>BRAF
 </code></pre></div>
-<p>By genomic region:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--region<span class="w"> </span><span class="s2">&quot;chr7:140400000-140500000&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-</code></pre></div>
 <p>With p-value threshold:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--p-value<span class="w"> </span>5e-8<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>-g<span class="w"> </span>TCF7L2<span class="w"> </span>--p-value<span class="w"> </span>5e-8<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
-<p>Key flags: <code>-g/--gene</code> for a gene symbol, <code>--trait</code> for phenotype text,
-<code>--region</code> for genomic intervals like <code>chr:start-end</code>, and <code>--p-value</code> for a
-significance threshold. Use <code>--limit</code> and <code>--offset</code> for bounded paging.</p>
+<p>Key flags: <code>-g/--gene</code> for a gene symbol, <code>--trait</code> for phenotype text, and
+<code>--p-value</code> for a finite significance threshold greater than 0 and at most 1.
+Exact provider mantissa/exponent values must also represent a probability in
+that range; BioMCP accepts exponents from -1,000,000 through 0, which preserves
+extreme underflowed results while rejecting malformed upstream values.
+Use <code>--limit</code> and <code>--offset</code> for bounded paging. Genomic interval search is not
+supported by this command.</p>
 <h2 id="get-records">Get records<a class="headerlink" href="#get-records" title="Permanent link">&para;</a></h2>
 <p>GWAS is search-only. There is no <code>get gwas</code> subcommand.</p>
 <h2 id="request-sections">Request sections<a class="headerlink" href="#request-sections" title="Permanent link">&para;</a></h2>
 <p>GWAS search rows do not expose extra section names. Use <code>biomcp get variant
 &lt;id&gt; gwas</code> when you need GWAS evidence attached to a known variant card.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<p>GWAS is search-only. Start with <code>search gwas</code> for genes, traits, or regions,
+<p>GWAS is search-only. Start with <code>search gwas</code> for genes or traits,
 then pivot into <code>get variant &lt;id&gt; gwas</code> if a specific association needs deeper
 context.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>gwas<span class="w"> </span>--trait<span class="w"> </span><span class="s2">&quot;type 2 diabetes&quot;</span>
 </code></pre></div>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Combine gene and trait filters to narrow broad searches.</li>
-<li>Use <code>--region</code> for locus-level queries when you have genomic coordinates.</li>
 <li>GWAS data is also available as a variant section: <code>biomcp get variant rs7903146 gwas</code>.</li>
 </ul>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>

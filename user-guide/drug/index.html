@@ -1088,6 +1088,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1296,6 +1352,17 @@
     <span class="md-ellipsis">
       
         JSON mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-section-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source-section outcomes
       
     </span>
   </a>
@@ -1659,6 +1726,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3312,6 +3491,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4083,6 +4290,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#source-section-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source-section outcomes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#practical-tips" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4214,9 +4432,10 @@ unless you pass <code>--region</code> explicitly.</p>
 <p>Interactions (DDInter-backed structured report with additive label text when available):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>warfarin<span class="w"> </span>interactions
 </code></pre></div>
-<p>This section now renders DDInter-backed partner rows, source-provided severity
-levels, and class rollups from the current local DDInter bundle. When the
-current bundle has no matching rows, BioMCP says that truthfully and does not
+<p>This section renders up to 25 DDInter-backed partner rows, source-provided
+severity levels, total/returned counts, and fresh/stale state from the current
+local bundle. When more rows exist it points to <code>drug interactions</code> for paging.
+When the bundle has no matching rows, BioMCP says that truthfully and does not
 claim the drug has no clinical interactions.</p>
 <p>CIViC evidence and Drugs@FDA approvals:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>vemurafenib<span class="w"> </span>civic
@@ -4324,9 +4543,10 @@ place these files in the target directory:</p>
 <h2 id="ddinter-local-data-setup">DDInter local data setup<a class="headerlink" href="#ddinter-local-data-setup" title="Permanent link">&para;</a></h2>
 <p>Drug interaction commands read DDInter local data from <code>BIOMCP_DDINTER_DIR</code>
 first, then the platform data directory (<code>~/.local/share/biomcp/ddinter</code> on
-typical Linux systems). On first use, BioMCP auto-downloads the eight public
-DDInter CSV files into that root and refreshes stale files after 72 hours. Use
-<code>biomcp ddinter sync</code> to force a refresh at any time. DDInter's own terms warn
+typical Linux systems). Reads never download or refresh files, including when
+the installed bundle is older than 72 hours. Use <code>biomcp ddinter sync</code> for
+explicit maintenance. It validates all eight downloaded files before replacing
+the prior complete bundle. DDInter's own terms warn
 that absence from the database does not prove no interaction exists, so BioMCP
 keeps empty interaction results scoped to the current local bundle.</p>
 <p>Manual preseed still works. If you need an offline or pre-populated root, place
@@ -4359,14 +4579,16 @@ these files in the target directory:</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>Interaction pivot:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>imatinib
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;._meta.next_commands&#39;</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin<span class="w"> </span>--limit<span class="w"> </span><span class="m">25</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">25</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;{pagination, bundle_freshness}&#39;</span>
 </code></pre></div>
-<p><code>drug interactions &lt;name&gt;</code> resolves the anchor drug first, reports DDInter-backed
-partner rows plus class summaries, and uses helper-specific next commands for
-<code>biomcp get drug &lt;canonical&gt; safety</code> and
-<code>biomcp search article --drug &lt;canonical&gt; --limit 5</code>. <code>get drug &lt;name&gt;
-interactions</code> renders the same interaction report inside the standard drug card.
+<p><code>drug interactions &lt;name&gt;</code> resolves the anchor drug first, sorts and deduplicates
+the complete local match set, and returns 25 rows by default. <code>--limit</code> requests
+above 50 are capped at 50; <code>--offset</code> selects later pages. JSON and Markdown
+report total and returned counts, effective offset/limit, bundle freshness, and
+a continuation command when more rows exist. <code>get drug &lt;name&gt;
+interactions</code> renders the first 25 rows inside the standard drug card and points
+to the page-able helper when more rows exist.
 When the current DDInter download bundle has no matching rows, BioMCP says so
 without turning that source empty into a safety claim.</p>
 <p>Trial pivot:</p>
@@ -4389,7 +4611,12 @@ matched first. Use <code>--no-alias-expand</code> to force literal matching.</p>
 </code></pre></div>
 <p><code>search drug --json</code> always returns the same top-level shape: <code>region</code>,
 <code>regions</code>, and optional <code>_meta.next_commands</code>. Each region bucket keeps the
-single-region wrapper fields <code>pagination</code>, <code>count</code>, and <code>results</code>.</p>
+single-region wrapper fields <code>pagination</code>, <code>count</code>, and <code>results</code>. <code>--limit</code>
+and <code>--offset</code> apply separately to each requested region, so an all-region
+search can return up to three times the requested limit. Every bucket has its
+own region-only continuation command. Rows identify whether they matched an
+exact product name, exact active substance, structured alias, or broader text;
+that ordering is applied only within the region, never across providers.</p>
 <ul>
 <li>Use <code>regions.us.results</code> for U.S. search rows.</li>
 <li>Use <code>regions.eu.results</code> for EMA rows.</li>
@@ -4397,15 +4624,22 @@ single-region wrapper fields <code>pagination</code>, <code>count</code>, and <c
 <li>Omitted <code>--region</code> on a plain name/alias search and explicit <code>--region all</code>
   include all three buckets under <code>regions</code>.</li>
 <li><code>biomcp --json drug interactions &lt;name&gt;</code> returns one canonical-anchor
-  interaction report with <code>interactions</code>, <code>class_summaries</code>, and the standard
+  interaction report with bounded <code>interactions</code>, <code>pagination</code>,
+  <code>bundle_freshness</code>, and the standard
   <code>_meta.evidence_urls</code>, <code>_meta.section_sources</code>, and helper-specific
   <code>_meta.next_commands</code>.</li>
 </ul>
+<h2 id="source-section-outcomes">Source-section outcomes<a class="headerlink" href="#source-section-outcomes" title="Permanent link">&para;</a></h2>
+<p>JSON and MCP drug records include outcomes for <code>approvals</code>, <code>safety</code>, <code>targets</code>,
+<code>indications</code>, and <code>civic</code>. <code>empty</code> credits the providers that completed without
+evidence, <code>degraded</code> preserves usable evidence when an additive provider fails,
+and <code>unavailable</code> carries no failed-provider credit. Existing biomedical fields,
+including the compatible <code>approvals</code> array, remain at their current paths.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Start with base <code>get</code> before requesting heavy sections.</li>
 <li>Use <code>drug interactions &lt;name&gt;</code> when the question is explicitly about
-  interacting drugs or interaction classes for a known medication.</li>
+  interacting drugs for a known medication.</li>
 <li>Use target filters to narrow crowded drug classes.</li>
 <li>Use <code>regulatory</code> with <code>--region who|all</code> when you need WHO Prequalification context.</li>
 <li>Use <code>regulatory</code>, <code>safety</code>, or <code>shortage</code> with <code>--region eu|all</code> when you need EMA context; <code>ema</code> is accepted as an input alias for <code>eu</code>.</li>

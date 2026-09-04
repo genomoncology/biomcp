@@ -1088,6 +1088,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1637,6 +1693,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3290,6 +3458,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4088,7 +4284,14 @@ survival context without creating a separate survival entity.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>disease<span class="w"> </span>-q<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>disease<span class="w"> </span>-q<span class="w"> </span>glioblastoma<span class="w"> </span>--source<span class="w"> </span>mondo<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>Search resolves common labels toward canonical ontology-backed identifiers.</p>
+<p>Search resolves common labels toward canonical ontology-backed identifiers.
+<code>--inheritance</code> accepts autosomal dominant/recessive, x-linked variants, y-linked,
+mitochondrial, multifactorial, oligogenic, polygenic, sporadic, somatic mosaicism,
+broad <code>dominant</code>/<code>recessive</code>, and HPO inheritance IDs <code>HP:0000006</code>, <code>HP:0000007</code>,
+<code>HP:0001417</code>, <code>HP:0001423</code>, <code>HP:0001419</code>, <code>HP:0001450</code>, <code>HP:0001427</code>, <code>HP:0001426</code>,
+<code>HP:0010983</code>, <code>HP:0010982</code>, <code>HP:0003745</code>, and <code>HP:0001442</code>. <code>--onset</code> accepts antenatal,
+embryonal, fetal, congenital, neonatal, infantile (<code>infancy</code> is an alias), childhood,
+juvenile, adolescent, young adult, adult, middle age, and late onset.</p>
 <h2 id="get-disease-records">Get disease records<a class="headerlink" href="#get-disease-records" title="Permanent link">&para;</a></h2>
 <p>By label:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>melanoma
@@ -4106,6 +4309,13 @@ gene card.
 The default disease card's <code>More:</code> block keeps <code>genes</code>, <code>pathways</code>, and
 <code>phenotypes</code> visible while also surfacing <code>survival</code> and <code>funding</code> so those
 opt-in sections stay discoverable from the base card.</p>
+<p>Treatment suggestions and recruiting-trial counts are automatic base-card
+enrichments. JSON records their status as <code>section_outcomes.treatments</code> and
+<code>section_outcomes.recruiting_trials</code>. A missing usable disease name is
+<code>inapplicable</code>; a healthy treatment miss is <code>empty</code>; returned treatments or any
+returned trial count (including zero) are <code>data</code>; and provider failure is
+<code>unavailable</code> with no source credit. These optional failures remain visible in
+JSON provenance and Markdown but do not make the base disease command fail.</p>
 <h2 id="disease-sections">Disease sections<a class="headerlink" href="#disease-sections" title="Permanent link">&para;</a></h2>
 <p>Genes (Monarch-backed rows plus additive CIViC and OpenTargets disease-gene associations; OpenTargets scores attach to any rendered row with a matching target score):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>genes
@@ -4117,15 +4327,13 @@ opt-in sections stay discoverable from the base card.</p>
 <code>### Key Features</code> above the HPO table. That summary is also exposed as
 <code>key_features[]</code> in <code>--json</code> output. The table remains the comprehensive phenotype
 annotation list, and the existing completeness note still applies.</p>
-<p>Clinical features (MedlinePlus clinical-summary rows):</p>
+<p>Clinical features (Monarch/HPO phenotype rows):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>&lt;name_or_id&gt;<span class="w"> </span>clinical_features
 </code></pre></div>
-<p>This opt-in section is currently available for the reviewed configured disease
-set: uterine leiomyoma / uterine fibroid, endometriosis, and chronic venous
-insufficiency. Rows are source-native MedlinePlus clinical-summary statements
-with auditable HPO mapping metadata. Unsupported diseases omit the
-<code>clinical_features</code> field rather than fabricating rows, and the section is not
-included in <code>biomcp get disease &lt;name_or_id&gt; all</code>.</p>
+<p>This opt-in section reuses the Monarch/HPO phenotype backend and exposes those
+backend rows directly as clinical features. Unsupported diseases return a
+truthful Monarch/HPO empty state rather than fabricated rows, and the section is
+not included in <code>biomcp get disease &lt;name_or_id&gt; all</code>.</p>
 <p>Variants (CIViC disease-associated variants):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0005105<span class="w"> </span>variants
 </code></pre></div>
@@ -4144,9 +4352,11 @@ anchor above the full variants table.</p>
 <p>Survival (SEER Explorer 5-year relative survival by sex for mapped cancers):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;chronic myeloid leukemia&quot;</span><span class="w"> </span>survival
 </code></pre></div>
-<p>The survival section is filtered to all ages and all races / ethnicities. When
-the normalized disease does not map cleanly to one SEER cancer site, BioMCP
-returns a stable <code>survival_note</code> instead of failing the disease card.</p>
+<p>The survival section is filtered to all ages and all races / ethnicities. JSON
+records the request in <code>section_outcomes.survival</code>: <code>data</code> credits SEER Explorer,
+<code>empty</code> means the disease did not map to usable SEER evidence, and <code>unavailable</code>
+reports a source failure without crediting the failed provider. Markdown reports
+unavailability in-band; the existing <code>survival_note</code> remains for compatibility.</p>
 <p>Diagnostic-test pivot (GTR and WHO IVD tests for the condition):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>tuberculosis<span class="w"> </span>diagnostics
 </code></pre></div>
@@ -4172,12 +4382,11 @@ and are not included in <code>biomcp get disease &lt;name_or_id&gt; all</code>.<
 </code></pre></div>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;Phelan-McDermid Syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>trials<span class="w"> </span><span class="s2">&quot;Rett Syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>drugs<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>biomcp<span class="w"> </span>disease<span class="w"> </span>articles<span class="w"> </span><span class="s2">&quot;Lynch syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>CTGov disease trial pivots reuse the same bounded condition expansion as
-<code>biomcp search trial -c</code>, while preserving the literal disease label.</p>
+<p>Disease trial pivots send the supplied disease label literally.</p>
 <h2 id="phenotype-to-disease-search">Phenotype-to-disease search<a class="headerlink" href="#phenotype-to-disease-search" title="Permanent link">&para;</a></h2>
 <p>Use HPO term sets for ranked disease candidates:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>

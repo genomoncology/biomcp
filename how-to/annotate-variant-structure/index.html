@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3154,6 +3322,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3849,9 +4045,15 @@
 <li><code>protein</code> with the UniProt accession and entry</li>
 <li>overlapping InterPro <code>domains</code> with <code>start</code> and <code>end</code></li>
 <li>UniProt <code>structures.pdb</code> rows plus <code>structures.alphafold.url</code></li>
-<li>source-labelled <code>cancerhotspots</code> recurrence</li>
+<li>nullable, source-labelled <code>cancerhotspots</code> recurrence</li>
+<li>top-level <code>lookup_outcomes</code> for <code>domains</code> and <code>cancerhotspots</code></li>
 <li><code>warnings</code> and <code>_meta.next_commands</code></li>
 </ul>
+<p>A successful provider check with no overlap or hotspot match is <code>empty</code> and may
+name the checked source. If the selected residue or normalizable protein change
+is missing, the lookup is <code>inapplicable</code>; if the provider fails, it is
+<code>unavailable</code>. Those states do not claim a checked absence or provider source,
+and an inapplicable/unavailable Cancer Hotspots recurrence is JSON <code>null</code>.</p>
 <p>BioMCP selects the requested HGVSp position when MyVariant.info/dbNSFP returns multiple transcript or isoform positions. Ambiguous residue-only inputs are rejected with the same guidance as <code>get variant</code>; search first, then run this helper on the exact variant.</p>
 <p>This helper does not run ΔΔG or stability prediction and does not change default <code>get variant</code> output.</p>
 

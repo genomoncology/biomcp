@@ -1,0 +1,255 @@
+# Data Sources
+
+BioMCP unifies multiple biomedical data providers behind one CLI grammar.
+This reference explains source provenance, authentication requirements, base endpoints,
+and operational caveats so users can reason about result quality and troubleshooting.
+Use [Source Licensing and Terms](source-licensing.md) for provider terms, reuse constraints, and indirect-only provenance rows.
+Use [Configuration Reference](configuration.md) for supported environment
+variables, test-only override seams, cache settings, and release/install knobs.
+
+## Source matrix
+
+| Entity / feature | Primary source(s) | Base URL | Auth required | Notes |
+|------------------|-------------------|----------|---------------|-------|
+| Gene | MyGene.info | `https://mygene.info/v3` | No | Symbol lookup, aliases, summaries, and GRCh38-labeled genomic coordinates when returned |
+| Gene sections | UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, OpenTargets, ClinGen, gnomAD GraphQL API | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/QuickGO/services`, `https://string-db.org/api`, `https://gtexportal.org/api/v2`, `https://www.proteinatlas.org`, `https://dgidb.org/api/graphql`, `https://api.platform.opentargets.org/api/v4/graphql`, `https://search.clinicalgenome.org`, `https://gnomad.broadinstitute.org/api` | No | Protein summary, GO terms, interactions, GTEx RNA tissue expression, HPA protein tissue expression and subcellular localization, combined DGIdb/OpenTargets druggability, gene-disease validity, and gnomAD v4 GRCh38 gene constraint |
+| Gene `disgenet` section | DisGeNET REST API | `https://api.disgenet.com/api/v1` | Yes (`DISGENET_API_KEY`) | Ranked scored gene-disease associations with PMIDs, clinical-trial counts, evidence index, and evidence level |
+| Gene CSpec documents | ClinGen CSpec | `https://cspec.clinicalgenome.org` | No | `gene cspec <GENE>` lists versioned resource IRIs; exact selection retains a bounded local raw capture and returns source facts without ACMG interpretation |
+| Variant | MyVariant.info | `https://myvariant.info/v1` | No | rsID/HGVS lookup, ClinVar, and prediction scores including separate `BayesDel add-AF` and `BayesDel no-AF` source values; BioMCP does not apply clinical thresholds or classify pathogenicity from them |
+| Variant cancerhotspots recurrence | Cancerhotspots.org | `https://www.cancerhotspots.org` | No | `get variant <gene> <change> all` adds source-labelled residue and exact amino-acid recurrence counts when cancerhotspots can be checked |
+| Variant ERepo assertions | ClinGen Evidence Repository | `https://erepo.clinicalgenome.org` | No | `variant erepo <CAid>` preserves versioned expert assertion source facts; it does not classify variants or infer criterion strength |
+| Variant CAR normalization | ClinGen Allele Registry | `https://reg.genome.network` | No | `variant normalize car <HGVS>` makes bounded read-only projected lookups for supported versioned RefSeq HGVS; it returns source facts without inferred equivalence or registration |
+| Variant article identity observation | ClinGen LDH | `https://ldh.genome.network` | No | `variant articles --verify-identity` may add bounded, auditable CAid/gene/PMCID/selector observations after retrieval; LDH never discovers, removes, ranks, or supplies negative evidence for candidates |
+| Variant normalization | Mutalyzer | `variant normalize` / `https://mutalyzer.nl/api` | No | Calls `GET /normalize/{description}` for explicit transcript HGVS and preserves normalized/corrected/protein fields plus source warnings/status |
+| Variant normalization | VariantValidator | `variant normalize` / `https://rest.variantvalidator.org` | No | Calls `GET /VariantValidator/variantvalidator/{genome_build}/{variant_description}/{select_transcripts}` for explicit transcript HGVS and preserves `TranscriptVersionWarning`, GRCh38 genomic descriptions, and source status |
+| Variant population section | gnomAD GraphQL API | `https://gnomad.broadinstitute.org/api` | No | Direct `gnomad_r4` query for a trustworthy GRCh38 coordinate; keeps exome/genome counts, ancestry frequencies, grpmax FAF95, and filters separate |
+| Variant GWAS section and GWAS search | GWAS Catalog REST API | `https://www.ebi.ac.uk/gwas/rest/api` | No | rsID detail plus bounded v2 gene and trait association retrieval |
+| Variant OncoKB helper | OncoKB | `https://www.oncokb.org/api/v1` | Yes (`ONCOKB_TOKEN`) | Accessed via explicit `variant oncokb <id>` command |
+| Variant prediction | AlphaGenome | `https://gdmscience.googleapis.com:443` | Yes (`ALPHAGENOME_API_KEY`) | gRPC scoring for `predict` section |
+| Trial (default) | ClinicalTrials.gov API v2 | `https://clinicaltrials.gov/api/v2` | No | Default trial search/get source |
+| Trial (optional) | NCI CTS API | `https://clinicaltrialsapi.cancer.gov/api/v2` | Yes (`NCI_API_KEY`) | Enabled via `--source nci` |
+| NCI CTS trial search | NCI CTS API | `https://clinicaltrialsapi.cancer.gov/api/v2` | Yes (`NCI_API_KEY`) | `search trial --source nci` |
+| Article search & metadata | PubTator3 + Europe PMC + PubMed + optional Semantic Scholar; Semantic Scholar and LitSense2 by explicit `--source semanticscholar` / `--source litsense2` | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api`, `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://www.ncbi.nlm.nih.gov/research/litsense2-api/api`, `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Federated default search with identifier-aware merge, per-source capping after deduplication and before ranking, plus lexical, semantic, or weighted hybrid relevance ranking; Semantic Scholar and LitSense2 remain individually selectable |
+| Author search and detail | Semantic Scholar | `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Provider-exact author records; no cross-provider resolution |
+| Article enrichment and graph helpers | Semantic Scholar | `https://api.semanticscholar.org` | Optional (`S2_API_KEY`) | Search-leg metadata, TLDR, influential citations, citation/reference graph, recommendations |
+| Article annotations | PubTator3 | `https://www.ncbi.nlm.nih.gov/research/pubtator3-api` | No | Entity annotations |
+| Article indexing | PubMed citation EFetch XML | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | Optional (`NCBI_API_KEY`) | Opt-in associated author affiliations/ORCID and structured MeSH; explicit available/unavailable status; included by `all` |
+| Article full-text resolution | Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata | `https://www.ebi.ac.uk/europepmc/webservices/rest`, `https://eutils.ncbi.nlm.nih.gov/entrez/eutils`, `https://pmc-oa-opendata.s3.amazonaws.com`, `https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles`, `https://pmc.ncbi.nlm.nih.gov/articles`, `https://api.semanticscholar.org` | Optional (`NCBI_API_KEY`, `S2_API_KEY`) | NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available |
+| Drug | MyChem.info | `https://mychem.info/v1` | No | Drug metadata, targets, synonyms, and default U.S. search/get normalization |
+| Drug EU regional context | EMA website JSON batch (local human-medicines download) | `https://www.ema.europa.eu/en/about-us/about-website/download-website-data-json-data-format` | No | Supports canonical `search/get drug --region eu|all` for regulatory, safety, and shortage, accepts `ema` as an input alias for `eu`, and auto-downloads into `BIOMCP_EMA_DIR` or the platform data directory on first use; `biomcp ema sync` force-refreshes the local files and omitting `--region` on `get drug <name> regulatory` checks U.S. and EU regulatory data |
+| Drug WHO regional context | WHO finished-pharmaceutical-products CSV + WHO active-pharmaceutical-ingredients CSV + WHO vaccine CSV (local downloads) | `https://extranet.who.int/prequal/medicines/prequalified/finished-pharmaceutical-products/export?page&_format=csv`, `https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients/export?page&_format=csv`, `https://extranet.who.int/prequal/vaccines/prequalified/export` | No | Supports `search/get drug --region who|all`, WHO-filtered structured `search drug --region who` for finished-pharma/API, and WHO-only `--product-type <finished_pharma|api|vaccine>` filters; WHO vaccine support is explicit search-only; auto-downloads all three files into `BIOMCP_WHO_DIR` or the platform data directory on first use and `biomcp who sync` force-refreshes the local exports |
+| Drug-drug interactions | DDInter public CSV download bundle (local reads) | `https://ddinter.scbdd.com/download/` | No | Supports bounded `biomcp drug interactions <name> --limit <N> --offset <N>` plus a bounded `get drug <name> interactions` first page; reads the installed eight-file bundle without maintenance, reports fresh/stale state, and uses `biomcp ddinter sync` as the explicit validated whole-bundle refresh path; empty results stay scoped to the current DDInter bundle and do not prove absence of clinical interactions |
+| Drug vaccine identity bridge | CDC CVX code set + CDC trade-name map + CDC MVX manufacturer table (local downloads) | `https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/cvx.txt`, `https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/TRADENAME.txt`, `https://www2.cdc.gov/vaccines/iis/iisstandards/downloads/mvx.txt` | No | Supports omitted-`--region` plain-name vaccine search plus explicit `search drug <name> --region eu|all` and explicit WHO vaccine name/brand search (`--region who --product-type vaccine`) when MyChem identity resolution misses; auto-downloads the bundle into `BIOMCP_CVX_DIR` or the platform data directory on first use, refreshes stale files after 30 days, and `biomcp cvx sync` force-refreshes the local CDC data; `--region us` stays outside this path |
+| Diagnostic | NCBI Genetic Testing Registry bulk exports + WHO IVD CSV export (local downloads) + optional OpenFDA device overlay | `https://ftp.ncbi.nlm.nih.gov/pub/GTR/data/test_version.gz`, `https://ftp.ncbi.nlm.nih.gov/pub/GTR/data/test_condition_gene.txt`, `https://extranet.who.int/prequal/vitro-diagnostics/prequalified/in-vitro-diagnostics/export?page&_format=csv`, `https://api.fda.gov/device/510k.json`, `https://api.fda.gov/device/pma.json` | Optional (`OPENFDA_API_KEY`) for the FDA overlay only | Supports source-aware `search diagnostic --source <gtr|who-ivd|all>` and `get diagnostic`; auto-downloads the GTR files into `BIOMCP_GTR_DIR`, `who_ivd.csv` into `BIOMCP_WHO_IVD_DIR`, refreshes stale GTR data after 7 days and WHO IVD data after 72 hours, and `biomcp gtr sync` / `biomcp who-ivd sync` force-refresh the local bundles; `get diagnostic <id> regulatory` adds an opt-in live OpenFDA device 510(k)/PMA lookup without changing the base summary card |
+| Drug section enrichments | ChEMBL + OpenTargets + CIViC | `https://www.ebi.ac.uk/chembl/api/data`, `https://api.platform.opentargets.org/api/v4/graphql`, `https://civicdb.org/api` | No | Generic targets/mechanisms from ChEMBL, generic target/indication context from Open Targets, and additive CIViC variant-target annotations for drug target output |
+| Disease normalization | MyDisease.info | `https://mydisease.info/v1` | No | MONDO-oriented disease normalization |
+| Discover structured concepts | OLS4 | `https://www.ebi.ac.uk/ols4` | No | Free-text ontology search for `biomcp discover`; OLS4 is the required backbone |
+| Discover clinical crosswalks | UMLS REST API | `https://uts-ws.nlm.nih.gov/rest` | Optional (`UMLS_API_KEY`) | Adds ICD-10, SNOMED CT, RxNorm, OMIM, and related cross-vocabulary IDs to discover results |
+| Discover plain-language topics | MedlinePlus Search | `https://wsearch.nlm.nih.gov/ws/query` | No | Best-effort disease/symptom context for `biomcp discover`; suppressed for gene/drug/pathway flows |
+| Disease `clinical_features` section | Monarch Initiative / HPO | Monarch/HPO phenotype APIs | No | Opt-in clinical-feature view over backend phenotype annotations; unsupported diseases return a truthful backend empty state |
+| Phenotype term resolution | HPO JAX API | `https://ontology.jax.org/api/hp` | No | Direct HPO term lookup and normalization used by phenotype workflows |
+| Disease genes/pathways/prevalence | OpenTargets GraphQL + Reactome | `https://api.platform.opentargets.org/api/v4/graphql`, `https://reactome.org/ContentService` | No | Baseline disease context with ranked associated targets; disease `genes` can promote OpenTargets rows directly into the disease-gene table and attach OT score summaries |
+| Disease `survival` section | SEER Explorer | `https://seer.cancer.gov/statistics-network/explorer/source/content_writers` | No | Disease survival detail for mapped cancers, surfaced by the explicit `survival` section and preserved in disease `all`; uses live site-catalog resolution plus all-ages / all-races 5-year relative survival by sex, and degrades to stable notes on mapping or availability failures |
+| Disease `genes` and `phenotypes` sections | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | Core disease associations and phenotype evidence |
+| Disease `genes` and `variants` augmentation | CIViC | `https://civicdb.org/api` | No | Somatic driver augmentation for genes and disease-associated molecular profiles |
+| Disease `models` section | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | Model-organism evidence with relationship and provenance |
+| Disease `disgenet` section | DisGeNET REST API | `https://api.disgenet.com/api/v1` | Yes (`DISGENET_API_KEY`) | Ranked scored disease-gene associations; disease lookup uses UMLS-backed DisGeNET identifiers |
+| Gene/Disease `funding` section | NIH Reporter v2 API | `https://api.reporter.nih.gov/v2` | No | Exact-phrase title/abstract funding lookup over the most recent 5 NIH fiscal years; returns top unique grants after de-duplicating project-year records |
+| Phenotype search (`search phenotype`) | Monarch Initiative API v3 | `https://api-v3.monarchinitiative.org` | No | HPO set similarity search to ranked diseases |
+| PGx core interactions/recommendations | CPIC API | `https://api.cpicpgx.org/v1` | No | Pair, recommendation, frequency, and guideline views |
+| PGx annotations section | PharmGKB API | `https://api.pharmgkb.org/v1` | No | Clinical/guideline/label annotation enrichment |
+| Pathway | Reactome + KEGG + WikiPathways + g:Profiler | `https://reactome.org/ContentService`, `https://rest.kegg.jp`, `https://www.wikipathways.org/json`, `https://biit.cs.ut.ee/gprofiler/api` | No | Pathway search and detail use Reactome + KEGG + WikiPathways; `genes` are available across all three sources, while `events` and pathway `enrichment` remain Reactome-only; top-level `biomcp enrich` uses **g:Profiler** |
+| Protein | UniProt + InterPro + STRING + ComplexPortal | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/interpro/api`, `https://string-db.org/api`, `https://www.ebi.ac.uk/intact/complex-ws` | No | Protein cards, domains, interactions, structures, and human protein complex membership; structure IDs are surfaced from UniProt cross-references to PDB and AlphaFold DB |
+| Drug/device safety, labels, shortages, approvals, and diagnostic regulatory overlay | OpenFDA | `https://api.fda.gov` | Optional (`OPENFDA_API_KEY`) | FAERS, MAUDE, recalls, drug labels, shortages, Drugs@FDA-derived approvals, and exact-name-first diagnostic device 510(k)/PMA overlays |
+| Vaccine adverse-event search | CDC WONDER VAERS | `https://wonder.cdc.gov/controller/datarequest/D8` | No | Aggregate-only vaccine adverse-event summaries for `search adverse-event --source vaers|all`; BioMCP uses the CDC WONDER XML POST contract, includes the required data-use agreement, and resolves vaccine identity through the CDC CVX/MVX bridge when available |
+| Gene enrichment sections | Enrichr | `https://maayanlab.cloud/Enrichr` | No | Gene enrichment sections inside entity outputs use Enrichr; this is distinct from top-level `biomcp enrich` |
+| Cohort frequencies (best-effort) | cBioPortal | `https://www.cbioportal.org/api` | No | Supplemental cancer frequency context |
+| Cancer hotspot recurrence | Cancerhotspots.org | `https://www.cancerhotspots.org` | No | Best-effort source-labelled recurrence counts for exact gene/protein variant detail under `get variant ... all` |
+
+## Global HTTP behavior
+
+All HTTP-based sources share a common client with:
+
+- Connect timeout: 10 seconds
+- Request timeout: 30 seconds
+- Retries: exponential backoff, up to 3 retries for transient failures
+- Retry-After: numeric 429 hints are honored only within a 5-second per-attempt cap and 15-second total retry-sleep budget
+- Disk cache: `<cache_root>/http` under the resolved cache root (`~/.cache/biomcp/http` on Linux)
+- Response bodies: bounded inside the cache before materialization (8 MiB by default, with source-specific request limits where documented)
+
+The first bounded-client initialization performs a filesystem-locked, one-time
+HTTP-cache epoch migration. It clears entries written before pre-cache body
+limits existed and fails closed if that migration cannot complete.
+
+Ordinary HTTP provider clients connect directly and ignore ambient
+`HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` settings. Built-in provider bases
+must use HTTPS and resolve only to public addresses; redirects stay on the exact
+scheme, host, and effective port of the initial request. An explicit
+`BIOMCP_*_BASE` or `BIOMCP_*_BASE_URL` setting is a process-level trusted origin,
+so an operator can deliberately select HTTP or private/on-prem addresses, but
+the exception does not allow a redirect to another origin. AlphaGenome is the
+single separate authenticated gRPC/Tonic provider transport and is not part of
+this ordinary Reqwest boundary.
+
+Provider-returned URL fetches share one outbound policy across Semantic Scholar
+PDFs, PMC OA objects, Figshare files, and ClinicalTrials.gov documents. Before
+contact, it requires an explicit HTTPS origin/port, rejects URL credentials and
+forbidden IP/DNS classes (including loopback, private, link-local, and metadata
+addresses), and revalidates every redirect target. Public failures identify the
+source and policy class without echoing the rejected URL or provider payload.
+Reviewed PMC, Figshare, and trial CDN transitions are explicit allowlist entries.
+
+Two raw-download paths use dedicated clients rather than the shared cached/retrying
+API client:
+
+- cBioPortal DataHub study archive downloads do not use a total request timeout, so
+  large files can keep downloading while bytes arrive. They use an idle/no-progress
+  timeout and a 2 GiB compressed cap; the download stalls if no bytes or progress
+  arrive within the idle window. Expansion is capped at 100,000 physical tar entries,
+  1 GiB per member, 8 GiB aggregate payload, and 1 MiB of path metadata; stalled,
+  oversized, or unsafe archives fail without publishing partial studies.
+- CTGov posted-document retrieval uses the standard 10-second connect and 30-second
+  request timeouts, but does not retry or cache the raw bytes. Its dedicated client
+  preserves provider bytes without transparent decompression and applies the shared
+  outbound policy to the approved CDN origin, DNS answers, and every redirect.
+
+Run `biomcp cache path` to print the managed HTTP cache directory on the current
+machine without creating or migrating cache directories.
+
+PMC OA resolves versioned S3 metadata and downloads declared XML/media objects;
+the retired FTP/archive route is removed in August 2026. Each object is capped at
+8 MiB, with 256 media objects and 64 MiB aggregate payload. Resource failures are
+reported without provider payload or object-path leakage.
+
+For freshness-sensitive workflows, use `--no-cache`.
+
+## Authentication requirements
+
+BioMCP only requires API keys for a subset of sources.
+
+| Source | Environment variable | Required when |
+|--------|----------------------|---------------|
+| AlphaGenome | `ALPHAGENOME_API_KEY` | Running `get variant <id> predict` |
+| Semantic Scholar | `S2_API_KEY` | Optional authenticated requests for `search author`, `get author`, `search article`, `get article`, `article batch`, TLDR, citation/reference/recommendation helpers, and `get article <id> fulltext --pdf` metadata enrichment |
+| NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci` |
+| OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
+| DisGeNET | `DISGENET_API_KEY` | Running `get gene <symbol> disgenet` or `get disease <name_or_id> disgenet` |
+| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom |
+| OpenFDA | `OPENFDA_API_KEY` | Optional; improves quota headroom |
+| UMLS | `UMLS_API_KEY` | Optional clinical crosswalk enrichment for `biomcp discover <query>` |
+
+## Source-specific rate and payload constraints
+
+Upstream services can change quotas without notice, so BioMCP documents enforced limits
+and practical ceilings observed in command behavior.
+
+| Source / command path | BioMCP-enforced limit | Practical guidance |
+|-----------------------|-----------------------|--------------------|
+| OpenFDA adverse-event / recall / device | `--limit` must be 1-50 | Use narrower filters and iterative queries for large pulls |
+| CDC WONDER VAERS | Automated queries should run one at a time; CDC recommends about 2 minutes between repeated data-mining requests | Keep VAERS queries targeted, prefer fixture-frozen contract tests over live loops, and use `biomcp health --apis-only` for readiness checks |
+| Gene search | `--limit` must be 1-50 | Start with small limits, then increase |
+| Variant search | `--limit` must be 1-50 | Use `--gene` + `--consequence` to reduce noise |
+| VariantValidator `variant normalize` | Single explicit transcript HGVS per command; upstream docs mention 2 requests / second | Use `all`, `mutalyzer`, or `variantvalidator`; BioMCP does not batch, parse report prose, choose transcripts, or classify clinical meaning |
+| PGx (CPIC) | Rate-limited to 1 request / 250ms | Keep result limits focused around target gene/drug |
+| PGx annotations (PharmGKB) | Rate-limited to 1 request / 500ms | Treat as enrichment; core PGx data remains from CPIC |
+| GWAS search (`search gwas`) | `--limit` must be 1-50 and checked `--offset + --limit` must be at most 50 | Prefer specific gene or trait queries; combined filters use rsID intersection |
+| Trial search | `--limit` defaults to 10, supports pagination | Use `--offset` to page and keep filters stable |
+| Article search | `--limit` defaults to 10 | Use `--since` and typed entity filters to constrain results; `sort=relevance` defaults to hybrid for keyword queries and lexical for entity-only queries |
+| KEGG pathway search/detail | Rate-limited to 1 request / 334ms | Matches KEGG's published 3 requests / second guidance |
+| NIH Reporter funding sections | Rate-limited to 1 request / second | Use explicit gene symbols or disease phrases/identifiers; BioMCP queries the most recent 5 NIH fiscal years, keeps free-text disease lookups as-entered, falls back to the resolved canonical disease name for identifier lookups, and de-duplicates project-year rows before ranking grants |
+| Semantic Scholar article helpers | 1 request / second with `S2_API_KEY`; 1 request / 2 seconds on the shared pool without it | Explicit helper commands fail fast on shared-pool `429` responses; set `S2_API_KEY` for dedicated quota and retry behavior |
+| Semantic Scholar author search/detail | Author search pages: 1-100 rows | Public provider-exact search/detail; no global identity or ORCID link is established |
+| DisGeNET `disgenet` sections | Server-enforced; trial accounts may return first-page-only results and `429` with `X-Rate-Limit-Retry-After-Seconds` | Keep requests explicit, avoid fan-out loops, and retry after the server-provided cooldown |
+
+## Trial source behavior
+
+BioMCP supports two trial backends with similar command syntax but different retrieval behavior.
+
+| Source flag | Backend | Strengths | Caveats |
+|-------------|---------|-----------|---------|
+| `--source ctgov` (default) | ClinicalTrials.gov API v2 | No API key, broad public coverage; registry eligibility provenance and posted-document metadata/raw bytes | Query behavior can vary with complex advanced terms; posted documents may add eligibility detail but do not guarantee criterion resolution |
+| `--source nci` | NCI CTS API | Alternative indexing, oncology-focused source | Requires `NCI_API_KEY`; CTGov document forms are unavailable |
+
+Use `biomcp --json get trial <NCT_ID> documents` for the standalone CTGov
+manifest, then an exact advertised `biomcp get trial <NCT_ID> document
+<filename>` handle for unconverted bytes. Actual response bodies are limited to
+32 MiB; ordinary trial `all` does not include documents.
+
+## Article pipeline behavior
+
+Article workflows compose multiple APIs for different tasks:
+
+1. PubTator3 + Europe PMC + PubMed for default federated search, with an optional Semantic Scholar leg when the filter set is compatible; Semantic Scholar and LitSense2 can also be queried alone through explicit `--source semanticscholar` / `--source litsense2` (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)
+2. Europe PMC for bibliographic metadata
+3. PubTator3 for entity annotations
+4. PubMed citation EFetch XML for opt-in author-affiliation/ORCID and MeSH indexing metadata (`all` includes it; ordinary detail/search/batch do not)
+5. Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, `openAccessPdf` metadata for the explicit `--pdf` fallback, and supported Figshare article-asset discovery
+6. NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and PMC OA asset rungs when the base article lacks PMCID
+7. Europe PMC PMC XML, NCBI EFetch PMC XML, PMC OA Archive XML, Europe PMC MED XML, PMC HTML, and opt-in Semantic Scholar PDF form the full-text content ladder where available
+8. Article assets resolve through PMC OA Archive, then Europe PMC `PMC<digits>/supplementaryFiles`, then Figshare after Semantic Scholar points at a supported Figshare/AACR Figshare article URL
+
+NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and asset rungs.
+Semantic Scholar supplies `openAccessPdf` metadata for the explicit `--pdf` fallback and for supported Figshare asset discovery;
+BioMCP fetches an opt-in PDF only when its HTTPS origin is on the explicit Semantic Scholar/CDN allowlist. Figshare asset retrieval is a separate path that re-resolves bytes through the Figshare API `download_url`; both that URL and PMC OA archive links use the same outbound policy with source-specific reviewed origins.
+Europe PMC supplementary ZIP responses are capped at 64 MiB compressed, 8 MiB per member, 64 MiB total expanded bytes, and 256 members. BioMCP validates relative normalized member names and never extracts them to disk. Only healthy absence across the applicable asset ladder returns `not_found`; a transport, body-limit, or archive failure without a later winner returns `source_unavailable`.
+
+This means metadata, annotations, and full text may have different availability
+for the same PMID.
+
+## OpenFDA behavior
+
+OpenFDA drives three BioMCP features:
+
+- FAERS drug adverse events
+- Drug/device recalls
+- MAUDE device events
+- Diagnostic `regulatory` overlays from device 510(k) and PMA
+
+OpenFDA may return no results for highly specific filters even when broader filters succeed.
+Start broad (`--drug`, `--type`) and then tighten with `--reaction`, `--outcome`, `--classification`, or date filters.
+
+## CDC WONDER VAERS behavior
+
+CDC WONDER VAERS drives the aggregate vaccine branch of `search adverse-event`.
+
+- `--source all` always keeps the OpenFDA FAERS path and adds VAERS only when the query resolves to a vaccine and the active filters are VAERS-compatible.
+- `--source vaers` is aggregate-only and uses the CDC WONDER D8 XML POST contract rather than case-level VAERS report retrieval.
+- CDC WONDER requires consent to its data use restrictions, and the public API guidance asks automated data-mining clients to send queries one at a time with recovery time between repeated requests.
+
+## Provenance expectations
+
+BioMCP output intentionally preserves source identity and record identifiers.
+Users should always be able to trace:
+
+- Which source produced the data
+- Which identifier anchors the record (e.g., NCT, PMID, MONDO, rsID)
+- Which sections come from direct source fields vs normalized rendering
+
+Optional entity lookups expose typed outcomes. The six values are
+`not_requested`, `inapplicable`, `data`, `empty`, `degraded`, and `unavailable`.
+`inapplicable` means BioMCP found a missing prerequisite locally and did not
+contact a provider; it has empty `sources` and a bounded explanation. In
+`_meta.section_sources`, the outcome is copied from the entity registry and
+`sources` lists successful contributors only, so inapplicable and failed
+providers are not credited as evidence. `inapplicable`, `degraded`, and
+`unavailable` messages exclude raw provider responses, credentials, URLs, and
+local paths.
+
+## Operations checklist
+
+When debugging source discrepancies:
+
+1. Run `biomcp health --apis-only` to inspect upstream/API connectivity plus any excluded key-gated sources
+2. Run `biomcp health` to inspect local readiness rows such as DDInter local data, EMA local data, WHO Prequalification local data, CDC CVX/MVX local data, GTR local data, WHO IVD local data, and cache dir
+3. Treat `biomcp health` as an inspection surface: it does not currently exit non-zero on partial upstream failures
+4. Run `./scripts/contract-smoke.sh --fast` for representative live probes, or `./scripts/contract-smoke.sh` for the fuller contract set
+5. Retry with `--no-cache`
+6. Confirm required API keys are set for optional sources
+7. Switch source when applicable (`--source ctgov` vs `--source nci`)
+8. Reduce filter complexity and retest
+
+## Related docs
+
+- [Quick Reference](quick-reference.md)
+- [Error Codes](error-codes.md)
+- [Troubleshooting](../troubleshooting.md)

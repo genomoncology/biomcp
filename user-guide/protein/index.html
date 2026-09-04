@@ -1088,6 +1088,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1336,6 +1392,17 @@
     <span class="md-ellipsis">
       
         JSON mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-section-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional-section outcomes
       
     </span>
   </a>
@@ -1615,6 +1682,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3268,6 +3447,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3995,6 +4202,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#optional-section-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional-section outcomes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#practical-tips" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4041,6 +4259,11 @@
 <h2 id="search-proteins">Search proteins<a class="headerlink" href="#search-proteins" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>protein<span class="w"> </span>-q<span class="w"> </span>kinase<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p>Search is human-only and reviewed-only by default. Species and review scope are
+independent: add <code>--all-species</code> without changing review quality, or add
+<code>--include-unreviewed</code> without changing the human scope. The two flags may be
+combined. <code>--reviewed</code> remains an explicit spelling of the default and conflicts
+with <code>--include-unreviewed</code>.</p>
 <h2 id="get-protein-records">Get protein records<a class="headerlink" href="#get-protein-records" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056
 </code></pre></div>
@@ -4072,9 +4295,15 @@ per complex so long names and large memberships stay readable in a terminal.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>protein<span class="w"> </span>P15056<span class="w"> </span>all
 </code></pre></div>
+<h2 id="optional-section-outcomes">Optional-section outcomes<a class="headerlink" href="#optional-section-outcomes" title="Permanent link">&para;</a></h2>
+<p>JSON and MCP protein records include outcomes for <code>domains</code>, <code>interactions</code>,
+<code>complexes</code>, and <code>structures</code>. Unrequested keys are <code>not_requested</code>; a requested
+empty vector is a confirmed zero only when its outcome is <code>empty</code>. Provider
+failure is <code>unavailable</code> and is also reported in Markdown.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Use a UniProt accession when you need the most stable exact lookup.</li>
+<li>Follow JSON <code>pagination.next_offset</code> while <code>has_more</code> is true; it is omitted at the end.</li>
 <li>Request only the section you need first, especially for <code>interactions</code> and <code>complexes</code>.</li>
 <li>Use <code>protein structures</code> when the next step is a structure handoff rather than a full protein card.</li>
 </ul>

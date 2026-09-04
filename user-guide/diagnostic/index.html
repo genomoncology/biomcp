@@ -1088,6 +1088,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1604,6 +1660,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3257,6 +3425,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4116,9 +4312,10 @@ sections; they are unsupported requests and fail before any data fetch.</p>
 <p>When you request <code>regulatory</code>, BioMCP queries OpenFDA device 510(k) and PMA
 records against a bounded set of source-native diagnostic names. Markdown adds
 <code>## Regulatory (FDA Device)</code> only when the section is requested. JSON adds a
-top-level <code>regulatory</code> field only when the section is requested. A no-match or
-temporary OpenFDA miss returns the same truthful empty state rather than
-failing the base diagnostic card.</p>
+top-level <code>regulatory</code> field only when the section is requested. A healthy
+no-match records <code>section_outcomes.regulatory</code> as <code>empty</code>; a temporary OpenFDA
+failure records <code>unavailable</code> with no provider credit. Markdown reports the
+unavailable state in-band rather than presenting it as a healthy no-match.</p>
 <h2 id="json-metadata">JSON metadata<a class="headerlink" href="#json-metadata" title="Permanent link">&para;</a></h2>
 <p>Non-empty <code>search diagnostic --json</code> responses include <code>_meta.next_commands</code>.
 The first follow-up drills the top result with <code>biomcp get diagnostic &lt;id&gt;</code>,

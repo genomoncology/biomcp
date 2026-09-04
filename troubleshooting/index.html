@@ -1081,6 +1081,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user-guide/trial/" class="md-nav__link">
         
   
@@ -1484,6 +1540,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3137,6 +3305,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/error-codes/" class="md-nav__link">
         
   
@@ -3932,10 +4128,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#11-local-build-missing-protoc" class="md-nav__link">
+  <a href="#11-alphagenome-protobuf-regeneration-needs-protoc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        11) Local build missing protoc
+        11) AlphaGenome protobuf regeneration needs protoc
       
     </span>
   </a>
@@ -4153,10 +4349,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#11-local-build-missing-protoc" class="md-nav__link">
+  <a href="#11-alphagenome-protobuf-regeneration-needs-protoc" class="md-nav__link">
     <span class="md-ellipsis">
       
-        11) Local build missing protoc
+        11) AlphaGenome protobuf regeneration needs protoc
       
     </span>
   </a>
@@ -4253,6 +4449,23 @@
 <p>BioMCP depends on multiple public biomedical APIs, so transient source failures are expected.
 This guide focuses on practical triage for API failures, slow responses, and environment issues.
 Start with health checks, then narrow to the affected entity and source.</p>
+<p>For a successful JSON or MCP response that includes optional source-backed
+sections, inspect <code>section_outcomes</code> first. <code>empty</code> means a contacted source
+completed successfully with no evidence;
+<code>unavailable</code> means no usable result was obtained; and <code>degraded</code> preserves
+partial evidence. <code>_meta.section_sources</code> is the matching provenance projection
+and credits only successful providers. Enable <code>RUST_LOG=warn</code> only after checking
+these in-band fields.</p>
+<p>For a hard remote-source failure, JSON may include <code>error.source</code> and
+<code>error.recovery</code>; human errors name the same canonical source and action. Retry
+a transient source, review source configuration when instructed, or narrow the
+request when the response exceeded BioMCP's body limit. Source fields are
+omitted for unwrapped transport errors when provider identity is unavailable;
+legacy source-shaped errors with an unknown name use <code>BioMCP source</code>. Public
+diagnostics intentionally do not echo request URLs, credentials, provider
+response bodies, parser detail,
+or local paths, so use the canonical source label rather than expecting raw
+transport detail.</p>
 <h2 id="1-validate-connectivity-first">1) Validate connectivity first<a class="headerlink" href="#1-validate-connectivity-first" title="Permanent link">&para;</a></h2>
 <p>Run API-level checks before debugging entity-specific commands:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
@@ -4271,6 +4484,9 @@ These services can intermittently return 5xx or timeout responses during peak tr
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>--no-cache<span class="w"> </span>search<span class="w"> </span>gene<span class="w"> </span>-q<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>biomcp<span class="w"> </span>--no-cache<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022
 </code></pre></div>
+<p>This mode makes no managed HTTP-cache or article-session reads or writes.
+Article <code>--session</code> is therefore incompatible with it. Explicit downloads and
+provider-side request logs are outside that promise.</p>
 <p>If <code>--no-cache</code> works while cached mode fails repeatedly, <code>biomcp cache clean</code>
 is the safe first step before any manual wipe. If you override the cache root
 with <code>BIOMCP_CACHE_DIR</code> or <code>cache.toml</code>, run <code>biomcp cache path</code> first to print
@@ -4280,11 +4496,17 @@ the managed HTTP cache path under the resolved cache root.</p>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>biomcp<span class="w"> </span>cache<span class="w"> </span>clean<span class="w"> </span>--max-age<span class="w"> </span>7d
 </code></pre></div>
 <p>If targeted cleanup still does not recover the cache, use
-<code>biomcp cache clear --yes</code> for a full wipe of the managed <code>http/</code> tree tied to
+<code>biomcp cache clear --yes</code> for a full wipe of the managed <code>http/</code> and ten-minute
+article-session trees tied to
 the resolved cache root you printed with <code>biomcp cache path</code>. <code>cache clear</code>
 never touches the sibling <code>downloads/</code> directory, so the choice is explicit:
 start with <code>cache clean</code> for targeted GC, escalate to <code>cache clear --yes</code> only
 when you need the destructive full wipe.</p>
+<p>If a cache command reports that it cannot secure managed local state, inspect
+the configured root for symlinks, hard links, unsupported file types, or an ACL
+that the current account cannot change. BioMCP fails before reading or writing
+provider responses or article queries; do not bypass this check by making the
+directory world-readable.</p>
 <h2 id="3-clinicaltrialsgov-api-v2-quirks">3) ClinicalTrials.gov API v2 quirks<a class="headerlink" href="#3-clinicaltrialsgov-api-v2-quirks" title="Permanent link">&para;</a></h2>
 <p>ClinicalTrials.gov search behavior can vary with complex query combinations and pagination tokens.
 The most common symptoms are empty pages after filters or unstable totals between repeated calls.</p>
@@ -4354,19 +4576,21 @@ Set a production token for full enrichment behavior.</p>
 </code></pre></div>
 <h2 id="10-installupdate-ownership-conflicts">10) Install/update ownership conflicts<a class="headerlink" href="#10-installupdate-ownership-conflicts" title="Permanent link">&para;</a></h2>
 <p><code>biomcp update</code> fails closed when the release SHA256 checksum sidecar is missing
-or invalid, before replacing the current binary. If a legitimate release is
-missing its sidecar, <code>biomcp update --allow-missing-checksum</code> is an UNSAFE
-per-invocation override.</p>
-<p>If <code>biomcp update</code> cannot replace the current binary (e.g. permission issues),
-re-run the installer:</p>
+or invalid, before replacing the current binary. There is no unverified-install
+override. Rerun the verified standalone installer if a release is incomplete.</p>
+<p>Self-update and uninstall require the adjacent <code>biomcp.install.json</code> ownership
+receipt. Package-manager installs must be upgraded or removed with that manager.
+Windows self-update is unsupported; rerun the verified standalone installer:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
 </code></pre></div>
-<h2 id="11-local-build-missing-protoc">11) Local build missing protoc<a class="headerlink" href="#11-local-build-missing-protoc" title="Permanent link">&para;</a></h2>
-<p>The project includes gRPC clients and requires <code>protoc</code> to build from source.</p>
-<ul>
-<li>macOS: <code>brew install protobuf</code></li>
-<li>Ubuntu/Debian: <code>apt-get install protobuf-compiler</code></li>
-</ul>
+<h2 id="11-alphagenome-protobuf-regeneration-needs-protoc">11) AlphaGenome protobuf regeneration needs protoc<a class="headerlink" href="#11-alphagenome-protobuf-regeneration-needs-protoc" title="Permanent link">&para;</a></h2>
+<p>Normal builds do not run or require <code>protoc</code>; they consume the committed
+AlphaGenome generated Rust source. Only maintainers changing the protobuf inputs
+need pinned <code>protoc</code> 28.3. After installing that exact version, run
+<code>scripts/regenerate-alphagenome-proto</code>; use
+<code>scripts/regenerate-alphagenome-proto --check</code> to report drift without writing.</p>
+<p>If <code>protoc --version</code> reports anything other than <code>libprotoc 28.3</code>, the
+regeneration command fails before generating a candidate.</p>
 <h2 id="12-still-blocked">12) Still blocked<a class="headerlink" href="#12-still-blocked" title="Permanent link">&para;</a></h2>
 <p>Capture one failing command with full stderr and include:</p>
 <ul>
@@ -4477,11 +4701,11 @@ vaccine name/brand search when <code>--product-type vaccine</code> is set. It do
 change WHO finished-pharma/API lookups or <code>get drug</code>, and pure <code>--region us</code>
 searches do not use the CVX root.</p>
 <h2 id="16-ddinter-local-data-not-available">16) DDInter local data not available<a class="headerlink" href="#16-ddinter-local-data-not-available" title="Permanent link">&para;</a></h2>
-<p>Drug interaction commands depend on the local DDInter CSV bundle. BioMCP
-auto-downloads the eight ATC-sliced DDInter files on first use for
-<code>biomcp drug interactions &lt;name&gt;</code> and <code>get drug &lt;name&gt; interactions</code>, but full
-<code>biomcp health</code> is still the right readiness surface when you need to debug the
-local DDInter state:</p>
+<p><code>biomcp drug interactions &lt;name&gt;</code> and <code>get drug &lt;name&gt; interactions</code> depend on
+an installed local DDInter CSV bundle. Normal reads do not download or refresh
+it. Run <code>biomcp ddinter sync</code> explicitly
+to install or replace all eight ATC-sliced files. Full <code>biomcp health</code> is the
+readiness surface for debugging local DDInter state:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>health
 </code></pre></div>
 <p>Interpret the DDInter row like this:</p>
@@ -4493,7 +4717,7 @@ local DDInter state:</p>
 <li><code>not configured</code>: no complete DDInter root was found at the default path, so DDInter-backed interaction rows are currently unavailable but the install is not considered broken</li>
 <li><code>error (missing: ...)</code>: BioMCP found a partial DDInter root or unreadable file; install the missing files or point <code>BIOMCP_DDINTER_DIR</code> at a complete bundle</li>
 </ul>
-<p>If a refresh fails, retry explicitly with <code>biomcp ddinter sync</code>:</p>
+<p>If an explicit refresh fails, the prior complete bundle remains usable. Retry with:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>ddinter<span class="w"> </span>sync
 </code></pre></div>
 <p>If you need to override the default path:</p>

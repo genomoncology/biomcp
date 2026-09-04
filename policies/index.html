@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3139,6 +3307,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/error-codes/" class="md-nav__link">
         
   
@@ -4043,8 +4239,26 @@ provider-specific terms that still apply when a query touches an upstream API.</
   organization allows.</li>
 </ul>
 <h2 id="retention-and-sensitive-data">Retention and sensitive data<a class="headerlink" href="#retention-and-sensitive-data" title="Permanent link">&para;</a></h2>
-<p>BioMCP does not define a separate retention period because it does not collect
-or store request payloads. Anthropic/Claude and upstream providers may retain
+<p>BioMCP keeps two kinds of managed local request state: HTTP provider responses
+under the resolved cache root's <code>http/</code> directory, and article-search session
+records containing a session token, query terms, PMIDs, and update time under
+<code>sessions/</code>. HTTP entries expire at configured <code>max_age_secs</code> (one day by
+default); article sessions expire after ten minutes. Opening either store for
+normal use or inspection physically removes expired records. <code>biomcp cache
+clean</code> performs targeted maintenance and <code>biomcp cache clear --yes</code> removes
+both managed trees.</p>
+<p>BioMCP creates managed local-state directories for the current user only. On
+Unix, directories are mode <code>0700</code> and regular files are <code>0600</code>; on Windows,
+the managed root uses a current-user ACL. Reopening a store narrows managed
+paths without following links or changing unrelated ancestors, and linked
+regular files are rejected before access. These filesystem controls still do
+not govern copies retained by an upstream provider.</p>
+<p>For an invocation that should leave no managed request state, use
+<code>--no-cache</code>. It bypasses both HTTP cache reads/writes and article sessions;
+combining it with <code>--session</code> is rejected. Explicit downloads, local study
+datasets, and requested captures remain durable output, and providers can still
+log or retain the requests they receive.</p>
+<p>These local controls do not govern provider systems. Anthropic/Claude and upstream providers may retain
 request data according to their own privacy policies. Do not send protected
 health information (PHI) or other sensitive patient data to third-party APIs
 unless your organization has approved that workflow.</p>

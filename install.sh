@@ -29,47 +29,31 @@ download() {
   fi
 }
 
-download_optional_checksum() {
+download_checksum() {
   local url="$1"
   local dest="$2"
-  local status=""
 
   if command -v curl >/dev/null 2>&1; then
-    status="$(curl -sSL -o "$dest" -w '%{http_code}' "$url")" || return 1
+    curl -fsSL "$url" -o "$dest"
   elif command -v wget >/dev/null 2>&1; then
-    # Wget writes HTTP status lines to stderr; use the final status after redirects.
-    local headers
-    headers="$(wget -qS -O "$dest" "$url" 2>&1 || true)"
-    status="$(printf '%s\n' "$headers" | awk '/^  HTTP\// { code=$2 } END { print code }')"
+    wget -qO "$dest" "$url"
   else
     echo "curl or wget is required to download biomcp" >&2
     return 1
   fi
-
-  if [[ "$status" == "200" ]]; then
-    return 0
-  fi
-
-  rm -f "$dest"
-  if [[ "$status" == "404" ]]; then
-    return 2
-  fi
-
-  if [[ -n "$status" ]]; then
-    echo "Failed to download checksum file (HTTP $status): $url" >&2
-  else
-    echo "Failed to download checksum file: $url" >&2
-  fi
-  return 1
 }
 
 compute_sha256() {
   local file="$1"
+
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$file" | awk '{print tolower($1)}'
   elif command -v shasum >/dev/null 2>&1; then
     shasum -a 256 "$file" | awk '{print tolower($1)}'
+  elif command -v openssl >/dev/null 2>&1; then
+    openssl dgst -sha256 "$file" | awk '{print tolower($NF)}'
   else
+    echo "No SHA-256 tool found; install sha256sum, shasum, or openssl." >&2
     return 1
   fi
 }
@@ -77,28 +61,112 @@ compute_sha256() {
 verify_checksum() {
   local archive="$1"
   local checksum_file="$2"
-  local expected
+  local asset_name
+  local expected=""
   local actual
+  local line
+  local records=0
 
-  expected="$(awk 'NF {print tolower($1); exit}' "$checksum_file" | tr -d '\r')"
-  if [[ ! "$expected" =~ ^[0-9a-f]{64}$ ]]; then
-    echo "Checksum file is invalid: $checksum_file" >&2
+  asset_name="$(basename "$archive")"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    records=$((records + 1))
+    if [[ $records -ne 1 ]]; then
+      echo "Checksum file must contain exactly one record." >&2
+      return 1
+    fi
+
+    if [[ "$line" =~ ^([[:xdigit:]]{64})$ ]]; then
+      expected="${BASH_REMATCH[1],,}"
+    elif [[ "$line" =~ ^([[:xdigit:]]{64})[[:space:]]+\*?([^[:space:]]+)$ ]] && [[ "${BASH_REMATCH[2]}" == "$asset_name" ]]; then
+      expected="${BASH_REMATCH[1],,}"
+    else
+      echo "Checksum file is invalid for ${asset_name}." >&2
+      return 1
+    fi
+  done < "$checksum_file"
+
+  if [[ $records -ne 1 ]]; then
+    echo "Checksum file must contain exactly one record." >&2
     return 1
   fi
 
-  if ! actual="$(compute_sha256 "$archive")"; then
-    echo "Warning: no SHA256 tool available; skipping checksum verification." >&2
-    return 0
+  if ! actual="$(compute_sha256 "$archive")" || [[ ! "$actual" =~ ^[0-9a-f]{64}$ ]]; then
+    echo "Could not compute SHA-256 for ${asset_name}; refusing unverified installation." >&2
+    return 1
   fi
 
   if [[ "$actual" != "$expected" ]]; then
-    echo "Checksum verification failed for $(basename "$archive")" >&2
-    echo "Expected: $expected" >&2
-    echo "Actual:   $actual" >&2
+    echo "Checksum verification failed for ${asset_name}." >&2
     return 1
   fi
 
   echo "Checksum verified."
+}
+
+json_escape() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '%s' "$value"
+}
+
+sync_path() {
+  sync -f "$1" 2>/dev/null || sync
+}
+
+receipt_value() {
+  local key="$1" file="$2" line
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^[[:space:]]*\"${key}\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+      printf '%s' "${BASH_REMATCH[1]}"
+      return 0
+    fi
+  done < "$file"
+  return 1
+}
+
+receipt_is_true() {
+  local key="$1" file="$2" line
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*\"${key}\"[[:space:]]*:[[:space:]]*true ]] && return 0
+  done < "$file"
+  return 1
+}
+
+write_receipt() {
+  local receipt="$1" state="$2" version="$3" sha="$4"
+  local transaction_nonce="${5:-}" old_version="${6:-}" old_sha="${7:-}"
+  local new_version="${8:-}" new_sha="${9:-}" staged_receipt
+  staged_receipt="$(mktemp "$INSTALL_DIR/.biomcp.install.json.XXXXXX")"
+  receipt_stage_path="$staged_receipt"
+  chmod 600 "$staged_receipt"
+  {
+    printf '{\n'
+    printf '  "schema_version": 1,\n'
+    printf '  "installer": "biomcp-standalone-installer",\n'
+    printf '  "state": "%s",\n' "$state"
+    printf '  "executable_path": "%s",\n' "$(json_escape "$installed_bin")"
+    printf '  "version": "%s",\n' "$(json_escape "$version")"
+    printf '  "sha256": "%s"' "$sha"
+    if [[ "$state" == "pending" ]]; then
+      printf ',\n  "transaction_nonce": "%s",\n' "$(json_escape "$transaction_nonce")"
+      if [[ -n "$old_sha" ]]; then
+        printf '  "old_version": "%s",\n' "$(json_escape "$old_version")"
+        printf '  "old_sha256": "%s",\n' "$old_sha"
+      else
+        printf '  "old_absent": true,\n'
+      fi
+      printf '  "new_version": "%s",\n' "$(json_escape "$new_version")"
+      printf '  "new_sha256": "%s"' "$new_sha"
+    fi
+    printf '\n}\n'
+  } > "$staged_receipt"
+  sync_path "$staged_receipt"
+  mv "$staged_receipt" "$receipt"
+  receipt_stage_path=""
+  sync_path "$INSTALL_DIR"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -186,33 +254,26 @@ tmpdir="$(mktemp -d)"
 cleanup() { rm -rf "$tmpdir"; }
 trap cleanup EXIT
 
-mkdir -p "$INSTALL_DIR"
-
 echo "Downloading ${ASSET} from ${REPO} (version: ${VERSION})..."
 
 archive_path="$tmpdir/$ASSET"
 download "$DOWNLOAD_URL" "$archive_path"
 
 checksum_path="$archive_path.sha256"
-if download_optional_checksum "${DOWNLOAD_URL}.sha256" "$checksum_path"; then
-  echo "Verifying checksum..."
-  verify_checksum "$archive_path" "$checksum_path"
-else
-  checksum_status=$?
-  if [[ $checksum_status -eq 2 ]]; then
-    echo "Warning: checksum file not found for this release; continuing without checksum verification." >&2
-  else
-    echo "Checksum download failed; aborting installation." >&2
-    exit 1
-  fi
+if ! download_checksum "${DOWNLOAD_URL}.sha256" "$checksum_path"; then
+  echo "Could not download release checksum; refusing unverified installation." >&2
+  exit 1
 fi
+
+echo "Verifying checksum..."
+verify_checksum "$archive_path" "$checksum_path"
 
 bin_path=""
 if [[ "$ASSET" == *.tar.gz ]]; then
   tar -xzf "$archive_path" -C "$tmpdir"
-  if [[ -f "$tmpdir/biomcp" ]]; then
+  if [[ -f "$tmpdir/biomcp" && ! -L "$tmpdir/biomcp" ]]; then
     bin_path="$tmpdir/biomcp"
-  elif [[ -f "$tmpdir/bin/biomcp" ]]; then
+  elif [[ -f "$tmpdir/bin/biomcp" && ! -L "$tmpdir/bin/biomcp" ]]; then
     bin_path="$tmpdir/bin/biomcp"
   else
     echo "Could not find biomcp binary in archive" >&2
@@ -224,7 +285,7 @@ elif [[ "$ASSET" == *.zip ]]; then
     exit 1
   fi
   unzip -q "$archive_path" -d "$tmpdir"
-  if [[ -f "$tmpdir/biomcp.exe" ]]; then
+  if [[ -f "$tmpdir/biomcp.exe" && ! -L "$tmpdir/biomcp.exe" ]]; then
     bin_path="$tmpdir/biomcp.exe"
   else
     echo "Could not find biomcp.exe in archive" >&2
@@ -235,47 +296,82 @@ else
   exit 1
 fi
 
-chmod +x "$bin_path" || true
-installed_bin="$INSTALL_DIR/$(basename "$bin_path")"
-mv -f "$bin_path" "$installed_bin"
-
-echo "Installed biomcp to $installed_bin"
-
-if ! installed_version="$("$installed_bin" version 2>/dev/null | head -n 1)"; then
-  echo "Install verification failed: $installed_bin version" >&2
+if [[ -L "$INSTALL_DIR" ]]; then
+  echo "Refusing symbolic-link install directory: $INSTALL_DIR" >&2
   exit 1
 fi
-if [[ -n "$installed_version" ]]; then
-  echo "Verified installation: $installed_version"
-else
-  echo "Verified installation: biomcp version returned successfully"
+mkdir -p "$INSTALL_DIR"
+INSTALL_DIR="$(cd "$INSTALL_DIR" && pwd -P)"
+installed_bin="$INSTALL_DIR/$(basename "$bin_path")"
+receipt="$INSTALL_DIR/biomcp.install.json"
+if [[ -L "$installed_bin" || -L "$receipt" ]]; then
+  echo "Refusing symbolic-link installation path." >&2
+  exit 1
 fi
 
-if [[ "$INSTALL_DIR" == "$HOME/.local/bin" ]]; then
-  if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    shell_name="$(basename "${SHELL:-}")"
-    if [[ "$shell_name" == "zsh" ]]; then
-      rc="$HOME/.zshrc"
-      line='export PATH="$HOME/.local/bin:$PATH"'
-      grep -Fqs "$line" "$rc" 2>/dev/null || printf "\n%s\n" "$line" >> "$rc"
-      echo "Updated PATH in $rc"
-    elif [[ "$shell_name" == "bash" ]]; then
-      rc="$HOME/.bashrc"
-      line='export PATH="$HOME/.local/bin:$PATH"'
-      grep -Fqs "$line" "$rc" 2>/dev/null || printf "\n%s\n" "$line" >> "$rc"
-      echo "Updated PATH in $rc"
-    elif [[ "$shell_name" == "fish" ]]; then
-      rc="$HOME/.config/fish/config.fish"
-      mkdir -p "$(dirname "$rc")"
-      line='set -gx PATH $HOME/.local/bin $PATH'
-      grep -Fqs "$line" "$rc" 2>/dev/null || printf "\n%s\n" "$line" >> "$rc"
-      echo "Updated PATH in $rc"
-    else
-      printf 'Add to PATH:\n  export PATH="$HOME/.local/bin:$PATH"\n' >&2
-    fi
+if [[ -f "$receipt" ]] && [[ "$(receipt_value state "$receipt" || true)" == "pending" ]]; then
+  current_sha=""
+  [[ -f "$installed_bin" ]] && current_sha="$(compute_sha256 "$installed_bin" || true)"
+  pending_old="$(receipt_value old_sha256 "$receipt" || true)"
+  pending_new="$(receipt_value new_sha256 "$receipt" || true)"
+  pending_installer="$(receipt_value installer "$receipt" || true)"
+  pending_path="$(receipt_value executable_path "$receipt" || true)"
+  if [[ "$pending_installer" != "biomcp-standalone-installer" || "$pending_path" != "$installed_bin" || ! "$pending_new" =~ ^[0-9a-f]{64}$ ]]; then
+    echo "Pending install receipt has an invalid identity; refusing to continue." >&2
+    exit 1
   fi
-else
-  echo "Ensure $INSTALL_DIR is on your PATH"
+  if [[ -z "$current_sha" ]] && receipt_is_true old_absent "$receipt"; then
+    :
+  elif [[ -z "$current_sha" || ( "$current_sha" != "$pending_old" && "$current_sha" != "$pending_new" ) ]]; then
+    echo "Pending install receipt does not match the installed binary; refusing to continue." >&2
+    exit 1
+  fi
+fi
+
+stage_path="$(mktemp "$INSTALL_DIR/.biomcp-stage.XXXXXX")"
+cleanup_stage() {
+  if [[ -n "${stage_path:-}" && -e "$stage_path" ]]; then
+    rm -f "$stage_path"
+  fi
+  if [[ -n "${receipt_stage_path:-}" && -e "$receipt_stage_path" ]]; then
+    rm -f "$receipt_stage_path"
+  fi
+  return 0
+}
+trap 'cleanup_stage; cleanup' EXIT
+cp "$bin_path" "$stage_path"
+chmod 755 "$stage_path"
+sync_path "$stage_path"
+
+if ! installed_version="$("$stage_path" version 2>/dev/null | head -n 1)"; then
+  echo "Install verification failed before replacement: staged biomcp version" >&2
+  exit 1
+fi
+reported_version="${installed_version##* }"
+requested_version="${VERSION#v}"
+if [[ "$VERSION" != "latest" && "${reported_version#v}" != "$requested_version" ]]; then
+  echo "Install verification failed: requested $requested_version but staged binary reported $reported_version" >&2
+  exit 1
+fi
+new_sha="$(compute_sha256 "$stage_path")"
+old_sha=""
+old_version=""
+if [[ -f "$installed_bin" ]]; then
+  old_sha="$(compute_sha256 "$installed_bin")"
+  old_output="$("$installed_bin" version 2>/dev/null | head -n 1 || true)"
+  old_version="${old_output##* }"
+fi
+transaction_nonce="${stage_path##*.biomcp-stage.}"
+write_receipt "$receipt" pending "$old_version" "$old_sha" "$transaction_nonce" "$old_version" "$old_sha" "$reported_version" "$new_sha"
+mv "$stage_path" "$installed_bin"
+sync_path "$INSTALL_DIR"
+write_receipt "$receipt" installed "$reported_version" "$new_sha"
+
+echo "Installed biomcp to $installed_bin"
+echo "Verified installation: $installed_version"
+
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+  printf 'Add BioMCP to PATH:\n  export PATH="%s:$PATH"\n' "$INSTALL_DIR" >&2
 fi
 
 printf "Verify:\\n  biomcp version\\n"

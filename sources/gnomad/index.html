@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1491,6 +1547,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3246,6 +3414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3994,7 +4190,10 @@
 
 <h1 id="gnomad">gnomAD<a class="headerlink" href="#gnomad" title="Permanent link">&para;</a></h1>
 <p>gnomAD is the quickest way to answer the question that often changes an interpretation: how rare is this variant, and how constrained is this gene in population data? It matters because frequency and constraint are among the fastest filters for separating plausible signals from common background variation.</p>
-<p>In BioMCP, gene constraint comes from the gnomAD source path directly, while variant population output is rendered as gnomAD-backed population context even though the current variant workflow surfaces those fields through MyVariant.info payloads. That distinction matters if you are tracing provenance or comparing the gene and variant views side by side.</p>
+<p>In BioMCP, gene constraint comes from the gnomAD source path directly, and
+variant population data now does too. Variant population requests are pinned to
+the <code>gnomad_r4</code> dataset and require a trustworthy GRCh38 coordinate. This
+replaces population fields previously copied from MyVariant.info payloads.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4012,8 +4211,13 @@
 </tr>
 <tr>
 <td><code>get variant &lt;id&gt; population</code></td>
-<td>Population frequency lines and subpopulation context</td>
-<td>Rendered from gnomAD-backed fields in the MyVariant payload</td>
+<td>Compact exome/genome frequencies, highest ancestry frequency, grpmax FAF95, and quality flags</td>
+<td>Direct <code>gnomad_r4</code> GraphQL query for the resolved GRCh38 coordinate</td>
+</tr>
+<tr>
+<td><code>get variant &lt;id&gt; population-details</code></td>
+<td>Full exome/genome ancestry tables</td>
+<td>Uses the same direct <code>gnomad_r4</code> result</td>
 </tr>
 <tr>
 <td><code>search variant -g &lt;gene&gt; --max-frequency &lt;value&gt;</code></td>
@@ -4028,10 +4232,13 @@
 <p>Returns a constraint section with gnomAD provenance and LOEUF-style metrics.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>population
 </code></pre></div>
-<p>Returns a population section with a gnomAD AF line and related population context.</p>
+<p>Returns compact direct gnomAD v4 exome and genome population results.
+JSON keeps raw numeric frequencies, counts, FAF95, ancestry rows, and source flag names.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>population
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;chr7:g.140453136A&gt;T&quot;</span><span class="w"> </span>population-details
 </code></pre></div>
-<p>Returns the same population section for HGVS input.</p>
+<p>The first command returns compact frequencies; the second returns full ancestry tables.
+A GRCh37-only or unknown-build result explains the requirement and does not query gnomAD.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRCA1<span class="w"> </span>--max-frequency<span class="w"> </span><span class="m">0</span>.01<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Returns variant rows constrained by a rarity filter.</p>

@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3144,6 +3312,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../error-codes/" class="md-nav__link">
         
   
@@ -3358,6 +3554,17 @@
     <span class="md-ellipsis">
       
         Why are some fields missing?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-is-an-empty-json-collection-present-beside-an-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why is an empty JSON collection present beside an error?
       
     </span>
   </a>
@@ -4050,6 +4257,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#why-is-an-empty-json-collection-present-beside-an-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why is an empty JSON collection present beside an error?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-do-i-inspect-available-commands-quickly" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4153,6 +4371,20 @@ See <a href="../../getting-started/claude-desktop/">Claude Desktop setup</a>.</p
 <li>switch to JSON,</li>
 <li>verify source availability with <code>biomcp health --apis-only</code>.</li>
 </ol>
+<h2 id="why-is-an-empty-json-collection-present-beside-an-error">Why is an empty JSON collection present beside an error?<a class="headerlink" href="#why-is-an-empty-json-collection-present-beside-an-error" title="Permanent link">&para;</a></h2>
+<p>For object-shaped query commands, BioMCP keeps the command's primary collection
+iterable even when a parsed call fails. For example, an article-search error can
+contain <code>results: []</code> alongside <code>error</code> and <code>_meta</code>, while <code>discover</code> retains
+<code>concepts: []</code>. This does not mean the
+biomedical search succeeded with no matches: inspect the process exit status or
+the <code>error</code> object. Errors that occur before BioMCP can identify the command stay
+keyless. Section-shaped <code>search all</code>, scalar trial <code>--count-only</code>, and VAERS-only
+aggregate responses also retain their existing shapes without a false flat
+<code>results</code> key.</p>
+<p>BioMCP preserves entity response families rather than introducing a global
+<code>data</code> envelope. Drug search therefore keeps nested <code>regions.&lt;region&gt;.results</code>.
+Batch commands are the deliberate exception: they use an ordered settlement
+envelope so one failed lookup cannot erase the successful items.</p>
 <h2 id="how-do-i-inspect-available-commands-quickly">How do I inspect available commands quickly?<a class="headerlink" href="#how-do-i-inspect-available-commands-quickly" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>list
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>list<span class="w"> </span>trial

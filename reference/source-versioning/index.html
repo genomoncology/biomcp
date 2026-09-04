@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3144,6 +3312,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../error-codes/" class="md-nav__link">
         
   
@@ -3988,6 +4184,34 @@
 <td>2026-06-11</td>
 </tr>
 <tr>
+<td>ClinGen Allele Registry</td>
+<td><code>https://reg.genome.network</code></td>
+<td>Request template v1; response version provenance</td>
+<td>The read-only projection is part of lookup identity; nullable <code>X-CAR-Version</code> is post-response provenance, never a cache key</td>
+<td>2026-07-24</td>
+</tr>
+<tr>
+<td>ClinGen CSpec</td>
+<td><code>https://cspec.clinicalgenome.org</code></td>
+<td>Versioned resource documents</td>
+<td>Full resource IRI is the selection identity; provider display version remains separate</td>
+<td>2026-07-23</td>
+</tr>
+<tr>
+<td>ClinGen ERepo</td>
+<td><code>https://erepo.clinicalgenome.org</code></td>
+<td>Versioned detail documents</td>
+<td>Exact <code>docVersion</code> is required in the SEPIO detail route</td>
+<td>2026-07-23</td>
+</tr>
+<tr>
+<td>ClinGen LDH</td>
+<td><code>https://ldh.genome.network</code></td>
+<td>Unversioned routes; request/response subset provenance</td>
+<td>BioMCP validates the fixed medium and direct routes, then records template and response-subset provenance after receipt rather than using it as a lookup key</td>
+<td>2026-07-26</td>
+</tr>
+<tr>
 <td>ComplexPortal</td>
 <td><code>https://www.ebi.ac.uk/intact/complex-ws</code></td>
 <td>Unversioned</td>
@@ -4269,10 +4493,10 @@
 </tr>
 <tr>
 <td>PMC OA</td>
-<td><code>https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi</code></td>
-<td>Unversioned</td>
-<td>Legacy utility endpoint; no version path available</td>
-<td>2026-02-15</td>
+<td><code>https://pmc-oa-opendata.s3.amazonaws.com</code></td>
+<td>Versioned metadata objects</td>
+<td>A version-prefix listing selects its flat versioned metadata object, which names durable XML/media objects; the retired FTP/archive files are removed in August 2026</td>
+<td>2026-08-05</td>
 </tr>
 <tr>
 <td>PubMed</td>
@@ -4379,7 +4603,8 @@
 <li>CDC WONDER VAERS intentionally stays out of <code>./scripts/contract-smoke.sh</code>: the
   D8 contract is POST/XML, relatively volatile, and already covered by the
   real-query health row plus fixture-frozen unit/spec tests.</li>
-<li>gnomAD versioning is handled by dataset selection in GraphQL variables and is verified by dataset fallback tests.</li>
+<li>gnomAD versioning is pinned to the <code>gnomad_r4</code> dataset in the GraphQL operation;
+  BioMCP does not fall back to another dataset for variant population results.</li>
 </ul>
 
 

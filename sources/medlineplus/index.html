@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Use BioMCP to add MedlinePlus plain-language context to discover results and opt-in disease clinical-feature summaries.">
+        <meta name="description" content="Use BioMCP to add MedlinePlus plain-language context to discover results.">
       
       
         <meta name="author" content="Ian Maurer">
@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1491,6 +1547,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3246,6 +3414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3994,7 +4190,7 @@
 
 <h1 id="medlineplus">MedlinePlus<a class="headerlink" href="#medlineplus" title="Permanent link">&para;</a></h1>
 <p>MedlinePlus is the right source when you need plain-language disease or symptom context alongside structured biomedical identifiers. In BioMCP, MedlinePlus supplements <code>biomcp discover</code> for disease and symptom-oriented prompts; it is suppressed for gene, drug, pathway, and other flows where consumer-health prose would add noise.</p>
-<p>MedlinePlus also backs the opt-in <code>get disease &lt;name_or_id&gt; clinical_features</code> section. That section surfaces reviewed clinical-summary rows for configured diseases and can fall back to embedded reviewed fixtures when live MedlinePlus search is unavailable.</p>
+<p>Disease <code>clinical_features</code> now uses Monarch/HPO phenotype annotations instead of MedlinePlus clinical summaries, so MedlinePlus remains a discover-only supplemental source.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4010,27 +4206,21 @@
 <td>Plain-language context for disease and symptom queries</td>
 <td>Supplemental only; OLS4 remains the required structured-concept backbone</td>
 </tr>
-<tr>
-<td><code>get disease &lt;name_or_id&gt; clinical_features</code></td>
-<td>MedlinePlus clinical-summary feature rows</td>
-<td>Opt-in disease section that keeps consumer-health context out of default disease cards</td>
-</tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;symptoms of Marfan syndrome&quot;</span>
 </code></pre></div>
 <p>Returns structured discover follow-ups with supplemental MedlinePlus plain-language context when the query resolves as a disease or symptom flow.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span><span class="s2">&quot;uterine leiomyoma&quot;</span><span class="w"> </span>clinical_features
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
 </code></pre></div>
-<p>Fetches the opt-in MedlinePlus-backed clinical-features section for a configured disease.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>disease<span class="w"> </span>MONDO:0007947<span class="w"> </span>clinical_features
+<p>Adds consumer-health context only when the resolved concept is disease- or symptom-oriented.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;Marfan syndrome&quot;</span>
 </code></pre></div>
-<p>Uses a resolved disease identifier while keeping the MedlinePlus clinical-summary section explicit.</p>
+<p>Keeps MedlinePlus supplemental to structured concept resolution.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>No BioMCP API key required. BioMCP uses the public MedlinePlus Search endpoint
-for supplemental discover context and disease clinical-feature summaries, with
-embedded reviewed fixtures as the offline fallback for configured diseases.</p>
+for supplemental discover context.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
 <p><a href="https://medlineplus.gov/">MedlinePlus</a> is the official NLM consumer-health
 site. BioMCP uses the public <a href="https://wsearch.nlm.nih.gov/ws/query">MedlinePlus Search</a>

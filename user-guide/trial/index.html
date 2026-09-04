@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://biomcp.org/user-guide/trial/">
       
       
-        <link rel="prev" href="../article/">
+        <link rel="prev" href="../author/">
       
       
         <link rel="next" href="../diagnostic/">
@@ -1085,6 +1085,62 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1167,16 +1223,22 @@
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rare-disease-action-summaries" class="md-nav__link">
+    <nav class="md-nav" aria-label="Search trials (default source)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pagination-termination" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rare-disease action summaries
+        Pagination termination
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1659,6 +1721,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3312,6 +3486,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4003,16 +4205,22 @@
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#rare-disease-action-summaries" class="md-nav__link">
+    <nav class="md-nav" aria-label="Search trials (default source)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pagination-termination" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rare-disease action summaries
+        Pagination termination
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4139,49 +4347,57 @@
 <p>Add intervention and phase filters:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>-i<span class="w"> </span>pembrolizumab<span class="w"> </span>--phase<span class="w"> </span><span class="m">3</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>On the default CTGov path, <code>--condition</code> auto-expands bounded rare-disease
-labels, unions the matching trials, and shows which expanded label matched each
-returned row.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Phelan-McDermid Syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Phelan-McDermid Syndrome&quot;</span><span class="w"> </span>--no-condition-expand<span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
+<p>Condition searches send the supplied label literally.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Rett Syndrome&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
 </code></pre></div>
-<p>When an expanded condition label wins, markdown adds a <code>Matched Condition</code>
-column and JSON adds <code>matched_condition_label</code>. <code>--no-condition-expand</code> forces
-strict literal condition matching.</p>
-<p>On the default CTGov path, <code>--intervention</code> auto-expands known drug aliases
-from the shared drug identity surface, unions the matching trials, and shows
-which alias matched each returned row.</p>
+<h3 id="pagination-termination">Pagination termination<a class="headerlink" href="#pagination-termination" title="Permanent link">&para;</a></h3>
+<p>For JSON ClinicalTrials.gov trial searches, continue only while
+<code>pagination.has_more</code> is true and pass the opaque <code>pagination.next_page_token</code>
+back as <code>--next-page</code>. When a
+reported total says the returned page reaches the end, BioMCP returns
+<code>has_more: false</code> and no next-page token, even if the upstream registry supplied
+one. This prevents a pagination client from restarting at earlier results.</p>
+<p>On the default CTGov path, every <code>--intervention</code> worker is sent as one quoted
+literal. BioMCP can expand the name with plausible trade names and
+investigational codes, excludes systematic chemical synonyms, unions the
+matching trials, and shows which alias matched each returned row.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-i<span class="w"> </span>daraxonrasib<span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-i<span class="w"> </span>daraxonrasib<span class="w"> </span>--no-alias-expand<span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
 </code></pre></div>
 <p>When an alternate alias wins, markdown adds a <code>Matched Intervention</code> column and
-JSON adds <code>matched_intervention_label</code>. <code>--no-alias-expand</code> forces strict
-literal intervention matching. If condition or intervention expansion fans out
-to multiple CTGov queries, <code>--next-page</code> is unavailable; use <code>--offset</code>,
-<code>--no-condition-expand</code>, or <code>--no-alias-expand</code>.</p>
+JSON adds <code>matched_intervention_label</code>. If CTGov rejects only an expanded alias,
+BioMCP keeps successful requested-name results and leaves the exact total unknown.
+<code>--no-alias-expand</code> performs one literal request for the supplied name. If
+intervention expansion fans out to multiple CTGov queries, <code>--next-page</code> is
+unavailable; use <code>--offset</code> or <code>--no-alias-expand</code>.</p>
+<p>JSON search and detail output preserve the complete provider condition array.
+Markdown detail lists every condition, while the search table keeps its compact
+condition cell; when that cell is abridged, it states the complete condition
+count.</p>
 <p>Add biomarker filters:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--biomarker<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p><code>--mutation</code> broadly searches CTGov title, summary, eligibility, and keyword
+fields. After broad discovery, simple mutation text receives a registry eligibility
+check that removes exclusion-only matches. Trials where the term is absent remain
+discoverable, and boolean expressions are discovery-only.</p>
+<p><code>--age</code> accepts finite patient ages from 0 through 150 years, including
+fractional ages.</p>
 <p>Geographic filtering:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--lat<span class="w"> </span><span class="m">42</span>.36<span class="w"> </span>--lon<span class="w"> </span>-71.06<span class="w"> </span>--distance<span class="w"> </span><span class="m">50</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>When geo filters are set, the search query summary includes <code>lat</code>, <code>lon</code>, and <code>distance</code>.</p>
-<h2 id="rare-disease-action-summaries">Rare-disease action summaries<a class="headerlink" href="#rare-disease-action-summaries" title="Permanent link">&para;</a></h2>
-<p>Use <code>--action-summary</code> when a rare-disease trial search needs practical CTGov detail instead of compact rows:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Phelan-McDermid Syndrome&quot;</span><span class="w"> </span>--action-summary<span class="w"> </span>--facility<span class="w"> </span><span class="s2">&quot;University of Michigan&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Phelan-McDermid Syndrome&quot;</span><span class="w"> </span>--action-summary<span class="w"> </span>--facility<span class="w"> </span><span class="s2">&quot;University of Michigan&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</code></pre></div>
-<p>Action summaries fetch full ClinicalTrials.gov records for selected candidate NCT IDs. Facility and geo flags are ranking hints against listed CTGov sites only; BioMCP reports when no listed site matches and does not infer pending or unlisted availability.</p>
-<p>JSON action-summary rows include stable <code>trial_type</code>, <code>access_caveats</code>, <code>ranked_sites</code>, <code>contacts</code>, and <code>eligibility</code> fields for agent workflows.</p>
+<p>When geo filters are set, the search query summary includes <code>lat</code>, <code>lon</code>, and
+<code>distance</code>. Latitude must be finite from -90 through 90, and longitude must be
+finite from -180 through 180.</p>
 <p>Prior-therapy filters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--prior-therapies<span class="w"> </span>platinum<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--line-of-therapy<span class="w"> </span>2L<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--prior-therapies<span class="w"> </span>platinum<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--line-of-therapy<span class="w"> </span>2L<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="search-trials-nci-source">Search trials (NCI source)<a class="headerlink" href="#search-trials-nci-source" title="Permanent link">&para;</a></h2>
 <p>Use NCI CTS when you want the shared BioMCP trial CLI to target the NCI trial
 catalog instead of ClinicalTrials.gov.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p><code>--condition</code> remains the NCI entry point. BioMCP first tries to ground the
 condition through MyDisease and, when the best match has an NCI Thesaurus
@@ -4198,28 +4414,55 @@ There is no separate NCI keyword flag in this ticket.</p>
 </ul>
 <p>NCI phase handling is also source-specific:</p>
 <ul>
-<li><code>1</code>, <code>2</code>, <code>3</code>, and <code>4</code> map to CTS <code>I</code>, <code>II</code>, <code>III</code>, and <code>IV</code></li>
-<li><code>1/2</code> maps to CTS <code>I_II</code></li>
-<li><code>NA</code> stays <code>NA</code></li>
-<li><code>early_phase1</code> is rejected for <code>--source nci</code></li>
+<li>shared input also accepts <code>NA</code>/<code>N/A</code> and the early-phase aliases
+  <code>EARLY_PHASE1</code>, <code>early_phase1</code>, and <code>early1</code>; matching is case-insensitive</li>
+<li>canonical <code>PHASE1</code> through <code>PHASE4</code>, numeric <code>1</code> through <code>4</code>, and Roman <code>I</code>
+  through <code>IV</code> normalize to the same four scalar phases</li>
+<li><code>PHASE1/PHASE2</code>, <code>1/2</code>, and <code>I_II</code> denote the single combined Phase 1/2
+  label and map to CTS <code>I_II</code></li>
+<li><code>PHASE2/PHASE3</code>, <code>2/3</code>, and <code>II_III</code> denote the single combined Phase 2/3
+  label and map to CTS <code>II_III</code></li>
+<li><code>NA</code> and <code>N/A</code> become <code>NA</code></li>
+<li>scalar NCI requests stay scalar rather than expanding to overlapping
+  combined labels</li>
+<li><code>EARLY_PHASE1</code>, <code>early_phase1</code>, and <code>early1</code> are accepted shared inputs but
+  rejected for <code>--source nci</code>; CTGov accepts them</li>
 </ul>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--phase<span class="w"> </span><span class="m">1</span>/2<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--status<span class="w"> </span>recruiting<span class="w"> </span>--phase<span class="w"> </span><span class="m">1</span>/2<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>NCI geographic filtering is direct CTS filtering rather than CTGov's
 geo-verify mode. When <code>--lat</code>, <code>--lon</code>, and <code>--distance</code> are all present,
 BioMCP sends <code>sites.org_coordinates_lat</code>, <code>sites.org_coordinates_lon</code>, and
 <code>sites.org_coordinates_dist=&lt;N&gt;mi</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--lat<span class="w"> </span><span class="m">42</span>.36<span class="w"> </span>--lon<span class="w"> </span>-71.06<span class="w"> </span>--distance<span class="w"> </span><span class="m">50</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--source<span class="w"> </span>nci<span class="w"> </span>--lat<span class="w"> </span><span class="m">42</span>.36<span class="w"> </span>--lon<span class="w"> </span>-71.06<span class="w"> </span>--distance<span class="w"> </span><span class="m">50</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p>NCI accepts one quoted value total across <code>--biomarker</code>, <code>--mutation</code>, and
+<code>--criteria</code>, sending it once as the CTS <code>biomarkers</code> field. Repeated values or
+combining those flags is rejected. NCI also rejects the CTGov-only
+<code>--study-type</code>, <code>--sponsor</code>, <code>--date-from</code>, and <code>--date-to</code> filters before any
+request rather than silently ignoring them.</p>
 <p>For higher limits and reliable authenticated access, set <code>NCI_API_KEY</code>.</p>
 <h2 id="get-a-trial-by-nct-id">Get a trial by NCT ID<a class="headerlink" href="#get-a-trial-by-nct-id" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
 </code></pre></div>
 <p>The default response summarizes title, status, condition context, intervention names, and source metadata. CTGov detail can include source-provided intervention alternate names; for investigational codes, follow-ups may use safer search/article routes instead of a brittle drug-card lookup.</p>
 <h2 id="request-trial-sections">Request trial sections<a class="headerlink" href="#request-trial-sections" title="Permanent link">&para;</a></h2>
 <p>Eligibility:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
 </code></pre></div>
+<p>CTGov eligibility is registry-supplied text. JSON eligibility output identifies
+that provenance and reports whether posted trial documents are available. When
+documents exist, Markdown offers a cautious follow-up because they may contain
+additional eligibility detail; BioMCP does not claim that a protocol resolves
+any criterion.</p>
+<p>Posted CTGov documents use standalone manifest and retrieval forms:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>documents
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>document<span class="w"> </span>Prot_SAP_000.pdf<span class="w"> </span>&gt;<span class="w"> </span>protocol.pdf
+</code></pre></div>
+<p>Use only an exact filename advertised by the current manifest. Retrieval returns
+raw bytes without PDF parsing or conversion and rejects bodies larger than 32
+MiB. Document forms are unavailable with <code>--source nci</code> and are not included in
+ordinary <code>all</code>.</p>
 <p>Contacts:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>contacts
 </code></pre></div>
@@ -4249,14 +4492,12 @@ This keeps repeated lookups responsive.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-i<span class="w"> </span>daraxonrasib<span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;Phelan-McDermid Syndrome&quot;</span><span class="w"> </span>--action-summary<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>Action-summary JSON includes <code>trial_type</code>, <code>access_caveats</code>, <code>ranked_sites</code>, <code>contacts</code>, and <code>eligibility</code>.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Start broad on condition, then add intervention and biomarker filters.</li>
 <li>Keep limits low while tuning search criteria.</li>
-<li>Use <code>eligibility</code> for full criteria text and structured sex/age facts.</li>
+<li>Use <code>eligibility</code> for registry-supplied criteria text, provenance, and structured sex/age facts.</li>
 <li>Use <code>contacts</code> when you need CTGov central or site contact details.</li>
 </ul>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>

@@ -1268,6 +1268,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1671,6 +1727,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3324,6 +3492,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4178,7 +4374,9 @@ token.</p>
 <h3 id="disgenet_api_key"><code>DISGENET_API_KEY</code><a class="headerlink" href="#disgenet_api_key" title="Permanent link">&para;</a></h3>
 <p>Required for DisGeNET scored association sections on genes and diseases.
 Without the key, those DisGeNET sections are unavailable and report the
-required environment variable.</p>
+required environment variable. A configured key may still be rejected if it is
+invalid or if the account's plan lacks access; check the credential and account
+access rather than exporting the variable again.</p>
 <p>Register at: <a href="https://www.disgenet.com/">https://www.disgenet.com/</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DISGENET_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>TP53<span class="w"> </span>disgenet
@@ -4204,6 +4402,11 @@ provider quota at 1 req/sec across the optional article search leg, <code>get ar
 enrichment, <code>get article ... tldr</code>, <code>article citations</code>, <code>article references</code>,
 and <code>article recommendations</code>. Without the key, those paths still work through
 the shared unauthenticated pool at 1 req/2sec.</p>
+<p>BioMCP sends <code>x-api-key</code> only to the canonical Semantic Scholar HTTPS API
+origin. A noncanonical <code>BIOMCP_S2_BASE</code> override is unauthenticated, and the key
+cannot follow a redirect to another origin. The internal exact-origin fixture
+signal used by repository tests is the only unsafe local exception; it is not a
+CLI or model argument.</p>
 <p>Request a key at: <a href="https://www.semanticscholar.org/product/api">https://www.semanticscholar.org/product/api</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">S2_API_KEY</span><span class="o">=</span><span class="s2">&quot;...&quot;</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
@@ -4221,7 +4424,7 @@ the shared unauthenticated pool at 1 req/2sec.</p>
 <li>Do not commit secrets into source control.</li>
 <li>Set keys in the same environment used by your MCP client.</li>
 <li>Rotate keys when sharing machines or CI runners.</li>
-<li><code>S2_API_KEY</code> is optional. Without it, article search/get/helper paths still work through the shared Semantic Scholar pool at 1 req/2sec. With it, BioMCP sends <code>x-api-key</code> and uses the authenticated quota at 1 req/sec for the same article search/get/helper paths.</li>
+<li><code>S2_API_KEY</code> is optional. Without it, article search/get/helper paths still work through the shared Semantic Scholar pool at 1 req/2sec. With it, BioMCP sends <code>x-api-key</code> only to the approved canonical Semantic Scholar origin and uses the authenticated quota at 1 req/sec for those requests.</li>
 <li><code>UMLS_API_KEY</code> is optional; when absent, <code>discover</code> still works with OLS4-only results.</li>
 </ul>
 <p>See also: <a href="../../reference/source-licensing/">Source Licensing and Terms</a></p>

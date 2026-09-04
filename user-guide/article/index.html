@@ -18,7 +18,7 @@
         <link rel="prev" href="../variant/">
       
       
-        <link rel="next" href="../trial/">
+        <link rel="next" href="../supplementary-materials/">
       
       
         
@@ -1262,6 +1262,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1665,6 +1721,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3318,6 +3486,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4143,7 +4339,7 @@
 <li>search a topic,</li>
 <li>choose an identifier,</li>
 <li>retrieve default summary,</li>
-<li>request full text or annotations only when needed.</li>
+<li>request indexing, full text, or annotations only when needed.</li>
 </ol>
 <h2 id="search-articles">Search articles<a class="headerlink" href="#search-articles" title="Permanent link">&para;</a></h2>
 <p>By gene and disease:</p>
@@ -4152,23 +4348,34 @@
 <p>By keyword:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;immunotherapy resistance&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p>By author:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-a<span class="w"> </span><span class="s2">&quot;Williams LS&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<p>Author filtering is an authorship constraint. The default <code>--source all</code> route
+limits candidate search to backends with native author fields: Europe PMC and,
+when the other selected filters are compatible, PubMed. Filters such as
+<code>--open-access</code> or <code>--no-preprints</code> can narrow the plan further to Europe PMC.
+You can select <code>--source europepmc</code> or <code>--source pubmed</code> directly; PubTator3,
+Semantic Scholar, and LitSense2 reject <code>--author</code> instead of treating the name
+as free text.</p>
 <p>Tune keyword-bearing relevance:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Hirschsprung disease ganglion cells&quot;</span><span class="w"> </span>--ranking-mode<span class="w"> </span>hybrid<span class="w"> </span>--weight-semantic<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--weight-lexical<span class="w"> </span><span class="m">0</span>.2<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Hirschsprung disease ganglion cells&quot;</span><span class="w"> </span>--ranking-mode<span class="w"> </span>hybrid<span class="w"> </span>--weight-semantic<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span>--weight-lexical<span class="w"> </span><span class="m">0</span>.2<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>By date:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>By year range:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;BRAF melanoma&quot;</span><span class="w"> </span>--year-min<span class="w"> </span><span class="m">2000</span><span class="w"> </span>--year-max<span class="w"> </span><span class="m">2013</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;BRAF melanoma&quot;</span><span class="w"> </span>--year-min<span class="w"> </span><span class="m">2000</span><span class="w"> </span>--year-max<span class="w"> </span><span class="m">2013</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Exclude preprints when supported by source metadata:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01<span class="w"> </span>--no-preprints<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01<span class="w"> </span>--no-preprints<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="query-formulation">Query formulation<a class="headerlink" href="#query-formulation" title="Permanent link">&para;</a></h2>
 <p>Turn a natural-language literature question into two parts:</p>
 <ul>
 <li>Put a known gene, disease, or drug in <code>-g/--gene</code>, <code>-d/--disease</code>, or <code>--drug</code>.</li>
-<li>Put mechanisms, phenotypes, outcomes, datasets, and other free-text concepts in <code>-k/--keyword</code>.</li>
+<li>Put mechanisms, phenotypes, outcomes, datasets, and other provider-neutral free-text concepts in <code>-k/--keyword</code>.</li>
+<li>Put a known author in <code>-a/--author</code> and a known journal in <code>--journal</code>; do not put PubMed or Europe PMC field grammar in <code>-k/--keyword</code>.</li>
 <li>If the question is asking which gene, disease, or drug fits the evidence and you do not know the entity yet, do not guess a typed flag. Start with keyword-only article search or run <code>biomcp discover "&lt;question&gt;"</code> first.</li>
 <li>Question-format article terms are acceptable: PubMed ESearch cleans bounded filler words from unfielded gene, disease, drug, and keyword terms provider-locally, while query echoes and non-PubMed sources keep the original wording.</li>
 <li>Use <code>--type review</code> for synthesis questions, list-style questions, and dataset surveys.</li>
@@ -4179,8 +4386,30 @@ BioMCP can add a typed <code>get gene</code>, <code>get drug</code>, or <code>ge
 <code>See also</code>, <code>_meta.next_commands</code>, and JSON <code>_meta.suggestions[]</code>. The
 structured suggestion object includes <code>command</code>, <code>reason</code>, and <code>sections</code>.
 Multi-concept phrases such as <code>BRAF V600E</code> or <code>lung cancer immunotherapy</code> do
-not get direct entity suggestions, and searches that already use <code>-g</code>, <code>-d</code>,
-or <code>--drug</code> suppress the exact suggestion.</p>
+not get direct entity suggestions. A whole exact gene-plus-protein keyword such
+as <code>MSH2 p.L341P</code> is handled separately: article search remains unchanged, but
+successful Markdown and JSON output add <code>biomcp variant articles "MSH2
+p.L341P"</code> to the follow-ups. Typed gene, disease, or drug context does not
+suppress this exact-variant pivot.</p>
+<p>For the complete strict-identity, union-shortlist, batch, selected full-text/assets,
+and conditional citation/reference sequence, run <code>biomcp skill
+exact-variant-literature</code>.</p>
+<p><code>biomcp --json variant articles "BRAF p.V600E" --verify-identity</code> adds an
+identity projection from captured provider evidence without changing normal
+retrieval recall. <code>--confirmed-only</code> requires verification and filters the
+verified candidate pool before ranking and pagination. Retrieval aliases remain
+provenance, not observed article evidence. Confirmation requires a returned-PMID typed PubTator Gene/Variant linkage whose
+exact HGVS and CorrespondingGene/NCBI Gene-ID facts agree, or an optional bounded
+ClinGen LDH CAid/gene/PMCID annotation with one exact text/table selector. LDH only
+observes already retrieved candidates; absent coverage is not negative evidence.
+Relations and same-passage co-occurrence are not enough.
+Identity observations include their provider, locator, linked gene, observed alias,
+typed <code>provider_linkage</code>, and canonical captured-content hash;
+verification artifact hashes in <code>--debug-plan</code> are versioned clinically relevant
+response/content subset audit facts, not retrieval-cache keys. Verification
+never fetches supplements automatically, and an incomplete verification is not a
+confirmation: it keeps the result incomplete, truncated, and without a total. Frozen
+fixtures provide release proof; live probes are diagnostics.</p>
 <p>For agent loops, <code>--session &lt;token&gt;</code> lets JSON article search compare the
 current keyword with the previous successful article keyword search for the
 same local token. The token is not a secret; use a short non-identifying label
@@ -4188,29 +4417,42 @@ such as <code>lit-review-1</code>. When post-stopword term overlap is at least 6
 BioMCP can add JSON-only <code>_meta.suggestions[]</code> fallbacks after exact entity
 suggestions: prior <code>article batch</code>, <code>discover</code>, and a date-narrowed retry when
 available. Session baselines expire after 10 minutes. Markdown output is
-unchanged.</p>
+unchanged. The local record stores the token, keyword and normalized terms,
+bounded PMID set, and update time under the resolved BioMCP cache root. Opening
+the store removes expired records; upstream providers apply their own separate
+logging and retention policies.
+BioMCP keeps the session directory and records private to the current OS user
+and refuses linked files before reading or replacing them.
+Use <code>--no-cache</code> when the invocation must not read or write either managed
+request-state store; BioMCP rejects <code>--no-cache --session</code> before transport.</p>
 <p>Known anchor only:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Known anchor plus mechanism or process:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>TP53<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;apoptosis gene regulation&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>TP53<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;apoptosis gene regulation&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Unknown-entity disease-identification question:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s1">&#39;&quot;cafe-au-lait spots&quot; neurofibromas disease&#39;</span><span class="w"> </span>--type<span class="w"> </span>review<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s1">&#39;&quot;cafe-au-lait spots&quot; neurofibromas disease&#39;</span><span class="w"> </span>--type<span class="w"> </span>review<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Known drug plus mechanism:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>--drug<span class="w"> </span>amiodarone<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;photosensitivity mechanism&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>--drug<span class="w"> </span>amiodarone<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;photosensitivity mechanism&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Dataset or method question:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;TCGA mutation analysis dataset&quot;</span><span class="w"> </span>--type<span class="w"> </span>review<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;TCGA mutation analysis dataset&quot;</span><span class="w"> </span>--type<span class="w"> </span>review<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="multi-source-federation">Multi-source federation<a class="headerlink" href="#multi-source-federation" title="Permanent link">&para;</a></h3>
 <p>Article search fans out to PubTator3, Europe PMC, and PubMed by default when
 the filter set is compatible. Known gene, disease, drug, and keyword queries
 participate in that route. Semantic Scholar can still join the same query when
-the filter set is compatible. Semantic Scholar and LitSense2 are also available
-as explicit single-source routes with <code>--source semanticscholar</code> and
-<code>--source litsense2</code>. BioMCP merges duplicates across PMID,
+the filter set is compatible. An author filter is intentionally narrower: the
+default route limits candidate search to Europe PMC and compatible PubMed,
+whose native author fields make every returned candidate an authorship match
+rather than a lexical match.
+Semantic Scholar and LitSense2 are also available as explicit single-source
+routes with <code>--source semanticscholar</code> and
+<code>--source litsense2</code>. Any explicit source selection stays on that source: it
+does not silently enrich rows through Semantic Scholar or another metadata
+provider. The response reports candidate and enrichment source plans. BioMCP merges duplicates across PMID,
 PMCID, and DOI where possible. <code>S2_API_KEY</code> upgrades the Semantic
 Scholar leg to authenticated requests at 1 req/sec; without it, BioMCP uses
 the shared unauthenticated pool at 1 req/2sec. Search results are still
@@ -4229,9 +4471,14 @@ deduplicated by PMID when BioMCP can resolve one.</p>
 <li><code>--weight-semantic</code>, <code>--weight-lexical</code>, <code>--weight-citations</code>, and
   <code>--weight-position</code> retune the hybrid formula.</li>
 </ul>
-<p>Markdown preserves the merged rank order, and JSON includes row-level
-<code>matched_sources</code>, <code>ranking</code>, <code>citation_count</code>, and
-<code>influential_citation_count</code>.</p>
+<p>Markdown preserves the merged rank order. JSON search rows are compact by
+default: available PMID/PMCID/DOI/arXiv/Semantic Scholar identifiers, title,
+journal, date, citation count, primary source, and tri-state retraction state.
+Use <code>biomcp --json search article -g BRAF --limit 5 --full</code> to restore detailed
+rows with <code>matched_sources</code>, <code>ranking</code>, <code>first_index_date</code>, influential counts,
+scores, and abstract snippets.</p>
+<p><code>--sort date</code> replaces relevance ranking rather than refining it. Compact JSON,
+<code>--full</code> JSON, and Markdown all emit an in-band warning when date sort is used.</p>
 <p>Use <code>--source &lt;all, pubtator, europepmc, pubmed, semanticscholar, litsense2&gt;</code>
 to select one backend or keep the default federated search.
 BioMCP caps each federated source's contribution after deduplication and before
@@ -4242,8 +4489,8 @@ deduplication. Use <code>--max-per-source &lt;N&gt;</code> to override that cap,
 <code>--limit</code> to disable capping.
 Default article search excludes confirmed retractions unless you pass
 <code>--include-retracted</code>. Sources that do not expose retraction metadata still
-participate in the search, and JSON search rows keep the tri-state contract:
-<code>"is_retracted": true</code>, <code>false</code>, or <code>null</code>.
+participate in the search, and compact and <code>--full</code> JSON search rows keep the
+tri-state contract: <code>"is_retracted": true</code>, <code>false</code>, or <code>null</code>.
 <code>--type</code>, <code>--open-access</code>, and <code>--no-preprints</code> are backend-compatibility
 constraints rather than universal filters across every article source.
 <code>--type</code> on <code>--source all</code> uses Europe PMC + PubMed when <code>--open-access</code> and
@@ -4252,19 +4499,26 @@ constraints rather than universal filters across every article source.
 PMC-only note in markdown, JSON, and debug-plan output instead of silently
 pretending the filter applies across every source.</p>
 <p>To search a single backend:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>pubtator<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>europepmc<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>pubmed<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>pubtator<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>europepmc<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--source<span class="w"> </span>pubmed<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>To force a tighter federated balance:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Kartagener syndrome ciliopathy&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span><span class="w"> </span>--max-per-source<span class="w"> </span><span class="m">10</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Kartagener syndrome ciliopathy&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span><span class="w"> </span>--max-per-source<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <h2 id="get-an-article">Get an article<a class="headerlink" href="#get-an-article" title="Permanent link">&para;</a></h2>
 <p>Supported IDs are PMID (digits only), PMCID (e.g., PMC9984800), and DOI
 (e.g., 10.1056/NEJMoa1203421). Publisher PIIs (e.g., <code>S1535610826000103</code>) are not
 indexed by PubMed or Europe PMC and cannot be resolved.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
+<p>Detail returns every author name supplied by the selected metadata source in
+source order. JSON includes <code>authors</code>, <code>author_count</code> (the number returned),
+<code>author_completeness</code> (<code>complete</code>, <code>source_limited</code>, or <code>unavailable</code>), and
+<code>author_source</code> (<code>pubtator</code> or <code>europepmc</code>). PubTator's structured author list is
+<code>complete</code>; Europe PMC's display string is <code>source_limited</code>, so BioMCP does not
+claim it reconstructs a ground-truth author list. Markdown prints the same names
+and status without inserting an ellipsis or a synthetic author.</p>
 <p>Default article output can include an optional Semantic Scholar section with
 TLDR text, influence counts, and open-access PDF metadata when that paper
 resolves in Semantic Scholar. <code>S2_API_KEY</code> makes those requests authenticated;
@@ -4274,13 +4528,17 @@ Semantic Scholar remains an automatic compatible leg and can also be queried
 alone with <code>--source semanticscholar</code>.</p>
 <h2 id="request-specific-sections">Request specific sections<a class="headerlink" href="#request-specific-sections" title="Permanent link">&para;</a></h2>
 <p>Full text section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext
 </code></pre></div>
 <p>This uses the default article full-text ladder: XML first, then PMC HTML when
 the XML path misses for a PMCID-backed article. It never falls back to PDF.
-When full text resolves, BioMCP prints a local <code>Saved to:</code> path for cached
+BioMCP accepts a winner only when JATS or PMC HTML structure contains a nonblank
+article-body block; title/front/abstract-only and metadata-only responses remain
+healthy partial results and the ladder continues. A source abstract fills a
+missing or blank article abstract but never replaces a nonblank base abstract.</p>
+<p>When full text resolves, BioMCP prints a local <code>Saved to:</code> path for cached
 Markdown and surfaces the winning source label (<code>Europe PMC XML</code>, <code>PMC HTML</code>,
-etc.) in markdown and JSON provenance. For XML/JATS winners, the saved Markdown
+etc.) in Markdown and JSON provenance. For XML/JATS winners, the saved Markdown
 keeps section text, tables, references, figure captions, supplementary-material
 metadata, and explicit markers for complex merged-cell tables that are not yet
 flattened. JSON fulltext responses also include <code>full_text_manifest</code>, an
@@ -4290,60 +4548,126 @@ quality flags, known license/reuse state, and provenance facts such as
 open-access and explicit PDF fallback status. JSON fulltext also reports
 <code>not_included</code> counts and points to the OA package asset manifest when figure
 images, supplementary files, or complex tables are not inlined.</p>
+<p>Requested full-text JSON adds <code>full_text_coverage</code>. Its final <code>coverage</code> is
+<code>full_text</code>, <code>abstract_only</code>, <code>metadata_only</code>, <code>none</code>, or <code>unavailable</code> and its
+ordered <code>attempts</code> list gives each eligible provider's source kind, coverage,
+outcome, cache state, and bounded reason. Attempts are sanitized: they do not
+contain source bodies, errors, URLs, credentials, parser details, or local
+paths. Ordinary article cards omit this object.</p>
+<p>JSON always exposes <code>section_outcomes.fulltext</code>: base cards are
+<code>not_requested</code>, successful retrieval is <code>data</code>, an all-healthy ladder with no
+winner is <code>empty</code>, and a ladder with any failed eligible source and no winner is
+<code>unavailable</code>. Structural coverage is independent, so an abstract or metadata
+partial remains visible even when another source failed. <code>_meta.section_sources</code>
+mirrors the section outcome and provider list. Markdown uses the same combined
+state: it distinguishes confirmed absence, partial metadata without an article
+body, and incomplete retrieval without listing provider attempts.</p>
 <p>Article assets:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>assets
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>asset<span class="w"> </span>&lt;filename&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>assets
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span>&lt;id&gt;<span class="w"> </span>asset<span class="w"> </span>&lt;asset-key&gt;
 </code></pre></div>
+<p>For a task-oriented walkthrough of listing, downloading, and interpreting
+these files, see <a href="../supplementary-materials/">Supplementary Materials</a>.</p>
 <p><code>get article &lt;id&gt; assets</code> returns a JSON-only provider-labelled manifest. BioMCP
-prefers the canonical PMC OA package; if none is available and Semantic Scholar
-enrichment points at supported Figshare/AACR Figshare metadata, it resolves the
-Figshare API and lists those public files instead. Figshare manifests can include
-same-paper sibling records discovered by DOI/title, while excluding records that
-do not match the paper. <code>get article &lt;id&gt; asset &lt;name&gt;</code> returns the selected
-member as raw bytes with no conversion; downstream tools parse CSV, XLSX, DOC,
-PDF, or images. Manifest handles remain BioMCP commands, not provider download
-URLs. Figshare supplement PDFs and tables remain assets, not full-text article
-substitutes.</p>
+merges PMC OA's versioned S3 metadata-declared media objects, a validated Europe PMC supplementary ZIP,
+recognized JATS/PMC HTML supplement links, and eligible Figshare/AACR metadata. PMC OA no longer uses
+the retired FTP/archive route, whose legacy files are removed in August 2026. Figshare
+manifests can include same-paper sibling records discovered by DOI/title, while
+excluding records that do not match the paper. Linked provider URLs stay internal;
+coverage reports named files that are absent, denied, unsupported, unavailable, or gated.
+The manifest's <code>source_attempts</code> distinguishes data, degraded data, healthy
+absence, provider failure, and timeout. Optional-provider work has an overall
+budget, so a slow optional source cannot withhold assets already returned by a
+successful source. Normal calls reuse the resolved manifest for five minutes,
+including paging continuations; <code>--no-cache</code> bypasses that reuse.
+PMC's <code>pmc_proof_of_work</code> outcome means PMC returned a proof-of-work challenge
+instead of the named file; it has no <code>asset_key</code> or handle. A linked binary
+received as HTML or XHTML is rejected rather than exposed as asset bytes.
+<code>get article &lt;id&gt; asset &lt;asset-key&gt;</code>
+returns the selected member as raw bytes with no conversion; downstream tools
+parse CSV, XLSX, DOC, PDF, or images. Manifest handles remain BioMCP commands,
+not provider download URLs. Europe PMC reuse remains unknown unless article
+metadata or a retained PMC OA manifest supplies a license; retained licenses
+name PMC OA as their source. When named coverage exists but no bytes are
+retrievable, the manifest remains available with <code>assets: []</code> and a specific
+per-file outcome. If no route names an asset, a healthy all-source miss is
+<code>not_found</code>; source failures remain <code>source_unavailable</code>. A missing or unknown
+asset key is <code>not_found</code>. Figshare supplement PDFs and tables remain assets,
+not full-text article substitutes. Full-text downloads are managed private
+state (<code>0600</code> files on Unix); routine managed-state maintenance also repairs
+older permissive files.</p>
 <p>Opt in to the final PDF rung only when you want the last-resort open-access PDF
-path after XML and PMC HTML both miss:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext<span class="w"> </span>--pdf
+path after XML and PMC HTML fail to provide an article body (including when they
+provide only an abstract or metadata):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>fulltext<span class="w"> </span>--pdf
 </code></pre></div>
-<p>With <code>--pdf</code>, BioMCP can use the Semantic Scholar open-access PDF URL as the
-final fallback and labels the winner as <code>Semantic Scholar PDF</code>. <code>--pdf</code> is only
-valid with the <code>fulltext</code> section; <code>biomcp get article 22663011 --pdf</code> is
-rejected instead of silently doing nothing.</p>
+<p>With <code>--pdf</code>, BioMCP can use a Semantic Scholar open-access PDF URL from an
+explicitly allowed Semantic Scholar/CDN HTTPS origin as the final fallback and
+labels the winner as <code>Semantic Scholar PDF</code>. A successful lookup with no PDF is
+a healthy absence; a failed lookup contributes unavailable state only when PDF
+fallback was requested. Other provider-returned origins are rejected before
+contact. <code>--pdf</code> is only valid with the <code>fulltext</code> section;
+<code>biomcp get article 22663011 --pdf</code> is rejected instead of silently doing
+nothing.</p>
+<p>Indexing section:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>indexing
+</code></pre></div>
+<p>This opt-in section fetches PubMed citation XML and keeps each author's name,
+optional ORCID, and source-associated affiliations together. MeSH descriptors
+and qualifiers retain their UIs and independent major-topic flags. The explicit
+<code>available</code> or <code>unavailable</code> status distinguishes a complete empty author/MeSH
+list from metadata BioMCP could not retrieve. BioMCP accepts PubMed's normal
+external <code>DOCTYPE</code> without downloading the DTD, while retaining the 8 MiB body
+limit and a 100,000-node XML limit. When indexing is unavailable, JSON and
+Markdown include a sanitized <code>failure</code> code and static message (for example,
+<code>rate_limited</code>, <code>parse_error</code>, or <code>timeout</code>) without upstream bodies, URLs,
+credentials, or parser details. The base article still succeeds. Ordinary detail,
+search, and batch do not make this extra request; <code>get article &lt;id&gt; all</code> includes
+it.</p>
 <p>Annotation section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
 </code></pre></div>
 <p>Semantic Scholar TLDR section:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
 </code></pre></div>
+<p>The attempted Semantic Scholar enrichment is recorded in
+<code>section_outcomes.tldr</code> as <code>data</code>, <code>empty</code>, or <code>unavailable</code>; its
+<code>_meta.section_sources</code> entry projects the same state and credits Semantic
+Scholar only after a successful response.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w">          </span><span class="c1"># compact multi-article summary cards</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">         </span><span class="c1"># Semantic Scholar citation graph</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">        </span><span class="c1"># Semantic Scholar reference graph</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w">          </span><span class="c1"># compact multi-article summary cards</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">         </span><span class="c1"># Semantic Scholar citation graph</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">        </span><span class="c1"># Semantic Scholar reference graph</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
 </code></pre></div>
-<p><code>article batch</code> works without <code>S2_API_KEY</code> and echoes the original
-<code>requested_id</code> together with resolved PMID/PMCID/DOI fields. When Semantic
-Scholar data is available, the batch helper can add optional TLDR and citation
-metadata. <code>S2_API_KEY</code> makes that enrichment authenticated and more reliable.
+<p><code>article batch</code> works without <code>S2_API_KEY</code> and returns a bare JSON array in
+request order. Each compact card echoes the original <code>requested_id</code>, keeps its
+resolved PMID/PMCID/DOI fields, and carries the same full <code>authors</code>, returned
+<code>author_count</code>, <code>author_completeness</code>, and <code>author_source</code> contract as detail.
+Markdown cards show the source-ordered names and an explicit status, including
+when no author list was supplied. When Semantic Scholar data is available, the
+batch helper can add optional TLDR and citation metadata without changing
+authorship. <code>S2_API_KEY</code> makes that enrichment authenticated and more reliable.
 Use <code>article batch</code> as the default follow-up after <code>search article</code> when you
 already have several shortlisted PMIDs or DOIs.</p>
 <p>The Semantic Scholar graph helpers also work without <code>S2_API_KEY</code>, but they use
 the shared pool and can fail fast on HTTP 429 with guidance to set the key for
 a dedicated rate limit. Citations usually work broadly; references and
 recommendations can be sparse or empty for paywalled papers because of
-publisher elision in the Semantic Scholar graph.</p>
+publisher elision in the Semantic Scholar graph. In JSON, citation/reference
+responses always carry <code>edges</code>, and recommendation responses always carry
+<code>recommendations</code>, including <code>[]</code> on successful emptiness and parsed structured
+errors. On errors, the accompanying <code>error</code> and nonzero exit status remain
+mandatory, so an empty array must not be interpreted as a biomedical negative.</p>
 <h2 id="caching-behavior">Caching behavior<a class="headerlink" href="#caching-behavior" title="Permanent link">&para;</a></h2>
 <p>Downloaded content is stored in the BioMCP cache directory.
 This avoids repeated large payload downloads during iterative workflows.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Oncotype DX review&quot;</span><span class="w"> </span>--session<span class="w"> </span>lit-review-1<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span>
 </code></pre></div>
 <p>JSON article responses include <code>_meta.next_commands</code> and <code>_meta.section_sources</code>,
 so article workflows can promote the next likely pivots and preserve section
@@ -4363,12 +4687,14 @@ label/alias match may include <code>_meta.suggestions[]</code> objects with <cod
 <code>reason</code>, and <code>sections</code>; same-session keyword loop-breaker suggestions include
 <code>command</code> and <code>reason</code> and omit <code>sections</code>. <code>_meta.next_commands</code> remains the
 executable string command list. JSON <code>article batch</code> responses are a bare array of compact cards
-so callers can map results back to the original input order.</p>
+so callers can map results back to the original input order; this compatibility
+shape is intentionally not wrapped in an object.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Start with narrow <code>--limit</code> values.</li>
 <li>Add a disease term when gene-only search is too broad.</li>
 <li>Use section requests to avoid oversized responses.</li>
+<li>Use <code>biomcp get article &lt;id&gt; indexing</code> for PubMed author-affiliation and MeSH indexing metadata.</li>
 <li>Use <code>biomcp get article &lt;id&gt; tldr</code> when you want only the optional Semantic Scholar section.</li>
 </ul>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>

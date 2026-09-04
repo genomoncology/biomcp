@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -2554,6 +2722,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#check-the-installed-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check the installed guidance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#validation-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3215,6 +3394,34 @@
     
   
     MCP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
   
 
     
@@ -3907,6 +4114,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#check-the-installed-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check the installed guidance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#validation-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3972,6 +4190,19 @@
 
 <h1 id="how-to-validate-skill-runs">How to: validate skill runs<a class="headerlink" href="#how-to-validate-skill-runs" title="Permanent link">&para;</a></h1>
 <p>This guide defines how to evaluate whether a BioMCP skill run is complete and trustworthy. Validation is checklist-driven and attached directly to each skill markdown file.</p>
+<h2 id="check-the-installed-guidance">Check the installed guidance<a class="headerlink" href="#check-the-installed-guidance" title="Permanent link">&para;</a></h2>
+<p>Before reviewing a run, compare the installed managed skill with the running
+binary:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>skill<span class="w"> </span>status<span class="w"> </span>~/.claude
+</code></pre></div>
+<p><code>current</code> means the recorded BioMCP version, canonical rendered <code>SKILL.md</code> hash,
+managed path set, and managed file bytes match. <code>missing</code>, <code>unmanaged</code>, <code>stale</code>,
+and <code>locally_modified</code> are diagnostic states, not reasons to overwrite files
+implicitly. Follow the returned recovery command only when you intend to replace
+BioMCP-managed files; <code>biomcp skill install --force &lt;dir&gt;</code> preserves unrelated
+files.</p>
+<p>The canonical prompt hash uses the exact UTF-8 bytes from <code>biomcp skill render</code>:
+terminal newlines are normalized to exactly one LF before SHA-256 hashing.</p>
 <h2 id="validation-model">Validation Model<a class="headerlink" href="#validation-model" title="Permanent link">&para;</a></h2>
 <p>Each skill should provide:</p>
 <ol>

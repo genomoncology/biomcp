@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1593,6 +1649,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3246,6 +3414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3998,11 +4194,14 @@
 default compatible article federation. <code>search article --source pubmed</code> uses
 BioMCP's PubMed ESearch/ESummary loop directly, while the default <code>--source
 all</code> route combines PubTator3, Europe PMC, and PubMed when the selected
-filters are PubMed-compatible. Direct PubMed search and the compatible
-federated PubMed leg clean question-format unfielded article terms before
-ESearch; BioMCP keeps the raw gene, disease, drug, or keyword wording in
+filters are PubMed-compatible. <code>variant articles --strategy union</code> also sends a
+bounded strict request with quoted gene and variant <code>Title/Abstract</code> clauses,
+then retains the discovery federation; <code>--debug-plan</code> exposes the versioned
+strict request. Direct PubMed search and the compatible federated PubMed leg
+clean question-format unfielded article terms before ESearch; BioMCP keeps the
+raw gene, disease, drug, or keyword wording in
 markdown and JSON query echoes, and other article sources keep their existing
-query behavior. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, NCBI ID Converter, PMC HTML, and opt-in Semantic Scholar PDF metadata; full text and PDFs remain governed by article-level licenses.
+query behavior. The opt-in <code>indexing</code> section uses PubMed citation EFetch XML for associated author affiliations, ORCID, and structured MeSH headings; <code>all</code> includes it while ordinary detail/search/batch do not. Full-text resolution uses Europe PMC, NCBI E-utilities, PMC OA, NCBI ID Converter, PMC HTML, and opt-in Semantic Scholar PDF metadata; full text and PDFs remain governed by article-level licenses. Article JSON records the full-text ladder as <code>not_requested</code>, <code>data</code>, confirmed <code>empty</code>, or <code>unavailable</code>; a later successful source wins, but a healthy miss cannot erase an earlier source failure. Markdown and <code>_meta.section_sources</code> project the same outcome.
 Semantic Scholar TLDR, citation, reference, and recommendation helpers belong
 on the <a href="../semantic-scholar/">Semantic Scholar</a> page because they come from a
 different provider surface.</p>
@@ -4032,6 +4231,11 @@ different provider surface.</p>
 <td>PubTator3-only section</td>
 </tr>
 <tr>
+<td><code>get article &lt;id&gt; indexing</code></td>
+<td>Associated citation authors/affiliations/ORCID and structured MeSH headings</td>
+<td>Opt-in PubMed citation XML; explicit status separates available-empty from unavailable; included by <code>all</code></td>
+</tr>
+<tr>
 <td><code>get article &lt;id&gt; fulltext</code></td>
 <td>Open-access full-text handoff with saved Markdown path and rendered references when available</td>
 <td>Uses Europe PMC, NCBI E-utilities, PMC OA, PMC HTML, and opt-in Semantic Scholar PDF fallbacks; NCBI ID Converter bridges PMID/DOI identifiers to PMCID before the PMCID-dependent source attempts</td>
@@ -4053,6 +4257,9 @@ different provider surface.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>annotations
 </code></pre></div>
 <p>Returns a PubTator annotation section with entity groups and counts.</p>
+<p>Use <code>biomcp get article 22663011 indexing</code> for PubMed citation indexing metadata
+that preserves author-affiliation associations and MeSH descriptor/qualifier
+flags.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
 </code></pre></div>
 <p>Returns an entity-grouped follow-up view with separate genes, diseases, and drugs sections.</p>
@@ -4061,7 +4268,15 @@ different provider surface.</p>
 <p>Returns a full-text section with a <code>Saved to:</code> cache path.
 XML, PMC HTML, or explicitly opted-in PDF sources can resolve. JATS Markdown can
 render references, figure captions, supplementary-material metadata, and complex-table
-omission markers. Semantic Scholar PDF is attempted only when the caller passes <code>--pdf</code>.</p>
+omission markers. Semantic Scholar PDF is attempted only when the caller passes <code>--pdf</code>.
+PMC OA resolves a versioned S3 prefix listing to its flat <code>&lt;version&gt;/&lt;version&gt;.json</code>
+metadata object, then downloads only metadata-declared XML and media objects from
+<code>https://pmc-oa-opendata.s3.amazonaws.com</code>. The retired FTP/archive route is not
+used: NLM removes its legacy files in August 2026. Scheme, origin, port, DNS
+answers, and every redirect are checked before contact without exposing a rejected
+URL in the public error. Each object is capped at 8 MiB; media is capped at 256
+objects and 64 MiB aggregate payload. Route-resolution failures identify the
+PMC OA package route; resource failures are sanitized as source unavailable.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>Optional <code>NCBI_API_KEY</code> for higher NCBI throughput. Set it through the <a href="../../getting-started/api-keys/">API Keys</a> guide and create one in <a href="https://www.ncbi.nlm.nih.gov/account/settings/">My NCBI</a>.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>

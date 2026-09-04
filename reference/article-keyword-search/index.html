@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3144,6 +3312,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../error-codes/" class="md-nav__link">
         
   
@@ -4148,8 +4344,14 @@ this effect?", do not guess a disease or drug name just to fill <code>-d</code> 
 first page reveals the likely anchor. If you need BioMCP to resolve the entity
 before you search, use <code>biomcp discover "&lt;question&gt;"</code>.</p>
 <h2 id="keyword-behavior">Keyword behavior<a class="headerlink" href="#keyword-behavior" title="Permanent link">&para;</a></h2>
-<p><code>--keyword</code> (<code>-k</code>) is treated as escaped free text and no longer auto-quotes
-whitespace-containing values.</p>
+<p><code>--keyword</code> (<code>-k</code>) is provider-neutral free text and no longer auto-quotes
+whitespace-containing values. It is not a raw PubMed or Europe PMC query field.
+Recognized author fields (<code>[author]</code>, <code>[au]</code>, <code>AUTH:</code>), affiliation fields
+(<code>[ad]</code>, <code>AFFILIATION:</code>), and journal fields (<code>[journal]</code>, <code>[jour]</code>, <code>JOURNAL:</code>)
+are rejected with guidance to use <code>--author</code>, <code>--journal</code>, or ordinary unfielded
+keyword text. Matching is case-insensitive. Other bracket and colon forms remain
+literal, so biomedical text such as <code>NM_004333.6:c.1799T&gt;A</code>, <code>BRAF[variant]</code>,
+and <code>protein:protein interaction</code> remains searchable.</p>
 <p>PubMed-specific behavior: direct <code>--source pubmed</code> searches and the compatible
 federated PubMed leg clean bounded question-format filler words from
 unfielded gene, disease, drug, and keyword terms before PubMed ESearch.
@@ -4167,7 +4369,9 @@ LitSense2 query behavior.</p>
 <li><code>--gene</code></li>
 <li><code>--disease</code></li>
 <li><code>--drug</code></li>
-<li><code>--author</code></li>
+<li><code>--author</code> (the default candidate search uses Europe PMC and compatible PubMed;
+  stricter filters may narrow further, and explicit PubTator3, Semantic Scholar,
+  and LitSense2 author searches are rejected)</li>
 </ul>
 <p>Example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--author<span class="w"> </span><span class="s2">&quot;Jane Doe&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>

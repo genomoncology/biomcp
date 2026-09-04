@@ -18,7 +18,7 @@
         <link rel="prev" href="../pubmed/">
       
       
-        <link rel="next" href="../clinvar/">
+        <link rel="next" href="../clingen-allele-registry/">
       
       
         
@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1565,6 +1621,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-access" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1601,6 +1668,118 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3246,6 +3425,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3940,6 +4147,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#runtime-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#api-access" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4040,6 +4258,16 @@
 <td>Linked publications and citations when present</td>
 <td>Detail-section view</td>
 </tr>
+<tr>
+<td><code>--json get trial &lt;nct_id&gt; documents</code></td>
+<td>Posted-document manifest and BioMCP retrieval handles</td>
+<td>ClinicalTrials.gov only; provider URLs are not exposed as handles</td>
+</tr>
+<tr>
+<td><code>get trial &lt;nct_id&gt; document &lt;filename&gt;</code></td>
+<td>Exact advertised document bytes</td>
+<td>32 MiB response limit; shared outbound policy protects the CDN fetch</td>
+</tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
@@ -4058,6 +4286,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>locations
 </code></pre></div>
 <p>Returns a locations table with facility, city, country, status, and contact fields.</p>
+<h2 id="runtime-behavior">Runtime behavior<a class="headerlink" href="#runtime-behavior" title="Permanent link">&para;</a></h2>
+<p>Posted-document retrieval validates the fixed ClinicalTrials.gov CDN HTTPS
+origin, port, DNS answers, and every redirect through BioMCP's shared outbound
+policy before contact. Loopback, private, link-local, metadata, non-HTTPS, and
+off-origin destinations are rejected with a sanitized source-unavailable error.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>No BioMCP API key required.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>

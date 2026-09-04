@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3312,6 +3480,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../error-codes/" class="md-nav__link">
         
   
@@ -4165,11 +4361,18 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td>Ranked scored gene-disease associations with PMIDs, clinical-trial counts, evidence index, and evidence level</td>
 </tr>
 <tr>
+<td>Gene CSpec documents</td>
+<td>ClinGen CSpec</td>
+<td><code>https://cspec.clinicalgenome.org</code></td>
+<td>No</td>
+<td><code>gene cspec &lt;GENE&gt;</code> lists versioned resource IRIs; exact selection retains a bounded local raw capture and returns source facts without ACMG interpretation</td>
+</tr>
+<tr>
 <td>Variant</td>
 <td>MyVariant.info</td>
 <td><code>https://myvariant.info/v1</code></td>
 <td>No</td>
-<td>rsID/HGVS lookup, ClinVar and population annotations</td>
+<td>rsID/HGVS lookup, ClinVar, and prediction scores including separate <code>BayesDel add-AF</code> and <code>BayesDel no-AF</code> source values; BioMCP does not apply clinical thresholds or classify pathogenicity from them</td>
 </tr>
 <tr>
 <td>Variant cancerhotspots recurrence</td>
@@ -4177,6 +4380,27 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td><code>https://www.cancerhotspots.org</code></td>
 <td>No</td>
 <td><code>get variant &lt;gene&gt; &lt;change&gt; all</code> adds source-labelled residue and exact amino-acid recurrence counts when cancerhotspots can be checked</td>
+</tr>
+<tr>
+<td>Variant ERepo assertions</td>
+<td>ClinGen Evidence Repository</td>
+<td><code>https://erepo.clinicalgenome.org</code></td>
+<td>No</td>
+<td><code>variant erepo &lt;CAid&gt;</code> preserves versioned expert assertion source facts; it does not classify variants or infer criterion strength</td>
+</tr>
+<tr>
+<td>Variant CAR normalization</td>
+<td>ClinGen Allele Registry</td>
+<td><code>https://reg.genome.network</code></td>
+<td>No</td>
+<td><code>variant normalize car &lt;HGVS&gt;</code> makes bounded read-only projected lookups for supported versioned RefSeq HGVS; it returns source facts without inferred equivalence or registration</td>
+</tr>
+<tr>
+<td>Variant article identity observation</td>
+<td>ClinGen LDH</td>
+<td><code>https://ldh.genome.network</code></td>
+<td>No</td>
+<td><code>variant articles --verify-identity</code> may add bounded, auditable CAid/gene/PMCID/selector observations after retrieval; LDH never discovers, removes, ranks, or supplies negative evidence for candidates</td>
 </tr>
 <tr>
 <td>Variant normalization</td>
@@ -4194,17 +4418,17 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 </tr>
 <tr>
 <td>Variant population section</td>
-<td>MyVariant.info (gnomAD fields)</td>
-<td><code>https://myvariant.info/v1</code></td>
+<td>gnomAD GraphQL API</td>
+<td><code>https://gnomad.broadinstitute.org/api</code></td>
 <td>No</td>
-<td>Uses cached gnomAD AF/subpopulation fields from MyVariant payload</td>
+<td>Direct <code>gnomad_r4</code> query for a trustworthy GRCh38 coordinate; keeps exome/genome counts, ancestry frequencies, grpmax FAF95, and filters separate</td>
 </tr>
 <tr>
 <td>Variant GWAS section and GWAS search</td>
 <td>GWAS Catalog REST API</td>
 <td><code>https://www.ebi.ac.uk/gwas/rest/api</code></td>
 <td>No</td>
-<td>rsID, gene, and trait association retrieval</td>
+<td>rsID detail plus bounded v2 gene and trait association retrieval</td>
 </tr>
 <tr>
 <td>Variant OncoKB helper</td>
@@ -4249,6 +4473,13 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td>Federated default search with identifier-aware merge, per-source capping after deduplication and before ranking, plus lexical, semantic, or weighted hybrid relevance ranking; Semantic Scholar and LitSense2 remain individually selectable</td>
 </tr>
 <tr>
+<td>Author search and detail</td>
+<td>Semantic Scholar</td>
+<td><code>https://api.semanticscholar.org</code></td>
+<td>Optional (<code>S2_API_KEY</code>)</td>
+<td>Provider-exact author records; no cross-provider resolution</td>
+</tr>
+<tr>
 <td>Article enrichment and graph helpers</td>
 <td>Semantic Scholar</td>
 <td><code>https://api.semanticscholar.org</code></td>
@@ -4263,9 +4494,16 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td>Entity annotations</td>
 </tr>
 <tr>
+<td>Article indexing</td>
+<td>PubMed citation EFetch XML</td>
+<td><code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code></td>
+<td>Optional (<code>NCBI_API_KEY</code>)</td>
+<td>Opt-in associated author affiliations/ORCID and structured MeSH; explicit available/unavailable status; included by <code>all</code></td>
+</tr>
+<tr>
 <td>Article full-text resolution</td>
 <td>Europe PMC + NCBI E-utilities + PMC OA + NCBI ID Converter + PMC HTML + opt-in Semantic Scholar PDF metadata</td>
-<td><code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code>, <code>https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi</code>, <code>https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles</code>, <code>https://pmc.ncbi.nlm.nih.gov/articles</code>, <code>https://api.semanticscholar.org</code></td>
+<td><code>https://www.ebi.ac.uk/europepmc/webservices/rest</code>, <code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code>, <code>https://pmc-oa-opendata.s3.amazonaws.com</code>, <code>https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles</code>, <code>https://pmc.ncbi.nlm.nih.gov/articles</code>, <code>https://api.semanticscholar.org</code></td>
 <td>Optional (<code>NCBI_API_KEY</code>, <code>S2_API_KEY</code>)</td>
 <td>NCBI ID Converter bridges identifiers; XML/HTML/PDF content rungs save Markdown when available</td>
 </tr>
@@ -4292,10 +4530,10 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 </tr>
 <tr>
 <td>Drug-drug interactions</td>
-<td>DDInter public CSV download bundle (local downloads)</td>
+<td>DDInter public CSV download bundle (local reads)</td>
 <td><code>https://ddinter.scbdd.com/download/</code></td>
 <td>No</td>
-<td>Supports <code>biomcp drug interactions &lt;name&gt;</code> plus <code>get drug &lt;name&gt; interactions</code>; auto-downloads the eight ATC-sliced DDInter CSVs into <code>BIOMCP_DDINTER_DIR</code> or the platform data directory on first use, refreshes stale files after 72 hours, and <code>biomcp ddinter sync</code> force-refreshes the local bundle; empty results stay scoped to the current DDInter bundle and do not prove absence of clinical interactions</td>
+<td>Supports bounded <code>biomcp drug interactions &lt;name&gt; --limit &lt;N&gt; --offset &lt;N&gt;</code> plus a bounded <code>get drug &lt;name&gt; interactions</code> first page; reads the installed eight-file bundle without maintenance, reports fresh/stale state, and uses <code>biomcp ddinter sync</code> as the explicit validated whole-bundle refresh path; empty results stay scoped to the current DDInter bundle and do not prove absence of clinical interactions</td>
 </tr>
 <tr>
 <td>Drug vaccine identity bridge</td>
@@ -4348,10 +4586,10 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 </tr>
 <tr>
 <td>Disease <code>clinical_features</code> section</td>
-<td>MedlinePlus Search</td>
-<td><code>https://wsearch.nlm.nih.gov/ws/query</code></td>
+<td>Monarch Initiative / HPO</td>
+<td>Monarch/HPO phenotype APIs</td>
 <td>No</td>
-<td>Opt-in clinical-summary feature rows for configured diseases, with embedded reviewed fixtures as the offline fallback</td>
+<td>Opt-in clinical-feature view over backend phenotype annotations; unsupported diseases return a truthful backend empty state</td>
 </tr>
 <tr>
 <td>Phenotype term resolution</td>
@@ -4489,13 +4727,47 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <li>Retries: exponential backoff, up to 3 retries for transient failures</li>
 <li>Retry-After: numeric 429 hints are honored only within a 5-second per-attempt cap and 15-second total retry-sleep budget</li>
 <li>Disk cache: <code>&lt;cache_root&gt;/http</code> under the resolved cache root (<code>~/.cache/biomcp/http</code> on Linux)</li>
+<li>Response bodies: bounded inside the cache before materialization (8 MiB by default, with source-specific request limits where documented)</li>
 </ul>
-<p>cBioPortal DataHub study archive downloads are the exception: archive downloads do
-not use a total request timeout, so large files can keep downloading while bytes
-arrive. They do use an idle/no-progress timeout; if a stalled archive sends no bytes
-or progress within that window, the download fails clearly.</p>
+<p>The first bounded-client initialization performs a filesystem-locked, one-time
+HTTP-cache epoch migration. It clears entries written before pre-cache body
+limits existed and fails closed if that migration cannot complete.</p>
+<p>Ordinary HTTP provider clients connect directly and ignore ambient
+<code>HTTP_PROXY</code>, <code>HTTPS_PROXY</code>, and <code>ALL_PROXY</code> settings. Built-in provider bases
+must use HTTPS and resolve only to public addresses; redirects stay on the exact
+scheme, host, and effective port of the initial request. An explicit
+<code>BIOMCP_*_BASE</code> or <code>BIOMCP_*_BASE_URL</code> setting is a process-level trusted origin,
+so an operator can deliberately select HTTP or private/on-prem addresses, but
+the exception does not allow a redirect to another origin. AlphaGenome is the
+single separate authenticated gRPC/Tonic provider transport and is not part of
+this ordinary Reqwest boundary.</p>
+<p>Provider-returned URL fetches share one outbound policy across Semantic Scholar
+PDFs, PMC OA objects, Figshare files, and ClinicalTrials.gov documents. Before
+contact, it requires an explicit HTTPS origin/port, rejects URL credentials and
+forbidden IP/DNS classes (including loopback, private, link-local, and metadata
+addresses), and revalidates every redirect target. Public failures identify the
+source and policy class without echoing the rejected URL or provider payload.
+Reviewed PMC, Figshare, and trial CDN transitions are explicit allowlist entries.</p>
+<p>Two raw-download paths use dedicated clients rather than the shared cached/retrying
+API client:</p>
+<ul>
+<li>cBioPortal DataHub study archive downloads do not use a total request timeout, so
+  large files can keep downloading while bytes arrive. They use an idle/no-progress
+  timeout and a 2 GiB compressed cap; the download stalls if no bytes or progress
+  arrive within the idle window. Expansion is capped at 100,000 physical tar entries,
+  1 GiB per member, 8 GiB aggregate payload, and 1 MiB of path metadata; stalled,
+  oversized, or unsafe archives fail without publishing partial studies.</li>
+<li>CTGov posted-document retrieval uses the standard 10-second connect and 30-second
+  request timeouts, but does not retry or cache the raw bytes. Its dedicated client
+  preserves provider bytes without transparent decompression and applies the shared
+  outbound policy to the approved CDN origin, DNS answers, and every redirect.</li>
+</ul>
 <p>Run <code>biomcp cache path</code> to print the managed HTTP cache directory on the current
 machine without creating or migrating cache directories.</p>
+<p>PMC OA resolves versioned S3 metadata and downloads declared XML/media objects;
+the retired FTP/archive route is removed in August 2026. Each object is capped at
+8 MiB, with 256 media objects and 64 MiB aggregate payload. Resource failures are
+reported without provider payload or object-path leakage.</p>
 <p>For freshness-sensitive workflows, use <code>--no-cache</code>.</p>
 <h2 id="authentication-requirements">Authentication requirements<a class="headerlink" href="#authentication-requirements" title="Permanent link">&para;</a></h2>
 <p>BioMCP only requires API keys for a subset of sources.</p>
@@ -4516,7 +4788,7 @@ machine without creating or migrating cache directories.</p>
 <tr>
 <td>Semantic Scholar</td>
 <td><code>S2_API_KEY</code></td>
-<td>Optional authenticated requests for <code>search article</code>, <code>get article</code>, <code>article batch</code>, TLDR, citation/reference/recommendation helpers, and <code>get article &lt;id&gt; fulltext --pdf</code> metadata enrichment</td>
+<td>Optional authenticated requests for <code>search author</code>, <code>get author</code>, <code>search article</code>, <code>get article</code>, <code>article batch</code>, TLDR, citation/reference/recommendation helpers, and <code>get article &lt;id&gt; fulltext --pdf</code> metadata enrichment</td>
 </tr>
 <tr>
 <td>NCI CTS API</td>
@@ -4599,8 +4871,8 @@ and practical ceilings observed in command behavior.</p>
 </tr>
 <tr>
 <td>GWAS search (<code>search gwas</code>)</td>
-<td><code>--limit</code> must be 1-50</td>
-<td>Prefer specific gene or trait queries to avoid broad result sets</td>
+<td><code>--limit</code> must be 1-50 and checked <code>--offset + --limit</code> must be at most 50</td>
+<td>Prefer specific gene or trait queries; combined filters use rsID intersection</td>
 </tr>
 <tr>
 <td>Trial search</td>
@@ -4628,6 +4900,11 @@ and practical ceilings observed in command behavior.</p>
 <td>Explicit helper commands fail fast on shared-pool <code>429</code> responses; set <code>S2_API_KEY</code> for dedicated quota and retry behavior</td>
 </tr>
 <tr>
+<td>Semantic Scholar author search/detail</td>
+<td>Author search pages: 1-100 rows</td>
+<td>Public provider-exact search/detail; no global identity or ORCID link is established</td>
+</tr>
+<tr>
 <td>DisGeNET <code>disgenet</code> sections</td>
 <td>Server-enforced; trial accounts may return first-page-only results and <code>429</code> with <code>X-Rate-Limit-Retry-After-Seconds</code></td>
 <td>Keep requests explicit, avoid fan-out loops, and retry after the server-provided cooldown</td>
@@ -4649,31 +4926,37 @@ and practical ceilings observed in command behavior.</p>
 <tr>
 <td><code>--source ctgov</code> (default)</td>
 <td>ClinicalTrials.gov API v2</td>
-<td>No API key, broad public coverage</td>
-<td>Query behavior can vary with complex advanced terms</td>
+<td>No API key, broad public coverage; registry eligibility provenance and posted-document metadata/raw bytes</td>
+<td>Query behavior can vary with complex advanced terms; posted documents may add eligibility detail but do not guarantee criterion resolution</td>
 </tr>
 <tr>
 <td><code>--source nci</code></td>
 <td>NCI CTS API</td>
 <td>Alternative indexing, oncology-focused source</td>
-<td>Requires <code>NCI_API_KEY</code> and NCI-specific availability</td>
+<td>Requires <code>NCI_API_KEY</code>; CTGov document forms are unavailable</td>
 </tr>
 </tbody>
 </table>
+<p>Use <code>biomcp --json get trial &lt;NCT_ID&gt; documents</code> for the standalone CTGov
+manifest, then an exact advertised <code>biomcp get trial &lt;NCT_ID&gt; document
+&lt;filename&gt;</code> handle for unconverted bytes. Actual response bodies are limited to
+32 MiB; ordinary trial <code>all</code> does not include documents.</p>
 <h2 id="article-pipeline-behavior">Article pipeline behavior<a class="headerlink" href="#article-pipeline-behavior" title="Permanent link">&para;</a></h2>
 <p>Article workflows compose multiple APIs for different tasks:</p>
 <ol>
 <li>PubTator3 + Europe PMC + PubMed for default federated search, with an optional Semantic Scholar leg when the filter set is compatible; Semantic Scholar and LitSense2 can also be queried alone through explicit <code>--source semanticscholar</code> / <code>--source litsense2</code> (parallel fan-out, identifier-aware merge across PMID/PMCID/DOI, per-source capping after deduplication and before ranking, local lexical/semantic/hybrid relevance ranking)</li>
 <li>Europe PMC for bibliographic metadata</li>
 <li>PubTator3 for entity annotations</li>
+<li>PubMed citation EFetch XML for opt-in author-affiliation/ORCID and MeSH indexing metadata (<code>all</code> includes it; ordinary detail/search/batch do not)</li>
 <li>Semantic Scholar for the optional search leg, TLDR, citation graph, influential citation counts, recommendations, <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback, and supported Figshare article-asset discovery</li>
 <li>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and PMC OA asset rungs when the base article lacks PMCID</li>
 <li>Europe PMC PMC XML, NCBI EFetch PMC XML, PMC OA Archive XML, Europe PMC MED XML, PMC HTML, and opt-in Semantic Scholar PDF form the full-text content ladder where available</li>
-<li>PMC OA Archive remains the preferred article-asset source; when unavailable, Figshare can provide raw article assets after Semantic Scholar points at a supported Figshare/AACR Figshare article URL</li>
+<li>Article assets resolve through PMC OA Archive, then Europe PMC <code>PMC&lt;digits&gt;/supplementaryFiles</code>, then Figshare after Semantic Scholar points at a supported Figshare/AACR Figshare article URL</li>
 </ol>
 <p>NCBI ID Converter bridges PMID or DOI to PMCID before PMCID-dependent full-text rungs and asset rungs.
 Semantic Scholar supplies <code>openAccessPdf</code> metadata for the explicit <code>--pdf</code> fallback and for supported Figshare asset discovery;
-BioMCP fetches third-party PDF URLs only after the caller opts in, while Figshare asset retrieval re-resolves bytes through the Figshare API <code>download_url</code>.</p>
+BioMCP fetches an opt-in PDF only when its HTTPS origin is on the explicit Semantic Scholar/CDN allowlist. Figshare asset retrieval is a separate path that re-resolves bytes through the Figshare API <code>download_url</code>; both that URL and PMC OA archive links use the same outbound policy with source-specific reviewed origins.
+Europe PMC supplementary ZIP responses are capped at 64 MiB compressed, 8 MiB per member, 64 MiB total expanded bytes, and 256 members. BioMCP validates relative normalized member names and never extracts them to disk. Only healthy absence across the applicable asset ladder returns <code>not_found</code>; a transport, body-limit, or archive failure without a later winner returns <code>source_unavailable</code>.</p>
 <p>This means metadata, annotations, and full text may have different availability
 for the same PMID.</p>
 <h2 id="openfda-behavior">OpenFDA behavior<a class="headerlink" href="#openfda-behavior" title="Permanent link">&para;</a></h2>
@@ -4701,6 +4984,15 @@ Users should always be able to trace:</p>
 <li>Which identifier anchors the record (e.g., NCT, PMID, MONDO, rsID)</li>
 <li>Which sections come from direct source fields vs normalized rendering</li>
 </ul>
+<p>Optional entity lookups expose typed outcomes. The six values are
+<code>not_requested</code>, <code>inapplicable</code>, <code>data</code>, <code>empty</code>, <code>degraded</code>, and <code>unavailable</code>.
+<code>inapplicable</code> means BioMCP found a missing prerequisite locally and did not
+contact a provider; it has empty <code>sources</code> and a bounded explanation. In
+<code>_meta.section_sources</code>, the outcome is copied from the entity registry and
+<code>sources</code> lists successful contributors only, so inapplicable and failed
+providers are not credited as evidence. <code>inapplicable</code>, <code>degraded</code>, and
+<code>unavailable</code> messages exclude raw provider responses, credentials, URLs, and
+local paths.</p>
 <h2 id="operations-checklist">Operations checklist<a class="headerlink" href="#operations-checklist" title="Permanent link">&para;</a></h2>
 <p>When debugging source discrepancies:</p>
 <ol>

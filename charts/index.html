@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3257,6 +3425,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../reference/error-codes/" class="md-nav__link">
         
   
@@ -4135,31 +4331,33 @@
 </tr>
 <tr>
 <td><code>--cols N</code></td>
-<td>Terminal charts only</td>
+<td>Terminal charts only; 20–500</td>
 <td><code>100</code></td>
 </tr>
 <tr>
 <td><code>--rows N</code></td>
-<td>Terminal charts only</td>
+<td>Terminal charts only; 8–200</td>
 <td><code>32</code></td>
 </tr>
 <tr>
 <td><code>--width PX</code></td>
-<td>SVG, PNG, MCP inline SVG</td>
+<td>SVG, PNG, MCP inline SVG; 240–4096</td>
 <td>Kuva auto layout</td>
 </tr>
 <tr>
 <td><code>--height PX</code></td>
-<td>SVG, PNG, MCP inline SVG</td>
+<td>SVG, PNG, MCP inline SVG; 160–4096</td>
 <td>Kuva auto layout</td>
 </tr>
 <tr>
 <td><code>--scale FACTOR</code></td>
-<td>PNG only</td>
+<td>PNG only; 0.5–4.0</td>
 <td><code>2.0</code></td>
 </tr>
 </tbody>
 </table>
+<p>PNG output is additionally limited to 16,777,216 final pixels after applying
+the scale factor. Invalid bounds fail before BioMCP loads local study data.</p>
 <p>Use <code>--palette wong</code> for colorblind-safe categorical output.</p>
 <p>Heatmaps use a fixed continuous colormap. <code>study co-occurrence --chart heatmap</code> supports <code>--title</code>, <code>--theme</code>, <code>--width</code>, and <code>--height</code>, but rejects <code>--palette</code>.</p>
 <h2 id="why-svg">Why SVG?<a class="headerlink" href="#why-svg" title="Permanent link">&para;</a></h2>

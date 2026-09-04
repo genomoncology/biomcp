@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Use BioMCP to query DDInter-backed drug-drug interactions, severity levels, and class summaries through the local DDInter CSV bundle.">
+        <meta name="description" content="Use BioMCP to query bounded DDInter-backed drug-drug interactions and severity levels through an installed local CSV bundle.">
       
       
         <meta name="author" content="Ian Maurer">
@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1491,6 +1547,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3246,6 +3414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3996,14 +4192,14 @@
 <p>DDInter matters when you need a structured answer to a drug-drug interaction
 question instead of free-text safety prose or ad hoc literature synthesis. It
 is the right page for questions about interacting partner drugs, source-provided
-severity levels, class rollups, and the local-runtime DDInter bundle that
+severity levels, bounded pages, and the local-runtime DDInter bundle that
 BioMCP keeps on disk for repeatable DDI lookups.</p>
 <p>In BioMCP, DDInter is a local-runtime source for interaction review rather than
-a live per-request API surface. BioMCP auto-downloads the eight public DDInter
-CSV files into <code>BIOMCP_DDINTER_DIR</code> or the default data directory on first use,
-supports <code>biomcp drug interactions &lt;name&gt;</code> plus <code>get drug &lt;name&gt; interactions</code>,
-shows <code>DDInter local data (&lt;root&gt;)</code> in full health output, and exposes
-<code>biomcp ddinter sync</code> when you want a forced refresh of the bundle.</p>
+a live per-request API surface. Reads use the installed eight-file bundle in
+<code>BIOMCP_DDINTER_DIR</code> or the default data directory without downloading or
+refreshing it. <code>biomcp ddinter sync</code> is the explicit maintenance path. BioMCP
+supports <code>biomcp drug interactions &lt;name&gt;</code> plus <code>get drug &lt;name&gt; interactions</code>
+and shows <code>DDInter local data (&lt;root&gt;)</code> in full health output.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4015,14 +4211,14 @@ shows <code>DDInter local data (&lt;root&gt;)</code> in full health output, and 
 </thead>
 <tbody>
 <tr>
-<td><code>biomcp drug interactions &lt;name&gt;</code></td>
-<td>Structured partner rows, DDInter severity levels, and class summaries for one anchor drug</td>
-<td>Uses the local DDInter bundle as the canonical DDI source and resolves the anchor drug first</td>
+<td><code>biomcp drug interactions &lt;name&gt; [--limit N] [--offset N]</code></td>
+<td>Bounded partner rows, DDInter severity levels, totals, paging, and bundle freshness</td>
+<td>Sorts and deduplicates the full local match set before returning up to 50 rows</td>
 </tr>
 <tr>
 <td><code>get drug &lt;name&gt; interactions</code></td>
-<td>The same DDInter-backed interaction report inside the standard drug card</td>
-<td>Keeps helper and section parity instead of splitting the contract</td>
+<td>The first 25 DDInter-backed rows inside the standard drug card</td>
+<td>Reports totals and points to the helper when more rows exist</td>
 </tr>
 <tr>
 <td><code>biomcp health</code></td>
@@ -4031,16 +4227,16 @@ shows <code>DDInter local data (&lt;root&gt;)</code> in full health output, and 
 </tr>
 <tr>
 <td><code>biomcp ddinter sync</code></td>
-<td>Forced refresh of the local DDInter CSV bundle</td>
-<td>Refreshes all eight public DDInter CSV files without waiting for the next automatic sync</td>
+<td>Explicit refresh of the local DDInter CSV bundle</td>
+<td>Downloads and validates all eight files before replacing the prior usable bundle</td>
 </tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>warfarin
 </code></pre></div>
-<p>Returns the structured DDInter-backed interaction report for warfarin, including class rollups and partner rows.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>imatinib
+<p>Returns the first 25 DDInter-backed partner rows for warfarin with total, page, and fresh/stale metadata.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>interactions<span class="w"> </span>imatinib<span class="w"> </span>--limit<span class="w"> </span><span class="m">25</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">25</span>
 </code></pre></div>
 <p>Returns the same interaction-focused report for an oncology anchor drug.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>drug<span class="w"> </span>warfarin<span class="w"> </span>interactions
@@ -4048,11 +4244,13 @@ shows <code>DDInter local data (&lt;root&gt;)</code> in full health output, and 
 <p>Renders the same DDInter-backed report inside the standard <code>get drug</code> card.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>ddinter<span class="w"> </span>sync
 </code></pre></div>
-<p>Refreshes the local DDInter bundle without waiting for the next automatic sync.</p>
+<p>Downloads and validates a complete replacement bundle. A failed sync leaves the prior complete bundle usable.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
-<p>No BioMCP API key required. BioMCP auto-downloads the eight public DDInter CSV
-files into <code>BIOMCP_DDINTER_DIR</code> or the default data directory on first use.
-DDInter's own terms warn that absence from the database does not prove no
+<p>No BioMCP API key required. Install the bundle with <code>biomcp ddinter sync</code>
+or preseed all eight files in <code>BIOMCP_DDINTER_DIR</code> or the default data directory.
+Normal reads never perform maintenance, even when the bundle is stale, and
+report <code>bundle_freshness.status</code> as <code>fresh</code> or <code>stale</code>. DDInter's own terms warn
+that absence from the database does not prove no
 interaction exists, so BioMCP keeps empty results scoped to the current local
 bundle instead of treating them as safety claims. When the queried drug is not
 present in the loaded DDInter bundle at all, JSON includes

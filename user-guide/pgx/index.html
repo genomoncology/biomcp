@@ -1088,6 +1088,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1632,6 +1688,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3285,6 +3453,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4079,34 +4275,38 @@
 <p>By drug:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-d<span class="w"> </span>codeine
 </code></pre></div>
-<p>With evidence and CPIC level filters:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-g<span class="w"> </span>CYP2D6<span class="w"> </span>--cpic-level<span class="w"> </span>A<span class="w"> </span>--evidence<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+<p>With guideline-name and CPIC level filters:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-g<span class="w"> </span>CYP2D6<span class="w"> </span>--cpic-level<span class="w"> </span>A<span class="w"> </span>--evidence<span class="w"> </span>guideline<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <p>Key flags: <code>-g/--gene</code> for the gene symbol, <code>-d/--drug</code> for the therapy,
-<code>--cpic-level</code> for CPIC levels <code>A|B|C|D</code>, <code>--pgx-testing</code> for testing-related
-guidance, and <code>--evidence</code> when you want evidence summaries alongside the main
-results. Use <code>--limit</code> and <code>--offset</code> for bounded paging.</p>
+<code>--cpic-level</code> for CPIC levels <code>A|B|C|D</code>, and <code>--pgx-testing</code> for <code>Actionable PGx</code>,
+<code>Informative PGx</code>, <code>No Clinical PGx</code>, <code>Testing Recommended</code>, or <code>Testing Required</code>.
+<code>--evidence</code> remains a best-effort free-text match over guideline names or CPIC
+levels. Use <code>--limit</code> and <code>--offset</code> for bounded paging.</p>
 <h2 id="get-pgx-records">Get PGX records<a class="headerlink" href="#get-pgx-records" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6
 </code></pre></div>
-<p>The base PGX card summarizes affected drugs and the guideline context tied to
-the gene or drug you queried.</p>
+<p>The default card returns only the first 10 CPIC interactions. Use <code>--limit</code>
+(1-50) and <code>--offset</code> to page that bounded list.</p>
 <h2 id="request-pgx-sections">Request PGX sections<a class="headerlink" href="#request-pgx-sections" title="Permanent link">&para;</a></h2>
 <p>Retrieve detailed PGX data for a gene-drug pair by section.</p>
+<p>Interactions explicitly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>interactions<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
 <p>Dosing recommendations:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>recommendations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>recommendations
 </code></pre></div>
 <p>Allele frequency data:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>frequencies
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>frequencies
 </code></pre></div>
 <p>Clinical guidelines:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>guidelines
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>guidelines
 </code></pre></div>
 <p>PharmGKB annotations:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>annotations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>annotations
 </code></pre></div>
-<p>All sections at once:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>all
+<p>All sections at once, capped at 50 rows per section:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>--full
 </code></pre></div>
 <h3 id="available-sections">Available sections<a class="headerlink" href="#available-sections" title="Permanent link">&para;</a></h3>
 <table>
@@ -4117,6 +4317,10 @@ the gene or drug you queried.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>interactions</code></td>
+<td>CPIC gene-drug interactions</td>
+</tr>
 <tr>
 <td><code>recommendations</code></td>
 <td>CPIC dosing recommendations</td>
@@ -4139,18 +4343,27 @@ the gene or drug you queried.</p>
 </tr>
 </tbody>
 </table>
+<p>A named section returns only identity, provenance, and that section. Multiple
+sections may be requested together at offset zero. To follow a continuation,
+request its section alone with the advertised <code>--offset</code>; nonzero offsets with
+multiple sections or <code>--full</code> are rejected before provider work.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>PGX does not expose a separate helper family. Start with <code>search pgx</code> when you
 need to find the right anchor, then switch to <code>get pgx &lt;gene_or_drug&gt;</code> for the
 base card or section-level follow-up.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-g<span class="w"> </span>CYP2D6
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>recommendations
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>pgx<span class="w"> </span>-g<span class="w"> </span>CYP2D6
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>pgx<span class="w"> </span>CYP2D6<span class="w"> </span>recommendations
 </code></pre></div>
+<p>Requested <code>frequencies</code> and <code>annotations</code> are also represented in
+<code>section_outcomes</code>. CPIC frequency aggregation is <code>degraded</code> when some additive
+lookups fail but usable rows remain, and <code>unavailable</code> when no usable rows
+survive. PharmGKB annotation failures are <code>unavailable</code>; healthy no-results are
+<code>empty</code>.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Start with <code>search pgx</code> when you only know the gene or drug and need the matching guideline rows first.</li>
-<li>Use section-specific <code>get pgx</code> calls when you need only recommendations, frequencies, guidelines, or annotations.</li>
+<li>Use section-specific <code>get pgx</code> calls when you need only interactions, recommendations, frequencies, guidelines, or annotations.</li>
 <li>Keep CPIC level filters tight when you want high-confidence dosing guidance.</li>
 </ul>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>

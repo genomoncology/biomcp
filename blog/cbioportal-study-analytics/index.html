@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3139,6 +3307,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4141,6 +4337,8 @@
 <li><strong>Log odds ratio</strong> — Computed from the 2×2 contingency table. Positive values indicate co-occurrence; negative values indicate mutual exclusivity.</li>
 <li><strong>Fisher's exact test</strong> — P-values are computed using the exact hypergeometric distribution, not an approximation.</li>
 </ol>
+<p>A co-occurrence effect and significance are undefined when a required row or column marginal is zero, so BioMCP preserves the four observed counts but reports the log odds ratio and p-value as missing. An individual zero cell remains analyzable when every marginal is non-zero.</p>
+<p>Expression comparisons follow the same missing-data rule: an empty group keeps a sample count of zero but has no mean, median, range, or quartiles. JSON renders these undefined statistics as <code>null</code>; terminal tables render them as <code>-</code>.</p>
 <p>All of this runs locally in Rust. A survival analysis across 10,945 samples completes in milliseconds.</p>
 <h2 id="charting-with-kuva">Charting with Kuva<a class="headerlink" href="#charting-with-kuva" title="Permanent link">&para;</a></h2>
 <p>BioMCP's charts are powered by <a href="https://github.com/Psy-Fer/kuva">Kuva</a>, an open-source Rust charting library built for this use case. Kuva renders to both terminal (Unicode block characters) and SVG.</p>

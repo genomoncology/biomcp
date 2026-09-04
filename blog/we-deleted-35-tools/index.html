@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3139,6 +3307,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -3818,10 +4014,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-one-tool-does-it-all" class="md-nav__link">
+  <a href="#1-one-command-grammar-with-a-few-bounded-typed-routes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. One tool does it all
+        1. One command grammar, with a few bounded typed routes
       
     </span>
   </a>
@@ -4086,10 +4282,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-one-tool-does-it-all" class="md-nav__link">
+  <a href="#1-one-command-grammar-with-a-few-bounded-typed-routes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. One tool does it all
+        1. One command grammar, with a few bounded typed routes
       
     </span>
   </a>
@@ -4228,7 +4424,7 @@
 
 <h1 id="we-deleted-35-tools-and-our-agent-got-better">We Deleted 35 Tools and Our Agent Got Better<a class="headerlink" href="#we-deleted-35-tools-and-our-agent-got-better" title="Permanent link">&para;</a></h1>
 <p><em>What rebuilding a biomedical data tool taught us about designing for AI agents.</em></p>
-<p><strong>TL;DR:</strong> We went from 36 MCP tools to one CLI command and cut context window overhead by 95%. The agent got faster, cheaper, and more accurate. Here's what we changed and what's generalizable.</p>
+<p><strong>TL;DR:</strong> We replaced 36 narrow MCP tools with one command grammar, then selectively added six bounded typed tools where schemas materially help. The seven-tool catalog measured 6,707 bytes and 1,628 <code>cl100k_base</code> tokens at the 0932 snapshot; the current catalog is measured and bounded in CI.</p>
 <p><img alt="Redesigned for AI Agents" src="../../assets/04-redesign-1280x720.png" /></p>
 <hr />
 <h2 id="the-landscape-shifted">The Landscape Shifted<a class="headerlink" href="#the-landscape-shifted" title="Permanent link">&para;</a></h2>
@@ -4250,8 +4446,8 @@
 <p><strong>New version:</strong> The agent runs <code>get variant "BRAF V600E"</code>, sees the contextual suggestion <code>variant trials "BRAF V600E"</code>, follows it, then runs <code>get drug vemurafenib</code>. Three commands, three round-trips, ~1,100 tokens of output. Each response tells the agent where to go next. The savings aren't additive — they compound with every step.</p>
 <hr />
 <h2 id="what-we-changed">What We Changed<a class="headerlink" href="#what-we-changed" title="Permanent link">&para;</a></h2>
-<h3 id="1-one-tool-does-it-all">1. One tool does it all<a class="headerlink" href="#1-one-tool-does-it-all" title="Permanent link">&para;</a></h3>
-<p>The old version was an MCP server that happened to have a CLI. The new version is a CLI that happens to serve MCP — one tool called <code>biomcp</code> that proxies the full command hierarchy:</p>
+<h3 id="1-one-command-grammar-with-a-few-bounded-typed-routes">1. One command grammar, with a few bounded typed routes<a class="headerlink" href="#1-one-command-grammar-with-a-few-bounded-typed-routes" title="Permanent link">&para;</a></h3>
+<p>The old version was an MCP server that happened to have a CLI. The new version is a CLI that happens to serve MCP. Its raw <code>biomcp</code> tool proxies the full read-only command hierarchy:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>## Patterns
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>- `search &lt;entity&gt; [query|filters]` - find entities
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>- `get &lt;entity&gt; &lt;id&gt; [section...]` - fetch by identifier
@@ -4263,9 +4459,24 @@
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>- `gene articles &lt;symbol&gt;`
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>- `drug adverse-events &lt;name&gt;`
 </code></pre></div>
-<p>The tool description is auto-generated from CLI help at build time, so it <strong>can never drift</strong> from reality. Context cost: ~800 tokens. Down from 16,600.</p>
+<p>Six bounded typed tools now sit beside that escape hatch: <code>search</code>, <code>get</code>,
+<code>variant_normalize_car</code>, <code>variant_erepo</code>, <code>gene_cspec</code>, and
+<code>variant_articles</code>. One typed Rust catalog owns all seven names, descriptions,
+annotations, and ordering. The raw description points to bounded <code>biomcp list</code>
+discovery instead of embedding the whole CLI reference.</p>
+<p>The compact serialized <code>tools/list</code> measured 6,707 UTF-8 bytes and 1,628
+<code>cl100k_base</code> tokens at the 0932 snapshot, versus roughly 16,600 tokens in the
+original Python surface. The development build measured on 2026-08-19: 15,704
+UTF-8 bytes and 3,974 <code>cl100k_base</code> tokens. The published 0.8.25 release:
+21,701 UTF-8 bytes and 5,599 <code>cl100k_base</code> tokens. Reproduce the current
+measurement with <code>uv run --no-sync python scripts/measure-mcp-tools.py</code>. The
+former 16,000-byte / 4,000-token CI budget applied only to development builds,
+not the published release. Current CI keeps the 0.9.0-dev.5 development build
+at or below 22,600 bytes and 5,800 tokens, combining its 15,841-byte,
+3,996-token catalog with the largest typed entry (<code>search</code>) and 99 bytes and 52
+tokens of margin. These are measurements, not a claimed percentage.</p>
 <p>We still support MCP — local stdio and remote server modes — but the MCP server is now a thin proxy over the CLI. You don't have to choose. Build the CLI first, serve it over MCP second.</p>
-<p><em>The general principle: Don't shatter a natural grammar into individual function signatures. Today's models handle a single tool with a command grammar — and you save thousands of context tokens.</em></p>
+<p><em>The general principle: Don't shatter a natural grammar into dozens of function signatures. Keep one compact command escape hatch, then add typed routes only where bounded schemas materially improve safety or usability.</em></p>
 <h3 id="2-light-on-context">2. Light on context<a class="headerlink" href="#2-light-on-context" title="Permanent link">&para;</a></h3>
 <p>The old version returned everything for every query in verbose indented blocks. The new version is deliberately minimal: compact tables instead of nested labels, plain text by default, and named sections so the agent pays only for the depth it needs.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp get gene BRAF              → summary card (~200 tokens)
@@ -4319,10 +4530,10 @@
 </thead>
 <tbody>
 <tr>
-<td>Tool descriptions loaded</td>
+<td>Tool catalog loaded</td>
 <td>36 tools, ~16,600 tokens</td>
-<td>1 tool, ~800 tokens</td>
-<td><strong>95% reduction</strong></td>
+<td>7 tools, 1,628 tokens at the 0932 snapshot</td>
+<td>Current catalog measured and bounded in CI</td>
 </tr>
 <tr>
 <td>Variant lookup output</td>

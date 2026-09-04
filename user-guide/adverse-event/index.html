@@ -1088,6 +1088,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../trial/" class="md-nav__link">
         
   
@@ -1404,6 +1460,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#combined-source-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combined-source outcomes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#practical-tips" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1648,6 +1715,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3301,6 +3480,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4061,6 +4268,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#combined-source-outcomes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combined-source outcomes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#practical-tips" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4111,13 +4329,7 @@ paths:</p>
 <li>recall notices,</li>
 <li>device events.</li>
 </ul>
-<p>Vaccine searches default to combined OpenFDA FAERS + CDC VAERS when the query
-resolves to a vaccine and the active filters are VAERS-compatible. Non-vaccine
-searches stay FAERS-only in practice. <code>--source vaers</code> is aggregate-only,
-supports only the vaccine query text from <code>--drug</code> or the positional query,
-and does not support <code>--reaction</code>, <code>--outcome</code>, <code>--serious</code>, <code>--date-from</code>,
-<code>--date-to</code>, <code>--suspect-only</code>, <code>--sex</code>, <code>--age-min</code>, <code>--age-max</code>,
-<code>--reporter</code>, <code>--count</code>, or <code>--offset &gt; 0</code>.</p>
+<p>Vaccine searches default to combined OpenFDA FAERS + CDC VAERS when the query resolves to a vaccine and the active filters are VAERS-compatible. Non-vaccine searches stay FAERS-only in practice. <code>--source vaers</code> is aggregate-only, accepts only the vaccine query and <code>--limit</code>, and rejects <code>--reaction</code>, <code>--outcome</code>, <code>--serious</code>, <code>--date-from</code>, <code>--date-to</code>, <code>--suspect-only</code>, <code>--sex</code>, <code>--age-min</code>, <code>--age-max</code>, <code>--reporter</code>, <code>--count</code>, <code>--offset</code>, recall classification, and device fields.</p>
 <h2 id="search-faers-reports">Search FAERS reports<a class="headerlink" href="#search-faers-reports" title="Permanent link">&para;</a></h2>
 <p>By drug:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
@@ -4128,37 +4340,38 @@ and does not support <code>--reaction</code>, <code>--outcome</code>, <code>--se
 <p>Reaction-focused filter:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--reaction<span class="w"> </span>pneumonitis<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p>FAERS counts are FAERS-only and therefore require <code>--source faers</code>; count operations require offset zero:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--source<span class="w"> </span>faers<span class="w"> </span>--count<span class="w"> </span>reaction<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
 <h2 id="search-vaccine-events-with-vaers">Search vaccine events with VAERS<a class="headerlink" href="#search-vaccine-events-with-vaers" title="Permanent link">&para;</a></h2>
 <p>Combined FAERS + VAERS for vaccine queries:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;COVID-19 vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;COVID-19 vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>VAERS-only aggregate summary:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;MMR vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>vaers<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;MMR vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>vaers<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>VAERS summaries are aggregate-only. They surface the matched vaccine display
-name, CDC WONDER code, CVX code(s) when the query resolves through the CDC
-CVX/MVX bridge, serious vs non-serious counts, age distribution, and top
-reaction counts.</p>
+<p>VAERS summaries are aggregate-only. They surface the matched vaccine display name, CDC WONDER code, CVX code(s) when the query resolves through the CDC CVX/MVX bridge, serious vs non-serious counts, age distribution, and top reaction counts. <code>--limit</code> bounds the number of top reaction rows.</p>
 <p><code>--source</code> only applies to <code>--type faers</code>; recall and device searches keep
 their existing source-specific paths.</p>
 <h2 id="search-recall-notices">Search recall notices<a class="headerlink" href="#search-recall-notices" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>recall<span class="w"> </span>--drug<span class="w"> </span>metformin<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>recall<span class="w"> </span>--drug<span class="w"> </span>metformin<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Classification filter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>recall<span class="w"> </span>--drug<span class="w"> </span>metformin<span class="w"> </span>--classification<span class="w"> </span><span class="s2">&quot;Class I&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>recall<span class="w"> </span>--drug<span class="w"> </span>metformin<span class="w"> </span>--classification<span class="w"> </span><span class="s2">&quot;Class I&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="search-device-events-maude">Search device events (MAUDE)<a class="headerlink" href="#search-device-events-maude" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--device<span class="w"> </span><span class="s2">&quot;insulin pump&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--device<span class="w"> </span><span class="s2">&quot;insulin pump&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Manufacturer filter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--manufacturer<span class="w"> </span>Medtronic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--manufacturer<span class="w"> </span>Medtronic<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p>Product-code filter:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--product-code<span class="w"> </span>PQP<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>device<span class="w"> </span>--product-code<span class="w"> </span>PQP<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <p><code>--manufacturer</code> and <code>--product-code</code> are valid only with <code>--type device</code>.</p>
+<p>Device seriousness is typed: bare <code>--serious</code> and <code>--serious any</code> select Death or Injury and render as <code>death_or_injury</code>, <code>--serious death</code> selects Death only, and <code>--serious injury</code> selects Injury only. FAERS seriousness values such as <code>hospitalization</code> are rejected on the device route.</p>
 <h2 id="get-a-report-by-id">Get a report by ID<a class="headerlink" href="#get-a-report-by-id" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
 </code></pre></div>
 <p>Report resolution is source-aware and returns the corresponding markdown format.</p>
 <h2 id="request-report-sections">Request report sections<a class="headerlink" href="#request-report-sections" title="Permanent link">&para;</a></h2>
@@ -4192,16 +4405,18 @@ their existing source-specific paths.</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>reactions<span class="w"> </span>outcomes
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>all
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>reactions<span class="w"> </span>outcomes
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span><span class="w"> </span>all
 </code></pre></div>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <p>There is no direct <code>adverse-event &lt;helper&gt;</code> family. Use
 <code>biomcp drug adverse-events &lt;name&gt;</code> when you want the inbound drug pivot into
 this safety surface.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>adverse-event<span class="w"> </span><span class="m">10222779</span>
 </code></pre></div>
+<h2 id="combined-source-outcomes">Combined-source outcomes<a class="headerlink" href="#combined-source-outcomes" title="Permanent link">&para;</a></h2>
+<p>JSON from <code>search adverse-event &lt;query&gt; --source all</code> includes independent <code>section_outcomes.faers</code> and <code>.vaers</code> entries while preserving <code>vaers.status</code>. One branch can be <code>unavailable</code> without erasing a healthy result from the other; <code>empty</code> means that source completed successfully with no matching evidence. A successful VAERS branch credits both CDC CVX identity resolution and CDC VAERS evidence. When <code>--source all</code> includes FAERS-only filters or a nonzero offset, <code>vaers.status</code> explains the skip and its section outcome remains <code>not_requested</code> because no VAERS fetch ran. Device-search JSON includes the effective query summary, including the selected seriousness meaning.</p>
 <h2 id="practical-tips">Practical tips<a class="headerlink" href="#practical-tips" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Include drug generic names for better FAERS recall.</li>

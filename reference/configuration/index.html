@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3144,6 +3312,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../error-codes/" class="md-nav__link">
         
   
@@ -4090,6 +4286,10 @@ internal fixture overrides and release/install variables.</p>
 <td>Minimum free disk budget before cache eviction</td>
 </tr>
 <tr>
+<td><code>BIOMCP_DEFAULT_ASSEMBLY</code></td>
+<td>Preferred genome assembly when a source returns equally supported GRCh37 and GRCh38 identities; accepts <code>GRCh37</code> or <code>GRCh38</code> and defaults to <code>GRCh38</code></td>
+</tr>
+<tr>
 <td><code>BIOMCP_STUDY_DIR</code></td>
 <td>Local cBioPortal-style study dataset root</td>
 </tr>
@@ -4128,6 +4328,16 @@ internal fixture overrides and release/install variables.</p>
 </tbody>
 </table>
 <p>Cache runtime precedence is environment, then <code>cache.toml</code>, then built-in default.
+The resolved root contains the managed HTTP response cache in <code>http/</code> and the
+ten-minute article-search loop-breaker records in <code>sessions/</code>. Cache reads,
+writes, statistics, and maintenance physically remove entries older than
+<code>max_age_secs</code>; opening the session store removes expired sessions.
+Managed directories and files are private to the current OS user. BioMCP
+repairs overly broad permissions inside the managed root and refuses linked
+regular files rather than risking access through another pathname.
+The global <code>--no-cache</code> flag bypasses these HTTP and session stores completely
+for one invocation. It does not override explicit output paths or provider
+retention.
 <code>BIOMCP_CACHE_MAX_AGE</code> overrides <code>[cache].max_age_secs</code>; both values are
 positive integer seconds.</p>
 <h2 id="internal-and-measurement-controls">Internal and Measurement Controls<a class="headerlink" href="#internal-and-measurement-controls" title="Permanent link">&para;</a></h2>
@@ -4158,11 +4368,11 @@ positive integer seconds.</p>
 fixture overrides unless this page lists them in an operator section. They let
 BioMCP's own verification harness redirect a source to a local server or fixture
 file. Do not treat those base-URL overrides as stable operator API.</p>
-<p>Known examples include <code>BIOMCP_ALPHAGENOME_BASE</code>,
+<p>Known examples include <code>BIOMCP_CSPEC_FIXTURE_ORIGIN</code> (an exact loopback origin for the runner-owned CSpec fixture), <code>BIOMCP_ALPHAGENOME_BASE</code>,
 <code>BIOMCP_CANCERHOTSPOTS_BASE</code>, <code>BIOMCP_CBIOPORTAL_BASE</code>,
 <code>BIOMCP_CBIOPORTAL_DATAHUB_BASE</code>, <code>BIOMCP_CHEMBL_BASE</code>, <code>BIOMCP_CIVIC_BASE</code>,
-<code>BIOMCP_CLINGEN_BASE</code>, <code>BIOMCP_COMPLEXPORTAL_BASE</code>, <code>BIOMCP_CPIC_BASE</code>,
-<code>BIOMCP_CTGOV_BASE</code>, <code>BIOMCP_DGIDB_BASE</code>, <code>BIOMCP_DISGENET_BASE</code>,
+<code>BIOMCP_CLINGEN_BASE</code>, <code>BIOMCP_CLINGEN_CAR_BASE</code>, <code>BIOMCP_CLINGEN_EREPO_BASE</code>, <code>BIOMCP_COMPLEXPORTAL_BASE</code>, <code>BIOMCP_CPIC_BASE</code>,
+<code>BIOMCP_CTGOV_BASE</code>, <code>BIOMCP_CTGOV_CDN_BASE</code>, <code>BIOMCP_DBSNP_BASE</code>, <code>BIOMCP_DGIDB_BASE</code>, <code>BIOMCP_DISGENET_BASE</code>,
 <code>BIOMCP_EMA_REPORT_BASE</code>, <code>BIOMCP_ENRICHR_BASE</code>, <code>BIOMCP_EUROPEPMC_BASE</code>,
 <code>BIOMCP_FIGSHARE_BASE</code>, <code>BIOMCP_GNOMAD_BASE</code>, <code>BIOMCP_GPROFILER_BASE</code>,
 <code>BIOMCP_GTEX_BASE</code>, <code>BIOMCP_GWAS_BASE</code>, <code>BIOMCP_HPA_BASE</code>,
@@ -4241,8 +4451,13 @@ Internal cBioPortal fixture/source-selection seams include
 <li><code>biomcp health --apis-only</code> reports API/source connectivity and excluded
   key-gated rows; full <code>biomcp health</code> also reports local runtime data and cache
   readiness.</li>
-<li>Optional sources degrade by omission, explicit unavailable notes, or
-  <code>_meta.source_status</code>; they must not fabricate empty-source certainty.</li>
+<li>Optional entity lookups expose typed outcomes in JSON/MCP. <code>inapplicable</code>
+  means a required input was absent and no provider was contacted; <code>empty</code> is a
+  successful zero-result query; <code>unavailable</code> means retrieval produced no usable
+  result; and <code>degraded</code> preserves partial evidence. <code>_meta.section_sources</code>
+  repeats requested section outcomes and credits only providers that returned
+  usable evidence. Outcome-only helpers such as <code>variant structure</code> may expose
+  the same state model on their documented status surface.</li>
 <li><code>SourceUnavailable</code> means the source is supported but temporarily unavailable.
   It is distinct from unsupported sections or invalid command grammar.</li>
 </ul>

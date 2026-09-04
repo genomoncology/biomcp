@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1491,6 +1547,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3257,6 +3425,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4015,8 +4211,8 @@
 
 
 <h1 id="semantic-scholar">Semantic Scholar<a class="headerlink" href="#semantic-scholar" title="Permanent link">&para;</a></h1>
-<p>Semantic Scholar matters when you already have the paper and need the graph around it: the TLDR, the follow-up literature, the references it builds on, and the related papers worth checking next. It turns a flat article lookup into a literature-review workflow that an agent can keep extending without losing the thread.</p>
-<p>In BioMCP, Semantic Scholar is an automatic optional <code>search article --source all</code> leg when the filter set is compatible, and it is also individually selectable with <code>--source semanticscholar</code>. Both routes use shared-pool mode at 1 req/2sec without <code>S2_API_KEY</code> and authenticated mode at 1 req/sec with the key. The dedicated helper commands on this page are the graph-oriented reason to come here: <code>get article &lt;id&gt; tldr</code>, <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
+<p>Semantic Scholar supplies provider-defined TLDR, citation, reference, and recommendation records around a paper. BioMCP relays those records; recommendation quality and recall are provider-dependent and not validated by BioMCP.</p>
+<p>In BioMCP, Semantic Scholar provides provider-exact author search/detail and an automatic optional <code>search article --source all</code> leg when the filter set is compatible; article search is also individually selectable with <code>--source semanticscholar</code>. <code>variant articles --strategy union</code> uses the bulk phrase endpoint only for its bounded strict lane and retains relevance search as discovery; <code>--debug-plan</code> identifies each versioned request. These routes use shared-pool mode at 1 req/2sec without <code>S2_API_KEY</code> and authenticated mode at 1 req/sec with the key. The dedicated article helper commands on this page are <code>get article &lt;id&gt; tldr</code>, <code>article citations</code>, <code>article references</code>, and <code>article recommendations</code>.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4027,6 +4223,16 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>search author -q &lt;name&gt; --source semanticscholar</code></td>
+<td>Exact Semantic Scholar provider-record candidates</td>
+<td>Results remain separate and provider-qualified; BioMCP does not claim a globally resolved person</td>
+</tr>
+<tr>
+<td><code>get author semanticscholar:&lt;id&gt;</code></td>
+<td>One exact Semantic Scholar provider record</td>
+<td>Requires the qualified numeric ID and does not establish an ORCID link</td>
+</tr>
 <tr>
 <td><code>search article</code></td>
 <td>Optional compatible search-leg enrichment plus source status</td>
@@ -4049,15 +4255,17 @@
 </tr>
 <tr>
 <td><code>article recommendations &lt;id&gt;</code></td>
-<td>Related-paper recommendations</td>
-<td>Dedicated Semantic Scholar helper</td>
+<td>Provider-defined paper recommendations</td>
+<td>BioMCP relay; relatedness and recall are not validated by BioMCP</td>
 </tr>
 </tbody>
 </table>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;BRAF melanoma&quot;</span><span class="w"> </span>--source<span class="w"> </span>semanticscholar<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>author<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;Louis Williams&quot;</span><span class="w"> </span>--source<span class="w"> </span>semanticscholar<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>author<span class="w"> </span>semanticscholar:1716151
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;BRAF melanoma&quot;</span><span class="w"> </span>--source<span class="w"> </span>semanticscholar<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
-<p>Returns article rows whose source is Semantic Scholar.</p>
+<p>Returns provider-qualified author records or article rows from Semantic Scholar.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>article<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>tldr
 </code></pre></div>
 <p>Returns a Semantic Scholar section with TLDR text and influence metadata.</p>
@@ -4069,7 +4277,7 @@
 <p>Returns a reference graph table with the same citation-context fields.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
-<p>Returns a recommendations table with PMID, title, journal, and year columns.</p>
+<p>Returns the provider-defined recommendations in a table with typed identifier, title, journal, and year columns.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>Optional <code>S2_API_KEY</code> for dedicated quota and higher reliability. Configure it with the <a href="../../getting-started/api-keys/">API Keys</a> guide and request one from the <a href="https://www.semanticscholar.org/product/api">Semantic Scholar API page</a>.</p>
 <p>Without <code>S2_API_KEY</code>, BioMCP uses the shared unauthenticated pool at
@@ -4090,6 +4298,10 @@ degradation behavior as the compatible federated route.</p>
 article leg so operators can distinguish <code>ok</code>, <code>degraded</code>, and <code>unavailable</code>
 without exposing credentials. Degradation of the optional Semantic Scholar leg
 should not be read as a PubMed, Europe PMC, or PubTator failure.</p>
+<p>Provider-returned PDF URLs and supported Figshare asset handoffs are fetched
+only through BioMCP's shared outbound policy. PDF, Figshare ndownloader, and
+reviewed CDN origins are explicit HTTPS allowlists; DNS answers and every
+redirect are revalidated before contact, and rejected URLs are not echoed.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
 <p><a href="https://www.semanticscholar.org/">Semantic Scholar</a> is the official literature-graph product behind BioMCP's TLDR and citation helper workflows.</p>
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>

@@ -1223,6 +1223,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1626,6 +1682,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3279,6 +3447,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/error-codes/" class="md-nav__link">
         
   
@@ -4064,7 +4260,10 @@
 <h2 id="option-1-installer-script">Option 1: Installer script<a class="headerlink" href="#option-1-installer-script" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
 </code></pre></div>
-<p>The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA256 checksum, and places <code>biomcp</code> in <code>~/.local/bin</code>.</p>
+<p>The installer downloads a prebuilt binary for your platform (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64), verifies the SHA-256 checksum, smokes a destination-directory staging file, and atomically places <code>biomcp</code> in <code>~/.local/bin</code>. It records standalone ownership in adjacent <code>biomcp.install.json</code> so update and uninstall cannot damage package-managed installs. It fails closed before replacement when verification fails, and a pending receipt makes interruption recovery deterministic.</p>
+<p>The installer never edits shell startup files. If <code>~/.local/bin</code> is missing from
+<code>PATH</code>, it prints one <code>export PATH=...</code> command for you to copy. Install
+<code>sha256sum</code>, <code>shasum -a 256</code>, or <code>openssl dgst -sha256</code> before running it.</p>
 <p>Pin a specific version:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://biomcp.org/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>--version<span class="w"> </span><span class="m">0</span>.8.0
 </code></pre></div>
@@ -4077,7 +4276,9 @@
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># pip install biomcp-cli</span>
 </code></pre></div>
 <p>Install the <code>biomcp-cli</code> package, then use the <code>biomcp</code> command in the rest of
-this guide.</p>
+this guide. The package also keeps a small <code>biomcp-cli</code> compatibility command;
+it forwards to the sibling <code>biomcp</code> executable without changing command output
+or exit status.</p>
 <p>Verify:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--version
 </code></pre></div>
@@ -4119,7 +4320,11 @@ these commands can work; creating that tap is a one-time release prerequisite.</
 <h2 id="troubleshooting-quick-hits">Troubleshooting quick hits<a class="headerlink" href="#troubleshooting-quick-hits" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Command not found: ensure install location is on <code>PATH</code>.</li>
-<li>Build fails at protobuf step: install <code>protoc</code>.</li>
+<li>Checksum verification fails: retry the download; the installer intentionally refuses to install an archive without a valid checksum and a local <code>sha256sum</code>, <code>shasum</code>, or <code>openssl</code> SHA-256 tool.</li>
+<li>Normal source builds do not run or require <code>protoc</code>; they consume committed
+  AlphaGenome generated Rust. Maintainers regenerating that source need pinned
+  <code>protoc</code> 28.3 and can verify it without writing with
+  <code>scripts/regenerate-alphagenome-proto --check</code>.</li>
 <li>Network-related health failures: retry and inspect upstream API status.</li>
 </ul>
 

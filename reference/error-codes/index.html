@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://biomcp.org/reference/error-codes/">
       
       
-        <link rel="prev" href="../mcp-server/">
+        <link rel="prev" href="../release-process/">
       
       
         <link rel="next" href="../benchmarks/">
@@ -1083,6 +1083,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../user-guide/trial/" class="md-nav__link">
         
   
@@ -1486,6 +1542,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3141,6 +3309,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -3219,6 +3415,17 @@
     <span class="md-ellipsis">
       
         Error catalog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structured-source-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structured source recovery
       
     </span>
   </a>
@@ -3940,6 +4147,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#structured-source-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structured source recovery
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#key-environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3994,7 +4212,19 @@
 
 <h1 id="error-codes">Error Codes<a class="headerlink" href="#error-codes" title="Permanent link">&para;</a></h1>
 <p>BioMCP exposes structured internal error variants through human-readable CLI messages.
-This reference maps each <code>BioMcpError</code> variant to likely causes and practical recovery steps.</p>
+This reference maps each <code>BioMcpError</code> variant to likely causes and practical recovery steps.
+JSON output renders variant names as stable snake-case <code>error.code</code> values; for example,
+missing credentials use <code>api_key_required</code>, while configured credentials rejected by a
+provider use <code>api_key_rejected</code>.</p>
+<p>Hard remote-source failures can also include additive <code>error.source</code> and
+<code>error.recovery</code> fields. <code>source</code> is a canonical allowlisted provider label
+(maximum 80 bytes), and <code>recovery</code> is a bounded action (maximum 160 bytes).
+Both fields are omitted for unwrapped transport errors when BioMCP no longer
+knows which source failed. Legacy source-shaped errors with an unknown name use
+the safe fallback described below. The human diagnostic uses the same source
+and recovery policy; neither output
+includes request destinations, credentials, provider bodies, parser details,
+or local paths.</p>
 <h2 id="process-exit-codes">Process exit codes<a class="headerlink" href="#process-exit-codes" title="Permanent link">&para;</a></h2>
 <p>BioMCP uses process exit codes to distinguish invalid usage from command
 execution failures:</p>
@@ -4024,7 +4254,7 @@ execution failures:</p>
 <tr>
 <td><code>HttpClientInit</code></td>
 <td>HTTP client could not initialize</td>
-<td>Check TLS/network stack, proxy settings, and local certificate configuration</td>
+<td>Check the TLS/network stack and local certificate configuration; ordinary provider clients intentionally ignore ambient proxy settings</td>
 </tr>
 <tr>
 <td><code>Http</code></td>
@@ -4047,6 +4277,16 @@ execution failures:</p>
 <td>Retry once; if repeatable, report issue because upstream format may have changed</td>
 </tr>
 <tr>
+<td><code>InputTooLarge</code></td>
+<td>A local structured input exceeded its command byte budget</td>
+<td>Reduce the input below the reported <code>limit_bytes</code></td>
+</tr>
+<tr>
+<td><code>ProviderResponseLimit</code></td>
+<td>A provider document exceeded a bounded item or field contract</td>
+<td>Select a smaller provider document or report the changed response shape</td>
+</tr>
+<tr>
 <td><code>NotFound</code></td>
 <td>Requested entity ID was not found</td>
 <td>Verify identifier format; run <code>search</code> before <code>get</code> when unsure</td>
@@ -4057,14 +4297,39 @@ execution failures:</p>
 <td>Re-run with <code>--help</code> and correct flag values/section names</td>
 </tr>
 <tr>
+<td><code>InternalProcessing</code></td>
+<td>BioMCP could not process data after a successful retrieval</td>
+<td>Report the command and error code; retrying the provider will not repair a repeatable local processing failure</td>
+</tr>
+<tr>
+<td><code>CaptureUnavailable</code></td>
+<td>A CSpec capture is missing, expired, or evicted</td>
+<td>Select the source document again to create a fresh capture</td>
+</tr>
+<tr>
+<td><code>CaptureCorrupt</code></td>
+<td>Stored CSpec binding metadata or captured bytes failed integrity checks</td>
+<td>Clear the affected cache and select the source document again</td>
+</tr>
+<tr>
+<td><code>BindingConflict</code></td>
+<td>Identical CSpec bytes were already captured under different source identity</td>
+<td>Select the correct document identity; do not reuse the handle across sources</td>
+</tr>
+<tr>
 <td><code>ApiKeyRequired</code></td>
 <td>Source requires an API key that is not set</td>
 <td>Export the listed environment variable and retry</td>
 </tr>
 <tr>
+<td><code>ApiKeyRejected</code></td>
+<td>Provider rejected the configured API key or the account lacks access</td>
+<td>Check the credential is valid and that the account has provider access</td>
+</tr>
+<tr>
 <td><code>SourceUnavailable</code></td>
 <td>Requested source could not be used</td>
-<td>Switch sources if possible or retry later</td>
+<td>Review source configuration and retry</td>
 </tr>
 <tr>
 <td><code>Template</code></td>
@@ -4083,6 +4348,17 @@ execution failures:</p>
 </tr>
 </tbody>
 </table>
+<h2 id="structured-source-recovery">Structured source recovery<a class="headerlink" href="#structured-source-recovery" title="Permanent link">&para;</a></h2>
+<p>The three stable recovery meanings are:</p>
+<ul>
+<li><strong>Retry the remote source</strong> — a transport, status, or decode failure may be transient.</li>
+<li><strong>Review source configuration and retry</strong> — check required credentials or source setup first.</li>
+<li><strong>Narrow the request and retry</strong> — reduce the requested result/body size.</li>
+</ul>
+<p>Legacy source errors with an unknown or unsafe provider name use the conservative
+label <code>BioMCP source</code> and configuration guidance instead of copying that name.
+The existing <code>error.code</code>, <code>_meta.not_found</code>, envelope, output stream, and exit
+status remain unchanged when source context is present.</p>
 <h2 id="key-environment-variables">Key environment variables<a class="headerlink" href="#key-environment-variables" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

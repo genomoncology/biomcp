@@ -90,7 +90,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["get gene <symbol> clingen"],
+    "bioMcp_surfaces": ["get gene <symbol> clingen", "variant erepo <CAid>"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "public web/API access",
@@ -99,7 +99,75 @@
     "terms_url": "https://clinicalgenome.org/",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "Open Targets currently lists ClinGen under CC0 for its own ingestion, but BioMCP links to ClinGen's official project site because that is the provider surface users encounter directly."
+    "notes": "BioMCP uses distinct ClinGen Search and Evidence Repository origins; ERepo assertions preserve panel source facts and versioned SEPIO provenance without interpretation."
+  },
+  {
+    "id": "clingen_car",
+    "name": "ClinGen Allele Registry",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["variant normalize car <HGVS>"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public web/API access",
+    "license_summary": "public ClinGen curation resources with publication and attribution expectations",
+    "redistribution_summary": "generally queryable and reusable, but users should preserve attribution and source context",
+    "terms_url": "https://reg.genome.network",
+    "key_url": null,
+    "reviewed_on": "2026-07-24",
+    "notes": "BioMCP performs read-only projected CAR lookups for supported versioned RefSeq HGVS values."
+  },
+  {
+    "id": "clingen_cspec",
+    "name": "ClinGen CSpec",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["gene cspec <GENE>", "gene_cspec"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public web/API access",
+    "license_summary": "public ClinGen curation resources with publication and attribution expectations",
+    "redistribution_summary": "generally queryable and reusable, but users should preserve attribution and source context",
+    "terms_url": "https://cspec.clinicalgenome.org",
+    "key_url": null,
+    "reviewed_on": "2026-07-23",
+    "notes": "BioMCP preserves exact selected CSpec document bytes behind bounded local capture handles and returns source facts without ACMG interpretation."
+  },
+  {
+    "id": "clingen_erepo",
+    "name": "ClinGen ERepo",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["variant erepo <CAid>"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public web/API access",
+    "license_summary": "public ClinGen curation resources with publication and attribution expectations",
+    "redistribution_summary": "generally queryable and reusable, but users should preserve attribution and source context",
+    "terms_url": "https://erepo.clinicalgenome.org",
+    "key_url": null,
+    "reviewed_on": "2026-07-23",
+    "notes": "BioMCP retrieves only bounded exact-CAid summaries and explicitly selected versioned detail documents."
+  },
+  {
+    "id": "clingen_ldh",
+    "name": "ClinGen LDH",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["variant articles --verify-identity", "variant_articles"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public web/API access",
+    "license_summary": "public ClinGen curation resources with publication and attribution expectations",
+    "redistribution_summary": "generally queryable and reusable, but users should preserve attribution and source context",
+    "terms_url": "https://ldh.genome.network",
+    "key_url": null,
+    "reviewed_on": "2026-07-26",
+    "notes": "BioMCP uses bounded post-retrieval LDH annotation lookups only as optional article identity observations; it does not discover, remove, rank, or supply negative evidence for candidates."
   },
   {
     "id": "clinicaltrials-gov",
@@ -183,13 +251,13 @@
     ],
     "bioMcp_auth": "none",
     "env_var": null,
-    "provider_access": "public DDInter download bundle; BioMCP downloads and reads local copies on demand, or operators can preseed BIOMCP_DDINTER_DIR manually",
+    "provider_access": "public DDInter download bundle; operators run biomcp ddinter sync explicitly or preseed BIOMCP_DDINTER_DIR manually, and normal reads stay local",
     "license_summary": "CC BY-NC-SA 4.0 with an explicit completeness disclaimer; absence from the database does not prove no interaction exists",
     "redistribution_summary": "reuse requires attribution, non-commercial use, and ShareAlike treatment; do not turn missing rows into safety claims or assume commercial redistribution rights",
     "terms_url": "https://ddinter.scbdd.com/terms/",
     "key_url": null,
     "reviewed_on": "2026-04-25",
-    "notes": "BioMCP requires ddinter_downloads_code_A.csv, ddinter_downloads_code_B.csv, ddinter_downloads_code_D.csv, ddinter_downloads_code_H.csv, ddinter_downloads_code_L.csv, ddinter_downloads_code_P.csv, ddinter_downloads_code_R.csv, and ddinter_downloads_code_V.csv; it auto-downloads them on first interaction use, refreshes stale files after 72 hours, supports explicit refresh via biomcp ddinter sync, and keeps empty results scoped to the current DDInter bundle."
+    "notes": "BioMCP requires all eight DDInter CSV files. Interaction reads use the installed bundle without maintenance and report fresh/stale state. biomcp ddinter sync explicitly downloads, validates, and publishes a complete replacement bundle; empty results remain scoped to the current DDInter bundle."
   },
   {
     "id": "disgenet",
@@ -319,7 +387,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search article", "get article <pmid>", "get article <id> fulltext"],
+    "bioMcp_surfaces": ["search article", "get article <pmid>", "get article <id> fulltext", "get article <id> assets", "get article <id> asset <asset-key>"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public API",
@@ -328,7 +396,7 @@
     "terms_url": "https://europepmc.org/RestfulWebService",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP uses Europe PMC for search, bibliographic metadata, and article full-text XML lookups. Open-access reuse depends on the publication license attached to each record."
+    "notes": "BioMCP uses Europe PMC for search, bibliographic metadata, article full-text XML, and the second article-asset rung after PMC OA. Supplementary ZIP bytes do not imply reusable status; a retained PMC OA license keeps PMC OA source attribution."
   },
   {
     "id": "figshare",
@@ -336,7 +404,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["get article <id> assets", "get article <id> asset <name>"],
+    "bioMcp_surfaces": ["get article <id> assets", "get article <id> asset <asset-key>"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public API",
@@ -345,7 +413,24 @@
     "terms_url": "https://figshare.com/terms",
     "key_url": null,
     "reviewed_on": "2026-06-06",
-    "notes": "BioMCP uses Figshare only as an article-asset fallback after PMC OA assets are unavailable and Semantic Scholar discovery points at a supported Figshare/AACR Figshare article URL. BioMCP downloads bytes from the Figshare API download_url and does not parse supplement contents."
+    "notes": "BioMCP uses Figshare only as an article-asset fallback after PMC OA and Europe PMC assets are unavailable and Semantic Scholar discovery points at a supported Figshare/AACR Figshare article URL. BioMCP downloads bytes from the Figshare API download_url and does not parse supplement contents."
+  },
+  {
+    "id": "dbsnp",
+    "name": "dbSNP",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": ["get variant <id> population"],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "open public API",
+    "license_summary": "NCBI public data service with attribution and non-endorsement expectations",
+    "redistribution_summary": "RefSNP records are publicly queryable; preserve dbSNP provenance and do not imply NCBI endorsement",
+    "terms_url": "https://www.ncbi.nlm.nih.gov/home/about/policies/",
+    "key_url": null,
+    "reviewed_on": "2026-08-20",
+    "notes": "BioMCP uses the NCBI Variation RefSNP API only to recover an explicitly labeled GRCh38 chromosome coordinate for eligible identifier-based gnomAD population lookups."
   },
   {
     "id": "gnomad",
@@ -489,10 +574,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": [
-      "discover plain-language topics",
-      "get disease <name_or_id> clinical_features"
-    ],
+    "bioMcp_surfaces": ["discover plain-language topics"],
     "bioMcp_auth": "none",
     "env_var": null,
     "provider_access": "open public search API",
@@ -501,7 +583,7 @@
     "terms_url": "https://medlineplus.gov/about/using/",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP uses MedlinePlus for best-effort plain-language discover context and opt-in disease clinical-feature summaries for configured diseases."
+    "notes": "BioMCP uses MedlinePlus for best-effort plain-language discover context."
   },
   {
     "id": "litsense2",
@@ -645,7 +727,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["get article <id> fulltext"],
+    "bioMcp_surfaces": ["get article <id> indexing", "get article <id> fulltext"],
     "bioMcp_auth": "optional_env",
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public E-utilities endpoint; optional My NCBI API key improves throughput",
@@ -654,7 +736,7 @@
     "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-04-10",
-    "notes": "BioMCP uses PMC `efetch` as one XML full-text fallback when Europe PMC does not serve the article; PMC OA and PMC article HTML are separate later fallback surfaces. `NCBI_API_KEY` raises the baseline NCBI E-utilities budget but is not required."
+    "notes": "BioMCP uses PubMed citation `efetch` for the opt-in indexing section and PMC `efetch` as one XML full-text fallback when Europe PMC does not serve the article; PMC OA and PMC article HTML are separate later fallback surfaces. `NCBI_API_KEY` raises the baseline NCBI E-utilities budget but is not required."
   },
   {
     "id": "gtr",
@@ -832,7 +914,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["get article <id> fulltext", "get article <id> assets", "get article <id> asset <name>"],
+    "bioMcp_surfaces": ["get article <id> fulltext", "get article <id> assets", "get article <id> asset <asset-key>"],
     "bioMcp_auth": "optional_env",
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public utility for the PMC Open Access subset",
@@ -840,8 +922,8 @@
     "redistribution_summary": "full text is reusable only according to each article's specific PMC Open Access license",
     "terms_url": "https://pmc.ncbi.nlm.nih.gov/tools/openftlist/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
-    "reviewed_on": "2026-03-20",
-    "notes": "BioMCP queries PMC OA on demand as one XML full-text rung and as the preferred article-asset provider; it does not ship the article corpus. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
+    "reviewed_on": "2026-08-05",
+    "notes": "BioMCP resolves a PMC OA version-prefix listing through its flat version-prefix S3 metadata object, then retrieves its declared XML/media objects; it does not ship the article corpus. The retired FTP/archive route is not used because NLM removes legacy files in August 2026. When Europe PMC recovers bytes after a PMC OA route failure, retained PMC OA license facts keep PMC OA source attribution. PMC article HTML is a separate derived fallback, and returned full text/assets are still governed by article-level licenses."
   },
   {
     "id": "pubtator3",
@@ -866,7 +948,7 @@
     "tier": 1,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search article", "get article <id>"],
+    "bioMcp_surfaces": ["search article", "get article <id>", "get article <id> indexing"],
     "bioMcp_auth": "optional_env",
     "env_var": "NCBI_API_KEY",
     "provider_access": "open public search/metadata service; optional My NCBI API key improves throughput",
@@ -875,7 +957,7 @@
     "terms_url": "https://www.ncbi.nlm.nih.gov/books/NBK25501/",
     "key_url": "https://www.ncbi.nlm.nih.gov/account/settings/",
     "reviewed_on": "2026-04-10",
-    "notes": "BioMCP uses PubMed as a first-class article search source while keeping separate rows for PubTator3 annotations, NCBI E-utilities/PMC OA XML full text, NCBI ID Converter bridging, and Semantic Scholar PDF metadata; PMC article HTML is documented as a PMC web fallback in the data-source matrix."
+    "notes": "BioMCP uses PubMed as a first-class article search source and fetches citation XML for opt-in indexing with associated affiliations, ORCID, and structured MeSH. It keeps separate rows for PubTator3 annotations, NCBI E-utilities/PMC OA XML full text, NCBI ID Converter bridging, and Semantic Scholar PDF metadata; PMC article HTML is documented as a PMC web fallback in the data-source matrix."
   },
   {
     "id": "quickgo",
@@ -917,7 +999,7 @@
     "tier": 2,
     "integration_mode": "direct_api",
     "via": null,
-    "bioMcp_surfaces": ["search article --source semanticscholar", "get article <id> tldr", "get article <id> fulltext --pdf", "article citations <id>", "article references <id>", "article recommendations <id>"],
+    "bioMcp_surfaces": ["search author", "get author <semanticscholar:id>", "search article --source semanticscholar", "get article <id> tldr", "get article <id> fulltext --pdf", "article citations <id>", "article references <id>", "article recommendations <id>"],
     "bioMcp_auth": "optional_env",
     "env_var": "S2_API_KEY",
     "provider_access": "Unauthenticated access is available on the shared pool; authenticated access uses the provider-issued API key and remains governed by the API license agreement",
@@ -926,7 +1008,7 @@
     "terms_url": "https://www.semanticscholar.org/product/api/license",
     "key_url": "https://www.semanticscholar.org/product/api",
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. Article search can use Semantic Scholar through compatible default federation or `--source semanticscholar`. For `get article <id> fulltext --pdf`, BioMCP uses Semantic Scholar `openAccessPdf` metadata, then fetches the third-party PDF URL only after explicit PDF opt-in; the PDF's article-level reuse terms remain separate."
+    "notes": "BioMCP can call Semantic Scholar without `S2_API_KEY`, but uses a more conservative shared-pool rate limit and recommends the key for dedicated quota and reliability. Author search/detail expose exact provider records without cross-provider resolution. Article search can use Semantic Scholar through compatible default federation or `--source semanticscholar`. For `get article <id> fulltext --pdf`, BioMCP uses Semantic Scholar `openAccessPdf` metadata, then fetches the PDF after explicit PDF opt-in only when its HTTPS origin is on BioMCP's Semantic Scholar/CDN allowlist; the PDF's article-level reuse terms remain separate."
   },
   {
     "id": "seer-explorer",

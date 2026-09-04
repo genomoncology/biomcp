@@ -1382,6 +1382,62 @@
   
   
     <li class="md-nav__item">
+      <a href="user-guide/supplementary-materials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supplementary Materials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user-guide/author/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Author
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="user-guide/trial/" class="md-nav__link">
         
   
@@ -1785,6 +1841,118 @@
     
   
     ClinicalTrials.gov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/clingen-allele-registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen Allele Registry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/clingen-cspec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen CSpec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/clingen-erepo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen ERepo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sources/clingen-ldh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ClinGen LDH
   
 
     
@@ -3438,6 +3606,34 @@
   
   
     <li class="md-nav__item">
+      <a href="reference/release-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="reference/error-codes/" class="md-nav__link">
         
   
@@ -4429,7 +4625,7 @@ stdio:</p>
 <p>Install to first result in under 30 seconds:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>biomcp-cli
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>biomcp<span class="w"> </span>health<span class="w"> </span>--apis-only
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>suggest<span class="w"> </span><span class="s2">&quot;What drugs treat melanoma?&quot;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>biomcp<span class="w"> </span>skill<span class="w"> </span>list
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>biomcp<span class="w"> </span>discover<span class="w"> </span><span class="s2">&quot;chest pain&quot;</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>biomcp<span class="w"> </span>list<span class="w"> </span>gene
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>biomcp<span class="w"> </span>search<span class="w"> </span>all<span class="w"> </span>--gene<span class="w"> </span>BRAF<span class="w"> </span>--disease<span class="w"> </span>melanoma<span class="w">  </span><span class="c1"># unified cross-entity discovery</span>
@@ -4437,7 +4633,7 @@ stdio:</p>
 </code></pre></div>
 <h2 id="command-grammar">Command grammar<a class="headerlink" href="#command-grammar" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>search &lt;entity&gt; [filters]    → discovery
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>suggest &lt;question&gt;           → playbook routing for how-to questions
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>skill list                   → playbook catalog for how-to questions
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>discover &lt;query&gt;             → single-entity concept resolution before entity selection
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>get &lt;entity&gt; &lt;id&gt; [sections] → focused detail
 <a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>&lt;entity&gt; &lt;helper&gt; &lt;id&gt;       → cross-entity pivots
@@ -4454,8 +4650,8 @@ stdio:</p>
   and close concept names into the right entity before you commit to a typed
   command. Relational or multi-entity questions may redirect to
   <code>biomcp search all --keyword "&lt;query&gt;"</code>.</li>
-<li><strong>Choose the workflow:</strong> <code>biomcp suggest "&lt;question&gt;"</code> returns the matching
-  worked-example playbook and two starter commands.</li>
+<li><strong>Choose the workflow:</strong> <code>biomcp skill list</code> shows the worked-example catalog
+  so you can open the matching workflow with <code>biomcp skill &lt;slug&gt;</code>.</li>
 <li><strong>Pivot across entities:</strong> move from a known gene, variant, drug, disease,
   pathway, protein, or article into trials, articles, drugs, pathways,
   structures, or article graph helpers without rebuilding context.</li>
@@ -4488,7 +4684,7 @@ agents do not synthesize unsupported <code>get</code> commands.</p>
 </tr>
 <tr>
 <td>variant</td>
-<td>MyVariant.info, ClinVar, gnomAD fields via MyVariant, CIViC, Cancer Genome Interpreter, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome</td>
+<td>MyVariant.info, ClinVar, direct gnomAD v4 population data, CIViC, Cancer Genome Interpreter, OncoKB, cBioPortal, GWAS Catalog, AlphaGenome</td>
 <td><code>biomcp get variant "BRAF V600E" clinvar</code></td>
 </tr>
 <tr>
@@ -4513,7 +4709,7 @@ agents do not synthesize unsupported <code>get</code> commands.</p>
 </tr>
 <tr>
 <td>disease</td>
-<td>MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter, DisGeNET, MedlinePlus <code>clinical_features</code>, GTR/WHO IVD diagnostics pivot</td>
+<td>MyDisease.info, Monarch Initiative, MONDO, OpenTargets, Reactome, CIViC, SEER Explorer, NIH Reporter, DisGeNET, GTR/WHO IVD diagnostics pivot</td>
 <td><code>biomcp get disease "chronic myeloid leukemia" funding</code></td>
 </tr>
 <tr>
