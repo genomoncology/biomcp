@@ -4286,11 +4286,21 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>locations
 </code></pre></div>
 <p>Returns a locations table with facility, city, country, status, and contact fields.</p>
+<p>Location requests return a 20-site page by default. Use <code>--offset</code> and
+<code>--limit</code> to select another page; an explicit Markdown page renders every site
+selected by that limit and reports the shown count, total, offset, and limit.
+When <code>contacts</code> and <code>locations</code> are requested together, top-level site contacts
+belong only to sites on that page, while central contacts remain visible.
+Contacts-only output remains complete.</p>
 <p>In JSON, each location's <code>contacts</code> array contains every named site contact in
 the order ClinicalTrials.gov provides them. The older <code>contact_name</code>,
 <code>contact_role</code>, <code>contact_phone</code>, and <code>contact_email</code> fields remain first-contact
 aliases for compatibility. Markdown keeps one row per site and renders all of
 that site's contacts in the Contact cell, separated by <code>&lt;br&gt;</code>.</p>
+<p>Standalone <code>all</code> JSON and batch JSON remain complete and unpaginated. For
+readability, unpaginated <code>all</code> and batch Markdown show at most 20 sites, state
+the display cap when it truncates the table, and limit top-level site contacts
+to those displayed sites.</p>
 <h2 id="runtime-behavior">Runtime behavior<a class="headerlink" href="#runtime-behavior" title="Permanent link">&para;</a></h2>
 <p>Posted-document retrieval validates the fixed ClinicalTrials.gov CDN HTTPS
 origin, port, DNS answers, and every redirect through BioMCP's shared outbound

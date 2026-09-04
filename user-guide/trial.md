@@ -195,7 +195,19 @@ Locations:
 
 ```bash
 biomcp get trial NCT02576665 locations
+biomcp get trial NCT02576665 --offset 20 --limit 10 contacts locations
 ```
+
+Locations use a 20-site page by default. `--offset` and `--limit` select an
+explicit page, and Markdown renders that full selected page with a footer that
+reports its shown count, total, offset, and limit. When `contacts` and
+`locations` are combined, top-level site contacts are scoped to the returned
+sites; central contacts remain visible even when the page is empty.
+
+A contacts-only response remains complete. Standalone `all` JSON and batch
+JSON are also complete and unpaginated. Unpaginated `all` and batch Markdown
+show at most 20 sites, disclose that display cap when it applies, and show only
+the top-level site contacts belonging to those visible sites.
 
 Outcomes:
 

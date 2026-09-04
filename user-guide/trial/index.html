@@ -4468,7 +4468,17 @@ ordinary <code>all</code>.</p>
 </code></pre></div>
 <p>Locations:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>locations
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>--offset<span class="w"> </span><span class="m">20</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span><span class="w"> </span>contacts<span class="w"> </span>locations
 </code></pre></div>
+<p>Locations use a 20-site page by default. <code>--offset</code> and <code>--limit</code> select an
+explicit page, and Markdown renders that full selected page with a footer that
+reports its shown count, total, offset, and limit. When <code>contacts</code> and
+<code>locations</code> are combined, top-level site contacts are scoped to the returned
+sites; central contacts remain visible even when the page is empty.</p>
+<p>A contacts-only response remains complete. Standalone <code>all</code> JSON and batch
+JSON are also complete and unpaginated. Unpaginated <code>all</code> and batch Markdown
+show at most 20 sites, disclose that display cap when it applies, and show only
+the top-level site contacts belonging to those visible sites.</p>
 <p>Outcomes:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>outcomes
 </code></pre></div>
