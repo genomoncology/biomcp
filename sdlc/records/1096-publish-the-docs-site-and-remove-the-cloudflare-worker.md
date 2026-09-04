@@ -234,7 +234,7 @@ branch, locked MkDocs toolchain, and ordinary Actions token are already present.
   responses to urllib's default user agent and could not pass; the same live
   witness was 200 with `BioMCP-docs-publication-verifier/1`. The stable explicit
   user-agent contract and all-request regression were added; remediation is
-  applied and re-review is pending.
+  applied and independent re-review accepted it.
 - Hosted verification: FAIL 2026-09-04 — run 33843221076 at
   `69a17318add8e688f80256d816e968816f78b935` reached the exact witness, then
   found stale `/` bytes at 06:10:34 UTC. A cache-busted explicit-UA diagnostic
@@ -242,7 +242,7 @@ branch, locked MkDocs toolchain, and ordinary Actions token are already present.
   93,168-byte length), proving non-atomic CDN propagation across paths. Require
   bounded retries of the complete trusted inventory. Deterministic convergence,
   non-convergence, and pre-network inventory regressions were added; remediation
-  is applied and re-review is pending.
+  is applied and independent re-review accepted it.
 - Hosted verification: FAIL 2026-09-04 — run 33844251288 at
   `9ea3941581245bd41e1115cfdfade89909a30227` could not converge because the
   Cloudflare proxy intermittently injected the
@@ -258,4 +258,35 @@ branch, locked MkDocs toolchain, and ordinary Actions token are already present.
   from the trusted resolved local target instead: only actual `.html` files may
   tolerate body transformation; the installer and every other non-HTML asset
   remain byte-exact. Installer and generic non-HTML classification regressions
-  were added; remediation is applied and re-review is pending.
+  were added; remediation is applied and independent re-review accepted it.
+
+## Completed 2026-09-04
+
+Replaced the failed Cloudflare Worker delivery path with a main-push-only,
+serialized GitHub Pages branch publisher. The workflow strictly builds the
+triggering SHA, rejects an already-stale writer, retains `gh-pages` history,
+requests a Pages build with job-scoped `contents: write` and `pages: write`, and
+cannot report success until the exact hosted revision is verified. Worker
+source, Wrangler configuration, credential references in active delivery code,
+and the obsolete content-negotiation promise were removed.
+
+The live verifier now reflects the constraints learned from three failed hosted
+runs: it identifies itself to the proxy, retries a complete publication through
+non-atomic CDN convergence, rejects cross-origin redirects and local path
+escape, trusts only the locally built index, requires exact bytes for the
+witness, indexes, Markdown twins, installer, and all other non-HTML assets, and
+allows proxy body transformation only for trusted HTML targets.
+
+Hosted run 33845621279 succeeded for exact main revision
+`fce136f3df2ff0fbc720ef8d168b9f41d7681b4a` in 1 minute 9 seconds. Its mandatory
+live step verified the revision witness, both agent indexes, all Markdown twins,
+111 byte-exact immutable assets including `install.sh`, and all four advertised
+HTML routes at the exact configured origin and path.
+
+Independent design review accepted the design after three correction rounds.
+Fresh code review rejected and then accepted remediations for cross-origin and
+path-traversal trust boundaries, proxy user-agent handling, non-atomic
+propagation, proxy-mutated HTML, and executable installer integrity. Final local
+gates passed on the reviewed implementation: `make lint`; `make test`, including
+the complete Rust lane, 883 Python tests passed (3 skipped), and strict docs;
+and `make spec`, including its static lane.
