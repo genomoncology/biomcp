@@ -89,3 +89,31 @@ It attests every field name the five NCI defects turn on. `arms[].interventions`
 Two reductions were made and neither removes a key name. The sites array was cut from 1261 entries to the first 3, each carrying every site key the provider sends. Within those 3 sites the seven person-bearing and organization-contact values read `REDACTED`. The unredacted response carried 326 distinct email addresses and 1028 distinct telephone numbers, and this repository is public. The receipt states both reductions.
 
 The check reads key names, so the redaction costs it nothing. If the design finds it needs an attested *value* from one of the seven redacted fields, stop and say so rather than recording an unredacted capture.
+
+## Correction, 2026-09-03: the seventh instance is described wrongly, and the check as specified cannot catch it
+
+Two claims above are wrong and one of them undermines the check this ticket builds. Both were found by reading the provider's own published schema rather than by sampling captures.
+
+**ClinicalTrials.gov publishes its field schema.** `https://clinicaltrials.gov/api/v2/studies/metadata` is public, needs no key, and documents 278 fields with their nesting and types. It settles attestation exactly, where sampled captures only ever sample.
+
+**`centralContacts` is documented, so "the provider never sends it" is false.** The schema places it at `protocolSection.contactsLocationsModule.centralContacts`, type `Contact[]`, a sibling of `locations`. It is well populated: all 20 recruiting melanoma trials sampled on 2026-09-03 publish one.
+
+The defect is a nesting error, not a nonexistent field. `CtGovContactsLocationsModule.central_contacts` is correct and `src/transform/trial.rs` already reads it correctly when building the contacts section. `CtGovLocation.central_contacts` is the dead one, because `Location` has no such member in the schema. It is consulted twice as a fallback, in `extract_locations` and in `extract_contacts`, and neither fallback can ever fire.
+
+The observable cost stays as this ticket described it. Central contacts do reach the caller through the module-level read. Nothing is missing from the output. That part was right.
+
+**The check as specified would pass this defect.** The requirement above says a key name the code reads is "present in a recorded capture from that provider endpoint." `centralContacts` is present in captures, at module level. A check that treats a capture as a flat set of key names finds it, marks the location field attested, and moves on. The ticket names this instance as one of the seven the check must catch, and as specified it catches six.
+
+**A key name is attested at its path, not as a bare name.** `contactsLocationsModule.centralContacts` is attested. `contactsLocationsModule.locations[].centralContacts` is not. The same word is real in one place and invented in another, and only the path tells them apart. Build the check on paths.
+
+`armGroupType`, the invented key that started this whole class, is absent from the schema entirely. So the schema separates a real key at the wrong path from a key that does not exist at all, and both are defects worth different messages.
+
+## The decision this correction carries
+
+Read the provider's published schema where one exists, and fall back to recorded captures where none does.
+
+The capture-union approach has now produced two wrong answers in one evening. It called `secondaryOutcomes` dead, and that is a documented field our one capture happened not to carry, which refused ticket 1126's first attempt. It would have called `centralContacts` attested at a path where it does not exist. A sample proves presence and never proves absence, which is the exact question this check asks.
+
+ClinicalTrials.gov has a schema. NCI does not publish an equivalent, so NCI keeps the capture path and keeps `get_nci_2023_04529_full_20260903.json` as its evidence. Say in the provenance record which source attests each endpoint.
+
+Cost of this decision. The schema is a network dependency the gate ladder must not acquire, so the schema is recorded into `testdata/sources/` like any other capture, with a receipt, and refreshed deliberately. A field the provider adds after the recording reads as unattested until someone re-records. That is the same staleness captures already have, and the schema is one file instead of a growing set of sampled trials.

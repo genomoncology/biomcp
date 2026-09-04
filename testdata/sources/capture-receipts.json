@@ -2194,6 +2194,18 @@
         "minimization_or_redaction": "No fields removed and no values redacted. The complete study record as returned; JSON whitespace normalized after capture. The record carries no email address and no telephone number. The only named people are overall officials, published with name, affiliation and role.",
         "provider_origin_statement": "Recorded from the public ClinicalTrials.gov v2 API on 2026-09-03 with no field restriction. Recorded as a second full capture because the first, NCT02576665, is a trial with no secondary outcomes, so its outcomesModule carries only primaryOutcomes and cannot attest secondaryOutcomes. This record carries both. One trial cannot attest a provider's optional keys; the attested key set is the union across captures."
       }
+    },
+    {
+      "path": "ctgov/field_metadata_20260903.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinicalTrials.gov",
+        "request": "https://clinicaltrials.gov/api/v2/studies/metadata",
+        "captured_at": "2026-09-03T20:05:00Z",
+        "sha256": "c37bbffd7a86efe150061f0f95d34483256961fdaa018519ea021d13864a1879",
+        "minimization_or_redaction": "No fields removed and no values redacted. JSON whitespace normalized after capture. The document is a field schema and carries no study data and no personal data.",
+        "provider_origin_statement": "The provider's own published field schema, recorded from the public ClinicalTrials.gov v2 API on 2026-09-03. It documents 278 fields with their nesting and types. It attests a field name at its path, which a sampled study record cannot: a sample proves a key is present and never proves a key is absent."
+      }
     }
   ],
   "confirmed_byte_unfaithful": 0,

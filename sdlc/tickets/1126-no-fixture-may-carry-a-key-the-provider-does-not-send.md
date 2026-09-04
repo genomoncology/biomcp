@@ -119,3 +119,23 @@ Nothing in the requirement. The rule stands as written and none of the above wea
 Two things are now settled that the first attempt had to discover: the attested set is a union across captures, and the check must know which endpoint a fixture claims. Both were implicit before and both are now stated.
 
 The ruling on `contacts`, `email` and `phone` is the one judgment the ticket should not make on its own. It is made here: they are exceptions, the reason is that attesting them would publish real people's contact details from a public repository, and that reason is written into the provenance record rather than left as a bare exemption.
+
+## Amendment, 2026-09-03: attest against the provider's schema, not a union of samples
+
+The nine unattested keys listed above were worked out by unioning key names across recorded captures. That method has now given two wrong answers in one evening, and it should not be what this check rests on.
+
+ClinicalTrials.gov publishes its own field schema at `https://clinicaltrials.gov/api/v2/studies/metadata`. Public, no key, 278 documented fields with their nesting and types. It is recorded as `testdata/sources/ctgov/field_metadata_20260903.json` with a receipt.
+
+It answers the nine directly. `secondaryOutcomes`, `contacts`, `email`, `phone`, `startDateStruct`, `overallStatus` and `centralContacts` are all documented. `armGroupType`, the invented key that started this class, is absent from the schema entirely.
+
+That last line is the point. A union of samples proves a key is present and never proves a key is absent, which is the question this check asks. The schema answers the question that was actually asked.
+
+**Three consequences for the work.**
+
+The three keys ruled exceptions above — `contacts`, `email`, `phone` — need no exception. The schema documents all three, so they are attested without recording anybody's telephone number. The reasoning behind that ruling still stands wherever no schema exists: do not record a capture carrying real people's contact details in order to satisfy a check.
+
+`startDate`, `completionDate` and `status` are still candidate defects. The schema documents `startDateStruct`, `completionDateStruct` and `overallStatus`. The bare forms are absent. Rule on each once the fixture's claimed endpoint is known.
+
+Attestation is by path, not by bare name. Ticket 1138's correction of the same date carries the argument in full and it applies identically here.
+
+**Where the schema does not exist.** NCI publishes no equivalent, so NCI keeps the capture path with `get_nci_2023_04529_full_20260903.json` as its evidence. The provenance record says which source attests each endpoint. Two mechanisms, one record.
