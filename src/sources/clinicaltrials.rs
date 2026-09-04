@@ -26,6 +26,7 @@ const CTGOV_GET_FIELDS_BASE: &[&str] = &[
     "InterventionName",
     "InterventionOtherName",
     "InterventionType",
+    "InterventionDescription",
     "LeadSponsorName",
     "EnrollmentCount",
     "BriefSummary",

@@ -114,6 +114,32 @@ fn default_get_fields_request_visible_status_context() {
 }
 
 #[test]
+fn intervention_detail_fields_are_requested_once_with_or_without_arms() {
+    for sections in [vec![], vec!["arms".to_string()]] {
+        let plan = ClinicalTrialsClient::get_plan("NCT02576665", &sections);
+        let fields = plan
+            .query_value("fields")
+            .expect("trial detail fields query");
+
+        for expected in [
+            "InterventionName",
+            "InterventionOtherName",
+            "InterventionType",
+            "InterventionDescription",
+        ] {
+            assert_eq!(
+                fields
+                    .split(',')
+                    .filter(|actual| *actual == expected)
+                    .count(),
+                1,
+                "{expected} must be requested exactly once for sections {sections:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn get_plan_builds_study_path_and_section_fields() {
     let sections = vec!["contacts".to_string(), "eligibility".to_string()];
     let plan = ClinicalTrialsClient::get_plan("NCT41300001", &sections);

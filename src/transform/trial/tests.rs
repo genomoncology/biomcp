@@ -4,6 +4,8 @@ use serde_json::json;
 mod ticket_1107;
 #[path = "tests/ticket_1111.rs"]
 mod ticket_1111;
+#[path = "tests/ticket_1112.rs"]
+mod ticket_1112;
 #[path = "tests/ticket_1132.rs"]
 mod ticket_1132;
 use ticket_1107::{IntoTrialSearchTestResult, IntoTrialTestResult};
