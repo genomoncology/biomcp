@@ -11,3 +11,11 @@ The cheapest useful addition would treat ORCID as another exact provider. `biomc
 A later feature could return evidence-backed cross-provider candidates. BioMCP should not merge same-name people automatically. The exact-provider rule already protects callers from that error.
 
 The current negative was verified with `biomcp 0.9.0-dev.6`, `biomcp list author`, and `biomcp get author semanticscholar:<id>` on 2026-09-04. Ticket 1060 deliberately excluded ORCID resolution and named it as follow-up work.
+
+## Provider verification
+
+ORCID supports this feature through its version 3.0 Public API. The `/record`, `/person`, and `/works` endpoints return public researcher data. Live `/works` calls for both exercise records returned 176 and 222 work groups on 2026-09-04. Their work summaries carried DOI and other external identifiers that BioMCP can preserve as article pivots.
+
+The supported production integration has one added cost. ORCID's documentation requires Public API credentials and a `/read-public` token for API calls. The production endpoints accepted the two anonymous reads during verification, but BioMCP should not treat observed anonymous access as the provider contract. The implementation should support ORCID credentials and report their health. ORCID exposes public claimed works. It does not supply the missing evidence that would merge those records with Semantic Scholar author identities.
+
+Provider documentation: <https://info.orcid.org/documentation/integration-and-api-faq/>

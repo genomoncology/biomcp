@@ -11,3 +11,11 @@ The cheapest useful addition would add `--offset`, retain the provider's offset 
 A later `--since` mode could support incremental refreshes. Offset pagination and honest completion metadata should land first.
 
 The negative was verified with `biomcp 0.9.0-dev.6` and the current help and JSON output on 2026-09-04. `src/cli/article/mod.rs` exposes only `--limit`. `src/sources/semantic_scholar.rs::paper_subresource_plan` sends only `fields` and `limit`. `SemanticScholarGraphResponse` keeps only `data`. This issue is related to ticket 1103. Ticket 1103 adds recovery commands to capped sections. Citation traversal first needs a continuation capability.
+
+## Provider verification
+
+Semantic Scholar supports this change directly. Its citation and reference endpoints accept `offset` and a limit up to 1,000. Their documented response shape contains `offset`, optional `next`, and `data`. It does not contain a total. A live three-page check against PMID 22237106 returned offsets 0, 1, and 2 with next values 1, 2, and 3 and a different paper on each page.
+
+BioMCP can therefore provide continuation and can mark the provider result complete when `next` is absent. BioMCP should not promise an exact total because the provider does not return one on this surface.
+
+Provider documentation: <https://api.semanticscholar.org/api-docs/graph>
