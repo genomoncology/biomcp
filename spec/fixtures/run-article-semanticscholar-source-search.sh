@@ -31,7 +31,7 @@ import json
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 port_file = Path(sys.argv[1])
 request_file = Path(sys.argv[2])
@@ -50,8 +50,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        request_file.write_text(request_file.read_text() + parsed.path + "\n" if request_file.exists() else parsed.path + "\n")
+        query = parse_qs(parsed.query).get("query", [""])[0]
+        request_file.write_text(request_file.read_text() + parsed.path + "\t" + query + "\n" if request_file.exists() else parsed.path + "\t" + query + "\n")
         if parsed.path == "/graph/v1/paper/search":
+            if query != "protein:protein interaction":
+                self.send_response(400)
+                self.end_headers()
+                return
             self.send_json({
                 "total": 1,
                 "data": [{
@@ -100,5 +105,5 @@ BIOMCP_PUBMED_BASE="$base" \
 BIOMCP_LITSENSE2_BASE="$base" \
 BIOMCP_TEST_UNPACED_ORIGIN="$base" \
 S2_API_KEY="" \
-  timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "BRAF melanoma" --source semanticscholar --debug-plan --limit 1
-test "$(cat "$REQUEST_FILE")" = "/graph/v1/paper/search"
+  timeout 25s "$ROOT/tools/biomcp-ci" --json search article -k "protein:protein interaction" --source semanticscholar --debug-plan --limit 1
+test "$(cat "$REQUEST_FILE")" = $'/graph/v1/paper/search\tprotein:protein interaction'

@@ -247,6 +247,8 @@ fn list_search_all_page_mentions_counts_only_json_contract() {
     assert!(out.contains("markdown keeps section counts and follow-up links"));
     assert!(out.contains("`--json` omits per-section results and links"));
     assert!(out.contains("metadata and counts only"));
+    assert!(out.contains("one nonempty symbol without whitespace"));
+    assert!(out.contains("rejects `gene:`, `disease:`, or `drug:`"));
 }
 
 #[test]
@@ -462,6 +464,8 @@ fn list_trial_and_article_include_missing_flags() {
     assert!(trial.contains("no separate NCI keyword flag"));
 
     let article = render(Some("article")).expect("list article should render");
+    assert!(article.contains("one nonempty symbol without whitespace"));
+    assert!(article.contains("Reserved `gene:`, `disease:`, and `drug:`"));
     assert!(article.contains("## When to use this surface"));
     assert!(article.contains("Use keyword search to scan a topic before you know the entities."));
     assert!(article.contains("Add `-g/--gene` when you already know the molecular anchor."));

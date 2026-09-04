@@ -137,6 +137,8 @@ pub(super) fn list_search_all() -> String {
 ## Notes
 
 - At least one typed slot is required.
+- `--gene` accepts one nonempty symbol without whitespace.
+- `--keyword` is provider-neutral and rejects `gene:`, `disease:`, or `drug:` field expressions; use the matching typed slot. Literal quote bytes around such text keep it literal.
 - Unanchored keyword-only dispatch is article-only.
 - Keyword is pushed into drug search only when `--gene` and/or `--disease` is present.
 

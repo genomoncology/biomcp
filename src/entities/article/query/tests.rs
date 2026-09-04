@@ -38,11 +38,13 @@ fn europepmc_keyword_does_not_quote_whitespace() {
 #[test]
 fn build_search_query_keeps_phrase_quoting_for_entity_filters() {
     let mut filters = empty_filters();
-    filters.gene = Some("BRAF V600E".into());
+    filters.gene = Some("BRAF".into());
+    filters.disease = Some("metastatic melanoma".into());
     filters.author = Some("Jane Doe".into());
 
     let query = build_search_query(&filters).expect("query should build");
-    assert!(query.contains("\"BRAF V600E\""));
+    assert!(query.contains("BRAF"));
+    assert!(query.contains("\"metastatic melanoma\""));
     assert!(query.contains("AUTH:\"Jane Doe\""));
 }
 
@@ -180,7 +182,7 @@ fn ticket_406_myd88_exact_protein_alias_article_precision() {
 #[test]
 fn build_pubmed_search_term_cleans_unfielded_clauses_only() {
     let mut filters = empty_filters();
-    filters.gene = Some("Which are the genes thought to be regulated by EWS/FLI?".into());
+    filters.gene = Some("EWS/FLI".into());
     filters.disease =
         Some("What is the incidence of cystic fibrosis in the caucasian population?".into());
     filters.drug = Some("What drug treatment can cause a spinal epidural hematoma?".into());
@@ -194,7 +196,7 @@ fn build_pubmed_search_term_cleans_unfielded_clauses_only() {
 
     assert_eq!(
         term,
-        "genes regulated EWS FLI AND incidence cystic fibrosis caucasian population AND drug treatment spinal epidural hematoma AND BRAF regulate melanoma AND \"Alice Smith\"[author] AND \"Nature Reviews\"[journal] AND review[pt] NOT retracted publication[pt]"
+        "EWS FLI AND incidence cystic fibrosis caucasian population AND drug treatment spinal epidural hematoma AND BRAF regulate melanoma AND \"Alice Smith\"[author] AND \"Nature Reviews\"[journal] AND review[pt] NOT retracted publication[pt]"
     );
 }
 

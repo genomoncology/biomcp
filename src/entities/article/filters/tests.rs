@@ -53,6 +53,86 @@ fn ordinary_bracket_and_colon_keywords_remain_valid() {
 }
 
 #[test]
+fn reserved_article_keyword_fields_have_precise_boundaries_and_guidance() {
+    const GENE: &str = "Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".";
+    const DISEASE: &str = "Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".";
+    const DRUG: &str = "Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".";
+    for (keyword, expected) in [
+        ("gene:RB1", GENE),
+        ("GENE:RB1", GENE),
+        ("melanoma gene:RB1", GENE),
+        ("melanoma (gene:RB1)", GENE),
+        ("melanoma\u{a0}gene:RB1", GENE),
+        ("gene:\"RB1\"", GENE),
+        ("disease:melanoma", DISEASE),
+        ("DRUG:vemurafenib", DRUG),
+    ] {
+        let err = validate_search_filter_values(&keyword_filters(keyword))
+            .expect_err("reserved article field syntax should be rejected");
+        let message = err.to_string();
+        assert_eq!(message, expected, "{keyword:?}");
+        assert!(
+            !message.contains(keyword),
+            "must not reflect input: {message}"
+        );
+    }
+}
+
+#[test]
+fn literal_colons_false_prefixes_and_quote_bytes_remain_keywords() {
+    for keyword in [
+        "NM_004333.6:c.1799T>A",
+        "protein:protein interaction",
+        "oncogene:RB1",
+        "MYGENE:RB1",
+        "ratio 1:2",
+        "BRAF[variant]",
+        "\"gene:gene interaction\"",
+        "melanoma \"gene:RB1",
+    ] {
+        validate_search_filter_values(&keyword_filters(keyword))
+            .unwrap_or_else(|err| panic!("literal keyword {keyword:?} should remain valid: {err}"));
+    }
+}
+
+#[test]
+fn article_gene_accepts_one_trimmed_whitespace_free_token() {
+    for gene in ["BRAF", "braf", "PD-L1", "H3-3A", "  BRAF  "] {
+        let filters = ArticleSearchFilters {
+            gene: Some(gene.into()),
+            ..empty_filters()
+        };
+        validate_search_filter_values(&filters)
+            .unwrap_or_else(|err| panic!("gene {gene:?} should remain valid: {err}"));
+    }
+}
+
+#[test]
+fn article_gene_rejects_empty_or_unicode_whitespace_with_fixed_guidance() {
+    const EXPECTED: &str = "Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].";
+    for gene in [
+        "",
+        " \t\n",
+        "TPMT mercaptopurine",
+        "TPMT\tmercaptopurine",
+        "TPMT\nmercaptopurine",
+        "TPMT\u{a0}mercaptopurine",
+    ] {
+        let filters = ArticleSearchFilters {
+            gene: Some(gene.into()),
+            ..empty_filters()
+        };
+        let err = validate_search_filter_values(&filters)
+            .expect_err("empty or multi-concept article gene should be rejected");
+        let message = err.to_string();
+        assert_eq!(message, EXPECTED, "{gene:?}");
+        if !gene.is_empty() {
+            assert!(!message.contains(gene), "must not reflect input: {message}");
+        }
+    }
+}
+
+#[test]
 fn normalized_date_bounds_normalizes_partial_dates() {
     let mut filters = empty_filters();
     filters.date_from = Some("2020".into());

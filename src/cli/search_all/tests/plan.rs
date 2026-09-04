@@ -4,7 +4,9 @@ use serde_json::json;
 
 use crate::entities::article::ArticleRankingMode;
 
-use super::super::plan::{PreparedInput, article_filters, build_result_plan};
+use super::super::plan::{
+    PreparedInput, article_filters, build_dispatch_plan_prepared, build_result_plan,
+};
 use super::super::{SearchAllInput, SearchAllSection, build_dispatch_plan};
 
 fn input_with_gene() -> SearchAllInput {
@@ -14,6 +16,20 @@ fn input_with_gene() -> SearchAllInput {
         disease: None,
         drug: None,
         keyword: None,
+        since: None,
+        limit: 3,
+        counts_only: false,
+        debug_plan: false,
+    }
+}
+
+fn input_with_keyword(keyword: &str) -> SearchAllInput {
+    SearchAllInput {
+        gene: None,
+        variant: None,
+        disease: None,
+        drug: None,
+        keyword: Some(keyword.into()),
         since: None,
         limit: 3,
         counts_only: false,
@@ -48,6 +64,69 @@ fn build_dispatch_plan_keyword_only_routes_to_article() {
     });
     let entities = plan.iter().map(|spec| spec.entity).collect::<Vec<_>>();
     assert_eq!(entities, vec!["article"]);
+}
+
+#[test]
+fn preparation_rejects_article_owned_keyword_and_gene_shapes_before_fanout() {
+    for (input, expected) in [
+        (
+            input_with_keyword("gene:RB1"),
+            "Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".",
+        ),
+        (
+            input_with_keyword("disease:melanoma"),
+            "Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".",
+        ),
+        (
+            input_with_keyword("drug:vemurafenib"),
+            "Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".",
+        ),
+        (
+            SearchAllInput {
+                gene: Some("TPMT mercaptopurine".into()),
+                ..input_with_gene()
+            },
+            "Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].",
+        ),
+        (
+            SearchAllInput {
+                gene: Some(" \u{a0} ".into()),
+                ..input_with_gene()
+            },
+            "Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].",
+        ),
+    ] {
+        let err =
+            PreparedInput::new(&input).expect_err("invalid article input must fail preparation");
+        assert_eq!(err.to_string(), expected);
+    }
+}
+
+#[test]
+fn preparation_keeps_literal_colons_and_valid_gene_tokens() {
+    for keyword in [
+        "NM_004333.6:c.1799T>A",
+        "protein:protein interaction",
+        "oncogene:RB1",
+        "MYGENE:RB1",
+        "ratio 1:2",
+        "BRAF[variant]",
+        "\"gene:gene interaction\"",
+    ] {
+        let prepared = PreparedInput::new(&input_with_keyword(keyword))
+            .unwrap_or_else(|err| panic!("keyword {keyword:?} should prepare: {err}"));
+        assert_eq!(build_dispatch_plan_prepared(&prepared).len(), 1);
+    }
+
+    for gene in ["BRAF", "braf", "PD-L1", "H3-3A", "  BRAF  "] {
+        let prepared = PreparedInput::new(&SearchAllInput {
+            gene: Some(gene.into()),
+            ..input_with_gene()
+        })
+        .unwrap_or_else(|err| panic!("gene {gene:?} should prepare: {err}"));
+        assert_eq!(prepared.gene.as_deref(), Some(gene.trim()));
+        assert_eq!(build_dispatch_plan_prepared(&prepared).len(), 7);
+    }
 }
 
 #[test]

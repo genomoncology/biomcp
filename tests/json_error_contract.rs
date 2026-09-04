@@ -801,6 +801,53 @@ fn contradictory_variant_filters_fail_before_myvariant_contact() {
 }
 
 #[test]
+fn malformed_article_query_inputs_keep_the_json_error_contract_without_provider_contact() {
+    let fixture = NoProviderContactFixture::start();
+    let providers = [
+        ("BIOMCP_PUBTATOR_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_EUROPEPMC_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_PUBMED_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_S2_BASE", fixture.base_url.as_str()),
+        ("BIOMCP_LITSENSE2_BASE", fixture.base_url.as_str()),
+    ];
+    for (args, expected) in [
+        (
+            vec!["--json", "search", "article", "-k", "gene:RB1"],
+            "Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".",
+        ),
+        (
+            vec!["--json", "search", "article", "-q", "disease:melanoma"],
+            "Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".",
+        ),
+        (
+            vec!["--json", "search", "article", "--query", "drug:vemurafenib"],
+            "Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".",
+        ),
+        (
+            vec![
+                "--json",
+                "search",
+                "article",
+                "--gene",
+                "TPMT mercaptopurine",
+            ],
+            "Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].",
+        ),
+        (
+            vec!["--json", "search", "article", "--gene", ""],
+            "Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].",
+        ),
+    ] {
+        let result = run_biomcp_with_env(&args, &providers);
+        assert_json_error(&result, 2, "invalid_argument");
+        assert!(result.stderr.is_empty(), "stderr={}", result.stderr);
+        let value: serde_json::Value = serde_json::from_str(&result.stdout).expect("valid JSON");
+        assert_eq!(value["error"]["message"], expected);
+        fixture.assert_no_request();
+    }
+}
+
+#[test]
 fn non_trial_batch_source_fails_before_provider_contact() {
     let result = run_biomcp_with_env(
         &["--json", "batch", "gene", "BRAF", "--source", "ctgov"],

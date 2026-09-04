@@ -614,6 +614,18 @@ class Handler(BaseHTTPRequestHandler):
         decoded_path = unquote(parsed.path)
         query = parse_qs(parsed.query)
 
+        candidate_route = {
+            "/search/": ("pubtator", "text"),
+            "/search": ("europepmc", "query"),
+            "/esearch.fcgi": ("pubmed", "term"),
+            "/graph/v1/paper/search": ("semanticscholar", "query"),
+            "/sentences/": ("litsense2", "query"),
+        }.get(decoded_path)
+        if candidate_route is not None:
+            provider, parameter = candidate_route
+            value = query.get(parameter, [""])[0]
+            append_request_log(f"search:{provider}:{value}")
+
         pmids = query.get("pmids")
         if decoded_path == "/publications/export/biocjson" and pmids == ["20516115"]:
             send_bytes(self, 200, PUBTATOR_20516115, "application/json")
@@ -1233,6 +1245,7 @@ printf 'export BIOMCP_PMC_OA_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_PMC_HTML_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_NCBI_IDCONV_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_S2_BASE=%q\n' "$base_url" >>"$env_file"
+printf 'export BIOMCP_LITSENSE2_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_FIGSHARE_BASE=%q\n' "$base_url" >>"$env_file"
 printf 'export BIOMCP_CACHE_MIN_DISK_FREE=1B\n' >>"$env_file"
 printf 'unset NCBI_API_KEY\n' >>"$env_file"

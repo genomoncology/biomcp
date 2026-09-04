@@ -861,6 +861,16 @@ def test_ticket_376_article_variant_specs_document_deterministic_or_live_smoke_c
     assert not re.search(r"trap[^\n]+(?:EXIT|INT|TERM|HUP)", article)
 
 
+def test_article_request_log_consumers_share_the_serial_fixture_lane() -> None:
+    runner = _read_repo("scripts/run-specs.sh")
+    partition = re.search(r"(?ms)^partition_paths\(\) \{.*?^\}", runner)
+    assert partition is not None
+    lane = partition.group(0)
+    for path in ("spec/entity/article.md", "spec/surface/mcp.md"):
+        assert path in lane
+        assert "BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG" in _read_repo(path)
+
+
 def test_ticket_377_renderer_envelope_fixture_contracts_exist() -> None:
     failures: list[str] = []
 

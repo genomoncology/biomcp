@@ -15,7 +15,7 @@ fn parse_article_year(value: &str) -> Result<u16, String> {
 
 #[derive(Args, Debug)]
 pub struct ArticleSearchArgs {
-    /// Filter by gene symbol
+    /// Filter by one gene symbol (nonempty and without whitespace)
     #[arg(short, long)]
     pub gene: Option<String>,
     /// Filter by disease name
@@ -27,7 +27,7 @@ pub struct ArticleSearchArgs {
     /// Filter by author name (default search uses compatible author-capable sources)
     #[arg(short = 'a', long, num_args = 1..)]
     pub author: Vec<String>,
-    /// Provider-neutral free text (alias: -q, --query; use --author/--journal for fields)
+    /// Provider-neutral free text (alias: -q, --query; use typed flags, not gene:/disease:/drug: syntax)
     #[arg(
         short = 'k',
         long = "keyword",

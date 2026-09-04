@@ -12,6 +12,38 @@ ranking, exact-keyword lookup intent, and the pre-execution `BackendPlan`, so
 tests can prove routing decisions without depending on live PubMed, Europe PMC,
 PubTator, LitSense2, or Semantic Scholar responses.
 
+Reserved typed-field expressions fail at that request boundary with actionable,
+sanitized guidance. Both the flagged and positional keyword aliases converge.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+before="$(wc -l <"$request_log")"
+for args in '-k gene:RB1' 'gene:RB1'; do
+  output="$(../../tools/biomcp-ci search article $args 2>&1 || true)"
+  printf '%s\n' "$output"
+done | mustmatch like 'keyword is provider-neutral
+Use --gene RB1 for CLI or raw MCP
+"gene":"RB1"'
+after="$(wc -l <"$request_log")"
+test "$after" -eq "$before"
+```
+
+The cross-entity surface applies the same check before its seven-leg gene
+fan-out and does not render a successful card.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+before="$(wc -l <"$request_log")"
+(../../tools/biomcp-ci search all --gene 'TPMT mercaptopurine' 2>&1 || true) | mustmatch like 'gene accepts one symbol
+--gene TPMT --keyword mercaptopurine
+"keyword":["mercaptopurine"]'
+(../../tools/biomcp-ci search all --gene 'TPMT mercaptopurine' 2>&1 || true) | mustmatch not like '# Cross-Entity Search'
+after="$(wc -l <"$request_log")"
+test "$after" -eq "$before"
+```
+
 ## Deterministic Source Contracts
 
 Ticket 376 moves routine article-source proof from public upstream canaries to

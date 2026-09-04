@@ -6,7 +6,7 @@ mod batch;
 mod candidates;
 mod detail;
 mod enrichment;
-mod filters;
+pub(crate) mod filters;
 mod fulltext;
 mod graph;
 mod identity_verification;

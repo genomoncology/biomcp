@@ -112,7 +112,7 @@ partition_paths() {
     case "$path" in
       # These pages share one article server and its mutable request log, so
       # Mustmatch retains their declared order in one serial invocation.
-      spec/entity/article.md|spec/entity/author.md) ARTICLE_MD_PATHS+=("$path") ;;
+      spec/entity/article.md|spec/entity/author.md|spec/surface/mcp.md) ARTICLE_MD_PATHS+=("$path") ;;
       # This page owns a separate setup/cleanup subshell and generated inputs.
       spec/entity/section-outcomes.md) SECTION_OUTCOME_MD_PATHS+=("$path") ;;
       *.md) MD_PATHS+=("$path") ;;

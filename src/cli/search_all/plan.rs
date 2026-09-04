@@ -422,11 +422,16 @@ impl PreparedInput {
             )));
         }
 
-        let gene = normalize_slot(input.gene.clone());
+        let gene = input.gene.as_deref().map(str::trim).map(str::to_string);
         let variant = normalize_slot(input.variant.clone());
         let disease = normalize_slot(input.disease.clone());
         let drug = normalize_slot(input.drug.clone());
         let keyword = normalize_slot(input.keyword.clone());
+
+        crate::entities::article::filters::validate_query_inputs(
+            gene.as_deref(),
+            keyword.as_deref(),
+        )?;
 
         if gene.is_none()
             && variant.is_none()

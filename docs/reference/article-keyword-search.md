@@ -126,6 +126,13 @@ keyword text. Matching is case-insensitive. Other bracket and colon forms remain
 literal, so biomedical text such as `NM_004333.6:c.1799T>A`, `BRAF[variant]`,
 and `protein:protein interaction` remains searchable.
 
+The case-insensitive labels `gene:`, `disease:`, and `drug:` are also rejected
+when they begin the trimmed keyword or follow whitespace or `(`. Use the
+matching typed field instead. Prefixes such as `oncogene:` and `MYGENE:` stay
+literal. Literal quote bytes around a value such as `"gene:gene interaction"`
+also keep it literal; ordinary shell or JSON delimiters do not become bytes in
+the runtime value.
+
 PubMed-specific behavior: direct `--source pubmed` searches and the compatible
 federated PubMed leg clean bounded question-format filler words from
 unfielded gene, disease, drug, and keyword terms before PubMed ESearch.
@@ -143,7 +150,9 @@ biomcp search article -k "large language model clinical trials" --limit 5
 
 ## Phrase behavior for entity filters
 
-Entity-oriented filters retain phrase quoting behavior:
+Article `--gene` accepts one nonempty symbol without whitespace; put any
+additional concept in `--keyword`. Other entity-oriented filters retain phrase
+quoting behavior:
 
 - `--gene`
 - `--disease`
@@ -155,7 +164,7 @@ Entity-oriented filters retain phrase quoting behavior:
 Example:
 
 ```bash
-biomcp search article -g "BRAF V600E" --author "Jane Doe" --limit 5
+biomcp search article -g BRAF -k V600E --author "Jane Doe" --limit 5
 ```
 
 ## Combined filters

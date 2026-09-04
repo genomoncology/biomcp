@@ -49,6 +49,70 @@ enum NativeKeywordField {
     Affiliation,
 }
 
+#[derive(Clone, Copy)]
+enum ReservedKeywordField {
+    Gene,
+    Disease,
+    Drug,
+}
+
+fn reserved_keyword_field(keyword: &str) -> Option<ReservedKeywordField> {
+    const FIELDS: [(&str, ReservedKeywordField); 3] = [
+        ("gene:", ReservedKeywordField::Gene),
+        ("disease:", ReservedKeywordField::Disease),
+        ("drug:", ReservedKeywordField::Drug),
+    ];
+    let keyword = keyword.trim();
+
+    for (label, field) in FIELDS {
+        for (start, _) in keyword.char_indices() {
+            let end = start + label.len();
+            if keyword
+                .get(start..end)
+                .is_some_and(|candidate| candidate.eq_ignore_ascii_case(label))
+                && (start == 0
+                    || keyword[..start]
+                        .chars()
+                        .next_back()
+                        .is_some_and(|previous| previous.is_whitespace() || previous == '('))
+            {
+                return Some(field);
+            }
+        }
+    }
+    None
+}
+
+pub(crate) fn validate_query_inputs(
+    gene: Option<&str>,
+    keyword: Option<&str>,
+) -> Result<(), BioMcpError> {
+    if let Some(gene) = gene
+        && (gene.trim().is_empty() || gene.trim().chars().any(char::is_whitespace))
+    {
+        return Err(BioMcpError::InvalidArgument(
+            "gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"]."
+                .into(),
+        ));
+    }
+
+    if let Some(field) = keyword.and_then(reserved_keyword_field) {
+        let (label, flag, example) = match field {
+            ReservedKeywordField::Gene => ("gene:", "--gene RB1", r#""gene":"RB1""#),
+            ReservedKeywordField::Disease => {
+                ("disease:", "--disease melanoma", r#""disease":"melanoma""#)
+            }
+            ReservedKeywordField::Drug => {
+                ("drug:", "--drug vemurafenib", r#""drug":"vemurafenib""#)
+            }
+        };
+        return Err(BioMcpError::InvalidArgument(format!(
+            "keyword is provider-neutral and does not accept {label} filter syntax. Use {flag} for CLI or raw MCP, or the typed MCP field, for example {example}."
+        )));
+    }
+    Ok(())
+}
+
 fn native_keyword_field(keyword: &str) -> Option<NativeKeywordField> {
     const SUFFIX_FIELDS: [(&str, NativeKeywordField); 5] = [
         ("[author]", NativeKeywordField::Author),
@@ -113,6 +177,7 @@ pub(super) fn validate_search_filter_values(
     {
         normalize_article_type(article_type)?;
     }
+    validate_query_inputs(filters.gene.as_deref(), filters.keyword.as_deref())?;
     if let Some(field) = filters.keyword.as_deref().and_then(native_keyword_field) {
         let guidance = match field {
             NativeKeywordField::Author => "Use --author for author searches.",

@@ -97,6 +97,52 @@ fn article_search_request_rejects_native_keyword_field_syntax() {
 }
 
 #[test]
+fn article_search_request_rejects_reserved_keyword_aliases_and_multiword_gene() {
+    for (keyword, expected) in [
+        (
+            "gene:RB1",
+            "Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".",
+        ),
+        (
+            "disease:melanoma",
+            "Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".",
+        ),
+        (
+            "drug:vemurafenib",
+            "Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".",
+        ),
+    ] {
+        for positional in [false, true] {
+            let mut args = default_article_search_args();
+            if positional {
+                args.positional_query = Some(keyword.into());
+            } else {
+                args.keyword = vec![keyword.into()];
+            }
+            let err =
+                article_search_request(args).expect_err("reserved syntax should fail planning");
+            assert_eq!(err.to_string(), expected);
+        }
+    }
+
+    let mut args = default_article_search_args();
+    args.gene = Some("TPMT mercaptopurine".into());
+    let err = article_search_request(args).expect_err("multiword gene should fail planning");
+    assert_eq!(
+        err.to_string(),
+        "Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"]."
+    );
+}
+
+#[test]
+fn article_search_request_trims_valid_gene_before_planning() {
+    let mut args = default_article_search_args();
+    args.gene = Some("  BRAF  ".into());
+    let request = article_search_request(args).expect("trimmed gene should plan");
+    assert_eq!(request.filters.gene.as_deref(), Some("BRAF"));
+}
+
+#[test]
 fn article_search_request_records_exact_keyword_lookup_intent() {
     let mut args = default_article_search_args();
     args.keyword = vec!["Gleevec".into()];

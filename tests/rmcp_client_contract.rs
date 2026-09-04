@@ -14,8 +14,63 @@ use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::sync::{
     Arc,
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
 };
+
+struct RequestCounterFixture {
+    base: String,
+    requests: Arc<AtomicUsize>,
+    stop: Arc<AtomicBool>,
+    thread: Option<thread::JoinHandle<()>>,
+}
+
+impl RequestCounterFixture {
+    fn start() -> anyhow::Result<Self> {
+        let listener = TcpListener::bind(("127.0.0.1", 0))?;
+        listener.set_nonblocking(true)?;
+        let base = format!("http://{}", listener.local_addr()?);
+        let requests = Arc::new(AtomicUsize::new(0));
+        let stop = Arc::new(AtomicBool::new(false));
+        let thread_requests = Arc::clone(&requests);
+        let thread_stop = Arc::clone(&stop);
+        let thread = thread::spawn(move || {
+            while !thread_stop.load(Ordering::SeqCst) {
+                match listener.accept() {
+                    Ok((mut stream, _)) => {
+                        thread_requests.fetch_add(1, Ordering::SeqCst);
+                        let mut request = [0_u8; 2048];
+                        let _ = stream.read(&mut request);
+                        let body = r#"{"total":0,"data":[]}"#;
+                        let response = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                            body.len()
+                        );
+                        let _ = stream.write_all(response.as_bytes());
+                    }
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(5))
+                    }
+                    Err(_) => return,
+                }
+            }
+        });
+        Ok(Self {
+            base,
+            requests,
+            stop,
+            thread: Some(thread),
+        })
+    }
+}
+
+impl Drop for RequestCounterFixture {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::SeqCst);
+        if let Some(thread) = self.thread.take() {
+            thread.join().expect("join request counter");
+        }
+    }
+}
 use std::thread;
 use std::time::Duration;
 
@@ -172,6 +227,152 @@ async fn human_mcp_command_dispatches_to_provider_once() -> anyhow::Result<()> {
     assert_eq!(result.is_error, Some(false));
     assert_eq!(requests.load(Ordering::SeqCst), 1);
 
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_and_typed_article_query_validation_converges_before_provider_work()
+-> anyhow::Result<()> {
+    let harness = harness();
+    let fixture = RequestCounterFixture::start()?;
+    let mut env = Vec::new();
+    for name in [
+        "BIOMCP_PUBTATOR_BASE",
+        "BIOMCP_EUROPEPMC_BASE",
+        "BIOMCP_PUBMED_BASE",
+        "BIOMCP_S2_BASE",
+        "BIOMCP_LITSENSE2_BASE",
+        "BIOMCP_MYGENE_BASE",
+        "BIOMCP_MYVARIANT_BASE",
+        "BIOMCP_MYCHEM_BASE",
+        "BIOMCP_CTGOV_BASE",
+        "BIOMCP_REACTOME_BASE",
+        "BIOMCP_KEGG_BASE",
+        "BIOMCP_WIKIPATHWAYS_BASE",
+        "BIOMCP_CPIC_BASE",
+    ] {
+        env.push((name, fixture.base.clone()));
+    }
+    env.push(("BIOMCP_TEST_UNPACED_ORIGIN", fixture.base.clone()));
+    let client = harness.spawn_stdio_client(&env).await?;
+    const GENE: &str = "Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example \"gene\":\"RB1\".";
+    const DISEASE: &str = "Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example \"disease\":\"melanoma\".";
+    const DRUG: &str = "Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example \"drug\":\"vemurafenib\".";
+    const SYMBOL: &str = "Error: Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields \"gene\":\"TPMT\" and \"keyword\":[\"mercaptopurine\"].";
+    let keyword_cases = [
+        ("gene:RB1", GENE),
+        ("disease:melanoma", DISEASE),
+        ("drug:vemurafenib", DRUG),
+    ];
+
+    for (keyword, expected) in keyword_cases {
+        for command in [
+            format!("biomcp search article -k {keyword}"),
+            format!("biomcp search article -q {keyword}"),
+            format!("biomcp search article --query {keyword}"),
+            format!("biomcp search article {keyword}"),
+            format!("biomcp search all --keyword {keyword}"),
+        ] {
+            let result = biomcp_mcp_contract_client::call_biomcp(&client, &command).await?;
+            assert_eq!(result.is_error, Some(true), "{command}");
+            assert_eq!(result.content.len(), 1, "{command}");
+            assert_eq!(
+                biomcp_mcp_contract_client::first_text(&result.content),
+                expected,
+                "{command}"
+            );
+        }
+    }
+
+    for command in [
+        "biomcp search article --gene 'TPMT mercaptopurine'",
+        "biomcp search all --gene 'TPMT mercaptopurine'",
+    ] {
+        let result = biomcp_mcp_contract_client::call_biomcp(&client, command).await?;
+        assert_eq!(result.is_error, Some(true), "{command}");
+        assert_eq!(result.content.len(), 1, "{command}");
+        assert_eq!(
+            biomcp_mcp_contract_client::first_text(&result.content),
+            SYMBOL,
+            "{command}"
+        );
+    }
+
+    for (arguments, expected) in [
+        (
+            BTreeMap::from([
+                ("entity".to_string(), json!("article")),
+                ("keyword".to_string(), json!(["gene:RB1"])),
+            ]),
+            GENE,
+        ),
+        (
+            BTreeMap::from([
+                ("entity".to_string(), json!("article")),
+                ("keyword".to_string(), json!(["disease:melanoma"])),
+            ]),
+            DISEASE,
+        ),
+        (
+            BTreeMap::from([
+                ("entity".to_string(), json!("article")),
+                ("keyword".to_string(), json!(["drug:vemurafenib"])),
+            ]),
+            DRUG,
+        ),
+        (
+            BTreeMap::from([
+                ("entity".to_string(), json!("article")),
+                ("gene".to_string(), json!("TPMT mercaptopurine")),
+            ]),
+            SYMBOL,
+        ),
+    ] {
+        let result = client
+            .peer()
+            .call_tool(
+                CallToolRequestParams::new("search")
+                    .with_arguments(arguments.into_iter().collect()),
+            )
+            .await?;
+        assert_eq!(result.is_error, Some(true));
+        assert_eq!(result.content.len(), 1);
+        assert_eq!(
+            biomcp_mcp_contract_client::first_text(&result.content),
+            expected
+        );
+    }
+
+    let harmless = biomcp_mcp_contract_client::call_biomcp(&client, "biomcp version").await?;
+    assert_eq!(harmless.is_error, Some(false));
+    thread::sleep(Duration::from_millis(20));
+    assert_eq!(fixture.requests.load(Ordering::SeqCst), 0);
+
+    let quoted = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("search").with_arguments(
+                BTreeMap::from([
+                    ("entity".to_string(), json!("article")),
+                    ("keyword".to_string(), json!(["\"gene:gene interaction\""])),
+                    ("source".to_string(), json!("semanticscholar")),
+                ])
+                .into_iter()
+                .collect(),
+            ),
+        )
+        .await?;
+    let quoted_text = biomcp_mcp_contract_client::first_text(&quoted.content);
+    assert!(
+        !quoted_text.contains("does not accept gene:"),
+        "{quoted_text}"
+    );
+    thread::sleep(Duration::from_millis(20));
+    assert!(
+        fixture.requests.load(Ordering::SeqCst) > 0,
+        "quoted literal should reach its provider"
+    );
     client.cancel().await?;
     Ok(())
 }

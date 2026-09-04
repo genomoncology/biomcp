@@ -9,6 +9,7 @@ import socket
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 import pytest
@@ -191,15 +192,17 @@ def test_runner_starts_one_article_fixture_and_cleans_it(
         line.split("|", 2)
         for line in (workspace / "mustmatch-invocation-log").read_text().splitlines()
     ]
-    assert len(invocations) == (4 if mode == "spec-contracts" else 29)
+    assert len(invocations) == (3 if mode == "spec-contracts" else 28)
     article_args, article_base, article_origin = invocations[0]
     assert "spec/entity/article.md" in article_args
     assert "spec/entity/author.md" in article_args
+    assert "spec/surface/mcp.md" in article_args
     assert article_base.startswith("http://127.0.0.1:")
     assert article_origin == article_base
     for rest_args, rest_base, rest_origin in invocations[1:]:
         assert "spec/entity/article.md" not in rest_args
         assert "spec/entity/author.md" not in rest_args
+        assert "spec/surface/mcp.md" not in rest_args
         assert rest_base == "caller-pubtator"
         assert rest_origin == "http://127.0.0.1:9999"
     assert not (workspace / ".cache" / "spec-article-fulltext-source-env").exists()
@@ -422,6 +425,41 @@ def _status(url: str) -> int:
             return response.status
     except urllib.error.HTTPError as error:
         return error.code
+
+
+def test_article_fixture_logs_every_candidate_search_route(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    _copy_article_fixture(workspace)
+    subprocess.run(
+        ["bash", "spec/fixtures/setup-article-fulltext-source-fixture.sh", str(workspace)],
+        cwd=workspace,
+        check=True,
+    )
+    exports = _read_exports(workspace / ".cache" / "spec-article-fulltext-source-env")
+    base = exports["BIOMCP_PUBTATOR_BASE"]
+    request_log = Path(exports["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"])
+    routes = [
+        ("/search/", "text", "pubtator"),
+        ("/search", "query", "europepmc"),
+        ("/esearch.fcgi", "term", "pubmed"),
+        ("/graph/v1/paper/search", "query", "semanticscholar"),
+        ("/sentences/", "query", "litsense2"),
+    ]
+    try:
+        assert exports["BIOMCP_LITSENSE2_BASE"] == base
+        request_log.write_text("", encoding="utf-8")
+        for path, parameter, _ in routes:
+            query = urllib.parse.urlencode({parameter: "route proof"})
+            _status(f"{base}{path}?{query}")
+        assert request_log.read_text(encoding="utf-8").splitlines() == [
+            f"search:{provider}:route proof" for _, _, provider in routes
+        ]
+    finally:
+        subprocess.run(
+            ["bash", "spec/fixtures/cleanup-article-fulltext-source-fixture.sh", str(workspace)],
+            cwd=workspace,
+            check=True,
+        )
 
 
 def test_metadata_resets_only_cold_storage_download_state(tmp_path: Path) -> None:

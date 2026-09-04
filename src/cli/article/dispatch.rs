@@ -148,8 +148,8 @@ pub(super) fn article_search_request(
         args.weight_citations,
         args.weight_position,
     )?;
-    let gene_anchored = args
-        .gene
+    let gene = args.gene.map(|value| value.trim().to_string());
+    let gene_anchored = gene
         .as_deref()
         .map(str::trim)
         .is_some_and(|value| !value.is_empty())
@@ -158,7 +158,7 @@ pub(super) fn article_search_request(
         && author.is_none()
         && keyword.is_none();
     let filters = crate::entities::article::ArticleSearchFilters {
-        gene: args.gene,
+        gene,
         gene_anchored,
         disease,
         drug,

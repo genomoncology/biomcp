@@ -153,6 +153,59 @@ variant_articles schema includes identity verification controls
 indexing'
 ```
 
+## Article Query Validation Converges Across MCP Tools
+
+Raw and typed article calls return the same actionable tool error without
+ending the session. The typed keyword keeps its published array shape.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw and typed article validation converges'
+import json, os, subprocess
+
+env = os.environ.copy()
+request_log = os.environ["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"]
+proc = subprocess.Popen([os.environ["BIOMCP_BIN"], "serve"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=env)
+
+def call(message):
+    proc.stdin.write(json.dumps(message) + "\n")
+    proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+
+call({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"spec","version":"1"}}})
+proc.stdin.write(json.dumps({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}) + "\n")
+proc.stdin.flush()
+open(request_log, "w", encoding="utf-8").close()
+before = sum(1 for _ in open(request_log, encoding="utf-8"))
+diagnostics = {
+    "gene": 'Error: Invalid argument: keyword is provider-neutral and does not accept gene: filter syntax. Use --gene RB1 for CLI or raw MCP, or the typed MCP field, for example "gene":"RB1".',
+    "disease": 'Error: Invalid argument: keyword is provider-neutral and does not accept disease: filter syntax. Use --disease melanoma for CLI or raw MCP, or the typed MCP field, for example "disease":"melanoma".',
+    "drug": 'Error: Invalid argument: keyword is provider-neutral and does not accept drug: filter syntax. Use --drug vemurafenib for CLI or raw MCP, or the typed MCP field, for example "drug":"vemurafenib".',
+    "symbol": 'Error: Invalid argument: gene accepts one symbol, for example TPMT. Put additional concepts in keyword: use --gene TPMT --keyword mercaptopurine for CLI or raw MCP, or typed MCP fields "gene":"TPMT" and "keyword":["mercaptopurine"].',
+}
+calls = [
+    ("biomcp", {"command":"biomcp search article -k gene:RB1"}, diagnostics["gene"]),
+    ("biomcp", {"command":"biomcp search all --keyword disease:melanoma"}, diagnostics["disease"]),
+    ("biomcp", {"command":"biomcp search all --keyword drug:vemurafenib"}, diagnostics["drug"]),
+    ("search", {"entity":"article","keyword":["gene:RB1"]}, diagnostics["gene"]),
+    ("search", {"entity":"article","keyword":["disease:melanoma"]}, diagnostics["disease"]),
+    ("search", {"entity":"article","keyword":["drug:vemurafenib"]}, diagnostics["drug"]),
+    ("search", {"entity":"article","gene":"TPMT mercaptopurine"}, diagnostics["symbol"]),
+]
+for index, (name, arguments, expected) in enumerate(calls, 2):
+    result = call({"jsonrpc":"2.0","id":index,"method":"tools/call","params":{"name":name,"arguments":arguments}})["result"]
+    assert result["isError"] is True and len(result["content"]) == 1
+    assert result["content"][0]["type"] == "text"
+    assert result["content"][0]["text"] == expected
+after = sum(1 for _ in open(request_log, encoding="utf-8"))
+assert after == before
+healthy = call({"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp version"}}})["result"]
+assert healthy["isError"] is False
+proc.terminate()
+proc.wait(timeout=5)
+print("raw and typed article validation converges")
+PY
+```
+
 ## Probe Routes Stay Lightweight
 
 The HTTP surface is intentionally tiny: two readiness probes and one root

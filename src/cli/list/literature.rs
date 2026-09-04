@@ -58,7 +58,7 @@ raw bytes
 - `search article --drug <name>` - chemical/drug filter (PubTator autocomplete)
 - `search article -a <author>` - author filter (default candidate search uses Europe PMC + compatible PubMed)
 - `search article <query>` - positional provider-neutral free text keyword
-- `search article -k <keyword>` (or `-q <keyword>`) - provider-neutral free text; use `--author` or `--journal` for fields
+- `search article -k <keyword>` (or `-q <keyword>`) - provider-neutral free text; use typed flags instead of `gene:`, `disease:`, `drug:`, author, or journal field syntax
 - `search article --type <review|research|case-reports|meta-analysis>`
 - `search article --date-from <YYYY|YYYY-MM|YYYY-MM-DD> --date-to <YYYY|YYYY-MM|YYYY-MM-DD>`
 - `search article --since <YYYY|YYYY-MM|YYYY-MM-DD>` - alias for `--date-from`
@@ -101,13 +101,14 @@ Result-page follow-ups:
 Entity-only quick start:
 
 - `biomcp search article -g BRAF --limit 5`
+- Article `--gene` accepts one nonempty symbol without whitespace. Put additional concepts in `--keyword`.
 
 Routing note:
 
 - On the default `search article --source all` route, `-a/--author` limits candidate search to Europe PMC + compatible PubMed; stricter filters may narrow further, and PubTator3, Semantic Scholar, and LitSense2 are not searched as free text.
 - On other compatible default searches, typed gene/disease/drug anchors participate in PubTator3 + Europe PMC + PubMed; Semantic Scholar is still automatic.
 - Add `-k/--keyword` for mechanisms, phenotypes, datasets, and other free-text concepts; the default source set remains PubTator3 + Europe PMC + PubMed + Semantic Scholar, and the default relevance mode becomes hybrid instead of lexical. Use `--source semanticscholar` or `--source litsense2` explicitly when you want one of those sources alone.
-- `-k/--keyword` is provider-neutral: use `--author` or `--journal` instead of PubMed/Europe PMC field syntax. Ordinary biomedical brackets and colons remain literal keyword text.
+- `-k/--keyword` is provider-neutral: use `--gene`, `--disease`, `--drug`, `--author`, or `--journal` instead of field syntax. Reserved `gene:`, `disease:`, and `drug:` labels are rejected only at the start or after whitespace/`(`. Ordinary biomedical brackets and colons remain literal keyword text. Literal quote bytes prevent recognition; shell/JSON quoting alone does not add those bytes.
 - Direct and compatible federated PubMed ESearch cleans question-format gene/disease/drug/keyword terms provider-locally; query echoes and non-PubMed sources keep the original wording.
 - Cap each federated source's contribution after deduplication and before ranking.
 - Default: 40% of `--limit` on federated pools with at least three surviving primary sources.
