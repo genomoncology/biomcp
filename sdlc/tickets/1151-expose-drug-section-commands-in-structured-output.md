@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 6
+deps: [1161]
 ---
 
 # Expose drug section commands in structured output

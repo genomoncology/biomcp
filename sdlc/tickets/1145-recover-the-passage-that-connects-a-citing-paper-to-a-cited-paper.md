@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 6
+deps: [1144]
 ---
 
 # Recover the passage that connects a citing paper to a cited paper

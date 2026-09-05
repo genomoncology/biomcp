@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 3
+deps: [1147]
 ---
 
 # Correct reversed search commands with the canonical form

@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 8
+deps: [1167]
 ---
 
 # Return variant literature within a total work budget
