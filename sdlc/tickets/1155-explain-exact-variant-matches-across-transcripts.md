@@ -106,16 +106,21 @@ or annotation preservation is incomplete. The sentence does not say that
 either transcript is preferred or that residues were renumbered. Raw and typed
 MCP Markdown match CLI Markdown exactly.
 
-Every provider-derived value interpolated into that heading's bullets—the
-result ID and all displayed or matched identity fields—first passes through
-behavior equivalent to the existing `sanitize_inline`, then through the
-existing safe `markdown_code_span` delimiter selection. Tuple separators and
-authored prose remain outside those code spans. Newlines, carriage returns,
-tabs, terminal/control sequences, and bidi controls therefore cannot create a
-new line or reorder the sentence; embedded backticks cannot close the span;
-and an embedded pipe remains literal code-span content rather than Markdown
-structure. Sanitization is a rendering rule only: structured JSON retains the
-trimmed source value and JSON escaping.
+The bullet renderer sanitizes the result ID with behavior equivalent to the
+existing `sanitize_inline`, then wraps that result in one safe
+`markdown_code_span`. It builds each displayed and matched tuple separately:
+sanitize each of `transcript`, `hgvs_c`, and `hgvs_p`; substitute the literal
+`-` when the field is null or sanitizes to empty; join the three sanitized
+values with the authored separator ` | `; then pass that complete joined tuple
+once through `markdown_code_span`. The fixed `: matched `, explanatory clause,
+`; displayed `, and final period remain authored prose outside the spans.
+Newlines, carriage returns, tabs, terminal/control sequences, and bidi controls
+in annotation fields therefore cannot create a new line or reorder the new
+explanation sentence; embedded backticks cannot close its tuple span; and an
+embedded pipe remains literal code-span content. This sanitization contract is
+limited to the new explanation section. It neither changes nor makes a new
+sanitization claim about the existing table. Structured JSON retains each
+trimmed source value with JSON escaping.
 
 ## Resource and failure bounds
 
@@ -206,14 +211,19 @@ bounded and explanation-free.
   empty/false result, broad search's compact usable result, and get's usable
   card with ClinVar fallback; a no-valid-sibling case proves absent display
   fields rather than dbNSFP zipping.
-- An adversarial explanation fixture places newlines, carriage returns, tabs,
-  C0/C1 and terminal escape sequences, bidi controls, backtick runs, and pipe
-  characters across the result ID and every annotation identity field. CLI,
-  raw-MCP, and typed-search Markdown each remain exactly one bullet on one
-  physical line beneath one explanation heading, preserve the fixed sentence
-  and tuple order, contain no control or bidi character, and use a code-span
-  delimiter longer than every embedded backtick run. No injected heading,
-  list item, table row, or trailing prose is created.
+- An adversarial explanation fixture uses a safe ordinary result ID and places
+  newlines, carriage returns, tabs, C0/C1 and terminal escape sequences, bidi
+  controls, backtick runs, and pipe characters across every displayed and
+  matched annotation identity field. For CLI, raw-MCP, and typed-search
+  Markdown, the test extracts only the new section from its heading through
+  the line before `Use get variant <id> for details.`. That extracted section
+  has exactly one heading and one bullet on one physical line, preserves the
+  fixed sentence and tuple-field order, contains no control or bidi character,
+  and uses one tuple code-span delimiter longer than every embedded backtick
+  run. No injected heading, list item, table row, or trailing prose occurs
+  inside the extracted explanation section. A separate baseline assertion
+  proves that the complete table prefix is byte-for-byte unchanged; the test
+  makes no new sanitization assertion about provider text in that table.
 - The compatibility matrix covers CLI Markdown, CLI JSON, raw MCP Markdown,
   raw MCP JSON, typed-search MCP Markdown, and typed-search MCP JSON. Every
   surface pins positive alternate-transcript output and the same-object/no-note
