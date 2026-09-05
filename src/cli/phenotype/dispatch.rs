@@ -17,16 +17,23 @@ struct PhenotypeJsonResponse {
     _meta: Option<super::super::SearchJsonMeta>,
 }
 
-fn pagination_footer(meta: &crate::entities::disease::PhenotypePagination) -> String {
-    if meta.truncated_by_provider_budget {
-        return "More phenotype matches may exist, but BioMCP's 50-result provider window was reached. Refine the HPO terms; no next offset is available.".into();
+pub(crate) fn pagination_footer(meta: &crate::entities::disease::PhenotypePagination) -> String {
+    let mut footer = if let Some((limit, offset)) = meta.next_window() {
+        format!("More results available. Continue with `--limit {limit} --offset {offset}`.")
+    } else {
+        format!("Showing {} results (total unknown).", meta.returned)
+    };
+    if meta.provider_window_exhausted {
+        footer.push_str(&format!(
+            " Warning: additional provider matches may exist beyond the {}-result window; refine the HPO terms for different coverage.",
+            meta.provider_window_limit
+        ));
     }
-    if let Some((limit, offset)) = meta.next_window() {
-        return format!(
-            "More results available. Continue with `--limit {limit} --offset {offset}`."
-        );
-    }
-    format!("Showing {} results (total unknown).", meta.returned)
+    footer.push_str(&format!(
+        " Provider window: {} raw rows received; limit {}; exhausted: {}.",
+        meta.provider_raw_row_count, meta.provider_window_limit, meta.provider_window_exhausted
+    ));
+    footer
 }
 
 pub(in crate::cli) async fn handle_search(

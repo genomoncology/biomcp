@@ -29,3 +29,48 @@ The provider boundary preserves the raw response row count before MONDO filterin
 ## Boundaries
 
 This ticket stabilizes bounded pagination for one normalized phenotype query and makes the provider ceiling truthful. It does not change the provider's similarity score, promise complete coverage beyond the 50-row window, determine whether a candidate directly carries the phenotype, make more than one provider request per query, or add a typed MCP phenotype-search surface.
+
+## Result
+
+Phenotype search now makes one Monarch request with `limit=50` after query and
+window validation, preserves that response's provider order, removes non-MONDO
+rows and later duplicate disease IDs, and applies the requested offset and
+limit locally. Tied scores are not re-sorted. The provider response carries its
+raw row count before normalization, and pagination reports
+`provider_window_limit`, `provider_raw_row_count`, and
+`provider_window_exhausted` independently from local `has_more`.
+
+Markdown, JSON, and raw MCP default/JSON output expose the same continuation
+and ceiling state. An exhausted provider window can therefore warn while an
+early local page still offers continuation; the final normalized page retains
+the warning without offering another offset. The typed MCP search schema was
+not extended. The BioData dependency pin and package metadata were unchanged.
+
+The deterministic disease-survival fixture accepts only the new 50-row
+phenotype request shape. Its adversarial response includes tied rows, a later
+duplicate with a higher numeric score, and a filtered non-disease row. The
+executable contract proves stable prefixes and combined pages for limits one,
+two, three, and five, exact one-request behavior, raw-count exhaustion before
+normalization, pre-contact validation, and raw MCP agreement.
+
+## Verification
+
+- Focused Rust phenotype suite: 32 passed.
+- Focused local fixture exercise: CLI Markdown/JSON and raw MCP default/JSON
+  passed; every recorded phenotype provider request used `limit=50`.
+- `make lint`: passed, including Clippy with warnings denied, license and
+  advisory checks, Python/Bash lint, fixture integrity, and the quality
+  ratchet.
+- `make test`: passed with 3,157 Rust tests, 902 Python tests (3 skipped), and
+  strict MkDocs validation.
+- The first `make spec` attempt exposed that the new pre-contact proof
+  truncated a shared request log while spec pages ran concurrently. It caused
+  three observation blocks to fail without a runtime failure. The proof was
+  corrected to compare unique per-route before/after counts without mutating
+  shared state.
+- Corrected `make spec` rerun: passed; the phenotype page reported 10 passed,
+  the final parallel-isolation audit reported 39 passed, and `spec-static`
+  reported 8 passed.
+
+No live-provider gate was run. Coverage beyond Monarch's fixed 50-row window
+remains intentionally unknown and is now reported as such.

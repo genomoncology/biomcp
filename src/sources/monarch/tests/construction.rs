@@ -42,14 +42,11 @@ fn disease_models_plan_sets_object_genotype_category() {
 
 #[test]
 fn phenotype_similarity_search_plan_normalizes_terms_and_sets_limit() {
-    let plan = MonarchClient::phenotype_similarity_search_plan(
-        &[
-            "hp_0001263".into(),
-            "HP:0001250".into(),
-            "HP:0001250".into(),
-        ],
-        99,
-    )
+    let plan = MonarchClient::phenotype_similarity_search_plan(&[
+        "hp_0001263".into(),
+        "HP:0001250".into(),
+        "HP:0001250".into(),
+    ])
     .unwrap();
 
     assert_eq!(
@@ -64,6 +61,6 @@ fn plans_reject_invalid_disease_ids_and_empty_hpo_terms() {
     let err = MonarchClient::disease_gene_associations_plan("OMIM:1", 5).unwrap_err();
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
 
-    let err = MonarchClient::phenotype_similarity_search_plan(&[], 5).unwrap_err();
+    let err = MonarchClient::phenotype_similarity_search_plan(&[]).unwrap_err();
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
 }

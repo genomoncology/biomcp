@@ -188,10 +188,67 @@ fn phenotype_continuation_shrinks_to_the_remaining_provider_window() {
         total: None,
         has_more: true,
         next_page_token: None,
-        truncated_by_provider_budget: false,
+        provider_window_limit: 50,
+        provider_raw_row_count: 50,
+        provider_window_exhausted: true,
     };
 
     assert_eq!(pagination.next_window(), Some((1, 49)));
+}
+
+#[test]
+fn phenotype_pages_slice_one_provider_ordered_deduplicated_window() {
+    let provider = crate::sources::monarch::MonarchPhenotypeSearchResponse {
+        matches: vec![
+            ("MONDO:0000003", "third", 10.0),
+            ("MONDO:0000001", "first tie", 9.0),
+            ("MONDO:0000002", "second tie", 9.0),
+            ("MONDO:0000004", "fourth", 8.0),
+            ("MONDO:0000005", "fifth", 7.0),
+        ]
+        .into_iter()
+        .map(|(disease_id, disease_name, score)| MonarchPhenotypeMatch {
+            disease_id: disease_id.into(),
+            disease_name: disease_name.into(),
+            score,
+        })
+        .collect(),
+        raw_row_count: 50,
+        provider_window_exhausted: true,
+    };
+
+    let first = paginate_phenotype_matches(provider.clone(), 2, 0).unwrap();
+    let second = paginate_phenotype_matches(provider.clone(), 3, 2).unwrap();
+    let combined = paginate_phenotype_matches(provider, 5, 0).unwrap();
+    let paged = first
+        .results
+        .iter()
+        .chain(&second.results)
+        .map(|row| row.disease_id.as_str())
+        .collect::<Vec<_>>();
+    let all = combined
+        .results
+        .iter()
+        .map(|row| row.disease_id.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(paged, all);
+    assert_eq!(
+        all,
+        [
+            "MONDO:0000003",
+            "MONDO:0000001",
+            "MONDO:0000002",
+            "MONDO:0000004",
+            "MONDO:0000005"
+        ]
+    );
+    assert!(first.pagination.has_more);
+    assert!(first.pagination.provider_window_exhausted);
+    assert_eq!(first.pagination.provider_window_limit, 50);
+    assert_eq!(first.pagination.provider_raw_row_count, 50);
+    assert!(!combined.pagination.has_more);
+    assert!(combined.pagination.provider_window_exhausted);
 }
 
 #[test]

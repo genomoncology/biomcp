@@ -54,20 +54,22 @@ MONARCH_CML_PHENOTYPES_QUERY = {
     "object_category": ["biolink:PhenotypicFeature"],
     "limit": ["80"],
 }
-PHENOTYPE_PAYLOADS = {
-    (
-        "/monarch/v3/api/semsim/search/HP:0001250,HP:0033349,HP:0002069,HP:0002373,HP:0002199,HP:0007359,HP:0007207,HP:0033259,HP:0002123,HP:0010819/Human%20Diseases",
-        "4",
-    ): "monarch/semsim_phrase_seizure_developmental_delay_20260811.json",
-    (
-        "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases",
-        "4",
-    ): "monarch/semsim_hp_0001250_hp_0001263_limit3_20260811.json",
-    (
-        "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases",
-        "2",
-    ): "monarch/semsim_hp_0001250_hp_0001263_limit3_20260811.json",
-}
+PHENOTYPE_PHRASE_PATH = "/monarch/v3/api/semsim/search/HP:0001250,HP:0033349,HP:0002069,HP:0002373,HP:0002199,HP:0007359,HP:0007207,HP:0033259,HP:0002123,HP:0010819/Human%20Diseases"
+PHENOTYPE_IDS_PATH = "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases"
+PHENOTYPE_FIXED_WINDOW = [
+    {"subject": {"id": "MONDO:0010450", "name": "intellectual disability, X-linked 89"}, "score": 13.302},
+    {"subject": {"id": "MONDO:0007367", "name": "febrile seizures, familial, 1"}, "score": 12.0},
+    {"subject": {"id": "MONDO:0000002", "name": "provider-order tie first"}, "score": 11.0},
+    {"subject": {"id": "MONDO:0000001", "name": "provider-order tie second"}, "score": 11.0},
+    {"subject": {"id": "MONDO:0010450", "name": "later duplicate must lose"}, "score": 99.0},
+    {"subject": {"id": "HP:0001250", "name": "non-disease row"}, "score": 10.0},
+]
+while len(PHENOTYPE_FIXED_WINDOW) < 50:
+    index = len(PHENOTYPE_FIXED_WINDOW)
+    PHENOTYPE_FIXED_WINDOW.append({
+        "subject": {"id": f"MONDO:{index + 2000000:07d}", "name": f"fixture disease {index}"},
+        "score": 10.0 - index / 100.0,
+    })
 OLS_ONTOLOGIES = "hgnc,mesh,mondo,doid,hp,go,chebi,dron,ncit,ordo,wikipathways,so"
 OLS_PAYLOADS = {
     "type 2 diabetes mellitus": "ols4/search_type_2_diabetes_mellitus_20260811.json",
@@ -113,11 +115,11 @@ class Handler(BaseHTTPRequestHandler):
             if ols_query in OLS_PAYLOADS and query == expected:
                 send_bytes(self, 200, source_bytes(OLS_PAYLOADS[ols_query]))
                 return
-        phenotype_payload = PHENOTYPE_PAYLOADS.get(
-            (parsed.path, query.get("limit", [""])[0])
-        )
-        if phenotype_payload is not None:
-            send_bytes(self, 200, source_bytes(phenotype_payload))
+        if parsed.path == PHENOTYPE_PHRASE_PATH and query == {"limit": ["50"]}:
+            send_bytes(self, 200, source_bytes("monarch/semsim_phrase_seizure_developmental_delay_20260811.json"))
+            return
+        if parsed.path == PHENOTYPE_IDS_PATH and query == {"limit": ["50"]}:
+            send_json(self, 200, PHENOTYPE_FIXED_WINDOW)
             return
         if parsed.path == "/mydisease/query":
             disease_query = query.get("q", [""])[0]

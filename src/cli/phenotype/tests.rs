@@ -75,3 +75,41 @@ fn search_args_reject_a_window_beyond_the_provider_budget() {
         .expect_err("unsupported phenotype window should fail fast");
     assert!(err.to_string().contains("--offset + --limit must be <= 50"));
 }
+
+#[test]
+fn pagination_footer_can_offer_local_continuation_and_warn_about_provider_ceiling() {
+    let pagination = crate::entities::disease::PhenotypePagination {
+        offset: 0,
+        limit: 2,
+        returned: 2,
+        total: None,
+        has_more: true,
+        next_page_token: None,
+        provider_window_limit: 50,
+        provider_raw_row_count: 50,
+        provider_window_exhausted: true,
+    };
+
+    let footer = super::dispatch::pagination_footer(&pagination);
+    assert!(footer.contains("--limit 2 --offset 2"));
+    assert!(footer.contains("additional provider matches may exist beyond the 50-result window"));
+}
+
+#[test]
+fn pagination_footer_keeps_ceiling_warning_on_final_local_page() {
+    let pagination = crate::entities::disease::PhenotypePagination {
+        offset: 2,
+        limit: 3,
+        returned: 3,
+        total: None,
+        has_more: false,
+        next_page_token: None,
+        provider_window_limit: 50,
+        provider_raw_row_count: 50,
+        provider_window_exhausted: true,
+    };
+
+    let footer = super::dispatch::pagination_footer(&pagination);
+    assert!(!footer.contains("Continue with"));
+    assert!(footer.contains("additional provider matches may exist beyond the 50-result window"));
+}

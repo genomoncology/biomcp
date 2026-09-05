@@ -100,11 +100,57 @@ fn map_phenotype_matches_maps_scores() {
     ]))
     .expect("semsim fixture should parse");
 
-    let rows = MonarchClient::map_phenotype_matches(rows, 5);
+    let response = MonarchClient::map_phenotype_matches(rows);
 
-    assert_eq!(rows.len(), 1);
-    assert_eq!(rows[0].disease_id, "MONDO:0010450");
-    assert!(rows[0].score > 0.0);
+    assert_eq!(response.raw_row_count, 2);
+    assert!(!response.provider_window_exhausted);
+    assert_eq!(response.matches.len(), 1);
+    assert_eq!(response.matches[0].disease_id, "MONDO:0010450");
+    assert!(response.matches[0].score > 0.0);
+}
+
+#[test]
+fn map_phenotype_matches_counts_raw_rows_and_keeps_first_disease_occurrence() {
+    let mut value = vec![serde_json::json!({
+        "subject": {"id": "MONDO:0000002", "name": "second provider row"},
+        "score": 7.0
+    })];
+    value.push(serde_json::json!({
+        "subject": {"id": "MONDO:0000001", "name": "first duplicate"},
+        "score": 6.0
+    }));
+    value.push(serde_json::json!({
+        "subject": {"id": "MONDO:0000001", "name": "later duplicate"},
+        "score": 99.0
+    }));
+    value.push(serde_json::json!({
+        "subject": {"id": "HP:0001250", "name": "filtered phenotype"},
+        "score": 5.0
+    }));
+    while value.len() < MONARCH_PHENOTYPE_WINDOW_LIMIT {
+        let index = value.len();
+        value.push(serde_json::json!({
+            "subject": {"id": format!("MONDO:{index:07}"), "name": format!("disease {index}")},
+            "score": 5.0
+        }));
+    }
+    let rows: Vec<MonarchSemsimRow> =
+        serde_json::from_value(serde_json::Value::Array(value)).unwrap();
+
+    let response = MonarchClient::map_phenotype_matches(rows);
+
+    assert_eq!(response.raw_row_count, MONARCH_PHENOTYPE_WINDOW_LIMIT);
+    assert!(response.provider_window_exhausted);
+    assert_eq!(response.matches[0].disease_id, "MONDO:0000002");
+    assert_eq!(response.matches[1].disease_name, "first duplicate");
+    assert_eq!(
+        response
+            .matches
+            .iter()
+            .filter(|row| row.disease_id == "MONDO:0000001")
+            .count(),
+        1
+    );
 }
 
 #[test]
@@ -129,4 +175,37 @@ fn decode_json_response_maps_5xx_to_source_unavailable() {
         }
         other => panic!("expected SourceUnavailable, got {other}"),
     }
+}
+
+#[test]
+fn phenotype_decode_failures_remain_typed_errors() {
+    let json = HeaderValue::from_static("application/json");
+    let html = HeaderValue::from_static("text/html");
+
+    let status = MonarchClient::decode_json_response::<Vec<MonarchSemsimRow>>(
+        StatusCode::NOT_FOUND,
+        Some(&json),
+        br#"{"error":"not found"}"#,
+    )
+    .expect_err("non-success must not become an empty phenotype page");
+    assert!(matches!(status, BioMcpError::Api { .. }));
+
+    let content_type = MonarchClient::decode_json_response::<Vec<MonarchSemsimRow>>(
+        StatusCode::OK,
+        Some(&html),
+        b"<html>provider error</html>",
+    )
+    .expect_err("HTML must not become an empty phenotype page");
+    assert!(matches!(
+        content_type,
+        BioMcpError::WithSourceContext { .. }
+    ));
+
+    let decode = MonarchClient::decode_json_response::<Vec<MonarchSemsimRow>>(
+        StatusCode::OK,
+        Some(&json),
+        b"not-json",
+    )
+    .expect_err("invalid JSON must not become an empty phenotype page");
+    assert!(matches!(decode, BioMcpError::ApiJson { .. }));
 }

@@ -453,7 +453,7 @@ async fn resolve_phenotype_query_terms(raw: &str) -> Result<Vec<String>, BioMcpE
 }
 
 const MAX_PHENOTYPE_TERMS: usize = 10;
-const MAX_PHENOTYPE_WINDOW: usize = 50;
+const MAX_PHENOTYPE_WINDOW: usize = crate::sources::monarch::MONARCH_PHENOTYPE_WINDOW_LIMIT;
 
 pub(crate) fn validate_phenotype_search_window(
     limit: usize,
@@ -483,7 +483,9 @@ pub struct PhenotypePagination {
     pub total: Option<usize>,
     pub has_more: bool,
     pub next_page_token: Option<String>,
-    pub truncated_by_provider_budget: bool,
+    pub provider_window_limit: usize,
+    pub provider_raw_row_count: usize,
+    pub provider_window_exhausted: bool,
 }
 
 impl PhenotypePagination {
@@ -503,25 +505,15 @@ pub struct PhenotypeSearchPage {
     pub pagination: PhenotypePagination,
 }
 
-pub async fn search_phenotype_page(
-    hpo_terms: &str,
+fn paginate_phenotype_matches(
+    provider: crate::sources::monarch::MonarchPhenotypeSearchResponse,
     limit: usize,
     offset: usize,
 ) -> Result<PhenotypeSearchPage, BioMcpError> {
     let window_end = validate_phenotype_search_window(limit, offset)?;
-
-    let terms = resolve_phenotype_query_terms(hpo_terms).await?;
-    let client = MonarchClient::new()?;
-    let fetch_limit = window_end.saturating_add(1).min(MAX_PHENOTYPE_WINDOW);
-    let mut rows = client
-        .phenotype_similarity_search(&terms, fetch_limit)
-        .await?;
-    rows.sort_by(|a, b| b.score.total_cmp(&a.score));
-    rows.truncate(fetch_limit);
-    let has_more = rows.len() > window_end;
-    let truncated_by_provider_budget =
-        window_end == MAX_PHENOTYPE_WINDOW && rows.len() == MAX_PHENOTYPE_WINDOW;
-    let results = rows
+    let has_more = provider.matches.len() > window_end;
+    let results = provider
+        .matches
         .into_iter()
         .skip(offset)
         .take(limit)
@@ -548,9 +540,24 @@ pub async fn search_phenotype_page(
             total: None,
             has_more,
             next_page_token: None,
-            truncated_by_provider_budget,
+            provider_window_limit: crate::sources::monarch::MONARCH_PHENOTYPE_WINDOW_LIMIT,
+            provider_raw_row_count: provider.raw_row_count,
+            provider_window_exhausted: provider.provider_window_exhausted,
         },
     })
+}
+
+pub async fn search_phenotype_page(
+    hpo_terms: &str,
+    limit: usize,
+    offset: usize,
+) -> Result<PhenotypeSearchPage, BioMcpError> {
+    validate_phenotype_search_window(limit, offset)?;
+
+    let terms = resolve_phenotype_query_terms(hpo_terms).await?;
+    let client = MonarchClient::new()?;
+    let provider = client.phenotype_similarity_search(&terms).await?;
+    paginate_phenotype_matches(provider, limit, offset)
 }
 
 #[cfg(test)]

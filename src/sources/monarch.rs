@@ -14,6 +14,7 @@ use crate::utils::serde::StringOrVec;
 const MONARCH_BASE: &str = "https://api-v3.monarchinitiative.org";
 const MONARCH_API: &str = "monarch";
 const MONARCH_BASE_ENV: &str = "BIOMCP_MONARCH_BASE";
+pub(crate) const MONARCH_PHENOTYPE_WINDOW_LIMIT: usize = 50;
 
 pub struct MonarchClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -300,23 +301,20 @@ impl MonarchClient {
 
     pub(crate) fn phenotype_similarity_search_plan(
         hpo_terms: &[String],
-        limit: usize,
     ) -> Result<RequestPlan, BioMcpError> {
         let normalized = normalize_hpo_terms(hpo_terms)?;
-        let limit = limit.clamp(1, 50);
         let termset = normalized.join(",");
         Ok(
             RequestPlan::get(format!("v3/api/semsim/search/{termset}/Human%20Diseases"))
-                .query("limit", limit.to_string()),
+                .query("limit", MONARCH_PHENOTYPE_WINDOW_LIMIT.to_string()),
         )
     }
 
-    fn map_phenotype_matches(
-        rows: Vec<MonarchSemsimRow>,
-        limit: usize,
-    ) -> Vec<MonarchPhenotypeMatch> {
-        let limit = limit.clamp(1, 50);
+    fn map_phenotype_matches(rows: Vec<MonarchSemsimRow>) -> MonarchPhenotypeSearchResponse {
+        let raw_row_count = rows.len();
+        let provider_window_exhausted = raw_row_count == MONARCH_PHENOTYPE_WINDOW_LIMIT;
         let mut out = Vec::new();
+        let mut seen = HashSet::new();
         for row in rows {
             let Some(disease_id) = row
                 .subject
@@ -328,6 +326,9 @@ impl MonarchClient {
             else {
                 continue;
             };
+            if !seen.insert(disease_id.clone()) {
+                continue;
+            }
 
             let disease_name = row
                 .subject
@@ -343,25 +344,24 @@ impl MonarchClient {
                 disease_name,
                 score: row.score,
             });
-
-            if out.len() >= limit {
-                break;
-            }
         }
 
-        out
+        MonarchPhenotypeSearchResponse {
+            matches: out,
+            raw_row_count,
+            provider_window_exhausted,
+        }
     }
 
-    pub async fn phenotype_similarity_search(
+    pub(crate) async fn phenotype_similarity_search(
         &self,
         hpo_terms: &[String],
-        limit: usize,
-    ) -> Result<Vec<MonarchPhenotypeMatch>, BioMcpError> {
-        let plan = Self::phenotype_similarity_search_plan(hpo_terms, limit)?;
+    ) -> Result<MonarchPhenotypeSearchResponse, BioMcpError> {
+        let plan = Self::phenotype_similarity_search_plan(hpo_terms)?;
         let rows: Vec<MonarchSemsimRow> = self
             .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
             .await?;
-        let out = Self::map_phenotype_matches(rows, limit);
+        let out = Self::map_phenotype_matches(rows);
         Ok(out)
     }
 }
@@ -543,6 +543,13 @@ pub struct MonarchPhenotypeMatch {
     pub disease_id: String,
     pub disease_name: String,
     pub score: f64,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct MonarchPhenotypeSearchResponse {
+    pub(crate) matches: Vec<MonarchPhenotypeMatch>,
+    pub(crate) raw_row_count: usize,
+    pub(crate) provider_window_exhausted: bool,
 }
 
 #[cfg(test)]
