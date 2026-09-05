@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use tracing::warn;
+use tracing::debug as warn;
 
 use super::{GENE_SECTION_CLINGEN, Gene, GeneTimingEntry};
 use crate::entities::section_outcome::SectionOutcome;
