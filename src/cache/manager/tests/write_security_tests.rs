@@ -61,18 +61,45 @@ fn assert_write_path_modes(cache_path: &Path, key: &str, integrity: &ssri::Integ
     ];
     assert_eq!(unix_mode(&index_bucket), 0o600);
     assert_eq!(unix_mode(&blob), 0o600);
+    let cache_root = cache_path.parent().expect("cache root");
+    assert_eq!(unix_mode(&cache_root.join(".biomcp-operation.lock")), 0o600);
     assert_eq!(
-        unix_mode(
-            &cache_path
-                .parent()
-                .expect("cache root")
-                .join(".biomcp-operation.lock")
-        ),
+        unix_mode(&crate::cache::key_lock_path(cache_root, key)),
         0o600
     );
+    assert_eq!(unix_mode(&cache_root.join(".biomcp-key-locks")), 0o700);
     for directory in directories {
         assert_eq!(unix_mode(&directory), 0o700, "{}", directory.display());
     }
+}
+
+#[test]
+fn contended_constructor_defers_cleanup_until_a_later_uncontended_constructor() {
+    let root = TempDirGuard::new("deferred-open-age-maintenance");
+    let cache_path = root.path().join("http");
+    write_entry(&cache_path, "expired", b"old", 1_000);
+    let mut config = test_config(root.path(), 1_000_000, DiskFreeThreshold::Percent(1));
+    config.max_age = Duration::from_secs(10);
+    let active = crate::cache::lock_cache_shared(root.path()).expect("active shared operation");
+
+    SizeAwareCacheManager::new_at(cache_path.clone(), config.clone(), 20_000)
+        .expect("contended manager construction");
+    assert!(
+        cacache::metadata_sync(&cache_path, "expired")
+            .expect("deferred metadata")
+            .is_some(),
+        "contended constructor must defer destructive cleanup"
+    );
+
+    drop(active);
+    SizeAwareCacheManager::new_at(cache_path.clone(), config, 20_000)
+        .expect("uncontended manager construction");
+    assert!(
+        cacache::metadata_sync(&cache_path, "expired")
+            .expect("reclaimed metadata")
+            .is_none(),
+        "later uncontended constructor must reclaim the expired entry"
+    );
 }
 
 struct UmaskGuard(libc::mode_t);
@@ -227,7 +254,7 @@ async fn eviction_waits_for_an_active_cache_operation() {
     let root = TempDirGuard::new("coordinated-eviction");
     let cache_path = root.path().join("http");
     let config = test_config(root.path(), 1_000, DiskFreeThreshold::Percent(1));
-    let operation = crate::cache::lock_cache_operation(root.path()).expect("hold operation lock");
+    let operation = crate::cache::lock_cache_shared(root.path()).expect("hold operation lock");
     let (started_tx, started_rx) = mpsc::channel();
     let (finished_tx, finished_rx) = mpsc::channel();
     let eviction = tokio::task::spawn_blocking(move || {

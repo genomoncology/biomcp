@@ -8,24 +8,72 @@ pub(crate) struct CacheOperationGuard {
     _file: File,
 }
 
-pub(crate) fn lock_cache_operation(cache_root: &Path) -> io::Result<CacheOperationGuard> {
-    use fs2::FileExt;
+pub(crate) struct CacheKeyGuard {
+    _shared: CacheOperationGuard,
+    _key: CacheOperationGuard,
+}
 
+fn operation_lock_file(cache_root: &Path) -> io::Result<File> {
     secure_managed_dir(cache_root)?;
     let lock_path = cache_root.join(CACHE_OPERATION_LOCK);
     let mut options = OpenOptions::new();
     options.read(true).write(true).create(true);
-    let file = open_private(&mut options, &lock_path)?;
+    open_private(&mut options, &lock_path)
+}
+
+pub(crate) fn lock_cache_maintenance(cache_root: &Path) -> io::Result<CacheOperationGuard> {
+    use fs2::FileExt;
+
+    let file = operation_lock_file(cache_root)?;
     file.lock_exclusive()?;
     Ok(CacheOperationGuard { _file: file })
 }
 
-pub(crate) async fn lock_cache_operation_async(
+pub(crate) fn try_lock_cache_maintenance(
+    cache_root: &Path,
+) -> io::Result<Option<CacheOperationGuard>> {
+    use fs2::FileExt;
+
+    let file = operation_lock_file(cache_root)?;
+    match file.try_lock_exclusive() {
+        Ok(()) => Ok(Some(CacheOperationGuard { _file: file })),
+        Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
+pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
+    use fs2::FileExt;
+
+    let file = operation_lock_file(cache_root)?;
+    FileExt::lock_shared(&file)?;
+    Ok(CacheOperationGuard { _file: file })
+}
+
+fn lock_cache_key(cache_root: &Path, key: &str) -> io::Result<CacheKeyGuard> {
+    use fs2::FileExt;
+
+    let shared = lock_cache_shared(cache_root)?;
+    let lock_dir = cache_root.join(super::layout::KEY_LOCK_DIR);
+    secure_managed_dir(&lock_dir)?;
+    let lock_path = super::key_lock_path(cache_root, key);
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true);
+    let file = open_private(&mut options, &lock_path)?;
+    file.lock_exclusive()?;
+    Ok(CacheKeyGuard {
+        _shared: shared,
+        _key: CacheOperationGuard { _file: file },
+    })
+}
+
+pub(crate) async fn lock_cache_key_async(
     cache_root: PathBuf,
-) -> io::Result<CacheOperationGuard> {
-    tokio::task::spawn_blocking(move || lock_cache_operation(&cache_root))
+    key: String,
+) -> io::Result<CacheKeyGuard> {
+    tokio::task::spawn_blocking(move || lock_cache_key(&cache_root, &key))
         .await
-        .map_err(|error| io::Error::other(format!("cache operation lock task failed: {error}")))?
+        .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
 }
 
 pub(crate) fn secure_managed_tree(
@@ -464,8 +512,50 @@ fn symlink_targets_directory(path: &Path) -> io::Result<bool> {
 #[cfg(all(test, unix))]
 mod unix_tests {
     use std::os::unix::fs::{PermissionsExt, symlink};
+    use std::sync::mpsc;
+    use std::time::Duration;
 
     use super::*;
+
+    #[test]
+    fn constructor_repairs_and_independent_key_operations_do_not_serialize_globally() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let constructor_a = lock_cache_shared(root.path()).expect("first shared constructor lock");
+        let (constructor_tx, constructor_rx) = mpsc::channel();
+        let root_path = root.path().to_path_buf();
+        let constructor_b = std::thread::spawn(move || {
+            let guard = lock_cache_shared(&root_path).expect("second shared constructor lock");
+            constructor_tx.send(()).expect("report shared acquisition");
+            guard
+        });
+        constructor_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("constructor repairs must overlap while first lock remains held");
+        drop(constructor_a);
+        drop(constructor_b.join().expect("constructor thread"));
+
+        let key_a = "independent-key-a";
+        let key_b = (0..10_000)
+            .map(|candidate| format!("independent-key-{candidate}"))
+            .find(|candidate| {
+                super::super::key_lock_path(root.path(), candidate)
+                    != super::super::key_lock_path(root.path(), key_a)
+            })
+            .expect("key in another lock shard");
+        let operation_a = lock_cache_key(root.path(), key_a).expect("first key lock");
+        let (key_tx, key_rx) = mpsc::channel();
+        let root_path = root.path().to_path_buf();
+        let operation_b = std::thread::spawn(move || {
+            let guard = lock_cache_key(&root_path, &key_b).expect("independent key lock");
+            key_tx.send(()).expect("report independent acquisition");
+            guard
+        });
+        key_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("independent key operations must overlap");
+        drop(operation_a);
+        drop(operation_b.join().expect("key operation thread"));
+    }
 
     #[test]
     fn explicit_whole_tree_maintenance_repairs_an_unrelated_sentinel() {

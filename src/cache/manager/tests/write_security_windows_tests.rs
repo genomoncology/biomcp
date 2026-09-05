@@ -87,6 +87,8 @@ async fn put_skips_unrelated_hardlink_and_protects_every_touched_path_acl() {
     let (algorithm, _) = metadata.integrity.to_hex();
     for path in [
         root.path().join(".biomcp-operation.lock"),
+        root.path().join(".biomcp-key-locks"),
+        crate::cache::key_lock_path(root.path(), key),
         cache_path.clone(),
         cache_path.join("tmp"),
         cache_path.join("index-v5"),

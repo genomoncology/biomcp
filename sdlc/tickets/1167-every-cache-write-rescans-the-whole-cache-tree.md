@@ -64,3 +64,11 @@ Lifecycle ownership is split deliberately. Client construction secures the cache
 ## Boundaries
 
 This ticket bounds post-write permission work. It does not remove startup repair or initialization scans, change the cache layout, the eviction policy, the size accounting in `estimate_cache_bytes_fast`, the cache clean planner, or the network work a variant-literature request performs. Ticket 1150 owns the total work budget for that request. Fixing this one alone does not make the union route fast; it removes the repeated whole-tree multiplier on top of it.
+
+Implementation-gate evidence corrected one initialization detail. A single
+global exclusive lock serialized parallel constructor repair and cleanup scans
+over a 75,000-entry cache, making the ordinary Rust gate stall. Startup repair
+and size estimation remain, but constructor age cleanup is opportunistic under
+contention: it runs under an exclusive cache-wide lock when immediately
+available and otherwise defers to a later uncontended constructor or explicit
+maintenance. This is the only correction to the initialization boundary.

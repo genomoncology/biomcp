@@ -5,19 +5,29 @@ use ssri::Integrity;
 
 pub(crate) const CONTENT_DIR: &str = "content-v2";
 pub(crate) const INDEX_DIR: &str = "index-v5";
+pub(crate) const KEY_LOCK_DIR: &str = ".biomcp-key-locks";
 pub(crate) const TEMP_DIR: &str = "tmp";
 
 pub(crate) fn index_bucket_path(cache_path: &Path, key: &str) -> PathBuf {
-    let digest = Sha1::digest(key.as_bytes());
-    let hex = digest
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect::<String>();
+    let hex = key_digest(key);
     cache_path
         .join(INDEX_DIR)
         .join(&hex[..2])
         .join(&hex[2..4])
         .join(&hex[4..])
+}
+
+pub(crate) fn key_lock_path(cache_root: &Path, key: &str) -> PathBuf {
+    cache_root
+        .join(KEY_LOCK_DIR)
+        .join(format!("{}.lock", &key_digest(key)[..2]))
+}
+
+fn key_digest(key: &str) -> String {
+    Sha1::digest(key.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 pub(crate) fn content_root(cache_path: &Path) -> PathBuf {

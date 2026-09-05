@@ -122,7 +122,7 @@ fn explicit_cache_maintenance_waits_for_an_active_cache_operation() {
             max_age: ConfigOrigin::Default,
         },
     );
-    let operation = crate::cache::lock_cache_operation(root.path()).expect("hold operation lock");
+    let operation = crate::cache::lock_cache_shared(root.path()).expect("hold operation lock");
     let (started_tx, started_rx) = std::sync::mpsc::channel();
     let (finished_tx, finished_rx) = std::sync::mpsc::channel();
     let maintenance = std::thread::spawn(move || {

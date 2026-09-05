@@ -59,6 +59,15 @@ fn directory_exists(path: &Path, label: &str) -> Result<bool, io::Error> {
 
 pub(crate) fn migrate_http_cache(cache_root: &Path) -> Result<MigrationOutcome, io::Error> {
     let old = cache_root.join("http-cacache");
+    if !directory_exists(&old, "legacy cache path")? {
+        return Ok(MigrationOutcome::SkippedOldMissing);
+    }
+    let _maintenance = super::lock_cache_maintenance(cache_root)?;
+    migrate_http_cache_locked(cache_root)
+}
+
+fn migrate_http_cache_locked(cache_root: &Path) -> Result<MigrationOutcome, io::Error> {
+    let old = cache_root.join("http-cacache");
     let new = cache_root.join("http");
 
     if !directory_exists(&old, "legacy cache path")? {
@@ -109,6 +118,16 @@ where
     let result = (|| {
         let marker_exists = validated_marker_exists(&marker)?;
 
+        let legacy_cache_exists = match fs::symlink_metadata(&legacy_cache) {
+            Ok(_) => true,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => false,
+            Err(error) => return Err(error),
+        };
+        if marker_exists && !legacy_cache_was_renamed && !legacy_cache_exists {
+            return Ok(());
+        }
+
+        let _maintenance = super::lock_cache_maintenance(cache_root)?;
         if marker_exists && !legacy_cache_was_renamed {
             remove_cache_directory(&legacy_cache)?;
             return Ok(());

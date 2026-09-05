@@ -701,7 +701,6 @@ fn build_http_client_with_config(
     let cache_root = config.cache_root.clone();
     let content_root = crate::cache::content_root(&cache_root.join("http"));
     crate::cache::secure_managed_tree(&cache_root, false, Some(&content_root))?;
-    let cache_operation = crate::cache::lock_cache_operation(&cache_root)?;
     let migration = apply_migration_non_fatal(
         &cache_root,
         crate::cache::migrate_http_cache,
@@ -716,9 +715,10 @@ fn build_http_client_with_config(
         &cache_root,
         matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
     )?;
+    let startup_repair = crate::cache::lock_cache_shared(&cache_root)?;
     let cache_path = cache_root.join("http");
     crate::cache::secure_managed_tree(&cache_path, true, Some(&content_root))?;
-    drop(cache_operation);
+    drop(startup_repair);
 
     let mut default_headers = HeaderMap::new();
     default_headers.insert(CACHE_CONTROL, HeaderValue::from_static("max-stale=86400"));

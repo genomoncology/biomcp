@@ -49,17 +49,20 @@ impl SizeAwareCacheManager {
         config: ResolvedCacheConfig,
         now_ms: u128,
     ) -> Result<Self, BioMcpError> {
-        let _operation = super::lock_cache_operation(&config.cache_root)?;
-        execute_cache_clean(
-            &path,
-            CleanOptions {
-                max_age: None,
-                max_size: None,
-                dry_run: false,
-            },
-            &config,
-            now_ms,
-        )?;
+        if let Some(_maintenance) = super::try_lock_cache_maintenance(&config.cache_root)? {
+            execute_cache_clean(
+                &path,
+                CleanOptions {
+                    max_age: None,
+                    max_size: None,
+                    dry_run: false,
+                },
+                &config,
+                now_ms,
+            )?;
+        } else {
+            debug!("cache initialization cleanup skipped while another cache operation is active");
+        }
         Ok(Self::build_with_services(path, config, default_services()))
     }
 
@@ -164,7 +167,8 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
-        let _operation = super::lock_cache_operation_async(self.config.cache_root.clone()).await?;
+        let _operation =
+            super::lock_cache_key_async(self.config.cache_root.clone(), cache_key.clone()).await?;
         super::prepare_write_paths(&self.inner.path, &cache_key)?;
         let response = self.inner.put(cache_key.clone(), res, policy).await?;
         (self.services.after_put)(&self.inner.path, &cache_key);
@@ -208,7 +212,9 @@ impl CacheManager for SizeAwareCacheManager {
     }
 
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
-        let _operation = super::lock_cache_operation_async(self.config.cache_root.clone()).await?;
+        let _operation =
+            super::lock_cache_key_async(self.config.cache_root.clone(), cache_key.to_owned())
+                .await?;
         let content_root = super::content_root(&self.inner.path);
         super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
         self.inner.delete(cache_key).await
@@ -305,7 +311,7 @@ fn run_eviction_cycle(
     config: &ResolvedCacheConfig,
     approx_bytes: &AtomicU64,
 ) -> Result<(), BioMcpError> {
-    let _operation = super::lock_cache_operation(&config.cache_root)?;
+    let _operation = super::lock_cache_maintenance(&config.cache_root)?;
     run_eviction_cycle_with(
         cache_path,
         config,

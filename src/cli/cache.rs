@@ -96,7 +96,7 @@ pub(crate) fn execute_clean(
     dry_run: bool,
 ) -> Result<crate::cache::CleanReport, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
-    let _cache_operation = crate::cache::lock_cache_operation(&config.cache_root)?;
+    let _cache_operation = crate::cache::lock_cache_maintenance(&config.cache_root)?;
     let content_root = crate::cache::content_root(&config.cache_root.join("http"));
     crate::cache::secure_managed_tree(&config.cache_root, true, Some(&content_root))?;
     let cache_path = config.cache_root.join("http");
@@ -329,10 +329,11 @@ pub(crate) fn build_cache_stats_report(
 
 pub(crate) fn collect_cache_stats_report() -> Result<CacheStatsReport, BioMcpError> {
     let config = crate::cache::resolve_cache_config()?;
-    let _cache_operation = crate::cache::lock_cache_operation(&config.cache_root)?;
     let content_root = crate::cache::content_root(&config.cache_root.join("http"));
-    crate::cache::secure_managed_tree(&config.cache_root, true, Some(&content_root))?;
+    crate::cache::secure_managed_tree(&config.cache_root, false, Some(&content_root))?;
     crate::cache::ensure_body_limited_cache_epoch(&config.cache_root, false)?;
+    let _cache_operation = crate::cache::lock_cache_shared(&config.cache_root)?;
+    crate::cache::secure_managed_tree(&config.cache_root, true, Some(&content_root))?;
     crate::cache::secure_managed_tree(&config.cache_root.join("http"), true, Some(&content_root))?;
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -359,7 +360,7 @@ pub(crate) fn collect_cache_stats_report() -> Result<CacheStatsReport, BioMcpErr
 pub(crate) fn execute_managed_clear(
     config: &crate::cache::ResolvedCacheConfig,
 ) -> Result<crate::cache::ClearReport, BioMcpError> {
-    let _cache_operation = crate::cache::lock_cache_operation(&config.cache_root)?;
+    let _cache_operation = crate::cache::lock_cache_maintenance(&config.cache_root)?;
     let content_root = crate::cache::content_root(&config.cache_root.join("http"));
     crate::cache::secure_managed_tree(&config.cache_root, true, Some(&content_root))?;
     let http = crate::cache::execute_cache_clear(&config.cache_root.join("http"))?;
