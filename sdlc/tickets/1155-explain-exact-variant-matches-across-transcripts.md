@@ -106,13 +106,25 @@ or annotation preservation is incomplete. The sentence does not say that
 either transcript is preferred or that residues were renumbered. Raw and typed
 MCP Markdown match CLI Markdown exactly.
 
+Every provider-derived value interpolated into that heading's bullets—the
+result ID and all displayed or matched identity fields—first passes through
+behavior equivalent to the existing `sanitize_inline`, then through the
+existing safe `markdown_code_span` delimiter selection. Tuple separators and
+authored prose remain outside those code spans. Newlines, carriage returns,
+tabs, terminal/control sequences, and bidi controls therefore cannot create a
+new line or reorder the sentence; embedded backticks cannot close the span;
+and an embedded pipe remains literal code-span content rather than Markdown
+structure. Sanitization is a rendering rule only: structured JSON retains the
+trimmed source value and JSON escaping.
+
 ## Resource and failure bounds
 
 The existing shared MyVariant response-body ceiling remains 8 MiB. In
 addition, annotation shaping applies all of these limits before allocating
 public annotation strings:
 
-- inspect no more than 32 `snpeff.ann` objects per hit;
+- project and allocate identity fields for at most 32 `snpeff.ann` objects per
+  hit, then observe whether item 33 exists without projecting it;
 - accept at most 256 UTF-8 bytes for each non-null identity field after
   trimming; and
 - accept at most 256 KiB of those identity-field bytes cumulatively across the
@@ -128,6 +140,17 @@ malformed. A wrong non-null JSON type in any of the four identity fields does
 the same. Valid sibling fields on the hit—including ClinVar and dbNSFP—remain
 available; malformed SnpEff alone must not fail deserialization of the hit or
 the whole provider response.
+
+For an `ann` array, its deserializer projects the first 32 elements under the
+field bounds. It then asks the sequence for item 33 as ignored data. If item 33
+exists, it immediately rejects the whole annotation set as incomplete and
+drains every remaining array value through streaming ignored-data decoding;
+it does not construct an annotation object or any identity string for item 33
+or the tail. This still consumes the JSON correctly and preserves valid sibling
+fields while keeping retained annotation allocation bounded at 32 objects and
+their bounded fields. A non-object among the first 32 is malformed as specified
+above; tail values after item 33 need not be validated because the set is
+already rejected and cannot become public evidence.
 
 The bounds are fail-safe, not truncating. If one hit has a 33rd annotation, one
 field is 257 bytes, or its SnpEff set is malformed under the rules above, only
@@ -154,9 +177,13 @@ valid SnpEff or ClinVar tuple exists, broad search and get leave those display
 fields absent rather than assembling them from dbNSFP arrays.
 
 Unit tests pin 32/33 annotations, 256/257-byte fields, and 256 KiB / 256 KiB
-plus one byte across a page. They also prove that cap accounting is checked
-before cloning provider strings and that an over-cap page remains bounded and
-explanation-free.
+plus one byte across a page. A separate long-tail array contains 10,000
+annotations within the 8 MiB body ceiling and uses decoder
+instrumentation to prove that at most 32 annotation objects and their bounded
+identity fields are constructed, item 33 triggers incomplete state, and no
+tail identity strings are allocated. The tests also prove that cap accounting
+is checked before cloning provider strings and that an over-cap page remains
+bounded and explanation-free.
 
 ## Completion evidence
 
@@ -179,6 +206,14 @@ explanation-free.
   empty/false result, broad search's compact usable result, and get's usable
   card with ClinVar fallback; a no-valid-sibling case proves absent display
   fields rather than dbNSFP zipping.
+- An adversarial explanation fixture places newlines, carriage returns, tabs,
+  C0/C1 and terminal escape sequences, bidi controls, backtick runs, and pipe
+  characters across the result ID and every annotation identity field. CLI,
+  raw-MCP, and typed-search Markdown each remain exactly one bullet on one
+  physical line beneath one explanation heading, preserve the fixed sentence
+  and tuple order, contain no control or bidi character, and use a code-span
+  delimiter longer than every embedded backtick run. No injected heading,
+  list item, table row, or trailing prose is created.
 - The compatibility matrix covers CLI Markdown, CLI JSON, raw MCP Markdown,
   raw MCP JSON, typed-search MCP Markdown, and typed-search MCP JSON. Every
   surface pins positive alternate-transcript output and the same-object/no-note
