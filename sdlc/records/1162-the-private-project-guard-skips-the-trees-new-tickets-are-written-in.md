@@ -36,6 +36,8 @@ tracked markers.
   skipped, and the strict documentation build.
 - `make spec` passed all routine and static specification suites.
 - `git diff --check` passed. No canonical lifecycle script changed.
+- Primary integration repeated the focused 19-test module and the canonical
+  `make lint`, `make test`, and `make spec` gates with the same passing counts.
 
 ## Review
 
@@ -43,7 +45,9 @@ tracked markers.
 - Initial code review: rejected the over-broad ticket and record filename
   parsing; remediation restored the accepted exact `NNNN-*.md` boundaries and
   added malformed-filename regressions.
-- Implementation: remediated and awaiting independent code re-review.
+- Independent code re-review: accepted the remediation with no findings after
+  confirming exact full-match parsing, malformed-name coverage, preserved
+  draft precedence, unchanged canonical scripts, and a clean worktree.
 
 ## Boundary
 
