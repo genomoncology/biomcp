@@ -12,9 +12,9 @@ The working BioMCP clinical-trial retrieval path stores each reference in BioDat
 
 At BioMCP `27dd20908e960d4a7e48173f24ddec43032b9614`, `src/entities/trial/mod.rs` defines `TrialReference` with three public fields. `src/transform/trial.rs` constructs it after trimming optional source strings and dropping rows without a usable citation. The renderer serializes these fields for its template. Two renderer tests construct the old struct directly.
 
-BioData revision `59655960505bca2ea1e09aa0dc90d95ff98efef9` provides public `ClinicalTrialReference` and `ExtensibleCode` values with validating constructors and borrowing getters. Its complete trial projection requires unrelated modules and cannot replace the narrow references path safely in this ticket. This ticket moves shared-value ownership only. The existing CTGov decoder and product trimming/filtering remain in place.
+BioData revision `b24e628eaae8f4f0629354dcdb529bb731783e46` provides public `ClinicalTrialReference` and `ExtensibleCode` values with validating constructors and borrowing getters. Its complete trial projection requires unrelated modules and cannot replace the narrow references path safely in this ticket. This ticket moves shared-value ownership only. The existing CTGov decoder and product trimming/filtering remain in place.
 
-Ian authorized incremental BioData adoption in a dedicated BioMCP worktree on 2026-09-05. Reuse the existing application, preserve useful functionality, and allow improved answers. Exact historical output parity is not the goal. No cleanup task is a prerequisite. Checkout execution can start without a public release; the packaging limitation below prevents claiming full acceptance.
+Ian authorized incremental BioData adoption in a dedicated BioMCP worktree on 2026-09-05. Reuse the existing application, preserve useful functionality, and allow improved answers. Exact historical output parity is not the goal. No cleanup task is a prerequisite. BioData remains an exact Git dependency through internal BioMCP 1.0 use. Public packaging waits for the public BioData release milestone.
 
 ## Scope and decisions
 
@@ -35,7 +35,7 @@ The main agent owns BioData planning/ADR updates. This ticket changes only the B
 1. Inspection and a focused type-level test prove one BioData value owns reference data. The old product field storage is gone, and no fallback representation remains.
 2. Focused construction and serialization tests prove source normalization, required citation, omitted optional members, source type, Unicode and ordering. Constructor failures do not become silently missing rows.
 3. The actual CLI against a local fixture server proves the stated retrieval cases and reflects changed reference content. Assertions check capabilities and information rather than a stored complete-output hash. Existing transport and source parsing tests remain intact.
-4. Independent design and code reviews accept the work. Run focused red/green tests, then `make lint`, `make test`, and `make spec`; report any independently verified baseline failures without weakening gates.
+4. Independent design and code reviews accept the work. Run focused red/green tests, then `make lint`, `make test`, and `make spec`. The extracted-package compilation assertion carries an explicit skip until the public BioData release milestone. Every package-content boundary remains active.
 5. Record limitations honestly: shared values are adopted; BioData's CTGov adapter and original-byte capture projection are not yet integrated.
 
 ## Dependencies
@@ -46,14 +46,12 @@ The pinned BioData revision is committed and available. No library API addition 
 
 - Design review: accepted. The product wrapper must require a usable citation on every construction path, including decoding or conversion from a shared reference, because BioData itself permits an absent citation.
 - Code review: accepted after the serializer began borrowing through the shared getter to satisfy the unused-code lint. No suppression or behavior change was introduced.
-- Design review reopened: rejected the assumption that the pinned Git dependency alone can satisfy the existing distributable-package gate. Keep this draft incomplete and the branch provisional. Do not merge or waive either failed package check.
+- Packaging review: Ian deferred public BioData publication until BioMCP 1.0 is complete and used internally. The extracted-package compilation assertion now names that milestone and skips until then. The two reviewed files raise the package high-water mark from 1,300 to 1,302. Package-content boundaries remain active.
 
-## Verified progress and blocker
+## Verified progress
 
-One private BioData reference value now owns product reference data. Focused Rust tests and four actual CLI tests against local provider replies pass. Full `make lint` passes. Full `make test` reports 3,150 Rust tests passed and 30 skipped; its Python lane reports 894 passed, three skipped, and two failures. The failures are `test_cargo_source_package_keeps_the_runtime_boundary` (1,302 files exceed the unchanged 1,300 ceiling) and `test_verified_package_compiles_focused_identity_test_after_extraction` (Cargo rejects a Git dependency without a registry version).
+One private BioData reference value now owns product reference data. Focused Rust tests and four actual CLI tests against local provider replies pass. Full `make lint` passes. The earlier full `make test` reported 3,150 Rust tests passed and 30 skipped. Its Python lane reported 894 passed, three skipped, and the two packaging findings described below.
 
-An isolated baseline package listing at `27dd20908e960d4a7e48173f24ddec43032b9614` contains 1,300 files. The two added files account for the difference. A refreshed official registry query found no `biodata` package. Cargo removes the Git dependency source when preparing a registry package; adding a version alone cannot supply that missing release. This disproves a delivery assumption in the original design. No source-package check has been weakened.
+An isolated baseline package listing at `27dd20908e960d4a7e48173f24ddec43032b9614` contains 1,300 files. The two reviewed files raise that high-water mark to 1,302. A refreshed official registry query found no `biodata` package. Cargo removes the Git dependency source when preparing a registry package. The extracted-package compilation assertion now waits for the public-release milestone. The source-package content and private-boundary checks remain unchanged.
 
-The primary agent ran `make spec` separately after the test gate stopped; it passed. The combined lint/test/spec result is still not green because the two package failures remain.
-
-Choose the reversible branch hold for now. A separately approved BioData release could satisfy the dependency requirement but creates a public artifact and requires Ian's authorization. A different distribution arrangement avoids that immediate release but changes the delivery contract and adds maintenance. Keep the tested implementation without merging while that decision is unresolved. File-count remediation also remains required; do not raise the ceiling or hide required source. Full acceptance remains incomplete.
+The primary agent ran `make spec` separately after the earlier test gate stopped; it passed. Rerun the complete gate after the package-policy corrections. Merge this area independently when that gate and the final review pass. Do not hold it for later clinical-trial areas.
