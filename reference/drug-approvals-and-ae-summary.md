@@ -38,7 +38,21 @@ OpenFDA FAERS summary fields:
 
 - total reports from OpenFDA FAERS metadata,
 - returned report count,
-- top reactions with count and percentage.
+- top reactions with count and a denominator-specific report share,
+- `percentage_context` in JSON whenever reaction percentage rows are present.
+
+Ordinary search calculates each reaction's **share of returned reports** from
+the returned page, which is only a sample of all matching reports. The drug
+helper calculates each reaction's **share of matching reports** from OpenFDA's
+aggregate count response and the total matching report count. The structured
+context names the denominator as `returned_reports` or `all_matching_reports`,
+records the exact divisor in `denominator_count`, and marks both
+`is_incidence` and `establishes_causality` false. It is omitted when there are
+no reaction percentage rows and remains additive to all existing summary keys.
+
+FAERS contains spontaneous reports, not a denominator of treated or exposed
+patients. These percentages are not incidence estimates and do not establish
+causality.
 
 The same summary appears in:
 

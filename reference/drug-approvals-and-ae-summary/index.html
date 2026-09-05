@@ -4152,8 +4152,20 @@ existing normalized approval date:</p>
 <ul>
 <li>total reports from OpenFDA FAERS metadata,</li>
 <li>returned report count,</li>
-<li>top reactions with count and percentage.</li>
+<li>top reactions with count and a denominator-specific report share,</li>
+<li><code>percentage_context</code> in JSON whenever reaction percentage rows are present.</li>
 </ul>
+<p>Ordinary search calculates each reaction's <strong>share of returned reports</strong> from
+the returned page, which is only a sample of all matching reports. The drug
+helper calculates each reaction's <strong>share of matching reports</strong> from OpenFDA's
+aggregate count response and the total matching report count. The structured
+context names the denominator as <code>returned_reports</code> or <code>all_matching_reports</code>,
+records the exact divisor in <code>denominator_count</code>, and marks both
+<code>is_incidence</code> and <code>establishes_causality</code> false. It is omitted when there are
+no reaction percentage rows and remains additive to all existing summary keys.</p>
+<p>FAERS contains spontaneous reports, not a denominator of treated or exposed
+patients. These percentages are not incidence estimates and do not establish
+causality.</p>
 <p>The same summary appears in:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>drug<span class="w"> </span>adverse-events<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>

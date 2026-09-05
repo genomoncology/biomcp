@@ -4340,9 +4340,25 @@ paths:</p>
 <p>Reaction-focused filter:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--reaction<span class="w"> </span>pneumonitis<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
+<p>The reaction summary labels each percentage as a <strong>share of returned reports</strong>:
+the numerator is the number of returned-page FAERS reports containing that
+reaction and the denominator is the number of reports on that returned page.
+The page is only a sample of all matching reports. These spontaneous-report
+shares are not incidence in treated or exposed patients and do not establish
+causality.</p>
+<p><code>biomcp drug adverse-events &lt;name&gt;</code> instead uses an aggregate OpenFDA count and
+labels the percentage as a <strong>share of matching reports</strong>. Its denominator is
+all matching FAERS reports. JSON identifies these meanings in
+<code>summary.percentage_context</code>, including the exact divisor and explicit false
+values for incidence and causality.</p>
 <p>FAERS counts are FAERS-only and therefore require <code>--source faers</code>; count operations require offset zero:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--source<span class="w"> </span>faers<span class="w"> </span>--count<span class="w"> </span>reaction<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
+<p>For <code>--count</code>, <code>Percent of Shown Count</code> divides each bucket by the sum of the
+shown bucket counts. That sum is not a count of distinct reports because one
+report can contribute to multiple buckets. Count-mode JSON remains the raw
+bucket contract and does not contain calculated percentages or
+<code>percentage_context</code>.</p>
 <h2 id="search-vaccine-events-with-vaers">Search vaccine events with VAERS<a class="headerlink" href="#search-vaccine-events-with-vaers" title="Permanent link">&para;</a></h2>
 <p>Combined FAERS + VAERS for vaccine queries:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span><span class="s2">&quot;COVID-19 vaccine&quot;</span><span class="w"> </span>--source<span class="w"> </span>all<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>

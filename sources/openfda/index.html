@@ -4260,7 +4260,16 @@ those U.S. safety and approval workflows.</p>
 <h2 id="example-commands">Example commands<a class="headerlink" href="#example-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--drug<span class="w"> </span>pembrolizumab<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
-<p>Returns an adverse-event summary with report totals and a compact result table.</p>
+<p>Returns an adverse-event summary with report totals and a compact result table.
+The ordinary search summary reports reaction shares within the returned page;
+<code>biomcp drug adverse-events &lt;name&gt;</code> reports aggregate shares across all
+matching FAERS reports. Both label the denominator in Markdown and in JSON
+<code>percentage_context</code> when percentage rows exist.</p>
+<p>FAERS is a spontaneous-reporting system. Its reports are affected by incomplete
+reporting and reporting behavior, and they do not provide the number of treated
+or exposed patients. BioMCP therefore labels these report shares as not
+incidence and as not establishing causality. A report may also list multiple
+products and reactions without linking a particular reaction to one product.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>adverse-event<span class="w"> </span>--type<span class="w"> </span>recall<span class="w"> </span>--drug<span class="w"> </span>metformin<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <p>Returns a recall results table with recall number, classification, and product fields.</p>
