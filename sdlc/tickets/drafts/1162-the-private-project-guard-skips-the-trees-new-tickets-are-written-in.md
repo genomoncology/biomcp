@@ -23,7 +23,9 @@ The scan must follow ticket lifecycle state rather than treating the whole ticke
 
 - Open top-level tickets and drafts are scanned alongside the roots already covered.
 - Temporary-tree regressions prove that an active top-level ticket and a draft carrying a tracked marker fail.
+- A draft carrying a tracked marker still fails when a completion record with the same numeric ID and a different slug exists. Draft lifecycle state takes precedence over record membership.
 - A top-level ticket with a matching numeric-ID completion record passes even when the two slugs differ, as does an archived ticket carrying the same marker.
+- Failure regressions assert the complete collected `relative-path:line:marker` diagnostic in stable path, line, and marker order rather than merely asserting that the audit rejects the tree.
 - `sdlc/records/` stays unscanned because record 1123 forbids rewriting append-only history.
 - Public dependency and provider names, this project's own hosting and attribution slug, and defect evidence that does not contain a tracked private marker keep passing. A tracked marker in living prose fails even when it is presented as historical evidence; any future exception requires an explicit, separately reviewed allowlist.
 
