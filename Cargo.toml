@@ -69,6 +69,7 @@ base64 = "0.22"
 
 # Hashing (download cache keys)
 md5 = "0.7"
+sha1 = "0.10"
 
 # Parsing
 bytesize = "1"

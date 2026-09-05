@@ -129,26 +129,14 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
-        super::secure_managed_tree(&self.inner.path, false)?;
+        prepare_write_paths(&self.inner.path, &cache_key)?;
         let response = self.inner.put(cache_key.clone(), res, policy).await?;
-        super::secure_managed_tree(&self.inner.path, true)?;
-
-        match cacache::metadata(&self.inner.path, &cache_key).await {
-            Ok(Some(metadata)) => {
-                self.approx_bytes
-                    .fetch_add(metadata.size as u64, Ordering::Relaxed);
-            }
-            Ok(None) => warn!(
-                cache_key,
-                cache_path = %self.inner.path.display(),
-                "cache metadata missing after put; leaving approximate size unchanged"
-            ),
-            Err(err) => warn!(
-                cache_key,
-                cache_path = %self.inner.path.display(),
-                "cache metadata lookup failed after put; leaving approximate size unchanged: {err}"
-            ),
-        }
+        let metadata = cacache::metadata(&self.inner.path, &cache_key)
+            .await?
+            .ok_or_else(|| io::Error::other("cache metadata missing after successful put"))?;
+        secure_written_content(&self.inner.path, &metadata.integrity)?;
+        self.approx_bytes
+            .fetch_add(metadata.size as u64, Ordering::Relaxed);
 
         let approx_bytes = self.approx_bytes.load(Ordering::Relaxed);
         let below_min_disk_free = match (self.services.inspect_space)(&self.config.cache_root) {
@@ -188,6 +176,49 @@ impl CacheManager for SizeAwareCacheManager {
     }
 }
 
+fn prepare_write_paths(cache_path: &Path, cache_key: &str) -> io::Result<()> {
+    super::secure_managed_dir(cache_path)?;
+    super::secure_managed_dir(&cache_path.join(super::layout::TEMP_DIR))?;
+
+    let content_root = super::content_root(cache_path);
+    super::secure_managed_dir(&content_root)?;
+    super::secure_managed_dir(&content_root.join("sha256"))?;
+
+    let bucket = super::index_bucket_path(cache_path, cache_key);
+    let index_root = cache_path.join(super::layout::INDEX_DIR);
+    super::secure_managed_dir(&index_root)?;
+    let first_shard = bucket
+        .parent()
+        .and_then(Path::parent)
+        .ok_or_else(|| io::Error::other("derived cache index path has no first shard"))?;
+    let second_shard = bucket
+        .parent()
+        .ok_or_else(|| io::Error::other("derived cache index path has no second shard"))?;
+    super::secure_managed_dir(first_shard)?;
+    super::secure_managed_dir(second_shard)?;
+    super::prepare_managed_file(&bucket)
+}
+
+fn secure_written_content(cache_path: &Path, integrity: &ssri::Integrity) -> io::Result<()> {
+    let blob = super::content_path(cache_path, integrity);
+    let content_root = super::content_root(cache_path);
+    super::secure_managed_dir(&content_root)?;
+
+    let (algorithm, _) = integrity.to_hex();
+    let algorithm = content_root.join(algorithm.to_string());
+    let first_shard = blob
+        .parent()
+        .and_then(Path::parent)
+        .ok_or_else(|| io::Error::other("derived cache content path has no first shard"))?;
+    let second_shard = blob
+        .parent()
+        .ok_or_else(|| io::Error::other("derived cache content path has no second shard"))?;
+    super::secure_managed_dir(&algorithm)?;
+    super::secure_managed_dir(first_shard)?;
+    super::secure_managed_dir(second_shard)?;
+    super::secure_managed_file(&blob)
+}
+
 fn default_services() -> ManagerServices {
     ManagerServices {
         estimate_cache_bytes: Arc::new(estimate_cache_bytes_fast),
@@ -197,7 +228,7 @@ fn default_services() -> ManagerServices {
 }
 
 fn estimate_cache_bytes_fast(path: &Path) -> io::Result<u64> {
-    let content_root = path.join("content-v2");
+    let content_root = super::content_root(path);
     match fs::symlink_metadata(&content_root) {
         Ok(metadata) if metadata.is_dir() => sum_tree_bytes(&content_root),
         Ok(metadata) if metadata.file_type().is_symlink() => Ok(0),
@@ -386,6 +417,9 @@ mod tests {
     };
     use crate::test_support::TempDirGuard;
     use http_cache::CacheManager;
+
+    #[path = "write_security_tests.rs"]
+    mod write_security_tests;
 
     fn write_entry(cache_path: &Path, key: &str, bytes: &[u8], time_ms: u128) {
         let mut writer = cacache::WriteOpts::new()

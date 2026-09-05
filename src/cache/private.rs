@@ -4,7 +4,7 @@ use std::path::Path;
 
 pub(crate) fn secure_managed_tree(root: &Path, recurse: bool) -> io::Result<()> {
     match fs::symlink_metadata(root) {
-        Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_dir() => {
+        Ok(metadata) if is_link_or_reparse_point(&metadata) || !metadata.is_dir() => {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("managed state root is not a directory: {}", root.display()),
@@ -14,7 +14,56 @@ pub(crate) fn secure_managed_tree(root: &Path, recurse: bool) -> io::Result<()> 
         Err(error) if error.kind() == io::ErrorKind::NotFound => create_private_dir(root)?,
         Err(error) => return Err(error),
     }
-    secure_entry(root, recurse)
+    secure_entry(
+        root,
+        recurse,
+        root.file_name()
+            .is_some_and(|name| name == super::layout::CONTENT_DIR),
+    )
+}
+
+pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if is_link_or_reparse_point(&metadata) || !metadata.is_dir() => {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "managed state directory is not a directory: {}",
+                    path.display()
+                ),
+            ))
+        }
+        Ok(_) => secure_entry(
+            path,
+            false,
+            path.file_name()
+                .is_some_and(|name| name == super::layout::CONTENT_DIR),
+        ),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            create_private_dir_exact(path)?;
+            secure_entry(
+                path,
+                false,
+                path.file_name()
+                    .is_some_and(|name| name == super::layout::CONTENT_DIR),
+            )
+        }
+        Err(error) => Err(error),
+    }
+}
+
+pub(crate) fn prepare_managed_file(path: &Path) -> io::Result<()> {
+    let mut options = OpenOptions::new();
+    options.read(true).append(true).create(true);
+    drop(open_private(&mut options, path)?);
+    Ok(())
+}
+
+pub(crate) fn secure_managed_file(path: &Path) -> io::Result<()> {
+    let mut options = OpenOptions::new();
+    options.read(true).write(true);
+    drop(open_private(&mut options, path)?);
+    Ok(())
 }
 
 pub(crate) fn open_private(options: &mut OpenOptions, path: &Path) -> io::Result<File> {
@@ -266,16 +315,36 @@ fn create_private_dir(path: &Path) -> io::Result<()> {
     builder.recursive(true).mode(0o700).create(path)
 }
 
+#[cfg(unix)]
+fn create_private_dir_exact(path: &Path) -> io::Result<()> {
+    use std::os::unix::fs::DirBuilderExt;
+    fs::DirBuilder::new().mode(0o700).create(path)
+}
+
 #[cfg(windows)]
 fn create_private_dir(path: &Path) -> io::Result<()> {
     fs::create_dir_all(path)
 }
 
+#[cfg(windows)]
+fn create_private_dir_exact(path: &Path) -> io::Result<()> {
+    fs::create_dir(path)
+}
+
 #[cfg(unix)]
-fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool, inside_content: bool) -> io::Result<()> {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     let metadata = fs::symlink_metadata(path)?;
     if metadata.file_type().is_symlink() {
+        if inside_content && symlink_targets_directory(path)? {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "managed content directory must not be a symlink: {}",
+                    path.display()
+                ),
+            ));
+        }
         return Ok(());
     }
     if metadata.is_file() {
@@ -298,16 +367,30 @@ fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
     }
     if recurse {
         for entry in fs::read_dir(path)? {
-            secure_entry(&entry?.path(), true)?;
+            let entry_path = entry?.path();
+            let child_inside_content = inside_content
+                || entry_path
+                    .file_name()
+                    .is_some_and(|name| name == super::layout::CONTENT_DIR);
+            secure_entry(&entry_path, true, child_inside_content)?;
         }
     }
     Ok(())
 }
 
 #[cfg(windows)]
-fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool, inside_content: bool) -> io::Result<()> {
     let metadata = fs::symlink_metadata(path)?;
-    if metadata.file_type().is_symlink() {
+    if is_link_or_reparse_point(&metadata) {
+        if inside_content && symlink_targets_directory(path)? {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "managed content directory must not be a reparse point: {}",
+                    path.display()
+                ),
+            ));
+        }
         return Ok(());
     }
     if metadata.is_file() {
@@ -315,7 +398,12 @@ fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
     } else if metadata.is_dir() {
         if recurse {
             for entry in fs::read_dir(path)? {
-                secure_entry(&entry?.path(), true)?;
+                let entry_path = entry?.path();
+                let child_inside_content = inside_content
+                    || entry_path
+                        .file_name()
+                        .is_some_and(|name| name == super::layout::CONTENT_DIR);
+                secure_entry(&entry_path, true, child_inside_content)?;
             }
         }
     } else {
@@ -339,6 +427,81 @@ fn secure_entry(path: &Path, recurse: bool) -> io::Result<()> {
         .success()
         .then_some(())
         .ok_or_else(|| io::Error::other(format!("cannot secure: {path:?}")))
+}
+
+#[cfg(unix)]
+fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
+    metadata.file_type().is_symlink()
+}
+
+#[cfg(windows)]
+fn is_link_or_reparse_point(metadata: &fs::Metadata) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_REPARSE_POINT;
+
+    metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
+}
+
+fn symlink_targets_directory(path: &Path) -> io::Result<bool> {
+    match fs::metadata(path) {
+        Ok(metadata) => Ok(metadata.is_dir()),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
+#[cfg(all(test, unix))]
+mod unix_tests {
+    use std::os::unix::fs::{PermissionsExt, symlink};
+
+    use super::*;
+
+    #[test]
+    fn explicit_whole_tree_maintenance_repairs_an_unrelated_sentinel() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let sentinel = root.path().join("unrelated/nested/sentinel");
+        fs::create_dir_all(sentinel.parent().expect("sentinel parent")).expect("sentinel tree");
+        fs::write(&sentinel, b"cached response").expect("sentinel");
+        fs::set_permissions(&sentinel, fs::Permissions::from_mode(0o644))
+            .expect("permissive sentinel");
+
+        secure_managed_tree(root.path(), true).expect("whole-tree maintenance");
+
+        assert_eq!(
+            fs::metadata(&sentinel)
+                .expect("sentinel metadata")
+                .permissions()
+                .mode()
+                & 0o777,
+            0o600
+        );
+    }
+
+    #[test]
+    fn whole_tree_maintenance_skips_unrelated_links_but_rejects_content_directory_links() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let outside_file = root.path().join("outside-file");
+        let outside_dir = root.path().join("outside-dir");
+        fs::write(&outside_file, b"outside bytes").expect("outside file");
+        fs::create_dir(&outside_dir).expect("outside directory");
+        symlink(&outside_file, root.path().join("unrelated-link")).expect("unrelated link");
+        fs::create_dir_all(root.path().join("content-v2/sha256")).expect("content root");
+        symlink(
+            &outside_dir,
+            root.path().join("content-v2/sha256/directory-link"),
+        )
+        .expect("content directory link");
+
+        let error = secure_managed_tree(root.path(), true)
+            .expect_err("content directory link must be rejected");
+
+        assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+        assert_eq!(
+            fs::read(&outside_file).expect("outside unchanged"),
+            b"outside bytes"
+        );
+        assert_eq!(fs::read_dir(&outside_dir).expect("outside dir").count(), 0);
+    }
 }
 
 #[cfg(all(test, windows))]

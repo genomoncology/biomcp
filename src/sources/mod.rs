@@ -1266,6 +1266,8 @@ pub(crate) async fn read_limited_source_body(
 
 #[cfg(test)]
 mod tests {
+    #[path = "cache_security.rs"]
+    mod cache_security;
     #[path = "clingen_runtime.rs"]
     mod clingen_runtime;
     #[path = "provider_network.rs"]
@@ -1282,7 +1284,6 @@ mod tests {
         atomic::{AtomicUsize, Ordering},
     };
     use tokio::io::AsyncWriteExt;
-
     fn test_response(
         status: StatusCode,
         headers: &[(&'static str, &'static str)],
@@ -1853,7 +1854,6 @@ mod tests {
         assert!(!override_root.join("http").join("sentinel.txt").exists());
         assert!(!override_root.join("http-cacache").exists());
     }
-
     #[test]
     fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
         let root = TempDirGuard::new("http-cache-epoch-clear");

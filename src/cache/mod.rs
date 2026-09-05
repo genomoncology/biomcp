@@ -1,6 +1,7 @@
 mod clean;
 mod clear;
 mod config;
+mod layout;
 mod limits;
 mod manager;
 pub(crate) mod migration;
@@ -17,6 +18,7 @@ pub(crate) use config::{
     CacheConfig, CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig,
     resolve_cache_config,
 };
+pub(crate) use layout::{content_path, content_root, index_bucket_path};
 #[allow(unused_imports)]
 pub(crate) use limits::{
     CacheLimitEvaluation, CacheUsage, FilesystemSpace, evaluate_cache_limits,
@@ -29,7 +31,10 @@ pub(crate) use planner::{
     CacheBlob, CacheCleanupPlan, CacheEntry, CachePlannerError, CacheSnapshot, plan_age_cleanup,
     plan_composite_cleanup, plan_orphan_gc, plan_size_lru, snapshot_cache,
 };
-pub(crate) use private::{open_managed_read, open_private, secure_managed_tree};
+pub(crate) use private::{
+    open_managed_read, open_private, prepare_managed_file, secure_managed_dir, secure_managed_file,
+    secure_managed_tree,
+};
 #[allow(unused_imports)]
 pub(crate) use provider_capture::{
     CspecCaptureBinding, ProviderCaptureError, ProviderCaptureManifest, ProviderCaptureProvider,

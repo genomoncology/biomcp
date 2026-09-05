@@ -81,7 +81,7 @@ pub(crate) fn snapshot_cache(cache_path: &Path) -> Result<CacheSnapshot, CachePl
         }
     }
 
-    let index_path = cache_path.join("index-v5");
+    let index_path = cache_path.join(super::layout::INDEX_DIR);
     let mut entries = if path_exists(&index_path)? {
         let mut listed = Vec::new();
         for result in cacache::list_sync(cache_path) {
@@ -103,7 +103,7 @@ pub(crate) fn snapshot_cache(cache_path: &Path) -> Result<CacheSnapshot, CachePl
     entries.sort_by(|left, right| left.key.cmp(&right.key));
 
     let refcounts = entry_refcounts(&entries);
-    let content_root = cache_path.join("content-v2");
+    let content_root = super::content_root(cache_path);
     let mut blobs = if path_exists(&content_root)? {
         walk_content_tree(cache_path, &content_root, &refcounts)?
     } else {
@@ -351,13 +351,7 @@ fn integrity_from_blob_path(content_root: &Path, blob_path: &Path) -> Option<Int
 }
 
 fn blob_path_for_integrity(cache_path: &Path, integrity: &Integrity) -> PathBuf {
-    let (algorithm, hex) = integrity.to_hex();
-    cache_path
-        .join("content-v2")
-        .join(algorithm.to_string())
-        .join(&hex[0..2])
-        .join(&hex[2..4])
-        .join(&hex[4..])
+    super::content_path(cache_path, integrity)
 }
 
 fn entry_refcounts(entries: &[CacheEntry]) -> HashMap<Integrity, usize> {
