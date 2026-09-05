@@ -83,8 +83,7 @@ provider-network tests. Two source-test routing modules became inline modules in
 their owning providers. `cargo package --list --allow-dirty --locked --offline` now lists
 exactly 1,300 paths, and the six focused source-package boundary tests pass when
 run with their required worktree-local temporary directory. `make lint` also
-passes after consolidation. The full primary gate was not rerun and is not
-claimed.
+passed after consolidation; the final full primary results are recorded below.
 
 A later review found that two cold, independent writes could both observe a
 common directory as missing and the loser would return `AlreadyExists` instead
@@ -95,8 +94,21 @@ passed. The regressions synchronize real different-shard puts immediately
 before their common key-lock directory creation and separately inject a hostile
 symlink winner to prove it is rejected rather than blindly accepted.
 
-The network-dependent large-cache live canary was not run. The corrected
-`make test` gate and `make spec` remain pending and are not claimed here.
+The final primary integration run passed `make lint`, all 3,172 Rust tests with
+30 skipped, all 902 Python contracts with 3 skipped, strict MkDocs, every
+routine mustmatch page, the 39-test parallel-isolation audit, and 8 static spec
+checks. The Rust suite completed in 119 seconds; the three cache-heavy MCP
+contracts finished in 88-97 seconds under concurrent machine load instead of
+reproducing the rejected design's 291-second per-test serialization.
+
+The release live strict-provenance canary passed every assertion against both
+cache states. Four serial variant calls took 192.58 seconds against the
+representative accumulated cache and 88.48 seconds against a fresh cache; the
+accumulated run used 24.77 seconds of user CPU and 64.14 seconds of system CPU,
+while the fresh run used 0.21 seconds of each. This confirms that the per-write
+whole-tree multiplier is removed but also confirms that deliberate startup
+repair and the separate provider-work problem remain material. Ticket 1150
+owns the latter.
 Windows-only tests cover bounded unrelated traversal and require a protected,
 current-user-only full-control ACL on each touched lock, tmp, index, and content
 path. They were not compiled or executed on this Unix host: the installed Rust
@@ -113,7 +125,10 @@ pending.
   classification, Windows/ancestor coverage, the basename-derived
   managed-content context, the global-exclusive constructor serialization, and
   cold-cache directory-creation races. Those findings were remediated;
-  independent re-review is pending.
+  independent re-review accepted the final lock design. A later integration
+  gate rejected the first packaging shape at 1,305 files; the five-file excess
+  was consolidated without weakening the 1,300-file ratchet or dropping test
+  coverage, and a final independent review accepted that remediation.
 
 ## Boundary
 
