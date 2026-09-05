@@ -49,11 +49,14 @@ The first independent implementation review rejected the change because duplicat
 
 A second independent review rejected the first remediation because one RCV element could still clone a shared multi-megabyte accession, status, or condition into hundreds of classification-domain rows before the aggregate cap was checked. The second remediation preflights the total aggregate child count and an 8 MiB cumulative emitted-public-text budget before constructing any aggregate or submission row. Deterministic tests cover a 512-child record with a shared 2 MiB accession while the XML stays below 8 MiB, 513 children in one RCV element, and the exact cumulative text boundary plus one byte.
 
-Second-remediation focused evidence passed 29 ClinVar-filtered Rust tests, followed by 14 parser-only tests after the final allocation-free count refinement, Clippy for the no-default-feature library and test graph with warnings denied, and the Rust source-size ratchet. The earlier remediation passed 51 source/licensing/configuration/documentation contracts and 12 package-boundary and quality-ratchet contracts. The package list remains exactly 1,300 files and the BioData pin remains unchanged. Routine gates were not rerun after remediation because the coordinating agent reserved that gate lane.
+A third independent review rejected that remediation because an empty `RecordStatus` child made the preflight skip a large fallback `RecordStatus` attribute even though row construction used the attribute. The parser and preflight now share one borrowed RCV status-selection helper with identical non-empty child/attribute fallback semantics. The regression uses 512 classification rows, an empty status child, and a 2 MiB status attribute in an XML document below the input cap.
+
+Second-remediation focused evidence passed 29 ClinVar-filtered Rust tests, followed by 14 parser-only tests after the allocation-free count refinement. Third-remediation evidence passed all 15 parser tests, Clippy for the no-default-feature library and test graph with warnings denied, and the Rust source-size ratchet. The earlier remediation passed 51 source/licensing/configuration/documentation contracts and 12 package-boundary and quality-ratchet contracts. The package list remains exactly 1,300 files and the BioData pin remains unchanged. Routine gates were not rerun after remediation because the coordinating agent reserved that gate lane.
 
 ## Review
 
 - Design review: accepted in the materially tightened ticket before implementation.
 - First implementation review: rejected with bounded-allocation, fail-closed parsing, documentation-inventory, and end-to-end override-coverage findings; the identified findings were remediated in the implementation and focused tests.
 - First remediation review: rejected because multi-row RCV elements still allowed shared-text allocation amplification before the aggregate cap.
-- Second remediation review: pending independent code review; this record does not claim code-review acceptance.
+- Second remediation review: rejected because empty-child/attribute-fallback ordering allowed preflight accounting to drift from row construction.
+- Third remediation review: pending independent code review; this record does not claim code-review acceptance.

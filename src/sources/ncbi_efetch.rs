@@ -321,11 +321,12 @@ pub(crate) mod clinvar {
         }
     }
 
+    fn value_ref<'a, 'input>(node: Node<'a, 'input>) -> Option<&'a str> {
+        node.text().map(str::trim).filter(|text| !text.is_empty())
+    }
+
     fn value(node: Node<'_, '_>) -> Option<String> {
-        node.text()
-            .map(str::trim)
-            .filter(|text| !text.is_empty())
-            .map(str::to_string)
+        value_ref(node).map(str::to_string)
     }
 
     fn child<'a, 'input>(node: Node<'a, 'input>, name: &str) -> Option<Node<'a, 'input>> {
@@ -333,7 +334,15 @@ pub(crate) mod clinvar {
     }
 
     fn child_value(node: Node<'_, '_>, name: &str) -> Option<String> {
-        child(node, name).and_then(value)
+        child_value_ref(node, name).map(str::to_string)
+    }
+
+    fn child_value_ref<'a, 'input>(node: Node<'a, 'input>, name: &str) -> Option<&'a str> {
+        child(node, name).and_then(value_ref)
+    }
+
+    fn rcv_record_status_ref<'a, 'input>(node: Node<'a, 'input>) -> Option<&'a str> {
+        child_value_ref(node, "RecordStatus").or_else(|| node.attribute("RecordStatus"))
     }
 
     fn optional_u32_attr(node: Node<'_, '_>, name: &str) -> Result<Option<u32>, BioMcpError> {
@@ -421,22 +430,21 @@ pub(crate) mod clinvar {
         })
     }
 
-    fn text_len(node: Node<'_, '_>) -> usize {
-        node.text().map(str::trim).map(str::len).unwrap_or(0)
+    fn value_len(node: Node<'_, '_>) -> Option<usize> {
+        value_ref(node).map(str::len)
     }
 
-    fn child_text_len(node: Node<'_, '_>, name: &str) -> usize {
-        child(node, name).map(text_len).unwrap_or(0)
+    fn child_value_len(node: Node<'_, '_>, name: &str) -> Option<usize> {
+        child_value_ref(node, name).map(str::len)
     }
 
     fn joined_text_len<'a, 'input: 'a>(nodes: impl Iterator<Item = Node<'a, 'input>>) -> usize {
         let mut count = 0usize;
         let mut bytes = 0usize;
         for node in nodes {
-            let len = text_len(node);
-            if len == 0 {
+            let Some(len) = value_len(node) else {
                 continue;
-            }
+            };
             bytes = bytes.saturating_add(len);
             count += 1;
         }
@@ -456,7 +464,9 @@ pub(crate) mod clinvar {
         node.descendants()
             .filter(|node| node.has_tag_name("ClassifiedCondition"))
             .map(|condition| {
-                text_len(condition).saturating_add(formatted_pair_len(condition, "DB", "ID"))
+                value_len(condition)
+                    .unwrap_or(0)
+                    .saturating_add(formatted_pair_len(condition, "DB", "ID"))
             })
             .fold(0usize, usize::saturating_add)
     }
@@ -469,7 +479,7 @@ pub(crate) mod clinvar {
         let mut budget = PublicTextBudget::default();
         budget.charge("NCBI ClinVar".len())?;
         budget.charge(archive.attribute("Accession").map(str::len).unwrap_or(0))?;
-        budget.charge(child_text_len(archive, "RecordStatus"))?;
+        budget.charge(child_value_len(archive, "RecordStatus").unwrap_or(0))?;
 
         let mut aggregate_count = 0usize;
         for rcv in rcv_nodes {
@@ -490,12 +500,7 @@ pub(crate) mod clinvar {
             let shared = "NCBI ClinVar"
                 .len()
                 .saturating_add(rcv.attribute("Accession").map(str::len).unwrap_or(0))
-                .saturating_add(
-                    child(*rcv, "RecordStatus")
-                        .map(text_len)
-                        .or_else(|| rcv.attribute("RecordStatus").map(str::len))
-                        .unwrap_or(0),
-                )
+                .saturating_add(rcv_record_status_ref(*rcv).map(str::len).unwrap_or(0))
                 .saturating_add(rcv_condition_text_len(*rcv));
             budget.repeated(shared, row_count)?;
             for classification in classifications
@@ -505,8 +510,8 @@ pub(crate) mod clinvar {
             {
                 let description = child(classification, "Description").expect("preflight row");
                 budget.charge(classification_domain_len(classification.tag_name().name()))?;
-                budget.charge(text_len(description))?;
-                budget.charge(child_text_len(classification, "ReviewStatus"))?;
+                budget.charge(value_len(description).unwrap_or(0))?;
+                budget.charge(child_value_len(classification, "ReviewStatus").unwrap_or(0))?;
                 budget.charge(
                     description
                         .attribute("DateLastEvaluated")
@@ -535,8 +540,7 @@ pub(crate) mod clinvar {
             *entry = entry.saturating_add(bytes);
         }
         for assertion in scv_nodes {
-            if !child(*assertion, "RecordStatus")
-                .and_then(|node| node.text())
+            if !child_value_ref(*assertion, "RecordStatus")
                 .is_some_and(|status| status.trim().eq_ignore_ascii_case("current"))
             {
                 continue;
@@ -551,13 +555,13 @@ pub(crate) mod clinvar {
                             .unwrap_or(0)
                 }),
             )?;
-            budget.charge(child_text_len(*assertion, "RecordStatus"))?;
+            budget.charge(child_value_len(*assertion, "RecordStatus").unwrap_or(0))?;
             if let Some(classification) = child(*assertion, "Classification") {
                 if let Some(domain) = classification_child(classification) {
                     budget.charge(classification_domain_len(domain.tag_name().name()))?;
-                    budget.charge(text_len(domain))?;
+                    budget.charge(value_len(domain).unwrap_or(0))?;
                 }
-                budget.charge(child_text_len(classification, "ReviewStatus"))?;
+                budget.charge(child_value_len(classification, "ReviewStatus").unwrap_or(0))?;
                 budget.charge(
                     classification
                         .attribute("DateLastEvaluated")
@@ -590,7 +594,7 @@ pub(crate) mod clinvar {
                             node.has_tag_name("ElementValue")
                                 && node.attribute("Type") == Some("Preferred")
                         })
-                        .map(text_len)
+                        .and_then(value_len)
                         .unwrap_or(0),
                 )?;
                 for xref in trait_node
@@ -609,9 +613,9 @@ pub(crate) mod clinvar {
             {
                 if let Some(id_node) = child(citation, "ID") {
                     budget.charge(id_node.attribute("Source").map(str::len).unwrap_or(0))?;
-                    budget.charge(text_len(id_node))?;
+                    budget.charge(value_len(id_node).unwrap_or(0))?;
                 }
-                budget.charge(child_text_len(citation, "URL"))?;
+                budget.charge(child_value_len(citation, "URL").unwrap_or(0))?;
             }
         }
         Ok(())
@@ -637,7 +641,7 @@ pub(crate) mod clinvar {
             return Ok(Vec::new());
         }
         let version = optional_u32_attr(node, "Version")?;
-        let record_status = child_value(node, "RecordStatus");
+        let record_status = rcv_record_status_ref(node).map(str::to_string);
         let conditions = rcv_conditions(node)?;
         let mut rows = Vec::new();
         let Some(classifications) = child(node, "RCVClassifications") else {
@@ -657,9 +661,7 @@ pub(crate) mod clinvar {
                 evaluation_date: description
                     .attribute("DateLastEvaluated")
                     .map(str::to_string),
-                record_status: record_status
-                    .clone()
-                    .or_else(|| node.attribute("RecordStatus").map(str::to_string)),
+                record_status: record_status.clone(),
                 number_submitters: optional_u32_attr(description, "NumberOfSubmitters")?,
                 submission_count: optional_u32_attr(description, "SubmissionCount")?,
                 conditions: conditions.clone(),
@@ -1049,6 +1051,19 @@ pub(crate) mod clinvar {
             let xml = archive_with(&format!(
                 "<RCVList><RCVAccession Accession=\"RCV1\"><RCVClassifications>{too_many}</RCVClassifications></RCVAccession></RCVList>"
             ));
+            assert!(parse_record(7, &xml).is_err());
+        }
+
+        #[test]
+        fn empty_status_child_cannot_bypass_shared_attribute_budget() {
+            let classifications =
+                "<GermlineClassification><Description>P</Description></GermlineClassification>"
+                    .repeat(MAX_RCV);
+            let shared_status = "s".repeat(2 * 1024 * 1024);
+            let xml = archive_with(&format!(
+                "<RCVList><RCVAccession Accession=\"RCV1\" RecordStatus=\"{shared_status}\"><RecordStatus> \n </RecordStatus><RCVClassifications>{classifications}</RCVClassifications></RCVAccession></RCVList>"
+            ));
+            assert!(xml.len() < CLINVAR_MAX_BODY_BYTES);
             assert!(parse_record(7, &xml).is_err());
         }
 
