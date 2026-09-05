@@ -12,6 +12,12 @@ partial evidence. `_meta.section_sources` is the matching provenance projection
 and credits only successful providers. Enable `RUST_LOG=warn` only after checking
 these in-band fields.
 
+Markdown places a safe, copyable `Retry:` command directly after each
+recoverable degraded or unavailable section. The same recovery commands lead
+JSON `_meta.next_commands`; each retries only the affected canonical section
+when the CLI exposes one. Successful article searches use source-specific
+retries only when that source accepts the current filters.
+
 For a hard remote-source failure, JSON may include `error.source` and
 `error.recovery`; human errors name the same canonical source and action. Retry
 a transient source, review source configuration when instructed, or narrow the
