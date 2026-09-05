@@ -11,7 +11,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 MAX_PACKAGE_FILES = 1_300
-BIODATA_REVISION = "4f912d35a0f3fbff6994f1769d7601d7d0367aa1"
+BIODATA_REVISION = "9c470d5d3aad97b34bd4be71924475c03973a331"
 
 
 def _cargo_package_list() -> list[str]:

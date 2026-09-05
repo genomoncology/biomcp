@@ -144,6 +144,104 @@ fn get_response_maps_not_found_to_trial_not_found() {
     }
 }
 
+fn assert_biodata_error(
+    error: BioMcpError,
+    expected_code: &str,
+    expected_recovery: crate::error::RecoveryAction,
+) {
+    match error {
+        BioMcpError::WithSourceContext { context, source } => {
+            assert_eq!(
+                context.provider(),
+                crate::error::SourceProvider::CLINICAL_TRIALS
+            );
+            assert_eq!(context.recovery(), expected_recovery);
+            match *source {
+                BioMcpError::Api { api, message } => {
+                    assert_eq!(api, "ClinicalTrials.gov");
+                    assert_eq!(
+                        message,
+                        format!("BioData response validation failed: {expected_code}")
+                    );
+                }
+                other => panic!("expected sanitized API error, got {other:?}"),
+            }
+        }
+        other => panic!("expected source context, got {other:?}"),
+    }
+}
+
+#[test]
+fn biodata_reference_response_maps_every_stable_validation_code() {
+    use crate::error::RecoveryAction;
+
+    for (bytes, code) in [
+        (b"{".as_slice(), "malformed_json"),
+        (b"[]".as_slice(), "unsupported_json"),
+        (
+            br#"{"protocolSection":{"identificationModule":{}}}"#.as_slice(),
+            "invalid_projection",
+        ),
+        (
+            br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000002"}}}"#.as_slice(),
+            "identity_mismatch",
+        ),
+    ] {
+        let error = ClinicalTrialsClient::decode_biodata_reference_response(
+            "NCT00000001",
+            StatusCode::OK,
+            bytes,
+        )
+        .expect_err(code);
+        assert_biodata_error(error, code, RecoveryAction::RetryRemoteSource);
+    }
+
+    let oversized = vec![b' '; 8 * 1024 * 1024 + 1];
+    let error = ClinicalTrialsClient::decode_biodata_reference_response(
+        "NCT00000001",
+        StatusCode::OK,
+        &oversized,
+    )
+    .expect_err("resource limit");
+    assert_biodata_error(error, "json_resource_limit", RecoveryAction::NarrowRequest);
+}
+
+#[test]
+fn biodata_reference_response_checks_http_status_before_valid_json() {
+    let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"}}}"#;
+    for status in [StatusCode::BAD_GATEWAY, StatusCode::SERVICE_UNAVAILABLE] {
+        let error =
+            ClinicalTrialsClient::decode_biodata_reference_response("NCT00000001", status, body)
+                .expect_err("HTTP failure");
+        assert_eq!(error.code(), "api");
+        assert!(format!("{error:?}").contains(status.as_str()));
+    }
+}
+
+#[test]
+fn biodata_reference_response_returns_one_reference_owner() {
+    let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"referencesModule":{"references":[]}}}"#;
+    let response = ClinicalTrialsClient::decode_biodata_reference_response(
+        "NCT00000001",
+        StatusCode::OK,
+        body,
+    )
+    .expect("valid BioData response");
+
+    assert!(matches!(
+        response.references,
+        biodata::ClinicalTrialSection::Present(ref references) if references.is_empty()
+    ));
+    assert!(
+        response
+            .study
+            .protocol_section
+            .as_ref()
+            .and_then(|protocol| protocol.references_module.as_ref())
+            .is_none()
+    );
+}
+
 #[test]
 fn decode_json_classifies_only_intervention_parser_bad_requests() {
     let signature = b"Error parsing query in Intervention / treatment: invalid expression";

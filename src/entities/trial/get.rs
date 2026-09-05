@@ -68,6 +68,45 @@ fn parse_sections(sections: &[String]) -> Result<TrialSections, BioMcpError> {
     Ok(out)
 }
 
+fn is_reference_only_request(sections: &[String]) -> bool {
+    let mut found_reference = false;
+    for raw in sections {
+        let section = raw.trim();
+        if section.is_empty() || section.eq_ignore_ascii_case("--json") || section == "-j" {
+            continue;
+        }
+        if !section.eq_ignore_ascii_case(TRIAL_SECTION_REFERENCES) {
+            return false;
+        }
+        found_reference = true;
+    }
+    found_reference
+}
+
+fn product_references(
+    section: biodata::ClinicalTrialSection<Vec<biodata::ClinicalTrialReference>>,
+) -> Result<Vec<super::TrialReference>, BioMcpError> {
+    match section {
+        biodata::ClinicalTrialSection::Present(values) => values
+            .into_iter()
+            .filter_map(|value| {
+                let citation = value
+                    .citation()
+                    .map(str::trim)
+                    .filter(|citation| !citation.is_empty())?;
+                Some(super::TrialReference::new(
+                    value.pmid().map(str::to_owned),
+                    citation.to_owned(),
+                    value.source_type().map(|kind| kind.code().to_owned()),
+                ))
+            })
+            .collect(),
+        biodata::ClinicalTrialSection::Absent => Ok(Vec::new()),
+        biodata::ClinicalTrialSection::NotRequested
+        | biodata::ClinicalTrialSection::Unavailable => Err(BioMcpError::InternalProcessing),
+    }
+}
+
 fn truncate_inline_text(value: &str, max_chars: usize) -> String {
     let count = value.chars().count();
     if count <= max_chars {
@@ -222,8 +261,19 @@ pub async fn get(
     match source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
-            let study = client.get(nct_id, sections).await?;
+            let (study, biodata_references) = if is_reference_only_request(sections) {
+                let response = client.get_biodata_references(nct_id).await?;
+                (
+                    response.study,
+                    Some(product_references(response.references)?),
+                )
+            } else {
+                (client.get(nct_id, sections).await?, None)
+            };
             let mut trial = transform::trial::from_ctgov_study(&study)?;
+            if let Some(references) = biodata_references {
+                trial.references = Some(references);
+            }
             trial.source = Some("ClinicalTrials.gov".into());
             if !section_flags.include_contacts {
                 trial.contacts = None;

@@ -1,6 +1,10 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
+use biodata::{
+    ClinicalTrialReference, ClinicalTrialSection, ClinicalTrialsGovApiV2DetailPlan,
+    ClinicalTrialsGovApiV2Limits, ClinicalTrialsGovApiV2Response,
+};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -101,6 +105,12 @@ const CTGOV_GET_FIELDS_REFERENCES: &[&str] =
 pub struct ClinicalTrialsClient {
     client: reqwest_middleware::ClientWithMiddleware,
     base: Cow<'static, str>,
+}
+
+#[derive(Debug)]
+pub(crate) struct CtGovBiodataReferenceResponse {
+    pub(crate) study: CtGovStudy,
+    pub(crate) references: ClinicalTrialSection<Vec<ClinicalTrialReference>>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -301,6 +311,73 @@ impl ClinicalTrialsClient {
 
     pub(crate) fn get_plan(nct_id: &str, sections: &[String]) -> RequestPlan {
         RequestPlan::get(format!("studies/{nct_id}")).query("fields", build_get_fields(sections))
+    }
+
+    pub(crate) fn biodata_reference_plan(nct_id: &str) -> Result<RequestPlan, BioMcpError> {
+        let plan = ClinicalTrialsGovApiV2DetailPlan::new(nct_id, true)
+            .map_err(|_| BioMcpError::InternalProcessing)?;
+        Ok(RequestPlan::get(plan.relative_path()).query("fields", plan.field_query()))
+    }
+
+    fn map_biodata_response_error(error: biodata::ClinicalTrialsGovApiV2Error) -> BioMcpError {
+        let context = if error.code() == "json_resource_limit" {
+            crate::error::SourceContext::narrow(crate::error::SourceProvider::CLINICAL_TRIALS)
+        } else {
+            crate::error::SourceContext::retry(crate::error::SourceProvider::CLINICAL_TRIALS)
+        };
+        BioMcpError::Api {
+            api: crate::error::SourceProvider::CLINICAL_TRIALS
+                .label()
+                .to_string(),
+            message: format!("BioData response validation failed: {}", error.code()),
+        }
+        .with_source_context(context)
+    }
+
+    pub(crate) fn decode_biodata_reference_response(
+        nct_id: &str,
+        status: reqwest::StatusCode,
+        bytes: &[u8],
+    ) -> Result<CtGovBiodataReferenceResponse, BioMcpError> {
+        if !status.is_success() {
+            return match Self::decode_get_response(nct_id, status, bytes) {
+                Err(error) => Err(error),
+                Ok(_) => Err(BioMcpError::InternalProcessing),
+            };
+        }
+
+        let biodata_plan = ClinicalTrialsGovApiV2DetailPlan::new(nct_id, true)
+            .map_err(|_| BioMcpError::InternalProcessing)?;
+        let response = ClinicalTrialsGovApiV2Response::parse(
+            &biodata_plan,
+            bytes,
+            &ClinicalTrialsGovApiV2Limits::default(),
+        )
+        .map_err(Self::map_biodata_response_error)?;
+        let references = response.references().clone();
+        let mut study = Self::decode_get_response(nct_id, status, bytes)?;
+        if let Some(protocol) = study.protocol_section.as_mut() {
+            protocol.references_module = None;
+        }
+        Ok(CtGovBiodataReferenceResponse { study, references })
+    }
+
+    pub(crate) async fn get_biodata_references(
+        &self,
+        nct_id: &str,
+    ) -> Result<CtGovBiodataReferenceResponse, BioMcpError> {
+        let plan = Self::biodata_reference_plan(nct_id)?;
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let (status, bytes) = self.send(req).await?;
+        Self::decode_biodata_reference_response(nct_id, status, &bytes).map_err(|error| {
+            if matches!(error, BioMcpError::WithSourceContext { .. }) {
+                error
+            } else {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::CLINICAL_TRIALS,
+                ))
+            }
+        })
     }
 
     pub(crate) fn decode_get_response(

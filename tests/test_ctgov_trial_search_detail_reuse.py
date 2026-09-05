@@ -26,6 +26,29 @@ FIXTURE_ENV = REPO_ROOT / ".cache/spec-ctgov-intervention-alias-env"
 FIXTURE_LOCK = REPO_ROOT / ".cache/spec-routine-fixtures.lock"
 REFERENCE_BINARY = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/spec/biomcp"))
 REFERENCE_CAPTURES = REPO_ROOT / "testdata/sources/ctgov"
+REFERENCE_FIELDS = [
+    "BriefSummary",
+    "BriefTitle",
+    "CompletionDate",
+    "Condition",
+    "EnrollmentCount",
+    "InterventionDescription",
+    "InterventionName",
+    "InterventionOtherName",
+    "InterventionType",
+    "LeadSponsorName",
+    "MaximumAge",
+    "MinimumAge",
+    "NCTId",
+    "OverallStatus",
+    "Phase",
+    "ReferenceCitation",
+    "ReferencePMID",
+    "ReferenceType",
+    "StartDate",
+    "StudyType",
+    "WhyStopped",
+]
 
 
 @contextmanager
@@ -177,7 +200,7 @@ def test_alias_fanout_count_deduplicates_before_detail_verification() -> None:
 @contextmanager
 def _reference_trial_server():
     replies = {
-        nct_id: json.loads((REFERENCE_CAPTURES / filename).read_text())
+        nct_id: (REFERENCE_CAPTURES / filename).read_bytes()
         for nct_id, filename in (
             ("NCT02576665", "get_nct02576665_full_20260903.json"),
             ("NCT06131398", "get_nct06131398_full_20260903.json"),
@@ -190,8 +213,15 @@ def _reference_trial_server():
             requests.append(self.path)
             nct_id = urlparse(self.path).path.removeprefix("/api/v2/studies/")
             payload = replies.get(nct_id)
-            body = json.dumps(payload if payload is not None else {}).encode()
-            self.send_response(200 if payload is not None else 404)
+            status = 200 if payload is not None else 404
+            if isinstance(payload, tuple):
+                status, payload = payload
+            body = (
+                payload
+                if isinstance(payload, bytes)
+                else json.dumps(payload if payload is not None else {}).encode()
+            )
+            self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -215,7 +245,7 @@ def _run_reference(
     base: str,
     cache: Path,
     nct_id: str,
-    section: str,
+    section: str | list[str],
     *,
     json_output: bool = True,
 ):
@@ -229,7 +259,7 @@ def _run_reference(
             nct_id,
             "--source",
             "ctgov",
-            section,
+            *([section] if isinstance(section, str) else section),
         ],
         cwd=REPO_ROOT,
         env=os.environ
@@ -249,7 +279,7 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
             result = _run_reference(base, tmp_path, nct_id, section)
             assert result.returncode == 0, result.stderr
             source = (
-                replies[nct_id]["protocolSection"]
+                json.loads(replies[nct_id])["protocolSection"]
                 .get("referencesModule", {})
                 .get("references", [])
             )
@@ -281,15 +311,21 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
             if not expected:
                 assert "No references" in markdown.stdout
         for request in requests:
-            fields = set(parse_qs(urlparse(request).query)["fields"][0].split(","))
-            assert {"ReferencePMID", "ReferenceType", "ReferenceCitation"} <= fields
-            assert ("PrimaryOutcomeMeasure" in fields) == (section == "all")
+            parsed = urlparse(request)
+            assert parsed.path.startswith("/api/v2/studies/NCT")
+            fields = parse_qs(parsed.query)["fields"][0].split(",")
+            if section == "references":
+                assert fields == REFERENCE_FIELDS
+            else:
+                assert {"ReferencePMID", "ReferenceType", "ReferenceCitation"} <= set(fields)
+                assert "PrimaryOutcomeMeasure" in fields
 
 
 def test_synthetic_partial_reply_normalizes_and_reflects_changed_references(
     tmp_path: Path,
 ) -> None:
     with _reference_trial_server() as (base, replies, _requests):
+        replies["NCT02576665"] = json.loads(replies["NCT02576665"])
         protocol = replies["NCT02576665"]["protocolSection"]
         for module in (
             "sponsorCollaboratorsModule",
@@ -345,5 +381,55 @@ def test_other_trial_section_and_not_found_still_work(tmp_path: Path) -> None:
         assert json.loads(result.stdout)["arms"]
         missing = _run_reference(base, tmp_path, "NCT00000000", "references")
         assert missing.returncode != 0
-        assert "not found" in (missing.stdout + missing.stderr).lower()
+        combined = missing.stdout + missing.stderr
+        assert "not found" in combined.lower()
+        assert "Retry the remote source" in combined
         assert "panicked" not in missing.stderr.lower()
+
+
+def test_mixed_references_request_keeps_the_legacy_field_set(tmp_path: Path) -> None:
+    with _reference_trial_server() as (base, _replies, requests):
+        result = _run_reference(
+            base, tmp_path, "NCT02576665", ["references", "outcomes"]
+        )
+        assert result.returncode == 0, result.stderr
+        fields = parse_qs(urlparse(requests[-1]).query)["fields"][0].split(",")
+        assert "ReferenceCitation" in fields
+        assert "PrimaryOutcomeMeasure" in fields
+
+
+def test_reference_validation_and_http_errors_are_safe(tmp_path: Path) -> None:
+    with _reference_trial_server() as (base, replies, _requests):
+        original = replies["NCT02576665"]
+        scenarios = [
+            (b"{", "malformed"),
+            (b"[]", "unsupported"),
+            (
+                b'{"protocolSection":{"identificationModule":{}}}',
+                "invalid projection",
+            ),
+            (
+                b'{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"}}}',
+                "identity mismatch",
+            ),
+            (b" " * (8 * 1024 * 1024 + 1), "resource limit"),
+        ]
+        for body, label in scenarios:
+            replies["NCT02576665"] = body
+            result = _run_reference(base, tmp_path, "NCT02576665", "references")
+            assert result.returncode != 0, label
+            combined = result.stdout + result.stderr
+            assert "ClinicalTrials.gov" in combined
+            assert "NCT00000001" not in combined
+            assert "protocolSection" not in combined
+            assert "identificationModule" not in combined
+            recovery = "Narrow the request" if label == "resource limit" else "Retry the remote source"
+            assert recovery in combined
+        replies["NCT02576665"] = original
+
+        replies["NCT02576665"] = (500, original)
+        result = _run_reference(base, tmp_path, "NCT02576665", "references")
+        assert result.returncode != 0
+        combined = result.stdout + result.stderr
+        assert "ClinicalTrials.gov" in combined
+        assert "Retry the remote source" in combined

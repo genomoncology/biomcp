@@ -43,6 +43,60 @@ fn parse_sections_accepts_contacts_and_all_includes_contacts() {
     assert!(all.include_locations);
 }
 
+#[test]
+fn only_a_normalized_reference_request_uses_the_biodata_path() {
+    for sections in [
+        vec!["references".to_string()],
+        vec![" REFERENCES ".to_string()],
+        vec![
+            "".to_string(),
+            "--json".to_string(),
+            "references".to_string(),
+        ],
+        vec![
+            "references".to_string(),
+            "-j".to_string(),
+            "references".to_string(),
+        ],
+    ] {
+        assert!(is_reference_only_request(&sections), "{sections:?}");
+    }
+
+    for sections in [
+        vec![],
+        vec!["".to_string(), "--json".to_string()],
+        vec!["all".to_string()],
+        vec!["references".to_string(), "outcomes".to_string()],
+        vec!["arms".to_string()],
+    ] {
+        assert!(!is_reference_only_request(&sections), "{sections:?}");
+    }
+}
+
+#[test]
+fn product_references_maps_each_section_state() {
+    use biodata::ClinicalTrialSection;
+
+    assert!(
+        product_references(ClinicalTrialSection::Absent)
+            .expect("absent references")
+            .is_empty()
+    );
+    assert!(
+        product_references(ClinicalTrialSection::Present(Vec::new()))
+            .expect("present empty references")
+            .is_empty()
+    );
+    assert!(matches!(
+        product_references(ClinicalTrialSection::NotRequested),
+        Err(BioMcpError::InternalProcessing)
+    ));
+    assert!(matches!(
+        product_references(ClinicalTrialSection::Unavailable),
+        Err(BioMcpError::InternalProcessing)
+    ));
+}
+
 #[tokio::test]
 async fn get_rejects_non_nct_id_with_format_hint() {
     let err = get("WRONG", &[], TrialSource::ClinicalTrialsGov)

@@ -174,3 +174,16 @@ fn get_plan_builds_study_path_and_section_fields() {
     );
     assert!(fields.split(',').any(|field| field == "Sex"));
 }
+
+#[test]
+fn biodata_reference_plan_uses_the_exact_shared_path_and_fields() {
+    let plan = ClinicalTrialsClient::biodata_reference_plan("NCT02576665").unwrap();
+    assert_eq!(plan.method, HttpMethod::Get);
+    assert_eq!(plan.path, "studies/NCT02576665");
+    assert_eq!(
+        plan.query_value("fields"),
+        Some(
+            "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,ReferenceCitation,ReferencePMID,ReferenceType,StartDate,StudyType,WhyStopped"
+        )
+    );
+}
