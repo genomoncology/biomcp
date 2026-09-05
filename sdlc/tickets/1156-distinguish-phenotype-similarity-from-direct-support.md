@@ -40,6 +40,18 @@ the existing ten-resolved-term ceiling. Resolve accepted phrases with at most
 four HPO requests in flight while collecting results in input-phrase and then
 provider-row order.
 
+Every accepted free-text phrase must resolve at least one HPO row. If one or
+more phrases return a successful zero-row response, fail the whole search with
+the existing typed no-HPO-match invalid-argument family, name the original
+unresolved phrases in input order, and make no Monarch request. Do not silently
+drop an unresolved phrase merely because another phrase resolved. Resolution
+may issue the bounded HPO searches concurrently, but it collects their
+outcomes before deciding whether the input is valid; provider failure remains
+the typed HPO provider error described below rather than being reported as a
+zero-row match. Thus a successful `resolved_query` accounts for every submitted
+non-empty comma-delimited phrase, although multiple phrases can still resolve
+to the same first-occurrence-deduplicated HPO ID.
+
 `label` comes only from the HPO API: the matching HPO search row for free text
 and `GET /terms/{id}` for direct IDs. A blank label, a term response whose
 normalized ID does not equal the requested ID, a 404 for a submitted direct
@@ -78,10 +90,19 @@ following four strings only:
   every pair is `unavailable`, and the failure is summarized without raw
   provider bodies or local details.
 
-Only a successful, filter-consistent response with `total == items.len()` and
-`total <= 500` is complete enough to produce `not_supported`. Empty successful
-responses with `total: 0` are complete. Neither truncation nor provider failure
-may be converted into a negative association.
+The association wire decoder tracks the presence of `total` and `items`
+separately; it must not use Serde defaults or an empty-vector/zero fallback that
+erases absence. Only a successful, filter-consistent response in which `total`
+is present as a non-negative integer, `items` is present as an array,
+`total == items.len()`, and `total <= 500` is complete enough to produce
+`not_supported`. An explicitly present `{"total":0,"items":[]}` is complete.
+If either field is absent, the lookup is incomplete: independently valid
+positive rows from a present `items` array may still produce `supported`, but
+all unmatched pairs are `indeterminate`; absent `items` means there are no
+rows from which to establish `supported`. A present field with the wrong JSON
+type is a decode failure and therefore `unavailable`. Neither missing fields,
+truncation, internal inconsistency, nor provider failure may be converted into
+a negative association.
 
 ### Exact bounded association lookup
 
@@ -108,23 +129,33 @@ empty result slice makes zero association requests. The maximum cross-product
 is 50 sliced diseases by 10 resolved HPO IDs; multiple source rows can still
 make `total` exceed 500, which is why absence then remains `indeterminate`.
 
-The direct-support phase has one in-flight association request and one
-non-configurable eight-second wall-clock deadline covering request retries and
-body reading. Deadline expiry cancels the request and produces `unavailable`;
-it does not delay the response until the shared client's longer timeout. HPO
-phrase searches or direct-ID label lookups use at most ten requests, at most
-four in flight, and one shared eight-second wall-clock resolution deadline;
-expiry or any failed/malformed label fails the command as described above.
-Including ticket 1157's one similarity request and this ticket's one batched
-association request, a successful invocation makes at most 12 provider
-requests and has at most four in flight. A non-configurable 30-second
-wall-clock deadline covers all phenotype provider work; expiry during HPO
-resolution or similarity retrieval is a typed provider error, while expiry
-during optional direct-support enrichment returns the similarity page with
-`unavailable`. These bounds are constants and are covered by tests rather than
-new public configuration. The eight-second enrichment budget follows the
-existing disease optional-enrichment policy, and the outer 30-second ceiling
-does not exceed the shared HTTP client's request timeout.
+The direct-support phase has one in-flight logical association operation and
+one non-configurable eight-second wall-clock deadline covering middleware
+retries and body reading. Deadline expiry cancels the operation and produces
+`unavailable`; it does not delay the response until the shared client's longer
+timeout. HPO phrase searches or direct-ID label lookups use at most ten
+logical source operations, at most four in flight, and one shared eight-second
+wall-clock resolution deadline; expiry or any failed/malformed label fails the
+command as described above. Including ticket 1157's one logical similarity
+operation and this ticket's one logical batched association operation, a
+successful invocation starts at most 12 logical source operations and has at
+most four in flight.
+
+All 12 operations retain the shared client's existing policy of one initial
+HTTP attempt plus at most three retries for retryable failures. Therefore the
+hard upper bound is 48 physical HTTP attempts per invocation (40 HPO, four
+similarity, and four association), with phase and whole-command deadlines able
+to cancel attempts or retry sleeps earlier. A cache hit still counts as one
+logical operation but can require no physical provider attempt. The ticket
+does not add another retry loop around the shared client.
+
+A non-configurable 30-second wall-clock deadline covers all phenotype provider
+work; expiry during HPO resolution or similarity retrieval is a typed provider
+error, while expiry during optional direct-support enrichment returns the
+similarity page with `unavailable`. These bounds are constants and are covered
+by tests rather than new public configuration. The eight-second enrichment
+budget follows the existing disease optional-enrichment policy, and the outer
+30-second ceiling does not exceed the shared HTTP client's request timeout.
 
 ### Rendering and follow-up commands
 
@@ -172,6 +203,12 @@ The fixed adversarial matrix covers all of the following:
   disease command uses the later supported MONDO ID.
 - A complete zero-item association response produces `not_supported`, while a
   `negated: true` exact row does not become `supported`.
+- Successful association JSON with missing `total`, missing `items`, and both
+  fields missing proves the decoder retains presence. None of those fixtures
+  can produce `not_supported`; present valid rows with missing `total` can
+  still produce `supported`, while every unmatched pair is `indeterminate`.
+  The explicit `{"total":0,"items":[]}` control still produces
+  `not_supported`.
 - A response with `total > items.len()` makes unmatched pairs
   `indeterminate`, retains any independently valid `supported` pair, and emits
   no unsafe disease command unless one row supports every term.
@@ -190,6 +227,10 @@ The fixed adversarial matrix covers all of the following:
 - Free-text `macrocephaly` proves its ordered `{raw,id,label}` resolution from
   HPO search and then the identical similarity/direct-support contract, with
   no redundant term-label request.
+- Mixed free text such as `macrocephaly, phrase-with-no-hpo-row` proves that a
+  successful zero-row response for the second phrase fails the whole search,
+  names that original phrase, and makes no Monarch similarity or association
+  request; the resolved first phrase is not silently accepted on its own.
 - Limits one, two, three, and five plus supported offsets retain ticket 1157's
   fixed order, first-occurrence deduplication, tied-row order,
   `provider_window_limit`, `provider_raw_row_count`,
@@ -202,8 +243,10 @@ The fixed adversarial matrix covers all of the following:
   phenotype out of the typed MCP schema.
 - Request construction and parsing unit tests pin repeated-parameter order,
   all filters, `limit=500`, `offset=0`, completeness checks, response-row
-  validation, the ten-phrase pre-contact rejection, maximum total-call and
-  concurrency constants, and both phase and whole-command deadline behavior.
+  validation, fail-closed `total`/`items` presence tracking, the ten-phrase
+  pre-contact rejection, the 12-logical-operation/48-physical-attempt upper
+  bounds, concurrency constants, absence of a nested retry loop, and both
+  phase and whole-command deadline behavior.
 
 Update `docs/user-guide/phenotype.md` and
 `docs/sources/monarch-initiative.md` to explain that results are semantic
