@@ -16,7 +16,12 @@ fn recorded_ctgov_condition_vector_matches_in_detail_and_search() {
         .clone();
 
     assert_eq!(expected.len(), 12);
-    assert_eq!(from_ctgov_study(&study).conditions, expected);
+    assert_eq!(
+        from_ctgov_study(&study)
+            .expect("valid trial fixture")
+            .conditions,
+        expected
+    );
     assert_eq!(from_ctgov_hit(&study).conditions, expected);
 }
 

@@ -295,11 +295,14 @@ fn trial_markdown_includes_source_labeled_sections() {
             description: Some("Description".to_string()),
             interventions: vec!["ivacaftor".to_string()],
         }]),
-        references: Some(vec![crate::entities::trial::TrialReference {
-            pmid: Some("22663011".to_string()),
-            citation: "Example citation".to_string(),
-            reference_type: Some("background".to_string()),
-        }]),
+        references: Some(vec![
+            crate::entities::trial::TrialReference::new(
+                Some("22663011".to_string()),
+                "Example citation".to_string(),
+                Some("background".to_string()),
+            )
+            .expect("valid reference"),
+        ]),
     };
 
     let markdown = trial_markdown(&trial, &["all".to_string()]).expect("trial");

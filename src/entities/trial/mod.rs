@@ -8,6 +8,7 @@ use crate::error::BioMcpError;
 
 mod documents;
 mod get;
+mod reference;
 mod search;
 #[cfg(test)]
 mod test_support;
@@ -17,6 +18,7 @@ pub use self::documents::{
     trial_documents_manifest,
 };
 pub use self::get::get;
+pub use self::reference::TrialReference;
 pub use self::search::{count_all, search, search_page};
 
 pub(crate) fn validate_search_filters(filters: &TrialSearchFilters) -> Result<(), BioMcpError> {
@@ -657,13 +659,15 @@ pub struct TrialArm {
     pub interventions: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialReference {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pmid: Option<String>,
-    pub citation: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reference_type: Option<String>,
+#[cfg(test)]
+mod reference_wire_tests {
+    use super::TrialReference;
+
+    #[test]
+    fn reference_wire_rejects_blank_required_citation() {
+        let wire = serde_json::json!({"citation": " \t "});
+        assert!(serde_json::from_value::<TrialReference>(wire).is_err());
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -17,7 +17,7 @@ fn receipted_ctgov_intervention_descriptions_keep_their_associations_in_json() {
     )
     .expect("receipted unrestricted NCT02576665 capture");
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     assert_eq!(trial.nct_id, "NCT02576665");
     assert_eq!(trial.intervention_details.len(), 2);
 

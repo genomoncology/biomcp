@@ -223,7 +223,7 @@ pub async fn get(
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
             let study = client.get(nct_id, sections).await?;
-            let mut trial = transform::trial::from_ctgov_study(&study);
+            let mut trial = transform::trial::from_ctgov_study(&study)?;
             trial.source = Some("ClinicalTrials.gov".into());
             if !section_flags.include_contacts {
                 trial.contacts = None;

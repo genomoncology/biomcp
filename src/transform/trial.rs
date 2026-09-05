@@ -324,28 +324,32 @@ fn extract_arms(study: &CtGovStudy) -> Option<Vec<TrialArm>> {
     (!out.is_empty()).then_some(out)
 }
 
-fn extract_references(study: &CtGovStudy) -> Option<Vec<TrialReference>> {
-    let refs = study
+fn extract_references(study: &CtGovStudy) -> Result<Option<Vec<TrialReference>>, BioMcpError> {
+    let Some(refs) = study
         .protocol_section
         .as_ref()
         .and_then(|p| p.references_module.as_ref())
-        .map(|m| &m.references)?;
+        .map(|m| &m.references)
+    else {
+        return Ok(None);
+    };
 
     let out = refs
         .iter()
         .filter_map(|r| {
-            Some(TrialReference {
-                pmid: clean_opt(r.pmid.as_deref()),
-                citation: clean_opt(r.citation.as_deref())?,
-                reference_type: clean_opt(r.reference_type.as_deref()),
-            })
+            let citation = clean_opt(r.citation.as_deref())?;
+            Some(TrialReference::new(
+                r.pmid.clone(),
+                citation,
+                r.reference_type.clone(),
+            ))
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, _>>()?;
 
-    (!out.is_empty()).then_some(out)
+    Ok((!out.is_empty()).then_some(out))
 }
 
-pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
+pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
     let p = study.protocol_section.as_ref();
     let id = p
         .and_then(|p| p.identification_module.as_ref())
@@ -461,7 +465,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         })
         .unwrap_or_default();
 
-    Trial {
+    Ok(Trial {
         nct_id: id,
         source: None,
         title,
@@ -485,8 +489,8 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Trial {
         locations: extract_locations(study),
         outcomes: extract_outcomes(study),
         arms: extract_arms(study),
-        references: extract_references(study),
-    }
+        references: extract_references(study)?,
+    })
 }
 
 pub fn from_ctgov_hit(study: &CtGovStudy) -> TrialSearchResult {

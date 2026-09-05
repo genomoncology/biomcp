@@ -342,11 +342,14 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             description: Some("Description".to_string()),
             interventions: vec!["ivacaftor".to_string()],
         }]),
-        references: Some(vec![crate::entities::trial::TrialReference {
-            pmid: Some("22663011".to_string()),
-            citation: "Example citation".to_string(),
-            reference_type: Some("background".to_string()),
-        }]),
+        references: Some(vec![
+            crate::entities::trial::TrialReference::new(
+                Some("22663011".to_string()),
+                "Example citation".to_string(),
+                Some("background".to_string()),
+            )
+            .expect("valid reference"),
+        ]),
     };
     let trial_markdown = trial_markdown(&trial, &["all".to_string()]).expect("trial");
     assert!(trial_markdown.contains("Source: ClinicalTrials.gov"));

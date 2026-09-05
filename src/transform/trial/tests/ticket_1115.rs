@@ -23,7 +23,7 @@ fn recorded_ctgov_summary_reaches_the_model_and_json_in_full() {
     );
 
     let study: CtGovStudy = serde_json::from_value(record.clone()).expect("CTGov study");
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     assert_eq!(trial.summary.as_deref(), Some(expected));
     assert_eq!(
         serde_json::to_value(&trial).expect("trial JSON")["summary"],

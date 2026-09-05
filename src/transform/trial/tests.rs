@@ -26,7 +26,7 @@ fn receipted_ctgov_partial_sites_preserve_all_locations() {
     )
     .expect("receipted NCT00791778 capture");
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let locations = trial.locations.as_ref().expect("locations");
     assert_eq!(locations.len(), 59);
     assert!(locations.iter().all(|location| location.facility.is_none()));
@@ -88,7 +88,7 @@ fn ctgov_case_13_preserves_every_site_contact_in_provider_order() {
         .contacts
         .len();
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let locations = trial.locations.as_ref().expect("typed locations");
     assert_eq!(locations.len(), 1);
     let location = &locations[0];
@@ -218,7 +218,7 @@ fn ctgov_location_aliases_stay_bound_to_literal_first_source_contact() {
     }))
     .expect("provider-shaped blank-first contact site");
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let location = &trial.locations.as_ref().expect("locations")[0];
     assert_eq!(location.contacts.len(), 1);
     assert_eq!(location.contacts[0].name, "Named Second Contact");
@@ -280,7 +280,7 @@ fn ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown() {
     }))
     .expect("provider-shaped partial sites");
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let locations = trial.locations.as_ref().expect("meaningful locations");
     assert_eq!(locations.len(), 7);
     assert_eq!(locations[0].state.as_deref(), Some("State only"));
@@ -402,7 +402,7 @@ fn from_ctgov_study_extracts_age_and_locations_sorted() {
     }))
     .unwrap();
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     assert_eq!(trial.age_range.as_deref(), Some("18 Years to 75 Years"));
     let locations = trial.locations.expect("locations");
     assert_eq!(locations.len(), 2);
@@ -444,7 +444,7 @@ fn from_ctgov_study_preserves_contacts_and_structured_eligibility() {
     }))
     .unwrap();
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let eligibility = trial.eligibility.expect("eligibility");
     assert_eq!(eligibility.sex.as_deref(), Some("Female"));
     assert_eq!(
@@ -509,7 +509,7 @@ fn from_ctgov_study_preserves_provider_type_fields_in_json() {
     }))
     .unwrap();
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let arms = trial.arms.as_ref().expect("arms");
     assert_eq!(arms.len(), 1);
     assert_eq!(arms[0].label, "Experimental Arm");
@@ -553,7 +553,7 @@ fn stopped_ctgov_trials_explain_their_status_in_json_and_markdown() {
         }))
         .expect("stopped study");
 
-        let trial = from_ctgov_study(&study);
+        let trial = from_ctgov_study(&study).expect("valid trial fixture");
         let json = serde_json::to_value(&trial).expect("trial JSON");
         assert_eq!(json["why_stopped"], reason);
 
@@ -575,7 +575,7 @@ fn stopped_ctgov_trial_without_reason_reports_checked_absence() {
         }
     }))
     .expect("stopped study without reason");
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let json = serde_json::to_value(&trial).expect("trial JSON");
     assert!(
         json.as_object()
@@ -599,7 +599,7 @@ fn stopped_ctgov_trial_without_reason_reports_checked_absence() {
         }
     }))
     .expect("ordinary study");
-    let ordinary_trial = from_ctgov_study(&ordinary_study);
+    let ordinary_trial = from_ctgov_study(&ordinary_study).expect("valid trial fixture");
     let ordinary_json = serde_json::to_value(&ordinary_trial).expect("ordinary trial JSON");
     assert!(
         !ordinary_json

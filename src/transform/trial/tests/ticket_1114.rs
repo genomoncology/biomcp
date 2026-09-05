@@ -16,7 +16,7 @@ fn receipted_ctgov_location_preserves_postal_code_in_json_and_markdown() {
     )
     .expect("receipted NCT02576665 capture");
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let sarah_cannon = trial
         .locations
         .as_ref()
@@ -76,7 +76,7 @@ fn ctgov_postal_codes_are_trimmed_and_blank_values_are_omitted() {
     }))
     .expect("provider-shaped study");
 
-    let trial = from_ctgov_study(&study);
+    let trial = from_ctgov_study(&study).expect("valid trial fixture");
     let locations = trial.locations.as_ref().expect("locations");
     let trimmed = locations
         .iter()
