@@ -2128,10 +2128,13 @@ impl ClinGenPrefetch {
     }
 
     async fn settle(mut self) -> Result<ClinGenPrefetchOutput, tokio::task::JoinError> {
-        self.handle
-            .take()
+        let result = self
+            .handle
+            .as_mut()
             .expect("ClinGen prefetch handle is owned until settlement")
-            .await
+            .await;
+        self.handle.take();
+        result
     }
 
     async fn abort_and_wait(mut self) {
@@ -4075,6 +4078,47 @@ mod tests {
             });
             let _prefetch = ClinGenPrefetch::new(handle);
             std::future::pending::<()>().await;
+        });
+
+        for _ in 0..20 {
+            if running.load(Ordering::SeqCst) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert!(running.load(Ordering::SeqCst));
+        parent.abort();
+        let _ = parent.await;
+        for _ in 0..20 {
+            if !running.load(Ordering::SeqCst) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert!(!running.load(Ordering::SeqCst));
+    }
+
+    #[tokio::test]
+    async fn canceling_during_settle_aborts_its_clingen_prefetch_task() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        struct RunningGuard(Arc<AtomicBool>);
+        impl Drop for RunningGuard {
+            fn drop(&mut self) {
+                self.0.store(false, Ordering::SeqCst);
+            }
+        }
+
+        let running = Arc::new(AtomicBool::new(false));
+        let child_running = Arc::clone(&running);
+        let parent = tokio::spawn(async move {
+            let handle = tokio::spawn(async move {
+                child_running.store(true, Ordering::SeqCst);
+                let _guard = RunningGuard(child_running);
+                std::future::pending::<ClinGenPrefetchOutput>().await
+            });
+            ClinGenPrefetch::new(handle).settle().await
         });
 
         for _ in 0..20 {
