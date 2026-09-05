@@ -5300,6 +5300,12 @@ applied after identity filtering: <code>pagination.total</code> is the compatibl
 when the provider candidate set was examined exhaustively, or <code>null</code> when the
 1,000-candidate safety cap leaves candidates unexamined. Broad gene-only and
 discovery-filter searches keep their existing JSON shape.</p>
+<p>Markdown labels this exact outcome <code>Variant identity</code>; JSON keeps it in
+<code>resolution</code>. Per-filter handling is separate: <code>Filter evaluation</code> in Markdown
+and <code>filter_evaluation</code> in JSON report each submitted filter as <code>evaluated</code> or
+<code>unavailable</code>. An evaluated filter participated in an interpretable query but
+does not assert that its value matched a variant. Broad searches therefore omit
+exact identity metadata while retaining a non-null filter-evaluation object.</p>
 <h3 id="drug">Drug<a class="headerlink" href="#drug" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>-q<span class="w"> </span><span class="s2">&quot;kinase inhibitor&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>search<span class="w"> </span>drug<span class="w"> </span>Keytruda<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>

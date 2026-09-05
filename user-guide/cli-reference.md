@@ -339,6 +339,13 @@ when the provider candidate set was examined exhaustively, or `null` when the
 1,000-candidate safety cap leaves candidates unexamined. Broad gene-only and
 discovery-filter searches keep their existing JSON shape.
 
+Markdown labels this exact outcome `Variant identity`; JSON keeps it in
+`resolution`. Per-filter handling is separate: `Filter evaluation` in Markdown
+and `filter_evaluation` in JSON report each submitted filter as `evaluated` or
+`unavailable`. An evaluated filter participated in an interpretable query but
+does not assert that its value matched a variant. Broad searches therefore omit
+exact identity metadata while retaining a non-null filter-evaluation object.
+
 ### Drug
 
 ```bash
