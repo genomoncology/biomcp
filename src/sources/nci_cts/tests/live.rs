@@ -39,9 +39,10 @@ async fn live_get_trial_by_id_round_trips() {
     let id = resp
         .hits()
         .first()
-        .and_then(|t| t.get("nci_id"))
+        .and_then(|t| t.get("nct_id"))
         .and_then(|v| v.as_str())
-        .expect("a trial with an nci_id");
-    let trial = client().get(id).await.expect("live nci get");
-    assert!(trial.is_object());
+        .expect("a trial with an nct_id");
+    let plan = biodata::NciCtsV2DetailPlan::new(id, true).expect("valid NCT identity");
+    let trial = client().get(&plan).await.expect("live nci get");
+    assert_eq!(trial.projection().trial().identities().len(), 2);
 }

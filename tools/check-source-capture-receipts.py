@@ -32,20 +32,11 @@ RFC3339_UTC_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\Z")
 TRIAL_ENDPOINTS = {"ctgov", "nci"}
 INLINE_CONVERTERS = {
     "from_ctgov_study": "ctgov",
-    "from_nci_trial": "nci",
     "from_nci_hit": "nci",
 }
 EXPECTED_CODE_BOUNDARIES = {
     ("ctgov", "src/sources/clinicaltrials.rs", "CtGovStudy", None, None),
     ("nci", "src/transform/trial.rs", None, "from_nci_hit", "hit"),
-    ("nci", "src/transform/trial.rs", None, "from_nci_trial", "trial"),
-    (
-        "nci",
-        "src/entities/trial/get.rs",
-        None,
-        "nci_eligibility_text",
-        "trial",
-    ),
 }
 EXPECTED_SUPPLEMENTAL_PATHS = {
     "protocolSection.contactsLocationsModule.locations[].geoPoint.lat",
@@ -1171,7 +1162,9 @@ def _audit_code_keys(root: Path, manifest: dict[str, object]) -> tuple[int, list
         )
     if len(declared) != len(set(declared)):
         errors.append("duplicate code-key boundary declaration")
-    if set(declared) != EXPECTED_CODE_BOUNDARIES or len(declared) != 4:
+    if set(declared) != EXPECTED_CODE_BOUNDARIES or len(declared) != len(
+        EXPECTED_CODE_BOUNDARIES
+    ):
         errors.append("code-key boundaries differ from the required closed set")
 
     fixture = manifest.get("fixture_key_contract", {})

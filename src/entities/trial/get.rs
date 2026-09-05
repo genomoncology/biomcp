@@ -4,6 +4,11 @@ use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use crate::sources::nci_cts::NciCtsClient;
 use crate::transform;
+use biodata::{
+    ClinicalTrialAgeBound, ClinicalTrialAgeBoundForm, ClinicalTrialAgeRange,
+    ClinicalTrialEligibilityClassification, ClinicalTrialSection, NciCtsV2DetailPlan,
+    NciCtsV2DetailResponse, NciCtsV2Eligibility,
+};
 
 use super::{
     TRIAL_SECTION_ALL, TRIAL_SECTION_ARMS, TRIAL_SECTION_CONTACTS, TRIAL_SECTION_ELIGIBILITY,
@@ -116,97 +121,146 @@ fn truncate_inline_text(value: &str, max_chars: usize) -> String {
     format!("{truncated}\n\n(truncated, {count} chars total)")
 }
 
-#[derive(Debug)]
-struct NciEligibilityCriterion {
-    description: String,
-    display_order: i128,
-    inclusion_indicator: bool,
-}
-
-fn invalid_nci_eligibility() -> BioMcpError {
-    BioMcpError::Api {
-        api: "nci_cts".to_string(),
-        message: "NCI eligibility structure is invalid".to_string(),
+fn nci_eligibility_text(eligibility: NciCtsV2Eligibility<'_>) -> Option<String> {
+    let criteria = eligibility.criteria()?;
+    if criteria.is_empty() {
+        return None;
     }
-}
-
-fn nci_eligibility_text(trial: &serde_json::Value) -> Result<Option<String>, BioMcpError> {
-    let Some(eligibility) = trial.get("eligibility") else {
-        return Ok(None);
-    };
-    if eligibility.is_null() {
-        return Ok(None);
-    }
-    let eligibility = eligibility
-        .as_object()
-        .ok_or_else(invalid_nci_eligibility)?;
-    let Some(unstructured) = eligibility.get("unstructured") else {
-        return Ok(None);
-    };
-    if unstructured.is_null() {
-        return Ok(None);
-    }
-    let entries = unstructured
-        .as_array()
-        .ok_or_else(invalid_nci_eligibility)?;
-    if entries.is_empty() {
-        return Ok(None);
-    }
-
-    let mut criteria = entries
-        .iter()
-        .map(|entry| {
-            let entry = entry.as_object().ok_or_else(invalid_nci_eligibility)?;
-            let description = entry
-                .get("description")
-                .and_then(serde_json::Value::as_str)
-                .map(str::trim)
-                .filter(|description| !description.is_empty())
-                .ok_or_else(invalid_nci_eligibility)?;
-            let display_order = entry
-                .get("display_order")
-                .and_then(serde_json::Value::as_number)
-                .and_then(|number| {
-                    number
-                        .as_i64()
-                        .map(i128::from)
-                        .or_else(|| number.as_u64().map(i128::from))
-                })
-                .ok_or_else(invalid_nci_eligibility)?;
-            let inclusion_indicator = entry
-                .get("inclusion_indicator")
-                .and_then(serde_json::Value::as_bool)
-                .ok_or_else(invalid_nci_eligibility)?;
-            Ok(NciEligibilityCriterion {
-                description: description.to_string(),
-                display_order,
-                inclusion_indicator,
-            })
-        })
-        .collect::<Result<Vec<_>, BioMcpError>>()?;
-    criteria.sort_by_key(|criterion| criterion.display_order);
-
     let mut rendered = String::new();
-    let mut prior_indicator = None;
+    let mut prior_classification = None;
     for criterion in criteria {
-        if prior_indicator != Some(criterion.inclusion_indicator) {
+        if prior_classification != Some(criterion.classification()) {
             if !rendered.is_empty() {
                 rendered.push('\n');
             }
-            rendered.push_str(if criterion.inclusion_indicator {
-                "Inclusion Criteria:\n"
-            } else {
-                "Exclusion Criteria:\n"
+            rendered.push_str(match criterion.classification() {
+                ClinicalTrialEligibilityClassification::Inclusion => "Inclusion Criteria:\n",
+                ClinicalTrialEligibilityClassification::Exclusion => "Exclusion Criteria:\n",
             });
-            prior_indicator = Some(criterion.inclusion_indicator);
+            prior_classification = Some(criterion.classification());
         }
         rendered.push_str("- ");
-        rendered.push_str(&criterion.description);
+        rendered.push_str(criterion.description());
         rendered.push('\n');
     }
     rendered.pop();
+    Some(truncate_inline_text(&rendered, ELIGIBILITY_MAX_CHARS))
+}
 
-    Ok(Some(truncate_inline_text(&rendered, ELIGIBILITY_MAX_CHARS)))
+fn product_age(bound: &ClinicalTrialAgeBound) -> Option<super::TrialAge> {
+    match bound.form() {
+        ClinicalTrialAgeBoundForm::Limited => {
+            super::TrialAge::from_provider(bound.source().source())
+        }
+        ClinicalTrialAgeBoundForm::SourceStatedNoLimit => Some(super::TrialAge::unparsed(
+            bound.source().source().trim().to_string(),
+        )),
+    }
+}
+
+fn product_age_range(range: Option<&ClinicalTrialAgeRange>) -> Option<String> {
+    let range = range?;
+    super::format_age_range(
+        range.minimum().and_then(product_age).as_ref(),
+        range.maximum().and_then(product_age).as_ref(),
+    )
+}
+
+fn product_eligibility(eligibility: NciCtsV2Eligibility<'_>) -> Option<super::TrialEligibility> {
+    let range = eligibility.age_range();
+    let minimum_age = range
+        .and_then(ClinicalTrialAgeRange::minimum)
+        .and_then(product_age);
+    let maximum_age = range
+        .and_then(ClinicalTrialAgeRange::maximum)
+        .and_then(product_age);
+    let sex = eligibility
+        .sex()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| match value.to_ascii_lowercase().as_str() {
+            "female" | "f" => "Female".to_string(),
+            "male" | "m" => "Male".to_string(),
+            "all" => "All".to_string(),
+            _ => value.to_string(),
+        });
+    (sex.is_some() || minimum_age.is_some() || maximum_age.is_some()).then_some(
+        super::TrialEligibility {
+            sex,
+            minimum_age,
+            maximum_age,
+        },
+    )
+}
+
+fn product_from_nci_response(
+    plan: &NciCtsV2DetailPlan,
+    response: &NciCtsV2DetailResponse,
+    include_eligibility: bool,
+) -> Result<Trial, BioMcpError> {
+    let shared = response.projection().trial();
+    let phase = shared
+        .phases()
+        .first()
+        .map(|value| value.code().to_string());
+    let age_range = product_age_range(shared.age_range());
+    let (eligibility, eligibility_text) = if include_eligibility {
+        match response.eligibility() {
+            ClinicalTrialSection::Present(value) => {
+                (product_eligibility(value), nci_eligibility_text(value))
+            }
+            ClinicalTrialSection::Absent => (None, None),
+            ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable => {
+                return Err(BioMcpError::InternalProcessing);
+            }
+        }
+    } else {
+        (None, None)
+    };
+
+    Ok(Trial {
+        nct_id: plan.requested_identity().to_string(),
+        source: Some("NCI CTS".to_string()),
+        title: shared.brief_title().to_string(),
+        status: shared.overall_status().code().to_string(),
+        why_stopped: Some(
+            shared
+                .stop_reason()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_owned),
+        ),
+        phase,
+        study_type: Some(shared.study_type().code().to_string()),
+        age_range,
+        conditions: shared.conditions().to_vec(),
+        interventions: shared
+            .intervention_names()
+            .iter()
+            .take(25)
+            .cloned()
+            .collect(),
+        intervention_details: Vec::new(),
+        sponsor: Some(shared.lead_sponsor_name().to_string()),
+        enrollment: shared
+            .enrollment_count()
+            .and_then(|value| i32::try_from(value).ok()),
+        summary: response
+            .brief_summary()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned),
+        start_date: shared.start_date().map(str::to_owned),
+        completion_date: shared.completion_date().map(str::to_owned),
+        eligibility_text,
+        eligibility,
+        eligibility_provenance: None,
+        contacts: None,
+        locations: None,
+        outcomes: None,
+        arms: None,
+        references: None,
+    })
 }
 
 fn looks_like_nct_id(value: &str) -> bool {
@@ -310,16 +364,12 @@ pub async fn get(
             Ok(trial)
         }
         TrialSource::NciCts => {
+            let plan = NciCtsV2DetailPlan::new(nct_id, true)
+                .map_err(|_| BioMcpError::InternalProcessing)?;
             let client = NciCtsClient::new()?;
-            let resp = client.get(nct_id).await?;
-            let mut trial = transform::trial::from_nci_trial(&resp)?;
-            trial.source = Some("NCI CTS".into());
-
-            if section_flags.include_eligibility {
-                trial.eligibility_text = nci_eligibility_text(&resp)?;
-            } else {
-                trial.eligibility = None;
-            }
+            let response = client.get(&plan).await?;
+            let mut trial =
+                product_from_nci_response(&plan, &response, section_flags.include_eligibility)?;
             if section_flags.include_references && trial.references.is_none() {
                 trial.references = Some(Vec::new());
             }

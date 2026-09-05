@@ -546,17 +546,16 @@ struct ResponseBodyPolicy {
     source_name: &'static str,
     max_bytes: usize,
 }
-
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct StatusBeforeBodyLimit;
 #[derive(Debug, thiserror::Error)]
 #[error("biomcp-response-body-limit|{source_name}|{max_bytes}")]
 pub(crate) struct ResponseBodyLimitError {
     pub(crate) source_name: &'static str,
     pub(crate) max_bytes: usize,
 }
-
 #[derive(Clone, Copy, Debug)]
 struct ResponseBodyLimitMiddleware;
-
 #[async_trait::async_trait]
 impl Middleware for ResponseBodyLimitMiddleware {
     async fn handle(
@@ -574,6 +573,9 @@ impl Middleware for ResponseBodyLimitMiddleware {
                     max_bytes: DEFAULT_MAX_BODY_BYTES,
                 });
         let mut response = next.run(req, extensions).await?;
+        if extensions.get::<StatusBeforeBodyLimit>().is_some() && !response.status().is_success() {
+            return Ok(response);
+        }
         if response
             .headers()
             .get(CONTENT_LENGTH)
@@ -588,7 +590,6 @@ impl Middleware for ResponseBodyLimitMiddleware {
                 },
             ));
         }
-
         let status = response.status();
         let version = response.version();
         let headers = response.headers().clone();
@@ -611,7 +612,6 @@ impl Middleware for ResponseBodyLimitMiddleware {
             }
             body.extend_from_slice(&chunk);
         }
-
         let mut rebuilt: reqwest::Response = http::Response::builder()
             .status(status)
             .version(version)

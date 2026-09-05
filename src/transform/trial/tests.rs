@@ -1,4 +1,5 @@
 use super::*;
+use crate::entities::trial::TrialAge;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use reqwest::StatusCode;
 use serde_json::json;
@@ -13,9 +14,7 @@ mod ticket_1112;
 mod ticket_1114;
 #[path = "tests/ticket_1115.rs"]
 mod ticket_1115;
-#[path = "tests/ticket_1132.rs"]
-mod ticket_1132;
-use ticket_1107::{IntoTrialSearchTestResult, IntoTrialTestResult};
+use ticket_1107::IntoTrialSearchTestResult;
 
 #[test]
 fn receipted_ctgov_partial_sites_preserve_all_locations() {
@@ -610,186 +609,6 @@ fn stopped_ctgov_trial_without_reason_reports_checked_absence() {
     let ordinary_markdown = crate::render::markdown::trial_markdown(&ordinary_trial, &[])
         .expect("ordinary trial Markdown");
     assert!(!ordinary_markdown.contains("Why stopped:"));
-}
-
-#[test]
-fn from_nci_trial_maps_attested_fields() {
-    let trial = from_nci_trial(&json!({
-        "nct_id": "NCT11111111",
-        "brief_title": "NCI trial",
-        "current_trial_status": "RECRUITING",
-        "phase": "PHASE3",
-        "lead_org": "NCI",
-        "start_date": "2020-01-01",
-        "completion_date": "2024-12-31",
-        "brief_summary": "Sentence one. Sentence two. Sentence three.",
-        "diseases": ["Melanoma"]
-    }))
-    .into_test_result()
-    .expect("valid NCI trial");
-
-    assert_eq!(trial.nct_id, "NCT11111111");
-    assert_eq!(trial.phase.as_deref(), Some("PHASE3"));
-    assert_eq!(trial.conditions, vec!["Melanoma"]);
-    assert_eq!(
-        trial.summary.as_deref(),
-        Some("Sentence one. Sentence two. Sentence three.")
-    );
-}
-
-#[test]
-fn from_nci_trial_builds_typed_age_from_primary_fields_only() {
-    let response: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
-    ))
-    .unwrap();
-    let mut record = response["data"][0].clone();
-    let structured = record["eligibility"]["structured"].as_object_mut().unwrap();
-    assert_eq!(structured["min_age_number"], 18.0);
-    assert_eq!(structured["min_age_unit"], "Years");
-    assert_eq!(structured["min_age_in_years"], 18.0);
-    structured.insert("max_age_number".into(), json!("malformed auxiliary"));
-    structured.insert("max_age_unit".into(), serde_json::Value::Null);
-    structured.remove("max_age_in_years");
-
-    let trial = from_nci_trial(&record).into_test_result().unwrap();
-    assert_eq!(trial.age_range.as_deref(), Some("18 Years to Any age"));
-    let value = serde_json::to_value(trial.eligibility.unwrap()).unwrap();
-    assert_eq!(
-        value,
-        json!({
-            "sex": "Female",
-            "minimum_age": {"number":18.0,"unit":"years","original":"18 Years"},
-            "maximum_age": {"number":null,"unit":null,"original":"999 Years"}
-        })
-    );
-}
-
-#[test]
-fn from_nci_trial_retains_malformed_primary_age_and_omits_empty_eligibility() {
-    let response: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
-    ))
-    .unwrap();
-    let mut record = response["data"][0].clone();
-    record["eligibility"]["structured"]["min_age"] = json!("18 Years old");
-    record["eligibility"]["structured"]["max_age"] = serde_json::Value::Null;
-    record["eligibility"]["structured"]["sex"] = json!("ALL");
-    let malformed = from_nci_trial(&record).into_test_result().unwrap();
-    assert_eq!(
-        malformed.age_range.as_deref(),
-        Some("18 Years old to Any age")
-    );
-    assert_eq!(
-        serde_json::to_value(malformed.eligibility.unwrap()).unwrap(),
-        json!({"sex":"All","minimum_age":{"number":null,"unit":null,"original":"18 Years old"}})
-    );
-
-    for structured in [json!(null), json!(true), json!([]), json!({"min_age":" "})] {
-        let mut record = response["data"][0].clone();
-        record["eligibility"]["structured"] = structured;
-        let trial = from_nci_trial(&record).into_test_result().unwrap();
-        assert!(trial.eligibility.is_none());
-        assert!(trial.age_range.is_none());
-    }
-}
-
-#[test]
-fn nci_wrong_typed_primary_age_members_are_absent_on_each_bound() {
-    let response: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
-    ))
-    .unwrap();
-    for key in ["min_age", "max_age"] {
-        for invalid in [
-            serde_json::Value::Null,
-            json!(true),
-            json!([]),
-            json!({"number": 18}),
-            json!(" \t"),
-        ] {
-            let mut record = response["data"][0].clone();
-            let structured = record["eligibility"]["structured"].as_object_mut().unwrap();
-            structured.remove("sex");
-            structured.remove("min_age");
-            structured.remove("max_age");
-            structured.insert(key.into(), invalid);
-            let trial = from_nci_trial(&record).into_test_result().unwrap();
-            assert!(trial.eligibility.is_none(), "{key}: {record}");
-            assert!(trial.age_range.is_none(), "{key}: {record}");
-        }
-    }
-}
-
-#[test]
-fn nci_maps_all_three_structured_sex_values_without_age_bounds() {
-    let response: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
-    ))
-    .unwrap();
-    for (provider, public) in [("FEMALE", "Female"), ("MALE", "Male"), ("ALL", "All")] {
-        let mut record = response["data"][0].clone();
-        let structured = record["eligibility"]["structured"].as_object_mut().unwrap();
-        structured.remove("min_age");
-        structured.remove("max_age");
-        structured.insert("sex".into(), json!(provider));
-        let trial = from_nci_trial(&record).into_test_result().unwrap();
-        assert!(trial.age_range.is_none());
-        assert_eq!(
-            serde_json::to_value(trial.eligibility.unwrap()).unwrap(),
-            json!({"sex": public})
-        );
-    }
-}
-
-#[test]
-fn nci_maximum_only_sentinel_is_retained_but_minimum_999_is_ordinary() {
-    let response: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
-    ))
-    .unwrap();
-    let mut record = response["data"][0].clone();
-    let structured = record["eligibility"]["structured"].as_object_mut().unwrap();
-    structured.remove("min_age");
-    structured.remove("sex");
-    structured.insert("max_age".into(), json!(" \t999 yEaRs\n "));
-    let maximum = from_nci_trial(&record).into_test_result().unwrap();
-    assert!(maximum.age_range.is_none());
-    assert_eq!(
-        serde_json::to_value(maximum.eligibility.unwrap()).unwrap(),
-        json!({"maximum_age":{"number":null,"unit":null,"original":"999 yEaRs"}})
-    );
-
-    let mut record = response["data"][0].clone();
-    let structured = record["eligibility"]["structured"].as_object_mut().unwrap();
-    structured.remove("max_age");
-    structured.remove("sex");
-    structured.insert("min_age".into(), json!("999 Years"));
-    let minimum = from_nci_trial(&record).into_test_result().unwrap();
-    assert_eq!(minimum.age_range.as_deref(), Some("999 Years to Any age"));
-    assert_eq!(
-        minimum.eligibility.unwrap().minimum_age.unwrap().number(),
-        Some(999.0)
-    );
-}
-
-#[test]
-fn trial_sections_maps_supported_nci_fields() {
-    let trial = from_nci_trial(&json!({
-        "nct_id": "NCT02296125",
-        "brief_title": "Osimertinib in EGFR-mutant NSCLC",
-        "current_trial_status": "ACTIVE",
-        "phase": "PHASE3",
-        "lead_org": "AstraZeneca",
-        "diseases": ["Non-small cell lung cancer"]
-    }))
-    .into_test_result()
-    .expect("valid NCI trial");
-
-    assert_eq!(trial.nct_id, "NCT02296125");
-    assert_eq!(trial.phase.as_deref(), Some("PHASE3"));
-    assert_eq!(trial.sponsor.as_deref(), Some("AstraZeneca"));
-    assert_eq!(trial.conditions, vec!["Non-small cell lung cancer"]);
 }
 
 #[test]

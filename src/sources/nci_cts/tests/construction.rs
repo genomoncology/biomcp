@@ -126,9 +126,42 @@ fn search_plan_includes_interventions_and_biomarkers_when_present() {
 }
 
 #[test]
-fn get_plan_builds_trial_path_with_api_key_header() {
-    let plan = NciCtsClient::get_plan("test-key", "NCT01234567");
+fn get_plan_executes_the_exact_biodata_detail_plan_with_one_credential_header() {
+    let biodata_plan = biodata::NciCtsV2DetailPlan::new("nct01234567", true).unwrap();
+    let plan = NciCtsClient::get_plan("test-key", &biodata_plan);
     assert_eq!(plan.method, HttpMethod::Get);
-    assert_eq!(plan.path, "trials/NCT01234567");
+    assert_eq!(plan.path, "trials");
     assert_eq!(plan.header_value("X-API-KEY"), Some("test-key"));
+    assert_eq!(
+        plan.headers
+            .iter()
+            .filter(|(name, _)| name.eq_ignore_ascii_case("X-API-KEY"))
+            .count(),
+        1
+    );
+    let expected = biodata_plan
+        .query_pairs()
+        .into_iter()
+        .map(|(name, value)| (name.to_owned(), value.to_owned()))
+        .collect::<Vec<_>>();
+    assert_eq!(plan.query, expected);
+    assert_eq!(
+        plan.query
+            .iter()
+            .filter(|(name, _)| name == "include")
+            .count(),
+        16
+    );
+    let request_text = format!("{:?}{:?}", plan.path, plan.query);
+    for forbidden in [
+        "test-key",
+        "sites",
+        "contact",
+        "principal_investigator",
+        "email",
+        "phone",
+        "primary_purpose",
+    ] {
+        assert!(!request_text.to_ascii_lowercase().contains(forbidden));
+    }
 }

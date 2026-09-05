@@ -204,7 +204,7 @@ def test_repository_audit_classifies_every_source_file_and_preserves_erepo_histo
     assert report["classified_files"] == report["audited_files"]
     assert report["fixture_keys_checked"] > 0
     assert report["fixture_key_exceptions"] == 0
-    assert report["code_keys_checked"] == 124
+    assert report["code_keys_checked"] == 108
     assert report["confirmed_byte_unfaithful"] == 0
     assert set(report["classifications"]) == {
         "authored",
@@ -370,14 +370,7 @@ def _write_fixture_contract_repo(
     transform_source = repository_root / "src" / "transform" / "trial.rs"
     transform_source.parent.mkdir(parents=True, exist_ok=True)
     transform_source.write_text(
-        'fn from_nci_hit(hit: &Value) { json_get_string(hit, &["nct_id", "brief_title"]); }\n'
-        'fn from_nci_trial(trial: &Value) { nci_conditions(trial, &["diseases"]); }\n',
-        encoding="utf-8",
-    )
-    get_source = repository_root / "src" / "entities" / "trial" / "get.rs"
-    get_source.parent.mkdir(parents=True, exist_ok=True)
-    get_source.write_text(
-        'fn nci_eligibility_text(trial: &Value) { trial.get("eligibility"); }\n',
+        'fn from_nci_hit(hit: &Value) { json_get_string(hit, &["nct_id", "brief_title"]); }\n',
         encoding="utf-8",
     )
     inline = (
@@ -427,18 +420,6 @@ def _write_fixture_contract_repo(
                     "source": "src/transform/trial.rs",
                     "function": "from_nci_hit",
                     "root_parameter": "hit",
-                },
-                {
-                    "endpoint": "nci",
-                    "source": "src/transform/trial.rs",
-                    "function": "from_nci_trial",
-                    "root_parameter": "trial",
-                },
-                {
-                    "endpoint": "nci",
-                    "source": "src/entities/trial/get.rs",
-                    "function": "nci_eligibility_text",
-                    "root_parameter": "trial",
                 },
             ],
             "supplemental_attestations": [
@@ -546,7 +527,7 @@ def test_inline_discovery_ignores_adversarial_comments(
 ) -> None:
     source_root = _write_fixture_contract_repo(
         tmp_path / "repo",
-        '{/* }) from_nci_trial(&json!({"invented": 1})) */ '
+        '{/* }) from_nci_hit(&json!({"invented": 1})) */ '
         '"protocolSection": {"armsInterventionsModule": '
         '{"armGroups": [{"label": "A", "type": "EXPERIMENTAL"}]}}}',
     )
@@ -618,7 +599,7 @@ def test_inline_discovery_follows_local_reassignment_before_converter_call(
         "fn fixture() {\n"
         "  let mut record = serde_json::Value::Null;\n"
         '  record = json!({"inventedNciKey": 1});\n'
-        "  let _trial = from_nci_trial(&record);\n"
+        "  let _trial = from_nci_hit(&record);\n"
         "}\n",
         encoding="utf-8",
     )
@@ -646,7 +627,7 @@ def test_inline_discovery_does_not_treat_comparison_as_reassignment(
         "fn fixture() {\n"
         '  let record = json!({"inventedNciKey": 1});\n'
         "  let _same = record == json!({});\n"
-        "  let _trial = from_nci_trial(&record);\n"
+        "  let _trial = from_nci_hit(&record);\n"
         "}\n",
         encoding="utf-8",
     )
@@ -672,7 +653,7 @@ def test_inline_discovery_fails_closed_on_unsupported_converter_argument(
     rust_path.write_text(
         "fn fixture() {\n"
         '  let wrapper = json!({"study": {"nct_id": "NCI-1"}});\n'
-        '  let _trial = from_nci_trial(&wrapper["study"]);\n'
+        '  let _trial = from_nci_hit(&wrapper["study"]);\n'
         "}\n",
         encoding="utf-8",
     )
@@ -681,7 +662,7 @@ def test_inline_discovery_fails_closed_on_unsupported_converter_argument(
 
     assert result.returncode != 0
     assert "src/transform/trial/tests.rs:fixture" in result.stderr
-    assert "unsupported argument into from_nci_trial" in result.stderr
+    assert "unsupported argument into from_nci_hit" in result.stderr
 
 
 def test_fixture_key_contract_fails_closed_on_undeclared_consumed_file(
@@ -901,7 +882,7 @@ def test_fixture_key_contract_rejects_unattested_nci_top_level_key(
     rust_path.write_text(
         "fn fixture() {\n"
         '  let record = json!({"inventedNciKey": 1});\n'
-        "  let _trial = from_nci_trial(&record);\n"
+        "  let _trial = from_nci_hit(&record);\n"
         "}\n",
         encoding="utf-8",
     )
@@ -1006,19 +987,6 @@ def test_code_key_contract_checks_each_nci_alternative_independently(
     assert expected in result.stderr
 
 
-def test_code_key_contract_rejects_unattested_direct_root_get(tmp_path: Path) -> None:
-    result = _mutate_current_contract(
-        tmp_path,
-        "src/entities/trial/get.rs",
-        'trial.get("eligibility")',
-        'trial.get("inventedEligibility")',
-    )
-    assert result.returncode != 0
-    assert "nci_eligibility_text" in result.stderr
-    assert "get#1" in result.stderr
-    assert "inventedEligibility" in result.stderr
-
-
 @pytest.mark.parametrize(
     ("old", "new", "expected"),
     (
@@ -1088,16 +1056,6 @@ def test_code_key_contract_fails_closed_on_unsupported_nci_root_forms(
     assert result.returncode != 0
     assert "from_nci_hit" in result.stderr
     assert expected in result.stderr
-
-
-def test_code_key_contract_checks_root_of_chained_read_only(tmp_path: Path) -> None:
-    result = _mutate_current_contract(
-        tmp_path,
-        "src/entities/trial/get.rs",
-        'trial.get("eligibility")',
-        'trial.get("eligibility").and_then(|value| value.get("not_top_level"))',
-    )
-    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.parametrize("change", ("missing", "altered", "duplicate", "extra"))
@@ -1180,30 +1138,6 @@ def test_code_key_discovery_ignores_commented_fake_reads_and_declarations(
     assert result.returncode == 0, result.stderr
 
 
-def test_code_key_discovery_rejects_unclosed_covered_construct(tmp_path: Path) -> None:
-    result = _mutate_current_contract(
-        tmp_path,
-        "src/entities/trial/get.rs",
-        'trial.get("eligibility")',
-        'trial.get("eligibility"',
-    )
-    assert result.returncode != 0
-    assert "unclosed" in result.stderr
-
-
-def test_code_key_discovery_requires_declared_root_parameter_in_source(
-    tmp_path: Path,
-) -> None:
-    result = _mutate_current_contract(
-        tmp_path,
-        "src/entities/trial/get.rs",
-        "fn nci_eligibility_text(trial: &serde_json::Value)",
-        "fn nci_eligibility_text(record: &serde_json::Value)",
-    )
-    assert result.returncode != 0
-    assert "declared root parameter trial does not exist" in result.stderr
-
-
 def test_ctgov_attribute_prefix_ignores_comment_delimiters(tmp_path: Path) -> None:
     result = _mutate_current_contract(
         tmp_path,
@@ -1214,16 +1148,6 @@ def test_ctgov_attribute_prefix_ignores_comment_delimiters(tmp_path: Path) -> No
     )
     assert result.returncode != 0
     assert "CtGovStudy: unsupported struct serde attribute" in result.stderr
-
-
-def test_nci_direct_get_treats_comments_as_whitespace(tmp_path: Path) -> None:
-    result = _mutate_current_contract(
-        tmp_path,
-        "src/entities/trial/get.rs",
-        'trial.get("eligibility")',
-        'trial.get(/* provider top-level key */ "eligibility")',
-    )
-    assert result.returncode == 0, result.stderr
 
 
 def test_nci_helper_does_not_discover_commented_key_literal(tmp_path: Path) -> None:

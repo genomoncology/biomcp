@@ -2264,13 +2264,9 @@
       {"path": "src/transform/trial/tests.rs", "selector": "stopped_ctgov_trial_without_reason_reports_checked_absence:json:2", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown:json:1", "endpoint": "ctgov"},
       {"path": "src/transform/trial/tests.rs", "selector": "ctgov_location_aliases_stay_bound_to_literal_first_source_contact:json:1", "endpoint": "ctgov"},
-      {"path": "src/transform/trial/tests.rs", "selector": "from_nci_trial_maps_attested_fields:json:1", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests.rs", "selector": "trial_sections_maps_supported_nci_fields:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:1", "endpoint": "nci"},
       {"path": "src/transform/trial/tests.rs", "selector": "trial_status_normalization_variants:json:2", "endpoint": "nci"},
       {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "unreadable_nci_disease_is_an_error:json:1", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "nci_condition_shape_does_not_change_a_comma_in_a_name:json:1", "endpoint": "nci"},
-      {"path": "src/transform/trial/tests/ticket_1107.rs", "selector": "nci_condition_shape_does_not_change_a_comma_in_a_name:json:2", "endpoint": "nci"},
       {"path": "src/transform/trial/tests/ticket_1114.rs", "selector": "ctgov_postal_codes_are_trimmed_and_blank_values_are_omitted:json:1", "endpoint": "ctgov"}
     ],
     "exceptions": []
@@ -2278,9 +2274,7 @@
   "code_key_contract": {
     "boundaries": [
       {"endpoint": "ctgov", "source": "src/sources/clinicaltrials.rs", "root_type": "CtGovStudy"},
-      {"endpoint": "nci", "source": "src/transform/trial.rs", "function": "from_nci_hit", "root_parameter": "hit"},
-      {"endpoint": "nci", "source": "src/transform/trial.rs", "function": "from_nci_trial", "root_parameter": "trial"},
-      {"endpoint": "nci", "source": "src/entities/trial/get.rs", "function": "nci_eligibility_text", "root_parameter": "trial"}
+      {"endpoint": "nci", "source": "src/transform/trial.rs", "function": "from_nci_hit", "root_parameter": "hit"}
     ],
     "supplemental_attestations": [
       {"endpoint": "ctgov", "path": "protocolSection.contactsLocationsModule.locations[].geoPoint.lat", "limitation": "The recorded CTGov schema exposes geoPoint as an opaque GeoPoint leaf.", "evidence_path": "ctgov/get_nct06131398_full_20260903.json"},

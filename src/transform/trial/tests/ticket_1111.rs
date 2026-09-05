@@ -1,5 +1,5 @@
 use super::super::*;
-use super::ticket_1107::{IntoTrialSearchTestResult, IntoTrialTestResult};
+use super::ticket_1107::IntoTrialSearchTestResult;
 
 #[test]
 fn recorded_ctgov_condition_vector_matches_in_detail_and_search() {
@@ -26,7 +26,7 @@ fn recorded_ctgov_condition_vector_matches_in_detail_and_search() {
 }
 
 #[test]
-fn recorded_nci_condition_vector_matches_in_detail_and_search() {
+fn recorded_nci_condition_vector_matches_in_search() {
     let response: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../testdata/sources/nci_cts/search_melanoma_20260811.json"
     ))
@@ -45,13 +45,6 @@ fn recorded_nci_condition_vector_matches_in_detail_and_search() {
         .collect::<Vec<_>>();
 
     assert_eq!(expected.len(), 26);
-    assert_eq!(
-        from_nci_trial(record)
-            .into_test_result()
-            .expect("valid recorded NCI trial")
-            .conditions,
-        expected
-    );
     assert_eq!(
         from_nci_hit(record)
             .into_test_result()

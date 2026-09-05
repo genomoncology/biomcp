@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::entities::trial::{
-    Trial, TrialAge, TrialArm, TrialContact, TrialEligibility, TrialIntervention, TrialLocation,
+    Trial, TrialArm, TrialContact, TrialEligibility, TrialIntervention, TrialLocation,
     TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult, TrialSiteContact,
     format_age_range,
 };
@@ -607,93 +607,6 @@ pub fn from_nci_hit(hit: &serde_json::Value) -> Result<TrialSearchResult, BioMcp
         conditions,
         sponsor,
         matched_intervention_label: None,
-    })
-}
-
-pub fn from_nci_trial(trial: &serde_json::Value) -> Result<Trial, BioMcpError> {
-    let nct_id = json_get_string(trial, &["nct_id"]).unwrap_or_default();
-    let title = json_get_string(trial, &["brief_title"]).unwrap_or_default();
-    let status = json_get_string(trial, &["current_trial_status"]).unwrap_or_default();
-    let phase = json_get_string(trial, &["phase"]).filter(|s| !s.is_empty());
-    let study_type = json_get_string(trial, &["study_protocol_type"]);
-    let structured_eligibility = trial
-        .get("eligibility")
-        .and_then(|value| value.as_object())
-        .and_then(|value| value.get("structured"))
-        .and_then(|value| value.as_object());
-    let min_age = structured_eligibility
-        .and_then(|value| json_get_string(&serde_json::Value::Object(value.clone()), &["min_age"]))
-        .and_then(|value| TrialAge::from_provider(&value));
-    let max_age = structured_eligibility
-        .and_then(|value| json_get_string(&serde_json::Value::Object(value.clone()), &["max_age"]))
-        .and_then(|value| {
-            if value.eq_ignore_ascii_case("999 Years") {
-                TrialAge::retained_unparsed(value)
-            } else {
-                TrialAge::from_provider(&value)
-            }
-        });
-    let age_range = format_age_range(min_age.as_ref(), max_age.as_ref());
-    let sex = structured_eligibility
-        .and_then(|value| json_get_string(&serde_json::Value::Object(value.clone()), &["sex"]))
-        .and_then(|value| format_sex(Some(&value)));
-    let eligibility =
-        (sex.is_some() || min_age.is_some() || max_age.is_some()).then_some(TrialEligibility {
-            sex,
-            minimum_age: min_age,
-            maximum_age: max_age,
-        });
-    let sponsor = json_get_string(trial, &["lead_org"]).filter(|s| !s.is_empty());
-    let enrollment = json_get_string(trial, &["minimum_target_accrual_number"])
-        .and_then(|s| s.parse::<i32>().ok());
-    let start_date = json_get_string(trial, &["start_date"]).filter(|s| !s.is_empty());
-    let completion_date = json_get_string(trial, &["completion_date"]).filter(|s| !s.is_empty());
-    let raw_summary = json_get_string(trial, &["brief_summary"]);
-    let summary = normalize_summary(raw_summary.as_deref());
-    let conditions = nci_conditions(trial, &["diseases"])?;
-    let interventions = trial
-        .get("arms")
-        .and_then(serde_json::Value::as_array)
-        .into_iter()
-        .flatten()
-        .flat_map(|arm| {
-            arm.get("interventions")
-                .and_then(serde_json::Value::as_array)
-                .into_iter()
-                .flatten()
-        })
-        .filter_map(|intervention| json_get_string(intervention, &["name"]))
-        .take(25)
-        .collect();
-    let why_stopped = trial
-        .get("why_study_stopped")
-        .map(|_| json_get_string(trial, &["why_study_stopped"]));
-
-    Ok(Trial {
-        nct_id,
-        source: None,
-        title,
-        status,
-        why_stopped,
-        phase,
-        study_type,
-        age_range,
-        conditions,
-        interventions,
-        intervention_details: Vec::new(),
-        sponsor,
-        enrollment,
-        summary,
-        start_date,
-        completion_date,
-        eligibility_text: None,
-        eligibility,
-        eligibility_provenance: None,
-        contacts: None,
-        locations: None,
-        outcomes: None,
-        arms: None,
-        references: None,
     })
 }
 

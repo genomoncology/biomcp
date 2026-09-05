@@ -332,10 +332,6 @@ impl TrialAge {
         }
     }
 
-    pub(crate) fn retained_unparsed(original: String) -> Option<Self> {
-        (!original.trim().is_empty()).then(|| Self::unparsed(original))
-    }
-
     pub fn number(&self) -> Option<f64> {
         self.number
     }

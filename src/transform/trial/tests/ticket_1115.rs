@@ -32,30 +32,6 @@ fn recorded_ctgov_summary_reaches_the_model_and_json_in_full() {
 }
 
 #[test]
-fn recorded_nci_summary_reaches_the_model_and_json_in_full() {
-    let response: Value = serde_json::from_str(include_str!(
-        "../../../../testdata/sources/nci_cts/search_melanoma.json"
-    ))
-    .expect("recorded NCI response");
-    let record = &response["data"][0];
-    let expected = record["brief_summary"]
-        .as_str()
-        .expect("recorded brief summary")
-        .trim();
-    assert!(
-        expected.len() > 500,
-        "fixture must cross the display byte cap"
-    );
-
-    let trial = from_nci_trial(record).expect("NCI trial");
-    assert_eq!(trial.summary.as_deref(), Some(expected));
-    assert_eq!(
-        serde_json::to_value(&trial).expect("trial JSON")["summary"],
-        expected
-    );
-}
-
-#[test]
 fn summary_normalization_keeps_trimmed_text_and_rejects_blanks() {
     assert_eq!(
         normalize_summary(Some("  Full provider summary.  ")).as_deref(),
