@@ -242,6 +242,17 @@
       }
     },
     {
+      "path": "src/sources/ncbi_efetch.rs",
+      "baseline_lines": 1217,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1154",
+        "delta": 217,
+        "reason": "Keep direct ClinVar transport, bounded typed parsing, and adversarial allocation tests beside the existing NCBI EFetch client without adding a package file beyond the fixed 1300-file boundary.",
+        "removal_condition": "Split the ClinVar transport, parser, and tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+      }
+    },
+    {
       "path": "src/sources/opentargets.rs",
       "baseline_lines": 2088,
       "floor_lines": 2088,
