@@ -313,6 +313,68 @@ fn combined_faers_filter_keeps_vaers_visibly_not_requested() {
 }
 
 #[test]
+fn faers_search_exposes_report_share_context_in_json_and_markdown() {
+    let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+    let output = run_biomcp(
+        &[
+            "--json",
+            "--no-cache",
+            "search",
+            "adverse-event",
+            "drug name",
+            "--source",
+            "faers",
+            "--limit",
+            "1",
+        ],
+        &fixture,
+    );
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).expect("search JSON");
+    assert_eq!(
+        value["summary"]["percentage_context"],
+        serde_json::json!({
+            "measure": "share_of_faers_reports",
+            "denominator": "returned_reports",
+            "denominator_count": 1,
+            "is_incidence": false,
+            "establishes_causality": false
+        })
+    );
+    assert_eq!(value["summary"]["top_reactions"][0]["percentage"], 100.0);
+    assert!(fixture.request_target().contains("drug/event.json"));
+
+    let fixture = RequestFixture::start_with_body(FAERS_REPORT_PAGE);
+    let output = run_biomcp(
+        &[
+            "--no-cache",
+            "search",
+            "adverse-event",
+            "drug name",
+            "--source",
+            "faers",
+            "--limit",
+            "1",
+        ],
+        &fixture,
+    );
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let markdown = String::from_utf8_lossy(&output.stdout);
+    assert!(markdown.contains("Share of returned reports"));
+    assert!(markdown.contains("not incidence"));
+    assert!(markdown.contains("does not establish causality"));
+    assert!(fixture.request_target().contains("drug/event.json"));
+}
+
+#[test]
 fn device_seriousness_requests_and_json_labels_are_exact() {
     let cases: &[(&[&str], &str, &str)] = &[
         (

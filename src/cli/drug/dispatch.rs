@@ -458,6 +458,7 @@ pub(crate) async fn handle_command(
                                         total_reports: 0,
                                         returned_report_count: 0,
                                         top_reactions: Vec::new(),
+                                        percentage_context: None,
                                     };
                                 let results = Vec::new();
                                 if json {

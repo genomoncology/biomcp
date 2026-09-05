@@ -2,6 +2,66 @@ use serde::{Deserialize, Serialize};
 
 use super::AdverseEvent;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdverseEventReactionSummary {
+    pub reaction: String,
+    pub count: usize,
+    pub percentage: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AdverseEventPercentageDenominator {
+    AllMatchingReports,
+    ReturnedReports,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdverseEventPercentageContext {
+    pub measure: String,
+    pub denominator: AdverseEventPercentageDenominator,
+    pub denominator_count: usize,
+    pub is_incidence: bool,
+    pub establishes_causality: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdverseEventSearchSummary {
+    pub total_reports: usize,
+    pub returned_report_count: usize,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub top_reactions: Vec<AdverseEventReactionSummary>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub percentage_context: Option<AdverseEventPercentageContext>,
+}
+
+impl AdverseEventSearchSummary {
+    pub(super) fn with_reactions(
+        total_reports: usize,
+        returned_report_count: usize,
+        top_reactions: Vec<AdverseEventReactionSummary>,
+        denominator: AdverseEventPercentageDenominator,
+    ) -> Self {
+        let percentage_context =
+            (!top_reactions.is_empty()).then(|| AdverseEventPercentageContext {
+                measure: "share_of_faers_reports".into(),
+                denominator,
+                denominator_count: match denominator {
+                    AdverseEventPercentageDenominator::AllMatchingReports => total_reports,
+                    AdverseEventPercentageDenominator::ReturnedReports => returned_report_count,
+                },
+                is_incidence: false,
+                establishes_causality: false,
+            });
+        Self {
+            total_reports,
+            returned_report_count,
+            top_reactions,
+            percentage_context,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct AdverseEventSections {
     pub include_reactions: bool,

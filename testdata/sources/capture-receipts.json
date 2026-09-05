@@ -705,8 +705,8 @@
     },
     {
       "path": "openfda/faers_event.json",
-      "classification": "pending_verification",
-      "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+      "classification": "synthetic_and_ineligible",
+      "ineligible_reason": "Synthetic provider-contract response; total is aligned with the receipted pembrolizumab reaction-count fixture so aggregate percentage examples remain arithmetically coherent. It is not a provider capture."
     },
     {
       "path": "pharmgkb/warfarin_annotations.json",

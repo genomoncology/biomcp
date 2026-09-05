@@ -551,6 +551,55 @@ async fn raw_and_typed_mcp_preserve_adverse_event_subset_and_full_json_contracts
 }
 
 #[tokio::test(flavor = "multi_thread")]
+async fn raw_mcp_preserves_faers_report_share_context_in_json_and_markdown() -> anyhow::Result<()> {
+    let harness = harness();
+    let fixture = OpenFdaFixture::start();
+    let cache = tempfile::tempdir()?;
+    let client = harness
+        .spawn_stdio_client(&[
+            ("BIOMCP_OPENFDA_BASE", fixture.base.clone()),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
+        ])
+        .await?;
+
+    let json_result = biomcp_mcp_contract_client::call_biomcp_json(
+        &client,
+        "biomcp --no-cache search adverse-event 'drug name' --source faers --limit 1",
+    )
+    .await?;
+    assert_eq!(json_result.is_error, Some(false));
+    let value: serde_json::Value =
+        serde_json::from_str(biomcp_mcp_contract_client::first_text(&json_result.content))?;
+    assert_eq!(
+        value["summary"]["percentage_context"],
+        json!({
+            "measure": "share_of_faers_reports",
+            "denominator": "returned_reports",
+            "denominator_count": 1,
+            "is_incidence": false,
+            "establishes_causality": false
+        })
+    );
+
+    let markdown_result = biomcp_mcp_contract_client::call_biomcp(
+        &client,
+        "biomcp --no-cache search adverse-event 'drug name' --source faers --limit 1",
+    )
+    .await?;
+    assert_eq!(markdown_result.is_error, Some(false));
+    let markdown = biomcp_mcp_contract_client::first_text(&markdown_result.content);
+    assert!(markdown.contains("Share of returned reports"));
+    assert!(markdown.contains("not incidence"));
+    assert!(markdown.contains("does not establish causality"));
+
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
 async fn rmcp_child_process_client_verifies_stdio_core_contract() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness.spawn_stdio_client(&[]).await?;

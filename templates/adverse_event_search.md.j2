@@ -7,13 +7,15 @@ Found {{ count }} report{% if count != 1 %}s{% endif %}
 ## Summary ({{ summary_source_label or "OpenFDA FAERS sample" }})
 - Total reports (OpenFDA FAERS): {{ summary.total_reports }}
 - Returned reports: {{ summary.returned_report_count }}
-{% if "aggregate" in (summary_source_label or "") -%}
-- Top reactions: aggregate count query; Percent = count / total reports.
-{% else -%}
-- Top reactions: returned-report sample only; Percent = count / returned reports, not population frequency.
-{% endif -%}
 {% if summary.top_reactions -%}
-| Reaction | Count | Percent |
+{% if summary.percentage_context.denominator == "all_matching_reports" -%}
+- Reaction share: matching FAERS reports containing the reaction term divided by all matching FAERS reports.
+{% else -%}
+- Reaction share: returned FAERS reports containing the reaction term divided by returned reports. The returned page is only a sample of all matching reports.
+{% endif -%}
+- **Caution:** This arithmetic is not incidence in treated or exposed patients and does not establish causality.
+
+| Reaction | Count | {% if summary.percentage_context.denominator == "all_matching_reports" %}Share of matching reports{% else %}Share of returned reports{% endif %} |
 |---|---|---|
 {% for row in summary.top_reactions -%}
 | {{ row.reaction }} | {{ row.count }} | {{ row.percentage }}% |

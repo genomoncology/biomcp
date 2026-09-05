@@ -35,6 +35,16 @@ biomcp search adverse-event --drug pembrolizumab --limit 3
 ```
 
 Returns an adverse-event summary with report totals and a compact result table.
+The ordinary search summary reports reaction shares within the returned page;
+`biomcp drug adverse-events <name>` reports aggregate shares across all
+matching FAERS reports. Both label the denominator in Markdown and in JSON
+`percentage_context` when percentage rows exist.
+
+FAERS is a spontaneous-reporting system. Its reports are affected by incomplete
+reporting and reporting behavior, and they do not provide the number of treated
+or exposed patients. BioMCP therefore labels these report shares as not
+incidence and as not establishing causality. A report may also list multiple
+products and reactions without linking a particular reaction to one product.
 
 ```bash
 biomcp search adverse-event --type recall --drug metformin --limit 3

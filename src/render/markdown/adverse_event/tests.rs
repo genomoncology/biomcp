@@ -147,17 +147,13 @@ fn adverse_event_subset_markdown_keeps_identity_and_only_selected_bodies() {
 
 #[test]
 fn adverse_event_search_markdown_renders_summary_and_filters() {
-    let summary = AdverseEventSearchSummary {
-        total_reports: 12,
-        returned_report_count: 1,
-        top_reactions: vec![
-            crate::entities::adverse_event::AdverseEventReactionSummary {
-                reaction: "Cough".to_string(),
-                count: 4,
-                percentage: 33.3,
-            },
-        ],
-    };
+    let summary: AdverseEventSearchSummary = serde_json::from_value(serde_json::json!({
+        "total_reports": 12,
+        "returned_report_count": 1,
+        "top_reactions": [{"reaction": "Cough", "count": 4, "percentage": 33.3}],
+        "percentage_context": {"measure": "share_of_faers_reports", "denominator": "returned_reports", "denominator_count": 1, "is_incidence": false, "establishes_causality": false}
+    }))
+    .expect("sample summary");
     let results = vec![AdverseEventSearchResult {
         report_id: "1001".to_string(),
         drug: "ivacaftor".to_string(),
@@ -168,26 +164,25 @@ fn adverse_event_search_markdown_renders_summary_and_filters() {
     let markdown = adverse_event_search_markdown("ivacaftor", &results, &summary).expect("search");
     assert!(markdown.contains("# Adverse Events: ivacaftor"));
     assert!(markdown.contains("## Summary (OpenFDA FAERS sample)"));
-    assert!(markdown.contains(
-        "Top reactions: returned-report sample only; Percent = count / returned reports, not population frequency."
-    ));
+    assert!(markdown.contains("| Reaction | Count | Share of returned reports |"));
+    assert!(!markdown.contains("| Reaction | Count | Percent |"));
+    assert!(markdown.contains("returned page is only a sample"));
+    assert!(markdown.contains("not incidence"));
+    assert!(markdown.contains("treated") || markdown.contains("exposed"));
+    assert!(markdown.contains("does not establish causality"));
     assert!(markdown.contains("| Cough | 4 | 33.3% |"));
     assert!(markdown.contains("Use `get adverse-event <report_id>` for details."));
 }
 
 #[test]
 fn adverse_event_search_markdown_can_label_aggregate_summary() {
-    let summary = AdverseEventSearchSummary {
-        total_reports: 20,
-        returned_report_count: 1,
-        top_reactions: vec![
-            crate::entities::adverse_event::AdverseEventReactionSummary {
-                reaction: "Rash".to_string(),
-                count: 5,
-                percentage: 25.0,
-            },
-        ],
-    };
+    let summary: AdverseEventSearchSummary = serde_json::from_value(serde_json::json!({
+        "total_reports": 20,
+        "returned_report_count": 1,
+        "top_reactions": [{"reaction": "Rash", "count": 5, "percentage": 25.0}],
+        "percentage_context": {"measure": "share_of_faers_reports", "denominator": "all_matching_reports", "denominator_count": 20, "is_incidence": false, "establishes_causality": false}
+    }))
+    .expect("aggregate summary");
     let results = vec![AdverseEventSearchResult {
         report_id: "1001".to_string(),
         drug: "ivacaftor".to_string(),
@@ -208,9 +203,11 @@ fn adverse_event_search_markdown_can_label_aggregate_summary() {
     .expect("aggregate summary");
 
     assert!(markdown.contains("## Summary (OpenFDA FAERS aggregate)"));
-    assert!(
-        markdown.contains("Top reactions: aggregate count query; Percent = count / total reports.")
-    );
+    assert!(markdown.contains("| Reaction | Count | Share of matching reports |"));
+    assert!(!markdown.contains("| Reaction | Count | Percent |"));
+    assert!(markdown.contains("not incidence"));
+    assert!(markdown.contains("treated") || markdown.contains("exposed"));
+    assert!(markdown.contains("does not establish causality"));
     assert!(markdown.contains("| Rash | 5 | 25% |") || markdown.contains("| Rash | 5 | 25.0% |"));
     assert!(
         markdown.contains("| Rash | 5 | 25.0% |\n\n|Report ID|")
@@ -230,6 +227,7 @@ fn adverse_event_search_markdown_renders_contextual_empty_state() {
             total_reports: 0,
             returned_report_count: 0,
             top_reactions: Vec::new(),
+            percentage_context: None,
         },
         "",
         Some("Drug not found in FAERS. FAERS is a post-marketing database."),
@@ -251,6 +249,7 @@ fn adverse_event_search_markdown_renders_trial_fallback_section() {
             total_reports: 0,
             returned_report_count: 0,
             top_reactions: Vec::new(),
+            percentage_context: None,
         },
         "",
         Some("Drug not found in FAERS. FAERS is a post-marketing database."),
@@ -288,7 +287,80 @@ fn adverse_event_count_markdown_renders_bucket_rows() {
     assert!(markdown.contains("# Adverse Event Counts"));
     assert!(markdown.contains("Count field: reaction"));
     assert!(markdown.contains("Counted rows shown: 7"));
+    assert!(markdown.contains("sum of the shown bucket counts"));
+    assert!(markdown.contains("one report can contribute to multiple buckets"));
+    assert!(!markdown.contains("distinct FAERS reports"));
+    assert!(markdown.contains("not incidence"));
+    assert!(markdown.contains("does not establish causality"));
     assert!(markdown.contains("| Cough | 7 | 100.0% |"));
+}
+
+#[test]
+fn adverse_event_summary_context_names_the_exact_divisor_and_is_backward_compatible() {
+    use crate::entities::adverse_event::{
+        AdverseEventPercentageDenominator, summarize_count_buckets, summarize_search_results,
+    };
+
+    let aggregate = summarize_count_buckets(
+        20,
+        1,
+        &[AdverseEventCountBucket {
+            value: "Rash".into(),
+            count: 5,
+        }],
+    );
+    assert_eq!(aggregate.top_reactions[0].count, 5);
+    assert_eq!(aggregate.top_reactions[0].percentage, 25.0);
+    let aggregate_context = aggregate.percentage_context.expect("aggregate context");
+    assert_eq!(
+        aggregate_context.denominator,
+        AdverseEventPercentageDenominator::AllMatchingReports
+    );
+    assert_eq!(aggregate_context.denominator_count, 20);
+    assert!(!aggregate_context.is_incidence);
+    assert!(!aggregate_context.establishes_causality);
+
+    let sample = summarize_search_results(
+        200,
+        &[
+            AdverseEventSearchResult {
+                report_id: "1".into(),
+                drug: "pembrolizumab".into(),
+                reactions: vec!["Rash".into()],
+                serious: true,
+            },
+            AdverseEventSearchResult {
+                report_id: "2".into(),
+                drug: "pembrolizumab".into(),
+                reactions: vec!["Rash".into(), "Fatigue".into()],
+                serious: false,
+            },
+        ],
+    );
+    assert_eq!(sample.top_reactions[0].count, 2);
+    assert_eq!(sample.top_reactions[0].percentage, 100.0);
+    let sample_context = sample.percentage_context.expect("sample context");
+    assert_eq!(
+        sample_context.denominator,
+        AdverseEventPercentageDenominator::ReturnedReports
+    );
+    assert_eq!(sample_context.denominator_count, 2);
+
+    let empty = summarize_search_results(12, &[]);
+    assert!(empty.percentage_context.is_none());
+    assert!(
+        serde_json::to_value(&empty)
+            .expect("serialize empty summary")
+            .get("percentage_context")
+            .is_none()
+    );
+    let old: AdverseEventSearchSummary = serde_json::from_value(serde_json::json!({
+        "total_reports": 2,
+        "returned_report_count": 1,
+        "top_reactions": [{"reaction": "Rash", "count": 1, "percentage": 100.0}]
+    }))
+    .expect("old summary without additive context");
+    assert!(old.percentage_context.is_none());
 }
 
 #[test]
@@ -352,6 +424,7 @@ fn combined_adverse_event_search_markdown_appends_vaers_summary_for_unavailable_
             total_reports: 0,
             returned_report_count: 0,
             top_reactions: Vec::new(),
+            percentage_context: None,
         },
         "",
         Some("Drug not found in FAERS. FAERS is a post-marketing database."),
@@ -375,6 +448,7 @@ fn combined_adverse_event_search_markdown_skips_query_not_vaccine_status() {
             total_reports: 0,
             returned_report_count: 0,
             top_reactions: Vec::new(),
+            percentage_context: None,
         },
         "",
         Some("Drug not found in FAERS. FAERS is a post-marketing database."),

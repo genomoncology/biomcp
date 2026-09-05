@@ -326,6 +326,7 @@ pub(crate) async fn handle_search(
                                         total_reports: 0,
                                         returned_report_count: 0,
                                         top_reactions: Vec::new(),
+                                        percentage_context: None,
                                     },
                                     Some(
                                         "Drug not found in FAERS. FAERS is a post-marketing database; expect no records for investigational, newly approved, or name-variant drugs.",
@@ -345,6 +346,7 @@ pub(crate) async fn handle_search(
                                         total_reports: 0,
                                         returned_report_count: 0,
                                         top_reactions: Vec::new(),
+                                        percentage_context: None,
                                     },
                                     Some("OpenFDA FAERS adverse events are unavailable."),
                                 ),
@@ -381,6 +383,7 @@ pub(crate) async fn handle_search(
                                         total_reports: 0,
                                         returned_report_count: 0,
                                         top_reactions: Vec::new(),
+                                        percentage_context: None,
                                     },
                                     Some(
                                         "Drug not found in FAERS. FAERS is a post-marketing database; expect no records for investigational, newly approved, or name-variant drugs.",
@@ -400,6 +403,7 @@ pub(crate) async fn handle_search(
                                         total_reports: 0,
                                         returned_report_count: 0,
                                         top_reactions: Vec::new(),
+                                        percentage_context: None,
                                     },
                                     Some("OpenFDA FAERS adverse events are unavailable."),
                                 ),

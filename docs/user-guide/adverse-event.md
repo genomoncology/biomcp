@@ -30,11 +30,30 @@ Reaction-focused filter:
 biomcp search adverse-event --drug pembrolizumab --reaction pneumonitis --limit 5
 ```
 
+The reaction summary labels each percentage as a **share of returned reports**:
+the numerator is the number of returned-page FAERS reports containing that
+reaction and the denominator is the number of reports on that returned page.
+The page is only a sample of all matching reports. These spontaneous-report
+shares are not incidence in treated or exposed patients and do not establish
+causality.
+
+`biomcp drug adverse-events <name>` instead uses an aggregate OpenFDA count and
+labels the percentage as a **share of matching reports**. Its denominator is
+all matching FAERS reports. JSON identifies these meanings in
+`summary.percentage_context`, including the exact divisor and explicit false
+values for incidence and causality.
+
 FAERS counts are FAERS-only and therefore require `--source faers`; count operations require offset zero:
 
 ```bash
 biomcp search adverse-event --drug pembrolizumab --source faers --count reaction --limit 10
 ```
+
+For `--count`, `Percent of Shown Count` divides each bucket by the sum of the
+shown bucket counts. That sum is not a count of distinct reports because one
+report can contribute to multiple buckets. Count-mode JSON remains the raw
+bucket contract and does not contain calculated percentages or
+`percentage_context`.
 
 ## Search vaccine events with VAERS
 

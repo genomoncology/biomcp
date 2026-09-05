@@ -76,6 +76,19 @@ biomcp search article -k "Marfan syndrome treatment" --type review --limit 5
 Try: biomcp discover "Marfan syndrome"'
 ```
 
+## FAERS Report-Share Semantics
+
+Aggregate reaction percentages use matching FAERS reports as their denominator.
+They are not incidence estimates and do not establish causality.
+
+```bash
+../../tools/biomcp-ci drug adverse-events pembrolizumab --limit 1 | mustmatch like '| Reaction | Count | Share of matching reports |
+| MALIGNANT NEOPLASM PROGRESSION | 12016 | 100.0% |
+not incidence
+does not establish causality'
+../../tools/biomcp-ci --json drug adverse-events pembrolizumab --limit 1 | jq -e '.summary.percentage_context == {"measure":"share_of_faers_reports","denominator":"all_matching_reports","denominator_count":12016,"is_incidence":false,"establishes_causality":false}'
+```
+
 ## WHO Regulatory Detail
 
 WHO prequalification should stay readable as a regional table with the stable

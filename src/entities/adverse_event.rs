@@ -23,7 +23,10 @@ use self::device::build_device_query;
 pub use self::device::{
     DeviceEventSearchFilters, DeviceEventSeriousness, device_query_summary, search_device_page,
 };
-pub use self::sections::{AdverseEventSections, FaersSubsetReport};
+pub use self::sections::{
+    AdverseEventPercentageDenominator, AdverseEventReactionSummary, AdverseEventSearchSummary,
+    AdverseEventSections, FaersSubsetReport,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdverseEvent {
@@ -55,21 +58,6 @@ pub struct AdverseEventSearchResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub reactions: Vec<String>,
     pub serious: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AdverseEventReactionSummary {
-    pub reaction: String,
-    pub count: usize,
-    pub percentage: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AdverseEventSearchSummary {
-    pub total_reports: usize,
-    pub returned_report_count: usize,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub top_reactions: Vec<AdverseEventReactionSummary>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -593,6 +581,10 @@ fn round_one_decimal(value: f64) -> f64 {
     (value * 10.0).round() / 10.0
 }
 
+/// Summarizes provider count buckets against every matching FAERS report.
+///
+/// A bucket count is preserved exactly; only its existing one-decimal report
+/// share is calculated here, with the divisor recorded beside the result.
 pub fn summarize_count_buckets(
     total_reports: usize,
     returned_report_count: usize,
@@ -609,13 +601,18 @@ pub fn summarize_count_buckets(
         })
         .collect::<Vec<_>>();
 
-    AdverseEventSearchSummary {
+    AdverseEventSearchSummary::with_reactions(
         total_reports,
         returned_report_count,
         top_reactions,
-    }
+        AdverseEventPercentageDenominator::AllMatchingReports,
+    )
 }
 
+/// Summarizes reaction terms found in the returned page of FAERS reports.
+///
+/// Each reaction is counted once per returned report, and the returned-page
+/// divisor is recorded so callers cannot mistake this sample for an aggregate.
 pub fn summarize_search_results(
     total_reports: usize,
     results: &[AdverseEventSearchResult],
@@ -654,19 +651,22 @@ pub fn summarize_search_results(
         })
         .collect::<Vec<_>>();
 
-    AdverseEventSearchSummary {
+    AdverseEventSearchSummary::with_reactions(
         total_reports,
         returned_report_count,
         top_reactions,
-    }
+        AdverseEventPercentageDenominator::ReturnedReports,
+    )
 }
 
 fn empty_search_summary() -> AdverseEventSearchSummary {
-    AdverseEventSearchSummary {
-        total_reports: 0,
-        returned_report_count: 0,
-        top_reactions: Vec::new(),
-    }
+    // With no percentage rows there is no real divisor to describe.
+    AdverseEventSearchSummary::with_reactions(
+        0,
+        0,
+        Vec::new(),
+        AdverseEventPercentageDenominator::ReturnedReports,
+    )
 }
 
 pub(crate) fn empty_search_response() -> AdverseEventSearchResponse {

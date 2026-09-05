@@ -295,6 +295,8 @@ pub fn adverse_event_count_markdown(
     out.push_str(&format!("Count field: {count_field}\n"));
     let counted_total = buckets.iter().map(|bucket| bucket.count).sum::<usize>();
     out.push_str(&format!("Counted rows shown: {counted_total}\n\n"));
+    out.push_str("Percent of Shown Count uses the sum of the shown bucket counts as its denominator; one report can contribute to multiple buckets.\n");
+    out.push_str("**Caution:** This arithmetic is not incidence in treated or exposed patients and does not establish causality.\n\n");
     out.push_str("| Value | Count | Percent of Shown Count |\n");
     out.push_str("|---|---|---|\n");
     if buckets.is_empty() {
