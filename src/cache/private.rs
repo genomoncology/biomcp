@@ -59,7 +59,7 @@ fn lock_cache_key(
     use fs2::FileExt;
 
     let shared = lock_cache_shared(cache_root)?;
-    let lock_dir = cache_root.join(super::layout::KEY_LOCK_DIR);
+    let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
     secure_managed_dir_with(&lock_dir, || before_lock_dir_create(&lock_dir))?;
     let lock_path = super::key_lock_path(cache_root, key);
     let mut options = OpenOptions::new();
@@ -82,6 +82,52 @@ pub(crate) async fn lock_cache_key_async(
     })
     .await
     .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
+}
+
+pub(crate) fn prepare_write_paths(cache_path: &Path, cache_key: &str) -> io::Result<()> {
+    secure_managed_dir(cache_path)?;
+    secure_managed_dir(&cache_path.join(super::TEMP_DIR))?;
+
+    let content_root = super::content_root(cache_path);
+    secure_managed_dir(&content_root)?;
+    secure_managed_dir(&content_root.join("sha256"))?;
+
+    let bucket = super::index_bucket_path(cache_path, cache_key);
+    let index_root = cache_path.join(super::INDEX_DIR);
+    secure_managed_dir(&index_root)?;
+    let first_shard = bucket
+        .parent()
+        .and_then(Path::parent)
+        .ok_or_else(|| io::Error::other("derived cache index path has no first shard"))?;
+    let second_shard = bucket
+        .parent()
+        .ok_or_else(|| io::Error::other("derived cache index path has no second shard"))?;
+    secure_managed_dir(first_shard)?;
+    secure_managed_dir(second_shard)?;
+    prepare_managed_file(&bucket)
+}
+
+pub(crate) fn secure_written_content(
+    cache_path: &Path,
+    integrity: &ssri::Integrity,
+) -> io::Result<()> {
+    let blob = super::content_path(cache_path, integrity);
+    let content_root = super::content_root(cache_path);
+    secure_managed_dir(&content_root)?;
+
+    let (algorithm, _) = integrity.to_hex();
+    let algorithm = content_root.join(algorithm.to_string());
+    let first_shard = blob
+        .parent()
+        .and_then(Path::parent)
+        .ok_or_else(|| io::Error::other("derived cache content path has no first shard"))?;
+    let second_shard = blob
+        .parent()
+        .ok_or_else(|| io::Error::other("derived cache content path has no second shard"))?;
+    secure_managed_dir(&algorithm)?;
+    secure_managed_dir(first_shard)?;
+    secure_managed_dir(second_shard)?;
+    secure_managed_file(&blob)
 }
 
 pub(crate) fn secure_managed_tree(

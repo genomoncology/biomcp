@@ -1269,11 +1269,11 @@ pub(crate) async fn read_limited_source_body(
 
 #[cfg(test)]
 mod tests {
-    #[path = "cache_security.rs"]
-    mod cache_security;
     #[path = "clingen_runtime.rs"]
     mod clingen_runtime;
     #[path = "provider_network.rs"]
+    // Includes HTTP transport and cache-construction security coverage.
+    // Kept together to stay within the shipped-package file budget.
     mod provider_network;
     #[path = "../request_plan_transport.rs"]
     mod request_plan_transport;

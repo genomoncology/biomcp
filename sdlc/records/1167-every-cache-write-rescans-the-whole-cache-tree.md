@@ -72,6 +72,20 @@ for a stats-path lock upgrade: epoch establishment now finishes before stats
 acquires its shared repair/snapshot gate, so no shared-to-exclusive upgrade is
 attempted.
 
+The primary integration run after the lock correction completed all 3,172 Rust
+tests in 94 seconds, confirming that constructor serialization was removed. Its
+Python lane failed only the package boundary: the five newly added packaged
+source/test files raised the list from the exact 1,300-file cap to 1,305. The
+implementation was consolidated without changing the cap or removing coverage:
+cache layout now lives in `cache/mod.rs`, exact write hardening lives with the
+private-path implementation, and constructor security tests live with existing
+provider-network tests. Two source-test routing modules became inline modules in
+their owning providers. `cargo package --list --allow-dirty --locked --offline` now lists
+exactly 1,300 paths, and the six focused source-package boundary tests pass when
+run with their required worktree-local temporary directory. `make lint` also
+passes after consolidation. The full primary gate was not rerun and is not
+claimed.
+
 A later review found that two cold, independent writes could both observe a
 common directory as missing and the loser would return `AlreadyExists` instead
 of validating the winner. Exact directory creation is now race-idempotent: an
@@ -81,8 +95,8 @@ passed. The regressions synchronize real different-shard puts immediately
 before their common key-lock directory creation and separately inject a hostile
 symlink winner to prove it is rejected rather than blindly accepted.
 
-The network-dependent large-cache live canary was not run. Primary-agent
-`make test` and `make spec` gates remain pending and are not claimed here.
+The network-dependent large-cache live canary was not run. The corrected
+`make test` gate and `make spec` remain pending and are not claimed here.
 Windows-only tests cover bounded unrelated traversal and require a protected,
 current-user-only full-control ACL on each touched lock, tmp, index, and content
 path. They were not compiled or executed on this Unix host: the installed Rust

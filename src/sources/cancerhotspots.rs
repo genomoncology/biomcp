@@ -188,4 +188,7 @@ fn residue_and_alt(normalized_change: &str) -> Option<(String, String)> {
 }
 
 #[cfg(test)]
-mod tests;
+mod tests {
+    mod construction;
+    mod parsing;
+}

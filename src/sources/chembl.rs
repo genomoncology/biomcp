@@ -179,4 +179,7 @@ pub struct ChemblTargetSummary {
 }
 
 #[cfg(test)]
-mod tests;
+mod tests {
+    mod construction;
+    mod parsing;
+}

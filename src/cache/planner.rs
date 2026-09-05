@@ -81,7 +81,7 @@ pub(crate) fn snapshot_cache(cache_path: &Path) -> Result<CacheSnapshot, CachePl
         }
     }
 
-    let index_path = cache_path.join(super::layout::INDEX_DIR);
+    let index_path = cache_path.join(super::INDEX_DIR);
     let mut entries = if path_exists(&index_path)? {
         let mut listed = Vec::new();
         for result in cacache::list_sync(cache_path) {
