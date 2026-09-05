@@ -459,6 +459,15 @@ biomcp get gene ERBB2 funding
 biomcp get gene BRAF all
 ```
 
+The `clingen` section preserves gene-validity and dosage-sensitivity evidence
+independently. JSON adds required `validity_status` and `dosage_status` objects
+to `GeneClinGen`; each uses `data|empty|failed|timed_out` and one of
+`client_init|gene_lookup|gene_validity_download|gene_dosage_download`. The
+canonical section outcome is `degraded` when one family has data and the other
+is unavailable, and `unavailable` when neither has data and an absence cannot
+be concluded. A missing dosage classification is omitted, while a literal
+ClinGen `No Evidence for ...` classification is retained as data.
+
 `diagnostics` and `funding` stay opt-in and are not included in
 `biomcp get gene <symbol> all`.
 

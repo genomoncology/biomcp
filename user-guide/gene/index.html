@@ -4467,6 +4467,30 @@ that length is available from the base UniProt record.</p>
 <p>Gene-disease validity (ClinGen):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>clingen
 </code></pre></div>
+<p>The additive <code>GeneClinGen</code> JSON shape keeps the existing evidence fields and
+reports validity and dosage acquisition independently:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">&quot;validity&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="nt">&quot;disease&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Li-Fraumeni syndrome&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;classification&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Definitive&quot;</span><span class="p">}],</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="nt">&quot;haploinsufficiency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sufficient Evidence for Haploinsufficiency&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="nt">&quot;triplosensitivity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;No Evidence for Triplosensitivity&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="nt">&quot;validity_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gene_validity_download&quot;</span><span class="p">},</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">  </span><span class="nt">&quot;dosage_status&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;op&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gene_dosage_download&quot;</span><span class="p">}</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>Each family status is one of <code>data</code>, <code>empty</code>, <code>failed</code>, or <code>timed_out</code>; its
+operation is one of <code>client_init</code>, <code>gene_lookup</code>, <code>gene_validity_download</code>, or
+<code>gene_dosage_download</code>. Healthy statuses omit <code>message</code>. Failures and timeouts
+include a stable public message without provider bodies, URLs, paths, or parser
+details. A failed lookup does not erase an exact-symbol match, but it prevents
+a zero match from being reported as confirmed <code>empty</code>.</p>
+<p>The combined <code>section_outcomes.clingen</code> and <code>_meta.section_sources</code> entry use
+<code>data</code> when both families are healthy and either has data, and <code>empty</code> only
+when both are confirmed empty. Data plus an unavailable family is <code>degraded</code>
+with ClinGen source credit; without any data, a failed or timed-out family is
+<code>unavailable</code> with no source credit.</p>
+<p>Missing dosage fields remain absent in JSON and Markdown. They are not rendered
+as <code>No evidence</code>; a literal ClinGen classification such as <code>No Evidence for
+Triplosensitivity</code> is real data and is preserved verbatim.</p>
 <p>When ClinGen validity rows are present, the gene card's <code>See also:</code> block
 promotes a recruiting-trial search keyed to the newest reviewed disease label
 already shown on the card, ahead of the generic gene pivots.</p>
@@ -4474,54 +4498,54 @@ already shown on the card, ahead of the generic gene pivots.</p>
 gene's returned resource IRIs, select one exact IRI or a unique short version, then
 use its capture handle to stream the original stored bytes locally. The display version
 is not interchangeable with resource identity:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>ATM
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>ATM<span class="w"> </span>--version<span class="w"> </span>https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>ATM<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.5.1
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>document<span class="w"> </span>&lt;capture-id&gt;
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>PTEN<span class="w"> </span>--version<span class="w"> </span>&lt;full-resource-iri&gt;<span class="w"> </span>--files
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>PTEN<span class="w"> </span>--capture-id<span class="w"> </span>&lt;capture-id&gt;<span class="w"> </span>--files
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>ATM
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>ATM<span class="w"> </span>--version<span class="w"> </span>https://cspec.genome.network/cspec/SequenceVariantInterpretation/id/GN020/version/1.5.1
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>ATM<span class="w"> </span>--version<span class="w"> </span><span class="m">1</span>.5.1
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>document<span class="w"> </span>&lt;capture-id&gt;
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>PTEN<span class="w"> </span>--version<span class="w"> </span>&lt;full-resource-iri&gt;<span class="w"> </span>--files
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>gene<span class="w"> </span>cspec<span class="w"> </span>PTEN<span class="w"> </span>--capture-id<span class="w"> </span>&lt;capture-id&gt;<span class="w"> </span>--files
 </code></pre></div>
 <p>CSpec returns source facts and provenance; it does not evaluate ACMG criteria or
 classify variants. The opt-in files view lists bounded metadata for linked public
 attachments without downloading them. Normal criteria output reports
 <code>attachment_count</code>; capture-based file listing never refetches the provider.</p>
 <p>Constraint metrics (gnomAD):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>constraint
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>constraint
 </code></pre></div>
 <p>Multiple sections can be chained:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>diseases
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>pathways<span class="w"> </span>diseases
 </code></pre></div>
 <p>All supported sections:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>all
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>all
 </code></pre></div>
 <p>To add funding, request it explicitly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>funding
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>funding
 </code></pre></div>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>TP53<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRAF
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>definition<span class="w"> </span>BRAF
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>trials<span class="w"> </span>TP53<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>drugs<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>pathways<span class="w"> </span>BRAF
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>articles<span class="w"> </span>BRAF
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>biomcp<span class="w"> </span>gene<span class="w"> </span>definition<span class="w"> </span>BRAF
 </code></pre></div>
 <p>Gene trial pivots send the supplied symbol as a biomarker.</p>
 <h2 id="common-workflows">Common workflows<a class="headerlink" href="#common-workflows" title="Permanent link">&para;</a></h2>
 <h3 id="clinical-trial-pivot">Clinical trial pivot<a class="headerlink" href="#clinical-trial-pivot" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>trial<span class="w"> </span>-c<span class="w"> </span>melanoma<span class="w"> </span>--mutation<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="literature-pivot">Literature pivot<a class="headerlink" href="#literature-pivot" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>-d<span class="w"> </span>melanoma<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h3 id="variant-pivot">Variant pivot<a class="headerlink" href="#variant-pivot" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>variant<span class="w"> </span>-g<span class="w"> </span>BRAF<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
 </code></pre></div>
 <h2 id="error-handling-expectations">Error handling expectations<a class="headerlink" href="#error-handling-expectations" title="Permanent link">&para;</a></h2>
 <p>If a section name is unsupported, BioMCP returns an explicit unknown-section message
 with hints about valid section names.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
 <p>Use JSON for pipelines or agent post-processing.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF
 </code></pre></div>
 <p><code>biomcp --json get gene BRAF druggability</code> includes DGIdb interaction fields plus
 OpenTargets <code>tractability[]</code> modality summaries and <code>safety_liabilities[]</code> event summaries.</p>

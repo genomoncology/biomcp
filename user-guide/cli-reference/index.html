@@ -5393,6 +5393,14 @@ and its <code>.exact</code> form; <code>patient.drug.medicinalproduct[.exact]</c
 <a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>ERBB2<span class="w"> </span>funding
 <a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>biomcp<span class="w"> </span>get<span class="w"> </span>gene<span class="w"> </span>BRAF<span class="w"> </span>all
 </code></pre></div>
+<p>The <code>clingen</code> section preserves gene-validity and dosage-sensitivity evidence
+independently. JSON adds required <code>validity_status</code> and <code>dosage_status</code> objects
+to <code>GeneClinGen</code>; each uses <code>data|empty|failed|timed_out</code> and one of
+<code>client_init|gene_lookup|gene_validity_download|gene_dosage_download</code>. The
+canonical section outcome is <code>degraded</code> when one family has data and the other
+is unavailable, and <code>unavailable</code> when neither has data and an absence cannot
+be concluded. A missing dosage classification is omitted, while a literal
+ClinGen <code>No Evidence for ...</code> classification is retained as data.</p>
 <p><code>diagnostics</code> and <code>funding</code> stay opt-in and are not included in
 <code>biomcp get gene &lt;symbol&gt; all</code>.</p>
 <p>Versioned ClinGen CSpec documents are separate from gene-card sections:</p>
