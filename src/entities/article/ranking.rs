@@ -279,21 +279,7 @@ fn lexical_ranking_metadata(
     source_positions: &[ArticleSourcePosition],
     anchors: &[String],
 ) -> ArticleRankingMetadata {
-    let title_hits = anchors
-        .iter()
-        .filter(|anchor| anchor_matches_text(&row.normalized_title, anchor))
-        .count();
-    let abstract_hits = anchors
-        .iter()
-        .filter(|anchor| anchor_matches_text(&row.normalized_abstract, anchor))
-        .count();
-    let combined_hits = anchors
-        .iter()
-        .filter(|anchor| {
-            anchor_matches_text(&row.normalized_title, anchor)
-                || anchor_matches_text(&row.normalized_abstract, anchor)
-        })
-        .count();
+    let (title_hits, abstract_hits, combined_hits) = lexical_anchor_hits(row, anchors);
     let anchor_count = anchors.len();
     let all_anchors_in_title = anchor_count > 0 && title_hits == anchor_count;
     let all_anchors_in_text = anchor_count > 0 && combined_hits == anchor_count;
@@ -330,6 +316,25 @@ fn lexical_ranking_metadata(
         composite_score: None,
         avg_source_rank: None,
     }
+}
+
+fn lexical_anchor_hits(row: &ArticleSearchResult, anchors: &[String]) -> (usize, usize, usize) {
+    let title_hits = anchors
+        .iter()
+        .filter(|anchor| anchor_matches_text(&row.normalized_title, anchor))
+        .count();
+    let abstract_hits = anchors
+        .iter()
+        .filter(|anchor| anchor_matches_text(&row.normalized_abstract, anchor))
+        .count();
+    let combined_hits = anchors
+        .iter()
+        .filter(|anchor| {
+            anchor_matches_text(&row.normalized_title, anchor)
+                || anchor_matches_text(&row.normalized_abstract, anchor)
+        })
+        .count();
+    (title_hits, abstract_hits, combined_hits)
 }
 
 fn populate_lexical_ranking_metadata(
@@ -457,6 +462,7 @@ fn rank_articles_by_semantic(rows: &mut [ArticleCandidate], filters: &ArticleSea
 fn rank_articles_hybrid(rows: &mut [ArticleCandidate], filters: &ArticleSearchFilters) {
     populate_lexical_ranking_metadata(rows, filters);
     let ranking = resolve_article_ranking(filters);
+    let anchors = build_anchor_set(filters);
     let max_citation_count = rows
         .iter()
         .filter_map(|candidate| candidate.row.citation_count)
@@ -474,12 +480,12 @@ fn rank_articles_hybrid(rows: &mut [ArticleCandidate], filters: &ArticleSearchFi
 
     for row in rows.iter_mut() {
         let semantic_score = semantic_signal(row);
-        let lexical_score = row
-            .row
-            .ranking
-            .as_ref()
-            .map(|entry| entry.directness_tier as f64 / 3.0)
-            .unwrap_or(0.0);
+        let lexical_score = if anchors.is_empty() {
+            0.0
+        } else {
+            let (_, _, combined_hits) = lexical_anchor_hits(&row.row, &anchors);
+            combined_hits as f64 / anchors.len() as f64
+        };
         let citation_score = normalized_citation_score(row.row.citation_count, max_citation_count);
         let avg_source_rank = avg_source_rank(&row.source_positions, row.row.source_local_position);
         let position_score = normalized_position_score(avg_source_rank, max_avg_source_rank);

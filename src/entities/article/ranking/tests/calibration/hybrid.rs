@@ -1,6 +1,172 @@
 use super::*;
 
 #[test]
+fn hybrid_lexical_coverage_beats_a_high_citation_one_anchor_match() {
+    let mut filters = empty_filters();
+    filters.keyword = Some("zolgensma treatment of retinoblastoma randomized trial".into());
+    filters.ranking.requested_mode = Some(ArticleRankingMode::Hybrid);
+
+    let five_anchor_match = worked_example_row(
+        "26427984",
+        ArticleSource::EuropePmc,
+        "Treatment of retinoblastoma: a prospective randomized trial",
+        "",
+        0,
+        25,
+        None,
+    );
+    let one_anchor_match = worked_example_row(
+        "32328653",
+        ArticleSource::EuropePmc,
+        "Treatment options in adult glioblastoma",
+        "",
+        0,
+        982,
+        None,
+    );
+
+    let page = finalize_article_candidates(
+        vec![one_anchor_match, five_anchor_match],
+        10,
+        0,
+        None,
+        &filters,
+    );
+
+    assert_eq!(
+        page.results
+            .iter()
+            .map(|row| row.pmid.as_str())
+            .collect::<Vec<_>>(),
+        vec!["26427984", "32328653"]
+    );
+    let five = row_by_pmid(&page.results, "26427984")
+        .ranking
+        .as_ref()
+        .expect("five-anchor ranking");
+    let one = row_by_pmid(&page.results, "32328653")
+        .ranking
+        .as_ref()
+        .expect("one-anchor ranking");
+    assert_eq!(five.lexical_score, Some(5.0 / 6.0));
+    assert_eq!(one.lexical_score, Some(1.0 / 6.0));
+    assert!(five.composite_score > one.composite_score);
+}
+
+#[test]
+fn hybrid_coverage_counts_title_and_abstract_duplicate_once() {
+    let mut filters = empty_filters();
+    filters.keyword = Some("BRAF melanoma".into());
+    filters.ranking.requested_mode = Some(ArticleRankingMode::Hybrid);
+    let duplicate = worked_example_row(
+        "6001",
+        ArticleSource::EuropePmc,
+        "BRAF resistance",
+        "BRAF melanoma cohort",
+        0,
+        0,
+        None,
+    );
+
+    let page = finalize_article_candidates(vec![duplicate], 10, 0, None, &filters);
+    let ranking = page.results[0].ranking.as_ref().expect("ranking");
+
+    assert_eq!(ranking.title_anchor_hits, 1);
+    assert_eq!(ranking.abstract_anchor_hits, 2);
+    assert_eq!(ranking.combined_anchor_hits, 2);
+    assert_eq!(ranking.lexical_score, Some(1.0));
+}
+
+#[test]
+fn hybrid_zero_anchor_lexical_score_is_finite_zero() {
+    let mut filters = empty_filters();
+    filters.ranking.requested_mode = Some(ArticleRankingMode::Hybrid);
+    let candidate = worked_example_row(
+        "6002",
+        ArticleSource::EuropePmc,
+        "Unanchored article",
+        "",
+        0,
+        0,
+        None,
+    );
+
+    let page = finalize_article_candidates(vec![candidate], 10, 0, None, &filters);
+    let score = page.results[0]
+        .ranking
+        .as_ref()
+        .and_then(|ranking| ranking.lexical_score)
+        .expect("lexical score");
+
+    assert_eq!(score, 0.0);
+    assert!(score.is_finite());
+}
+
+#[test]
+fn hybrid_coverage_uses_full_counts_before_public_counters_saturate() {
+    let anchors = (0..300)
+        .map(|index| format!("anchor{index}"))
+        .collect::<Vec<_>>();
+    let mut filters = empty_filters();
+    filters.keyword = Some(anchors.join(" "));
+    filters.ranking.requested_mode = Some(ArticleRankingMode::Hybrid);
+    let title = anchors[..260].join(" ");
+    let candidate = worked_example_row("6003", ArticleSource::EuropePmc, &title, "", 0, 0, None);
+
+    let page = finalize_article_candidates(vec![candidate], 10, 0, None, &filters);
+    let ranking = page.results[0].ranking.as_ref().expect("ranking");
+
+    assert_eq!(ranking.anchor_count, u8::MAX);
+    assert_eq!(ranking.combined_anchor_hits, u8::MAX);
+    assert_eq!(ranking.lexical_score, Some(260.0 / 300.0));
+}
+
+#[test]
+fn hybrid_exact_composite_tie_uses_stable_identifier_order() {
+    let mut filters = empty_filters();
+    filters.keyword = Some("BRAF".into());
+    filters.ranking.requested_mode = Some(ArticleRankingMode::Hybrid);
+    let higher_id = worked_example_row(
+        "7002",
+        ArticleSource::EuropePmc,
+        "BRAF study",
+        "",
+        0,
+        0,
+        None,
+    );
+    let lower_id = worked_example_row(
+        "7001",
+        ArticleSource::EuropePmc,
+        "BRAF study",
+        "",
+        0,
+        0,
+        None,
+    );
+
+    let page = finalize_article_candidates(vec![higher_id, lower_id], 10, 0, None, &filters);
+
+    assert_eq!(
+        page.results
+            .iter()
+            .map(|row| row.pmid.as_str())
+            .collect::<Vec<_>>(),
+        vec!["7001", "7002"]
+    );
+    assert_eq!(
+        page.results[0]
+            .ranking
+            .as_ref()
+            .and_then(|ranking| ranking.composite_score),
+        page.results[1]
+            .ranking
+            .as_ref()
+            .and_then(|ranking| ranking.composite_score)
+    );
+}
+
+#[test]
 fn hybrid_default_weights_orders_example_one() {
     let (filters, candidates) = hybrid_worked_example_fixture();
     let page = finalize_article_candidates(candidates, 10, 0, None, &filters);
@@ -87,7 +253,7 @@ fn hybrid_entity_only_falls_back_without_nan() {
             .iter()
             .map(|row| row.pmid.as_str())
             .collect::<Vec<_>>(),
-        vec!["2001", "2002", "2003"]
+        vec!["2002", "2001", "2003"]
     );
     assert!(page.results.iter().all(|row| {
         let ranking = row.ranking.as_ref().expect("ranking should be present");
@@ -116,7 +282,7 @@ fn hybrid_custom_weights_shift_ordering() {
             .iter()
             .map(|row| row.pmid.as_str())
             .collect::<Vec<_>>(),
-        vec!["1003", "1002", "1004", "1001", "1005"]
+        vec!["1003", "1002", "1001", "1004", "1005"]
     );
 }
 

@@ -1,9 +1,10 @@
 //! Article CLI filter, ranking, and debug tests.
 
 use super::super::dispatch::{
-    article_debug_filters, article_query_summary, article_search_request, build_article_debug_plan,
+    ArticleSearchJsonPage, article_debug_filters, article_query_summary,
+    article_search_json_with_detail, article_search_request, build_article_debug_plan,
 };
-use super::super::truncate_article_annotations;
+use super::super::{ArticleSearchDetail, article_search_warnings, truncate_article_annotations};
 use crate::cli::PaginationMeta;
 
 fn default_article_search_args() -> super::super::ArticleSearchArgs {
@@ -414,4 +415,220 @@ fn truncate_article_annotations_applies_limit_per_bucket() {
     assert_eq!(truncated.diseases.len(), 1);
     assert_eq!(truncated.chemicals.len(), 1);
     assert_eq!(truncated.mutations.len(), 1);
+}
+
+fn coverage_row(
+    anchor_count: u8,
+    combined_anchor_hits: u8,
+) -> crate::entities::article::ArticleSearchResult {
+    coverage_row_with_exact_completion(
+        anchor_count,
+        combined_anchor_hits,
+        combined_anchor_hits == anchor_count && anchor_count > 0,
+    )
+}
+
+fn coverage_row_with_exact_completion(
+    anchor_count: u8,
+    combined_anchor_hits: u8,
+    all_anchors_in_text: bool,
+) -> crate::entities::article::ArticleSearchResult {
+    crate::entities::article::ArticleSearchResult {
+        pmid: "1102".into(),
+        pmcid: None,
+        doi: None,
+        arxiv_id: None,
+        semantic_scholar_id: None,
+        title: "Synthetic coverage row".into(),
+        journal: None,
+        date: None,
+        first_index_date: None,
+        citation_count: None,
+        influential_citation_count: None,
+        source: crate::entities::article::ArticleSource::EuropePmc,
+        matched_sources: vec![crate::entities::article::ArticleSource::EuropePmc],
+        score: None,
+        is_retracted: Some(false),
+        abstract_snippet: None,
+        ranking: Some(crate::entities::article::ArticleRankingMetadata {
+            directness_tier: u8::from(combined_anchor_hits > 0),
+            anchor_count,
+            title_anchor_hits: combined_anchor_hits,
+            abstract_anchor_hits: 0,
+            combined_anchor_hits,
+            all_anchors_in_title: combined_anchor_hits == anchor_count && anchor_count > 0,
+            all_anchors_in_text,
+            study_or_review_cue: false,
+            pubmed_rescue: false,
+            pubmed_rescue_kind: None,
+            pubmed_source_position: None,
+            mode: Some(crate::entities::article::ArticleRankingMode::Hybrid),
+            semantic_score: Some(0.0),
+            lexical_score: Some(if anchor_count == 0 {
+                0.0
+            } else {
+                f64::from(combined_anchor_hits) / f64::from(anchor_count)
+            }),
+            citation_score: Some(0.0),
+            position_score: Some(0.0),
+            composite_score: Some(0.0),
+            avg_source_rank: Some(1.0),
+        }),
+        normalized_title: "synthetic coverage row".into(),
+        normalized_abstract: String::new(),
+        publication_type: None,
+        source_local_position: 0,
+    }
+}
+
+fn coverage_json(
+    filters: &crate::entities::article::ArticleSearchFilters,
+    detail: ArticleSearchDetail,
+    results: Vec<crate::entities::article::ArticleSearchResult>,
+) -> serde_json::Value {
+    let count = results.len();
+    let json = article_search_json_with_detail(
+        "keyword=BRAF melanoma",
+        filters,
+        crate::entities::article::ArticleSourceFilter::All,
+        detail,
+        false,
+        None,
+        None,
+        ArticleSearchJsonPage {
+            results,
+            pagination: PaginationMeta::offset(0, 10, count, Some(count)),
+            next_commands: Vec::new(),
+            suggestions: Vec::new(),
+            source_status: Vec::new(),
+        },
+    )
+    .expect("coverage JSON");
+    serde_json::from_str(&json).expect("coverage JSON value")
+}
+
+#[test]
+fn partial_keyword_coverage_warns_in_compact_and_full_json() {
+    let mut filters = super::super::super::related_article_filters();
+    filters.keyword = Some("BRAF melanoma".into());
+
+    for detail in [ArticleSearchDetail::Compact, ArticleSearchDetail::Full] {
+        let value = coverage_json(&filters, detail, vec![coverage_row(2, 1)]);
+        assert_eq!(value["_meta"]["warnings"][0]["code"], "partial_query_match");
+        let message = value["_meta"]["warnings"][0]["message"]
+            .as_str()
+            .expect("warning message");
+        assert!(message.contains("top result has partial lexical query coverage"));
+        assert!(message.contains("Why"));
+        assert!(!message.to_ascii_lowercase().contains("irrelevant"));
+        if matches!(detail, ArticleSearchDetail::Compact) {
+            assert!(value["results"][0].get("ranking").is_none());
+        } else {
+            assert!(value["results"][0].get("ranking").is_some());
+        }
+    }
+}
+
+#[test]
+fn partial_keyword_coverage_warning_precedes_markdown_table() {
+    let mut filters = super::super::super::related_article_filters();
+    filters.keyword = Some("BRAF melanoma".into());
+    let results = vec![coverage_row(2, 1)];
+    let warnings = article_search_warnings(&filters, &results);
+
+    let markdown = crate::render::markdown::article_search_markdown_with_footer_and_context(
+        "keyword=BRAF melanoma",
+        &results,
+        "",
+        &filters,
+        crate::render::markdown::ArticleSearchRenderContext {
+            source_filter: crate::entities::article::ArticleSourceFilter::All,
+            semantic_scholar_enabled: false,
+            warning: warnings.first().map(|warning| warning.message),
+            note: None,
+            debug_plan: None,
+            exact_entity_commands: &[],
+            source_status: &[],
+        },
+    )
+    .expect("coverage warning markdown");
+
+    let warning_position = markdown
+        .find("> Warning: The top result has partial lexical query coverage")
+        .expect("markdown warning");
+    let table_position = markdown
+        .find("| Identifier | Title |")
+        .expect("article table");
+    assert!(warning_position < table_position);
+}
+
+#[test]
+fn partial_keyword_warning_includes_zero_hits_and_explicit_semantic_mode() {
+    let mut filters = super::super::super::related_article_filters();
+    filters.keyword = Some("BRAF melanoma".into());
+    filters.ranking.requested_mode = Some(crate::entities::article::ArticleRankingMode::Semantic);
+
+    let value = coverage_json(
+        &filters,
+        ArticleSearchDetail::Compact,
+        vec![coverage_row(2, 0)],
+    );
+
+    assert_eq!(value["_meta"]["warnings"][0]["code"], "partial_query_match");
+}
+
+#[test]
+fn partial_keyword_warning_uses_exact_coverage_after_public_counts_saturate() {
+    let mut filters = super::super::super::related_article_filters();
+    filters.keyword = Some(
+        (0..300)
+            .map(|index| format!("anchor{index}"))
+            .collect::<Vec<_>>()
+            .join(" "),
+    );
+    // The owning ranker records exact incompleteness while both public u8
+    // counters saturate for a 260-of-300 match.
+    let saturated_partial = coverage_row_with_exact_completion(u8::MAX, u8::MAX, false);
+
+    let value = coverage_json(
+        &filters,
+        ArticleSearchDetail::Compact,
+        vec![saturated_partial],
+    );
+
+    assert_eq!(value["_meta"]["warnings"][0]["code"], "partial_query_match");
+}
+
+#[test]
+fn partial_keyword_warning_obeys_non_trigger_boundaries() {
+    let mut filters = super::super::super::related_article_filters();
+    filters.keyword = Some("BRAF melanoma".into());
+    let full = coverage_json(
+        &filters,
+        ArticleSearchDetail::Compact,
+        vec![coverage_row(2, 2)],
+    );
+    assert!(full.get("_meta").is_none());
+
+    let empty = coverage_json(&filters, ArticleSearchDetail::Compact, Vec::new());
+    assert!(empty.get("_meta").is_none());
+
+    filters.keyword = None;
+    filters.gene = Some("BRAF".into());
+    let entity_only = coverage_json(
+        &filters,
+        ArticleSearchDetail::Compact,
+        vec![coverage_row(1, 0)],
+    );
+    assert!(entity_only.get("_meta").is_none());
+
+    filters.keyword = Some("BRAF melanoma".into());
+    filters.gene = None;
+    filters.sort = crate::entities::article::ArticleSort::Citations;
+    let citations = coverage_json(
+        &filters,
+        ArticleSearchDetail::Compact,
+        vec![coverage_row(2, 0)],
+    );
+    assert!(citations.get("_meta").is_none());
 }

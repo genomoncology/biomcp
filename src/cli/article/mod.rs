@@ -132,6 +132,7 @@ pub(super) enum ArticleSearchDetail {
 
 pub(super) const DATE_SORT_WARNING_MESSAGE: &str =
     "Date sort replaces relevance ranking; results are ordered by publication date.";
+pub(super) const PARTIAL_QUERY_MATCH_WARNING_MESSAGE: &str = "The top result has partial lexical query coverage. Check the Why column or full ranking metadata before citing it.";
 
 #[derive(Clone, Copy, serde::Serialize)]
 pub(super) struct ArticleSearchWarning {
@@ -146,6 +147,32 @@ pub(super) fn article_search_warning(
         code: "date_sort_replaces_relevance",
         message: DATE_SORT_WARNING_MESSAGE,
     })
+}
+
+pub(super) fn article_search_warnings(
+    filters: &crate::entities::article::ArticleSearchFilters,
+    results: &[crate::entities::article::ArticleSearchResult],
+) -> Vec<ArticleSearchWarning> {
+    let mut warnings = article_search_warning(filters.sort)
+        .into_iter()
+        .collect::<Vec<_>>();
+    let has_keyword = filters
+        .keyword
+        .as_deref()
+        .is_some_and(|keyword| !keyword.trim().is_empty());
+    if filters.sort == crate::entities::article::ArticleSort::Relevance
+        && has_keyword
+        && results
+            .first()
+            .and_then(|row| row.ranking.as_ref())
+            .is_some_and(|ranking| ranking.anchor_count > 0 && !ranking.all_anchors_in_text)
+    {
+        warnings.push(ArticleSearchWarning {
+            code: "partial_query_match",
+            message: PARTIAL_QUERY_MATCH_WARNING_MESSAGE,
+        });
+    }
+    warnings
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]

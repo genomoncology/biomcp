@@ -6,7 +6,7 @@ use super::workflow::article_follow_up_workflow;
 use super::{
     ArticleCommand, ArticleGetArgs, ArticleSearchArgs, ArticleSearchCompactResult,
     ArticleSearchDetail, ArticleSearchJsonMeta, ArticleSearchJsonRows, article_search_json_meta,
-    article_search_warning,
+    article_search_warnings,
 };
 use crate::cli::CommandOutcome;
 
@@ -298,6 +298,7 @@ pub(in crate::cli) async fn handle_search(
 
     let article_type_note =
         crate::entities::article::article_type_limitation_note(filters, source_filter);
+    let warnings = article_search_warnings(filters, &results);
     let text = if json {
         article_search_json_with_detail(
             &query,
@@ -325,7 +326,7 @@ pub(in crate::cli) async fn handle_search(
             crate::render::markdown::ArticleSearchRenderContext {
                 source_filter,
                 semantic_scholar_enabled,
-                warning: article_search_warning(filters.sort).map(|warning| warning.message),
+                warning: warnings.first().map(|warning| warning.message),
                 note: article_type_note.as_deref(),
                 debug_plan: debug_plan.as_ref(),
                 exact_entity_commands: &exact_entity_commands,
@@ -678,7 +679,7 @@ pub(super) fn article_search_json_with_detail(
         results,
         debug_plan,
         _meta: article_search_json_meta(
-            article_search_warning(filters.sort).into_iter().collect(),
+            article_search_warnings(filters, &page.results),
             page.next_commands,
             page.suggestions,
             page.source_status,
