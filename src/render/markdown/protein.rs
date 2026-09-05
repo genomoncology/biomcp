@@ -126,7 +126,7 @@ pub fn protein_markdown(
         show_structures_section => show_structures_section,
         sections_block => format_sections_block("protein", &protein.accession, sections_protein(protein, requested_sections)),
         related_block => format_related_block(related_protein(protein, requested_sections)),
-        source_states => section_render_contexts("protein", &protein.section_outcomes),
+        source_states => section_render_contexts("protein", &protein.accession, &protein.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, protein_evidence_urls(protein)))
 }

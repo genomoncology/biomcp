@@ -137,7 +137,7 @@ pub fn variant_markdown(
         show_gwas_section => show_gwas_section,
         sections_block => format_sections_block("variant", follow_up_id, sections_variant(variant, requested_sections)),
         related_block => format_related_block(related_variant(variant)),
-        source_states => section_render_contexts("variant", &variant.section_outcomes),
+        source_states => section_render_contexts("variant", follow_up_id, &variant.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, variant_evidence_urls(variant)))
 }
@@ -417,6 +417,22 @@ pub fn variant_normalization_markdown(result: &VariantNormalizationResponse) -> 
 
 pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
     let mut out = String::new();
+    let structure_retry = section_recovery_commands(
+        "variant_structure",
+        &result.variant,
+        &result.lookup_outcomes,
+    )
+    .into_iter()
+    .next();
+    let domains_recoverable = result
+        .lookup_outcomes
+        .get("domains")
+        .is_some_and(|outcome| {
+            matches!(
+                outcome.outcome(),
+                SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+            )
+        });
     out.push_str(&format!("# Variant structure: {}\n\n", result.variant));
     out.push_str(&format!("Gene: {}\n", result.gene));
     if let Some(position) = result.residue.position {
@@ -460,8 +476,12 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
         ) => {
             if let Some(message) = domains_outcome.and_then(|outcome| outcome.message()) {
                 out.push_str(message);
-                out.push_str("\n\n");
+                out.push('\n');
             }
+            if let Some(command) = structure_retry.as_deref() {
+                out.push_str(&format!("Retry: {}\n", markdown_code_span(command)));
+            }
+            out.push('\n');
         }
         Some(SectionOutcomeState::NotRequested) | None => {}
     }
@@ -516,8 +536,12 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
         ) => {
             if let Some(message) = hotspots_outcome.and_then(|outcome| outcome.message()) {
                 out.push_str(message);
-                out.push_str("\n\n");
+                out.push('\n');
             }
+            if !domains_recoverable && let Some(command) = structure_retry.as_deref() {
+                out.push_str(&format!("Retry: {}\n", markdown_code_span(command)));
+            }
+            out.push('\n');
         }
         Some(SectionOutcomeState::NotRequested) | None => {}
     }
@@ -530,7 +554,11 @@ pub fn variant_structure_markdown(result: &VariantStructureResult) -> String {
         out.push('\n');
     }
 
-    out.push_str(&format_related_block(result.meta.next_commands.clone()));
+    let mut next_commands = result.meta.next_commands.clone();
+    if let Some(command) = structure_retry.as_deref() {
+        next_commands.retain(|candidate| candidate != command);
+    }
+    out.push_str(&format_related_block(next_commands));
     out
 }
 

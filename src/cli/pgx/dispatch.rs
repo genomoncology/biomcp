@@ -36,7 +36,12 @@ pub(crate) fn render_loaded_card(
         Ok(crate::render::json::to_entity_json(
             entity,
             crate::render::markdown::pgx_evidence_urls(entity),
-            crate::render::markdown::related_pgx(entity),
+            crate::render::markdown::with_section_recovery(
+                "pgx",
+                &entity.query,
+                &entity.section_outcomes,
+                crate::render::markdown::related_pgx(entity),
+            ),
             crate::render::provenance::pgx_section_sources(entity),
         )?)
     } else {

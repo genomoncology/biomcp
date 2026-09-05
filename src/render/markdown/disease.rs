@@ -370,7 +370,7 @@ pub(crate) fn disease_markdown_with_identity_notice(
         xrefs => xrefs,
         sections_block => format_sections_block("disease", &disease.id, sections_disease(disease, requested_sections)),
         related_block => format_related_block(related_disease(disease)),
-        source_states => section_render_contexts("disease", &disease.section_outcomes),
+        source_states => section_render_contexts("disease", &disease.id, &disease.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, disease_evidence_urls(disease)))
 }

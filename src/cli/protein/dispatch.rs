@@ -41,7 +41,12 @@ pub(crate) fn render_loaded_card(
 ) -> anyhow::Result<String> {
     if json_output {
         let evidence_urls = crate::render::markdown::protein_evidence_urls(protein);
-        let next_commands = crate::render::markdown::related_protein(protein, sections);
+        let next_commands = crate::render::markdown::with_section_recovery(
+            "protein",
+            &protein.accession,
+            &protein.section_outcomes,
+            crate::render::markdown::related_protein(protein, sections),
+        );
         let section_sources = crate::render::provenance::protein_section_sources(protein);
         let mut value = crate::render::json::to_entity_json_value(
             protein,

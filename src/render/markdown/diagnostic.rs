@@ -49,7 +49,11 @@ pub fn diagnostic_markdown(
         supports("conditions") && (include_all || has_requested("conditions"));
     let show_methods_section = supports("methods") && (include_all || has_requested("methods"));
     let show_regulatory_section = supports("regulatory") && has_requested("regulatory");
-    let source_states = section_render_contexts("diagnostic", &diagnostic.section_outcomes);
+    let source_states = section_render_contexts(
+        "diagnostic",
+        &diagnostic.accession,
+        &diagnostic.section_outcomes,
+    );
     let regulatory_state = source_states
         .get("regulatory")
         .expect("registered diagnostic regulatory state");

@@ -2,8 +2,9 @@
 
 use super::TrialGetArgs;
 use super::dispatch::{
-    LocationPaginationMeta, handle_get, paginate_trial_locations, parse_trial_location_paging,
-    should_show_trial_zero_result_nickname_hint, trial_locations_json, trial_search_query_summary,
+    LocationPaginationMeta, attach_location_continuation, handle_get, paginate_trial_locations,
+    parse_trial_location_paging, should_show_trial_zero_result_nickname_hint, trial_locations_json,
+    trial_search_query_summary,
 };
 
 fn contact(
@@ -129,6 +130,58 @@ fn paginate_trial_locations_aligns_site_contacts_to_the_page() {
             "Contact 22"
         ]
     );
+}
+
+#[test]
+fn explicit_location_pages_carry_exact_nonterminal_continuation() {
+    let mut trial = paged_contact_trial();
+    trial.nct_id = "NCT id` ;&".to_string();
+    let mut page = paginate_trial_locations(&mut trial, 20, 3);
+    attach_location_continuation(
+        &trial,
+        crate::entities::trial::TrialSource::NciCts,
+        &["contacts".into(), "locations".into()],
+        &mut page,
+    );
+
+    assert_eq!(page.offset, 20);
+    assert_eq!(page.limit, 3);
+    assert_eq!(
+        page.continuation_command.as_deref(),
+        Some(
+            "biomcp get trial \"NCT id\\` ;&\" --source nci --offset 23 --limit 3 contacts locations"
+        )
+    );
+
+    let mut all_trial = paged_contact_trial();
+    all_trial.nct_id = "NCT id` ;&".to_string();
+    let mut all_page = paginate_trial_locations(&mut all_trial, 20, 3);
+    attach_location_continuation(
+        &all_trial,
+        crate::entities::trial::TrialSource::ClinicalTrialsGov,
+        &["all".into(), "locations".into()],
+        &mut all_page,
+    );
+    assert_eq!(
+        all_page.continuation_command.as_deref(),
+        Some("biomcp get trial \"NCT id\\` ;&\" --offset 23 --limit 3 contacts locations")
+    );
+}
+
+#[test]
+fn terminal_location_page_omits_continuation_key_and_markdown_command() {
+    let mut trial = paged_contact_trial();
+    let mut page = paginate_trial_locations(&mut trial, 23, 3);
+    attach_location_continuation(
+        &trial,
+        crate::entities::trial::TrialSource::ClinicalTrialsGov,
+        &["locations".into()],
+        &mut page,
+    );
+    assert!(!page.has_more);
+    assert!(page.continuation_command.is_none());
+    let json = trial_locations_json(&trial, page).expect("terminal page JSON");
+    assert!(!json.contains("continuation_command"));
 }
 
 #[test]
@@ -406,6 +459,9 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
             offset: 20,
             limit: 10,
             has_more: true,
+            continuation_command: Some(
+                "biomcp get trial NCT00000001 --offset 21 --limit 10 locations".to_string(),
+            ),
         },
     )
     .expect("trial locations json");
@@ -416,6 +472,10 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
     assert_eq!(value["location_pagination"]["offset"], 20);
     assert_eq!(value["location_pagination"]["limit"], 10);
     assert_eq!(value["location_pagination"]["has_more"], true);
+    assert_eq!(
+        value["location_pagination"]["continuation_command"],
+        "biomcp get trial NCT00000001 --offset 21 --limit 10 locations"
+    );
     assert!(value.get("_meta").is_some());
     assert_eq!(value["_meta"]["section_sources"][0]["key"], "overview");
     assert_eq!(

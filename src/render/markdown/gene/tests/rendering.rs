@@ -145,6 +145,7 @@ fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
         diagnostics_note: None,
     };
 
+    let base_gene = gene.clone();
     for (key, source) in [
         ("expression", "GTEx"),
         ("hpa", "Human Protein Atlas"),
@@ -178,19 +179,46 @@ fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
     assert!(markdown.contains("No DGIdb interactions returned"));
     assert!(markdown.contains("No ClinGen records returned"));
 
-    let mut unavailable = gene.clone();
+    let mut unavailable = base_gene;
+    unavailable.symbol = "BR` AF;&".to_string();
+    unavailable.section_outcomes.complete(
+        "pathways",
+        crate::entities::section_outcome::SectionOutcome::degraded(
+            ["Reactome"],
+            "Reactome returned only partial pathway evidence.",
+        ),
+    );
+    unavailable.section_outcomes.complete(
+        "hpa",
+        crate::entities::section_outcome::SectionOutcome::inapplicable(
+            "Human Protein Atlas does not cover this identifier.",
+        ),
+    );
     unavailable.section_outcomes.complete(
         "civic",
         crate::entities::section_outcome::SectionOutcome::unavailable(
             "CIViC gene evidence is unavailable.",
         ),
     );
-    let markdown = gene_markdown(&unavailable, &["civic".to_string()])
+    let markdown = gene_markdown(&unavailable, &["civic".to_string(), "hpa".to_string()])
         .expect("unavailable CIViC markdown");
     let status = markdown.find("**CIViC status (CIViC):**").expect("CIViC status");
     let navigation = markdown.find("More:").expect("section navigation");
 
     assert!(status < navigation, "status must precede navigation: {markdown}");
+    assert_eq!(markdown.matches("Retry:").count(), 2, "{markdown}");
+    assert!(
+        markdown.contains("Retry: ``biomcp get gene \"BR\\` AF;&\" civic``"),
+        "literal backticks need a longer Markdown delimiter: {markdown}"
+    );
+    assert!(
+        markdown.contains("Retry: ``biomcp get gene \"BR\\` AF;&\" pathways``"),
+        "degraded canonical sections need an exact retry: {markdown}"
+    );
+    assert!(
+        !markdown.contains("Retry: ``biomcp get gene \"BR\\` AF;&\" hpa``"),
+        "inapplicable sections must not gain retries: {markdown}"
+    );
     assert!(
         !markdown.contains("Evidence Items: 0")
             && !markdown.contains("No CIViC records returned for this gene query."),

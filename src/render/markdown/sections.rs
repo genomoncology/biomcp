@@ -173,6 +173,23 @@ pub(super) fn sections_for(requested: &[String], available: &[&str]) -> Vec<Stri
         .collect()
 }
 
+fn without_failed_recovery_sections(
+    sections: Vec<String>,
+    outcomes: &crate::entities::section_outcome::SectionOutcomes,
+) -> Vec<String> {
+    sections
+        .into_iter()
+        .filter(|section| {
+            !outcomes.get(section).is_some_and(|outcome| {
+                matches!(
+                    outcome.outcome(),
+                    SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+                )
+            })
+        })
+        .collect()
+}
+
 fn visible_section_limit(entity: &str) -> usize {
     match entity {
         "disease" => 6,
@@ -199,13 +216,17 @@ pub(crate) fn disease_next_commands(
     disease: &Disease,
     requested_sections: &[String],
 ) -> Vec<String> {
-    let mut out = visible_section_commands(
+    let out = visible_section_commands(
         "disease",
         &disease.id,
         &sections_disease(disease, requested_sections),
     );
-    out.extend(related_disease(disease));
-    dedupe_markdown_commands(out)
+    with_section_recovery(
+        "disease",
+        &disease.id,
+        &disease.section_outcomes,
+        out.into_iter().chain(related_disease(disease)).collect(),
+    )
 }
 
 pub(crate) fn diagnostic_next_commands(
@@ -223,18 +244,28 @@ pub(crate) fn diagnostic_next_commands(
             out.push(format!("biomcp get diagnostic {accession}"));
         }
     }
-    out.extend(related_diagnostic(diagnostic));
-    dedupe_markdown_commands(out)
+    with_section_recovery(
+        "diagnostic",
+        &diagnostic.accession,
+        &diagnostic.section_outcomes,
+        out.into_iter()
+            .chain(related_diagnostic(diagnostic))
+            .collect(),
+    )
 }
 
 pub(crate) fn gene_next_commands(gene: &Gene, requested_sections: &[String]) -> Vec<String> {
-    let mut out = visible_section_commands(
+    let out = visible_section_commands(
         "gene",
         &gene.symbol,
         &sections_gene(gene, requested_sections),
     );
-    out.extend(related_gene(gene));
-    dedupe_markdown_commands(out)
+    with_section_recovery(
+        "gene",
+        &gene.symbol,
+        &gene.section_outcomes,
+        out.into_iter().chain(related_gene(gene)).collect(),
+    )
 }
 
 pub(super) fn sections_gene(gene: &Gene, requested: &[String]) -> Vec<String> {
@@ -243,7 +274,10 @@ pub(super) fn sections_gene(gene: &Gene, requested: &[String]) -> Vec<String> {
         return Vec::new();
     }
 
-    sections_for(requested, GENE_DISCOVERY_SECTION_NAMES)
+    without_failed_recovery_sections(
+        sections_for(requested, GENE_DISCOVERY_SECTION_NAMES),
+        &gene.section_outcomes,
+    )
 }
 
 pub(super) fn sections_variant(variant: &Variant, requested: &[String]) -> Vec<String> {
@@ -251,7 +285,10 @@ pub(super) fn sections_variant(variant: &Variant, requested: &[String]) -> Vec<S
     if id.is_empty() {
         return Vec::new();
     }
-    sections_for(requested, crate::entities::variant::VARIANT_SECTION_NAMES)
+    without_failed_recovery_sections(
+        sections_for(requested, crate::entities::variant::VARIANT_SECTION_NAMES),
+        &variant.section_outcomes,
+    )
 }
 
 pub(super) fn sections_article(article: &Article, requested: &[String]) -> Vec<String> {
@@ -265,7 +302,10 @@ pub(super) fn sections_article(article: &Article, requested: &[String]) -> Vec<S
     if key.is_empty() {
         return Vec::new();
     }
-    sections_for(requested, crate::entities::article::ARTICLE_SECTION_NAMES)
+    without_failed_recovery_sections(
+        sections_for(requested, crate::entities::article::ARTICLE_SECTION_NAMES),
+        &article.section_outcomes,
+    )
 }
 
 const COMPLETED_TRIAL_SECTION_NAMES: &[&str] = &[
@@ -301,7 +341,10 @@ pub(super) fn sections_drug(drug: &Drug, requested: &[String]) -> Vec<String> {
     if name.is_empty() {
         return Vec::new();
     }
-    sections_for(requested, crate::entities::drug::DRUG_SECTION_NAMES)
+    without_failed_recovery_sections(
+        sections_for(requested, crate::entities::drug::DRUG_SECTION_NAMES),
+        &drug.section_outcomes,
+    )
 }
 
 pub(super) fn sections_disease(disease: &Disease, requested: &[String]) -> Vec<String> {
@@ -309,7 +352,10 @@ pub(super) fn sections_disease(disease: &Disease, requested: &[String]) -> Vec<S
     if key.is_empty() {
         return Vec::new();
     }
-    sections_for(requested, DISEASE_DISCOVERY_SECTION_NAMES)
+    without_failed_recovery_sections(
+        sections_for(requested, DISEASE_DISCOVERY_SECTION_NAMES),
+        &disease.section_outcomes,
+    )
 }
 
 pub(super) fn sections_diagnostic(diagnostic: &Diagnostic, requested: &[String]) -> Vec<String> {
@@ -317,9 +363,14 @@ pub(super) fn sections_diagnostic(diagnostic: &Diagnostic, requested: &[String])
     if accession.is_empty() {
         return Vec::new();
     }
-    sections_for(
-        requested,
-        crate::entities::diagnostic::supported_diagnostic_sections_for_source(&diagnostic.source),
+    without_failed_recovery_sections(
+        sections_for(
+            requested,
+            crate::entities::diagnostic::supported_diagnostic_sections_for_source(
+                &diagnostic.source,
+            ),
+        ),
+        &diagnostic.section_outcomes,
     )
 }
 
@@ -327,7 +378,10 @@ pub(super) fn sections_pgx(pgx: &Pgx, requested: &[String]) -> Vec<String> {
     if pgx.query.trim().is_empty() {
         return Vec::new();
     }
-    sections_for(requested, crate::entities::pgx::PGX_SECTION_NAMES)
+    without_failed_recovery_sections(
+        sections_for(requested, crate::entities::pgx::PGX_SECTION_NAMES),
+        &pgx.section_outcomes,
+    )
 }
 
 pub(super) fn sections_pathway(pathway: &Pathway, requested: &[String]) -> Vec<String> {
@@ -335,9 +389,12 @@ pub(super) fn sections_pathway(pathway: &Pathway, requested: &[String]) -> Vec<S
     if id.is_empty() {
         return Vec::new();
     }
-    sections_for(
-        requested,
-        crate::entities::pathway::supported_pathway_sections_for_source(&pathway.source),
+    without_failed_recovery_sections(
+        sections_for(
+            requested,
+            crate::entities::pathway::supported_pathway_sections_for_source(&pathway.source),
+        ),
+        &pathway.section_outcomes,
     )
 }
 
@@ -346,7 +403,10 @@ pub(super) fn sections_protein(protein: &Protein, requested: &[String]) -> Vec<S
     if accession.is_empty() {
         return Vec::new();
     }
-    sections_for(requested, crate::entities::protein::PROTEIN_SECTION_NAMES)
+    without_failed_recovery_sections(
+        sections_for(requested, crate::entities::protein::PROTEIN_SECTION_NAMES),
+        &protein.section_outcomes,
+    )
 }
 
 pub(super) fn sections_adverse_event(event: &AdverseEvent, requested: &[String]) -> Vec<String> {

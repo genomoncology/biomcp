@@ -39,7 +39,7 @@ pub fn pathway_markdown(
         show_enrichment_section => show_enrichment_section,
         sections_block => format_sections_block("pathway", &pathway.id, sections_pathway(pathway, requested_sections)),
         related_block => format_related_block(related_pathway(pathway)),
-        source_states => section_render_contexts("pathway", &pathway.section_outcomes),
+        source_states => section_render_contexts("pathway", &pathway.id, &pathway.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, pathway_evidence_urls(pathway)))
 }

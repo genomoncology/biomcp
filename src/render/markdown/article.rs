@@ -26,6 +26,112 @@ pub struct ArticleSearchRenderContext<'a> {
     pub debug_plan: Option<&'a DebugPlan>,
     pub exact_entity_commands: &'a [String],
     pub source_status: &'a [crate::entities::article::ArticleSourceStatus],
+    pub retry_page: Option<(usize, usize)>,
+}
+
+#[derive(serde::Serialize)]
+struct ArticleSourceStatusRender {
+    note: String,
+    retry: Option<String>,
+}
+
+fn article_source_filter(source: ArticleSource) -> crate::entities::article::ArticleSourceFilter {
+    match source {
+        ArticleSource::PubTator => crate::entities::article::ArticleSourceFilter::PubTator,
+        ArticleSource::EuropePmc => crate::entities::article::ArticleSourceFilter::EuropePmc,
+        ArticleSource::PubMed => crate::entities::article::ArticleSourceFilter::PubMed,
+        ArticleSource::SemanticScholar => {
+            crate::entities::article::ArticleSourceFilter::SemanticScholar
+        }
+        ArticleSource::LitSense2 => crate::entities::article::ArticleSourceFilter::LitSense2,
+    }
+}
+
+fn article_direct_retry_command(
+    filters: &ArticleSearchFilters,
+    source: ArticleSource,
+    limit: usize,
+    offset: usize,
+) -> Option<String> {
+    let source_filter = article_source_filter(source);
+    let mut direct_filters = filters.clone();
+    direct_filters.max_per_source = None;
+    crate::entities::article::validate_search_page_request(&direct_filters, limit, source_filter)
+        .ok()?;
+
+    let mut command = crate::next_command::NextCommand::biomcp().args(["search", "article"]);
+    for (flag, value) in [
+        ("--gene", filters.gene.as_deref()),
+        ("--disease", filters.disease.as_deref()),
+        ("--drug", filters.drug.as_deref()),
+        ("--author", filters.author.as_deref()),
+        ("--keyword", filters.keyword.as_deref()),
+        ("--date-from", filters.date_from.as_deref()),
+        ("--date-to", filters.date_to.as_deref()),
+        ("--type", filters.article_type.as_deref()),
+        ("--journal", filters.journal.as_deref()),
+    ] {
+        if let Some(value) = value {
+            command = command.arg(flag).arg(value);
+        }
+    }
+    for flag in [
+        filters.open_access.then_some("--open-access"),
+        filters.no_preprints.then_some("--no-preprints"),
+        filters
+            .exclude_retracted
+            .then_some("--exclude-retracted")
+            .or(Some("--include-retracted")),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        command = command.arg(flag);
+    }
+    command = command.arg("--sort").arg(filters.sort.as_str());
+    if let Some(mode) = filters.ranking.requested_mode {
+        command = command.arg("--ranking-mode").arg(mode.as_str());
+    }
+    if filters.ranking.weights_overridden {
+        for (flag, value) in [
+            ("--weight-semantic", filters.ranking.weights.semantic),
+            ("--weight-lexical", filters.ranking.weights.lexical),
+            ("--weight-citations", filters.ranking.weights.citations),
+            ("--weight-position", filters.ranking.weights.position),
+        ] {
+            command = command.arg(flag).arg(value.to_string());
+        }
+    }
+    Some(
+        command
+            .arg("--source")
+            .arg(source_filter.as_str())
+            .arg("--limit")
+            .arg(limit.to_string())
+            .arg("--offset")
+            .arg(offset.to_string())
+            .render_shell(),
+    )
+}
+
+pub(crate) fn article_source_retry_commands(
+    filters: &ArticleSearchFilters,
+    source_status: &[crate::entities::article::ArticleSourceStatus],
+    limit: usize,
+    offset: usize,
+) -> Vec<String> {
+    let commands = source_status.iter().filter_map(|status| {
+        matches!(
+            status.status,
+            Some(
+                crate::entities::article::ArticleSourceAvailability::Degraded
+                    | crate::entities::article::ArticleSourceAvailability::Unavailable
+            )
+        )
+        .then(|| article_direct_retry_command(filters, status.source, limit, offset))
+        .flatten()
+    });
+    dedupe_markdown_commands(commands.collect())
 }
 
 pub fn article_markdown(
@@ -46,6 +152,12 @@ pub fn article_markdown(
     } else {
         article.title.trim()
     };
+    let article_identity = article
+        .pmid
+        .as_deref()
+        .or(article.pmcid.as_deref())
+        .or(article.doi.as_deref())
+        .unwrap_or("");
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(article_label, requested_sections),
@@ -79,7 +191,7 @@ pub fn article_markdown(
         show_semantic_scholar_section => show_semantic_scholar_section,
         sections_block => format_sections_block("article", article.pmid.as_deref().or(article.pmcid.as_deref()).or(article.doi.as_deref()).unwrap_or(""), sections_article(article, requested_sections)),
         related_block => format_related_block(related_article(article)),
-        source_states => section_render_contexts("article", &article.section_outcomes),
+        source_states => section_render_contexts("article", article_identity, &article.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, article_evidence_urls(article)))
 }
@@ -409,10 +521,13 @@ fn format_article_score(value: f64) -> String {
     if out == "-0" { "0".to_string() } else { out }
 }
 
-fn article_source_status_note(
+fn article_source_status_rows(
     source_status: &[crate::entities::article::ArticleSourceStatus],
-) -> Option<String> {
-    let notes = source_status
+    filters: &ArticleSearchFilters,
+    limit: usize,
+    offset: usize,
+) -> Vec<ArticleSourceStatusRender> {
+    source_status
         .iter()
         .filter_map(|status| {
             let availability = match status.status? {
@@ -435,13 +550,16 @@ fn article_source_status_note(
                 .or(auth)
                 .map(|message| format!(" ({message})"))
                 .unwrap_or_default();
-            Some(format!(
-                "{} source status: {availability}{suffix}",
-                status.source.display_name()
-            ))
+            Some(ArticleSourceStatusRender {
+                note: format!(
+                    "{} source status: {availability}{suffix}",
+                    status.source.display_name()
+                ),
+                retry: article_direct_retry_command(filters, status.source, limit, offset)
+                    .map(|command| markdown_code_span(&command)),
+            })
         })
-        .collect::<Vec<_>>();
-    (!notes.is_empty()).then(|| notes.join("\n"))
+        .collect()
 }
 
 fn article_ranking_why(row: &ArticleSearchResult, filters: &ArticleSearchFilters) -> String {
@@ -521,7 +639,9 @@ pub fn article_search_markdown_with_footer_and_context(
         ),
     );
     let index_date_footer = newest_indexed_footer(results);
-    let semantic_scholar_source_status_note = article_source_status_note(context.source_status);
+    let (retry_limit, retry_offset) = context.retry_page.unwrap_or((10, 0));
+    let source_status_rows =
+        article_source_status_rows(context.source_status, filters, retry_limit, retry_offset);
     let source_plan =
         crate::entities::article::article_source_plan(filters, context.source_filter)?;
     let source_names = |values: &[crate::entities::article::ArticleSource]| {
@@ -540,7 +660,7 @@ pub fn article_search_markdown_with_footer_and_context(
         count => results.len(),
         rows => rows,
         semantic_scholar_enabled => context.semantic_scholar_enabled,
-        semantic_scholar_source_status_note => semantic_scholar_source_status_note,
+        source_status_rows => source_status_rows,
         warning => context.warning,
         note => context.note,
         sort => filters.sort.as_str(),

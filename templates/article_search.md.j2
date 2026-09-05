@@ -6,6 +6,11 @@
 {% endif %}
 Source plan: candidates [{{ candidate_sources }}]; enrichment [{{ enrichment_sources }}]
 
+{% for status in source_status_rows -%}
+{{ status.note }}
+{% if status.retry %}Retry: {{ status.retry }}
+{% endif %}{% endfor %}
+
 {% if count == 0 -%}
 No articles found matching the filters.
 
@@ -21,8 +26,7 @@ Found {{ count }} article{% if count != 1 %}s{% endif %}
 
 {% endif %}
 Semantic Scholar: {% if semantic_scholar_enabled %}enabled{% else %}disabled{% endif %}
-{% if semantic_scholar_source_status_note %}{{ semantic_scholar_source_status_note }}
-{% endif %}{% if sort == "relevance" %}
+{% if sort == "relevance" %}
 Ranking: {{ ranking_policy }}
 {% endif %}
 

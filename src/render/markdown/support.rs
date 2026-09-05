@@ -99,6 +99,16 @@ pub(super) fn shell_quote_arg(value: &str) -> String {
     crate::next_command::shell_quote_arg(value)
 }
 
+pub(super) fn markdown_code_span(value: &str) -> String {
+    let longest = value
+        .split(|character| character != '`')
+        .map(str::len)
+        .max()
+        .unwrap_or(0);
+    let delimiter = "`".repeat(longest.saturating_add(1));
+    format!("{delimiter}{value}{delimiter}")
+}
+
 pub(super) fn discover_try_line(query: &str, description: &str) -> String {
     let query = shell_quote_arg(query);
     if query.is_empty() {

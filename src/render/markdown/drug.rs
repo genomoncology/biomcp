@@ -40,7 +40,7 @@ pub fn drug_markdown_with_region(
     } else {
         None
     };
-    let source_states = section_render_contexts("drug", &drug.section_outcomes);
+    let source_states = section_render_contexts("drug", &drug.name, &drug.section_outcomes);
     let safety_state = source_states
         .get("safety")
         .expect("registered drug safety state");

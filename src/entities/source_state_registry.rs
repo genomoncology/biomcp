@@ -37,6 +37,18 @@ pub(crate) struct SelectorRow {
     pub canonical: Option<&'static str>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RecoveryRoute {
+    Section {
+        cli_entity: &'static str,
+        section: &'static str,
+    },
+    BaseCard {
+        cli_entity: &'static str,
+    },
+    VariantStructure,
+}
+
 const fn state(
     entity: &'static str,
     key: &'static str,
@@ -754,4 +766,87 @@ pub(crate) fn labels(entity: &str) -> Vec<(&'static str, &'static str)> {
         .filter(|row| row.entity == entity)
         .map(|row| (row.key, row.label))
         .collect()
+}
+
+/// Resolve the one public read route that owns a recoverable source-state row.
+///
+/// Canonical selectors use their registered target. Rows that intentionally
+/// have no selector are enumerated here so rendering cannot invent CLI syntax.
+pub(crate) fn recovery_route(entity: &str, key: &str) -> Option<RecoveryRoute> {
+    if entity == "variant_structure" && matches!(key, "domains" | "cancerhotspots") {
+        return Some(RecoveryRoute::VariantStructure);
+    }
+    let cli_entity = match entity {
+        "adverse_event" => "adverse-event",
+        "article" => "article",
+        "diagnostic" => "diagnostic",
+        "disease" => "disease",
+        "drug" => "drug",
+        "gene" => "gene",
+        "pathway" => "pathway",
+        "pgx" => "pgx",
+        "protein" => "protein",
+        "variant" => "variant",
+        _ => return None,
+    };
+    let canonical = SELECTOR_ROWS.iter().find_map(|row| {
+        (row.entity == entity && row.selector == key && row.class == SelectorClass::Canonical)
+            .then_some(row.canonical)
+            .flatten()
+            .map(|section| RecoveryRoute::Section {
+                cli_entity,
+                section,
+            })
+    });
+    canonical.or(match (entity, key) {
+        ("disease", "treatments" | "recruiting_trials")
+        | ("variant", "cancerhotspots")
+        | ("adverse_event", "faers" | "vaers") => Some(RecoveryRoute::BaseCard { cli_entity }),
+        _ => None,
+    })
+}
+
+#[cfg(test)]
+mod recovery_tests {
+    use super::*;
+
+    #[test]
+    fn every_source_state_row_has_one_callable_recovery_route() {
+        for row in SOURCE_STATE_ROWS {
+            let canonical_routes = SELECTOR_ROWS
+                .iter()
+                .filter(|selector| {
+                    selector.entity == row.entity
+                        && selector.selector == row.key
+                        && selector.class == SelectorClass::Canonical
+                        && selector.canonical.is_some()
+                })
+                .count();
+            let exceptional_routes = usize::from(matches!(
+                (row.entity, row.key),
+                ("disease", "treatments" | "recruiting_trials")
+                    | ("variant", "cancerhotspots")
+                    | ("adverse_event", "faers" | "vaers")
+                    | ("variant_structure", "domains" | "cancerhotspots")
+            ));
+            assert_eq!(canonical_routes + exceptional_routes, 1);
+            assert!(
+                recovery_route(row.entity, row.key).is_some(),
+                "missing recovery route for {}/{}",
+                row.entity,
+                row.key
+            );
+        }
+        assert_eq!(recovery_route("synthetic", "unmapped"), None);
+        assert_eq!(
+            recovery_route("disease", "treatments"),
+            Some(RecoveryRoute::BaseCard {
+                cli_entity: "disease"
+            })
+        );
+        assert_eq!(
+            recovery_route("variant_structure", "domains"),
+            Some(RecoveryRoute::VariantStructure)
+        );
+    }
 }

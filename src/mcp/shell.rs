@@ -1821,42 +1821,42 @@ mod tests {
 
     #[test]
     fn mcp_allowlist_blocks_mutating_commands() {
-        assert!(is_allowed_mcp_args(&[
-            "biomcp".into(),
-            "search".into(),
-            "gene".into()
-        ]));
-        assert!(is_allowed_mcp_args(&[
-            "biomcp".into(),
-            "variant".into(),
-            "articles".into(),
-            "BRAF p.V600E".into()
-        ]));
-        assert!(!is_allowed_mcp_args(&[
-            "biomcp".into(),
-            "variant".into(),
-            "--json".into(),
-            "articles".into(),
-            "--input".into(),
-            "/server/private.json".into()
-        ]));
-        assert!(!is_allowed_mcp_args(&[
-            "biomcp".into(),
-            "variant".into(),
-            "articles".into(),
-            "--input=-".into()
-        ]));
-        assert!(is_allowed_mcp_args(&[
-            "biomcp".into(),
-            "skill".into(),
-            "--json".into(),
-            "list".into()
-        ]));
-        assert!(is_allowed_mcp_args(&[
-            "biomcp".into(),
-            "skill".into(),
-            "render".into()
-        ]));
+        let allowed = |command: &str| is_allowed_mcp_args(&shlex::split(command).unwrap());
+        for command in [
+            "biomcp search gene",
+            "biomcp variant articles 'BRAF p.V600E'",
+            "biomcp get gene 'BR` AF;&' civic",
+            "biomcp get disease melanoma treatments",
+            "biomcp get adverse-event aspirin",
+            "biomcp get adverse-event 10222779 reactions",
+            "biomcp search trial --condition melanoma",
+            "biomcp variant structure 'BRAF p.V600E`;&'",
+            "biomcp search article --keyword BRAF --source pubmed",
+        ] {
+            assert!(allowed(command), "{command}");
+        }
+        for row in crate::entities::source_state_registry::SOURCE_STATE_ROWS {
+            let mut outcomes =
+                crate::entities::section_outcome::SectionOutcomes::with_keys(&[row.key]);
+            outcomes.complete(
+                row.key,
+                crate::entities::section_outcome::SectionOutcome::unavailable("unavailable"),
+            );
+            let commands = crate::render::markdown::section_recovery_commands(
+                row.entity, "BR` AF;&", &outcomes,
+            );
+            assert_eq!(commands.len(), 1, "{}/{}", row.entity, row.key);
+            assert!(allowed(&commands[0]), "{}: {}", row.entity, commands[0]);
+        }
+        for command in [
+            "biomcp variant --json articles --input /server/private.json",
+            "biomcp variant articles --input=-",
+        ] {
+            assert!(!allowed(command), "{command}");
+        }
+        for command in ["biomcp skill --json list", "biomcp skill render"] {
+            assert!(allowed(command), "{command}");
+        }
         assert!(is_allowed_mcp_args(&["biomcp".into(), "skill".into()]));
         // Numeric and slug skill lookups are read-only when they name embedded skills.
         assert!(is_allowed_mcp_args(&[

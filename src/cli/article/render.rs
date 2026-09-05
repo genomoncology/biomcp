@@ -16,7 +16,18 @@ pub(super) fn render_loaded_card_with_summary(
     fulltext_summary: Option<super::fulltext_view::FulltextSummary>,
 ) -> anyhow::Result<String> {
     if json_output {
-        let mut next_commands = crate::render::markdown::related_article(article);
+        let identity = article
+            .pmid
+            .as_deref()
+            .or(article.pmcid.as_deref())
+            .or(article.doi.as_deref())
+            .unwrap_or("");
+        let mut next_commands = crate::render::markdown::with_section_recovery(
+            "article",
+            identity,
+            &article.section_outcomes,
+            crate::render::markdown::related_article(article),
+        );
         if let Some(not_included) = article.not_included.as_ref() {
             next_commands.extend(not_included.next_commands.clone());
         }

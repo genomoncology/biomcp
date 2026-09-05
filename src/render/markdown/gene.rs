@@ -72,7 +72,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         show_diagnostics_section => show_diagnostics_section,
         sections_block => format_sections_block("gene", &gene.symbol, sections_gene(gene, requested_sections)),
         related_block => format_related_block(related_gene(gene)),
-        source_states => section_render_contexts("gene", &gene.section_outcomes),
+        source_states => section_render_contexts("gene", &gene.symbol, &gene.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, gene_evidence_urls(gene)))
 }

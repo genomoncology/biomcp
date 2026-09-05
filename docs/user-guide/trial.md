@@ -220,11 +220,14 @@ explicit page, and Markdown renders that full selected page with a footer that
 reports its shown count, total, offset, and limit. When `contacts` and
 `locations` are combined, top-level site contacts are scoped to the returned
 sites; central contacts remain visible even when the page is empty.
+When more locations remain, Markdown prints the complete `Next:` command and
+JSON adds the same value as `location_pagination.continuation_command`.
 
 A contacts-only response remains complete. Standalone `all` JSON and batch
 JSON are also complete and unpaginated. Unpaginated `all` and batch Markdown
 show at most 20 sites, disclose that display cap when it applies, and show only
-the top-level site contacts belonging to those visible sites.
+the top-level site contacts belonging to those visible sites. Their printed
+continuation starts at offset 20 and retains the card source and contact view.
 
 Outcomes:
 

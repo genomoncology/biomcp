@@ -57,7 +57,7 @@ pub fn pgx_markdown(pgx: &Pgx, requested_sections: &[String]) -> Result<String, 
         show_annotations_empty => section_has_healthy_empty(&pgx.section_outcomes, "annotations"),
         sections_block => format_sections_block("pgx", &pgx.query, sections_pgx(pgx, requested_sections)),
         related_block => format_related_block(related_pgx(pgx)),
-        source_states => section_render_contexts("pgx", &pgx.section_outcomes),
+        source_states => section_render_contexts("pgx", &pgx.query, &pgx.section_outcomes),
     })?;
     Ok(append_evidence_urls(body, pgx_evidence_urls(pgx)))
 }

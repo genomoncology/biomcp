@@ -14,10 +14,21 @@ use std::collections::BTreeSet;
 fn markdown_commands(markdown: &str) -> BTreeSet<String> {
     markdown
         .lines()
-        .filter_map(|line| line.strip_prefix("  biomcp "))
-        .map(|line| {
+        .filter_map(|line| {
+            line.strip_prefix("  biomcp ")
+                .map(|command| (command, true))
+                .or_else(|| {
+                    line.strip_prefix("Retry: ")
+                        .and_then(|line| line.find("biomcp ").map(|start| (&line[start..], false)))
+                })
+        })
+        .map(|(line, needs_prefix)| {
             let command = line.split("   - ").next().unwrap_or(line);
-            format!("biomcp {command}")
+            if needs_prefix {
+                format!("biomcp {command}")
+            } else {
+                command.trim_end_matches('`').to_string()
+            }
         })
         .collect()
 }
@@ -99,13 +110,17 @@ fn every_detail_card_markdown_and_json_commands_agree() {
 
     let gene: Gene = serde_json::from_value(serde_json::json!({
         "symbol": "BRAF", "name": "B-Raf", "entrez_id": "673",
-        "aliases": []
+        "aliases": [],
+        "section_outcomes": {
+            "civic": {"outcome": "unavailable", "sources": [], "message": "provider unavailable"}
+        }
     }))
     .unwrap();
+    let gene_sections = ["civic".to_string()];
     assert_command_surfaces(
         "gene",
-        crate::cli::gene::render_loaded_card(&gene, &[], false).unwrap(),
-        crate::cli::gene::render_loaded_card(&gene, &[], true).unwrap(),
+        crate::cli::gene::render_loaded_card(&gene, &gene_sections, false).unwrap(),
+        crate::cli::gene::render_loaded_card(&gene, &gene_sections, true).unwrap(),
         &[(
             "biomcp get gene BRAF all",
             "Markdown offers full-card navigation; JSON metadata carries follow-up pivots.",

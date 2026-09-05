@@ -9,7 +9,7 @@ use clap::Parser;
 fn printed_commands(markdown: &str) -> Vec<String> {
     let mut commands = std::collections::BTreeSet::new();
     for line in markdown.lines() {
-        for code in line.split('`').skip(1).step_by(2) {
+        for code in markdown_code_spans(line) {
             if let Some(start) = code.find("biomcp ") {
                 commands.insert(code[start..].trim().to_string());
             }
@@ -23,6 +23,46 @@ fn printed_commands(markdown: &str) -> Vec<String> {
         }
     }
     commands.into_iter().collect()
+}
+
+fn markdown_code_spans(line: &str) -> Vec<&str> {
+    let bytes = line.as_bytes();
+    let mut spans = Vec::new();
+    let mut cursor = 0;
+    while cursor < bytes.len() {
+        let Some(relative_start) = bytes[cursor..].iter().position(|byte| *byte == b'`') else {
+            break;
+        };
+        let start = cursor + relative_start;
+        let delimiter_len = bytes[start..]
+            .iter()
+            .take_while(|byte| **byte == b'`')
+            .count();
+        let content_start = start + delimiter_len;
+        let mut search = content_start;
+        let mut close = None;
+        while search < bytes.len() {
+            let Some(relative_tick) = bytes[search..].iter().position(|byte| *byte == b'`') else {
+                break;
+            };
+            let tick = search + relative_tick;
+            let run = bytes[tick..]
+                .iter()
+                .take_while(|byte| **byte == b'`')
+                .count();
+            if run == delimiter_len {
+                close = Some(tick);
+                break;
+            }
+            search = tick + run;
+        }
+        let Some(end) = close else {
+            break;
+        };
+        spans.push(&line[content_start..end]);
+        cursor = end + delimiter_len;
+    }
+    spans
 }
 
 fn parse_printed_commands(markdown: &str) -> Result<usize, String> {
@@ -196,4 +236,33 @@ fn detail_card_contract_rejects_malformed_command() {
         parse_printed_commands(malformed).is_err(),
         "the extracted malformed command must be rejected"
     );
+}
+
+#[test]
+fn recovery_commands_round_trip_to_their_registered_routes() {
+    use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
+
+    for row in crate::entities::source_state_registry::SOURCE_STATE_ROWS {
+        let identity = "BR` AF;&";
+        let mut outcomes = SectionOutcomes::with_keys(&[row.key]);
+        let key = row.key;
+        outcomes.complete(key, SectionOutcome::unavailable("provider unavailable"));
+        let commands =
+            crate::render::markdown::section_recovery_commands(row.entity, identity, &outcomes);
+        assert_eq!(commands.len(), 1, "{}/{}", row.entity, row.key);
+        let command = &commands[0];
+        let markdown = format!(
+            "Retry: {}",
+            crate::render::markdown::markdown_command_code_span(command)
+        );
+        let extracted = printed_commands(&markdown);
+        assert_eq!(extracted, commands);
+        let argv = shlex::split(command).expect("valid shell command");
+        Cli::try_parse_from(argv).unwrap_or_else(|error| {
+            panic!(
+                "{}/{} recovery does not parse: {command}: {error}",
+                row.entity, row.key
+            )
+        });
+    }
 }

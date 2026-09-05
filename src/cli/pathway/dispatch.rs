@@ -31,7 +31,12 @@ pub(crate) fn render_loaded_card(
         Ok(crate::render::json::to_entity_json(
             entity,
             crate::render::markdown::pathway_evidence_urls(entity),
-            crate::render::markdown::related_pathway(entity),
+            crate::render::markdown::with_section_recovery(
+                "pathway",
+                &entity.id,
+                &entity.section_outcomes,
+                crate::render::markdown::related_pathway(entity),
+            ),
             crate::render::provenance::pathway_section_sources(entity),
         )?)
     } else {
@@ -170,6 +175,7 @@ pub(in crate::cli) async fn handle_command(
                         debug_plan: None,
                         exact_entity_commands: &[],
                         source_status: &[],
+                        retry_page: None,
                     },
                 )?
             }

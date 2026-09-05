@@ -58,7 +58,9 @@ pub(in crate::cli) async fn handle_get(
     if includes_locations {
         let offset = location_offset.unwrap_or(0);
         let limit = location_limit.unwrap_or(20);
-        location_pagination = Some(paginate_trial_locations(&mut trial, offset, limit));
+        let mut page = paginate_trial_locations(&mut trial, offset, limit);
+        attach_location_continuation(&trial, trial_source, &sections, &mut page);
+        location_pagination = Some(page);
     }
 
     let text = match (json_output, location_pagination) {
@@ -77,12 +79,43 @@ pub(in crate::cli) async fn handle_get(
                     ""
                 },
             ));
+            if let Some(command) = loc_page.continuation_command.as_deref() {
+                md.push_str(&format!(
+                    "\nNext: {}",
+                    crate::render::markdown::markdown_command_code_span(command)
+                ));
+            }
             md
         }
         (_, None) => render_loaded_card(&trial, &sections, json_output)?,
     };
 
     Ok(CommandOutcome::stdout(text))
+}
+
+pub(super) fn attach_location_continuation(
+    trial: &crate::entities::trial::Trial,
+    source: crate::entities::trial::TrialSource,
+    sections: &[String],
+    page: &mut LocationPaginationMeta,
+) {
+    if !page.has_more {
+        return;
+    }
+    let returned = trial.locations.as_ref().map_or(0, Vec::len);
+    let include_contacts = sections.iter().any(|section| {
+        matches!(
+            section.trim().to_ascii_lowercase().as_str(),
+            "contacts" | "all"
+        )
+    });
+    page.continuation_command = crate::render::markdown::trial_location_continuation_command(
+        trial,
+        Some(source),
+        page.offset.saturating_add(returned),
+        page.limit,
+        include_contacts,
+    );
 }
 
 pub(crate) fn render_loaded_card(
@@ -377,6 +410,8 @@ pub(super) struct LocationPaginationMeta {
     pub(super) offset: usize,
     pub(super) limit: usize,
     pub(super) has_more: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) continuation_command: Option<String>,
 }
 
 pub(super) fn trial_locations_json(
@@ -418,6 +453,7 @@ pub(super) fn paginate_trial_locations(
         offset,
         limit,
         has_more,
+        continuation_command: None,
     }
 }
 

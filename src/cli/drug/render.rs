@@ -57,7 +57,12 @@ pub(crate) fn render_loaded_card(
         Ok(crate::render::json::to_entity_json_with_workflow(
             drug,
             crate::render::markdown::drug_evidence_urls(drug),
-            crate::render::markdown::related_drug(drug),
+            crate::render::markdown::with_section_recovery(
+                "drug",
+                &drug.name,
+                &drug.section_outcomes,
+                crate::render::markdown::related_drug(drug),
+            ),
             crate::render::provenance::drug_section_sources(drug),
             drug_pharmacogene_workflow(drug)?,
         )?)

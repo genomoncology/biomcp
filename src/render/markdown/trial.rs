@@ -110,10 +110,20 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
             let total = locations.len();
             locations.truncate(LOCATION_DISPLAY_CAP);
             (total > locations.len()).then(|| {
-                format!(
+                let mut disclosure = format!(
                     "Locations: showing {} of {total} (display cap {LOCATION_DISPLAY_CAP}).",
                     locations.len()
-                )
+                );
+                if let Some(command) = trial_location_continuation_command(
+                    trial,
+                    None,
+                    locations.len(),
+                    LOCATION_DISPLAY_CAP,
+                    show_contacts_section,
+                ) {
+                    let _ = write!(disclosure, "\nNext: {}", markdown_code_span(&command));
+                }
+                disclosure
             })
         })
     } else {
@@ -130,6 +140,43 @@ pub fn trial_markdown(trial: &Trial, requested_sections: &[String]) -> Result<St
         requested_sections,
         location_disclosure.as_deref(),
     )
+}
+
+fn trial_source_from_marker(marker: Option<&str>) -> Option<crate::entities::trial::TrialSource> {
+    match marker.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(value) if value.eq_ignore_ascii_case("ClinicalTrials.gov") => {
+            Some(crate::entities::trial::TrialSource::ClinicalTrialsGov)
+        }
+        Some(value) if value.eq_ignore_ascii_case("NCI CTS") => {
+            Some(crate::entities::trial::TrialSource::NciCts)
+        }
+        _ => None,
+    }
+}
+
+pub(crate) fn trial_location_continuation_command(
+    trial: &Trial,
+    source: Option<crate::entities::trial::TrialSource>,
+    offset: usize,
+    limit: usize,
+    include_contacts: bool,
+) -> Option<String> {
+    let source = source.or_else(|| trial_source_from_marker(trial.source.as_deref()))?;
+    let mut command = crate::next_command::NextCommand::biomcp()
+        .args(["get", "trial"])
+        .arg(&trial.nct_id);
+    if matches!(source, crate::entities::trial::TrialSource::NciCts) {
+        command = command.args(["--source", "nci"]);
+    }
+    command = command
+        .arg("--offset")
+        .arg(offset.to_string())
+        .arg("--limit")
+        .arg(limit.to_string());
+    if include_contacts {
+        command = command.arg("contacts");
+    }
+    Some(command.arg("locations").render_shell())
 }
 
 pub(crate) fn trial_paginated_markdown(

@@ -23,7 +23,6 @@ fn article_entities_markdown_uses_safe_gene_search_commands() {
             count: 2,
         }],
     };
-
     let markdown =
         article_entities_markdown("22663011", Some(&annotations), Some(5)).expect("markdown");
     assert!(markdown.contains("`biomcp search gene -q BRAF`"));
@@ -77,17 +76,14 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
         }),
         pubtator_fallback: false,
     };
-
     let markdown =
         article_markdown(&article, &["tldr".to_string()]).expect("markdown should render");
     assert!(markdown.contains("## Semantic Scholar"));
     assert!(markdown.contains("TLDR: A concise summary."));
     assert!(markdown.contains("Influential citations: 4"));
     assert!(markdown.contains("Open-access PDF: https://example.org/paper.pdf"));
-
     let detail = article_markdown(&article, &[]).expect("detail markdown should render");
     assert!(detail.contains("Authorship: unavailable (no author list supplied by PubTator3)"));
-
     article.indexing = Some(crate::entities::article::ArticleIndexing {
         status: crate::entities::article::ArticleIndexingStatus::Available,
         source: ArticleSource::PubMed,
@@ -154,7 +150,6 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
         ),
         "indexing authors must retain affiliation and identifier hierarchy: {indexing}"
     );
-
     article.indexing = Some(crate::entities::article::ArticleIndexing {
         status: crate::entities::article::ArticleIndexingStatus::Unavailable,
         source: ArticleSource::PubMed,
@@ -185,7 +180,6 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
     ] {
         assert!(!unavailable.contains(sentinel));
     }
-
     article.full_text_coverage = Some(crate::entities::article::ArticleFulltextCoverage {
         coverage: crate::entities::article::ArticleFulltextCoverageKind::AbstractOnly,
         attempts: Vec::new(),
@@ -199,7 +193,6 @@ fn article_markdown_renders_semantic_scholar_and_indexing_sections() {
         article_markdown(&article, &["fulltext".to_string()]).expect("partial fulltext markdown");
     assert!(partial.contains("Abstract found; article body not available."));
     assert!(!partial.contains("Saved to:"));
-
     mixed_article.section_outcomes.complete(
         "fulltext",
         crate::entities::section_outcome::SectionOutcome::unavailable(
@@ -259,12 +252,10 @@ fn article_markdown_renders_resolved_fulltext_source_label() {
         "fulltext",
         crate::entities::section_outcome::SectionOutcome::data("Europe PMC"),
     );
-
     let markdown =
         article_markdown(&article, &["fulltext".to_string()]).expect("markdown should render");
     assert!(markdown.contains("## Full Text (Europe PMC XML)"));
     assert!(markdown.contains("Saved to: /tmp/fulltext.md"));
-
     let detail = article_markdown(&article, &[]).expect("detail markdown should render");
     assert!(detail.contains(
         "First Author, Second Author, Middle Author, Fourth Author, Fifth Author, Last Author"
@@ -566,6 +557,7 @@ fn article_search_markdown_preserves_rank_order_and_shows_rationale() {
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("markdown should render");
@@ -634,6 +626,7 @@ fn ticket_377_article_renderer_envelope_contracts_markdown_status() {
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &source_status,
+            retry_page: Some((10, 0)),
         },
     )
     .expect("article_search_markdown_with_footer_and_context");
@@ -691,6 +684,7 @@ fn article_search_markdown_renders_non_semantic_source_status() {
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &source_status,
+            retry_page: Some((10, 0)),
         },
     )
     .expect("article_search_markdown_with_footer_and_context");
@@ -952,6 +946,7 @@ fn article_search_markdown_prepends_debug_plan_block() {
             debug_plan: Some(&debug_plan),
             exact_entity_commands: &[],
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("markdown should render");
@@ -1003,6 +998,7 @@ fn article_search_markdown_renders_related_block_before_pagination() {
             debug_plan: None,
             exact_entity_commands: &exact_commands,
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("markdown should render");
@@ -1062,6 +1058,7 @@ fn article_search_markdown_includes_cross_entity_discover_hint_for_short_keyword
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("markdown should render");
@@ -1120,6 +1117,7 @@ fn article_search_markdown_renders_each_typed_identifier() {
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("typed identifier markdown");
@@ -1155,6 +1153,7 @@ fn article_search_markdown_renders_date_sort_warning() {
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("date warning markdown");
@@ -1223,6 +1222,7 @@ fn article_search_markdown_omits_index_footer_when_no_rows_have_it() {
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("markdown should render");

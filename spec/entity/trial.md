@@ -267,15 +267,21 @@ contacts follow the selected location page while central contacts remain.
 
 ```bash
 ../../tools/biomcp-ci --json get trial NCT41300001 --offset 20 --limit 3 contacts locations \
-  | jq -e '(.locations | length == 3) and ([.locations[].facility] == ["Fixture Site 21", "Fixture Site 22", "Fixture Site 23"]) and ([.contacts[].name] == ["Central Coordinator", "Site Coordinator 21", "Site Coordinator 22", "Site Coordinator 23"]) and (.location_pagination == {"total": 25, "offset": 20, "limit": 3, "has_more": true})' \
+  | jq -e '(.locations | length == 3) and ([.locations[].facility] == ["Fixture Site 21", "Fixture Site 22", "Fixture Site 23"]) and ([.contacts[].name] == ["Central Coordinator", "Site Coordinator 21", "Site Coordinator 22", "Site Coordinator 23"]) and (.location_pagination == {"total": 25, "offset": 20, "limit": 3, "has_more": true, "continuation_command": "biomcp get trial NCT41300001 --offset 23 --limit 3 contacts locations"})' \
   | mustmatch 'true'
 ../../tools/biomcp-ci get trial NCT41300001 --offset 20 --limit 3 contacts locations \
-  | grep -E '^- Name: (Central Coordinator|Site Coordinator 2[1-3])$|^\*Locations:' \
+  | grep -E '^- Name: (Central Coordinator|Site Coordinator 2[1-3])$|^\*Locations:|^Next:' \
   | mustmatch like '- Name: Central Coordinator
 - Name: Site Coordinator 21
 - Name: Site Coordinator 22
 - Name: Site Coordinator 23
-*Locations: showing 3 of 25 (offset 20, limit 3, more available)*'
+*Locations: showing 3 of 25 (offset 20, limit 3, more available)*
+Next: `biomcp get trial NCT41300001 --offset 23 --limit 3 contacts locations`'
+next_locations="$(../../tools/biomcp-ci get trial NCT41300001 --offset 20 --limit 3 contacts locations | sed -n 's/^Next: `\(.*\)`$/\1/p')"
+bash -c 'set -eu; eval "set -- $1"; "$@"' _ "$next_locations" \
+  | grep -E '^\| Fixture Site (24|25) ' \
+  | mustmatch like '| Fixture Site 24 | Fixture City 24, Michigan |
+| Fixture Site 25 | Fixture City 25, Michigan |'
 ../../tools/biomcp-ci get trial NCT41300001 --offset 20 --limit 3 contacts locations \
   | mustmatch not like 'site@example.test'
 ```

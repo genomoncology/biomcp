@@ -167,7 +167,6 @@ fn rsid_indel_card_only_prints_variant_ids_accepted_by_the_parser() {
             "card printed an unreadable variant ID in `{command}`"
         );
     };
-
     for line in markdown.lines() {
         if let Some(start) = line.find("biomcp ") {
             let command = line[start..]
@@ -795,7 +794,6 @@ fn ticket_406_coordinate_outputs_carry_genome_build_context() {
             ),
         ],
     };
-
     let markdown = variant_normalization_markdown(&response);
 
     assert!(
@@ -822,7 +820,7 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
                     "matched_transcript": null
                 }),
             )
-        } else {
+        } else if failed_key == "cancerhotspots" {
             (
                 serde_json::json!({"outcome": "empty", "sources": ["InterPro"]}),
                 serde_json::json!({
@@ -830,6 +828,12 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
                     "sources": [],
                     "message": "Cancer Hotspots recurrence is temporarily unavailable."
                 }),
+                serde_json::Value::Null,
+            )
+        } else {
+            (
+                serde_json::json!({"outcome": "unavailable", "sources": [], "message": "InterPro unavailable."}),
+                serde_json::json!({"outcome": "unavailable", "sources": [], "message": "Cancer Hotspots unavailable."}),
                 serde_json::Value::Null,
             )
         };
@@ -877,13 +881,9 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
         serde_json::json!([])
     );
     let interpro_markdown = variant_structure_markdown(&interpro);
-    assert!(
-        interpro_markdown
-            .to_ascii_lowercase()
-            .contains("unavailable")
-    );
+    assert!(interpro_markdown.contains("unavailable"));
     assert!(!interpro_markdown.contains("No overlapping InterPro domains found"));
-
+    assert_eq!(interpro_markdown.matches("Retry:").count(), 1);
     let hotspots = fixture("cancerhotspots");
     let hotspots_json = serde_json::to_value(&hotspots).expect("structure serializes");
     assert_eq!(
@@ -897,13 +897,13 @@ fn ticket_589_variant_structure_failures_do_not_render_as_checked_absence_or_sou
     assert!(hotspots_json["cancerhotspots"].is_null());
     assert!(!hotspots_json.to_string().contains("cancerhotspots.org"));
     let hotspots_markdown = variant_structure_markdown(&hotspots);
-    assert!(
-        hotspots_markdown
-            .to_ascii_lowercase()
-            .contains("unavailable")
-    );
+    assert!(hotspots_markdown.contains("unavailable"));
     assert!(!hotspots_markdown.contains("Source: cancerhotspots.org"));
     assert!(!hotspots_markdown.contains("No Cancer Hotspots recurrence match was found"));
+    assert_eq!(hotspots_markdown.matches("Retry:").count(), 1);
+    let both = fixture("both");
+    let both_markdown = variant_structure_markdown(&both);
+    assert_eq!(both_markdown.matches("Retry:").count(), 1);
 }
 
 #[test]

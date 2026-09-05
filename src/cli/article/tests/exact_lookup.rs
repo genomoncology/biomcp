@@ -192,3 +192,109 @@ fn article_search_request_typed_filter_skips_exact_lookup() {
     assert_eq!(request.filters.gene.as_deref(), Some("BRAF"));
     assert!(request.exact_keyword_lookup.is_none());
 }
+
+#[test]
+fn degraded_article_sources_share_safe_direct_retries_across_zero_row_surfaces() {
+    use crate::entities::article::{
+        ArticleSource, ArticleSourceAvailability, ArticleSourceFilter, ArticleSourceStatus,
+    };
+    let status = |source, status, message: &str| ArticleSourceStatus {
+        source,
+        enabled: true,
+        auth_mode: None,
+        status: Some(status),
+        message: (!message.is_empty()).then(|| message.into()),
+    };
+    let mut filters = super::super::super::related_article_filters();
+    filters.keyword = Some("BRAF ` $(touch nope); & melanoma".into());
+    filters.author = Some("Doe, Jane & Roe".into());
+    filters.date_from = Some("2020-01".into());
+    filters.date_to = Some("2025".into());
+    filters.article_type = Some("review".into());
+    filters.journal = Some("Cancer & Cell".into());
+    filters.no_preprints = false;
+    filters.max_per_source = Some(2);
+    let statuses = vec![
+        status(
+            ArticleSource::EuropePmc,
+            ArticleSourceAvailability::Degraded,
+            "timed out",
+        ),
+        status(
+            ArticleSource::PubMed,
+            ArticleSourceAvailability::Unavailable,
+            "unavailable",
+        ),
+        status(
+            ArticleSource::SemanticScholar,
+            ArticleSourceAvailability::Degraded,
+            "incompatible",
+        ),
+        status(ArticleSource::LitSense2, ArticleSourceAvailability::Ok, ""),
+    ];
+    let retries = crate::render::markdown::article_source_retry_commands(&filters, &statuses, 5, 7);
+    assert_eq!(retries.len(), 2, "{retries:?}");
+    assert!(retries[0].contains("--source europepmc"));
+    assert!(retries[1].contains("--source pubmed"));
+    for command in &retries {
+        for expected in [
+            "--keyword \"BRAF \\` \\$(touch nope); & melanoma\"",
+            "--author \"Doe, Jane & Roe\"",
+            "--date-from 2020-01 --date-to 2025",
+            "--type review --journal \"Cancer & Cell\"",
+            "--limit 5 --offset 7",
+        ] {
+            assert!(command.contains(expected), "{command}");
+        }
+        assert!(!command.contains("max-per-source"));
+        let parsed = crate::cli::try_parse_cli(shlex::split(command).unwrap()).unwrap();
+        assert!(matches!(
+            parsed.command,
+            crate::cli::Commands::Search { .. }
+        ));
+    }
+    let markdown = crate::render::markdown::article_search_markdown_with_footer_and_context(
+        "adversarial zero row",
+        &[],
+        "",
+        &filters,
+        crate::render::markdown::ArticleSearchRenderContext {
+            source_filter: ArticleSourceFilter::All,
+            semantic_scholar_enabled: false,
+            warning: None,
+            note: None,
+            debug_plan: None,
+            exact_entity_commands: &[],
+            source_status: &statuses,
+            retry_page: Some((5, 7)),
+        },
+    )
+    .expect("zero-row Markdown");
+    for expected in [
+        "No articles found matching the filters.",
+        "Europe PMC source status: degraded",
+        "PubMed source status: unavailable",
+        "Semantic Scholar source status: degraded",
+    ] {
+        assert!(markdown.contains(expected), "{markdown}");
+    }
+    assert_eq!(markdown.matches("Retry:").count(), 2);
+    assert!(retries.iter().all(|command| markdown.contains(command)));
+    let json = super::super::dispatch::article_search_json(
+        "adversarial zero row",
+        &filters,
+        false,
+        None,
+        None,
+        super::super::dispatch::ArticleSearchJsonPage {
+            results: Vec::new(),
+            pagination: crate::cli::PaginationMeta::offset(7, 5, 0, Some(7)),
+            next_commands: retries.clone(),
+            suggestions: Vec::new(),
+            source_status: statuses,
+        },
+    )
+    .expect("zero-row JSON");
+    let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(value["_meta"]["next_commands"], serde_json::json!(retries));
+}

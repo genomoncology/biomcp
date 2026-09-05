@@ -4,7 +4,9 @@ use crate::entities::trial::TrialSearchResult;
 
 use super::super::dispatch::{merge_trial_backfill_rows, section_fetch_limit, section_timeout};
 use super::super::plan::PreparedInput;
-use super::super::{SearchAllInput, SearchAllResults, SearchAllSection, SectionKind};
+use super::super::{
+    SearchAllInput, SearchAllLink, SearchAllResults, SearchAllSection, SectionKind,
+};
 
 fn trial_row(nct_id: &str, status: &str) -> TrialSearchResult {
     TrialSearchResult {
@@ -103,7 +105,11 @@ fn search_all_pathway_section_surfaces_sanitized_wikipathways_error() {
         error: Some("API error from wikipathways: HTTP 404; HTML error page".to_string()),
         note: None,
         results: Vec::new(),
-        links: Vec::new(),
+        links: vec![SearchAllLink {
+            rel: "search.retry".into(),
+            title: "Retry pathway search".into(),
+            command: "biomcp search pathway BRAF --limit 3".into(),
+        }],
     };
     let error = section.error.clone().expect("pathway section should fail");
     assert_eq!(section.entity, "pathway");
@@ -131,6 +137,7 @@ fn search_all_pathway_section_surfaces_sanitized_wikipathways_error() {
     assert!(markdown.contains("## Pathways (unknown)"));
     assert!(markdown.contains("Error: API error from wikipathways: HTTP 404"));
     assert!(markdown.contains("HTML error page"));
+    assert!(markdown.contains("`biomcp search pathway BRAF --limit 3`"));
     assert!(!markdown.contains("<!DOCTYPE"));
     assert!(!markdown.contains("<html"));
     assert!(!markdown.contains("<head"));

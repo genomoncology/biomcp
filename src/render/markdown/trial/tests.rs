@@ -537,6 +537,9 @@ fn generic_trial_markdown_caps_locations_discloses_and_aligns_contacts() {
         20
     );
     assert!(markdown.contains("Locations: showing 20 of 21 (display cap 20)."));
+    assert!(markdown.contains(
+        "Next: `biomcp get trial NCT00000001 --offset 20 --limit 20 contacts locations`"
+    ));
     assert!(markdown.contains("Central Person"));
     assert!(markdown.contains("Person 19"));
     assert!(!markdown.contains("Facility 20"));
@@ -557,6 +560,31 @@ fn generic_trial_markdown_omits_cap_disclosure_when_locations_fit() {
         20
     );
     assert!(!markdown.contains("display cap"));
+    assert!(!markdown.contains("\nNext:"));
+}
+
+#[test]
+fn generic_trial_continuation_maps_provider_markers_without_guessing() {
+    let mut ctgov = markdown_location_trial(21);
+    ctgov.nct_id = "NCT id` ;&".to_string();
+    let ctgov_markdown = trial_markdown(&ctgov, &["locations".into()]).expect("CTGov card");
+    assert!(
+        ctgov_markdown.contains(
+            "Next: ``biomcp get trial \"NCT id\\` ;&\" --offset 20 --limit 20 locations``"
+        )
+    );
+
+    let mut nci = markdown_location_trial(21);
+    nci.source = Some("NCI CTS".into());
+    let nci_markdown = trial_markdown(&nci, &["all".into()]).expect("NCI card");
+    assert!(nci_markdown.contains(
+        "Next: `biomcp get trial NCT00000001 --source nci --offset 20 --limit 20 contacts locations`"
+    ));
+
+    let mut unknown = markdown_location_trial(21);
+    unknown.source = Some("Unknown Provider".into());
+    let unknown_markdown = trial_markdown(&unknown, &["all".into()]).expect("unknown card");
+    assert!(!unknown_markdown.contains("\nNext:"));
 }
 
 #[test]

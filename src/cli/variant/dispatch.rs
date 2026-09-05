@@ -121,7 +121,9 @@ pub(crate) async fn handle_command(
             .await;
         }
         VariantCommand::Structure { id } => {
-            let result = crate::entities::variant::structure(&id).await?;
+            let mut result = crate::entities::variant::structure(&id).await?;
+            result.meta.next_commands =
+                crate::render::markdown::variant_structure_recovery_commands(&result);
             if json {
                 crate::render::json::to_pretty(&result)?
             } else {
@@ -200,7 +202,7 @@ pub(crate) async fn handle_command(
                 crate::render::json::to_entity_json(
                     &variant,
                     crate::render::markdown::variant_evidence_urls(&variant),
-                    crate::render::markdown::related_variant(&variant),
+                    crate::render::markdown::related_variant_with_recovery(&variant),
                     crate::render::provenance::variant_section_sources(&variant),
                 )?
             } else {
@@ -518,7 +520,7 @@ pub(crate) fn render_loaded_card(
         Ok(crate::render::json::to_entity_json_with_workflow(
             variant,
             crate::render::markdown::variant_evidence_urls(variant),
-            crate::render::markdown::related_variant(variant),
+            crate::render::markdown::related_variant_with_recovery(variant),
             crate::render::provenance::variant_section_sources(variant),
             workflow,
         )?)

@@ -272,12 +272,18 @@ pub(in crate::cli) async fn handle_search(
         .iter()
         .map(|suggestion| suggestion.command.clone())
         .collect::<Vec<_>>();
-    let next_commands = crate::render::markdown::search_next_commands_article(
+    let mut next_commands = crate::render::markdown::article_source_retry_commands(
+        filters,
+        &source_status,
+        limit,
+        offset,
+    );
+    next_commands.extend(crate::render::markdown::search_next_commands_article(
         &results,
         filters,
         source_filter,
         &exact_entity_commands,
-    );
+    ));
     if let Some(token) = session_token.as_deref() {
         let session_suggestions = match crate::cache::resolve_cache_config() {
             Ok(config) => article_session_suggestions(
@@ -331,6 +337,7 @@ pub(in crate::cli) async fn handle_search(
                 debug_plan: debug_plan.as_ref(),
                 exact_entity_commands: &exact_entity_commands,
                 source_status: &source_status,
+                retry_page: Some((limit, offset)),
             },
         )?
     };

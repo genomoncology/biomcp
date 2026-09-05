@@ -549,6 +549,7 @@ fn partial_keyword_coverage_warning_precedes_markdown_table() {
             debug_plan: None,
             exact_entity_commands: &[],
             source_status: &[],
+            retry_page: None,
         },
     )
     .expect("coverage warning markdown");

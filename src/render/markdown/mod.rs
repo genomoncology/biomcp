@@ -38,6 +38,7 @@ pub use self::adverse_event::{
     device_event_search_markdown_with_footer, recall_search_markdown,
     recall_search_markdown_with_footer,
 };
+pub(crate) use self::article::article_source_retry_commands;
 #[allow(unused_imports)]
 pub use self::article::{
     ArticleSearchRenderContext, article_batch_markdown, article_entities_markdown,
@@ -83,7 +84,7 @@ pub use self::study::{
     study_filter_markdown, study_list_markdown, study_query_markdown, study_survival_markdown,
     study_top_mutated_markdown,
 };
-pub(crate) use self::trial::trial_paginated_markdown;
+pub(crate) use self::trial::{trial_location_continuation_command, trial_paginated_markdown};
 #[allow(unused_imports)]
 pub use self::trial::{
     trial_markdown, trial_search_markdown, trial_search_markdown_with_footer,
@@ -104,7 +105,7 @@ use minijinja::{Environment, context};
 
 use crate::cli::debug_plan::DebugPlan;
 use crate::entities::section_outcome::{SectionOutcomeState, SectionOutcomes};
-use crate::entities::source_state_registry::SOURCE_STATE_ROWS;
+use crate::entities::source_state_registry::{RecoveryRoute, SOURCE_STATE_ROWS};
 
 #[derive(serde::Serialize)]
 struct SectionRenderContext {
@@ -115,6 +116,7 @@ struct SectionRenderContext {
 
 fn section_render_contexts(
     entity: &str,
+    identity: &str,
     outcomes: &SectionOutcomes,
 ) -> BTreeMap<&'static str, SectionRenderContext> {
     SOURCE_STATE_ROWS
@@ -128,10 +130,18 @@ fn section_render_contexts(
                 let message = outcome
                     .and_then(|value| value.message())
                     .unwrap_or(state.as_str());
-                format!(
+                let mut rendered = format!(
                     "**{} status ({}):** {label} — {message}",
                     row.label, providers
-                )
+                );
+                if matches!(
+                    state,
+                    SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+                ) && let Some(command) = section_recovery_command(entity, identity, row.key)
+                {
+                    let _ = write!(rendered, "\nRetry: {}", markdown_code_span(&command));
+                }
+                rendered
             });
             let payload_allowed = !matches!(
                 state,
@@ -151,6 +161,61 @@ fn section_render_contexts(
             )
         })
         .collect()
+}
+
+fn section_recovery_command(entity: &str, identity: &str, key: &str) -> Option<String> {
+    let identity = identity.trim();
+    if identity.is_empty() {
+        return None;
+    }
+    let command = match crate::entities::source_state_registry::recovery_route(entity, key)? {
+        RecoveryRoute::Section {
+            cli_entity,
+            section,
+        } => crate::next_command::NextCommand::biomcp()
+            .args(["get", cli_entity])
+            .arg(identity)
+            .arg(section),
+        RecoveryRoute::BaseCard { cli_entity } => crate::next_command::NextCommand::biomcp()
+            .args(["get", cli_entity])
+            .arg(identity),
+        RecoveryRoute::VariantStructure => crate::next_command::NextCommand::biomcp()
+            .args(["variant", "structure"])
+            .arg(identity),
+    };
+    Some(command.render_shell())
+}
+
+pub(crate) fn section_recovery_commands(
+    entity: &str,
+    identity: &str,
+    outcomes: &SectionOutcomes,
+) -> Vec<String> {
+    let commands = SOURCE_STATE_ROWS
+        .iter()
+        .filter(|row| row.entity == entity)
+        .filter(|row| {
+            outcomes.get(row.key).is_some_and(|outcome| {
+                matches!(
+                    outcome.outcome(),
+                    SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+                )
+            })
+        })
+        .filter_map(|row| section_recovery_command(entity, identity, row.key))
+        .collect();
+    dedupe_markdown_commands(commands)
+}
+
+pub(crate) fn with_section_recovery(
+    entity: &str,
+    identity: &str,
+    outcomes: &SectionOutcomes,
+    remaining: Vec<String>,
+) -> Vec<String> {
+    let mut commands = section_recovery_commands(entity, identity, outcomes);
+    commands.extend(remaining);
+    dedupe_markdown_commands(commands)
 }
 
 fn source_state_message_label(state: SectionOutcomeState) -> Option<&'static str> {
@@ -223,6 +288,24 @@ fn preferred_variant_follow_up_id(variant: &Variant) -> &str {
         .unwrap_or_else(|| variant.id.trim())
 }
 
+pub(crate) fn related_variant_with_recovery(variant: &Variant) -> Vec<String> {
+    with_section_recovery(
+        "variant",
+        preferred_variant_follow_up_id(variant),
+        &variant.section_outcomes,
+        related_variant(variant),
+    )
+}
+
+pub(crate) fn variant_structure_recovery_commands(result: &VariantStructureResult) -> Vec<String> {
+    with_section_recovery(
+        "variant_structure",
+        &result.variant,
+        &result.lookup_outcomes,
+        result.meta.next_commands.clone(),
+    )
+}
+
 pub(crate) fn adverse_event_evidence_urls(event: &AdverseEvent) -> Vec<(&'static str, String)> {
     evidence::adverse_event_evidence_urls(event)
 }
@@ -285,6 +368,10 @@ pub(crate) fn quote_arg(value: &str) -> String {
 
 pub(crate) fn shell_quote_arg(value: &str) -> String {
     support::shell_quote_arg(value)
+}
+
+pub(crate) fn markdown_command_code_span(value: &str) -> String {
+    support::markdown_code_span(value)
 }
 
 pub(crate) fn preferred_drug_name<'a>(
