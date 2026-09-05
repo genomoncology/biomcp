@@ -30,7 +30,7 @@ The earlier provider-title shell-safety record remains 1160. The newer BioData r
 
 Focused duplicate-record coverage passed 2 tests, the complete documentation-consistency module passed 18 tests, and the independent combined review run passed 48 tests. `git diff --check` passed. The BioData record's old and new blobs both have SHA-256 `a52149857285252d24123e5243044934e8bcb7ce4665aaddf5812f2d07433e9d`. No canonical SDLC project script changed.
 
-Primary-agent `make lint`, `make test`, and `make spec` gates remain pending and are not claimed here.
+Primary-agent integration gates passed: `make lint`; `make test` with 3,152 Rust tests passed (30 skipped), 901 Python tests passed (3 skipped), and the strict documentation build; and `make spec`, including 8 static contract checks. The focused documentation-consistency module also passed all 18 tests on the integrated tree.
 
 ## Review
 
