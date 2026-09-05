@@ -187,7 +187,7 @@ changed.
   `GeneClinGen` had no `validity_status` or `dosage_status` fields and no closed
   family-status types or constructors.
 - Green: `cargo test --no-default-features --lib clingen -- --nocapture`
-  passed all 51 selected Rust tests. These cover concurrency, one shared
+  passed all 52 selected Rust tests. These cover concurrency, one shared
   lookup, independent timeout and failure preservation, cancellation,
   fail-closed parsing, ordering, caps, aggregate truth-table rows, and
   Markdown rendering.
@@ -199,7 +199,22 @@ changed.
   gene contract blocks against the isolated provider fixture, including CLI
   and raw/typed MCP surfaces.
 - `cargo package --list --allow-dirty --locked --offline | wc -l` remains at
-  the exact 1,300-file boundary. The new acquisition test owner replaces the
-  former construction test file, so packaged source file count does not grow.
-- The complete `make lint`, `make test`, and `make spec` lane is intentionally
-  deferred to the coordinating agent's single full-gate run.
+  the exact 1,300-file boundary. The new gene-side ClinGen module was offset by
+  consolidating the acquisition tests into existing owners, so packaged source
+  file count did not grow.
+- Independent code review found and remediation proved cancellation during
+  `ClinGenPrefetch::settle`, not only cancellation before settlement. A later
+  extraction review preserved the existing DEBUG-level provider diagnostics.
+  `src/entities/gene.rs` is 3,859 lines; its exact baseline and floor tightened
+  by the same 39 lines to 3,859 and 3,812, retaining ticket 0973's 47-line
+  authorization without increasing any allowance.
+- The first integrated routine run exposed a fixture-origin collision: the
+  provider fixture's global `BIOMCP_TEST_UNPACED_ORIGIN` displaced the
+  concurrently active CTGov document origin. The final contract scopes that
+  fixture-only escape to the four deadline-sensitive ClinGen spec commands.
+  Independent review accepted the correction; `spec/entity/gene.md` passed all
+  15 blocks and `spec/entity/trial-documents.md` passed all 7 blocks.
+- On the rebased integration tree, `make lint` passed; `make test` passed 3,213
+  Rust tests with 30 skipped and 902 Python contracts with 3 skipped, followed
+  by strict documentation build; and `make spec` passed the complete routine
+  corpus, 39 parallel-isolation checks, and all 8 static blocks.

@@ -353,7 +353,6 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_WHO_IVD_DIR=%q\n' "$who_ivd_dir"
   printf 'export BIOMCP_GTR_DIR=%q\n' "$gtr_dir"
   printf 'export BIOMCP_PROVIDER_CONTRACT_BASE=%q\n' "$base_url"
-  printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_PROVIDER_CONTRACT_READY_FILE=%q\n' "$ready_file"
   printf 'export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG=%q\n' "$request_log"
