@@ -1,6 +1,16 @@
 use std::collections::BTreeSet;
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 
-use axum::{Json, Router, routing::get as axum_get};
+use axum::{
+    Json, Router,
+    body::Body,
+    extract::State,
+    http::{Response, StatusCode, Uri, header},
+    routing::get as axum_get,
+};
 use clap::CommandFactory;
 use serde_json::json;
 
@@ -28,6 +38,116 @@ impl Drop for CtGovAgeMcpEnv {
             }
         }
     }
+}
+
+struct ClinvarMcpEnv(Vec<(&'static str, Option<std::ffi::OsString>)>);
+
+impl ClinvarMcpEnv {
+    fn set(base: &str) -> Self {
+        let values = [
+            ("BIOMCP_MYVARIANT_BASE", format!("{base}/v1")),
+            ("BIOMCP_CLINVAR_BASE", format!("{base}/eutils")),
+            ("BIOMCP_GNOMAD_BASE", format!("{base}/unavailable")),
+            ("BIOMCP_DBSNP_BASE", format!("{base}/unavailable")),
+            ("BIOMCP_CBIOPORTAL_BASE", format!("{base}/unavailable")),
+            ("BIOMCP_CANCERHOTSPOTS_BASE", format!("{base}/unavailable")),
+            ("BIOMCP_CIVIC_BASE", format!("{base}/unavailable")),
+            ("BIOMCP_GWAS_BASE", format!("{base}/unavailable")),
+        ];
+        let mut previous = Vec::new();
+        for (name, value) in values {
+            previous.push((name, std::env::var_os(name)));
+            // SAFETY: callers hold the serial-test process-wide environment lock.
+            unsafe { std::env::set_var(name, value) };
+        }
+        Self(previous)
+    }
+}
+
+impl Drop for ClinvarMcpEnv {
+    fn drop(&mut self) {
+        // SAFETY: callers hold the serial-test process-wide environment lock.
+        unsafe {
+            for (name, previous) in self.0.drain(..) {
+                if let Some(previous) = previous {
+                    std::env::set_var(name, previous);
+                } else {
+                    std::env::remove_var(name);
+                }
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+struct ClinvarMcpFixture {
+    requests: Arc<AtomicUsize>,
+}
+
+fn fixture_response(
+    status: StatusCode,
+    content_type: &'static str,
+    body: String,
+) -> Response<Body> {
+    Response::builder()
+        .status(status)
+        .header(header::CONTENT_TYPE, content_type)
+        .body(Body::from(body))
+        .expect("fixture response")
+}
+
+async fn clinvar_mcp_fixture(State(state): State<ClinvarMcpFixture>, uri: Uri) -> Response<Body> {
+    let request = uri.to_string();
+    if request.starts_with("/v1/query") {
+        let (rsid, clinvar) = if request.contains("rs1154003") {
+            ("rs1154003", serde_json::Value::Null)
+        } else if request.contains("rs1154002") {
+            (
+                "rs1154002",
+                json!({"variant_id":1154002,"rcv":{"accession":"RCV001154002","version":4,"clinical_significance":"Pathogenic","last_evaluated":"2024-02-03","number_submitters":3}}),
+            )
+        } else if request.contains("rs1154004") {
+            (
+                "rs1154004",
+                json!({"variant_id":1154004,"rcv":{"accession":"RCV001154004","version":1,"clinical_significance":"Uncertain significance","last_evaluated":"2023-01-01","number_submitters":1}}),
+            )
+        } else {
+            (
+                "rs1154001",
+                json!({"variant_id":1154001,"rcv":{"accession":"RCV001154001","version":2,"clinical_significance":"Likely pathogenic","last_evaluated":"2020-08-04","number_submitters":1}}),
+            )
+        };
+        let mut hit = json!({
+            "_id":"chr5:g.118860951A>G",
+            "dbsnp":{"rsid":rsid}
+        });
+        if !clinvar.is_null() {
+            hit["clinvar"] = clinvar;
+        }
+        return fixture_response(
+            StatusCode::OK,
+            "application/json",
+            json!({"hits":[hit]}).to_string(),
+        );
+    }
+    if request.starts_with("/eutils/efetch.fcgi") {
+        state.requests.fetch_add(1, Ordering::SeqCst);
+        if request.contains("id=1154002") {
+            return fixture_response(StatusCode::OK, "text/html", "<html/>".into());
+        }
+        let id = if request.contains("id=1154004") {
+            1_154_004
+        } else {
+            1_154_001
+        };
+        let extra = usize::from(id == 1_154_004);
+        let criteria = "c".repeat(32 * 1024 + extra);
+        let xml = format!(
+            "<ClinVarResult-Set><VariationArchive VariationID=\"{id}\" Accession=\"VCV{id:09}\" Version=\"1\"><RecordStatus>current</RecordStatus><ClassifiedRecord><RCVList><RCVAccession Accession=\"RCV{id:09}\" Version=\"1\"><RCVClassifications><GermlineClassification><Description>Pathogenic</Description></GermlineClassification></RCVClassifications></RCVAccession></RCVList><ClinicalAssertionList><ClinicalAssertion ID=\"{id}\" ContributesToAggregateClassification=\"true\"><ClinVarAccession Accession=\"SCV{id:09}\" Version=\"1\" SubmitterName=\"Fixture Lab\"/><RecordStatus>current</RecordStatus><Classification><GermlineClassification>Pathogenic</GermlineClassification></Classification><AttributeSet><Attribute Type=\"AssertionMethod\">{criteria}</Attribute></AttributeSet></ClinicalAssertion></ClinicalAssertionList></ClassifiedRecord></VariationArchive></ClinVarResult-Set>"
+        );
+        return fixture_response(StatusCode::OK, "application/xml", xml);
+    }
+    fixture_response(StatusCode::NOT_FOUND, "application/json", "{}".into())
 }
 
 #[test]
@@ -311,4 +431,154 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     assert_eq!(typed["eligibility"], raw["eligibility"]);
     assert!(!typed["eligibility"]["minimum_age"].is_string());
     assert!(!raw["eligibility"]["maximum_age"].is_string());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn clinvar_override_is_consistent_across_request_modes_and_mcp_surfaces() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let requests = Arc::new(AtomicUsize::new(0));
+    let router = Router::new()
+        .fallback(clinvar_mcp_fixture)
+        .with_state(ClinvarMcpFixture {
+            requests: Arc::clone(&requests),
+        });
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let _env = ClinvarMcpEnv::set(&base);
+
+    let default = crate::entities::variant::get("rs1154001", &[])
+        .await
+        .expect("default variant");
+    assert_eq!(requests.load(Ordering::SeqCst), 0);
+    assert!(default.clinvar.is_none());
+
+    let explicit = crate::entities::variant::get("rs1154001", &["clinvar".into()])
+        .await
+        .expect("explicit ClinVar");
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+    let explicit_json = serde_json::to_value(&explicit).expect("variant JSON");
+    assert_eq!(
+        explicit_json["section_outcomes"]["clinvar"]["outcome"],
+        "data"
+    );
+    assert_eq!(
+        explicit_json["section_outcomes"]["clinvar"]["sources"],
+        json!(["NCBI ClinVar"])
+    );
+    assert_eq!(
+        explicit_json["clinvar"]["submissions"][0]["criteria"]
+            .as_str()
+            .expect("criteria at exact boundary")
+            .len(),
+        32 * 1024
+    );
+
+    crate::entities::variant::get("rs1154001", &["all".into()])
+        .await
+        .expect("all sections");
+    assert_eq!(requests.load(Ordering::SeqCst), 2);
+
+    let over_boundary = crate::entities::variant::get("rs1154004", &["clinvar".into()])
+        .await
+        .expect("over-boundary direct record degrades");
+    let over_json = serde_json::to_value(over_boundary).expect("over-boundary JSON");
+    assert_eq!(
+        over_json["section_outcomes"]["clinvar"]["outcome"],
+        "degraded"
+    );
+    assert_eq!(over_json["clinvar"]["source"], "MyVariant.info");
+
+    let json_result = |result| {
+        let value = serde_json::to_value(result).expect("MCP result JSON");
+        serde_json::from_str::<serde_json::Value>(
+            value["content"][0]["text"].as_str().expect("MCP JSON text"),
+        )
+        .expect("MCP response body")
+    };
+    let fallback_entity = crate::entities::variant::get("rs1154002", &["clinvar".into()])
+        .await
+        .expect("fallback JSON");
+    let fallback_json = serde_json::to_value(fallback_entity).expect("fallback entity JSON");
+    let fallback_raw = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp get variant rs1154002 clinvar".into(),
+            json: true,
+        }))
+        .await
+        .map(json_result)
+        .expect("raw MCP fallback");
+    let fallback_typed = BioMcpServer::new()
+        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
+            json!({
+                "entity":"variant", "id":"rs1154002", "sections":["clinvar"], "json":true
+            }),
+        )))
+        .await
+        .map(json_result)
+        .expect("typed MCP fallback");
+    for value in [&fallback_json, &fallback_raw, &fallback_typed] {
+        assert_eq!(value["clinvar"]["source"], "MyVariant.info");
+        assert_eq!(value["clinvar"]["aggregates"][0]["version"], 4);
+        assert_eq!(
+            value["clinvar"]["aggregates"][0]["evaluation_date"],
+            "2024-02-03"
+        );
+        assert_eq!(value["clinvar"]["aggregates"][0]["number_submitters"], 3);
+        assert_eq!(value["section_outcomes"]["clinvar"]["outcome"], "degraded");
+        assert_eq!(
+            value["section_outcomes"]["clinvar"]["sources"],
+            json!(["MyVariant.info"])
+        );
+        if let Some(meta) = value.get("_meta") {
+            let row = meta["section_sources"]
+                .as_array()
+                .and_then(|rows| rows.iter().find(|row| row["key"] == "clinvar"))
+                .expect("MCP ClinVar provenance");
+            assert_eq!(row["outcome"], "degraded");
+            assert_eq!(row["sources"], json!(["MyVariant.info"]));
+        }
+    }
+
+    let before_inapplicable = requests.load(Ordering::SeqCst);
+    let inapplicable_entity = crate::entities::variant::get("rs1154003", &["clinvar".into()])
+        .await
+        .expect("inapplicable JSON");
+    let inapplicable_json = serde_json::to_value(inapplicable_entity).expect("entity JSON");
+    let inapplicable_raw = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp get variant rs1154003 clinvar".into(),
+            json: true,
+        }))
+        .await
+        .map(json_result)
+        .expect("raw MCP inapplicable");
+    let inapplicable_typed = BioMcpServer::new()
+        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
+            json!({
+                "entity":"variant", "id":"rs1154003", "sections":["clinvar"], "json":true
+            }),
+        )))
+        .await
+        .map(json_result)
+        .expect("typed MCP inapplicable");
+    assert_eq!(requests.load(Ordering::SeqCst), before_inapplicable);
+    for value in [&inapplicable_json, &inapplicable_raw, &inapplicable_typed] {
+        assert!(value.get("clinvar").is_none());
+        assert_eq!(
+            value["section_outcomes"]["clinvar"]["outcome"],
+            "inapplicable"
+        );
+        assert_eq!(value["section_outcomes"]["clinvar"]["sources"], json!([]));
+        if let Some(meta) = value.get("_meta") {
+            let row = meta["section_sources"]
+                .as_array()
+                .and_then(|rows| rows.iter().find(|row| row["key"] == "clinvar"))
+                .expect("MCP ClinVar provenance");
+            assert_eq!(row["outcome"], "inapplicable");
+            assert_eq!(row["sources"], json!([]));
+        }
+    }
+
+    server.abort();
 }

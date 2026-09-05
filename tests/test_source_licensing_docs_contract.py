@@ -312,7 +312,7 @@ def test_api_keys_page_policies_data_sources_and_nav_link_to_licensing_reference
 
     assert "[Source licensing reference](reference/source-licensing.md)" in policies
     assert (
-        "| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom |"
+        "| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves ClinVar EFetch, PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom |"
         in data_sources
     )
     assert "      - Source Licensing: reference/source-licensing.md" in mkdocs

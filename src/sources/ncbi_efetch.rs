@@ -160,7 +160,7 @@ mod tests;
 
 pub(crate) mod clinvar {
     use std::borrow::Cow;
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
 
     use http_cache_reqwest::CacheMode;
     use reqwest::header::HeaderValue;
@@ -318,6 +318,22 @@ pub(crate) mod clinvar {
         child(node, name).and_then(value)
     }
 
+    fn optional_u32_attr(node: Node<'_, '_>, name: &str) -> Result<Option<u32>, BioMcpError> {
+        node.attribute(name)
+            .map(|value| value.parse().map_err(|_| provider_error()))
+            .transpose()
+    }
+
+    fn optional_bool_attr(node: Node<'_, '_>, name: &str) -> Result<Option<bool>, BioMcpError> {
+        node.attribute(name)
+            .map(|value| match value.to_ascii_lowercase().as_str() {
+                "true" => Ok(true),
+                "false" => Ok(false),
+                _ => Err(provider_error()),
+            })
+            .transpose()
+    }
+
     fn bounded_text(text: Option<String>) -> Result<Option<String>, BioMcpError> {
         match text {
             Some(text) if text.len() > MAX_TEXT_BYTES => Err(provider_error()),
@@ -395,9 +411,7 @@ pub(crate) mod clinvar {
         if accession.is_empty() {
             return Ok(Vec::new());
         }
-        let version = node
-            .attribute("Version")
-            .and_then(|value| value.parse().ok());
+        let version = optional_u32_attr(node, "Version")?;
         let record_status = child_value(node, "RecordStatus");
         let conditions = rcv_conditions(node)?;
         let mut rows = Vec::new();
@@ -421,12 +435,8 @@ pub(crate) mod clinvar {
                 record_status: record_status
                     .clone()
                     .or_else(|| node.attribute("RecordStatus").map(str::to_string)),
-                number_submitters: description
-                    .attribute("NumberOfSubmitters")
-                    .and_then(|value| value.parse().ok()),
-                submission_count: description
-                    .attribute("SubmissionCount")
-                    .and_then(|value| value.parse().ok()),
+                number_submitters: optional_u32_attr(description, "NumberOfSubmitters")?,
+                submission_count: optional_u32_attr(description, "SubmissionCount")?,
                 conditions: conditions.clone(),
             });
         }
@@ -532,9 +542,7 @@ pub(crate) mod clinvar {
         Ok(Some(ClinvarSubmission {
             source: "NCBI ClinVar".into(),
             accession: accession.into(),
-            version: accession_node
-                .attribute("Version")
-                .and_then(|value| value.parse().ok()),
+            version: optional_u32_attr(accession_node, "Version")?,
             classification_domain: classification_domain(domain_node.tag_name().name()),
             classification: value(domain_node),
             review_status: child_value(classification, "ReviewStatus"),
@@ -545,13 +553,10 @@ pub(crate) mod clinvar {
             submitter: accession_node
                 .attribute("SubmitterName")
                 .map(str::to_string),
-            contributes_to_aggregate_classification: node
-                .attribute("ContributesToAggregateClassification")
-                .and_then(|value| match value.to_ascii_lowercase().as_str() {
-                    "true" => Some(true),
-                    "false" => Some(false),
-                    _ => None,
-                }),
+            contributes_to_aggregate_classification: optional_bool_attr(
+                node,
+                "ContributesToAggregateClassification",
+            )?,
             conditions: scv_conditions(node, node.attribute("ID"), trait_mappings)?,
             criteria: joined_bounded_text(criteria)?,
             citations: citations(node)?,
@@ -607,6 +612,14 @@ pub(crate) mod clinvar {
         if rcv_nodes.len() > MAX_RCV || scv_nodes.len() > MAX_SCV {
             return Err(provider_error());
         }
+        let mut assertion_ids = HashSet::new();
+        for node in &scv_nodes {
+            if let Some(id) = node.attribute("ID")
+                && !assertion_ids.insert(id)
+            {
+                return Err(provider_error());
+            }
+        }
         let mut trait_mappings: HashMap<String, Vec<Node<'_, '_>>> = HashMap::new();
         for mapping in archive
             .descendants()
@@ -636,16 +649,10 @@ pub(crate) mod clinvar {
             source: "NCBI ClinVar".into(),
             variation_id,
             accession: archive.attribute("Accession").map(str::to_string),
-            version: archive
-                .attribute("Version")
-                .and_then(|value| value.parse().ok()),
+            version: optional_u32_attr(archive, "Version")?,
             record_status,
-            number_submissions: archive
-                .attribute("NumberOfSubmissions")
-                .and_then(|value| value.parse().ok()),
-            number_submitters: archive
-                .attribute("NumberOfSubmitters")
-                .and_then(|value| value.parse().ok()),
+            number_submissions: optional_u32_attr(archive, "NumberOfSubmissions")?,
+            number_submitters: optional_u32_attr(archive, "NumberOfSubmitters")?,
             aggregates,
             submissions,
         }))
@@ -729,11 +736,59 @@ pub(crate) mod clinvar {
         }
 
         #[test]
+        fn supplied_invalid_numeric_and_contribution_attributes_fail_closed() {
+            for xml in [
+                HSD17B4.replace(
+                    "Version=\"2\" NumberOfSubmissions",
+                    "Version=\"two\" NumberOfSubmissions",
+                ),
+                HSD17B4.replace("NumberOfSubmissions=\"2\"", "NumberOfSubmissions=\"many\""),
+                HSD17B4.replace("NumberOfSubmitters=\"2\"", "NumberOfSubmitters=\"many\""),
+                HSD17B4.replacen(
+                    "Version=\"2\"><ClassifiedConditionList",
+                    "Version=\"two\"><ClassifiedConditionList",
+                    1,
+                ),
+                HSD17B4.replace("SubmissionCount=\"2\"", "SubmissionCount=\"many\""),
+                HSD17B4.replacen(
+                    "Version=\"1\" SubmitterName",
+                    "Version=\"one\" SubmitterName",
+                    1,
+                ),
+                HSD17B4.replacen(
+                    "ContributesToAggregateClassification=\"true\"",
+                    "ContributesToAggregateClassification=\"sometimes\"",
+                    1,
+                ),
+            ] {
+                assert!(parse_record(974782, &xml).is_err());
+            }
+        }
+
+        #[test]
+        fn duplicate_assertion_ids_reject_trait_mapping_amplification() {
+            let scv = "<ClinicalAssertion ID=\"same\"><ClinVarAccession Accession=\"SCV1\"/><RecordStatus>current</RecordStatus><Classification><GermlineClassification>Pathogenic</GermlineClassification></Classification></ClinicalAssertion>";
+            let mapping_value = "x".repeat(MAX_TEXT_BYTES);
+            let xml = archive_with(&format!(
+                "<ClinicalAssertionList>{}</ClinicalAssertionList><TraitMappingList><TraitMapping ClinicalAssertionID=\"same\" MappingRef=\"provider\" MappingValue=\"{mapping_value}\"/></TraitMappingList>",
+                scv.repeat(MAX_SCV)
+            ));
+            assert!(xml.len() < CLINVAR_MAX_BODY_BYTES);
+            assert!(parse_record(7, &xml).is_err());
+        }
+
+        #[test]
         fn exact_text_and_list_boundaries_are_enforced_without_partial_records() {
             let text = "x".repeat(MAX_TEXT_BYTES);
             let exact = FIXTURE.replace("public", &text);
             assert!(parse_record(974782, &exact).is_ok());
             let over = FIXTURE.replace("public", &(text + "x"));
+            assert!(parse_record(974782, &over).is_err());
+
+            let criteria = "c".repeat(MAX_TEXT_BYTES);
+            let exact = FIXTURE.replace(">ACMG<", &format!(">{criteria}<"));
+            assert!(parse_record(974782, &exact).is_ok());
+            let over = FIXTURE.replace(">ACMG<", &format!(">{criteria}c<"));
             assert!(parse_record(974782, &over).is_err());
 
             let citations = "<Citation><ID>1</ID></Citation>".repeat(MAX_CITATIONS);

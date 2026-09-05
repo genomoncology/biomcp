@@ -288,7 +288,7 @@ Most commands work without credentials. Optional keys improve rate limits or
 unlock optional enrichments:
 
 ```bash
-export NCBI_API_KEY="..."        # PubTator, PubMed/efetch, PMC OA, NCBI ID converter
+export NCBI_API_KEY="..."        # ClinVar, PubTator, PubMed/efetch, PMC OA, NCBI ID converter
 export S2_API_KEY="..."          # Optional Semantic Scholar auth; dedicated quota at 1 req/sec
 export OPENFDA_API_KEY="..."     # OpenFDA rate limits
 export NCI_API_KEY="..."         # NCI CTS trial search (--source nci)

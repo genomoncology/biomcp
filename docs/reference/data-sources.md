@@ -15,7 +15,8 @@ variables, test-only override seams, cache settings, and release/install knobs.
 | Gene sections | UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, OpenTargets, ClinGen, gnomAD GraphQL API | `https://rest.uniprot.org`, `https://www.ebi.ac.uk/QuickGO/services`, `https://string-db.org/api`, `https://gtexportal.org/api/v2`, `https://www.proteinatlas.org`, `https://dgidb.org/api/graphql`, `https://api.platform.opentargets.org/api/v4/graphql`, `https://search.clinicalgenome.org`, `https://gnomad.broadinstitute.org/api` | No | Protein summary, GO terms, interactions, GTEx RNA tissue expression, HPA protein tissue expression and subcellular localization, combined DGIdb/OpenTargets druggability, gene-disease validity, and gnomAD v4 GRCh38 gene constraint |
 | Gene `disgenet` section | DisGeNET REST API | `https://api.disgenet.com/api/v1` | Yes (`DISGENET_API_KEY`) | Ranked scored gene-disease associations with PMIDs, clinical-trial counts, evidence index, and evidence level |
 | Gene CSpec documents | ClinGen CSpec | `https://cspec.clinicalgenome.org` | No | `gene cspec <GENE>` lists versioned resource IRIs; exact selection retains a bounded local raw capture and returns source facts without ACMG interpretation |
-| Variant | MyVariant.info | `https://myvariant.info/v1` | No | rsID/HGVS lookup, ClinVar, and prediction scores including separate `BayesDel add-AF` and `BayesDel no-AF` source values; BioMCP does not apply clinical thresholds or classify pathogenicity from them |
+| Variant | MyVariant.info | `https://myvariant.info/v1` | No | rsID/HGVS lookup, default ClinVar summary and direct-ClinVar fallback, and prediction scores including separate `BayesDel add-AF` and `BayesDel no-AF` source values; BioMCP does not apply clinical thresholds or classify pathogenicity from them |
+| Variant ClinVar section | NCBI ClinVar EFetch | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils` | Optional (`NCBI_API_KEY`) | Explicit `clinvar` and `all` requests retrieve the resolved numeric Variation ID; the default card makes no direct ClinVar request |
 | Variant cancerhotspots recurrence | Cancerhotspots.org | `https://www.cancerhotspots.org` | No | `get variant <gene> <change> all` adds source-labelled residue and exact amino-acid recurrence counts when cancerhotspots can be checked |
 | Variant ERepo assertions | ClinGen Evidence Repository | `https://erepo.clinicalgenome.org` | No | `variant erepo <CAid>` preserves versioned expert assertion source facts; it does not classify variants or infer criterion strength |
 | Variant CAR normalization | ClinGen Allele Registry | `https://reg.genome.network` | No | `variant normalize car <HGVS>` makes bounded read-only projected lookups for supported versioned RefSeq HGVS; it returns source facts without inferred equivalence or registration |
@@ -134,7 +135,7 @@ BioMCP only requires API keys for a subset of sources.
 | NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci` |
 | OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
 | DisGeNET | `DISGENET_API_KEY` | Running `get gene <symbol> disgenet` or `get disease <name_or_id> disgenet` |
-| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom |
+| NCBI E-utilities | `NCBI_API_KEY` | Optional; improves ClinVar EFetch, PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom |
 | OpenFDA | `OPENFDA_API_KEY` | Optional; improves quota headroom |
 | UMLS | `UMLS_API_KEY` | Optional clinical crosswalk enrichment for `biomcp discover <query>` |
 

@@ -47,6 +47,8 @@ Returns variant rows filtered by ClinVar significance labels.
 
 NCBI E-utilities EFetch (`db=clinvar`, `rettype=vcv`, Variation ID lookup) powers explicit `clinvar` and `all` requests. The [Variant](../user-guide/variant.md) guide covers the broader workflow that hosts this section.
 
+No credential is required. An optional `NCBI_API_KEY` is sent to NCBI E-utilities when configured and enables the provider's higher request budget.
+
 ## Official source
 
 [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) is the official NCBI archive for clinical variant interpretations.

@@ -9,7 +9,7 @@ internal fixture overrides and release/install variables.
 |---|---|
 | `ALPHAGENOME_API_KEY` | Enables `get variant <id> predict` |
 | `DISGENET_API_KEY` | Enables gene/disease `disgenet` sections |
-| `NCBI_API_KEY` | Improves NCBI E-utilities quota for PubMed, PubTator, PMC OA, and ID Converter paths |
+| `NCBI_API_KEY` | Improves NCBI E-utilities quota for ClinVar, PubMed, PubTator, PMC OA, and ID Converter paths |
 | `NCI_API_KEY` | Enables trial operations with `--source nci` |
 | `ONCOKB_TOKEN` | Enables the explicit `variant oncokb <id>` helper |
 | `OPENFDA_API_KEY` | Improves OpenFDA quota headroom |
