@@ -73,8 +73,8 @@
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3898,
-      "floor_lines": 3851,
+      "baseline_lines": 3859,
+      "floor_lines": 3812,
       "authorized_increase": {
         "ticket": "0973",
         "delta": 47,
