@@ -35,10 +35,19 @@ token that produced the ID; normalization and duplicate removal retain the
 first occurrence. For free text, `raw` is the comma-delimited symptom phrase
 that produced the HPO search row, and HPO result order is retained. An ID
 resolved from more than one phrase retains the first phrase and first row.
-Reject more than ten comma-delimited phrases before provider contact, matching
-the existing ten-resolved-term ceiling. Resolve accepted phrases with at most
-four HPO requests in flight while collecting results in input-phrase and then
-provider-row order.
+Reject more than ten comma-delimited phrases before provider contact. Resolve
+accepted phrases with at most four HPO requests in flight, then flatten valid
+HPO rows in input-phrase and provider-row order and normalize and deduplicate
+them by first occurrence. Do not stop processing just because ten unique IDs
+have already been seen. If the complete flattened result contains more than
+ten unique HPO IDs, reject the whole query with an invalid-argument error that
+says the search resolved more than ten unique terms and asks the user to refine
+the symptom phrases. Make no Monarch request. There is no per-phrase quota and
+no truncation: silently dropping the eleventh ID could remove the only term
+contributed by a later valid phrase and would make the direct-support claim
+describe only part of the user's query. Every successful query therefore has
+at most ten unique resolved IDs and retains all of them in the deterministic
+order above.
 
 Every accepted free-text phrase must resolve at least one HPO row. If one or
 more phrases return a successful zero-row response, fail the whole search with
@@ -51,6 +60,17 @@ the typed HPO provider error described below rather than being reported as a
 zero-row match. Thus a successful `resolved_query` accounts for every submitted
 non-empty comma-delimited phrase, although multiple phrases can still resolve
 to the same first-occurrence-deduplicated HPO ID.
+
+For each free-text HPO search, the response envelope must contain a `terms`
+field whose value is an array. The decoder preserves field presence rather
+than defaulting a missing field to an empty vector. A present empty array is a
+valid zero-row response and follows the unresolved-user-input rule above;
+missing `terms`, `terms: null`, or any other non-array value is a typed HPO
+provider/decode failure, takes precedence over any simultaneous zero-row
+phrase, and makes no Monarch request. It must never be reported as an
+unresolved user phrase. After all bounded HPO operations settle, apply
+validation in this deterministic order: provider/transport/decode failures,
+then zero-row phrases in input order, then the aggregate ten-unique-ID bound.
 
 `label` comes only from the HPO API: the matching HPO search row for free text
 and `GET /terms/{id}` for direct IDs. A blank label, a term response whose
@@ -231,6 +251,18 @@ The fixed adversarial matrix covers all of the following:
   successful zero-row response for the second phrase fails the whole search,
   names that original phrase, and makes no Monarch similarity or association
   request; the resolved first phrase is not silently accepted on its own.
+- Two valid phrases whose provider-ordered rows collectively contain eleven
+  unique HPO IDs prove that resolution flattens by phrase then row, detects the
+  eleventh first occurrence, rejects instead of truncating or allocating a
+  per-phrase quota, and makes no Monarch request. A companion case with ten
+  unique IDs, including a cross-phrase duplicate, succeeds and pins
+  first-occurrence order and the duplicate's first phrase in `raw`.
+- Free-text HPO envelopes with missing `terms`, `terms: null`, and a non-array
+  `terms` value each produce a typed HPO provider/decode failure and no Monarch
+  request. The explicit `{"terms":[]}` control produces the distinct typed
+  no-HPO-match invalid argument, proving malformed provider data cannot be
+  mistaken for unresolved user input. A mixed concurrent case with one empty
+  array and one malformed envelope proves the provider failure wins.
 - Limits one, two, three, and five plus supported offsets retain ticket 1157's
   fixed order, first-occurrence deduplication, tied-row order,
   `provider_window_limit`, `provider_raw_row_count`,
@@ -243,10 +275,11 @@ The fixed adversarial matrix covers all of the following:
   phenotype out of the typed MCP schema.
 - Request construction and parsing unit tests pin repeated-parameter order,
   all filters, `limit=500`, `offset=0`, completeness checks, response-row
-  validation, fail-closed `total`/`items` presence tracking, the ten-phrase
-  pre-contact rejection, the 12-logical-operation/48-physical-attempt upper
-  bounds, concurrency constants, absence of a nested retry loop, and both
-  phase and whole-command deadline behavior.
+  validation, fail-closed `total`/`items` and HPO `terms` presence tracking,
+  the ten-phrase pre-contact rejection, deterministic aggregate over-ten
+  rejection without truncation, the 12-logical-operation/48-physical-attempt
+  upper bounds, concurrency constants, absence of a nested retry loop, and
+  both phase and whole-command deadline behavior.
 
 Update `docs/user-guide/phenotype.md` and
 `docs/sources/monarch-initiative.md` to explain that results are semantic
