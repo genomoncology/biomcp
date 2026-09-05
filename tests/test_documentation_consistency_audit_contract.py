@@ -174,6 +174,7 @@ PRIVATE_CURRENT_PROSE_MARKERS = (
 )
 
 COMPLETION_RECORD_NAME = re.compile(r"^(?P<record_id>[0-9]{4})-.+\.md$")
+TICKET_NAME = re.compile(r"^(?P<ticket_id>[0-9]{4})-.+\.md$")
 
 
 def _read(path: str) -> str:
@@ -197,6 +198,45 @@ def _duplicate_completion_record_diagnostic(records_root: Path) -> str:
         lines.append(f"duplicate completion record ID {record_id}:")
         lines.extend(f"- {path}" for path in sorted(paths))
     return "\n".join(lines)
+
+
+def _current_markdown_paths(repo_root: Path) -> list[Path]:
+    paths = {
+        path
+        for root in CURRENT_MARKDOWN_ROOTS
+        for path in (repo_root / root).rglob("*.md")
+    }
+
+    records_root = repo_root / "sdlc" / "records"
+    completed_ids = {
+        match.group("record_id")
+        for path in records_root.iterdir()
+        if path.is_file()
+        if (match := COMPLETION_RECORD_NAME.fullmatch(path.name)) is not None
+    }
+
+    tickets_root = repo_root / "sdlc" / "tickets"
+    for path in tickets_root.glob("*.md"):
+        match = TICKET_NAME.fullmatch(path.name)
+        if match is not None and match.group("ticket_id") not in completed_ids:
+            paths.add(path)
+
+    paths.update((tickets_root / "drafts").rglob("*.md"))
+    return sorted(paths, key=lambda path: path.relative_to(repo_root).as_posix())
+
+
+def _private_current_prose_violations(repo_root: Path) -> list[str]:
+    violations: list[str] = []
+    for path in _current_markdown_paths(repo_root):
+        for line_number, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        ):
+            lowered = line.casefold()
+            for marker in PRIVATE_CURRENT_PROSE_MARKERS:
+                if marker.casefold() in lowered:
+                    relative_path = path.relative_to(repo_root).as_posix()
+                    violations.append(f"{relative_path}:{line_number}: {marker}")
+    return violations
 
 
 def _normalize_whitespace(text: str) -> str:
@@ -566,24 +606,57 @@ def test_cache_path_docs_match_resolved_cache_root_contract() -> None:
 
 
 def test_current_markdown_does_not_depend_on_private_project_context() -> None:
-    violations: list[str] = []
-    for root in CURRENT_MARKDOWN_ROOTS:
-        for path in sorted((REPO_ROOT / root).rglob("*.md")):
-            for line_number, line in enumerate(
-                path.read_text(encoding="utf-8").splitlines(), start=1
-            ):
-                lowered = line.casefold()
-                for marker in PRIVATE_CURRENT_PROSE_MARKERS:
-                    if marker.casefold() in lowered:
-                        relative_path = path.relative_to(REPO_ROOT)
-                        violations.append(f"{relative_path}:{line_number}: {marker}")
-
-    assert violations == []
+    assert _private_current_prose_violations(REPO_ROOT) == []
 
     structural_hardening = _read(
         "architecture/experiments/structural-variant-article-annotations/harden.md"
     )
     assert "~/workspace/planning/mole/spike-plan.md" not in structural_hardening
+
+
+def test_private_project_diagnostic_covers_open_tickets_and_every_draft(
+    tmp_path: Path,
+) -> None:
+    files = {
+        "architecture/zeta.md": "public\nRolodex Tool and TRIALS3\n",
+        "docs/alpha.md": "trials3\n",
+        "sdlc/issues/current.md": (
+            "repos/mktg/biomcp/drafts/10-ten-cards-one-command/"
+            "captures/10-search-all.txt\n"
+        ),
+        "sdlc/tickets/2001-open.md": "public\ntrials3\n",
+        "sdlc/tickets/2002-complete.md": "rolodex tool\n",
+        "sdlc/tickets/2003-open.md": "trials3\n",
+        "sdlc/tickets/2004.md": "trials3\n",
+        "sdlc/tickets/README.md": "trials3\n",
+        "sdlc/tickets/archive/2005-history.md": "trials3\n",
+        "sdlc/tickets/drafts/2002-different-slug.md": "rolodex tool\n",
+        "sdlc/tickets/drafts/nested/notes.md": "public\ntrials3\n",
+        "sdlc/records/2002-other-slug.md": "trials3\n",
+        "sdlc/records/2003-not-a-record.txt": "trials3\n",
+        "sdlc/records/2003.md": "trials3\n",
+        "sdlc/records/2003junk.md": "trials3\n",
+        "sdlc/records/2006-record.md": "trials3\n",
+    }
+    for relative, content in files.items():
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+    assert _private_current_prose_violations(tmp_path) == [
+        "architecture/zeta.md:2: trials3",
+        "architecture/zeta.md:2: rolodex tool",
+        "docs/alpha.md:1: trials3",
+        (
+            "sdlc/issues/current.md:1: "
+            "repos/mktg/biomcp/drafts/10-ten-cards-one-command/"
+            "captures/10-search-all.txt"
+        ),
+        "sdlc/tickets/2001-open.md:2: trials3",
+        "sdlc/tickets/2003-open.md:1: trials3",
+        "sdlc/tickets/drafts/2002-different-slug.md:1: rolodex tool",
+        "sdlc/tickets/drafts/nested/notes.md:2: trials3",
+    ]
 
 
 def test_duplicate_completion_record_diagnostic_is_complete_and_stable(
