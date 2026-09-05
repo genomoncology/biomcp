@@ -4588,7 +4588,15 @@ keyword query, <code>--ranking-mode semantic</code> to sort by the LitSense2-der
 semantic signal first, or <code>--weight-*</code> flags to retune the default hybrid
 formula <code>0.4*semantic + 0.3*lexical + 0.2*citations + 0.1*position</code>. Rows
 without LitSense2 provenance contribute <code>semantic=0</code> in semantic-aware
-ranking modes.</p>
+ranking modes. In hybrid mode, the lexical component is the fraction of unique
+query anchors found in the title or abstract; an anchor found in both counts
+once. Lexical mode keeps its tiered title/abstract comparator.</p>
+<p>For keyword relevance searches, BioMCP warns when the top result has only
+partial literal query coverage. In Markdown, inspect the <code>Why</code> column before
+citing the result. In JSON, the warning appears in <code>_meta.warnings[]</code> for both
+compact and <code>--full</code> output; use <code>--full</code> to inspect row-level ranking metadata.
+This warning describes literal coverage only and does not declare a semantic or
+synonym match irrelevant.</p>
 <h2 id="cap-one-source-explicitly">Cap one source explicitly<a class="headerlink" href="#cap-one-source-explicitly" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>article<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;Kartagener syndrome ciliopathy&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span><span class="w"> </span>--max-per-source<span class="w"> </span><span class="m">10</span>
 </code></pre></div>

@@ -188,7 +188,16 @@ keyword query, `--ranking-mode semantic` to sort by the LitSense2-derived
 semantic signal first, or `--weight-*` flags to retune the default hybrid
 formula `0.4*semantic + 0.3*lexical + 0.2*citations + 0.1*position`. Rows
 without LitSense2 provenance contribute `semantic=0` in semantic-aware
-ranking modes.
+ranking modes. In hybrid mode, the lexical component is the fraction of unique
+query anchors found in the title or abstract; an anchor found in both counts
+once. Lexical mode keeps its tiered title/abstract comparator.
+
+For keyword relevance searches, BioMCP warns when the top result has only
+partial literal query coverage. In Markdown, inspect the `Why` column before
+citing the result. In JSON, the warning appears in `_meta.warnings[]` for both
+compact and `--full` output; use `--full` to inspect row-level ranking metadata.
+This warning describes literal coverage only and does not declare a semantic or
+synonym match irrelevant.
 
 ## Cap one source explicitly
 
