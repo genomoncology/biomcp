@@ -700,6 +700,7 @@ fn build_http_client_with_config(
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     let cache_root = config.cache_root.clone();
     crate::cache::secure_managed_tree(&cache_root, false)?;
+    let cache_operation = crate::cache::lock_cache_operation(&cache_root)?;
     let migration = apply_migration_non_fatal(
         &cache_root,
         crate::cache::migrate_http_cache,
@@ -716,6 +717,7 @@ fn build_http_client_with_config(
     )?;
     let cache_path = cache_root.join("http");
     crate::cache::secure_managed_tree(&cache_path, true)?;
+    drop(cache_operation);
 
     let mut default_headers = HeaderMap::new();
     default_headers.insert(CACHE_CONTROL, HeaderValue::from_static("max-stale=86400"));
@@ -1274,7 +1276,6 @@ mod tests {
     mod provider_network;
     #[path = "../request_plan_transport.rs"]
     mod request_plan_transport;
-
     use super::*;
     use crate::cache::{CacheConfigOrigins, ConfigOrigin, DiskFreeThreshold, ResolvedCacheConfig};
     use crate::test_support::TempDirGuard;
@@ -1834,7 +1835,6 @@ mod tests {
         assert!(outcome.is_none());
         assert_eq!(warned, vec![std::io::ErrorKind::PermissionDenied]);
     }
-
     #[test]
     fn build_http_client_migrates_then_clears_pre_limit_legacy_cache() {
         let root = TempDirGuard::new("http-cache-migration");

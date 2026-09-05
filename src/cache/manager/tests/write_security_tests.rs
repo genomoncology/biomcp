@@ -3,6 +3,8 @@
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
 use std::path::Path;
+use std::sync::{Arc, Mutex, mpsc};
+use std::time::Duration;
 
 use http_cache::CacheManager;
 
@@ -29,6 +31,48 @@ fn unix_mode(path: &Path) -> u32 {
         .permissions()
         .mode()
         & 0o777
+}
+
+fn assert_write_path_modes(cache_path: &Path, key: &str, integrity: &ssri::Integrity) {
+    let index_bucket = crate::cache::index_bucket_path(cache_path, key);
+    let blob = crate::cache::content_path(cache_path, integrity);
+    let content_root = crate::cache::content_root(cache_path);
+    let (algorithm, _) = integrity.to_hex();
+    let directories = [
+        cache_path.to_path_buf(),
+        cache_path.join("tmp"),
+        cache_path.join("index-v5"),
+        index_bucket
+            .parent()
+            .and_then(Path::parent)
+            .expect("first index shard")
+            .to_path_buf(),
+        index_bucket
+            .parent()
+            .expect("second index shard")
+            .to_path_buf(),
+        content_root.clone(),
+        content_root.join(algorithm.to_string()),
+        blob.parent()
+            .and_then(Path::parent)
+            .expect("first content shard")
+            .to_path_buf(),
+        blob.parent().expect("second content shard").to_path_buf(),
+    ];
+    assert_eq!(unix_mode(&index_bucket), 0o600);
+    assert_eq!(unix_mode(&blob), 0o600);
+    assert_eq!(
+        unix_mode(
+            &cache_path
+                .parent()
+                .expect("cache root")
+                .join(".biomcp-operation.lock")
+        ),
+        0o600
+    );
+    for directory in directories {
+        assert_eq!(unix_mode(&directory), 0o700, "{}", directory.display());
+    }
 }
 
 struct UmaskGuard(libc::mode_t);
@@ -81,22 +125,135 @@ async fn put_secures_only_its_exact_paths_under_a_permissive_umask() {
     );
 
     let cache_path = root.path().join("http");
-    let index_bucket = crate::cache::index_bucket_path(&cache_path, key);
     let metadata = cacache::metadata_sync(&cache_path, key)
         .expect("cache metadata")
         .expect("written metadata");
-    let blob = crate::cache::content_path(&cache_path, &metadata.integrity);
-    assert_eq!(unix_mode(&index_bucket), 0o600);
-    assert_eq!(unix_mode(&blob), 0o600);
-    for directory in [
+    assert_write_path_modes(&cache_path, key, &metadata.integrity);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[serial_test::serial(cache_epoch_umask)]
+async fn concurrent_same_key_puts_keep_metadata_attributable_until_hardening_finishes() {
+    // SAFETY: this test is serialized with every test that changes the process umask.
+    let original = unsafe { libc::umask(0) };
+    let _guard = UmaskGuard(original);
+    let root = TempDirGuard::new("coordinated-same-key-put");
+    let cache_path = root.path().join("http");
+    let key = "same-key";
+    let (a_delegated_tx, a_delegated_rx) = mpsc::channel();
+    let (release_a_tx, release_a_rx) = mpsc::channel();
+    let release_a_rx = Arc::new(Mutex::new(release_a_rx));
+    let manager_a = SizeAwareCacheManager::new_with_services_and_after_put(
         cache_path.clone(),
-        cache_path.join("tmp"),
-        cache_path.join("index-v5"),
-        index_bucket.parent().expect("bucket parent").to_path_buf(),
-        blob.parent().expect("blob parent").to_path_buf(),
-    ] {
-        assert_eq!(unix_mode(&directory), 0o700, "{}", directory.display());
-    }
+        test_config(root.path(), u64::MAX / 2, DiskFreeThreshold::Percent(1)),
+        |_| Ok(0),
+        |_| {
+            Ok(FilesystemSpace {
+                available_bytes: 99,
+                total_bytes: 100,
+            })
+        },
+        |_, _, _, _| unreachable!("test cache must not schedule eviction"),
+        {
+            let release_a_rx = Arc::clone(&release_a_rx);
+            move |path, cache_key| {
+                let integrity = cacache::metadata_sync(path, cache_key)
+                    .expect("A metadata")
+                    .expect("A written metadata")
+                    .integrity;
+                a_delegated_tx.send(integrity).expect("report A delegation");
+                release_a_rx
+                    .lock()
+                    .expect("release receiver")
+                    .recv()
+                    .expect("release A");
+            }
+        },
+    );
+    let (b_delegated_tx, b_delegated_rx) = mpsc::channel();
+    let manager_b = SizeAwareCacheManager::new_with_services_and_after_put(
+        cache_path.clone(),
+        test_config(root.path(), u64::MAX / 2, DiskFreeThreshold::Percent(1)),
+        |_| Ok(0),
+        |_| {
+            Ok(FilesystemSpace {
+                available_bytes: 99,
+                total_bytes: 100,
+            })
+        },
+        |_, _, _, _| unreachable!("test cache must not schedule eviction"),
+        move |_, _| {
+            let _ = b_delegated_tx.send(());
+        },
+    );
+
+    let a = tokio::spawn(async move {
+        manager_a
+            .put(key.into(), test_http_response(b"body-a"), test_policy())
+            .await
+    });
+    let a_integrity = tokio::task::spawn_blocking(move || {
+        a_delegated_rx
+            .recv_timeout(Duration::from_secs(5))
+            .expect("A reaches post-delegation seam")
+    })
+    .await
+    .expect("A observer task");
+    let b = tokio::spawn(async move {
+        manager_b
+            .put(key.into(), test_http_response(b"body-b"), test_policy())
+            .await
+    });
+    let b_was_blocked = tokio::task::spawn_blocking(move || {
+        b_delegated_rx
+            .recv_timeout(Duration::from_millis(200))
+            .is_err()
+    })
+    .await
+    .expect("B observer task");
+    assert!(
+        b_was_blocked,
+        "B must not delegate while A attributes and secures its write"
+    );
+    release_a_tx.send(()).expect("release A");
+    a.await.expect("A task").expect("A put");
+    b.await.expect("B task").expect("B put");
+
+    assert_write_path_modes(&cache_path, key, &a_integrity);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn eviction_waits_for_an_active_cache_operation() {
+    let root = TempDirGuard::new("coordinated-eviction");
+    let cache_path = root.path().join("http");
+    let config = test_config(root.path(), 1_000, DiskFreeThreshold::Percent(1));
+    let operation = crate::cache::lock_cache_operation(root.path()).expect("hold operation lock");
+    let (started_tx, started_rx) = mpsc::channel();
+    let (finished_tx, finished_rx) = mpsc::channel();
+    let eviction = tokio::task::spawn_blocking(move || {
+        started_tx.send(()).expect("report eviction start");
+        let result = super::super::run_eviction_cycle(
+            &cache_path,
+            &config,
+            &std::sync::atomic::AtomicU64::new(0),
+        );
+        finished_tx.send(()).expect("report eviction finish");
+        result
+    });
+    started_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("eviction task started");
+    assert!(
+        finished_rx
+            .recv_timeout(Duration::from_millis(200))
+            .is_err(),
+        "eviction must wait for the active cache operation"
+    );
+    drop(operation);
+    eviction
+        .await
+        .expect("eviction task")
+        .expect("eviction cycle");
 }
 
 #[test]
@@ -107,7 +264,7 @@ fn cacache_atomic_temporary_file_is_born_private() {
     let _guard = UmaskGuard(original);
     let root = TempDirGuard::new("cacache-private-temp");
     let cache_path = root.path().join("http");
-    super::super::prepare_write_paths(&cache_path, "temporary-file-test")
+    crate::cache::prepare_write_paths(&cache_path, "temporary-file-test")
         .expect("prepare cache paths");
     let writer = cacache::WriteOpts::new()
         .size(1)

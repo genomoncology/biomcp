@@ -1,6 +1,32 @@
 use std::fs::{self, File, OpenOptions};
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+const CACHE_OPERATION_LOCK: &str = ".biomcp-operation.lock";
+
+pub(crate) struct CacheOperationGuard {
+    _file: File,
+}
+
+pub(crate) fn lock_cache_operation(cache_root: &Path) -> io::Result<CacheOperationGuard> {
+    use fs2::FileExt;
+
+    secure_managed_dir(cache_root)?;
+    let lock_path = cache_root.join(CACHE_OPERATION_LOCK);
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true);
+    let file = open_private(&mut options, &lock_path)?;
+    file.lock_exclusive()?;
+    Ok(CacheOperationGuard { _file: file })
+}
+
+pub(crate) async fn lock_cache_operation_async(
+    cache_root: PathBuf,
+) -> io::Result<CacheOperationGuard> {
+    tokio::task::spawn_blocking(move || lock_cache_operation(&cache_root))
+        .await
+        .map_err(|error| io::Error::other(format!("cache operation lock task failed: {error}")))?
+}
 
 pub(crate) fn secure_managed_tree(root: &Path, recurse: bool) -> io::Result<()> {
     match fs::symlink_metadata(root) {
@@ -14,12 +40,21 @@ pub(crate) fn secure_managed_tree(root: &Path, recurse: bool) -> io::Result<()> 
         Err(error) if error.kind() == io::ErrorKind::NotFound => create_private_dir(root)?,
         Err(error) => return Err(error),
     }
-    secure_entry(
-        root,
-        recurse,
-        root.file_name()
-            .is_some_and(|name| name == super::layout::CONTENT_DIR),
-    )
+    let content_root = managed_content_root(root);
+    secure_entry(root, recurse, &content_root)
+}
+
+fn managed_content_root(root: &Path) -> PathBuf {
+    if root
+        .file_name()
+        .is_some_and(|name| name == super::layout::CONTENT_DIR)
+    {
+        root.to_path_buf()
+    } else if root.file_name().is_some_and(|name| name == "http") {
+        super::content_root(root)
+    } else {
+        super::content_root(&root.join("http"))
+    }
 }
 
 pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
@@ -33,20 +68,10 @@ pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
                 ),
             ))
         }
-        Ok(_) => secure_entry(
-            path,
-            false,
-            path.file_name()
-                .is_some_and(|name| name == super::layout::CONTENT_DIR),
-        ),
+        Ok(_) => secure_entry(path, false, &managed_content_root(path)),
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
             create_private_dir_exact(path)?;
-            secure_entry(
-                path,
-                false,
-                path.file_name()
-                    .is_some_and(|name| name == super::layout::CONTENT_DIR),
-            )
+            secure_entry(path, false, &managed_content_root(path))
         }
         Err(error) => Err(error),
     }
@@ -332,11 +357,11 @@ fn create_private_dir_exact(path: &Path) -> io::Result<()> {
 }
 
 #[cfg(unix)]
-fn secure_entry(path: &Path, recurse: bool, inside_content: bool) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool, content_root: &Path) -> io::Result<()> {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     let metadata = fs::symlink_metadata(path)?;
     if metadata.file_type().is_symlink() {
-        if inside_content && symlink_targets_directory(path)? {
+        if path.starts_with(content_root) && symlink_targets_directory(path)? {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!(
@@ -368,21 +393,17 @@ fn secure_entry(path: &Path, recurse: bool, inside_content: bool) -> io::Result<
     if recurse {
         for entry in fs::read_dir(path)? {
             let entry_path = entry?.path();
-            let child_inside_content = inside_content
-                || entry_path
-                    .file_name()
-                    .is_some_and(|name| name == super::layout::CONTENT_DIR);
-            secure_entry(&entry_path, true, child_inside_content)?;
+            secure_entry(&entry_path, true, content_root)?;
         }
     }
     Ok(())
 }
 
 #[cfg(windows)]
-fn secure_entry(path: &Path, recurse: bool, inside_content: bool) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool, content_root: &Path) -> io::Result<()> {
     let metadata = fs::symlink_metadata(path)?;
     if is_link_or_reparse_point(&metadata) {
-        if inside_content && symlink_targets_directory(path)? {
+        if path.starts_with(content_root) && symlink_targets_directory(path)? {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!(
@@ -399,11 +420,7 @@ fn secure_entry(path: &Path, recurse: bool, inside_content: bool) -> io::Result<
         if recurse {
             for entry in fs::read_dir(path)? {
                 let entry_path = entry?.path();
-                let child_inside_content = inside_content
-                    || entry_path
-                        .file_name()
-                        .is_some_and(|name| name == super::layout::CONTENT_DIR);
-                secure_entry(&entry_path, true, child_inside_content)?;
+                secure_entry(&entry_path, true, content_root)?;
             }
         }
     } else {
@@ -485,10 +502,10 @@ mod unix_tests {
         fs::write(&outside_file, b"outside bytes").expect("outside file");
         fs::create_dir(&outside_dir).expect("outside directory");
         symlink(&outside_file, root.path().join("unrelated-link")).expect("unrelated link");
-        fs::create_dir_all(root.path().join("content-v2/sha256")).expect("content root");
+        fs::create_dir_all(root.path().join("http/content-v2/sha256")).expect("content root");
         symlink(
             &outside_dir,
-            root.path().join("content-v2/sha256/directory-link"),
+            root.path().join("http/content-v2/sha256/directory-link"),
         )
         .expect("content directory link");
 
@@ -501,6 +518,31 @@ mod unix_tests {
             b"outside bytes"
         );
         assert_eq!(fs::read_dir(&outside_dir).expect("outside dir").count(), 0);
+    }
+
+    #[test]
+    fn unrelated_nested_content_v2_directory_symlink_keeps_skip_behavior() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let outside = root.path().join("outside");
+        let unrelated = root.path().join("other/content-v2");
+        fs::create_dir_all(unrelated.parent().expect("unrelated parent"))
+            .expect("unrelated parent");
+        fs::create_dir(&outside).expect("outside directory");
+        fs::write(outside.join("sentinel"), b"outside bytes").expect("outside sentinel");
+        symlink(&outside, &unrelated).expect("unrelated directory symlink");
+
+        secure_managed_tree(root.path(), true).expect("unrelated link remains skippable");
+
+        assert!(
+            fs::symlink_metadata(&unrelated)
+                .expect("unrelated link metadata")
+                .file_type()
+                .is_symlink()
+        );
+        assert_eq!(
+            fs::read(outside.join("sentinel")).expect("outside unchanged"),
+            b"outside bytes"
+        );
     }
 }
 

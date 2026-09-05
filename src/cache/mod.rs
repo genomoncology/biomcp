@@ -8,6 +8,7 @@ pub(crate) mod migration;
 mod planner;
 mod private;
 mod provider_capture;
+mod write_security;
 
 #[allow(unused_imports)]
 pub(crate) use clean::{CleanOptions, CleanReport, execute_cache_clean};
@@ -32,11 +33,12 @@ pub(crate) use planner::{
     plan_composite_cleanup, plan_orphan_gc, plan_size_lru, snapshot_cache,
 };
 pub(crate) use private::{
-    open_managed_read, open_private, prepare_managed_file, secure_managed_dir, secure_managed_file,
-    secure_managed_tree,
+    lock_cache_operation, lock_cache_operation_async, open_managed_read, open_private,
+    prepare_managed_file, secure_managed_dir, secure_managed_file, secure_managed_tree,
 };
 #[allow(unused_imports)]
 pub(crate) use provider_capture::{
     CspecCaptureBinding, ProviderCaptureError, ProviderCaptureManifest, ProviderCaptureProvider,
     ProviderCaptureStore,
 };
+pub(crate) use write_security::{prepare_write_paths, secure_written_content};

@@ -21,12 +21,14 @@ type EstimateCacheBytesFn = dyn Fn(&Path) -> io::Result<u64> + Send + Sync;
 type InspectSpaceFn = dyn Fn(&Path) -> Result<FilesystemSpace, BioMcpError> + Send + Sync;
 type ScheduleEvictionFn =
     dyn Fn(PathBuf, ResolvedCacheConfig, Arc<AtomicU64>, Arc<AtomicBool>) + Send + Sync;
+type AfterPutFn = dyn Fn(&Path, &str) + Send + Sync;
 
 #[derive(Clone)]
 struct ManagerServices {
     estimate_cache_bytes: Arc<EstimateCacheBytesFn>,
     inspect_space: Arc<InspectSpaceFn>,
     schedule_eviction: Arc<ScheduleEvictionFn>,
+    after_put: Arc<AfterPutFn>,
 }
 
 pub(crate) struct SizeAwareCacheManager {
@@ -47,6 +49,7 @@ impl SizeAwareCacheManager {
         config: ResolvedCacheConfig,
         now_ms: u128,
     ) -> Result<Self, BioMcpError> {
+        let _operation = super::lock_cache_operation(&config.cache_root)?;
         execute_cache_clean(
             &path,
             CleanOptions {
@@ -83,6 +86,37 @@ impl SizeAwareCacheManager {
                 estimate_cache_bytes: Arc::new(estimate_cache_bytes),
                 inspect_space: Arc::new(inspect_space),
                 schedule_eviction: Arc::new(schedule_eviction),
+                after_put: Arc::new(|_, _| {}),
+            },
+        )
+    }
+
+    #[cfg(test)]
+    fn new_with_services_and_after_put<E, I, S, A>(
+        path: PathBuf,
+        config: ResolvedCacheConfig,
+        estimate_cache_bytes: E,
+        inspect_space: I,
+        schedule_eviction: S,
+        after_put: A,
+    ) -> Self
+    where
+        E: Fn(&Path) -> io::Result<u64> + Send + Sync + 'static,
+        I: Fn(&Path) -> Result<FilesystemSpace, BioMcpError> + Send + Sync + 'static,
+        S: Fn(PathBuf, ResolvedCacheConfig, Arc<AtomicU64>, Arc<AtomicBool>)
+            + Send
+            + Sync
+            + 'static,
+        A: Fn(&Path, &str) + Send + Sync + 'static,
+    {
+        Self::build_with_services(
+            path,
+            config,
+            ManagerServices {
+                estimate_cache_bytes: Arc::new(estimate_cache_bytes),
+                inspect_space: Arc::new(inspect_space),
+                schedule_eviction: Arc::new(schedule_eviction),
+                after_put: Arc::new(after_put),
             },
         )
     }
@@ -129,12 +163,14 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
-        prepare_write_paths(&self.inner.path, &cache_key)?;
+        let _operation = super::lock_cache_operation_async(self.config.cache_root.clone()).await?;
+        super::prepare_write_paths(&self.inner.path, &cache_key)?;
         let response = self.inner.put(cache_key.clone(), res, policy).await?;
+        (self.services.after_put)(&self.inner.path, &cache_key);
         let metadata = cacache::metadata(&self.inner.path, &cache_key)
             .await?
             .ok_or_else(|| io::Error::other("cache metadata missing after successful put"))?;
-        secure_written_content(&self.inner.path, &metadata.integrity)?;
+        super::secure_written_content(&self.inner.path, &metadata.integrity)?;
         self.approx_bytes
             .fetch_add(metadata.size as u64, Ordering::Relaxed);
 
@@ -171,52 +207,10 @@ impl CacheManager for SizeAwareCacheManager {
     }
 
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
+        let _operation = super::lock_cache_operation_async(self.config.cache_root.clone()).await?;
         super::secure_managed_tree(&self.inner.path, false)?;
         self.inner.delete(cache_key).await
     }
-}
-
-fn prepare_write_paths(cache_path: &Path, cache_key: &str) -> io::Result<()> {
-    super::secure_managed_dir(cache_path)?;
-    super::secure_managed_dir(&cache_path.join(super::layout::TEMP_DIR))?;
-
-    let content_root = super::content_root(cache_path);
-    super::secure_managed_dir(&content_root)?;
-    super::secure_managed_dir(&content_root.join("sha256"))?;
-
-    let bucket = super::index_bucket_path(cache_path, cache_key);
-    let index_root = cache_path.join(super::layout::INDEX_DIR);
-    super::secure_managed_dir(&index_root)?;
-    let first_shard = bucket
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| io::Error::other("derived cache index path has no first shard"))?;
-    let second_shard = bucket
-        .parent()
-        .ok_or_else(|| io::Error::other("derived cache index path has no second shard"))?;
-    super::secure_managed_dir(first_shard)?;
-    super::secure_managed_dir(second_shard)?;
-    super::prepare_managed_file(&bucket)
-}
-
-fn secure_written_content(cache_path: &Path, integrity: &ssri::Integrity) -> io::Result<()> {
-    let blob = super::content_path(cache_path, integrity);
-    let content_root = super::content_root(cache_path);
-    super::secure_managed_dir(&content_root)?;
-
-    let (algorithm, _) = integrity.to_hex();
-    let algorithm = content_root.join(algorithm.to_string());
-    let first_shard = blob
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| io::Error::other("derived cache content path has no first shard"))?;
-    let second_shard = blob
-        .parent()
-        .ok_or_else(|| io::Error::other("derived cache content path has no second shard"))?;
-    super::secure_managed_dir(&algorithm)?;
-    super::secure_managed_dir(first_shard)?;
-    super::secure_managed_dir(second_shard)?;
-    super::secure_managed_file(&blob)
 }
 
 fn default_services() -> ManagerServices {
@@ -224,6 +218,7 @@ fn default_services() -> ManagerServices {
         estimate_cache_bytes: Arc::new(estimate_cache_bytes_fast),
         inspect_space: Arc::new(inspect_filesystem_space),
         schedule_eviction: Arc::new(spawn_eviction_task),
+        after_put: Arc::new(|_, _| {}),
     }
 }
 
@@ -308,6 +303,7 @@ fn run_eviction_cycle(
     config: &ResolvedCacheConfig,
     approx_bytes: &AtomicU64,
 ) -> Result<(), BioMcpError> {
+    let _operation = super::lock_cache_operation(&config.cache_root)?;
     run_eviction_cycle_with(
         cache_path,
         config,
@@ -420,6 +416,8 @@ mod tests {
 
     #[path = "write_security_tests.rs"]
     mod write_security_tests;
+    #[path = "write_security_windows_tests.rs"]
+    mod write_security_windows_tests;
 
     fn write_entry(cache_path: &Path, key: &str, bytes: &[u8], time_ms: u128) {
         let mut writer = cacache::WriteOpts::new()

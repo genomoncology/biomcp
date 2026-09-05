@@ -108,6 +108,45 @@ fn render_path_for_config_does_not_create_or_migrate_directories() {
     assert!(!env_cache.join("http").exists());
 }
 
+#[test]
+fn explicit_cache_maintenance_waits_for_an_active_cache_operation() {
+    let root = crate::test_support::TempDirGuard::new("cache-maintenance-coordination");
+    let config = test_config(
+        root.path(),
+        10_000_000_000,
+        86_400,
+        CacheConfigOrigins {
+            cache_root: ConfigOrigin::Default,
+            max_size: ConfigOrigin::Default,
+            min_disk_free: ConfigOrigin::Default,
+            max_age: ConfigOrigin::Default,
+        },
+    );
+    let operation = crate::cache::lock_cache_operation(root.path()).expect("hold operation lock");
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let (finished_tx, finished_rx) = std::sync::mpsc::channel();
+    let maintenance = std::thread::spawn(move || {
+        started_tx.send(()).expect("report maintenance start");
+        let result = super::execute_managed_clear(&config);
+        finished_tx.send(()).expect("report maintenance finish");
+        result
+    });
+    started_rx
+        .recv_timeout(Duration::from_secs(5))
+        .expect("maintenance thread started");
+    assert!(
+        finished_rx
+            .recv_timeout(Duration::from_millis(200))
+            .is_err(),
+        "maintenance must wait for the active cache operation"
+    );
+    drop(operation);
+    maintenance
+        .join()
+        .expect("maintenance thread")
+        .expect("managed clear");
+}
+
 fn test_integrity(bytes: &[u8]) -> Integrity {
     Integrity::from(bytes)
 }
