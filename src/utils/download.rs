@@ -31,7 +31,7 @@ async fn create_unique_sibling_temp(
         ));
     };
     if managed {
-        crate::cache::secure_managed_tree(dir, true)?;
+        crate::cache::secure_managed_tree(dir, true, None)?;
     } else if !dir.is_dir() {
         return Err(BioMcpError::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
@@ -62,7 +62,7 @@ async fn create_unique_sibling_temp(
         match opened {
             Ok(file) => {
                 if managed {
-                    crate::cache::secure_managed_tree(dir, true)?;
+                    crate::cache::secure_managed_tree(dir, true, None)?;
                 }
                 return Ok((tokio::fs::File::from_std(file), candidate));
             }
@@ -175,7 +175,7 @@ pub async fn save_atomic(id: &str, content: &str) -> Result<PathBuf, BioMcpError
 
 async fn save_atomic_to_path(path: PathBuf, content: &str) -> Result<PathBuf, BioMcpError> {
     let parent = path.parent().expect("download path has parent");
-    crate::cache::secure_managed_tree(parent, true)?;
+    crate::cache::secure_managed_tree(parent, true, None)?;
     match crate::cache::open_managed_read(&path) {
         Ok(_) => return Ok(path),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}

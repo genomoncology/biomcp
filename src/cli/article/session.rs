@@ -110,12 +110,16 @@ pub(crate) fn maintain_sessions(
     cache_root: &Path,
     now_epoch_secs: u64,
 ) -> Result<usize, BioMcpError> {
-    crate::cache::secure_managed_tree(cache_root, false)?;
+    crate::cache::secure_managed_tree(cache_root, false, None)?;
     let path = store_path(cache_root);
     if !path.exists() {
         return Ok(0);
     }
-    crate::cache::secure_managed_tree(path.parent().expect("session store has parent"), true)?;
+    crate::cache::secure_managed_tree(
+        path.parent().expect("session store has parent"),
+        true,
+        None,
+    )?;
     let lock = crate::cache::open_private(
         OpenOptions::new()
             .read(true)
@@ -182,9 +186,9 @@ fn record_success_and_suggestions_inner(
     cache_root: &Path,
     search: SessionSearch<'_>,
 ) -> Result<Vec<ArticleSuggestion>, StoreError> {
-    crate::cache::secure_managed_tree(cache_root, false)?;
+    crate::cache::secure_managed_tree(cache_root, false, None)?;
     let session_dir = cache_root.join(STORE_DIR);
-    crate::cache::secure_managed_tree(&session_dir, true)?;
+    crate::cache::secure_managed_tree(&session_dir, true, None)?;
     let lock = crate::cache::open_private(
         OpenOptions::new()
             .read(true)

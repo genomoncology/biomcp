@@ -30,11 +30,11 @@ live in one cache layout module shared by the manager and planner. Exact
 directory creation rejects links and platform reparse points instead of walking
 through them; exact files are opened without following links, checked for a
 single link, and repaired privately. Recursive startup and maintenance repair
-still skips unrelated links, but rejects directory links only within the actual
-managed top-level `http/content-v2` tree so the content tree is trusted before
-writes begin.
+still skips unrelated links, but callers explicitly identify the concrete
+managed `<cache-root>/http/content-v2` path whose directory links must be
+rejected. No security behavior is inferred from a configured path's basename.
 
-The focused cache suite passed 145 tests. Separate HTTP-client construction
+The focused cache suite passed 146 tests. Separate HTTP-client construction
 coverage passed 2 security tests and the existing managed-state permission
 integration test passed. Regressions prove unrelated permissive and hard-linked
 sentinels are not inspected by `put`, exact output modes remain private under a
@@ -45,7 +45,10 @@ a hostile content destination is replaced without changing its outside target.
 Deterministic concurrency regressions prove same-key puts and eviction wait for
 the active operation through its post-delegation hardening window. Another
 regression proves an unrelated nested directory named `content-v2` retains the
-documented symlink-skip behavior. `make lint` and `git diff --check` passed.
+documented symlink-skip behavior. A parameterized regression proves configured
+cache roots named exactly `http` and `content-v2` do not alter that boundary,
+while their actual nested `http/content-v2` trees remain strict. `make lint` and
+`git diff --check` passed.
 
 The network-dependent large-cache live canary was not run. Primary-agent
 `make test` and `make spec` gates remain pending and are not claimed here.
@@ -61,9 +64,10 @@ pending.
 - Design review: accepted after multiple security corrections established the
   narrow lifecycle ownership, path-link boundaries, CACache layout contract,
   temporary-file requirement, and excluded concurrent path-swapping threat.
-- Code review: an initial review rejected the post-write attribution,
-  recursive-link classification, and Windows/ancestor coverage. Those findings
-  were remediated; independent re-review is pending.
+- Code review: reviews rejected the post-write attribution, recursive-link
+  classification, Windows/ancestor coverage, and later the basename-derived
+  managed-content context. Those findings were remediated; independent
+  re-review is pending.
 
 ## Boundary
 

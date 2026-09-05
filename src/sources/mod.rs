@@ -699,7 +699,8 @@ fn build_http_client_with_config(
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
     let cache_root = config.cache_root.clone();
-    crate::cache::secure_managed_tree(&cache_root, false)?;
+    let content_root = crate::cache::content_root(&cache_root.join("http"));
+    crate::cache::secure_managed_tree(&cache_root, false, Some(&content_root))?;
     let cache_operation = crate::cache::lock_cache_operation(&cache_root)?;
     let migration = apply_migration_non_fatal(
         &cache_root,
@@ -716,7 +717,7 @@ fn build_http_client_with_config(
         matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
     )?;
     let cache_path = cache_root.join("http");
-    crate::cache::secure_managed_tree(&cache_path, true)?;
+    crate::cache::secure_managed_tree(&cache_path, true, Some(&content_root))?;
     drop(cache_operation);
 
     let mut default_headers = HeaderMap::new();
@@ -1314,7 +1315,6 @@ mod tests {
             },
         }
     }
-
     #[test]
     fn parse_cache_mode_returns_none_for_default_or_unset() {
         assert!(parse_cache_mode(None).is_none());

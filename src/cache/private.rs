@@ -28,7 +28,11 @@ pub(crate) async fn lock_cache_operation_async(
         .map_err(|error| io::Error::other(format!("cache operation lock task failed: {error}")))?
 }
 
-pub(crate) fn secure_managed_tree(root: &Path, recurse: bool) -> io::Result<()> {
+pub(crate) fn secure_managed_tree(
+    root: &Path,
+    recurse: bool,
+    managed_content_root: Option<&Path>,
+) -> io::Result<()> {
     match fs::symlink_metadata(root) {
         Ok(metadata) if is_link_or_reparse_point(&metadata) || !metadata.is_dir() => {
             return Err(io::Error::new(
@@ -40,21 +44,7 @@ pub(crate) fn secure_managed_tree(root: &Path, recurse: bool) -> io::Result<()> 
         Err(error) if error.kind() == io::ErrorKind::NotFound => create_private_dir(root)?,
         Err(error) => return Err(error),
     }
-    let content_root = managed_content_root(root);
-    secure_entry(root, recurse, &content_root)
-}
-
-fn managed_content_root(root: &Path) -> PathBuf {
-    if root
-        .file_name()
-        .is_some_and(|name| name == super::layout::CONTENT_DIR)
-    {
-        root.to_path_buf()
-    } else if root.file_name().is_some_and(|name| name == "http") {
-        super::content_root(root)
-    } else {
-        super::content_root(&root.join("http"))
-    }
+    secure_entry(root, recurse, managed_content_root)
 }
 
 pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
@@ -68,10 +58,10 @@ pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
                 ),
             ))
         }
-        Ok(_) => secure_entry(path, false, &managed_content_root(path)),
+        Ok(_) => secure_entry(path, false, None),
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
             create_private_dir_exact(path)?;
-            secure_entry(path, false, &managed_content_root(path))
+            secure_entry(path, false, None)
         }
         Err(error) => Err(error),
     }
@@ -357,11 +347,13 @@ fn create_private_dir_exact(path: &Path) -> io::Result<()> {
 }
 
 #[cfg(unix)]
-fn secure_entry(path: &Path, recurse: bool, content_root: &Path) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::Result<()> {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     let metadata = fs::symlink_metadata(path)?;
     if metadata.file_type().is_symlink() {
-        if path.starts_with(content_root) && symlink_targets_directory(path)? {
+        if content_root.is_some_and(|root| path.starts_with(root))
+            && symlink_targets_directory(path)?
+        {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!(
@@ -400,10 +392,12 @@ fn secure_entry(path: &Path, recurse: bool, content_root: &Path) -> io::Result<(
 }
 
 #[cfg(windows)]
-fn secure_entry(path: &Path, recurse: bool, content_root: &Path) -> io::Result<()> {
+fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::Result<()> {
     let metadata = fs::symlink_metadata(path)?;
     if is_link_or_reparse_point(&metadata) {
-        if path.starts_with(content_root) && symlink_targets_directory(path)? {
+        if content_root.is_some_and(|root| path.starts_with(root))
+            && symlink_targets_directory(path)?
+        {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!(
@@ -482,7 +476,7 @@ mod unix_tests {
         fs::set_permissions(&sentinel, fs::Permissions::from_mode(0o644))
             .expect("permissive sentinel");
 
-        secure_managed_tree(root.path(), true).expect("whole-tree maintenance");
+        secure_managed_tree(root.path(), true, None).expect("whole-tree maintenance");
 
         assert_eq!(
             fs::metadata(&sentinel)
@@ -509,7 +503,8 @@ mod unix_tests {
         )
         .expect("content directory link");
 
-        let error = secure_managed_tree(root.path(), true)
+        let content_root = super::super::content_root(&root.path().join("http"));
+        let error = secure_managed_tree(root.path(), true, Some(&content_root))
             .expect_err("content directory link must be rejected");
 
         assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
@@ -531,7 +526,9 @@ mod unix_tests {
         fs::write(outside.join("sentinel"), b"outside bytes").expect("outside sentinel");
         symlink(&outside, &unrelated).expect("unrelated directory symlink");
 
-        secure_managed_tree(root.path(), true).expect("unrelated link remains skippable");
+        let content_root = super::super::content_root(&root.path().join("http"));
+        secure_managed_tree(root.path(), true, Some(&content_root))
+            .expect("unrelated link remains skippable");
 
         assert!(
             fs::symlink_metadata(&unrelated)
@@ -543,6 +540,46 @@ mod unix_tests {
             fs::read(outside.join("sentinel")).expect("outside unchanged"),
             b"outside bytes"
         );
+    }
+
+    #[test]
+    fn cache_root_basename_never_changes_managed_content_semantics() {
+        for root_name in ["http", "content-v2"] {
+            let parent = tempfile::tempdir().expect("temporary parent");
+            let cache_root = parent.path().join(root_name);
+            let outside = parent.path().join("outside");
+            fs::create_dir(&cache_root).expect("cache root");
+            fs::create_dir(&outside).expect("outside directory");
+            fs::write(outside.join("sentinel"), b"outside bytes").expect("outside sentinel");
+
+            let unrelated = if root_name == "http" {
+                cache_root.join("content-v2")
+            } else {
+                cache_root.join("unrelated-link")
+            };
+            symlink(&outside, &unrelated).expect("unrelated directory symlink");
+            let content_root = super::super::content_root(&cache_root.join("http"));
+
+            secure_managed_tree(&cache_root, true, Some(&content_root))
+                .expect("basename collision must not make unrelated link strict");
+            assert!(
+                fs::symlink_metadata(&unrelated)
+                    .expect("unrelated link metadata")
+                    .file_type()
+                    .is_symlink()
+            );
+
+            fs::create_dir_all(content_root.join("sha256")).expect("managed content tree");
+            symlink(&outside, content_root.join("sha256/managed-link"))
+                .expect("managed directory symlink");
+            let error = secure_managed_tree(&cache_root, true, Some(&content_root))
+                .expect_err("actual managed content directory link must be rejected");
+            assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+            assert_eq!(
+                fs::read(outside.join("sentinel")).expect("outside unchanged"),
+                b"outside bytes"
+            );
+        }
     }
 }
 

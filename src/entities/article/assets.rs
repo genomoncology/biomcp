@@ -217,7 +217,7 @@ async fn read_cached_asset_manifest(requested_id: &str) -> Option<ArticleAssetsM
         return None;
     }
     if let Some(parent) = path.parent()
-        && let Err(error) = crate::cache::secure_managed_tree(parent, true)
+        && let Err(error) = crate::cache::secure_managed_tree(parent, true, None)
     {
         tracing::warn!("Article asset manifest cache permissions could not be repaired: {error}");
         return None;
