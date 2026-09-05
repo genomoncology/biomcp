@@ -173,9 +173,30 @@ PRIVATE_CURRENT_PROSE_MARKERS = (
     "repos/mktg/biomcp/drafts/10-ten-cards-one-command/captures/10-search-all.txt",
 )
 
+COMPLETION_RECORD_NAME = re.compile(r"^(?P<record_id>[0-9]{4})-.+\.md$")
+
 
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
+
+
+def _duplicate_completion_record_diagnostic(records_root: Path) -> str:
+    records_by_id: dict[str, list[str]] = {}
+    for path in records_root.iterdir():
+        if not path.is_file():
+            continue
+        match = COMPLETION_RECORD_NAME.fullmatch(path.name)
+        if match is None:
+            continue
+        records_by_id.setdefault(match.group("record_id"), []).append(path.name)
+
+    lines: list[str] = []
+    for record_id, paths in sorted(records_by_id.items()):
+        if len(paths) < 2:
+            continue
+        lines.append(f"duplicate completion record ID {record_id}:")
+        lines.extend(f"- {path}" for path in sorted(paths))
+    return "\n".join(lines)
 
 
 def _normalize_whitespace(text: str) -> str:
@@ -563,3 +584,34 @@ def test_current_markdown_does_not_depend_on_private_project_context() -> None:
         "architecture/experiments/structural-variant-article-annotations/harden.md"
     )
     assert "~/workspace/planning/mole/spike-plan.md" not in structural_hardening
+
+
+def test_duplicate_completion_record_diagnostic_is_complete_and_stable(
+    tmp_path: Path,
+) -> None:
+    records = tmp_path / "records"
+    for relative in (
+        "2002-zeta.md",
+        "2001-zeta.md",
+        "2003-unique.md",
+        "2002-alpha.md",
+        "2001-alpha.md",
+        "nested/2001-nested.md",
+        "2001.md",
+    ):
+        path = records / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("completion evidence\n", encoding="utf-8")
+
+    assert _duplicate_completion_record_diagnostic(records) == (
+        "duplicate completion record ID 2001:\n"
+        "- 2001-alpha.md\n"
+        "- 2001-zeta.md\n"
+        "duplicate completion record ID 2002:\n"
+        "- 2002-alpha.md\n"
+        "- 2002-zeta.md"
+    )
+
+
+def test_completion_record_ids_are_unique() -> None:
+    assert _duplicate_completion_record_diagnostic(REPO_ROOT / "sdlc" / "records") == ""
