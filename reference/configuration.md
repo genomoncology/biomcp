@@ -9,7 +9,7 @@ internal fixture overrides and release/install variables.
 |---|---|
 | `ALPHAGENOME_API_KEY` | Enables `get variant <id> predict` |
 | `DISGENET_API_KEY` | Enables gene/disease `disgenet` sections |
-| `NCBI_API_KEY` | Improves NCBI E-utilities quota for PubMed, PubTator, PMC OA, and ID Converter paths |
+| `NCBI_API_KEY` | Improves NCBI E-utilities quota for ClinVar, PubMed, PubTator, PMC OA, and ID Converter paths |
 | `NCI_API_KEY` | Enables trial operations with `--source nci` |
 | `ONCOKB_TOKEN` | Enables the explicit `variant oncokb <id>` helper |
 | `OPENFDA_API_KEY` | Improves OpenFDA quota headroom |
@@ -67,7 +67,7 @@ file. Do not treat those base-URL overrides as stable operator API.
 
 Known examples include `BIOMCP_CSPEC_FIXTURE_ORIGIN` (an exact loopback origin for the runner-owned CSpec fixture), `BIOMCP_ALPHAGENOME_BASE`,
 `BIOMCP_CANCERHOTSPOTS_BASE`, `BIOMCP_CBIOPORTAL_BASE`,
-`BIOMCP_CBIOPORTAL_DATAHUB_BASE`, `BIOMCP_CHEMBL_BASE`, `BIOMCP_CIVIC_BASE`,
+`BIOMCP_CBIOPORTAL_DATAHUB_BASE`, `BIOMCP_CHEMBL_BASE`, `BIOMCP_CIVIC_BASE`, `BIOMCP_CLINVAR_BASE`,
 `BIOMCP_CLINGEN_BASE`, `BIOMCP_CLINGEN_CAR_BASE`, `BIOMCP_CLINGEN_EREPO_BASE`, `BIOMCP_COMPLEXPORTAL_BASE`, `BIOMCP_CPIC_BASE`,
 `BIOMCP_CTGOV_BASE`, `BIOMCP_CTGOV_CDN_BASE`, `BIOMCP_DBSNP_BASE`, `BIOMCP_DGIDB_BASE`, `BIOMCP_DISGENET_BASE`,
 `BIOMCP_EMA_REPORT_BASE`, `BIOMCP_ENRICHR_BASE`, `BIOMCP_EUROPEPMC_BASE`,

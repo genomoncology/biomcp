@@ -6461,8 +6461,8 @@ specific capture requires a separate source-by-source rights record.</p>
 <tr>
 <td>ClinVar</td>
 <td>1</td>
-<td>indirect_only</td>
-<td>not_applicable</td>
+<td>direct_api</td>
+<td>optional_env</td>
 <td>NCBI public-domain submission archive</td>
 <td>records are broadly reusable, but preserve accession/provenance and submitter context</td>
 <td><a href="https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/">https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/</a></td>
@@ -7322,14 +7322,15 @@ specific capture requires a separate source-by-source rights record.</p>
 <h3 id="clinvar">ClinVar<a class="headerlink" href="#clinvar" title="Permanent link">&para;</a></h3>
 <ul>
 <li>BioMCP surfaces: <code>get variant &lt;id&gt; clinvar</code></li>
-<li>Integration mode: <code>indirect_only</code></li>
-<li>BioMCP auth: <code>not_applicable</code></li>
-<li>Provider access / registration: surfaced indirectly through MyVariant.info payloads</li>
+<li>Integration mode: <code>direct_api</code></li>
+<li>BioMCP auth: <code>optional_env</code></li>
+<li>Credential environment variable: <code>NCBI_API_KEY</code></li>
+<li>Provider access / registration: open public NCBI E-utilities API; MyVariant.info is the fallback carrier</li>
 <li>License / terms summary: NCBI public-domain submission archive</li>
 <li>Redistribution / reuse summary: records are broadly reusable, but preserve accession/provenance and submitter context</li>
 <li>Official terms URL: <a href="https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/">https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/</a></li>
 <li>Reviewed on: <code>2026-03-20</code></li>
-<li>Notes: BioMCP does not call ClinVar directly; ClinVar assertions arrive through MyVariant.info.</li>
+<li>Notes: Explicit <code>clinvar</code> and <code>all</code> variant requests use NCBI EFetch by resolved Variation ID; the default card and degraded fallback use MyVariant.info.</li>
 </ul>
 <h3 id="cosmic">COSMIC<a class="headerlink" href="#cosmic" title="Permanent link">&para;</a></h3>
 <ul>

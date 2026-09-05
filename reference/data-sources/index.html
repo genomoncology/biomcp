@@ -4372,7 +4372,14 @@ variables, test-only override seams, cache settings, and release/install knobs.<
 <td>MyVariant.info</td>
 <td><code>https://myvariant.info/v1</code></td>
 <td>No</td>
-<td>rsID/HGVS lookup, ClinVar, and prediction scores including separate <code>BayesDel add-AF</code> and <code>BayesDel no-AF</code> source values; BioMCP does not apply clinical thresholds or classify pathogenicity from them</td>
+<td>rsID/HGVS lookup, default ClinVar summary and direct-ClinVar fallback, and prediction scores including separate <code>BayesDel add-AF</code> and <code>BayesDel no-AF</code> source values; BioMCP does not apply clinical thresholds or classify pathogenicity from them</td>
+</tr>
+<tr>
+<td>Variant ClinVar section</td>
+<td>NCBI ClinVar EFetch</td>
+<td><code>https://eutils.ncbi.nlm.nih.gov/entrez/eutils</code></td>
+<td>Optional (<code>NCBI_API_KEY</code>)</td>
+<td>Explicit <code>clinvar</code> and <code>all</code> requests retrieve the resolved numeric Variation ID; the default card makes no direct ClinVar request</td>
 </tr>
 <tr>
 <td>Variant cancerhotspots recurrence</td>
@@ -4808,7 +4815,7 @@ reported without provider payload or object-path leakage.</p>
 <tr>
 <td>NCBI E-utilities</td>
 <td><code>NCBI_API_KEY</code></td>
-<td>Optional; improves PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom</td>
+<td>Optional; improves ClinVar EFetch, PubTator3, PubMed/efetch, PMC OA, and NCBI ID Converter quota headroom</td>
 </tr>
 <tr>
 <td>OpenFDA</td>

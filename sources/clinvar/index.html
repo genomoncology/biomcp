@@ -4190,7 +4190,7 @@
 
 <h1 id="clinvar">ClinVar<a class="headerlink" href="#clinvar" title="Permanent link">&para;</a></h1>
 <p>ClinVar is the most recognizable public archive for germline and somatic clinical significance claims, so it is often the first source people want when they ask whether a variant is pathogenic, uncertain, or well reviewed. It matters because the labels are familiar to labs, researchers, and reviewers even when the upstream submission evidence is messy.</p>
-<p>In BioMCP, ClinVar is an indirect-only source. BioMCP does not act as a direct ClinVar API client; instead, ClinVar assertions are surfaced through MyVariant.info payloads and then normalized into the variant workflow. That keeps the lookup fast, but it means this page is about ClinVar-backed provenance inside BioMCP rather than a standalone ClinVar transport.</p>
+<p>BioMCP retrieves the current NCBI Variation Archive record directly for an explicit <code>clinvar</code> section (and for <code>all</code>) after MyVariant.info resolves a numeric ClinVar Variation ID. The default variant card remains a fast indirect summary. If direct retrieval fails, a usable MyVariant.info snapshot is returned as a clearly degraded fallback with its available evaluation date and submitter count.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4204,12 +4204,12 @@
 <tr>
 <td><code>get variant &lt;id&gt;</code></td>
 <td>Base variant card with ClinVar-backed significance signals when present</td>
-<td>ClinVar arrives indirectly through MyVariant.info</td>
+<td>Indirect summary through MyVariant.info; no direct ClinVar request</td>
 </tr>
 <tr>
 <td><code>get variant &lt;id&gt; clinvar</code></td>
-<td>Focused ClinVar section with significance, review status, and disease context</td>
-<td>Indirect-only provider surface</td>
+<td>Current condition-specific RCV aggregates and separate current SCV submissions</td>
+<td>Direct NCBI ClinVar, with MyVariant.info fallback</td>
 </tr>
 <tr>
 <td><code>search variant -g &lt;gene&gt; --significance &lt;value&gt;</code></td>
@@ -4224,7 +4224,7 @@
 <p>Returns a base variant card that can include ClinVar-backed summary fields when they are available.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>rs113488022<span class="w"> </span>clinvar
 </code></pre></div>
-<p>Returns a ClinVar section with significance, review status, and disease context.</p>
+<p>Returns the current direct ClinVar record with condition-specific aggregates and each current submission kept separate. Domains such as germline, somatic clinical impact, and oncogenicity are not combined into a consensus.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span><span class="w"> </span>clinvar
 </code></pre></div>
 <p>Returns the same ClinVar section for a gene-plus-protein variant ID.</p>
@@ -4232,7 +4232,8 @@
 </code></pre></div>
 <p>Returns variant rows filtered by ClinVar significance labels.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
-<p>No standalone BioMCP key path; ClinVar content is surfaced indirectly via MyVariant.info. The <a href="../../user-guide/variant/">Variant</a> guide covers the broader workflow that hosts this section.</p>
+<p>NCBI E-utilities EFetch (<code>db=clinvar</code>, <code>rettype=vcv</code>, Variation ID lookup) powers explicit <code>clinvar</code> and <code>all</code> requests. The <a href="../../user-guide/variant/">Variant</a> guide covers the broader workflow that hosts this section.</p>
+<p>No credential is required. An optional <code>NCBI_API_KEY</code> is sent to NCBI E-utilities when configured and enables the provider's higher request budget.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
 <p><a href="https://www.ncbi.nlm.nih.gov/clinvar/">ClinVar</a> is the official NCBI archive for clinical variant interpretations.</p>
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
