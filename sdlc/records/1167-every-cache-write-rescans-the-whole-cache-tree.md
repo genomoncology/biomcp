@@ -72,6 +72,15 @@ for a stats-path lock upgrade: epoch establishment now finishes before stats
 acquires its shared repair/snapshot gate, so no shared-to-exclusive upgrade is
 attempted.
 
+A later review found that two cold, independent writes could both observe a
+common directory as missing and the loser would return `AlreadyExists` instead
+of validating the winner. Exact directory creation is now race-idempotent: an
+`AlreadyExists` result restarts full link/reparse-point, type, and permission
+validation. Nine focused write-security tests and six private-path Unix tests
+passed. The regressions synchronize real different-shard puts immediately
+before their common key-lock directory creation and separately inject a hostile
+symlink winner to prove it is rejected rather than blindly accepted.
+
 The network-dependent large-cache live canary was not run. Primary-agent
 `make test` and `make spec` gates remain pending and are not claimed here.
 Windows-only tests cover bounded unrelated traversal and require a protected,
@@ -88,8 +97,9 @@ pending.
   temporary-file requirement, and excluded concurrent path-swapping threat.
 - Code review: reviews rejected the post-write attribution, recursive-link
   classification, Windows/ancestor coverage, the basename-derived
-  managed-content context, and the global-exclusive constructor serialization.
-  Those findings were remediated; independent re-review is pending.
+  managed-content context, the global-exclusive constructor serialization, and
+  cold-cache directory-creation races. Those findings were remediated;
+  independent re-review is pending.
 
 ## Boundary
 

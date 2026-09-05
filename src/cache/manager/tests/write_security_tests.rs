@@ -3,7 +3,7 @@
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
 use std::path::Path;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, Barrier, Mutex, mpsc};
 use std::time::Duration;
 
 use http_cache::CacheManager;
@@ -170,7 +170,7 @@ async fn concurrent_same_key_puts_keep_metadata_attributable_until_hardening_fin
     let (a_delegated_tx, a_delegated_rx) = mpsc::channel();
     let (release_a_tx, release_a_rx) = mpsc::channel();
     let release_a_rx = Arc::new(Mutex::new(release_a_rx));
-    let manager_a = SizeAwareCacheManager::new_with_services_and_after_put(
+    let manager_a = SizeAwareCacheManager::new_with_services_and_observers(
         cache_path.clone(),
         test_config(root.path(), u64::MAX / 2, DiskFreeThreshold::Percent(1)),
         |_| Ok(0),
@@ -196,9 +196,10 @@ async fn concurrent_same_key_puts_keep_metadata_attributable_until_hardening_fin
                     .expect("release A");
             }
         },
+        |_| {},
     );
     let (b_delegated_tx, b_delegated_rx) = mpsc::channel();
-    let manager_b = SizeAwareCacheManager::new_with_services_and_after_put(
+    let manager_b = SizeAwareCacheManager::new_with_services_and_observers(
         cache_path.clone(),
         test_config(root.path(), u64::MAX / 2, DiskFreeThreshold::Percent(1)),
         |_| Ok(0),
@@ -212,6 +213,7 @@ async fn concurrent_same_key_puts_keep_metadata_attributable_until_hardening_fin
         move |_, _| {
             let _ = b_delegated_tx.send(());
         },
+        |_| {},
     );
 
     let a = tokio::spawn(async move {
@@ -247,6 +249,65 @@ async fn concurrent_same_key_puts_keep_metadata_attributable_until_hardening_fin
     b.await.expect("B task").expect("B put");
 
     assert_write_path_modes(&cache_path, key, &a_integrity);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn cold_cache_different_shard_puts_tolerate_common_directory_creation_races() {
+    let root = TempDirGuard::new("cold-different-shard-puts");
+    let cache_path = root.path().join("http");
+    let key_a = "cold-key-a";
+    let key_b = (0..10_000)
+        .map(|candidate| format!("cold-key-{candidate}"))
+        .find(|candidate| {
+            crate::cache::key_lock_path(root.path(), candidate)
+                != crate::cache::key_lock_path(root.path(), key_a)
+        })
+        .expect("key in another lock shard");
+    let barrier = Arc::new(Barrier::new(2));
+    let manager = |barrier: Arc<Barrier>| {
+        SizeAwareCacheManager::new_with_services_and_observers(
+            cache_path.clone(),
+            test_config(root.path(), u64::MAX / 2, DiskFreeThreshold::Percent(1)),
+            |_| Ok(0),
+            |_| {
+                Ok(FilesystemSpace {
+                    available_bytes: 99,
+                    total_bytes: 100,
+                })
+            },
+            |_, _, _, _| unreachable!("test cache must not schedule eviction"),
+            |_, _| {},
+            move |_| {
+                barrier.wait();
+            },
+        )
+    };
+    let manager_a = manager(Arc::clone(&barrier));
+    let manager_b = manager(barrier);
+    let put_a = tokio::spawn(async move {
+        manager_a
+            .put(key_a.into(), test_http_response(b"body-a"), test_policy())
+            .await
+    });
+    let put_b = tokio::spawn(async move {
+        manager_b
+            .put(key_b.clone(), test_http_response(b"body-b"), test_policy())
+            .await
+            .map(|response| (response, key_b))
+    });
+
+    put_a.await.expect("first put task").expect("first put");
+    let (_, key_b) = put_b.await.expect("second put task").expect("second put");
+    assert!(
+        cacache::metadata_sync(&cache_path, key_a)
+            .expect("first metadata")
+            .is_some()
+    );
+    assert!(
+        cacache::metadata_sync(&cache_path, &key_b)
+            .expect("second metadata")
+            .is_some()
+    );
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

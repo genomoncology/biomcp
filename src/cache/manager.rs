@@ -22,6 +22,7 @@ type InspectSpaceFn = dyn Fn(&Path) -> Result<FilesystemSpace, BioMcpError> + Se
 type ScheduleEvictionFn =
     dyn Fn(PathBuf, ResolvedCacheConfig, Arc<AtomicU64>, Arc<AtomicBool>) + Send + Sync;
 type AfterPutFn = dyn Fn(&Path, &str) + Send + Sync;
+type BeforeKeyLockDirCreateFn = dyn Fn(&Path) + Send + Sync;
 
 #[derive(Clone)]
 struct ManagerServices {
@@ -29,6 +30,7 @@ struct ManagerServices {
     inspect_space: Arc<InspectSpaceFn>,
     schedule_eviction: Arc<ScheduleEvictionFn>,
     after_put: Arc<AfterPutFn>,
+    before_key_lock_dir_create: Arc<BeforeKeyLockDirCreateFn>,
 }
 
 pub(crate) struct SizeAwareCacheManager {
@@ -90,18 +92,20 @@ impl SizeAwareCacheManager {
                 inspect_space: Arc::new(inspect_space),
                 schedule_eviction: Arc::new(schedule_eviction),
                 after_put: Arc::new(|_, _| {}),
+                before_key_lock_dir_create: Arc::new(|_| {}),
             },
         )
     }
 
     #[cfg(test)]
-    fn new_with_services_and_after_put<E, I, S, A>(
+    fn new_with_services_and_observers<E, I, S, A, B>(
         path: PathBuf,
         config: ResolvedCacheConfig,
         estimate_cache_bytes: E,
         inspect_space: I,
         schedule_eviction: S,
         after_put: A,
+        before_key_lock_dir_create: B,
     ) -> Self
     where
         E: Fn(&Path) -> io::Result<u64> + Send + Sync + 'static,
@@ -111,6 +115,7 @@ impl SizeAwareCacheManager {
             + Sync
             + 'static,
         A: Fn(&Path, &str) + Send + Sync + 'static,
+        B: Fn(&Path) + Send + Sync + 'static,
     {
         Self::build_with_services(
             path,
@@ -120,6 +125,7 @@ impl SizeAwareCacheManager {
                 inspect_space: Arc::new(inspect_space),
                 schedule_eviction: Arc::new(schedule_eviction),
                 after_put: Arc::new(after_put),
+                before_key_lock_dir_create: Arc::new(before_key_lock_dir_create),
             },
         )
     }
@@ -167,8 +173,12 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
-        let _operation =
-            super::lock_cache_key_async(self.config.cache_root.clone(), cache_key.clone()).await?;
+        let _operation = super::lock_cache_key_async(
+            self.config.cache_root.clone(),
+            cache_key.clone(),
+            Arc::clone(&self.services.before_key_lock_dir_create),
+        )
+        .await?;
         super::prepare_write_paths(&self.inner.path, &cache_key)?;
         let response = self.inner.put(cache_key.clone(), res, policy).await?;
         (self.services.after_put)(&self.inner.path, &cache_key);
@@ -212,9 +222,12 @@ impl CacheManager for SizeAwareCacheManager {
     }
 
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
-        let _operation =
-            super::lock_cache_key_async(self.config.cache_root.clone(), cache_key.to_owned())
-                .await?;
+        let _operation = super::lock_cache_key_async(
+            self.config.cache_root.clone(),
+            cache_key.to_owned(),
+            Arc::clone(&self.services.before_key_lock_dir_create),
+        )
+        .await?;
         let content_root = super::content_root(&self.inner.path);
         super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
         self.inner.delete(cache_key).await
@@ -227,6 +240,7 @@ fn default_services() -> ManagerServices {
         inspect_space: Arc::new(inspect_filesystem_space),
         schedule_eviction: Arc::new(spawn_eviction_task),
         after_put: Arc::new(|_, _| {}),
+        before_key_lock_dir_create: Arc::new(|_| {}),
     }
 }
 

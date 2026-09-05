@@ -1,6 +1,7 @@
 use std::fs::{self, File, OpenOptions};
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 const CACHE_OPERATION_LOCK: &str = ".biomcp-operation.lock";
 
@@ -50,12 +51,16 @@ pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationG
     Ok(CacheOperationGuard { _file: file })
 }
 
-fn lock_cache_key(cache_root: &Path, key: &str) -> io::Result<CacheKeyGuard> {
+fn lock_cache_key(
+    cache_root: &Path,
+    key: &str,
+    before_lock_dir_create: &dyn Fn(&Path),
+) -> io::Result<CacheKeyGuard> {
     use fs2::FileExt;
 
     let shared = lock_cache_shared(cache_root)?;
     let lock_dir = cache_root.join(super::layout::KEY_LOCK_DIR);
-    secure_managed_dir(&lock_dir)?;
+    secure_managed_dir_with(&lock_dir, || before_lock_dir_create(&lock_dir))?;
     let lock_path = super::key_lock_path(cache_root, key);
     let mut options = OpenOptions::new();
     options.read(true).write(true).create(true);
@@ -70,10 +75,13 @@ fn lock_cache_key(cache_root: &Path, key: &str) -> io::Result<CacheKeyGuard> {
 pub(crate) async fn lock_cache_key_async(
     cache_root: PathBuf,
     key: String,
+    before_lock_dir_create: Arc<dyn Fn(&Path) + Send + Sync>,
 ) -> io::Result<CacheKeyGuard> {
-    tokio::task::spawn_blocking(move || lock_cache_key(&cache_root, &key))
-        .await
-        .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
+    tokio::task::spawn_blocking(move || {
+        lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref())
+    })
+    .await
+    .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
 }
 
 pub(crate) fn secure_managed_tree(
@@ -96,6 +104,13 @@ pub(crate) fn secure_managed_tree(
 }
 
 pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
+    secure_managed_dir_with(path, || {})
+}
+
+fn secure_managed_dir_with<F>(path: &Path, before_create: F) -> io::Result<()>
+where
+    F: FnOnce(),
+{
     match fs::symlink_metadata(path) {
         Ok(metadata) if is_link_or_reparse_point(&metadata) || !metadata.is_dir() => {
             Err(io::Error::new(
@@ -108,8 +123,14 @@ pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {
         }
         Ok(_) => secure_entry(path, false, None),
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
-            create_private_dir_exact(path)?;
-            secure_entry(path, false, None)
+            before_create();
+            match create_private_dir_exact(path) {
+                Ok(()) => secure_entry(path, false, None),
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                    secure_managed_dir(path)
+                }
+                Err(error) => Err(error),
+            }
         }
         Err(error) => Err(error),
     }
@@ -542,11 +563,11 @@ mod unix_tests {
                     != super::super::key_lock_path(root.path(), key_a)
             })
             .expect("key in another lock shard");
-        let operation_a = lock_cache_key(root.path(), key_a).expect("first key lock");
+        let operation_a = lock_cache_key(root.path(), key_a, &|_| {}).expect("first key lock");
         let (key_tx, key_rx) = mpsc::channel();
         let root_path = root.path().to_path_buf();
         let operation_b = std::thread::spawn(move || {
-            let guard = lock_cache_key(&root_path, &key_b).expect("independent key lock");
+            let guard = lock_cache_key(&root_path, &key_b, &|_| {}).expect("independent key lock");
             key_tx.send(()).expect("report independent acquisition");
             guard
         });
@@ -555,6 +576,27 @@ mod unix_tests {
             .expect("independent key operations must overlap");
         drop(operation_a);
         drop(operation_b.join().expect("key operation thread"));
+    }
+
+    #[test]
+    fn directory_create_race_revalidates_a_hostile_winner() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let outside = root.path().join("outside");
+        let managed = root.path().join("managed");
+        fs::create_dir(&outside).expect("outside directory");
+
+        let error = secure_managed_dir_with(&managed, || {
+            symlink(&outside, &managed).expect("hostile race winner");
+        })
+        .expect_err("race winner must be revalidated");
+
+        assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+        assert!(
+            fs::symlink_metadata(&managed)
+                .expect("hostile link remains")
+                .file_type()
+                .is_symlink()
+        );
     }
 
     #[test]
