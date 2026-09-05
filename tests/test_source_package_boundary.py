@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import re
 import subprocess
 import sys
-import tarfile
 import tempfile
 import tomllib
 import zipfile
 
-import pytest
-
-
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
-MAX_PACKAGE_FILES = 1_302
+MAX_PACKAGE_FILES = 1_300
+BIODATA_REVISION = "4f912d35a0f3fbff6994f1769d7601d7d0367aa1"
 
 
 def _cargo_package_list() -> list[str]:
@@ -92,53 +88,18 @@ def test_python_contract_temporary_paths_stay_in_worktree(tmp_path: Path) -> Non
     assert ROOT in Path(tempfile.gettempdir()).parents
 
 
-@pytest.mark.skip(
-    reason="Requires the public BioData release milestone; development uses an exact Git revision"
-)
-def test_verified_package_compiles_focused_identity_test_after_extraction(
-    tmp_path: Path,
-) -> None:
-    assert ROOT in tmp_path.parents
-    subprocess.run(
-        [
-            "cargo",
-            "package",
-            "--allow-dirty",
-            "--locked",
-            "--offline",
-            "--no-verify",
-        ],
-        cwd=ROOT,
-        check=True,
-    )
+def test_extracted_package_compile_deferral_names_the_public_release_milestone() -> None:
     cargo = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
-    package = cargo["package"]
-    archive = ROOT / "target" / "package" / f"{package['name']}-{package['version']}.crate"
-    assert archive.is_file()
-
-    extract_root = tmp_path / "source-package"
-    extract_root.mkdir()
-    with tarfile.open(archive, mode="r:gz") as crate:
-        crate.extractall(extract_root, filter="data")
-    package_root = extract_root / f"{package['name']}-{package['version']}"
-
-    subprocess.run(
-        [
-            "cargo",
-            "test",
-            "--manifest-path",
-            str(package_root / "Cargo.toml"),
-            "--locked",
-            "--offline",
-            "--no-default-features",
-            "--test",
-            "package_build_identity",
-        ],
-        cwd=package_root,
-        env=os.environ | {"CARGO_TARGET_DIR": str(ROOT / "target")},
-        check=True,
-    )
-    assert not (package_root / "target").exists()
+    dependency = cargo["dependencies"]["biodata"]
+    assert dependency == {
+        "git": "https://github.com/genomoncology/biodata",
+        "rev": BIODATA_REVISION,
+    }
+    assert cargo["package"]["metadata"]["biodata-development"] == {
+        "extracted-package-compile": "deferred",
+        "until": "BioMCP 1.0 complete and used internally",
+        "reason": "Cargo removes exact Git dependencies from registry packages",
+    }
 
 
 def test_artifact_checker_rejects_renamed_fixture_bytes(tmp_path: Path) -> None:

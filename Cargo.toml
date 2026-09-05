@@ -19,6 +19,11 @@ exclude = [
     "tools/alphagenome-proto-generator/",
 ]
 
+[package.metadata.biodata-development]
+extracted-package-compile = "deferred"
+until = "BioMCP 1.0 complete and used internally"
+reason = "Cargo removes exact Git dependencies from registry packages"
+
 [[bin]]
 name = "biomcp"
 path = "src/main.rs"
@@ -28,7 +33,7 @@ name = "biomcp-cli"
 path = "src/main_biomcp_cli.rs"
 
 [dependencies]
-biodata = { git = "https://github.com/genomoncology/biodata", rev = "b24e628eaae8f4f0629354dcdb529bb731783e46" }
+biodata = { git = "https://github.com/genomoncology/biodata", rev = "4f912d35a0f3fbff6994f1769d7601d7d0367aa1" }
 
 # CLI
 clap = { version = "4", features = ["derive"] }
