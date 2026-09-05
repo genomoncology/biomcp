@@ -71,6 +71,15 @@ normalization, pre-contact validation, and raw MCP agreement.
 - Corrected `make spec` rerun: passed; the phenotype page reported 10 passed,
   the final parallel-isolation audit reported 39 passed, and `spec-static`
   reported 8 passed.
+- Independent code review accepted the request construction, raw-count-before-
+  normalization behavior, first-occurrence deduplication, stable provider
+  order, independent continuation/exhaustion metadata, surface agreement, and
+  fail-closed fixture isolation without findings.
+- Primary integration on top of tickets 1167 and 1170 passed `make lint`, all
+  3,183 Rust tests with 30 skipped, all 904 Python contracts with 3 skipped,
+  strict MkDocs, every routine mustmatch page, the 39-test parallel-isolation
+  audit, and 8 static spec checks. An earlier artifact-archive attempt received
+  SIGTERM before any test ran; the clean restart produced the results above.
 
 No live-provider gate was run. Coverage beyond Monarch's fixed 50-row window
 remains intentionally unknown and is now reported as such.
