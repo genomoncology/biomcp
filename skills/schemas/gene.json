@@ -36,6 +36,32 @@
       "type": ["array", "null"],
       "items": { "type": "string" }
     },
+    "clingen": {
+      "type": "object",
+      "properties": {
+        "validity": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "properties": {
+              "disease": { "type": "string" },
+              "classification": { "type": "string" },
+              "review_date": { "type": "string" },
+              "moi": { "type": "string" }
+            },
+            "required": ["disease", "classification"],
+            "additionalProperties": false
+          }
+        },
+        "haploinsufficiency": { "type": "string" },
+        "triplosensitivity": { "type": "string" },
+        "validity_status": { "$ref": "#/$defs/validityStatus" },
+        "dosage_status": { "$ref": "#/$defs/dosageStatus" }
+      },
+      "required": ["validity_status", "dosage_status"],
+      "additionalProperties": false
+    },
     "_meta": {
       "type": ["object", "null"],
       "properties": {
@@ -60,6 +86,110 @@
         "workflow_playbook": { "type": ["string", "null"] }
       },
       "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "validityStatus": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["data", "empty"] },
+            "op": { "const": "gene_validity_download" }
+          },
+          "required": ["status", "op"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": { "const": "failed" },
+            "op": { "const": "client_init" },
+            "message": { "const": "ClinGen client initialization failed." }
+          },
+          "required": ["status", "op", "message"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["failed", "timed_out"] },
+            "op": { "const": "gene_lookup" },
+            "message": { "enum": ["ClinGen gene lookup failed; gene-validity absence is unconfirmed.", "ClinGen gene lookup timed out; gene-validity absence is unconfirmed."] }
+          },
+          "required": ["status", "op", "message"],
+          "allOf": [
+            { "if": { "properties": { "status": { "const": "failed" } } }, "then": { "properties": { "message": { "const": "ClinGen gene lookup failed; gene-validity absence is unconfirmed." } } } },
+            { "if": { "properties": { "status": { "const": "timed_out" } } }, "then": { "properties": { "message": { "const": "ClinGen gene lookup timed out; gene-validity absence is unconfirmed." } } } }
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["failed", "timed_out"] },
+            "op": { "const": "gene_validity_download" },
+            "message": { "enum": ["ClinGen gene-validity download failed.", "ClinGen gene-validity download timed out."] }
+          },
+          "required": ["status", "op", "message"],
+          "allOf": [
+            { "if": { "properties": { "status": { "const": "failed" } } }, "then": { "properties": { "message": { "const": "ClinGen gene-validity download failed." } } } },
+            { "if": { "properties": { "status": { "const": "timed_out" } } }, "then": { "properties": { "message": { "const": "ClinGen gene-validity download timed out." } } } }
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "dosageStatus": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["data", "empty"] },
+            "op": { "const": "gene_dosage_download" }
+          },
+          "required": ["status", "op"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": { "const": "failed" },
+            "op": { "const": "client_init" },
+            "message": { "const": "ClinGen client initialization failed." }
+          },
+          "required": ["status", "op", "message"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["failed", "timed_out"] },
+            "op": { "const": "gene_lookup" },
+            "message": { "enum": ["ClinGen gene lookup failed; dosage-sensitivity absence is unconfirmed.", "ClinGen gene lookup timed out; dosage-sensitivity absence is unconfirmed."] }
+          },
+          "required": ["status", "op", "message"],
+          "allOf": [
+            { "if": { "properties": { "status": { "const": "failed" } } }, "then": { "properties": { "message": { "const": "ClinGen gene lookup failed; dosage-sensitivity absence is unconfirmed." } } } },
+            { "if": { "properties": { "status": { "const": "timed_out" } } }, "then": { "properties": { "message": { "const": "ClinGen gene lookup timed out; dosage-sensitivity absence is unconfirmed." } } } }
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": { "enum": ["failed", "timed_out"] },
+            "op": { "const": "gene_dosage_download" },
+            "message": { "enum": ["ClinGen gene-dosage download failed.", "ClinGen gene-dosage download timed out."] }
+          },
+          "required": ["status", "op", "message"],
+          "allOf": [
+            { "if": { "properties": { "status": { "const": "failed" } } }, "then": { "properties": { "message": { "const": "ClinGen gene-dosage download failed." } } } },
+            { "if": { "properties": { "status": { "const": "timed_out" } } }, "then": { "properties": { "message": { "const": "ClinGen gene-dosage download timed out." } } } }
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   },
   "additionalProperties": true

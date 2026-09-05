@@ -109,16 +109,16 @@ fn related_gene_promotes_clingen_trial_search_before_generic_pivots() {
             rna_summary: None,
         }),
         druggability: None,
-        clingen: Some(crate::sources::clingen::GeneClinGen {
-            validity: vec![crate::sources::clingen::ClinGenValidity {
+        clingen: Some(crate::sources::clingen::GeneClinGen::from_parts(
+            vec![crate::sources::clingen::ClinGenValidity {
                 disease: "dominant optic atrophy".to_string(),
                 classification: "Definitive".to_string(),
                 review_date: Some("2024-01-01".to_string()),
                 moi: Some("AD".to_string()),
             }],
-            haploinsufficiency: None,
-            triplosensitivity: None,
-        }),
+            None,
+            None,
+        )),
         constraint: None,
         disgenet: None,
         funding: None,

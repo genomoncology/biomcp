@@ -77,7 +77,21 @@ MYGENE = {
     'symbol:"BRCA1"': fixture("mygene/get_brca1_20260811.json"),
     'symbol:"EGFR"': fixture("mygene/get_egfr_20260811.json"),
     'symbol:"ERBB2"': fixture("mygene/get_erbb2_20260811.json"),
+    'symbol:"TP53"': json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "TP53",
+            "name": "tumor protein p53",
+            "entrezgene": 7157,
+            "type_of_gene": "protein-coding",
+            "ensembl": {"gene": "ENSG00000141510"},
+            "uniprot": {"Swiss-Prot": "P04637"},
+        }],
+    }).encode("utf-8"),
 }
+CLINGEN_LOOKUP_TP53 = fixture("clingen/lookup_tp53.json")
+CLINGEN_VALIDITY_TP53 = fixture("clingen/validity_tp53.csv")
+CLINGEN_DOSAGE_TP53 = fixture("clingen/dosage_tp53.csv")
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
 OPENFDA_DEVICE_510K = fixture("openfda/device_510k_brca1_20260811.json")
@@ -101,6 +115,7 @@ OPENTARGETS = {
     ("ENSG00000146648", True): fixture("opentargets/druggability_egfr_20260811.json"),
     ("ENSG00000141736", False): fixture("opentargets/clinical_erbb2_20260811.json"),
     ("ENSG00000012048", False): fixture("opentargets/clinical_brca1_20260811.json"),
+    ("ENSG00000141510", False): b'{"data":{"target":{"associatedDiseases":{"rows":[]},"drugAndClinicalCandidates":{"rows":[]}}}}',
 }
 KEGG_SEARCH = fixture("kegg/search_mapk_20260811.txt")
 KEGG_DETAIL = fixture("kegg/get_hsa05200_20260811.txt")
@@ -147,6 +162,21 @@ class Handler(BaseHTTPRequestHandler):
             if body is not None:
                 send(self, 200, body)
                 return
+        if parsed.path.endswith("/api/genes/look/TP53") and parsed.path.startswith("/clingen/"):
+            send(self, 200, CLINGEN_LOOKUP_TP53)
+            return
+        if parsed.path.endswith("/kb/gene-validity/download") and parsed.path.startswith("/clingen/"):
+            if parsed.path.startswith("/clingen/validity-fail/"):
+                send(self, 400, b"synthetic private validity failure")
+            else:
+                send(self, 200, CLINGEN_VALIDITY_TP53, "text/csv")
+            return
+        if parsed.path.endswith("/kb/gene-dosage/download") and parsed.path.startswith("/clingen/"):
+            if parsed.path.startswith("/clingen/dosage-timeout/"):
+                import time
+                time.sleep(0.2)
+            send(self, 200, CLINGEN_DOSAGE_TP53, "text/csv")
+            return
         if parsed.path == "/openfda/drug/label.json":
             search = parse_qs(parsed.query).get("search", [""])[0].lower()
             if "keytruda" in search or "pembrolizumab" in search:
@@ -322,6 +352,8 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"
   printf 'export BIOMCP_WHO_IVD_DIR=%q\n' "$who_ivd_dir"
   printf 'export BIOMCP_GTR_DIR=%q\n' "$gtr_dir"
+  printf 'export BIOMCP_PROVIDER_CONTRACT_BASE=%q\n' "$base_url"
+  printf 'export BIOMCP_TEST_UNPACED_ORIGIN=%q\n' "$base_url"
   printf 'export BIOMCP_CACHE_MODE=off\n'
   printf 'export BIOMCP_PROVIDER_CONTRACT_READY_FILE=%q\n' "$ready_file"
   printf 'export BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG=%q\n' "$request_log"

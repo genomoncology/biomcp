@@ -59,14 +59,43 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "clingen/README.md",
+      "classification": "authored",
+      "authored_reason": "Repository-authored fixture provenance and derivation inventory."
+    },
+    {
       "path": "clingen/dosage.csv",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "clingen/dosage_tp53.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen",
+        "request": "https://search.clinicalgenome.org/kb/gene-dosage/download",
+        "captured_at": "2026-09-05T22:10:00Z",
+        "sha256": "8c4c96c7fa09ef052cf178268b4868eab68ac0c13827846f53a32622c860529f",
+        "minimization_or_redaction": "Minimized to provider metadata, schema header, and the TP53 row; original full-response SHA-256 was 87ee01eef894c482aa3f257f09c7d4222f33bda3bf9e2aefbc327c96feb1a3c0.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen gene-dosage download before minimization."
+      }
+    },
+    {
       "path": "clingen/lookup_braf.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen/lookup_tp53.json",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen",
+        "request": "https://search.clinicalgenome.org/api/genes/look/TP53",
+        "captured_at": "2026-09-05T22:10:00Z",
+        "sha256": "5da51ef4128aee0b164900721d2c17fba1c31885bf933ed36409d624fc732404",
+        "minimization_or_redaction": "Minimized to the exact TP53 row; original full-response SHA-256 was 07127e6d35df8f17862e54111bdd9125457ba5b9dbd0a99e191c91eb043aaddf.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen gene lookup before minimization."
+      }
     },
     {
       "path": "clingen/validity.csv",
@@ -77,6 +106,18 @@
       "path": "clingen/validity_hgnc_only.csv",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
+    },
+    {
+      "path": "clingen/validity_tp53.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "ClinGen",
+        "request": "https://search.clinicalgenome.org/kb/gene-validity/download",
+        "captured_at": "2026-09-05T22:10:00Z",
+        "sha256": "1c4477f14542ed946ac02520e3125af7439882909a961d3b67bc7911beafed7e",
+        "minimization_or_redaction": "Minimized to provider metadata, schema header, and the TP53 row; original full-response SHA-256 was 964b90650a947fef7b1d4be2520bc8c1afdf2871000f1e9a7824e98ce8e2df60.",
+        "provider_origin_statement": "Bytes were recorded from the public ClinGen gene-validity download before minimization."
+      }
     },
     {
       "path": "clingen_allele_registry/resolved.json",

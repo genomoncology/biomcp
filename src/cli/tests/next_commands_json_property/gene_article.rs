@@ -197,16 +197,16 @@ fn gene_json_next_commands_include_clingen_trial_search() {
         expression: None,
         hpa: None,
         druggability: None,
-        clingen: Some(crate::sources::clingen::GeneClinGen {
-            validity: vec![crate::sources::clingen::ClinGenValidity {
+        clingen: Some(crate::sources::clingen::GeneClinGen::from_parts(
+            vec![crate::sources::clingen::ClinGenValidity {
                 disease: "genetic developmental and epileptic encephalopathy".to_string(),
                 classification: "Definitive".to_string(),
                 review_date: Some("2025-12-16".to_string()),
                 moi: Some("AD".to_string()),
             }],
-            haploinsufficiency: None,
-            triplosensitivity: None,
-        }),
+            None,
+            None,
+        )),
         constraint: None,
         disgenet: None,
         funding: None,

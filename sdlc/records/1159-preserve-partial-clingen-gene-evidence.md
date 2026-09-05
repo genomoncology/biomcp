@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 8
+status: complete
 ---
 
 # Preserve partial ClinGen gene evidence
@@ -161,3 +162,44 @@ separate named section with bulk-cache and stale-data semantics, while the
 status type and operations defined here are ClinGen-specific. Its `deps` entry
 is therefore removed rather than implying a reusable abstraction that this
 ticket does not introduce.
+
+## Outcome
+
+ClinGen gene validity, dosage sensitivity, and the shared HGNC lookup now run
+concurrently under independent deadlines. Each evidence family exposes its
+required closed status object and preserves a completed sibling when another
+operation fails or times out. Acquisition fails closed for unrecognized CSV
+schemas, HTML bodies, invalid encoding, oversized bodies, and non-success
+responses. Exact-symbol evidence survives an inconclusive lookup while a zero
+match inherits the lookup failure or timeout.
+
+CLI JSON, CLI Markdown, raw MCP text and JSON, and typed MCP `get` expose the
+same family statuses, aggregate outcome, provenance, ordering, caps, and
+missing-versus-literal-no-evidence behavior. The public schema and user-facing
+documentation define the additive contract. Provider-shaped TP53 evidence is
+backed by public capture receipts; timeout, failure, malformed, and oversize
+cases remain labelled test derivatives. Ticket 1158 implementation was not
+changed.
+
+## Implementation evidence
+
+- Red: the initial focused parsing tests failed to compile because
+  `GeneClinGen` had no `validity_status` or `dosage_status` fields and no closed
+  family-status types or constructors.
+- Green: `cargo test --no-default-features --lib clingen -- --nocapture`
+  passed all 51 selected Rust tests. These cover concurrency, one shared
+  lookup, independent timeout and failure preservation, cancellation,
+  fail-closed parsing, ordering, caps, aggregate truth-table rows, and
+  Markdown rendering.
+- `python -m pytest -q tests/test_public_skill_docs_contract.py
+  tests/test_provider_contract_fixture.py tests/test_capture_receipts.py`
+  passed all 75 selected Python tests. Focused Ruff checks and
+  `git diff --check` passed.
+- `mustmatch test spec/entity/gene.md --lang bash --timeout 180` passed all 15
+  gene contract blocks against the isolated provider fixture, including CLI
+  and raw/typed MCP surfaces.
+- `cargo package --list --allow-dirty --locked --offline | wc -l` remains at
+  the exact 1,300-file boundary. The new acquisition test owner replaces the
+  former construction test file, so packaged source file count does not grow.
+- The complete `make lint`, `make test`, and `make spec` lane is intentionally
+  deferred to the coordinating agent's single full-gate run.

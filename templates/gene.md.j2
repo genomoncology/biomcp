@@ -256,6 +256,20 @@ No DGIdb interactions returned for this gene query.
 
 {% if source_states.clingen.status %}{{ source_states.clingen.status }}
 {% endif -%}
+{% if clingen -%}
+### Gene-Disease Validity Status
+
+- Status: `{{ clingen.validity_status.status }}`
+- Operation: `{{ clingen.validity_status.op }}`
+{% if clingen.validity_status.message %}- Message: {{ clingen.validity_status.message }}
+{% endif -%}
+### Dosage-Sensitivity Status
+
+- Status: `{{ clingen.dosage_status.status }}`
+- Operation: `{{ clingen.dosage_status.op }}`
+{% if clingen.dosage_status.message %}- Message: {{ clingen.dosage_status.message }}
+{% endif -%}
+{% endif -%}
 {% if source_states.clingen.payload_allowed and clingen -%}
 {% if clingen.validity -%}
 ### Gene-Disease Validity
@@ -269,8 +283,10 @@ No DGIdb interactions returned for this gene query.
 {% if clingen.haploinsufficiency or clingen.triplosensitivity -%}
 ### Dosage Sensitivity
 
-- Haploinsufficiency: {{ clingen.haploinsufficiency or "No evidence" }}
-- Triplosensitivity: {{ clingen.triplosensitivity or "No evidence" }}
+{% if clingen.haploinsufficiency %}- Haploinsufficiency: {{ clingen.haploinsufficiency }}
+{% endif -%}
+{% if clingen.triplosensitivity %}- Triplosensitivity: {{ clingen.triplosensitivity }}
+{% endif -%}
 {% endif -%}
 {% if not clingen.validity and not clingen.haploinsufficiency and not clingen.triplosensitivity -%}
 No ClinGen records returned for this gene query.

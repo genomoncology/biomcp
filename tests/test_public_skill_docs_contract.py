@@ -1,12 +1,53 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
+
+import pytest
+from jsonschema import Draft202012Validator, ValidationError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
+
+
+def test_gene_schema_closes_clingen_family_status_shapes() -> None:
+    schema = json.loads(_read("skills/schemas/gene.json"))
+    validator = Draft202012Validator(schema)
+    payload = {
+        "symbol": "TP53",
+        "name": "tumor protein p53",
+        "clingen": {
+            "triplosensitivity": "No Evidence for Triplosensitivity",
+            "validity_status": {
+                "status": "timed_out",
+                "op": "gene_validity_download",
+                "message": "ClinGen gene-validity download timed out.",
+            },
+            "dosage_status": {
+                "status": "data",
+                "op": "gene_dosage_download",
+            },
+        },
+    }
+    validator.validate(payload)
+
+    invalid = json.loads(json.dumps(payload))
+    invalid["clingen"]["dosage_status"]["message"] = "healthy but noisy"
+    with pytest.raises(ValidationError):
+        validator.validate(invalid)
+
+    invalid = json.loads(json.dumps(payload))
+    invalid["clingen"]["validity_status"]["status"] = "failed"
+    with pytest.raises(ValidationError):
+        validator.validate(invalid)
+
+    invalid = json.loads(json.dumps(payload))
+    invalid["clingen"]["unexpected"] = True
+    with pytest.raises(ValidationError):
+        validator.validate(invalid)
 
 
 def test_public_skill_docs_match_current_cli_contract() -> None:

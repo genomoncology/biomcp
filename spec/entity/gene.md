@@ -135,6 +135,62 @@ grep -F 'GET /quickgo/QuickGO/services/annotation/search?geneProductId=P15056&li
 grep -F 'GET /string/api/json/network?identifiers=BRAF&species=9606&limit=15' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'species=9606'
 ```
 
+## Partial ClinGen evidence
+
+ClinGen validity, dosage sensitivity, and the shared gene lookup start together
+under independent deadlines. A slow dosage download keeps completed validity
+evidence and reports the exact degraded aggregate on both provenance surfaces.
+
+```bash
+BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen/dosage-timeout" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=40 \
+  ../../tools/biomcp-ci --json get gene TP53 clingen \
+  | jq -e '.clingen.validity[0].disease == "Li-Fraumeni syndrome" and .clingen.validity_status == {status:"data", op:"gene_validity_download"} and .clingen.dosage_status == {status:"timed_out", op:"gene_dosage_download", message:"ClinGen gene-dosage download timed out."} and .section_outcomes.clingen == {outcome:"degraded", sources:["ClinGen"], message:"ClinGen gene evidence is partial; one result family is unavailable."} and (._meta.section_sources | any(.key == "clingen" and .label == "ClinGen" and .outcome == "degraded" and .sources == ["ClinGen"]))' \
+  | mustmatch 'true'
+```
+
+The inverse failure retains the newest dosage row, including a literal ClinGen
+no-evidence classification. Markdown exposes both family states and never
+invents a missing classification.
+
+```bash
+BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen/validity-fail" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 \
+  ../../tools/biomcp-ci --json get gene TP53 clingen \
+  | jq -e '.clingen.validity_status == {status:"failed", op:"gene_validity_download", message:"ClinGen gene-validity download failed."} and .clingen.dosage_status == {status:"data", op:"gene_dosage_download"} and .clingen.haploinsufficiency == "Sufficient Evidence for Haploinsufficiency" and .clingen.triplosensitivity == "No Evidence for Triplosensitivity" and .section_outcomes.clingen.outcome == "degraded"' \
+  | mustmatch 'true'
+BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen/validity-fail" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 \
+  ../../tools/biomcp-ci get gene TP53 clingen \
+  | mustmatch like 'Gene-Disease Validity Status
+Status: `failed`
+ClinGen gene-validity download failed.
+Dosage-Sensitivity Status
+Status: `data`
+Haploinsufficiency: Sufficient Evidence for Haploinsufficiency
+Triplosensitivity: No Evidence for Triplosensitivity'
+```
+
+Raw MCP text and JSON plus typed MCP `get` travel through the same section
+contract. The typed request schema remains the existing gene/section request.
+
+```bash
+BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen/validity-fail" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 \
+  BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/clingen-mcp-cache" \
+  bash ../fixtures/run-section-outcome-mcp.sh ../.. clingen-surfaces \
+  | mustmatch like 'RAW TEXT
+Gene-Disease Validity Status
+ClinGen gene-validity download failed.
+Triplosensitivity: No Evidence for Triplosensitivity
+RAW JSON
+"validity_status": {
+"status": "failed"
+"dosage_status": {
+"status": "data"
+TYPED JSON
+"section_outcomes": {
+"clingen": {
+"outcome": "degraded"
+"section_sources":'
+```
+
 ## All-Section Warm Budget
 
 Quarantined from routine executable specs by ticket 372 because this timing-only

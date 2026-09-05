@@ -118,6 +118,36 @@ Gene-disease validity (ClinGen):
 biomcp get gene BRAF clingen
 ```
 
+The additive `GeneClinGen` JSON shape keeps the existing evidence fields and
+reports validity and dosage acquisition independently:
+
+```json
+{
+  "validity": [{"disease": "Li-Fraumeni syndrome", "classification": "Definitive"}],
+  "haploinsufficiency": "Sufficient Evidence for Haploinsufficiency",
+  "triplosensitivity": "No Evidence for Triplosensitivity",
+  "validity_status": {"status": "data", "op": "gene_validity_download"},
+  "dosage_status": {"status": "data", "op": "gene_dosage_download"}
+}
+```
+
+Each family status is one of `data`, `empty`, `failed`, or `timed_out`; its
+operation is one of `client_init`, `gene_lookup`, `gene_validity_download`, or
+`gene_dosage_download`. Healthy statuses omit `message`. Failures and timeouts
+include a stable public message without provider bodies, URLs, paths, or parser
+details. A failed lookup does not erase an exact-symbol match, but it prevents
+a zero match from being reported as confirmed `empty`.
+
+The combined `section_outcomes.clingen` and `_meta.section_sources` entry use
+`data` when both families are healthy and either has data, and `empty` only
+when both are confirmed empty. Data plus an unavailable family is `degraded`
+with ClinGen source credit; without any data, a failed or timed-out family is
+`unavailable` with no source credit.
+
+Missing dosage fields remain absent in JSON and Markdown. They are not rendered
+as `No evidence`; a literal ClinGen classification such as `No Evidence for
+Triplosensitivity` is real data and is preserved verbatim.
+
 When ClinGen validity rows are present, the gene card's `See also:` block
 promotes a recruiting-trial search keyed to the newest reviewed disease label
 already shown on the card, ahead of the generic gene pivots.

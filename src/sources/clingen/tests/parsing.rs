@@ -75,6 +75,48 @@ fn dosage_sensitivity_parses_csv_and_picks_latest_row() {
 }
 
 #[test]
+fn validity_keeps_newest_five_with_deterministic_ties() {
+    let csv = concat!(
+        "GENE SYMBOL,GENE ID (HGNC),DISEASE LABEL,CLASSIFICATION,CLASSIFICATION DATE,MOI\n",
+        "TP53,HGNC:11998,Zeta,Definitive,2026-01-01,AD\n",
+        "TP53,HGNC:11998,Alpha,Limited,2026-01-01,AD\n",
+        "TP53,HGNC:11998,Alpha,Definitive,2026-01-01,AD\n",
+        "TP53,HGNC:11998,D4,Definitive,2025-01-01,AD\n",
+        "TP53,HGNC:11998,D5,Definitive,2024-01-01,AD\n",
+        "TP53,HGNC:11998,D6,Definitive,2023-01-01,AD\n",
+        "TP53,HGNC:11998,D7,Definitive,2022-01-01,AD\n",
+    );
+    let rows = parse_validity_csv(csv, "TP53", Some("HGNC:11998")).unwrap();
+
+    assert_eq!(rows.len(), 5);
+    assert_eq!(
+        rows.iter()
+            .map(|row| (row.disease.as_str(), row.classification.as_str()))
+            .collect::<Vec<_>>(),
+        vec![
+            ("Alpha", "Definitive"),
+            ("Alpha", "Limited"),
+            ("Zeta", "Definitive"),
+            ("D4", "Definitive"),
+            ("D5", "Definitive"),
+        ]
+    );
+}
+
+#[test]
+fn dosage_newest_row_preserves_a_literal_no_evidence_and_omits_missing_side() {
+    let csv = concat!(
+        "GENE SYMBOL,HGNC ID,HAPLOINSUFFICIENCY,TRIPLOSENSITIVITY,DATE\n",
+        "TP53,HGNC:11998,Sufficient Evidence for Haploinsufficiency,Sufficient Evidence for Triplosensitivity,2020-01-01\n",
+        "TP53,HGNC:11998,,No Evidence for Triplosensitivity,2026-01-01\n",
+    );
+    let (haplo, triplo) = parse_dosage_csv(csv, "TP53", Some("HGNC:11998")).unwrap();
+
+    assert_eq!(haplo, None);
+    assert_eq!(triplo.as_deref(), Some("No Evidence for Triplosensitivity"));
+}
+
+#[test]
 fn gene_context_can_be_built_from_one_lookup_and_both_csv_payloads() {
     let rows = lookup_rows(fixture!("lookup_braf.json"));
     let hgnc_id = hgnc_id_from_lookup_rows("BRAF", &rows);
@@ -94,6 +136,8 @@ fn gene_context_can_be_built_from_one_lookup_and_both_csv_payloads() {
         validity,
         haploinsufficiency,
         triplosensitivity,
+        validity_status: ClinGenFamilyStatus::data(ClinGenOperation::GeneValidityDownload),
+        dosage_status: ClinGenFamilyStatus::data(ClinGenOperation::GeneDosageDownload),
     };
 
     assert_eq!(context.validity.len(), 2);
@@ -105,6 +149,58 @@ fn gene_context_can_be_built_from_one_lookup_and_both_csv_payloads() {
         context.triplosensitivity.as_deref(),
         Some("No Evidence for Triplosensitivity")
     );
+}
+
+#[test]
+fn family_status_serialization_is_closed_and_omits_healthy_messages() {
+    let context = GeneClinGen {
+        validity: Vec::new(),
+        haploinsufficiency: None,
+        triplosensitivity: None,
+        validity_status: ClinGenFamilyStatus::timed_out(
+            ClinGenOperation::GeneValidityDownload,
+            VALIDITY_TIMEOUT_MESSAGE,
+        ),
+        dosage_status: ClinGenFamilyStatus::empty(ClinGenOperation::GeneDosageDownload),
+    };
+
+    assert_eq!(
+        serde_json::to_value(context).unwrap(),
+        serde_json::json!({
+            "validity_status": {
+                "status": "timed_out",
+                "op": "gene_validity_download",
+                "message": "ClinGen gene-validity download timed out."
+            },
+            "dosage_status": {
+                "status": "empty",
+                "op": "gene_dosage_download"
+            }
+        })
+    );
+}
+
+#[test]
+fn downloads_fail_closed_on_unrecognized_schema_html_and_invalid_encoding() {
+    let missing_validity_header =
+        "GENE SYMBOL,DISEASE LABEL,CLASSIFICATION\nTP53,cancer,Definitive\n";
+    assert!(parse_validity_csv(missing_validity_header, "TP53", None).is_err());
+
+    let missing_dosage_header = "GENE SYMBOL,HGNC ID,HAPLOINSUFFICIENCY,TRIPLOSENSITIVITY\nTP53,HGNC:11998,Sufficient Evidence,\n";
+    assert!(parse_dosage_csv(missing_dosage_header, "TP53", None).is_err());
+
+    let malformed_validity = "GENE SYMBOL,GENE ID (HGNC),DISEASE LABEL,CLASSIFICATION,CLASSIFICATION DATE,MOI\nTP53,HGNC:11998,Li-Fraumeni syndrome\n";
+    assert!(parse_validity_csv(malformed_validity, "TP53", None).is_err());
+
+    assert!(
+        ClinGenClient::decode_text_response(
+            CLINGEN_API,
+            StatusCode::OK,
+            b"<!doctype html><html><body>maintenance</body></html>",
+        )
+        .is_err()
+    );
+    assert!(ClinGenClient::decode_text_response(CLINGEN_API, StatusCode::OK, b"\xff\xfe").is_err());
 }
 
 #[test]

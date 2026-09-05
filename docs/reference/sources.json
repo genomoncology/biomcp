@@ -99,7 +99,7 @@
     "terms_url": "https://clinicalgenome.org/",
     "key_url": null,
     "reviewed_on": "2026-03-20",
-    "notes": "BioMCP uses distinct ClinGen Search and Evidence Repository origins; ERepo assertions preserve panel source facts and versioned SEPIO provenance without interpretation."
+    "notes": "The gene clingen section reports gene-validity and dosage-sensitivity acquisition independently, preserves partial evidence, and distinguishes a missing dosage classification from a literal ClinGen no-evidence classification. BioMCP uses distinct ClinGen Search and Evidence Repository origins; ERepo assertions preserve panel source facts and versioned SEPIO provenance without interpretation."
   },
   {
     "id": "clingen_car",

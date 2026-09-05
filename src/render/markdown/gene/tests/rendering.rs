@@ -41,6 +41,80 @@ fn gene_markdown_includes_evidence_links() {
 }
 
 #[test]
+fn clingen_markdown_keeps_partial_evidence_and_distinguishes_missing_dosage() {
+    use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
+    use crate::sources::clingen::{
+        ClinGenFamilyStatus, ClinGenOperation, GeneClinGen, VALIDITY_FAILED_MESSAGE,
+    };
+
+    let mut section_outcomes =
+        SectionOutcomes::with_keys(&crate::entities::source_state_registry::outcome_keys("gene"));
+    section_outcomes.complete(
+        "clingen",
+        SectionOutcome::degraded(
+            ["ClinGen"],
+            "ClinGen gene evidence is partial; one result family is unavailable.",
+        ),
+    );
+    let gene = Gene {
+        section_outcomes,
+        symbol: "TP53".to_string(),
+        name: "tumor protein p53".to_string(),
+        entrez_id: "7157".to_string(),
+        ensembl_id: None,
+        location: None,
+        genomic_coordinates: None,
+        omim_id: None,
+        uniprot_id: None,
+        summary: None,
+        gene_type: None,
+        aliases: Vec::new(),
+        clinical_diseases: Vec::new(),
+        clinical_drugs: Vec::new(),
+        pathways: None,
+        ontology: None,
+        diseases: None,
+        protein: None,
+        go: None,
+        interactions: None,
+        civic: None,
+        expression: None,
+        hpa: None,
+        druggability: None,
+        clingen: Some(GeneClinGen {
+            validity: Vec::new(),
+            haploinsufficiency: None,
+            triplosensitivity: Some("No Evidence for Triplosensitivity".to_string()),
+            validity_status: ClinGenFamilyStatus::failed(
+                ClinGenOperation::GeneValidityDownload,
+                VALIDITY_FAILED_MESSAGE,
+            ),
+            dosage_status: ClinGenFamilyStatus::data(ClinGenOperation::GeneDosageDownload),
+        }),
+        constraint: None,
+        disgenet: None,
+        funding: None,
+        funding_note: None,
+        diagnostics: None,
+        diagnostics_note: None,
+    };
+
+    let markdown = gene_markdown(&gene, &["clingen".to_string()]).expect("ClinGen markdown");
+    assert!(markdown.contains("Status: `failed`"), "{markdown}");
+    assert!(
+        markdown.contains("Operation: `gene_validity_download`"),
+        "{markdown}"
+    );
+    assert!(markdown.contains(VALIDITY_FAILED_MESSAGE), "{markdown}");
+    assert!(markdown.contains("Status: `data`"), "{markdown}");
+    assert!(
+        markdown.contains("Triplosensitivity: No Evidence for Triplosensitivity"),
+        "{markdown}"
+    );
+    assert!(!markdown.contains("Haploinsufficiency:"), "{markdown}");
+}
+
+#[test]
 fn ticket_406_coordinate_outputs_carry_genome_build_context() {
     let gene = Gene {
         section_outcomes: Default::default(),

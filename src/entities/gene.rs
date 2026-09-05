@@ -16,7 +16,7 @@ use crate::entities::section_outcome::{SectionOutcome, SectionOutcomeState, Sect
 use crate::entities::source_state_registry::outcome_keys;
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
-use crate::sources::clingen::{ClinGenClient, GeneClinGen};
+use crate::sources::clingen::{ClinGenClient, ClinGenFamilyState, GeneClinGen};
 use crate::sources::dgidb::{
     DgidbClient, GeneDruggability, GeneSafetyLiability, GeneTractabilityModality,
 };
@@ -652,6 +652,13 @@ fn complete_gene_section_outcomes(gene: &mut Gene, include: &[GeneIncludeType]) 
             .get(key)
             .is_some_and(|outcome| outcome.outcome() != SectionOutcomeState::NotRequested)
         {
+            continue;
+        }
+        if key == GENE_SECTION_CLINGEN
+            && let Some(clingen) = gene.clingen.as_ref()
+        {
+            gene.section_outcomes
+                .complete(key, clingen_section_outcome(clingen));
             continue;
         }
         let (has_data, unavailable, source) = match section {
@@ -1827,49 +1834,70 @@ fn merge_druggability_results(
 }
 
 async fn fetch_clingen_section(symbol: &str, timeout: Duration) -> (GeneClinGen, SectionOutcome) {
+    fetch_clingen_section_with_client(symbol, timeout, ClinGenClient::new()).await
+}
+
+async fn fetch_clingen_section_with_client(
+    symbol: &str,
+    timeout: Duration,
+    client: Result<ClinGenClient, BioMcpError>,
+) -> (GeneClinGen, SectionOutcome) {
     let symbol = symbol.trim();
     if symbol.is_empty() {
-        return (GeneClinGen::default(), SectionOutcome::empty("ClinGen"));
+        let clingen = GeneClinGen::downloads_failed();
+        let outcome = clingen_section_outcome(&clingen);
+        return (clingen, outcome);
     }
 
-    let clingen_fut = async {
-        let client = ClinGenClient::new()?;
-        client.gene_context(symbol).await
+    let client = match client {
+        Ok(client) => client,
+        Err(err) => {
+            warn!(symbol = %symbol, "ClinGen client initialization failed: {err}");
+            let clingen = GeneClinGen::client_init_failed();
+            let outcome = clingen_section_outcome(&clingen);
+            return (clingen, outcome);
+        }
     };
 
-    match tokio::time::timeout(timeout, clingen_fut).await {
-        Ok(Ok(clingen)) => {
-            let outcome = if clingen.validity.is_empty()
-                && clingen.haploinsufficiency.is_none()
-                && clingen.triplosensitivity.is_none()
-            {
-                SectionOutcome::empty("ClinGen")
-            } else {
-                SectionOutcome::data("ClinGen")
-            };
+    match client.gene_context(symbol, timeout).await {
+        Ok(clingen) => {
+            let outcome = clingen_section_outcome(&clingen);
             (clingen, outcome)
         }
-        Ok(Err(err)) => {
+        Err(err) => {
             warn!(
                 symbol = %symbol,
                 "ClinGen unavailable for gene clingen section: {err}"
             );
-            (
-                GeneClinGen::default(),
-                SectionOutcome::unavailable("ClinGen gene evidence is unavailable."),
-            )
+            let clingen = GeneClinGen::downloads_failed();
+            let outcome = clingen_section_outcome(&clingen);
+            (clingen, outcome)
         }
-        Err(_) => {
-            warn!(
-                symbol = %symbol,
-                timeout_secs = timeout.as_secs(),
-                "ClinGen gene section timed out"
-            );
-            (
-                GeneClinGen::default(),
-                SectionOutcome::unavailable("ClinGen gene evidence is unavailable."),
-            )
-        }
+    }
+}
+
+fn clingen_section_outcome(clingen: &GeneClinGen) -> SectionOutcome {
+    let statuses = [&clingen.validity_status, &clingen.dosage_status];
+    let has_data = statuses
+        .iter()
+        .any(|status| status.status == ClinGenFamilyState::Data);
+    let has_unavailable = statuses.iter().any(|status| {
+        matches!(
+            status.status,
+            ClinGenFamilyState::Failed | ClinGenFamilyState::TimedOut
+        )
+    });
+
+    match (has_data, has_unavailable) {
+        (true, true) => SectionOutcome::degraded(
+            ["ClinGen"],
+            "ClinGen gene evidence is partial; one result family is unavailable.",
+        ),
+        (false, true) => SectionOutcome::unavailable(
+            "ClinGen gene evidence is incomplete; no ClinGen absence can be concluded.",
+        ),
+        (true, false) => SectionOutcome::data("ClinGen"),
+        (false, false) => SectionOutcome::empty("ClinGen"),
     }
 }
 
@@ -2086,15 +2114,49 @@ fn apply_diagnostics_section_result(
     }
 }
 
+type ClinGenPrefetchOutput = ((GeneClinGen, SectionOutcome), GeneTimingEntry);
+
+struct ClinGenPrefetch {
+    handle: Option<tokio::task::JoinHandle<ClinGenPrefetchOutput>>,
+}
+
+impl ClinGenPrefetch {
+    fn new(handle: tokio::task::JoinHandle<ClinGenPrefetchOutput>) -> Self {
+        Self {
+            handle: Some(handle),
+        }
+    }
+
+    async fn settle(mut self) -> Result<ClinGenPrefetchOutput, tokio::task::JoinError> {
+        self.handle
+            .take()
+            .expect("ClinGen prefetch handle is owned until settlement")
+            .await
+    }
+
+    async fn abort_and_wait(mut self) {
+        if let Some(handle) = self.handle.take() {
+            handle.abort();
+            let _ = handle.await;
+        }
+    }
+}
+
+impl Drop for ClinGenPrefetch {
+    fn drop(&mut self) {
+        if let Some(handle) = self.handle.take() {
+            handle.abort();
+        }
+    }
+}
+
 async fn populate_sections_parallel_top(
     gene: &mut Gene,
     include: &[GeneIncludeType],
     timing: &mut GeneTimingCollector,
     opentargets_id: Option<&str>,
     optional_timeout: Duration,
-    prefetched_clingen: Option<
-        tokio::task::JoinHandle<((GeneClinGen, SectionOutcome), GeneTimingEntry)>,
-    >,
+    prefetched_clingen: Option<ClinGenPrefetch>,
 ) -> Result<(), BioMcpError> {
     let symbol = gene.symbol.clone();
     let ensembl_id = gene.ensembl_id.clone();
@@ -2200,15 +2262,14 @@ async fn populate_sections_parallel_top(
         if !include.contains(&GeneIncludeType::ClinGen) {
             None
         } else if let Some(prefetched) = prefetched_clingen {
-            match prefetched.await {
+            match prefetched.settle().await {
                 Ok(value) => Some(value),
                 Err(err) => {
                     warn!("ClinGen prefetch task failed: {err}");
+                    let clingen = GeneClinGen::downloads_failed();
+                    let outcome = clingen_section_outcome(&clingen);
                     Some((
-                        (
-                            GeneClinGen::default(),
-                            SectionOutcome::unavailable("ClinGen gene evidence is unavailable."),
-                        ),
+                        (clingen, outcome),
                         GeneTimingEntry {
                             section: "clingen".to_string(),
                             elapsed_ms: 0,
@@ -2571,19 +2632,27 @@ pub async fn get_with_report(
         strategy == GeneGetStrategy::ParallelTop && should_use_parallel_top(&include);
     let mut clingen_prefetch = if use_parallel_top && include.contains(&GeneIncludeType::ClinGen) {
         let symbol = symbol.trim().to_string();
-        Some(tokio::spawn(async move {
+        Some(ClinGenPrefetch::new(tokio::spawn(async move {
             timed_section(
                 "clingen",
                 fetch_clingen_section(&symbol, optional_timeout),
                 classify_clingen_section,
             )
             .await
-        }))
+        })))
     } else {
         None
     };
 
-    let client = MyGeneClient::new()?;
+    let client = match MyGeneClient::new() {
+        Ok(client) => client,
+        Err(err) => {
+            if let Some(handle) = clingen_prefetch.take() {
+                handle.abort_and_wait().await;
+            }
+            return Err(err);
+        }
+    };
     let started = Instant::now();
     let resp = client.get(symbol, false).await;
     timing.record(
@@ -2595,7 +2664,7 @@ pub async fn get_with_report(
         Ok(resp) => resp,
         Err(err @ BioMcpError::NotFound { .. }) => {
             if let Some(handle) = clingen_prefetch.take() {
-                handle.abort();
+                handle.abort_and_wait().await;
             }
             if let Some(canonical_symbol) = unique_canonical_alias_symbol(&client, symbol).await? {
                 return Box::pin(get_with_report(&canonical_symbol, options)).await;
@@ -2604,7 +2673,7 @@ pub async fn get_with_report(
         }
         Err(err) => {
             if let Some(handle) = clingen_prefetch.take() {
-                handle.abort();
+                handle.abort_and_wait().await;
             }
             return Err(err);
         }
@@ -3894,5 +3963,135 @@ mod tests {
                 "timing parity failed for {case}"
             );
         }
+    }
+
+    #[test]
+    fn clingen_family_statuses_define_the_exact_aggregate_truth_table() {
+        use crate::sources::clingen::{
+            ClinGenFamilyStatus, ClinGenOperation, DOSAGE_FAILED_MESSAGE,
+        };
+
+        let cases = [
+            (
+                ClinGenFamilyStatus::data(ClinGenOperation::GeneValidityDownload),
+                ClinGenFamilyStatus::empty(ClinGenOperation::GeneDosageDownload),
+                SectionOutcomeState::Data,
+                vec!["ClinGen"],
+                None,
+            ),
+            (
+                ClinGenFamilyStatus::empty(ClinGenOperation::GeneValidityDownload),
+                ClinGenFamilyStatus::empty(ClinGenOperation::GeneDosageDownload),
+                SectionOutcomeState::Empty,
+                vec!["ClinGen"],
+                None,
+            ),
+            (
+                ClinGenFamilyStatus::data(ClinGenOperation::GeneValidityDownload),
+                ClinGenFamilyStatus::failed(
+                    ClinGenOperation::GeneDosageDownload,
+                    DOSAGE_FAILED_MESSAGE,
+                ),
+                SectionOutcomeState::Degraded,
+                vec!["ClinGen"],
+                Some("ClinGen gene evidence is partial; one result family is unavailable."),
+            ),
+            (
+                ClinGenFamilyStatus::empty(ClinGenOperation::GeneValidityDownload),
+                ClinGenFamilyStatus::failed(
+                    ClinGenOperation::GeneDosageDownload,
+                    DOSAGE_FAILED_MESSAGE,
+                ),
+                SectionOutcomeState::Unavailable,
+                Vec::new(),
+                Some("ClinGen gene evidence is incomplete; no ClinGen absence can be concluded."),
+            ),
+        ];
+
+        for (validity_status, dosage_status, state, sources, message) in cases {
+            let clingen = GeneClinGen {
+                validity: Vec::new(),
+                haploinsufficiency: None,
+                triplosensitivity: None,
+                validity_status,
+                dosage_status,
+            };
+            let outcome = clingen_section_outcome(&clingen);
+            assert_eq!(outcome.outcome(), state);
+            assert_eq!(outcome.sources(), sources);
+            assert_eq!(outcome.message(), message);
+        }
+    }
+
+    #[tokio::test]
+    async fn clingen_client_construction_failure_marks_both_families_before_requests() {
+        let (clingen, outcome) = fetch_clingen_section_with_client(
+            "TP53",
+            Duration::from_millis(10),
+            Err(BioMcpError::InvalidArgument(
+                "synthetic client construction failure".to_string(),
+            )),
+        )
+        .await;
+
+        assert_eq!(
+            serde_json::to_value(clingen).unwrap(),
+            serde_json::json!({
+                "validity_status": {
+                    "status": "failed",
+                    "op": "client_init",
+                    "message": "ClinGen client initialization failed."
+                },
+                "dosage_status": {
+                    "status": "failed",
+                    "op": "client_init",
+                    "message": "ClinGen client initialization failed."
+                }
+            })
+        );
+        assert_eq!(outcome.outcome(), SectionOutcomeState::Unavailable);
+        assert!(outcome.sources().is_empty());
+    }
+
+    #[tokio::test]
+    async fn canceling_parent_aborts_its_clingen_prefetch_task() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        struct RunningGuard(Arc<AtomicBool>);
+        impl Drop for RunningGuard {
+            fn drop(&mut self) {
+                self.0.store(false, Ordering::SeqCst);
+            }
+        }
+
+        let running = Arc::new(AtomicBool::new(false));
+        let child_running = Arc::clone(&running);
+        let parent = tokio::spawn(async move {
+            let handle = tokio::spawn(async move {
+                child_running.store(true, Ordering::SeqCst);
+                let _guard = RunningGuard(child_running);
+                std::future::pending::<ClinGenPrefetchOutput>().await
+            });
+            let _prefetch = ClinGenPrefetch::new(handle);
+            std::future::pending::<()>().await;
+        });
+
+        for _ in 0..20 {
+            if running.load(Ordering::SeqCst) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert!(running.load(Ordering::SeqCst));
+        parent.abort();
+        let _ = parent.await;
+        for _ in 0..20 {
+            if !running.load(Ordering::SeqCst) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert!(!running.load(Ordering::SeqCst));
     }
 }

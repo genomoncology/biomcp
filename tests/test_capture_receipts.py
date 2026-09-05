@@ -78,6 +78,33 @@ def test_clingen_car_and_ldh_live_replacements_have_receipted_captures() -> None
     } == expected_paths
 
 
+def test_clingen_gene_positive_fixtures_are_minimized_receipted_captures() -> None:
+    manifest = json.loads(
+        (SOURCES_ROOT / "capture-receipts.json").read_text(encoding="utf-8")
+    )
+    entries = {entry["path"]: entry for entry in manifest["entries"]}
+    expected = {
+        "clingen/lookup_tp53.json":
+            "https://search.clinicalgenome.org/api/genes/look/TP53",
+        "clingen/validity_tp53.csv":
+            "https://search.clinicalgenome.org/kb/gene-validity/download",
+        "clingen/dosage_tp53.csv":
+            "https://search.clinicalgenome.org/kb/gene-dosage/download",
+    }
+
+    for path, request in expected.items():
+        entry = entries[path]
+        receipt = entry["receipt"]
+        body = (SOURCES_ROOT / path).read_bytes()
+        assert entry["classification"] == "real_and_receipted"
+        assert receipt["request"] == request
+        assert receipt["captured_at"].startswith("2026-09-05T")
+        assert receipt["sha256"] == hashlib.sha256(body).hexdigest()
+        assert "original full-response SHA-256" in receipt["minimization_or_redaction"]
+
+    assert entries["clingen/README.md"]["classification"] == "authored"
+
+
 def test_article_663_source_contract_captures_are_receipted() -> None:
     manifest = json.loads(
         (SOURCES_ROOT / "capture-receipts.json").read_text(encoding="utf-8")
