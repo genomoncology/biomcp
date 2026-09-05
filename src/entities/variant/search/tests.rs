@@ -28,6 +28,37 @@ fn search_query_summary_includes_residue_alias_marker() {
 }
 
 #[test]
+fn filter_statuses_describe_evaluation_and_keep_canonical_order() {
+    let filters = VariantSearchFilters {
+        gene: Some("MISSING".into()),
+        hgvsp: Some("p.V1A".into()),
+        protein_alias: Some(VariantProteinAlias {
+            position: 1,
+            residue: 'A',
+        }),
+        ..Default::default()
+    };
+    let diagnostics = vec![SearchDiagnostic::GeneUnavailable {
+        requested: "MISSING".into(),
+    }];
+
+    assert_eq!(
+        serde_json::to_value(filter_evaluation(&filters, &diagnostics))
+            .expect("filter statuses serialize"),
+        serde_json::json!({
+            "gene": "unavailable",
+            "hgvsp": "evaluated",
+            "residue_alias": "evaluated"
+        })
+    );
+    assert_eq!(
+        serde_json::to_value(filter_evaluation(&VariantSearchFilters::default(), &[]))
+            .expect("empty filter statuses serialize"),
+        serde_json::json!({})
+    );
+}
+
+#[test]
 fn quality_score_prioritizes_significance_and_frequency() {
     let rich = VariantSearchResult {
         id: "chr1:g.1A>T".into(),

@@ -20,12 +20,12 @@ use super::{
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum VariantFilterResolutionStatus {
-    Resolved,
-    Unresolved,
+pub(crate) enum VariantFilterEvaluationStatus {
+    Evaluated,
+    Unavailable,
 }
 
-pub(crate) type VariantFilterResolution = BTreeMap<&'static str, VariantFilterResolutionStatus>;
+pub(crate) type VariantFilterEvaluation = BTreeMap<&'static str, VariantFilterEvaluationStatus>;
 
 #[derive(Debug, Clone)]
 pub(crate) struct VariantSearchPage {
@@ -33,17 +33,17 @@ pub(crate) struct VariantSearchPage {
     pub total: Option<usize>,
     pub requested_variant: Option<RequestedVariantIdentity>,
     pub resolution: Option<VariantSearchResolution>,
-    pub filter_resolution: VariantFilterResolution,
+    pub filter_evaluation: VariantFilterEvaluation,
     pub has_more: Option<bool>,
     pub diagnostics: Vec<SearchDiagnostic>,
 }
 
-fn filter_resolution(
+fn filter_evaluation(
     filters: &VariantSearchFilters,
     diagnostics: &[SearchDiagnostic],
-) -> VariantFilterResolution {
+) -> VariantFilterEvaluation {
     let mut resolution = BTreeMap::new();
-    let resolved = VariantFilterResolutionStatus::Resolved;
+    let evaluated = VariantFilterEvaluationStatus::Evaluated;
     macro_rules! string_filter {
         ($field:ident) => {
             if filters
@@ -52,7 +52,7 @@ fn filter_resolution(
                 .map(str::trim)
                 .is_some_and(|value| !value.is_empty())
             {
-                resolution.insert(stringify!($field), resolved);
+                resolution.insert(stringify!($field), evaluated);
             }
         };
     }
@@ -62,29 +62,29 @@ fn filter_resolution(
     string_filter!(hgvsc);
     string_filter!(rsid);
     if filters.protein_alias.is_some() {
-        resolution.insert("residue_alias", resolved);
+        resolution.insert("residue_alias", evaluated);
     }
     string_filter!(significance);
     if filters.max_frequency.is_some() {
-        resolution.insert("max_frequency", resolved);
+        resolution.insert("max_frequency", evaluated);
     }
     if filters.min_cadd.is_some() {
-        resolution.insert("min_cadd", resolved);
+        resolution.insert("min_cadd", evaluated);
     }
     string_filter!(consequence);
     string_filter!(review_status);
     string_filter!(population);
     if filters.revel_min.is_some() {
-        resolution.insert("revel_min", resolved);
+        resolution.insert("revel_min", evaluated);
     }
     if filters.gerp_min.is_some() {
-        resolution.insert("gerp_min", resolved);
+        resolution.insert("gerp_min", evaluated);
     }
     string_filter!(tumor_site);
     string_filter!(condition);
     string_filter!(impact);
     if filters.lof {
-        resolution.insert("lof", resolved);
+        resolution.insert("lof", evaluated);
     }
     string_filter!(has);
     string_filter!(missing);
@@ -94,7 +94,7 @@ fn filter_resolution(
         .iter()
         .any(|diagnostic| matches!(diagnostic, SearchDiagnostic::GeneUnavailable { .. }))
     {
-        resolution.insert("gene", VariantFilterResolutionStatus::Unresolved);
+        resolution.insert("gene", VariantFilterEvaluationStatus::Unavailable);
     }
     resolution
 }
@@ -752,7 +752,7 @@ async fn search_page_with_execution(
             total: page.total,
             requested_variant: None,
             resolution: None,
-            filter_resolution: filter_resolution(filters, &diagnostics),
+            filter_evaluation: filter_evaluation(filters, &diagnostics),
             has_more: None,
             diagnostics,
         });
@@ -813,7 +813,7 @@ async fn search_page_with_execution(
         saw_indeterminate,
         exhaustive,
     );
-    page.filter_resolution = filter_resolution(filters, &diagnostics);
+    page.filter_evaluation = filter_evaluation(filters, &diagnostics);
     page.diagnostics = diagnostics;
     Ok(page)
 }
@@ -874,7 +874,7 @@ fn finalize_exact_page(
             normalized_aliases: requested.normalized_aliases(),
             exhaustive,
         }),
-        filter_resolution: BTreeMap::new(),
+        filter_evaluation: BTreeMap::new(),
         has_more: Some(has_more),
         diagnostics: Vec::new(),
     }

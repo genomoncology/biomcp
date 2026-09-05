@@ -655,7 +655,7 @@ async fn render_variant_search_outcome(
                 output,
                 page.requested_variant,
                 page.resolution,
-                page.filter_resolution,
+                page.filter_evaluation,
                 page.diagnostics,
             )?,
         ));
@@ -668,14 +668,14 @@ async fn render_variant_search_outcome(
         &footer,
         filters.gene.as_deref(),
         filters.condition.as_deref(),
-        &page.filter_resolution,
+        &page.filter_evaluation,
         &page.diagnostics,
     )?;
     let body = match (page.requested_variant, page.resolution) {
         (Some(requested), Some(resolution)) => format!(
-            "Requested variant: {}\n\nResolution: {:?}\n\n{body}",
+            "Requested variant: {}\n\nVariant identity: {}\n\n{body}",
             requested.human_label(),
-            resolution.status
+            format!("{:?}", resolution.status).to_lowercase()
         ),
         _ => body,
     };

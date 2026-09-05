@@ -616,7 +616,17 @@ fn ticket_377_variant_renderer_envelope_contracts() {
         next_commands,
     )
     .expect("variant search_json_with_meta");
+    let json = crate::render::json::with_variant_search_resolution(
+        json,
+        None,
+        None,
+        Default::default(),
+        Vec::new(),
+    )
+    .expect("variant search resolution envelope");
     let value: serde_json::Value = serde_json::from_str(&json).expect("valid variant JSON");
+    assert_eq!(value["filter_evaluation"], serde_json::json!({}));
+    assert!(value.get("filter_resolution").is_none());
     assert_eq!(value["results"][0]["genome_build"], "GRCh37");
     assert_eq!(value["results"][0]["genome_build_provenance"], "test");
     assert!(
@@ -684,4 +694,50 @@ fn ticket_377_variant_renderer_envelope_contracts() {
     assert!(normalization_markdown.contains("Status: invalid_input"));
     assert!(normalization_markdown.contains("NC_000007.14:g.140753336A>T"));
     assert!(normalization_markdown.contains("fixture warning from normalization service"));
+}
+
+#[test]
+fn variant_filter_evaluation_renderers_keep_mixed_states_and_order() {
+    let evaluation = std::collections::BTreeMap::from([
+        ("hgvsp", entity::VariantFilterEvaluationStatus::Evaluated),
+        ("gene", entity::VariantFilterEvaluationStatus::Unavailable),
+    ]);
+    let markdown = crate::render::markdown::variant_search_markdown_with_context(
+        "gene=MISSING, hgvsp=p.V1A",
+        &[],
+        "",
+        Some("MISSING"),
+        None,
+        &evaluation,
+        &[],
+    )
+    .expect("mixed filter evaluation markdown");
+    let gene = markdown.find("gene: unavailable").expect("gene evaluation");
+    let hgvsp = markdown.find("hgvsp: evaluated").expect("hgvsp evaluation");
+    assert!(markdown.contains("## Filter evaluation"));
+    assert!(!markdown.contains("Filter resolution"));
+    assert!(gene < hgvsp, "BTreeMap order must reach Markdown");
+
+    let json = crate::cli::search_json_with_meta(
+        Vec::<entity::VariantSearchResult>::new(),
+        crate::cli::PaginationMeta::offset(0, 1, 0, Some(0)),
+        Vec::new(),
+    )
+    .expect("empty variant search envelope");
+    let json = crate::render::json::with_variant_search_resolution(
+        json,
+        None,
+        None,
+        evaluation,
+        Vec::new(),
+    )
+    .expect("mixed filter evaluation JSON");
+    let value: serde_json::Value = serde_json::from_str(&json).expect("valid variant JSON");
+    assert_eq!(
+        value["filter_evaluation"],
+        serde_json::json!({"gene": "unavailable", "hgvsp": "evaluated"})
+    );
+    assert!(value.get("filter_resolution").is_none());
+    assert!(value.get("requested_variant").is_none());
+    assert!(value.get("resolution").is_none());
 }

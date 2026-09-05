@@ -106,6 +106,17 @@ absent or contradictory. Retained rows expose the provider's complete
 `source_identity` arrays and the source-derived `matched_alias` that proved the
 match.
 
+Search output reports that exact result as `Variant identity` in Markdown and
+as `resolution` in JSON. A separate `Filter evaluation` block (the
+`filter_evaluation` JSON object) marks each submitted filter as `evaluated` or
+`unavailable`. `evaluated` means the filter participated in an interpretable
+provider query; it does not mean that the filter value names a record. This is
+why an exact identity can be `unresolved` while its gene and protein filters are
+both `evaluated`. An unavailable gene may appear beside another evaluated
+filter when provider evidence cannot support a reliable negative gene result.
+Broad searches omit `requested_variant` and `resolution` but keep their filter
+evaluation object, including an empty object when no filters were submitted.
+
 Gene-only, residue-alias, significance, consequence, score, population, and
 other discovery filters remain broad searches and omit strict identity metadata.
 

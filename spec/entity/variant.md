@@ -355,9 +355,12 @@ default card without scraping markdown helper text.
 Long-form protein filters should normalize to the same compact spelling that the
 short-form query uses, rather than leaking a second variant identifier shape.
 
-## Variant filter resolution
+## Variant identity and filter evaluation
 
-Every submitted filter reports whether BioMCP resolved its value independently
+Exact-search identity and per-filter evaluation answer different questions.
+`resolved`, `ambiguous`, and `unresolved` describe only whether the requested
+variant identifies one compatible provider record. Every submitted filter
+separately reports whether BioMCP `evaluated` it independently
 of whether the combined query returned rows. The same per-filter outcome is
 available in JSON and Markdown: a gene unavailable under its symbol or aliases
 is not presented as a true negative, while a recognized gene and a valid
@@ -385,19 +388,24 @@ jq -cn \
       (test("(^|[^[:alpha:]])" + $status + "([^[:alpha:]]|$)"; "i"))
     );
   {
-    unresolved_gene_json: ($unresolved.filter_resolution == {gene: "unresolved"}),
-    unresolved_gene_markdown: outcome($unresolved_markdown; "gene"; "unresolved"),
-    alias_gene_resolved: ($alias.filter_resolution == {gene: "resolved"}),
+    unresolved_gene_json: ($unresolved.filter_evaluation == {gene: "unavailable"}),
+    unresolved_gene_markdown: outcome($unresolved_markdown; "gene"; "unavailable"),
+    alias_gene_evaluated: ($alias.filter_evaluation == {gene: "evaluated"}),
     alias_rows_preserved: ($alias.count == 1 and $alias.pagination.total == 1156),
     resolved_empty_count: ($resolved.count == 0),
-    resolved_filters_json: ($resolved.filter_resolution == {gene: "resolved", hgvsp: "resolved"}),
-    resolved_filters_markdown: (
-      outcome($resolved_markdown; "gene"; "resolved") and
-      outcome($resolved_markdown; "hgvsp"; "resolved")
+    exact_identity_unresolved: ($resolved.resolution.status == "unresolved"),
+    evaluated_filters_json: ($resolved.filter_evaluation == {gene: "evaluated", hgvsp: "evaluated"}),
+    retired_json_absent: ($resolved | has("filter_resolution") | not),
+    evaluated_filters_markdown: (
+      ($resolved_markdown | contains("Variant identity: unresolved")) and
+      ($resolved_markdown | contains("## Filter evaluation")) and
+      outcome($resolved_markdown; "gene"; "evaluated") and
+      outcome($resolved_markdown; "hgvsp"; "evaluated") and
+      ($resolved_markdown | contains("Filter resolution") | not)
     ),
-    threshold_uses_common_channel: ($threshold.filter_resolution == {gene: "resolved", min_cadd: "resolved"})
+    threshold_uses_common_channel: ($threshold.filter_evaluation == {gene: "evaluated", min_cadd: "evaluated"})
   }' \
-  | mustmatch like '{"unresolved_gene_json":true,"unresolved_gene_markdown":true,"alias_gene_resolved":true,"alias_rows_preserved":true,"resolved_empty_count":true,"resolved_filters_json":true,"resolved_filters_markdown":true,"threshold_uses_common_channel":true}'
+  | mustmatch like '{"unresolved_gene_json":true,"unresolved_gene_markdown":true,"alias_gene_evaluated":true,"alias_rows_preserved":true,"resolved_empty_count":true,"exact_identity_unresolved":true,"evaluated_filters_json":true,"retired_json_absent":true,"evaluated_filters_markdown":true,"threshold_uses_common_channel":true}'
 ```
 
 ## Variant filter diagnostics
@@ -419,8 +427,8 @@ alias retry happened.
 
 ```bash
 biomcp --json search variant -g H3F3A --limit 1 \
-  | jq -c '{count, total: .pagination.total, diagnostics}' \
-  | mustmatch like '{"count":1,"total":1156,"diagnostics":[]}'
+  | jq -c '{count, total: .pagination.total, diagnostics, filter_evaluation, exact_identity_absent: ((has("requested_variant") or has("resolution")) | not)}' \
+  | mustmatch like '{"count":1,"total":1156,"diagnostics":[],"filter_evaluation":{"gene":"evaluated"},"exact_identity_absent":true}'
 ```
 
 If neither a symbol nor any known alias has dbNSFP rows, Markdown should explain
@@ -447,8 +455,8 @@ position probe.
 
 ```bash
 biomcp --json search variant -g H3F3A --hgvsp K28M --limit 1 \
-  | jq -c '{count, status: .resolution.status, diagnostics}' \
-  | mustmatch like '{"count":1,"status":"resolved","diagnostics":[]}'
+  | jq -c '{count, status: .resolution.status, filter_evaluation, diagnostics}' \
+  | mustmatch like '{"count":1,"status":"resolved","filter_evaluation":{"gene":"evaluated","hgvsp":"evaluated"},"diagnostics":[]}'
 ```
 
 When each filter has provider rows but their intersection does not, the empty

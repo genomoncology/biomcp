@@ -206,6 +206,91 @@ print("raw and typed article validation converges")
 PY
 ```
 
+## Variant filter evaluation is identical through raw and typed tools
+
+Raw and typed MCP search calls use the same CLI execution and rendering path.
+Both formats therefore distinguish exact variant identity from per-filter
+evaluation without introducing an MCP-only response model.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw and typed variant evaluation converges'
+import json, os, subprocess
+
+proc = subprocess.Popen(
+    [os.environ["BIOMCP_BIN"], "serve"],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    text=True,
+    env=os.environ.copy(),
+)
+
+def call(identifier, name, arguments):
+    proc.stdin.write(json.dumps({
+        "jsonrpc": "2.0",
+        "id": identifier,
+        "method": "tools/call",
+        "params": {"name": name, "arguments": arguments},
+    }) + "\n")
+    proc.stdin.flush()
+    result = json.loads(proc.stdout.readline())["result"]
+    assert result.get("isError") is not True
+    assert len(result["content"]) == 1 and result["content"][0]["type"] == "text"
+    return result["content"][0]["text"]
+
+try:
+    proc.stdin.write(json.dumps({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-03-26",
+            "capabilities": {},
+            "clientInfo": {"name": "spec", "version": "1"},
+        },
+    }) + "\n")
+    proc.stdin.flush()
+    json.loads(proc.stdout.readline())
+    proc.stdin.write(json.dumps({
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized",
+        "params": {},
+    }) + "\n")
+    proc.stdin.flush()
+
+    raw_markdown = call(2, "biomcp", {
+        "command": "biomcp search variant -g RB1 --hgvsp Q999X --limit 1"
+    })
+    typed_markdown = call(3, "search", {
+        "entity": "variant", "gene": "RB1", "hgvsp": "Q999X", "limit": 1
+    })
+    assert typed_markdown == raw_markdown
+    assert "Variant identity: unresolved" in raw_markdown
+    assert "## Filter evaluation" in raw_markdown
+    assert "gene: evaluated" in raw_markdown and "hgvsp: evaluated" in raw_markdown
+    assert "Filter resolution" not in raw_markdown
+
+    raw_json = call(4, "biomcp", {
+        "command": "biomcp search variant -g RB1 --hgvsp Q999X --limit 1",
+        "json": True,
+    })
+    typed_json = call(5, "search", {
+        "entity": "variant", "gene": "RB1", "hgvsp": "Q999X", "limit": 1,
+        "json": True,
+    })
+    assert typed_json == raw_json
+    assert json.loads(typed_json) == json.loads(raw_json)
+    value = json.loads(raw_json)
+    assert value["resolution"]["status"] == "unresolved"
+    assert value["filter_evaluation"] == {"gene": "evaluated", "hgvsp": "evaluated"}
+    assert "filter_resolution" not in value
+finally:
+    proc.terminate()
+    proc.wait(timeout=5)
+
+print("raw and typed variant evaluation converges")
+PY
+```
+
 ## Probe Routes Stay Lightweight
 
 The HTTP surface is intentionally tiny: two readiness probes and one root
