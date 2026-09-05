@@ -11,7 +11,7 @@ The optimized implementation was a single 201-line Python file containing detect
 
 The library has no argument parsing, filesystem writes, subprocess calls, or network behavior. Independent regex scans remain deliberate: optimization showed that combining same-type alternatives lost overlapping occurrences. The extraction does not change the experimental boundary: no PMID/disease rules, no event-to-gene lookup table, and no inferred gene relationships.
 
-The generic harden instructions referenced `~/workspace/planning/mole/spike-plan.md`, but that path does not exist. Ticket 515 is therefore authoritative: the consumers are a later BioMCP opt-in article-annotation proof and the Trials3/Nucleus alteration-grammar work. They need occurrence records over already-retrieved article text. This package gives them an in-process interface; they do not need to shell out or copy parser code.
+The generic harden instructions referenced an unavailable cross-repository spike plan. Ticket 515 is therefore authoritative: the consumers are a later BioMCP opt-in article-annotation proof and a downstream alteration-grammar consumer. They need occurrence records over already-retrieved article text. This package gives them an in-process interface; they do not need to shell out or copy parser code.
 
 ## Public API
 

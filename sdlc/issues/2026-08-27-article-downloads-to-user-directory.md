@@ -15,7 +15,7 @@ Sketch (smallest useful version first):
 
 Later, if the small version earns it: a `library` concept (default directory via env/config, `biomcp library list/search`), and batch fetch into it.
 
-Context: found 2026-08-27 while pulling PMID 41152957 (Wu G et al., ultra-rare variants across MNDs) for a reproduction experiment (`experiments/186-gangwu-biomcp-reproduction/`). The rolodex tool has the same gap from the other side — it saves papers to a user directory but only speaks arXiv, so biomedical journals are unreachable there. BioMCP with `--out` closes the loop for both.
+Context: found 2026-08-27 while pulling PMID 41152957 (Wu G et al., ultra-rare variants across MNDs) for a reproduction experiment (`experiments/186-gangwu-biomcp-reproduction/`). A separate paper-library tool has the same gap from the other side — it saves papers to a user directory but only speaks arXiv, so biomedical journals are unreachable there. BioMCP with `--out` closes the loop for both.
 
 Verified against current main on 2026-08-27: downloads resolve to the cache
 root `downloads/` directory with hash filenames (`src/utils/download.rs:20`);

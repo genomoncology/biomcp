@@ -161,6 +161,18 @@ EXAMPLE_READMES = [
     "examples/trialgpt/README.md",
 ]
 
+CURRENT_MARKDOWN_ROOTS = (
+    "docs",
+    "architecture",
+    "sdlc/issues",
+)
+
+PRIVATE_CURRENT_PROSE_MARKERS = (
+    "trials3",
+    "rolodex tool",
+    "repos/mktg/biomcp/drafts/10-ten-cards-one-command/captures/10-search-all.txt",
+)
+
 
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
@@ -530,3 +542,24 @@ def test_cache_path_docs_match_resolved_cache_root_contract() -> None:
 
     assert "Saved to: <cache_root>/downloads/" in blog
     assert "follows the resolved cache root on your machine" in blog_ws
+
+
+def test_current_markdown_does_not_depend_on_private_project_context() -> None:
+    violations: list[str] = []
+    for root in CURRENT_MARKDOWN_ROOTS:
+        for path in sorted((REPO_ROOT / root).rglob("*.md")):
+            for line_number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), start=1
+            ):
+                lowered = line.casefold()
+                for marker in PRIVATE_CURRENT_PROSE_MARKERS:
+                    if marker.casefold() in lowered:
+                        relative_path = path.relative_to(REPO_ROOT)
+                        violations.append(f"{relative_path}:{line_number}: {marker}")
+
+    assert violations == []
+
+    structural_hardening = _read(
+        "architecture/experiments/structural-variant-article-annotations/harden.md"
+    )
+    assert "~/workspace/planning/mole/spike-plan.md" not in structural_hardening

@@ -7,9 +7,8 @@ the order looks alphabetical rather than relevance-ranked — as if the pathway
 family is listing rather than searching. Every other section in the same card
 (Variants, Diseases, Drugs, Trials, Articles) is correctly scoped to the query.
 
-Found while reviewing marketing capture
-`repos/mktg/biomcp/drafts/10-ten-cards-one-command/captures/10-search-all.txt`
-(BioMCP 0.9.0-dev.6, captured 2026-08-26). The slide does not show the pathway
+Found in an external review capture of BioMCP 0.9.0-dev.6, captured 2026-08-26.
+The capture does not show the pathway
 rows, so nothing is blocked on this, but the section is misleading to a user and
 would be embarrassing in a demo.
 

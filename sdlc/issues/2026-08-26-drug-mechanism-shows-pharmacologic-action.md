@@ -10,9 +10,8 @@ pharmacologic-action term, not the drug's mechanism of action, and it sits in a
 column the vemurafenib row fills correctly. A clinician reading the card would
 take the label at face value.
 
-Found while reviewing marketing capture
-`repos/mktg/biomcp/drafts/10-ten-cards-one-command/captures/10-search-all.txt`
-(BioMCP 0.9.0-dev.6, captured 2026-08-26). Worth checking whether the mechanism
+Found in an external review capture of BioMCP 0.9.0-dev.6, captured 2026-08-26.
+Worth checking whether the mechanism
 field takes the first available MeSH pharmacologic action rather than a
 mechanism-of-action classification.
 

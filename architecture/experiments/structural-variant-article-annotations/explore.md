@@ -111,4 +111,4 @@ If these blind thresholds fail, keep the feature experimental and narrow the sup
 - **Offsets and text versions:** PubTator, PubMed, and Europe PMC may normalize whitespace or Unicode differently. Keep offset unit and exact source text/version together.
 - **Acronym drift:** `SV`/`CNA` should require local definition or strong article context outside the measured corpus.
 - **Ontology scope:** ontology labels help normalization but their broad lexical forms are unsafe as detectors.
-- **Schema alignment:** Trials3/Nucleus alteration grammar is not yet available in this repo; obtain cross-team review before freezing public JSON names.
+- **Schema alignment:** A downstream alteration-grammar consumer's schema is not yet available in this repo; obtain cross-team review before freezing public JSON names.
