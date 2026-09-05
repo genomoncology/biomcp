@@ -140,6 +140,17 @@
       }
     },
     {
+      "path": "src/entities/variant/search/mod.rs",
+      "baseline_lines": 1083,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1155",
+        "delta": 83,
+        "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, and bounded projection beside the existing identity filter and pagination owner without adding a package file beyond the fixed 1300-file boundary.",
+        "removal_condition": "Split exact-search result projection when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+      }
+    },
+    {
       "path": "src/error.rs",
       "baseline_lines": 1125,
       "floor_lines": 1122,
@@ -191,6 +202,17 @@
       }
     },
     {
+      "path": "src/render/markdown/variant/tests.rs",
+      "baseline_lines": 1069,
+      "floor_lines": 1000,
+      "authorized_increase": {
+        "ticket": "1155",
+        "delta": 69,
+        "reason": "Keep transcript explanation placement and hostile inline-sanitization regressions beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
+        "removal_condition": "Split variant-search renderer tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
+      }
+    },
+    {
       "path": "src/render/markdown/related.rs",
       "baseline_lines": 1123,
       "floor_lines": 1123,
@@ -226,13 +248,13 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1055,
+      "baseline_lines": 1460,
       "floor_lines": 1033,
       "authorized_increase": {
-        "ticket": "1091, 1154",
-        "delta": 22,
-        "reason": "Probe trusted MyGene aliases and preserve ClinVar fallback accession and freshness fields.",
-        "removal_condition": "Remove this allowance when MyVariant request planning is decomposed."
+        "ticket": "1091, 1154, 1155",
+        "delta": 427,
+        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, and stream-isolate bounded SnpEff annotations without adding a package file beyond the fixed 1300-file boundary.",
+        "removal_condition": "Split MyVariant request planning and SnpEff decoding when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
     },
     {
@@ -266,12 +288,12 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1372,
+      "baseline_lines": 1385,
       "floor_lines": 1335,
       "authorized_increase": {
-        "ticket": "1154",
-        "delta": 37,
-        "reason": "Keep MyVariant ClinVar fallback freshness fields explicit in existing transformation fixtures.",
+        "ticket": "1154, 1155",
+        "delta": 50,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields and selected SnpEff annotation identity explicit in the existing transformation owner.",
         "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
       }
     }

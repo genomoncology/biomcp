@@ -81,6 +81,22 @@ H3F3A_POSITION_HITS = [
     }
     for position in (19, 28, 37, 57)
 ]
+HSD17B4_TRANSCRIPT_HIT = {
+    "_id": "chr5:g.118860951A>G",
+    "dbnsfp": {
+        "genename": "HSD17B4",
+        "hgvsp": ["p.His515Arg", "p.His540Arg"],
+        "hgvsc": ["c.1544A>G", "c.1619A>G"],
+    },
+    "clinvar": {"rcv": {"preferred_name": "NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
+    "snpeff": {"ann": [
+        {"feature_id": "NM_001199291.2", "genename": "HSD17B4", "hgvs_c": "c.1619A>G", "hgvs_p": "p.His540Arg"},
+        {"feature_id": "NM_000414.3", "genename": "HSD17B4", "hgvs_c": "c.1544A>G", "hgvs_p": "p.His515Arg"},
+        {"feature_id": "XM_011512026.2", "genename": "HSD17B4", "hgvs_c": "c.1616A>G", "hgvs_p": "p.His539Arg"},
+        {"feature_id": "NM_001199292.2", "genename": "HSD17B4", "hgvs_c": "c.1562A>G", "hgvs_p": "p.His521Arg"},
+        {"feature_id": "XM_017009363.1", "genename": "HSD17B4", "hgvs_c": "c.1544A>G", "hgvs_p": "p.His515Arg"},
+    ]},
+}
 CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
     "/api/hotspots/single/byGene/MYD88": (ROOT / "testdata/sources/cancerhotspots/by_gene_myd88_20260805.json").read_bytes(),
@@ -196,6 +212,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if query == "dbnsfp.genename:H3F3A AND dbnsfp.hgvsp:p.K*M":
                 send_json(self, 200, {"total": 4, "hits": H3F3A_POSITION_HITS})
+                return
+            if "dbnsfp.genename:HSD17B4" in query:
+                send_json(self, 200, {"total": 1, "hits": [HSD17B4_TRANSCRIPT_HIT]})
                 return
             if query == "dbnsfp.genename:NOTAREALGENE1091":
                 send_json(self, 200, {"total": 0, "hits": []})

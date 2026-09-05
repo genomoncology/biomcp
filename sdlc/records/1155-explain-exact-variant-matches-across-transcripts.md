@@ -255,3 +255,38 @@ policy, normalize HGVS independently, infer missing fields, reconcile SnpEff
 with dbNSFP or ClinVar, change classification, alter exact-match acceptance,
 or change ranking, deduplication, pagination, provider queries, cache behavior,
 or public command/tool inputs.
+
+## Result
+
+Exact MyVariant-backed searches now retain a bounded, fail-safe projection of
+whole `snpeff.ann` tuples after the existing dbNSFP identity decision. The
+public exact-search rows expose completeness and deterministic annotation
+roles, while broad search and `get variant` keep their prior envelopes and the
+ticket-1154 ClinVar fallback boundary. Malformed or over-limit SnpEff data is
+isolated to empty/incomplete explanation data and cannot admit a result or
+change `matched_alias`.
+
+CLI and raw/typed MCP Markdown add the bounded explanation only after the
+unchanged result table when distinct complete displayed and matched tuples
+exist. The new prose sanitizes every untrusted field and builds one safe code
+span per tuple. JSON surfaces share the exact six-key annotation schema.
+Documentation and licensing provenance identify MyVariant.info as the direct
+carrier and SnpEff as the indirect annotation source. No new package file was
+added; the source-size inventory records the exact package-neutral increases.
+
+Focused implementation evidence passed: `cargo fmt --all -- --check`;
+`cargo check --tests --no-default-features`; the MyVariant parsing (19), variant
+search (17), and variant Markdown (24) Rust test groups; Clippy for the
+no-default-feature library and test graph with warnings denied; 15 focused
+Python source-licensing, public-skill, and package-boundary contracts; the
+complete quality ratchet; the three new CLI mustmatch blocks; and the extended
+raw/typed MCP contract block. `cargo package --list --allow-dirty --locked
+--offline` remains exactly 1,300 files. The repository-wide `make lint`, `make
+test`, and `make spec` gates were intentionally not claimed at this code-stage
+handoff.
+
+## Review
+
+- Design review: accepted before implementation in this ticket.
+- Code-stage implementation: complete with focused evidence above; independent
+  implementation review and any resulting remediation remain pending.

@@ -72,22 +72,24 @@ fn clinvar_preferred_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotati
     })
 }
 
-fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
+pub(crate) fn selected_snpeff_annotation_index(hit: &MyVariantHit) -> Option<usize> {
     let clinvar = clinvar_preferred_annotation(hit);
     let preferred_stem = clinvar
         .as_ref()
         .and_then(|value| value.transcript.as_deref())
         .map(accession_stem);
     let annotations = &hit.snpeff.as_ref()?.ann;
-    let selected = annotations
+    annotations
         .iter()
+        .enumerate()
         .filter(|ann| {
-            ann.hgvs_c
+            ann.1
+                .hgvs_c
                 .as_deref()
                 .is_some_and(|value| !value.trim().is_empty())
         })
         .min_by_key(|ann| {
-            let feature = ann.feature_id.as_deref().unwrap_or_default();
+            let feature = ann.1.feature_id.as_deref().unwrap_or_default();
             if preferred_stem.is_some_and(|preferred| accession_stem(feature) == preferred) {
                 0
             } else if feature.starts_with("NM_") {
@@ -95,7 +97,16 @@ fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotati
             } else {
                 2
             }
-        })?;
+        })
+        .map(|(index, _)| index)
+}
+
+fn select_transcript_annotation(hit: &MyVariantHit) -> Option<TranscriptAnnotation> {
+    let selected = hit
+        .snpeff
+        .as_ref()?
+        .ann
+        .get(selected_snpeff_annotation_index(hit)?)?;
     Some(TranscriptAnnotation {
         gene: selected.genename.clone(),
         transcript: selected.feature_id.clone(),
@@ -957,6 +968,8 @@ pub fn from_myvariant_search_hit(hit: &MyVariantHit) -> VariantSearchResult {
         gerp,
         source_identity: None,
         matched_alias: None,
+        transcript_annotations_complete: None,
+        transcript_annotations: None,
     }
 }
 

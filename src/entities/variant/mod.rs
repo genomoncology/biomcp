@@ -49,8 +49,8 @@ pub(crate) use self::resolution::{
     SourceVariantIdentity, VariantArticleRequest, VariantArticleResolution,
     VariantArticleResolutionBasis, VariantArticleResolutionContext, VariantIdentityComparison,
     VariantProviderValidation, VariantProviderValidationStatus, VariantResolutionStatus,
-    VariantSearchResolution, compare_variant_identity, gnomad_variant_slug, is_rsid,
-    normalize_genomic_coordinate, normalize_protein_change, protein_change_segment,
+    VariantSearchResolution, coding_change_segment, compare_variant_identity, gnomad_variant_slug,
+    is_rsid, normalize_genomic_coordinate, normalize_protein_change, protein_change_segment,
 };
 #[cfg(test)]
 pub(crate) use self::search::VariantFilterEvaluationStatus;
@@ -825,6 +825,23 @@ pub struct VariantPrediction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TranscriptAnnotationRole {
+    Displayed,
+    Matched,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VariantTranscriptAnnotation {
+    pub source: String,
+    pub gene: Option<String>,
+    pub transcript: Option<String>,
+    pub hgvs_c: Option<String>,
+    pub hgvs_p: Option<String>,
+    pub roles: Vec<TranscriptAnnotationRole>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariantSearchResult {
     pub id: String,
     pub genome_build: GenomeBuild,
@@ -849,6 +866,10 @@ pub struct VariantSearchResult {
     pub source_identity: Option<SourceVariantIdentity>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub matched_alias: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcript_annotations_complete: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transcript_annotations: Option<Vec<VariantTranscriptAnnotation>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -283,6 +283,65 @@ try:
     assert value["resolution"]["status"] == "unresolved"
     assert value["filter_evaluation"] == {"gene": "evaluated", "hgvsp": "evaluated"}
     assert "filter_resolution" not in value
+
+    raw_transcript_markdown = call(6, "biomcp", {
+        "command": "biomcp search variant -g HSD17B4 --hgvsp H540R --limit 10"
+    })
+    typed_transcript_markdown = call(7, "search", {
+        "entity": "variant", "gene": "HSD17B4", "hgvsp": "H540R", "limit": 10
+    })
+    assert typed_transcript_markdown == raw_transcript_markdown
+    assert "## Transcript match explanations" in raw_transcript_markdown
+    assert "NM_001199291.2 | c.1619A>G | p.His540Arg" in raw_transcript_markdown
+
+    raw_transcript_json = call(8, "biomcp", {
+        "command": "biomcp search variant -g HSD17B4 --hgvsp H540R --limit 10",
+        "json": True,
+    })
+    typed_transcript_json = call(9, "search", {
+        "entity": "variant", "gene": "HSD17B4", "hgvsp": "H540R", "limit": 10,
+        "json": True,
+    })
+    assert typed_transcript_json == raw_transcript_json
+    transcript_row = json.loads(raw_transcript_json)["results"][0]
+    assert transcript_row["transcript_annotations_complete"] is True
+    assert set(transcript_row["transcript_annotations"][0]) == {
+        "source", "gene", "transcript", "hgvs_c", "hgvs_p", "roles"
+    }
+    assert transcript_row["transcript_annotations"][0]["roles"] == ["displayed"]
+    assert transcript_row["transcript_annotations"][1]["roles"] == ["matched"]
+
+    raw_same = call(10, "biomcp", {
+        "command": "biomcp search variant -g HSD17B4 --hgvsp H515R --limit 10"
+    })
+    typed_same = call(11, "search", {
+        "entity": "variant", "gene": "HSD17B4", "hgvsp": "H515R", "limit": 10
+    })
+    assert typed_same == raw_same
+    assert "## Transcript match explanations" not in raw_same
+
+    raw_same_json = call(12, "biomcp", {
+        "command": "biomcp search variant -g HSD17B4 --hgvsp H515R --limit 10",
+        "json": True,
+    })
+    typed_same_json = call(13, "search", {
+        "entity": "variant", "gene": "HSD17B4", "hgvsp": "H515R", "limit": 10,
+        "json": True,
+    })
+    assert typed_same_json == raw_same_json
+    same_row = json.loads(raw_same_json)["results"][0]
+    assert same_row["transcript_annotations"][0]["roles"] == ["displayed", "matched"]
+
+    raw_broad_json = call(14, "biomcp", {
+        "command": "biomcp search variant -g HSD17B4 --limit 1", "json": True,
+    })
+    typed_broad_json = call(15, "search", {
+        "entity": "variant", "gene": "HSD17B4", "limit": 1, "json": True,
+    })
+    assert typed_broad_json == raw_broad_json
+    broad_row = json.loads(raw_broad_json)["results"][0]
+    assert "transcript_annotations" not in broad_row
+    assert "transcript_annotations_complete" not in broad_row
 finally:
     proc.terminate()
     proc.wait(timeout=5)

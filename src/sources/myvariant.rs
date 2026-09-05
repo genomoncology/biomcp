@@ -1,7 +1,7 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use serde::de::DeserializeOwned;
+use serde::de::{DeserializeOwned, IgnoredAny, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::entities::variant::VariantProteinAlias;
@@ -854,21 +854,426 @@ pub struct MyVariantHit {
     pub cosmic: Option<MyVariantCosmic>,
     pub cgi: Option<serde_json::Value>,
     pub civic: Option<serde_json::Value>,
+    #[serde(default, deserialize_with = "de_isolated_snpeff")]
     pub snpeff: Option<MyVariantSnpeff>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MyVariantSnpeff {
-    #[serde(default, deserialize_with = "de_vec_or_single")]
     pub ann: Vec<MyVariantSnpeffAnnotation>,
+    #[serde(skip)]
+    pub complete: bool,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+impl Default for MyVariantSnpeff {
+    fn default() -> Self {
+        Self {
+            ann: Vec::new(),
+            complete: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct MyVariantSnpeffAnnotation {
     pub feature_id: Option<String>,
     pub genename: Option<String>,
     pub hgvs_c: Option<String>,
     pub hgvs_p: Option<String>,
+}
+
+const MAX_SNPEFF_ANNOTATIONS: usize = 32;
+const MAX_SNPEFF_IDENTITY_BYTES: usize = 256;
+
+#[cfg(test)]
+thread_local! {
+    static SNPEFF_PROJECTED_OBJECTS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static SNPEFF_PROJECTED_STRINGS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+#[cfg(test)]
+pub(crate) fn reset_snpeff_projection_counts() {
+    SNPEFF_PROJECTED_OBJECTS.set(0);
+    SNPEFF_PROJECTED_STRINGS.set(0);
+}
+
+#[cfg(test)]
+pub(crate) fn snpeff_projection_counts() -> (usize, usize) {
+    (
+        SNPEFF_PROJECTED_OBJECTS.get(),
+        SNPEFF_PROJECTED_STRINGS.get(),
+    )
+}
+
+enum ProjectedField {
+    Valid(Option<String>),
+    Invalid,
+}
+
+struct BoundedIdentityField;
+
+impl<'de> serde::de::DeserializeSeed<'de> for BoundedIdentityField {
+    type Value = ProjectedField;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(BoundedIdentityVisitor)
+    }
+}
+
+struct BoundedIdentityVisitor;
+
+impl<'de> Visitor<'de> for BoundedIdentityVisitor {
+    type Value = ProjectedField;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a null or bounded string identity field")
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E> {
+        Ok(ProjectedField::Valid(None))
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E> {
+        Ok(ProjectedField::Valid(None))
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E> {
+        let value = value.trim();
+        if value.len() > MAX_SNPEFF_IDENTITY_BYTES {
+            Ok(ProjectedField::Invalid)
+        } else if value.is_empty() {
+            Ok(ProjectedField::Valid(None))
+        } else {
+            #[cfg(test)]
+            SNPEFF_PROJECTED_STRINGS.set(SNPEFF_PROJECTED_STRINGS.get() + 1);
+            Ok(ProjectedField::Valid(Some(value.to_owned())))
+        }
+    }
+
+    fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Self::Value, E> {
+        self.visit_str(&value)
+    }
+
+    fn visit_bool<E>(self, _: bool) -> Result<Self::Value, E> {
+        Ok(ProjectedField::Invalid)
+    }
+
+    fn visit_i64<E>(self, _: i64) -> Result<Self::Value, E> {
+        Ok(ProjectedField::Invalid)
+    }
+
+    fn visit_u64<E>(self, _: u64) -> Result<Self::Value, E> {
+        Ok(ProjectedField::Invalid)
+    }
+
+    fn visit_f64<E>(self, _: f64) -> Result<Self::Value, E> {
+        Ok(ProjectedField::Invalid)
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        while seq.next_element::<IgnoredAny>()?.is_some() {}
+        Ok(ProjectedField::Invalid)
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        while map.next_entry::<IgnoredAny, IgnoredAny>()?.is_some() {}
+        Ok(ProjectedField::Invalid)
+    }
+}
+
+enum ProjectedAnnotation {
+    Valid(MyVariantSnpeffAnnotation),
+    Invalid,
+}
+
+struct AnnotationSeed;
+
+impl<'de> serde::de::DeserializeSeed<'de> for AnnotationSeed {
+    type Value = ProjectedAnnotation;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(AnnotationVisitor)
+    }
+}
+
+struct AnnotationVisitor;
+
+impl<'de> Visitor<'de> for AnnotationVisitor {
+    type Value = ProjectedAnnotation;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("one SnpEff annotation object")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        #[cfg(test)]
+        SNPEFF_PROJECTED_OBJECTS.set(SNPEFF_PROJECTED_OBJECTS.get() + 1);
+        let mut annotation = MyVariantSnpeffAnnotation {
+            feature_id: None,
+            genename: None,
+            hgvs_c: None,
+            hgvs_p: None,
+        };
+        let mut valid = true;
+        let mut seen = 0_u8;
+        while let Some(key) = map.next_key::<String>()? {
+            let target = match key.as_str() {
+                "feature_id" => Some((&mut annotation.feature_id, 1)),
+                "genename" => Some((&mut annotation.genename, 2)),
+                "hgvs_c" => Some((&mut annotation.hgvs_c, 4)),
+                "hgvs_p" => Some((&mut annotation.hgvs_p, 8)),
+                _ => None,
+            };
+            if let Some((target, bit)) = target {
+                if seen & bit != 0 {
+                    map.next_value::<IgnoredAny>()?;
+                    valid = false;
+                    continue;
+                }
+                seen |= bit;
+                match map.next_value_seed(BoundedIdentityField)? {
+                    ProjectedField::Valid(value) => *target = value,
+                    ProjectedField::Invalid => valid = false,
+                }
+            } else {
+                map.next_value::<IgnoredAny>()?;
+            }
+        }
+        Ok(if valid {
+            ProjectedAnnotation::Valid(annotation)
+        } else {
+            ProjectedAnnotation::Invalid
+        })
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E> {
+        Ok(ProjectedAnnotation::Invalid)
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E> {
+        Ok(ProjectedAnnotation::Invalid)
+    }
+
+    fn visit_bool<E>(self, _: bool) -> Result<Self::Value, E> {
+        Ok(ProjectedAnnotation::Invalid)
+    }
+
+    fn visit_i64<E>(self, _: i64) -> Result<Self::Value, E> {
+        Ok(ProjectedAnnotation::Invalid)
+    }
+
+    fn visit_u64<E>(self, _: u64) -> Result<Self::Value, E> {
+        Ok(ProjectedAnnotation::Invalid)
+    }
+
+    fn visit_f64<E>(self, _: f64) -> Result<Self::Value, E> {
+        Ok(ProjectedAnnotation::Invalid)
+    }
+
+    fn visit_str<E>(self, _: &str) -> Result<Self::Value, E> {
+        Ok(ProjectedAnnotation::Invalid)
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        while seq.next_element::<IgnoredAny>()?.is_some() {}
+        Ok(ProjectedAnnotation::Invalid)
+    }
+}
+
+struct AnnotationSetSeed;
+
+impl<'de> serde::de::DeserializeSeed<'de> for AnnotationSetSeed {
+    type Value = MyVariantSnpeff;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_any(AnnotationSetVisitor)
+    }
+}
+
+struct AnnotationSetVisitor;
+
+impl<'de> Visitor<'de> for AnnotationSetVisitor {
+    type Value = MyVariantSnpeff;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a null, annotation object, or annotation array")
+    }
+
+    fn visit_none<E>(self) -> Result<Self::Value, E> {
+        Ok(MyVariantSnpeff::default())
+    }
+
+    fn visit_unit<E>(self) -> Result<Self::Value, E> {
+        Ok(MyVariantSnpeff::default())
+    }
+
+    fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        Ok(match AnnotationVisitor.visit_map(map)? {
+            ProjectedAnnotation::Valid(annotation) => MyVariantSnpeff {
+                ann: vec![annotation],
+                complete: true,
+            },
+            ProjectedAnnotation::Invalid => MyVariantSnpeff {
+                ann: Vec::new(),
+                complete: false,
+            },
+        })
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: SeqAccess<'de>,
+    {
+        let mut annotations = Vec::with_capacity(MAX_SNPEFF_ANNOTATIONS);
+        for _ in 0..MAX_SNPEFF_ANNOTATIONS {
+            match seq.next_element_seed(AnnotationSeed)? {
+                Some(ProjectedAnnotation::Valid(annotation)) => annotations.push(annotation),
+                Some(ProjectedAnnotation::Invalid) => {
+                    while seq.next_element::<IgnoredAny>()?.is_some() {}
+                    return Ok(incomplete_snpeff());
+                }
+                None => {
+                    return Ok(MyVariantSnpeff {
+                        ann: annotations,
+                        complete: true,
+                    });
+                }
+            }
+        }
+        if seq.next_element::<IgnoredAny>()?.is_some() {
+            while seq.next_element::<IgnoredAny>()?.is_some() {}
+            return Ok(incomplete_snpeff());
+        }
+        Ok(MyVariantSnpeff {
+            ann: annotations,
+            complete: true,
+        })
+    }
+
+    fn visit_bool<E>(self, _: bool) -> Result<Self::Value, E> {
+        Ok(incomplete_snpeff())
+    }
+
+    fn visit_i64<E>(self, _: i64) -> Result<Self::Value, E> {
+        Ok(incomplete_snpeff())
+    }
+
+    fn visit_u64<E>(self, _: u64) -> Result<Self::Value, E> {
+        Ok(incomplete_snpeff())
+    }
+
+    fn visit_f64<E>(self, _: f64) -> Result<Self::Value, E> {
+        Ok(incomplete_snpeff())
+    }
+
+    fn visit_str<E>(self, _: &str) -> Result<Self::Value, E> {
+        Ok(incomplete_snpeff())
+    }
+}
+
+fn incomplete_snpeff() -> MyVariantSnpeff {
+    MyVariantSnpeff {
+        ann: Vec::new(),
+        complete: false,
+    }
+}
+
+fn de_isolated_snpeff<'de, D>(deserializer: D) -> Result<Option<MyVariantSnpeff>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct SnpeffVisitor;
+    impl<'de> Visitor<'de> for SnpeffVisitor {
+        type Value = Option<MyVariantSnpeff>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("a null or SnpEff object")
+        }
+
+        fn visit_none<E>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_unit<E>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+        where
+            A: MapAccess<'de>,
+        {
+            let mut result = MyVariantSnpeff::default();
+            let mut ann_seen = false;
+            while let Some(key) = map.next_key::<String>()? {
+                if key == "ann" {
+                    if ann_seen {
+                        map.next_value::<IgnoredAny>()?;
+                        result = incomplete_snpeff();
+                    } else {
+                        ann_seen = true;
+                        result = map.next_value_seed(AnnotationSetSeed)?;
+                    }
+                } else {
+                    map.next_value::<IgnoredAny>()?;
+                }
+            }
+            Ok(Some(result))
+        }
+
+        fn visit_bool<E>(self, _: bool) -> Result<Self::Value, E> {
+            Ok(Some(incomplete_snpeff()))
+        }
+
+        fn visit_i64<E>(self, _: i64) -> Result<Self::Value, E> {
+            Ok(Some(incomplete_snpeff()))
+        }
+
+        fn visit_u64<E>(self, _: u64) -> Result<Self::Value, E> {
+            Ok(Some(incomplete_snpeff()))
+        }
+
+        fn visit_f64<E>(self, _: f64) -> Result<Self::Value, E> {
+            Ok(Some(incomplete_snpeff()))
+        }
+
+        fn visit_str<E>(self, _: &str) -> Result<Self::Value, E> {
+            Ok(Some(incomplete_snpeff()))
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            while seq.next_element::<IgnoredAny>()?.is_some() {}
+            Ok(Some(incomplete_snpeff()))
+        }
+    }
+
+    deserializer.deserialize_any(SnpeffVisitor)
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

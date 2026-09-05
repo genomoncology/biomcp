@@ -604,6 +604,8 @@ fn ticket_377_variant_renderer_envelope_contracts() {
         gerp: Some(5.1),
         source_identity: None,
         matched_alias: None,
+        transcript_annotations_complete: None,
+        transcript_annotations: None,
     }];
     let next_commands = crate::render::markdown::search_next_commands_variant(
         &results,

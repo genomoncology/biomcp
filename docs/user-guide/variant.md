@@ -106,6 +106,20 @@ absent or contradictory. Retained rows expose the provider's complete
 `source_identity` arrays and the source-derived `matched_alias` that proved the
 match.
 
+Exact-search rows also include `transcript_annotations_complete` and a bounded
+`transcript_annotations` array. Each object preserves one intact
+MyVariant.info `snpeff.ann` gene/transcript/coding/protein tuple and marks it as
+`displayed`, `matched`, both, or neither. The displayed role follows BioMCP's
+existing SnpEff display selection; the matched role is present only when that
+same SnpEff object satisfies every submitted gene and transcript-specific
+selector. The independent dbNSFP arrays remain the evidence used to retain an
+exact result, so `matched_alias` can be present when no SnpEff tuple is marked
+matched. These annotations explain source representations; they do not choose
+a preferred transcript, establish equivalence, or convey clinical meaning.
+Broad searches omit both fields. An empty array with `false` means malformed or
+over-budget SnpEff data was isolated while the otherwise usable result was
+retained.
+
 Search output reports that exact result as `Variant identity` in Markdown and
 as `resolution` in JSON. A separate `Filter evaluation` block (the
 `filter_evaluation` JSON object) marks each submitted filter as `evaluated` or

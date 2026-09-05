@@ -967,7 +967,7 @@ fn coding_change_re() -> &'static Regex {
     })
 }
 
-fn coding_change_segment(value: &str) -> &str {
+pub(crate) fn coding_change_segment(value: &str) -> &str {
     let trimmed = value.trim();
     trimmed
         .rsplit_once(':')

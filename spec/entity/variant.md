@@ -492,6 +492,42 @@ biomcp --json search variant -g BRCA1 --hgvsp p.Met16Ile --limit 5 \
   | mustmatch like '{"supplied_protein":"p.Met16Ile","normalized_proteins":["M16I"],"status":"resolved","exhaustive":true,"retained":1,"matched_alias":"p.Met16Ile","source_has_supplied_alias":true,"source_has_short_alias":true,"filtered_total":1,"has_more":false}'
 ```
 
+An exact match can be retained by dbNSFP while the displayed SnpEff tuple uses
+another transcript. The structured explanation preserves whole provider tuples
+and assigns roles without zipping the independent dbNSFP arrays.
+
+```bash
+biomcp --json search variant -g HSD17B4 --hgvsp H540R --limit 10 \
+  | jq -c '.results[0] | {id, matched_alias, transcript, hgvs_c, hgvs_p, transcript_annotations_complete, transcript_annotations}' \
+  | mustmatch like '{"id":"chr5:g.118860951A>G","matched_alias":"p.His540Arg","transcript":"NM_000414.3","hgvs_c":"c.1544A>G","hgvs_p":"p.His515Arg","transcript_annotations_complete":true,"transcript_annotations":[{"source":"myvariant.info/snpeff.ann","gene":"HSD17B4","transcript":"NM_000414.3","hgvs_c":"c.1544A>G","hgvs_p":"p.His515Arg","roles":["displayed"]},{"source":"myvariant.info/snpeff.ann","gene":"HSD17B4","transcript":"NM_001199291.2","hgvs_c":"c.1619A>G","hgvs_p":"p.His540Arg","roles":["matched"]},{"source":"myvariant.info/snpeff.ann","gene":"HSD17B4","transcript":"XM_011512026.2","hgvs_c":"c.1616A>G","hgvs_p":"p.His539Arg","roles":[]},{"source":"myvariant.info/snpeff.ann","gene":"HSD17B4","transcript":"NM_001199292.2","hgvs_c":"c.1562A>G","hgvs_p":"p.His521Arg","roles":[]},{"source":"myvariant.info/snpeff.ann","gene":"HSD17B4","transcript":"XM_017009363.1","hgvs_c":"c.1544A>G","hgvs_p":"p.His515Arg","roles":[]}]}'
+```
+
+Markdown leaves the result table intact and adds the bounded explanation only
+after that table.
+
+```bash
+biomcp search variant -g HSD17B4 --hgvsp H540R --limit 10 \
+  | mustmatch like '| chr5:g.118860951A>G | GRCh37 | HSD17B4 | NM_000414.3 | c.1544A>G | p.His515Arg | ...
+...
+## Transcript match explanations
+...
+- `chr5:g.118860951A>G`: matched `NM_001199291.2 | c.1619A>G | p.His540Arg` from a different source-provided transcript annotation; displayed `NM_000414.3 | c.1544A>G | p.His515Arg`.
+...
+Use `get variant <id>` for details.'
+```
+
+When the displayed tuple itself matches, one object receives both ordered roles
+and Markdown adds no explanation. A broad search stays compact.
+
+```bash
+same_json="$(biomcp --json search variant -g HSD17B4 --hgvsp H515R --limit 10)"
+same_markdown="$(biomcp search variant -g HSD17B4 --hgvsp H515R --limit 10)"
+broad_json="$(biomcp --json search variant -g HSD17B4 --limit 1)"
+jq -n --argjson same "$same_json" --arg same_markdown "$same_markdown" --argjson broad "$broad_json" \
+  '{same_roles: $same.results[0].transcript_annotations[0].roles, note_absent: ($same_markdown | contains("Transcript match explanations") | not), broad_omits: (($broad.results[0] | has("transcript_annotations") or has("transcript_annotations_complete")) | not)}' \
+  | mustmatch like '{"same_roles":["displayed","matched"],"note_absent":true,"broad_omits":true}'
+```
+
 ## Residue-Alias Search
 
 Residue aliases should stay on the typed variant path instead of falling

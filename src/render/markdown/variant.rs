@@ -286,7 +286,8 @@ pub fn variant_search_markdown_with_context(
     diagnostics: &[crate::entities::variant::SearchDiagnostic],
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("variant_search.md.j2")?;
-    let body = tmpl.render(context! {
+    let transcript_explanations = transcript_match_explanations(results);
+    let mut body = tmpl.render(context! {
         query => query,
         count => results.len(),
         results => results,
@@ -299,7 +300,81 @@ pub fn variant_search_markdown_with_context(
         )),
         pagination_footer => pagination_footer,
     })?;
+    if !transcript_explanations.is_empty() {
+        body = body.replacen(
+            "Use `get variant <id>` for details.",
+            &format!("{transcript_explanations}Use `get variant <id>` for details."),
+            1,
+        );
+    }
     Ok(with_pagination_footer(body, pagination_footer))
+}
+
+fn transcript_match_explanations(results: &[VariantSearchResult]) -> String {
+    let mut bullets = Vec::new();
+    for result in results {
+        if result.transcript_annotations_complete != Some(true) {
+            continue;
+        }
+        let Some(annotations) = result.transcript_annotations.as_deref() else {
+            continue;
+        };
+        let displayed = annotations.iter().find(|annotation| {
+            annotation.roles.iter().any(|role| {
+                matches!(
+                    role,
+                    crate::entities::variant::TranscriptAnnotationRole::Displayed
+                )
+            })
+        });
+        let matched = annotations.iter().find(|annotation| {
+            annotation.roles.iter().any(|role| {
+                matches!(
+                    role,
+                    crate::entities::variant::TranscriptAnnotationRole::Matched
+                )
+            })
+        });
+        let (Some(displayed), Some(matched)) = (displayed, matched) else {
+            continue;
+        };
+        if displayed.transcript == matched.transcript
+            && displayed.hgvs_c == matched.hgvs_c
+            && displayed.hgvs_p == matched.hgvs_p
+        {
+            continue;
+        }
+        let tuple = |annotation: &crate::entities::variant::VariantTranscriptAnnotation| {
+            let field = |value: Option<&str>| {
+                let value = value
+                    .map(crate::render::human::sanitize_inline)
+                    .unwrap_or_default();
+                if value.is_empty() { "-".into() } else { value }
+            };
+            markdown_code_span(
+                &[
+                    field(annotation.transcript.as_deref()),
+                    field(annotation.hgvs_c.as_deref()),
+                    field(annotation.hgvs_p.as_deref()),
+                ]
+                .join(" | "),
+            )
+        };
+        let id = markdown_code_span(&crate::render::human::sanitize_inline(&result.id));
+        bullets.push(format!(
+            "- {id}: matched {} from a different source-provided transcript annotation; displayed {}.",
+            tuple(matched),
+            tuple(displayed)
+        ));
+    }
+    if bullets.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "## Transcript match explanations\n\n{}\n\n",
+            bullets.join("\n")
+        )
+    }
 }
 
 // dead-code reason: variant::phenotype_search_markdown is exercised by native renderer contracts

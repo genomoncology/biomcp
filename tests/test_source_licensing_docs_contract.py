@@ -227,6 +227,8 @@ def test_source_licensing_reference_matches_inventory_and_required_sections() ->
         in licensing
     )
     assert "COSMIC" in licensing
+    assert "MyVariant.info as the direct carrier" in licensing
+    assert "SnpEff `ann`" in licensing
     assert "licensing risk" in licensing
     assert "PubMed" in licensing
     assert "Drugs@FDA" in licensing

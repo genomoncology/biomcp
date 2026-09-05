@@ -76,6 +76,8 @@ fn quality_score_prioritizes_significance_and_frequency() {
         gerp: None,
         source_identity: None,
         matched_alias: None,
+        transcript_annotations_complete: None,
+        transcript_annotations: None,
     };
     let sparse = VariantSearchResult {
         id: "chr1:g.2A>T".into(),
@@ -93,6 +95,8 @@ fn quality_score_prioritizes_significance_and_frequency() {
         gerp: None,
         source_identity: None,
         matched_alias: None,
+        transcript_annotations_complete: None,
+        transcript_annotations: None,
     };
 
     assert!(search_result_quality_score(&rich) > search_result_quality_score(&sparse));
@@ -227,8 +231,224 @@ fn exact_aggregation_retains_identical_complex_protein_hgvs() {
         &mut retained,
     ));
     assert_eq!(
-        retained[0].matched_alias.as_deref(),
+        retained[0].row.matched_alias.as_deref(),
         Some("NP_005219.2:p.Glu746_Ala750del")
+    );
+}
+
+#[test]
+fn exact_projection_keeps_paired_snpeff_roles_separate_from_dbnsfp_match() {
+    let requested = RequestedVariantIdentity::for_search(
+        Some("HSD17B4".into()),
+        Some("H540R".into()),
+        None,
+        None,
+    );
+    let source_hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+        "_id": "chr5:g.118860951A>G",
+        "dbnsfp": {"genename": "HSD17B4", "hgvsp": ["p.His515Arg", "p.His540Arg"]},
+        "clinvar": {"rcv": {"preferred_name": "NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
+        "snpeff": {"ann": [
+            {"feature_id":"NM_001199291.2", "genename":"HSD17B4", "hgvs_c":"c.1619A>G", "hgvs_p":"p.His540Arg"},
+            {"feature_id":"NM_000414.3", "genename":"HSD17B4", "hgvs_c":"c.1544A>G", "hgvs_p":"p.His515Arg"},
+            {"feature_id":"XM_1", "genename":"HSD17B4", "hgvs_c":"c.1A>G", "hgvs_p":null},
+            {"feature_id":"NM_000414.3", "genename":"HSD17B4", "hgvs_c":"c.1544A>G", "hgvs_p":"p.His515Arg"}
+        ]}
+    }))
+    .expect("valid paired fixture");
+    let mut seen = HashSet::new();
+    let mut retained = Vec::new();
+    assert!(!retain_compatible_hits(
+        &requested,
+        [source_hit],
+        &mut seen,
+        &mut retained,
+    ));
+
+    let page = finalize_exact_page(&requested, retained, 0, 10, false, true);
+    let row = &page.results[0];
+    assert_eq!(row.matched_alias.as_deref(), Some("p.His540Arg"));
+    assert_eq!(row.transcript.as_deref(), Some("NM_000414.3"));
+    assert_eq!(row.transcript_annotations_complete, Some(true));
+    let annotations = row
+        .transcript_annotations
+        .as_ref()
+        .expect("exact annotations");
+    assert_eq!(annotations.len(), 3);
+    assert_eq!(annotations[0].transcript.as_deref(), Some("NM_000414.3"));
+    assert_eq!(
+        serde_json::to_value(&annotations[0].roles).unwrap(),
+        serde_json::json!(["displayed"])
+    );
+    assert_eq!(annotations[1].transcript.as_deref(), Some("NM_001199291.2"));
+    assert_eq!(
+        serde_json::to_value(&annotations[1].roles).unwrap(),
+        serde_json::json!(["matched"])
+    );
+    assert_eq!(annotations[2].transcript.as_deref(), Some("XM_1"));
+    assert!(annotations[2].roles.is_empty());
+    assert_eq!(
+        serde_json::to_value(&annotations[2]).unwrap(),
+        serde_json::json!({
+            "source":"myvariant.info/snpeff.ann",
+            "gene":"HSD17B4",
+            "transcript":"XM_1",
+            "hgvs_c":"c.1A>G",
+            "hgvs_p":null,
+            "roles":[]
+        })
+    );
+}
+
+#[test]
+fn split_snpeff_fields_do_not_inherit_dbnsfp_match_role() {
+    let requested = RequestedVariantIdentity::for_search(
+        Some("BRAF".into()),
+        Some("V600E".into()),
+        Some("c.1799T>A".into()),
+        None,
+    );
+    let source_hit: MyVariantHit = serde_json::from_value(serde_json::json!({
+        "_id": "chr7:g.140453136A>T",
+        "dbnsfp": {"genename":"BRAF", "hgvsp":"p.V600E", "hgvsc":"c.1799T>A"},
+        "snpeff": {"ann": [
+            {"feature_id":"NM_1", "genename":"BRAF", "hgvs_c":"c.1799T>A"},
+            {"feature_id":"NM_2", "genename":"BRAF", "hgvs_p":"p.V600E"}
+        ]}
+    }))
+    .unwrap();
+    let mut seen = HashSet::new();
+    let mut retained = Vec::new();
+    retain_compatible_hits(&requested, [source_hit], &mut seen, &mut retained);
+    let page = finalize_exact_page(&requested, retained, 0, 10, false, true);
+    assert!(
+        page.results[0]
+            .transcript_annotations
+            .as_ref()
+            .unwrap()
+            .iter()
+            .all(|annotation| !annotation
+                .roles
+                .iter()
+                .any(|role| matches!(role, TranscriptAnnotationRole::Matched)))
+    );
+}
+
+#[test]
+fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
+    fn retained(id: usize, annotations: usize, field_len: usize) -> RetainedVariant {
+        let annotation = || MyVariantSnpeffAnnotation {
+            feature_id: Some("t".repeat(field_len)),
+            genename: Some("g".repeat(field_len)),
+            hgvs_c: Some("c".repeat(field_len)),
+            hgvs_p: Some("p".repeat(field_len)),
+        };
+        RetainedVariant {
+            row: VariantSearchResult {
+                id: format!("chr1:g.{id}A>G"),
+                genome_build: super::super::GenomeBuild::Grch37,
+                genome_build_provenance: "test".into(),
+                gene: "SAFE".into(),
+                hgvs_p: None,
+                hgvs_c: None,
+                transcript: None,
+                legacy_name: None,
+                significance: None,
+                clinvar_stars: None,
+                gnomad_af: None,
+                revel: None,
+                gerp: None,
+                source_identity: None,
+                matched_alias: None,
+                transcript_annotations_complete: None,
+                transcript_annotations: None,
+            },
+            snpeff: Some(MyVariantSnpeff {
+                ann: (0..annotations).map(|_| annotation()).collect(),
+                complete: true,
+            }),
+            displayed_snpeff_index: None,
+        }
+    }
+
+    let requested =
+        RequestedVariantIdentity::for_search(Some("SAFE".into()), Some("A1V".into()), None, None);
+    let exact = (0..8).map(|id| retained(id, 32, 256)).collect();
+    let page = finalize_exact_page(&requested, exact, 0, 50, false, true);
+    assert!(
+        page.results
+            .iter()
+            .all(|row| row.transcript_annotations_complete == Some(true))
+    );
+
+    let mut over = (0..8).map(|id| retained(id, 32, 256)).collect::<Vec<_>>();
+    over.push(retained(9, 1, 1));
+    let page = finalize_exact_page(&requested, over, 0, 50, false, true);
+    assert!(page.results.iter().all(|row| {
+        row.transcript_annotations_complete == Some(false)
+            && row
+                .transcript_annotations
+                .as_deref()
+                .is_some_and(<[VariantTranscriptAnnotation]>::is_empty)
+    }));
+}
+
+#[test]
+fn malformed_snpeff_isolated_from_exact_broad_and_get_siblings() {
+    let make_hit = || -> MyVariantHit {
+        serde_json::from_value(serde_json::json!({
+            "_id":"chr5:g.118860951A>G",
+            "dbnsfp":{"genename":"HSD17B4", "hgvsp":"p.His540Arg"},
+            "clinvar":{"rcv":{"preferred_name":"NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
+            "snpeff":{"ann":[{"feature_id":7}]}
+        }))
+        .unwrap()
+    };
+    let broad = transform::variant::from_myvariant_search_hit(&make_hit());
+    assert_eq!(broad.transcript.as_deref(), Some("NM_000414.3"));
+    let broad_json = serde_json::to_value(&broad).unwrap();
+    assert!(broad_json.get("transcript_annotations").is_none());
+    assert!(broad_json.get("transcript_annotations_complete").is_none());
+
+    let detail = transform::variant::from_myvariant_hit(&make_hit());
+    assert_eq!(detail.transcript.as_deref(), Some("NM_000414.3"));
+    assert_eq!(detail.hgvs_c.as_deref(), Some("c.1544A>G"));
+    assert_eq!(detail.hgvs_p.as_deref(), Some("p.His515Arg"));
+
+    let no_valid_sibling: MyVariantHit = serde_json::from_value(serde_json::json!({
+        "_id":"chr5:g.118860951A>G",
+        "dbnsfp":{"genename":"HSD17B4", "hgvsc":["c.1544A>G", "c.1619A>G"], "hgvsp":["p.His515Arg", "p.His540Arg"]},
+        "snpeff":{"ann":"malformed"}
+    }))
+    .unwrap();
+    let no_sibling_broad = transform::variant::from_myvariant_search_hit(&no_valid_sibling);
+    let no_sibling_detail = transform::variant::from_myvariant_hit(&no_valid_sibling);
+    assert!(no_sibling_broad.transcript.is_none());
+    assert!(no_sibling_broad.hgvs_c.is_none());
+    assert!(no_sibling_broad.hgvs_p.is_none());
+    assert!(no_sibling_detail.transcript.is_none());
+    assert!(no_sibling_detail.hgvs_c.is_none());
+    assert!(no_sibling_detail.hgvs_p.is_none());
+
+    let requested = RequestedVariantIdentity::for_search(
+        Some("HSD17B4".into()),
+        Some("H540R".into()),
+        None,
+        None,
+    );
+    let mut seen = HashSet::new();
+    let mut retained = Vec::new();
+    retain_compatible_hits(&requested, [make_hit()], &mut seen, &mut retained);
+    let exact = finalize_exact_page(&requested, retained, 0, 10, false, true);
+    assert_eq!(
+        exact.results[0].transcript_annotations_complete,
+        Some(false)
+    );
+    assert!(
+        exact.results[0]
+            .transcript_annotations
+            .as_deref()
+            .is_some_and(<[VariantTranscriptAnnotation]>::is_empty)
     );
 }
 

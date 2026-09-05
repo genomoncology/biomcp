@@ -491,7 +491,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Redistribution / reuse summary: ClinVar, COSMIC, Cancer Genome Interpreter, and gnomAD-related fields should be treated according to their original providers' terms
 - Official terms URL: <https://docs.myvariant.info/en/latest/>
 - Reviewed on: `2026-03-20`
-- Notes: BioMCP intentionally documents several indirect-only provenance rows that arrive through MyVariant.info payloads.
+- Notes: BioMCP intentionally documents several indirect-only provenance rows that arrive through MyVariant.info payloads. Exact variant-search transcript annotations identify MyVariant.info as the direct carrier and SnpEff `ann` as their indirect annotation provenance.
 
 ### NCBI ID Converter
 

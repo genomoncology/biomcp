@@ -2,7 +2,9 @@
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
-use crate::sources::myvariant::{MyVariantClient, MyVariantHit, VariantSearchParams};
+use crate::sources::myvariant::{
+    MyVariantClient, MyVariantHit, MyVariantSnpeff, MyVariantSnpeffAnnotation, VariantSearchParams,
+};
 use crate::transform;
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
@@ -12,11 +14,21 @@ pub(crate) use diagnostics::SearchDiagnostic;
 use diagnostics::{classify_provider_zero, search_params};
 
 use super::{
-    RequestedVariantIdentity, SourceVariantIdentity, VariantArticleResolution,
-    VariantArticleResolutionBasis, VariantArticleResolutionContext, VariantIdentityComparison,
-    VariantProviderValidation, VariantProviderValidationStatus, VariantResolutionStatus,
-    VariantSearchFilters, VariantSearchResolution, VariantSearchResult, compare_variant_identity,
+    RequestedVariantIdentity, SourceVariantIdentity, TranscriptAnnotationRole,
+    VariantArticleResolution, VariantArticleResolutionBasis, VariantArticleResolutionContext,
+    VariantIdentityComparison, VariantProviderValidation, VariantProviderValidationStatus,
+    VariantResolutionStatus, VariantSearchFilters, VariantSearchResolution, VariantSearchResult,
+    VariantTranscriptAnnotation, compare_variant_identity,
 };
+
+const MAX_TRANSCRIPT_ANNOTATION_PAGE_BYTES: usize = 256 * 1024;
+
+#[derive(Clone)]
+struct RetainedVariant {
+    row: VariantSearchResult,
+    snpeff: Option<MyVariantSnpeff>,
+    displayed_snpeff_index: Option<usize>,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -830,7 +842,7 @@ fn retain_compatible_hits(
     requested: &RequestedVariantIdentity,
     hits: impl IntoIterator<Item = MyVariantHit>,
     seen: &mut HashSet<String>,
-    retained: &mut Vec<VariantSearchResult>,
+    retained: &mut Vec<RetainedVariant>,
 ) -> bool {
     let mut saw_indeterminate = false;
     for hit in hits {
@@ -839,9 +851,15 @@ fn retain_compatible_hits(
             VariantIdentityComparison::Compatible { matched_alias } => {
                 if seen.insert(source.normalized_key()) {
                     let mut row = transform::variant::from_myvariant_search_hit(&hit);
+                    let displayed_snpeff_index =
+                        transform::variant::selected_snpeff_annotation_index(&hit);
                     row.source_identity = Some(source);
                     row.matched_alias = Some(matched_alias);
-                    retained.push(row);
+                    retained.push(RetainedVariant {
+                        row,
+                        snpeff: hit.snpeff,
+                        displayed_snpeff_index,
+                    });
                 }
             }
             VariantIdentityComparison::Indeterminate { .. } => saw_indeterminate = true,
@@ -853,18 +871,35 @@ fn retain_compatible_hits(
 
 fn finalize_exact_page(
     requested: &RequestedVariantIdentity,
-    mut retained: Vec<VariantSearchResult>,
+    mut retained: Vec<RetainedVariant>,
     offset: usize,
     limit: usize,
     saw_indeterminate: bool,
     exhaustive: bool,
 ) -> VariantSearchPage {
-    sort_results(&mut retained);
+    retained.sort_by(|a, b| compare_search_results(&a.row, &b.row));
     let compatible_count = retained.len();
     let status = resolution_status(compatible_count, saw_indeterminate, exhaustive);
     let total = exhaustive.then_some(compatible_count);
     let has_more = offset.saturating_add(limit) < compatible_count || !exhaustive;
-    let results = retained.into_iter().skip(offset).take(limit).collect();
+    let mut selected = retained
+        .into_iter()
+        .skip(offset)
+        .take(limit)
+        .collect::<Vec<_>>();
+    let page_annotation_bytes = selected
+        .iter()
+        .filter_map(|item| item.snpeff.as_ref())
+        .filter(|snpeff| snpeff.complete)
+        .flat_map(|snpeff| &snpeff.ann)
+        .flat_map(annotation_identity_fields)
+        .map(str::len)
+        .sum::<usize>();
+    let page_complete = page_annotation_bytes <= MAX_TRANSCRIPT_ANNOTATION_PAGE_BYTES;
+    let results = selected
+        .drain(..)
+        .map(|item| finalize_transcript_annotations(item, requested, page_complete))
+        .collect();
     VariantSearchPage {
         results,
         total,
@@ -878,6 +913,146 @@ fn finalize_exact_page(
         has_more: Some(has_more),
         diagnostics: Vec::new(),
     }
+}
+
+fn annotation_identity_fields(
+    annotation: &MyVariantSnpeffAnnotation,
+) -> impl Iterator<Item = &str> {
+    [
+        annotation.genename.as_deref(),
+        annotation.feature_id.as_deref(),
+        annotation.hgvs_c.as_deref(),
+        annotation.hgvs_p.as_deref(),
+    ]
+    .into_iter()
+    .flatten()
+}
+
+fn annotation_matches_request(
+    annotation: &MyVariantSnpeffAnnotation,
+    requested: &RequestedVariantIdentity,
+) -> bool {
+    if requested.protein_change.is_none() && requested.coding_change.is_none() {
+        return false;
+    }
+    if let Some(gene) = requested.gene.as_deref()
+        && !annotation
+            .genename
+            .as_deref()
+            .is_some_and(|value| value.eq_ignore_ascii_case(gene))
+    {
+        return false;
+    }
+    if let Some(protein) = requested.protein_change.as_deref() {
+        let wanted = super::normalize_protein_change(protein);
+        let supplied = annotation
+            .hgvs_p
+            .as_deref()
+            .and_then(super::normalize_protein_change);
+        if wanted.is_none() || supplied != wanted {
+            return false;
+        }
+    }
+    if let Some(coding) = requested.coding_change.as_deref()
+        && !annotation.hgvs_c.as_deref().is_some_and(|value| {
+            super::coding_change_segment(value)
+                .eq_ignore_ascii_case(super::coding_change_segment(coding))
+        })
+    {
+        return false;
+    }
+    if let Some(transcript) = requested.transcript.as_deref()
+        && !annotation
+            .feature_id
+            .as_deref()
+            .is_some_and(|value| value.eq_ignore_ascii_case(transcript))
+    {
+        return false;
+    }
+    true
+}
+
+fn finalize_transcript_annotations(
+    mut item: RetainedVariant,
+    requested: &RequestedVariantIdentity,
+    page_complete: bool,
+) -> VariantSearchResult {
+    let Some(snpeff) = item.snpeff.take() else {
+        item.row.transcript_annotations_complete = Some(page_complete);
+        item.row.transcript_annotations = Some(Vec::new());
+        return item.row;
+    };
+    if !page_complete || !snpeff.complete {
+        item.row.transcript_annotations_complete = Some(false);
+        item.row.transcript_annotations = Some(Vec::new());
+        return item.row;
+    }
+
+    let mut annotations: Vec<VariantTranscriptAnnotation> = Vec::new();
+    for (index, annotation) in snpeff.ann.into_iter().enumerate() {
+        let displayed = item.displayed_snpeff_index == Some(index);
+        let matched = annotation_matches_request(&annotation, requested);
+        let duplicate = annotations.iter_mut().find(|existing| {
+            existing.gene == annotation.genename
+                && existing.transcript == annotation.feature_id
+                && existing.hgvs_c == annotation.hgvs_c
+                && existing.hgvs_p == annotation.hgvs_p
+        });
+        let roles = match duplicate {
+            Some(existing) => &mut existing.roles,
+            None => {
+                annotations.push(VariantTranscriptAnnotation {
+                    source: "myvariant.info/snpeff.ann".into(),
+                    gene: annotation.genename,
+                    transcript: annotation.feature_id,
+                    hgvs_c: annotation.hgvs_c,
+                    hgvs_p: annotation.hgvs_p,
+                    roles: Vec::new(),
+                });
+                &mut annotations.last_mut().expect("just pushed").roles
+            }
+        };
+        if displayed
+            && !roles
+                .iter()
+                .any(|role| matches!(role, TranscriptAnnotationRole::Displayed))
+        {
+            roles.push(TranscriptAnnotationRole::Displayed);
+        }
+        if matched
+            && !roles
+                .iter()
+                .any(|role| matches!(role, TranscriptAnnotationRole::Matched))
+        {
+            roles.push(TranscriptAnnotationRole::Matched);
+        }
+    }
+    for annotation in &mut annotations {
+        annotation.roles.sort_by_key(|role| match role {
+            TranscriptAnnotationRole::Displayed => 0,
+            TranscriptAnnotationRole::Matched => 1,
+        });
+    }
+    annotations.sort_by_key(|annotation| {
+        if annotation
+            .roles
+            .iter()
+            .any(|role| matches!(role, TranscriptAnnotationRole::Displayed))
+        {
+            0
+        } else if annotation
+            .roles
+            .iter()
+            .any(|role| matches!(role, TranscriptAnnotationRole::Matched))
+        {
+            1
+        } else {
+            2
+        }
+    });
+    item.row.transcript_annotations_complete = Some(true);
+    item.row.transcript_annotations = Some(annotations);
+    item.row
 }
 
 fn resolution_status(
@@ -895,11 +1070,13 @@ fn resolution_status(
 }
 
 fn sort_results(out: &mut [VariantSearchResult]) {
-    out.sort_by(|a, b| {
-        search_result_quality_score(b)
-            .cmp(&search_result_quality_score(a))
-            .then_with(|| a.id.cmp(&b.id))
-    });
+    out.sort_by(compare_search_results);
+}
+
+fn compare_search_results(a: &VariantSearchResult, b: &VariantSearchResult) -> std::cmp::Ordering {
+    search_result_quality_score(b)
+        .cmp(&search_result_quality_score(a))
+        .then_with(|| a.id.cmp(&b.id))
 }
 
 #[cfg(test)]

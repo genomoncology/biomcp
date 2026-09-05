@@ -651,6 +651,8 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
             gerp: Some(5.12),
             source_identity: None,
             matched_alias: None,
+            transcript_annotations_complete: None,
+            transcript_annotations: None,
         },
         VariantSearchResult {
             id: "chr6:g.118880100A>G".to_string(),
@@ -668,6 +670,8 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
             gerp: None,
             source_identity: None,
             matched_alias: None,
+            transcript_annotations_complete: None,
+            transcript_annotations: None,
         },
     ];
 
@@ -680,6 +684,72 @@ fn variant_search_markdown_renders_legacy_name_column_and_fallback() {
         markdown.contains("| chr6:g.118880200T>G | GRCh37 | PLN | - | - | p.L39X | PLN L39stop |")
     );
     assert!(markdown.contains("| chr6:g.118880100A>G | GRCh37 | PLN | - | - | p.K3R | - |"));
+}
+
+#[test]
+fn variant_search_explains_distinct_transcript_match_after_unchanged_table() {
+    let result: VariantSearchResult = serde_json::from_value(serde_json::json!({
+        "id": "chr5:g.118860951A>G",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "test",
+        "gene": "HSD17B4",
+        "transcript": "NM_000414.3",
+        "hgvs_c": "c.1544A>G",
+        "hgvs_p": "p.His515Arg",
+        "clinvar_stars": null,
+        "revel": null,
+        "gerp": null,
+        "transcript_annotations_complete": true,
+        "transcript_annotations": [
+            {"source":"myvariant.info/snpeff.ann", "gene":"HSD17B4", "transcript":"NM_000414.3", "hgvs_c":"c.1544A>G", "hgvs_p":"p.His515Arg", "roles":["displayed"]},
+            {"source":"myvariant.info/snpeff.ann", "gene":"HSD17B4", "transcript":"NM_001199291.2", "hgvs_c":"c.1619A>G", "hgvs_p":"p.His540Arg", "roles":["matched"]}
+        ]
+    }))
+    .unwrap();
+    let markdown = variant_search_markdown("gene=HSD17B4, hgvsp=H540R", &[result]).unwrap();
+    let table_end = "| chr5:g.118860951A>G | GRCh37 | HSD17B4 | NM_000414.3 | c.1544A>G | p.His515Arg | - | - | none | - | none | none |\n\n";
+    assert!(markdown.contains(table_end), "{markdown}");
+    assert!(markdown.contains(
+        "## Transcript match explanations\n\n- `chr5:g.118860951A>G`: matched `NM_001199291.2 | c.1619A>G | p.His540Arg` from a different source-provided transcript annotation; displayed `NM_000414.3 | c.1544A>G | p.His515Arg`.\n\nUse `get variant <id>` for details."
+    ));
+}
+
+#[test]
+fn transcript_explanation_sanitizes_controls_and_embedded_backticks() {
+    let result: VariantSearchResult = serde_json::from_value(serde_json::json!({
+        "id": "safe-id",
+        "genome_build": "GRCh37",
+        "genome_build_provenance": "test",
+        "gene": "SAFE",
+        "clinvar_stars": null,
+        "revel": null,
+        "gerp": null,
+        "transcript_annotations_complete": true,
+        "transcript_annotations": [
+            {"source":"myvariant.info/snpeff.ann", "gene":"SAFE", "transcript":"NM_1\n\r\t\u{0001}\u{0085}\u{001b}[31m\u{202e}# injected|`", "hgvs_c":"c.1A>G\n\r\t\u{0002}\u{0085}\u{001b}]0;bad\u{0007}\u{2066}|row``", "hgvs_p":"p.A1V\n\r\t\u{0003}\u{0085}\u{001b}Pbad\u{001b}\\\u{2069}|```", "roles":["displayed"]},
+            {"source":"myvariant.info/snpeff.ann", "gene":"SAFE", "transcript":"NM_2\n\r\t\u{0004}\u{0085}\u{001b}[31m\u{202e}|`", "hgvs_c":"c.2A>G\n\r\t\u{0005}\u{0085}\u{001b}]0;bad\u{0007}\u{2066}|- item``", "hgvs_p":"p.A2V\n\r\t\u{0006}\u{0085}\u{001b}Pbad\u{001b}\\\u{2069}|```", "roles":["matched"]}
+        ]
+    }))
+    .unwrap();
+    let markdown = variant_search_markdown("", &[result]).unwrap();
+    let section = markdown
+        .split_once("## Transcript match explanations\n")
+        .unwrap()
+        .1
+        .split_once("Use `get variant <id>` for details.")
+        .unwrap()
+        .0;
+    let nonempty = section
+        .lines()
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>();
+    assert_eq!(nonempty.len(), 1);
+    assert!(nonempty[0].starts_with("- "));
+    assert!(!nonempty[0].chars().any(char::is_control));
+    assert!(!section.contains("\u{202e}"));
+    assert!(section.contains("|row"));
+    assert!(section.contains("````NM_1"));
+    assert!(section.contains("|```"));
 }
 
 #[test]
@@ -701,6 +771,8 @@ fn variant_search_markdown_renders_related_commands_from_context() {
             gerp: Some(5.7),
             source_identity: None,
             matched_alias: None,
+            transcript_annotations_complete: None,
+            transcript_annotations: None,
         },
         VariantSearchResult {
             id: "rs7626962".to_string(),
@@ -718,6 +790,8 @@ fn variant_search_markdown_renders_related_commands_from_context() {
             gerp: Some(5.1),
             source_identity: None,
             matched_alias: None,
+            transcript_annotations_complete: None,
+            transcript_annotations: None,
         },
     ];
 
