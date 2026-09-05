@@ -182,6 +182,24 @@ pub(crate) mod clinvar {
     const MAX_CONDITIONS: usize = 256;
     const MAX_CITATIONS: usize = 128;
     const MAX_TEXT_BYTES: usize = 32 * 1024;
+    const MAX_PUBLIC_TEXT_BYTES: usize = CLINVAR_MAX_BODY_BYTES;
+
+    #[derive(Default)]
+    struct PublicTextBudget(usize);
+
+    impl PublicTextBudget {
+        fn charge(&mut self, bytes: usize) -> Result<(), BioMcpError> {
+            self.0 = self.0.checked_add(bytes).ok_or_else(provider_error)?;
+            if self.0 > MAX_PUBLIC_TEXT_BYTES {
+                return Err(provider_error());
+            }
+            Ok(())
+        }
+
+        fn repeated(&mut self, bytes: usize, count: usize) -> Result<(), BioMcpError> {
+            self.charge(bytes.checked_mul(count).ok_or_else(provider_error)?)
+        }
+    }
 
     #[derive(Clone)]
     pub(crate) struct ClinvarClient {
@@ -377,6 +395,17 @@ pub(crate) mod clinvar {
         }
     }
 
+    fn classification_domain_len(name: &str) -> usize {
+        match name {
+            "GermlineClassification" => "germline".len(),
+            "SomaticClinicalImpact" | "SomaticClinicalImpactClassification" => {
+                "somatic clinical impact".len()
+            }
+            "OncogenicityClassification" => "oncogenicity".len(),
+            other => other.strip_suffix("Classification").unwrap_or(other).len(),
+        }
+    }
+
     fn classification_child<'a, 'input>(node: Node<'a, 'input>) -> Option<Node<'a, 'input>> {
         node.children().find(|child| {
             child.is_element()
@@ -390,6 +419,202 @@ pub(crate) mod clinvar {
                         "SomaticClinicalImpact" | "Oncogenicity"
                     ))
         })
+    }
+
+    fn text_len(node: Node<'_, '_>) -> usize {
+        node.text().map(str::trim).map(str::len).unwrap_or(0)
+    }
+
+    fn child_text_len(node: Node<'_, '_>, name: &str) -> usize {
+        child(node, name).map(text_len).unwrap_or(0)
+    }
+
+    fn joined_text_len<'a, 'input: 'a>(nodes: impl Iterator<Item = Node<'a, 'input>>) -> usize {
+        let mut count = 0usize;
+        let mut bytes = 0usize;
+        for node in nodes {
+            let len = text_len(node);
+            if len == 0 {
+                continue;
+            }
+            bytes = bytes.saturating_add(len);
+            count += 1;
+        }
+        bytes.saturating_add(count.saturating_sub(1).saturating_mul(2))
+    }
+
+    fn formatted_pair_len(node: Node<'_, '_>, first: &str, second: &str) -> usize {
+        match (node.attribute(first), node.attribute(second)) {
+            (Some(first), Some(second)) => {
+                first.len().saturating_add(1).saturating_add(second.len())
+            }
+            _ => 0,
+        }
+    }
+
+    fn rcv_condition_text_len(node: Node<'_, '_>) -> usize {
+        node.descendants()
+            .filter(|node| node.has_tag_name("ClassifiedCondition"))
+            .map(|condition| {
+                text_len(condition).saturating_add(formatted_pair_len(condition, "DB", "ID"))
+            })
+            .fold(0usize, usize::saturating_add)
+    }
+
+    fn preflight_public_text(
+        archive: Node<'_, '_>,
+        rcv_nodes: &[Node<'_, '_>],
+        scv_nodes: &[Node<'_, '_>],
+    ) -> Result<(), BioMcpError> {
+        let mut budget = PublicTextBudget::default();
+        budget.charge("NCBI ClinVar".len())?;
+        budget.charge(archive.attribute("Accession").map(str::len).unwrap_or(0))?;
+        budget.charge(child_text_len(archive, "RecordStatus"))?;
+
+        let mut aggregate_count = 0usize;
+        for rcv in rcv_nodes {
+            let Some(classifications) = child(*rcv, "RCVClassifications") else {
+                continue;
+            };
+            let row_count = classifications
+                .children()
+                .filter(Node::is_element)
+                .filter(|classification| child(*classification, "Description").is_some())
+                .count();
+            aggregate_count = aggregate_count
+                .checked_add(row_count)
+                .ok_or_else(provider_error)?;
+            if aggregate_count > MAX_RCV {
+                return Err(provider_error());
+            }
+            let shared = "NCBI ClinVar"
+                .len()
+                .saturating_add(rcv.attribute("Accession").map(str::len).unwrap_or(0))
+                .saturating_add(
+                    child(*rcv, "RecordStatus")
+                        .map(text_len)
+                        .or_else(|| rcv.attribute("RecordStatus").map(str::len))
+                        .unwrap_or(0),
+                )
+                .saturating_add(rcv_condition_text_len(*rcv));
+            budget.repeated(shared, row_count)?;
+            for classification in classifications
+                .children()
+                .filter(Node::is_element)
+                .filter(|classification| child(*classification, "Description").is_some())
+            {
+                let description = child(classification, "Description").expect("preflight row");
+                budget.charge(classification_domain_len(classification.tag_name().name()))?;
+                budget.charge(text_len(description))?;
+                budget.charge(child_text_len(classification, "ReviewStatus"))?;
+                budget.charge(
+                    description
+                        .attribute("DateLastEvaluated")
+                        .map(str::len)
+                        .unwrap_or(0),
+                )?;
+            }
+        }
+
+        let mut mapping_text = HashMap::<&str, usize>::new();
+        for mapping in archive
+            .descendants()
+            .filter(|node| node.has_tag_name("TraitMapping"))
+        {
+            let Some(id) = mapping.attribute("ClinicalAssertionID") else {
+                continue;
+            };
+            let mut bytes = formatted_pair_len(mapping, "MappingRef", "MappingValue");
+            for medgen in mapping
+                .children()
+                .filter(|node| node.has_tag_name("MedGen"))
+            {
+                bytes = bytes.saturating_add(medgen.attribute("Name").map(str::len).unwrap_or(0));
+            }
+            let entry = mapping_text.entry(id).or_default();
+            *entry = entry.saturating_add(bytes);
+        }
+        for assertion in scv_nodes {
+            if !child(*assertion, "RecordStatus")
+                .and_then(|node| node.text())
+                .is_some_and(|status| status.trim().eq_ignore_ascii_case("current"))
+            {
+                continue;
+            }
+            budget.charge("NCBI ClinVar".len())?;
+            budget.charge(
+                child(*assertion, "ClinVarAccession").map_or(0, |accession| {
+                    accession.attribute("Accession").map(str::len).unwrap_or(0)
+                        + accession
+                            .attribute("SubmitterName")
+                            .map(str::len)
+                            .unwrap_or(0)
+                }),
+            )?;
+            budget.charge(child_text_len(*assertion, "RecordStatus"))?;
+            if let Some(classification) = child(*assertion, "Classification") {
+                if let Some(domain) = classification_child(classification) {
+                    budget.charge(classification_domain_len(domain.tag_name().name()))?;
+                    budget.charge(text_len(domain))?;
+                }
+                budget.charge(child_text_len(classification, "ReviewStatus"))?;
+                budget.charge(
+                    classification
+                        .attribute("DateLastEvaluated")
+                        .map(str::len)
+                        .unwrap_or(0),
+                )?;
+                budget.charge(joined_text_len(
+                    classification
+                        .children()
+                        .filter(|node| node.has_tag_name("Comment")),
+                ))?;
+            }
+            budget.charge(joined_text_len(assertion.descendants().filter(
+                |candidate| {
+                    candidate.has_tag_name("Attribute")
+                        && matches!(
+                            candidate.attribute("Type"),
+                            Some("AssertionMethod" | "AssertionCriteria" | "ClassificationMethod")
+                        )
+                },
+            )))?;
+            for trait_node in assertion
+                .descendants()
+                .filter(|node| node.has_tag_name("Trait"))
+            {
+                budget.charge(
+                    trait_node
+                        .descendants()
+                        .find(|node| {
+                            node.has_tag_name("ElementValue")
+                                && node.attribute("Type") == Some("Preferred")
+                        })
+                        .map(text_len)
+                        .unwrap_or(0),
+                )?;
+                for xref in trait_node
+                    .descendants()
+                    .filter(|node| node.has_tag_name("XRef"))
+                {
+                    budget.charge(formatted_pair_len(xref, "DB", "ID"))?;
+                }
+            }
+            if let Some(id) = assertion.attribute("ID") {
+                budget.charge(mapping_text.get(id).copied().unwrap_or(0))?;
+            }
+            for citation in assertion
+                .descendants()
+                .filter(|node| node.has_tag_name("Citation"))
+            {
+                if let Some(id_node) = child(citation, "ID") {
+                    budget.charge(id_node.attribute("Source").map(str::len).unwrap_or(0))?;
+                    budget.charge(text_len(id_node))?;
+                }
+                budget.charge(child_text_len(citation, "URL"))?;
+            }
+        }
+        Ok(())
     }
 
     fn rcv_conditions(node: Node<'_, '_>) -> Result<Vec<String>, BioMcpError> {
@@ -620,6 +845,7 @@ pub(crate) mod clinvar {
                 return Err(provider_error());
             }
         }
+        preflight_public_text(archive, &rcv_nodes, &scv_nodes)?;
         let mut trait_mappings: HashMap<String, Vec<Node<'_, '_>>> = HashMap::new();
         for mapping in archive
             .descendants()
@@ -774,6 +1000,55 @@ pub(crate) mod clinvar {
                 scv.repeat(MAX_SCV)
             ));
             assert!(xml.len() < CLINVAR_MAX_BODY_BYTES);
+            assert!(parse_record(7, &xml).is_err());
+        }
+
+        #[test]
+        fn cumulative_public_text_budget_accepts_exact_and_rejects_plus_one() {
+            let classifications =
+                "<GermlineClassification><Description>P</Description></GermlineClassification>"
+                    .repeat(MAX_RCV);
+            let fixed = "NCBI ClinVar".len()
+                + "current".len()
+                + MAX_RCV * ("NCBI ClinVar".len() + "germline".len() + "P".len());
+            let shared_accession_len = (MAX_PUBLIC_TEXT_BYTES - fixed) / MAX_RCV;
+            let archive_accession_len = (MAX_PUBLIC_TEXT_BYTES - fixed) % MAX_RCV;
+            let body = |archive_extra: usize| {
+                format!(
+                    "<ClinVarResult-Set><VariationArchive VariationID=\"7\" Accession=\"{}\"><RecordStatus>current</RecordStatus><ClassifiedRecord><RCVList><RCVAccession Accession=\"{}\"><RCVClassifications>{classifications}</RCVClassifications></RCVAccession></RCVList></ClassifiedRecord></VariationArchive></ClinVarResult-Set>",
+                    "v".repeat(archive_accession_len + archive_extra),
+                    "r".repeat(shared_accession_len),
+                )
+            };
+            let exact = body(0);
+            assert!(exact.len() < CLINVAR_MAX_BODY_BYTES);
+            assert_eq!(
+                parse_record(7, &exact).unwrap().unwrap().aggregates.len(),
+                MAX_RCV
+            );
+            let over = body(1);
+            assert!(over.len() < CLINVAR_MAX_BODY_BYTES);
+            assert!(parse_record(7, &over).is_err());
+        }
+
+        #[test]
+        fn many_classification_children_fail_before_shared_text_is_cloned() {
+            let classifications =
+                "<GermlineClassification><Description>P</Description></GermlineClassification>"
+                    .repeat(MAX_RCV);
+            let shared = "r".repeat(2 * 1024 * 1024);
+            let xml = archive_with(&format!(
+                "<RCVList><RCVAccession Accession=\"{shared}\"><RCVClassifications>{classifications}</RCVClassifications></RCVAccession></RCVList>"
+            ));
+            assert!(xml.len() < CLINVAR_MAX_BODY_BYTES);
+            assert!(parse_record(7, &xml).is_err());
+
+            let too_many =
+                "<GermlineClassification><Description>P</Description></GermlineClassification>"
+                    .repeat(MAX_RCV + 1);
+            let xml = archive_with(&format!(
+                "<RCVList><RCVAccession Accession=\"RCV1\"><RCVClassifications>{too_many}</RCVClassifications></RCVAccession></RCVList>"
+            ));
             assert!(parse_record(7, &xml).is_err());
         }
 
