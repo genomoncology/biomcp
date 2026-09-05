@@ -189,6 +189,8 @@ retains it at exactly six months.
   | mustmatch 'true'
 ```
 
+## Trial Batch Detail
+
 Batch detail returns the same exact objects as direct detail.
 
 ```bash
@@ -197,6 +199,19 @@ batch="$(../../tools/biomcp-ci --json batch trial NCT60000001 --sections eligibi
 jq -n -e --argjson direct "$direct" --argjson batch "$batch" \
   '$direct.eligibility == $batch.items[0].result.eligibility' \
   | mustmatch 'true'
+```
+
+## Cross-entity Trial Pivot Commands
+
+Gene, variant, drug, and disease anchors each retain a distinct command that plans a trial search from that anchor.
+
+```bash
+for entity in gene variant drug disease; do
+  ../../tools/biomcp-ci "$entity" trials --help | grep '^Usage:'
+done | mustmatch like 'Usage: biomcp gene trials [OPTIONS] <SYMBOL>
+Usage: biomcp variant trials [OPTIONS] <ID>
+Usage: biomcp drug trials [OPTIONS] <NAME>
+Usage: biomcp disease trials [OPTIONS] <NAME>'
 ```
 
 ## Trial Detail & Eligibility
