@@ -99,7 +99,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | WikiPathways | 1 | direct_api | none | CC0 | pathway content is dedicated to the public domain; attribution is still good scholarly practice | <https://classic.wikipathways.org/index.php/WikiPathways:License_Terms> |
 | AlphaFold DB | 1 | indirect_only | not_applicable | AlphaFold DB structural predictions are published for broad open use | reuse is generally open, but preserve model/source provenance and article citations | <https://alphafold.ebi.ac.uk/faq> |
 | Cancer Genome Interpreter | 3 | indirect_only | not_applicable | custom tool terms | do not assume commercial reuse rights; the official terms restrict some external and commercial use | <https://www.cancergenomeinterpreter.org/conditions> |
-| ClinVar | 1 | indirect_only | not_applicable | NCBI public-domain submission archive | records are broadly reusable, but preserve accession/provenance and submitter context | <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/> |
+| ClinVar | 1 | direct_api | none | NCBI public-domain submission archive | records are broadly reusable, but preserve accession/provenance and submitter context | <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/> |
 | COSMIC | 3 | indirect_only | not_applicable | custom COSMIC licensing with commercial restrictions | direct redistribution and direct integration remain intentionally unsupported without a separate COSMIC license | <https://www.sanger.ac.uk/legal/cosmic-licensing/> |
 | Disease Ontology | 1 | indirect_only | not_applicable | open disease ontology project | reuse is generally open; preserve ontology version and source references | <https://disease-ontology.org/> |
 | DrugBank | 3 | indirect_only | not_applicable | custom DrugBank terms of use and licensing | use or redistribution of DrugBank content requires a DrugBank license; do not assume open downstream rights | <https://trust.drugbank.com/drugbank-trust-center/drugbank-terms-of-service> |
@@ -910,14 +910,14 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 ### ClinVar
 
 - BioMCP surfaces: `get variant <id> clinvar`
-- Integration mode: `indirect_only`
-- BioMCP auth: `not_applicable`
-- Provider access / registration: surfaced indirectly through MyVariant.info payloads
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: open public NCBI E-utilities API; MyVariant.info is the fallback carrier
 - License / terms summary: NCBI public-domain submission archive
 - Redistribution / reuse summary: records are broadly reusable, but preserve accession/provenance and submitter context
 - Official terms URL: <https://www.ncbi.nlm.nih.gov/clinvar/docs/maintenance_use/>
 - Reviewed on: `2026-03-20`
-- Notes: BioMCP does not call ClinVar directly; ClinVar assertions arrive through MyVariant.info.
+- Notes: Explicit `clinvar` and `all` variant requests use NCBI EFetch by resolved Variation ID; the default card and degraded fallback use MyVariant.info.
 
 ### COSMIC
 

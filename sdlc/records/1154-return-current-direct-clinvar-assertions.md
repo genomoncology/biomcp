@@ -36,3 +36,16 @@ If direct ClinVar retrieval is unavailable, malformed, oversized, non-XML, or id
 ## Boundaries
 
 This ticket changes the explicit ClinVar section and `all`, plus the typed status/provenance and documentation needed to describe them. It does not require direct ClinVar retrieval on the default variant card, return a partially truncated direct record, calculate a consensus classification, merge classification domains, apply ACMG criteria, or make a clinical conclusion. It does not duplicate assertion rows beyond the bounded accepted record or expose provider-controlled unbounded prose.
+
+## Result
+
+The explicit `clinvar` section and `all` now retrieve one current Variation Archive by the resolved numeric Variation ID through NCBI EFetch, while the default card performs no direct ClinVar request. Typed VCV, condition-specific RCV, and current SCV values preserve their separate identity, status, domain, contribution, condition, freshness, citation, criteria, and public-comment semantics. Invalid, hostile, mismatched, or over-budget XML fails closed without returning a partial direct record. MyVariant.info remains a typed degraded fallback with accession, version, evaluation date, and submitter count.
+
+The canonical `clinvar` outcome now drives JSON, Markdown, and MCP provenance for direct data, checked empty, degraded fallback, unavailable, and source-free inapplicable states. The ClinVar source page, licensing inventory, source registry, configuration override classification, and executable documentation contracts describe the direct/fallback boundary. Cargo files remain unchanged, BioData remains pinned to `4f912d35a0f3fbff6994f1769d7601d7d0367aa1`, and `cargo package --list --allow-dirty --locked --offline` reports exactly 1,300 files.
+
+Focused parser, fallback, rendering, outcome/provenance, source-documentation, licensing, configuration, package-boundary, and quality-ratchet tests passed. The final routine rerun passed `make lint`; `make test` passed 3,166 Rust tests with 30 skipped, 901 Python tests with three skipped, and the strict documentation build; `make spec` passed every routine and static group. The first two routine attempts exposed and led to removal of an orphan health probe and documentation of the new fixture override seam before the clean final rerun.
+
+## Review
+
+- Design review: accepted in the materially tightened ticket before implementation.
+- Implementation review: pending independent code review; this record does not claim code-review acceptance.

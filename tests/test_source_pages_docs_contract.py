@@ -75,12 +75,12 @@ SOURCE_PAGE_SPECS = {
     "clinvar.md": {
         "title": "ClinVar MCP Tool for Variant Interpretation | BioMCP",
         "description": "Use BioMCP to pull ClinVar clinical significance, review status, and disease context for human variants through one variant lookup workflow.",
-        "api_access": "No standalone BioMCP key path; ClinVar content is surfaced indirectly via MyVariant.info.",
+        "api_access": "NCBI E-utilities EFetch (`db=clinvar`, `rettype=vcv`, Variation ID lookup) powers explicit `clinvar` and `all` requests.",
         "official_url": "https://www.ncbi.nlm.nih.gov/clinvar/",
         "required_intro_phrases": [
-            "indirect-only",
+            "retrieves the current NCBI Variation Archive record directly",
             "MyVariant.info",
-            "does not act as a direct ClinVar API client",
+            "degraded fallback",
         ],
         "exposes": [
             "get variant <id>",

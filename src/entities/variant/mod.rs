@@ -163,6 +163,8 @@ pub struct Variant {
     pub clinvar_review_stars: Option<u8>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub conditions: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clinvar: Option<ClinvarRecord>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub consequence: Option<String>,
@@ -208,6 +210,347 @@ pub struct Variant {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prediction: Option<VariantPrediction>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarRecord {
+    pub source: String,
+    pub variation_id: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub accession: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub record_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub number_submissions: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub number_submitters: Option<u32>,
+    #[serde(default)]
+    pub aggregates: Vec<ClinvarAggregate>,
+    #[serde(default)]
+    pub submissions: Vec<ClinvarSubmission>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarAggregate {
+    pub source: String,
+    pub accession: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<u32>,
+    pub classification_domain: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub classification: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub review_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evaluation_date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub record_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub number_submitters: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submission_count: Option<u32>,
+    #[serde(default)]
+    pub conditions: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarSubmission {
+    pub source: String,
+    pub accession: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<u32>,
+    pub classification_domain: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub classification: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub review_status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evaluation_date: Option<String>,
+    pub record_status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submitter: Option<String>,
+    pub contributes_to_aggregate_classification: Option<bool>,
+    #[serde(default)]
+    pub conditions: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub criteria: Option<String>,
+    #[serde(default)]
+    pub citations: Vec<ClinvarCitation>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_comment: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ClinvarCitation {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+mod clinvar {
+    use std::time::Duration;
+
+    use crate::entities::section_outcome::SectionOutcome;
+    use crate::sources::ncbi_efetch::clinvar::ClinvarClient;
+
+    use super::Variant;
+
+    const CLINVAR_DIRECT_FAILURE: &str =
+        "Direct ClinVar retrieval is unavailable; showing MyVariant.info fallback data.";
+    const CLINVAR_UNAVAILABLE: &str = "ClinVar data is temporarily unavailable.";
+    const CLINVAR_ID_REQUIRED: &str =
+        "Direct ClinVar retrieval requires a resolved numeric Variation ID.";
+
+    fn indirect_conditions(
+        value: Option<&serde_json::Value>,
+        preferred: Option<&str>,
+    ) -> Vec<String> {
+        fn collect(value: &serde_json::Value, out: &mut Vec<String>) {
+            match value {
+                serde_json::Value::String(value) if !value.trim().is_empty() => {
+                    out.push(value.clone())
+                }
+                serde_json::Value::Array(values) => {
+                    values.iter().for_each(|value| collect(value, out))
+                }
+                serde_json::Value::Object(object) => {
+                    for key in ["name", "preferred_name"] {
+                        if let Some(value) = object.get(key) {
+                            collect(value, out);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+        let mut out = Vec::new();
+        if let Some(value) = value {
+            collect(value, &mut out);
+        }
+        if let Some(preferred) = preferred.map(str::trim).filter(|value| !value.is_empty()) {
+            out.push(preferred.to_string());
+        }
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    pub(super) fn indirect_clinvar_record(
+        hit: &crate::sources::myvariant::MyVariantHit,
+    ) -> Option<super::ClinvarRecord> {
+        let clinvar = hit.clinvar.as_ref()?;
+        let variation_id = clinvar.variant_id?;
+        let aggregates = clinvar
+            .rcv
+            .iter()
+            .filter_map(|rcv| {
+                let accession = rcv.accession.as_deref()?.trim();
+                (!accession.is_empty()).then(|| super::ClinvarAggregate {
+                    source: "MyVariant.info".into(),
+                    accession: accession.into(),
+                    version: rcv.version,
+                    classification_domain: "germline".into(),
+                    classification: rcv.clinical_significance.clone(),
+                    review_status: rcv.review_status.clone(),
+                    evaluation_date: rcv.last_evaluated.clone(),
+                    record_status: None,
+                    number_submitters: rcv.number_submitters,
+                    submission_count: None,
+                    conditions: indirect_conditions(
+                        rcv.conditions.as_ref(),
+                        rcv.preferred_name.as_deref(),
+                    ),
+                })
+            })
+            .collect::<Vec<_>>();
+        (!aggregates.is_empty()).then(|| super::ClinvarRecord {
+            source: "MyVariant.info".into(),
+            variation_id,
+            accession: None,
+            version: None,
+            record_status: None,
+            number_submissions: None,
+            number_submitters: None,
+            aggregates,
+            submissions: Vec::new(),
+        })
+    }
+
+    fn apply_clinvar_result(
+        variant: &mut Variant,
+        fallback: Option<super::ClinvarRecord>,
+        direct: Result<Option<super::ClinvarRecord>, ()>,
+    ) {
+        match direct {
+            Ok(Some(record)) if !record.aggregates.is_empty() || !record.submissions.is_empty() => {
+                variant.clinvar = Some(record);
+                variant
+                    .section_outcomes
+                    .complete("clinvar", SectionOutcome::data("NCBI ClinVar"));
+            }
+            Ok(_) => variant
+                .section_outcomes
+                .complete("clinvar", SectionOutcome::empty("NCBI ClinVar")),
+            Err(()) => {
+                variant.clinvar = fallback;
+                if variant.clinvar.is_some() {
+                    variant.section_outcomes.complete(
+                        "clinvar",
+                        SectionOutcome::degraded(["MyVariant.info"], CLINVAR_DIRECT_FAILURE),
+                    );
+                } else {
+                    variant
+                        .section_outcomes
+                        .complete("clinvar", SectionOutcome::unavailable(CLINVAR_UNAVAILABLE));
+                }
+            }
+        }
+    }
+
+    pub(super) async fn add_clinvar(
+        variant: &mut Variant,
+        hit: &crate::sources::myvariant::MyVariantHit,
+        timeout: Duration,
+    ) {
+        let fallback = indirect_clinvar_record(hit);
+        let variation_id = hit.clinvar.as_ref().and_then(|clinvar| clinvar.variant_id);
+        super::get::strip_clinvar_details(variant);
+        let Some(variation_id) = variation_id else {
+            variant
+                .section_outcomes
+                .complete("clinvar", SectionOutcome::inapplicable(CLINVAR_ID_REQUIRED));
+            return;
+        };
+        let direct = async {
+            let client = ClinvarClient::new()?;
+            client.variation(variation_id).await
+        };
+        let result = tokio::time::timeout(timeout, direct)
+            .await
+            .map_err(|_| ())
+            .and_then(|result| result.map_err(|_| ()));
+        apply_clinvar_result(variant, fallback, result);
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use crate::entities::section_outcome::SectionOutcomeState;
+
+        use super::*;
+
+        fn hit() -> crate::sources::myvariant::MyVariantHit {
+            serde_json::from_value(serde_json::json!({
+                "_id": "chr5:g.118860951A>G",
+                "clinvar": {"variant_id": 974782, "rcv": {
+                    "accession": "RCV001251043", "clinical_significance": "Likely pathogenic"
+                }}
+            }))
+            .expect("fixture")
+        }
+
+        fn direct_record(with_row: bool) -> super::super::ClinvarRecord {
+            super::super::ClinvarRecord {
+                source: "NCBI ClinVar".into(),
+                variation_id: 974782,
+                accession: Some("VCV000974782".into()),
+                version: Some(2),
+                record_status: Some("current".into()),
+                number_submissions: None,
+                number_submitters: None,
+                aggregates: if with_row {
+                    indirect_clinvar_record(&hit())
+                        .expect("fallback")
+                        .aggregates
+                } else {
+                    Vec::new()
+                },
+                submissions: Vec::new(),
+            }
+        }
+
+        #[test]
+        fn canonical_outcomes_and_provenance_match_selected_payload_source() {
+            let cases = [
+                (
+                    Ok(Some(direct_record(true))),
+                    Some(indirect_clinvar_record(&hit()).expect("fallback")),
+                    SectionOutcomeState::Data,
+                    vec!["NCBI ClinVar"],
+                    Some("NCBI ClinVar"),
+                ),
+                (
+                    Ok(Some(direct_record(false))),
+                    Some(indirect_clinvar_record(&hit()).expect("fallback")),
+                    SectionOutcomeState::Empty,
+                    vec!["NCBI ClinVar"],
+                    None,
+                ),
+                (
+                    Err(()),
+                    Some(indirect_clinvar_record(&hit()).expect("fallback")),
+                    SectionOutcomeState::Degraded,
+                    vec!["MyVariant.info"],
+                    Some("MyVariant.info"),
+                ),
+                (
+                    Err(()),
+                    None,
+                    SectionOutcomeState::Unavailable,
+                    vec![],
+                    None,
+                ),
+            ];
+            for (direct, fallback, state, sources, payload_source) in cases {
+                let mut variant = crate::transform::variant::from_myvariant_hit(&hit());
+                variant.clinvar = None;
+                apply_clinvar_result(&mut variant, fallback, direct);
+                let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
+                assert_eq!(outcome.outcome(), state);
+                assert_eq!(outcome.sources(), sources);
+                assert_eq!(
+                    variant
+                        .clinvar
+                        .as_ref()
+                        .map(|record| record.source.as_str()),
+                    payload_source
+                );
+                let provenance = crate::render::provenance::variant_section_sources(&variant);
+                let clinvar = provenance
+                    .iter()
+                    .find(|row| row.key == "clinvar")
+                    .expect("row");
+                assert_eq!(clinvar.outcome, state);
+                assert_eq!(clinvar.sources, sources);
+            }
+        }
+
+        #[tokio::test]
+        async fn missing_numeric_variation_id_is_source_free_inapplicable() {
+            let hit = serde_json::from_value(serde_json::json!({
+                "_id": "chr5:g.118860951A>G",
+                "clinvar": {"rcv": {"accession": "RCV001251043"}}
+            }))
+            .expect("fixture");
+            let mut variant = crate::transform::variant::from_myvariant_hit(&hit);
+            add_clinvar(&mut variant, &hit, Duration::from_millis(1)).await;
+            let outcome = variant.section_outcomes.get("clinvar").expect("outcome");
+            assert_eq!(outcome.outcome(), SectionOutcomeState::Inapplicable);
+            assert!(outcome.sources().is_empty());
+            assert!(variant.clinvar.is_none());
+            let provenance = crate::render::provenance::variant_section_sources(&variant);
+            let row = provenance
+                .iter()
+                .find(|row| row.key == "clinvar")
+                .expect("row");
+            assert_eq!(row.outcome, SectionOutcomeState::Inapplicable);
+            assert!(row.sources.is_empty());
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

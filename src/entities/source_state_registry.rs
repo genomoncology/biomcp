@@ -412,6 +412,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
     ),
     state(
         "variant",
+        "clinvar",
+        "ClinVar",
+        &["NCBI ClinVar", "MyVariant.info"],
+        Aggregation::Fallback,
+    ),
+    state(
+        "variant",
         "population",
         "Population",
         &["dbSNP", "gnomAD v4"],
@@ -681,7 +688,12 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         Some("predict"),
     ),
     selector("variant", "predictions", SelectorClass::Local, None),
-    selector("variant", "clinvar", SelectorClass::Local, None),
+    selector(
+        "variant",
+        "clinvar",
+        SelectorClass::Canonical,
+        Some("clinvar"),
+    ),
     selector(
         "variant",
         "population",

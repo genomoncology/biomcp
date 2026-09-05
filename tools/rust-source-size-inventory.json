@@ -119,12 +119,12 @@
     },
     {
       "path": "src/entities/variant/get.rs",
-      "baseline_lines": 1251,
+      "baseline_lines": 1255,
       "floor_lines": 1128,
       "authorized_increase": {
-        "ticket": "1022, 1035, 1086",
-        "delta": 123,
-        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, and traced-test timing support for GRCh38 population queries.",
+        "ticket": "1022, 1035, 1086, 1154",
+        "delta": 127,
+        "reason": "Add narrow dbSNP RefSNP resolution, population-detail selection, traced-test timing support, and direct ClinVar section dispatch.",
         "removal_condition": "Extract population resolution and section selection when the variant workflow is next decomposed."
       }
     },
@@ -198,8 +198,8 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1823,
-      "floor_lines": 1820,
+      "baseline_lines": 1813,
+      "floor_lines": 1810,
       "authorized_increase": {
         "ticket": "1022",
         "delta": 3,
@@ -232,12 +232,12 @@
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1051,
+      "baseline_lines": 1055,
       "floor_lines": 1033,
       "authorized_increase": {
-        "ticket": "1091",
-        "delta": 18,
-        "reason": "Probe trusted MyGene aliases without weakening validation of user-supplied gene symbols.",
+        "ticket": "1091, 1154",
+        "delta": 22,
+        "reason": "Probe trusted MyGene aliases and preserve ClinVar fallback accession and freshness fields.",
         "removal_condition": "Remove this allowance when MyVariant request planning is decomposed."
       }
     },
@@ -261,9 +261,14 @@
     },
     {
       "path": "src/transform/variant.rs",
-      "baseline_lines": 1335,
+      "baseline_lines": 1372,
       "floor_lines": 1335,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1154",
+        "delta": 37,
+        "reason": "Keep MyVariant ClinVar fallback freshness fields explicit in existing transformation fixtures.",
+        "removal_condition": "Remove when ClinVar fallback transformation tests move into their own module."
+      }
     }
   ]
 }

@@ -558,18 +558,6 @@ pub(crate) fn variant_section_sources(variant: &Variant) -> Vec<SectionSource> {
         ["MyVariant.info", "ClinVar"],
     );
 
-    push_section(
-        &mut out,
-        has_opt_text(&variant.clinvar_id)
-            || !variant.conditions.is_empty()
-            || !variant.clinvar_conditions.is_empty()
-            || variant.clinvar_condition_reports.is_some()
-            || variant.clinvar_review_stars.is_some()
-            || has_opt_text(&variant.clinvar_review_status),
-        "clinvar",
-        "ClinVar",
-        ["ClinVar"],
-    );
     if let Some(population) = variant.population.as_ref().filter(|population| {
         matches!(
             population.status,
@@ -619,6 +607,7 @@ pub(crate) fn variant_section_sources(variant: &Variant) -> Vec<SectionSource> {
         &variant.section_outcomes,
         &[
             ("predict", "Prediction"),
+            ("clinvar", "ClinVar"),
             ("cancerhotspots", "Cancer Hotspots"),
             ("civic", "CIViC"),
             ("cbioportal", "cBioPortal"),
@@ -995,6 +984,7 @@ mod tests {
             clinvar_review_status: None,
             clinvar_review_stars: None,
             conditions: Vec::new(),
+            clinvar: None,
             consequence: None,
             cadd_score: None,
             sift_pred: None,

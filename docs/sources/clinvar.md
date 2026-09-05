@@ -7,14 +7,14 @@ description: "Use BioMCP to pull ClinVar clinical significance, review status, a
 
 ClinVar is the most recognizable public archive for germline and somatic clinical significance claims, so it is often the first source people want when they ask whether a variant is pathogenic, uncertain, or well reviewed. It matters because the labels are familiar to labs, researchers, and reviewers even when the upstream submission evidence is messy.
 
-In BioMCP, ClinVar is an indirect-only source. BioMCP does not act as a direct ClinVar API client; instead, ClinVar assertions are surfaced through MyVariant.info payloads and then normalized into the variant workflow. That keeps the lookup fast, but it means this page is about ClinVar-backed provenance inside BioMCP rather than a standalone ClinVar transport.
+BioMCP retrieves the current NCBI Variation Archive record directly for an explicit `clinvar` section (and for `all`) after MyVariant.info resolves a numeric ClinVar Variation ID. The default variant card remains a fast indirect summary. If direct retrieval fails, a usable MyVariant.info snapshot is returned as a clearly degraded fallback with its available evaluation date and submitter count.
 
 ## What BioMCP exposes
 
 | Command | What BioMCP gets from this source | Integration note |
 |---|---|---|
-| `get variant <id>` | Base variant card with ClinVar-backed significance signals when present | ClinVar arrives indirectly through MyVariant.info |
-| `get variant <id> clinvar` | Focused ClinVar section with significance, review status, and disease context | Indirect-only provider surface |
+| `get variant <id>` | Base variant card with ClinVar-backed significance signals when present | Indirect summary through MyVariant.info; no direct ClinVar request |
+| `get variant <id> clinvar` | Current condition-specific RCV aggregates and separate current SCV submissions | Direct NCBI ClinVar, with MyVariant.info fallback |
 | `search variant -g <gene> --significance <value>` | Variant search filtered by ClinVar significance labels | Search rows can surface ClinVar-derived review and significance hints |
 
 ## Example commands
@@ -29,7 +29,7 @@ Returns a base variant card that can include ClinVar-backed summary fields when 
 biomcp get variant rs113488022 clinvar
 ```
 
-Returns a ClinVar section with significance, review status, and disease context.
+Returns the current direct ClinVar record with condition-specific aggregates and each current submission kept separate. Domains such as germline, somatic clinical impact, and oncogenicity are not combined into a consensus.
 
 ```bash
 biomcp get variant "BRAF V600E" clinvar
@@ -45,7 +45,7 @@ Returns variant rows filtered by ClinVar significance labels.
 
 ## API access
 
-No standalone BioMCP key path; ClinVar content is surfaced indirectly via MyVariant.info. The [Variant](../user-guide/variant.md) guide covers the broader workflow that hosts this section.
+NCBI E-utilities EFetch (`db=clinvar`, `rettype=vcv`, Variation ID lookup) powers explicit `clinvar` and `all` requests. The [Variant](../user-guide/variant.md) guide covers the broader workflow that hosts this section.
 
 ## Official source
 

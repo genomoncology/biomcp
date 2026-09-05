@@ -636,7 +636,6 @@ pub async fn oncokb(id: &str) -> Result<VariantOncoKbResult, BioMcpError> {
 
 const VARIANT_SOURCE_UNAVAILABLE: &str =
     "Requested variant source data is temporarily unavailable.";
-
 #[cfg(feature = "alphagenome")]
 async fn add_prediction(variant: &mut Variant) -> Result<(), BioMcpError> {
     let Some(caps) = hgvs_coords_re().captures(&variant.id) else {
@@ -916,6 +915,7 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
         clinvar_review_status: None,
         clinvar_review_stars: None,
         conditions: Vec::new(),
+        clinvar: None,
         consequence: None,
         cadd_score: None,
         sift_pred: None,
@@ -939,7 +939,7 @@ fn gwas_only_variant_stub(rsid: &str) -> Variant {
     }
 }
 
-fn strip_clinvar_details(variant: &mut Variant) {
+pub(super) fn strip_clinvar_details(variant: &mut Variant) {
     variant.conditions.clear();
     variant.clinvar_conditions.clear();
     variant.clinvar_condition_reports = None;
@@ -947,6 +947,7 @@ fn strip_clinvar_details(variant: &mut Variant) {
     variant.clinvar_id = None;
     variant.clinvar_review_status = None;
     variant.clinvar_review_stars = None;
+    variant.clinvar = None;
 }
 
 fn strip_civic_live_details(variant: &mut Variant) {
@@ -1188,7 +1189,7 @@ pub async fn get_with_workflow_signals(
         return Ok((variant, VariantWorkflowSignals::default()));
     }
 
-    let (mut variant, id_format) = resolve_base(id, genome_build).await?;
+    let (mut variant, id_format, hit) = resolve_base_with_hit(id, genome_build).await?;
     let signals = VariantWorkflowSignals {
         has_clinvar_signal: has_clinvar_workflow_signal(&variant),
     };
@@ -1227,6 +1228,9 @@ pub async fn get_with_workflow_signals(
     }
     if section_flags.include_prediction {
         add_prediction(&mut variant).await?;
+    }
+    if section_flags.include_clinvar {
+        super::clinvar::add_clinvar(&mut variant, &hit, optional_enrichment_timeout()).await;
     }
     if section_flags.include_population {
         add_population(&mut variant, &id_format).await;

@@ -72,10 +72,11 @@ DIRECT_SOURCE_MODULES = {
     "wikipathways": "WikiPathways",
 }
 
+NESTED_DIRECT_SOURCES = {"ClinVar"}
+
 INDIRECT_ONLY_ROWS = {
     "AlphaFold DB": "UniProt",
     "Cancer Genome Interpreter": "MyVariant.info",
-    "ClinVar": "MyVariant.info",
     "COSMIC": "MyVariant.info",
     "Disease Ontology": "MyDisease.info",
     "DrugBank": "MyChem.info",
@@ -84,7 +85,9 @@ INDIRECT_ONLY_ROWS = {
     "PDB": "UniProt",
 }
 
-EXPECTED_NAMES = sorted([*DIRECT_SOURCE_MODULES.values(), *INDIRECT_ONLY_ROWS.keys()])
+EXPECTED_NAMES = sorted(
+    [*DIRECT_SOURCE_MODULES.values(), *NESTED_DIRECT_SOURCES, *INDIRECT_ONLY_ROWS.keys()]
+)
 
 
 def _read(path: str) -> str:
@@ -175,7 +178,7 @@ def test_sources_inventory_is_complete_and_schema_conformant() -> None:
             assert item["via"] == INDIRECT_ONLY_ROWS[item["name"]]
             assert item["bioMcp_auth"] == "not_applicable"
         else:
-            assert item["name"] in DIRECT_SOURCE_MODULES.values()
+            assert item["name"] in {*DIRECT_SOURCE_MODULES.values(), *NESTED_DIRECT_SOURCES}
 
 
 def test_orcid_is_citation_evidence_not_a_direct_source() -> None:

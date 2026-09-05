@@ -875,6 +875,7 @@ pub fn from_myvariant_hit(hit: &MyVariantHit) -> Variant {
         clinvar_review_status,
         clinvar_review_stars,
         conditions,
+        clinvar: None,
         clinvar_conditions,
         clinvar_condition_reports,
         consequence,
@@ -1023,12 +1024,20 @@ mod tests {
                 review_status: Some("criteria provided, single submitter".into()),
                 conditions: None,
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: None,
                 review_status: Some("reviewed by expert panel".into()),
                 conditions: None,
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
         ];
 
@@ -1047,6 +1056,10 @@ mod tests {
             review_status: Some("criteria provided, single submitter".into()),
             conditions: None,
             preferred_name: None,
+            accession: None,
+            version: None,
+            last_evaluated: None,
+            number_submitters: None,
         }];
         assert_eq!(pick_significance(&partial), None);
     }
@@ -1059,12 +1072,20 @@ mod tests {
                 review_status: Some("criteria provided, single submitter".into()),
                 conditions: Some(serde_json::json!({"name": "Breast-ovarian cancer"})),
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: Some("Pathogenic".into()),
                 review_status: Some("reviewed by expert panel".into()),
                 conditions: Some(serde_json::json!({"name": "Hereditary breast cancer"})),
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
         ];
 
@@ -1079,12 +1100,20 @@ mod tests {
                 review_status: None,
                 conditions: Some(serde_json::json!({"name": "Colorectal carcinoma"})),
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: Some("Likely pathogenic".into()),
                 review_status: Some("criteria provided, single submitter".into()),
                 conditions: Some(serde_json::json!({"name": "Lung adenocarcinoma"})),
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
         ];
 
@@ -1105,12 +1134,20 @@ mod tests {
                     {"name": "Lung cancer"}
                 ])),
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
             MyVariantClinVarRcv {
                 clinical_significance: None,
                 review_status: None,
                 conditions: Some(serde_json::json!({"name": "Melanoma"})),
                 preferred_name: None,
+                accession: None,
+                version: None,
+                last_evaluated: None,
+                number_submitters: None,
             },
         ];
 

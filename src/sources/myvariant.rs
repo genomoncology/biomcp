@@ -20,7 +20,7 @@ const MYVARIANT_BASE_ENV: &str = "BIOMCP_MYVARIANT_BASE";
 
 pub(crate) const MYVARIANT_FIELDS_GET: &str = concat!(
     "_id,cadd.phred,cadd.consequence,",
-    "clinvar.gene.symbol,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.rcv.preferred_name,clinvar.variant_id,",
+    "clinvar.gene.symbol,clinvar.rcv.accession,clinvar.rcv.version,clinvar.rcv.clinical_significance,clinvar.rcv.review_status,clinvar.rcv.conditions,clinvar.rcv.preferred_name,clinvar.rcv.last_evaluated,clinvar.rcv.number_submitters,clinvar.variant_id,",
     "snpeff.ann.feature_id,snpeff.ann.genename,snpeff.ann.hgvs_c,snpeff.ann.hgvs_p,",
     "dbnsfp.genename,dbnsfp.hgvsp,dbnsfp.hgvsc,",
     "dbnsfp.sift.pred,dbnsfp.sift.score,",
@@ -1025,10 +1025,14 @@ pub struct MyVariantClinVarGene {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MyVariantClinVarRcv {
+    pub accession: Option<String>,
+    pub version: Option<u32>,
     pub clinical_significance: Option<String>,
     pub review_status: Option<String>,
     pub conditions: Option<serde_json::Value>,
     pub preferred_name: Option<String>,
+    pub last_evaluated: Option<String>,
+    pub number_submitters: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

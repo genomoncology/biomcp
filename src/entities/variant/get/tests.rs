@@ -127,6 +127,33 @@ fn exact_helper_candidate_selection_rejects_conflicts_and_missing_evidence() {
     ));
 }
 
+#[test]
+fn indirect_clinvar_fallback_preserves_accession_freshness_and_submitter_count() {
+    let hit = serde_json::from_value(serde_json::json!({
+        "_id": "chr5:g.118860951A>G",
+        "clinvar": {
+            "variant_id": 974782,
+            "rcv": {
+                "accession": "RCV001251043",
+                "version": 2,
+                "clinical_significance": "Likely pathogenic",
+                "review_status": "criteria provided, single submitter",
+                "last_evaluated": "2020-08-04",
+                "number_submitters": 1,
+                "conditions": {"name": "Bifunctional peroxisomal enzyme deficiency"}
+            }
+        }
+    }))
+    .expect("MyVariant fixture");
+    let record = super::super::clinvar::indirect_clinvar_record(&hit).expect("usable fallback");
+    let row = &record.aggregates[0];
+    assert_eq!(record.source, "MyVariant.info");
+    assert_eq!(row.accession, "RCV001251043");
+    assert_eq!(row.version, Some(2));
+    assert_eq!(row.evaluation_date.as_deref(), Some("2020-08-04"));
+    assert_eq!(row.number_submitters, Some(1));
+}
+
 fn braf_variant_stub() -> Variant {
     Variant {
         section_outcomes: super::super::default_variant_section_outcomes(),
@@ -147,6 +174,7 @@ fn braf_variant_stub() -> Variant {
         clinvar_review_status: None,
         clinvar_review_stars: None,
         conditions: Vec::new(),
+        clinvar: None,
         consequence: None,
         cadd_score: None,
         sift_pred: None,
@@ -303,6 +331,16 @@ fn variant_json_omits_legacy_name_when_absent() {
 
 #[test]
 fn parse_sections_supports_new_variant_sections() {
+    assert!(
+        !parse_sections(&[])
+            .expect("default sections")
+            .include_clinvar
+    );
+    assert!(
+        parse_sections(&["clinvar".to_string()])
+            .expect("ClinVar section")
+            .include_clinvar
+    );
     let flags = parse_sections(&[
         "conservation".to_string(),
         "predictions".to_string(),
@@ -426,6 +464,7 @@ fn civic_molecular_profile_name_prefers_gene_and_hgvs_p() {
         clinvar_review_status: None,
         clinvar_review_stars: None,
         conditions: Vec::new(),
+        clinvar: None,
         consequence: None,
         cadd_score: None,
         sift_pred: None,

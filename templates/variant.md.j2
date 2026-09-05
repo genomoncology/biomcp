@@ -31,8 +31,33 @@ Top Affected Gene (Ensembl ID when available): {% if prediction.top_gene %}{{ pr
 Note: AlphaGenome reports this field as a gene-level identifier from its model output.
 {% endif -%}
 {% endif -%}
-{% if show_clinvar_section and (conditions or clinvar_id or clinvar_conditions) -%}
+{% if show_clinvar_section and (clinvar or source_states.clinvar.status or conditions or clinvar_id or clinvar_conditions) -%}
 ## ClinVar
+{% if source_states.clinvar.status %}{{ source_states.clinvar.status }}
+{% endif -%}
+{% if source_states.clinvar.payload_allowed and clinvar -%}
+- Source: {{ clinvar.source }}
+- Variation ID: {{ clinvar.variation_id }}{% if clinvar.accession %} ({{ clinvar.accession }}{% if clinvar.version is not none %}.{{ clinvar.version }}{% endif %}){% endif %}
+{% if clinvar.record_status %}- VCV record status: {{ clinvar.record_status }}
+{% endif -%}
+{% if clinvar.number_submitters is not none %}- VCV submitters: {{ clinvar.number_submitters }}
+{% endif -%}
+{% if clinvar.aggregates -%}
+### Condition-specific aggregates
+{% for row in clinvar.aggregates -%}
+- {{ row.accession }}{% if row.version is not none %}.{{ row.version }}{% endif %} [{{ row.classification_domain }}]: {{ row.classification or "Not reported" }}{% if row.review_status %}; {{ row.review_status }}{% endif %}{% if row.evaluation_date %}; evaluated {{ row.evaluation_date }}{% endif %}{% if row.number_submitters is not none %}; {{ row.number_submitters }} submitter(s){% elif row.submission_count is not none %}; {{ row.submission_count }} submission(s){% endif %}{% if row.record_status %}; RCV status {{ row.record_status }}{% endif %}. Source: {{ row.source }}.{% if row.conditions %} Conditions: {{ row.conditions | join(", ") }}.{% endif %}
+{% endfor -%}
+{% endif -%}
+{% if clinvar.submissions -%}
+### Current submissions
+{% for row in clinvar.submissions -%}
+- {{ row.accession }}{% if row.version is not none %}.{{ row.version }}{% endif %} [{{ row.classification_domain }}]: {{ row.classification or "Not reported" }}; SCV status {{ row.record_status }}{% if row.submitter %}; {{ row.submitter }}{% endif %}{% if row.contributes_to_aggregate_classification is not none %}; contributes to aggregate: {{ row.contributes_to_aggregate_classification }}{% endif %}{% if row.review_status %}; {{ row.review_status }}{% endif %}{% if row.evaluation_date %}; evaluated {{ row.evaluation_date }}{% endif %}. Source: {{ row.source }}.{% if row.conditions %} Conditions: {{ row.conditions | join(", ") }}.{% endif %}{% if row.criteria %} Criteria: {{ row.criteria }}.{% endif %}{% if row.citations %} Citations:{% for citation in row.citations %} {% if citation.source %}{{ citation.source }}:{% endif %}{{ citation.id or citation.url }}{% endfor %}.{% endif %}{% if row.public_comment %} Public comment: {{ row.public_comment }}{% endif %}
+{% endfor -%}
+{% endif -%}
+{% elif source_states.clinvar.empty_allowed and not clinvar -%}
+No current direct ClinVar record was returned.
+{% endif -%}
+{% if not clinvar and source_states.clinvar.payload_allowed -%}
 {% if top_disease -%}
 Top disease (ClinVar): {{ top_disease.condition }} ({{ top_disease.reports }} report{% if top_disease.reports != 1 %}s{% endif %})
 {% endif -%}
@@ -49,6 +74,7 @@ Conditions ({% if clinvar_condition_reports %}{{ clinvar_condition_reports }}{% 
 {% endif -%}
 {% if clinvar_id -%}
 - Variant ID: {{ clinvar_id }}
+{% endif -%}
 {% endif -%}
 {% endif -%}
 {% if show_conservation_section -%}
