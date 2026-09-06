@@ -211,7 +211,7 @@ registry, fixture, or MCP surfaces.
 Implemented test-first on 2026-09-06 against `6ed5b39b`. The sole and repeated
 interaction selectors now enter the existing reducer instead of propagating a
 DDInter error. The frozen twelve-row contributor matrix, all twenty-three
-focused drug-get tests, MCP example compilation, and the fourteen-case
+focused drug-get tests, MCP example compilation, and the initial fourteen-case
 `section-outcomes.md` executable contract pass. The contract exercises CLI and
 both MCP entry points in Markdown and JSON, executes degraded and unavailable
 recovery commands under the same failures, retains the pageable-report error,
@@ -221,5 +221,10 @@ shell syntax, diff whitespace, and the pinned source-file ceilings pass.
 The first independent code review rejected incomplete executable coverage and
 an overclaimed 1,097-line source baseline. Remediation restores the truthful
 1,094-line exact baseline and adds the missing failure-surface and exclusion
-proofs. Focused re-review is pending, so this ticket remains in
-`sdlc/tickets/` and is not yet a completion record.
+proofs. The expanded fifteen-case contract passes, as do the focused MCP
+allowlist, printed-card recovery, surface-agreement, source-state-registry, and
+six package-boundary checks. The quality ratchet, formatting, diff whitespace,
+fixture shell syntax, exact 1,300-file package inventory, and the 1,094/2,136
+Rust source ceilings also pass. Full repository gates were deliberately not
+rerun during this focused remediation. Focused re-review is pending, so this
+ticket remains in `sdlc/tickets/` and is not yet a completion record.
