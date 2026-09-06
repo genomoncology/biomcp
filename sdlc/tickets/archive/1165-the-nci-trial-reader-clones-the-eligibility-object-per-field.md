@@ -1,9 +1,14 @@
 ---
 flow: build
 priority: 3
+hold: Retired 2026-09-06. Record 1171 removed the NCI detail parser and clone target. Archived.
 ---
 
 # The NCI trial reader clones the eligibility object per field
+
+**Retired 2026-09-06. Archived, not held.** Record 1171 replaced the raw NCI
+detail conversion with BioData-backed projection, so the named clone path no
+longer exists.
 
 ## Goal
 

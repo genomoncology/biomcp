@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 8
-deps: [1167]
+deps: [1167, 1173]
 ---
 
 # Return variant literature within one invocation-wide work deadline
