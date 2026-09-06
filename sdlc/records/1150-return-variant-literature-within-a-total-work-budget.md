@@ -160,6 +160,17 @@ commit and proves successful settlement plus compatible readback. That test
 passed individually and in 20 repeated runs. The paused-clock concurrent test
 still proves an armed put does not shield unrelated or unarmed operations.
 
+The subsequent full test gate passed the cache transition regression but found
+two existing CLI execution tests overflowing the fixed 8 MiB
+`biomcp-cli-execute` worker stack. An immutable A/B reproduced the disease test
+failure at pre-Writer commit `ecfbc1bb` while current main passed, proving this
+was not caused by the explicit CACache writer. Ticket 1150 had enlarged article
+and variant async handlers retained inside the shared CLI dispatcher state.
+Boxing those handler arms and the fallback `run` boundary restores bounded
+dispatcher state without changing the worker stack or cache behavior. The
+exact disease-card and ticket-1120 raw-MCP reproductions now pass on the normal
+worker stack. The coordinating full gate remains unclaimed pending rerun.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every

@@ -4,11 +4,11 @@
   "entries": [
     {
       "path": "src/cache/manager.rs",
-      "baseline_lines": 1090,
+      "baseline_lines": 1072,
       "floor_lines": 985,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 105,
+        "delta": 87,
         "reason": "Deadline-aware cache get, put, delete, and size traversal remain beside the cache manager trait implementation.",
         "removal_condition": "Extract cache deadline adapters when the cache manager is next decomposed."
       }

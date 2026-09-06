@@ -292,6 +292,22 @@ mod trial;
 pub(crate) use self::dispatch::render_loaded_card;
 pub(crate) use self::dispatch::{handle_command, handle_get, handle_search};
 
+pub(crate) async fn handle_get_bounded(
+    args: VariantGetArgs,
+    json: bool,
+    alias_suggestions_as_json: bool,
+) -> anyhow::Result<crate::cli::CommandOutcome> {
+    Box::pin(handle_get(args, json, alias_suggestions_as_json)).await
+}
+
+pub(crate) async fn handle_search_bounded(
+    args: VariantSearchArgs,
+    json: bool,
+    alias_suggestions_as_json: bool,
+) -> anyhow::Result<crate::cli::CommandOutcome> {
+    Box::pin(handle_search(args, json, alias_suggestions_as_json)).await
+}
+
 #[cfg(test)]
 #[path = "../../../tests/unit/cli/variant.rs"]
 mod tests;

@@ -131,7 +131,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             } => outcome_to_string(super::gene::handle_get(args, json, false).await?),
             Commands::Get {
                 entity: GetEntity::Article(args),
-            } => outcome_to_string(super::article::handle_get(args, json, false).await?),
+            } => outcome_to_string(Box::pin(super::article::handle_get(args, json, false)).await?),
             Commands::Get {
                 entity: GetEntity::Disease(args),
             } => outcome_to_string(super::disease::handle_get(args, json).await?),
@@ -146,7 +146,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             } => outcome_to_string(super::trial::handle_get(args, json).await?),
             Commands::Get {
                 entity: GetEntity::Variant(args),
-            } => outcome_to_string(super::variant::handle_get(args, json, false).await?),
+            } => outcome_to_string(Box::pin(super::variant::handle_get(args, json, false)).await?),
             Commands::Get {
                 entity: GetEntity::Drug(args),
             } => outcome_to_string(super::drug::handle_get(args, json, false).await?),
@@ -160,7 +160,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 entity: GetEntity::AdverseEvent(args),
             } => outcome_to_string(super::adverse_event::handle_get(args, json).await?),
             Commands::Variant { cmd } => {
-                outcome_to_string(super::variant::handle_command(cmd, json).await?)
+                outcome_to_string(Box::pin(super::variant::handle_command(cmd, json)).await?)
             }
             Commands::Drug { cmd } => {
                 outcome_to_string(super::drug::handle_command(cmd, json, false).await?)
@@ -169,7 +169,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 outcome_to_string(super::disease::handle_command(cmd, json).await?)
             }
             Commands::Article { cmd } => {
-                outcome_to_string(super::article::handle_command(cmd, json).await?)
+                outcome_to_string(Box::pin(super::article::handle_command(cmd, json)).await?)
             }
             Commands::Author { cmd } => outcome_to_string(super::author::handle(cmd, json).await?),
             Commands::Gene { cmd } => {
@@ -243,13 +243,13 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                     outcome_to_string(super::gwas::handle_search(args, json).await?)
                 }
                 SearchEntity::Article(args) => {
-                    outcome_to_string(super::article::handle_search(args, json).await?)
+                    outcome_to_string(Box::pin(super::article::handle_search(args, json)).await?)
                 }
                 SearchEntity::Trial(args) => {
                     outcome_to_string(super::trial::handle_search(args, json).await?)
                 }
                 SearchEntity::Variant(args) => {
-                    outcome_to_string(super::variant::handle_search(args, json, false).await?)
+                    outcome_to_string(super::variant::handle_search_bounded(args, json, false).await?)
                 }
                 SearchEntity::Drug(args) => {
                     outcome_to_string(super::drug::handle_search(args, json).await?)
@@ -468,7 +468,7 @@ async fn run_outcome_inner(
             entity: GetEntity::Variant(args),
         } => {
             crate::sources::with_no_cache(no_cache, async move {
-                super::variant::handle_get(args, json, alias_suggestions_as_json).await
+                super::variant::handle_get_bounded(args, json, alias_suggestions_as_json).await
             })
             .await
         }
@@ -484,7 +484,7 @@ async fn run_outcome_inner(
             entity: SearchEntity::Variant(args),
         } => {
             crate::sources::with_no_cache(no_cache, async move {
-                super::variant::handle_search(args, json, alias_suggestions_as_json).await
+                super::variant::handle_search_bounded(args, json, alias_suggestions_as_json).await
             })
             .await
         }
@@ -595,11 +595,11 @@ async fn run_outcome_inner(
             .await
         }
         command => Ok(CommandOutcome::stdout(
-            run(Cli {
+            Box::pin(run(Cli {
                 command,
                 json,
                 no_cache,
-            })
+            }))
             .await?,
         )),
     }
