@@ -4385,6 +4385,13 @@ name/brand search with <code>--product-type vaccine</code> can also use the loca
 CVX/MVX bundle to expand vaccine aliases. That bridge does not change WHO
 finished-pharma/API matching, does not create a WHO vaccine <code>get drug</code> detail
 surface, and does not run for pure <code>--region us</code> searches.</p>
+<p>EMA name search keeps the requested name as one boundary-delimited phrase; it
+does not split that phrase or arbitrary chemical synonyms into generic words.
+Only exact generic names and verified OpenFDA brand names from a MyChem hit
+that itself exactly identifies the request become EMA aliases. Each EU row
+reports <code>match_kind</code>, <code>matched_term</code>, and <code>source</code>, so JSON callers can tell
+whether the row matched the query, a typed provider field, or a bounded CVX
+description. Markdown combines the same facts in its <code>Match</code> column.</p>
 <p>WHO vaccine support in this release is search-only. Use
 <code>search drug &lt;name&gt; --region who --product-type vaccine</code> for vaccine rows;
 <code>get drug &lt;name&gt; regulatory --region who|all</code> remains finished-pharma/API only.</p>
@@ -4616,7 +4623,11 @@ and <code>--offset</code> apply separately to each requested region, so an all-r
 search can return up to three times the requested limit. Every bucket has its
 own region-only continuation command. Rows identify whether they matched an
 exact product name, exact active substance, structured alias, or broader text;
-that ordering is applied only within the region, never across providers.</p>
+that ordering is applied only within the region, never across providers.
+EU rows additionally include non-null <code>matched_term</code> and <code>source</code> fields.
+EMA filters and deduplicates the complete bounded local feed before applying
+each region's offset and limit, so <code>regions.eu.pagination.total</code> and its
+continuation describe the filtered EU result set rather than raw feed rows.</p>
 <ul>
 <li>Use <code>regions.us.results</code> for U.S. search rows.</li>
 <li>Use <code>regions.eu.results</code> for EMA rows.</li>

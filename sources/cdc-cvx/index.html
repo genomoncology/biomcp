@@ -4192,6 +4192,13 @@
 <p>CDC CVX/MVX matters when a vaccine brand name such as Gardasil, Prevnar, Fluzone, or Comirnaty does not normalize cleanly through U.S.-first drug identity sources but you still need EU vaccine context or an explicit WHO vaccine search. It is the right page for questions about vaccine-brand matching, local vaccine identity setup, and how BioMCP expands brand names into vaccine-antigen terms before retrying the EMA path or explicit WHO vaccine search.</p>
 <p>In BioMCP, CDC CVX/MVX is a local-runtime vaccine identity source rather than a live per-request API surface. BioMCP auto-downloads <code>cvx.txt</code>, <code>TRADENAME.txt</code>, and <code>mvx.txt</code> into <code>BIOMCP_CVX_DIR</code> or the default data directory on first use, augments the EMA/default plain-name vaccine search path when MyChem identity resolution fails, supports omitted <code>--region</code> plain-name vaccine lookups plus explicit <code>--region eu|all</code>, also augments explicit WHO vaccine name/brand searches when you pass <code>--region who --product-type vaccine</code>, leaves <code>--region us</code> untouched, and exposes <code>biomcp cvx sync</code> when you want a forced refresh.</p>
 <h2 id="what-biomcp-exposes">What BioMCP exposes<a class="headerlink" href="#what-biomcp-exposes" title="Permanent link">&para;</a></h2>
+<p>The EMA bridge only uses descriptions joined from an exact or family-prefix
+trade-name match. It discards generic formulation words, requires at least one
+distinctive antigen word or uppercase vaccine initialism, and matches the
+remaining description tokens in order within one EMA field. This admits
+recorded bridges such as Gardasil/Silgard, Prevnar/Prevenar 13, and
+Fluzone/influenza without treating words such as <code>vaccine</code>, <code>conjugate</code>, or a
+number by itself as drug identity.</p>
 <table>
 <thead>
 <tr>

@@ -58,6 +58,14 @@ CVX/MVX bundle to expand vaccine aliases. That bridge does not change WHO
 finished-pharma/API matching, does not create a WHO vaccine `get drug` detail
 surface, and does not run for pure `--region us` searches.
 
+EMA name search keeps the requested name as one boundary-delimited phrase; it
+does not split that phrase or arbitrary chemical synonyms into generic words.
+Only exact generic names and verified OpenFDA brand names from a MyChem hit
+that itself exactly identifies the request become EMA aliases. Each EU row
+reports `match_kind`, `matched_term`, and `source`, so JSON callers can tell
+whether the row matched the query, a typed provider field, or a bounded CVX
+description. Markdown combines the same facts in its `Match` column.
+
 WHO vaccine support in this release is search-only. Use
 `search drug <name> --region who --product-type vaccine` for vaccine rows;
 `get drug <name> regulatory --region who|all` remains finished-pharma/API only.
@@ -366,6 +374,10 @@ search can return up to three times the requested limit. Every bucket has its
 own region-only continuation command. Rows identify whether they matched an
 exact product name, exact active substance, structured alias, or broader text;
 that ordering is applied only within the region, never across providers.
+EU rows additionally include non-null `matched_term` and `source` fields.
+EMA filters and deduplicates the complete bounded local feed before applying
+each region's offset and limit, so `regions.eu.pagination.total` and its
+continuation describe the filtered EU result set rather than raw feed rows.
 
 - Use `regions.us.results` for U.S. search rows.
 - Use `regions.eu.results` for EMA rows.
