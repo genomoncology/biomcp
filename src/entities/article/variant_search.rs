@@ -1051,6 +1051,57 @@ fn status_with_detail(
     }
 }
 
+fn strategy_route_skeleton(
+    strategy: VariantArticleStrategy,
+    verify_identity: bool,
+) -> Vec<(&'static str, &'static str)> {
+    let mut rows = vec![
+        ("resolution", "myvariant"),
+        ("canonical_equivalence", "clingen_car"),
+    ];
+    let federated = ["pubmed", "europepmc", "pubtator", "semanticscholar"];
+    match strategy {
+        VariantArticleStrategy::Union => {
+            rows.extend(federated.map(|source| ("strict", source)));
+            rows.push(("pubtator_variant", "pubtator"));
+            rows.extend(federated.map(|source| ("exact_lexical", source)));
+            rows.extend(federated.map(|source| ("best_effort_free_text", source)));
+            rows.push(("source_citation", "myvariant"));
+        }
+        VariantArticleStrategy::Annotation => rows.push(("pubtator_variant", "pubtator")),
+        VariantArticleStrategy::Lexical => {
+            rows.extend(federated.map(|source| ("strict", source)));
+            rows.extend(federated.map(|source| ("exact_lexical", source)));
+        }
+    }
+    rows.extend([
+        ("enrichment", "semanticscholar"),
+        ("enrichment", "pubtator"),
+        ("enrichment", "europepmc"),
+    ]);
+    if verify_identity {
+        rows.extend([
+            ("identity_verification", "pubtator"),
+            ("clingen_ldh_medium", "clingen_ldh"),
+            ("clingen_ldh_direct", "clingen_ldh"),
+        ]);
+    }
+    rows
+}
+
+fn deadline_blocked_status(route: &str, source: &str) -> VariantArticleSourceStatus {
+    aggregate_source_status(
+        route,
+        source,
+        VariantArticleSourceWork {
+            planned: 1,
+            not_attempted: 1,
+            ..Default::default()
+        },
+        vec!["invocation_deadline"],
+    )
+}
+
 fn provider_terminal_status(events: &[&VariantArticleCallEvent]) -> VariantArticleSourceStatusKind {
     if events.iter().any(|event| event.status == "timed_out") {
         return VariantArticleSourceStatusKind::TimedOut;
@@ -2580,6 +2631,7 @@ async fn search_variant_articles_identity(
             "--limit must be between 1 and 50".to_string(),
         ));
     }
+    let route_skeleton = strategy_route_skeleton(strategy, verification.verify_identity);
     let mut context =
         crate::entities::variant::resolve_article_variant_identity(requested, input, &execution)
             .await?;
@@ -2600,6 +2652,20 @@ async fn search_variant_articles_identity(
                     VariantArticleSourceStatusKind::Unavailable
                 },
             ));
+        }
+        if execution.deadline.is_exhausted() {
+            let decided = source_status
+                .iter()
+                .map(|status| (status.route.clone(), status.source.clone()))
+                .collect::<BTreeSet<_>>();
+            source_status.extend(
+                route_skeleton
+                    .iter()
+                    .filter(|(route, source)| {
+                        !decided.contains(&(route.to_string(), source.to_string()))
+                    })
+                    .map(|(route, source)| deadline_blocked_status(route, source)),
+            );
         }
         source_status
             .sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
@@ -3871,35 +3937,60 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn zero_deadline_fails_before_resolution_client_or_provider_contact() {
-        let outcome = search_variant_articles_with_deadline(
-            "chr7:g.140453136A>T",
+    async fn zero_deadline_terminalizes_the_complete_strategy_route_skeleton() {
+        for strategy in [
             VariantArticleStrategy::Union,
-            3,
-            0,
-            true,
-            VariantArticleVerificationOptions::default(),
-            std::time::Duration::ZERO,
-        )
-        .await
-        .expect("deadline is an in-band terminal state");
-        assert!(outcome.hard_error);
-        assert_eq!(
-            outcome.response.error.as_ref().map(|error| error.code),
-            Some("deadline_exceeded")
-        );
-        assert!(outcome.response.pagination.has_more);
-        assert!(outcome.response.source_status.iter().any(|status| {
-            status.route == "resolution"
-                && status.status == VariantArticleSourceStatusKind::NotAttempted
-                && status.reason_codes == vec!["invocation_deadline"]
-        }));
-        assert!(
-            outcome
+            VariantArticleStrategy::Annotation,
+            VariantArticleStrategy::Lexical,
+        ] {
+            let outcome = search_variant_articles_with_deadline(
+                "chr7:g.140453136A>T",
+                strategy,
+                3,
+                0,
+                true,
+                VariantArticleVerificationOptions::default(),
+                std::time::Duration::ZERO,
+            )
+            .await
+            .expect("deadline is an in-band terminal state");
+            assert!(outcome.hard_error && outcome.response.pagination.has_more);
+            assert_eq!(
+                outcome.response.error.as_ref().map(|error| error.code),
+                Some("deadline_exceeded")
+            );
+            let expected = strategy_route_skeleton(strategy, false)
+                .into_iter()
+                .collect::<BTreeSet<_>>();
+            let actual = outcome
                 .response
-                .debug_plan
-                .is_some_and(|plan| plan.deadline.exhausted)
-        );
+                .source_status
+                .iter()
+                .map(|status| (status.route.as_str(), status.source.as_str()))
+                .collect::<BTreeSet<_>>();
+            assert_eq!(actual, expected, "incomplete {strategy:?} route ledger");
+            for status in &outcome.response.source_status {
+                assert_eq!(status.status, VariantArticleSourceStatusKind::NotAttempted);
+                assert_eq!(
+                    (
+                        status.work.planned,
+                        status.work.ok,
+                        status.work.degraded,
+                        status.work.unavailable,
+                        status.work.timed_out,
+                        status.work.not_attempted,
+                    ),
+                    (1, 0, 0, 0, 0, 1)
+                );
+                assert_eq!(status.reason_codes, ["invocation_deadline"]);
+            }
+            assert!(
+                outcome
+                    .response
+                    .debug_plan
+                    .is_some_and(|plan| plan.deadline.exhausted)
+            );
+        }
     }
 
     #[test]

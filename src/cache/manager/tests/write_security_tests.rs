@@ -65,8 +65,9 @@ async fn put_deadline_transition_is_exactly_at_writer_commit() {
         |_, _| unreachable!("timed-out pre-publication put must not finalize"),
         move |_| wait_until_exhausted(&wait_deadline),
     )
-    .with_safe_return_observer(move |_, _| {
-        observed_commit.store(true, std::sync::atomic::Ordering::SeqCst);
+    .with_safe_return_observer(move || {
+        let observed_commit = Arc::clone(&observed_commit);
+        async move { observed_commit.store(true, std::sync::atomic::Ordering::SeqCst) }
     });
     let result = crate::sources::with_variant_article_deadline(
         before_deadline,
@@ -117,9 +118,12 @@ async fn put_deadline_transition_is_exactly_at_writer_commit() {
         },
         |_| {},
     )
-    .with_safe_return_observer(move |_, _| {
-        assert!(crate::sources::current_variant_article_deadline().is_some());
-        observed_commit.store(true, std::sync::atomic::Ordering::SeqCst);
+    .with_safe_return_observer(move || {
+        let observed_commit = Arc::clone(&observed_commit);
+        async move {
+            assert!(crate::sources::current_variant_article_deadline().is_some());
+            observed_commit.store(true, std::sync::atomic::Ordering::SeqCst);
+        }
     });
     let result = crate::sources::with_variant_article_deadline(
         commit_deadline,

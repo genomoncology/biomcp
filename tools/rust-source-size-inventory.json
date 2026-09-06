@@ -4,11 +4,11 @@
   "entries": [
     {
       "path": "src/cache/manager.rs",
-      "baseline_lines": 1072,
+      "baseline_lines": 1077,
       "floor_lines": 985,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 87,
+        "delta": 92,
         "reason": "Deadline-aware cache get, put, delete, and size traversal remain beside the cache manager trait implementation.",
         "removal_condition": "Extract cache deadline adapters when the cache manager is next decomposed."
       }
@@ -61,11 +61,11 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 5390,
+      "baseline_lines": 5481,
       "floor_lines": 4828,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 562,
+        "delta": 653,
         "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
@@ -253,11 +253,11 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2242,
+      "baseline_lines": 2274,
       "floor_lines": 1847,
       "authorized_increase": {
         "ticket": "1022, 1150",
-        "delta": 395,
+        "delta": 427,
         "reason": "Register dbSNP and carry the task-local variant deadline through shared request, retry, and provider-admission utilities.",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }

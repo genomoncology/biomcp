@@ -79,6 +79,21 @@ drives metadata/security finalization to its stable success or fail-closed
 result, and then resumes normal deadline cancellation. Full repository gates
 remain unclaimed.
 
+The final remediation gives each production middleware send one shared cache
+publication marker. Both rate-limit layers and the request boundary observe
+that same marker, so expiry remains cancellable before publication but awaits
+cache commit, fail-closed finalization, and key-lock release after it is armed.
+A paused-time production-middleware test uses `Notify` at the real writer
+boundary and proves an unrelated unarmed deadline still expires. Cold-client
+migration and epoch initialization now acquire the maintenance lock by
+deadline-clipped async polling; deterministic contention proves expiry leaves
+the legacy tree untouched, releases the guard, and permits a complete retry.
+The strategy route skeleton is now selected before resolution, and a
+zero-deadline production-path matrix pins every union, annotation, and lexical
+row to exact `planned: 1`, `not_attempted: 1`, `invocation_deadline` state.
+Focused Rust tests for those regressions passed; full `make test` and `make
+spec` remain integration gates and are not claimed here.
+
 ## Review
 
 - Design review: accepted before implementation.

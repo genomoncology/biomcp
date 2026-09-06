@@ -323,8 +323,7 @@ impl Middleware for RateLimitMiddleware {
     ) -> reqwest_middleware::Result<reqwest::Response> {
         if let Some(deadline) = extensions.get::<super::VariantArticleDeadline>().cloned() {
             if self.provider_pool {
-                return deadline
-                    .run(next.run(req, extensions))
+                return super::run_with_cache_publication(&deadline, next.run(req, extensions))
                     .await
                     .map_err(reqwest_middleware::Error::middleware)?;
             }
@@ -332,8 +331,7 @@ impl Middleware for RateLimitMiddleware {
                 .run(self.limiter.wait_for_url(req.url()))
                 .await
                 .map_err(reqwest_middleware::Error::middleware)?;
-            return deadline
-                .run(next.run(req, extensions))
+            return super::run_with_cache_publication(&deadline, next.run(req, extensions))
                 .await
                 .map_err(reqwest_middleware::Error::middleware)?;
         } else if !self.provider_pool {
