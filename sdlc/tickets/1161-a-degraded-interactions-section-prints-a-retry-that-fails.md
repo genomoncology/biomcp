@@ -240,3 +240,11 @@ reads from filesystem timestamps. The exact observer test passes (one positive
 control call, then zero calls for each required-label failure path), and the
 updated fifteen-case `section-outcomes.md` executable contract passes. Focused
 re-review remains pending; full repository gates remain intentionally deferred.
+
+The warm full `make test` review then exposed an unrelated ownership contract:
+provider environment fixtures may not live in `get/tests.rs`, where they can
+interfere with the trial-alias retry tests. The observer integration test and
+its local HTTP/environment fixture now live in the existing drug
+`test_support.rs` fixture owner without changing the positive-control or exact
+zero-call assertions. The exact parallel-isolation static contract and the
+relocated Rust test both pass. Full gates remain with the independent reviewer.
