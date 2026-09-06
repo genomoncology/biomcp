@@ -119,8 +119,10 @@ uses exactly `GenCC data is unavailable; no GenCC absence can be concluded.` A
 failed identity match uses exactly `GenCC gene identity is inconclusive; no
 GenCC absence can be concluded.` A stale read after this request's lock budget
 expires uses exactly `GenCC refresh is still in progress; results come from the
-last validated dataset.` Upstream bodies, URLs, local paths, parser details,
-and lock errors never enter public messages.
+last validated dataset.` A no-generation read after this request's lock budget
+expires uses exactly `GenCC refresh is still in progress; no GenCC absence can
+be concluded.` Upstream bodies, URLs, local paths, parser details, and lock
+errors never enter public messages.
 
 Each `assertions` element has exactly this public shape:
 
@@ -181,12 +183,21 @@ Required row values are `sgc_id`, positive `version_number`, `gene_curie`,
 `gene_symbol`, `disease_curie`, `disease_title`, the classification pair, the
 mode-of-inheritance pair, and the submitter pair. IDs match exact namespaces:
 `SGC-[1-9][0-9]*`, `HGNC:[1-9][0-9]*`, `MONDO:[0-9]{7}`,
-`GENCC:[0-9]{6}`, and `HP:[0-9]{7}`. Required labels are trimmed, nonblank,
-control-free strings. `evaluated_date` is the date component of a valid
-`submitted_as_date` in `YYYY-MM-DD`, GenCC's space-separated timestamp, or RFC
-3339 form; `submitted_date` is the date from a valid `submitted_run_date`. A
-blank optional date becomes null; a nonblank malformed date invalidates the row
-and therefore the generation.
+`GENCC:[0-9]{6}`, and `HP:[0-9]{7}`. Required labels are Unicode-trimmed,
+nonblank, control-free strings under the exact normalization rules below.
+`evaluated_date` is the date component of a valid `submitted_as_date`;
+`submitted_date` is the date component of a valid `submitted_run_date`. Each
+accepts exactly one of: ten ASCII bytes `YYYY-MM-DD`; nineteen ASCII bytes
+`YYYY-MM-DD HH:MM:SS`, where the separator is one U+0020 SPACE and the time is
+interpreted as UTC; or an RFC 3339 date-time with an explicit `Z` or numeric
+offset. Calendar dates and hours/minutes/seconds must be real (`00:00:00`
+through `23:59:59`); the exact space form has no fraction or offset, while RFC
+3339 fraction and offset rules are those of the repository's pinned date-time
+parser. Date-only and space-form inputs retain their parsed calendar date; an
+RFC 3339 instant is converted to UTC before its calendar date is selected. The
+public value is formatted canonically as `YYYY-MM-DD`. A
+Unicode-whitespace-only optional date becomes null; any other malformed value
+invalidates the row and therefore the generation.
 
 `version_number` is parsed from an ASCII-decimal CSV scalar into `u32` and is
 valid only in `1..=4_294_967_295`; signs, decimal points, exponent notation,
@@ -198,8 +209,13 @@ closed mapping treats `GENCC:100007` paired exactly with `Animal Model Only` as
 the 2026-09-05 provider capture, and is never inferred from neighboring CURIEs.
 
 Only absolute `http` or `https` public-report and criteria URLs without user
-information and no more than 2,048 bytes are exposed; a blank, oversized, or
-malformed optional URL becomes null and is not fetched. Each assertion has
+information and no more than 2,048 UTF-8 bytes after Unicode trimming are
+exposed; a blank, oversized, or malformed optional URL becomes null and is not
+fetched. URL parsing is validation only: the public value preserves the exact
+trimmed provider spelling byte-for-byte, including scheme/host case, explicit
+default port, path spelling, query ordering, and percent-escape case. BioMCP
+does not apply URL-library serialization or Unicode normalization. Each
+assertion has
 exactly the three link slots in its schema (source record, public report, and
 assertion criteria), of which only the source record is required. The
 source-record URL is constructed from validated SGC identity and version.
@@ -215,16 +231,36 @@ row. `disease_original_*`, every
 other `submitted_as_*` field, free-text notes, and original OMIM
 labels/identifiers are never placed in the normalized cache or public output.
 
+All decoded CSV fields first undergo the common byte/control validation below;
+normalization then uses these exact rules. Unicode trimming removes the maximal
+leading and trailing sequence for which Rust `char::is_whitespace` is true.
+The remaining Unicode scalar sequence and its UTF-8 bytes are preserved: there
+is no NFC/NFKC normalization, Unicode case folding, whitespace collapse, or
+interior trimming. Namespace syntax and decimal parsing are ASCII-only. The
+only case-insensitive operations are the explicitly named ASCII comparisons
+for `HGNC:`, `PMID:`, gene symbols, and submitter sort keys. Numeric versions,
+MyGene HGNC values, and PMIDs serialize to canonical base-10 as specified;
+validated GenCC CSV CURIEs otherwise retain their exact required uppercase
+namespace spelling. Optional URLs use the preserved trimmed spelling above,
+while constructed GenCC/PubMed URLs use their fixed canonical templates.
+
 For duplicate comparison, first parse one row into the canonical normalized
 cache tuple in this exact field order: canonical `sgc_id`, `u32` version,
 canonical gene CURIE, trimmed gene label, canonical disease CURIE, trimmed
 disease label, the closed classification CURIE/label/code triple, canonical
 inheritance CURIE plus trimmed label, canonical submitter CURIE plus trimmed
-label, nullable canonical evaluated/submitted dates, nullable normalized
-public-report/criteria URLs, and the ordered canonical PMID vector. Two rows
-with one `(sgc_id, version)` are byte-equivalent only when every byte of that
-tuple's deterministic serialization is equal; label case, optional-null
-state, URL spelling, PMID value, and PMID order therefore matter. Equivalent
+label, nullable canonical evaluated/submitted dates, nullable preserved
+trimmed/validated public-report and criteria URL spellings, and the ordered
+canonical PMID vector. Two rows
+with one `(sgc_id, version)` are byte-equivalent only when every scalar field is
+equal by its stated value and every retained string/vector element is equal by
+its exact UTF-8 bytes in order; implementations need not invent a second wire
+serialization merely to compare the tuple. Canonically equivalent but
+byte-distinct Unicode labels differ because no Unicode normalization occurs.
+Optional-null state, preserved URL spelling, PMID value, and PMID order also
+matter. Thus two valid URL spellings that a URL library might serialize alike
+remain different and invalidate a duplicate pair, while identical trimmed URL
+spellings compare equal. Equivalent
 duplicates become one row in first-row position; any tuple difference
 invalidates the generation. Columns excluded from the normalized cache
 (`disease_original_*`, notes, and the other unused `submitted_as_*` columns)
@@ -313,30 +349,53 @@ errors and never fall back to the default. If the override is absent and
 explicit sync exits nonzero. Every one of those selection failures makes zero
 GenCC requests and creates no directory.
 
-First-root creation has one deterministic lock anchor even before the root
-exists. Starting at the selected absolute root, BioMCP finds its deepest
-existing ancestor without following symlinks/reparse points and opens there,
-with no-follow semantics, a regular current-user-owned `0600` file named
-`.biomcp-gencc-root-<sha256-of-selected-absolute-path>.lock`: create-new when
-absent, otherwise open the same existing inode. It verifies
-one link and the existing private-path ownership rules, takes its exclusive
-advisory lock, re-walks the whole path, then creates each missing component
-with `0700`/the existing Windows private ACL. It finally creates and verifies
-`<root>/.store.lock` as current-user-owned regular `0600`, acquires it, fsyncs
-each changed parent, and only then may issue a GET. Later calls use
-`.store.lock`; they still take the setup anchor when root/store-lock validation
-or repair is required. The bootstrap anchor remains as the permanent
-coordination inode and is never unlinked by GenCC cleanup, so root deletion and
-recreation cannot create two lock domains. The setup lock is released only
-after the verified `.store.lock` is held. The default and override paths use
-this identical algorithm. Failure to locate/open/lock the anchor, ownership/link/type failure,
-creation/fsync failure, or a changed component makes zero GETs. Tests cover a
-missing default hierarchy, missing override hierarchy, already-created roots,
-two-process first creation, blank/relative overrides, unsafe ancestors/root/
-lock files, `dirs::data_dir() == None`, permissions, and exact zero-request
-logs. This durable source never falls back to a process temporary directory.
-It is not an ordinary HTTP-response cache entry, and metadata contains no
-absolute local paths.
+First-root creation has one deterministic bootstrap anchor whose pathname does
+not depend on whether the selected root exists. For the default root, the
+anchor directory is exactly the already-existing `dirs::data_dir()` and the
+selected root is its `biomcp/gencc` descendant. For an override, the anchor
+directory is exactly the selected root's lexical parent and only that final
+root component may be absent. The anchor directory itself must already exist,
+must be opened component-by-component without following symlinks/reparse
+points, and must satisfy the existing private-path ownership rules. An absent
+or unsafe default anchor directory, or an override whose lexical parent is
+absent or unsafe, fails closed with zero GETs and creates nothing; BioMCP does
+not recursively bootstrap an unanchored hierarchy.
+
+Inside that invariant directory the anchor is the regular current-user-owned
+`0600` file `.biomcp-gencc-root-<sha256-of-selected-absolute-path>.lock`.
+Every operation derives the same pathname from the selected absolute path,
+opens it with no-follow semantics (create-new when absent, otherwise open),
+verifies one link plus pathname-to-open-file inode/file-ID equality, and takes
+its exclusive advisory lock before validating or creating the selected root.
+Under that lock it re-walks the selected root, creates only its permitted
+missing components with `0700`/the existing Windows private ACL, creates and
+verifies the distinct root files `.refresh.lock` and `.store.lock` as regular
+current-user-owned `0600` files, and fsyncs each changed parent. The bootstrap
+lock is released only after the needed root lock file descriptions have been
+opened and `.store.lock` is held shared for the initial state snapshot. The
+anchor is outside the selected root and GenCC cleanup never unlinks it, so a
+missing root becoming present and a later deletion/recreation of the selected
+root both rediscover the same anchor pathname and inode. Default and override
+subprocess tests record the anchor device/inode (or Windows file ID) before
+creation, after creation, and across root deletion/recreation and prove two
+processes still serialize on that one file.
+
+This guarantee covers BioMCP creation and deletion/recreation of the selected
+root while its invariant anchor directory remains intact. Concurrent hostile
+deletion/replacement of the anchor file or anchor directory by the owning OS
+user cannot be made safe with advisory locks and is explicitly outside the
+guarantee; pathname/file-ID revalidation fails closed when detected. Tests do
+not claim protection from an owner that can unlink a currently locked file.
+Failure to locate/open/lock/revalidate the anchor, ownership/link/type failure,
+root or root-lock creation/fsync failure, or a changed component makes zero
+GETs. Tests cover a missing selected default root beneath an existing default
+anchor, a missing override root beneath an existing override parent,
+already-created roots, two-process first creation, both root
+delete/recreate cases, absent anchor directories, blank/relative overrides,
+unsafe ancestors/root/lock files, `dirs::data_dir() == None`, permissions, and
+exact zero-request logs. This durable source never falls back to a process
+temporary directory. It is not an ordinary HTTP-response cache entry, and
+metadata contains no absolute local paths.
 
 Durable state has two deliberately different layers:
 
@@ -373,9 +432,11 @@ time plus 86,400 seconds; explicit sync ignores suppression. An injected clock
 tests one second before, exactly at, and one second after both boundaries and
 clock rollback.
 
-- First use with no valid generation takes the refresh lock, rechecks disk,
-  performs one unconditional `GET`, validates completely, publishes, and
-  queries. Failure is unavailable; partial data is not retained.
+- First use with no valid generation takes the process mutex and exclusive
+  `.refresh.lock`, rechecks disk under a brief shared `.store.lock`, releases
+  the store lock, performs one unconditional `GET`, validates completely, then
+  publishes under exclusive `.store.lock` and queries. Failure is unavailable;
+  partial data is not retained.
 - A generation younger than 604,800 seconds is queried with no HTTP request.
 - A due generation sends one conditional `GET` with `If-None-Match` and
   `If-Modified-Since`, because every accepted `200` must supply both validators;
@@ -398,8 +459,10 @@ clock rollback.
   makes this lookup stale after durably recording the failed attempt when that
   failure-state update itself commits. Post-rename root-fsync failure follows
   the separate namespace-authority matrix below.
-- `biomcp gencc sync` always takes the lock and performs the same conditional
-  revalidation even when fresh. `304` and valid `200` succeed. Refresh failure
+- `biomcp gencc sync` always waits for the process mutex and exclusive
+  `.refresh.lock`, uses `.store.lock` only for its recheck and publication
+  phases, and performs the same conditional revalidation even when fresh.
+  `304` and valid `200` succeed. Refresh failure
   exits nonzero even if prior data remains; it never destroys that generation.
   Explicit sync has a 120-second deadline.
 - Global `--no-cache` still bypasses HTTP-response/session caches. It does not
@@ -411,18 +474,47 @@ clock rollback.
   content type, ETag, and Last-Modified. Health never downloads, publishes, or
   changes timestamps. Normal all-provider health includes the descriptor.
 
-Refresh uses a process-local async mutex and cross-process advisory lock. An
-ordinary due caller first acquires the active generation snapshot lease using
-the protocol below, then releases the store-shared phase while retaining that
-generation lease as its precise timeout/failure fallback. An ordinary leader
-obtains both refresh locks within its one-gene deadline, reloads `state.json`
-and the active generation after each acquisition, and decides again whether a
-request is due. Same-process followers wait on the mutex; cross-process
-followers wait on the advisory lock. A follower whose leader completed reloads
-the durable result: it reports `local_query` after a successful leader refresh,
-or `retry_suppressed` after the leader durably records failure, and never sends
-a second GET. At deadline, a follower with a valid old generation queries it as
-stale with `refresh_deferred`; without one it reports unavailable
+Refresh leadership uses two locks with distinct purposes: one process-local
+async mutex plus the cross-process exclusive advisory `.refresh.lock` elect a
+single refresh leader, while `.store.lock` protects only short state,
+publication, lease-acquisition, recovery, and cleanup critical sections. The
+blocking acquisition order for leadership/publication is bootstrap anchor
+(initialization only, released before leadership), process-local refresh mutex,
+`.refresh.lock`, then `.store.lock`. Lease acquisition is separately
+`.store.lock` shared then generation `lease.lock` shared. After releasing the
+store lock, an ordinary due caller may deliberately retain that already-held
+fallback lease while later acquiring the mutex, refresh lock, and store lock;
+this cannot form a wait cycle because no path waits for a generation-exclusive
+lock while holding any of those locks. Cleanup holds `.store.lock` exclusive
+and only tries generation locks nonblocking, skipping contention. No path
+acquires the bootstrap anchor while holding a root lock, and no path performs a
+blocking generation-exclusive acquisition. Readers that do not seek refresh
+leadership take only `.store.lock` shared and then the generation lease. The
+leader holds the mutex and
+`.refresh.lock` continuously from election through its final durable state
+decision, but never holds `.store.lock` during HTTP, streaming, parsing, or
+index construction.
+
+An ordinary caller first uses a shared `.store.lock` phase to read state and,
+when present, acquire the active generation snapshot lease by the protocol
+below. It releases `.store.lock` while retaining that lease as its exact
+timeout/failure fallback. If refresh is due or no generation exists, it then
+waits for the process mutex and `.refresh.lock` within its one-gene deadline.
+After both leadership locks are held it briefly reacquires `.store.lock`
+shared, reloads state and any generation, and decides again whether work is
+due. A completed predecessor therefore produces `local_query` after success or
+`retry_suppressed` after a durably recorded failure, with no second GET. A true
+leader releases `.store.lock`, performs the one HTTP attempt and complete
+validation while retaining both leadership locks, then takes `.store.lock`
+exclusive to publish the generation/state or the failed-attempt state. It
+releases `.store.lock`, then `.refresh.lock`, then the process mutex.
+
+This separation deliberately lets a follower that starts after the leader has
+entered HTTP take `.store.lock` shared and lease the still-active old
+generation. If its deadline expires before leadership becomes available, it
+queries that lease as stale with `refresh_deferred`. A follower that observes
+no generation likewise waits without issuing a GET; on deadline it returns the
+exact unavailable `refresh_deferred` row defined below rather than claiming
 `initial_download`. Lock wait/timeout is not an upstream attempt and never
 changes `attempted_at`. These rules apply identically to concurrent first use:
 one leader performs the unconditional GET, successful followers query its
@@ -430,6 +522,16 @@ generation, and failed followers observe its persisted suppression state.
 Readers open only finalized immutable generation files and therefore never see
 temporary or partially published state. Opening a finalized file alone is not
 the cleanup-safety protocol; every query holds the generation lease below.
+
+Deterministic thread and two-process barriers pause a leader only after it has
+released `.store.lock` and entered the fixture HTTP handler. A late follower is
+then started. With an old generation it must acquire and retain that exact
+lease, make zero GETs, preserve its state timestamps/validators, and return the
+stale `refresh_deferred` projection on timeout. Without a generation it must
+also make zero GETs and return the unavailable `refresh_deferred` projection;
+the shared request log contains exactly the leader's one GET. Companion tests
+release the leader before the follower deadline and prove reload-after-lock
+returns `local_query` or `retry_suppressed` without a follower GET.
 
 Each finalized generation contains a private regular `0600` `lease.lock`.
 To start a query, a process takes `.store.lock` shared, reads and validates
@@ -566,14 +668,17 @@ validators, or indexes across versions.
 
 One direct gene request gives its GenCC section one existing configurable
 eight-second optional-enrichment deadline, starting when that section future is
-first polled and covering mutex/advisory-lock wait, HTTP, streaming,
+first polled and covering refresh-mutex/advisory-lock wait, short store-lock
+phases, HTTP, streaming,
 validation, publication, identity resolution, and index query. Batch retains
 the existing maximum of ten input IDs and `join_all` behavior: all at-most-ten
 gene futures are polled concurrently, each has its own eight-second GenCC
 deadline, and there is no additional shared batch deadline. They share the
-same store mutex and therefore at most one GenCC GET; local immutable queries
-may proceed concurrently after reload. Explicit sync instead has one
-120-second end-to-end deadline and waits for both locks; timeout exits nonzero
+same process refresh mutex and `.refresh.lock` and therefore at most one GenCC
+GET; local immutable queries may proceed concurrently after reload. Explicit
+sync instead has one 120-second end-to-end deadline and waits for the process
+mutex and `.refresh.lock`, then for each required short `.store.lock` phase;
+timeout exits nonzero
 with or without a generation, preserves old data when present, publishes
 nothing, and is not recorded as an upstream attempt if no request began. HTTP
 streaming observes cancellation. Blocking parse/index work receives a
@@ -598,12 +703,33 @@ publisher, or temp file survives completion.
   Trailing blank lines are allowed; ragged rows, duplicate headers, controls,
   invalid UTF-8/quoting, unknown/missing/reordered columns, or legacy `uuid`
   invalidate the generation.
-- A raw field is <=16 KiB, normalized labels <=1,024 Unicode scalars, and each
-  exposed link is <=2,048 bytes. An assertion has <=128 unique PMIDs. The first
+- After RFC 4180 unquoting and UTF-8 decoding, every field is at most exactly
+  16,384 UTF-8 bytes before trimming or any other normalization. CSV delimiter,
+  quote, and record-terminator bytes are not part of the decoded field; an
+  embedded CR/LF in a quoted field is part of it and is rejected by the control
+  rule. The parser checks `field.as_bytes().len()`, not Unicode scalar count or
+  storage capacity. Every decoded field, including excluded/unused columns and
+  optional URLs that would otherwise become null, is rejected if it contains a
+  Unicode General Category `Cc` control scalar: exactly U+0000-U+001F and
+  U+007F-U+009F. Other categories such as `Cf` are not controls under this
+  predicate. The optional initial U+FEFF BOM is accepted only before the first
+  header byte and is never field content.
+- After the common raw-field check and Unicode trimming, normalized labels are
+  <=1,024 Unicode scalar values and exposed links are <=2,048 UTF-8 bytes. An
+  assertion has <=128 unique canonical PMIDs. Boundary tests accept 16,384
+  ASCII bytes and 8,192 two-byte scalars, reject 16,385 bytes including a
+  multibyte scalar that crosses the boundary, accept/reject 1,024/1,025 label
+  scalars and 2,048/2,049 URL bytes, and exercise leading/trailing NBSP and EM
+  SPACE, preserved interior whitespace, composed versus decomposed labels,
+  allowed `Cf`, and rejected C0/C1 controls in required, optional, quoted, and
+  excluded fields. URL tests prove preserved spelling and exact-string evidence
+  deduplication; duplicate-row tests prove same parsed URL spelling deduplicates
+  while distinct spellings invalidate the generation. The first
   byte/row/field/publication above a fail-closed input bound is rejected; an
-  invalid optional link follows the explicit null rule above. At most 100,000
-  normalized assertions can enter a generation by the row bound, and the
-  100-assertion response cap is separate.
+  invalid optional link follows the explicit null rule only after the common
+  raw bound/control checks pass. At most 100,000 normalized assertions can
+  enter a generation by the row bound, and the 100-assertion response cap is
+  separate.
 - All errors are typed internally and mapped to stable status. No body excerpt,
   note, OMIM-original field, local path, or credential appears in outputs,
   stderr, or debug logs.
@@ -612,8 +738,9 @@ publisher, or temp file survives completion.
 
 `GenCC` is the exact source label. In the table, “query” means the immutable
 local index may be queried after lifecycle resolution; it never means a GenCC
-network query. `stale-failed`, `stale-progress`, `unavailable`, and `identity`
-mean the four exact messages defined above. Same-process mutex followers and
+network query. `stale-failed`, `stale-progress`, `unavailable`, `identity`, and
+`no-generation-progress` mean respectively the five exact failure/warning
+messages defined above. Same-process mutex followers and
 cross-process advisory-lock followers use the same rows. The lock owner alone
 updates timestamps. `section_outcomes.gencc` and its matching
 `_meta.section_sources` entry use this complete mapping:
@@ -635,7 +762,7 @@ updates timestamps. `section_outcomes.gencc` and its matching
 | none | first-use follower reloads leader's valid `200` | yes | conclusive / >0 | `fresh/data/local_query` | `data` | `["GenCC"]` | null |
 | none | first-use follower reloads leader's valid `200` | yes | conclusive / 0 | `fresh/empty/local_query` | `empty` | `["GenCC"]` | null |
 | none | first-use follower reloads leader's persisted failure | no | n/a | `unavailable/unknown/retry_suppressed` | `unavailable` | `[]` | unavailable |
-| none | mutex/advisory-lock wait reaches per-gene deadline | no | n/a | `unavailable/unknown/initial_download` | `unavailable` | `[]` | unavailable |
+| none | mutex/advisory refresh-lock wait reaches per-gene deadline; this follower sends no GET | no | n/a | `unavailable/unknown/refresh_deferred` | `unavailable` | `[]` | no-generation-progress |
 | fresh | no refresh due | yes | conclusive / >0 | `fresh/data/local_query` | `data` | `["GenCC"]` | null |
 | fresh | no refresh due | yes | conclusive / 0 | `fresh/empty/local_query` | `empty` | `["GenCC"]` | null |
 | due | leader valid `304` | yes | conclusive / >0 | `fresh/data/conditional_refresh` | `data` | `["GenCC"]` | null |
@@ -664,6 +791,19 @@ fresh, suppressed, and lock-deadline reads consume zero GETs and change no
 timestamp. Root/no-generation acquisition failure remains the corresponding
 `initial_download`/`retry_suppressed` lifecycle row because no index existed to
 prove an identity conflict.
+
+The no-generation `refresh_deferred` follower projection is exact:
+`assertions: []`, `total_matching_assertions: 0`, `truncated: false`, section
+outcome `{outcome: "unavailable", sources: [], message:
+"GenCC refresh is still in progress; no GenCC absence can be concluded."}`,
+the matching `_meta.section_sources` entry with `key: "gencc"`, outcome
+`unavailable`, and `sources: []`, and no GenCC evidence URLs. `checked_at`,
+`retrieved_at`, ETag, and Last-Modified are null. If there
+was no earlier completed attempt, `attempted_at` is also null; if a valid
+failure-only state predated the in-flight leader, its completed `attempted_at`
+is preserved byte-for-byte. The leader's unfinished attempt changes no durable
+timestamp. The follower performs exactly zero HEAD/GET requests and no state
+write; a concurrent fixture log therefore contains only the leader's one GET.
 
 GenCC evidence URLs are appended after the existing NCBI Gene, UniProt,
 Ensembl, and OMIM evidence in this exact order when the GenCC outcome is
@@ -756,13 +896,18 @@ to design review rather than deleting an opportunistic unrelated file.
   (including the authoritative `GENCC:100007` Animal Model Only pair), order,
   version/duplicate rules, public `u32` version exact maximum and maximum-plus-
   one, PMID zero/leading-zero/`u64` maximum/overflow behavior, 100/101 assertion
-  and 128/129 unique-PMID boundaries, and identity rules. ODC1 returns all three
-  separate Strong/autosomal-dominant assertions and submitters.
+  and 128/129 unique-PMID boundaries, exact date-only/19-byte-space/RFC-3339
+  grammars and UTC-date projection, Unicode trim-without-normalization rules,
+  and identity rules. ODC1 returns all three separate
+  Strong/autosomal-dominant assertions and submitters.
 - Adversarial tests cover every first-over-bound value; header/schema/legacy,
   quote/UTF-8, content type/archive/compression, validator/status, CURIE/date/
-  PMID/classification, duplicate, URL, cache path/link, redirect, leak, and
-  timeout failures. Bad optional report/criteria URLs become null; structural or
-  required-field failures invalidate the generation.
+  PMID/classification, duplicate, exact URL spelling, raw UTF-8 byte versus
+  scalar bounds, Unicode whitespace/normalization, the exact Cc control
+  predicate in included and excluded fields, cache path/link, redirect, leak,
+  and timeout failures. Bad optional report/criteria URLs become null only after
+  their common raw-field/control validation passes; structural or required-field
+  failures invalidate the generation.
 - An injected-clock HTTP fixture proves initial download, fresh reuse, exact
   seven-day edges, both conditional headers, zero-body `304`, Content-Length
   zero/one, transfer/content encoding, absent/equal/mismatched validators and
@@ -785,7 +930,15 @@ to design review rather than deleting an opportunistic unrelated file.
   timeout with and without a generation, exact operation/message/timestamp
   preservation, per-gene eight-second batch deadlines for ten concurrent items,
   no shared batch deadline, immutable concurrent reads, private permissions,
-  and no live work or temp files after success/timeout/cancellation. Crash
+  and no live work or temp files after success/timeout/cancellation. Barrier
+  cases start followers only after the elected leader has entered HTTP and
+  released `.store.lock`; with an old generation they prove a late lease and
+  stale `refresh_deferred`, while without a generation they prove exact
+  unavailable/unknown/`refresh_deferred`, unchanged/null state fields, zero
+  follower GETs, and one total leader GET. Default and override subprocess
+  cases prove the invariant out-of-root bootstrap anchor path and inode/file ID
+  across missing-to-existing and selected-root delete/recreate, and explicitly
+  bound the guarantee to an intact anchor directory. Crash
   injection before and after each file/directory fsync, generation rename,
   state rename, and cleanup recovers only a complete old or new generation and
   proves the exact current/next/restart matrix—including root-fsync failure
@@ -846,6 +999,15 @@ the implementation base.
   consistently makes the namespace-visible state authoritative immediately
   after rename, keeps explicit sync's durability failure nonzero, and gives
   exact current/next/restart public-status rows for replacement `200`, `304`,
-  and failed-attempt updates with and without old data. Pending fresh
-  independent design re-review.
+  and failed-attempt updates with and without old data.
+- The next independent design review rejected the existence-dependent
+  bootstrap anchor, conflated refresh leadership with store serialization,
+  mislabeled a no-generation lock follower as `initial_download`, and left
+  CSV Unicode/byte normalization underspecified. This revision fixes the
+  bootstrap anchor outside the selected root and explicitly narrows its threat
+  boundary, separates `.refresh.lock` from `.store.lock` with one acquisition
+  order and late-lease tests, defines the exact no-generation
+  `refresh_deferred` projection and zero-GET/timestamp behavior, and pins the
+  timestamp, UTF-8-byte, control, Unicode-trim, URL-preservation, and duplicate
+  rules. Pending re-review by the same independent reviewer.
 - Code review: pending.
