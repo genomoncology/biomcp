@@ -94,5 +94,14 @@ root; they are not one file per distinct cache key.
   request `CacheMode::NoStore`, and bounded internal and public error context.
 - Code review: the first review rejected compaction that retained the legacy
   migration tests but dropped their decisive migrated-sentinel absence checks.
-  Both assertions are restored at the exact source-line baseline; focused
-  remediation review is pending.
+  Both assertions are restored at the exact source-line baseline. Independent
+  remediation review accepted the immutable repaired commit and found no new
+  ticket-specific issue.
+
+## Final integration evidence
+
+After rebasing onto `6ed5b39b`, the final integration head passed `make lint`,
+`make test`, and `make spec`. The Python contract portion of `make test`
+reported 910 passed and 3 skipped; strict documentation built successfully.
+The complete routine specification corpus and its static/parallel-isolation
+checks passed. No live-provider verification was part of these routine gates.
