@@ -168,4 +168,10 @@ not a dependency and neither ticket may absorb or sequence the other's work.
 The first draft did not specify how an exact hit outside the requested first
 page could be observed, how filtering/deduplication interacted with paging, or
 how production CLI and MCP surfaces proved the same first command. This
-revision freezes those contracts and awaits independent design review.
+revision freezes those contracts.
+
+Independent design re-review accepted the immutable ticket at `13fd8a3f`. The
+reviewer confirmed the bounded complete-set acquisition and overflow fallback,
+stable ranking/deduplication/pagination rules, production CLI/raw-MCP/typed-MCP
+proofs, hostile-input handling, unchanged public contracts, exact source and
+package ceilings, and ticket 1149's explicit non-dependency.
