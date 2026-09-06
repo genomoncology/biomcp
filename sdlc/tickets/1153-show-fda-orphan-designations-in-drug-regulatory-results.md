@@ -235,3 +235,11 @@ Ticket 1151 is command discovery only and is not a dependency: this ticket
 neither consumes nor changes `_meta.next_commands`. This work does not add a
 requestable section, change region parsing/`all`, alter Drugs@FDA/label
 semantics, offer clinical advice, or add non-FDA orphan programs.
+
+## Review
+
+Accepted after independent design review. The reviewer confirmed exact
+anchored-alias matching, completion-order-independent duplicate handling, the
+bounded uncached form-POST health probe, explicit field/envelope nullability,
+the provider and surface contracts, package-neutral file plan, and removal of
+the unsupported 1151 dependency.
