@@ -495,3 +495,10 @@ selected reference IDs fail closed, makes normalized-empty markers ineligible
 before bounded passage slicing, and defines the twenty-two-second absolute
 response deadline plus the single-permit late-settling `spawn_blocking`
 exception and its deterministic proof. A fresh design re-review is pending.
+
+The same independent reviewer accepted the remediation at `f36ac020`. It
+confirmed fail-closed same-precedence identifier and duplicate-reference-ID
+handling, empty-marker eligibility and truncation boundaries, and the bounded
+late-settling parser worker under one absolute deadline. Previously accepted
+traversal, public outcomes, 1144 compatibility, surface coverage, ownership,
+and ratchets remain unchanged.
