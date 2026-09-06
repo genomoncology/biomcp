@@ -325,7 +325,10 @@ fn loop_suggestions(
     let mut suggestions = Vec::new();
     if !previous.pmids.is_empty() {
         suggestions.push(ArticleSuggestion {
-            command: format!("biomcp article batch {}", previous.pmids.join(" ")),
+            command: format!(
+                "biomcp batch article {} --mode compact",
+                previous.pmids.join(",")
+            ),
             reason: "Use the prior search's article set instead of reformulating the keyword."
                 .to_string(),
             sections: Vec::new(),

@@ -521,7 +521,7 @@ case "$scenario" in
           and (has("abstract") or has("abstract_snippet") or has("full_text") or has("annotations") or has("provenance") or has("ranking") | not))),
         followups: {
           parseable: $followups_parseable,
-          article_batch: (any($batch._meta.next_commands[]; startswith("biomcp article batch "))),
+          article_batch: (any($batch._meta.next_commands[]; startswith("biomcp batch article ") and endswith(" --mode compact"))),
           article_detail: (any($batch._meta.next_commands[]; startswith("biomcp get article ") and (split(" ") | length) == 4)),
           fulltext: (any($batch._meta.next_commands[]; startswith("biomcp get article ") and endswith(" fulltext"))),
           assets: (any($batch._meta.next_commands[]; startswith("biomcp get article ") and endswith(" assets"))),

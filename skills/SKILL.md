@@ -26,9 +26,9 @@ open the matching `biomcp skill <slug>` playbook for the full workflow.
 - Exact gene-plus-protein literature questions: resolve/check identity, then use `biomcp variant articles "MSH2 p.L341P" --limit 5`; an ordinary `search article -k "MSH2 p.L341P"` remains unchanged but may suggest that helper in `_meta.next_commands`.
 - Article-search JSON is compact by default; use `--full` only when abstracts, full provenance, or ranking diagnostics are needed. `--sort date` replaces relevance ranking, so preserve and heed `_meta.warnings[]`.
 - Keyword-only article searches may return `_meta.suggestions[]` objects when the whole keyword exactly matches a gene, drug, or disease label/alias; use the suggested `get gene`, `get drug`, or `get disease` command when structured data may answer before more article paging.
-- For repeated article keyword searches in one task, use JSON plus `--session <token>` with a short non-secret local label. If the next keyword overlaps the previous same-session keyword, `_meta.suggestions[]` can point to prior `article batch`, `discover`, or date narrowing instead of more reformulation.
+- For repeated article keyword searches in one task, use JSON plus `--session <token>` with a short non-secret local label. If the next keyword overlaps the previous same-session keyword, `_meta.suggestions[]` can point to prior `batch article --mode compact`, `discover`, or date narrowing instead of more reformulation.
 - Some first-call JSON responses include `_meta.workflow`, `_meta.workflow_rationale`, and `_meta.workflow_playbook`. Treat `_meta.next_commands` as current-result one-hop follow-ups and open the named playbook for worked examples.
-- After `search article`, default to `biomcp article batch <id1> <id2> ...` instead of repeated `get article` calls. Batch up to 20 shortlisted papers in one call.
+- After `search article`, default to `biomcp batch article <id1,id2,...> --mode compact` instead of repeated `get article` calls. Batch up to 20 shortlisted papers in one call.
 - Use `biomcp batch gene <GENE1,GENE2,...>` when you need the same basic card fields, chromosome, or sectioned output for multiple genes.
 - For diseases with weak ontology-name coverage, run `biomcp discover "<disease>"` first, then pass a resolved `MESH:...`, `OMIM:...`, `ICD10CM:...`, `MONDO:...`, or `DOID:...` identifier to `biomcp get disease`.
 - Multi-hop article follow-up: `biomcp article citations <id> --limit 5` and `biomcp article recommendations <id> --limit 5`
@@ -63,7 +63,7 @@ open the matching `biomcp skill <slug>` playbook for the full workflow.
 - Use helpers when the pivot is obvious: `drug interactions`, `drug trials`, `disease trials`, `variant articles`, `article citations`.
 - Use sectioned diagnostic pivots for gene or disease contexts: `get gene <symbol> diagnostics` and `get disease <name_or_id> diagnostics`. Use `biomcp list diagnostic` for source/filter/section details, and inspect returned IDs with `get diagnostic <id>` rather than inventing accessions or product codes.
 - Use `search article -d "<disease>" --type review --limit 5` when disease phenotypes or drug indications look sparse.
-- Use `article batch` as the default multi-article follow-up after `search article`; it replaces sequential `get article` calls and preserves Semantic Scholar enrichment when available.
+- Use `batch article --mode compact` as the default multi-article follow-up after `search article`; it replaces sequential `get article` calls and preserves Semantic Scholar enrichment when available.
 - Use `batch <entity> <id1,id2,...> --sections <s1,s2,...>` when you need the same card shape for several entities.
 - Use `enrich <GENE1,GENE2,...>` once you have a real gene set and want pathways or GO-style categories.
 
@@ -92,7 +92,7 @@ sequence.
 | You need recruiting or completed trials for a disease, drug, or biomarker | `biomcp search trial -c "<condition>" --limit 5` | Start with condition and intervention filters, then add biomarker or geography only when needed |
 | You need to resolve or annotate a variant identifier | `biomcp get variant "<variant>"` | Normalize the variant first, then add significance or frequency filters |
 | You need a functional-effect prediction for a variant | `biomcp get variant "<variant>" predict` | Use `predict` only after you have a resolvable variant identifier |
-| You need to reproduce a paper-style workflow | Map the paper task to the closest BioMCP entity command, then use `biomcp article batch <pmid1> <pmid2> ...` for shortlisted papers | Map the paper task to the closest BioMCP workflow area before copying commands |
+| You need to reproduce a paper-style workflow | Map the paper task to the closest BioMCP entity command, then use `biomcp batch article <pmid1,pmid2,...> --mode compact` for shortlisted papers | Map the paper task to the closest BioMCP workflow area before copying commands |
 | You need to review whether a workflow run is complete and trustworthy | Check command fidelity, evidence traceability, and reproducibility against the commands already run | Check command fidelity, evidence traceability, and reproducibility before signing off |
 
 ## Anti-patterns
@@ -113,7 +113,7 @@ searches, pass `--json --session <token>` so BioMCP can detect overlap across
 consecutive searches; the token is a local non-secret label, not a user ID. If
 two searches with different keywords return similar or empty results, follow
 the JSON `_meta.suggestions[]` ladder or change strategy entirely: inspect the
-previous result set with `biomcp article batch <id1> <id2> ...`, switch entity
+previous result set with `biomcp batch article <id1,id2,...> --mode compact`, switch entity
 or source, narrow by year, or start with `biomcp discover "<free text>"`.
 
 ### Trial nicknames don't work in trial search
@@ -137,7 +137,7 @@ the key results paper often ranks too low to appear on the first page.
 
 ### Batch syntax is entity-specific
 
-`biomcp article batch <pmid1> <pmid2> ...` uses spaces between PMIDs. `biomcp
+`biomcp batch article <pmid1,pmid2,...> --mode compact` uses commas between PMIDs. `biomcp
 batch gene <gene1,gene2,...>` and `biomcp batch drug <drug1,drug2,...>` use
 comma-separated IDs.
 

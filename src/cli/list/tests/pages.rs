@@ -523,7 +523,7 @@ fn list_trial_and_article_include_missing_flags() {
             .contains("`0` uses the default cap; setting it equal to `--limit` disables capping.")
     );
     assert!(article.contains("Rows count against their primary source after deduplication."));
-    assert!(article.contains("article batch <id> [<id>...]"));
+    assert!(article.contains("batch article <id1,id2,...>"));
     assert!(article.contains("## Query formulation"));
     assert!(article.contains("## JSON Output"));
     assert!(article.contains("`_meta.next_commands`"));
@@ -574,7 +574,9 @@ fn list_trial_and_article_include_missing_flags() {
     assert!(article.contains(
         "Exact entity suggestions include `sections`; loop-breaker suggestions from `--session` omit `sections`."
     ));
-    assert!(article.contains("prior `biomcp article batch ...`, `biomcp discover <topic>`"));
+    assert!(article.contains(
+        "prior `biomcp batch article <comma-IDs> --mode compact`, `biomcp discover <topic>`"
+    ));
     assert!(article.contains("visible dated rows can also add a year-refinement next command"));
 }
 

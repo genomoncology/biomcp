@@ -542,7 +542,7 @@ biomcp --json get article 22663011 --asset-view coverage --asset-limit 25 --asse
 biomcp --json get article <id> assets
 biomcp get article <id> asset <asset-key>
 biomcp get article 22663011 tldr
-biomcp article batch 22663011 24200969
+biomcp batch article 22663011,24200969 --mode compact
 ```
 
 Article detail and batch return every author supplied by the selected source in
@@ -573,7 +573,7 @@ ordinary detail, search, and batch avoid the extra PubMed request.
 
 `S2_API_KEY` is optional. With it, BioMCP sends authenticated Semantic Scholar
 requests at 1 req/sec for `search article`, `get article`, `get article ... tldr`,
-`article batch`, and the explicit `article citations|references|recommendations`
+`batch article`, and the explicit `article citations|references|recommendations`
 helpers. Without it, those same paths use the shared unauthenticated pool at
 1 req/2sec.
 
@@ -753,13 +753,15 @@ message so failed symbols are not mistaken for confident empty evidence.
 
 ## Batch mode
 
-Batch accepts up to 10 IDs per call and each call must use a single entity type.
+Batch accepts up to 20 article IDs in compact mode and up to 10 IDs in article
+detail mode or for any other entity. Each call must use a single entity type.
 Named sections are entity-dependent. Adverse-event batches do not support `--sections`; use individual `get adverse-event` calls for FAERS report sections.
 `--source <ctgov|nci>` is available only for trial batches; trials default to
 `ctgov`, and other entities reject the flag before provider work.
 
 ```bash
-biomcp batch article 22663011,24200969
+biomcp batch article 22663011,24200969 --mode compact
+biomcp batch article 22663011,24200969 --mode detail --sections tldr
 biomcp batch gene BRAF,TP53
 biomcp batch gene BRAF,TP53 --sections pathways,interactions
 biomcp batch trial NCT02576665,NCT03715933 --source nci

@@ -419,6 +419,10 @@ pub(in crate::cli) async fn handle_command(
                 ))
                 .into());
             }
+            crate::cli::system::validate_batch_id_lengths(
+                ids.iter().map(String::as_str),
+                "Article batch",
+            )?;
             let input_refs = ids.iter().map(String::as_str).collect::<Vec<_>>();
             let futures = ids
                 .iter()

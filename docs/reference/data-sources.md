@@ -131,7 +131,7 @@ BioMCP only requires API keys for a subset of sources.
 | Source | Environment variable | Required when |
 |--------|----------------------|---------------|
 | AlphaGenome | `ALPHAGENOME_API_KEY` | Running `get variant <id> predict` |
-| Semantic Scholar | `S2_API_KEY` | Optional authenticated requests for `search author`, `get author`, `search article`, `get article`, `article batch`, TLDR, citation/reference/recommendation helpers, and `get article <id> fulltext --pdf` metadata enrichment |
+| Semantic Scholar | `S2_API_KEY` | Optional authenticated requests for `search author`, `get author`, `search article`, `get article`, `batch article`, TLDR, citation/reference/recommendation helpers, and `get article <id> fulltext --pdf` metadata enrichment |
 | NCI CTS API | `NCI_API_KEY` | Trial operations with `--source nci` |
 | OncoKB | `ONCOKB_TOKEN` | Running `variant oncokb <id>` |
 | DisGeNET | `DISGENET_API_KEY` | Running `get gene <symbol> disgenet` or `get disease <name_or_id> disgenet` |

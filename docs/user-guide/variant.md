@@ -385,7 +385,7 @@ release proof; the matching live probe is diagnostic only. The typed MCP
 
 For an exact gene-plus-protein literature review, run `biomcp skill
 exact-variant-literature`. It checks identity before the default union shortlist,
-compares selected summaries with `article batch`, requests full text and assets
+compares selected summaries with `batch article --mode compact`, requests full text and assets
 only for chosen papers, and expands citations or references only when needed.
 
 For several variants, pass a JSON array of 1-10 structured identities from a file

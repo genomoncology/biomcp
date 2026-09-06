@@ -6,7 +6,7 @@ Use this when the question names a gene and variant class, but the syndrome or d
 biomcp get gene IPO8
 biomcp search article -g IPO8 -k "biallelic loss-of-function Loeys-Dietz Shprintzen-Goldberg thoracic aortic aneurysm" --limit 5
 biomcp get gene IPO8 diseases
-biomcp article batch 36905820 34010605
+biomcp batch article 36905820,34010605 --mode compact
 ```
 
 Interpretation:

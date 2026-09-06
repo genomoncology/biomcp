@@ -186,11 +186,80 @@ where
     Ok(())
 }
 
+async fn assert_raw_article_batch_contract<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    for json in [false, true] {
+        let compatibility = if json {
+            biomcp_mcp_contract_client::call_biomcp_json(
+                client,
+                "biomcp article batch invalid-one invalid-two",
+            )
+            .await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(
+                client,
+                "biomcp article batch invalid-one invalid-two",
+            )
+            .await?
+        };
+        let canonical = if json {
+            biomcp_mcp_contract_client::call_biomcp_json(
+                client,
+                "biomcp batch article invalid-one,invalid-two --mode compact",
+            )
+            .await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(
+                client,
+                "biomcp batch article invalid-one,invalid-two --mode compact",
+            )
+            .await?
+        };
+        // Settled item errors are data over raw MCP, not tool-call errors.
+        assert_eq!(compatibility.is_error, Some(false));
+        assert_eq!(canonical.is_error, Some(false));
+        assert_eq!(canonical.content, compatibility.content);
+        assert_eq!(
+            canonical.structured_content,
+            compatibility.structured_content
+        );
+        let text = biomcp_mcp_contract_client::first_text(&canonical.content);
+        assert!(text.contains(if json {
+            "\"failed\": 2"
+        } else {
+            "Total: 2; succeeded: 0; failed: 2."
+        }));
+    }
+
+    for command in [
+        "biomcp batch article 1 --mode compact --sections tldr",
+        "biomcp batch article 1 --mode compact --offset 1",
+        "biomcp batch gene BRAF --mode detail",
+    ] {
+        let result = biomcp_mcp_contract_client::call_biomcp(client, command).await?;
+        assert_eq!(result.is_error, Some(true), "command={command}");
+    }
+    Ok(())
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn raw_mcp_global_flags_are_safe_over_stdio() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness.spawn_stdio_client(&[]).await?;
     assert_raw_mcp_global_flags_follow_the_parsed_command(&client).await?;
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_article_batch_contract_is_safe_over_stdio() -> anyhow::Result<()> {
+    let harness = harness();
+    let client = harness.spawn_stdio_client(&[]).await?;
+    assert_raw_article_batch_contract(&client).await?;
     client.cancel().await?;
     Ok(())
 }
@@ -207,6 +276,21 @@ async fn raw_mcp_global_flags_are_safe_over_http() -> anyhow::Result<()> {
     }
     .await;
 
+    child.kill().await.ok();
+    result
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_article_batch_contract_is_safe_over_http() -> anyhow::Result<()> {
+    let harness = harness();
+    let (mut child, base_url) = harness.spawn_http_server(&[]).await?;
+    let result = async {
+        let client = harness.http_client(format!("{base_url}/mcp")).await?;
+        assert_raw_article_batch_contract(&client).await?;
+        client.cancel().await?;
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
     child.kill().await.ok();
     result
 }

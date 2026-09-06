@@ -119,14 +119,23 @@ pub struct ListArgs {
 pub struct BatchArgs {
     /// Entity type (gene, variant, article, trial, drug, disease, pgx, pathway, protein, adverse-event)
     pub entity: String,
-    /// Comma-separated IDs (max 10)
+    /// Comma-separated IDs (article compact max 20; otherwise max 10)
     pub ids: String,
+    /// Article rendering mode (defaults to detail; article only)
+    #[arg(long, value_enum)]
+    pub mode: Option<ArticleBatchMode>,
     /// Optional comma-separated sections (not supported for adverse-event batches)
     #[arg(long)]
     pub sections: Option<String>,
     /// Trial source when entity=trial (ctgov or nci)
     #[arg(long)]
     pub source: Option<String>,
+}
+
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ArticleBatchMode {
+    Compact,
+    Detail,
 }
 
 #[derive(Args, Debug)]
@@ -162,7 +171,9 @@ pub struct VersionArgs {
 
 mod batch;
 mod dispatch;
-pub(crate) use self::batch::settle_batch;
+pub(crate) use self::batch::{
+    settle_batch, validate_batch_args, validate_batch_id_lengths, validate_batch_ids,
+};
 pub(crate) use self::dispatch::{
     handle_batch, handle_cvx, handle_ddinter, handle_ema, handle_enrich, handle_gtr,
     handle_uninstall, handle_version, handle_who, handle_who_ivd, version_identity_json,

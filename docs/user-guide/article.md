@@ -111,7 +111,7 @@ current keyword with the previous successful article keyword search for the
 same local token. The token is not a secret; use a short non-identifying label
 such as `lit-review-1`. When post-stopword term overlap is at least 60%,
 BioMCP can add JSON-only `_meta.suggestions[]` fallbacks after exact entity
-suggestions: prior `article batch`, `discover`, and a date-narrowed retry when
+suggestions: prior `batch article --mode compact`, `discover`, and a date-narrowed retry when
 available. Session baselines expire after 10 minutes. Markdown output is
 unchanged. The local record stores the token, keyword and normalized terms,
 bounded PMID set, and update time under the resolved BioMCP cache root. Opening
@@ -395,21 +395,23 @@ Scholar only after a successful response.
 
 ```bash
 biomcp article entities 22663011   # extract annotated entities via PubTator
-biomcp article batch 22663011 24200969          # compact multi-article summary cards
+biomcp batch article 22663011,24200969 --mode compact  # compact summary cards
+biomcp batch article 22663011,24200969                 # detail records (default)
 biomcp article citations 22663011 --limit 3         # Semantic Scholar citation graph
 biomcp article references 22663011 --limit 3        # Semantic Scholar reference graph
 biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related papers
 ```
 
-`article batch` works without `S2_API_KEY` and returns a bare JSON array in
-request order. Each compact card echoes the original `requested_id`, keeps its
+`batch article --mode compact` works without `S2_API_KEY` and returns the
+standard `{summary, items}` batch envelope in request order. Each compact card
+echoes the original `requested_id`, keeps its
 resolved PMID/PMCID/DOI fields, and carries the same full `authors`, returned
 `author_count`, `author_completeness`, and `author_source` contract as detail.
 Markdown cards show the source-ordered names and an explicit status, including
 when no author list was supplied. When Semantic Scholar data is available, the
 batch helper can add optional TLDR and citation metadata without changing
 authorship. `S2_API_KEY` makes that enrichment authenticated and more reliable.
-Use `article batch` as the default follow-up after `search article` when you
+Use `batch article --mode compact` as the default follow-up after `search article` when you
 already have several shortlisted PMIDs or DOIs.
 
 The Semantic Scholar graph helpers also work without `S2_API_KEY`, but they use
@@ -433,7 +435,7 @@ This avoids repeated large payload downloads during iterative workflows.
 biomcp --json get article 22663011
 biomcp --json search article -g BRAF --limit 3
 biomcp --json search article -k "Oncotype DX review" --session lit-review-1 --limit 5
-biomcp --json article batch 22663011 24200969
+biomcp --json batch article 22663011,24200969 --mode compact
 ```
 
 JSON article responses include `_meta.next_commands` and `_meta.section_sources`,
@@ -453,9 +455,11 @@ score. Keyword-only article searches with an exact gene, drug, or disease
 label/alias match may include `_meta.suggestions[]` objects with `command`,
 `reason`, and `sections`; same-session keyword loop-breaker suggestions include
 `command` and `reason` and omit `sections`. `_meta.next_commands` remains the
-executable string command list. JSON `article batch` responses are a bare array of compact cards
-so callers can map results back to the original input order; this compatibility
-shape is intentionally not wrapped in an object.
+executable string command list. JSON `batch article` responses use the standard
+batch envelope so callers can map settled results back to the original input order.
+The compatibility spelling `biomcp article batch <id1> <id2> ...` remains
+available with its existing compact-card output; prefer the canonical command
+in new scripts.
 
 ## Practical tips
 

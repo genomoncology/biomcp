@@ -465,6 +465,82 @@ PMID: 22663012
 Total: 2; succeeded: 2; failed: 0.'
 ```
 
+## Canonical Compact Batch Preserves Compatibility Bytes
+
+<!-- mustmatch-lint: skip -->
+
+The canonical compact spelling preserves the complete compatibility response,
+including ordering, nested headings, authorship, JSON whitespace, and status.
+
+```bash
+tmp="$(mktemp -d)"
+compare_compact_routes() {
+  comma_ids="$1"
+  shift
+  for format in markdown json; do
+    json_args=()
+    test "$format" = json && json_args=(--json)
+    set +e
+    ../../tools/biomcp-ci "${json_args[@]}" article batch "$@" >"$tmp/compat.out" 2>"$tmp/compat.err"
+    compat_status="$?"
+    ../../tools/biomcp-ci "${json_args[@]}" batch article "$comma_ids" --mode compact >"$tmp/canonical.out" 2>"$tmp/canonical.err"
+    canonical_status="$?"
+    set -e
+    test "$canonical_status" = "$compat_status"
+    cmp "$tmp/canonical.out" "$tmp/compat.out"
+    cmp "$tmp/canonical.err" "$tmp/compat.err"
+  done
+}
+compare_compact_routes '22663011,22663012' 22663011 22663012
+compare_compact_routes '22663011,22663011' 22663011 22663011
+compare_compact_routes '22663011,not-an-article-id' 22663011 not-an-article-id
+compare_compact_routes 'not-an-article-id,also-invalid' not-an-article-id also-invalid
+rm -r "$tmp"
+```
+
+## Canonical Detail Batch Defaults to Ordinary Article Detail
+
+Omitting `--mode` is byte-equivalent to explicit detail. Each success retains
+the ordinary article projection and provenance rather than a compact card.
+
+```bash
+default_detail="$(../../tools/biomcp-ci --json batch article 22663011,22663012)"
+explicit_detail="$(../../tools/biomcp-ci --json batch article 22663011,22663012 --mode detail)"
+test "$default_detail" = "$explicit_detail"
+../../tools/biomcp-ci --json batch article 22663011,22663012 | mustmatch like '{
+  "summary": {"total": 2, "succeeded": 2, "failed": 0},
+  "items": [
+    {"input": "22663011", "status": "ok", "result": {
+      "title": "Europe full text winner",
+      "_meta": {"evidence_urls": [...], "section_sources": {...}}
+    }},
+    {"input": "22663012", "status": "ok", "result": {
+      "title": "PMC HTML fallback winner",
+      "_meta": {"evidence_urls": [...], "section_sources": {...}}
+    }}
+  ]
+}'
+```
+
+## Article Batch Preflight Starts No Provider Work
+
+<!-- mustmatch-lint: skip -->
+
+Mode, section, count, length, and unsupported-flag failures are rejected before
+the first provider request.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+before="$(wc -l <"$request_log")"
+! ../../tools/biomcp-ci batch article 1 --mode compact --sections '' >/dev/null 2>&1
+! ../../tools/biomcp-ci batch gene BRAF --mode detail >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article "$(printf 'x%.0s' $(seq 1 513))" >/dev/null 2>&1
+! ../../tools/biomcp-ci batch article 1 --offset 1 >/dev/null 2>&1
+after="$(wc -l <"$request_log")"
+test "$after" = "$before"
+```
+
 ## MYD88 Protein-Alias Article Precision
 
 <!-- mustmatch-lint: skip -->

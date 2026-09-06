@@ -55,7 +55,7 @@ When an agent is iterating on one literature task, pass a short local
 `--session` label and request JSON. If the next keyword search overlaps the
 previous same-session keyword by at least 60% after BioMCP removes common
 search filler words, JSON `_meta.suggestions[]` can point to a better fallback:
-inspect the prior hits with `article batch`, map the topic with `discover`, or
+inspect the prior hits with `batch article --mode compact`, map the topic with `discover`, or
 narrow by publication year when the current page supports that retry.
 
 ```bash
@@ -226,10 +226,10 @@ biomcp get article 22663011 fulltext
 ## Fetch several shortlisted papers at once
 
 ```bash
-biomcp article batch 22663011 24200969 39073865
+biomcp batch article 22663011,24200969,39073865 --mode compact
 ```
 
-Use `article batch` after search when you already know the candidate PMIDs or
+Use `batch article --mode compact` after search when you already know the candidate PMIDs or
 DOIs and want compact title/journal/year/entity cards before opening one paper
 in full detail. The helper preserves input order and still works when
 `S2_API_KEY` is unset.

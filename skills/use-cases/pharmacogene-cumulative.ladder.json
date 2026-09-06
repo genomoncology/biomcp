@@ -20,7 +20,7 @@
     },
     {
       "step": 4,
-      "command": "biomcp article batch 17048007 19794411 19958090",
+      "command": "biomcp batch article 17048007,19794411,19958090 --mode compact",
       "what_it_gives": "Batch article details for key supporting papers."
     }
   ]

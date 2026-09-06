@@ -293,7 +293,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "../docs/" not in how_to_table
     assert ".md)" not in how_to_table
     assert (
-        "After `search article`, default to `biomcp article batch <id1> <id2> ...` instead of repeated `get article` calls."
+        "After `search article`, default to `biomcp batch article <id1,id2,...> --mode compact` instead of repeated `get article` calls."
         in skill_file
     )
     assert (
@@ -314,7 +314,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "DDInter is the local drug-interaction bundle" in skill_file
     assert "_meta.workflow" in skill_file
     assert "_meta.workflow_playbook" in skill_file
-    assert "`biomcp article batch <pmid1> <pmid2> ...` uses spaces between PMIDs." in skill_file
+    assert "`biomcp batch article <pmid1,pmid2,...> --mode compact` uses commas between PMIDs." in skill_file
     assert "Only add more commands if a needed claim is still unsupported." in skill_file
     assert "If one command already answers the question, stop searching and answer." in skill_file
     assert "biomcp get drug nivolumab regulatory" in skill_file
@@ -339,7 +339,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     )
     assert "biomcp get gene <symbol>" in anti_patterns
 
-    assert "Use `article batch` as the default follow-up after `search article`" in article_guide
+    assert "Use `batch article --mode compact` as the default follow-up after `search article`" in article_guide
     assert "`--type` on `--source all` uses Europe PMC + PubMed" in article_guide
     assert "PMC-only note" in article_guide
     assert "LitSense2-derived semantic signal" in article_guide
@@ -359,7 +359,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
         in article_guide
     )
     assert (
-        "Use `article batch` after search when you already know the candidate PMIDs or"
+        "Use `batch article --mode compact` after search when you already know the candidate PMIDs or"
         in find_articles
     )
     assert "`--type` on the default `--source all` route uses Europe PMC + PubMed" in find_articles
@@ -396,7 +396,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp get gene IPO8" in orientation_use_case
     assert 'biomcp search article -g IPO8 -k "biallelic loss-of-function Loeys-Dietz Shprintzen-Goldberg thoracic aortic aneurysm" --limit 5' in orientation_use_case
     assert "biomcp get gene IPO8 diseases" in orientation_use_case
-    assert "biomcp article batch 36905820 34010605" in orientation_use_case
+    assert "biomcp batch article 36905820,34010605 --mode compact" in orientation_use_case
     assert "# Pattern: Article follow-up via citations and recommendations" in article_follow_up
     assert "biomcp article citations 22663011 --limit 5" in article_follow_up
 

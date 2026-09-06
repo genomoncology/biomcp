@@ -81,7 +81,7 @@ Loop-breaker guidance appears only in JSON `_meta.suggestions[]`; default
 markdown output is unchanged. Exact entity suggestions keep `sections`.
 Loop-breaker suggestions omit `sections` and are ordered by fallback strategy:
 
-1. `biomcp article batch ...` for the previous search's top PMIDs, when any
+1. `biomcp batch article <comma-IDs> --mode compact` for the previous search's top PMIDs, when any
    were available.
 2. `biomcp discover "<topic>"` to map the current topic to structured
    biomedical entities.
