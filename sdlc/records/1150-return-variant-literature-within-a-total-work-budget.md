@@ -71,6 +71,25 @@ prepared `target/release/biomcp` and were not run as passing claims. Full
 - Design review: accepted before implementation.
 - Code review: pending independent review of this commit.
 
+## Prerequisite integration evidence
+
+Rebased onto `ecaeb921` after ticket 1173 landed. The cache integration keeps
+1173's injected manager factory, get/write observers, and stable fail-closed
+post-write metadata context. Deadline cancellation covers cache work before
+CACache publishes an entry; after publication, metadata hardening completes
+inside the existing safe-return boundary before the operation returns. The
+unused synchronous ClinGen LDH constructor was removed rather than adding a
+new dead-code exception, while variant-literature uses the required
+deadline-aware constructor.
+
+Focused integration validation passed all 24 cache-manager tests, both cached
+client post-write and bypass tests, all 47 variant-search tests, the task-local
+deadline isolation test, the real downstream HTTP provider-concurrency test,
+and the raw-MCP disposition seam test. Formatting, diff whitespace, the
+quality/source-size ratchets, and the exact 1,300-file package inventory pass.
+The source-size inventory now records the exact post-integration counts rather
+than the stale pre-remediation counts. Full repository gates were not run.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every
