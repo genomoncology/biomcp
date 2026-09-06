@@ -54,8 +54,8 @@ MONARCH_CML_PHENOTYPES_QUERY = {
     "object_category": ["biolink:PhenotypicFeature"],
     "limit": ["80"],
 }
-PHENOTYPE_PHRASE_PATH = "/monarch/v3/api/semsim/search/HP:0001250,HP:0033349,HP:0002069,HP:0002373,HP:0002199,HP:0007359,HP:0007207,HP:0033259,HP:0002123,HP:0010819/Human%20Diseases"
 PHENOTYPE_IDS_PATH = "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases"
+PHENOTYPE_MACRO_PATH = "/monarch/v3/api/semsim/search/HP:0000256/Human%20Diseases"
 PHENOTYPE_FIXED_WINDOW = [
     {"subject": {"id": "MONDO:0010450", "name": "intellectual disability, X-linked 89"}, "score": 13.302},
     {"subject": {"id": "MONDO:0007367", "name": "febrile seizures, familial, 1"}, "score": 12.0},
@@ -102,7 +102,34 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, {"status": "ok"})
             return
         if parsed.path == "/hpo/search" and query == {"q": ["seizure"]}:
-            send_bytes(self, 200, source_bytes("hpo/search_seizure_20260811.json"))
+            send_json(self, 200, {"terms": [{"id": "HP:0001250", "name": "Seizure"}]})
+            return
+        if parsed.path == "/hpo/search" and query == {"q": ["developmental delay"]}:
+            send_json(self, 200, {"terms": [{"id": "HP:0001263", "name": "Global developmental delay"}]})
+            return
+        if parsed.path == "/hpo/search" and query == {"q": ["macrocephaly"]}:
+            send_json(self, 200, {"terms": [{"id": "HP:0000256", "name": "Macrocephaly"}]})
+            return
+        if parsed.path == "/hpo/search" and query == {"q": ["phrase-with-no-hpo-row"]}:
+            send_json(self, 200, {"terms": []})
+            return
+        if parsed.path == "/hpo/terms/HP:0001250":
+            send_json(self, 200, {"id": "HP:0001250", "name": "Seizure"})
+            return
+        if parsed.path == "/hpo/terms/HP:0001263":
+            send_json(self, 200, {"id": "HP:0001263", "name": "Global developmental delay"})
+            return
+        if parsed.path == "/hpo/terms/HP:0000201":
+            send_json(self, 200, {"id": "HP:0000201", "name": "Indeterminate fixture phenotype"})
+            return
+        if parsed.path == "/hpo/terms/HP:0000202":
+            send_json(self, 200, {"id": "HP:0000202", "name": "Unavailable fixture phenotype"})
+            return
+        if parsed.path == "/hpo/terms/HP:0000203":
+            send_json(self, 200, {"id": "HP:9999999", "name": "Mismatched fixture phenotype"})
+            return
+        if parsed.path == "/hpo/terms/HP:0000204":
+            send_json(self, 200, {"id": "HP:0000204", "name": "  "})
             return
         if parsed.path == "/ols4/api/search":
             ols_query = query.get("q", [""])[0]
@@ -115,12 +142,48 @@ class Handler(BaseHTTPRequestHandler):
             if ols_query in OLS_PAYLOADS and query == expected:
                 send_bytes(self, 200, source_bytes(OLS_PAYLOADS[ols_query]))
                 return
-        if parsed.path == PHENOTYPE_PHRASE_PATH and query == {"limit": ["50"]}:
-            send_bytes(self, 200, source_bytes("monarch/semsim_phrase_seizure_developmental_delay_20260811.json"))
-            return
         if parsed.path == PHENOTYPE_IDS_PATH and query == {"limit": ["50"]}:
             send_json(self, 200, PHENOTYPE_FIXED_WINDOW)
             return
+        if parsed.path == PHENOTYPE_MACRO_PATH and query == {"limit": ["50"]}:
+            send_json(self, 200, [
+                {"subject":{"id":"MONDO:0019387","name":"isolated microcephaly"},"score":19.0},
+                {"subject":{"id":"MONDO:0001234","name":"macrocephaly syndrome"},"score":18.0}
+            ])
+            return
+        if parsed.path in {
+            "/monarch/v3/api/semsim/search/HP:0000201/Human%20Diseases",
+            "/monarch/v3/api/semsim/search/HP:0000202/Human%20Diseases",
+        } and query == {"limit": ["50"]}:
+            send_json(self, 200, [{"subject":{"id":"MONDO:0000200","name":"support state fixture disease"},"score":7.0}])
+            return
+        if parsed.path == "/monarch/v3/api/association":
+            required = {
+                "category": ["biolink:DiseaseToPhenotypicFeatureAssociation"],
+                "predicate": ["biolink:has_phenotype"],
+                "object_category": ["biolink:PhenotypicFeature"],
+                "direct": ["true"], "limit": ["500"], "offset": ["0"],
+            }
+            if all(query.get(key) == value for key, value in required.items()):
+                subjects = query.get("subject", [])
+                objects = query.get("object", [])
+                if objects == ["HP:0000201"]:
+                    send_json(self, 200, {"items": []})
+                    return
+                if objects == ["HP:0000202"]:
+                    send_json(self, 502, {"error": "fixed association outage"})
+                    return
+                rows = []
+                for subject in subjects:
+                    for obj in objects:
+                        if subject != "MONDO:0019387":
+                            rows.append({
+                                "subject": subject, "object": obj,
+                                "category": "biolink:DiseaseToPhenotypicFeatureAssociation",
+                                "predicate": "biolink:has_phenotype", "negated": False,
+                            })
+                send_json(self, 200, {"total": len(rows), "items": rows})
+                return
         if parsed.path == "/mydisease/query":
             disease_query = query.get("q", [""])[0]
             if "Marfan syndrome" in disease_query:

@@ -265,9 +265,12 @@ fn split_phenotype_queries_preserves_single_phrase_and_splits_commas() {
 
 #[tokio::test]
 async fn resolve_phenotype_query_terms_empty_input_mentions_hpo_ids_and_symptom_phrases() {
-    let err = resolve_phenotype_query_terms("   ")
-        .await
-        .expect_err("empty phenotype query should fail");
+    let err = resolve_phenotype_query_terms(
+        "   ",
+        tokio::time::Instant::now() + std::time::Duration::from_secs(1),
+    )
+    .await
+    .expect_err("empty phenotype query should fail");
 
     match err {
         BioMcpError::InvalidArgument(message) => {
@@ -277,4 +280,93 @@ async fn resolve_phenotype_query_terms_empty_input_mentions_hpo_ids_and_symptom_
         }
         other => panic!("expected InvalidArgument, got: {other}"),
     }
+}
+
+#[test]
+fn phenotype_provider_work_has_fixed_concurrency_operation_and_attempt_bounds() {
+    assert_eq!(MAX_PHENOTYPE_IN_FLIGHT, 4);
+    assert_eq!(MAX_PHENOTYPE_LOGICAL_OPERATIONS, 10 + 1 + 1);
+    assert_eq!(
+        MAX_PHENOTYPE_PHYSICAL_ATTEMPTS,
+        MAX_PHENOTYPE_LOGICAL_OPERATIONS * 4
+    );
+    assert_eq!(
+        PHENOTYPE_RESOLUTION_TIMEOUT,
+        std::time::Duration::from_secs(8)
+    );
+    assert_eq!(PHENOTYPE_SUPPORT_TIMEOUT, std::time::Duration::from_secs(8));
+    assert_eq!(
+        PHENOTYPE_COMMAND_TIMEOUT,
+        std::time::Duration::from_secs(30)
+    );
+}
+
+#[test]
+fn unavailable_support_is_applied_pairwise_without_changing_similarity_order() {
+    let mut results = vec![PhenotypeSearchResult {
+        disease_id: "MONDO:0000001".into(),
+        disease_name: "candidate".into(),
+        score: 9.0,
+        direct_support: Vec::new(),
+    }];
+    apply_direct_support(
+        &mut results,
+        &["HP:0000256".into(), "HP:0001250".into()],
+        None,
+    );
+    assert_eq!(results[0].score, 9.0);
+    assert_eq!(
+        results[0]
+            .direct_support
+            .iter()
+            .map(|row| row.status)
+            .collect::<Vec<_>>(),
+        vec![
+            PhenotypeDirectSupportStatus::Unavailable,
+            PhenotypeDirectSupportStatus::Unavailable,
+        ]
+    );
+}
+
+#[test]
+fn phenotype_phrase_rows_flatten_in_phrase_and_provider_order_without_truncating_the_eleventh() {
+    let row = |id: usize| HpoResolvedTerm {
+        id: format!("HP:{id:07}"),
+        label: format!("term {id}"),
+    };
+    let over = flatten_resolved_phrase_rows(vec![
+        ("first phrase".into(), (1..=6).map(row).collect()),
+        ("second phrase".into(), (7..=11).map(row).collect()),
+    ])
+    .expect_err("eleven aggregate unique IDs must be rejected, not truncated");
+    assert!(
+        over.to_string()
+            .contains("resolved more than 10 unique HPO terms")
+    );
+
+    let ten = flatten_resolved_phrase_rows(vec![
+        ("first phrase".into(), (1..=5).map(row).collect()),
+        (
+            "second phrase".into(),
+            std::iter::once(row(5)).chain((6..=10).map(row)).collect(),
+        ),
+    ])
+    .expect("ten unique IDs with a cross-phrase duplicate should succeed");
+    assert_eq!(ten.len(), 10);
+    assert_eq!(ten[4].raw, "first phrase");
+    assert_eq!(
+        ten.iter().map(|term| term.id.as_str()).collect::<Vec<_>>(),
+        vec![
+            "HP:0000001",
+            "HP:0000002",
+            "HP:0000003",
+            "HP:0000004",
+            "HP:0000005",
+            "HP:0000006",
+            "HP:0000007",
+            "HP:0000008",
+            "HP:0000009",
+            "HP:0000010",
+        ]
+    );
 }

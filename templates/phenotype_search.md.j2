@@ -1,18 +1,27 @@
 # Phenotype Search: {{ query }}
 
+Resolved HPO terms:
+{% for term in resolved_query -%}
+- `{{ term.id }}` — {{ term.label }} (from `{{ term.raw }}`)
+{% endfor %}
+
 {% if count == 0 -%}
 No phenotype similarity matches found.
 {% else -%}
-Found {{ count }} candidate disease{% if count != 1 %}s{% endif %}
+Found {{ count }} semantic-similarity candidate disease{% if count != 1 %}s{% endif %}. Similarity is not proof of a direct phenotype association.
 
-| Disease ID | Disease Name | Similarity Score |
-|---|---|---|
+| Disease ID | Disease Name | Semantic Similarity Score | Direct Monarch support by HPO term |
+|---|---|---|---|
 {% for row in results -%}
-| {{ row.disease_id }} | {{ row.disease_name }} | {{ row.score | score }} |
+| {{ row.disease_id }} | {{ row.disease_name }} | {{ row.score | score }} | {% for support in row.direct_support %}`{{ support.hpo_id }}`: {{ support.status }}{% if not loop.last %}; {% endif %}{% endfor %} |
 {% endfor -%}
+`not_supported` means no direct Monarch association was found in the complete lookup; it does not prove the disease lacks the phenotype. `indeterminate` means the lookup could not prove absence. `unavailable` means direct-support enrichment failed or exceeded its deadline while similarity results remained available.
 {% if related_block %}
 
 {{ related_block }}
+{% else %}
+
+No disease follow-up is suggested because no returned candidate has direct Monarch support for every resolved HPO term.
 {% endif %}
 {% if pagination_footer %}
 

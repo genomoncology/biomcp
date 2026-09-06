@@ -139,6 +139,10 @@ fn phenotype_search_json_contract_unchanged() {
             disease_id: "MONDO:0100135".to_string(),
             disease_name: "Dravet syndrome".to_string(),
             score: 15.036,
+            direct_support: vec![crate::entities::disease::PhenotypeDirectSupport {
+                hpo_id: "HP:0001250".into(),
+                status: crate::entities::disease::PhenotypeDirectSupportStatus::Supported,
+            }],
         }],
         pagination,
     )

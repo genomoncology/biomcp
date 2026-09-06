@@ -37,6 +37,10 @@ fn phenotype_search_json_next_commands_parse() {
         disease_id: "MONDO:0100135".to_string(),
         disease_name: "Dravet syndrome".to_string(),
         score: 0.98,
+        direct_support: vec![crate::entities::disease::PhenotypeDirectSupport {
+            hpo_id: "HP:0001250".into(),
+            status: crate::entities::disease::PhenotypeDirectSupportStatus::Supported,
+        }],
     }];
     let pagination = crate::cli::PaginationMeta::offset(0, 1, results.len(), Some(1));
     let json = crate::cli::search_json_with_meta(
@@ -50,7 +54,7 @@ fn phenotype_search_json_next_commands_parse() {
     assert_eq!(
         commands,
         vec![
-            "biomcp get disease \"Dravet syndrome\" genes phenotypes".to_string(),
+            "biomcp get disease MONDO:0100135 phenotypes".to_string(),
             "biomcp list phenotype".to_string(),
         ]
     );

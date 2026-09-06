@@ -16,9 +16,10 @@ use crate::entities::trial::{self, TrialSearchFilters, TrialSource};
 use crate::error::BioMcpError;
 use crate::sources::civic::{CivicClient, CivicContext};
 use crate::sources::disgenet::{DisgenetAssociationRecord, DisgenetClient};
-use crate::sources::hpo::HpoClient;
+use crate::sources::hpo::{HpoClient, HpoResolvedTerm, HpoTerm};
 use crate::sources::monarch::{
-    MonarchClient, MonarchGeneAssociation, MonarchModelAssociation, MonarchPhenotypeMatch,
+    MonarchClient, MonarchDirectSupportLookup, MonarchGeneAssociation, MonarchModelAssociation,
+    MonarchPhenotypeMatch,
 };
 use crate::sources::mydisease::{MyDiseaseClient, MyDiseaseHit};
 use crate::sources::nih_reporter::{NihReporterClient, NihReporterFundingSection};
@@ -279,6 +280,29 @@ pub struct PhenotypeSearchResult {
     pub disease_id: String,
     pub disease_name: String,
     pub score: f64,
+    pub direct_support: Vec<PhenotypeDirectSupport>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ResolvedPhenotypeQuery {
+    pub raw: String,
+    pub id: String,
+    pub label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PhenotypeDirectSupport {
+    pub hpo_id: String,
+    pub status: PhenotypeDirectSupportStatus,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PhenotypeDirectSupportStatus {
+    Supported,
+    NotSupported,
+    Indeterminate,
+    Unavailable,
 }
 
 #[derive(Debug, Clone, Default)]

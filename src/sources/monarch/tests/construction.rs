@@ -64,3 +64,32 @@ fn plans_reject_invalid_disease_ids_and_empty_hpo_terms() {
     let err = MonarchClient::phenotype_similarity_search_plan(&[]).unwrap_err();
     assert!(matches!(err, BioMcpError::InvalidArgument(_)));
 }
+
+#[test]
+fn direct_phenotype_support_plan_repeats_slice_and_term_ids_in_order() {
+    let plan = MonarchClient::phenotype_direct_support_plan(
+        &["MONDO:0000002".into(), "MONDO:0000001".into()],
+        &["HP:0000256".into(), "HP:0001250".into()],
+    )
+    .unwrap();
+
+    assert_eq!(plan.path, "v3/api/association");
+    assert_eq!(
+        plan.query,
+        vec![
+            ("subject".into(), "MONDO:0000002".into()),
+            ("subject".into(), "MONDO:0000001".into()),
+            ("object".into(), "HP:0000256".into()),
+            ("object".into(), "HP:0001250".into()),
+            (
+                "category".into(),
+                "biolink:DiseaseToPhenotypicFeatureAssociation".into()
+            ),
+            ("predicate".into(), "biolink:has_phenotype".into()),
+            ("object_category".into(), "biolink:PhenotypicFeature".into()),
+            ("direct".into(), "true".into()),
+            ("limit".into(), "500".into()),
+            ("offset".into(), "0".into()),
+        ]
+    );
+}

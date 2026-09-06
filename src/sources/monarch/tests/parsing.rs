@@ -208,4 +208,72 @@ fn phenotype_decode_failures_remain_typed_errors() {
     )
     .expect_err("invalid JSON must not become an empty phenotype page");
     assert!(matches!(decode, BioMcpError::ApiJson { .. }));
+
+    let plain_json = MonarchClient::decode_json_response::<Vec<MonarchSemsimRow>>(
+        StatusCode::OK,
+        Some(&HeaderValue::from_static("text/plain")),
+        b"[]",
+    )
+    .expect_err("JSON under a non-JSON content type must fail closed");
+    assert!(matches!(plain_json, BioMcpError::WithSourceContext { .. }));
+}
+
+#[test]
+fn direct_support_presence_and_completeness_fail_closed() {
+    let subjects = vec!["MONDO:0000001".to_string(), "MONDO:0000002".to_string()];
+    let objects = vec!["HP:0000256".to_string()];
+    let positive = serde_json::json!({
+        "subject": "MONDO:0000001",
+        "object": "HP:0000256",
+        "category": "biolink:DiseaseToPhenotypicFeatureAssociation",
+        "predicate": "biolink:has_phenotype",
+        "negated": false
+    });
+
+    let missing_total: MonarchDirectSupportResponse =
+        serde_json::from_value(serde_json::json!({"items": [positive.clone()]})).unwrap();
+    let support = MonarchClient::map_direct_support(missing_total, &subjects, &objects).unwrap();
+    assert_eq!(
+        support.status("MONDO:0000001", "HP:0000256"),
+        PhenotypeDirectSupportStatus::Supported
+    );
+    assert_eq!(
+        support.status("MONDO:0000002", "HP:0000256"),
+        PhenotypeDirectSupportStatus::Indeterminate
+    );
+
+    let complete: MonarchDirectSupportResponse =
+        serde_json::from_value(serde_json::json!({"total": 1, "items": [positive]})).unwrap();
+    let support = MonarchClient::map_direct_support(complete, &subjects, &objects).unwrap();
+    assert_eq!(
+        support.status("MONDO:0000002", "HP:0000256"),
+        PhenotypeDirectSupportStatus::NotSupported
+    );
+
+    for value in [
+        serde_json::json!({"total": null, "items": []}),
+        serde_json::json!({"total": "0", "items": []}),
+        serde_json::json!({"total": 0, "items": null}),
+        serde_json::json!({"total": 0, "items": {}}),
+    ] {
+        assert!(serde_json::from_value::<MonarchDirectSupportResponse>(value).is_err());
+    }
+}
+
+#[test]
+fn negated_or_filter_violating_rows_never_establish_support_or_absence() {
+    let subjects = vec!["MONDO:0000001".to_string()];
+    let objects = vec!["HP:0000256".to_string()];
+    let response: MonarchDirectSupportResponse = serde_json::from_value(serde_json::json!({
+        "total": 2,
+        "items": [
+            {"subject":"MONDO:0000001","object":"HP:0000256","category":"biolink:DiseaseToPhenotypicFeatureAssociation","predicate":"biolink:has_phenotype","negated":true},
+            {"subject":"MONDO:outside","object":"HP:0000256","category":"biolink:DiseaseToPhenotypicFeatureAssociation","predicate":"biolink:has_phenotype"}
+        ]
+    })).unwrap();
+    let support = MonarchClient::map_direct_support(response, &subjects, &objects).unwrap();
+    assert_eq!(
+        support.status("MONDO:0000001", "HP:0000256"),
+        PhenotypeDirectSupportStatus::Indeterminate
+    );
 }

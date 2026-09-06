@@ -10,6 +10,7 @@ pub(super) fn validate_search_args(
 
 #[derive(serde::Serialize)]
 struct PhenotypeJsonResponse {
+    resolved_query: Vec<crate::entities::disease::ResolvedPhenotypeQuery>,
     pagination: crate::entities::disease::PhenotypePagination,
     count: usize,
     results: Vec<crate::entities::disease::PhenotypeSearchResult>,
@@ -48,6 +49,7 @@ pub(in crate::cli) async fn handle_search(
     let page =
         crate::entities::disease::search_phenotype_page(&args.terms, args.limit, args.offset)
             .await?;
+    let resolved_query = page.resolved_query;
     let results = page.results;
     let pagination = page.pagination;
     let text = if json {
@@ -64,6 +66,7 @@ pub(in crate::cli) async fn handle_search(
             );
         }
         crate::render::json::to_pretty(&PhenotypeJsonResponse {
+            resolved_query,
             count: results.len(),
             results,
             pagination,
@@ -73,6 +76,7 @@ pub(in crate::cli) async fn handle_search(
         let footer = pagination_footer(&pagination);
         crate::render::markdown::phenotype_search_markdown_with_footer(
             &query_summary,
+            &resolved_query,
             &results,
             &footer,
         )?

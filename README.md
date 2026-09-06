@@ -214,7 +214,7 @@ agents do not synthesize unsupported `get` commands.
 | Entity | Upstream providers used by BioMCP | Example |
 |--------|-----------------------------------|---------|
 | gwas | GWAS Catalog | `biomcp search gwas --trait "type 2 diabetes"` |
-| phenotype | Monarch Initiative (HPO semantic similarity) | `biomcp search phenotype "HP:0001250"` |
+| phenotype | Monarch Initiative (HPO semantic similarity plus direct-support checks) | `biomcp search phenotype "HP:0001250"` |
 
 ## Cross-entity helpers
 

@@ -8,9 +8,12 @@ The routine fixture resolves the symptom phrase through HPO search and then repl
 
 ```bash
 ../../tools/biomcp-ci search phenotype 'seizure, developmental delay' --limit 3 | mustmatch like '# Phenotype Search: seizure, developmental delay
-| Disease ID | Disease Name | Similarity Score |
-MONDO:0007367
-febrile seizures, familial, 1'
+Resolved HPO terms:
+`HP:0001250` — Seizure
+`HP:0001263` — Global developmental delay
+Semantic Similarity Score
+MONDO:0010450
+supported'
 ```
 
 ## Captured HPO-ID Route
@@ -19,18 +22,22 @@ Direct HPO IDs skip phrase resolution and use the same similarity and rendering 
 
 ```bash
 ../../tools/biomcp-ci search phenotype 'HP:0001250 HP:0001263' --limit 3 | mustmatch like '# Phenotype Search: HP:0001250 HP:0001263
-| Disease ID | Disease Name | Similarity Score |
+Resolved HPO terms:
+`HP:0001250` — Seizure
+`HP:0001263` — Global developmental delay
+Semantic Similarity Score
 MONDO:0010450
 intellectual disability, X-linked 89'
 ```
 
 ## Disease Follow-Up Guidance
 
-The captured phrase result teaches the typed disease command for its top match.
+The captured phrase result teaches the typed disease command only because its
+first returned row has exact support for every resolved term.
 
 ```bash
 ../../tools/biomcp-ci search phenotype 'seizure, developmental delay' --limit 3 | mustmatch like 'See also:
-biomcp get disease "febrile seizures, familial, 1" genes phenotypes'
+biomcp get disease MONDO:0010450 phenotypes'
 ```
 
 ## Captured JSON Follow-Up Envelope
@@ -38,14 +45,70 @@ biomcp get disease "febrile seizures, familial, 1" genes phenotypes'
 JSON callers receive the same typed disease follow-up without an unsupported phenotype-get command.
 
 ```bash
-../../tools/biomcp-ci --json search phenotype 'HP:0001250 HP:0001263' --limit 1 | jq '(.pagination.total == null) and .pagination.has_more and (.pagination.provider_window_limit == 50) and (.pagination.provider_raw_row_count == 50) and .pagination.provider_window_exhausted and (._meta.next_commands | any(startswith("biomcp search phenotype ") and endswith("--limit 1 --offset 1"))) and (._meta.next_commands | any(startswith("biomcp get disease ") and endswith(" genes phenotypes")))' | mustmatch 'true'
+../../tools/biomcp-ci --json search phenotype 'HP:0001250 HP:0001263' --limit 1 | jq '(.resolved_query == [{"raw":"HP:0001250","id":"HP:0001250","label":"Seizure"},{"raw":"HP:0001263","id":"HP:0001263","label":"Global developmental delay"}]) and (.results[0].direct_support | all(.status == "supported")) and (.pagination.total == null) and .pagination.has_more and (.pagination.provider_window_limit == 50) and (.pagination.provider_raw_row_count == 50) and .pagination.provider_window_exhausted and (._meta.next_commands | any(startswith("biomcp search phenotype ") and endswith("--limit 1 --offset 1"))) and (._meta.next_commands | any(. == "biomcp get disease MONDO:0010450 phenotypes"))' | mustmatch 'true'
 ```
 
-The symptom-phrase fixture is a short raw response, so the same metadata does
-not claim that Monarch's 50-row window was exhausted.
+Phrase and direct-ID inputs resolve to the same fixed provider window.
 
 ```bash
-../../tools/biomcp-ci --json search phenotype 'seizure, developmental delay' --limit 3 | jq '(.pagination.provider_window_limit == 50) and (.pagination.provider_raw_row_count == 3) and (.pagination.provider_window_exhausted == false)' | mustmatch 'true'
+../../tools/biomcp-ci --json search phenotype 'seizure, developmental delay' --limit 3 | jq '(.resolved_query | map(.id)) == ["HP:0001250","HP:0001263"] and (.pagination.provider_window_limit == 50) and (.pagination.provider_raw_row_count == 50) and .pagination.provider_window_exhausted' | mustmatch 'true'
+```
+
+## Similarity Does Not Imply Direct Support
+
+The adversarial macrocephaly response ranks isolated microcephaly first. Its
+complete direct lookup does not contain the requested pair, while the second
+candidate has exact support and alone receives the follow-up.
+
+```bash
+../../tools/biomcp-ci search phenotype macrocephaly --limit 2 | mustmatch like 'semantic-similarity candidate
+MONDO:0019387 | isolated microcephaly | 19.000 | `HP:0000256`: not_supported
+no direct Monarch association was found in the complete lookup
+biomcp get disease MONDO:0001234 phenotypes'
+../../tools/biomcp-ci --json search phenotype macrocephaly --limit 2 | jq '(.resolved_query == [{"raw":"macrocephaly","id":"HP:0000256","label":"Macrocephaly"}]) and (.results | map(.direct_support[0].status)) == ["not_supported","supported"] and (._meta.next_commands | any(. == "biomcp get disease MONDO:0001234 phenotypes")) and (._meta.next_commands | any(contains("MONDO:0019387")) | not)' | mustmatch 'true'
+```
+
+Every free-text phrase must contribute at least one HPO row. A successful
+empty array remains a user-input error and prevents both Monarch calls.
+
+```bash
+python3 - <<'PY' | mustmatch like 'unresolved phrase rejected before Monarch'
+import os, subprocess
+log = os.environ["BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG"]
+before = open(log, encoding="utf-8").read().count("/monarch/")
+result = subprocess.run([os.environ["BIOMCP_BIN"], "--json", "search", "phenotype", "macrocephaly, phrase-with-no-hpo-row"], capture_output=True, text=True, env=os.environ.copy())
+assert result.returncode == 2 and "phrase-with-no-hpo-row" in result.stdout
+after = open(log, encoding="utf-8").read().count("/monarch/")
+assert after == before
+print("unresolved phrase rejected before Monarch")
+PY
+```
+
+Missing completeness fields never become negative evidence, while an
+association outage degrades only the support phase.
+
+```bash
+../../tools/biomcp-ci --json search phenotype HP:0000201 --limit 1 | jq '(.results[0].score == 7) and (.results[0].direct_support == [{"hpo_id":"HP:0000201","status":"indeterminate"}]) and (._meta.next_commands | all(startswith("biomcp get disease ") | not))' | mustmatch 'true'
+../../tools/biomcp-ci search phenotype HP:0000202 --limit 1 | mustmatch like 'support state fixture disease
+`HP:0000202`: unavailable
+direct-support enrichment failed
+No disease follow-up is suggested'
+```
+
+Direct-ID labels are HPO-owned and fail closed before Monarch when the term
+response is mismatched, blank, or absent.
+
+```bash
+python3 - <<'PY' | mustmatch like 'invalid HPO labels prevented Monarch contact'
+import os, subprocess
+log = os.environ["BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG"]
+for term in ("HP:0000203", "HP:0000204", "HP:0000205"):
+    before = open(log, encoding="utf-8").read().count("/monarch/")
+    result = subprocess.run([os.environ["BIOMCP_BIN"], "--json", "search", "phenotype", term], capture_output=True, text=True, env=os.environ.copy())
+    assert result.returncode != 0
+    assert open(log, encoding="utf-8").read().count("/monarch/") == before
+print("invalid HPO labels prevented Monarch contact")
+PY
 ```
 
 ## Stable Provider Order And Local Pages
@@ -131,6 +194,7 @@ proc.stdin.write(json.dumps({"jsonrpc":"2.0","method":"notifications/initialized
 proc.stdin.flush()
 default = call({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp search phenotype 'HP:0001250 HP:0001263' --limit 2"}}})["result"]
 structured = call({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp search phenotype 'HP:0001250 HP:0001263' --limit 2","json":True}}})["result"]
+degraded = call({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp search phenotype HP:0000202 --limit 1","json":True}}})["result"]
 assert default.get("isError") is False and structured.get("isError") is False
 text = default["content"][0]["text"]
 assert "--limit 2 --offset 2" in text and "Provider window: 50 raw rows received; limit 50; exhausted: true" in text
@@ -139,6 +203,10 @@ assert payload["pagination"]["has_more"] is True
 assert payload["pagination"]["provider_window_limit"] == 50
 assert payload["pagination"]["provider_raw_row_count"] == 50
 assert payload["pagination"]["provider_window_exhausted"] is True
+degraded_payload = json.loads(degraded["content"][0]["text"])
+assert degraded.get("isError") is False
+assert degraded_payload["results"][0]["direct_support"][0]["status"] == "unavailable"
+assert not any(command.startswith("biomcp get disease ") for command in degraded_payload["_meta"]["next_commands"])
 proc.terminate(); proc.wait(timeout=5)
 
 shell = open("../../src/mcp/shell.rs", encoding="utf-8").read()

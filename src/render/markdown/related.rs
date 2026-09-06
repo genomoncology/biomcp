@@ -77,6 +77,8 @@ pub(super) fn related_command_description(command: &str) -> Option<&'static str>
         Some("pharmacogenomics interactions")
     } else if command.starts_with("biomcp get disease ") && command.ends_with(" genes phenotypes") {
         Some("open the top phenotype-match disease with genes and phenotypes")
+    } else if command.starts_with("biomcp get disease ") && command.ends_with(" phenotypes") {
+        Some("inspect the first disease with direct support for every resolved phenotype")
     } else if is_variant_literature_follow_up_command(command) {
         Some("literature follow-up for an uncertain-significance variant")
     } else if command.starts_with("biomcp search drug --indication ") {
@@ -707,29 +709,27 @@ pub(super) fn search_next_commands_gwas(results: &[VariantGwasAssociation]) -> V
     out.push("biomcp list gwas".to_string());
     dedupe_markdown_commands(out)
 }
-
 pub(super) fn related_phenotype_search_results(results: &[PhenotypeSearchResult]) -> Vec<String> {
-    let Some(label) = results.first().and_then(|row| {
-        let name = row.disease_name.trim();
-        if !name.is_empty() {
-            return Some(name.to_string());
-        }
-        let id = row.disease_id.trim();
-        if id.is_empty() {
-            None
-        } else {
-            Some(id.to_string())
-        }
-    }) else {
+    let Some(id) = results
+        .iter()
+        .find(|row| {
+            !row.direct_support.is_empty()
+                && row.direct_support.iter().all(|support| {
+                    support.status
+                        == crate::entities::disease::PhenotypeDirectSupportStatus::Supported
+                })
+        })
+        .map(|row| row.disease_id.trim())
+        .filter(|id| !id.is_empty())
+    else {
         return Vec::new();
     };
 
     dedupe_markdown_commands(vec![format!(
-        "biomcp get disease {} genes phenotypes",
-        force_quote_arg(&label)
+        "biomcp get disease {} phenotypes",
+        quote_arg(id)
     )])
 }
-
 #[derive(Clone, Copy)]
 pub(super) enum ArticleAnnotationBucket {
     Gene,

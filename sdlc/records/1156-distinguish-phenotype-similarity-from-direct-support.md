@@ -297,3 +297,46 @@ similarity score, alter ticket 1157's normalized window or paging semantics,
 fetch support for rows outside the requested page, follow association
 pagination beyond the fixed bound, rank a complete patient phenotype profile,
 or add a typed MCP phenotype-search surface.
+
+## Result
+
+Phenotype search now resolves every accepted phrase or direct HPO ID to an
+ordered `{raw,id,label}` identity before Monarch contact. Resolution is
+fail-closed for malformed HPO envelopes and labels, collects all phrase
+outcomes with at most four operations in flight, rejects more than ten phrases
+or aggregate unique IDs without truncation, and uses shared eight-second and
+thirty-second deadlines.
+
+The fixed Monarch similarity window and local paging from ticket 1157 are
+unchanged. After slicing, a non-empty page makes one exact, bounded association
+request and assigns `supported`, `not_supported`, `indeterminate`, or
+`unavailable` to every returned disease/HPO pair. Missing or inconsistent
+association metadata cannot establish absence, and association failures
+degrade the support phase without discarding similarity candidates. Markdown,
+JSON, and raw MCP expose the same identities and states. A disease follow-up
+uses the first stable MONDO ID supported for every resolved term; otherwise it
+is suppressed.
+
+The supervised phenotype fixture now includes the opposite-phenotype
+macrocephaly case, incomplete and unavailable support states, exact post-slice
+request construction, and fail-closed direct-label controls. User and source
+documentation describe semantic similarity separately from direct evidence.
+
+## Verification
+
+- Focused Rust phenotype suite: 35 passed.
+- Focused HPO and Monarch presence/content-type/direct-support tests: passed.
+- Focused deterministic `spec/entity/phenotype.md`: 14 passed after the final
+  strict content-type hardening.
+- Focused documentation contracts: 30 passed.
+- Release-package and source-package boundary contracts: 23 passed with the
+  required prepared binary and worktree-local temporary directory. An initial
+  invocation without those two harness settings had two setup failures and was
+  rerun correctly.
+- `make prepare-spec`: passed.
+- `make lint`: passed, including source/fixture integrity, Python and Bash
+  lint, Rust formatting and Clippy with warnings denied, license/advisory
+  checks, and the quality ratchet.
+
+The full `make test`, full parallel `make spec`, full-feature lane, and live
+provider verification were not run in this isolated implementation stage.

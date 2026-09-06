@@ -737,7 +737,6 @@ fn variant_search_markdown_renders_related_commands_from_context() {
     assert!(markdown.contains("biomcp get gene SCN5A"));
     assert!(markdown.contains("biomcp search disease --query Brugada"));
 }
-
 #[test]
 fn phenotype_search_markdown_renders_top_disease_follow_up() {
     let results = vec![
@@ -745,29 +744,34 @@ fn phenotype_search_markdown_renders_top_disease_follow_up() {
             disease_id: "MONDO:0100135".to_string(),
             disease_name: "Dravet syndrome".to_string(),
             score: 15.036,
+            direct_support: vec![crate::entities::disease::PhenotypeDirectSupport {
+                hpo_id: "HP:0001250".into(),
+                status: crate::entities::disease::PhenotypeDirectSupportStatus::Supported,
+            }],
         },
         crate::entities::disease::PhenotypeSearchResult {
             disease_id: "MONDO:0000032".to_string(),
             disease_name: "febrile seizures, familial".to_string(),
             score: 15.036,
+            direct_support: vec![],
         },
     ];
 
     let markdown = phenotype_search_markdown_with_footer(
         "HP:0002373 HP:0001250",
+        &[],
         &results,
         "Showing 1-2 of 2 results.",
     )
     .expect("rendered markdown");
 
     assert!(markdown.contains("See also:"));
-    assert!(markdown.contains("biomcp get disease \"Dravet syndrome\" genes phenotypes"));
+    assert!(markdown.contains("biomcp get disease MONDO:0100135 phenotypes"));
     assert_eq!(
         related_command_description("biomcp get disease \"Dravet syndrome\" genes phenotypes"),
         Some("open the top phenotype-match disease with genes and phenotypes")
     );
 }
-
 #[test]
 fn ticket_406_coordinate_outputs_carry_genome_build_context() {
     let response = VariantNormalizationResponse {

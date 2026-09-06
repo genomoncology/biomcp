@@ -5,8 +5,10 @@ use std::collections::HashSet;
 use reqwest::StatusCode;
 use reqwest::header::HeaderValue;
 use serde::Deserialize;
+use serde::Deserializer;
 use serde::de::DeserializeOwned;
 
+use crate::entities::disease::PhenotypeDirectSupportStatus;
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 use crate::utils::serde::StringOrVec;
@@ -76,7 +78,7 @@ impl MonarchClient {
             });
         }
 
-        crate::sources::ensure_json_content_type(
+        require_json_content_type(
             crate::error::SourceContext::retry(crate::error::SourceProvider::MONARCH),
             content_type,
             bytes,
@@ -364,6 +366,125 @@ impl MonarchClient {
         let out = Self::map_phenotype_matches(rows);
         Ok(out)
     }
+
+    pub(crate) fn phenotype_direct_support_plan(
+        disease_ids: &[String],
+        hpo_terms: &[String],
+    ) -> Result<RequestPlan, BioMcpError> {
+        if disease_ids.is_empty() {
+            return Err(BioMcpError::InvalidArgument(
+                "At least one sliced MONDO disease is required for direct support".into(),
+            ));
+        }
+        let mut plan = RequestPlan::get("v3/api/association");
+        let mut seen = HashSet::new();
+        for id in disease_ids {
+            let id = normalize_disease_id(id)?;
+            if !id.starts_with("MONDO:") {
+                return Err(BioMcpError::InvalidArgument(format!(
+                    "Phenotype support requires a MONDO identifier. Received: {id}"
+                )));
+            }
+            if seen.insert(id.clone()) {
+                plan = plan.query("subject", id);
+            }
+        }
+        for id in normalize_hpo_terms(hpo_terms)? {
+            plan = plan.query("object", id);
+        }
+        Ok(plan
+            .query("category", "biolink:DiseaseToPhenotypicFeatureAssociation")
+            .query("predicate", "biolink:has_phenotype")
+            .query("object_category", "biolink:PhenotypicFeature")
+            .query("direct", "true")
+            .query("limit", "500")
+            .query("offset", "0"))
+    }
+
+    pub(crate) fn map_direct_support(
+        response: MonarchDirectSupportResponse,
+        disease_ids: &[String],
+        hpo_terms: &[String],
+    ) -> Result<MonarchDirectSupportLookup, BioMcpError> {
+        let total = match response.total {
+            Presence::Missing => None,
+            Presence::Value(value) => Some(value),
+        };
+        let items = match response.items {
+            Presence::Missing => None,
+            Presence::Value(items) => Some(items),
+        };
+        let disease_set = disease_ids
+            .iter()
+            .map(String::as_str)
+            .collect::<HashSet<_>>();
+        let hpo_set = hpo_terms.iter().map(String::as_str).collect::<HashSet<_>>();
+        let mut supported = HashSet::new();
+        let mut consistent = true;
+        if let Some(items) = items.as_ref() {
+            for item in items {
+                let subject = item.subject.as_deref().unwrap_or_default();
+                let object = item.object.as_deref().unwrap_or_default();
+                let valid_filter = disease_set.contains(subject)
+                    && hpo_set.contains(object)
+                    && item.category.as_deref()
+                        == Some("biolink:DiseaseToPhenotypicFeatureAssociation")
+                    && item.predicate.as_deref() == Some("biolink:has_phenotype");
+                if !valid_filter {
+                    consistent = false;
+                    continue;
+                }
+                if item.negated != Some(true) {
+                    supported.insert((subject.to_string(), object.to_string()));
+                }
+            }
+        }
+        let complete = consistent
+            && total.is_some_and(|total| total <= 500)
+            && items
+                .as_ref()
+                .is_some_and(|items| total == Some(items.len()));
+        Ok(MonarchDirectSupportLookup {
+            supported,
+            complete,
+        })
+    }
+
+    pub(crate) async fn phenotype_direct_support(
+        &self,
+        disease_ids: &[String],
+        hpo_terms: &[String],
+    ) -> Result<MonarchDirectSupportLookup, BioMcpError> {
+        let plan = Self::phenotype_direct_support_plan(disease_ids, hpo_terms)?;
+        let response: MonarchDirectSupportResponse = self
+            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .await?;
+        Self::map_direct_support(response, disease_ids, hpo_terms)
+    }
+}
+
+fn require_json_content_type(
+    context: crate::error::SourceContext,
+    content_type: Option<&HeaderValue>,
+    body: &[u8],
+) -> Result<(), BioMcpError> {
+    crate::sources::ensure_json_content_type(context, content_type, body)?;
+    let media_type = content_type
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .map(str::trim);
+    if media_type.is_some_and(|value| {
+        value.eq_ignore_ascii_case("application/json")
+            || value.eq_ignore_ascii_case("text/json")
+            || value.to_ascii_lowercase().ends_with("+json")
+    }) {
+        return Ok(());
+    }
+    Err(BioMcpError::Api {
+        api: context.provider().label().into(),
+        message: "Provider response did not declare a JSON content type".into(),
+    }
+    .with_source_context(context))
 }
 
 fn normalize_disease_id(value: &str) -> Result<String, BioMcpError> {
@@ -469,6 +590,58 @@ struct MonarchAssociationItem {
     sex_qualifier_label: Option<String>,
     #[serde(default)]
     stage_qualifier_label: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+enum Presence<T> {
+    #[default]
+    Missing,
+    Value(T),
+}
+
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for Presence<T> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        T::deserialize(deserializer).map(Self::Value)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub(crate) struct MonarchDirectSupportResponse {
+    #[serde(default)]
+    total: Presence<usize>,
+    #[serde(default)]
+    items: Presence<Vec<MonarchDirectSupportItem>>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct MonarchDirectSupportItem {
+    subject: Option<String>,
+    object: Option<String>,
+    category: Option<String>,
+    predicate: Option<String>,
+    #[serde(default)]
+    negated: Option<bool>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct MonarchDirectSupportLookup {
+    supported: HashSet<(String, String)>,
+    complete: bool,
+}
+
+impl MonarchDirectSupportLookup {
+    pub(crate) fn status(&self, disease_id: &str, hpo_id: &str) -> PhenotypeDirectSupportStatus {
+        if self
+            .supported
+            .contains(&(disease_id.to_string(), hpo_id.to_string()))
+        {
+            PhenotypeDirectSupportStatus::Supported
+        } else if self.complete {
+            PhenotypeDirectSupportStatus::NotSupported
+        } else {
+            PhenotypeDirectSupportStatus::Indeterminate
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

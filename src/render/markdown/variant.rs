@@ -308,17 +308,19 @@ pub fn phenotype_search_markdown(
     query: &str,
     results: &[PhenotypeSearchResult],
 ) -> Result<String, BioMcpError> {
-    phenotype_search_markdown_with_footer(query, results, "")
+    phenotype_search_markdown_with_footer(query, &[], results, "")
 }
 
 pub fn phenotype_search_markdown_with_footer(
     query: &str,
+    resolved_query: &[crate::entities::disease::ResolvedPhenotypeQuery],
     results: &[PhenotypeSearchResult],
     pagination_footer: &str,
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("phenotype_search.md.j2")?;
     let body = tmpl.render(context! {
         query => query,
+        resolved_query => resolved_query,
         count => results.len(),
         results => results,
         related_block => format_related_block(related_phenotype_search_results(results)),

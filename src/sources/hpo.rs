@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use futures::future::join_all;
 use reqwest::StatusCode;
+use reqwest::header::HeaderValue;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
@@ -37,12 +38,13 @@ impl HpoClient {
             ))
             .await?;
         let status = resp.status();
+        let content_type = resp.headers().get(reqwest::header::CONTENT_TYPE).cloned();
         let bytes = crate::sources::read_limited_source_body(
             resp,
             crate::error::SourceContext::narrow(crate::error::SourceProvider::HPO),
         )
         .await?;
-        Self::decode_json_response(status, &bytes).map_err(|error| {
+        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
             error.with_source_context(crate::error::SourceContext::retry(
                 crate::error::SourceProvider::HPO,
             ))
@@ -51,6 +53,7 @@ impl HpoClient {
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
         status: StatusCode,
+        content_type: Option<&HeaderValue>,
         bytes: &[u8],
     ) -> Result<T, BioMcpError> {
         if status == StatusCode::NOT_FOUND {
@@ -67,6 +70,11 @@ impl HpoClient {
                 message: format!("HTTP {status}: {excerpt}"),
             });
         }
+        require_json_content_type(
+            crate::error::SourceContext::retry(crate::error::SourceProvider::HPO),
+            content_type,
+            bytes,
+        )?;
         serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
             api: HPO_API.to_string(),
             source,
@@ -134,17 +142,24 @@ impl HpoClient {
     }
 
     fn decode_search_term_ids(response: HpoSearchResponse, max_terms: usize) -> Vec<String> {
-        let limit = max_terms.clamp(1, 20);
-        let mut out: Vec<String> = Vec::new();
+        Self::decode_search_terms(response)
+            .into_iter()
+            .take(max_terms.clamp(1, 20))
+            .map(|term| term.id)
+            .collect()
+    }
+
+    fn decode_search_terms(response: HpoSearchResponse) -> Vec<HpoResolvedTerm> {
+        let mut out = Vec::new();
         let mut seen: HashSet<String> = HashSet::new();
         for row in response.terms {
             if let Some(id) = normalize_hpo_id(&row.id)
                 && seen.insert(id.clone())
             {
-                out.push(id);
-                if out.len() >= limit {
-                    break;
-                }
+                out.push(HpoResolvedTerm {
+                    id,
+                    label: row.name,
+                });
             }
         }
         out
@@ -163,6 +178,50 @@ impl HpoClient {
             .await?;
         Ok(Self::decode_search_term_ids(response, max_terms))
     }
+
+    pub(crate) async fn search_terms(
+        &self,
+        query: &str,
+    ) -> Result<Vec<HpoResolvedTerm>, BioMcpError> {
+        let Some(plan) = Self::search_term_ids_plan(query) else {
+            return Ok(Vec::new());
+        };
+        let response: HpoSearchResponse = self
+            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .await?;
+        let terms = Self::decode_search_terms(response);
+        if let Some(term) = terms.iter().find(|term| term.label.trim().is_empty()) {
+            return Err(BioMcpError::Api {
+                api: HPO_API.into(),
+                message: format!("HPO returned a blank label for {}", term.id),
+            });
+        }
+        Ok(terms)
+    }
+}
+
+fn require_json_content_type(
+    context: crate::error::SourceContext,
+    content_type: Option<&HeaderValue>,
+    body: &[u8],
+) -> Result<(), BioMcpError> {
+    crate::sources::ensure_json_content_type(context, content_type, body)?;
+    let media_type = content_type
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .map(str::trim);
+    if media_type.is_some_and(|value| {
+        value.eq_ignore_ascii_case("application/json")
+            || value.eq_ignore_ascii_case("text/json")
+            || value.to_ascii_lowercase().ends_with("+json")
+    }) {
+        return Ok(());
+    }
+    Err(BioMcpError::Api {
+        api: context.provider().label().into(),
+        message: "Provider response did not declare a JSON content type".into(),
+    }
+    .with_source_context(context))
 }
 
 fn normalize_hpo_id(value: &str) -> Option<String> {
@@ -191,13 +250,19 @@ pub struct HpoTerm {
 
 #[derive(Debug, Clone, Deserialize)]
 struct HpoSearchResponse {
-    #[serde(default)]
     terms: Vec<HpoSearchTerm>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 struct HpoSearchTerm {
     id: String,
+    name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct HpoResolvedTerm {
+    pub(crate) id: String,
+    pub(crate) label: String,
 }
 
 #[cfg(test)]

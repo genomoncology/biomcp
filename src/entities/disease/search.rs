@@ -4,6 +4,8 @@ use super::*;
 
 use super::associations::normalize_hpo_id;
 use super::resolution::{rerank_disease_search_hits, resolver_queries};
+use futures::stream::{self, StreamExt};
+use tokio::time::{Duration, Instant, timeout_at};
 
 pub(super) const MAX_DISEASE_SEARCH_LIMIT: usize = 50;
 
@@ -403,14 +405,100 @@ fn split_phenotype_queries(raw: &str) -> Vec<String> {
     queries
 }
 
-async fn resolve_phenotype_query_terms(raw: &str) -> Result<Vec<String>, BioMcpError> {
+const PHENOTYPE_RESOLUTION_TIMEOUT: Duration = Duration::from_secs(8);
+const PHENOTYPE_SUPPORT_TIMEOUT: Duration = Duration::from_secs(8);
+const PHENOTYPE_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const MAX_PHENOTYPE_IN_FLIGHT: usize = 4;
+#[cfg(test)]
+const MAX_PHENOTYPE_LOGICAL_OPERATIONS: usize = 12;
+#[cfg(test)]
+const MAX_PHENOTYPE_PHYSICAL_ATTEMPTS: usize = 48;
+
+fn hpo_deadline_error() -> BioMcpError {
+    BioMcpError::Api {
+        api: "hpo".into(),
+        message: "HPO phenotype resolution exceeded its 8-second deadline".into(),
+    }
+}
+
+fn monarch_deadline_error() -> BioMcpError {
+    BioMcpError::SourceUnavailable {
+        source_name: "Monarch Initiative".into(),
+        reason: "Phenotype similarity retrieval exceeded the 30-second provider deadline".into(),
+        suggestion: "Retry later when Monarch is healthy.".into(),
+    }
+}
+
+fn validate_hpo_label(
+    raw: &str,
+    requested_id: &str,
+    term: HpoTerm,
+) -> Result<ResolvedPhenotypeQuery, BioMcpError> {
+    let returned_id = normalize_hpo_id(&term.id).ok_or_else(|| BioMcpError::Api {
+        api: "hpo".into(),
+        message: format!("HPO returned an invalid term identifier for {requested_id}"),
+    })?;
+    if returned_id != requested_id {
+        return Err(BioMcpError::Api {
+            api: "hpo".into(),
+            message: format!("HPO returned {returned_id} while resolving {requested_id}"),
+        });
+    }
+    let label = term.name.trim();
+    if label.is_empty() {
+        return Err(BioMcpError::Api {
+            api: "hpo".into(),
+            message: format!("HPO returned a blank label for {requested_id}"),
+        });
+    }
+    Ok(ResolvedPhenotypeQuery {
+        raw: raw.into(),
+        id: requested_id.into(),
+        label: label.into(),
+    })
+}
+
+async fn resolve_phenotype_query_terms(
+    raw: &str,
+    command_deadline: Instant,
+) -> Result<Vec<ResolvedPhenotypeQuery>, BioMcpError> {
     let raw = raw.trim();
     if raw.is_empty() {
         return Err(phenotype_query_required_error());
     }
 
     match parse_hpo_query_terms(raw) {
-        Ok(terms) => return Ok(terms),
+        Ok(terms) => {
+            let first_raw = raw
+                .split(|character: char| character.is_whitespace() || character == ',')
+                .map(str::trim)
+                .filter(|token| !token.is_empty())
+                .fold(HashMap::<String, String>::new(), |mut map, token| {
+                    if let Some(id) = normalize_hpo_id(token) {
+                        map.entry(id).or_insert_with(|| token.to_string());
+                    }
+                    map
+                });
+            let hpo = HpoClient::new()?;
+            let deadline = (Instant::now() + PHENOTYPE_RESOLUTION_TIMEOUT).min(command_deadline);
+            let mut outcomes = stream::iter(terms.into_iter().enumerate().map(|(index, id)| {
+                let hpo = &hpo;
+                let raw = first_raw.get(&id).cloned().unwrap_or_else(|| id.clone());
+                async move {
+                    let result = timeout_at(deadline, hpo.term(&id))
+                        .await
+                        .map_err(|_| hpo_deadline_error())
+                        .and_then(|term| term)
+                        .and_then(|term| validate_hpo_label(&raw, &id, term));
+                    (index, result)
+                }
+            }))
+            .buffer_unordered(MAX_PHENOTYPE_IN_FLIGHT)
+            .collect::<Vec<_>>()
+            .await;
+            outcomes.sort_by_key(|(index, _)| *index);
+            return outcomes.into_iter().map(|(_, result)| result).collect();
+        }
         Err(error)
             if raw
                 .split(|character: char| character.is_whitespace() || character == ',')
@@ -430,25 +518,77 @@ async fn resolve_phenotype_query_terms(raw: &str) -> Result<Vec<String>, BioMcpE
         return Err(phenotype_query_required_error());
     }
 
+    if queries.len() > MAX_PHENOTYPE_TERMS {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "Phenotype search accepts at most {MAX_PHENOTYPE_TERMS} comma-delimited symptom phrases"
+        )));
+    }
     let hpo = HpoClient::new()?;
+    let deadline = (Instant::now() + PHENOTYPE_RESOLUTION_TIMEOUT).min(command_deadline);
+    let mut outcomes = stream::iter(queries.iter().cloned().enumerate().map(|(index, query)| {
+        let hpo = &hpo;
+        async move {
+            let result = timeout_at(deadline, hpo.search_terms(&query))
+                .await
+                .map_err(|_| hpo_deadline_error())
+                .and_then(|rows| rows);
+            (index, query, result)
+        }
+    }))
+    .buffer_unordered(MAX_PHENOTYPE_IN_FLIGHT)
+    .collect::<Vec<_>>()
+    .await;
+    outcomes.sort_by_key(|(index, _, _)| *index);
+
+    if let Some(error) = outcomes
+        .iter_mut()
+        .find_map(|(_, _, result)| result.as_mut().err())
+    {
+        return Err(std::mem::replace(error, hpo_deadline_error()));
+    }
+    let unresolved = outcomes
+        .iter()
+        .filter(|(_, _, result)| result.as_ref().is_ok_and(Vec::is_empty))
+        .map(|(_, query, _)| query.as_str())
+        .collect::<Vec<_>>();
+    if !unresolved.is_empty() {
+        return Err(phenotype_query_no_match_error(&unresolved.join(", ")));
+    }
+    let phrase_rows = outcomes
+        .into_iter()
+        .map(|(_, query, rows)| (query, rows.expect("provider errors handled above")))
+        .collect();
+    flatten_resolved_phrase_rows(phrase_rows)
+}
+
+fn flatten_resolved_phrase_rows(
+    phrase_rows: Vec<(String, Vec<HpoResolvedTerm>)>,
+) -> Result<Vec<ResolvedPhenotypeQuery>, BioMcpError> {
     let mut resolved = Vec::new();
     let mut seen = HashSet::new();
-    for query in queries {
-        let ids = hpo.search_term_ids(&query, MAX_PHENOTYPE_TERMS).await?;
-        for id in ids {
+    for (query, rows) in phrase_rows {
+        for HpoResolvedTerm { id, label } in rows {
+            let label = label.trim();
+            if label.is_empty() {
+                return Err(BioMcpError::Api {
+                    api: "hpo".into(),
+                    message: format!("HPO returned a blank label for {id}"),
+                });
+            }
             if seen.insert(id.clone()) {
-                resolved.push(id);
-                if resolved.len() >= MAX_PHENOTYPE_TERMS {
-                    return Ok(resolved);
-                }
+                resolved.push(ResolvedPhenotypeQuery {
+                    raw: query.clone(),
+                    id,
+                    label: label.into(),
+                });
             }
         }
     }
-
-    if resolved.is_empty() {
-        return Err(phenotype_query_no_match_error(raw));
+    if resolved.len() > MAX_PHENOTYPE_TERMS {
+        return Err(BioMcpError::InvalidArgument(format!(
+            "Phenotype search resolved more than {MAX_PHENOTYPE_TERMS} unique HPO terms; refine the symptom phrases"
+        )));
     }
-
     Ok(resolved)
 }
 
@@ -501,6 +641,7 @@ impl PhenotypePagination {
 
 #[derive(Debug, Clone)]
 pub struct PhenotypeSearchPage {
+    pub resolved_query: Vec<ResolvedPhenotypeQuery>,
     pub results: Vec<PhenotypeSearchResult>,
     pub pagination: PhenotypePagination,
 }
@@ -526,12 +667,14 @@ fn paginate_phenotype_matches(
                 disease_id,
                 disease_name,
                 score,
+                direct_support: Vec::new(),
             },
         )
         .collect::<Vec<_>>();
     let returned = results.len();
 
     Ok(PhenotypeSearchPage {
+        resolved_query: Vec::new(),
         results,
         pagination: PhenotypePagination {
             offset,
@@ -554,10 +697,55 @@ pub async fn search_phenotype_page(
 ) -> Result<PhenotypeSearchPage, BioMcpError> {
     validate_phenotype_search_window(limit, offset)?;
 
-    let terms = resolve_phenotype_query_terms(hpo_terms).await?;
+    let command_deadline = Instant::now() + PHENOTYPE_COMMAND_TIMEOUT;
+    let resolved_query = resolve_phenotype_query_terms(hpo_terms, command_deadline).await?;
+    let terms = resolved_query
+        .iter()
+        .map(|term| term.id.clone())
+        .collect::<Vec<_>>();
     let client = MonarchClient::new()?;
-    let provider = client.phenotype_similarity_search(&terms).await?;
-    paginate_phenotype_matches(provider, limit, offset)
+    let provider = timeout_at(command_deadline, client.phenotype_similarity_search(&terms))
+        .await
+        .map_err(|_| monarch_deadline_error())??;
+    let mut page = paginate_phenotype_matches(provider, limit, offset)?;
+    page.resolved_query = resolved_query;
+    if page.results.is_empty() {
+        return Ok(page);
+    }
+    let disease_ids = page
+        .results
+        .iter()
+        .map(|row| row.disease_id.clone())
+        .collect::<Vec<_>>();
+    let support_deadline = (Instant::now() + PHENOTYPE_SUPPORT_TIMEOUT).min(command_deadline);
+    let lookup = timeout_at(
+        support_deadline,
+        client.phenotype_direct_support(&disease_ids, &terms),
+    )
+    .await;
+    match lookup {
+        Ok(Ok(lookup)) => apply_direct_support(&mut page.results, &terms, Some(&lookup)),
+        Ok(Err(_)) | Err(_) => apply_direct_support(&mut page.results, &terms, None),
+    }
+    Ok(page)
+}
+
+fn apply_direct_support(
+    results: &mut [PhenotypeSearchResult],
+    terms: &[String],
+    lookup: Option<&MonarchDirectSupportLookup>,
+) {
+    for result in results {
+        result.direct_support = terms
+            .iter()
+            .map(|hpo_id| PhenotypeDirectSupport {
+                hpo_id: hpo_id.clone(),
+                status: lookup.map_or(PhenotypeDirectSupportStatus::Unavailable, |lookup| {
+                    lookup.status(&result.disease_id, hpo_id)
+                }),
+            })
+            .collect();
+    }
 }
 
 #[cfg(test)]
