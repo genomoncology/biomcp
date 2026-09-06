@@ -228,3 +228,13 @@ fixture shell syntax, exact 1,300-file package inventory, and the 1,094/2,136
 Rust source ceilings also pass. Full repository gates were deliberately not
 rerun during this focused remediation. Focused re-review is pending, so this
 ticket remains in `sdlc/tickets/` and is not yet a completion record.
+
+The second independent review accepted every behavior except the required-label
+zero-DDInter-read proof: access-time metadata was not a deterministic read
+witness. The implementation now has a direct test-only atomic observer at the
+`DdinterClient::ready` boundary. A serial real-get test proves the witness with
+one positive-control call, resets it, and asserts exactly zero calls for both
+`label interactions` and `all` when required OpenFDA label acquisition fails.
+The executable spec retains the exact public error checks but no longer infers
+reads from filesystem timestamps. Focused validation and re-review remain
+pending; full repository gates remain intentionally deferred.

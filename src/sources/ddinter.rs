@@ -5,6 +5,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
+#[cfg(test)]
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use csv::ReaderBuilder;
 use http_cache_reqwest::CacheMode;
 use serde::Deserialize;
@@ -139,6 +142,8 @@ struct DdinterCsvRow {
 
 impl DdinterClient {
     pub(crate) async fn ready() -> Result<Self, BioMcpError> {
+        #[cfg(test)]
+        DDINTER_READY_CALLS.fetch_add(1, Ordering::SeqCst);
         let root = resolve_ddinter_root();
         let index = cached_index_for_root(&root)?;
         let freshness = bundle_freshness(&root);
@@ -179,6 +184,19 @@ impl DdinterClient {
     pub(crate) fn freshness(&self) -> DdinterBundleFreshness {
         self.freshness
     }
+}
+
+#[cfg(test)]
+static DDINTER_READY_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(test)]
+pub(crate) fn reset_ready_call_count() {
+    DDINTER_READY_CALLS.store(0, Ordering::SeqCst);
+}
+
+#[cfg(test)]
+pub(crate) fn ready_call_count() -> usize {
+    DDINTER_READY_CALLS.load(Ordering::SeqCst)
 }
 
 fn cached_index_map() -> &'static Mutex<HashMap<PathBuf, Arc<DdinterIndex>>> {

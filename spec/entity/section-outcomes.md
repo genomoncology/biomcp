@@ -181,7 +181,10 @@ exit=1'
 
 When label acquisition fails, a sole interaction card keeps DDInter evidence
 and credits DrugBank only when the retained row has its narrative. The required
-label shapes still fail instead of starting interaction settlement.
+label shapes still fail instead of starting interaction settlement. The native
+`required_label_failures_make_zero_ddinter_ready_calls` test uses a direct
+test-only DDInter observer, proves the observer with one positive control, then
+asserts exactly zero DDInter ready calls for both required-label shapes.
 
 ```bash
 BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-ddinter-openfda-fail interactions \
@@ -195,20 +198,16 @@ BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json 
   | mustmatch 'true'
 assert_required_label_failure() {
   mode=$1; shift
-  find "$BIOMCP_DDINTER_READ_WITNESS_DIR" -type f -exec touch -a -d @946684800 {} +
-  before=$(stat -c '%n:%X' "$BIOMCP_DDINTER_READ_WITNESS_DIR"/*.csv)
   set +e
   if test "$mode" = json; then
-    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_READ_WITNESS_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@")
+    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@")
   else
-    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_READ_WITNESS_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" 2>&1)
+    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" 2>&1)
   fi
   status=$?
   set -e
-  after=$(stat -c '%n:%X' "$BIOMCP_DDINTER_READ_WITNESS_DIR"/*.csv)
   test "$status" -eq 1
-  test "$before" = "$after"
-  case "$output" in *SENSITIVE-UPSTREAM-DETAIL*|*ddinter-read-witness*) return 1;; esac
+  case "$output" in *SENSITIVE-UPSTREAM-DETAIL*) return 1;; esac
   if test "$mode" = json; then
     printf '%s\n' "$output" | jq -e '.error == {"code":"api","message":"API request to OpenFDA failed.","source":"OpenFDA","recovery":"Retry the remote source."}' >/dev/null
   else
