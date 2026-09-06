@@ -62,6 +62,16 @@ impl PubTatorClient {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        Ok(Self {
+            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            base: crate::sources::env_base(PUBTATOR_BASE, PUBTATOR_BASE_ENV),
+            api_key: crate::sources::ncbi_api_key(),
+        })
+    }
+
     async fn get_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,

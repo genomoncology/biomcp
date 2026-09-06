@@ -62,6 +62,15 @@ impl EuropePmcClient {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        Ok(Self {
+            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            base: crate::sources::env_base(EUROPE_PMC_BASE, EUROPE_PMC_BASE_ENV),
+        })
+    }
+
     async fn get_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,

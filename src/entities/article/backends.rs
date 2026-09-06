@@ -72,17 +72,28 @@ where
         return future.await.map(Some);
     };
     let Some(started) = execution.reserve(route) else {
+        execution.record_not_attempted(route, source);
         return Ok(None);
     };
     let result = future.await;
-    execution.record(
-        route,
-        source,
-        started,
-        if result.is_ok() { "ok" } else { "unavailable" },
-        usize::from(result.is_ok()),
-    );
+    match &result {
+        Ok(_) => execution.record(route, source, started, "ok", 1),
+        Err(error) => execution.record_error(route, source, started, error),
+    }
     result.map(Some)
+}
+
+fn record_variant_client_error(
+    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+    source: &str,
+    error: &BioMcpError,
+) {
+    let Some(execution) = execution else { return };
+    match execution.reserve(route) {
+        Some(started) => execution.record_error(route, source, started, error),
+        None => execution.record_not_attempted(route, source),
+    }
 }
 
 fn semantic_scholar_unavailable_outcome(
@@ -134,7 +145,16 @@ pub(super) async fn search_pubmed_page_with_context(
         None => build_pubmed_search_term(filters)?,
     };
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
-    let client = PubMedClient::new()?;
+    let client = match match execution {
+        Some(execution) => PubMedClient::new_with_deadline(execution.deadline()).await,
+        None => PubMedClient::new(),
+    } {
+        Ok(client) => client,
+        Err(error) => {
+            record_variant_client_error(execution, route, "pubmed", &error);
+            return Err(error);
+        }
+    };
 
     let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
     let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
@@ -279,7 +299,16 @@ pub(super) async fn search_europepmc_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    let europe = EuropePmcClient::new()?;
+    let europe = match match execution {
+        Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
+        None => EuropePmcClient::new(),
+    } {
+        Ok(client) => client,
+        Err(error) => {
+            record_variant_client_error(execution, route, "europepmc", &error);
+            return Err(error);
+        }
+    };
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_search_query(filters)?,
@@ -422,7 +451,16 @@ pub(super) async fn search_pubtator_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    let pubtator = PubTatorClient::new()?;
+    let pubtator = match match execution {
+        Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
+        None => PubTatorClient::new(),
+    } {
+        Ok(client) => client,
+        Err(error) => {
+            record_variant_client_error(execution, route, "pubtator", &error);
+            return Err(error);
+        }
+    };
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_pubtator_query(filters, &pubtator).await?,
@@ -502,7 +540,16 @@ pub(super) async fn search_semantic_scholar_candidates(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SemanticScholarCandidateOutcome, BioMcpError> {
-    let client = SemanticScholarClient::new()?;
+    let client = match match execution {
+        Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
+        None => SemanticScholarClient::new(),
+    } {
+        Ok(client) => client,
+        Err(error) => {
+            record_variant_client_error(execution, route, "semanticscholar", &error);
+            return Err(error);
+        }
+    };
     let auth_mode = client.auth_mode();
     let status = semantic_scholar_status(auth_mode);
 

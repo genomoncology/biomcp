@@ -376,6 +376,15 @@ impl MyVariantClient {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        Ok(Self {
+            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            base: crate::sources::env_base(MYVARIANT_BASE, MYVARIANT_BASE_ENV),
+        })
+    }
+
     pub(crate) fn escape_query_value(value: &str) -> String {
         crate::utils::query::escape_lucene_value(value)
     }

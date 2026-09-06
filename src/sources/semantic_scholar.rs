@@ -86,6 +86,31 @@ impl SemanticScholarClient {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(SEMANTIC_SCHOLAR_BASE, SEMANTIC_SCHOLAR_BASE_ENV);
+        let base_url = reqwest::Url::parse(base.as_ref()).map_err(|_| BioMcpError::Api {
+            api: SEMANTIC_SCHOLAR_API.to_string(),
+            message:
+                "Semantic Scholar source unavailable: outbound policy rejected invalid base URL"
+                    .into(),
+        })?;
+        let policy = ProviderUrlPolicy::semantic_scholar_api(&base_url)?;
+        let api_key = effective_api_key(&policy, &base_url, crate::sources::s2_api_key());
+        let client = crate::sources::semantic_scholar_provider_client_with_deadline(
+            &policy,
+            api_key.is_some(),
+            deadline,
+        )
+        .await?;
+        Ok(Self {
+            client,
+            base,
+            api_key,
+        })
+    }
+
     pub fn auth_mode(&self) -> SemanticScholarAuthMode {
         match self.api_key.as_ref() {
             Some(_) => SemanticScholarAuthMode::Authenticated,

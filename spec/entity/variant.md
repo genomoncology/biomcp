@@ -841,6 +841,14 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
 }
 ```
 
+A fully settled page beyond a known nonzero total reports page exhaustion,
+not a false empty-search conclusion:
+
+```sh
+bash ../fixtures/run-variant-article-entity-fixture.sh ../.. offset-beyond-total-markdown \
+  | mustmatch like 'No articles on this page. Known total: <N:int>. Requested offset: 999.'
+```
+
 ## Caller-supplied RefSeq identities remain exact when MyVariant has no record
 
 <!-- mustmatch-lint: skip -->

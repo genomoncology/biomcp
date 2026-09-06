@@ -49,6 +49,27 @@ impl SizeAwareCacheManager {
         Self::new_at(path, config, current_time_ms())
     }
 
+    pub(crate) async fn new_with_deadline(
+        path: PathBuf,
+        config: ResolvedCacheConfig,
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        if deadline.is_exhausted() {
+            return Err(BioMcpError::Io(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "variant article invocation deadline exceeded",
+            )));
+        }
+        let manager = Self::new_at(path, config, current_time_ms())?;
+        if deadline.is_exhausted() {
+            return Err(BioMcpError::Io(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "variant article invocation deadline exceeded",
+            )));
+        }
+        Ok(manager)
+    }
+
     fn new_at(
         path: PathBuf,
         config: ResolvedCacheConfig,
@@ -199,7 +220,11 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
-        let operation = async {
+        // Cancellation is safe until cacache atomically publishes the entry.  Keep
+        // the per-key guard and finish metadata hardening after that publication;
+        // returning a deadline error in between would expose a successful write
+        // whose ownership/mode finalization had not run.
+        let pre_commit = async {
             let _operation = super::lock_cache_key_async(
                 self.config.cache_root.clone(),
                 cache_key.clone(),
@@ -208,6 +233,11 @@ impl CacheManager for SizeAwareCacheManager {
             .await?;
             super::prepare_write_paths(&self.inner.path, &cache_key)?;
             let response = self.inner.put(cache_key.clone(), res, policy).await?;
+            Ok::<_, http_cache::BoxError>((_operation, response))
+        };
+        let (_operation, response) = run_with_variant_article_deadline(pre_commit).await?;
+
+        let finalization = async {
             (self.services.after_put)(&self.inner.path, &cache_key);
             let metadata = cacache::metadata(&self.inner.path, &cache_key)
                 .await
@@ -248,7 +278,7 @@ impl CacheManager for SizeAwareCacheManager {
 
             Ok(response)
         };
-        run_with_variant_article_deadline(operation).await
+        crate::sources::with_variant_article_safe_return(finalization).await
     }
 
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
@@ -893,6 +923,51 @@ mod tests {
         .expect("new cache manager");
 
         assert_eq!(manager.approx_bytes.load(Ordering::Relaxed), 8);
+    }
+
+    #[tokio::test]
+    async fn put_finishes_security_boundary_when_deadline_expires_after_publish() {
+        let root = TempDirGuard::new("put-deadline-safe-return");
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(30));
+        let observer_deadline = deadline.clone();
+        let manager = SizeAwareCacheManager::new_with_services_and_observers(
+            root.path().join("http"),
+            test_config(root.path(), 1_000_000, DiskFreeThreshold::Percent(1)),
+            |_| Ok(0),
+            |_| {
+                Ok(FilesystemSpace {
+                    available_bytes: 1_000_000,
+                    total_bytes: 1_000_000,
+                })
+            },
+            |_, _, _, _| {},
+            move |_, _| {
+                while !observer_deadline.is_exhausted() {
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+            },
+            |_| {},
+        );
+        let result = crate::sources::with_variant_article_deadline(
+            deadline,
+            manager.put(
+                "safe-return".into(),
+                test_http_response(b"ok"),
+                test_policy(),
+            ),
+        )
+        .await;
+
+        assert!(
+            result.is_ok(),
+            "published entry must reach a safe return boundary: {result:?}"
+        );
+        assert!(
+            cacache::metadata(root.path().join("http"), "safe-return")
+                .await
+                .expect("metadata")
+                .is_some()
+        );
     }
 
     #[test]

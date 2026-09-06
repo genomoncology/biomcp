@@ -83,17 +83,30 @@ pub(crate) struct VariantArticleDeadlineElapsed;
 
 tokio::task_local! {
     static VARIANT_ARTICLE_DEADLINE: VariantArticleDeadline;
+    static VARIANT_ARTICLE_SAFE_RETURN: bool;
 }
 
 pub(crate) async fn with_variant_article_deadline<F: Future>(
     deadline: VariantArticleDeadline,
     future: F,
 ) -> F::Output {
-    VARIANT_ARTICLE_DEADLINE.scope(deadline, future).await
+    VARIANT_ARTICLE_DEADLINE
+        .scope(deadline, VARIANT_ARTICLE_SAFE_RETURN.scope(false, future))
+        .await
 }
 
 pub(crate) fn current_variant_article_deadline() -> Option<VariantArticleDeadline> {
+    if VARIANT_ARTICLE_SAFE_RETURN
+        .try_with(|masked| *masked)
+        .unwrap_or(false)
+    {
+        return None;
+    }
     VARIANT_ARTICLE_DEADLINE.try_with(Clone::clone).ok()
+}
+
+pub(crate) async fn with_variant_article_safe_return<F: Future>(future: F) -> F::Output {
+    VARIANT_ARTICLE_SAFE_RETURN.scope(true, future).await
 }
 
 fn ensure_variant_article_time() -> Result<(), BioMcpError> {
@@ -785,6 +798,7 @@ pub(crate) fn build_uncached_http_client(
     let retry = ExponentialBackoff::builder().build_with_max_retries(3);
     let builder = ClientBuilder::new(base);
     let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
+    let builder = builder.with(rate_limit::RateLimitMiddleware::provider_pool());
     let builder = builder.with(
         RetryTransientMiddleware::new_with_policy(retry)
             .with_retry_log_level(tracing::Level::DEBUG),
@@ -845,6 +859,15 @@ where
     crate::cache::secure_managed_tree(&cache_path, true, Some(&content_root))?;
     drop(startup_repair);
 
+    let manager = make_manager(cache_path, config)?;
+    finish_cached_http_client(kind, provider_policy, manager)
+}
+
+fn finish_cached_http_client(
+    kind: SharedHttpClientKind,
+    provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
+    manager: crate::cache::SizeAwareCacheManager,
+) -> Result<ClientWithMiddleware, BioMcpError> {
     let mut default_headers = HeaderMap::new();
     default_headers.insert(CACHE_CONTROL, HeaderValue::from_static("max-stale=86400"));
 
@@ -869,9 +892,12 @@ where
 
     let builder = ClientBuilder::new(base_client);
     let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
+    // Provider admission is outermost: one permit therefore covers cache
+    // lookup/write, retry/backoff, transport, body parsing, and commitment.
+    let builder = builder.with(rate_limit::RateLimitMiddleware::provider_pool());
     let builder = builder.with(Cache(HttpCache {
         mode: CacheMode::Default,
-        manager: make_manager(cache_path, config)?,
+        manager,
         options: cache_options,
     }));
     let builder = builder.with(
@@ -888,6 +914,62 @@ where
         .with(rate_limit::RateLimitMiddleware::new())
         .with(ResponseBodyLimitMiddleware)
         .build())
+}
+
+async fn build_http_client_with_config_deadline(
+    kind: SharedHttpClientKind,
+    config: crate::cache::ResolvedCacheConfig,
+    provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
+    deadline: &VariantArticleDeadline,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
+    }
+    let cache_root = config.cache_root.clone();
+    let cache_path = cache_root.join("http");
+    let content_root = crate::cache::content_root(&cache_path);
+    crate::cache::secure_managed_tree_until(&cache_root, false, Some(&content_root), deadline)?;
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
+    }
+    let migration = apply_migration_non_fatal(
+        &cache_root,
+        crate::cache::migrate_http_cache,
+        |err| {
+            warn!(
+                cache_root = %cache_root.display(),
+                "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
+            );
+        },
+    );
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
+    }
+    crate::cache::ensure_body_limited_cache_epoch(
+        &cache_root,
+        matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
+    )?;
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
+    }
+    let startup_repair = crate::cache::lock_cache_shared_until(&cache_root, deadline).await?;
+    crate::cache::secure_managed_tree_until(&cache_path, true, Some(&content_root), deadline)?;
+    drop(startup_repair);
+    let manager =
+        crate::cache::SizeAwareCacheManager::new_with_deadline(cache_path, config, deadline)
+            .await?;
+    let client = finish_cached_http_client(kind, provider_policy, manager)?;
+    if deadline.is_exhausted() {
+        return Err(variant_article_deadline_error());
+    }
+    Ok(client)
+}
+
+fn variant_article_deadline_error() -> BioMcpError {
+    BioMcpError::Api {
+        api: "variant-articles".into(),
+        message: "invocation deadline exceeded".into(),
+    }
 }
 
 #[cfg(test)]
@@ -998,6 +1080,39 @@ pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
     }
 }
 
+pub(crate) async fn shared_client_with_deadline(
+    deadline: &VariantArticleDeadline,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    let _permit = deadline
+        .acquire_provider()
+        .await
+        .map_err(|_| variant_article_deadline_error())?;
+    if let Some(client) = HTTP_CLIENT.get() {
+        return Ok(client.clone());
+    }
+    if is_no_cache_enabled() {
+        let client = build_uncached_http_client(SharedHttpClientKind::Default, None)?;
+        return (!deadline.is_exhausted())
+            .then_some(client)
+            .ok_or_else(variant_article_deadline_error);
+    }
+    let config = crate::cache::resolve_cache_config()?;
+    let client = build_http_client_with_config_deadline(
+        SharedHttpClientKind::Default,
+        config,
+        None,
+        deadline,
+    )
+    .await?;
+    match HTTP_CLIENT.set(client.clone()) {
+        Ok(()) => Ok(client),
+        Err(_) => HTTP_CLIENT.get().cloned().ok_or_else(|| BioMcpError::Api {
+            api: "http-client".into(),
+            message: "Shared HTTP client initialization race".into(),
+        }),
+    }
+}
+
 pub(crate) fn semantic_scholar_provider_client(
     policy: &provider_url_policy::ProviderUrlPolicy,
     authenticated: bool,
@@ -1017,6 +1132,32 @@ pub(crate) fn semantic_scholar_provider_client(
     Ok(client)
 }
 
+pub(crate) async fn semantic_scholar_provider_client_with_deadline(
+    policy: &provider_url_policy::ProviderUrlPolicy,
+    authenticated: bool,
+    deadline: &VariantArticleDeadline,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    let _permit = deadline
+        .acquire_provider()
+        .await
+        .map_err(|_| variant_article_deadline_error())?;
+    let kind = if authenticated {
+        SharedHttpClientKind::Default
+    } else {
+        SharedHttpClientKind::SemanticScholarSharedPool
+    };
+    if is_no_cache_enabled() {
+        return build_uncached_http_client(kind, Some(policy));
+    }
+    build_http_client_with_config_deadline(
+        kind,
+        crate::cache::resolve_cache_config()?,
+        Some(policy),
+        deadline,
+    )
+    .await
+}
+
 pub(crate) fn provider_url_client(
     policy: &provider_url_policy::ProviderUrlPolicy,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
@@ -1029,6 +1170,26 @@ pub(crate) fn provider_url_client(
         build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))?;
     ensure_variant_article_time()?;
     Ok(client)
+}
+
+pub(crate) async fn provider_url_client_with_deadline(
+    policy: &provider_url_policy::ProviderUrlPolicy,
+    deadline: &VariantArticleDeadline,
+) -> Result<ClientWithMiddleware, BioMcpError> {
+    let _permit = deadline
+        .acquire_provider()
+        .await
+        .map_err(|_| variant_article_deadline_error())?;
+    if is_no_cache_enabled() {
+        return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
+    }
+    build_http_client_with_config_deadline(
+        SharedHttpClientKind::Default,
+        crate::cache::resolve_cache_config()?,
+        Some(policy),
+        deadline,
+    )
+    .await
 }
 
 pub(crate) fn is_semantic_scholar_shared_pool_rate_limit_error(

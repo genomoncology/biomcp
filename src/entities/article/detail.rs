@@ -265,15 +265,18 @@ where
     let Some(execution) = execution else {
         return Some(future.await);
     };
-    let started = execution.reserve("enrichment")?;
+    let started = match execution.reserve("enrichment") {
+        Some(started) => started,
+        None => {
+            execution.record_not_attempted("enrichment", source);
+            return None;
+        }
+    };
     let result = future.await;
-    execution.record(
-        "enrichment",
-        source,
-        started,
-        if result.is_ok() { "ok" } else { "unavailable" },
-        usize::from(result.is_ok()),
-    );
+    match &result {
+        Ok(_) => execution.record("enrichment", source, started, "ok", 1),
+        Err(error) => execution.record_error("enrichment", source, started, error),
+    }
     Some(result)
 }
 

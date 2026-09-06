@@ -499,24 +499,23 @@ async fn direct_provider_scan(
     execution: &crate::entities::article::variant_search::VariantArticleExecutionContext,
 ) -> ProviderScan {
     let Some(started) = execution.reserve("resolution") else {
+        execution.record_not_attempted("resolution", "myvariant");
         return ProviderScan {
             candidates: Vec::new(),
             exhaustive: false,
             available: false,
         };
     };
-    let result = match MyVariantClient::new() {
+    let result = match MyVariantClient::new_with_deadline(execution.deadline()).await {
         Ok(client) => client.get_all(input).await,
         Err(error) => Err(error),
     };
-    let conclusive = result.is_ok() || matches!(result, Err(BioMcpError::NotFound { .. }));
-    execution.record(
-        "resolution",
-        "myvariant",
-        started,
-        if conclusive { "ok" } else { "unavailable" },
-        usize::from(conclusive),
-    );
+    match &result {
+        Ok(_) | Err(BioMcpError::NotFound { .. }) => {
+            execution.record("resolution", "myvariant", started, "ok", 1)
+        }
+        Err(error) => execution.record_error("resolution", "myvariant", started, error),
+    }
     match result {
         Ok(hits) => ProviderScan {
             candidates: hits
@@ -552,7 +551,7 @@ async fn searched_provider_scan(
             available: false,
         };
     }
-    let client = match MyVariantClient::new() {
+    let client = match MyVariantClient::new_with_deadline(execution.deadline()).await {
         Ok(client) => client,
         Err(_) => {
             return ProviderScan {
@@ -567,6 +566,7 @@ async fn searched_provider_scan(
     let mut exhaustive = false;
     while provider_offset < MAX_CANDIDATES {
         let Some(started) = execution.reserve("resolution") else {
+            execution.record_not_attempted("resolution", "myvariant");
             break;
         };
         let result = client
@@ -595,13 +595,10 @@ async fn searched_provider_scan(
                 offset: provider_offset,
             })
             .await;
-        execution.record(
-            "resolution",
-            "myvariant",
-            started,
-            if result.is_ok() { "ok" } else { "unavailable" },
-            usize::from(result.is_ok()),
-        );
+        match &result {
+            Ok(_) => execution.record("resolution", "myvariant", started, "ok", 1),
+            Err(error) => execution.record_error("resolution", "myvariant", started, error),
+        }
         let response = match result {
             Ok(response) => response,
             Err(_) => {
@@ -750,7 +747,10 @@ async fn search_page_with_execution(
         search_params(filters, filters.gene.clone(), page_limit, page_offset)
     };
 
-    let client = MyVariantClient::new()?;
+    let client = match execution {
+        Some(execution) => MyVariantClient::new_with_deadline(execution.deadline()).await?,
+        None => MyVariantClient::new()?,
+    };
     let Some(requested) = filters.requested_identity.as_ref() else {
         let initial = client.search(&params_at(fetch_limit, offset)).await?;
         let (resp, diagnostics) = if initial.total == Some(0) {
@@ -787,20 +787,20 @@ async fn search_page_with_execution(
     let mut diagnostics = Vec::new();
     while provider_offset < MAX_CANDIDATES {
         let started = execution.and_then(|execution| execution.reserve("resolution"));
-        if execution.is_some() && started.is_none() {
+        if let Some(execution) = execution
+            && started.is_none()
+        {
+            execution.record_not_attempted("resolution", "myvariant");
             break;
         }
         let result = client
             .search(&params_at(SOURCE_PAGE, provider_offset))
             .await;
         if let (Some(execution), Some(started)) = (execution, started) {
-            execution.record(
-                "resolution",
-                "myvariant",
-                started,
-                if result.is_ok() { "ok" } else { "unavailable" },
-                usize::from(result.is_ok()),
-            );
+            match &result {
+                Ok(_) => execution.record("resolution", "myvariant", started, "ok", 1),
+                Err(error) => execution.record_error("resolution", "myvariant", started, error),
+            }
         }
         let initial = result?;
         let (resp, classified) = if provider_offset == 0 && initial.total == Some(0) {

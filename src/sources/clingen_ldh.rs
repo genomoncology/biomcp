@@ -23,6 +23,7 @@ pub(crate) struct ClinGenLdhClient {
 }
 
 impl ClinGenLdhClient {
+    #[allow(dead_code)]
     pub(crate) fn new() -> Result<Self, BioMcpError> {
         let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::clingen_ldh()?;
         let fixture_origin = std::env::var(LDH_BASE_ENV)
@@ -30,6 +31,19 @@ impl ClinGenLdhClient {
             .and_then(|value| Url::parse(&value).ok());
         Ok(Self {
             client: crate::sources::provider_url_client(&policy)?,
+            fixture_origin,
+        })
+    }
+
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::clingen_ldh()?;
+        let fixture_origin = std::env::var(LDH_BASE_ENV)
+            .ok()
+            .and_then(|value| Url::parse(&value).ok());
+        Ok(Self {
+            client: crate::sources::provider_url_client_with_deadline(&policy, deadline).await?,
             fixture_origin,
         })
     }

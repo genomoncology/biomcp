@@ -131,6 +131,14 @@ pub(crate) async fn lock_cache_key_async(
     .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
 }
 
+pub(crate) async fn lock_cache_shared_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    lock_file_until(file, false, deadline).await
+}
+
 async fn lock_file_until(
     file: File,
     exclusive: bool,
@@ -226,6 +234,28 @@ pub(crate) fn secure_managed_tree(
         Err(error) => return Err(error),
     }
     secure_entry(root, recurse, managed_content_root)
+}
+
+pub(crate) fn secure_managed_tree_until(
+    root: &Path,
+    recurse: bool,
+    managed_content_root: Option<&Path>,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<()> {
+    if deadline.is_exhausted() {
+        return Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "variant article invocation deadline exceeded",
+        ));
+    }
+    secure_managed_tree(root, recurse, managed_content_root)?;
+    if deadline.is_exhausted() {
+        return Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "variant article invocation deadline exceeded",
+        ));
+    }
+    Ok(())
 }
 
 pub(crate) fn secure_managed_dir(path: &Path) -> io::Result<()> {

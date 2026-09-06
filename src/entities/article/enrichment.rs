@@ -113,7 +113,10 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
         return None;
     }
 
-    let client = match SemanticScholarClient::new() {
+    let client = match match execution {
+        Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
+        None => SemanticScholarClient::new(),
+    } {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(
@@ -141,20 +144,22 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
 
     for chunk in lookup_ids.chunks(SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS) {
         let started = execution.and_then(|execution| execution.reserve("enrichment"));
-        if execution.is_some() && started.is_none() {
+        if let Some(execution) = execution
+            && started.is_none()
+        {
+            execution.record_not_attempted("enrichment", "semanticscholar");
             status.status = Some(ArticleSourceAvailability::Degraded);
             status.message = Some("Variant article work budget exhausted".into());
             break;
         }
         let result = client.paper_batch_search_enrichment(chunk).await;
         if let (Some(execution), Some(started)) = (execution, started) {
-            execution.record(
-                "enrichment",
-                "semanticscholar",
-                started,
-                if result.is_ok() { "ok" } else { "unavailable" },
-                usize::from(result.is_ok()),
-            );
+            match &result {
+                Ok(_) => execution.record("enrichment", "semanticscholar", started, "ok", 1),
+                Err(error) => {
+                    execution.record_error("enrichment", "semanticscholar", started, error)
+                }
+            }
         }
         match result {
             Ok(papers) => {
@@ -227,7 +232,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
         return;
     }
 
-    let pubtator = match PubTatorClient::new() {
+    let pubtator = match match execution {
+        Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
+        None => PubTatorClient::new(),
+    } {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(
@@ -238,7 +246,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
             return;
         }
     };
-    let europe = match EuropePmcClient::new() {
+    let europe = match match execution {
+        Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
+        None => EuropePmcClient::new(),
+    } {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(

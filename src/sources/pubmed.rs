@@ -145,6 +145,16 @@ impl PubMedClient {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        Ok(Self {
+            client: crate::sources::shared_client_with_deadline(deadline).await?,
+            base: crate::sources::env_base(PUBMED_EUTILS_BASE, PUBMED_EUTILS_BASE_ENV),
+            api_key: crate::sources::ncbi_api_key(),
+        })
+    }
+
     async fn send(
         &self,
         req: reqwest_middleware::RequestBuilder,
