@@ -72,6 +72,36 @@ async fn handle_command_rejects_zero_limit_before_backend_lookup() {
     );
 }
 
+#[test]
+fn graph_offset_accepts_u64_boundaries_and_rejects_out_of_range_values() {
+    for value in ["0", "18446744073709551615"] {
+        assert!(
+            Cli::try_parse_from([
+                "biomcp",
+                "article",
+                "citations",
+                "22663011",
+                "--offset",
+                value
+            ])
+            .is_ok()
+        );
+    }
+    for value in ["-1", "18446744073709551616"] {
+        assert!(
+            Cli::try_parse_from([
+                "biomcp",
+                "article",
+                "references",
+                "22663011",
+                "--offset",
+                value
+            ])
+            .is_err()
+        );
+    }
+}
+
 fn article_result() -> crate::entities::article::ArticleSearchResult {
     crate::entities::article::ArticleSearchResult {
         pmid: "22663011".into(),

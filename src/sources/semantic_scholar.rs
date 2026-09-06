@@ -481,12 +481,14 @@ impl SemanticScholarClient {
         &self,
         id: &str,
         limit: usize,
+        offset: u64,
     ) -> Result<SemanticScholarGraphResponse<SemanticScholarCitationEdge>, BioMcpError> {
         let plan = Self::paper_subresource_plan(
             id,
             "citations",
             CITATION_EDGE_FIELDS,
             limit,
+            offset,
             self.api_key.as_deref(),
         )?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
@@ -497,12 +499,14 @@ impl SemanticScholarClient {
         &self,
         id: &str,
         limit: usize,
+        offset: u64,
     ) -> Result<SemanticScholarGraphResponse<SemanticScholarReferenceEdge>, BioMcpError> {
         let plan = Self::paper_subresource_plan(
             id,
             "references",
             REFERENCE_EDGE_FIELDS,
             limit,
+            offset,
             self.api_key.as_deref(),
         )?;
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
@@ -514,6 +518,7 @@ impl SemanticScholarClient {
         subresource: &str,
         fields: &str,
         limit: usize,
+        offset: u64,
         api_key: Option<&str>,
     ) -> Result<RequestPlan, BioMcpError> {
         let id = validate_paper_id(id)?;
@@ -525,7 +530,8 @@ impl SemanticScholarClient {
                 subresource
             ))
             .query("fields", fields)
-            .query("limit", limit.to_string()),
+            .query("limit", limit.to_string())
+            .query("offset", offset.to_string()),
             api_key,
         ))
     }
@@ -833,6 +839,8 @@ pub struct SemanticScholarTldr {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(bound(deserialize = "T: Deserialize<'de>"))]
 pub struct SemanticScholarGraphResponse<T> {
+    pub offset: Option<u64>,
+    pub next: Option<u64>,
     #[serde(default, deserialize_with = "deserialize_vec_or_default")]
     pub data: Vec<T>,
 }

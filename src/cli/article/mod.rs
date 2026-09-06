@@ -352,10 +352,12 @@ See also: biomcp list article")]
     #[command(after_help = "\
 EXAMPLES:
   biomcp article citations 22663011 --limit 5
+  biomcp article citations 22663011 --limit 5 --offset 5
   biomcp article citations PMC9984800 --limit 5
 
 Works without S2_API_KEY; authenticated requests are more reliable when the key
-is set.
+is set. Pagination follows Semantic Scholar's provider-relative next offset;
+the endpoint does not report an exact total.
 See also: biomcp list article")]
     Citations {
         /// PMID, PMCID, or DOI
@@ -363,15 +365,20 @@ See also: biomcp list article")]
         /// Maximum citing papers, 1-100 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
+        /// Provider page offset (default: 0)
+        #[arg(long, default_value = "0")]
+        offset: u64,
     },
     /// Traverse referenced papers with Semantic Scholar contexts and intents
     #[command(after_help = "\
 EXAMPLES:
   biomcp article references 22663011 --limit 5
+  biomcp article references 22663011 --limit 5 --offset 5
   biomcp article references 10.1056/NEJMoa1203421 --limit 5
 
 Works without S2_API_KEY; authenticated requests are more reliable when the key
-is set.
+is set. Pagination follows Semantic Scholar's provider-relative next offset;
+the endpoint does not report an exact total.
 See also: biomcp list article")]
     References {
         /// PMID, PMCID, or DOI
@@ -379,6 +386,9 @@ See also: biomcp list article")]
         /// Maximum referenced papers, 1-100 (default: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
+        /// Provider page offset (default: 0)
+        #[arg(long, default_value = "0")]
+        offset: u64,
     },
     /// Find related papers from one or more positive seeds
     #[command(after_help = "\

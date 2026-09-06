@@ -93,6 +93,8 @@ fn parses_graph_and_recommendation_fixtures() {
         )
         .unwrap();
     assert_eq!(citations.data.len(), 1);
+    assert_eq!(citations.offset, None);
+    assert_eq!(citations.next, None);
     assert_eq!(
         citations.data[0].citing_paper.paper_id.as_deref(),
         Some("citing-paper")
@@ -110,6 +112,45 @@ fn parses_graph_and_recommendation_fixtures() {
         recommendations.recommended_papers[0].paper_id.as_deref(),
         Some("paper-3")
     );
+}
+
+#[test]
+fn graph_pagination_rejects_non_unsigned_wire_values() {
+    for field in ["offset", "next"] {
+        for invalid in ["-1", "1.5", "\"1\"", "18446744073709551616"] {
+            let (offset, next) = if field == "offset" {
+                (invalid, "1")
+            } else {
+                ("0", invalid)
+            };
+            let bytes = format!(r#"{{"offset":{offset},"next":{next},"data":[]}}"#);
+            let decoded = SemanticScholarClient::decode_json_response::<
+                SemanticScholarGraphResponse<SemanticScholarCitationEdge>,
+            >(StatusCode::OK, bytes.as_bytes(), false);
+            assert!(
+                decoded.is_err(),
+                "{field} accepted invalid wire value: {invalid}"
+            );
+        }
+    }
+}
+
+#[test]
+fn graph_pagination_distinguishes_required_offset_from_optional_next() {
+    for exhausted in [
+        r#"{"offset":7,"data":[]}"#,
+        r#"{"offset":7,"next":null,"data":[]}"#,
+    ] {
+        let decoded: SemanticScholarGraphResponse<SemanticScholarCitationEdge> =
+            serde_json::from_str(exhausted).unwrap();
+        assert_eq!(decoded.offset, Some(7));
+        assert_eq!(decoded.next, None);
+    }
+    for malformed in [r#"{"data":[]}"#, r#"{"offset":null,"data":[]}"#] {
+        let decoded: SemanticScholarGraphResponse<SemanticScholarCitationEdge> =
+            serde_json::from_str(malformed).unwrap();
+        assert_eq!(decoded.offset, None);
+    }
 }
 
 #[test]

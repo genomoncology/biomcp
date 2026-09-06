@@ -443,12 +443,14 @@ fn citation_reference_and_recommendation_plans_set_paths() {
         "citations",
         CITATION_EDGE_FIELDS,
         10,
+        0,
         None,
     )
     .unwrap();
     assert_eq!(citation.path, "graph/v1/paper/PMID:22663011/citations");
     assert_eq!(citation.query_value("fields"), Some(CITATION_EDGE_FIELDS));
     assert_eq!(citation.query_value("limit"), Some("10"));
+    assert_eq!(citation.query_value("offset"), Some("0"));
     assert_eq!(citation.query_value("from"), None);
     assert_eq!(citation.header_value("x-api-key"), None);
 
@@ -457,10 +459,15 @@ fn citation_reference_and_recommendation_plans_set_paths() {
         "references",
         REFERENCE_EDGE_FIELDS,
         10,
+        u64::MAX,
         None,
     )
     .unwrap();
     assert_eq!(reference.path, "graph/v1/paper/PMID:22663011/references");
+    assert_eq!(
+        reference.query_value("offset"),
+        Some("18446744073709551615")
+    );
     assert_eq!(reference.header_value("x-api-key"), None);
 
     let for_paper =

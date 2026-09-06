@@ -131,7 +131,7 @@ Their schemas enumerate valid entity names, valid get section tokens, and the bo
 
 ### Raw command escape hatch
 
-The raw `biomcp` tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as `discover`, `biomcp skill list`, `biomcp skill render`, embedded `biomcp skill <number-or-slug>` lookups, and the catalog-only `study download --list` form.
+The raw `biomcp` tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as `discover`, `biomcp skill list`, `biomcp skill render`, embedded `biomcp skill <number-or-slug>` lookups, the catalog-only `study download --list` form, and one-page `article citations|references <id> --limit N --offset N` graph traversal. Graph pages expose provider-relative continuation in JSON and Markdown; citation and reference graph tools are not added to the typed catalog.
 
 The seven-tool catalog is intentionally bounded. Reproduce its current local
 measurement with `uv run --no-sync python scripts/measure-mcp-tools.py`. CI

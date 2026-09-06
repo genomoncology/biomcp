@@ -372,27 +372,37 @@ pub fn article_graph_markdown(
     out.push_str("| --- | --- | --- | --- | --- |\n");
     if result.edges.is_empty() {
         out.push_str("| - | - | - | - | No related papers returned |\n");
-        return Ok(out);
+    } else {
+        for edge in &result.edges {
+            let intents = if edge.intents.is_empty() {
+                "-".to_string()
+            } else {
+                markdown_cell(&edge.intents.join(", "))
+            };
+            let context = edge
+                .contexts
+                .first()
+                .map(|value| markdown_cell(value))
+                .unwrap_or_else(|| "-".to_string());
+            out.push_str(&format!(
+                "| {} | {} | {} | {} | {} |\n",
+                article_related_id(&edge.paper),
+                markdown_cell(&edge.paper.title),
+                intents,
+                if edge.is_influential { "yes" } else { "no" },
+                context,
+            ));
+        }
     }
-    for edge in &result.edges {
-        let intents = if edge.intents.is_empty() {
-            "-".to_string()
-        } else {
-            markdown_cell(&edge.intents.join(", "))
-        };
-        let context = edge
-            .contexts
-            .first()
-            .map(|value| markdown_cell(value))
-            .unwrap_or_else(|| "-".to_string());
-        out.push_str(&format!(
-            "| {} | {} | {} | {} | {} |\n",
-            article_related_id(&edge.paper),
-            markdown_cell(&edge.paper.title),
-            intents,
-            if edge.is_influential { "yes" } else { "no" },
-            context,
-        ));
+    out.push_str(&format!(
+        "\nPage offset: {}; page size: {}; returned: {}; coverage: {}.\nSemantic Scholar does not provide an exact total.\n",
+        result.pagination.offset,
+        result.pagination.limit,
+        result.pagination.returned,
+        result.pagination.coverage_status.as_str(),
+    ));
+    if let Some(command) = result._meta.next_commands.first() {
+        out.push_str(&format!("Next: `{command}`\n"));
     }
     Ok(out)
 }

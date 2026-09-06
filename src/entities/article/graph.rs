@@ -13,7 +13,8 @@ use super::detail::{
     article_not_found, first_europepmc_hit, is_doi, parse_arxiv_id, parse_pmcid, parse_pmid,
 };
 use super::{
-    ArticleGraphEdge, ArticleGraphResult, ArticleRecommendationsResult, ArticleRelatedPaper,
+    ArticleGraphEdge, ArticleGraphMeta, ArticleGraphPagination, ArticleGraphResult,
+    ArticleRecommendationsResult, ArticleRelatedPaper, GraphCoverageStatus,
 };
 use crate::entities::author::{
     ArticleAuthorRecord, ArticleAuthorsResult, AuthorAssertion, AuthorEvidence, AuthorEvidenceUrl,
@@ -168,20 +169,109 @@ fn graph_edge_from_reference(edge: SemanticScholarReferenceEdge) -> ArticleGraph
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum GraphDirection {
+    Citations,
+    References,
+}
+
+impl GraphDirection {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::Citations => "citations",
+            Self::References => "references",
+        }
+    }
+}
+
+fn graph_continuation_command(
+    caller_id: &str,
+    direction: GraphDirection,
+    limit: usize,
+    next_offset: u64,
+) -> String {
+    crate::next_command::NextCommand::biomcp()
+        .args(["article", direction.as_str()])
+        .arg(caller_id.trim())
+        .args([
+            "--limit",
+            &limit.to_string(),
+            "--offset",
+            &next_offset.to_string(),
+        ])
+        .render_shell()
+}
+
+fn graph_page_contract<T>(
+    response: &crate::sources::semantic_scholar::SemanticScholarGraphResponse<T>,
+    requested_offset: u64,
+    limit: usize,
+    caller_id: &str,
+    direction: GraphDirection,
+) -> Result<(ArticleGraphPagination, ArticleGraphMeta), BioMcpError> {
+    let provider_offset = response.offset.ok_or_else(|| BioMcpError::Api {
+        api: "semantic-scholar".into(),
+        message: "graph response omitted its required offset".into(),
+    })?;
+    if provider_offset != requested_offset {
+        return Err(BioMcpError::Api {
+            api: "semantic-scholar".into(),
+            message: "graph response offset did not match the request".into(),
+        });
+    }
+    if response.next.is_some_and(|next| next <= provider_offset) {
+        return Err(BioMcpError::Api {
+            api: "semantic-scholar".into(),
+            message: "graph response continuation did not advance".into(),
+        });
+    }
+    let next_commands = response
+        .next
+        .map(|next| graph_continuation_command(caller_id, direction, limit, next))
+        .into_iter()
+        .collect();
+    Ok((
+        ArticleGraphPagination {
+            offset: provider_offset,
+            limit,
+            returned: response.data.len(),
+            next_offset: response.next,
+            coverage_status: if response.next.is_some() {
+                GraphCoverageStatus::Continuable
+            } else {
+                GraphCoverageStatus::Exhausted
+            },
+        },
+        ArticleGraphMeta { next_commands },
+    ))
+}
+
 fn article_graph_from_citations(
     article: ArticleRelatedPaper,
     response: crate::sources::semantic_scholar::SemanticScholarGraphResponse<
         SemanticScholarCitationEdge,
     >,
-) -> ArticleGraphResult {
-    ArticleGraphResult {
+    requested_offset: u64,
+    limit: usize,
+    caller_id: &str,
+) -> Result<ArticleGraphResult, BioMcpError> {
+    let (pagination, _meta) = graph_page_contract(
+        &response,
+        requested_offset,
+        limit,
+        caller_id,
+        GraphDirection::Citations,
+    )?;
+    Ok(ArticleGraphResult {
         article,
         edges: response
             .data
             .into_iter()
             .map(graph_edge_from_citation)
             .collect(),
-    }
+        pagination,
+        _meta,
+    })
 }
 
 fn article_graph_from_references(
@@ -189,15 +279,27 @@ fn article_graph_from_references(
     response: crate::sources::semantic_scholar::SemanticScholarGraphResponse<
         SemanticScholarReferenceEdge,
     >,
-) -> ArticleGraphResult {
-    ArticleGraphResult {
+    requested_offset: u64,
+    limit: usize,
+    caller_id: &str,
+) -> Result<ArticleGraphResult, BioMcpError> {
+    let (pagination, _meta) = graph_page_contract(
+        &response,
+        requested_offset,
+        limit,
+        caller_id,
+        GraphDirection::References,
+    )?;
+    Ok(ArticleGraphResult {
         article,
         edges: response
             .data
             .into_iter()
             .map(graph_edge_from_reference)
             .collect(),
-    }
+        pagination,
+        _meta,
+    })
 }
 
 fn article_recommendations_from_response(
@@ -288,7 +390,11 @@ pub async fn authors(id: &str) -> Result<ArticleAuthorsResult, BioMcpError> {
     })
 }
 
-pub async fn citations(id: &str, limit: usize) -> Result<ArticleGraphResult, BioMcpError> {
+pub async fn citations(
+    id: &str,
+    limit: usize,
+    offset: u64,
+) -> Result<ArticleGraphResult, BioMcpError> {
     let client = SemanticScholarClient::new()?;
     let europe = EuropePmcClient::new()?;
     let article = resolve_semantic_scholar_seed(id, &client, &europe).await?;
@@ -297,12 +403,16 @@ pub async fn citations(id: &str, limit: usize) -> Result<ArticleGraphResult, Bio
         .as_deref()
         .map(str::to_string)
         .ok_or_else(|| article_not_found(id, id))?;
-    let response = client.paper_citations(&graph_id, limit).await?;
+    let response = client.paper_citations(&graph_id, limit, offset).await?;
 
-    Ok(article_graph_from_citations(article, response))
+    article_graph_from_citations(article, response, offset, limit, id)
 }
 
-pub async fn references(id: &str, limit: usize) -> Result<ArticleGraphResult, BioMcpError> {
+pub async fn references(
+    id: &str,
+    limit: usize,
+    offset: u64,
+) -> Result<ArticleGraphResult, BioMcpError> {
     let client = SemanticScholarClient::new()?;
     let europe = EuropePmcClient::new()?;
     let article = resolve_semantic_scholar_seed(id, &client, &europe).await?;
@@ -311,9 +421,9 @@ pub async fn references(id: &str, limit: usize) -> Result<ArticleGraphResult, Bi
         .as_deref()
         .map(str::to_string)
         .ok_or_else(|| article_not_found(id, id))?;
-    let response = client.paper_references(&graph_id, limit).await?;
+    let response = client.paper_references(&graph_id, limit, offset).await?;
 
-    Ok(article_graph_from_references(article, response))
+    article_graph_from_references(article, response, offset, limit, id)
 }
 
 pub async fn recommendations(

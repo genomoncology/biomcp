@@ -52,6 +52,8 @@ fn citations_map_semantic_scholar_edges() {
     let result = article_graph_from_citations(
         article,
         SemanticScholarGraphResponse {
+            offset: Some(0),
+            next: Some(10),
             data: vec![SemanticScholarCitationEdge {
                 contexts: vec!["Example context".into()],
                 intents: vec!["Background".into()],
@@ -65,7 +67,11 @@ fn citations_map_semantic_scholar_edges() {
                 ),
             }],
         },
-    );
+        0,
+        10,
+        "22663011",
+    )
+    .expect("valid graph page");
 
     assert_eq!(result.article.paper_id.as_deref(), Some("paper-1"));
     assert_eq!(result.edges.len(), 1);
@@ -73,6 +79,20 @@ fn citations_map_semantic_scholar_edges() {
     assert_eq!(result.edges[0].contexts, ["Example context"]);
     assert_eq!(result.edges[0].intents, ["Background"]);
     assert!(!result.edges[0].is_influential);
+    assert_eq!(
+        serde_json::to_value(&result.pagination).unwrap(),
+        serde_json::json!({
+            "offset": 0,
+            "limit": 10,
+            "returned": 1,
+            "next_offset": 10,
+            "coverage_status": "continuable"
+        })
+    );
+    assert_eq!(
+        result._meta.next_commands,
+        ["biomcp article citations 22663011 --limit 10 --offset 10"]
+    );
 }
 
 #[test]
@@ -96,7 +116,11 @@ fn receipted_provider_only_citation_survives_article_graph_mapping() {
             2010,
         )),
         response,
-    );
+        0,
+        100,
+        "20516115",
+    )
+    .expect("valid capture");
     let paper = result
         .edges
         .iter()
@@ -120,6 +144,8 @@ fn references_map_semantic_scholar_edges() {
     let result = article_graph_from_references(
         article,
         SemanticScholarGraphResponse {
+            offset: Some(7),
+            next: None,
             data: vec![SemanticScholarReferenceEdge {
                 contexts: vec!["Example context".into()],
                 intents: vec!["Background".into()],
@@ -133,12 +159,140 @@ fn references_map_semantic_scholar_edges() {
                 ),
             }],
         },
-    );
+        7,
+        3,
+        "22663011",
+    )
+    .expect("valid graph page");
 
     assert_eq!(result.article.paper_id.as_deref(), Some("paper-1"));
     assert_eq!(result.edges.len(), 1);
     assert_eq!(result.edges[0].paper.pmid.as_deref(), Some("19424861"));
     assert_eq!(result.edges[0].paper.journal.as_deref(), Some("Cell"));
+    assert_eq!(result.pagination.offset, 7);
+    assert_eq!(result.pagination.next_offset, None);
+    assert_eq!(
+        result.pagination.coverage_status,
+        GraphCoverageStatus::Exhausted
+    );
+    assert!(result._meta.next_commands.is_empty());
+}
+
+#[test]
+fn graph_page_validation_fails_closed_for_bad_offsets_and_next_values() {
+    let article = related_paper_from_semantic_scholar(&semantic_paper(
+        "paper-1",
+        "22663011",
+        "Seed paper",
+        "Science",
+        2012,
+    ));
+    for (offset, next) in [
+        (None, Some(2)),
+        (Some(0), Some(2)),
+        (Some(1), Some(1)),
+        (Some(2), Some(1)),
+    ] {
+        let response = SemanticScholarGraphResponse::<SemanticScholarCitationEdge> {
+            offset,
+            next,
+            data: Vec::new(),
+        };
+        assert!(
+            article_graph_from_citations(article.clone(), response, 1, 10, "22663011",).is_err()
+        );
+    }
+}
+
+#[test]
+fn graph_pages_preserve_provider_order_and_duplicate_edges() {
+    let article = related_paper_from_semantic_scholar(&semantic_paper(
+        "seed", "22663011", "Seed", "Science", 2012,
+    ));
+    let edge = SemanticScholarCitationEdge {
+        contexts: vec!["first context".into(), "second context".into()],
+        intents: vec!["Background".into(), "Methods".into()],
+        is_influential: Some(true),
+        citing_paper: semantic_paper("duplicate", "24200969", "Duplicate", "Nature", 2024),
+    };
+    let result = article_graph_from_citations(
+        article,
+        SemanticScholarGraphResponse {
+            offset: Some(4),
+            next: Some(8),
+            data: vec![edge.clone(), edge],
+        },
+        4,
+        4,
+        "22663011",
+    )
+    .expect("valid duplicate page");
+
+    assert_eq!(result.edges.len(), 2);
+    assert_eq!(result.edges[0], result.edges[1]);
+    assert_eq!(result.edges[0].intents, ["Background", "Methods"]);
+    assert_eq!(
+        result.edges[0].contexts,
+        ["first context", "second context"]
+    );
+    assert!(result.edges[0].is_influential);
+}
+
+#[test]
+fn empty_pages_follow_provider_next_for_both_directions() {
+    let article = related_paper_from_semantic_scholar(&semantic_paper(
+        "seed", "22663011", "Seed", "Science", 2012,
+    ));
+    let citation = article_graph_from_citations(
+        article.clone(),
+        SemanticScholarGraphResponse {
+            offset: Some(9),
+            next: None,
+            data: Vec::new(),
+        },
+        9,
+        2,
+        "22663011",
+    )
+    .expect("empty exhausted citation page");
+    let reference = article_graph_from_references(
+        article,
+        SemanticScholarGraphResponse {
+            offset: Some(9),
+            next: Some(20),
+            data: Vec::new(),
+        },
+        9,
+        2,
+        "22663011",
+    )
+    .expect("empty continuable reference page");
+
+    assert_eq!(citation.pagination.returned, 0);
+    assert_eq!(
+        citation.pagination.coverage_status,
+        GraphCoverageStatus::Exhausted
+    );
+    assert!(citation._meta.next_commands.is_empty());
+    assert_eq!(reference.pagination.returned, 0);
+    assert_eq!(
+        reference.pagination.coverage_status,
+        GraphCoverageStatus::Continuable
+    );
+    assert_eq!(reference.pagination.next_offset, Some(20));
+}
+
+#[test]
+fn graph_continuation_quotes_the_trimmed_caller_id() {
+    assert_eq!(
+        graph_continuation_command(
+            "  10.1/example; echo owned  ",
+            GraphDirection::References,
+            7,
+            9,
+        ),
+        "biomcp article references \"10.1/example; echo owned\" --limit 7 --offset 9"
+    );
 }
 
 #[test]

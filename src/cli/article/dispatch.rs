@@ -433,18 +433,18 @@ pub(in crate::cli) async fn handle_command(
             )
             .await;
         }
-        ArticleCommand::Citations { id, limit } => {
+        ArticleCommand::Citations { id, limit, offset } => {
             let limit = super::super::paged_fetch_limit(limit, 0, 100)?;
-            let graph = crate::entities::article::citations(&id, limit).await?;
+            let graph = crate::entities::article::citations(&id, limit, offset).await?;
             if json {
                 crate::render::json::to_pretty(&graph)?
             } else {
                 crate::render::markdown::article_graph_markdown("Citations", &graph)?
             }
         }
-        ArticleCommand::References { id, limit } => {
+        ArticleCommand::References { id, limit, offset } => {
             let limit = super::super::paged_fetch_limit(limit, 0, 100)?;
-            let graph = crate::entities::article::references(&id, limit).await?;
+            let graph = crate::entities::article::references(&id, limit, offset).await?;
             if json {
                 crate::render::json::to_pretty(&graph)?
             } else {

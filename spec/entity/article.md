@@ -1156,12 +1156,105 @@ identifier. The local source capture retains those identifier-only citations
 instead of silently dropping them, and a successful recommendation response
 contains a usable paper identity and title.
 
+Graph traversal is one provider page at a time. Pagination reports only the
+provider's advancing continuation; Semantic Scholar does not expose an exact
+total for these endpoints.
+
+```bash
+../../tools/biomcp-ci --json article citations 20516115 --limit 1 --offset 0 | jq -c '{edge: .edges[0].paper.paper_id, pagination, _meta}' | mustmatch like '{"edge":"56cfe391a8bd5bb371a9922d6703de9231314b35","pagination":{"offset":0,"limit":1,"returned":1,"next_offset":1,"coverage_status":"continuable"},"_meta":{"next_commands":["biomcp article citations 20516115 --limit 1 --offset 1"]}}'
+../../tools/biomcp-ci --json article citations 20516115 --limit 1 --offset 1 | jq -c '{edge: .edges[0].paper.paper_id, pagination, _meta}' | mustmatch like '{"edge":"9f51d401ac7ff096b8b871f2e4f60735de5bba45","pagination":{"offset":1,"limit":1,"returned":1,"next_offset":2,"coverage_status":"continuable"},"_meta":{"next_commands":["biomcp article citations 20516115 --limit 1 --offset 2"]}}'
+../../tools/biomcp-ci --json article citations 20516115 --limit 1 --offset 999 | jq -c '{pagination, _meta, absent: ((.pagination | has("total") or has("has_more")) or has("total") or has("has_more"))}' | mustmatch like '{"pagination":{"offset":999,"limit":1,"returned":1,"next_offset":null,"coverage_status":"exhausted"},"_meta":{"next_commands":[]},"absent":false}'
+../../tools/biomcp-ci --json article citations 20516115 --limit 1 --offset 1000 | jq -c '{edges, pagination, _meta}' | mustmatch like '{"edges":[],"pagination":{"offset":1000,"limit":1,"returned":0,"next_offset":1001,"coverage_status":"continuable"},"_meta":{"next_commands":["biomcp article citations 20516115 --limit 1 --offset 1001"]}}'
+../../tools/biomcp-ci --json article citations 20516115 --limit 1 --offset 1001 | jq -c '{edges, pagination, _meta}' | mustmatch like '{"edges":[],"pagination":{"offset":1001,"limit":1,"returned":0,"next_offset":null,"coverage_status":"exhausted"},"_meta":{"next_commands":[]}}'
+```
+
+```bash
+../../tools/biomcp-ci --json article references 20516115 --limit 1 --offset 0 | jq -c '{edge: .edges[0] | {paper_id: .paper.paper_id, intents, is_influential, context: .contexts[0]}, pagination, _meta}' | mustmatch like '{"edge":{"paper_id":"1640a8f64efa15c8fc94e5a8e9c96521e50b8211","intents":["background"],"is_influential":false,"context":"In addition, quantitative assays of phosphopeptide binding, such as isothermal titration calorimetry, can reveal the detailed thermodynamics of peptide-BRCT interactions (50,51)."},"pagination":{"offset":0,"limit":1,"returned":1,"next_offset":1,"coverage_status":"continuable"},"_meta":{"next_commands":["biomcp article references 20516115 --limit 1 --offset 1"]}}'
+../../tools/biomcp-ci --json article references 20516115 --limit 1 --offset 1 | jq -r '.edges[0].paper.paper_id, .pagination.offset, .pagination.next_offset' | mustmatch like '28b690e65a5cf640d75d2259e932b706aa1a8813
+1
+2'
+../../tools/biomcp-ci --json article references 20516115 --limit 1 --offset 58 | jq -c '{pagination, _meta}' | mustmatch like '{"pagination":{"offset":58,"limit":1,"returned":1,"next_offset":null,"coverage_status":"exhausted"},"_meta":{"next_commands":[]}}'
+../../tools/biomcp-ci --json article references 20516115 --limit 1 --offset 1000 | jq -c '{edges, pagination, _meta}' | mustmatch like '{"edges":[],"pagination":{"offset":1000,"limit":1,"returned":0,"next_offset":1001,"coverage_status":"continuable"},"_meta":{"next_commands":["biomcp article references 20516115 --limit 1 --offset 1001"]}}'
+../../tools/biomcp-ci --json article references 20516115 --limit 1 --offset 1001 | jq -c '{edges, pagination, _meta}' | mustmatch like '{"edges":[],"pagination":{"offset":1001,"limit":1,"returned":0,"next_offset":null,"coverage_status":"exhausted"},"_meta":{"next_commands":[]}}'
+```
+
+```bash
+../../tools/biomcp-ci article citations 20516115 --limit 1 --offset 1 | tail -n 4 | mustmatch like 'Page offset: 1; page size: 1; returned: 1; coverage: continuable.
+Semantic Scholar does not provide an exact total.
+Next: `biomcp article citations 20516115 --limit 1 --offset 2`'
+../../tools/biomcp-ci article citations 20516115 --limit 1 --offset 999 | tail -n 3 | mustmatch like 'Page offset: 999; page size: 1; returned: 1; coverage: exhausted.
+Semantic Scholar does not provide an exact total.'
+../../tools/biomcp-ci article citations 20516115 --limit 1 --offset 1000 | mustmatch like '| - | - | - | - | No related papers returned |
+
+Page offset: 1000; page size: 1; returned: 0; coverage: continuable.'
+../../tools/biomcp-ci article citations 20516115 --limit 1 --offset 1001 | mustmatch not like 'Next:'
+../../tools/biomcp-ci article references 20516115 --limit 1 --offset 1 | tail -n 4 | mustmatch like 'Page offset: 1; page size: 1; returned: 1; coverage: continuable.
+Semantic Scholar does not provide an exact total.
+Next: `biomcp article references 20516115 --limit 1 --offset 2`'
+../../tools/biomcp-ci article references 20516115 --limit 1 --offset 58 | tail -n 3 | mustmatch like 'Page offset: 58; page size: 1; returned: 1; coverage: exhausted.
+Semantic Scholar does not provide an exact total.'
+../../tools/biomcp-ci article references 20516115 --limit 1 --offset 1000 | mustmatch like '| - | - | - | - | No related papers returned |
+
+Page offset: 1000; page size: 1; returned: 0; coverage: continuable.
+Semantic Scholar does not provide an exact total.
+Next: `biomcp article references 20516115 --limit 1 --offset 1001`'
+../../tools/biomcp-ci article references 20516115 --limit 1 --offset 1001 | mustmatch not like 'Next:'
+```
+
+```bash
+../../tools/biomcp-ci article citations --help | mustmatch like '--offset <OFFSET>'
+../../tools/biomcp-ci article references --help | mustmatch like '--offset <OFFSET>'
+```
+
+Unsigned offset boundaries are enforced before provider work, and the maximum
+value reaches the graph request and response without narrowing.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+: >"$request_log"
+for invalid in -1 18446744073709551616; do
+  ../../tools/biomcp-ci --json article citations 20516115 --offset "$invalid" >/dev/null 2>&1 && exit 1
+done
+test "$(wc -l <"$request_log")" -eq 0
+../../tools/biomcp-ci --json article references 20516115 --limit 1 --offset 18446744073709551615 \
+  | jq -c '{pagination, _meta}' \
+  | mustmatch like '{"pagination":{"offset":18446744073709551615,"limit":1,"returned":0,"next_offset":null,"coverage_status":"exhausted"},"_meta":{"next_commands":[]}}'
+test "$(wc -l <"$request_log")" -eq 2
+```
+
+Raw MCP preserves the same JSON and Markdown contract. Citation/reference
+graph operations remain deliberately absent from the typed MCP inventory.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw graph pagination agrees; typed graph tools absent'
+import json, os, subprocess
+
+proc = subprocess.Popen([os.environ["BIOMCP_BIN"], "serve"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, env=os.environ.copy())
+def call(message):
+    proc.stdin.write(json.dumps(message) + "\n"); proc.stdin.flush()
+    return json.loads(proc.stdout.readline())
+call({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"spec","version":"1"}}})
+proc.stdin.write(json.dumps({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}) + "\n"); proc.stdin.flush()
+structured = call({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp --json article citations 20516115 --limit 1 --offset 1"}}})["result"]
+readable = call({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp article references 20516115 --limit 1 --offset 1"}}})["result"]
+tools = call({"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}})["result"]["tools"]
+payload = json.loads(structured["content"][0]["text"])
+assert structured.get("isError") is False and payload["pagination"] == {"offset":1,"limit":1,"returned":1,"next_offset":2,"coverage_status":"continuable"}
+assert payload["_meta"]["next_commands"] == ["biomcp article citations 20516115 --limit 1 --offset 2"]
+assert readable.get("isError") is False and "Next: `biomcp article references 20516115 --limit 1 --offset 2`" in readable["content"][0]["text"]
+names = {tool["name"] for tool in tools}
+assert "article_citations" not in names and "article_references" not in names
+proc.terminate(); proc.wait(timeout=5)
+print("raw graph pagination agrees; typed graph tools absent")
+PY
+```
+
 ```bash
 ../../tools/biomcp-ci article citations 20516115 | mustmatch like "| Identifier | Title | Intents | Influential | Context |"
 ```
 
 ```bash
-../../tools/biomcp-ci --json article citations 20516115 | jq 'any(.edges[]?.paper; .paper_id == "bdb7239fd58ab8fee22b211f96073a3c58dad53d" and .pmid == null and .doi == null and .arxiv_id == null)' | mustmatch 'true'
+../../tools/biomcp-ci --json article citations 20516115 --limit 100 | jq 'any(.edges[]?.paper; .paper_id == "bdb7239fd58ab8fee22b211f96073a3c58dad53d" and .pmid == null and .doi == null and .arxiv_id == null)' | mustmatch 'true'
 ```
 
 ```bash

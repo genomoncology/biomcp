@@ -1,6 +1,7 @@
 ---
 flow: build
 priority: 7
+status: complete
 ---
 
 # Continue citation and reference pages without losing coverage
@@ -149,3 +150,42 @@ providers, calculate a total, fetch all pages, deduplicate across pages, or
 recover missing citation passages. Ticket 1145 remains the downstream owner of
 passage recovery and must preserve this ticket's edge and pagination contract.
 Ticket 1143 changes exact-author paper richness and is not a dependency.
+
+## Outcome
+
+Citation and reference commands now accept an unsigned provider offset and
+return exactly one validated Semantic Scholar graph page. JSON always carries
+the closed pagination envelope and shared shell-safe continuation command;
+Markdown renders the same state after the unchanged edge table. Missing,
+mismatched, non-advancing, and non-unsigned provider pagination fails closed.
+Graph edges retain provider order and duplicates. No typed MCP graph tool,
+cross-page fetch, total inference, passage recovery, or exact-author behavior
+was added.
+
+The local captured-source server now requires the exact graph fields, limit,
+and offset query and deterministically serves first, middle, terminal,
+empty-continuable, and empty-exhausted pages for citations and references.
+Executable article contracts cover CLI JSON and Markdown, help, raw MCP, and
+typed-tool exclusion. Durable CLI, article, Semantic Scholar source, and MCP
+documentation describes provider-relative exhaustion and the lack of a total.
+
+## Verified progress
+
+Red tests first failed at the missing CLI, entity, source-plan, wire, and result
+pagination seams. After implementation, nine focused graph entity tests, the
+Semantic Scholar pagination request/decoder tests, the graph Markdown test, and
+the CLI unsigned-boundary test pass. The complete fixture-backed article spec
+page passes 91 examples with three intentional skips. The graph fixture
+lifecycle/request test, package-boundary test, source-page documentation suite,
+public-skill documentation suite, documentation-consistency suite, and the two
+typed-catalog shape/inventory tests pass. `cargo package --list --allow-dirty
+--locked --offline` remains exactly 1,300 paths. `cargo fmt --check`, Clippy
+with warnings denied, license/advisory checks, all non-Rust lint stages, the
+spec lint, and the quality ratchet pass; the two necessary over-threshold Rust
+owner increases are explicitly attributed to ticket 1144.
+
+The full `make test` and repository-wide `make spec` gates were not rerun. A
+broader MCP measurement-test invocation could not import the environment's
+optional `tiktoken` package; its unaffected catalog shape and installed-binary
+inventory tests were rerun separately and passed. Independent code review is
+still required before merge.

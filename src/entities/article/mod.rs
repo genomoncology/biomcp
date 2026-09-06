@@ -765,6 +765,38 @@ pub struct ArticleGraphResult {
     pub article: ArticleRelatedPaper,
     #[serde(default)]
     pub edges: Vec<ArticleGraphEdge>,
+    pub pagination: ArticleGraphPagination,
+    pub _meta: ArticleGraphMeta,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GraphCoverageStatus {
+    Continuable,
+    Exhausted,
+}
+
+impl GraphCoverageStatus {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::Continuable => "continuable",
+            Self::Exhausted => "exhausted",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleGraphPagination {
+    pub offset: u64,
+    pub limit: usize,
+    pub returned: usize,
+    pub next_offset: Option<u64>,
+    pub coverage_status: GraphCoverageStatus,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArticleGraphMeta {
+    pub next_commands: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1052,6 +1084,16 @@ mod tests {
         let graph = ArticleGraphResult {
             article: related_paper("Anchor"),
             edges: Vec::new(),
+            pagination: ArticleGraphPagination {
+                offset: 0,
+                limit: 10,
+                returned: 0,
+                next_offset: None,
+                coverage_status: GraphCoverageStatus::Exhausted,
+            },
+            _meta: ArticleGraphMeta {
+                next_commands: Vec::new(),
+            },
         };
         let recommendations = ArticleRecommendationsResult {
             positive_seeds: Vec::new(),
@@ -1082,6 +1124,16 @@ mod tests {
                 contexts: Vec::new(),
                 is_influential: false,
             }],
+            pagination: ArticleGraphPagination {
+                offset: 0,
+                limit: 10,
+                returned: 1,
+                next_offset: None,
+                coverage_status: GraphCoverageStatus::Exhausted,
+            },
+            _meta: ArticleGraphMeta {
+                next_commands: Vec::new(),
+            },
         };
         let recommendations = ArticleRecommendationsResult {
             positive_seeds: vec![related_paper("Anchor")],

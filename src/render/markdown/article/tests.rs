@@ -312,6 +312,16 @@ fn article_graph_markdown_renders_expected_table_headers() {
             contexts: vec!["Important supporting context".to_string()],
             is_influential: true,
         }],
+        pagination: crate::entities::article::ArticleGraphPagination {
+            offset: 4,
+            limit: 1,
+            returned: 1,
+            next_offset: Some(5),
+            coverage_status: crate::entities::article::GraphCoverageStatus::Continuable,
+        },
+        _meta: crate::entities::article::ArticleGraphMeta {
+            next_commands: vec!["biomcp article citations 22663011 --limit 1 --offset 5".into()],
+        },
     };
 
     let markdown = article_graph_markdown("Citations", &result).expect("graph markdown");
@@ -320,6 +330,9 @@ fn article_graph_markdown_renders_expected_table_headers() {
     assert!(markdown.contains(
         "| PMID 24200969 | Related paper | Background | yes | Important supporting context |"
     ));
+    assert!(markdown.contains("Page offset: 4; page size: 1; returned: 1; coverage: continuable."));
+    assert!(markdown.contains("Semantic Scholar does not provide an exact total."));
+    assert!(markdown.contains("Next: `biomcp article citations 22663011 --limit 1 --offset 5`"));
 }
 
 #[test]

@@ -39,13 +39,13 @@
     },
     {
       "path": "src/entities/article/mod.rs",
-      "baseline_lines": 1333,
+      "baseline_lines": 1385,
       "floor_lines": 1314,
       "authorized_increase": {
-        "ticket": "0974",
-        "delta": 19,
-        "reason": "Public article-asset provider outcome types remain local to the existing article entity contract.",
-        "removal_condition": "Move asset-specific public types into an article asset model module when that model is decomposed."
+        "ticket": "1144",
+        "delta": 71,
+        "reason": "Keep the public citation and reference pagination envelope beside the existing article graph result contract without adding a package file beyond the fixed 1300-file boundary.",
+        "removal_condition": "Extract article graph result types when a package-neutral module split can preserve the exact 1300-file source package boundary."
       }
     },
     {
@@ -192,13 +192,13 @@
     },
     {
       "path": "src/render/markdown/article/tests.rs",
-      "baseline_lines": 1231,
+      "baseline_lines": 1244,
       "floor_lines": 1207,
       "authorized_increase": {
-        "ticket": "1047",
-        "delta": 24,
-        "reason": "The two complete article result-row assertions bind each title, source, rationale, and citation count to its identifier.",
-        "removal_condition": "Extract reusable article search row fixtures when another renderer test needs the same row shape."
+        "ticket": "1144",
+        "delta": 37,
+        "reason": "Pin the graph pagination footer and shared continuation command on the existing article Markdown renderer test without adding a package file beyond the fixed 1300-file boundary.",
+        "removal_condition": "Extract graph renderer tests when a package-neutral module split can preserve the exact 1300-file source package boundary."
       }
     },
     {

@@ -560,6 +560,25 @@ def europepmc_search_payload(pmid):
     }
 
 
+def graph_page_payload(body, offset, limit):
+    payload = json.loads(body)
+    if offset == 999:
+        return {"offset": offset, "next": None, "data": (payload.get("data") or [])[-1:]}
+    if offset == 1000:
+        return {"offset": offset, "next": 1001, "data": []}
+    if offset == 1001:
+        return {"offset": offset, "next": None, "data": []}
+    rows = payload.get("data") or []
+    page = rows[offset:offset + limit]
+    captured_next = payload.get("next")
+    next_offset = offset + limit
+    if next_offset >= len(rows) and captured_next is None:
+        next_offset = None
+    elif not page:
+        next_offset = None
+    return {"offset": offset, "next": next_offset, "data": page}
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
@@ -677,11 +696,29 @@ class Handler(BaseHTTPRequestHandler):
             append_request_log(
                 "s2:x-api-key:" + ("present" if self.headers.get("x-api-key") else "absent")
             )
+            if decoded_path.endswith("/citations"):
+                expected_fields = "contexts,intents,isInfluential,citingPaper.paperId,citingPaper.externalIds,citingPaper.title,citingPaper.venue,citingPaper.year"
+            elif decoded_path.endswith("/references"):
+                expected_fields = "contexts,intents,isInfluential,citedPaper.paperId,citedPaper.externalIds,citedPaper.title,citedPaper.venue,citedPaper.year"
+            else:
+                expected_fields = None
             body = {
                 "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/citations": SEMANTIC_SCHOLAR_20516115_CITATIONS,
                 "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/references": SEMANTIC_SCHOLAR_20516115_REFERENCES,
                 "/recommendations/v1/papers/forpaper/059f780c07b87339c275192f1b82662747c28ccd": SEMANTIC_SCHOLAR_20516115_RECOMMENDATIONS,
             }[decoded_path]
+            if expected_fields is not None:
+                if query.get("fields") != [expected_fields] or len(query.get("limit", [])) != 1 or len(query.get("offset", [])) != 1:
+                    send_json(self, 400, {"error": "unexpected graph query"})
+                    return
+                try:
+                    limit = int(query["limit"][0])
+                    offset = int(query["offset"][0])
+                except ValueError:
+                    send_json(self, 400, {"error": "invalid graph pagination"})
+                    return
+                send_json(self, 200, graph_page_payload(body, offset, limit))
+                return
             send_bytes(self, 200, body, "application/json")
             return
 
