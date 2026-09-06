@@ -5759,10 +5759,17 @@ Invalid batch items keep <code>resolution: null</code>.</p>
 <a id="__codelineno-36-16" name="__codelineno-36-16" href="#__codelineno-36-16"></a>biomcp<span class="w"> </span>pathway<span class="w"> </span>trials<span class="w"> </span>R-HSA-5673001
 <a id="__codelineno-36-17" name="__codelineno-36-17" href="#__codelineno-36-17"></a>biomcp<span class="w"> </span>protein<span class="w"> </span>structures<span class="w"> </span>P15056
 <a id="__codelineno-36-18" name="__codelineno-36-18" href="#__codelineno-36-18"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span>
-<a id="__codelineno-36-19" name="__codelineno-36-19" href="#__codelineno-36-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-36-20" name="__codelineno-36-20" href="#__codelineno-36-20"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-36-19" name="__codelineno-36-19" href="#__codelineno-36-19"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-36-20" name="__codelineno-36-20" href="#__codelineno-36-20"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span>
 <a id="__codelineno-36-21" name="__codelineno-36-21" href="#__codelineno-36-21"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
+<p>Citation and reference graph pages accept <code>--offset &lt;u64&gt;</code> (default <code>0</code>) and
+make exactly one graph request after resolving the seed. JSON reports the
+requested <code>offset</code>, <code>limit</code>, returned edge count, the provider's <code>next_offset</code>,
+and <code>coverage_status</code> (<code>continuable</code> or <code>exhausted</code>). Semantic Scholar does not
+return an exact total, so these results do not infer <code>total</code> or <code>has_more</code>.
+Continue only with the copyable command in <code>_meta.next_commands</code> or the
+Markdown <code>Next:</code> line; both preserve the caller-facing article ID.</p>
 <h2 id="chart-reference">Chart reference<a class="headerlink" href="#chart-reference" title="Permanent link">&para;</a></h2>
 <p>Use <code>biomcp chart</code> to list chart families and <code>biomcp chart &lt;type&gt;</code> for the
 embedded help page for one chart type.</p>

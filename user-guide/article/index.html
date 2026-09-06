@@ -4638,8 +4638,8 @@ Scholar only after a successful response.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>entities<span class="w"> </span><span class="m">22663011</span><span class="w">   </span><span class="c1"># extract annotated entities via PubTator</span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>biomcp<span class="w"> </span>article<span class="w"> </span>batch<span class="w"> </span><span class="m">22663011</span><span class="w"> </span><span class="m">24200969</span><span class="w">          </span><span class="c1"># compact multi-article summary cards</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">         </span><span class="c1"># Semantic Scholar citation graph</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">        </span><span class="c1"># Semantic Scholar reference graph</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>biomcp<span class="w"> </span>article<span class="w"> </span>citations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">   </span><span class="c1"># one Semantic Scholar citation page</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>--offset<span class="w"> </span><span class="m">0</span><span class="w">  </span><span class="c1"># one Semantic Scholar reference page</span>
 <a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w">   </span><span class="c1"># Semantic Scholar related papers</span>
 </code></pre></div>
 <p><code>article batch</code> works without <code>S2_API_KEY</code> and returns a bare JSON array in
@@ -4660,7 +4660,11 @@ publisher elision in the Semantic Scholar graph. In JSON, citation/reference
 responses always carry <code>edges</code>, and recommendation responses always carry
 <code>recommendations</code>, including <code>[]</code> on successful emptiness and parsed structured
 errors. On errors, the accompanying <code>error</code> and nonzero exit status remain
-mandatory, so an empty array must not be interpreted as a biomedical negative.</p>
+mandatory, so an empty array must not be interpreted as a biomedical negative.
+Each citation/reference invocation returns exactly one requested <code>--offset</code>
+page. Follow only the provider-authored command in <code>_meta.next_commands</code> or the
+Markdown <code>Next:</code> line; <code>coverage_status: exhausted</code> means that response omitted
+a continuation, not that BioMCP calculated a total.</p>
 <h2 id="caching-behavior">Caching behavior<a class="headerlink" href="#caching-behavior" title="Permanent link">&para;</a></h2>
 <p>Downloaded content is stored in the BioMCP cache directory.
 This avoids repeated large payload downloads during iterative workflows.</p>

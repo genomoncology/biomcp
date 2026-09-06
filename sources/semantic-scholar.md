@@ -17,8 +17,8 @@ In BioMCP, Semantic Scholar provides provider-exact author search/detail and an 
 | `get author semanticscholar:<id>` | One exact Semantic Scholar provider record | Requires the qualified numeric ID and does not establish an ORCID link |
 | `search article` | Optional compatible search-leg enrichment plus source status | Semantic Scholar joins article search automatically when the filter set allows it and can be selected alone with `--source semanticscholar` |
 | `get article <id> tldr` | TLDR text, influence counts, and related article metadata | Dedicated Semantic Scholar helper |
-| `article citations <id>` | Citation graph rows | Dedicated Semantic Scholar helper |
-| `article references <id>` | Reference graph rows | Dedicated Semantic Scholar helper |
+| `article citations <id> [--limit N] [--offset N]` | One citation graph page plus provider continuation | Dedicated Semantic Scholar helper |
+| `article references <id> [--limit N] [--offset N]` | One reference graph page plus provider continuation | Dedicated Semantic Scholar helper |
 | `article recommendations <id>` | Provider-defined paper recommendations | BioMCP relay; relatedness and recall are not validated by BioMCP |
 
 ## Example commands
@@ -48,6 +48,12 @@ biomcp article references 22663011 --limit 3
 ```
 
 Returns a reference graph table with the same citation-context fields.
+
+The citation and reference endpoints expose an offset and optional next offset,
+but no exact total. BioMCP returns one provider page per command, preserves
+provider edge order and duplicates, and labels the page `continuable` only when
+Semantic Scholar supplies a valid advancing `next`. Use the returned `Next:`
+command rather than inferring an offset from the number of rows.
 
 ```bash
 biomcp article recommendations 22663011 --limit 3

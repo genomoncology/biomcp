@@ -877,10 +877,18 @@ biomcp pathway articles R-HSA-5673001
 biomcp pathway trials R-HSA-5673001
 biomcp protein structures P15056
 biomcp article entities 22663011
-biomcp article citations 22663011 --limit 3
-biomcp article references 22663011 --limit 3
+biomcp article citations 22663011 --limit 3 --offset 0
+biomcp article references 22663011 --limit 3 --offset 0
 biomcp article recommendations 22663011 --limit 3
 ```
+
+Citation and reference graph pages accept `--offset <u64>` (default `0`) and
+make exactly one graph request after resolving the seed. JSON reports the
+requested `offset`, `limit`, returned edge count, the provider's `next_offset`,
+and `coverage_status` (`continuable` or `exhausted`). Semantic Scholar does not
+return an exact total, so these results do not infer `total` or `has_more`.
+Continue only with the copyable command in `_meta.next_commands` or the
+Markdown `Next:` line; both preserve the caller-facing article ID.
 
 ## Chart reference
 

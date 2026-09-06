@@ -4244,13 +4244,13 @@
 <td>Dedicated Semantic Scholar helper</td>
 </tr>
 <tr>
-<td><code>article citations &lt;id&gt;</code></td>
-<td>Citation graph rows</td>
+<td><code>article citations &lt;id&gt; [--limit N] [--offset N]</code></td>
+<td>One citation graph page plus provider continuation</td>
 <td>Dedicated Semantic Scholar helper</td>
 </tr>
 <tr>
-<td><code>article references &lt;id&gt;</code></td>
-<td>Reference graph rows</td>
+<td><code>article references &lt;id&gt; [--limit N] [--offset N]</code></td>
+<td>One reference graph page plus provider continuation</td>
 <td>Dedicated Semantic Scholar helper</td>
 </tr>
 <tr>
@@ -4275,6 +4275,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>references<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <p>Returns a reference graph table with the same citation-context fields.</p>
+<p>The citation and reference endpoints expose an offset and optional next offset,
+but no exact total. BioMCP returns one provider page per command, preserves
+provider edge order and duplicates, and labels the page <code>continuable</code> only when
+Semantic Scholar supplies a valid advancing <code>next</code>. Use the returned <code>Next:</code>
+command rather than inferring an offset from the number of rows.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>article<span class="w"> </span>recommendations<span class="w"> </span><span class="m">22663011</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
 </code></pre></div>
 <p>Returns the provider-defined recommendations in a table with typed identifier, title, journal, and year columns.</p>

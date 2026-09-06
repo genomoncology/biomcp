@@ -396,8 +396,8 @@ Scholar only after a successful response.
 ```bash
 biomcp article entities 22663011   # extract annotated entities via PubTator
 biomcp article batch 22663011 24200969          # compact multi-article summary cards
-biomcp article citations 22663011 --limit 3         # Semantic Scholar citation graph
-biomcp article references 22663011 --limit 3        # Semantic Scholar reference graph
+biomcp article citations 22663011 --limit 3 --offset 0   # one Semantic Scholar citation page
+biomcp article references 22663011 --limit 3 --offset 0  # one Semantic Scholar reference page
 biomcp article recommendations 22663011 --limit 3   # Semantic Scholar related papers
 ```
 
@@ -421,6 +421,10 @@ responses always carry `edges`, and recommendation responses always carry
 `recommendations`, including `[]` on successful emptiness and parsed structured
 errors. On errors, the accompanying `error` and nonzero exit status remain
 mandatory, so an empty array must not be interpreted as a biomedical negative.
+Each citation/reference invocation returns exactly one requested `--offset`
+page. Follow only the provider-authored command in `_meta.next_commands` or the
+Markdown `Next:` line; `coverage_status: exhausted` means that response omitted
+a continuation, not that BioMCP calculated a total.
 
 ## Caching behavior
 

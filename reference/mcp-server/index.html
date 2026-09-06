@@ -4523,7 +4523,7 @@ still enforces that read-only boundary when a tool is called.</p>
 </ul>
 <p>Their schemas enumerate valid entity names, valid get section tokens, and the bounded search <code>limit</code>.</p>
 <h3 id="raw-command-escape-hatch">Raw command escape hatch<a class="headerlink" href="#raw-command-escape-hatch" title="Permanent link">&para;</a></h3>
-<p>The raw <code>biomcp</code> tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as <code>discover</code>, <code>biomcp skill list</code>, <code>biomcp skill render</code>, embedded <code>biomcp skill &lt;number-or-slug&gt;</code> lookups, and the catalog-only <code>study download --list</code> form.</p>
+<p>The raw <code>biomcp</code> tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as <code>discover</code>, <code>biomcp skill list</code>, <code>biomcp skill render</code>, embedded <code>biomcp skill &lt;number-or-slug&gt;</code> lookups, the catalog-only <code>study download --list</code> form, and one-page <code>article citations|references &lt;id&gt; --limit N --offset N</code> graph traversal. Graph pages expose provider-relative continuation in JSON and Markdown; citation and reference graph tools are not added to the typed catalog.</p>
 <p>The seven-tool catalog is intentionally bounded. Reproduce its current local
 measurement with <code>uv run --no-sync python scripts/measure-mcp-tools.py</code>. CI
 rejects the full catalog above 22,600 UTF-8 bytes or 5,800 <code>cl100k_base</code> tokens,
