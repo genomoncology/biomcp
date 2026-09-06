@@ -414,6 +414,70 @@ const MAX_PHENOTYPE_LOGICAL_OPERATIONS: usize = 12;
 #[cfg(test)]
 const MAX_PHENOTYPE_PHYSICAL_ATTEMPTS: usize = 48;
 
+trait HpoResolutionSource: Sync {
+    fn term<'a>(
+        &'a self,
+        id: &'a str,
+    ) -> impl std::future::Future<Output = Result<HpoTerm, BioMcpError>> + Send + 'a;
+    fn search_terms<'a>(
+        &'a self,
+        query: &'a str,
+    ) -> impl std::future::Future<Output = Result<Vec<HpoResolvedTerm>, BioMcpError>> + Send + 'a;
+}
+
+impl HpoResolutionSource for HpoClient {
+    fn term<'a>(
+        &'a self,
+        id: &'a str,
+    ) -> impl std::future::Future<Output = Result<HpoTerm, BioMcpError>> + Send + 'a {
+        self.phenotype_term(id)
+    }
+
+    fn search_terms<'a>(
+        &'a self,
+        query: &'a str,
+    ) -> impl std::future::Future<Output = Result<Vec<HpoResolvedTerm>, BioMcpError>> + Send + 'a
+    {
+        self.search_terms(query)
+    }
+}
+
+trait PhenotypeMonarchSource: Sync {
+    fn similarity<'a>(
+        &'a self,
+        terms: &'a [String],
+    ) -> impl std::future::Future<
+        Output = Result<crate::sources::monarch::MonarchPhenotypeSearchResponse, BioMcpError>,
+    > + Send
+    + 'a;
+    fn direct_support<'a>(
+        &'a self,
+        disease_ids: &'a [String],
+        terms: &'a [String],
+    ) -> impl std::future::Future<Output = Result<MonarchDirectSupportLookup, BioMcpError>> + Send + 'a;
+}
+
+impl PhenotypeMonarchSource for MonarchClient {
+    fn similarity<'a>(
+        &'a self,
+        terms: &'a [String],
+    ) -> impl std::future::Future<
+        Output = Result<crate::sources::monarch::MonarchPhenotypeSearchResponse, BioMcpError>,
+    > + Send
+    + 'a {
+        self.phenotype_similarity_search(terms)
+    }
+
+    fn direct_support<'a>(
+        &'a self,
+        disease_ids: &'a [String],
+        terms: &'a [String],
+    ) -> impl std::future::Future<Output = Result<MonarchDirectSupportLookup, BioMcpError>> + Send + 'a
+    {
+        self.phenotype_direct_support(disease_ids, terms)
+    }
+}
+
 fn hpo_deadline_error() -> BioMcpError {
     BioMcpError::Api {
         api: "hpo".into(),
@@ -458,9 +522,19 @@ fn validate_hpo_label(
     })
 }
 
+#[cfg(test)]
 async fn resolve_phenotype_query_terms(
     raw: &str,
     command_deadline: Instant,
+) -> Result<Vec<ResolvedPhenotypeQuery>, BioMcpError> {
+    let hpo = HpoClient::new()?;
+    resolve_phenotype_query_terms_with_source(raw, command_deadline, &hpo).await
+}
+
+async fn resolve_phenotype_query_terms_with_source<S: HpoResolutionSource>(
+    raw: &str,
+    command_deadline: Instant,
+    hpo: &S,
 ) -> Result<Vec<ResolvedPhenotypeQuery>, BioMcpError> {
     let raw = raw.trim();
     if raw.is_empty() {
@@ -479,7 +553,6 @@ async fn resolve_phenotype_query_terms(
                     }
                     map
                 });
-            let hpo = HpoClient::new()?;
             let deadline = (Instant::now() + PHENOTYPE_RESOLUTION_TIMEOUT).min(command_deadline);
             let mut outcomes = stream::iter(terms.into_iter().enumerate().map(|(index, id)| {
                 let hpo = &hpo;
@@ -523,7 +596,6 @@ async fn resolve_phenotype_query_terms(
             "Phenotype search accepts at most {MAX_PHENOTYPE_TERMS} comma-delimited symptom phrases"
         )));
     }
-    let hpo = HpoClient::new()?;
     let deadline = (Instant::now() + PHENOTYPE_RESOLUTION_TIMEOUT).min(command_deadline);
     let mut outcomes = stream::iter(queries.iter().cloned().enumerate().map(|(index, query)| {
         let hpo = &hpo;
@@ -696,15 +768,28 @@ pub async fn search_phenotype_page(
     offset: usize,
 ) -> Result<PhenotypeSearchPage, BioMcpError> {
     validate_phenotype_search_window(limit, offset)?;
-
     let command_deadline = Instant::now() + PHENOTYPE_COMMAND_TIMEOUT;
-    let resolved_query = resolve_phenotype_query_terms(hpo_terms, command_deadline).await?;
+    let hpo = HpoClient::new()?;
+    let monarch = MonarchClient::new()?;
+    search_phenotype_page_with_sources(hpo_terms, limit, offset, command_deadline, &hpo, &monarch)
+        .await
+}
+
+async fn search_phenotype_page_with_sources<H: HpoResolutionSource, M: PhenotypeMonarchSource>(
+    hpo_terms: &str,
+    limit: usize,
+    offset: usize,
+    command_deadline: Instant,
+    hpo: &H,
+    monarch: &M,
+) -> Result<PhenotypeSearchPage, BioMcpError> {
+    let resolved_query =
+        resolve_phenotype_query_terms_with_source(hpo_terms, command_deadline, hpo).await?;
     let terms = resolved_query
         .iter()
         .map(|term| term.id.clone())
         .collect::<Vec<_>>();
-    let client = MonarchClient::new()?;
-    let provider = timeout_at(command_deadline, client.phenotype_similarity_search(&terms))
+    let provider = timeout_at(command_deadline, monarch.similarity(&terms))
         .await
         .map_err(|_| monarch_deadline_error())??;
     let mut page = paginate_phenotype_matches(provider, limit, offset)?;
@@ -720,7 +805,7 @@ pub async fn search_phenotype_page(
     let support_deadline = (Instant::now() + PHENOTYPE_SUPPORT_TIMEOUT).min(command_deadline);
     let lookup = timeout_at(
         support_deadline,
-        client.phenotype_direct_support(&disease_ids, &terms),
+        monarch.direct_support(&disease_ids, &terms),
     )
     .await;
     match lookup {

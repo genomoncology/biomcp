@@ -48,6 +48,21 @@ JSON callers receive the same typed disease follow-up without an unsupported phe
 ../../tools/biomcp-ci --json search phenotype 'HP:0001250 HP:0001263' --limit 1 | jq '(.resolved_query == [{"raw":"HP:0001250","id":"HP:0001250","label":"Seizure"},{"raw":"HP:0001263","id":"HP:0001263","label":"Global developmental delay"}]) and (.results[0].direct_support | all(.status == "supported")) and (.pagination.total == null) and .pagination.has_more and (.pagination.provider_window_limit == 50) and (.pagination.provider_raw_row_count == 50) and .pagination.provider_window_exhausted and (._meta.next_commands | any(startswith("biomcp search phenotype ") and endswith("--limit 1 --offset 1"))) and (._meta.next_commands | any(. == "biomcp get disease MONDO:0010450 phenotypes"))' | mustmatch 'true'
 ```
 
+Both renderers use one ordered command selector: continuation first, then the
+first fully supported disease, then the existing list helper.
+
+```bash
+../../tools/biomcp-ci --json search phenotype 'HP:0001250 HP:0001263' --limit 1 | jq -c '._meta.next_commands | [(.[0] | endswith("--limit 1 --offset 1")), .[1], .[2]]' | mustmatch '[true,"biomcp get disease MONDO:0010450 phenotypes","biomcp list phenotype"]'
+../../tools/biomcp-ci search phenotype 'HP:0001250 HP:0001263' --limit 1 | mustmatch like 'See also:
+biomcp search phenotype
+biomcp get disease MONDO:0010450 phenotypes
+biomcp list phenotype'
+../../tools/biomcp-ci --json search phenotype macrocephaly --limit 1 | jq -c '._meta.next_commands | [(.[0] | endswith("--limit 1 --offset 1")), .[1]]' | mustmatch '[true,"biomcp list phenotype"]'
+../../tools/biomcp-ci search phenotype macrocephaly --limit 1 | mustmatch like 'See also:
+biomcp search phenotype macrocephaly
+biomcp list phenotype'
+```
+
 Phrase and direct-ID inputs resolve to the same fixed provider window.
 
 ```bash
@@ -93,6 +108,56 @@ association outage degrades only the support phase.
 `HP:0000202`: unavailable
 direct-support enrichment failed
 No disease follow-up is suggested'
+../../tools/biomcp-ci --json search phenotype HP:0000206 --limit 1 | jq -r '.results[0].direct_support[0].status' | mustmatch 'indeterminate'
+../../tools/biomcp-ci --json search phenotype HP:0000207 --limit 1 | jq -r '.results[0].direct_support[0].status' | mustmatch 'indeterminate'
+../../tools/biomcp-ci --json search phenotype HP:0000208 --limit 1 | jq -r '.results[0].direct_support[0].status' | mustmatch 'not_supported'
+../../tools/biomcp-ci --json search phenotype HP:0000209 --limit 2 | jq -c '.results | map(.direct_support[0].status)' | mustmatch '["supported","indeterminate"]'
+../../tools/biomcp-ci --json search phenotype HP:0000210 --limit 2 | jq -c '.results | map(.direct_support[0].status)' | mustmatch '["supported","indeterminate"]'
+../../tools/biomcp-ci --json search phenotype 'HP:0000209 HP:0000210' --limit 2 | jq -c '{states: [.results[] | [.direct_support[].status]], follow_up: (._meta.next_commands | map(select(startswith("biomcp get disease "))))}' | mustmatch '{"states":[["supported","not_supported"],["supported","supported"]],"follow_up":["biomcp get disease MONDO:0000201 phenotypes"]}'
+```
+
+Malformed HPO search envelopes are provider failures, including when a sibling
+phrase returns a valid empty array. A valid empty array remains the distinct
+unresolved-input outcome, and no case reaches Monarch.
+
+```bash
+python3 - <<'PY' | mustmatch like 'HPO envelope precedence is fail closed'
+import os, subprocess
+log = os.environ["BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG"]
+binary = os.environ["BIOMCP_BIN"]
+for query, malformed in [
+    ("missing-terms", True), ("null-terms", True),
+    ("scalar-terms", True), ("empty-control", False),
+    ("empty-control, missing-terms", True),
+]:
+    before = open(log, encoding="utf-8").read().count("/monarch/")
+    result = subprocess.run([binary, "--json", "search", "phenotype", query], capture_output=True, text=True, env=os.environ.copy())
+    assert result.returncode != 0
+    assert ("No HPO terms matched" not in result.stdout) == malformed, (query, result.stdout)
+    assert open(log, encoding="utf-8").read().count("/monarch/") == before
+print("HPO envelope precedence is fail closed")
+PY
+```
+
+Aggregate free-text resolution is all-or-nothing: ten unique IDs preserve the
+first phrase for a duplicate, while the eleventh is rejected before Monarch.
+
+```bash
+python3 - <<'PY' | mustmatch like 'aggregate ten accepted and eleven rejected'
+import json, os, subprocess
+from urllib.parse import parse_qs, urlparse
+binary = os.environ["BIOMCP_BIN"]
+log = os.environ["BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG"]
+ok = subprocess.run([binary, "--json", "search", "phenotype", "ten-first, ten-second", "--limit", "1"], check=True, capture_output=True, text=True, env=os.environ.copy())
+payload = json.loads(ok.stdout)
+assert [row["id"] for row in payload["resolved_query"]] == [f"HP:{index:07d}" for index in range(1, 11)]
+assert payload["resolved_query"][4]["raw"] == "ten-first"
+before = open(log, encoding="utf-8").read().count("/monarch/")
+bad = subprocess.run([binary, "--json", "search", "phenotype", "eleven-first, eleven-second"], capture_output=True, text=True, env=os.environ.copy())
+assert bad.returncode == 2 and "resolved more than 10 unique HPO terms" in bad.stdout
+assert open(log, encoding="utf-8").read().count("/monarch/") == before
+print("aggregate ten accepted and eleven rejected")
+PY
 ```
 
 Direct-ID labels are HPO-owned and fail closed before Monarch when the term
@@ -121,6 +186,7 @@ accidentally satisfy the contract.
 ```bash
 python3 - <<'PY' | mustmatch like 'phenotype pages share one fixed provider order'
 import json, os, subprocess
+from urllib.parse import parse_qs, urlparse
 
 binary = os.environ["BIOMCP_BIN"]
 env = os.environ.copy()
@@ -128,11 +194,20 @@ log = os.environ["BIOMCP_DISEASE_SURVIVAL_REQUEST_LOG"]
 initial_lines = open(log, encoding="utf-8").readlines()
 
 def search(limit, offset=0):
+    before_lines = open(log, encoding="utf-8").readlines()
     result = subprocess.run(
         [binary, "--json", "search", "phenotype", "HP:0001250 HP:0001263", "--limit", str(limit), "--offset", str(offset)],
         check=True, capture_output=True, text=True, env=env,
     )
-    return json.loads(result.stdout)
+    payload = json.loads(result.stdout)
+    association = [line for line in open(log, encoding="utf-8").readlines()[len(before_lines):] if "/monarch/v3/api/association?" in line]
+    expected_subjects = [row["disease_id"] for row in payload["results"]]
+    assert len(association) == (1 if expected_subjects else 0)
+    if association:
+        request = parse_qs(urlparse(association[0].split(" ", 1)[1].strip()).query)
+        assert request["subject"] == expected_subjects
+        assert request["object"] == ["HP:0001250", "HP:0001263"]
+    return payload
 
 pages = {}
 for limit in (1, 2, 3, 5):
@@ -150,6 +225,20 @@ page_two = search(3, 2)
 assert ids(pages[(2, 0)]) + ids(page_two) == ids(pages[(5, 0)])
 assert ids(pages[(5, 0)])[:4] == ["MONDO:0010450", "MONDO:0007367", "MONDO:0000002", "MONDO:0000001"]
 assert pages[(5, 0)]["results"][0]["disease_name"] == "intellectual disability, X-linked 89"
+
+association_lines = [line for line in open(log, encoding="utf-8").readlines()[len(initial_lines):] if "/monarch/v3/api/association?" in line]
+assert association_lines
+for line in association_lines:
+    parsed = urlparse(line.split(" ", 1)[1].strip())
+    query = parse_qs(parsed.query)
+    assert query["limit"] == ["500"] and query["offset"] == ["0"] and query["direct"] == ["true"]
+    assert len(query["subject"]) in (1, 2, 3, 5)
+    assert len(query["object"]) == 2
+
+before_empty = open(log, encoding="utf-8").read().count("/monarch/v3/api/association?")
+empty = search(2, 48)
+assert empty["results"] == []
+assert open(log, encoding="utf-8").read().count("/monarch/v3/api/association?") == before_empty
 
 requests = [line for line in open(log, encoding="utf-8").readlines()[len(initial_lines):] if "/monarch/v3/api/semsim/" in line]
 assert requests and all(line.rstrip().endswith("?limit=50") for line in requests)
@@ -228,14 +317,18 @@ invalid_window_path='/monarch/v3/api/semsim/search/HP:0001250/Human%20Diseases'
 too_many_terms_path='/monarch/v3/api/semsim/search/HP:0000001,HP:0000002,HP:0000003,HP:0000004,HP:0000005,HP:0000006,HP:0000007,HP:0000008,HP:0000009,HP:0000010,HP:0000011/Human%20Diseases'
 before_invalid_window="$(grep -Fc "$invalid_window_path" "$request_log" || true)"
 before_too_many_terms="$(grep -Fc "$too_many_terms_path" "$request_log" || true)"
+before_hpo_searches="$(grep -Fc '/hpo/search?' "$request_log" || true)"
 { set +e; ../../tools/biomcp-ci --json search phenotype 'HP:0001250' --limit 11 --offset 40 2>/dev/null; status=$?; set -e; test "$status" -eq 2; } | mustmatch like '"code": "invalid_argument"
 --offset + --limit must be <= 50 for phenotype search'
 { set +e; ../../tools/biomcp-ci --json search phenotype 'HP:0000001 HP:0000002 HP:0000003 HP:0000004 HP:0000005 HP:0000006 HP:0000007 HP:0000008 HP:0000009 HP:0000010 HP:0000011' 2>/dev/null; status=$?; set -e; test "$status" -eq 2; } | mustmatch like '"code": "invalid_argument"
 at most 10 unique HPO terms'
+{ set +e; ../../tools/biomcp-ci --json search phenotype 'p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11' 2>/dev/null; status=$?; set -e; test "$status" -eq 2; } | mustmatch like '"code": "invalid_argument"
+at most 10 comma-delimited symptom phrases'
 after_invalid_window="$(grep -Fc "$invalid_window_path" "$request_log" || true)"
 after_too_many_terms="$(grep -Fc "$too_many_terms_path" "$request_log" || true)"
 test "$after_invalid_window" -eq "$before_invalid_window"
 test "$after_too_many_terms" -eq "$before_too_many_terms"
+test "$(grep -Fc '/hpo/search?' "$request_log" || true)" -eq "$before_hpo_searches"
 ```
 
 ## Observed Phenotype Provider Requests

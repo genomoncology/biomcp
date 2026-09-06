@@ -16,12 +16,13 @@ Found {{ count }} semantic-similarity candidate disease{% if count != 1 %}s{% en
 | {{ row.disease_id }} | {{ row.disease_name }} | {{ row.score | score }} | {% for support in row.direct_support %}`{{ support.hpo_id }}`: {{ support.status }}{% if not loop.last %}; {% endif %}{% endfor %} |
 {% endfor -%}
 `not_supported` means no direct Monarch association was found in the complete lookup; it does not prove the disease lacks the phenotype. `indeterminate` means the lookup could not prove absence. `unavailable` means direct-support enrichment failed or exceeded its deadline while similarity results remained available.
+{% if not has_disease_follow_up %}
+
+No disease follow-up is suggested because no returned candidate has direct Monarch support for every resolved HPO term.
+{% endif %}
 {% if related_block %}
 
 {{ related_block }}
-{% else %}
-
-No disease follow-up is suggested because no returned candidate has direct Monarch support for every resolved HPO term.
 {% endif %}
 {% if pagination_footer %}
 

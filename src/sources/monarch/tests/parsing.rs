@@ -160,6 +160,7 @@ fn decode_json_response_maps_5xx_to_source_unavailable() {
         StatusCode::BAD_GATEWAY,
         Some(&content_type),
         b"bad gateway",
+        true,
     )
     .expect_err("5xx should be classified as source unavailable");
 
@@ -186,6 +187,7 @@ fn phenotype_decode_failures_remain_typed_errors() {
         StatusCode::NOT_FOUND,
         Some(&json),
         br#"{"error":"not found"}"#,
+        true,
     )
     .expect_err("non-success must not become an empty phenotype page");
     assert!(matches!(status, BioMcpError::Api { .. }));
@@ -194,6 +196,7 @@ fn phenotype_decode_failures_remain_typed_errors() {
         StatusCode::OK,
         Some(&html),
         b"<html>provider error</html>",
+        true,
     )
     .expect_err("HTML must not become an empty phenotype page");
     assert!(matches!(
@@ -205,6 +208,7 @@ fn phenotype_decode_failures_remain_typed_errors() {
         StatusCode::OK,
         Some(&json),
         b"not-json",
+        true,
     )
     .expect_err("invalid JSON must not become an empty phenotype page");
     assert!(matches!(decode, BioMcpError::ApiJson { .. }));
@@ -213,9 +217,15 @@ fn phenotype_decode_failures_remain_typed_errors() {
         StatusCode::OK,
         Some(&HeaderValue::from_static("text/plain")),
         b"[]",
+        true,
     )
     .expect_err("JSON under a non-JSON content type must fail closed");
     assert!(matches!(plain_json, BioMcpError::WithSourceContext { .. }));
+
+    let legacy: Vec<MonarchSemsimRow> =
+        MonarchClient::decode_json_response(StatusCode::OK, None, b"[]", false)
+            .expect("non-phenotype Monarch callers retain prior JSON sniffing");
+    assert!(legacy.is_empty());
 }
 
 #[test]
@@ -243,10 +253,54 @@ fn direct_support_presence_and_completeness_fail_closed() {
     );
 
     let complete: MonarchDirectSupportResponse =
-        serde_json::from_value(serde_json::json!({"total": 1, "items": [positive]})).unwrap();
+        serde_json::from_value(serde_json::json!({"total": 1, "items": [positive.clone()]}))
+            .unwrap();
     let support = MonarchClient::map_direct_support(complete, &subjects, &objects).unwrap();
     assert_eq!(
         support.status("MONDO:0000002", "HP:0000256"),
+        PhenotypeDirectSupportStatus::NotSupported
+    );
+
+    for value in [serde_json::json!({"total": 0}), serde_json::json!({})] {
+        let response: MonarchDirectSupportResponse = serde_json::from_value(value).unwrap();
+        let support = MonarchClient::map_direct_support(response, &subjects, &objects).unwrap();
+        assert_eq!(
+            support.status("MONDO:0000002", "HP:0000256"),
+            PhenotypeDirectSupportStatus::Indeterminate
+        );
+    }
+
+    let explicit_zero: MonarchDirectSupportResponse =
+        serde_json::from_value(serde_json::json!({"total": 0, "items": []})).unwrap();
+    let support = MonarchClient::map_direct_support(explicit_zero, &subjects, &objects).unwrap();
+    assert_eq!(
+        support.status("MONDO:0000002", "HP:0000256"),
+        PhenotypeDirectSupportStatus::NotSupported
+    );
+
+    for total in [2, 501] {
+        let response: MonarchDirectSupportResponse = serde_json::from_value(
+            serde_json::json!({"total": total, "items": [positive.clone()]}),
+        )
+        .unwrap();
+        let support = MonarchClient::map_direct_support(response, &subjects, &objects).unwrap();
+        assert_eq!(
+            support.status("MONDO:0000001", "HP:0000256"),
+            PhenotypeDirectSupportStatus::Supported
+        );
+        assert_eq!(
+            support.status("MONDO:0000002", "HP:0000256"),
+            PhenotypeDirectSupportStatus::Indeterminate
+        );
+    }
+
+    let complete_negated: MonarchDirectSupportResponse = serde_json::from_value(
+        serde_json::json!({"total":1,"items":[{"subject":"MONDO:0000001","object":"HP:0000256","category":"biolink:DiseaseToPhenotypicFeatureAssociation","predicate":"biolink:has_phenotype","negated":true}]}),
+    )
+    .unwrap();
+    let support = MonarchClient::map_direct_support(complete_negated, &subjects, &objects).unwrap();
+    assert_eq!(
+        support.status("MONDO:0000001", "HP:0000256"),
         PhenotypeDirectSupportStatus::NotSupported
     );
 

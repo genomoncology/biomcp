@@ -56,6 +56,8 @@ MONARCH_CML_PHENOTYPES_QUERY = {
 }
 PHENOTYPE_IDS_PATH = "/monarch/v3/api/semsim/search/HP:0001250,HP:0001263/Human%20Diseases"
 PHENOTYPE_MACRO_PATH = "/monarch/v3/api/semsim/search/HP:0000256/Human%20Diseases"
+TEN_HPO_IDS = [f"HP:{index:07d}" for index in range(1, 11)]
+TEN_HPO_PATH = "/monarch/v3/api/semsim/search/" + ",".join(TEN_HPO_IDS) + "/Human%20Diseases"
 PHENOTYPE_FIXED_WINDOW = [
     {"subject": {"id": "MONDO:0010450", "name": "intellectual disability, X-linked 89"}, "score": 13.302},
     {"subject": {"id": "MONDO:0007367", "name": "febrile seizures, familial, 1"}, "score": 12.0},
@@ -113,6 +115,19 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/hpo/search" and query == {"q": ["phrase-with-no-hpo-row"]}:
             send_json(self, 200, {"terms": []})
             return
+        hpo_search_cases = {
+            "empty-control": {"terms": []},
+            "missing-terms": {},
+            "null-terms": {"terms": None},
+            "scalar-terms": {"terms": "not-an-array"},
+            "ten-first": {"terms": [{"id": f"HP:{index:07d}", "name": f"term {index}"} for index in range(1, 6)]},
+            "ten-second": {"terms": [{"id": "HP:0000005", "name": "duplicate five"}] + [{"id": f"HP:{index:07d}", "name": f"term {index}"} for index in range(6, 11)]},
+            "eleven-first": {"terms": [{"id": f"HP:{index:07d}", "name": f"term {index}"} for index in range(1, 7)]},
+            "eleven-second": {"terms": [{"id": f"HP:{index:07d}", "name": f"term {index}"} for index in range(7, 12)]},
+        }
+        if parsed.path == "/hpo/search" and query.get("q", [None])[0] in hpo_search_cases:
+            send_json(self, 200, hpo_search_cases[query["q"][0]])
+            return
         if parsed.path == "/hpo/terms/HP:0001250":
             send_json(self, 200, {"id": "HP:0001250", "name": "Seizure"})
             return
@@ -131,6 +146,11 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/hpo/terms/HP:0000204":
             send_json(self, 200, {"id": "HP:0000204", "name": "  "})
             return
+        if parsed.path.startswith("/hpo/terms/HP:00002"):
+            term_id = parsed.path.rsplit("/", 1)[1]
+            if term_id in {"HP:0000206", "HP:0000207", "HP:0000208", "HP:0000209", "HP:0000210"}:
+                send_json(self, 200, {"id": term_id, "name": f"support fixture {term_id}"})
+                return
         if parsed.path == "/ols4/api/search":
             ols_query = query.get("q", [""])[0]
             expected = {
@@ -151,11 +171,32 @@ class Handler(BaseHTTPRequestHandler):
                 {"subject":{"id":"MONDO:0001234","name":"macrocephaly syndrome"},"score":18.0}
             ])
             return
+        if parsed.path == TEN_HPO_PATH and query == {"limit": ["50"]}:
+            send_json(self, 200, [{"subject":{"id":"MONDO:0000010","name":"ten-term fixture"},"score":10.0}])
+            return
         if parsed.path in {
             "/monarch/v3/api/semsim/search/HP:0000201/Human%20Diseases",
             "/monarch/v3/api/semsim/search/HP:0000202/Human%20Diseases",
+            "/monarch/v3/api/semsim/search/HP:0000206/Human%20Diseases",
+            "/monarch/v3/api/semsim/search/HP:0000207/Human%20Diseases",
+            "/monarch/v3/api/semsim/search/HP:0000208/Human%20Diseases",
         } and query == {"limit": ["50"]}:
             send_json(self, 200, [{"subject":{"id":"MONDO:0000200","name":"support state fixture disease"},"score":7.0}])
+            return
+        if parsed.path == "/monarch/v3/api/semsim/search/HP:0000209,HP:0000210/Human%20Diseases" and query == {"limit": ["50"]}:
+            send_json(self, 200, [
+                {"subject":{"id":"MONDO:0000200","name":"partial fixture disease"},"score":8.0},
+                {"subject":{"id":"MONDO:0000201","name":"complete fixture disease"},"score":7.0},
+            ])
+            return
+        if parsed.path in {
+            "/monarch/v3/api/semsim/search/HP:0000209/Human%20Diseases",
+            "/monarch/v3/api/semsim/search/HP:0000210/Human%20Diseases",
+        } and query == {"limit": ["50"]}:
+            send_json(self, 200, [
+                {"subject":{"id":"MONDO:0000200","name":"positive fixture disease"},"score":7.0},
+                {"subject":{"id":"MONDO:0000201","name":"unmatched fixture disease"},"score":6.0},
+            ])
             return
         if parsed.path == "/monarch/v3/api/association":
             required = {
@@ -167,11 +208,47 @@ class Handler(BaseHTTPRequestHandler):
             if all(query.get(key) == value for key, value in required.items()):
                 subjects = query.get("subject", [])
                 objects = query.get("object", [])
+                allowed = {
+                    "HP:0000256": {"MONDO:0019387", "MONDO:0001234"},
+                    "HP:0000201": {"MONDO:0000200"}, "HP:0000202": {"MONDO:0000200"},
+                    "HP:0000206": {"MONDO:0000200"}, "HP:0000207": {"MONDO:0000200"},
+                    "HP:0000208": {"MONDO:0000200"},
+                    "HP:0000209": {"MONDO:0000200", "MONDO:0000201"},
+                    "HP:0000210": {"MONDO:0000200", "MONDO:0000201"},
+                }
+                fixed_ids = {row["subject"]["id"] for row in PHENOTYPE_FIXED_WINDOW if row["subject"]["id"].startswith("MONDO:")}
+                allowed_subjects = {"MONDO:0000010"} if objects == TEN_HPO_IDS else set().union(*(allowed.get(obj, fixed_ids) for obj in objects))
+                if len(subjects) != len(set(subjects)) or len(objects) != len(set(objects)) or not set(subjects) <= allowed_subjects:
+                    send_json(self, 404, {"error": "association request escaped sliced subjects or duplicated filters"})
+                    return
                 if objects == ["HP:0000201"]:
                     send_json(self, 200, {"items": []})
                     return
                 if objects == ["HP:0000202"]:
                     send_json(self, 502, {"error": "fixed association outage"})
+                    return
+                if objects == ["HP:0000206"]:
+                    send_json(self, 200, {"total": 0})
+                    return
+                if objects == ["HP:0000207"]:
+                    send_json(self, 200, {})
+                    return
+                if objects == ["HP:0000208"]:
+                    send_json(self, 200, {"total": 0, "items": []})
+                    return
+                if objects in (["HP:0000209"], ["HP:0000210"]):
+                    row = {"subject":"MONDO:0000200","object":objects[0],"category":"biolink:DiseaseToPhenotypicFeatureAssociation","predicate":"biolink:has_phenotype","negated":False}
+                    send_json(self, 200, {"total": 2 if objects == ["HP:0000209"] else 501, "items": [row]})
+                    return
+                if objects == ["HP:0000209", "HP:0000210"]:
+                    rows = [
+                        {"subject":"MONDO:0000200","object":"HP:0000209"},
+                        {"subject":"MONDO:0000201","object":"HP:0000209"},
+                        {"subject":"MONDO:0000201","object":"HP:0000210"},
+                    ]
+                    for row in rows:
+                        row.update({"category":"biolink:DiseaseToPhenotypicFeatureAssociation","predicate":"biolink:has_phenotype","negated":False})
+                    send_json(self, 200, {"total": len(rows), "items": rows})
                     return
                 rows = []
                 for subject in subjects:

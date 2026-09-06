@@ -28,9 +28,29 @@ impl HpoClient {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn new_for_test(base: String) -> Result<Self, BioMcpError> {
+        let origin = reqwest::Url::parse(&base).map_err(|error| BioMcpError::Api {
+            api: HPO_API.into(),
+            message: format!("invalid test HPO base: {error}"),
+        })?;
+        let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::test_fixture(
+            crate::sources::provider_url_policy::ProviderUrlConsumer::GithubRelease,
+            &origin,
+        )?;
+        Ok(Self {
+            client: crate::sources::build_uncached_http_client(
+                crate::sources::SharedHttpClientKind::Default,
+                Some(&policy),
+            )?,
+            base: Cow::Owned(base),
+        })
+    }
+
     async fn get_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
+        strict_content_type: bool,
     ) -> Result<T, BioMcpError> {
         let resp = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
@@ -44,17 +64,19 @@ impl HpoClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::HPO),
         )
         .await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
-            error.with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::HPO,
-            ))
-        })
+        Self::decode_json_response(status, content_type.as_ref(), &bytes, strict_content_type)
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::HPO,
+                ))
+            })
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
         status: StatusCode,
         content_type: Option<&HeaderValue>,
         bytes: &[u8],
+        strict_content_type: bool,
     ) -> Result<T, BioMcpError> {
         if status == StatusCode::NOT_FOUND {
             return Err(BioMcpError::NotFound {
@@ -70,11 +92,12 @@ impl HpoClient {
                 message: format!("HTTP {status}: {excerpt}"),
             });
         }
-        require_json_content_type(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::HPO),
-            content_type,
-            bytes,
-        )?;
+        let context = crate::error::SourceContext::retry(crate::error::SourceProvider::HPO);
+        if strict_content_type {
+            require_json_content_type(context, content_type, bytes)?;
+        } else {
+            crate::sources::ensure_json_content_type(context, content_type, bytes)?;
+        }
         serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
             api: HPO_API.to_string(),
             source,
@@ -90,8 +113,20 @@ impl HpoClient {
 
     pub async fn term(&self, hpo_id: &str) -> Result<HpoTerm, BioMcpError> {
         let plan = Self::term_plan(hpo_id)?;
-        self.get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
-            .await
+        self.get_json(
+            request_from_plan(&self.client, self.base.as_ref(), &plan),
+            false,
+        )
+        .await
+    }
+
+    pub(crate) async fn phenotype_term(&self, hpo_id: &str) -> Result<HpoTerm, BioMcpError> {
+        let plan = Self::term_plan(hpo_id)?;
+        self.get_json(
+            request_from_plan(&self.client, self.base.as_ref(), &plan),
+            true,
+        )
+        .await
     }
 
     fn normalize_term_ids(ids: &[String], max_terms: usize) -> Vec<String> {
@@ -174,7 +209,10 @@ impl HpoClient {
             return Ok(Vec::new());
         };
         let response: HpoSearchResponse = self
-            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .get_json(
+                request_from_plan(&self.client, self.base.as_ref(), &plan),
+                false,
+            )
             .await?;
         Ok(Self::decode_search_term_ids(response, max_terms))
     }
@@ -187,7 +225,10 @@ impl HpoClient {
             return Ok(Vec::new());
         };
         let response: HpoSearchResponse = self
-            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .get_json(
+                request_from_plan(&self.client, self.base.as_ref(), &plan),
+                true,
+            )
             .await?;
         let terms = Self::decode_search_terms(response);
         if let Some(term) = terms.iter().find(|term| term.label.trim().is_empty()) {

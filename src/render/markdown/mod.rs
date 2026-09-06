@@ -443,10 +443,6 @@ pub(crate) fn related_pgx(pgx: &Pgx) -> Vec<String> {
     related::related_pgx(pgx)
 }
 
-pub(crate) fn related_phenotype_search_results(results: &[PhenotypeSearchResult]) -> Vec<String> {
-    related::related_phenotype_search_results(results)
-}
-
 pub(crate) fn related_protein(protein: &Protein, requested_sections: &[String]) -> Vec<String> {
     related::related_protein(protein, requested_sections)
 }
@@ -528,8 +524,11 @@ pub(crate) fn search_next_commands_protein(results: &[ProteinSearchResult]) -> V
     related::search_next_commands_protein(results)
 }
 
-pub(crate) fn search_next_commands_phenotype(results: &[PhenotypeSearchResult]) -> Vec<String> {
-    related::search_next_commands_phenotype(results)
+pub(crate) fn search_next_commands_phenotype(
+    results: &[PhenotypeSearchResult],
+    pagination: Option<String>,
+) -> Vec<String> {
+    related::search_next_commands_phenotype(results, pagination)
 }
 
 pub(crate) fn diagnostic_zero_result_recovery_commands() -> Vec<String> {

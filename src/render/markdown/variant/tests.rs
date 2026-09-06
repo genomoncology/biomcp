@@ -731,7 +731,6 @@ fn variant_search_markdown_renders_related_commands_from_context() {
         &[],
     )
     .expect("rendered markdown");
-
     assert!(markdown.contains("See also:"));
     assert!(markdown.contains("biomcp get variant rs199473688"));
     assert!(markdown.contains("biomcp get gene SCN5A"));
@@ -762,11 +761,13 @@ fn phenotype_search_markdown_renders_top_disease_follow_up() {
         &[],
         &results,
         "Showing 1-2 of 2 results.",
+        &crate::render::markdown::search_next_commands_phenotype(&results, None),
     )
     .expect("rendered markdown");
 
     assert!(markdown.contains("See also:"));
     assert!(markdown.contains("biomcp get disease MONDO:0100135 phenotypes"));
+    assert!(markdown.contains("biomcp list phenotype"));
     assert_eq!(
         related_command_description("biomcp get disease \"Dravet syndrome\" genes phenotypes"),
         Some("open the top phenotype-match disease with genes and phenotypes")

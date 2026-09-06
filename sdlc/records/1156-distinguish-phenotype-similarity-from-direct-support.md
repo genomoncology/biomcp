@@ -315,7 +315,9 @@ association metadata cannot establish absence, and association failures
 degrade the support phase without discarding similarity candidates. Markdown,
 JSON, and raw MCP expose the same identities and states. A disease follow-up
 uses the first stable MONDO ID supported for every resolved term; otherwise it
-is suppressed.
+is suppressed. Pagination, that eligible disease follow-up, and the existing
+phenotype-list helper now come from one ordered selector shared by Markdown
+and JSON.
 
 The supervised phenotype fixture now includes the opposite-phenotype
 macrocephaly case, incomplete and unavailable support states, exact post-slice
@@ -324,10 +326,18 @@ documentation describe semantic similarity separately from direct evidence.
 
 ## Verification
 
-- Focused Rust phenotype suite: 35 passed.
-- Focused HPO and Monarch presence/content-type/direct-support tests: passed.
-- Focused deterministic `spec/entity/phenotype.md`: 14 passed after the final
-  strict content-type hardening.
+- Focused Rust phenotype suite after independent-review remediation: 39
+  passed. This includes paused-time/request-count proofs for the four-request
+  concurrency bound, shared eight-second and outer thirty-second deadlines,
+  cancellation, retry/physical-attempt bounds, and degraded association phase
+  outcomes.
+- Focused Monarch direct-support presence/completeness parser matrix: 1 passed.
+  The phenotype suite also covers the HPO operation's four physical attempts.
+- Focused deterministic `spec/entity/phenotype.md`: 17 passed, covering the
+  four support states, multi-term partial/all support, malformed-envelope
+  precedence, ten/eleven aggregate bounds, post-slice association cardinality,
+  and shared Markdown/JSON follow-up ordering with and without an eligible
+  disease.
 - Focused documentation contracts: 30 passed.
 - Release-package and source-package boundary contracts: 23 passed with the
   required prepared binary and worktree-local temporary directory. An initial
@@ -336,7 +346,9 @@ documentation describe semantic similarity separately from direct evidence.
 - `make prepare-spec`: passed.
 - `make lint`: passed, including source/fixture integrity, Python and Bash
   lint, Rust formatting and Clippy with warnings denied, license/advisory
-  checks, and the quality ratchet.
+  checks, and the quality ratchet. The first remediation lint invocation found
+  three test-only declarations visible to the production library; they were
+  scoped to tests and the complete lint gate then passed.
 
 The full `make test`, full parallel `make spec`, full-feature lane, and live
 provider verification were not run in this isolated implementation stage.

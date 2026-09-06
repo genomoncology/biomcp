@@ -1,4 +1,201 @@
 use super::*;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use tokio::sync::Semaphore;
+
+#[derive(Clone)]
+struct OperationCounts {
+    active: Arc<AtomicUsize>,
+    maximum: Arc<AtomicUsize>,
+    started: Arc<AtomicUsize>,
+    cancelled: Arc<AtomicUsize>,
+}
+
+impl OperationCounts {
+    fn new() -> Self {
+        Self {
+            active: Arc::new(AtomicUsize::new(0)),
+            maximum: Arc::new(AtomicUsize::new(0)),
+            started: Arc::new(AtomicUsize::new(0)),
+            cancelled: Arc::new(AtomicUsize::new(0)),
+        }
+    }
+
+    fn enter(&self) -> OperationGuard {
+        self.started.fetch_add(1, Ordering::SeqCst);
+        let active = self.active.fetch_add(1, Ordering::SeqCst) + 1;
+        self.maximum.fetch_max(active, Ordering::SeqCst);
+        OperationGuard {
+            counts: self.clone(),
+            completed: false,
+        }
+    }
+}
+
+struct OperationGuard {
+    counts: OperationCounts,
+    completed: bool,
+}
+
+impl Drop for OperationGuard {
+    fn drop(&mut self) {
+        self.counts.active.fetch_sub(1, Ordering::SeqCst);
+        if !self.completed {
+            self.counts.cancelled.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+}
+
+struct GatedHpo {
+    permits: Arc<Semaphore>,
+    counts: OperationCounts,
+}
+
+impl HpoResolutionSource for GatedHpo {
+    async fn term(&self, id: &str) -> Result<HpoTerm, BioMcpError> {
+        let mut guard = self.counts.enter();
+        self.permits
+            .acquire()
+            .await
+            .expect("test semaphore open")
+            .forget();
+        guard.completed = true;
+        Ok(HpoTerm {
+            id: id.into(),
+            name: format!("label {id}"),
+        })
+    }
+
+    async fn search_terms(&self, query: &str) -> Result<Vec<HpoResolvedTerm>, BioMcpError> {
+        let mut guard = self.counts.enter();
+        self.permits
+            .acquire()
+            .await
+            .expect("test semaphore open")
+            .forget();
+        guard.completed = true;
+        let index = query.trim_start_matches('p').parse::<usize>().unwrap_or(1);
+        Ok(vec![HpoResolvedTerm {
+            id: format!("HP:{index:07}"),
+            label: format!("label {index}"),
+        }])
+    }
+}
+
+struct ImmediateHpo;
+
+impl HpoResolutionSource for ImmediateHpo {
+    async fn term(&self, id: &str) -> Result<HpoTerm, BioMcpError> {
+        Ok(HpoTerm {
+            id: id.into(),
+            name: "label".into(),
+        })
+    }
+
+    async fn search_terms(&self, _: &str) -> Result<Vec<HpoResolvedTerm>, BioMcpError> {
+        unreachable!("deadline tests use direct IDs")
+    }
+}
+
+struct PhaseMonarch {
+    similarity_counts: OperationCounts,
+    support_counts: OperationCounts,
+    block_similarity: bool,
+    block_support: bool,
+}
+
+#[derive(Clone, Copy)]
+enum SupportFailure {
+    Transport,
+    Status,
+    ContentType,
+    BodyLimit,
+    Decode,
+}
+
+struct FailingSupportMonarch(SupportFailure);
+
+impl PhenotypeMonarchSource for FailingSupportMonarch {
+    async fn similarity(
+        &self,
+        _: &[String],
+    ) -> Result<crate::sources::monarch::MonarchPhenotypeSearchResponse, BioMcpError> {
+        Ok(crate::sources::monarch::MonarchPhenotypeSearchResponse {
+            matches: vec![MonarchPhenotypeMatch {
+                disease_id: "MONDO:0000001".into(),
+                disease_name: "candidate".into(),
+                score: 1.0,
+            }],
+            raw_row_count: 1,
+            provider_window_exhausted: false,
+        })
+    }
+
+    async fn direct_support(
+        &self,
+        _: &[String],
+        _: &[String],
+    ) -> Result<MonarchDirectSupportLookup, BioMcpError> {
+        match self.0 {
+            SupportFailure::BodyLimit => Err(BioMcpError::BodyLimit {
+                source_name: "Monarch Initiative".into(),
+                max_bytes: 8 * 1024 * 1024,
+            }),
+            kind => Err(BioMcpError::Api {
+                api: "monarch".into(),
+                message: match kind {
+                    SupportFailure::Transport => "transport",
+                    SupportFailure::Status => "status",
+                    SupportFailure::ContentType => "content-type",
+                    SupportFailure::Decode => "decode",
+                    SupportFailure::BodyLimit => unreachable!(),
+                }
+                .into(),
+            }),
+        }
+    }
+}
+
+impl PhenotypeMonarchSource for PhaseMonarch {
+    async fn similarity(
+        &self,
+        _: &[String],
+    ) -> Result<crate::sources::monarch::MonarchPhenotypeSearchResponse, BioMcpError> {
+        let mut guard = self.similarity_counts.enter();
+        if self.block_similarity {
+            std::future::pending::<()>().await;
+        }
+        guard.completed = true;
+        Ok(crate::sources::monarch::MonarchPhenotypeSearchResponse {
+            matches: vec![MonarchPhenotypeMatch {
+                disease_id: "MONDO:0000001".into(),
+                disease_name: "candidate".into(),
+                score: 1.0,
+            }],
+            raw_row_count: 1,
+            provider_window_exhausted: false,
+        })
+    }
+
+    async fn direct_support(
+        &self,
+        _: &[String],
+        _: &[String],
+    ) -> Result<MonarchDirectSupportLookup, BioMcpError> {
+        let mut guard = self.support_counts.enter();
+        if self.block_support {
+            std::future::pending::<()>().await;
+        }
+        guard.completed = true;
+        let response = serde_json::from_value(serde_json::json!({"total":0,"items":[]}))
+            .expect("complete empty support response");
+        MonarchClient::map_direct_support(
+            response,
+            &["MONDO:0000001".into()],
+            &["HP:0001250".into()],
+        )
+    }
+}
 
 #[test]
 fn disease_search_request_records_normalized_filters_and_fetch_plan() {
@@ -282,23 +479,157 @@ async fn resolve_phenotype_query_terms_empty_input_mentions_hpo_ids_and_symptom_
     }
 }
 
-#[test]
-fn phenotype_provider_work_has_fixed_concurrency_operation_and_attempt_bounds() {
-    assert_eq!(MAX_PHENOTYPE_IN_FLIGHT, 4);
-    assert_eq!(MAX_PHENOTYPE_LOGICAL_OPERATIONS, 10 + 1 + 1);
+#[tokio::test(start_paused = true)]
+async fn phenotype_resolution_runs_all_ten_operations_with_at_most_four_in_flight() {
+    let source = GatedHpo {
+        permits: Arc::new(Semaphore::new(0)),
+        counts: OperationCounts::new(),
+    };
+    let query = (1..=10)
+        .map(|index| format!("p{index}"))
+        .collect::<Vec<_>>()
+        .join(",");
+    let future = resolve_phenotype_query_terms_with_source(
+        &query,
+        Instant::now() + PHENOTYPE_COMMAND_TIMEOUT,
+        &source,
+    );
+    tokio::pin!(future);
+    for _ in 0..20 {
+        tokio::select! {
+            biased;
+            result = &mut future => panic!("resolution finished before permits: {result:?}"),
+            _ = tokio::task::yield_now() => {}
+        }
+        if source.counts.started.load(Ordering::SeqCst) == MAX_PHENOTYPE_IN_FLIGHT {
+            break;
+        }
+    }
+    assert_eq!(source.counts.started.load(Ordering::SeqCst), 4);
+    assert_eq!(source.counts.maximum.load(Ordering::SeqCst), 4);
+    source.permits.add_permits(10);
+    let terms = future.await.expect("all ten phrases resolve");
+    assert_eq!(terms.len(), 10);
+    assert_eq!(source.counts.started.load(Ordering::SeqCst), 10);
+    assert_eq!(source.counts.maximum.load(Ordering::SeqCst), 4);
+    assert_eq!(source.counts.cancelled.load(Ordering::SeqCst), 0);
+    assert_eq!(10 + 1 + 1, MAX_PHENOTYPE_LOGICAL_OPERATIONS);
     assert_eq!(
-        MAX_PHENOTYPE_PHYSICAL_ATTEMPTS,
-        MAX_PHENOTYPE_LOGICAL_OPERATIONS * 4
+        MAX_PHENOTYPE_LOGICAL_OPERATIONS * 4,
+        MAX_PHENOTYPE_PHYSICAL_ATTEMPTS
+    );
+}
+
+#[tokio::test(start_paused = true)]
+async fn phenotype_shared_resolution_deadline_cancels_every_in_flight_operation_at_eight_seconds() {
+    let source = GatedHpo {
+        permits: Arc::new(Semaphore::new(0)),
+        counts: OperationCounts::new(),
+    };
+    let started_at = Instant::now();
+    let result = resolve_phenotype_query_terms_with_source(
+        "p1,p2,p3,p4,p5",
+        started_at + PHENOTYPE_COMMAND_TIMEOUT,
+        &source,
+    )
+    .await;
+    assert!(result.is_err());
+    assert_eq!(Instant::now() - started_at, PHENOTYPE_RESOLUTION_TIMEOUT);
+    assert_eq!(source.counts.started.load(Ordering::SeqCst), 5);
+    assert_eq!(source.counts.active.load(Ordering::SeqCst), 0);
+    assert_eq!(source.counts.cancelled.load(Ordering::SeqCst), 5);
+}
+
+#[tokio::test(start_paused = true)]
+async fn phenotype_whole_command_and_support_deadlines_have_distinct_observable_outcomes() {
+    let similarity_blocked = PhaseMonarch {
+        similarity_counts: OperationCounts::new(),
+        support_counts: OperationCounts::new(),
+        block_similarity: true,
+        block_support: false,
+    };
+    let started_at = Instant::now();
+    let failure = search_phenotype_page_with_sources(
+        "HP:0001250",
+        1,
+        0,
+        started_at + PHENOTYPE_COMMAND_TIMEOUT,
+        &ImmediateHpo,
+        &similarity_blocked,
+    )
+    .await
+    .expect_err("similarity must fail at the whole-command deadline");
+    match failure {
+        BioMcpError::SourceUnavailable { reason, .. } => {
+            assert!(reason.contains("30-second provider deadline"));
+        }
+        other => panic!("expected typed Monarch deadline, got {other:?}"),
+    }
+    assert_eq!(Instant::now() - started_at, PHENOTYPE_COMMAND_TIMEOUT);
+    assert_eq!(
+        similarity_blocked
+            .similarity_counts
+            .cancelled
+            .load(Ordering::SeqCst),
+        1
+    );
+
+    let support_blocked = PhaseMonarch {
+        similarity_counts: OperationCounts::new(),
+        support_counts: OperationCounts::new(),
+        block_similarity: false,
+        block_support: true,
+    };
+    let started_at = Instant::now();
+    let page = search_phenotype_page_with_sources(
+        "HP:0001250",
+        1,
+        0,
+        started_at + PHENOTYPE_COMMAND_TIMEOUT,
+        &ImmediateHpo,
+        &support_blocked,
+    )
+    .await
+    .expect("support deadline degrades a valid similarity page");
+    assert_eq!(Instant::now() - started_at, PHENOTYPE_SUPPORT_TIMEOUT);
+    assert_eq!(
+        support_blocked
+            .support_counts
+            .cancelled
+            .load(Ordering::SeqCst),
+        1
     );
     assert_eq!(
-        PHENOTYPE_RESOLUTION_TIMEOUT,
-        std::time::Duration::from_secs(8)
+        page.results[0].direct_support[0].status,
+        PhenotypeDirectSupportStatus::Unavailable
     );
-    assert_eq!(PHENOTYPE_SUPPORT_TIMEOUT, std::time::Duration::from_secs(8));
-    assert_eq!(
-        PHENOTYPE_COMMAND_TIMEOUT,
-        std::time::Duration::from_secs(30)
-    );
+}
+
+#[tokio::test]
+async fn phenotype_support_transport_status_content_body_and_decode_failures_all_degrade() {
+    for failure in [
+        SupportFailure::Transport,
+        SupportFailure::Status,
+        SupportFailure::ContentType,
+        SupportFailure::BodyLimit,
+        SupportFailure::Decode,
+    ] {
+        let page = search_phenotype_page_with_sources(
+            "HP:0001250",
+            1,
+            0,
+            Instant::now() + PHENOTYPE_COMMAND_TIMEOUT,
+            &ImmediateHpo,
+            &FailingSupportMonarch(failure),
+        )
+        .await
+        .expect("association failures must retain the similarity page");
+        assert_eq!(page.results[0].score, 1.0);
+        assert_eq!(
+            page.results[0].direct_support[0].status,
+            PhenotypeDirectSupportStatus::Unavailable
+        );
+    }
 }
 
 #[test]

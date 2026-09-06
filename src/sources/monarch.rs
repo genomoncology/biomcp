@@ -34,6 +34,7 @@ impl MonarchClient {
     async fn get_json<T: DeserializeOwned>(
         &self,
         req: reqwest_middleware::RequestBuilder,
+        strict_content_type: bool,
     ) -> Result<T, BioMcpError> {
         let resp = crate::sources::apply_cache_mode(req)
             .send_with_source_context(crate::error::SourceContext::retry(
@@ -47,17 +48,19 @@ impl MonarchClient {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::MONARCH),
         )
         .await?;
-        Self::decode_json_response(status, content_type.as_ref(), &bytes).map_err(|error| {
-            error.with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::MONARCH,
-            ))
-        })
+        Self::decode_json_response(status, content_type.as_ref(), &bytes, strict_content_type)
+            .map_err(|error| {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::MONARCH,
+                ))
+            })
     }
 
     pub(crate) fn decode_json_response<T: DeserializeOwned>(
         status: StatusCode,
         content_type: Option<&HeaderValue>,
         bytes: &[u8],
+        strict_content_type: bool,
     ) -> Result<T, BioMcpError> {
         if !status.is_success() {
             let excerpt = crate::sources::body_excerpt(bytes);
@@ -78,11 +81,12 @@ impl MonarchClient {
             });
         }
 
-        require_json_content_type(
-            crate::error::SourceContext::retry(crate::error::SourceProvider::MONARCH),
-            content_type,
-            bytes,
-        )?;
+        let context = crate::error::SourceContext::retry(crate::error::SourceProvider::MONARCH);
+        if strict_content_type {
+            require_json_content_type(context, content_type, bytes)?;
+        } else {
+            crate::sources::ensure_json_content_type(context, content_type, bytes)?;
+        }
 
         serde_json::from_slice(bytes).map_err(|source| BioMcpError::ApiJson {
             api: MONARCH_API.to_string(),
@@ -155,7 +159,10 @@ impl MonarchClient {
     ) -> Result<Vec<MonarchGeneAssociation>, BioMcpError> {
         let plan = Self::disease_gene_associations_plan(disease_id, limit)?;
         let resp: MonarchAssociationResponse = self
-            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .get_json(
+                request_from_plan(&self.client, self.base.as_ref(), &plan),
+                false,
+            )
             .await?;
         let out = Self::map_gene_associations(resp, limit);
         Ok(out)
@@ -224,7 +231,10 @@ impl MonarchClient {
     ) -> Result<Vec<MonarchPhenotypeAssociation>, BioMcpError> {
         let plan = Self::disease_phenotypes_plan(disease_id, limit)?;
         let resp: MonarchAssociationResponse = self
-            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .get_json(
+                request_from_plan(&self.client, self.base.as_ref(), &plan),
+                false,
+            )
             .await?;
         let out = Self::map_phenotype_associations(resp, limit);
         Ok(out)
@@ -295,7 +305,10 @@ impl MonarchClient {
     ) -> Result<Vec<MonarchModelAssociation>, BioMcpError> {
         let plan = Self::disease_models_plan(disease_id, limit)?;
         let resp: MonarchAssociationResponse = self
-            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .get_json(
+                request_from_plan(&self.client, self.base.as_ref(), &plan),
+                false,
+            )
             .await?;
         let out = Self::map_model_associations(resp, limit);
         Ok(out)
@@ -361,7 +374,10 @@ impl MonarchClient {
     ) -> Result<MonarchPhenotypeSearchResponse, BioMcpError> {
         let plan = Self::phenotype_similarity_search_plan(hpo_terms)?;
         let rows: Vec<MonarchSemsimRow> = self
-            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .get_json(
+                request_from_plan(&self.client, self.base.as_ref(), &plan),
+                true,
+            )
             .await?;
         let out = Self::map_phenotype_matches(rows);
         Ok(out)
@@ -457,7 +473,10 @@ impl MonarchClient {
     ) -> Result<MonarchDirectSupportLookup, BioMcpError> {
         let plan = Self::phenotype_direct_support_plan(disease_ids, hpo_terms)?;
         let response: MonarchDirectSupportResponse = self
-            .get_json(request_from_plan(&self.client, self.base.as_ref(), &plan))
+            .get_json(
+                request_from_plan(&self.client, self.base.as_ref(), &plan),
+                true,
+            )
             .await?;
         Self::map_direct_support(response, disease_ids, hpo_terms)
     }

@@ -52,19 +52,17 @@ pub(in crate::cli) async fn handle_search(
     let resolved_query = page.resolved_query;
     let results = page.results;
     let pagination = page.pagination;
+    let pagination_command = pagination.next_window().map(|(limit, offset)| {
+        format!(
+            "biomcp search phenotype {} --limit {} --offset {}",
+            crate::render::markdown::shell_quote_arg(&args.terms),
+            limit,
+            offset
+        )
+    });
+    let next_commands =
+        crate::render::markdown::search_next_commands_phenotype(&results, pagination_command);
     let text = if json {
-        let mut next_commands = crate::render::markdown::search_next_commands_phenotype(&results);
-        if let Some((limit, offset)) = pagination.next_window() {
-            next_commands.insert(
-                0,
-                format!(
-                    "biomcp search phenotype {} --limit {} --offset {}",
-                    crate::render::markdown::shell_quote_arg(&args.terms),
-                    limit,
-                    offset
-                ),
-            );
-        }
         crate::render::json::to_pretty(&PhenotypeJsonResponse {
             resolved_query,
             count: results.len(),
@@ -79,6 +77,7 @@ pub(in crate::cli) async fn handle_search(
             &resolved_query,
             &results,
             &footer,
+            &next_commands,
         )?
     };
     Ok(CommandOutcome::stdout(text))

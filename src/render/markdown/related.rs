@@ -476,21 +476,21 @@ pub(super) fn search_next_commands_protein(results: &[ProteinSearchResult]) -> V
     out.push("biomcp list protein".to_string());
     dedupe_markdown_commands(out)
 }
-
-pub(super) fn search_next_commands_phenotype(results: &[PhenotypeSearchResult]) -> Vec<String> {
+pub(super) fn search_next_commands_phenotype(
+    results: &[PhenotypeSearchResult],
+    pagination: Option<String>,
+) -> Vec<String> {
     if results.is_empty() {
         return Vec::new();
     }
-
-    let mut out = related_phenotype_search_results(results);
+    let mut out = pagination.into_iter().collect::<Vec<_>>();
+    out.extend(related_phenotype_search_results(results));
     out.push("biomcp list phenotype".to_string());
     dedupe_markdown_commands(out)
 }
-
 pub(super) fn diagnostic_zero_result_recovery_commands() -> Vec<String> {
     vec!["biomcp list diagnostic".to_string()]
 }
-
 fn non_empty_owned(value: &str) -> Option<String> {
     let value = value.trim();
     (!value.is_empty()).then(|| value.to_string())

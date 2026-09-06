@@ -46,7 +46,10 @@ fn phenotype_search_json_next_commands_parse() {
     let json = crate::cli::search_json_with_meta(
         results.clone(),
         pagination,
-        crate::render::markdown::search_next_commands_phenotype(&results),
+        crate::render::markdown::search_next_commands_phenotype(
+            &results,
+            Some("biomcp search phenotype seizure --limit 1 --offset 1".into()),
+        ),
     )
     .expect("phenotype search json");
     let commands = collect_next_commands(&json);
@@ -54,6 +57,7 @@ fn phenotype_search_json_next_commands_parse() {
     assert_eq!(
         commands,
         vec![
+            "biomcp search phenotype seizure --limit 1 --offset 1".to_string(),
             "biomcp get disease MONDO:0100135 phenotypes".to_string(),
             "biomcp list phenotype".to_string(),
         ]
@@ -64,4 +68,18 @@ fn phenotype_search_json_next_commands_parse() {
             .any(|command| command.contains("get phenotype"))
     );
     assert_json_next_commands_parse("phenotype-search", &json);
+
+    let mut unsupported = results;
+    unsupported[0].direct_support[0].status =
+        crate::entities::disease::PhenotypeDirectSupportStatus::Indeterminate;
+    assert_eq!(
+        crate::render::markdown::search_next_commands_phenotype(
+            &unsupported,
+            Some("biomcp search phenotype seizure --limit 1 --offset 1".into()),
+        ),
+        vec![
+            "biomcp search phenotype seizure --limit 1 --offset 1",
+            "biomcp list phenotype",
+        ]
+    );
 }
