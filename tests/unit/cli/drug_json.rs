@@ -69,6 +69,16 @@ fn drug_search_json_single_region_keeps_selected_bucket_and_who_fields() {
         value["regions"]["who"]["results"][0]["prequalification_date"],
         "2019-12-18"
     );
+    assert!(
+        value["regions"]["who"]["results"][0]
+            .get("matched_term")
+            .is_none()
+    );
+    assert!(
+        value["regions"]["who"]["results"][0]
+            .get("source")
+            .is_none()
+    );
     assert_eq!(
         value["_meta"]["next_commands"][0],
         serde_json::Value::String("biomcp get drug Trastuzumab".into())
@@ -240,6 +250,12 @@ fn drug_search_json_preserves_region_envelope_with_workflow_meta() {
     let value: serde_json::Value = serde_json::from_str(&json).expect("valid json");
     assert_eq!(value["region"], "us");
     assert_eq!(value["regions"]["us"]["count"], 1);
+    assert!(
+        value["regions"]["us"]["results"][0]
+            .get("matched_term")
+            .is_none()
+    );
+    assert!(value["regions"]["us"]["results"][0].get("source").is_none());
     assert_eq!(value["_meta"]["workflow"], "treatment-lookup");
     assert_eq!(value["_meta"]["workflow_playbook"], expected_playbook);
     assert!(value["_meta"].get("ladder").is_none());
@@ -270,6 +286,9 @@ fn drug_search_json_all_region_uses_unified_regions_envelope() {
                     active_substance: "pembrolizumab".to_string(),
                     ema_product_number: "EMEA/H/C/003820".to_string(),
                     status: "Authorised".to_string(),
+                    match_kind: "active_substance".to_string(),
+                    matched_term: "pembrolizumab".to_string(),
+                    source: "query".to_string(),
                 }],
                 Some(1),
             )
@@ -346,6 +365,9 @@ fn drug_search_json_all_region_keeps_empty_buckets() {
                     active_substance: "pembrolizumab".to_string(),
                     ema_product_number: "EMEA/H/C/003820".to_string(),
                     status: "Authorised".to_string(),
+                    match_kind: "active_substance".to_string(),
+                    matched_term: "pembrolizumab".to_string(),
+                    source: "query".to_string(),
                 }],
                 Some(1),
             )
@@ -378,18 +400,27 @@ fn drug_search_json_orders_match_tiers_stably_within_one_region() {
             active_substance: "different".into(),
             ema_product_number: "2".into(),
             status: "Authorised".into(),
+            match_kind: "product_name".into(),
+            matched_term: "pembrolizumab".into(),
+            source: "query".into(),
         },
         crate::entities::drug::EmaDrugSearchResult {
             name: "Keytruda".into(),
             active_substance: "Pembrolizumab".into(),
             ema_product_number: "3".into(),
             status: "Authorised".into(),
+            match_kind: "active_substance".into(),
+            matched_term: "pembrolizumab".into(),
+            source: "query".into(),
         },
         crate::entities::drug::EmaDrugSearchResult {
             name: "Earlier broad product".into(),
             active_substance: "different".into(),
             ema_product_number: "1".into(),
             status: "Authorised".into(),
+            match_kind: "broad_text".into(),
+            matched_term: "pembrolizumab".into(),
+            source: "query".into(),
         },
     ];
     let json = drug_search_json(
@@ -415,4 +446,6 @@ fn drug_search_json_orders_match_tiers_stably_within_one_region() {
     assert_eq!(results[0]["match_kind"], "product_name");
     assert_eq!(results[1]["match_kind"], "active_substance");
     assert_eq!(results[2]["match_kind"], "broad_text");
+    assert_eq!(results[0]["matched_term"], "pembrolizumab");
+    assert_eq!(results[0]["source"], "query");
 }

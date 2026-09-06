@@ -11,6 +11,14 @@ In BioMCP, CDC CVX/MVX is a local-runtime vaccine identity source rather than a 
 
 ## What BioMCP exposes
 
+The EMA bridge only uses descriptions joined from an exact or family-prefix
+trade-name match. It discards generic formulation words, requires at least one
+distinctive antigen word or uppercase vaccine initialism, and matches the
+remaining description tokens in order within one EMA field. This admits
+recorded bridges such as Gardasil/Silgard, Prevnar/Prevenar 13, and
+Fluzone/influenza without treating words such as `vaccine`, `conjugate`, or a
+number by itself as drug identity.
+
 | Command | What BioMCP gets from this source | Integration note |
 |---|---|---|
 | `search drug <vaccine_brand> --region eu` | EU vaccine matches by bridged brand name | Uses the local CDC bundle to expand vaccine brand names into EMA-searchable aliases after MyChem identity misses |

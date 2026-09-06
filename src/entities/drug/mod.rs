@@ -412,6 +412,9 @@ pub struct EmaDrugSearchResult {
     pub active_substance: String,
     pub ema_product_number: String,
     pub status: String,
+    pub match_kind: String,
+    pub matched_term: String,
+    pub source: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

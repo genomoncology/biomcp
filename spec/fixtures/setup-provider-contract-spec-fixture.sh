@@ -55,6 +55,7 @@ MYCHEM = {
     "Keytruda": fixture("mychem/query_keytruda_get_20260811.json"),
     "pembrolizumab": fixture("mychem/query_pembrolizumab_get_20260811.json"),
     "trastuzumab": fixture("mychem/query_trastuzumab_search_20260811.json"),
+    "eflornithine": fixture("mychem/query_eflornithine_search_20260905.json"),
     'drugcentral.drug_use.indication.concept_name:"Marfan syndrome"': fixture(
         "mychem/query_marfan_indication_20260811.json"
     ),

@@ -102,7 +102,8 @@ pub(super) struct DrugSearchRegionBucket<T: serde::Serialize> {
 struct DrugSearchView<T: serde::Serialize> {
     #[serde(flatten)]
     row: T,
-    match_kind: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    match_kind: Option<&'static str>,
 }
 
 #[derive(Default, serde::Serialize)]
@@ -139,12 +140,39 @@ pub(super) fn bucket_from_page<T: serde::Serialize>(
         .into_iter()
         .zip(page.match_kinds)
         .map(|(row, kind)| DrugSearchView {
-            match_kind: kind.as_str(),
+            match_kind: Some(kind.as_str()),
             row,
         })
         .collect::<Vec<_>>();
     DrugSearchRegionBucket {
         region,
+        pagination,
+        count,
+        results,
+        continuation_command,
+    }
+}
+
+fn eu_bucket_from_page(
+    page: crate::entities::drug::RankedDrugSearchPage<crate::entities::drug::EmaDrugSearchResult>,
+    query: Option<&str>,
+    offset: usize,
+    limit: usize,
+) -> DrugSearchRegionBucket<crate::entities::drug::EmaDrugSearchResult> {
+    let count = page.results.len();
+    let pagination = crate::cli::PaginationMeta::offset(offset, limit, count, page.total);
+    let continuation_command =
+        drug_region_continuation(query, "eu", offset, limit, count, pagination.has_more);
+    let results = page
+        .results
+        .into_iter()
+        .map(|row| DrugSearchView {
+            row,
+            match_kind: None,
+        })
+        .collect();
+    DrugSearchRegionBucket {
+        region: "eu",
         pagination,
         count,
         results,
@@ -208,7 +236,7 @@ pub(super) fn drug_search_json(
             DrugSearchJsonResponse {
                 region: crate::entities::drug::DrugRegion::Eu.as_str(),
                 regions: DrugSearchJsonRegions {
-                    eu: Some(bucket_from_page(page, "eu", requested_name, offset, limit)),
+                    eu: Some(eu_bucket_from_page(page, requested_name, offset, limit)),
                     ..Default::default()
                 },
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow.clone()),
@@ -241,7 +269,7 @@ pub(super) fn drug_search_json(
                 region: crate::entities::drug::DrugRegion::All.as_str(),
                 regions: DrugSearchJsonRegions {
                     us: Some(bucket_from_page(us, "us", requested_name, offset, limit)),
-                    eu: Some(bucket_from_page(eu, "eu", requested_name, offset, limit)),
+                    eu: Some(eu_bucket_from_page(eu, requested_name, offset, limit)),
                     who: Some(bucket_from_page(who, "who", requested_name, offset, limit)),
                 },
                 _meta: crate::cli::search_meta_with_workflow(next_commands, None, workflow),

@@ -73,6 +73,9 @@ fn search_next_commands_drug_eu_prefers_active_substance_match() {
             active_substance: "trastuzumab".to_string(),
             ema_product_number: "EMEA/H/C/004123".to_string(),
             status: "Authorised".to_string(),
+            match_kind: "active_substance".to_string(),
+            matched_term: "trastuzumab".to_string(),
+            source: "query".to_string(),
         }],
         Some("trastuzumab"),
     );
@@ -127,6 +130,9 @@ fn search_next_commands_drug_regions_canonicalize_across_buckets() {
             active_substance: "pembrolizumab".to_string(),
             ema_product_number: "EMEA/H/C/003820".to_string(),
             status: "Authorised".to_string(),
+            match_kind: "active_substance".to_string(),
+            matched_term: "pembrolizumab".to_string(),
+            source: "query".to_string(),
         }]),
         Some(&[crate::entities::drug::WhoPrequalificationSearchResult {
             kind: crate::entities::drug::WhoPrequalificationKind::FinishedPharma,
@@ -162,6 +168,9 @@ fn search_next_commands_drug_regions_fall_back_without_requested_name() {
             active_substance: "trastuzumab".to_string(),
             ema_product_number: "EMEA/H/C/004123".to_string(),
             status: "Authorised".to_string(),
+            match_kind: "active_substance".to_string(),
+            matched_term: "trastuzumab".to_string(),
+            source: "query".to_string(),
         }]),
         Some(&[crate::entities::drug::WhoPrequalificationSearchResult {
             kind: crate::entities::drug::WhoPrequalificationKind::FinishedPharma,

@@ -7,8 +7,8 @@ use tracing::warn;
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
-use crate::sources::cvx::{CvxClient, CvxSyncMode};
-use crate::sources::ema::{EmaClient, EmaDrugIdentity, EmaSyncMode};
+use crate::sources::cvx::{CvxAliasSource, CvxClient, CvxSyncMode};
+use crate::sources::ema::{EmaClient, EmaDrugIdentity, EmaIdentitySource, EmaSyncMode};
 use crate::sources::mychem::{MyChemHit, MyChemNdcField};
 use crate::sources::openfda::OpenFdaClient;
 use crate::sources::who_pq::{WhoPqClient, WhoPqSyncMode, WhoProductTypeFilter};
@@ -17,9 +17,9 @@ use crate::transform;
 use super::label::extract_openfda_values_from_result;
 use super::query::{AtcExpansion, build_mychem_query, mechanism_atc_expansions};
 use super::{
-    Drug, DrugRegion, DrugSearchFilters, DrugSearchMatchKind, DrugSearchPageWithRegion,
-    DrugSearchResult, RankedDrugSearchPage, WhoPrequalificationEntry,
-    WhoPrequalificationSearchResult, build_ema_identity, build_who_identity, direct_drug_lookup,
+    DrugRegion, DrugSearchFilters, DrugSearchMatchKind, DrugSearchPageWithRegion, DrugSearchResult,
+    RankedDrugSearchPage, WhoPrequalificationEntry, WhoPrequalificationSearchResult,
+    build_who_identity, direct_drug_lookup,
 };
 
 fn normalized_name(value: &str) -> String {
@@ -40,6 +40,112 @@ fn string_field_matches(value: &crate::utils::serde::StringOrVec, query: &str) -
             values.iter().any(|value| normalized_name(value) == query)
         }
     }
+}
+
+fn string_field_values(value: &crate::utils::serde::StringOrVec) -> Vec<&str> {
+    match value {
+        crate::utils::serde::StringOrVec::None => Vec::new(),
+        crate::utils::serde::StringOrVec::Single(value) => vec![value],
+        crate::utils::serde::StringOrVec::Multiple(values) => {
+            values.iter().map(String::as_str).collect()
+        }
+    }
+}
+
+fn ndc_rows(hit: &MyChemHit) -> Vec<&crate::sources::mychem::MyChemNdc> {
+    match hit.ndc.as_ref() {
+        None => Vec::new(),
+        Some(MyChemNdcField::One(row)) => vec![row],
+        Some(MyChemNdcField::Many(rows)) => rows.iter().collect(),
+    }
+}
+
+fn hit_matches_ema_query(hit: &MyChemHit, normalized_query: &str) -> bool {
+    hit.openfda.as_ref().is_some_and(|openfda| {
+        string_field_matches(&openfda.generic_name, normalized_query)
+            || string_field_matches(&openfda.brand_name, normalized_query)
+    }) || ndc_rows(hit).iter().any(|row| {
+        row.nonproprietaryname
+            .as_deref()
+            .is_some_and(|value| normalized_name(value) == normalized_query)
+    }) || hit
+        .drugbank
+        .as_ref()
+        .and_then(|drugbank| drugbank.name.as_deref())
+        .is_some_and(|value| normalized_name(value) == normalized_query)
+        || hit
+            .chembl
+            .as_ref()
+            .and_then(|chembl| chembl.pref_name.as_deref())
+            .is_some_and(|value| normalized_name(value) == normalized_query)
+}
+
+fn push_ema_terms(
+    out: &mut Vec<(String, EmaIdentitySource)>,
+    values: impl IntoIterator<Item = (String, EmaIdentitySource)>,
+) {
+    out.extend(values.into_iter().filter_map(|(value, source)| {
+        let cleaned = value
+            .trim()
+            .trim_matches('.')
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+        (!cleaned.is_empty()).then_some((cleaned, source))
+    }));
+}
+
+fn ema_identity_from_mychem_hits(query: &str, hits: &[MyChemHit]) -> Option<EmaDrugIdentity> {
+    let normalized_query = normalized_name(query);
+    let admitted = hits
+        .iter()
+        .filter(|hit| hit_matches_ema_query(hit, &normalized_query))
+        .collect::<Vec<_>>();
+    if admitted.is_empty() {
+        return None;
+    }
+    let mut terms = Vec::new();
+    for hit in admitted {
+        if let Some(openfda) = hit.openfda.as_ref() {
+            push_ema_terms(
+                &mut terms,
+                string_field_values(&openfda.generic_name)
+                    .into_iter()
+                    .map(|value| (value.to_string(), EmaIdentitySource::OpenFdaGenericName)),
+            );
+        }
+        push_ema_terms(
+            &mut terms,
+            ndc_rows(hit).into_iter().filter_map(|row| {
+                row.nonproprietaryname
+                    .clone()
+                    .map(|value| (value, EmaIdentitySource::NdcNonproprietaryName))
+            }),
+        );
+        if let Some(value) = hit
+            .drugbank
+            .as_ref()
+            .and_then(|drugbank| drugbank.name.clone())
+        {
+            push_ema_terms(&mut terms, [(value, EmaIdentitySource::DrugbankName)]);
+        }
+        if let Some(value) = hit
+            .chembl
+            .as_ref()
+            .and_then(|chembl| chembl.pref_name.clone())
+        {
+            push_ema_terms(&mut terms, [(value, EmaIdentitySource::ChemblPrefName)]);
+        }
+        if let Some(openfda) = hit.openfda.as_ref() {
+            push_ema_terms(
+                &mut terms,
+                string_field_values(&openfda.brand_name)
+                    .into_iter()
+                    .map(|value| (value.to_string(), EmaIdentitySource::OpenFdaBrandName)),
+            );
+        }
+    }
+    Some(EmaDrugIdentity::from_typed_terms(query, terms))
 }
 
 fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
@@ -477,20 +583,16 @@ pub(super) fn search_results_from_openfda_label_response(
     out
 }
 
-async fn try_resolve_drug_identity(name: &str) -> Option<Drug> {
+async fn try_resolve_drug_identity(
+    name: &str,
+) -> Option<crate::sources::mychem::MyChemQueryResponse> {
     let name = name.trim();
     if name.is_empty() {
         return None;
     }
 
     match direct_drug_lookup(name).await {
-        Ok(resp) => {
-            if resp.hits.is_empty() {
-                return None;
-            }
-            let selected = transform::drug::select_hits_for_name(&resp.hits, name);
-            Some(transform::drug::merge_mychem_hits(&selected, name))
-        }
+        Ok(resp) => Some(resp),
         Err(err) => {
             warn!(query = %name, "Drug identity resolution unavailable for EMA alias expansion: {err}");
             None
@@ -533,23 +635,32 @@ pub async fn search_name_query_with_region(
             product_type,
             crate::sources::who_pq::WhoProductTypeFilter::Vaccine
         );
-    let resolved_identity = if should_resolve_drug_identity(region, product_type) {
+    let resolved_response = if should_resolve_drug_identity(region, product_type) {
         try_resolve_drug_identity(query).await
     } else {
         None
     };
+    let resolved_ema_identity = resolved_response
+        .as_ref()
+        .and_then(|response| ema_identity_from_mychem_hits(query, &response.hits));
+    let resolved_drug = resolved_response.as_ref().and_then(|response| {
+        (!response.hits.is_empty()).then(|| {
+            let selected = transform::drug::select_hits_for_name(&response.hits, query);
+            transform::drug::merge_mychem_hits(&selected, query)
+        })
+    });
     let needs_cvx_aliases =
-        (region.includes_eu() && resolved_identity.is_none()) || who_vaccine_search;
-    let cvx_aliases = if needs_cvx_aliases {
+        (region.includes_eu() && resolved_ema_identity.is_none()) || who_vaccine_search;
+    let (cvx_search_aliases, cvx_aliases) = if needs_cvx_aliases {
         match CvxClient::ready(CvxSyncMode::Auto).await {
-            Ok(client) => match client.lookup_brand_aliases(query) {
+            Ok(client) => match client.lookup_search_alias_sets(query) {
                 Ok(aliases) => aliases,
                 Err(err) => {
                     warn!(
                         query = %query,
                         "CDC CVX/MVX alias lookup unavailable for vaccine bridge: {err}"
                     );
-                    Vec::new()
+                    (Vec::new(), Vec::new())
                 }
             },
             Err(err) => {
@@ -557,20 +668,36 @@ pub async fn search_name_query_with_region(
                     query = %query,
                     "CDC CVX/MVX auto-sync unavailable for vaccine bridge: {err}"
                 );
-                Vec::new()
+                (Vec::new(), Vec::new())
             }
         }
     } else {
-        Vec::new()
+        (Vec::new(), Vec::new())
     };
     let eu_identity = if region.includes_eu() {
-        match resolved_identity.as_ref() {
-            Some(drug) => build_ema_identity(query, drug),
+        match resolved_ema_identity {
+            Some(identity) => identity,
             None => {
-                if cvx_aliases.is_empty() {
+                if cvx_search_aliases.is_empty() {
                     EmaDrugIdentity::new(query)
                 } else {
-                    EmaDrugIdentity::with_aliases(query, None, &cvx_aliases)
+                    EmaDrugIdentity::from_typed_terms(
+                        query,
+                        cvx_search_aliases
+                            .into_iter()
+                            .map(|alias| {
+                                let source = match alias.source {
+                                    CvxAliasSource::ShortDescription => {
+                                        EmaIdentitySource::CvxShortDescription
+                                    }
+                                    CvxAliasSource::FullVaccineName => {
+                                        EmaIdentitySource::CvxFullVaccineName
+                                    }
+                                };
+                                (alias.value, source)
+                            })
+                            .collect(),
+                    )
                 }
             }
         }
@@ -584,7 +711,7 @@ pub async fn search_name_query_with_region(
             crate::sources::who_pq::WhoPqIdentity::with_aliases(query, None, &cvx_aliases)
         }
     } else {
-        match resolved_identity.as_ref() {
+        match resolved_drug.as_ref() {
             Some(drug) => build_who_identity(query, drug),
             None => crate::sources::who_pq::WhoPqIdentity::new(query),
         }

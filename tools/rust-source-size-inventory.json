@@ -214,12 +214,6 @@
       "authorized_increase": null
     },
     {
-      "path": "src/sources/ema.rs",
-      "baseline_lines": 1059,
-      "floor_lines": 1059,
-      "authorized_increase": null
-    },
-    {
       "path": "src/sources/mod.rs",
       "baseline_lines": 1884,
       "floor_lines": 1847,

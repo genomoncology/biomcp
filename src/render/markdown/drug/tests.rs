@@ -505,6 +505,9 @@ fn drug_search_all_region_markdown_includes_who_block() {
             active_substance: "trastuzumab".to_string(),
             ema_product_number: "EMEA/H/C/004123".to_string(),
             status: "Authorised".to_string(),
+            match_kind: "alias".to_string(),
+            matched_term: "trastuzumab".to_string(),
+            source: "openfda.brand_name".to_string(),
         }],
         Some(1),
         &[crate::entities::drug::WhoPrequalificationSearchResult {
@@ -537,6 +540,34 @@ fn drug_search_all_region_markdown_includes_who_block() {
     assert!(markdown.contains("## WHO (WHO Prequalification)"));
     assert!(markdown.contains("BT-ON001"));
     assert!(markdown.contains("EMEA/H/C/004123"));
+    assert!(markdown.contains("|Name|Active Substance|EMA Number|Status|Match|"));
+    assert!(markdown.contains("alias: trastuzumab (openfda.brand_name)"));
+}
+
+#[test]
+fn eu_search_markdown_escapes_every_dynamic_match_component() {
+    let row = crate::entities::drug::EmaDrugSearchResult {
+        name: "Product".into(),
+        active_substance: "Substance".into(),
+        ema_product_number: "P1".into(),
+        status: "Authorised".into(),
+        match_kind: "alias|kind".into(),
+        matched_term: "term|value".into(),
+        source: "source|field".into(),
+    };
+    let markdown = drug_search_markdown_with_region(
+        "query",
+        DrugRegion::Eu,
+        &[],
+        Some(0),
+        &[row],
+        Some(1),
+        &[],
+        Some(0),
+        "",
+    )
+    .expect("markdown");
+    assert!(markdown.contains("alias\\|kind: term\\|value (source\\|field)"));
 }
 
 #[test]
@@ -831,6 +862,9 @@ fn drug_search_all_region_empty_state_includes_discover_only_when_both_regions_a
             active_substance: "pembrolizumab".to_string(),
             ema_product_number: "EMEA/H/C/003820".to_string(),
             status: "Authorized".to_string(),
+            match_kind: "alias".to_string(),
+            matched_term: "MK-3475".to_string(),
+            source: "openfda.brand_name".to_string(),
         }],
         Some(1),
         &[],
@@ -848,6 +882,9 @@ fn all_region_search_places_exact_continuation_under_the_matching_region() {
         active_substance: "pembrolizumab".to_string(),
         ema_product_number: "EMEA/H/C/003820".to_string(),
         status: "Authorized".to_string(),
+        match_kind: "active_substance".to_string(),
+        matched_term: "pembrolizumab".to_string(),
+        source: "query".to_string(),
     }];
     let markdown = drug_search_markdown_all_regions(
         "pembrolizumab",

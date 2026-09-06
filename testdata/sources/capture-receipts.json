@@ -1378,6 +1378,11 @@
       }
     },
     {
+      "path": "mychem/query_eflornithine_search_20260905.json",
+      "classification": "authored",
+      "authored_reason": "Provider-shaped adversarial fixture derived from ticket 1152's receipted eflornithine response evidence; it retains the real systematic DrugBank synonym while adding explicit multi-value and irrelevant-hit cases for deterministic identity admission coverage."
+    },
+    {
       "path": "mychem/query_imatinib_get_20260811.json",
       "classification": "real_and_receipted",
       "receipt": {

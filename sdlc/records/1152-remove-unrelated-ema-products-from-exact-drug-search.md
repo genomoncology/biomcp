@@ -225,3 +225,76 @@ US/WHO matching, OpenFDA fallback, `get drug`, public `Drug.brand_names`, the
 EMA or CVX feeds, sync/network/body/row limits, or MCP tool inventory. It has
 no dependency on tickets 1161, 1151, or 1153; those drug interaction,
 degradation, and orphan-designation changes are separate surfaces.
+
+## Result
+
+EMA name search now builds a search-only typed identity directly from admitted
+MyChem hits, with the accepted closed field/source vocabulary and no shared
+all-hits fallback. Untyped DrugBank synonyms and the excluded GtoPDB, UNII,
+and ChEBI fields cannot admit a hit or contribute an EMA term. Unresolved,
+empty, and failed MyChem lookups keep query-only behavior and use the existing
+strict CVX trade-name branch. The CVX bridge implements the bounded retained-
+token signature exactly, including qualifying uppercase initialisms, numeric
+constraints, compact ordered matching within one EMA scalar, and the specified
+formulation-word exclusions.
+
+Every retained EU row carries non-null `match_kind`, `matched_term`, and
+`source` values through CLI JSON and raw-MCP JSON. EU Markdown renders the
+escaped combined Match column; US and WHO shapes and typed MCP's deliberate
+rejection of the drug entity remain unchanged. EMA classification, exclusion,
+case-insensitive product-number deduplication, later-better whole-row
+replacement, stable tier ordering, totals, and pagination all occur across the
+complete bounded local feed before slicing.
+
+Provider-shaped MyChem, EMA, and CVX fixtures cover the eflornithine/acid false
+positive, every allowed and excluded source, exact and broad tiers, duplicate
+replacement, all pagination positions, and the Gardasil/Silgard,
+Prevnar/Prevenar-13, and Fluzone/influenza bridges with adversarial generic,
+numeric, reversed, and cross-field negatives. User and source documentation
+now describe typed identity, primary-phrase matching, CVX bridging, per-region
+pagination, and result provenance. Extracting EMA identity into its own module
+brought the legacy EMA source below 1,000 lines and removed its obsolete size
+inventory entry; two existing test sidecars were consolidated so the source
+package remains at the enforced 1,300-file ceiling.
+
+## Verification
+
+- Test-first proof: the initial focused Rust test did not compile because the
+  typed EMA identity constructor did not exist.
+- Focused Rust: 11 CVX parsing tests, 12 EMA parsing tests, 2 identity tests,
+  8 drug JSON tests, and 19 drug Markdown tests passed; the complete
+  `entities::drug` library lane passed 80 tests. After the package-neutral
+  file consolidation, all 17 EMA tests and all 15 drug-search tests passed.
+- Focused Python/docs: 38 tests passed across the source-page, public-skill,
+  and upstream-planning documentation contracts. The source capture receipt
+  audit passed.
+- Executable contract: the focused provider/DDInter-backed
+  `spec/entity/drug.md` run passed all 13 examples, including CLI Markdown and
+  JSON, raw MCP readable and JSON modes, typed-MCP rejection, false-positive
+  exclusion, and pagination surfaces. Manual fixture-backed CVX checks returned
+  Silgard, Prevenar 13, and the recorded influenza products with the expected
+  CVX sources.
+- Quality/package: the final `make lint` invocation passed its credential,
+  documentation, fixture, Python, shell, formatting, Clippy-with-warnings-
+  denied, license, and advisory checks, then failed only because the quality
+  ratchet correctly saw an intentional deleted test sidecar as still tracked
+  before staging. After staging that deletion, the complete standalone quality
+  ratchet and `git diff --cached --check` passed. An earlier complete lint run
+  after the EMA extraction had passed the same ratchet. `cargo build
+  --no-default-features --bin biomcp` passed. `cargo package --list
+  --allow-dirty --locked --offline --no-verify` reports exactly 1,300 files.
+
+The first package-list attempt exposed two new packaged sidecars and 1,302
+paths; consolidating the new identity tests and an existing EMA construction
+test sidecar restored the exact ceiling. A direct verified `cargo package`
+cannot run because the repository intentionally uses the existing Git-only
+BioData dependency without a registry version; the repository-standard
+offline package-list check passed. Full `make test`, full `make spec`, the
+full-feature lane, and the release gate were not run, and no merge was
+performed.
+
+## Review
+
+- Design review: accepted in the materially detailed ticket before
+  implementation.
+- Implementation review: pending independent review of this commit.

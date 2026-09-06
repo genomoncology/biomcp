@@ -93,6 +93,18 @@ pub(crate) struct CvxVaccineCandidate {
     pub full_vaccine_name: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CvxAliasSource {
+    ShortDescription,
+    FullVaccineName,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CvxSearchAlias {
+    pub value: String,
+    pub source: CvxAliasSource,
+}
+
 impl CvxClient {
     // dead-code reason: binary adverse-event dispatch constructs the local CVX client
     #[allow(dead_code)]
@@ -118,41 +130,62 @@ impl CvxClient {
         sync_cvx_root(&root, mode).await
     }
 
+    #[cfg(test)]
     pub(crate) fn lookup_brand_aliases(&self, query: &str) -> Result<Vec<String>, BioMcpError> {
+        Ok(self.lookup_search_alias_sets(query)?.1)
+    }
+
+    pub(crate) fn lookup_search_alias_sets(
+        &self,
+        query: &str,
+    ) -> Result<(Vec<CvxSearchAlias>, Vec<String>), BioMcpError> {
+        let Some(normalized_query) = normalize_match_key(query) else {
+            return Ok((Vec::new(), Vec::new()));
+        };
+        let records = self.read_alias_records()?;
+        let ema_records = ranked_alias_records(records.clone(), &normalized_query, false);
+        let broad_records = ranked_alias_records(records, &normalized_query, true);
+        let ema_aliases = Self::search_aliases_from_candidates(vaccine_candidates(ema_records));
+        let broad_aliases = Self::search_aliases_from_candidates(vaccine_candidates(broad_records))
+            .into_iter()
+            .map(|alias| alias.value)
+            .collect();
+        Ok((ema_aliases, broad_aliases))
+    }
+
+    #[cfg(test)]
+    pub(crate) fn lookup_brand_search_aliases(
+        &self,
+        query: &str,
+    ) -> Result<Vec<CvxSearchAlias>, BioMcpError> {
+        Ok(self.lookup_search_alias_sets(query)?.0)
+    }
+
+    fn search_aliases_from_candidates(records: Vec<CvxVaccineCandidate>) -> Vec<CvxSearchAlias> {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
-        for record in self.lookup_vaccine_candidates(query)? {
-            for term in [&record.short_description, &record.full_vaccine_name] {
+        for record in records {
+            for (term, source) in [
+                (&record.short_description, CvxAliasSource::ShortDescription),
+                (&record.full_vaccine_name, CvxAliasSource::FullVaccineName),
+            ] {
                 let Some(dedupe_key) = normalize_match_key(term) else {
                     continue;
                 };
                 let value = clean_text(term).unwrap_or_else(|| term.trim().to_string());
                 if seen.insert(dedupe_key) {
-                    out.push(value);
+                    out.push(CvxSearchAlias { value, source });
                 }
             }
         }
-
-        Ok(out)
+        out
     }
 
     pub(crate) fn lookup_vaccine_candidates(
         &self,
         query: &str,
     ) -> Result<Vec<CvxVaccineCandidate>, BioMcpError> {
-        let mut out = Vec::new();
-        let mut seen = HashSet::new();
-        for record in self.matching_alias_records(query)? {
-            if seen.insert(record.cvx_code.clone()) {
-                out.push(CvxVaccineCandidate {
-                    cvx_code: record.cvx_code,
-                    product_name: record.product_name,
-                    short_description: record.cvx_short_description,
-                    full_vaccine_name: record.cvx_full_vaccine_name,
-                });
-            }
-        }
-        Ok(out)
+        Ok(vaccine_candidates(self.matching_alias_records(query)?))
     }
 
     fn matching_alias_records(&self, query: &str) -> Result<Vec<CvxAliasRecord>, BioMcpError> {
@@ -160,31 +193,11 @@ impl CvxClient {
             return Ok(Vec::new());
         };
 
-        let mut matches = self
-            .read_alias_records()?
-            .into_iter()
-            .filter_map(|record| {
-                if record.cvx_non_vaccine {
-                    return None;
-                }
-                let match_rank = record_match_rank(&record, &normalized_query)?;
-                Some((match_rank, record))
-            })
-            .collect::<Vec<_>>();
-
-        matches.sort_by(|(rank_a, a), (rank_b, b)| {
-            rank_a
-                .cmp(rank_b)
-                .then_with(|| {
-                    active_sort_key(&a.product_name_status)
-                        .cmp(&active_sort_key(&b.product_name_status))
-                })
-                .then_with(|| active_sort_key(&a.cvx_status).cmp(&active_sort_key(&b.cvx_status)))
-                .then_with(|| a.normalized_product_name.cmp(&b.normalized_product_name))
-                .then_with(|| a.product_name.cmp(&b.product_name))
-        });
-
-        Ok(matches.into_iter().map(|(_, record)| record).collect())
+        Ok(ranked_alias_records(
+            self.read_alias_records()?,
+            &normalized_query,
+            true,
+        ))
     }
 
     fn read_alias_records(&self) -> Result<Vec<CvxAliasRecord>, BioMcpError> {
@@ -290,6 +303,55 @@ fn active_sort_key(status: &str) -> u8 {
     } else {
         1
     }
+}
+
+fn vaccine_candidates(records: Vec<CvxAliasRecord>) -> Vec<CvxVaccineCandidate> {
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
+    for record in records {
+        if seen.insert(record.cvx_code.clone()) {
+            out.push(CvxVaccineCandidate {
+                cvx_code: record.cvx_code,
+                product_name: record.product_name,
+                short_description: record.cvx_short_description,
+                full_vaccine_name: record.cvx_full_vaccine_name,
+            });
+        }
+    }
+    out
+}
+
+fn ranked_alias_records(
+    records: Vec<CvxAliasRecord>,
+    normalized_query: &str,
+    include_description_matches: bool,
+) -> Vec<CvxAliasRecord> {
+    let mut matches = records
+        .into_iter()
+        .filter_map(|record| {
+            if record.cvx_non_vaccine {
+                return None;
+            }
+            let match_rank = if include_description_matches {
+                record_match_rank(&record, normalized_query)
+            } else {
+                match_kind(&record.normalized_product_name, normalized_query)
+            }?;
+            Some((match_rank, record))
+        })
+        .collect::<Vec<_>>();
+    matches.sort_by(|(rank_a, a), (rank_b, b)| {
+        rank_a
+            .cmp(rank_b)
+            .then_with(|| {
+                active_sort_key(&a.product_name_status)
+                    .cmp(&active_sort_key(&b.product_name_status))
+            })
+            .then_with(|| active_sort_key(&a.cvx_status).cmp(&active_sort_key(&b.cvx_status)))
+            .then_with(|| a.normalized_product_name.cmp(&b.normalized_product_name))
+            .then_with(|| a.product_name.cmp(&b.product_name))
+    });
+    matches.into_iter().map(|(_, record)| record).collect()
 }
 
 fn match_kind(normalized_product_name: &str, normalized_query: &str) -> Option<u8> {

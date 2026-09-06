@@ -141,6 +141,26 @@ fn lookup_brand_aliases_matches_cvx_family_terms_for_antigen_queries() {
 }
 
 #[test]
+fn ema_search_aliases_require_trade_name_identity() {
+    let root = TempDirGuard::new("cvx-ema-trade-name-only");
+    super::write_fixture_bundle(root.path());
+    let client = CvxClient::from_root(root.path().to_path_buf());
+
+    assert!(
+        client
+            .lookup_brand_search_aliases("HPV")
+            .expect("strict EMA aliases")
+            .is_empty()
+    );
+    let gardasil = client
+        .lookup_brand_search_aliases("gardasil")
+        .expect("Gardasil aliases");
+    assert_eq!(gardasil[0].value, "HPV, quadrivalent");
+    assert_eq!(gardasil[0].source, CvxAliasSource::ShortDescription);
+    assert_eq!(gardasil[1].source, CvxAliasSource::FullVaccineName);
+}
+
+#[test]
 fn lookup_brand_aliases_joins_mvx_rows_when_present() {
     let root = TempDirGuard::new("cvx-mvx");
     super::write_fixture_bundle(root.path());

@@ -1,0 +1,27 @@
+{
+  "total": 2,
+  "hits": [
+    {
+      "_id": "DB06243",
+      "openfda": {
+        "generic_name": ["eflornithine"],
+        "brand_name": ["Vaniqa"]
+      },
+      "ndc": [
+        {"nonproprietaryname": "unrelated first NDC value"},
+        {"nonproprietaryname": "eflornithine"}
+      ],
+      "drugbank": {
+        "id": "DB06243",
+        "name": "Eflornithine",
+        "synonyms": ["2,5-diamino-2-(difluoromethyl)pentanoic acid", "acid"]
+      },
+      "chembl": {"pref_name": "Eflornithine"}
+    },
+    {
+      "_id": "irrelevant",
+      "drugbank": {"name": "Prasugrel", "synonyms": ["eflornithine"]},
+      "openfda": {"brand_name": ["Must Not Leak"]}
+    }
+  ]
+}

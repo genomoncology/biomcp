@@ -358,16 +358,19 @@ fn drug_search_markdown_with_region_and_footers(
                 "Found {count} drug{}\n",
                 if count == 1 { "" } else { "s" }
             );
-            out.push_str("|Name|Active Substance|EMA Number|Status|\n");
-            out.push_str("|---|---|---|---|\n");
+            out.push_str("|Name|Active Substance|EMA Number|Status|Match|\n");
+            out.push_str("|---|---|---|---|---|\n");
             for row in eu_results {
                 let _ = writeln!(
                     out,
-                    "|{}|{}|{}|{}|",
+                    "|{}|{}|{}|{}|{}: {} ({})|",
                     markdown_cell(&row.name),
                     markdown_cell(&row.active_substance),
                     markdown_cell(&row.ema_product_number),
                     markdown_cell(&row.status),
+                    markdown_cell(&row.match_kind),
+                    markdown_cell(&row.matched_term),
+                    markdown_cell(&row.source),
                 );
             }
             if !(us_results.is_empty()
@@ -499,16 +502,19 @@ fn drug_search_markdown_with_region_and_footers(
                     "Found {count} drug{}\n",
                     if count == 1 { "" } else { "s" }
                 );
-                out.push_str("|Name|Active Substance|EMA Number|Status|\n");
-                out.push_str("|---|---|---|---|\n");
+                out.push_str("|Name|Active Substance|EMA Number|Status|Match|\n");
+                out.push_str("|---|---|---|---|---|\n");
                 for row in eu_results {
                     let _ = writeln!(
                         out,
-                        "|{}|{}|{}|{}|",
+                        "|{}|{}|{}|{}|{}: {} ({})|",
                         markdown_cell(&row.name),
                         markdown_cell(&row.active_substance),
                         markdown_cell(&row.ema_product_number),
                         markdown_cell(&row.status),
+                        markdown_cell(&row.match_kind),
+                        markdown_cell(&row.matched_term),
+                        markdown_cell(&row.source),
                     );
                 }
             }

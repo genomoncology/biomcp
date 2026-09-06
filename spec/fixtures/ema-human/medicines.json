@@ -91,6 +91,29 @@
       "therapeutic_indication": ["Prophylaxis of influenza in adults 50 years of age and older."]
     },
     {
+      "name_of_medicine": ["Vaniqa"],
+      "active_substance": ["eflornithine"],
+      "ema_product_number": ["EMEA/H/C/000379"],
+      "medicine_status": ["Authorised"],
+      "category": ["Human"],
+      "therapeutic_indication": ["Treatment of facial hirsutism in women."]
+    },
+    {
+      "name_of_medicine": ["Eflornithine"],
+      "active_substance": ["other substance"],
+      "ema_product_number": ["EMEA/H/C/009001"],
+      "medicine_status": ["Exact product"],
+      "category": ["Human"]
+    },
+    {
+      "name_of_medicine": ["Prasugrel Viatris"],
+      "active_substance": ["prasugrel"],
+      "ema_product_number": ["EMEA/H/C/005207"],
+      "medicine_status": ["Authorised"],
+      "category": ["Human"],
+      "therapeutic_indication": ["Co-administered with acetylsalicylic acid for atherothrombotic events."]
+    },
+    {
       "name_of_medicine": ["Keytrudavet"],
       "active_substance": ["pembrolizumab"],
       "ema_product_number": ["EMEA/V/C/000999"],

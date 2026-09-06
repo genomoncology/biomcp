@@ -1,6 +1,6 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -19,6 +19,13 @@ use crate::entities::drug::{
 };
 use crate::error::BioMcpError;
 use crate::utils::serde::StringOrVec;
+
+mod identity;
+
+use identity::classify_ema_match;
+pub(crate) use identity::{EmaDrugIdentity, EmaIdentitySource};
+#[cfg(test)]
+use identity::{cvx_description_matches, cvx_signature};
 
 const SOURCE_NAME: &str = "EMA";
 const DOWNLOAD_URL: &str =
@@ -97,57 +104,6 @@ struct FeedSyncPlan {
     feed: EmaFeed,
     state: FeedSyncState,
     cache_mode: CacheMode,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct EmaDrugIdentity {
-    terms: Vec<String>,
-}
-
-impl EmaDrugIdentity {
-    pub(crate) fn new(primary: &str) -> Self {
-        Self::from_terms(vec![primary.to_string()])
-    }
-
-    pub(crate) fn with_aliases(primary: &str, canonical: Option<&str>, aliases: &[String]) -> Self {
-        let mut terms = vec![primary.to_string()];
-        if let Some(canonical) = canonical {
-            terms.push(canonical.to_string());
-        }
-        terms.extend(aliases.iter().cloned());
-        Self::from_terms(terms)
-    }
-
-    fn from_terms(terms: Vec<String>) -> Self {
-        let mut out = Vec::new();
-        let mut seen = HashSet::new();
-        for term in terms {
-            let Some(term) = normalize_term(&term) else {
-                continue;
-            };
-            if seen.insert(term.clone()) {
-                out.push(term);
-            }
-        }
-        Self { terms: out }
-    }
-
-    fn term_set(&self) -> HashSet<String> {
-        self.terms.iter().cloned().collect()
-    }
-
-    fn search_tokens(&self) -> HashSet<String> {
-        let mut out = HashSet::new();
-        for term in &self.terms {
-            for token in term
-                .split(|ch: char| !ch.is_ascii_alphanumeric())
-                .filter(|token| token.len() >= 3)
-            {
-                out.insert(token.to_string());
-            }
-        }
-        out
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -368,12 +324,10 @@ impl EmaClient {
         offset: usize,
     ) -> Result<crate::entities::drug::RankedDrugSearchPage<EmaDrugSearchResult>, BioMcpError> {
         let medicines = self.read_feed::<EmaMedicineRow>(MEDICINES_FILE)?;
-        let phrase_terms = identity.term_set();
-        let token_terms = identity.search_tokens();
-        let mut out = Vec::new();
-        let mut seen_products = HashSet::new();
+        let mut out: Vec<(EmaDrugSearchResult, DrugSearchMatchKind, usize)> = Vec::new();
+        let mut product_positions: HashMap<String, usize> = HashMap::new();
 
-        for row in medicines {
+        for (feed_position, row) in medicines.into_iter().enumerate() {
             if !is_human_category(&row.category) {
                 continue;
             }
@@ -389,72 +343,56 @@ impl EmaClient {
             };
             let therapeutic_indication = scalar_ema_text(&row.therapeutic_indication);
 
-            let primary = identity.terms.first();
             let normalized_name = normalize_term(&medicine_name);
             let normalized_active = normalize_term(&active_substance);
-            let alias_match = identity.terms.iter().skip(1).any(|term| {
-                normalized_name.as_ref() == Some(term) || normalized_active.as_ref() == Some(term)
-            });
-            let broad_match = field_matches_terms(&medicine_name, &phrase_terms)
-                || field_matches_terms(&active_substance, &phrase_terms)
-                || therapeutic_indication
-                    .as_deref()
-                    .is_some_and(|value| field_matches_terms(value, &phrase_terms))
-                || (!token_terms.is_empty()
-                    && (field_matches_terms(&active_substance, &token_terms)
-                        || therapeutic_indication
-                            .as_deref()
-                            .is_some_and(|value| field_matches_terms(value, &token_terms))));
-            let match_kind = if normalized_name.as_ref() == primary {
-                DrugSearchMatchKind::ProductName
-            } else if normalized_active.as_ref() == primary {
-                DrugSearchMatchKind::ActiveSubstance
-            } else if alias_match {
-                DrugSearchMatchKind::Alias
-            } else if broad_match {
-                DrugSearchMatchKind::BroadText
-            } else {
+            let fields = [
+                medicine_name.as_str(),
+                active_substance.as_str(),
+                therapeutic_indication.as_deref().unwrap_or_default(),
+            ];
+            let Some((match_kind, matched_term, source)) = classify_ema_match(
+                identity,
+                normalized_name.as_deref(),
+                normalized_active.as_deref(),
+                &fields,
+            ) else {
                 continue;
             };
 
-            let product_key = ema_product_number.to_ascii_lowercase();
-            if !seen_products.insert(product_key) {
-                continue;
-            }
-
-            out.push(AnchorMedicine {
-                medicine_name,
+            let result = EmaDrugSearchResult {
+                name: medicine_name,
                 active_substance,
                 ema_product_number,
                 status: scalar_value(&row.medicine_status).unwrap_or_else(|| "Unknown".to_string()),
-                holder: scalar_value(&row.marketing_authorisation_developer_applicant_holder),
-                marketing_authorisation_date: scalar_value(&row.marketing_authorisation_date),
-                therapeutic_indication,
-                match_rank: match_kind.rank(),
-            });
+                match_kind: match_kind.as_str().to_string(),
+                matched_term,
+                source: source.as_str().to_string(),
+            };
+            let product_key = result.ema_product_number.trim().to_ascii_lowercase();
+            if product_key.is_empty() {
+                out.push((result, match_kind, feed_position));
+            } else if let Some(index) = product_positions.get(&product_key).copied() {
+                if match_kind.rank() < out[index].1.rank() {
+                    let first_position = out[index].2;
+                    out[index] = (result, match_kind, first_position);
+                }
+            } else {
+                product_positions.insert(product_key, out.len());
+                out.push((result, match_kind, feed_position));
+            }
         }
 
-        out.sort_by_key(|medicine| medicine.match_rank);
+        out.sort_by_key(|(_, match_kind, position)| (match_kind.rank(), *position));
 
         let total = out.len();
         let selected = out.into_iter().skip(offset).take(limit).collect::<Vec<_>>();
         let match_kinds = selected
             .iter()
-            .map(|medicine| match medicine.match_rank {
-                0 => DrugSearchMatchKind::ProductName,
-                1 => DrugSearchMatchKind::ActiveSubstance,
-                2 => DrugSearchMatchKind::Alias,
-                _ => DrugSearchMatchKind::BroadText,
-            })
+            .map(|(_, match_kind, _)| *match_kind)
             .collect();
         let results = selected
             .into_iter()
-            .map(|medicine| EmaDrugSearchResult {
-                name: medicine.medicine_name,
-                active_substance: medicine.active_substance,
-                ema_product_number: medicine.ema_product_number,
-                status: medicine.status,
-            })
+            .map(|(medicine, _, _)| medicine)
             .collect::<Vec<_>>();
         Ok(crate::entities::drug::RankedDrugSearchPage::offset(
             results,
