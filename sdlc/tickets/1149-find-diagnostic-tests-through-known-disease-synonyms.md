@@ -1,27 +1,201 @@
 ---
 flow: build
 priority: 6
+deps: []
 ---
 
 # Find diagnostic tests through known disease synonyms
 
-## Goal
+## Goal and authoritative resolver
 
-A diagnostic search uses disease names that BioMCP already recognizes and finds tests filed under an equivalent name. On 2026-09-04, BioMCP resolved Bachmann-Bupp syndrome to `MONDO:0033642` and knew its synonyms, but `biomcp search diagnostic --disease "Bachmann-Bupp syndrome" --source gtr --limit 5` returned zero results. The same GTR data returned `GTR000596648.2` through its longer condition name and through `--gene ODC1`. The reproduction and code evidence came from `sdlc/issues/2026-09-04-diagnostic-disease-search-does-not-use-known-synonyms.md` in commit `f8ff2a78`.
+`search diagnostic --disease "Bachmann-Bupp syndrome" --source gtr` must find
+`GTR000596648.2` when GTR stores the longer equivalent condition name. Expand
+only through exact names and synonyms of one authoritative MyDisease identity;
+never use parents, descendants, fuzzy scoring, substring candidate selection,
+or the discover fallback.
 
-## Desired functionality
+Add one shared owner in `entities::disease::resolution`,
+`resolve_exact_disease_terms`, used by diagnostic search rather than copying
+MyDisease parsing or disease ranking into `entities::diagnostic`. It accepts
+the already validated disease filter and returns requested term, optional
+canonical ID/name, bounded exact synonyms, and one public resolution outcome.
 
-BioMCP matches a diagnostic disease query against the requested name, the resolved disease name, and exact known synonyms. Results identify the term that matched. A failed or unavailable disease lookup remains distinguishable from a confirmed empty diagnostic search. The search does not broaden into disease ancestors or loosely related concepts.
+Normalize only for equality/deduplication: Rust `str::trim`, ASCII lowercase,
+and collapse each Unicode-whitespace run to one ASCII space. Preserve all
+punctuation and non-ASCII code points; never apply the disease searcher's
+`carcinoma` rewrite. Provider requests retain the original trimmed bytes and
+the existing Lucene escaping. Reject a disease filter over 512 bytes, fewer
+than three alphanumeric characters, or containing controls before resolver or
+local-source work.
 
-## Success criteria
+The resolver has one five-second total deadline, at most two logical MyDisease
+requests, the existing shared HTTP cache policy, and an 8 MiB body cap per
+response:
 
-- The Bachmann-Bupp syndrome command returns `GTR000596648.2`.
-- Searching the longer GTR condition name keeps returning the same test.
-- Structured output identifies the disease name or synonym that matched.
-- An unavailable disease resolver does not produce a false confirmed zero.
-- An unrelated disease synonym does not admit the Bachmann-Bupp test.
-- Existing gene, test-type, manufacturer, and WHO IVD filters retain their behavior.
+- A canonical MONDO/DOID ID performs exactly one existing detail GET.
+- MESH/OMIM/ICD10CM performs one existing xref query with `size=5`, then one
+  detail GET only when exactly one distinct canonical identity remains.
+- Free text performs one existing name/synonym query with `size=50`, `from=0`,
+  and `MYDISEASE_SEARCH_FIELDS`. Locally retain only hits where the normalized
+  query equals the primary MONDO/DO name or one declared MONDO/DO exact
+  synonym. Zero retained identities is `absent`; more than one is `ambiguous`;
+  exactly one receives one detail GET with `MYDISEASE_GET_FIELDS`.
 
-## Boundaries
+If a query reports `total > returned hits`, do not call absence authoritative:
+classify it unavailable/incomplete. A detail 404 after a selected search hit,
+ID disagreement, invalid JSON/type shape, missing/blank ID or canonical name,
+oversize body, transport/HTTP failure, or deadline expiry is `unavailable`.
+For the detail record, accept synonym as a string or array of strings only;
+any other non-null shape is malformed. Reject controls and strings over 256
+bytes, deduplicate by the equality normalization, omit the requested and
+canonical terms, preserve MONDO then DO provider order, and retain at most 20
+synonyms. Truncation at 20 is successful and exposed as `synonyms_truncated`.
 
-This ticket adds exact disease-name and synonym matching to diagnostic discovery. It does not add ontology-parent expansion, fuzzy disease matching, diagnostic interpretation, or a new GTR ingestion system.
+## Applicability and exact match/rank/page algorithm
+
+MyDisease expansion applies only when GTR is selected (`gtr` or `all`) and a
+disease filter exists. WHO IVD's `Pathogen/Disease/Marker` is not an ontology
+disease field and continues to use only the literal requested phrase. A
+WHO-only disease search performs zero MyDisease requests and reports resolution
+`inapplicable`. Existing `--source who-ivd --gene` rejection remains unchanged;
+with `source=all` plus a gene, WHO remains inapplicable and only GTR is loaded.
+
+Construct the GTR term list in this order: requested, distinct canonical name,
+then distinct synonyms. Match each term with the existing Unicode-safe
+alphanumeric phrase-boundary predicate against every condition. WHO uses that
+same predicate with requested term only. A row records the first matching term:
+
+```
+"disease_match": {
+  "kind": "requested|canonical|synonym",
+  "term": "Bachmann-Bupp syndrome",
+  "resolved_id": "MONDO:0033642"
+}
+```
+
+`resolved_id` is a string for canonical/synonym matches and null for a literal
+match without a resolved identity. Omit `disease_match` only when no disease
+filter exists. Provider condition strings remain unchanged.
+
+Within disease-filtered results, rank requested before canonical before
+synonym; synonyms tie by their resolver order. Then retain the current
+case-insensitive trimmed result-name order, accession order, and finally source
+key. Without a disease filter, ordering is byte-for-byte unchanged. Deduplicate
+after matching/ranking and before slicing by `(source, accession)`, each trimmed
+and ASCII-case-folded; best-ranked first wins, while equal accessions from GTR
+and WHO remain distinct.
+
+The disease predicate is one OR over its applicable terms. It remains ANDed
+with every requested gene, exact test type, manufacturer/lab, and source
+predicate; expansion cannot resurrect a row rejected by another filter. Load
+all selected bounded local rows, match, rank, and deduplicate before applying
+`[offset, min(offset + limit, len))` with checked arithmetic. When all required
+inputs are complete, `total` is the exact deduplicated count even for
+`source=all`, and `has_more` is `offset + returned < total`. An unavailable
+selected local source or unavailable disease resolution makes `total: null`
+and `has_more: true`; retained rows still return in deterministic order. Empty
+and ambiguous resolution are complete literal-only searches and may produce a
+confirmed zero.
+
+## Exact provenance and failure schema
+
+Add these exact objects under JSON `_meta`; CLI JSON, raw MCP JSON, and typed
+MCP JSON use the same serializer:
+
+```
+"disease_resolution": {
+  "outcome": "resolved|absent|ambiguous|unavailable|inapplicable",
+  "source": "MyDisease.info" | null,
+  "query": "Bachmann-Bupp syndrome",
+  "resolved_id": "MONDO:0033642" | null,
+  "canonical_name": "..." | null,
+  "synonyms_returned": 0,
+  "synonyms_truncated": false,
+  "message": "..." | null
+},
+"source_status": [{
+  "source": "gtr|who-ivd",
+  "outcome": "data|empty|unavailable|inapplicable",
+  "message": null
+}]
+```
+
+Omit `disease_resolution` when no disease filter exists. Successful resolver
+outcomes (`resolved`, `absent`, `ambiguous`) name MyDisease; unavailable and
+WHO-only inapplicable use null source. Only resolved has ID/name and synonym
+counts. Resolved has null message. The other exact messages are `No exact
+MyDisease identity matched; the literal disease term was searched.`, `Multiple
+exact MyDisease identities matched; synonyms were not expanded.`, `Disease
+synonym resolution is temporarily unavailable; the literal disease term was
+searched.`, and `WHO IVD uses the literal disease term; ontology synonyms are
+not applied.`, respectively. Do not expose provider text, URLs, paths, or
+credentials.
+
+Emit one source-status row for each selected source in `gtr`, then `who-ivd`
+order. A source that loaded and retained rows is data; loaded with none is
+empty; a load/sync/index failure is unavailable with exactly `GTR diagnostic
+data is temporarily unavailable.` or `WHO IVD diagnostic data is temporarily
+unavailable.`; WHO suppressed by a gene is inapplicable with `WHO IVD does not
+support gene filtering.` Data/empty messages are null. Unavailable sources
+contribute no provenance. For `source=all`,
+one unavailable source no longer discards rows from the other; both unavailable
+returns an in-band incomplete empty page, never a confirmed zero. Explicit
+single-source failure uses the same in-band state. Input errors still fail
+before any request.
+
+Markdown adds a `Disease match` column using `Requested:`, `Canonical:`, or
+`Synonym:` plus escaped term, followed by bounded resolution/source notes.
+Only a complete `total: 0` prints `No diagnostic tests found.` and filter
+recovery. Incomplete zero prints `Diagnostic search is incomplete.` and the
+fixed unavailable notes. Existing row `source`, JSON field nullability, compact
+gene/condition arrays, `_meta.next_commands`, and exact first-row command
+behavior otherwise remain.
+
+## Typed, raw, and executable acceptance
+
+Add `diagnostic` to the existing typed MCP `search` union with fields `gene`,
+`disease`, `test_type`, `manufacturer` (strings), `source` enum
+`gtr|who-ivd|all`, `full` boolean, and existing typed `limit` 1-25, `offset`
+0-1000, and `json`. Require at least one of the four filters; map `test_type`
+to `--type`. This changes only that schema branch: tool count, other branches,
+raw allowlist, CLI arguments, and typed execution owner remain unchanged.
+
+Extend the existing GTR/WHO/MyDisease fixture family and diagnostic spec.
+Through executable CLI Markdown/JSON, raw MCP `biomcp` Markdown/JSON, and typed
+MCP `search` Markdown/JSON, pin Bachmann-Bupp by requested and long synonym,
+canonical-name and synonym-only rows, precedence/ties/dedupe, every source
+mode, conjunctive filters, offsets before/at/after the end, exact totals and
+`has_more`, resolution absent/ambiguous/unavailable/malformed/timeout, each
+local-source failure combination, and 0/1/2 resolver request paths. MCP bodies
+are byte-equal to their CLI format after the existing MCP footer rules.
+
+Fixture logs independently assert request path, fields, size, cache reuse,
+deadline and request/body/synonym caps, zero resolver calls for WHO-only or no
+disease, and zero extra calls from rendering. Parse emitted detail commands
+with the real CLI parser. Provider names, synonyms, conditions, accessions, and
+manufacturer values containing pipe, brackets, parentheses, Markdown/HTML,
+quotes, backslash, dollar, backtick, semicolon, ampersand, CR/LF, and terminal
+controls must not create a table cell, link, heading, HTML node, terminal
+escape, extra argument, command, or provider request. Invalid controls in
+resolver identity data produce the specified unavailable state; hostile local
+row text is safely rendered and round-trips unchanged in JSON.
+
+## Ownership, ratchets, dependency, and gates
+
+Keep the resolver/result owner in existing `entities/disease/resolution.rs`,
+matching/paging and its tests in existing `entities/diagnostic/search.rs` and
+`mod.rs`, projection in existing diagnostic CLI/Markdown owners, and typed
+mapping/tests in existing MCP owners. Extend existing fixtures/docs/specs; add
+no parallel parser, renderer, fixture family, dependency, or file. Absorb added
+lines through cohesive consolidation in the same touched owners: no existing
+source-size baseline or CLI 700-line cap may increase. Package inventory stays
+exactly 1,300 without filler, exclusion changes, or unrelated deletion.
+
+Run focused disease-resolution, diagnostic entity/render/CLI/MCP, fixture, and
+mustmatch tests, then `make lint`, `make test`, `make spec`,
+`make full-feature-check`, exact package inventory, and `git diff --check`.
+
+Ticket 1148 ranks gene search and shares no code or public field with this
+work. It is a scheduling preference, not a dependency; neither ticket may
+absorb or wait on the other. This ticket adds no ontology traversal, fuzzy
+matching, diagnostic interpretation, or new GTR/WHO ingestion.
