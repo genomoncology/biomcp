@@ -28,6 +28,7 @@ pub(crate) use self::gwas::validate_gwas_window;
 pub use self::gwas::{
     GwasPagination, GwasSearchPage, gwas_search_query_summary, search_gwas, search_gwas_page,
 };
+pub(crate) use self::normalization::unavailable_car_item;
 pub use self::normalization::{
     CarAliasCollection, CarNormalizationBatchResponse, CarNormalizationItem,
     CarNormalizationStatus, CarProvenance, VariantNormalizationAggregate,
