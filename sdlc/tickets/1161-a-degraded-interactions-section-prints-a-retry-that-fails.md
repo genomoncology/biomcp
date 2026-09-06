@@ -196,3 +196,12 @@ any recovery route.
   `cargo package --list --allow-dirty --locked --offline --no-verify | wc -l`
   equal to 1300 and `git diff --check`. The completion record must distinguish
   focused evidence from full gates and state the actual results.
+
+## Design review
+
+Accepted on 2026-09-06 after an independent rereview against `201274c0`.
+The reviewer confirmed that the frozen matrix matches the current reducer,
+that the sole-card and pageable-report boundaries are explicit, and that the
+retry, CLI, raw-MCP, and typed-MCP proofs are implementable. The reviewer also
+confirmed that intervening changes on main do not alter the relevant drug,
+registry, fixture, or MCP surfaces.
