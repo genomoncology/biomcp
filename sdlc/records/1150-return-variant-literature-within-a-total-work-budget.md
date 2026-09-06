@@ -90,9 +90,24 @@ deadline-clipped async polling; deterministic contention proves expiry leaves
 the legacy tree untouched, releases the guard, and permits a complete retry.
 The strategy route skeleton is now selected before resolution, and a
 zero-deadline production-path matrix pins every union, annotation, and lexical
-row to exact `planned: 1`, `not_attempted: 1`, `invocation_deadline` state.
-Focused Rust tests for those regressions passed; full `make test` and `make
-spec` remain integration gates and are not claimed here.
+route without inventing downstream work: resolution and the applicable zero-,
+one-, or two-unit CAR plan materialize immediately, while an authoritative
+caller identity also materializes its one annotation query and two exact
+aliases. Strict/fallback, citation, enrichment, LDH, and identity-verification
+work remains zero until its own prerequisite exists. Every undecidable route is
+still terminal `not_attempted`. Focused Rust tests for those regressions passed;
+full `make test` and `make spec` remain integration gates and are not claimed
+here.
+
+A final remediation replaces synchronous recursive epoch cleanup with sorted,
+iterative Tokio filesystem traversal. It checks the invocation deadline before
+and after each atomic filesystem operation, awaits each admitted operation to
+its safe boundary, and admits no later mutation after expiry. A paused-time
+mid-cleanup test proves that expiry after the first removal preserves the next
+entry and never publishes the epoch marker. The zero-deadline route matrix uses
+independent expected route and identity tables across all strategies and both
+verification modes, including exact CAR 0/1/2 work totals. Full repository
+gates remain unclaimed.
 
 ## Review
 
@@ -105,6 +120,8 @@ spec` remain integration gates and are not claimed here.
 - `cargo clippy --no-default-features --lib -- -D warnings`: passed.
 - Production-shaped post-publication fail-closed test: passed.
 - Contended cold cache-epoch deadline test: passed.
+- Mid-cleanup epoch expiry/no-subsequent-mutation test: passed.
+- Zero-deadline strategy/verification/identity ledger oracle matrix: passed.
 - Actual-HTTP provider-unit concurrency test: passed with an HTTP peak of ten,
   a post-body commit peak of ten, and twenty matching terminal ledger events.
 - Backend fifty-call bound, invocation-deadline settlement, source attribution,

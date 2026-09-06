@@ -1089,17 +1089,48 @@ fn strategy_route_skeleton(
     rows
 }
 
-fn deadline_blocked_status(route: &str, source: &str) -> VariantArticleSourceStatus {
-    aggregate_source_status(
-        route,
-        source,
-        VariantArticleSourceWork {
-            planned: 1,
-            not_attempted: 1,
-            ..Default::default()
-        },
-        vec!["invocation_deadline"],
-    )
+fn deadline_blocked_status(
+    route: &str,
+    source: &str,
+    requested: &RequestedVariantIdentity,
+) -> VariantArticleSourceStatus {
+    let planned = match route {
+        "resolution" => 1,
+        "canonical_equivalence" => canonical_equivalence_queries(requested).len(),
+        _ => 0,
+    };
+    if route == "canonical_equivalence" && planned == 0 {
+        let mut status = status_with_detail(
+            route,
+            source,
+            VariantArticleSourceStatusKind::Skipped,
+            Some("caller identity has no applicable canonical query"),
+        );
+        status.reason_codes = vec!["identity_inapplicable"];
+        return status;
+    }
+    if planned > 0 {
+        return aggregate_source_status(
+            route,
+            source,
+            VariantArticleSourceWork {
+                planned,
+                not_attempted: planned,
+                ..Default::default()
+            },
+            vec!["invocation_deadline"],
+        );
+    }
+    VariantArticleSourceStatus {
+        route: route.into(),
+        source: source.into(),
+        status: VariantArticleSourceStatusKind::NotAttempted,
+        detail: Some(
+            "0 planned: 0 ok, 0 degraded, 0 unavailable, 0 timed out, 0 not attempted (invocation_deadline)".into(),
+        ),
+        work: VariantArticleSourceWork::default(),
+        reason_codes: vec!["invocation_deadline"],
+    }
 }
 
 fn provider_terminal_status(events: &[&VariantArticleCallEvent]) -> VariantArticleSourceStatusKind {
@@ -2643,15 +2674,15 @@ async fn search_variant_articles_identity(
         let events = execution.events();
         let mut source_status = provider_statuses_for_events(&events);
         if source_status.is_empty() {
-            source_status.push(status(
-                "resolution",
-                "myvariant",
-                if execution.deadline.is_exhausted() {
-                    VariantArticleSourceStatusKind::TimedOut
-                } else {
-                    VariantArticleSourceStatusKind::Unavailable
-                },
-            ));
+            source_status.push(if execution.deadline.is_exhausted() {
+                deadline_blocked_status("resolution", "myvariant", &context.requested)
+            } else {
+                status(
+                    "resolution",
+                    "myvariant",
+                    VariantArticleSourceStatusKind::Unavailable,
+                )
+            });
         }
         if execution.deadline.is_exhausted() {
             let decided = source_status
@@ -2664,7 +2695,9 @@ async fn search_variant_articles_identity(
                     .filter(|(route, source)| {
                         !decided.contains(&(route.to_string(), source.to_string()))
                     })
-                    .map(|(route, source)| deadline_blocked_status(route, source)),
+                    .map(|(route, source)| {
+                        deadline_blocked_status(route, source, &context.requested)
+                    }),
             );
         }
         source_status
@@ -3137,6 +3170,28 @@ async fn search_variant_articles_identity(
         .collect::<BTreeSet<_>>()
     {
         statuses.extend(provider_statuses_for_route(&route, &final_events));
+    }
+    if execution.deadline.is_exhausted() {
+        let skeleton_keys = route_skeleton
+            .iter()
+            .map(|(route, source)| (route.to_string(), source.to_string()))
+            .collect::<BTreeSet<_>>();
+        statuses.retain(|status| {
+            let key = (status.route.clone(), status.source.clone());
+            event_keys.contains(&key) || !skeleton_keys.contains(&key)
+        });
+        let decided = statuses
+            .iter()
+            .map(|status| (status.route.clone(), status.source.clone()))
+            .collect::<BTreeSet<_>>();
+        statuses.extend(
+            route_skeleton
+                .iter()
+                .filter(|(route, source)| {
+                    !decided.contains(&(route.to_string(), source.to_string()))
+                })
+                .map(|(route, source)| deadline_blocked_status(route, source, &context.requested)),
+        );
     }
     let runtime_incomplete = final_events.iter().any(|event| event.status != "ok");
     let provider_incomplete = matches!(
@@ -3937,59 +3992,180 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn zero_deadline_terminalizes_the_complete_strategy_route_skeleton() {
-        for strategy in [
-            VariantArticleStrategy::Union,
-            VariantArticleStrategy::Annotation,
-            VariantArticleStrategy::Lexical,
-        ] {
-            let outcome = search_variant_articles_with_deadline(
-                "chr7:g.140453136A>T",
-                strategy,
-                3,
+    async fn zero_deadline_ledger_uses_independent_strategy_and_identity_oracles() {
+        let identities = [
+            (
+                RequestedVariantIdentity {
+                    gene: Some("BRAF".into()),
+                    ..Default::default()
+                },
                 0,
-                true,
-                VariantArticleVerificationOptions::default(),
-                std::time::Duration::ZERO,
-            )
-            .await
-            .expect("deadline is an in-band terminal state");
-            assert!(outcome.hard_error && outcome.response.pagination.has_more);
-            assert_eq!(
-                outcome.response.error.as_ref().map(|error| error.code),
-                Some("deadline_exceeded")
-            );
-            let expected = strategy_route_skeleton(strategy, false)
-                .into_iter()
-                .collect::<BTreeSet<_>>();
-            let actual = outcome
-                .response
-                .source_status
-                .iter()
-                .map(|status| (status.route.as_str(), status.source.as_str()))
-                .collect::<BTreeSet<_>>();
-            assert_eq!(actual, expected, "incomplete {strategy:?} route ledger");
-            for status in &outcome.response.source_status {
-                assert_eq!(status.status, VariantArticleSourceStatusKind::NotAttempted);
-                assert_eq!(
-                    (
-                        status.work.planned,
-                        status.work.ok,
-                        status.work.degraded,
-                        status.work.unavailable,
-                        status.work.timed_out,
-                        status.work.not_attempted,
-                    ),
-                    (1, 0, 0, 0, 0, 1)
-                );
-                assert_eq!(status.reason_codes, ["invocation_deadline"]);
+            ),
+            (
+                RequestedVariantIdentity {
+                    transcript: Some("NM_004333.6".into()),
+                    coding_change: Some("c.1799T>A".into()),
+                    ..Default::default()
+                },
+                1,
+            ),
+            (
+                RequestedVariantIdentity {
+                    transcript: Some("NM_004333.6".into()),
+                    coding_change: Some("c.1799T>A".into()),
+                    genomic_accession: Some("NC_000007.14".into()),
+                    genome_build: Some("GRCh38".into()),
+                    position: Some(140753336),
+                    reference: Some("A".into()),
+                    alternate: Some("T".into()),
+                    ..Default::default()
+                },
+                2,
+            ),
+        ];
+        for (requested, car_units) in identities {
+            for strategy in [
+                VariantArticleStrategy::Union,
+                VariantArticleStrategy::Annotation,
+                VariantArticleStrategy::Lexical,
+            ] {
+                for verify_identity in [false, true] {
+                    let deadline =
+                        crate::sources::VariantArticleDeadline::from_now(std::time::Duration::ZERO);
+                    let execution =
+                        VariantArticleExecutionContext::single_with_deadline(deadline.clone());
+                    let outcome = crate::sources::with_variant_article_deadline(
+                        deadline,
+                        search_variant_articles_identity(
+                            "BRAF variant",
+                            requested.clone(),
+                            strategy,
+                            3,
+                            0,
+                            true,
+                            VariantArticleVerificationOptions {
+                                verify_identity,
+                                ..Default::default()
+                            },
+                            execution,
+                        ),
+                    )
+                    .await
+                    .expect("deadline is an in-band terminal state");
+                    assert!(outcome.hard_error && outcome.response.pagination.has_more);
+                    assert_eq!(
+                        outcome.response.error.as_ref().map(|error| error.code),
+                        Some("deadline_exceeded")
+                    );
+                    let mut expected = vec![
+                        ("resolution", "myvariant"),
+                        ("canonical_equivalence", "clingen_car"),
+                    ];
+                    let federated = ["pubmed", "europepmc", "pubtator", "semanticscholar"];
+                    match strategy {
+                        VariantArticleStrategy::Union => {
+                            expected.extend(federated.map(|source| ("strict", source)));
+                            expected.push(("pubtator_variant", "pubtator"));
+                            expected.extend(federated.map(|source| ("exact_lexical", source)));
+                            expected
+                                .extend(federated.map(|source| ("best_effort_free_text", source)));
+                            expected.push(("source_citation", "myvariant"));
+                        }
+                        VariantArticleStrategy::Annotation => {
+                            expected.push(("pubtator_variant", "pubtator"))
+                        }
+                        VariantArticleStrategy::Lexical => {
+                            expected.extend(federated.map(|source| ("strict", source)));
+                            expected.extend(federated.map(|source| ("exact_lexical", source)));
+                        }
+                    }
+                    expected.extend([
+                        ("enrichment", "semanticscholar"),
+                        ("enrichment", "pubtator"),
+                        ("enrichment", "europepmc"),
+                    ]);
+                    if verify_identity {
+                        expected.extend([
+                            ("identity_verification", "pubtator"),
+                            ("clingen_ldh_medium", "clingen_ldh"),
+                            ("clingen_ldh_direct", "clingen_ldh"),
+                        ]);
+                    }
+                    let expected = expected.into_iter().collect::<BTreeSet<_>>();
+                    let actual = outcome
+                        .response
+                        .source_status
+                        .iter()
+                        .map(|status| (status.route.as_str(), status.source.as_str()))
+                        .collect::<BTreeSet<_>>();
+                    assert_eq!(actual, expected, "incomplete {strategy:?} route ledger");
+                    for status in &outcome.response.source_status {
+                        let planned = if status.route == "resolution" {
+                            1
+                        } else if status.route == "canonical_equivalence" {
+                            car_units
+                        } else if car_units == 2
+                            && status.route == "pubtator_variant"
+                            && matches!(
+                                strategy,
+                                VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
+                            )
+                        {
+                            1
+                        } else if car_units == 2
+                            && status.route == "exact_lexical"
+                            && matches!(
+                                strategy,
+                                VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
+                            )
+                        {
+                            2
+                        } else {
+                            0
+                        };
+                        let skipped = status.route == "canonical_equivalence" && car_units == 0;
+                        assert_eq!(
+                            status.status,
+                            if skipped {
+                                VariantArticleSourceStatusKind::Skipped
+                            } else {
+                                VariantArticleSourceStatusKind::NotAttempted
+                            },
+                            "unexpected terminal state for {strategy:?} {requested:?} {}:{}",
+                            status.route,
+                            status.source,
+                        );
+                        assert_eq!(
+                            (
+                                status.work.planned,
+                                status.work.ok,
+                                status.work.degraded,
+                                status.work.unavailable,
+                                status.work.timed_out,
+                                status.work.not_attempted,
+                            ),
+                            (planned, 0, 0, 0, 0, planned),
+                            "unexpected work for {strategy:?} {requested:?} {}:{}",
+                            status.route,
+                            status.source,
+                        );
+                        assert_eq!(
+                            status.reason_codes,
+                            if skipped {
+                                vec!["identity_inapplicable"]
+                            } else {
+                                vec!["invocation_deadline"]
+                            }
+                        );
+                    }
+                    assert!(
+                        outcome
+                            .response
+                            .debug_plan
+                            .is_some_and(|plan| plan.deadline.exhausted)
+                    );
+                }
             }
-            assert!(
-                outcome
-                    .response
-                    .debug_plan
-                    .is_some_and(|plan| plan.deadline.exhausted)
-            );
         }
     }
 

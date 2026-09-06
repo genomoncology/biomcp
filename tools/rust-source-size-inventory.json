@@ -61,11 +61,11 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 5481,
+      "baseline_lines": 5657,
       "floor_lines": 4828,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 653,
+        "delta": 829,
         "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
