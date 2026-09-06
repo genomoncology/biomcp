@@ -160,6 +160,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
     ),
     state(
         "gene",
+        "gencc",
+        "GenCC gene-disease validity",
+        &["GenCC"],
+        Aggregation::Additive,
+    ),
+    state(
+        "gene",
         "constraint",
         "Constraint",
         &["gnomAD"],

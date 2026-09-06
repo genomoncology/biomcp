@@ -295,6 +295,25 @@ No ClinGen records returned for this gene query.
 No ClinGen records returned for this gene query.
 {% endif -%}
 {% endif -%}
+{% if show_gencc_section -%}
+## GenCC gene-disease validity
+
+{% if source_states.gencc.status %}{{ source_states.gencc.status }}
+{% endif -%}
+{% if source_states.gencc.payload_allowed and gencc -%}
+{% if gencc.assertions -%}
+| Disease | Classification | Inheritance | Submitter | Evaluated | Submitted | ID |
+|---|---|---|---|---|---|---|
+{% for row in gencc.assertions -%}
+| {{ row.disease.label }} ({{ row.disease.id }}) | {{ row.classification.label }} ({{ row.classification.code }}) | {{ row.mode_of_inheritance.label }} ({{ row.mode_of_inheritance.id }}) | {{ row.submitter.label }} ({{ row.submitter.id }}) | {{ row.evaluated_date or "-" }} | {{ row.submitted_date or "-" }} | [{{ row.id }}]({{ row.source_record_url }}) |
+{% endfor -%}
+{% if gencc.truncated %}Showing 100 of {{ gencc.total_matching_assertions }} assertions.
+{% endif -%}
+{% else -%}
+No GenCC assertions returned for this gene in the validated dataset.
+{% endif -%}
+{% endif -%}
+{% endif -%}
 {% if show_constraint_section -%}
 ## Constraint (gnomAD)
 

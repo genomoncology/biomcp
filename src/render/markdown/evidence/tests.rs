@@ -27,6 +27,7 @@ fn gene_evidence_urls_include_ensembl_and_omim() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,

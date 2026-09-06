@@ -903,6 +903,7 @@ mod tests {
             expression: None,
             hpa: None,
             druggability: None,
+            gencc: None,
             clingen: None,
             constraint: None,
             disgenet: None,
@@ -944,6 +945,7 @@ mod tests {
             expression: None,
             hpa: None,
             druggability: None,
+            gencc: None,
             clingen: None,
             constraint: None,
             disgenet: Some(crate::entities::gene::GeneDisgenet {

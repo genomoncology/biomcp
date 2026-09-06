@@ -397,6 +397,7 @@ fn gene_fixture(symbol: &str, name: &str, entrez_id: &str) -> crate::entities::g
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,

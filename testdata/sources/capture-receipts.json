@@ -590,6 +590,25 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "gencc/submissions-new-odc1.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Gene Curation Coalition",
+        "request": "GET https://thegencc.org/download/action/submissions-export-csv?format=new",
+        "request_headers": "No authentication or conditional validators on the recorded initial download.",
+        "captured_at": "2026-09-05T22:51:21Z",
+        "response_status": 200,
+        "response_content_type": "text/csv",
+        "response_etag": "\"eef7e2a136ebf84effde839603b84777\"",
+        "response_last_modified": "Sun, 30 Aug 2026 06:00:29 GMT",
+        "original_content_length": 26825294,
+        "original_sha256": "e6b8834da0d156430e10795d20077e6b9b8c6c25f5e8b896c312654de11c41a2",
+        "sha256": "e736325d92ae12cb8110f3fac539f4fa2efdc352bdc27c35d5fa4ebb6cf0e59e",
+        "minimization_or_redaction": "Deterministically retained the exact 31-column new-format header and the three current ODC1 rows in provider order; no retained field was rewritten.",
+        "provider_origin_statement": "Bytes were recorded from GenCC's public new-format submissions export before deterministic row minimization."
+      }
+    },
+    {
       "path": "gnomad/constraint_ddx3x_null.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."

@@ -96,6 +96,7 @@ fn markdown_detail_outputs_label_gene_drug_and_disease_sources() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,

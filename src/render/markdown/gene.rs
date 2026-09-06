@@ -17,6 +17,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
     let show_druggability_section =
         include_all || has_requested("druggability") || has_requested("drugs");
     let show_clingen_section = include_all || has_requested("clingen");
+    let show_gencc_section = include_all || has_requested("gencc");
     let show_constraint_section = include_all || has_requested("constraint");
     let show_disgenet_section = has_requested("disgenet");
     let show_funding_section = has_requested("funding");
@@ -52,6 +53,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         hpa => &gene.hpa,
         druggability => &gene.druggability,
         clingen => &gene.clingen,
+        gencc => &gene.gencc,
         constraint => &gene.constraint,
         disgenet => &gene.disgenet,
         funding => &gene.funding,
@@ -65,6 +67,7 @@ pub fn gene_markdown(gene: &Gene, requested_sections: &[String]) -> Result<Strin
         show_hpa_section => show_hpa_section,
         show_druggability_section => show_druggability_section,
         show_clingen_section => show_clingen_section,
+        show_gencc_section => show_gencc_section,
         show_constraint_section => show_constraint_section,
         show_disgenet_section => show_disgenet_section,
         show_disgenet_empty => section_has_healthy_empty(&gene.section_outcomes, "disgenet"),

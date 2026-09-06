@@ -83,6 +83,7 @@ pub(crate) mod ema;
 pub(crate) mod enrichr;
 pub(crate) mod europepmc;
 pub(crate) mod figshare;
+pub(crate) mod gencc;
 pub(crate) mod gnomad;
 pub(crate) mod gprofiler;
 pub(crate) mod gtex;

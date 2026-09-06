@@ -1,5 +1,6 @@
 mod clingen;
 pub(crate) mod cspec;
+mod gencc;
 
 use std::collections::HashMap;
 use std::fs;
@@ -11,6 +12,7 @@ use futures::future::try_join_all;
 use serde::{Deserialize, Serialize};
 use tracing::{debug as warn, warn as local_warn};
 
+use self::gencc::{GeneGenCc, add_section as add_gencc_section};
 use crate::entities::SearchPage;
 use crate::entities::diagnostic::{DiagnosticSearchFilters, DiagnosticSearchResult};
 use crate::entities::section_outcome::{SectionOutcome, SectionOutcomeState, SectionOutcomes};
@@ -97,6 +99,8 @@ pub struct Gene {
     pub druggability: Option<GeneDruggability>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub clingen: Option<GeneClinGen>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gencc: Option<GeneGenCc>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub constraint: Option<GeneConstraint>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -228,6 +232,7 @@ pub enum GeneIncludeType {
     Hpa,
     Druggability,
     ClinGen,
+    GenCc,
     Constraint,
     Disgenet,
     Funding,
@@ -247,6 +252,7 @@ const GENE_SECTION_EXPRESSION: &str = "expression";
 const GENE_SECTION_HPA: &str = "hpa";
 const GENE_SECTION_DRUGGABILITY: &str = "druggability";
 const GENE_SECTION_CLINGEN: &str = "clingen";
+const GENE_SECTION_GENCC: &str = "gencc";
 const GENE_SECTION_CONSTRAINT: &str = "constraint";
 const GENE_SECTION_DISGENET: &str = "disgenet";
 const GENE_SECTION_FUNDING: &str = "funding";
@@ -264,6 +270,7 @@ pub(crate) const GENE_OUTCOME_KEYS: &[&str] = &[
     GENE_SECTION_HPA,
     GENE_SECTION_DRUGGABILITY,
     GENE_SECTION_CLINGEN,
+    GENE_SECTION_GENCC,
     GENE_SECTION_CONSTRAINT,
     GENE_SECTION_DISGENET,
     GENE_SECTION_FUNDING,
@@ -293,6 +300,7 @@ pub const GENE_SECTION_NAMES: &[&str] = &[
     GENE_SECTION_HPA,
     GENE_SECTION_DRUGGABILITY,
     GENE_SECTION_CLINGEN,
+    GENE_SECTION_GENCC,
     GENE_SECTION_CONSTRAINT,
     GENE_SECTION_DISGENET,
     GENE_SECTION_FUNDING,
@@ -314,6 +322,7 @@ impl GeneIncludeType {
             GENE_SECTION_HPA => Some(Self::Hpa),
             GENE_SECTION_DRUGGABILITY | "drugs" => Some(Self::Druggability),
             GENE_SECTION_CLINGEN => Some(Self::ClinGen),
+            GENE_SECTION_GENCC => Some(Self::GenCc),
             GENE_SECTION_CONSTRAINT => Some(Self::Constraint),
             GENE_SECTION_DISGENET => Some(Self::Disgenet),
             GENE_SECTION_FUNDING => Some(Self::Funding),
@@ -337,6 +346,7 @@ impl GeneIncludeType {
             Self::Hpa => GENE_SECTION_HPA,
             Self::Druggability => GENE_SECTION_DRUGGABILITY,
             Self::ClinGen => GENE_SECTION_CLINGEN,
+            Self::GenCc => GENE_SECTION_GENCC,
             Self::Constraint => GENE_SECTION_CONSTRAINT,
             Self::Disgenet => GENE_SECTION_DISGENET,
             Self::Funding => GENE_SECTION_FUNDING,
@@ -358,6 +368,7 @@ impl GeneIncludeType {
             Self::Hpa,
             Self::Druggability,
             Self::ClinGen,
+            Self::GenCc,
             Self::Constraint,
         ]
     }
@@ -377,6 +388,7 @@ impl GeneIncludeType {
             | Self::Hpa
             | Self::Druggability
             | Self::ClinGen
+            | Self::GenCc
             | Self::Constraint
             | Self::Disgenet
             | Self::Funding => &[],
@@ -753,6 +765,13 @@ fn complete_gene_section_outcomes(gene: &mut Gene, include: &[GeneIncludeType]) 
                 false,
                 "ClinGen",
             ),
+            GeneIncludeType::GenCc => (
+                gene.gencc
+                    .as_ref()
+                    .is_some_and(|value| !value.assertions.is_empty()),
+                gene.gencc.is_none(),
+                "GenCC",
+            ),
             GeneIncludeType::Constraint => (
                 gene.constraint.as_ref().is_some_and(|value| {
                     value.pli.is_some()
@@ -1084,6 +1103,7 @@ async fn enrich_gene(
             | GeneIncludeType::Hpa
             | GeneIncludeType::Druggability
             | GeneIncludeType::ClinGen
+            | GeneIncludeType::GenCc
             | GeneIncludeType::Constraint
             | GeneIncludeType::Diagnostics
             | GeneIncludeType::Disgenet
@@ -1156,6 +1176,7 @@ pub fn parse_sections(
             GeneIncludeType::Hpa,
             GeneIncludeType::Druggability,
             GeneIncludeType::ClinGen,
+            GeneIncludeType::GenCc,
             GeneIncludeType::Constraint,
         ];
     }
@@ -2571,8 +2592,22 @@ pub async fn get_with_report(
         }
     };
 
+    let hgnc = resp.hgnc_ids();
     let mut gene = transform::gene::from_mygene_get(resp);
     let opentargets_id = preferred_opentargets_id(&gene, strategy).map(str::to_string);
+
+    if include.contains(&GeneIncludeType::GenCc) {
+        let started = Instant::now();
+        add_gencc_section(&mut gene, hgnc, optional_timeout).await;
+        timing.record(
+            "gencc",
+            started,
+            gene.section_outcomes
+                .get(GENE_SECTION_GENCC)
+                .map(|outcome| outcome.outcome().as_str())
+                .unwrap_or("unavailable"),
+        );
+    }
 
     if use_parallel_top {
         populate_sections_parallel_top(
@@ -3196,6 +3231,7 @@ mod tests {
             expression: None,
             hpa: None,
             druggability: None,
+            gencc: None,
             clingen: None,
             constraint: None,
             disgenet: None,

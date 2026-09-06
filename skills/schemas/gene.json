@@ -62,6 +62,50 @@
       "required": ["validity_status", "dosage_status"],
       "additionalProperties": false
     },
+    "gencc": {
+      "type": "object",
+      "properties": {
+        "assertions": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "sgc_id": { "type": "string" },
+              "version": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+              "gene": { "$ref": "#/$defs/genccTerm" },
+              "disease": { "$ref": "#/$defs/genccTerm" },
+              "classification": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "label": { "type": "string" },
+                  "code": { "enum": ["definitive", "strong", "moderate", "limited", "disputed_evidence", "refuted_evidence", "animal_model_only", "no_known_disease_relationship", "supportive"] }
+                },
+                "required": ["id", "label", "code"],
+                "additionalProperties": false
+              },
+              "mode_of_inheritance": { "$ref": "#/$defs/genccTerm" },
+              "submitter": { "$ref": "#/$defs/genccTerm" },
+              "evaluated_date": { "type": ["string", "null"] },
+              "submitted_date": { "type": ["string", "null"] },
+              "source_record_url": { "type": "string" },
+              "public_report_url": { "type": ["string", "null"] },
+              "assertion_criteria_url": { "type": ["string", "null"] },
+              "publications": { "type": "array" }
+            },
+            "required": ["id", "sgc_id", "version", "gene", "disease", "classification", "mode_of_inheritance", "submitter", "evaluated_date", "submitted_date", "source_record_url", "public_report_url", "assertion_criteria_url", "publications"],
+            "additionalProperties": false
+          }
+        },
+        "total_matching_assertions": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/genccStatus" }
+      },
+      "required": ["assertions", "total_matching_assertions", "truncated", "status"],
+      "additionalProperties": false
+    },
     "_meta": {
       "type": ["object", "null"],
       "properties": {
@@ -89,6 +133,32 @@
     }
   },
   "$defs": {
+    "genccTerm": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" }
+      },
+      "required": ["id", "label"],
+      "additionalProperties": false
+    },
+    "genccStatus": {
+      "type": "object",
+      "properties": {
+        "freshness": { "enum": ["fresh", "stale", "unavailable"] },
+        "result": { "enum": ["data", "empty", "unknown"] },
+        "operation": { "enum": ["local_query", "initial_download", "conditional_refresh", "retry_suppressed", "refresh_deferred", "identity_match"] },
+        "checked_at": { "type": ["string", "null"] },
+        "retrieved_at": { "type": ["string", "null"] },
+        "attempted_at": { "type": ["string", "null"] },
+        "etag": { "type": ["string", "null"] },
+        "last_modified": { "type": ["string", "null"] },
+        "upstream_version": { "type": "null" },
+        "message": { "type": ["string", "null"] }
+      },
+      "required": ["freshness", "result", "operation", "checked_at", "retrieved_at", "attempted_at", "etag", "last_modified", "upstream_version", "message"],
+      "additionalProperties": false
+    },
     "validityStatus": {
       "oneOf": [
         {

@@ -37,7 +37,7 @@ pub struct GeneSearchArgs {
 pub struct GeneGetArgs {
     /// Gene symbol or known single-gene alias (e.g., BRAF, TP53, PD-L1)
     pub symbol: String,
-    /// Sections to include (pathways, ontology, diseases, diagnostics, protein, go, interactions, civic, expression, hpa, druggability, clingen, constraint, disgenet, funding, all)
+    /// Sections to include (pathways, ontology, diseases, diagnostics, protein, go, interactions, civic, expression, hpa, druggability, clingen, gencc, constraint, disgenet, funding, all)
     #[arg(trailing_var_arg = true)]
     pub sections: Vec<String>,
 }

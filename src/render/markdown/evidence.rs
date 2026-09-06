@@ -157,6 +157,27 @@ pub(super) fn gene_evidence_urls(gene: &Gene) -> Vec<(&'static str, String)> {
     {
         urls.push(("OMIM", format!("https://www.omim.org/entry/{omim}")));
     }
+    if let Some(gencc) = &gene.gencc
+        && (gencc.status.freshness == crate::sources::gencc::GenCcFreshness::Fresh
+            || (gencc.status.freshness == crate::sources::gencc::GenCcFreshness::Stale
+                && gencc.status.result == crate::sources::gencc::GenCcResult::Data))
+    {
+        urls.push(("GenCC dataset", "https://thegencc.org/download".into()));
+        for assertion in &gencc.assertions {
+            urls.push(("GenCC submission", assertion.source_record_url.clone()));
+            if let Some(url) = &assertion.public_report_url {
+                urls.push(("GenCC public report", url.clone()));
+            }
+            if let Some(url) = &assertion.assertion_criteria_url {
+                urls.push(("GenCC assertion criteria", url.clone()));
+            }
+            for publication in &assertion.publications {
+                urls.push(("PubMed", publication.url.clone()));
+            }
+        }
+    }
+    let mut seen = std::collections::HashSet::new();
+    urls.retain(|(_, url)| seen.insert(url.clone()));
     urls
 }
 

@@ -312,6 +312,9 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
                 outcome_to_string(super::system::handle_ddinter(cmd, json).await?)
             }
             Commands::Gtr { cmd } => outcome_to_string(super::system::handle_gtr(cmd, json).await?),
+            Commands::Gencc { cmd } => {
+                outcome_to_string(super::system::handle_gencc(cmd, json).await?)
+            }
             Commands::WhoIvd { cmd } => {
                 outcome_to_string(super::system::handle_who_ivd(cmd, json).await?)
             }

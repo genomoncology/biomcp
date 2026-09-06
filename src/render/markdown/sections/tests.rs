@@ -330,6 +330,7 @@ fn sections_gene_base_card_surfaces_diagnostics_as_fourth_command() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,

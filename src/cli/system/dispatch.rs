@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 
 use super::settle_batch;
 use super::{
-    BatchArgs, CvxCommand, DdinterCommand, EmaCommand, EnrichArgs, GtrCommand, VersionArgs,
-    WhoCommand, WhoIvdCommand,
+    BatchArgs, CvxCommand, DdinterCommand, EmaCommand, EnrichArgs, GenCcCommand, GtrCommand,
+    VersionArgs, WhoCommand, WhoIvdCommand,
 };
 use crate::cli::CommandOutcome;
 
@@ -364,6 +364,30 @@ pub(crate) async fn handle_gtr(cmd: GtrCommand, json: bool) -> anyhow::Result<Co
         }
     };
     sync_outcome("gtr", text, json)
+}
+
+pub(crate) async fn handle_gencc(cmd: GenCcCommand, json: bool) -> anyhow::Result<CommandOutcome> {
+    let changed = match cmd {
+        GenCcCommand::Sync => {
+            crate::sources::gencc::GenCcClient::new()
+                .map_err(|()| anyhow::anyhow!("GenCC client initialization failed"))?
+                .sync()
+                .await?
+        }
+    };
+    let text = if json {
+        crate::render::json::to_pretty(&serde_json::json!({
+            "kind": "data_sync",
+            "source": "gencc",
+            "status": "synchronized",
+            "changed": changed,
+        }))?
+    } else if changed {
+        "GenCC dataset updated.\n".to_string()
+    } else {
+        "GenCC dataset is already current.\n".to_string()
+    };
+    Ok(CommandOutcome::stdout(text))
 }
 
 pub(crate) async fn handle_who_ivd(

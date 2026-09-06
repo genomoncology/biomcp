@@ -23,6 +23,7 @@ pub(super) fn list_gene() -> String {
 - `get gene <symbol> hpa` - Human Protein Atlas protein tissue expression + localization
 - `get gene <symbol> druggability` - DGIdb interactions plus OpenTargets tractability/safety
 - `get gene <symbol> clingen` - ClinGen validity + dosage sensitivity
+- `get gene <symbol> gencc` - GenCC submission-level gene-disease validity
 - `get gene <symbol> constraint` - gnomAD gene constraint (pLI, LOEUF, mis_z, syn_z)
 - `get gene <symbol> disgenet` - DisGeNET scored gene-disease associations (requires `DISGENET_API_KEY`)
 - `get gene <symbol> funding` - NIH Reporter grants mentioning the gene in the most recent 5 NIH fiscal years

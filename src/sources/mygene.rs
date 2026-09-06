@@ -133,9 +133,9 @@ impl MyGeneClient {
         }
 
         let fields = if include_transcripts {
-            "symbol,name,summary,alias,type_of_gene,ensembl.gene,ensembl.transcript,ensembl.protein,entrezgene,genomic_pos.chr,genomic_pos.start,genomic_pos.end,genomic_pos.strand,MIM,uniprot,pathway.kegg"
+            "symbol,name,summary,alias,type_of_gene,ensembl.gene,ensembl.transcript,ensembl.protein,entrezgene,genomic_pos.chr,genomic_pos.start,genomic_pos.end,genomic_pos.strand,MIM,uniprot,pathway.kegg,HGNC"
         } else {
-            "symbol,name,summary,alias,type_of_gene,ensembl.gene,entrezgene,genomic_pos.chr,genomic_pos.start,genomic_pos.end,genomic_pos.strand,MIM,uniprot,pathway.kegg"
+            "symbol,name,summary,alias,type_of_gene,ensembl.gene,entrezgene,genomic_pos.chr,genomic_pos.start,genomic_pos.end,genomic_pos.strand,MIM,uniprot,pathway.kegg,HGNC"
         };
 
         let q = format!("symbol:\"{}\"", Self::escape_query_value(symbol));
@@ -335,6 +335,67 @@ pub struct MyGeneGetResponse {
     pub mim: Option<serde_json::Value>,
     pub uniprot: Option<serde_json::Value>,
     pub pathway: Option<serde_json::Value>,
+    #[serde(rename = "HGNC")]
+    pub hgnc: Option<serde_json::Value>,
+}
+
+impl MyGeneGetResponse {
+    /// Decode MyGene's documented HGNC annotation while tolerating its observed
+    /// identifier scalar/flat-array wire union. Any malformed or conflicting
+    /// supplied value makes identity inconclusive.
+    pub(crate) fn hgnc_ids(&self) -> Result<Vec<String>, ()> {
+        fn parse_one(value: &serde_json::Value) -> Result<String, ()> {
+            let digits = match value {
+                serde_json::Value::String(value) => {
+                    let value = value.trim();
+                    let value = if value
+                        .get(..5)
+                        .is_some_and(|prefix| prefix.eq_ignore_ascii_case("HGNC:"))
+                    {
+                        value.get(5..).ok_or(())?
+                    } else {
+                        value
+                    };
+                    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+                        return Err(());
+                    }
+                    value
+                }
+                serde_json::Value::Number(value) if value.as_u64().is_some() => {
+                    return u32::try_from(value.as_u64().ok_or(())?)
+                        .ok()
+                        .filter(|value| *value > 0)
+                        .map(|value| format!("HGNC:{value}"))
+                        .ok_or(());
+                }
+                _ => return Err(()),
+            };
+            let value = digits
+                .parse::<u32>()
+                .ok()
+                .filter(|value| *value > 0)
+                .ok_or(())?;
+            Ok(format!("HGNC:{value}"))
+        }
+
+        let Some(value) = &self.hgnc else {
+            return Ok(Vec::new());
+        };
+        let values: Vec<&serde_json::Value> = match value {
+            serde_json::Value::Null => return Ok(Vec::new()),
+            serde_json::Value::Array(values) if values.is_empty() => return Ok(Vec::new()),
+            serde_json::Value::Array(values) => values.iter().collect(),
+            value => vec![value],
+        };
+        let mut result = Vec::new();
+        for value in values {
+            let normalized = parse_one(value)?;
+            if !result.contains(&normalized) {
+                result.push(normalized);
+            }
+        }
+        Ok(result)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -429,4 +490,382 @@ impl GenomicPosField {
 }
 
 #[cfg(test)]
-mod tests;
+mod tests {
+    mod construction {
+        //! Tier 2 — request construction. Pure: builds `RequestPlan`s and asserts the exact
+        //! method / path / query / body that would be sent. Nothing is sent.
+
+        use crate::error::BioMcpError;
+        use crate::sources::mygene::MyGeneClient;
+        use crate::sources::{HttpMethod, RequestBody};
+
+        #[test]
+        fn search_plan_sets_path_and_core_query_params() {
+            let plan = MyGeneClient::search_plan("symbol:EGFR", 5, 0, None).unwrap();
+            assert_eq!(plan.method, HttpMethod::Get);
+            assert_eq!(plan.path, "query");
+            assert_eq!(plan.query_value("q"), Some("symbol:EGFR"));
+            assert_eq!(plan.query_value("species"), Some("human"));
+            assert_eq!(plan.query_value("size"), Some("5"));
+            assert_eq!(plan.query_value("from"), Some("0"));
+            assert!(!plan.has_query("chr"));
+            let fields = plan.query_value("fields").expect("fields present");
+            assert!(fields.contains("alias"));
+            assert!(fields.contains("genomic_pos.chr"));
+        }
+
+        #[test]
+        fn search_plan_adds_chr_filter_only_when_non_empty() {
+            let plan = MyGeneClient::search_plan("symbol:EGFR", 5, 0, Some("7")).unwrap();
+            assert_eq!(plan.query_value("chr"), Some("7"));
+
+            let blank = MyGeneClient::search_plan("symbol:EGFR", 5, 0, Some("  ")).unwrap();
+            assert!(!blank.has_query("chr"));
+        }
+
+        #[test]
+        fn search_plan_rejects_offset_at_or_above_window() {
+            let err = MyGeneClient::search_plan("symbol:EGFR", 5, 10_000, None).unwrap_err();
+            assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+            assert!(err.to_string().contains("--offset"));
+        }
+
+        #[test]
+        fn search_plan_rejects_offset_plus_limit_overflow() {
+            let err = MyGeneClient::search_plan("symbol:EGFR", 2, 9_999, None).unwrap_err();
+            assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+            assert!(err.to_string().contains("--limit"));
+        }
+
+        #[test]
+        fn get_plan_default_uses_minimal_fields_quoted_symbol_and_size_one() {
+            let plan = MyGeneClient::get_plan("BRAF", false).unwrap();
+            assert_eq!(plan.path, "query");
+            assert_eq!(plan.query_value("q"), Some("symbol:\"BRAF\""));
+            assert_eq!(plan.query_value("species"), Some("human"));
+            assert_eq!(plan.query_value("size"), Some("1"));
+            let fields = plan.query_value("fields").expect("fields present");
+            assert!(fields.contains("ensembl.gene"));
+            assert!(fields.split(',').any(|field| field == "HGNC"));
+            assert!(!fields.contains("ensembl.transcript"));
+        }
+
+        #[test]
+        fn get_plan_with_transcripts_requests_transcript_and_protein_fields() {
+            let plan = MyGeneClient::get_plan("BRAF", true).unwrap();
+            let fields = plan.query_value("fields").expect("fields present");
+            assert!(fields.contains("ensembl.transcript"));
+            assert!(fields.contains("ensembl.protein"));
+        }
+
+        #[test]
+        fn get_plan_rejects_empty_symbol() {
+            let err = MyGeneClient::get_plan("   ", false).unwrap_err();
+            assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+            assert!(err.to_string().contains("required"));
+        }
+
+        #[test]
+        fn get_plan_rejects_overlong_symbol() {
+            let err = MyGeneClient::get_plan(&"A".repeat(129), false).unwrap_err();
+            assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+            assert!(err.to_string().contains("too long"));
+        }
+
+        #[test]
+        fn get_plan_rejects_invalid_symbol_characters() {
+            let err = MyGeneClient::get_plan("BRAF:V600E", false).unwrap_err();
+            assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+            assert!(err.to_string().contains("letters, numbers"));
+        }
+
+        #[test]
+        fn batch_symbols_plan_builds_post_form_preserving_input_order() {
+            let (plan, ids) = MyGeneClient::batch_symbols_plan(&[
+                " 1956 ".to_string(),
+                "7157".to_string(),
+                String::new(),
+                "673".to_string(),
+            ])
+            .unwrap();
+            assert_eq!(plan.method, HttpMethod::Post);
+            assert_eq!(plan.path, "gene");
+            assert_eq!(ids, vec!["1956", "7157", "673"]);
+            match &plan.body {
+                RequestBody::Form(form) => {
+                    assert!(form.iter().any(|(k, v)| k == "ids" && v == "1956,7157,673"));
+                    assert!(form.iter().any(|(k, v)| k == "fields" && v == "symbol"));
+                    assert!(form.iter().any(|(k, v)| k == "species" && v == "human"));
+                }
+                other => panic!("expected form body, got {other:?}"),
+            }
+        }
+
+        #[test]
+        fn batch_symbols_plan_rejects_empty_input() {
+            let err = MyGeneClient::batch_symbols_plan(&[]).unwrap_err();
+            assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+            assert!(err.to_string().contains("at least one ID"));
+        }
+
+        #[test]
+        fn batch_symbols_plan_rejects_oversized_batch() {
+            let ids: Vec<String> = (1..=201).map(|n| n.to_string()).collect();
+            let err = MyGeneClient::batch_symbols_plan(&ids).unwrap_err();
+            assert!(matches!(err, BioMcpError::InvalidArgument(_)));
+            assert!(err.to_string().contains("200"));
+        }
+    }
+
+    mod parsing {
+        //! Tier 3 — response parsing. Pure: feeds committed fixture bytes to `decode_json` and
+        //! the response types, plus the pure post-processing helpers. No network, no server.
+
+        use crate::sources::decode_json;
+        use crate::sources::mygene::{
+            MyGeneBatchGeneHit, MyGeneClient, MyGeneGetQueryResponse, MyGeneGetResponse,
+            MyGeneSearchResponse, extract_uniprot_accession,
+        };
+        use reqwest::StatusCode;
+        use reqwest::header::HeaderValue;
+
+        macro_rules! fixture {
+            ($name:expr) => {
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/testdata/sources/mygene/",
+                    $name
+                ))
+            };
+        }
+
+        fn json_ct() -> HeaderValue {
+            HeaderValue::from_static("application/json")
+        }
+
+        #[test]
+        fn parses_search_response_from_real_fixture() {
+            let resp: MyGeneSearchResponse = decode_json(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+                StatusCode::OK,
+                Some(&json_ct()),
+                fixture!("search_egfr.json"),
+                true,
+            )
+            .unwrap();
+            assert!(!resp.hits.is_empty());
+            assert!(resp.hits[0].symbol.is_some());
+        }
+
+        #[test]
+        fn parses_get_response_fields_from_real_fixture() {
+            let resp: MyGeneGetQueryResponse = decode_json(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+                StatusCode::OK,
+                Some(&json_ct()),
+                fixture!("get_braf.json"),
+                true,
+            )
+            .unwrap();
+            let hit = resp.hits.into_iter().next().expect("a hit");
+            assert_eq!(hit.symbol.as_deref(), Some("BRAF"));
+            assert_eq!(
+                hit.ensembl
+                    .as_ref()
+                    .and_then(|e| e.gene())
+                    .map(String::as_str),
+                Some("ENSG00000157764")
+            );
+            assert_eq!(
+                hit.genomic_pos
+                    .as_ref()
+                    .and_then(|g| g.chr())
+                    .map(String::as_str),
+                Some("7")
+            );
+        }
+
+        #[test]
+        fn hgnc_wire_union_normalizes_and_rejects_malformed_values() {
+            for (wire, expected) in [
+                (serde_json::json!("008109"), vec!["HGNC:8109"]),
+                (serde_json::json!(8109), vec!["HGNC:8109"]),
+                (
+                    serde_json::json!(["hgnc:8109", 8109, "HGNC:00042"]),
+                    vec!["HGNC:8109", "HGNC:42"],
+                ),
+            ] {
+                let mut hit: MyGeneGetResponse =
+                    serde_json::from_value(serde_json::json!({})).unwrap();
+                hit.hgnc = Some(wire);
+                assert_eq!(hit.hgnc_ids().unwrap(), expected);
+            }
+
+            for wire in [
+                serde_json::json!(0),
+                serde_json::json!(-1),
+                serde_json::json!(1.5),
+                serde_json::json!([8109, false]),
+                serde_json::json!([[8109]]),
+            ] {
+                let mut hit: MyGeneGetResponse =
+                    serde_json::from_value(serde_json::json!({})).unwrap();
+                hit.hgnc = Some(wire);
+                assert!(hit.hgnc_ids().is_err(), "wire should be inconclusive");
+            }
+        }
+
+        #[test]
+        fn extract_uniprot_prefers_swiss_prot_from_real_fixture() {
+            let resp: MyGeneGetQueryResponse = decode_json(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+                StatusCode::OK,
+                Some(&json_ct()),
+                fixture!("get_braf.json"),
+                true,
+            )
+            .unwrap();
+            let hit = resp.hits.into_iter().next().expect("a hit");
+            let uniprot = hit.uniprot.as_ref().expect("real BRAF carries uniprot");
+            assert_eq!(
+                extract_uniprot_accession(uniprot).as_deref(),
+                Some("P15056")
+            );
+        }
+
+        #[test]
+        fn extract_uniprot_prefers_swiss_prot_over_trembl_synthetic() {
+            let value = serde_json::json!({ "Swiss-Prot": ["P15056"], "TrEMBL": ["A0A0A0"] });
+            assert_eq!(extract_uniprot_accession(&value).as_deref(), Some("P15056"));
+        }
+
+        #[test]
+        fn extract_uniprot_returns_none_for_empty_object() {
+            assert_eq!(extract_uniprot_accession(&serde_json::json!({})), None);
+        }
+
+        #[test]
+        fn dedupe_symbols_maps_real_batch_in_input_order() {
+            let rows: Vec<MyGeneBatchGeneHit> = decode_json(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+                StatusCode::OK,
+                Some(&json_ct()),
+                fixture!("batch_symbols.json"),
+                true,
+            )
+            .unwrap();
+            // fixture maps 1956 -> EGFR, 7157 -> TP53, 673 -> BRAF
+            let ids = vec!["7157".to_string(), "1956".to_string(), "673".to_string()];
+            assert_eq!(
+                MyGeneClient::dedupe_symbols_in_order(rows, &ids),
+                vec!["TP53", "EGFR", "BRAF"]
+            );
+        }
+
+        #[test]
+        fn dedupe_symbols_dedupes_repeated_ids_keeping_first_position() {
+            let rows: Vec<MyGeneBatchGeneHit> = serde_json::from_str(
+        r#"[{"query":"1956","_id":"1956","symbol":"EGFR"},{"query":"7157","_id":"7157","symbol":"TP53"}]"#,
+    )
+    .unwrap();
+            let ids = vec!["1956".to_string(), "7157".to_string(), "1956".to_string()];
+            assert_eq!(
+                MyGeneClient::dedupe_symbols_in_order(rows, &ids),
+                vec!["EGFR", "TP53"]
+            );
+        }
+
+        #[test]
+        fn decode_json_maps_http_error_status_with_excerpt() {
+            let err = decode_json::<MyGeneSearchResponse>(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+                StatusCode::INTERNAL_SERVER_ERROR,
+                None,
+                b"upstream failure",
+                true,
+            )
+            .unwrap_err();
+            let msg = format!("{err:?}");
+            assert_eq!(err.code(), "api");
+            assert!(msg.contains("MyGene.info"), "got: {msg}");
+            assert!(msg.contains("500"), "got: {msg}");
+        }
+
+        #[test]
+        fn decode_json_rejects_non_json_content_type() {
+            let html = HeaderValue::from_static("text/html");
+            let err = decode_json::<MyGeneSearchResponse>(
+                crate::error::SourceContext::retry(crate::error::SourceProvider::MYGENE),
+                StatusCode::OK,
+                Some(&html),
+                b"<html><body>error</body></html>",
+                true,
+            )
+            .unwrap_err();
+            let msg = format!("{err:?}");
+            assert!(msg.contains("MyGene.info"), "got: {msg}");
+            assert!(msg.contains("HTML"), "got: {msg}");
+        }
+    }
+
+    mod live {
+        //! Tier 4 — real round-trips against mygene.info. `#[ignore]`d: excluded from the
+        //! routine `make test` gate. Run in the verify lane / coverage-parity check with
+        //! `cargo nextest run --run-ignored all -E 'test(/sources::mygene::/)'`.
+        //!
+        //! These exercise the thin async glue (plan -> request_from_plan -> get_json -> parse)
+        //! end to end and catch upstream drift.
+
+        use crate::error::BioMcpError;
+        use crate::sources::mygene::MyGeneClient;
+
+        fn client() -> MyGeneClient {
+            MyGeneClient::new().expect("construct live mygene client")
+        }
+
+        #[tokio::test]
+        #[ignore = "live network"]
+        async fn live_get_braf_returns_symbol_and_ensembl() {
+            let resp = client().get("BRAF", true).await.expect("live get BRAF");
+            assert_eq!(resp.symbol.as_deref(), Some("BRAF"));
+            assert!(resp.ensembl.and_then(|e| e.gene().cloned()).is_some());
+        }
+
+        #[tokio::test]
+        #[ignore = "live network"]
+        async fn live_search_egfr_returns_hits() {
+            let resp = client()
+                .search("EGFR", 3, 0, None)
+                .await
+                .expect("live search EGFR");
+            assert!(!resp.hits.is_empty());
+        }
+
+        #[tokio::test]
+        #[ignore = "live network"]
+        async fn live_resolve_uniprot_for_braf() {
+            let acc = client()
+                .resolve_uniprot_accession("BRAF")
+                .await
+                .expect("live uniprot BRAF");
+            assert!(!acc.is_empty());
+        }
+
+        #[tokio::test]
+        #[ignore = "live network"]
+        async fn live_get_unknown_symbol_is_not_found() {
+            let err = client().get("ZZZNOTAREALGENE", false).await.unwrap_err();
+            assert!(matches!(err, BioMcpError::NotFound { .. }));
+        }
+
+        #[tokio::test]
+        #[ignore = "live network"]
+        async fn live_symbols_for_entrez_ids_resolves_known_ids() {
+            let symbols = client()
+                .symbols_for_entrez_ids(&["1956".to_string(), "7157".to_string()])
+                .await
+                .expect("live batch symbols");
+            assert!(symbols.contains(&"EGFR".to_string()));
+        }
+    }
+}

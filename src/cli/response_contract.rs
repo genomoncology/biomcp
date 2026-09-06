@@ -144,6 +144,7 @@ impl JsonResponseContract {
             | Commands::Cvx { .. }
             | Commands::Ddinter { .. }
             | Commands::Gtr { .. }
+            | Commands::Gencc { .. }
             | Commands::WhoIvd { .. }
             | Commands::Mcp(_)
             | Commands::Serve

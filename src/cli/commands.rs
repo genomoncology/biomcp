@@ -129,6 +129,12 @@ EXAMPLES:
         #[command(subcommand)]
         cmd: system::GtrCommand,
     },
+    /// GenCC local gene-disease validity data management
+    #[command(after_help = "EXAMPLES:\n  biomcp gencc sync    # revalidate the GenCC dataset")]
+    Gencc {
+        #[command(subcommand)]
+        cmd: system::GenCcCommand,
+    },
     /// WHO Prequalified IVD local data management
     #[command(after_help = "\
 EXAMPLES:
