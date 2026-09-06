@@ -205,3 +205,19 @@ that the sole-card and pageable-report boundaries are explicit, and that the
 retry, CLI, raw-MCP, and typed-MCP proofs are implementable. The reviewer also
 confirmed that intervening changes on main do not alter the relevant drug,
 registry, fixture, or MCP surfaces.
+
+## Implementation evidence
+
+Implemented test-first on 2026-09-06 against `6ed5b39b`. The sole and repeated
+interaction selectors now enter the existing reducer instead of propagating a
+DDInter error. The frozen twelve-row contributor matrix, all twenty-three
+focused drug-get tests, MCP example compilation, and the fourteen-case
+`section-outcomes.md` executable contract pass. The contract exercises CLI and
+both MCP entry points in Markdown and JSON, executes degraded and unavailable
+recovery commands under the same failures, retains the pageable-report error,
+and covers DDInter evidence when OpenFDA label acquisition fails. Formatting,
+shell syntax, diff whitespace, and the pinned source-file ceilings pass.
+
+Full `make lint`, `make test`, and `make spec` have not been run on this branch.
+Independent code review is pending, so this ticket remains in `sdlc/tickets/`
+and is not yet a completion record.

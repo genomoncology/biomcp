@@ -132,7 +132,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/drug/label.json":
             search = parse_qs(urlparse(self.path).query).get("search", [""])[0].lower()
-            if "openfda-fail" in search:
+            if "openfda-fail" in search.replace("\\", ""):
                 send_json(self, 503, {"error": "SENSITIVE-UPSTREAM-DETAIL label unavailable"})
                 return
             payload = {"results": [{
