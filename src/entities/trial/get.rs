@@ -5,15 +5,15 @@ use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use crate::sources::nci_cts::NciCtsClient;
 use crate::transform;
 use biodata::{
-    ClinicalTrialAgeBound, ClinicalTrialAgeBoundForm, ClinicalTrialAgeRange,
-    ClinicalTrialEligibilityClassification, ClinicalTrialSection, NciCtsV2DetailPlan,
-    NciCtsV2DetailResponse, NciCtsV2Eligibility,
+    ClinicalTrialAgeBound, ClinicalTrialAgeBoundForm, ClinicalTrialAgeRange, ClinicalTrialArms,
+    ClinicalTrialEligibilityClassification, ClinicalTrialIntervention, ClinicalTrialSection,
+    NciCtsV2DetailPlan, NciCtsV2DetailResponse, NciCtsV2Eligibility,
 };
 
 use super::{
     TRIAL_SECTION_ALL, TRIAL_SECTION_ARMS, TRIAL_SECTION_CONTACTS, TRIAL_SECTION_ELIGIBILITY,
     TRIAL_SECTION_LOCATIONS, TRIAL_SECTION_NAMES, TRIAL_SECTION_OUTCOMES, TRIAL_SECTION_REFERENCES,
-    Trial, TrialSource,
+    Trial, TrialDesign, TrialSource,
 };
 
 const ELIGIBILITY_MAX_CHARS: usize = 12_000;
@@ -73,21 +73,6 @@ fn parse_sections(sections: &[String]) -> Result<TrialSections, BioMcpError> {
     Ok(out)
 }
 
-fn is_reference_only_request(sections: &[String]) -> bool {
-    let mut found_reference = false;
-    for raw in sections {
-        let section = raw.trim();
-        if section.is_empty() || section.eq_ignore_ascii_case("--json") || section == "-j" {
-            continue;
-        }
-        if !section.eq_ignore_ascii_case(TRIAL_SECTION_REFERENCES) {
-            return false;
-        }
-        found_reference = true;
-    }
-    found_reference
-}
-
 fn product_references(
     section: biodata::ClinicalTrialSection<Vec<biodata::ClinicalTrialReference>>,
 ) -> Result<Vec<super::TrialReference>, BioMcpError> {
@@ -110,6 +95,44 @@ fn product_references(
         biodata::ClinicalTrialSection::NotRequested
         | biodata::ClinicalTrialSection::Unavailable => Err(BioMcpError::InternalProcessing),
     }
+}
+
+pub(crate) fn product_design(
+    interventions: &ClinicalTrialSection<Vec<ClinicalTrialIntervention>>,
+    arms: &ClinicalTrialSection<ClinicalTrialArms>,
+) -> Result<TrialDesign, BioMcpError> {
+    let interventions = match interventions {
+        ClinicalTrialSection::Present(values) => values.clone(),
+        ClinicalTrialSection::Absent => Vec::new(),
+        ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable => {
+            return Err(BioMcpError::InternalProcessing);
+        }
+    };
+    let (arms, assignments) = match arms {
+        ClinicalTrialSection::Present(value) => (
+            Some(value.arms().to_vec()),
+            Some(value.assignments().to_vec()),
+        ),
+        ClinicalTrialSection::Absent | ClinicalTrialSection::NotRequested => (None, None),
+        ClinicalTrialSection::Unavailable => return Err(BioMcpError::InternalProcessing),
+    };
+    TrialDesign::new(interventions, arms, assignments).map_err(|()| BioMcpError::InternalProcessing)
+}
+
+fn product_nci_design(
+    shared: &biodata::ClinicalTrial,
+    include_arms: bool,
+) -> Result<TrialDesign, BioMcpError> {
+    let interventions = shared.interventions().unwrap_or_default().to_vec();
+    let (arms, assignments) = if include_arms {
+        (
+            shared.arms().map(<[_]>::to_vec),
+            shared.arm_intervention_assignments().map(<[_]>::to_vec),
+        )
+    } else {
+        (None, None)
+    };
+    TrialDesign::new(interventions, arms, assignments).map_err(|()| BioMcpError::InternalProcessing)
 }
 
 fn truncate_inline_text(value: &str, max_chars: usize) -> String {
@@ -197,6 +220,7 @@ fn product_from_nci_response(
     plan: &NciCtsV2DetailPlan,
     response: &NciCtsV2DetailResponse,
     include_eligibility: bool,
+    include_arms: bool,
 ) -> Result<Trial, BioMcpError> {
     let shared = response.projection().trial();
     let phase = shared
@@ -234,13 +258,7 @@ fn product_from_nci_response(
         study_type: Some(shared.study_type().code().to_string()),
         age_range,
         conditions: shared.conditions().to_vec(),
-        interventions: shared
-            .intervention_names()
-            .iter()
-            .take(25)
-            .cloned()
-            .collect(),
-        intervention_details: Vec::new(),
+        design: product_nci_design(shared, include_arms)?,
         sponsor: Some(shared.lead_sponsor_name().to_string()),
         enrollment: shared
             .enrollment_count()
@@ -258,7 +276,6 @@ fn product_from_nci_response(
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     })
 }
@@ -315,18 +332,16 @@ pub async fn get(
     match source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
-            let (study, biodata_references) = if is_reference_only_request(sections) {
-                let response = client.get_biodata_references(nct_id).await?;
-                (
-                    response.study,
-                    Some(product_references(response.references)?),
-                )
-            } else {
-                (client.get(nct_id, sections).await?, None)
-            };
+            let response = client.get_biodata_detail(nct_id, sections).await?;
+            let mut study = response.study;
+            if let Some(protocol) = study.protocol_section.as_mut() {
+                protocol.arms_interventions_module = None;
+                protocol.references_module = None;
+            }
             let mut trial = transform::trial::from_ctgov_study(&study)?;
-            if let Some(references) = biodata_references {
-                trial.references = Some(references);
+            trial.design = product_design(response.shared.interventions(), response.shared.arms())?;
+            if section_flags.include_references {
+                trial.references = Some(product_references(response.shared.references().clone())?);
             }
             trial.source = Some("ClinicalTrials.gov".into());
             if !section_flags.include_contacts {
@@ -368,8 +383,12 @@ pub async fn get(
                 .map_err(|_| BioMcpError::InternalProcessing)?;
             let client = NciCtsClient::new()?;
             let response = client.get(&plan).await?;
-            let mut trial =
-                product_from_nci_response(&plan, &response, section_flags.include_eligibility)?;
+            let mut trial = product_from_nci_response(
+                &plan,
+                &response,
+                section_flags.include_eligibility,
+                section_flags.include_arms,
+            )?;
             if section_flags.include_references && trial.references.is_none() {
                 trial.references = Some(Vec::new());
             }

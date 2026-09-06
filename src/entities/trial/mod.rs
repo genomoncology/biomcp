@@ -7,17 +7,21 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::error::BioMcpError;
 
+mod design;
 mod documents;
 mod get;
 mod search;
 #[cfg(test)]
 mod test_support;
 
+pub use self::design::TrialDesign;
 pub use self::documents::{
     TrialDocumentsManifest, TrialEligibilityProvenance, trial_document_bytes,
     trial_documents_manifest,
 };
 pub use self::get::get;
+#[cfg(test)]
+pub(crate) use self::get::product_design;
 pub use self::search::{count_all, search, search_page};
 
 pub(crate) fn validate_search_filters(filters: &TrialSearchFilters) -> Result<(), BioMcpError> {
@@ -41,10 +45,8 @@ pub struct Trial {
     pub age_range: Option<String>,
     #[serde(default)]
     pub conditions: Vec<String>,
-    #[serde(default)]
-    pub interventions: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub intervention_details: Vec<TrialIntervention>,
+    #[serde(flatten)]
+    pub design: TrialDesign,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sponsor: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -68,20 +70,13 @@ pub struct Trial {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outcomes: Option<TrialOutcomes>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub arms: Option<Vec<TrialArm>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub references: Option<Vec<TrialReference>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialIntervention {
-    pub name: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub intervention_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub other_names: Vec<String>,
+impl Trial {
+    pub(crate) fn has_arms(&self) -> bool {
+        self.design.arms().is_some()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -641,17 +636,6 @@ pub struct TrialOutcome {
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time_frame: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialArm {
-    pub label: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub arm_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default)]
-    pub interventions: Vec<String>,
 }
 
 /// Product serialization around the shared clinical-trial reference value.

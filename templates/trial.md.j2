@@ -25,14 +25,6 @@ Source: {{ trial_source_label }}
 {% if intervention_details | length > 5 -%}
 _and {{ intervention_details | length - 5 }} more (see `arms` section)_
 {% endif -%}
-{% elif interventions -%}
-## Interventions ({{ trial_source_label }})
-{% for i in interventions[:5] -%}
-- {{ i }}
-{% endfor %}
-{% if interventions | length > 5 -%}
-_and {{ interventions | length - 5 }} more (see `arms` section)_
-{% endif -%}
 {% endif -%}
 {% if summary -%}
 ## Summary ({{ trial_source_label }})
@@ -107,7 +99,7 @@ _and {{ interventions | length - 5 }} more (see `arms` section)_
 | Arm | Type | Interventions | Description |
 |---|---|---|---|
 {% for arm in arms -%}
-| {{ arm.label }} | {{ arm.arm_type or "-" }} | {% if arm.interventions %}{{ arm.interventions | join(", ") }}{% else %}-{% endif %} | {{ (arm.description or "-") | truncate(60) }} |
+| {{ arm.label }} | {{ arm.arm_type or "-" }} | {% if arm.interventions %}{{ arm.interventions | join(", ") }}{% if arm.omitted_interventions %}, and {{ arm.omitted_interventions }} more{% endif %}{% else %}-{% endif %} | {{ (arm.description or "-") | truncate(60) }} |
 {% endfor -%}
 {% endif -%}
 {% if show_references_section and references is not none -%}

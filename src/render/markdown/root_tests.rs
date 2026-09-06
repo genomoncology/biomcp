@@ -302,8 +302,12 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         study_type: Some("Interventional".to_string()),
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
-        interventions: vec!["ivacaftor".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names_and_arm(
+            &["ivacaftor"],
+            "Arm A",
+            Some("Experimental"),
+            Some("Description"),
+        ),
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(42),
         summary: Some("Trial summary.".to_string()),
@@ -336,12 +340,6 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             }],
             secondary: Vec::new(),
         }),
-        arms: Some(vec![crate::entities::trial::TrialArm {
-            label: "Arm A".to_string(),
-            arm_type: Some("Experimental".to_string()),
-            description: Some("Description".to_string()),
-            interventions: vec!["ivacaftor".to_string()],
-        }]),
         references: Some(vec![
             crate::entities::trial::TrialReference::new(
                 Some("22663011".to_string()),

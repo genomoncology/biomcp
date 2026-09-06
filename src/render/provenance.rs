@@ -698,7 +698,7 @@ pub(crate) fn trial_section_sources(trial: &Trial) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        !trial.interventions.is_empty(),
+        !trial.design.interventions().is_empty(),
         "interventions",
         "Interventions",
         source_ref,
@@ -731,7 +731,7 @@ pub(crate) fn trial_section_sources(trial: &Trial) -> Vec<SectionSource> {
         "Outcomes",
         source_ref,
     );
-    push_section(&mut out, trial.arms.is_some(), "arms", "Arms", source_ref);
+    push_section(&mut out, trial.has_arms(), "arms", "Arms", source_ref);
     push_section(
         &mut out,
         trial.references.is_some(),

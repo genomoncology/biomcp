@@ -356,7 +356,7 @@ the investigational code.
 
 ```bash
 ../../tools/biomcp-ci --json get trial NCT02136914 \
-  | jq -r '.intervention_details[]? | select(.name == "ADS-5102") | .other_names[]?' \
+  | jq -r '.interventions[]? | select(.name == "ADS-5102") | .other_names[]?' \
   | mustmatch like "amantadine HCl extended release"
 ```
 

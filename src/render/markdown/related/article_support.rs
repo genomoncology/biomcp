@@ -123,8 +123,8 @@ pub(super) fn trial_results_search_command(trial: &Trial) -> Option<String> {
         return None;
     }
 
-    if let Some(intervention) = trial.interventions.first().map(String::as_str) {
-        let intervention_q = quote_arg(intervention);
+    if let Some(intervention) = trial.design.interventions().first() {
+        let intervention_q = quote_arg(intervention.name());
         if !intervention_q.is_empty() {
             return Some(format!(
                 "biomcp search article --drug {intervention_q} -q {seed_q} --limit 5"

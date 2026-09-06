@@ -130,3 +130,7 @@ nci
 document
 documents
 ```
+
+## Next migration step
+
+Remove the private clinical-trial reference wrapper before eligibility migration begins. The arm migration leaves that wrapper unchanged so reference nullability and absent-versus-empty behavior remain independently reviewable.

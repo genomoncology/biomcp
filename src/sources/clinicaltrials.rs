@@ -2,8 +2,7 @@ use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
 use biodata::{
-    ClinicalTrialReference, ClinicalTrialSection, ClinicalTrialsGovApiV2DetailPlan,
-    ClinicalTrialsGovApiV2Limits, ClinicalTrialsGovApiV2Response,
+    ClinicalTrialsGovApiV2DetailPlan, ClinicalTrialsGovApiV2Limits, ClinicalTrialsGovApiV2Response,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -19,88 +18,6 @@ const CTGOV_INTERVENTION_QUERY_ERROR_PREFIX: &str =
 const CTGOV_SEARCH_FIELDS: &str = "NCTId,BriefTitle,OverallStatus,Phase,StudyType,Condition,InterventionName,LeadSponsorName,EnrollmentCount,BriefSummary,StartDate,CompletionDate,MinimumAge,MaximumAge";
 pub const CTGOV_ADVERSE_EVENT_SEARCH_FIELDS: &str = "protocolSection.identificationModule.nctId,protocolSection.identificationModule.briefTitle,hasResults,resultsSection.adverseEventsModule";
 
-const CTGOV_GET_FIELDS_BASE: &[&str] = &[
-    "NCTId",
-    "BriefTitle",
-    "OverallStatus",
-    "WhyStopped",
-    "Phase",
-    "StudyType",
-    "Condition",
-    "InterventionName",
-    "InterventionOtherName",
-    "InterventionType",
-    "InterventionDescription",
-    "LeadSponsorName",
-    "EnrollmentCount",
-    "BriefSummary",
-    "StartDate",
-    "CompletionDate",
-    "MinimumAge",
-    "MaximumAge",
-];
-
-const CTGOV_GET_FIELDS_ELIGIBILITY: &[&str] =
-    &["EligibilityCriteria", "MinimumAge", "MaximumAge", "Sex"];
-const CTGOV_GET_FIELDS_DOCUMENTS: &[&str] = &["LargeDocumentModule"];
-
-const CTGOV_GET_FIELDS_CONTACTS: &[&str] = &[
-    "CentralContactName",
-    "CentralContactRole",
-    "CentralContactPhone",
-    "CentralContactEMail",
-    "LocationFacility",
-    "LocationCity",
-    "LocationState",
-    "LocationCountry",
-    "LocationContactName",
-    "LocationContactRole",
-    "LocationContactPhone",
-    "LocationContactEMail",
-];
-
-const CTGOV_GET_FIELDS_LOCATIONS: &[&str] = &[
-    "LocationFacility",
-    "LocationCity",
-    "LocationState",
-    "LocationZip",
-    "LocationCountry",
-    "LocationStatus",
-    "LocationContactName",
-    "LocationContactRole",
-    "LocationContactPhone",
-    "LocationContactEMail",
-    "CentralContactName",
-    "CentralContactRole",
-    "CentralContactPhone",
-    "CentralContactEMail",
-    "LocationGeoPoint",
-];
-
-const CTGOV_GET_FIELDS_OUTCOMES: &[&str] = &[
-    "PrimaryOutcomeMeasure",
-    "PrimaryOutcomeDescription",
-    "PrimaryOutcomeTimeFrame",
-    "SecondaryOutcomeMeasure",
-    "SecondaryOutcomeDescription",
-    "SecondaryOutcomeTimeFrame",
-];
-
-const CTGOV_GET_FIELDS_ARMS: &[&str] = &[
-    "ArmGroupLabel",
-    "ArmGroupType",
-    "ArmGroupDescription",
-    "ArmGroupInterventionName",
-    "InterventionType",
-    "InterventionName",
-    "InterventionOtherName",
-    "InterventionDescription",
-    "InterventionArmGroupLabel",
-];
-
-const CTGOV_GET_FIELDS_REFERENCES: &[&str] =
-    &["ReferencePMID", "ReferenceType", "ReferenceCitation"];
-
 #[derive(Clone)]
 pub struct ClinicalTrialsClient {
     client: reqwest_middleware::ClientWithMiddleware,
@@ -108,9 +25,9 @@ pub struct ClinicalTrialsClient {
 }
 
 #[derive(Debug)]
-pub(crate) struct CtGovBiodataReferenceResponse {
+pub(crate) struct CtGovBiodataDetailResponse {
     pub(crate) study: CtGovStudy,
-    pub(crate) references: ClinicalTrialSection<Vec<ClinicalTrialReference>>,
+    pub(crate) shared: ClinicalTrialsGovApiV2Response,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -129,41 +46,6 @@ pub struct CtGovSearchParams {
     pub lat: Option<f64>,
     pub lon: Option<f64>,
     pub distance_miles: Option<u32>,
-}
-
-fn build_get_fields(sections: &[String]) -> String {
-    let mut fields: Vec<&str> = CTGOV_GET_FIELDS_BASE.to_vec();
-    let mut add_all_sections = false;
-
-    for section in sections {
-        match section.trim().to_ascii_lowercase().as_str() {
-            "eligibility" => {
-                fields.extend_from_slice(CTGOV_GET_FIELDS_ELIGIBILITY);
-                fields.extend_from_slice(CTGOV_GET_FIELDS_DOCUMENTS);
-            }
-            "documents" => fields.extend_from_slice(CTGOV_GET_FIELDS_DOCUMENTS),
-            "contacts" => fields.extend_from_slice(CTGOV_GET_FIELDS_CONTACTS),
-            "locations" => fields.extend_from_slice(CTGOV_GET_FIELDS_LOCATIONS),
-            "outcomes" => fields.extend_from_slice(CTGOV_GET_FIELDS_OUTCOMES),
-            "arms" => fields.extend_from_slice(CTGOV_GET_FIELDS_ARMS),
-            "references" => fields.extend_from_slice(CTGOV_GET_FIELDS_REFERENCES),
-            "all" => add_all_sections = true,
-            _ => {}
-        }
-    }
-
-    if add_all_sections {
-        fields.extend_from_slice(CTGOV_GET_FIELDS_ELIGIBILITY);
-        fields.extend_from_slice(CTGOV_GET_FIELDS_CONTACTS);
-        fields.extend_from_slice(CTGOV_GET_FIELDS_LOCATIONS);
-        fields.extend_from_slice(CTGOV_GET_FIELDS_OUTCOMES);
-        fields.extend_from_slice(CTGOV_GET_FIELDS_ARMS);
-        fields.extend_from_slice(CTGOV_GET_FIELDS_REFERENCES);
-    }
-
-    fields.sort_unstable();
-    fields.dedup();
-    fields.join(",")
 }
 
 impl ClinicalTrialsClient {
@@ -309,14 +191,73 @@ impl ClinicalTrialsClient {
         self.get_json(req).await
     }
 
-    pub(crate) fn get_plan(nct_id: &str, sections: &[String]) -> RequestPlan {
-        RequestPlan::get(format!("studies/{nct_id}")).query("fields", build_get_fields(sections))
+    pub(crate) fn biodata_detail_plan(
+        nct_id: &str,
+        sections: &[String],
+    ) -> Result<ClinicalTrialsGovApiV2DetailPlan, BioMcpError> {
+        let all = sections
+            .iter()
+            .any(|value| value.trim().eq_ignore_ascii_case("all"));
+        let has = |name: &str| {
+            all || sections
+                .iter()
+                .any(|value| value.trim().eq_ignore_ascii_case(name))
+        };
+        let mut plan = ClinicalTrialsGovApiV2DetailPlan::new(nct_id, has("references"))
+            .map_err(|_| BioMcpError::InternalProcessing)?;
+        if has("arms") {
+            plan = plan.with_arms();
+        }
+        if has("eligibility") {
+            plan = plan.with_eligibility();
+        }
+        if has("contacts") {
+            plan = plan.with_contacts();
+        }
+        if has("locations") {
+            plan = plan.with_locations();
+        }
+        if has("outcomes") {
+            plan = plan.with_outcomes();
+        }
+        if sections
+            .iter()
+            .any(|value| value.trim().eq_ignore_ascii_case("documents"))
+            || sections
+                .iter()
+                .any(|value| value.trim().eq_ignore_ascii_case("eligibility"))
+        {
+            plan = plan.with_documents();
+        }
+        Ok(plan)
     }
 
-    pub(crate) fn biodata_reference_plan(nct_id: &str) -> Result<RequestPlan, BioMcpError> {
-        let plan = ClinicalTrialsGovApiV2DetailPlan::new(nct_id, true)
-            .map_err(|_| BioMcpError::InternalProcessing)?;
-        Ok(RequestPlan::get(plan.relative_path()).query("fields", plan.field_query()))
+    #[cfg(test)]
+    pub(crate) fn get_plan(nct_id: &str, sections: &[String]) -> RequestPlan {
+        let plan = Self::biodata_detail_plan(nct_id, sections)
+            .expect("validated trial identity reaches source planning");
+        RequestPlan::get(plan.relative_path()).query("fields", plan.field_query())
+    }
+
+    pub(crate) fn decode_biodata_detail_response(
+        nct_id: &str,
+        sections: &[String],
+        status: reqwest::StatusCode,
+        bytes: &[u8],
+    ) -> Result<CtGovBiodataDetailResponse, BioMcpError> {
+        if !status.is_success() {
+            return Self::decode_get_response(nct_id, status, bytes)
+                .and(Err(BioMcpError::InternalProcessing));
+        }
+        let plan = Self::biodata_detail_plan(nct_id, sections)?;
+        let shared = ClinicalTrialsGovApiV2Response::parse(
+            &plan,
+            bytes,
+            &ClinicalTrialsGovApiV2Limits::default(),
+        )
+        .map_err(Self::map_biodata_response_error)?;
+        let study = Self::decode_get_response(nct_id, status, bytes)?;
+        Ok(CtGovBiodataDetailResponse { study, shared })
     }
 
     fn map_biodata_response_error(error: biodata::ClinicalTrialsGovApiV2Error) -> BioMcpError {
@@ -332,52 +273,6 @@ impl ClinicalTrialsClient {
             message: format!("BioData response validation failed: {}", error.code()),
         }
         .with_source_context(context)
-    }
-
-    pub(crate) fn decode_biodata_reference_response(
-        nct_id: &str,
-        status: reqwest::StatusCode,
-        bytes: &[u8],
-    ) -> Result<CtGovBiodataReferenceResponse, BioMcpError> {
-        if !status.is_success() {
-            return match Self::decode_get_response(nct_id, status, bytes) {
-                Err(error) => Err(error),
-                Ok(_) => Err(BioMcpError::InternalProcessing),
-            };
-        }
-
-        let biodata_plan = ClinicalTrialsGovApiV2DetailPlan::new(nct_id, true)
-            .map_err(|_| BioMcpError::InternalProcessing)?;
-        let response = ClinicalTrialsGovApiV2Response::parse(
-            &biodata_plan,
-            bytes,
-            &ClinicalTrialsGovApiV2Limits::default(),
-        )
-        .map_err(Self::map_biodata_response_error)?;
-        let references = response.references().clone();
-        let mut study = Self::decode_get_response(nct_id, status, bytes)?;
-        if let Some(protocol) = study.protocol_section.as_mut() {
-            protocol.references_module = None;
-        }
-        Ok(CtGovBiodataReferenceResponse { study, references })
-    }
-
-    pub(crate) async fn get_biodata_references(
-        &self,
-        nct_id: &str,
-    ) -> Result<CtGovBiodataReferenceResponse, BioMcpError> {
-        let plan = Self::biodata_reference_plan(nct_id)?;
-        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
-        let (status, bytes) = self.send(req).await?;
-        Self::decode_biodata_reference_response(nct_id, status, &bytes).map_err(|error| {
-            if matches!(error, BioMcpError::WithSourceContext { .. }) {
-                error
-            } else {
-                error.with_source_context(crate::error::SourceContext::retry(
-                    crate::error::SourceProvider::CLINICAL_TRIALS,
-                ))
-            }
-        })
     }
 
     pub(crate) fn decode_get_response(
@@ -397,13 +292,29 @@ impl ClinicalTrialsClient {
     }
 
     pub async fn get(&self, nct_id: &str, sections: &[String]) -> Result<CtGovStudy, BioMcpError> {
-        let plan = Self::get_plan(nct_id, sections);
+        self.get_biodata_detail(nct_id, sections)
+            .await
+            .map(|value| value.study)
+    }
+
+    pub(crate) async fn get_biodata_detail(
+        &self,
+        nct_id: &str,
+        sections: &[String],
+    ) -> Result<CtGovBiodataDetailResponse, BioMcpError> {
+        let biodata_plan = Self::biodata_detail_plan(nct_id, sections)?;
+        let plan = RequestPlan::get(biodata_plan.relative_path())
+            .query("fields", biodata_plan.field_query());
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let (status, bytes) = self.send(req).await?;
-        Self::decode_get_response(nct_id, status, &bytes).map_err(|error| {
-            error.with_source_context(crate::error::SourceContext::retry(
-                crate::error::SourceProvider::CLINICAL_TRIALS,
-            ))
+        Self::decode_biodata_detail_response(nct_id, sections, status, &bytes).map_err(|error| {
+            if matches!(error, BioMcpError::WithSourceContext { .. }) {
+                error
+            } else {
+                error.with_source_context(crate::error::SourceContext::retry(
+                    crate::error::SourceProvider::CLINICAL_TRIALS,
+                ))
+            }
         })
     }
 }
@@ -535,10 +446,8 @@ pub struct CtGovEnrollmentInfo {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovArmsInterventionsModule {
-    #[serde(default)]
-    pub interventions: Vec<CtGovIntervention>,
-    #[serde(default)]
-    pub arm_groups: Vec<CtGovArmGroup>,
+    pub interventions: Option<Vec<CtGovIntervention>>,
+    pub arm_groups: Option<Vec<CtGovArmGroup>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

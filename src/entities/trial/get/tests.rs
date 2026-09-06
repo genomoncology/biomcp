@@ -70,36 +70,6 @@ fn parse_sections_accepts_contacts_and_all_includes_contacts() {
 }
 
 #[test]
-fn only_a_normalized_reference_request_uses_the_biodata_path() {
-    for sections in [
-        vec!["references".to_string()],
-        vec![" REFERENCES ".to_string()],
-        vec![
-            "".to_string(),
-            "--json".to_string(),
-            "references".to_string(),
-        ],
-        vec![
-            "references".to_string(),
-            "-j".to_string(),
-            "references".to_string(),
-        ],
-    ] {
-        assert!(is_reference_only_request(&sections), "{sections:?}");
-    }
-
-    for sections in [
-        vec![],
-        vec!["".to_string(), "--json".to_string()],
-        vec!["all".to_string()],
-        vec!["references".to_string(), "outcomes".to_string()],
-        vec!["arms".to_string()],
-    ] {
-        assert!(!is_reference_only_request(&sections), "{sections:?}");
-    }
-}
-
-#[test]
 fn product_references_maps_each_section_state() {
     use biodata::ClinicalTrialSection;
 
@@ -131,13 +101,55 @@ fn nci_product_conversion_checks_enrollment_and_preserves_source_presence() {
     record["brief_summary"] = serde_json::json!("  Source summary.  ");
     let (plan, response) = plan_bound_nci_response(record, true);
 
-    let trial = product_from_nci_response(&plan, &response, true).unwrap();
+    let trial = product_from_nci_response(&plan, &response, true, false).unwrap();
     assert_eq!(trial.enrollment, None);
     assert_eq!(
         trial.why_stopped,
         Some(Some("Enrollment target was not met".to_string()))
     );
     assert_eq!(trial.summary.as_deref(), Some("Source summary."));
+}
+
+#[test]
+fn nci_arm_conversion_preserves_every_occurrence_and_assignment() {
+    let (plan, response) = plan_bound_nci_response(receipted_nci_record(), true);
+    let trial = product_from_nci_response(&plan, &response, true, true).unwrap();
+    assert_eq!(trial.design.arms().map(<[_]>::len), Some(2));
+    assert_eq!(trial.design.interventions().len(), 53);
+    assert_eq!(trial.design.assignments().map(<[_]>::len), Some(53));
+    let mut names = std::collections::HashSet::new();
+    assert!(
+        trial
+            .design
+            .interventions()
+            .iter()
+            .any(|value| !names.insert(value.name()))
+    );
+    let encoded = serde_json::to_value(&trial.design).unwrap();
+    assert_eq!(
+        encoded["interventions"][0]["type"],
+        serde_json::json!({
+            "authority": "nci", "code": "Other", "display": null,
+            "vocabulary_version": null, "recognized_meaning": null
+        })
+    );
+    assert_eq!(
+        encoded["arms"][0]["type"],
+        serde_json::json!({
+            "authority": "nci", "code": "EXPERIMENTAL", "display": null,
+            "vocabulary_version": null, "recognized_meaning": null
+        })
+    );
+    assert!(
+        encoded["interventions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|value| { value["type"].is_null() || value["type"]["authority"] == "nci" })
+    );
+    let decoded: crate::entities::trial::TrialDesign =
+        serde_json::from_value(encoded.clone()).unwrap();
+    assert_eq!(serde_json::to_value(decoded).unwrap(), encoded);
 }
 
 #[test]
@@ -174,7 +186,7 @@ fn nci_eligibility_keeps_absence_and_an_explicit_empty_list_distinct() {
     let record = receipted_nci_record();
     let (unrequested_plan, unrequested) = plan_bound_nci_response(record, false);
     assert!(matches!(
-        product_from_nci_response(&unrequested_plan, &unrequested, true),
+        product_from_nci_response(&unrequested_plan, &unrequested, true, false),
         Err(BioMcpError::InternalProcessing)
     ));
 }
@@ -319,7 +331,7 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
     assert_eq!(trial.start_date.as_deref(), Some("2023-10-18"));
     assert_eq!(trial.completion_date.as_deref(), Some("2030-02-28"));
     assert_eq!(trial.why_stopped, Some(None));
-    assert_eq!(trial.interventions.len(), 25);
+    assert_eq!(trial.design.interventions().len(), 53);
     assert!(
         trial
             .summary
@@ -330,8 +342,7 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
     assert!(trial.contacts.is_none());
     assert!(trial.locations.is_none());
     assert!(trial.outcomes.is_none());
-    assert!(trial.arms.is_none());
-    assert!(trial.intervention_details.is_empty());
+    assert!(trial.design.arms().is_none());
 
     let overview = get("NCT05879926", &[], TrialSource::NciCts)
         .await

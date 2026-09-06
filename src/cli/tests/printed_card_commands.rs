@@ -110,7 +110,7 @@ fn render_fixtures() -> Vec<(&'static str, String)> {
         "title": "Quoted intervention trial",
         "status": "Recruiting",
         "conditions": ["rare disease subtype"],
-        "interventions": ["drug with space"]
+        "interventions": [{"id": 1, "name": "drug with space", "type": null, "description": null, "other_names": []}]
     }))
     .expect("trial fixture");
     let article = serde_json::from_value(serde_json::json!({

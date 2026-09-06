@@ -171,7 +171,8 @@ fn every_detail_card_markdown_and_json_commands_agree() {
 
     let trial: Trial = serde_json::from_value(serde_json::json!({
         "nct_id": "NCT01234567", "title": "Example trial", "status": "Completed",
-        "conditions": ["melanoma"], "interventions": ["dabrafenib"]
+        "conditions": ["melanoma"],
+        "interventions": [{"id": 1, "name": "dabrafenib", "type": null, "description": null, "other_names": []}]
     }))
     .unwrap();
     assert_command_surfaces(

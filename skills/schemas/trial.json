@@ -2,7 +2,53 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "BioMCP Trial",
   "type": "object",
-  "required": ["nct_id", "title"],
+  "required": ["nct_id", "title", "interventions"],
+  "$defs": {
+    "extensibleCode": {
+      "type": "object",
+      "required": ["authority", "code", "display", "vocabulary_version", "recognized_meaning"],
+      "properties": {
+        "authority": { "type": "string", "minLength": 1 },
+        "code": { "type": "string", "minLength": 1 },
+        "display": { "type": ["string", "null"], "minLength": 1 },
+        "vocabulary_version": { "type": ["string", "null"], "minLength": 1 },
+        "recognized_meaning": { "type": ["string", "null"], "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "intervention": {
+      "type": "object",
+      "required": ["id", "name", "type", "description", "other_names"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "oneOf": [{ "$ref": "#/$defs/extensibleCode" }, { "type": "null" }] },
+        "description": { "type": ["string", "null"] },
+        "other_names": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      },
+      "additionalProperties": false
+    },
+    "arm": {
+      "type": "object",
+      "required": ["id", "name", "type", "description"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "oneOf": [{ "$ref": "#/$defs/extensibleCode" }, { "type": "null" }] },
+        "description": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "assignment": {
+      "type": "object",
+      "required": ["arm_id", "intervention_id"],
+      "properties": {
+        "arm_id": { "type": "integer", "minimum": 1 },
+        "intervention_id": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
   "properties": {
     "nct_id": { "type": "string" },
     "source": { "type": ["string", "null"] },
@@ -16,8 +62,16 @@
       "items": { "type": "string" }
     },
     "interventions": {
-      "type": ["array", "null"],
-      "items": { "type": "string" }
+      "type": "array",
+      "items": { "$ref": "#/$defs/intervention" }
+    },
+    "arms": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/arm" }
+    },
+    "arm_intervention_assignments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/assignment" }
     },
     "sponsor": { "type": ["string", "null"] },
     "enrollment": { "type": ["integer", "number", "null"] },
@@ -50,6 +104,10 @@
       },
       "additionalProperties": true
     }
+  },
+  "dependentRequired": {
+    "arms": ["arm_intervention_assignments"],
+    "arm_intervention_assignments": ["arms"]
   },
   "additionalProperties": true
 }

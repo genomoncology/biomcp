@@ -38,7 +38,6 @@ def test_gene_schema_closes_clingen_family_status_shapes() -> None:
     invalid["clingen"]["dosage_status"]["message"] = "healthy but noisy"
     with pytest.raises(ValidationError):
         validator.validate(invalid)
-
     invalid = json.loads(json.dumps(payload))
     invalid["clingen"]["validity_status"]["status"] = "failed"
     with pytest.raises(ValidationError):
@@ -49,6 +48,11 @@ def test_gene_schema_closes_clingen_family_status_shapes() -> None:
     with pytest.raises(ValidationError):
         validator.validate(invalid)
 
+
+def test_packaged_trial_example_matches_the_strict_relationship_schema() -> None:
+    schema = json.loads(_read("skills/schemas/trial.json"))
+    example = json.loads(_read("skills/examples/get-trial.json"))
+    Draft202012Validator(schema).validate(example)
 
 def test_public_skill_docs_match_current_cli_contract() -> None:
     readme = _read("README.md")

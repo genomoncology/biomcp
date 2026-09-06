@@ -27,6 +27,51 @@ impl CtGovAgeMcpEnv {
     }
 }
 
+struct NciTrialMcpEnv {
+    previous: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    _cache: tempfile::TempDir,
+}
+
+impl NciTrialMcpEnv {
+    fn set(base: &str) -> Self {
+        let cache = tempfile::tempdir().expect("NCI MCP cache directory");
+        let values = [
+            ("BIOMCP_NCI_CTS_BASE", base.to_string()),
+            ("NCI_API_KEY", "fixture-key".to_string()),
+            (
+                "BIOMCP_CACHE_DIR",
+                cache.path().to_string_lossy().into_owned(),
+            ),
+            ("BIOMCP_TEST_UNPACED_ORIGIN", base.to_string()),
+        ];
+        let mut previous = Vec::new();
+        for (name, value) in values {
+            previous.push((name, std::env::var_os(name)));
+            // SAFETY: callers hold the serial-test process-wide environment lock.
+            unsafe { std::env::set_var(name, value) };
+        }
+        Self {
+            previous,
+            _cache: cache,
+        }
+    }
+}
+
+impl Drop for NciTrialMcpEnv {
+    fn drop(&mut self) {
+        // SAFETY: callers hold the serial-test process-wide environment lock.
+        unsafe {
+            for (name, previous) in self.previous.drain(..) {
+                if let Some(previous) = previous {
+                    std::env::set_var(name, previous);
+                } else {
+                    std::env::remove_var(name);
+                }
+            }
+        }
+    }
+}
+
 impl Drop for CtGovAgeMcpEnv {
     fn drop(&mut self) {
         // SAFETY: callers hold the serial-test process-wide environment lock.
@@ -388,7 +433,11 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     let study = json!({"protocolSection": {
         "identificationModule": {"nctId":"NCT60000001","briefTitle":"Infant trial"},
         "statusModule": {"overallStatus":"RECRUITING"},
-        "eligibilityModule": {"minimumAge":"6 Months","maximumAge":"N/A"}
+        "eligibilityModule": {"minimumAge":"6 Months","maximumAge":"N/A"},
+        "armsInterventionsModule": {
+            "armGroups": [{"label":"Arm one","interventionNames":["Drug: first drug"]}],
+            "interventions": [{"type":"DRUG","name":"first drug","armGroupLabels":["Arm one"]}]
+        }
     }});
     let router = Router::new().route(
         "/studies/{id}",
@@ -403,14 +452,14 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     let typed = BioMcpServer::new()
         .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
             json!({
-                "entity":"trial", "id":"NCT60000001", "sections":["eligibility"], "json":true
+                "entity":"trial", "id":"NCT60000001", "sections":["eligibility", "arms"], "json":true
             }),
         )))
         .await
         .unwrap();
     let raw = BioMcpServer::new()
         .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
-            command: "biomcp get trial NCT60000001 eligibility".into(),
+            command: "biomcp get trial NCT60000001 eligibility arms".into(),
             json: true,
         }))
         .await
@@ -429,8 +478,94 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     assert_eq!(typed["eligibility"]["minimum_age"], expected_minimum);
     assert_eq!(typed["eligibility"]["maximum_age"], expected_maximum);
     assert_eq!(typed["eligibility"], raw["eligibility"]);
+    assert_eq!(typed["interventions"], raw["interventions"]);
+    assert_eq!(typed["arms"], raw["arms"]);
+    assert_eq!(
+        typed["arm_intervention_assignments"],
+        raw["arm_intervention_assignments"]
+    );
+    assert_eq!(
+        typed["arm_intervention_assignments"],
+        json!([{"arm_id":1,"intervention_id":1}])
+    );
     assert!(!typed["eligibility"]["minimum_age"].is_string());
     assert!(!raw["eligibility"]["maximum_age"].is_string());
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let bytes =
+        include_bytes!("../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json");
+    let router = Router::new().route(
+        "/trials",
+        axum_get(move || async move {
+            Response::builder()
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(bytes.as_slice()))
+                .unwrap()
+        }),
+    );
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let prior_env = [
+        "BIOMCP_NCI_CTS_BASE",
+        "NCI_API_KEY",
+        "BIOMCP_CACHE_DIR",
+        "BIOMCP_TEST_UNPACED_ORIGIN",
+    ]
+    .map(|name| (name, std::env::var_os(name)));
+    let env = NciTrialMcpEnv::set(&base);
+
+    let typed = tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        BioMcpServer::new().get(rmcp::handler::server::wrapper::Parameters(TypedGet(
+            json!({
+                "entity":"trial", "id":"NCT05879926", "source":"nci",
+                "sections":["all"], "json":true
+            }),
+        ))),
+    )
+    .await
+    .expect("typed NCI get timeout")
+    .unwrap();
+    let raw = tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        BioMcpServer::new().biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp get trial NCT05879926 --source nci all".into(),
+            json: true,
+        })),
+    )
+    .await
+    .expect("raw NCI get timeout")
+    .unwrap();
+
+    server.abort();
+    let response_json = |result| {
+        let value = serde_json::to_value(result).unwrap();
+        serde_json::from_str::<serde_json::Value>(value["content"][0]["text"].as_str().unwrap())
+            .unwrap()
+    };
+    let typed = response_json(typed);
+    let raw = response_json(raw);
+    assert_eq!(typed["interventions"], raw["interventions"]);
+    assert_eq!(typed["arms"], raw["arms"]);
+    assert_eq!(
+        typed["arm_intervention_assignments"],
+        raw["arm_intervention_assignments"]
+    );
+    assert_eq!(typed["interventions"].as_array().map(Vec::len), Some(53));
+    assert_eq!(
+        typed["arm_intervention_assignments"]
+            .as_array()
+            .map(Vec::len),
+        Some(53)
+    );
+    drop(env);
+    for (name, previous) in prior_env {
+        assert_eq!(std::env::var_os(name), previous);
+    }
 }
 
 #[tokio::test]

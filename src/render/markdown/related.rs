@@ -779,14 +779,14 @@ pub(super) fn related_trial(trial: &Trial) -> Vec<String> {
         }
     }
 
-    if let Some(detail) = trial.intervention_details.iter().find(|detail| {
+    if let Some(detail) = trial.design.interventions().iter().find(|detail| {
         detail
-            .other_names
-            .iter()
-            .any(|name| !name.trim().is_empty())
+            .other_names()
+            .is_some_and(|names| names.iter().any(|name| !name.trim().is_empty()))
     }) {
         if let Some(alias) = detail
-            .other_names
+            .other_names()
+            .unwrap_or_default()
             .iter()
             .find(|name| !name.trim().is_empty())
         {
@@ -795,8 +795,8 @@ pub(super) fn related_trial(trial: &Trial) -> Vec<String> {
                 out.push(format!("biomcp search drug -q {alias}"));
             }
         }
-    } else if let Some(intervention) = trial.interventions.first().map(String::as_str) {
-        let name = quote_arg(intervention);
+    } else if let Some(intervention) = trial.design.interventions().first() {
+        let name = quote_arg(intervention.name());
         if !name.is_empty() {
             out.push(format!("biomcp search drug -q {name}"));
             out.push(format!("biomcp drug trials {name}"));

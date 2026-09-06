@@ -1,9 +1,6 @@
-use std::collections::HashSet;
-
 use crate::entities::trial::{
-    Trial, TrialArm, TrialContact, TrialEligibility, TrialIntervention, TrialLocation,
-    TrialOutcome, TrialOutcomes, TrialReference, TrialSearchResult, TrialSiteContact,
-    format_age_range,
+    Trial, TrialContact, TrialDesign, TrialEligibility, TrialLocation, TrialOutcome, TrialOutcomes,
+    TrialReference, TrialSearchResult, TrialSiteContact, format_age_range,
 };
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
@@ -27,16 +24,6 @@ fn normalize_phase(phases: &[String]) -> Option<String> {
         return None;
     }
     Some(phases.join("/"))
-}
-
-fn clean_list(values: &[String], max: usize) -> Vec<String> {
-    values
-        .iter()
-        .map(|s| s.trim())
-        .filter(|s| !s.is_empty())
-        .take(max)
-        .map(|s| s.to_string())
-        .collect()
 }
 
 fn clean_conditions(values: &[String]) -> Vec<String> {
@@ -292,38 +279,6 @@ fn extract_outcomes(study: &CtGovStudy) -> Option<TrialOutcomes> {
     }
 }
 
-fn extract_arms(study: &CtGovStudy) -> Option<Vec<TrialArm>> {
-    let module = study
-        .protocol_section
-        .as_ref()
-        .and_then(|p| p.arms_interventions_module.as_ref())?;
-
-    let out = module
-        .arm_groups
-        .iter()
-        .filter_map(|arm| {
-            let label = clean_opt(arm.label.as_deref())?;
-            Some(TrialArm {
-                label: label.clone(),
-                arm_type: clean_opt(arm.arm_group_type.as_deref()),
-                description: clean_opt(arm.description.as_deref()),
-                interventions: if arm.intervention_names.is_empty() {
-                    module
-                        .interventions
-                        .iter()
-                        .filter(|i| i.arm_group_labels.iter().any(|v| v == &label))
-                        .filter_map(|i| clean_opt(i.name.as_deref()))
-                        .collect::<Vec<_>>()
-                } else {
-                    clean_list(&arm.intervention_names, 25)
-                },
-            })
-        })
-        .collect::<Vec<_>>();
-
-    (!out.is_empty()).then_some(out)
-}
-
 fn extract_references(study: &CtGovStudy) -> Result<Option<Vec<TrialReference>>, BioMcpError> {
     let Some(refs) = study
         .protocol_section
@@ -422,49 +377,6 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         .and_then(|p| p.conditions_module.as_ref())
         .map(|m| clean_conditions(&m.conditions))
         .unwrap_or_default();
-    let interventions = p
-        .and_then(|p| p.arms_interventions_module.as_ref())
-        .map(|m| {
-            m.interventions
-                .iter()
-                .filter_map(|i| i.name.as_deref())
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-                .take(25)
-                .map(|s| s.to_string())
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    let intervention_details = p
-        .and_then(|p| p.arms_interventions_module.as_ref())
-        .map(|m| {
-            m.interventions
-                .iter()
-                .filter_map(|i| {
-                    let name = clean_opt(i.name.as_deref())?;
-                    let mut seen = HashSet::new();
-                    let other_names = i
-                        .other_names
-                        .iter()
-                        .map(|s| s.trim())
-                        .filter(|s| !s.is_empty())
-                        .filter(|s| !s.eq_ignore_ascii_case(&name))
-                        .filter(|s| seen.insert(s.to_ascii_lowercase()))
-                        .take(25)
-                        .map(|s| s.to_string())
-                        .collect();
-                    Some(TrialIntervention {
-                        name,
-                        intervention_type: clean_opt(i.intervention_type.as_deref()),
-                        description: clean_opt(i.description.as_deref()),
-                        other_names,
-                    })
-                })
-                .take(25)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-
     Ok(Trial {
         nct_id: id,
         source: None,
@@ -475,8 +387,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         study_type,
         age_range,
         conditions,
-        interventions,
-        intervention_details,
+        design: TrialDesign::default(),
         sponsor,
         enrollment,
         summary,
@@ -488,7 +399,6 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         contacts: extract_contacts(study),
         locations: extract_locations(study),
         outcomes: extract_outcomes(study),
-        arms: extract_arms(study),
         references: extract_references(study)?,
     })
 }

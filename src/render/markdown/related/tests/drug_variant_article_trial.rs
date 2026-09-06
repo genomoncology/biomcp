@@ -49,6 +49,36 @@ fn related_drug_suggests_review_when_label_and_indications_are_sparse() {
 }
 
 #[test]
+fn related_trial_uses_the_first_alias_from_the_first_intervention_that_has_one() {
+    let trial: crate::entities::trial::Trial = serde_json::from_value(serde_json::json!({
+        "nct_id": "NCT00000001", "title": "trial", "status": "Recruiting", "conditions": [],
+        "interventions": [
+            {"id": 1, "name": "first", "type": null, "description": null, "other_names": []},
+            {"id": 2, "name": "second", "type": null, "description": null, "other_names": ["second alias", "later"]},
+            {"id": 3, "name": "third", "type": null, "description": null, "other_names": ["third alias"]}
+        ]
+    })).unwrap();
+    let commands = related_trial(&trial);
+    assert!(commands.contains(&"biomcp search drug -q \"second alias\"".to_string()));
+    assert!(!commands.iter().any(|value| value.contains("third alias")));
+    assert!(!commands.iter().any(|value| value.starts_with("biomcp drug trials")));
+}
+
+#[test]
+fn related_trial_without_aliases_uses_the_first_intervention_name() {
+    let trial: crate::entities::trial::Trial = serde_json::from_value(serde_json::json!({
+        "nct_id": "NCT00000001", "title": "trial", "status": "Recruiting", "conditions": [],
+        "interventions": [
+            {"id": 1, "name": "first drug", "type": null, "description": null, "other_names": []},
+            {"id": 2, "name": "second drug", "type": null, "description": null, "other_names": []}
+        ]
+    })).unwrap();
+    let commands = related_trial(&trial);
+    assert!(commands.contains(&"biomcp search drug -q \"first drug\"".to_string()));
+    assert!(commands.contains(&"biomcp drug trials \"first drug\"".to_string()));
+}
+
+#[test]
 fn search_next_commands_drug_prefers_requested_us_name() {
     let related = search_next_commands_drug(
         &[crate::entities::drug::DrugSearchResult {
@@ -465,8 +495,7 @@ fn related_trial_promotes_results_search_for_completed_or_terminated_studies() {
             study_type: None,
             age_range: None,
             conditions: vec!["Colorectal Cancer".to_string()],
-            interventions: vec!["Toca 511".to_string()],
-            intervention_details: Vec::new(),
+            design: crate::entities::trial::TrialDesign::from_names(&["Toca 511"]),
             sponsor: None,
             enrollment: None,
             summary: None,
@@ -478,7 +507,6 @@ fn related_trial_promotes_results_search_for_completed_or_terminated_studies() {
             contacts: None,
             locations: None,
             outcomes: None,
-            arms: None,
             references: None,
         };
 
@@ -523,8 +551,7 @@ fn provider_trial_title_shell_syntax_stays_inert_in_results_search() {
         study_type: None,
         age_range: None,
         conditions: Vec::new(),
-        interventions: vec!["SAFE-357".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names(&["SAFE-357"]),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -536,7 +563,6 @@ fn provider_trial_title_shell_syntax_stays_inert_in_results_search() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     };
 
@@ -576,8 +602,9 @@ fn related_trial_searches_unverified_jag201_intervention() {
         study_type: Some("Interventional".to_string()),
         age_range: None,
         conditions: vec!["Phelan-McDermid syndrome".to_string()],
-        interventions: vec!["JAG201".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names_and_arm(
+            &["JAG201"], "JAG201 arm", Some("Experimental"), None
+        ),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -589,12 +616,6 @@ fn related_trial_searches_unverified_jag201_intervention() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: Some(vec![crate::entities::trial::TrialArm {
-            label: "JAG201 arm".to_string(),
-            arm_type: Some("Experimental".to_string()),
-            description: None,
-            interventions: vec!["JAG201".to_string()],
-        }]),
         references: None,
     };
 
@@ -616,8 +637,7 @@ fn related_trial_keeps_recruiting_order_without_results_search() {
         study_type: None,
         age_range: None,
         conditions: vec!["melanoma".to_string()],
-        interventions: vec!["dabrafenib".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names(&["dabrafenib"]),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -629,7 +649,6 @@ fn related_trial_keeps_recruiting_order_without_results_search() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     };
 
@@ -652,8 +671,7 @@ fn related_trial_completed_promotes_results_search_before_condition_pivots() {
         study_type: None,
         age_range: None,
         conditions: vec!["melanoma".to_string()],
-        interventions: vec!["dabrafenib".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names(&["dabrafenib"]),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -665,7 +683,6 @@ fn related_trial_completed_promotes_results_search_before_condition_pivots() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     };
 
@@ -689,8 +706,7 @@ fn related_trial_results_search_without_intervention_keeps_seed_quoted() {
         study_type: None,
         age_range: None,
         conditions: vec!["melanoma".to_string()],
-        interventions: Vec::new(),
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::default(),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -702,7 +718,6 @@ fn related_trial_results_search_without_intervention_keeps_seed_quoted() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     };
 

@@ -172,7 +172,7 @@ fn assert_biodata_error(
 }
 
 #[test]
-fn biodata_reference_response_maps_every_stable_validation_code() {
+fn biodata_detail_response_maps_every_stable_validation_code() {
     use crate::error::RecoveryAction;
 
     for (bytes, code) in [
@@ -187,8 +187,9 @@ fn biodata_reference_response_maps_every_stable_validation_code() {
             "identity_mismatch",
         ),
     ] {
-        let error = ClinicalTrialsClient::decode_biodata_reference_response(
+        let error = ClinicalTrialsClient::decode_biodata_detail_response(
             "NCT00000001",
+            &["references".to_string()],
             StatusCode::OK,
             bytes,
         )
@@ -197,8 +198,9 @@ fn biodata_reference_response_maps_every_stable_validation_code() {
     }
 
     let oversized = vec![b' '; 8 * 1024 * 1024 + 1];
-    let error = ClinicalTrialsClient::decode_biodata_reference_response(
+    let error = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT00000001",
+        &["references".to_string()],
         StatusCode::OK,
         &oversized,
     )
@@ -207,11 +209,11 @@ fn biodata_reference_response_maps_every_stable_validation_code() {
 }
 
 #[test]
-fn biodata_reference_response_checks_http_status_before_valid_json() {
+fn biodata_detail_response_checks_http_status_before_valid_json() {
     let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"}}}"#;
     for status in [StatusCode::BAD_GATEWAY, StatusCode::SERVICE_UNAVAILABLE] {
         let error =
-            ClinicalTrialsClient::decode_biodata_reference_response("NCT00000001", status, body)
+            ClinicalTrialsClient::decode_biodata_detail_response("NCT00000001", &[], status, body)
                 .expect_err("HTTP failure");
         assert_eq!(error.code(), "api");
         assert!(format!("{error:?}").contains(status.as_str()));
@@ -219,27 +221,174 @@ fn biodata_reference_response_checks_http_status_before_valid_json() {
 }
 
 #[test]
-fn biodata_reference_response_returns_one_reference_owner() {
+fn biodata_detail_response_returns_shared_references() {
     let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"referencesModule":{"references":[]}}}"#;
-    let response = ClinicalTrialsClient::decode_biodata_reference_response(
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT00000001",
+        &["references".to_string()],
         StatusCode::OK,
         body,
     )
     .expect("valid BioData response");
 
     assert!(matches!(
-        response.references,
-        biodata::ClinicalTrialSection::Present(ref references) if references.is_empty()
+        response.shared.references(),
+        biodata::ClinicalTrialSection::Present(references) if references.is_empty()
     ));
+    assert!(response.study.protocol_section.is_some());
+}
+
+#[test]
+fn biodata_detail_response_sanitizes_ambiguous_arm_labels() {
+    let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"same"},{"label":"same"}],"interventions":[{"name":"I","armGroupLabels":["same"]}]}}}"#;
+    let error = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT00000001",
+        &["arms".to_string()],
+        StatusCode::OK,
+        body,
+    )
+    .expect_err("ambiguous label");
+    assert_biodata_error(
+        error,
+        "invalid_projection",
+        crate::error::RecoveryAction::RetryRemoteSource,
+    );
+}
+
+#[test]
+fn product_arm_states_survive_dedicated_mixed_and_all_routes() {
+    let states: [(&[u8], Option<usize>); 4] = [
+        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"}}}"#, None),
+        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":null,"interventions":null}}}"#, None),
+        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[],"interventions":[]}}}"#, Some(0)),
+        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"A"}],"interventions":[{"name":"I","armGroupLabels":["A"]}]}}}"#, Some(1)),
+    ];
+    for sections in [
+        vec!["arms".to_string()],
+        vec!["arms".to_string(), "outcomes".to_string()],
+        vec!["all".to_string()],
+    ] {
+        for (body, expected_arms) in states {
+            let response = ClinicalTrialsClient::decode_biodata_detail_response(
+                "NCT00000001",
+                &sections,
+                StatusCode::OK,
+                body,
+            )
+            .unwrap_or_else(|error| panic!("valid arm state for {sections:?}: {error:?}"));
+            let design = crate::entities::trial::product_design(
+                response.shared.interventions(),
+                response.shared.arms(),
+            )
+            .expect("product arm state");
+            assert_eq!(design.arms().map(<[_]>::len), expected_arms);
+            assert_eq!(design.assignments().map(<[_]>::len), expected_arms);
+        }
+    }
+}
+
+#[test]
+fn legacy_capture_keeps_missing_null_and_empty_arm_arrays_distinct() {
+    let missing = ClinicalTrialsClient::decode_get_response(
+        "NCT00000001",
+        StatusCode::OK,
+        br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"}}}"#,
+    )
+    .unwrap();
     assert!(
-        response
-            .study
+        missing
             .protocol_section
-            .as_ref()
-            .and_then(|protocol| protocol.references_module.as_ref())
+            .unwrap()
+            .arms_interventions_module
             .is_none()
     );
+
+    let decode_module = |body: &[u8]| {
+        ClinicalTrialsClient::decode_get_response("NCT00000001", StatusCode::OK, body)
+            .unwrap()
+            .protocol_section
+            .unwrap()
+            .arms_interventions_module
+            .unwrap()
+    };
+    let null = decode_module(br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":null,"interventions":null}}}"#);
+    assert!(null.arm_groups.is_none());
+    assert!(null.interventions.is_none());
+
+    let empty = decode_module(br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[],"interventions":[]}}}"#);
+    assert!(empty.arm_groups.is_some_and(|values| values.is_empty()));
+    assert!(empty.interventions.is_some_and(|values| values.is_empty()));
+}
+
+#[test]
+fn arm_label_mutations_rebuild_or_reject_assignments_without_leaking_values() {
+    let before = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm A"]},{"name":"J","armGroupLabels":["Arm B"]}]}}}"#;
+    let after = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm B"]},{"name":"J","armGroupLabels":["Arm B"]}]}}}"#;
+    let parse_design = |body: &[u8]| {
+        let response = ClinicalTrialsClient::decode_biodata_detail_response(
+            "NCT00000001",
+            &["arms".to_string()],
+            StatusCode::OK,
+            body,
+        )
+        .expect("forward label resolves");
+        crate::entities::trial::product_design(
+            response.shared.interventions(),
+            response.shared.arms(),
+        )
+        .expect("forward relationship")
+    };
+    let before = parse_design(before);
+    let after = parse_design(after);
+    let entity_names = |design: &crate::entities::trial::TrialDesign| {
+        (
+            design
+                .arms()
+                .unwrap()
+                .iter()
+                .map(|value| value.name().to_string())
+                .collect::<Vec<_>>(),
+            design
+                .interventions()
+                .iter()
+                .map(|value| value.name().to_string())
+                .collect::<Vec<_>>(),
+        )
+    };
+    assert_eq!(entity_names(&before), entity_names(&after));
+    let assigned_arm = |design: &crate::entities::trial::TrialDesign| {
+        design
+            .assignments()
+            .unwrap()
+            .iter()
+            .find(|value| value.intervention_id().get() == 1)
+            .unwrap()
+            .arm_id()
+            .get()
+    };
+    assert_eq!(assigned_arm(&before), 1);
+    assert_eq!(assigned_arm(&after), 2);
+
+    for invalid in [
+        br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"known-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["unknown-label-secret"]}]}}}"#.as_slice(),
+        br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"ambiguous-label-secret"},{"label":"ambiguous-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["ambiguous-label-secret"]}]}}}"#.as_slice(),
+    ] {
+        let error = ClinicalTrialsClient::decode_biodata_detail_response(
+            "NCT00000001", &["arms".to_string()], StatusCode::OK, invalid,
+        )
+        .expect_err("invalid label relationship");
+        assert!(matches!(
+            &error,
+            BioMcpError::WithSourceContext { source, .. }
+                if matches!(source.as_ref(), BioMcpError::Api { message, .. }
+                    if message.ends_with("invalid_projection"))
+        ));
+        for rendered in [error.to_string(), format!("{error:?}")] {
+            assert!(!rendered.contains("label-secret"));
+            assert!(!rendered.contains("unknown-label"));
+            assert!(!rendered.contains("ambiguous-label"));
+        }
+    }
 }
 
 #[test]

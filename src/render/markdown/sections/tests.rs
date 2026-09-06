@@ -401,8 +401,7 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
         study_type: None,
         age_range: None,
         conditions: vec!["melanoma".to_string()],
-        interventions: vec!["trametinib".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names(&["trametinib"]),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -414,7 +413,6 @@ fn format_sections_block_describes_guardrailed_drug_and_trial_sections() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     };
     let terminated_sections = sections_trial(&terminated, &[]);

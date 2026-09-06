@@ -11,8 +11,7 @@ fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
         study_type: None,
         age_range: None,
         conditions: vec![],
-        interventions: vec![],
-        intervention_details: vec![],
+        design: crate::entities::trial::TrialDesign::default(),
         sponsor: None,
         enrollment: None,
         summary: summary.map(str::to_string),
@@ -24,7 +23,6 @@ fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     }
 }
@@ -250,13 +248,46 @@ fn trial_markdown_includes_source_labeled_sections() {
         study_type: Some("Interventional".to_string()),
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
-        interventions: vec!["ivacaftor".to_string()],
-        intervention_details: vec![crate::entities::trial::TrialIntervention {
-            name: "ivacaftor".to_string(),
-            intervention_type: Some("BIOLOGICAL".to_string()),
-            description: None,
-            other_names: Vec::new(),
-        }],
+        design: {
+            let intervention_id = biodata::ClinicalTrialInterventionId::new(1).unwrap();
+            let arm_id = biodata::ClinicalTrialArmId::new(1).unwrap();
+            let code = |value: &str| {
+                biodata::ExtensibleCode::new(
+                    "test",
+                    value,
+                    None::<String>,
+                    None::<String>,
+                    None::<String>,
+                )
+                .unwrap()
+            };
+            crate::entities::trial::TrialDesign::new(
+                vec![
+                    biodata::ClinicalTrialIntervention::new(
+                        intervention_id,
+                        "ivacaftor",
+                        Some(code("BIOLOGICAL")),
+                        None,
+                        None,
+                    )
+                    .unwrap(),
+                ],
+                Some(vec![
+                    biodata::ClinicalTrialArm::new(
+                        arm_id,
+                        "Arm A",
+                        Some(code("Experimental")),
+                        Some("Description".to_string()),
+                    )
+                    .unwrap(),
+                ]),
+                Some(vec![biodata::ClinicalTrialArmInterventionAssignment::new(
+                    arm_id,
+                    intervention_id,
+                )]),
+            )
+            .unwrap()
+        },
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(42),
         summary: Some("Trial summary.".to_string()),
@@ -289,12 +320,6 @@ fn trial_markdown_includes_source_labeled_sections() {
             }],
             secondary: Vec::new(),
         }),
-        arms: Some(vec![crate::entities::trial::TrialArm {
-            label: "Arm A".to_string(),
-            arm_type: Some("Experimental".to_string()),
-            description: Some("Description".to_string()),
-            interventions: vec!["ivacaftor".to_string()],
-        }]),
         references: Some(vec![
             crate::entities::trial::TrialReference::new(
                 Some("22663011".to_string()),
@@ -325,6 +350,79 @@ fn trial_markdown_includes_source_labeled_sections() {
 }
 
 #[test]
+fn arm_rendering_follows_assignment_ids_when_names_do_not_change() {
+    use biodata::{
+        ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
+        ClinicalTrialIntervention, ClinicalTrialInterventionId,
+    };
+
+    let interventions = vec![
+        ClinicalTrialIntervention::new(
+            ClinicalTrialInterventionId::new(1).unwrap(),
+            "alpha",
+            None,
+            None,
+            None,
+        )
+        .unwrap(),
+        ClinicalTrialIntervention::new(
+            ClinicalTrialInterventionId::new(2).unwrap(),
+            "beta",
+            None,
+            None,
+            None,
+        )
+        .unwrap(),
+    ];
+    let arms = vec![
+        ClinicalTrialArm::new(ClinicalTrialArmId::new(1).unwrap(), "Arm A", None, None).unwrap(),
+        ClinicalTrialArm::new(ClinicalTrialArmId::new(2).unwrap(), "Arm B", None, None).unwrap(),
+    ];
+    let design = |pairs: [(u64, u64); 2]| {
+        crate::entities::trial::TrialDesign::new(
+            interventions.clone(),
+            Some(arms.clone()),
+            Some(
+                pairs
+                    .map(|(arm, intervention)| {
+                        ClinicalTrialArmInterventionAssignment::new(
+                            ClinicalTrialArmId::new(arm).unwrap(),
+                            ClinicalTrialInterventionId::new(intervention).unwrap(),
+                        )
+                    })
+                    .to_vec(),
+            ),
+        )
+        .unwrap()
+    };
+    let mut trial = summary_trial(None);
+    trial.design = design([(1, 1), (2, 2)]);
+    let original_names = trial
+        .design
+        .interventions()
+        .iter()
+        .map(|value| value.name().to_string())
+        .collect::<Vec<_>>();
+    let before = arm_views(&trial);
+    assert_eq!(before[0].interventions, ["alpha"]);
+    assert_eq!(before[1].interventions, ["beta"]);
+
+    trial.design = design([(1, 2), (2, 1)]);
+    assert_eq!(
+        trial
+            .design
+            .interventions()
+            .iter()
+            .map(|value| value.name().to_string())
+            .collect::<Vec<_>>(),
+        original_names
+    );
+    let after = arm_views(&trial);
+    assert_eq!(after[0].interventions, ["beta"]);
+    assert_eq!(after[1].interventions, ["alpha"]);
+}
+
+#[test]
 fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
     let mut trial = crate::entities::trial::Trial {
         nct_id: "NCT41300001".to_string(),
@@ -336,8 +434,7 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
         study_type: None,
         age_range: Some("2 Years to 18 Years".to_string()),
         conditions: vec![],
-        interventions: vec![],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::default(),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -395,7 +492,6 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
             longitude: None,
         }]),
         outcomes: None,
-        arms: None,
         references: None,
     };
 

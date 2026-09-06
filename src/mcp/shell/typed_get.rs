@@ -1,4 +1,6 @@
-use serde_json::{Map, json};
+use serde_json::{Map, Value, json};
+
+use super::{McpError, checked_text, input_error};
 
 #[derive(Debug)]
 pub(super) struct TypedGetCapability {
@@ -26,6 +28,32 @@ pub(super) fn typed_get_capabilities() -> Vec<TypedGetCapability> {
         .collect()
 }
 
+pub(super) fn typed_get_allowed_keys(entity: &str, has_sections: bool) -> &'static [&'static str] {
+    if !has_sections {
+        &["entity", "id", "json"]
+    } else if entity == "variant" {
+        &["entity", "id", "sections", "assembly", "json"]
+    } else if entity == "trial" {
+        &["entity", "id", "sections", "source", "json"]
+    } else {
+        &["entity", "id", "sections", "json"]
+    }
+}
+
+pub(super) fn typed_trial_source_args(
+    entity: &str,
+    source: Option<&Value>,
+) -> Result<Vec<String>, McpError> {
+    let Some(source) = source.filter(|_| entity == "trial") else {
+        return Ok(Vec::new());
+    };
+    let source = checked_text(source, "source", 256)?;
+    if !["ctgov", "nci"].contains(&source.as_str()) {
+        return Err(input_error("invalid trial source"));
+    }
+    Ok(vec!["--source".into(), source])
+}
+
 pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
     let branches = typed_get_capabilities()
         .into_iter().map(|capability| {
@@ -44,6 +72,9 @@ pub(super) fn typed_get_schema(schema: &mut rmcp::schemars::Schema) {
             }
             if entity == "variant" {
                 properties.insert("assembly".into(), json!({"enum":["grch37","hg19","grch38","hg38"]}));
+            }
+            if entity == "trial" {
+                properties.insert("source".into(), json!({"enum":["ctgov","nci"],"default":"ctgov"}));
             }
             json!({"type":"object","additionalProperties":false,"properties":properties,"required":["entity","id"]})
         }).collect::<Vec<_>>();

@@ -13,6 +13,7 @@ from typing import Iterator
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from jsonschema import Draft202012Validator
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -49,6 +50,14 @@ REFERENCE_FIELDS = [
     "StudyType",
     "WhyStopped",
 ]
+DETAIL_ROUTE_FIELDS = {
+    "overview": "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+    "arms": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+    "all": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
+    "eligibility": "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
+    "documents": "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+    "mixed": "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
+}
 
 
 @contextmanager
@@ -270,6 +279,29 @@ def _run_reference(
     )
 
 
+@pytest.mark.parametrize(
+    ("route", "sections"),
+    [
+        ("overview", []),
+        ("arms", ["arms"]),
+        ("all", ["all"]),
+        ("eligibility", ["eligibility"]),
+        ("documents", ["documents"]),
+        ("mixed", ["arms", "outcomes"]),
+    ],
+)
+def test_every_detail_route_uses_one_exact_request(
+    tmp_path: Path, route: str, sections: list[str]
+) -> None:
+    with _reference_trial_server() as (base, _replies, requests):
+        result = _run_reference(base, tmp_path, "NCT02576665", sections)
+        assert result.returncode == 0, result.stderr
+        assert len(requests) == 1
+        parsed = urlparse(requests[0])
+        assert parsed.path == "/api/v2/studies/NCT02576665"
+        assert parse_qs(parsed.query) == {"fields": [DETAIL_ROUTE_FIELDS[route]]}
+
+
 @pytest.mark.parametrize("section", ["references", "all"])
 def test_recorded_references_and_empty_result_keep_section_behavior(
     tmp_path: Path, section: str
@@ -378,7 +410,13 @@ def test_other_trial_section_and_not_found_still_work(tmp_path: Path) -> None:
     with _reference_trial_server() as (base, _replies, _requests):
         result = _run_reference(base, tmp_path, "NCT02576665", "arms")
         assert result.returncode == 0, result.stderr
-        assert json.loads(result.stdout)["arms"]
+        trial = json.loads(result.stdout)
+        schema = json.loads((REPO_ROOT / "skills/schemas/trial.json").read_text())
+        Draft202012Validator(schema).validate(trial)
+        assert len(trial["arms"]) == 1
+        assert len(trial["interventions"]) == 2
+        assert len(trial["arm_intervention_assignments"]) == 2
+        assert "intervention_details" not in trial
         missing = _run_reference(base, tmp_path, "NCT00000000", "references")
         assert missing.returncode != 0
         combined = missing.stdout + missing.stderr

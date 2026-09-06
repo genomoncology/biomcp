@@ -6,7 +6,8 @@ use crate::sources::HttpMethod;
 
 #[test]
 fn get_fields_contacts_preserve_site_context_and_eligibility_sex() {
-    let contact_fields = build_get_fields(&["contacts".to_string()]);
+    let contact_plan = ClinicalTrialsClient::get_plan("NCT00000001", &["contacts".to_string()]);
+    let contact_fields = contact_plan.query_value("fields").unwrap();
     for field in [
         "CentralContactEMail",
         "LocationFacility",
@@ -18,7 +19,9 @@ fn get_fields_contacts_preserve_site_context_and_eligibility_sex() {
         assert!(contact_fields.split(',').any(|actual| actual == field));
     }
 
-    let eligibility_fields = build_get_fields(&["eligibility".to_string()]);
+    let eligibility_plan =
+        ClinicalTrialsClient::get_plan("NCT00000001", &["eligibility".to_string()]);
+    let eligibility_fields = eligibility_plan.query_value("fields").unwrap();
     assert!(eligibility_fields.split(',').any(|field| field == "Sex"));
     assert!(
         eligibility_fields
@@ -26,14 +29,16 @@ fn get_fields_contacts_preserve_site_context_and_eligibility_sex() {
             .any(|field| field == "LargeDocumentModule")
     );
 
-    let all_fields = build_get_fields(&["all".to_string()]);
+    let all_plan = ClinicalTrialsClient::get_plan("NCT00000001", &["all".to_string()]);
+    let all_fields = all_plan.query_value("fields").unwrap();
     assert!(
         !all_fields
             .split(',')
             .any(|field| field == "LargeDocumentModule")
     );
 
-    let document_fields = build_get_fields(&["documents".to_string()]);
+    let document_plan = ClinicalTrialsClient::get_plan("NCT00000001", &["documents".to_string()]);
+    let document_fields = document_plan.query_value("fields").unwrap();
     assert!(
         document_fields
             .split(',')
@@ -103,7 +108,8 @@ fn search_plan_includes_geo_facility_agg_and_field_override() {
 
 #[test]
 fn default_get_fields_request_visible_status_context() {
-    let fields = build_get_fields(&[]);
+    let plan = ClinicalTrialsClient::get_plan("NCT00000001", &[]);
+    let fields = plan.query_value("fields").unwrap();
 
     for field in ["InterventionType", "WhyStopped"] {
         assert!(
@@ -121,7 +127,8 @@ fn location_postal_code_is_requested_only_for_location_projections() {
         (vec!["locations".to_string()], 1),
         (vec!["all".to_string()], 1),
     ] {
-        let fields = build_get_fields(&sections);
+        let plan = ClinicalTrialsClient::get_plan("NCT00000001", &sections);
+        let fields = plan.query_value("fields").unwrap();
         assert_eq!(
             fields
                 .split(',')
@@ -176,8 +183,8 @@ fn get_plan_builds_study_path_and_section_fields() {
 }
 
 #[test]
-fn biodata_reference_plan_uses_the_exact_shared_path_and_fields() {
-    let plan = ClinicalTrialsClient::biodata_reference_plan("NCT02576665").unwrap();
+fn biodata_detail_plan_uses_the_exact_shared_path_and_fields() {
+    let plan = ClinicalTrialsClient::get_plan("NCT02576665", &["references".to_string()]);
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "studies/NCT02576665");
     assert_eq!(
@@ -186,4 +193,43 @@ fn biodata_reference_plan_uses_the_exact_shared_path_and_fields() {
             "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,ReferenceCitation,ReferencePMID,ReferenceType,StartDate,StudyType,WhyStopped"
         )
     );
+}
+
+#[test]
+fn every_product_detail_route_has_one_exact_composed_request() {
+    let cases = [
+        (
+            vec![],
+            "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+        ),
+        (
+            vec!["arms"],
+            "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+        ),
+        (
+            vec!["all"],
+            "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,ReferenceCitation,ReferencePMID,ReferenceType,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,Sex,StartDate,StudyType,WhyStopped",
+        ),
+        (
+            vec!["eligibility"],
+            "BriefSummary,BriefTitle,CompletionDate,Condition,EligibilityCriteria,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,Sex,StartDate,StudyType,WhyStopped",
+        ),
+        (
+            vec!["documents"],
+            "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+        ),
+        (
+            vec!["arms", "outcomes"],
+            "ArmGroupDescription,ArmGroupInterventionName,ArmGroupLabel,ArmGroupType,BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionArmGroupLabel,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,MaximumAge,MinimumAge,NCTId,OverallStatus,Phase,PrimaryOutcomeDescription,PrimaryOutcomeMeasure,PrimaryOutcomeTimeFrame,SecondaryOutcomeDescription,SecondaryOutcomeMeasure,SecondaryOutcomeTimeFrame,StartDate,StudyType,WhyStopped",
+        ),
+    ];
+
+    for (sections, expected_fields) in cases {
+        let sections = sections.into_iter().map(str::to_owned).collect::<Vec<_>>();
+        let plan = ClinicalTrialsClient::get_plan("NCT02576665", &sections);
+        assert_eq!(plan.method, HttpMethod::Get);
+        assert_eq!(plan.path, "studies/NCT02576665");
+        assert_eq!(plan.query.len(), 1);
+        assert_eq!(plan.query_value("fields"), Some(expected_fields));
+    }
 }

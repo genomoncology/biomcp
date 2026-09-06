@@ -19,7 +19,9 @@ use serde_json::{Value, json};
 use tokio_util::sync::CancellationToken;
 
 mod typed_get;
-use self::typed_get::{typed_get_capabilities, typed_get_schema};
+use self::typed_get::{
+    typed_get_allowed_keys, typed_get_capabilities, typed_get_schema, typed_trial_source_args,
+};
 mod http_server;
 pub(super) use self::http_server::run_http;
 mod pre_session;
@@ -799,13 +801,10 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         .find(|capability| capability.entity == entity)
         .ok_or_else(|| input_error("invalid typed get entity"))?;
     let id = checked_text(object.get("id").unwrap_or(&Value::Null), "id", 512)?;
-    let allowed_keys = if capability.sections.is_none() {
-        &["entity", "id", "json"][..]
-    } else if entity == "variant" {
-        &["entity", "id", "sections", "assembly", "json"][..]
-    } else {
-        &["entity", "id", "sections", "json"][..]
-    };
+    let allowed_keys = typed_get_allowed_keys(&entity, capability.sections.is_some());
+    debug_assert!(allowed_keys.contains(&"entity"));
+    debug_assert!(allowed_keys.contains(&"id"));
+    debug_assert!(allowed_keys.contains(&"json"));
     if let Some(key) = object
         .keys()
         .find(|key| !allowed_keys.contains(&key.as_str()))
@@ -821,6 +820,7 @@ fn get_args(input: TypedGet) -> Result<Vec<String>, McpError> {
         args.extend(["--assembly".into(), assembly]);
     }
     args.push(id);
+    args.extend(typed_trial_source_args(&entity, object.get("source"))?);
     let sections = object
         .get("sections")
         .and_then(Value::as_array)

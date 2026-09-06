@@ -77,8 +77,7 @@ fn paged_contact_trial() -> crate::entities::trial::Trial {
         study_type: None,
         age_range: None,
         conditions: vec![],
-        interventions: vec![],
-        intervention_details: vec![],
+        design: crate::entities::trial::TrialDesign::default(),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -90,7 +89,6 @@ fn paged_contact_trial() -> crate::entities::trial::Trial {
         contacts: Some(contacts),
         locations: Some(locations),
         outcomes: None,
-        arms: None,
         references: None,
     }
 }
@@ -421,8 +419,7 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
         study_type: Some("Interventional".to_string()),
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["melanoma".to_string()],
-        interventions: vec!["osimertinib".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names(&["osimertinib"]),
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(100),
         summary: Some("Example summary".to_string()),
@@ -448,7 +445,6 @@ fn trial_locations_json_preserves_location_pagination_and_section_sources() {
             longitude: None,
         }]),
         outcomes: None,
-        arms: None,
         references: None,
     };
 
@@ -502,8 +498,7 @@ fn paginate_trial_locations_handles_missing_locations() {
         study_type: Some("Interventional".to_string()),
         age_range: Some("18 Years and older".to_string()),
         conditions: vec!["melanoma".to_string()],
-        interventions: vec!["osimertinib".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names(&["osimertinib"]),
         sponsor: Some("Example Sponsor".to_string()),
         enrollment: Some(100),
         summary: Some("Example summary".to_string()),
@@ -515,7 +510,6 @@ fn paginate_trial_locations_handles_missing_locations() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     };
 

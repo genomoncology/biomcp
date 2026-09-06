@@ -263,8 +263,7 @@ fn trial_json_next_commands_parse() {
         study_type: None,
         age_range: None,
         conditions: vec!["melanoma".to_string()],
-        interventions: vec!["dabrafenib".to_string()],
-        intervention_details: Vec::new(),
+        design: crate::entities::trial::TrialDesign::from_names(&["dabrafenib"]),
         sponsor: None,
         enrollment: None,
         summary: None,
@@ -276,7 +275,6 @@ fn trial_json_next_commands_parse() {
         contacts: None,
         locations: None,
         outcomes: None,
-        arms: None,
         references: None,
     };
     let next_commands = crate::render::markdown::related_trial(&trial);

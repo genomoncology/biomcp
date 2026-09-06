@@ -63,9 +63,9 @@ def test_rejected_nci_filters_never_reach_local_transport() -> None:
 
 
 def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
-    fixture = json.loads(
-        (REPO_ROOT / "testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json").read_text()
-    )["data"][0]
+    response = (
+        REPO_ROOT / "testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
+    ).read_bytes()
     fields = [
         "nci_id",
         "nct_id",
@@ -84,10 +84,6 @@ def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
         "eligibility",
         "brief_summary",
     ]
-    response = json.dumps(
-        {"total": 1, "data": [{name: fixture[name] for name in fields}]}
-    ).encode()
-
     class DetailHandler(BaseHTTPRequestHandler):
         request_path = ""
         query: list[tuple[str, str]] = []
@@ -117,7 +113,15 @@ def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
     }
     try:
         result = subprocess.run(
-            [binary, "--json", "get", "trial", "NCT05879926", "--source", "nci", "eligibility"],
+            [binary, "--json", "get", "trial", "NCT05879926", "--source", "nci", "all"],
+            cwd=REPO_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        markdown = subprocess.run(
+            [binary, "get", "trial", "NCT05879926", "--source", "nci", "arms"],
             cwd=REPO_ROOT,
             env=env,
             text=True,
@@ -130,6 +134,15 @@ def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
         server.server_close()
 
     assert result.returncode == 0, result.stderr
+    assert markdown.returncode == 0, markdown.stderr
+    assert "and 20 more" in markdown.stdout
+    assert "and 23 more" in markdown.stdout
+    trial = json.loads(result.stdout)
+    assert len(trial["arms"]) == 2
+    assert len(trial["interventions"]) == 53
+    assert len(trial["arm_intervention_assignments"]) == 53
+    assert len({row["id"] for row in trial["interventions"]}) == 53
+    assert "intervention_details" not in trial
     assert DetailHandler.request_path == "/trials"
     assert DetailHandler.query == [
         ("size", "1"),

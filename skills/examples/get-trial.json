@@ -21,8 +21,32 @@
     "IDH1 Mutated or MGMT Methylated Recurrent HGG (Not Recruiting)"
   ],
   "interventions": [
-    "Toca 511",
-    "Toca FC"
+    {
+      "id": 1,
+      "name": "Toca 511",
+      "type": {
+        "authority": "clinicaltrials.gov",
+        "code": "BIOLOGICAL",
+        "display": "Biological",
+        "vocabulary_version": null,
+        "recognized_meaning": null
+      },
+      "description": null,
+      "other_names": []
+    },
+    {
+      "id": 2,
+      "name": "Toca FC",
+      "type": {
+        "authority": "clinicaltrials.gov",
+        "code": "DRUG",
+        "display": "Drug",
+        "vocabulary_version": null,
+        "recognized_meaning": null
+      },
+      "description": null,
+      "other_names": []
+    }
   ],
   "sponsor": "Tocagen Inc.",
   "enrollment": 21,

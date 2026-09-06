@@ -2,6 +2,66 @@
 
 use super::*;
 
+#[derive(serde::Serialize)]
+struct InterventionView<'a> {
+    name: &'a str,
+    intervention_type: Option<&'a str>,
+    other_names: &'a [String],
+}
+
+#[derive(serde::Serialize)]
+struct ArmView<'a> {
+    label: &'a str,
+    arm_type: Option<&'a str>,
+    description: Option<&'a str>,
+    interventions: Vec<&'a str>,
+    omitted_interventions: usize,
+}
+
+fn intervention_views(trial: &Trial) -> Vec<InterventionView<'_>> {
+    trial
+        .design
+        .interventions()
+        .iter()
+        .map(|value| InterventionView {
+            name: value.name(),
+            intervention_type: value.source_type().map(|kind| kind.code()),
+            other_names: value.other_names().unwrap_or_default(),
+        })
+        .collect()
+}
+
+fn arm_views(trial: &Trial) -> Vec<ArmView<'_>> {
+    let assignments = trial.design.assignments().unwrap_or_default();
+    trial
+        .design
+        .arms()
+        .unwrap_or_default()
+        .iter()
+        .map(|arm| {
+            let all = assignments
+                .iter()
+                .filter(|value| value.arm_id() == arm.id())
+                .filter_map(|value| {
+                    trial
+                        .design
+                        .interventions()
+                        .iter()
+                        .find(|item| item.id() == value.intervention_id())
+                        .map(|item| item.name())
+                })
+                .collect::<Vec<_>>();
+            ArmView {
+                label: arm.name(),
+                arm_type: arm.source_type().map(|kind| kind.code()),
+                description: arm.description(),
+                interventions: all.iter().take(5).copied().collect(),
+                omitted_interventions: all.len().saturating_sub(5),
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests;
 
@@ -217,6 +277,8 @@ fn render_trial_markdown(
         .as_deref()
         .map(bounded_trial_summary)
         .filter(|summary| !summary.is_empty());
+    let intervention_details = intervention_views(trial);
+    let arms = arm_views(trial);
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&trial.nct_id, requested_sections),
@@ -230,8 +292,7 @@ fn render_trial_markdown(
         study_type => &trial.study_type,
         age_range => &trial.age_range,
         conditions => &trial.conditions,
-        interventions => &trial.interventions,
-        intervention_details => &trial.intervention_details,
+        intervention_details => &intervention_details,
         sponsor => &trial.sponsor,
         enrollment => &trial.enrollment,
         summary => &summary,
@@ -244,7 +305,7 @@ fn render_trial_markdown(
         locations => &trial.locations,
         location_disclosure => location_disclosure,
         outcomes => &trial.outcomes,
-        arms => &trial.arms,
+        arms => &arms,
         references => &trial.references,
         show_eligibility_section => show_eligibility_section,
         show_contacts_section => show_contacts_section,
