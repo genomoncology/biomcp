@@ -214,3 +214,12 @@ one test with 15 filtered out. Formatting, Ruff, fixture shell syntax,
 `git diff --check`, and the exact 1,300-path package count passed. Full
 repository gates were not rerun. Fresh independent remediation review remains
 required; this record does not claim acceptance.
+
+The second independent review rejected the branch because the new exact graph
+Markdown matrix had grown `src/render/markdown/article/tests.rs` from its
+1,244-line ratchet baseline to 1,392 lines. The matrix and adversarial-backtick
+test now live in the existing article CLI exact-contract test surface instead;
+their assertions are unchanged, the renderer test is exactly 1,244 lines, and
+the focused Rust source-size ratchet passes without raising its baseline or
+adding a package file. Focused behavior checks and reviewer reacceptance remain
+required after the remediation rebase.

@@ -328,3 +328,112 @@ fn degraded_article_sources_share_safe_direct_retries_across_zero_row_surfaces()
     let value: serde_json::Value = serde_json::from_str(&json).unwrap();
     assert_eq!(value["_meta"]["next_commands"], serde_json::json!(retries));
 }
+
+#[test]
+fn graph_markdown_is_exact_for_every_page_shape_and_direction() {
+    use crate::entities::article::{
+        ArticleGraphEdge, ArticleGraphMeta, ArticleGraphPagination, ArticleGraphResult,
+        ArticleRelatedPaper, GraphCoverageStatus,
+    };
+    const ROW: &str =
+        "| PMID 24200969 | Related paper | Background | yes | Important supporting context |\n";
+    const EMPTY: &str = "| - | - | - | - | No related papers returned |\n";
+    let paper = |pmid: &str, title: &str| ArticleRelatedPaper {
+        paper_id: Some(format!("paper-{pmid}")),
+        pmid: Some(pmid.into()),
+        doi: None,
+        arxiv_id: None,
+        title: title.into(),
+        journal: None,
+        year: None,
+    };
+    let article = paper("22663011", "Seed");
+    let edge = ArticleGraphEdge {
+        paper: paper("24200969", "Related paper"),
+        intents: vec!["Background".into()],
+        contexts: vec!["Important supporting context".into()],
+        is_influential: true,
+    };
+    let cases = [
+        (0, 1, Some(1), GraphCoverageStatus::Continuable, false),
+        (1, 1, Some(2), GraphCoverageStatus::Continuable, false),
+        (58, 1, None, GraphCoverageStatus::Exhausted, false),
+        (1000, 0, Some(1001), GraphCoverageStatus::Continuable, true),
+        (1001, 0, None, GraphCoverageStatus::Exhausted, true),
+    ];
+    for (kind, direction) in [("Citations", "citations"), ("References", "references")] {
+        for (offset, returned, next, coverage_status, empty) in cases {
+            let command = next.map(|next| {
+                format!("biomcp article {direction} 22663011 --limit 1 --offset {next}")
+            });
+            let result = ArticleGraphResult {
+                article: article.clone(),
+                edges: (!empty).then(|| edge.clone()).into_iter().collect(),
+                pagination: ArticleGraphPagination {
+                    offset,
+                    limit: 1,
+                    returned,
+                    next_offset: next,
+                    coverage_status,
+                },
+                _meta: ArticleGraphMeta {
+                    next_commands: command.clone().into_iter().collect(),
+                },
+            };
+            let status = coverage_status.as_str();
+            let expected = format!(
+                "# {kind} for PMID 22663011\n\n| Identifier | Title | Intents | Influential | Context |\n| --- | --- | --- | --- | --- |\n{}\nPage offset: {offset}; page size: 1; returned: {returned}; coverage: {status}.\nSemantic Scholar does not provide an exact total.\n{}",
+                if empty { EMPTY } else { ROW },
+                command.map_or_else(String::new, |value| format!("Next: `{value}`\n")),
+            );
+            assert_eq!(
+                crate::render::markdown::article_graph_markdown(kind, &result).unwrap(),
+                expected
+            );
+        }
+    }
+}
+
+#[test]
+fn graph_markdown_uses_a_safe_code_span_for_the_shared_command() {
+    use crate::entities::article::{
+        ArticleGraphMeta, ArticleGraphPagination, ArticleGraphResult, ArticleRelatedPaper,
+        GraphCoverageStatus,
+    };
+    let mut result = ArticleGraphResult {
+        article: ArticleRelatedPaper {
+            paper_id: Some("paper-1".into()),
+            pmid: Some("22663011".into()),
+            doi: None,
+            arxiv_id: None,
+            title: "Seed".into(),
+            journal: None,
+            year: None,
+        },
+        edges: Vec::new(),
+        pagination: ArticleGraphPagination {
+            offset: 0,
+            limit: 1,
+            returned: 0,
+            next_offset: Some(1),
+            coverage_status: GraphCoverageStatus::Continuable,
+        },
+        _meta: ArticleGraphMeta {
+            next_commands: vec![
+                "biomcp article citations \"10.1/a`b\" --limit 1 --offset 1".into(),
+            ],
+        },
+    };
+    let command = result._meta.next_commands[0].clone();
+    let markdown = crate::render::markdown::article_graph_markdown("Citations", &result).unwrap();
+    assert!(
+        markdown.contains(&format!("Next: ``{command}``")),
+        "{markdown}"
+    );
+    result._meta.next_commands.clear();
+    assert!(
+        !crate::render::markdown::article_graph_markdown("Citations", &result)
+            .unwrap()
+            .contains("Next:")
+    );
+}
