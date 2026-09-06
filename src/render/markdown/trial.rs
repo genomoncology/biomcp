@@ -251,6 +251,8 @@ fn render_trial_markdown(
     requested_sections: &[String],
     location_disclosure: Option<&str>,
 ) -> Result<String, BioMcpError> {
+    let references = crate::entities::trial::reference_wire::views(&trial.references)
+        .map_err(|()| BioMcpError::InternalProcessing)?;
     let tmpl = env()?.get_template("trial.md.j2")?;
     let section_only = is_section_only_requested(requested_sections);
     let include_all = has_all_section(requested_sections);
@@ -306,7 +308,7 @@ fn render_trial_markdown(
         location_disclosure => location_disclosure,
         outcomes => &trial.outcomes,
         arms => &arms,
-        references => &trial.references,
+        references => &references,
         show_eligibility_section => show_eligibility_section,
         show_contacts_section => show_contacts_section,
         show_locations_section => show_locations_section,

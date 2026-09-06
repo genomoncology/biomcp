@@ -75,22 +75,17 @@ fn parse_sections(sections: &[String]) -> Result<TrialSections, BioMcpError> {
 
 fn product_references(
     section: biodata::ClinicalTrialSection<Vec<biodata::ClinicalTrialReference>>,
-) -> Result<Vec<super::TrialReference>, BioMcpError> {
+) -> Result<Vec<biodata::ClinicalTrialReference>, BioMcpError> {
     match section {
-        biodata::ClinicalTrialSection::Present(values) => values
+        biodata::ClinicalTrialSection::Present(values) => Ok(values
             .into_iter()
-            .filter_map(|value| {
-                let citation = value
+            .filter(|value| {
+                value
                     .citation()
                     .map(str::trim)
-                    .filter(|citation| !citation.is_empty())?;
-                Some(super::TrialReference::new(
-                    value.pmid().map(str::to_owned),
-                    citation.to_owned(),
-                    value.source_type().map(|kind| kind.code().to_owned()),
-                ))
+                    .is_some_and(|citation| !citation.is_empty())
             })
-            .collect(),
+            .collect()),
         biodata::ClinicalTrialSection::Absent => Ok(Vec::new()),
         biodata::ClinicalTrialSection::NotRequested
         | biodata::ClinicalTrialSection::Unavailable => Err(BioMcpError::InternalProcessing),

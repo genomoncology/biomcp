@@ -341,10 +341,19 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             secondary: Vec::new(),
         }),
         references: Some(vec![
-            crate::entities::trial::TrialReference::new(
+            biodata::ClinicalTrialReference::new(
                 Some("22663011".to_string()),
-                "Example citation".to_string(),
-                Some("background".to_string()),
+                Some("Example citation".to_string()),
+                Some(
+                    biodata::ExtensibleCode::new(
+                        "clinicaltrials.gov",
+                        "background",
+                        None::<String>,
+                        None::<String>,
+                        None::<String>,
+                    )
+                    .expect("valid reference type"),
+                ),
             )
             .expect("valid reference"),
         ]),

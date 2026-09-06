@@ -71,7 +71,7 @@ fn parse_sections_accepts_contacts_and_all_includes_contacts() {
 
 #[test]
 fn product_references_maps_each_section_state() {
-    use biodata::ClinicalTrialSection;
+    use biodata::{ClinicalTrialReference, ClinicalTrialSection};
 
     assert!(
         product_references(ClinicalTrialSection::Absent)
@@ -91,6 +91,20 @@ fn product_references_maps_each_section_state() {
         product_references(ClinicalTrialSection::Unavailable),
         Err(BioMcpError::InternalProcessing)
     ));
+
+    let without_citation = ClinicalTrialReference::new(Some("123".to_string()), None, None)
+        .expect("source-stated reference");
+    let retained =
+        ClinicalTrialReference::new(Some("456".to_string()), Some("Citation".to_string()), None)
+            .expect("source-stated reference");
+    assert_eq!(
+        product_references(ClinicalTrialSection::Present(vec![
+            without_citation,
+            retained.clone(),
+        ]))
+        .expect("present references"),
+        vec![retained]
+    );
 }
 
 #[test]

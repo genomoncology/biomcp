@@ -133,4 +133,4 @@ documents
 
 ## Next migration step
 
-Remove the private clinical-trial reference wrapper before eligibility migration begins. The arm migration leaves that wrapper unchanged so reference nullability and absent-versus-empty behavior remain independently reviewable.
+Carry typed arm relationship failures through BioData and BioMCP before eligibility migration begins. Preserve sanitized public provider errors while retaining the internal failure category and typed local identities. Complete that narrow diagnostic repair as a paired BioData and BioMCP change, then start the standards-shaped eligibility area for ClinicalTrials.gov and NCI.

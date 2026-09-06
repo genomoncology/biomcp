@@ -1,6 +1,6 @@
 use crate::entities::trial::{
     Trial, TrialContact, TrialDesign, TrialEligibility, TrialLocation, TrialOutcome, TrialOutcomes,
-    TrialReference, TrialSearchResult, TrialSiteContact, format_age_range,
+    TrialSearchResult, TrialSiteContact, format_age_range,
 };
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
@@ -279,31 +279,6 @@ fn extract_outcomes(study: &CtGovStudy) -> Option<TrialOutcomes> {
     }
 }
 
-fn extract_references(study: &CtGovStudy) -> Result<Option<Vec<TrialReference>>, BioMcpError> {
-    let Some(refs) = study
-        .protocol_section
-        .as_ref()
-        .and_then(|p| p.references_module.as_ref())
-        .map(|m| &m.references)
-    else {
-        return Ok(None);
-    };
-
-    let out = refs
-        .iter()
-        .filter_map(|r| {
-            let citation = clean_opt(r.citation.as_deref())?;
-            Some(TrialReference::new(
-                r.pmid.clone(),
-                citation,
-                r.reference_type.clone(),
-            ))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    Ok((!out.is_empty()).then_some(out))
-}
-
 pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
     let p = study.protocol_section.as_ref();
     let id = p
@@ -399,7 +374,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         contacts: extract_contacts(study),
         locations: extract_locations(study),
         outcomes: extract_outcomes(study),
-        references: extract_references(study)?,
+        references: None,
     })
 }
 

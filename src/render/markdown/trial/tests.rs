@@ -321,10 +321,19 @@ fn trial_markdown_includes_source_labeled_sections() {
             secondary: Vec::new(),
         }),
         references: Some(vec![
-            crate::entities::trial::TrialReference::new(
+            biodata::ClinicalTrialReference::new(
                 Some("22663011".to_string()),
-                "Example citation".to_string(),
-                Some("background".to_string()),
+                Some("Example citation".to_string()),
+                Some(
+                    biodata::ExtensibleCode::new(
+                        "clinicaltrials.gov",
+                        "background",
+                        None::<String>,
+                        None::<String>,
+                        None::<String>,
+                    )
+                    .expect("valid reference type"),
+                ),
             )
             .expect("valid reference"),
         ]),
@@ -347,6 +356,36 @@ fn trial_markdown_includes_source_labeled_sections() {
         );
     }
     assert!(!markdown.contains("Posted trial documents"));
+}
+
+#[test]
+fn trial_markdown_rejects_invalid_shared_references_without_exposing_them() {
+    let mut trial = summary_trial(None);
+    trial.references = Some(vec![
+        biodata::ClinicalTrialReference::new(
+            Some("private-pmid".to_string()),
+            Some("private-citation".to_string()),
+            Some(
+                biodata::ExtensibleCode::new(
+                    "unsupported.example",
+                    "private-type",
+                    None::<String>,
+                    None::<String>,
+                    None::<String>,
+                )
+                .expect("shared source type"),
+            ),
+        )
+        .expect("shared reference"),
+    ]);
+
+    let error = trial_markdown(&trial, &["references".to_string()])
+        .expect_err("unsupported reference must not render");
+    assert!(matches!(error, BioMcpError::InternalProcessing));
+    let message = error.to_string();
+    for private_value in ["private-pmid", "private-citation", "private-type"] {
+        assert!(!message.contains(private_value));
+    }
 }
 
 #[test]

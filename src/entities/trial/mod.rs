@@ -2,8 +2,8 @@
 
 use std::collections::HashMap;
 
-use biodata::{ClinicalTrialReference, ExtensibleCode};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use biodata::ClinicalTrialReference;
+use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 
@@ -69,8 +69,12 @@ pub struct Trial {
     pub locations: Option<Vec<TrialLocation>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outcomes: Option<TrialOutcomes>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub references: Option<Vec<TrialReference>>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "reference_wire"
+    )]
+    pub references: Option<Vec<ClinicalTrialReference>>,
 }
 
 impl Trial {
@@ -638,23 +642,34 @@ pub struct TrialOutcome {
     pub time_frame: Option<String>,
 }
 
-/// Product serialization around the shared clinical-trial reference value.
-#[derive(Debug, Clone)]
-pub struct TrialReference {
-    shared: ClinicalTrialReference,
-}
+pub(crate) mod reference_wire {
+    use biodata::{ClinicalTrialReference, ExtensibleCode};
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    const AUTHORITY: &str = "clinicaltrials.gov";
+    #[derive(Deserialize, Serialize)]
+    pub(crate) struct Wire<T> {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pmid: Option<T>,
+        citation: Option<T>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        reference_type: Option<T>,
+    }
+    fn normalized(value: Option<String>) -> Option<String> {
+        value
+            .map(|text| text.trim().to_owned())
+            .filter(|text| !text.is_empty())
+    }
 
-impl TrialReference {
-    pub fn new(
+    fn from_parts(
         pmid: Option<String>,
-        citation: String,
+        citation: Option<String>,
         reference_type: Option<String>,
-    ) -> Result<Self, BioMcpError> {
-        let citation = normalize_reference(Some(citation)).ok_or_else(invalid_reference)?;
-        let source_type = normalize_reference(reference_type)
+    ) -> Result<ClinicalTrialReference, ()> {
+        let citation = normalized(citation).ok_or(())?;
+        let source_type = normalized(reference_type)
             .map(|code| {
                 ExtensibleCode::new(
-                    "clinicaltrials.gov",
+                    AUTHORITY,
                     code,
                     None::<String>,
                     None::<String>,
@@ -662,123 +677,74 @@ impl TrialReference {
                 )
             })
             .transpose()
-            .map_err(|_| invalid_reference())?;
-        let shared =
-            ClinicalTrialReference::new(normalize_reference(pmid), Some(citation), source_type)
-                .map_err(|_| invalid_reference())?;
-        Ok(Self { shared })
+            .map_err(|_| ())?;
+        ClinicalTrialReference::new(normalized(pmid), Some(citation), source_type).map_err(|_| ())
     }
 
-    pub fn shared(&self) -> &ClinicalTrialReference {
-        &self.shared
-    }
-}
-
-fn normalize_reference(value: Option<String>) -> Option<String> {
-    value
-        .map(|text| text.trim().to_owned())
-        .filter(|text| !text.is_empty())
-}
-
-fn invalid_reference() -> BioMcpError {
-    BioMcpError::Api {
-        api: "ClinicalTrials.gov".into(),
-        message: "Invalid trial reference data".into(),
-    }
-}
-
-impl Serialize for TrialReference {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        #[derive(Serialize)]
-        struct Wire<'a> {
-            #[serde(skip_serializing_if = "Option::is_none")]
-            pmid: Option<&'a str>,
-            citation: &'a str,
-            #[serde(skip_serializing_if = "Option::is_none")]
-            reference_type: Option<&'a str>,
-        }
-        let shared = self.shared();
-        Wire {
-            pmid: shared.pmid(),
-            citation: shared
-                .citation()
-                .ok_or_else(|| serde::ser::Error::custom("Invalid trial reference data"))?,
-            reference_type: shared.source_type().map(ExtensibleCode::code),
-        }
-        .serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for TrialReference {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        #[derive(Deserialize)]
-        struct Wire {
-            pmid: Option<String>,
-            citation: String,
-            reference_type: Option<String>,
-        }
-        let wire = Wire::deserialize(deserializer)?;
-        Self::new(wire.pmid, wire.citation, wire.reference_type)
-            .map_err(|_| serde::de::Error::custom("Invalid trial reference data"))
-    }
-}
-
-#[cfg(test)]
-mod reference_wire_tests {
-    use super::*;
-
-    #[test]
-    fn reference_owns_a_shared_value_and_preserves_wire_information() {
-        let reference = TrialReference::new(
-            Some(" 123 ".into()),
-            " Étude α. ".into(),
-            Some(" DERIVED ".into()),
-        )
-        .expect("usable citation");
-        let shared: &ClinicalTrialReference = reference.shared();
-        assert_eq!(shared.pmid(), Some("123"));
-        assert_eq!(shared.citation(), Some("Étude α."));
-        let code = shared.source_type().expect("source type");
-        assert_eq!(code.authority(), "clinicaltrials.gov");
-        assert_eq!(code.code(), "DERIVED");
-        let wire = serde_json::to_value(&reference).expect("serialize");
-        assert_eq!(
-            wire,
-            serde_json::json!({"pmid":"123", "citation":"Étude α.", "reference_type":"DERIVED"})
-        );
-        let decoded: TrialReference = serde_json::from_value(wire).expect("decode");
-        assert_eq!(decoded.shared(), shared);
+    fn wire(reference: &ClinicalTrialReference) -> Result<Wire<&str>, ()> {
+        let citation = reference
+            .citation()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or(())?;
+        let pmid = reference
+            .pmid()
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let reference_type = match reference.source_type() {
+            None => None,
+            Some(source_type)
+                if source_type.authority() == AUTHORITY
+                    && source_type.display().is_none()
+                    && source_type.vocabulary_version().is_none()
+                    && source_type.recognized_meaning().is_none() =>
+            {
+                match source_type.code().trim() {
+                    "" => None,
+                    code => Some(code),
+                }
+            }
+            Some(_) => return Err(()),
+        };
+        Ok(Wire {
+            pmid,
+            citation: Some(citation),
+            reference_type,
+        })
     }
 
-    #[test]
-    fn decoding_normalizes_optional_fields_and_rejects_unusable_citations() {
-        for value in [serde_json::Value::Null, serde_json::json!(" \t ")] {
-            let wire =
-                serde_json::json!({"citation":" Citation ", "pmid":value, "reference_type":value});
-            let reference: TrialReference = serde_json::from_value(wire).expect("optional absence");
-            assert_eq!(
-                serde_json::to_value(reference).expect("serialize"),
-                serde_json::json!({"citation":"Citation"})
-            );
-        }
-        for wire in [
-            serde_json::json!({}),
-            serde_json::json!({"citation":null}),
-            serde_json::json!({"citation":""}),
-            serde_json::json!({"citation":" \t "}),
-        ] {
-            assert!(serde_json::from_value::<TrialReference>(wire).is_err());
-        }
-        let error = TrialReference::new(Some("private input".into()), " ".into(), None)
-            .expect_err("citation is required");
-        assert!(matches!(error, BioMcpError::Api { .. }));
-        assert!(!error.to_string().contains("private input"));
+    pub(crate) fn views(
+        references: &Option<Vec<ClinicalTrialReference>>,
+    ) -> Result<Option<Vec<Wire<&str>>>, ()> {
+        references
+            .as_ref()
+            .map(|values| values.iter().map(wire).collect())
+            .transpose()
     }
 
-    #[test]
-    fn reference_wire_rejects_blank_required_citation() {
-        let wire = serde_json::json!({"citation": " \t "});
-        assert!(serde_json::from_value::<TrialReference>(wire).is_err());
+    pub(super) fn serialize<S: Serializer>(
+        references: &Option<Vec<ClinicalTrialReference>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        views(references)
+            .map_err(|()| serde::ser::Error::custom("Invalid trial reference data"))?
+            .serialize(serializer)
+    }
+
+    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<Vec<ClinicalTrialReference>>, D::Error> {
+        Option::<Vec<Wire<String>>>::deserialize(deserializer)?
+            .map(|values| {
+                values
+                    .into_iter()
+                    .map(|value| {
+                        from_parts(value.pmid, value.citation, value.reference_type)
+                            .map_err(|()| serde::de::Error::custom("Invalid trial reference data"))
+                    })
+                    .collect()
+            })
+            .transpose()
     }
 }
 

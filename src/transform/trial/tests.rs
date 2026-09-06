@@ -494,13 +494,6 @@ fn from_ctgov_study_preserves_provider_type_fields_in_json() {
                     }
                 ]
             },
-            "referencesModule": {
-                "references": [{
-                    "pmid": "12345678",
-                    "type": "BACKGROUND",
-                    "citation": "Prior evidence"
-                }]
-            },
             "outcomesModule": {
                 "primaryOutcomes": [{"measure": "Overall survival"}],
                 "secondaryOutcomes": [{"measure": "Progression-free survival"}]
@@ -517,9 +510,6 @@ fn from_ctgov_study_preserves_provider_type_fields_in_json() {
     assert_eq!(outcomes.primary[0].measure, "Overall survival");
     assert_eq!(outcomes.secondary.len(), 1);
     assert_eq!(outcomes.secondary[0].measure, "Progression-free survival");
-
-    let json = serde_json::to_value(trial).expect("trial JSON");
-    assert_eq!(json["references"][0]["reference_type"], json!("BACKGROUND"));
 }
 
 #[test]
