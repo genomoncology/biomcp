@@ -237,3 +237,11 @@ Ticket 1148 ranks gene search and shares no code or public field with this
 work. It is a scheduling preference, not a dependency; neither ticket may
 absorb or wait on the other. This ticket adds no ontology traversal, fuzzy
 matching, diagnostic interpretation, or new GTR/WHO ingestion.
+
+## Review
+
+Accepted after independent design review. The reviewer confirmed exact
+kind-specific xref proof within the two-request bound, the exhaustive public
+resolution/nullability table, typed 512-byte runtime boundaries with zero-work
+rejection, and all previously accepted ranking, source, surface, ownership,
+package, and dependency contracts.
