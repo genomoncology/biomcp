@@ -2,7 +2,7 @@
 
 use tokio::io::AsyncReadExt;
 
-use crate::cli::CommandOutcome;
+use crate::cli::{CommandOutcome, VariantArticlesMcpDisposition};
 use crate::entities::article::{VariantArticleStrategy, VariantArticleStrategy::Union};
 use crate::error::BioMcpError;
 
@@ -83,9 +83,12 @@ pub(super) async fn handle(
         .await?;
         let text = crate::render::json::to_pretty(&outcome.response)?;
         return Ok(if outcome.hard_error {
-            CommandOutcome::stdout_with_exit(text, 1)
+            CommandOutcome::stdout_with_exit(text, 1).with_variant_articles_mcp_disposition(
+                VariantArticlesMcpDisposition::StructuredError,
+            )
         } else {
             CommandOutcome::stdout(text)
+                .with_variant_articles_mcp_disposition(VariantArticlesMcpDisposition::Success)
         });
     }
 
@@ -113,7 +116,7 @@ pub(super) async fn handle(
         )
         .await?
     };
-    let text = if json {
+    let mut text = if json {
         crate::render::json::to_pretty(&outcome.response)?
     } else {
         let filters = super::super::related_article_filters();
@@ -150,11 +153,34 @@ pub(super) async fn handle(
             },
         )?
     };
+    if !json && !outcome.response.complete {
+        let unfinished = outcome
+            .response
+            .source_status
+            .iter()
+            .filter(|status| {
+                !matches!(
+                    status.status,
+                    crate::entities::article::variant_search::VariantArticleSourceStatusKind::Ok
+                        | crate::entities::article::variant_search::VariantArticleSourceStatusKind::Skipped
+                )
+            })
+            .map(|status| format!("- {}/{}: {:?}", status.route, status.source, status.status).to_ascii_lowercase())
+            .collect::<Vec<_>>();
+        if !unfinished.is_empty() {
+            text.push_str("\n\n## Incomplete coverage\n\n");
+            text.push_str(&unfinished.join("\n"));
+        }
+    }
     if !outcome.hard_error {
-        return Ok(CommandOutcome::stdout(text));
+        return Ok(CommandOutcome::stdout(text)
+            .with_variant_articles_mcp_disposition(VariantArticlesMcpDisposition::Success));
     }
     if json {
-        return Ok(CommandOutcome::stdout_with_exit(text, 1));
+        return Ok(CommandOutcome::stdout_with_exit(text, 1)
+            .with_variant_articles_mcp_disposition(
+                VariantArticlesMcpDisposition::StructuredError,
+            ));
     }
     let sources = outcome
         .response
@@ -162,7 +188,9 @@ pub(super) async fn handle(
         .iter()
         .filter(|status| {
             status.status
-                == crate::entities::article::variant_search::VariantArticleSourceStatusKind::Unavailable
+                != crate::entities::article::variant_search::VariantArticleSourceStatusKind::Ok
+                && status.status
+                    != crate::entities::article::variant_search::VariantArticleSourceStatusKind::Skipped
         })
         .map(|status| match status.source.as_str() {
             "pubtator" => "PubTator 3",
@@ -172,7 +200,8 @@ pub(super) async fn handle(
         .collect::<Vec<_>>()
         .join(", ");
     Ok(CommandOutcome::stderr_with_exit(
-        format!("{sources} variant article route unavailable; retry the request."),
+        format!("{sources} variant article route incomplete or timed out; retry the request."),
         1,
-    ))
+    )
+    .with_variant_articles_mcp_disposition(VariantArticlesMcpDisposition::StructuredError))
 }

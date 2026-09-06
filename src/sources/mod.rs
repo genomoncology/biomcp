@@ -17,6 +17,102 @@ use tracing::warn;
 
 use crate::error::{BioMcpError, SourceContext};
 
+/// One monotonic ceiling shared by every provider operation in a variant-
+/// literature invocation. It is never retained by a global client.
+#[derive(Clone, Debug)]
+pub(crate) struct VariantArticleDeadline {
+    inner: std::sync::Arc<VariantArticleDeadlineInner>,
+}
+
+#[derive(Debug)]
+struct VariantArticleDeadlineInner {
+    at: tokio::time::Instant,
+    limit: Duration,
+    providers: std::sync::Arc<tokio::sync::Semaphore>,
+}
+
+impl VariantArticleDeadline {
+    pub(crate) fn from_now(limit: Duration) -> Self {
+        Self {
+            inner: std::sync::Arc::new(VariantArticleDeadlineInner {
+                at: tokio::time::Instant::now() + limit,
+                limit,
+                providers: std::sync::Arc::new(tokio::sync::Semaphore::new(10)),
+            }),
+        }
+    }
+
+    pub(crate) fn remaining(&self) -> Duration {
+        self.inner
+            .at
+            .saturating_duration_since(tokio::time::Instant::now())
+    }
+
+    pub(crate) fn is_exhausted(&self) -> bool {
+        self.remaining().is_zero()
+    }
+
+    pub(crate) fn limit(&self) -> Duration {
+        self.inner.limit
+    }
+
+    pub(crate) async fn run<F: Future>(
+        &self,
+        future: F,
+    ) -> Result<F::Output, VariantArticleDeadlineElapsed> {
+        tokio::select! {
+            biased;
+            _ = tokio::time::sleep_until(self.inner.at) => Err(VariantArticleDeadlineElapsed),
+            output = future => Ok(output),
+        }
+    }
+
+    pub(crate) async fn acquire_provider(
+        &self,
+    ) -> Result<tokio::sync::OwnedSemaphorePermit, VariantArticleDeadlineElapsed> {
+        let acquire = self.inner.providers.clone().acquire_owned();
+        self.run(acquire)
+            .await?
+            .map_err(|_| VariantArticleDeadlineElapsed)
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("variant article invocation deadline exceeded")]
+pub(crate) struct VariantArticleDeadlineElapsed;
+
+tokio::task_local! {
+    static VARIANT_ARTICLE_DEADLINE: VariantArticleDeadline;
+}
+
+pub(crate) async fn with_variant_article_deadline<F: Future>(
+    deadline: VariantArticleDeadline,
+    future: F,
+) -> F::Output {
+    VARIANT_ARTICLE_DEADLINE.scope(deadline, future).await
+}
+
+pub(crate) fn current_variant_article_deadline() -> Option<VariantArticleDeadline> {
+    VARIANT_ARTICLE_DEADLINE.try_with(Clone::clone).ok()
+}
+
+fn ensure_variant_article_time() -> Result<(), BioMcpError> {
+    if current_variant_article_deadline().is_some_and(|deadline| deadline.is_exhausted()) {
+        return Err(BioMcpError::Api {
+            api: "variant-articles".into(),
+            message: "invocation deadline exceeded".into(),
+        });
+    }
+    Ok(())
+}
+
+fn attach_variant_article_deadline(request: RequestBuilder) -> RequestBuilder {
+    match current_variant_article_deadline() {
+        Some(deadline) => request.with_extension(deadline),
+        None => request,
+    }
+}
+
 pub(crate) trait RequestBuilderSourceContextExt {
     fn send_with_source_context(
         self,
@@ -29,17 +125,22 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
         self,
         context: SourceContext,
     ) -> Result<reqwest::Response, BioMcpError> {
-        self.send()
-            .await
-            .map_err(BioMcpError::from)
-            .map_err(|error| {
-                let context = if matches!(error, BioMcpError::BodyLimit { .. }) {
-                    SourceContext::narrow(context.provider())
-                } else {
-                    context
-                };
-                error.with_source_context(context)
-            })
+        let request = attach_variant_article_deadline(self);
+        let response = match current_variant_article_deadline() {
+            Some(deadline) => deadline
+                .run(request.send())
+                .await
+                .map_err(reqwest_middleware::Error::middleware)?,
+            None => request.send().await,
+        };
+        response.map_err(BioMcpError::from).map_err(|error| {
+            let context = if matches!(error, BioMcpError::BodyLimit { .. }) {
+                SourceContext::narrow(context.provider())
+            } else {
+                context
+            };
+            error.with_source_context(context)
+        })
     }
 }
 
@@ -197,7 +298,7 @@ pub(crate) fn apply_cache_mode(req: RequestBuilder) -> RequestBuilder {
     if let Some(mode) = resolve_cache_mode(no_cache, false, env_cache_mode()) {
         return req.with_extension(mode);
     }
-    req
+    attach_variant_article_deadline(req)
 }
 
 pub(crate) fn apply_cache_mode_with_auth(
@@ -513,7 +614,14 @@ impl Middleware for RetryAfterTooManyRequestsMiddleware {
                 next_retry_sleep(state, Some(retry_after_floor))
             };
             if let Some(duration) = duration {
-                tokio::time::sleep(duration).await;
+                if let Some(deadline) = extensions.get::<VariantArticleDeadline>().cloned() {
+                    deadline
+                        .run(tokio::time::sleep(duration))
+                        .await
+                        .map_err(reqwest_middleware::Error::middleware)?;
+                } else {
+                    tokio::time::sleep(duration).await;
+                }
             }
         }
         Ok(response)
@@ -870,6 +978,7 @@ pub(crate) fn test_client() -> Result<ClientWithMiddleware, BioMcpError> {
 }
 
 pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
+    ensure_variant_article_time()?;
     if is_no_cache_enabled() {
         return build_uncached_http_client(SharedHttpClientKind::Default, None);
     }
@@ -879,6 +988,7 @@ pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
 
     let client = build_http_client(SharedHttpClientKind::Default)?;
 
+    ensure_variant_article_time()?;
     match HTTP_CLIENT.set(client.clone()) {
         Ok(()) => Ok(client),
         Err(_) => HTTP_CLIENT.get().cloned().ok_or_else(|| BioMcpError::Api {
@@ -892,6 +1002,7 @@ pub(crate) fn semantic_scholar_provider_client(
     policy: &provider_url_policy::ProviderUrlPolicy,
     authenticated: bool,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    ensure_variant_article_time()?;
     let kind = if authenticated {
         SharedHttpClientKind::Default
     } else {
@@ -901,17 +1012,23 @@ pub(crate) fn semantic_scholar_provider_client(
         return build_uncached_http_client(kind, Some(policy));
     }
     let config = crate::cache::resolve_cache_config()?;
-    build_http_client_with_config(kind, config, Some(policy))
+    let client = build_http_client_with_config(kind, config, Some(policy))?;
+    ensure_variant_article_time()?;
+    Ok(client)
 }
 
 pub(crate) fn provider_url_client(
     policy: &provider_url_policy::ProviderUrlPolicy,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    ensure_variant_article_time()?;
     if is_no_cache_enabled() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }
     let config = crate::cache::resolve_cache_config()?;
-    build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))
+    let client =
+        build_http_client_with_config(SharedHttpClientKind::Default, config, Some(policy))?;
+    ensure_variant_article_time()?;
+    Ok(client)
 }
 
 pub(crate) fn is_semantic_scholar_shared_pool_rate_limit_error(
@@ -1880,5 +1997,39 @@ mod tests {
         .unwrap();
         assert!(cache_root.join("http").is_dir());
         assert!(!cache_root.join("http/legacy-sentinel").exists() && !legacy.exists());
+    }
+
+    #[tokio::test]
+    async fn variant_article_deadlines_are_task_local_and_do_not_leak() {
+        let short = VariantArticleDeadline::from_now(Duration::from_millis(5));
+        let long = VariantArticleDeadline::from_now(Duration::from_millis(50));
+        let short_task = with_variant_article_deadline(short, async {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+            current_variant_article_deadline().is_some_and(|deadline| deadline.is_exhausted())
+        });
+        let long_task = with_variant_article_deadline(long, async {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+            current_variant_article_deadline().is_some_and(|deadline| !deadline.is_exhausted())
+        });
+        let (short_expired, long_live) = tokio::join!(short_task, long_task);
+        assert!(short_expired);
+        assert!(long_live);
+        assert!(current_variant_article_deadline().is_none());
+    }
+
+    #[tokio::test]
+    async fn variant_article_provider_admission_is_capped_and_deadline_cancellable() {
+        let deadline = VariantArticleDeadline::from_now(Duration::from_millis(20));
+        let mut permits = Vec::new();
+        for _ in 0..10 {
+            permits.push(
+                deadline
+                    .acquire_provider()
+                    .await
+                    .expect("one of ten permits"),
+            );
+        }
+        assert!(deadline.acquire_provider().await.is_err());
+        drop(permits);
     }
 }

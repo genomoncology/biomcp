@@ -184,10 +184,13 @@ impl CacheManager for SizeAwareCacheManager {
         &self,
         cache_key: &str,
     ) -> http_cache::Result<Option<(HttpResponse, CachePolicy)>> {
-        (self.services.observe_get)(&self.inner.path, cache_key);
-        let content_root = super::content_root(&self.inner.path);
-        super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
-        self.inner.get(cache_key).await
+        let operation = async {
+            (self.services.observe_get)(&self.inner.path, cache_key);
+            let content_root = super::content_root(&self.inner.path);
+            super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
+            self.inner.get(cache_key).await
+        };
+        run_with_variant_article_deadline(operation).await
     }
 
     async fn put(
@@ -196,65 +199,84 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
-        let _operation = super::lock_cache_key_async(
-            self.config.cache_root.clone(),
-            cache_key.clone(),
-            Arc::clone(&self.services.before_key_lock_dir_create),
-        )
-        .await?;
-        super::prepare_write_paths(&self.inner.path, &cache_key)?;
-        let response = self.inner.put(cache_key.clone(), res, policy).await?;
-        (self.services.after_put)(&self.inner.path, &cache_key);
-        let metadata = cacache::metadata(&self.inner.path, &cache_key)
-            .await
-            .map_err(|_| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?
-            .ok_or_else(|| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?;
-        super::secure_written_content(&self.inner.path, &metadata.integrity)?;
-        self.approx_bytes
-            .fetch_add(metadata.size as u64, Ordering::Relaxed);
+        let operation = async {
+            let _operation = super::lock_cache_key_async(
+                self.config.cache_root.clone(),
+                cache_key.clone(),
+                Arc::clone(&self.services.before_key_lock_dir_create),
+            )
+            .await?;
+            super::prepare_write_paths(&self.inner.path, &cache_key)?;
+            let response = self.inner.put(cache_key.clone(), res, policy).await?;
+            (self.services.after_put)(&self.inner.path, &cache_key);
+            let metadata = cacache::metadata(&self.inner.path, &cache_key)
+                .await
+                .map_err(|_| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?
+                .ok_or_else(|| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?;
+            super::secure_written_content(&self.inner.path, &metadata.integrity)?;
+            self.approx_bytes
+                .fetch_add(metadata.size as u64, Ordering::Relaxed);
 
-        let approx_bytes = self.approx_bytes.load(Ordering::Relaxed);
-        let below_min_disk_free = match (self.services.inspect_space)(&self.config.cache_root) {
-            Ok(space) => self
-                .config
-                .min_disk_free
-                .is_violated(space.available_bytes, space.total_bytes),
-            Err(err) => {
-                warn!(
-                    cache_root = %self.config.cache_root.display(),
-                    "cache filesystem inspection failed after put; skipping disk-pressure trigger: {err}"
+            let approx_bytes = self.approx_bytes.load(Ordering::Relaxed);
+            let below_min_disk_free = match (self.services.inspect_space)(&self.config.cache_root) {
+                Ok(space) => self
+                    .config
+                    .min_disk_free
+                    .is_violated(space.available_bytes, space.total_bytes),
+                Err(err) => {
+                    warn!(
+                        cache_root = %self.config.cache_root.display(),
+                        "cache filesystem inspection failed after put; skipping disk-pressure trigger: {err}"
+                    );
+                    false
+                }
+            };
+
+            if (approx_bytes > self.config.max_size || below_min_disk_free)
+                && self
+                    .eviction_running
+                    .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                    .is_ok()
+            {
+                (self.services.schedule_eviction)(
+                    self.inner.path.clone(),
+                    self.config.clone(),
+                    Arc::clone(&self.approx_bytes),
+                    Arc::clone(&self.eviction_running),
                 );
-                false
             }
+
+            Ok(response)
         };
-
-        if (approx_bytes > self.config.max_size || below_min_disk_free)
-            && self
-                .eviction_running
-                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-                .is_ok()
-        {
-            (self.services.schedule_eviction)(
-                self.inner.path.clone(),
-                self.config.clone(),
-                Arc::clone(&self.approx_bytes),
-                Arc::clone(&self.eviction_running),
-            );
-        }
-
-        Ok(response)
+        run_with_variant_article_deadline(operation).await
     }
 
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
-        let _operation = super::lock_cache_key_async(
-            self.config.cache_root.clone(),
-            cache_key.to_owned(),
-            Arc::clone(&self.services.before_key_lock_dir_create),
-        )
-        .await?;
-        let content_root = super::content_root(&self.inner.path);
-        super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
-        self.inner.delete(cache_key).await
+        let operation = async {
+            let _operation = super::lock_cache_key_async(
+                self.config.cache_root.clone(),
+                cache_key.to_owned(),
+                Arc::clone(&self.services.before_key_lock_dir_create),
+            )
+            .await?;
+            let content_root = super::content_root(&self.inner.path);
+            super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
+            self.inner.delete(cache_key).await
+        };
+        run_with_variant_article_deadline(operation).await
+    }
+}
+
+async fn run_with_variant_article_deadline<F, T>(future: F) -> http_cache::Result<T>
+where
+    F: std::future::Future<Output = http_cache::Result<T>>,
+{
+    match crate::sources::current_variant_article_deadline() {
+        Some(deadline) => deadline
+            .run(future)
+            .await
+            .map_err(|error| Box::new(error) as http_cache::BoxError)?,
+        None => future.await,
     }
 }
 
@@ -286,6 +308,14 @@ fn estimate_cache_bytes_fast(path: &Path) -> io::Result<u64> {
 fn sum_tree_bytes(path: &Path) -> io::Result<u64> {
     let mut total = 0_u64;
     for entry in fs::read_dir(path)? {
+        if crate::sources::current_variant_article_deadline()
+            .is_some_and(|deadline| deadline.is_exhausted())
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "variant article invocation deadline exceeded",
+            ));
+        }
         let entry = entry?;
         let entry_path = entry.path();
         let metadata = fs::symlink_metadata(&entry_path)?;

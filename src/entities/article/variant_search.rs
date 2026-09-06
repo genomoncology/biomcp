@@ -77,8 +77,19 @@ pub enum VariantArticleSourceStatusKind {
     Ok,
     Degraded,
     Unavailable,
+    TimedOut,
     Skipped,
     NotAttempted,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct VariantArticleSourceWork {
+    pub planned: usize,
+    pub ok: usize,
+    pub degraded: usize,
+    pub unavailable: usize,
+    pub timed_out: usize,
+    pub not_attempted: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -88,6 +99,8 @@ pub struct VariantArticleSourceStatus {
     pub status: VariantArticleSourceStatusKind,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
+    pub work: VariantArticleSourceWork,
+    pub reason_codes: Vec<&'static str>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -164,6 +177,7 @@ pub struct VariantArticleResponse {
     pub source_status: Vec<VariantArticleSourceStatus>,
     pub retrieval_path: &'static str,
     pub results: Vec<VariantArticleRow>,
+    pub error: Option<VariantArticleItemError>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub debug_plan: Option<VariantArticleDebugPlan>,
 }
@@ -177,6 +191,8 @@ pub struct VariantArticleOutcome {
 const ITEM_WORK_LIMIT: usize = 50;
 const EXACT_WORK_LIMIT: usize = MAX_EXACT_ALIASES * 5;
 const ITEM_CONCURRENCY_LIMIT: usize = 2;
+const PROVIDER_CONCURRENCY_LIMIT: usize = 10;
+const VARIANT_ARTICLE_DEADLINE_LIMIT: std::time::Duration = std::time::Duration::from_secs(60);
 const LDH_MEDIUM_LIMIT: usize = 1;
 const LDH_DIRECT_LIMIT: usize = 10;
 
@@ -203,6 +219,7 @@ struct VariantArticleWorkAllocation {
 
 #[derive(Debug, Clone)]
 pub(crate) struct VariantArticleExecutionContext {
+    deadline: crate::sources::VariantArticleDeadline,
     item: Arc<SharedWorkBudget>,
     request: Arc<SharedWorkBudget>,
     exact_item: Arc<SharedWorkBudget>,
@@ -218,8 +235,12 @@ pub(crate) struct VariantArticleExecutionContext {
 }
 
 impl VariantArticleExecutionContext {
-    fn with_request(request: Arc<SharedWorkBudget>) -> Self {
+    fn with_request(
+        request: Arc<SharedWorkBudget>,
+        deadline: crate::sources::VariantArticleDeadline,
+    ) -> Self {
         Self {
+            deadline,
             item: Arc::new(SharedWorkBudget {
                 limit: ITEM_WORK_LIMIT,
                 consumed: AtomicUsize::new(0),
@@ -253,20 +274,41 @@ impl VariantArticleExecutionContext {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn single() -> Self {
-        Self::with_request(Arc::new(SharedWorkBudget {
-            limit: ITEM_WORK_LIMIT,
-            consumed: AtomicUsize::new(0),
-        }))
+        Self::single_with_deadline(crate::sources::VariantArticleDeadline::from_now(
+            std::time::Duration::from_secs(3_600),
+        ))
     }
 
+    fn single_with_deadline(deadline: crate::sources::VariantArticleDeadline) -> Self {
+        Self::with_request(
+            Arc::new(SharedWorkBudget {
+                limit: ITEM_WORK_LIMIT,
+                consumed: AtomicUsize::new(0),
+            }),
+            deadline,
+        )
+    }
+
+    #[cfg(test)]
     fn batch(item_count: usize) -> Vec<Self> {
+        Self::batch_with_deadline(
+            item_count,
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(3_600)),
+        )
+    }
+
+    fn batch_with_deadline(
+        item_count: usize,
+        deadline: crate::sources::VariantArticleDeadline,
+    ) -> Vec<Self> {
         let request = Arc::new(SharedWorkBudget {
             limit: ITEM_WORK_LIMIT.saturating_mul(item_count),
             consumed: AtomicUsize::new(0),
         });
         let contexts = (0..item_count)
-            .map(|_| Self::with_request(request.clone()))
+            .map(|_| Self::with_request(request.clone(), deadline.clone()))
             .collect::<Vec<_>>();
         let exact_request = Arc::new(SharedWorkBudget {
             limit: EXACT_WORK_LIMIT.saturating_mul(item_count),
@@ -309,7 +351,15 @@ impl VariantArticleExecutionContext {
         );
     }
 
+    pub(crate) fn deadline_exhausted(&self) -> bool {
+        self.deadline.is_exhausted()
+    }
+
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
+        if self.deadline.is_exhausted() {
+            self.stop(route);
+            return None;
+        }
         // ClinGen LDH runs last, after every retrieval route and after
         // per-candidate PubTator verification. Live requests exhaust the shared
         // item budget before it is reached, so drawing from that pool means the
@@ -438,6 +488,11 @@ impl VariantArticleExecutionContext {
         status: &str,
         pages: usize,
     ) {
+        let status = if self.deadline.is_exhausted() && status != "ok" {
+            "timed_out"
+        } else {
+            status
+        };
         self.events
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -510,6 +565,20 @@ impl VariantArticleExecutionContext {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
+    }
+
+    fn deadline_plan(&self) -> VariantArticleDeadlinePlan {
+        VariantArticleDeadlinePlan {
+            scope: "invocation",
+            limit_ms: self
+                .deadline
+                .limit()
+                .as_millis()
+                .try_into()
+                .unwrap_or(u64::MAX),
+            exhausted: self.deadline.is_exhausted(),
+            provider_concurrency_limit: PROVIDER_CONCURRENCY_LIMIT,
+        }
     }
 
     fn stopped_routes(&self) -> Vec<String> {
@@ -673,6 +742,15 @@ pub struct VariantArticleDebugPlan {
     pub candidate_trace: VariantArticleCandidateTrace,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub verification: Option<VariantArticleVerificationPlan>,
+    pub deadline: VariantArticleDeadlinePlan,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct VariantArticleDeadlinePlan {
+    pub scope: &'static str,
+    pub limit_ms: u64,
+    pub exhausted: bool,
+    pub provider_concurrency_limit: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -680,6 +758,7 @@ pub struct VariantArticleBatchDebugPlan {
     pub item_concurrency_limit: usize,
     pub work: VariantArticleWork,
     pub items_planned: usize,
+    pub deadline: VariantArticleDeadlinePlan,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -791,20 +870,108 @@ fn status_with_detail(
     status: VariantArticleSourceStatusKind,
     detail: Option<&str>,
 ) -> VariantArticleSourceStatus {
+    let mut work = VariantArticleSourceWork::default();
+    if !matches!(
+        status,
+        VariantArticleSourceStatusKind::Skipped | VariantArticleSourceStatusKind::Ok
+    ) {
+        work.planned = 1;
+        match status {
+            VariantArticleSourceStatusKind::Ok => {}
+            VariantArticleSourceStatusKind::Degraded => work.degraded = 1,
+            VariantArticleSourceStatusKind::Unavailable => work.unavailable = 1,
+            VariantArticleSourceStatusKind::TimedOut => work.timed_out = 1,
+            VariantArticleSourceStatusKind::NotAttempted => work.not_attempted = 1,
+            VariantArticleSourceStatusKind::Skipped => {}
+        }
+    }
+    let reason_codes = match status {
+        VariantArticleSourceStatusKind::TimedOut => vec!["invocation_deadline"],
+        VariantArticleSourceStatusKind::Unavailable => vec!["provider_error"],
+        VariantArticleSourceStatusKind::NotAttempted => vec!["logical_work_cap"],
+        _ => Vec::new(),
+    };
+    let detail = detail.map(str::to_string).or_else(|| {
+        (!matches!(
+            status,
+            VariantArticleSourceStatusKind::Ok | VariantArticleSourceStatusKind::Skipped
+        ))
+        .then(|| {
+            format!(
+                "{} planned: {} ok, {} degraded, {} unavailable, {} timed out, {} not attempted ({})",
+                work.planned,
+                work.ok,
+                work.degraded,
+                work.unavailable,
+                work.timed_out,
+                work.not_attempted,
+                reason_codes.join(", "),
+            )
+        })
+    });
     VariantArticleSourceStatus {
         route: route.to_string(),
         source: source.to_string(),
         status,
-        detail: detail.map(str::to_string),
+        detail,
+        work,
+        reason_codes,
     }
 }
 
 fn provider_terminal_status(events: &[&VariantArticleCallEvent]) -> VariantArticleSourceStatusKind {
+    if events.iter().any(|event| event.status == "timed_out") {
+        return VariantArticleSourceStatusKind::TimedOut;
+    }
     let successful = events.iter().filter(|event| event.status == "ok").count();
     match successful {
         0 => VariantArticleSourceStatusKind::Unavailable,
         count if count == events.len() => VariantArticleSourceStatusKind::Ok,
         _ => VariantArticleSourceStatusKind::Degraded,
+    }
+}
+
+fn aggregate_source_status(
+    route: &str,
+    source: &str,
+    work: VariantArticleSourceWork,
+    reason_codes: Vec<&'static str>,
+) -> VariantArticleSourceStatus {
+    let started = work.ok + work.degraded + work.unavailable + work.timed_out;
+    let deadline_omission = work.not_attempted > 0 && reason_codes.contains(&"invocation_deadline");
+    let status_kind = if work.planned == 0 || work.ok == work.planned {
+        VariantArticleSourceStatusKind::Ok
+    } else if started == 0 {
+        VariantArticleSourceStatusKind::NotAttempted
+    } else if work.timed_out > 0 || deadline_omission {
+        VariantArticleSourceStatusKind::TimedOut
+    } else if work.ok + work.degraded > 0 {
+        VariantArticleSourceStatusKind::Degraded
+    } else {
+        VariantArticleSourceStatusKind::Unavailable
+    };
+    let mut reason_codes = reason_codes;
+    reason_codes.sort_unstable();
+    reason_codes.dedup();
+    let detail = (!matches!(status_kind, VariantArticleSourceStatusKind::Ok)).then(|| {
+        format!(
+            "{} planned: {} ok, {} degraded, {} unavailable, {} timed out, {} not attempted ({})",
+            work.planned,
+            work.ok,
+            work.degraded,
+            work.unavailable,
+            work.timed_out,
+            work.not_attempted,
+            reason_codes.join(", "),
+        )
+    });
+    VariantArticleSourceStatus {
+        route: route.into(),
+        source: source.into(),
+        status: status_kind,
+        detail,
+        work,
+        reason_codes,
     }
 }
 
@@ -818,12 +985,58 @@ fn provider_statuses_for_route(
     }
     grouped
         .into_iter()
-        .map(|(source, events)| status(route, &source, provider_terminal_status(&events)))
+        .map(|(source, events)| {
+            let work = VariantArticleSourceWork {
+                planned: events.len(),
+                ok: events.iter().filter(|event| event.status == "ok").count(),
+                degraded: events
+                    .iter()
+                    .filter(|event| event.status == "degraded")
+                    .count(),
+                unavailable: events
+                    .iter()
+                    .filter(|event| event.status == "unavailable")
+                    .count(),
+                timed_out: events
+                    .iter()
+                    .filter(|event| event.status == "timed_out")
+                    .count(),
+                not_attempted: 0,
+            };
+            let reasons = if work.timed_out > 0 {
+                vec!["invocation_deadline"]
+            } else if work.unavailable > 0 {
+                vec!["provider_error"]
+            } else {
+                Vec::new()
+            };
+            aggregate_source_status(route, &source, work, reasons)
+        })
         .collect()
 }
 
 fn route_stop_detail(route_stopped: bool) -> Option<&'static str> {
     route_stopped.then_some("internal work or configuration stopped before a provider call")
+}
+
+fn stopped_status(
+    route: &str,
+    execution: &VariantArticleExecutionContext,
+) -> VariantArticleSourceStatus {
+    aggregate_source_status(
+        route,
+        "internal",
+        VariantArticleSourceWork {
+            planned: 1,
+            not_attempted: 1,
+            ..Default::default()
+        },
+        vec![if execution.deadline.is_exhausted() {
+            "invocation_deadline"
+        } else {
+            "logical_work_cap"
+        }],
+    )
 }
 
 fn candidate_with_provenance(
@@ -1033,6 +1246,9 @@ async fn resolve_canonical_equivalence(
     execution: &VariantArticleExecutionContext,
 ) -> CanonicalEquivalence {
     let queries = canonical_equivalence_queries(requested);
+    if execution.deadline.is_exhausted() {
+        return canonical_equivalence(Vec::new(), Vec::new());
+    }
     let client = crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new().ok();
     let mut observations = Vec::with_capacity(queries.len());
     let mut items = Vec::new();
@@ -1380,7 +1596,8 @@ async fn federated_alias_candidates(
     let mut incomplete = false;
     let mut succeeded = false;
     let mut alias_failed = false;
-    for result in futures::future::join_all(searches).await {
+    let mut completions = stream::iter(searches).buffer_unordered(PROVIDER_CONCURRENCY_LIMIT);
+    while let Some(result) = completions.next().await {
         let (alias, federated) = match result {
             Ok(result) => result,
             Err(_) => {
@@ -1438,12 +1655,8 @@ async fn federated_alias_candidates(
         .any(|event| event.route == route && event.status != "ok");
     let mut statuses = provider_statuses_for_route(route, &calls);
     if let Some(detail) = route_stop_detail(execution.route_stopped(route)) {
-        statuses.push(status_with_detail(
-            route,
-            "internal",
-            VariantArticleSourceStatusKind::NotAttempted,
-            Some(detail),
-        ));
+        let _ = detail;
+        statuses.push(stopped_status(route, execution));
     }
     (candidates, incomplete, succeeded, statuses)
 }
@@ -1579,12 +1792,8 @@ async fn strict_provider_candidates(
     let calls = execution.events();
     let mut statuses = provider_statuses_for_route("strict", &calls);
     if let Some(detail) = route_stop_detail(execution.route_stopped("strict")) {
-        statuses.push(status_with_detail(
-            "strict",
-            "internal",
-            VariantArticleSourceStatusKind::NotAttempted,
-            Some(detail),
-        ));
+        let _ = detail;
+        statuses.push(stopped_status("strict", execution));
     }
     (candidates, incomplete, succeeded, statuses)
 }
@@ -2118,6 +2327,7 @@ fn build_debug_plan(
             candidates,
         },
         verification: None,
+        deadline: execution.deadline_plan(),
     }
 }
 
@@ -2160,16 +2370,48 @@ pub(crate) async fn search_variant_articles_with_options(
     debug_plan: bool,
     verification: VariantArticleVerificationOptions,
 ) -> Result<VariantArticleOutcome, BioMcpError> {
-    let requested = RequestedVariantIdentity::from_variant_input(input)?;
-    search_variant_articles_identity(
+    search_variant_articles_with_deadline(
         input,
-        requested,
         strategy,
         limit,
         offset,
         debug_plan,
         verification,
-        VariantArticleExecutionContext::single(),
+        VARIANT_ARTICLE_DEADLINE_LIMIT,
+    )
+    .await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn search_variant_articles_with_deadline(
+    input: &str,
+    strategy: VariantArticleStrategy,
+    limit: usize,
+    offset: usize,
+    debug_plan: bool,
+    verification: VariantArticleVerificationOptions,
+    deadline_limit: std::time::Duration,
+) -> Result<VariantArticleOutcome, BioMcpError> {
+    let requested = RequestedVariantIdentity::from_variant_input(input)?;
+    if limit == 0 || limit > 50 {
+        return Err(BioMcpError::InvalidArgument(
+            "--limit must be between 1 and 50".to_string(),
+        ));
+    }
+    let deadline = crate::sources::VariantArticleDeadline::from_now(deadline_limit);
+    let execution = VariantArticleExecutionContext::single_with_deadline(deadline.clone());
+    crate::sources::with_variant_article_deadline(
+        deadline,
+        search_variant_articles_identity(
+            input,
+            requested,
+            strategy,
+            limit,
+            offset,
+            debug_plan,
+            verification,
+            execution,
+        ),
     )
     .await
 }
@@ -2222,6 +2464,7 @@ async fn search_variant_articles_identity(
                 empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
             plan.budgets.item = execution.item_work();
             plan.budgets.request = execution.request_work();
+            plan.deadline = execution.deadline_plan();
             plan
         });
         return Ok(VariantArticleOutcome {
@@ -2237,16 +2480,32 @@ async fn search_variant_articles_identity(
                     limit,
                     returned: 0,
                     total: None,
-                    has_more: false,
+                    has_more: true,
                     next_page_token: None,
                 },
                 source_status: vec![status(
                     "resolution",
                     "myvariant",
-                    VariantArticleSourceStatusKind::Unavailable,
+                    if execution.deadline.is_exhausted() {
+                        VariantArticleSourceStatusKind::TimedOut
+                    } else {
+                        VariantArticleSourceStatusKind::Unavailable
+                    },
                 )],
                 retrieval_path: "variant resolution unavailable",
                 results: Vec::new(),
+                error: Some(VariantArticleItemError {
+                    code: if execution.deadline.is_exhausted() {
+                        "deadline_exceeded"
+                    } else {
+                        "source_unavailable"
+                    },
+                    message: if execution.deadline.is_exhausted() {
+                        "the variant article invocation deadline expired before a usable result was available".into()
+                    } else {
+                        "all required variant article routes were unavailable".into()
+                    },
+                }),
                 debug_plan,
             },
             hard_error: true,
@@ -2259,7 +2518,19 @@ async fn search_variant_articles_identity(
     }
     let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
     let mut candidates = Vec::new();
-    let mut statuses = Vec::new();
+    let events = execution.events();
+    let mut statuses = provider_statuses_for_route("resolution", &events);
+    let canonical_statuses = provider_statuses_for_route("canonical_equivalence", &events);
+    if canonical_statuses.is_empty() {
+        statuses.push(status_with_detail(
+            "canonical_equivalence",
+            "clingen_car",
+            VariantArticleSourceStatusKind::Skipped,
+            Some("caller identity has no applicable canonical query"),
+        ));
+    } else {
+        statuses.extend(canonical_statuses);
+    }
     let mut succeeded_routes = 0usize;
     let mut failed_routes = 0usize;
 
@@ -2395,12 +2666,8 @@ async fn search_variant_articles_identity(
                         && let Some(detail) =
                             route_stop_detail(execution.route_stopped("pubtator_variant"))
                     {
-                        statuses.push(status_with_detail(
-                            "pubtator_variant",
-                            "internal",
-                            VariantArticleSourceStatusKind::NotAttempted,
-                            Some(detail),
-                        ));
+                        let _ = detail;
+                        statuses.push(stopped_status("pubtator_variant", &execution));
                     }
                     succeeded_routes += usize::from(succeeded);
                     failed_routes += usize::from(incomplete || !succeeded);
@@ -2440,12 +2707,8 @@ async fn search_variant_articles_identity(
                                 if let Some(detail) =
                                     route_stop_detail(execution.route_stopped("source_citation"))
                                 {
-                                    statuses.push(status_with_detail(
-                                        "source_citation",
-                                        "internal",
-                                        VariantArticleSourceStatusKind::NotAttempted,
-                                        Some(detail),
-                                    ));
+                                    let _ = detail;
+                                    statuses.push(stopped_status("source_citation", &execution));
                                 }
                                 failed_routes += 1;
                             } else {
@@ -2657,7 +2920,7 @@ async fn search_variant_articles_identity(
         .chain(filtered_candidate_trace)
         .collect();
     let total_candidates = candidates.len();
-    let hard_error = succeeded_routes == 0 && failed_routes > 0;
+    let _provider_hard_error = succeeded_routes == 0 && failed_routes > 0;
     let has_more = offset.saturating_add(limit) < total_candidates;
     let mut visible_candidates = candidates
         .into_iter()
@@ -2717,6 +2980,7 @@ async fn search_variant_articles_identity(
             }
         })
         .collect::<Vec<_>>();
+    let hard_error = rows.is_empty() && !complete;
     statuses.sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
     let retrieval_path = if !resolved {
         VARIANT_FALLBACK_RETRIEVAL_PATH
@@ -2771,12 +3035,24 @@ async fn search_variant_articles_identity(
                 limit,
                 returned: rows.len(),
                 total: complete.then_some(total_candidates),
-                has_more,
+                has_more: if complete { has_more } else { true },
                 next_page_token: None,
             },
             source_status: statuses,
             retrieval_path,
             results: rows,
+            error: hard_error.then(|| VariantArticleItemError {
+                code: if execution.deadline.is_exhausted() {
+                    "deadline_exceeded"
+                } else {
+                    "source_unavailable"
+                },
+                message: if execution.deadline.is_exhausted() {
+                    "the variant article invocation deadline expired before a usable result was available".into()
+                } else {
+                    "all required variant article routes were unavailable".into()
+                },
+            }),
             debug_plan,
         },
         hard_error,
@@ -3032,6 +3308,12 @@ fn empty_debug_plan(
             candidates: Vec::new(),
         },
         verification: None,
+        deadline: VariantArticleDeadlinePlan {
+            scope: "invocation",
+            limit_ms: 60_000,
+            exhausted: false,
+            provider_concurrency_limit: PROVIDER_CONCURRENCY_LIMIT,
+        },
     }
 }
 
@@ -3164,11 +3446,8 @@ async fn execute_batch_item(
             return empty_item(fallback, limit, offset, item_error(error), debug_plan);
         }
     };
-    let error = outcome.hard_error.then(|| VariantArticleItemError {
-        code: "source_unavailable",
-        message: "all required variant article routes were unavailable".into(),
-    });
     let response = outcome.response;
+    let error = response.error;
     VariantArticleBatchItem {
         request_id: request.request_id,
         requested_variant: response.requested_variant,
@@ -3267,8 +3546,9 @@ fn finish_variant_article_batch(
     debug_plan: bool,
     item_count: usize,
     request_work: VariantArticleWork,
+    deadline: VariantArticleDeadlinePlan,
 ) -> VariantArticleBatchOutcome {
-    let hard_error = items.iter().any(|item| item.error.is_some());
+    let hard_error = !items.is_empty() && items.iter().all(|item| item.error.is_some());
     let complete = items
         .iter()
         .all(|item| item.complete && item.error.is_none());
@@ -3284,6 +3564,7 @@ fn finish_variant_article_batch(
                 item_concurrency_limit: ITEM_CONCURRENCY_LIMIT,
                 work: request_work,
                 items_planned: item_count,
+                deadline,
             }),
         },
         hard_error,
@@ -3305,7 +3586,9 @@ pub(crate) async fn search_variant_article_batch_with_options(
     }
     let validated = validate_batch_requests(requests)?;
     let item_count = validated.len();
-    let contexts = VariantArticleExecutionContext::batch(item_count);
+    let deadline = crate::sources::VariantArticleDeadline::from_now(VARIANT_ARTICLE_DEADLINE_LIMIT);
+    let contexts =
+        VariantArticleExecutionContext::batch_with_deadline(item_count, deadline.clone());
     let request_context = contexts.first().cloned();
     let futures = validated
         .into_iter()
@@ -3322,7 +3605,18 @@ pub(crate) async fn search_variant_article_batch_with_options(
             )
         })
         .collect();
-    let mut items = collect_bounded_ordered(futures).await;
+    let mut items =
+        crate::sources::with_variant_article_deadline(deadline, collect_bounded_ordered(futures))
+            .await;
+    let deadline_plan = request_context
+        .as_ref()
+        .map(VariantArticleExecutionContext::deadline_plan)
+        .unwrap_or(VariantArticleDeadlinePlan {
+            scope: "invocation",
+            limit_ms: 60_000,
+            exhausted: false,
+            provider_concurrency_limit: PROVIDER_CONCURRENCY_LIMIT,
+        });
     let request_work = request_context
         .map(|context| context.request_work())
         .unwrap_or_else(|| VariantArticleWork::new(0, 0));
@@ -3338,6 +3632,7 @@ pub(crate) async fn search_variant_article_batch_with_options(
         debug_plan,
         item_count,
         request_work,
+        deadline_plan,
     ))
 }
 
@@ -3401,6 +3696,101 @@ mod tests {
             })
             .collect();
         candidate
+    }
+
+    #[tokio::test]
+    async fn invocation_deadline_stops_new_provider_work_and_reports_one_scope() {
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(1));
+        let execution = VariantArticleExecutionContext::single_with_deadline(deadline);
+        tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+        assert!(execution.reserve("strict").is_none());
+        assert!(execution.route_stopped("strict"));
+        let plan = execution.deadline_plan();
+        assert_eq!(plan.scope, "invocation");
+        assert_eq!(plan.limit_ms, 1);
+        assert!(plan.exhausted);
+        assert_eq!(plan.provider_concurrency_limit, 10);
+    }
+
+    #[tokio::test]
+    async fn zero_deadline_fails_before_resolution_client_or_provider_contact() {
+        let outcome = search_variant_articles_with_deadline(
+            "chr7:g.140453136A>T",
+            VariantArticleStrategy::Union,
+            3,
+            0,
+            true,
+            VariantArticleVerificationOptions::default(),
+            std::time::Duration::ZERO,
+        )
+        .await
+        .expect("deadline is an in-band terminal state");
+        assert!(outcome.hard_error);
+        assert_eq!(
+            outcome.response.error.as_ref().map(|error| error.code),
+            Some("deadline_exceeded")
+        );
+        assert!(outcome.response.pagination.has_more);
+        assert!(outcome.response.source_status.iter().any(|status| {
+            status.route == "resolution"
+                && status.status == VariantArticleSourceStatusKind::TimedOut
+        }));
+        assert!(
+            outcome
+                .response
+                .debug_plan
+                .is_some_and(|plan| plan.deadline.exhausted)
+        );
+    }
+
+    #[test]
+    fn source_work_precedence_distinguishes_timeout_partial_and_unstarted() {
+        let cases = [
+            (
+                VariantArticleSourceWork {
+                    planned: 2,
+                    ok: 1,
+                    timed_out: 1,
+                    ..Default::default()
+                },
+                vec!["invocation_deadline"],
+                VariantArticleSourceStatusKind::TimedOut,
+            ),
+            (
+                VariantArticleSourceWork {
+                    planned: 2,
+                    ok: 1,
+                    unavailable: 1,
+                    ..Default::default()
+                },
+                vec!["provider_timeout"],
+                VariantArticleSourceStatusKind::Degraded,
+            ),
+            (
+                VariantArticleSourceWork {
+                    planned: 1,
+                    not_attempted: 1,
+                    ..Default::default()
+                },
+                vec!["invocation_deadline"],
+                VariantArticleSourceStatusKind::NotAttempted,
+            ),
+            (
+                VariantArticleSourceWork {
+                    planned: 1,
+                    unavailable: 1,
+                    ..Default::default()
+                },
+                vec!["provider_error"],
+                VariantArticleSourceStatusKind::Unavailable,
+            ),
+        ];
+        for (work, reasons, expected) in cases {
+            let status = aggregate_source_status("route", "source", work, reasons);
+            assert_eq!(status.status, expected);
+            assert!(status.detail.is_some());
+        }
     }
 
     #[serial_test::serial(article_resolver_env)]
@@ -4452,7 +4842,7 @@ mod tests {
     }
 
     #[test]
-    fn mixed_usable_and_terminal_hard_batch_preserves_items_and_hard_exit() {
+    fn mixed_usable_and_terminal_hard_batch_preserves_items_and_succeeds() {
         let outcome = finish_variant_article_batch(
             vec![
                 batch_item("usable", true, false, None),
@@ -4469,11 +4859,17 @@ mod tests {
             false,
             2,
             VariantArticleWork::new(100, 2),
+            VariantArticleDeadlinePlan {
+                scope: "invocation",
+                limit_ms: 60_000,
+                exhausted: false,
+                provider_concurrency_limit: 10,
+            },
         );
 
         assert!(
-            outcome.hard_error,
-            "CLI must select its exit-1 JSON outcome"
+            !outcome.hard_error,
+            "one usable item keeps the batch successful"
         );
         assert!(!outcome.response.complete);
         assert!(outcome.response.truncated);
@@ -4503,6 +4899,12 @@ mod tests {
             false,
             1,
             VariantArticleWork::new(50, 1),
+            VariantArticleDeadlinePlan {
+                scope: "invocation",
+                limit_ms: 60_000,
+                exhausted: false,
+                provider_concurrency_limit: 10,
+            },
         );
 
         assert!(

@@ -271,6 +271,13 @@ pub struct CliOutput {
     pub text: String,
     pub metadata_json: Option<String>,
     pub svg: Option<String>,
+    pub variant_articles_mcp_disposition: Option<VariantArticlesMcpDisposition>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VariantArticlesMcpDisposition {
+    Success,
+    StructuredError,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -304,6 +311,7 @@ pub struct CommandOutcome {
     pub svg: Option<String>,
     pub stream: OutputStream,
     pub exit_code: u8,
+    pub variant_articles_mcp_disposition: Option<VariantArticlesMcpDisposition>,
 }
 
 impl CommandOutcome {
@@ -315,6 +323,7 @@ impl CommandOutcome {
             svg: None,
             stream: OutputStream::Stdout,
             exit_code: 0,
+            variant_articles_mcp_disposition: None,
         }
     }
 
@@ -331,6 +340,7 @@ impl CommandOutcome {
             svg: None,
             stream: OutputStream::Stdout,
             exit_code: 0,
+            variant_articles_mcp_disposition: None,
         }
     }
 
@@ -351,6 +361,7 @@ impl CommandOutcome {
             svg: None,
             stream: OutputStream::Stdout,
             exit_code: 0,
+            variant_articles_mcp_disposition: None,
         }
     }
 
@@ -362,6 +373,7 @@ impl CommandOutcome {
             svg: None,
             stream: OutputStream::Stdout,
             exit_code,
+            variant_articles_mcp_disposition: None,
         }
     }
 
@@ -373,11 +385,20 @@ impl CommandOutcome {
             svg: None,
             stream: OutputStream::Stderr,
             exit_code,
+            variant_articles_mcp_disposition: None,
         }
     }
 
     pub(crate) fn with_metadata_json(mut self, metadata_json: String) -> Self {
         self.metadata_json = Some(metadata_json);
+        self
+    }
+
+    pub(crate) fn with_variant_articles_mcp_disposition(
+        mut self,
+        disposition: VariantArticlesMcpDisposition,
+    ) -> Self {
+        self.variant_articles_mcp_disposition = Some(disposition);
         self
     }
 
@@ -389,6 +410,7 @@ impl CommandOutcome {
             svg: Some(svg),
             stream: OutputStream::Stdout,
             exit_code: 0,
+            variant_articles_mcp_disposition: None,
         }
     }
 }

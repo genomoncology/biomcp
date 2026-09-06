@@ -26,6 +26,7 @@ fn outcome_to_mcp_output(outcome: CommandOutcome) -> anyhow::Result<CliOutput> {
         text: outcome.text,
         metadata_json: outcome.metadata_json,
         svg: outcome.svg,
+        variant_articles_mcp_disposition: outcome.variant_articles_mcp_disposition,
     })
 }
 
@@ -694,7 +695,6 @@ pub async fn execute_mcp_cli(mut cli: Cli) -> anyhow::Result<CliOutput> {
     let outcome = run_outcome_with_worker_stack(cli, true).await?;
     outcome_to_mcp_output(outcome)
 }
-
 #[cfg(test)]
 #[path = "outcome/tests.rs"]
 mod tests;

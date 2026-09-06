@@ -545,6 +545,13 @@ async fn searched_provider_scan(
 ) -> ProviderScan {
     const SOURCE_PAGE: usize = 50;
     const MAX_CANDIDATES: usize = 1_000;
+    if execution.deadline_exhausted() {
+        return ProviderScan {
+            candidates: Vec::new(),
+            exhaustive: false,
+            available: false,
+        };
+    }
     let client = match MyVariantClient::new() {
         Ok(client) => client,
         Err(_) => {

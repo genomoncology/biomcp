@@ -481,8 +481,9 @@ case "$scenario" in
           results,
           complete,
           truncated,
+          error,
           pagination: (.pagination | {offset, limit, returned, total, has_more, next_page_token}),
-          source_status: [(.source_status // [])[] | select(.route == "pubtator_variant" and .source == "pubtator") | {route, source, status}]
+          source_status: [(.source_status // [])[] | select(.route == "pubtator_variant" and .source == "pubtator") | {route, source, status, work, reason_codes}]
         }'
     ;;
   batch-compact-json)

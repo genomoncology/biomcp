@@ -402,7 +402,15 @@ impl BioMcpServer {
                     let encoded = base64::engine::general_purpose::STANDARD.encode(svg.as_bytes());
                     content.push(Content::image(encoded, "image/svg+xml"));
                 }
-                Ok(CallToolResult::success(content))
+                Ok(
+                    if output.variant_articles_mcp_disposition
+                        == Some(crate::cli::VariantArticlesMcpDisposition::StructuredError)
+                    {
+                        CallToolResult::error(content)
+                    } else {
+                        CallToolResult::success(content)
+                    },
+                )
             }
             Err(err) => Ok(Self::tool_error(format!("Error: {err}"))),
         }
@@ -1314,7 +1322,11 @@ impl BioMcpServer {
                         None,
                     )
                 })?;
-                Ok(CallToolResult::success(vec![Content::text(text)]))
+                Ok(if outcome.hard_error {
+                    CallToolResult::error(vec![Content::text(text)])
+                } else {
+                    CallToolResult::success(vec![Content::text(text)])
+                })
             }
             Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
         }

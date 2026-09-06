@@ -9,6 +9,8 @@ ClinGen Linked Data Hub (LDH) links CAids, genes, PMC articles, and exact text o
 table selectors. BioMCP uses it only as an optional post-retrieval identity
 observation for `variant articles --verify-identity`; it never discovers, removes,
 or ranks article candidates.
+LDH verification shares the variant-article invocation's 60-second deadline;
+a timeout preserves the base article and reports incomplete verification.
 
 It is a source of auditable linkage facts, not a measure of literature coverage or
 scientific evidence strength.
