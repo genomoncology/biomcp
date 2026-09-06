@@ -106,10 +106,12 @@ are RFC 3339 UTC.
 successful `200` whose body produced the active generation; `attempted_at` is
 the last completed refresh attempt. They are null when no event exists. ETag is
 preserved as a valid HTTP entity tag, including weakness and quotes;
-Last-Modified is the validated HTTP-date. `upstream_version` contains a
-nonblank provider dataset version only if GenCC supplies a documented version
-response header. It is null rather than synthesized from validators, row
-versions, or dates.
+Last-Modified is the validated HTTP-date. GenCC documents no dataset-version
+response header for this export, so this ticket does not read one:
+`upstream_version` is always JSON `null` in public status and immutable
+manifests. It is never synthesized from an undocumented header, validators,
+row versions, or dates. Adding a provider version later requires a separate
+contract change backed by GenCC documentation.
 
 `message` is null for fresh data/empty. Stale results use exactly `GenCC refresh
 failed; results come from the last validated dataset.` Unavailable acquisition
@@ -213,10 +215,24 @@ row. `disease_original_*`, every
 other `submitted_as_*` field, free-text notes, and original OMIM
 labels/identifiers are never placed in the normalized cache or public output.
 
-Byte-equivalent duplicate rows for one `(sgc_id, version)` become one row;
-conflicting duplicates invalidate the generation. When several versions of an
-SGC ID exist, only its greatest positive version is current. This never combines
-different SGC IDs, even when their other fields match. Current assertions are
+For duplicate comparison, first parse one row into the canonical normalized
+cache tuple in this exact field order: canonical `sgc_id`, `u32` version,
+canonical gene CURIE, trimmed gene label, canonical disease CURIE, trimmed
+disease label, the closed classification CURIE/label/code triple, canonical
+inheritance CURIE plus trimmed label, canonical submitter CURIE plus trimmed
+label, nullable canonical evaluated/submitted dates, nullable normalized
+public-report/criteria URLs, and the ordered canonical PMID vector. Two rows
+with one `(sgc_id, version)` are byte-equivalent only when every byte of that
+tuple's deterministic serialization is equal; label case, optional-null
+state, URL spelling, PMID value, and PMID order therefore matter. Equivalent
+duplicates become one row in first-row position; any tuple difference
+invalidates the generation. Columns excluded from the normalized cache
+(`disease_original_*`, notes, and the other unused `submitted_as_*` columns)
+are decoded only for the global CSV/UTF-8/control/raw-field bounds: their
+contents are neither normalized nor compared, so rows differing only in an
+excluded column still deduplicate. When several versions of an SGC ID exist,
+only its greatest positive version is current. This never combines different
+SGC IDs, even when their other fields match. Current assertions are
 ordered by evaluated date descending (null last), submitted date descending
 (null last), submitter label case-insensitively then bytewise, disease ID,
 inheritance ID, SGC ID, and version descending. A response returns at most 100
@@ -257,6 +273,28 @@ two or more are the existing multiple-value identity conflict.
   the base MyGene lookup fails, existing Gene-card failure remains authoritative
   and no GenCC refresh/query starts.
 
+Identity has two explicit phases. The pre-index phase validates the canonical
+MyGene symbol and HGNC wire union. A missing/invalid symbol or malformed/
+multiple HGNC values is conclusively inconclusive before every GenCC root
+check, lock, lifecycle decision, HEAD/GET, and local index query. That case
+always returns the exact `identity_match` row, consumes zero GenCC quota,
+creates no root/lock, and leaves every durable timestamp and last-attempt byte
+unchanged; it wins over a hypothetical root failure or suppression state.
+
+A valid canonical symbol with zero or one HGNC value is only an identity
+candidate: the symbol-to-CURIE consistency rules require a validated GenCC
+index. Lifecycle acquisition/refresh therefore runs first, with its normal GET
+and timestamp effects, and identity matching runs against the resulting fresh
+index or a leased stale index. If no index is available because initial
+download/root/lock/suppression failed, that lifecycle failure wins and the
+operation is not mislabeled `identity_match`. If an index is queryable and the
+symbol/HGNC check is inconclusive, `identity_match` wins in the public section
+over stale-failed, retry-suppressed, or refresh-deferred presentation, while
+the already completed lifecycle attempt/suppression timestamps remain exactly
+as recorded. A failed base MyGene request wins before constructing
+`Gene.gencc`, preserving the existing whole-card/section failure behavior; no
+GenCC status, evidence source, or URL is manufactured.
+
 Tests cover every scalar/array wire shape, missing/null/empty, numeric
 normalization, exact and first-over bounds, equivalent-value deduplication,
 mixed malformed arrays, multiple distinct IDs, case, alias input resolved to
@@ -265,21 +303,40 @@ symbol, duplicate GenCC identities, and failed base identity.
 
 ## Dataset lifecycle and concurrency
 
-The GenCC store lives at the trimmed nonblank `BIOMCP_GENCC_DIR` exactly when
-set. Otherwise its exact root is `dirs::data_dir()/biomcp/gencc` (for example
-`$XDG_DATA_HOME/biomcp/gencc` on Linux under the `dirs` crate contract). If the
-environment override is absent and `dirs::data_dir()` returns `None`, ordinary
-`gencc` returns unavailable and explicit sync exits nonzero without making a
-network request; this durable source never falls back to a process temporary
-directory. A missing selected root is created only while holding the private
-parent/root setup lock, before any GET. Failure to create, permission, and
-unsafe-path failures likewise make zero GETs because BioMCP could not durably
-record quota-consuming work. It is a dedicated durable source dataset, not an
-ordinary HTTP-response cache entry. Directories/lock files are current-user
-private (`0700`/`0600` on Unix and the existing ACL equivalent on Windows).
-Existing private-path helpers reject symlinks/reparse points, non-regular files,
-unexpected hard links, and paths escaping the root. Metadata has no absolute
-local paths.
+The GenCC store selection is exact. If `BIOMCP_GENCC_DIR` is absent, the root
+is `dirs::data_dir()/biomcp/gencc` (for example
+`$XDG_DATA_HOME/biomcp/gencc` on Linux under the `dirs` crate contract). A set
+override is Unicode-trimmed once and must be a nonblank absolute path with no
+`.` or `..` lexical component; blank or relative overrides are configuration
+errors and never fall back to the default. If the override is absent and
+`dirs::data_dir()` returns `None`, ordinary `gencc` returns unavailable and
+explicit sync exits nonzero. Every one of those selection failures makes zero
+GenCC requests and creates no directory.
+
+First-root creation has one deterministic lock anchor even before the root
+exists. Starting at the selected absolute root, BioMCP finds its deepest
+existing ancestor without following symlinks/reparse points and opens there,
+with no-follow semantics, a regular current-user-owned `0600` file named
+`.biomcp-gencc-root-<sha256-of-selected-absolute-path>.lock`: create-new when
+absent, otherwise open the same existing inode. It verifies
+one link and the existing private-path ownership rules, takes its exclusive
+advisory lock, re-walks the whole path, then creates each missing component
+with `0700`/the existing Windows private ACL. It finally creates and verifies
+`<root>/.store.lock` as current-user-owned regular `0600`, acquires it, fsyncs
+each changed parent, and only then may issue a GET. Later calls use
+`.store.lock`; they still take the setup anchor when root/store-lock validation
+or repair is required. The bootstrap anchor remains as the permanent
+coordination inode and is never unlinked by GenCC cleanup, so root deletion and
+recreation cannot create two lock domains. The setup lock is released only
+after the verified `.store.lock` is held. The default and override paths use
+this identical algorithm. Failure to locate/open/lock the anchor, ownership/link/type failure,
+creation/fsync failure, or a changed component makes zero GETs. Tests cover a
+missing default hierarchy, missing override hierarchy, already-created roots,
+two-process first creation, blank/relative overrides, unsafe ancestors/root/
+lock files, `dirs::data_dir() == None`, permissions, and exact zero-request
+logs. This durable source never falls back to a process temporary directory.
+It is not an ordinary HTTP-response cache entry, and metadata contains no
+absolute local paths.
 
 Durable state has two deliberately different layers:
 
@@ -287,7 +344,7 @@ Durable state has two deliberately different layers:
   are immutable after publication. The manifest records schema version,
   endpoint identity, body and index SHA-256, row/assertion counts, the
   successful `200` `retrieved_at`, the validated ETag and Last-Modified, and
-  nullable upstream version. A generation ID is derived from the index hash
+  an `upstream_version` slot fixed to null by this ticket. A generation ID is derived from the index hash
   plus an unguessable creation suffix and is used only as a local opaque name.
 - Root `state.json` is the single mutable control record. It contains nullable
   `active_generation`, `checked_at`, `attempted_at`, and an exact last-attempt
@@ -329,15 +386,18 @@ clock rollback.
   absent or exactly zero, and exactly zero streamed body bytes. Content-Type is
   ignored on the bodyless response. ETag and Last-Modified may each be absent;
   when supplied they must be syntactically valid and byte-for-byte equal to the
-  stored values. A supplied documented dataset-version header must likewise
-  equal the stored nullable version; appearance, disappearance, or change is a
-  refresh failure requiring a `200`, never a metadata-only mutation. A valid
+  stored values. No response header is interpreted as a dataset version, on
+  either `200` or `304`; `upstream_version` therefore remains null and an
+  unrelated/header-extension appearance or change cannot mutate it. A valid
   `304` atomically replaces `state.json` with advanced
   `checked_at`/`attempted_at`, retaining `retrieved_at`, validators, version,
-  and index. A valid `200` publishes a new generation. Any other response,
+  and index. A valid `200` publishes a new generation. Any other response, or
+  any storage failure before the state-rename linearization point, including a
   one-byte body, invalid/mismatched validator, invalid header/body/schema,
-  timeout, or publication failure keeps the old generation and makes this
-  lookup stale after durably recording the failed attempt.
+  timeout, or pre-rename publication failure, keeps the old generation and
+  makes this lookup stale after durably recording the failed attempt when that
+  failure-state update itself commits. Post-rename root-fsync failure follows
+  the separate namespace-authority matrix below.
 - `biomcp gencc sync` always takes the lock and performs the same conditional
   revalidation even when fresh. `304` and valid `200` succeed. Refresh failure
   exits nonzero even if prior data remains; it never destroys that generation.
@@ -352,7 +412,10 @@ clock rollback.
   changes timestamps. Normal all-provider health includes the descriptor.
 
 Refresh uses a process-local async mutex and cross-process advisory lock. An
-ordinary leader obtains both within its one-gene deadline, reloads `state.json`
+ordinary due caller first acquires the active generation snapshot lease using
+the protocol below, then releases the store-shared phase while retaining that
+generation lease as its precise timeout/failure fallback. An ordinary leader
+obtains both refresh locks within its one-gene deadline, reloads `state.json`
 and the active generation after each acquisition, and decides again whether a
 request is due. Same-process followers wait on the mutex; cross-process
 followers wait on the advisory lock. A follower whose leader completed reloads
@@ -365,19 +428,83 @@ changes `attempted_at`. These rules apply identically to concurrent first use:
 one leader performs the unconditional GET, successful followers query its
 generation, and failed followers observe its persisted suppression state.
 Readers open only finalized immutable generation files and therefore never see
-temporary or partially published state.
+temporary or partially published state. Opening a finalized file alone is not
+the cleanup-safety protocol; every query holds the generation lease below.
+
+Each finalized generation contains a private regular `0600` `lease.lock`.
+To start a query, a process takes `.store.lock` shared, reads and validates
+`state.json`, obtains a process-local reference-counted `GenerationLease` for
+that generation, takes a shared advisory lock on its `lease.lock`, opens the
+manifest/index handles, rechecks that state still names the same generation,
+and then releases `.store.lock`. A changed state restarts this sequence. The
+generation shared lock, open handles, and in-process reference remain held
+through the complete index query/render projection. Same-process leases share
+one locked file description and release it only when the last reference drops,
+avoiding per-process advisory-lock semantics accidentally unlocking another
+reader.
+
+Publication/state replacement/maintenance take `.store.lock` exclusively.
+Cleanup may delete a non-retained generation only after a nonblocking exclusive
+lock on that generation's `lease.lock` succeeds and the process-local reference
+count is zero; contention means skip, not wait or unlink. It revalidates the
+directory under that lock immediately before deletion. Thus POSIX unlink and
+Windows deletion semantics cannot race an active snapshot. An adversarial
+three-generation test holds a G1 reader lease while G2 is active, publishes G3,
+proves cleanup retains leased G1 even though the normal retained pair is G3/G2,
+finishes the G1 query unchanged, releases the lease, and proves the next locked
+maintenance removes G1 while preserving G3/G2. A subprocess variant proves the
+same cross-process behavior.
 
 Publication creates a unique private sibling temporary generation, writes the
 index and manifest with create-new semantics, fsyncs each file and then that
 directory, renames it to its final generation name, fsyncs the generations
 directory, and reopens/revalidates both hashes and the manifest. It next writes
 a unique private `state.json` temporary, fsyncs it, atomically renames it over
-`state.json`, and fsyncs the root. The old state remains authoritative until
-that last rename is durable. A `304` and a failed attempt use the same
-write/fsync/rename/root-fsync sequence for state only; if persisting a failed
-attempt itself fails, the request still fails/stales but retry suppression is
-not claimed. Every exit removes its owned raw/state/generation temporaries
-after worker settlement.
+`state.json`, and fsyncs the root. The successful state rename—not the later
+root fsync—is the namespace linearization point: before it, the old state is
+authoritative and remains name-visible; after it, the new state is
+name-visible and authoritative to every non-crashed current/subsequent reader,
+and BioMCP never claims that the inaccessible old pathname is still active.
+The following root fsync establishes crash durability.
+
+Failure before the state rename leaves the old state authoritative and the
+current ordinary call uses its already-held old-generation lease (stale on a
+due refresh), while explicit sync fails nonzero. Failure of the root fsync
+after a successful rename cannot be rolled back: the leader reports its current
+ordinary call from the pre-refresh lease as refresh-failed (or unavailable if
+there was no generation), and explicit sync fails nonzero, but a subsequent
+non-crashed call reloads the namespace-visible new state and uses it. After a
+crash at that point, startup may observe the complete old or new state; it
+validates whichever is visible and never combines them. A later retry of root
+fsync may make the rename durable, but public success is not retroactively
+reported.
+
+A `304` and a failed-attempt update use the same temporary-file fsync,
+rename-linearization, and root-fsync rules for state only. If a failure-state
+rename did not occur, no suppression is claimed. If its rename occurred but
+the root fsync failed, the current call reports the underlying failure without
+claiming durable suppression; subsequent non-crashed calls that reload the
+valid namespace-visible failure state use `retry_suppressed`, while a crash is
+allowed to reveal the prior state and retry. Timestamps always come wholly
+from the single visible state record. Every exit removes only its owned
+raw/state/unpublished-generation temporaries after worker settlement; a
+finalized generation or renamed state is never treated as a temporary.
+
+The state-update failure matrix is normative:
+
+| last completed step | namespace authority now | current ordinary call | next non-crashed call | restart |
+|---|---|---|---|---|
+| before generation rename | old state/generation, or none | stale old result / unavailable | reloads old/none; retry follows persisted attempt state | old/none |
+| generation renamed+directory fsynced; before state rename | old state; new generation is inactive | stale old result / unavailable | reloads old; orphan is cleanup/recovery input, never active by implication | valid old state wins; scan only if state requires recovery |
+| state temporary fsynced; before state rename | old state | stale old result / unavailable | reloads old | old |
+| state rename succeeded; root fsync failed | new namespace-visible state | stale pre-refresh leased result / unavailable; explicit sync nonzero | reloads and uses new state | complete old or new state, never mixed |
+| state rename and root fsync succeeded | new durable state | new result | new result | new |
+| failure-attempt state update failed before rename | prior state | underlying stale/unavailable failure, no suppression claim | prior state decides eligibility | prior state |
+| failure-attempt state renamed; root fsync failed | new namespace-visible failure state | underlying stale/unavailable failure, no durable-suppression claim | suppresses from new `attempted_at` | old or new failure state; whichever validates decides |
+
+“Stale old result” includes its prior assertions only when positive and uses
+the exact stale-failed mapping; zero remains unavailable. None of these storage
+failures issues a second provider GET inside the same call.
 
 Startup validates `state.json`, then validates its referenced finalized
 generation by manifest and hashes. If state is missing/corrupt or references an
@@ -388,13 +515,18 @@ generation's immutable `retrieved_at` and writes a fresh state record; it never
 recovers a later 304/failure timestamp from a partial state file. If no valid
 generation exists, acquisition starts from none (while an independently valid
 failure-only `state.json` still enforces retry suppression). Under the
-cross-process lock, post-publication/startup maintenance retains the active and
-newest other valid generation, removes abandoned temporaries and all other
-invalid/old generations, and fsyncs every parent directory whose entries
-changed. Cleanup failure is logged and leaves extra private files; it never
-invalidates the already durable active state or deletes either retained copy.
-Crash injection before/after every fsync and rename proves recovery selects
-only a complete old or new generation.
+exclusive cross-process store lock and generation-lease protocol,
+post-publication/startup maintenance retains the active and newest other valid
+generation, removes abandoned temporaries and all other unleased invalid/old
+generations, and fsyncs every parent directory whose entries changed. Cleanup
+failure or a leased candidate is logged and leaves extra private files; it
+never invalidates the already durable active state or deletes either retained
+copy or an actively leased older copy.
+Crash/failure injection before and after every fsync and rename separately
+asserts the current call, the next non-crashed call, and restart outcome. It
+proves that state is old before rename, new after rename, restart selects only
+a complete old or new state/generation, and no output mixes timestamps,
+validators, or indexes across versions.
 
 One direct gene request gives its GenCC section one existing configurable
 eight-second optional-enrichment deadline, starting when that section future is
@@ -452,6 +584,13 @@ updates timestamps. `section_outcomes.gencc` and its matching
 
 | generation at entry | lifecycle decision for this call | local query | identity / matches | status (`freshness/result/operation`) | outcome | sources | message |
 |---|---|---|---|---|---|---|---|
+| any/none | pre-index MyGene identity is inconclusive; lifecycle is not consulted | no | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
+| none | candidate identity; valid first `200`, then index identity inconclusive | yes | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
+| fresh | candidate identity; no refresh due, index identity inconclusive | yes | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
+| due | candidate identity; valid `200`/`304`, then index identity inconclusive | yes | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
+| due | candidate identity; refresh fails, stale index identity inconclusive | yes | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
+| due | candidate identity; retry suppressed, stale index identity inconclusive | yes | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
+| due | candidate identity; lock deadline, leased stale index identity inconclusive | yes | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
 | none | root unavailable/unsafe before GET | no | n/a | `unavailable/unknown/initial_download` | `unavailable` | `[]` | unavailable |
 | none | leader valid first `200` | yes | conclusive / >0 | `fresh/data/initial_download` | `data` | `["GenCC"]` | null |
 | none | leader valid first `200` | yes | conclusive / 0 | `fresh/empty/initial_download` | `empty` | `["GenCC"]` | null |
@@ -477,10 +616,18 @@ updates timestamps. `section_outcomes.gencc` and its matching
 | due | follower reloads leader's persisted failure | yes | conclusive / 0 | `stale/empty/retry_suppressed` | `unavailable` | `[]` | stale-failed |
 | due | mutex/advisory-lock wait reaches deadline; old retained | yes | conclusive / >0 | `stale/data/refresh_deferred` | `degraded` | `["GenCC"]` | stale-progress |
 | due | mutex/advisory-lock wait reaches deadline; old retained | yes | conclusive / 0 | `stale/empty/refresh_deferred` | `unavailable` | `[]` | stale-progress |
-| any valid | lifecycle permits local read | yes, identity index only | inconclusive / n/a | `unavailable/unknown/identity_match` | `unavailable` | `[]` | identity |
 
 The stale-zero rows are intentional: old positive assertions may be shown with
-a warning, but zero matches in old data cannot establish current absence.
+a warning, but zero matches in old data cannot establish current absence. The
+pre-index identity row makes zero GenCC HEAD/GET requests, creates no root, and
+leaves state byte-for-byte unchanged. Index-identity rows inherit the lifecycle
+effects that occurred before the index could be checked: first/successful due
+refresh consumes exactly one GET and advances the success timestamps; a failed
+due refresh consumes one GET and advances only its failed `attempted_at`;
+fresh, suppressed, and lock-deadline reads consume zero GETs and change no
+timestamp. Root/no-generation acquisition failure remains the corresponding
+`initial_download`/`retry_suppressed` lifecycle row because no index existed to
+prove an identity conflict.
 
 GenCC evidence URLs are appended after the existing NCBI Gene, UniProt,
 Ensembl, and OMIM evidence in this exact order when the GenCC outcome is
@@ -531,6 +678,37 @@ without a generation.
   change. A combined `clingen gencc` fixture proves either section's
   data/empty/failure cannot overwrite the other's result or provenance.
 
+## Implementation ownership and package neutrality
+
+The implementation adds exactly these nine package paths:
+`src/sources/gencc.rs` (transport/facade),
+`src/sources/gencc/model.rs` (bounded CSV parsing and normalized model),
+`src/sources/gencc/store.rs` (root, state, generation, lease, and recovery),
+`src/sources/gencc/tests.rs` (source/store adversarial tests),
+`src/entities/gene/gencc.rs` (resolved identity/index query and section status),
+`src/entities/gene/gencc/tests.rs` (identity/lifecycle truth-table tests),
+`docs/sources/gencc.md`, one minimized
+`testdata/sources/gencc/submissions-new-odc1.csv`, and one focused
+`tests/test_gencc_docs_contract.py`. Existing Gene dispatch/rendering, CLI,
+MCP, schemas, fixture setup, receipts/inventory, and executable specs are
+modified in place rather than gaining more files. Each new Rust production or
+test module remains at or below 1,000 lines.
+
+Before adding those paths, perform these behavior-neutral consolidations and
+delete exactly nine package files: inline
+`src/sources/mygene/tests/{mod.rs,construction.rs,parsing.rs,live.rs}` into a
+single `#[cfg(test)] mod tests` in `src/sources/mygene.rs`; inline
+`src/sources/clingen_cspec/tests/{mod.rs,construction.rs}` into
+`src/sources/clingen_cspec.rs`; and inline
+`src/sources/clingen_erepo/tests/{mod.rs,construction.rs,parsing.rs}` into
+`src/sources/clingen_erepo.rs`. Preserve every test name, ignored/live marker,
+fixture path, and behavior, and run the three consolidated test filters before
+GenCC work. These owners remain below 1,000 lines after consolidation. No
+source-size baseline is raised. `cargo package --list --allow-dirty --locked
+--offline` must be exactly 1,291 immediately after consolidation and exactly
+1,300 after the nine additions; any different implementation file plan returns the ticket
+to design review rather than deleting an opportunistic unrelated file.
+
 ## Acceptance
 
 - A receipt-backed minimized new-format capture contains the three ODC1 rows
@@ -552,13 +730,18 @@ without a generation.
 - An injected-clock HTTP fixture proves initial download, fresh reuse, exact
   seven-day edges, both conditional headers, zero-body `304`, Content-Length
   zero/one, transfer/content encoding, absent/equal/mismatched validators and
-  version on `304`, replacement `200`, durable daily retry suppression with and
-  without old data, rollback, sync, `--no-cache`, and health HEAD. Its log
+  always-null/ignored-undocumented upstream-version headers, replacement `200`,
+  durable daily retry suppression with and without old data, rollback, sync,
+  `--no-cache`, and health HEAD. Its log
   rejects unplanned routes and proves normal/suppressed/follower reuse consumes
   no download.
 - MyGene fixtures prove the appended `HGNC` projection and every accepted and
   rejected scalar/string/flat-array shape, normalization bound, deduplication,
-  and conflict before exercising the combined identity index.
+  and conflict before exercising the combined identity index. Pre-index and
+  index-dependent inconclusive identity are then tested against no/fresh/due/
+  failed/retry-suppressed/lock-deferred states and root failures, proving the
+  exact precedence, zero-request pre-index behavior, lifecycle-dependent GET
+  count, and exact timestamp/state effects in the truth table.
 - Thread/task and subprocess tests separately prove one GET for concurrent
   first use and refresh, same-process successful/failed followers,
   cross-process successful/failed followers, old-generation contention,
@@ -569,14 +752,18 @@ without a generation.
   and no live work or temp files after success/timeout/cancellation. Crash
   injection before and after each file/directory fsync, generation rename,
   state rename, and cleanup recovers only a complete old or new generation and
-  proves failure-attempt persistence plus deterministic fallback ordering.
+  proves the exact current/next/restart matrix, failure-attempt persistence,
+  deterministic fallback ordering, and the shared/refcounted generation lease.
+  The three-generation in-process and subprocess cases keep a G1 snapshot
+  readable across G2/G3 publication and defer its deletion until lease release.
 - CLI direct/all/batch Markdown/JSON, raw MCP text/JSON, typed MCP, help/list,
   schema, exact evidence-URL labels/order/global deduplication for report,
   criteria, duplicate PubMed and capped assertions, docs, and 1159 coexistence
   are fixture-tested without live provider access.
 - New Rust modules remain <=1,000 lines. Do not raise any existing exact
-  source-size baseline or CLI 700-line cap. `cargo package --list --allow-dirty`
-  remains exactly 1,300 files; additions require package-neutral consolidation.
+  source-size baseline or CLI 700-line cap. The named nine-file consolidation/
+  addition plan is followed exactly and `cargo package --list --allow-dirty`
+  remains exactly 1,300 files.
 - Focused tests pass, then `make lint`, `make test`, `make spec`, and
   `make full-feature-check`. Live verification is optional and must not spend a
   GenCC successful-download quota merely to close the ticket.
@@ -604,6 +791,14 @@ the implementation base.
   two-layer durable state protocol and crash ordering, exact HGNC/PMID/version
   parsing, authoritative Animal Model Only mapping, exact GenCC evidence URL
   labels/order/deduplication, strict 304 rules, and the repository's existing
-  per-gene eight-second/max-ten-concurrent batch behavior. Pending fresh
+  per-gene eight-second/max-ten-concurrent batch behavior.
+- Second design review: rejected because identity-failure precedence and quota
+  effects, post-rename authority, cleanup-safe reader leases, upstream-version
+  handling, first-root locking, package-neutral file ownership, and duplicate
+  equivalence remained underspecified. This revision adds exact truth-table and
+  crash outcomes, shared/refcounted per-generation leases with a
+  three-generation test, always-null version semantics, deterministic
+  default/override bootstrap locking and zero-request failures, a named
+  nine-for-nine package plan, and canonical duplicate comparison. Pending fresh
   independent design re-review.
 - Code review: pending.
