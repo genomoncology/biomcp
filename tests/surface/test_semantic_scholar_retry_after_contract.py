@@ -16,7 +16,9 @@ BIOMCP_BIN = Path(os.environ.get("BIOMCP_BIN", REPO_ROOT / "target/release/biomc
 RETRY_AFTER_SECONDS = 2.0
 EXTREME_RETRY_AFTER_SECONDS = 999
 RETRY_AFTER_TOLERANCE_SECONDS = 0.2
-GUIDANCE = "Rate limited by Semantic Scholar. Set S2_API_KEY for a dedicated rate limit."
+GUIDANCE = (
+    "Rate limited by Semantic Scholar. Set S2_API_KEY for a dedicated rate limit."
+)
 
 
 class _SemanticScholarState:
@@ -85,6 +87,7 @@ class _SemanticScholarHandler(BaseHTTPRequestHandler):
             self._send_json(
                 200,
                 {
+                    "offset": 0,
                     "data": [
                         {
                             "contexts": ["Recovered after Retry-After"],
@@ -98,7 +101,7 @@ class _SemanticScholarHandler(BaseHTTPRequestHandler):
                                 "year": 2024,
                             },
                         }
-                    ]
+                    ],
                 },
             )
             return
@@ -150,7 +153,10 @@ class _RunningSemanticScholarServer:
 
 
 def _run_article_citations(
-    server: _RunningSemanticScholarServer, *, api_key: str | None
+    server: _RunningSemanticScholarServer,
+    *,
+    api_key: str | None,
+    json_output: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     assert BIOMCP_BIN.exists(), f"missing biomcp binary: {BIOMCP_BIN}"
     with tempfile.TemporaryDirectory(prefix="biomcp-s2-retry-spec-") as cache_home:
@@ -169,8 +175,12 @@ def _run_article_citations(
         else:
             env["S2_API_KEY"] = api_key
 
+        args = [str(BIOMCP_BIN)]
+        if json_output:
+            args.append("--json")
+        args.extend(["article", "citations", "22663011", "--limit", "1"])
         return subprocess.run(
-            [str(BIOMCP_BIN), "article", "citations", "22663011", "--limit", "1"],
+            args,
             cwd=REPO_ROOT,
             env=env,
             capture_output=True,
@@ -180,9 +190,24 @@ def _run_article_citations(
         )
 
 
+def _assert_recovered_exhausted_page(result: subprocess.CompletedProcess[str]) -> None:
+    payload = json.loads(result.stdout)
+    assert payload["edges"][0]["paper"]["title"] == "Recovered after retry-after floor"
+    assert payload["pagination"] == {
+        "offset": 0,
+        "limit": 1,
+        "returned": 1,
+        "next_offset": None,
+        "coverage_status": "exhausted",
+    }
+    assert payload["_meta"]["next_commands"] == []
+
+
 def test_authenticated_semantic_scholar_retry_waits_for_retry_after() -> None:
     with _RunningSemanticScholarServer(authenticated_retry_after=True) as server:
-        result = _run_article_citations(server, api_key="spec-test-key")
+        result = _run_article_citations(
+            server, api_key="spec-test-key", json_output=True
+        )
 
         assert result.returncode == 0, (
             "authenticated Semantic Scholar retry should recover after the local 429\n"
@@ -197,9 +222,14 @@ def test_authenticated_semantic_scholar_retry_waits_for_retry_after() -> None:
         assert len(server.state.citation_times) >= 2, (
             "authenticated 429 should be retried and reach the recovery response"
         )
+        _assert_recovered_exhausted_page(result)
 
-        second_retry_delay = server.state.citation_times[1] - server.state.citation_times[0]
-        assert second_retry_delay >= RETRY_AFTER_SECONDS - RETRY_AFTER_TOLERANCE_SECONDS, (
+        second_retry_delay = (
+            server.state.citation_times[1] - server.state.citation_times[0]
+        )
+        assert (
+            second_retry_delay >= RETRY_AFTER_SECONDS - RETRY_AFTER_TOLERANCE_SECONDS
+        ), (
             "authenticated Semantic Scholar 429 retried before the Retry-After floor: "
             f"observed {second_retry_delay:.3f}s, required at least "
             f"{RETRY_AFTER_SECONDS - RETRY_AFTER_TOLERANCE_SECONDS:.3f}s"
@@ -212,7 +242,9 @@ def test_authenticated_semantic_scholar_extreme_retry_after_stays_bounded() -> N
         retry_after_value=EXTREME_RETRY_AFTER_SECONDS,
     ) as server:
         started = time.monotonic()
-        result = _run_article_citations(server, api_key="spec-test-key")
+        result = _run_article_citations(
+            server, api_key="spec-test-key", json_output=True
+        )
         elapsed = time.monotonic() - started
 
         assert result.returncode == 0, (
@@ -222,13 +254,16 @@ def test_authenticated_semantic_scholar_extreme_retry_after_stays_bounded() -> N
         assert len(server.state.citation_times) >= 2, (
             "extreme Retry-After should still retry through the default-client path"
         )
+        _assert_recovered_exhausted_page(result)
         assert elapsed < 20, (
             f"Retry-After: {EXTREME_RETRY_AFTER_SECONDS} should be capped, not slept "
             f"literally; elapsed {elapsed:.3f}s"
         )
 
 
-def test_unauthenticated_semantic_scholar_shared_pool_429_fails_fast_without_retrying() -> None:
+def test_unauthenticated_semantic_scholar_shared_pool_429_fails_fast_without_retrying() -> (
+    None
+):
     with _RunningSemanticScholarServer(authenticated_retry_after=False) as server:
         result = _run_article_citations(server, api_key=None)
 

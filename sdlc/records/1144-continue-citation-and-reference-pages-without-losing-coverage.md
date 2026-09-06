@@ -232,3 +232,12 @@ whitespace, 1,244-line renderer-test baseline, 700-line CLI ceiling, and exact
 rebuilt because the filesystem had fallen below the 15%-free build guardrail;
 the prior 92-example result remains the latest spec evidence. Independent
 remediation review remains pending.
+
+The final integration `make test` run exposed two pre-existing authenticated
+Semantic Scholar Retry-After contracts whose local successful graph response
+omitted the now-required provider `offset`. The fixture now returns its
+requested offset of zero while continuing to omit `next`; both authenticated
+paths assert the recovered edge, exact exhausted pagination envelope, and
+empty continuation list in addition to their retry-count and timing bounds.
+The exact Retry-After contract file passes all three tests against the prepared
+spec binary. Full repository gates remain for the integrator to rerun.
