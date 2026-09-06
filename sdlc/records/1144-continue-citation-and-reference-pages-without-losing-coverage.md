@@ -240,4 +240,11 @@ requested offset of zero while continuing to omit `next`; both authenticated
 paths assert the recovered edge, exact exhausted pagination envelope, and
 empty continuation list in addition to their retry-count and timing bounds.
 The exact Retry-After contract file passes all three tests against the prepared
-spec binary. Full repository gates remain for the integrator to rerun.
+spec binary.
+
+On the final rebased head, `make lint`, `make test`, and `make spec` all pass.
+The Python contract portion of `make test` reports 910 passed and 3 skipped,
+strict documentation builds successfully, and the article specification page
+reports 148 passed and 5 intentional skips. Independent review accepted the
+pagination implementation and both remediation rounds; no live-provider gate
+was part of this routine integration proof.
