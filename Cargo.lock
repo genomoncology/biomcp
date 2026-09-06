@@ -321,6 +321,7 @@ dependencies = [
  "flate2",
  "fs2",
  "futures",
+ "getrandom 0.3.4",
  "htmd",
  "http",
  "http-body-util",

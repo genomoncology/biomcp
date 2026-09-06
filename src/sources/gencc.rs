@@ -11,6 +11,8 @@ use reqwest::header::{
 };
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
+#[cfg(test)]
+use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
 
 pub(crate) mod model;
@@ -132,8 +134,11 @@ impl GenCcClient {
 
     pub(crate) async fn acquire(&self, timeout: Duration) -> GenCcData {
         let deadline = tokio::time::Instant::now() + timeout;
-        let store = match Store::open() {
+        let store = match Store::open_until(store_deadline(deadline)) {
             Ok(store) => store,
+            Err(StoreError::Deadline) => {
+                return unavailable(GenCcOperation::RefreshDeferred, State::default());
+            }
             Err(_) => return unavailable(GenCcOperation::InitialDownload, State::default()),
         };
         let state = store.load_state().unwrap_or_default();
@@ -175,8 +180,15 @@ impl GenCcClient {
     }
 
     pub(crate) async fn sync(&self) -> Result<bool, crate::error::BioMcpError> {
-        let deadline = tokio::time::Instant::now() + Duration::from_secs(120);
-        let store = Store::open().map_err(|_| sync_error())?;
+        self.sync_with_timeout(Duration::from_secs(120)).await
+    }
+
+    async fn sync_with_timeout(
+        &self,
+        timeout: Duration,
+    ) -> Result<bool, crate::error::BioMcpError> {
+        let deadline = tokio::time::Instant::now() + timeout;
+        let store = Store::open_until(store_deadline(deadline)).map_err(|_| sync_error())?;
         let before = store.load_state().unwrap_or_default().active_generation;
         let mutex = REFRESH_MUTEX.get_or_init(|| Mutex::new(()));
         let _guard = tokio::time::timeout_at(deadline, mutex.lock())
@@ -389,6 +401,10 @@ async fn lock_refresh_until(store: &Store, deadline: tokio::time::Instant) -> Re
         }
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
+}
+
+fn store_deadline(deadline: tokio::time::Instant) -> std::time::Instant {
+    std::time::Instant::now() + deadline.saturating_duration_since(tokio::time::Instant::now())
 }
 
 fn sync_error() -> crate::error::BioMcpError {
@@ -661,6 +677,54 @@ fn failed_refresh_now(
 ) -> GenCcData {
     let now = timestamp(Utc::now());
     failed_refresh(store, snapshot, state, operation, &now)
+}
+
+#[cfg(test)]
+#[tokio::test(flavor = "current_thread")]
+#[serial_test::serial(gencc_env)]
+async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation() {
+    for seeded in [false, true] {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("gencc");
+        let previous = std::env::var_os("BIOMCP_GENCC_DIR");
+        unsafe { std::env::set_var("BIOMCP_GENCC_DIR", &root) };
+        let store = Store::open().unwrap();
+        if seeded {
+            let body = include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/testdata/sources/gencc/submissions-new-odc1.csv"
+            ));
+            let dataset = GenCcDataset::parse(body, &AtomicBool::new(false)).unwrap();
+            store
+                .publish(
+                    &dataset,
+                    PublishMetadata {
+                        now: "2026-01-01T00:00:00Z",
+                        etag: "\"sync-lock\"",
+                        last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                        endpoint: ENDPOINT,
+                        body_sha256: &format!("{:x}", Sha256::digest(body)),
+                        row_count: dataset.row_count(),
+                    },
+                )
+                .unwrap();
+        }
+        let before = std::fs::read(root.join("state.json")).ok();
+        assert!(store.try_lock_refresh().unwrap());
+        assert!(
+            GenCcClient::new()
+                .unwrap()
+                .sync_with_timeout(Duration::from_millis(40))
+                .await
+                .is_err()
+        );
+        store.unlock_refresh();
+        assert_eq!(std::fs::read(root.join("state.json")).ok(), before);
+        match previous {
+            Some(value) => unsafe { std::env::set_var("BIOMCP_GENCC_DIR", value) },
+            None => unsafe { std::env::remove_var("BIOMCP_GENCC_DIR") },
+        }
+    }
 }
 
 #[cfg(test)]

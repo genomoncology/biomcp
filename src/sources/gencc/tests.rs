@@ -548,6 +548,10 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
             .unwrap()
     };
     let g1 = publish("2026-01-01T00:00:00Z");
+    let g1_name = g1.state.active_generation.as_deref().unwrap();
+    let suffix = g1_name.rsplit_once('-').unwrap().1;
+    assert_eq!(suffix.len(), 32);
+    assert!(suffix.bytes().all(|byte| byte.is_ascii_hexdigit()));
     let same_generation = store.load().unwrap().unwrap();
     assert!(Arc::ptr_eq(&g1.lease, &same_generation.lease));
     drop(same_generation);
@@ -559,7 +563,21 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
     );
     assert_eq!(g1.dataset.assertions().len(), 3);
     drop(g1);
+    let invalid = root.join("generations/invalid-finalized");
+    std::fs::create_dir(&invalid).unwrap();
+    std::fs::write(invalid.join("lease.lock"), b"").unwrap();
+    std::fs::write(invalid.join("manifest.json"), b"invalid").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&invalid, std::fs::Permissions::from_mode(0o700)).unwrap();
+        for name in ["lease.lock", "manifest.json"] {
+            std::fs::set_permissions(invalid.join(name), std::fs::Permissions::from_mode(0o600))
+                .unwrap();
+        }
+    }
     drop(publish("2026-01-04T00:00:00Z"));
+    assert!(!invalid.exists());
     assert_eq!(
         std::fs::read_dir(root.join("generations")).unwrap().count(),
         2
@@ -599,4 +617,378 @@ fn refresh_leader_removes_only_owned_abandoned_temporaries() {
     assert!(!state.exists());
     assert!(!generation.exists());
     assert!(root.join("unrelated.tmp").exists());
+}
+
+#[test]
+#[serial_test::serial(gencc_env)]
+fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
+    use fs2::FileExt;
+
+    use super::store::{Store, StoreError};
+
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("gencc");
+    let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
+    drop(Store::open().unwrap());
+
+    let anchor_path = std::fs::read_dir(temp.path())
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| {
+            path.file_name()
+                .is_some_and(|name| name.to_string_lossy().starts_with(".biomcp-gencc-root-"))
+        })
+        .unwrap();
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(anchor_path)
+        .unwrap();
+    held.lock_exclusive().unwrap();
+    let release = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(60));
+        drop(held);
+    });
+    let started = std::time::Instant::now();
+    drop(Store::open_until(started + Duration::from_secs(1)).unwrap());
+    assert!(started.elapsed() >= Duration::from_millis(50));
+    release.join().unwrap();
+
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(root.join(".store.lock"))
+        .unwrap();
+    held.lock_exclusive().unwrap();
+    let release = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(60));
+        drop(held);
+    });
+    let started = std::time::Instant::now();
+    drop(Store::open_until(started + Duration::from_secs(1)).unwrap());
+    assert!(started.elapsed() >= Duration::from_millis(50));
+    release.join().unwrap();
+
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(root.join(".store.lock"))
+        .unwrap();
+    held.lock_exclusive().unwrap();
+    let result = Store::open_until(std::time::Instant::now() + Duration::from_millis(30));
+    assert!(matches!(result, Err(StoreError::Deadline)));
+    drop(held);
+}
+
+#[test]
+#[ignore = "subprocess helper"]
+fn gencc_subprocess_client() {
+    if let Some(entered) = std::env::var_os("BIOMCP_GENCC_CHILD_HOLD_LEASE") {
+        use super::store::Store;
+        let snapshot = Store::open().unwrap().load().unwrap().unwrap();
+        std::fs::write(entered, b"entered").unwrap();
+        let release = std::env::var_os("BIOMCP_GENCC_CHILD_RELEASE").unwrap();
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while !std::path::Path::new(&release).exists() {
+            assert!(std::time::Instant::now() < deadline);
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert_eq!(snapshot.dataset.assertions().len(), 3);
+        return;
+    }
+    if std::env::var_os("BIOMCP_GENCC_CHILD_CRASH_PUBLISH").is_some() {
+        #[cfg(unix)]
+        unsafe {
+            libc::setrlimit(
+                libc::RLIMIT_CORE,
+                &libc::rlimit {
+                    rlim_cur: 0,
+                    rlim_max: 0,
+                },
+            );
+        }
+        use super::store::{PublishMetadata, Store};
+        let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+        Store::open()
+            .unwrap()
+            .publish(
+                &dataset,
+                PublishMetadata {
+                    now: "2026-02-01T00:00:00Z",
+                    etag: "\"crash-new\"",
+                    last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                    endpoint: ENDPOINT,
+                    body_sha256: &format!("{:x}", Sha256::digest(fixture())),
+                    row_count: dataset.row_count(),
+                },
+            )
+            .unwrap();
+        panic!("configured crash point was not reached");
+    }
+    let Ok(expected) = std::env::var("BIOMCP_GENCC_CHILD_EXPECT") else {
+        return;
+    };
+    let timeout = std::env::var("BIOMCP_GENCC_CHILD_TIMEOUT_MS")
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let data = runtime.block_on(async {
+        super::GenCcClient::new()
+            .unwrap()
+            .acquire(Duration::from_millis(timeout))
+            .await
+    });
+    let actual = format!(
+        "{:?}/{:?}/{:?}",
+        data.status.operation, data.status.freshness, data.status.result
+    );
+    assert_eq!(actual, expected);
+}
+
+#[tokio::test(flavor = "current_thread")]
+#[serial_test::serial(gencc_env)]
+async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
+    use axum::Router;
+    use axum::body::Body;
+    use axum::extract::State as AxumState;
+    use axum::http::{Response, StatusCode};
+    use std::path::{Path, PathBuf};
+    use std::process::{Child, Command, Stdio};
+
+    #[derive(Clone)]
+    struct Barrier {
+        entered: PathBuf,
+        release: PathBuf,
+        requests: Arc<std::sync::atomic::AtomicUsize>,
+        fail: bool,
+        conditional: bool,
+    }
+
+    async fn handler(AxumState(state): AxumState<Barrier>) -> Response<Body> {
+        state.requests.fetch_add(1, Ordering::Relaxed);
+        std::fs::write(&state.entered, b"entered").unwrap();
+        while !state.release.exists() {
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+        if state.fail {
+            return Response::builder()
+                .status(StatusCode::BAD_GATEWAY)
+                .body(Body::from("private provider failure"))
+                .unwrap();
+        }
+        if state.conditional {
+            return Response::builder()
+                .status(StatusCode::NOT_MODIFIED)
+                .header("content-length", "0")
+                .header("etag", "\"fixture-cross-process\"")
+                .header("last-modified", "Sun, 06 Sep 2026 06:00:29 GMT")
+                .body(Body::empty())
+                .unwrap();
+        }
+        Response::builder()
+            .status(StatusCode::OK)
+            .header("content-type", "text/csv")
+            .header("content-length", fixture().len())
+            .header("etag", "\"fixture-cross-process\"")
+            .header("last-modified", "Sun, 06 Sep 2026 06:00:29 GMT")
+            .body(Body::from(fixture()))
+            .unwrap()
+    }
+
+    fn child(root: &Path, endpoint: &str, timeout: u64, expected: &str) -> Child {
+        Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--ignored",
+                "--exact",
+                "sources::gencc::tests::gencc_subprocess_client",
+            ])
+            .env("BIOMCP_GENCC_DIR", root)
+            .env("BIOMCP_GENCC_BASE", endpoint)
+            .env("BIOMCP_GENCC_CHILD_TIMEOUT_MS", timeout.to_string())
+            .env("BIOMCP_GENCC_CHILD_EXPECT", expected)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap()
+    }
+
+    async fn wait(child: &mut Child) {
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+        loop {
+            if let Some(status) = child.try_wait().unwrap() {
+                assert!(status.success());
+                return;
+            }
+            assert!(tokio::time::Instant::now() < deadline, "GenCC child hung");
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    }
+
+    async fn wait_for(path: &Path, child: &mut Child) {
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+        while !path.exists() {
+            assert!(
+                child.try_wait().unwrap().is_none(),
+                "leader exited before HTTP"
+            );
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "leader never entered HTTP"
+            );
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+    }
+
+    fn seed(root: &Path) {
+        use super::store::{PublishMetadata, Store};
+        let restore = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
+        let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
+        Store::open()
+            .unwrap()
+            .publish(
+                &dataset,
+                PublishMetadata {
+                    now: "2026-01-01T00:00:00Z",
+                    etag: "\"fixture-cross-process\"",
+                    last_modified: "Sun, 06 Sep 2026 06:00:29 GMT",
+                    endpoint: ENDPOINT,
+                    body_sha256: &format!("{:x}", Sha256::digest(fixture())),
+                    row_count: dataset.row_count(),
+                },
+            )
+            .unwrap();
+        drop(restore);
+    }
+
+    fn status(data: &super::GenCcData) -> String {
+        format!(
+            "{:?}/{:?}/{:?}",
+            data.status.operation, data.status.freshness, data.status.result
+        )
+    }
+
+    for (conditional, fail) in [(false, false), (false, true), (true, false), (true, true)] {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("gencc");
+        if conditional {
+            seed(&root);
+        }
+        let entered = temp.path().join("entered");
+        let release = temp.path().join("release");
+        let requests = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!(
+            "http://{}/download/action/submissions-export-csv?format=new",
+            listener.local_addr().unwrap()
+        );
+        let server = tokio::spawn(
+            axum::serve(
+                listener,
+                Router::new().fallback(handler).with_state(Barrier {
+                    entered: entered.clone(),
+                    release: release.clone(),
+                    requests: Arc::clone(&requests),
+                    fail,
+                    conditional,
+                }),
+            )
+            .into_future(),
+        );
+        let mut leader = child(
+            &root,
+            &endpoint,
+            3_000,
+            if conditional && fail {
+                "ConditionalRefresh/Stale/Data"
+            } else if conditional {
+                "ConditionalRefresh/Fresh/Data"
+            } else if fail {
+                "InitialDownload/Unavailable/Unknown"
+            } else {
+                "InitialDownload/Fresh/Data"
+            },
+        );
+        wait_for(&entered, &mut leader).await;
+        let mut follower = child(
+            &root,
+            &endpoint,
+            80,
+            if conditional {
+                "RefreshDeferred/Stale/Data"
+            } else {
+                "RefreshDeferred/Unavailable/Unknown"
+            },
+        );
+        wait(&mut follower).await;
+        assert_eq!(requests.load(Ordering::Relaxed), 1);
+        std::fs::write(&release, b"release").unwrap();
+        wait(&mut leader).await;
+        let mut settled = child(
+            &root,
+            &endpoint,
+            1_000,
+            if conditional && fail {
+                "RetrySuppressed/Stale/Data"
+            } else if conditional {
+                "LocalQuery/Fresh/Data"
+            } else if fail {
+                "RetrySuppressed/Unavailable/Unknown"
+            } else {
+                "LocalQuery/Fresh/Data"
+            },
+        );
+        wait(&mut settled).await;
+        assert_eq!(requests.load(Ordering::Relaxed), 1);
+
+        std::fs::remove_file(&entered).unwrap();
+        std::fs::remove_file(&release).unwrap();
+        let local_root = temp.path().join("local-gencc");
+        if conditional {
+            seed(&local_root);
+        }
+        let _root = EnvRestore::set("BIOMCP_GENCC_DIR", local_root.as_os_str());
+        let _base = EnvRestore::set("BIOMCP_GENCC_BASE", std::ffi::OsStr::new(&endpoint));
+        let expected_leader = if conditional && fail {
+            "ConditionalRefresh/Stale/Data"
+        } else if conditional {
+            "ConditionalRefresh/Fresh/Data"
+        } else if fail {
+            "InitialDownload/Unavailable/Unknown"
+        } else {
+            "InitialDownload/Fresh/Data"
+        };
+        let expected_follower = if conditional {
+            "RefreshDeferred/Stale/Data"
+        } else {
+            "RefreshDeferred/Unavailable/Unknown"
+        };
+        let leader = tokio::spawn(async move {
+            super::GenCcClient::new()
+                .unwrap()
+                .acquire(Duration::from_secs(3))
+                .await
+        });
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
+        while !entered.exists() {
+            assert!(!leader.is_finished() && tokio::time::Instant::now() < deadline);
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+        assert_eq!(
+            status(
+                &super::GenCcClient::new()
+                    .unwrap()
+                    .acquire(Duration::from_millis(80))
+                    .await
+            ),
+            expected_follower
+        );
+        std::fs::write(&release, b"release").unwrap();
+        assert_eq!(status(&leader.await.unwrap()), expected_leader);
+        assert_eq!(requests.load(Ordering::Relaxed), 2);
+        server.abort();
+    }
 }
