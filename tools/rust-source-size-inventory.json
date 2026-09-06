@@ -61,11 +61,11 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 5391,
+      "baseline_lines": 5390,
       "floor_lines": 4828,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 563,
+        "delta": 562,
         "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
@@ -253,11 +253,11 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2196,
+      "baseline_lines": 2242,
       "floor_lines": 1847,
       "authorized_increase": {
         "ticket": "1022, 1150",
-        "delta": 349,
+        "delta": 395,
         "reason": "Register dbSNP and carry the task-local variant deadline through shared request, retry, and provider-admission utilities.",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }

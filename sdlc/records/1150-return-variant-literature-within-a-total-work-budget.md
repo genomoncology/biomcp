@@ -140,6 +140,19 @@ Europe PMC leg fails, with exactly one success and one unavailable event. The
 existing real CAR/LDH capture path remains extended through MyVariant citation
 hydration. Full `make test`, `make spec`, and release gates remain unclaimed.
 
+The coordinating full `make test` later stopped after 68 passing Rust tests
+because `put_finishes_security_boundary_when_deadline_expires_after_publish`
+returned the correct pre-publication timeout under suite contention: its
+30-millisecond wall-clock setup had not actually established that publication
+preceded expiry. Remediation removes that timing claim. A deterministic manager
+test now proves post-arm finalization masks deadline checks, while a paused-clock
+concurrency test proves only that put may finish after the deadline: unrelated
+and unarmed operations still time out. The per-invocation safe-return counter
+was replaced by a per-put marker so concurrent work cannot inherit another
+put's shield. Both focused tests passed individually and for 20 parallel
+nextest stress iterations. The interrupted full gate remains failed evidence
+and was not rerun here.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every

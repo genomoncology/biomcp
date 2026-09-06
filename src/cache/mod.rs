@@ -69,10 +69,6 @@ pub(crate) use limits::{
 };
 pub(crate) use manager::SizeAwareCacheManager;
 
-fn begin_variant_article_cache_publication() -> Option<crate::sources::VariantArticleSafeReturnGuard>
-{
-    crate::sources::current_variant_article_deadline().map(|deadline| deadline.enter_safe_return())
-}
 pub(crate) use migration::{
     MigrationOutcome, ensure_body_limited_cache_epoch, ensure_body_limited_cache_epoch_until,
     migrate_http_cache,

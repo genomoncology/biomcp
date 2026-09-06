@@ -29,7 +29,6 @@ struct VariantArticleDeadlineInner {
     at: tokio::time::Instant,
     limit: Duration,
     providers: std::sync::Arc<tokio::sync::Semaphore>,
-    safe_returns: std::sync::atomic::AtomicUsize,
 }
 
 impl VariantArticleDeadline {
@@ -39,7 +38,6 @@ impl VariantArticleDeadline {
                 at: tokio::time::Instant::now() + limit,
                 limit,
                 providers: std::sync::Arc::new(tokio::sync::Semaphore::new(10)),
-                safe_returns: std::sync::atomic::AtomicUsize::new(0),
             }),
         }
     }
@@ -62,29 +60,26 @@ impl VariantArticleDeadline {
         &self,
         future: F,
     ) -> Result<F::Output, VariantArticleDeadlineElapsed> {
+        tokio::time::timeout_at(self.inner.at, future)
+            .await
+            .map_err(|_| VariantArticleDeadlineElapsed)
+    }
+
+    pub(crate) async fn run_with_safe_return<F: Future>(
+        &self,
+        future: F,
+        safe_return: &std::sync::atomic::AtomicBool,
+    ) -> Result<F::Output, VariantArticleDeadlineElapsed> {
         tokio::pin!(future);
         tokio::select! {
             biased;
             _ = tokio::time::sleep_until(self.inner.at) => {
-                while self.inner.safe_returns.load(std::sync::atomic::Ordering::Acquire) > 0 {
-                    tokio::select! {
-                        biased;
-                        output = &mut future => return Ok(output),
-                        _ = tokio::task::yield_now() => {}
-                    }
+                if safe_return.load(std::sync::atomic::Ordering::Acquire) {
+                    return Ok(future.await);
                 }
                 Err(VariantArticleDeadlineElapsed)
             },
             output = &mut future => Ok(output),
-        }
-    }
-
-    pub(crate) fn enter_safe_return(&self) -> VariantArticleSafeReturnGuard {
-        self.inner
-            .safe_returns
-            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
-        VariantArticleSafeReturnGuard {
-            deadline: self.clone(),
         }
     }
 
@@ -95,19 +90,6 @@ impl VariantArticleDeadline {
         self.run(acquire)
             .await?
             .map_err(|_| VariantArticleDeadlineElapsed)
-    }
-}
-
-pub(crate) struct VariantArticleSafeReturnGuard {
-    deadline: VariantArticleDeadline,
-}
-
-impl Drop for VariantArticleSafeReturnGuard {
-    fn drop(&mut self) {
-        self.deadline
-            .inner
-            .safe_returns
-            .fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
     }
 }
 
@@ -141,6 +123,22 @@ pub(crate) fn current_variant_article_deadline() -> Option<VariantArticleDeadlin
 
 pub(crate) async fn with_variant_article_safe_return<F: Future>(future: F) -> F::Output {
     VARIANT_ARTICLE_SAFE_RETURN.scope(true, future).await
+}
+
+pub(crate) async fn run_with_variant_article_safe_return_marker<F, T>(
+    future: F,
+    safe_return: &std::sync::atomic::AtomicBool,
+) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
+where
+    F: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
+{
+    match current_variant_article_deadline() {
+        Some(deadline) => deadline
+            .run_with_safe_return(future, safe_return)
+            .await
+            .map_err(|error| Box::new(error) as Box<dyn std::error::Error + Send + Sync>)?,
+        None => future.await,
+    }
 }
 
 fn ensure_variant_article_time() -> Result<(), BioMcpError> {
@@ -2216,5 +2214,29 @@ mod tests {
         }
         assert!(deadline.acquire_provider().await.is_err());
         drop(permits);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn cache_safe_return_marker_shields_only_its_own_operation() {
+        let deadline = VariantArticleDeadline::from_now(Duration::from_secs(10));
+        let safe_return = std::sync::atomic::AtomicBool::new(true);
+        let started = tokio::time::Instant::now();
+
+        let shielded = deadline
+            .run_with_safe_return(tokio::time::sleep(Duration::from_secs(20)), &safe_return);
+        let unrelated = deadline.run(std::future::pending::<()>());
+        let (shielded, unrelated) = tokio::join!(shielded, unrelated);
+
+        assert!(shielded.is_ok());
+        assert!(unrelated.is_err());
+        assert_eq!(started.elapsed(), Duration::from_secs(20));
+
+        let unarmed = std::sync::atomic::AtomicBool::new(false);
+        assert!(
+            deadline
+                .run_with_safe_return(std::future::pending::<()>(), &unarmed)
+                .await
+                .is_err()
+        );
     }
 }
