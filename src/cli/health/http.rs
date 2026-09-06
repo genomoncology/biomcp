@@ -7,6 +7,35 @@ use crate::error::BioMcpError;
 use super::HealthStatus;
 use super::runner::{ProbeClass, ProbeOutcome, health_row, outcome};
 
+pub(in crate::cli::health) async fn check_gencc_head(
+    api: &str,
+    affects: Option<&'static str>,
+) -> ProbeOutcome {
+    let start = Instant::now();
+    let healthy = match crate::sources::gencc::GenCcClient::new() {
+        Ok(client) => client.health().await,
+        Err(()) => false,
+    };
+    let elapsed = start.elapsed().as_millis();
+    if healthy {
+        outcome(
+            health_row(api, HealthStatus::Ok, format!("{elapsed}ms"), None, None),
+            ProbeClass::Healthy,
+        )
+    } else {
+        outcome(
+            health_row(
+                api,
+                HealthStatus::Error,
+                format!("{elapsed}ms (error)"),
+                affects,
+                None,
+            ),
+            ProbeClass::Error,
+        )
+    }
+}
+
 pub(in crate::cli::health) fn configured_key(env_var: &str) -> Option<String> {
     configured_key_from_value(std::env::var(env_var).ok())
 }

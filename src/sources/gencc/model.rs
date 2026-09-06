@@ -97,6 +97,7 @@ pub struct GenCcAssertion {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct GenCcDataset {
     assertions: Vec<GenCcAssertion>,
+    row_count: usize,
 }
 
 impl GenCcDataset {
@@ -117,6 +118,7 @@ impl GenCcDataset {
         }
 
         let mut rows = Vec::new();
+        let mut row_count = 0;
         let mut duplicates: HashMap<(String, u32), usize> = HashMap::new();
         for (row_index, record) in reader.records().enumerate() {
             if cancelled.load(AtomicOrdering::Relaxed) {
@@ -126,6 +128,7 @@ impl GenCcDataset {
                 return Err(ParseError::RowLimit);
             }
             let record = record.map_err(|_| ParseError::Invalid)?;
+            row_count = row_index + 1;
             if record.len() != HEADER.len() {
                 return Err(ParseError::Invalid);
             }
@@ -157,11 +160,18 @@ impl GenCcDataset {
             });
         rows.retain(|row| greatest.get(row.sgc_id.as_str()) == Some(&row.version));
         rows.sort_by(assertion_order);
-        Ok(Self { assertions: rows })
+        Ok(Self {
+            assertions: rows,
+            row_count,
+        })
     }
 
     pub(crate) fn assertions(&self) -> &[GenCcAssertion] {
         &self.assertions
+    }
+
+    pub(crate) fn row_count(&self) -> usize {
+        self.row_count
     }
 
     pub(crate) fn symbol_hgnc_ids(&self, symbol: &str) -> Vec<String> {
@@ -309,11 +319,13 @@ fn parse_optional_date(value: &str) -> Result<Option<String>, ParseError> {
         NaiveDateTime::parse_from_str(value, "%Y-%m-%d %H:%M:%S")
             .map_err(|_| ParseError::Invalid)?
             .date()
-    } else {
+    } else if value.is_ascii() && value.as_bytes().get(10) == Some(&b'T') {
         DateTime::parse_from_rfc3339(value)
             .map_err(|_| ParseError::Invalid)?
             .with_timezone(&Utc)
             .date_naive()
+    } else {
+        return Err(ParseError::Invalid);
     };
     Ok(Some(date.format("%Y-%m-%d").to_string()))
 }

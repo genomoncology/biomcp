@@ -56,12 +56,25 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     assert paths
-    assert len(paths) <= MAX_PACKAGE_FILES
+    assert len(paths) == MAX_PACKAGE_FILES
     assert not any(path == "testdata" or path.startswith("testdata/") for path in paths)
     for private_root in ("architecture", "sdlc"):
         assert not any(
             path == private_root or path.startswith(f"{private_root}/") for path in paths
         )
+    for required in (
+        "docs/sources/gencc.md",
+        "src/entities/gene/gencc.rs",
+        "src/entities/gene/gencc/tests.rs",
+        "src/sources/gencc.rs",
+        "src/sources/gencc/model.rs",
+        "src/sources/gencc/store.rs",
+        "src/sources/gencc/tests.rs",
+        "src/sources/mygene/tests/live.rs",
+        "tests/test_gencc_docs_contract.py",
+    ):
+        assert required in paths
+    assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
         [sys.executable, CHECKER, "--manifest"],
         cwd=ROOT,

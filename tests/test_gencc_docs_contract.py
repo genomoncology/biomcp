@@ -28,3 +28,27 @@ def test_gencc_schema_and_receipt_are_registered() -> None:
     )
     assert '"gencc"' in schema
     assert "gencc/submissions-new-odc1.csv" in receipts
+
+
+def test_gencc_operator_and_source_references_are_complete() -> None:
+    references = "\n".join(
+        (ROOT / path).read_text(encoding="utf-8")
+        for path in (
+            "docs/reference/configuration.md",
+            "docs/reference/data-sources.md",
+            "docs/reference/source-licensing.md",
+            "docs/user-guide/cli-reference.md",
+            "docs/troubleshooting.md",
+            "docs/llms-full.txt",
+        )
+    )
+    for required in (
+        "BIOMCP_GENCC_DIR",
+        "gene gencc",
+        "GenCC",
+        "gencc sync",
+        "thegencc.org",
+        "CC0 1.0",
+        "gene gencc section",
+    ):
+        assert required in references

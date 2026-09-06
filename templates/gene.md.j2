@@ -307,6 +307,11 @@ No ClinGen records returned for this gene query.
 {% for row in gencc.assertions -%}
 | {{ row.disease.label }} ({{ row.disease.id }}) | {{ row.classification.label }} ({{ row.classification.code }}) | {{ row.mode_of_inheritance.label }} ({{ row.mode_of_inheritance.id }}) | {{ row.submitter.label }} ({{ row.submitter.id }}) | {{ row.evaluated_date or "-" }} | {{ row.submitted_date or "-" }} | [{{ row.id }}]({{ row.source_record_url }}) |
 {% endfor -%}
+{% for row in gencc.assertions -%}
+{% if row.public_report_url or row.assertion_criteria_url or row.publications -%}
+- {{ row.id }} links:{% if row.public_report_url %} [public report]({{ row.public_report_url }}){% endif %}{% if row.assertion_criteria_url %} [assertion criteria]({{ row.assertion_criteria_url }}){% endif %}{% for publication in row.publications %} [PMID {{ publication.pmid }}]({{ publication.url }}){% endfor %}
+{% endif -%}
+{% endfor -%}
 {% if gencc.truncated %}Showing 100 of {{ gencc.total_matching_assertions }} assertions.
 {% endif -%}
 {% else -%}

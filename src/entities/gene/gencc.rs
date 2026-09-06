@@ -14,6 +14,13 @@ use crate::sources::gencc::{
 
 const IDENTITY_MESSAGE: &str =
     "GenCC gene identity is inconclusive; no GenCC absence can be concluded.";
+const STALE_FAILED_MESSAGE: &str =
+    "GenCC refresh failed; results come from the last validated dataset.";
+const STALE_PROGRESS_MESSAGE: &str =
+    "GenCC refresh is still in progress; results come from the last validated dataset.";
+const UNAVAILABLE_MESSAGE: &str = "GenCC data is unavailable; no GenCC absence can be concluded.";
+const UNAVAILABLE_PROGRESS_MESSAGE: &str =
+    "GenCC refresh is still in progress; no GenCC absence can be concluded.";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GeneGenCc {
@@ -79,26 +86,7 @@ async fn fetch_section(
             );
         }
     };
-    let data = match tokio::time::timeout(timeout, client.acquire()).await {
-        Ok(data) => data,
-        Err(_) => GenCcData {
-            dataset: None,
-            status: GenCcStatus {
-                freshness: GenCcFreshness::Unavailable,
-                result: GenCcResult::Unknown,
-                operation: GenCcOperation::RefreshDeferred,
-                checked_at: None,
-                retrieved_at: None,
-                attempted_at: None,
-                etag: None,
-                last_modified: None,
-                upstream_version: None,
-                message: Some(
-                    "GenCC refresh is still in progress; no GenCC absence can be concluded.".into(),
-                ),
-            },
-        },
-    };
+    let data = client.acquire(timeout).await;
     project(symbol, hgnc.as_deref(), data)
 }
 
@@ -107,6 +95,8 @@ fn project(
     resolved_hgnc: Option<&str>,
     data: GenCcData,
 ) -> (GeneGenCc, SectionOutcome) {
+    // Keep the shared generation lock alive through the complete index projection.
+    let _lease = data.lease;
     let Some(dataset) = data.dataset else {
         let section = GeneGenCc {
             assertions: Vec::new(),
@@ -197,20 +187,22 @@ fn valid_symbol(value: &str) -> bool {
 }
 
 pub(super) fn section_outcome(section: &GeneGenCc) -> SectionOutcome {
+    let message = match (
+        section.status.operation,
+        section.status.freshness,
+        section.status.message.as_deref(),
+    ) {
+        (GenCcOperation::IdentityMatch, _, _) => IDENTITY_MESSAGE,
+        (GenCcOperation::RefreshDeferred, GenCcFreshness::Stale, _) => STALE_PROGRESS_MESSAGE,
+        (GenCcOperation::RefreshDeferred, _, _) => UNAVAILABLE_PROGRESS_MESSAGE,
+        (_, GenCcFreshness::Stale, _) => STALE_FAILED_MESSAGE,
+        _ => UNAVAILABLE_MESSAGE,
+    };
     match (section.status.freshness, section.status.result) {
         (GenCcFreshness::Fresh, GenCcResult::Data) => SectionOutcome::data("GenCC"),
         (GenCcFreshness::Fresh, GenCcResult::Empty) => SectionOutcome::empty("GenCC"),
-        (GenCcFreshness::Stale, GenCcResult::Data) => SectionOutcome::degraded(
-            ["GenCC"],
-            "GenCC refresh failed; results come from the last validated dataset.",
-        ),
-        _ => SectionOutcome::unavailable(match section.status.message.as_deref() {
-            Some(IDENTITY_MESSAGE) => IDENTITY_MESSAGE,
-            Some("GenCC refresh is still in progress; no GenCC absence can be concluded.") => {
-                "GenCC refresh is still in progress; no GenCC absence can be concluded."
-            }
-            _ => "GenCC data is unavailable; no GenCC absence can be concluded.",
-        }),
+        (GenCcFreshness::Stale, GenCcResult::Data) => SectionOutcome::degraded(["GenCC"], message),
+        _ => SectionOutcome::unavailable(message),
     }
 }
 

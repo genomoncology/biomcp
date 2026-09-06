@@ -6,6 +6,8 @@ separate ClinGen section.
 
 Run `biomcp get gene ODC1 gencc` to request the section and `biomcp gencc sync`
 to explicitly refresh the local dataset.
+`biomcp health --api GenCC` uses a quota-exempt HEAD request and reports that
+failures affect the `gene gencc section`; it never downloads or publishes data.
 
 The `gencc` object always contains `assertions`, `total_matching_assertions`,
 `truncated`, and `status`. Assertions retain their submitter, disease,
@@ -16,8 +18,10 @@ as JSON `null`.
 
 BioMCP downloads GenCC's new-format CSV to a private durable store. A validated
 dataset is fresh for seven days. Due refreshes use both ETag and Last-Modified
-conditional headers; failed automatic refreshes are retried no more than once
-per day. Global `--no-cache` does not discard or force-refresh this dataset.
+conditional headers; failed automatic refreshes are retried no more than once per day.
+Set `BIOMCP_GENCC_DIR` to an absolute private root when the platform
+data directory is unsuitable. Global `--no-cache` does not discard or
+force-refresh this dataset.
 
 GenCC publishes the data weekly and asks clients not to poll more than once per
 day. The documented limit is 20 successful downloads per IP per day;

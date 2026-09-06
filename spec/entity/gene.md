@@ -42,7 +42,8 @@ The checked-in gene schema must validate the actual JSON emitted from the captur
 
 ```bash
 gene_json="$(../../tools/biomcp-ci --json get gene BRAF)"
-GENE_JSON="$gene_json" uv run --no-sync python3 - ../../skills/schemas/gene.json <<'PY' | mustmatch like 'gene schema matches fixture-backed CLI payload'
+gencc_gene_json="$(../../tools/biomcp-ci --json get gene ODC1 gencc)"
+GENE_JSON="$gene_json" GENCC_GENE_JSON="$gencc_gene_json" uv run --no-sync python3 - ../../skills/schemas/gene.json <<'PY' | mustmatch like 'gene schema matches fixture-backed CLI payload'
 import json
 import os
 from copy import deepcopy
@@ -56,6 +57,7 @@ Draft202012Validator.check_schema(schema)
 validator = Draft202012Validator(schema)
 payload = json.loads(os.environ["GENE_JSON"])
 validator.validate(payload)
+validator.validate(json.loads(os.environ["GENCC_GENE_JSON"]))
 
 without_coordinates = deepcopy(payload)
 without_coordinates.pop("genomic_coordinates")
@@ -189,6 +191,75 @@ TYPED JSON
 "clingen": {
 "outcome": "degraded"
 "section_sources":'
+```
+
+## GenCC submission-level validity
+
+The receipt-backed new-format fixture preserves the three independent ODC1
+assertions. JSON, Markdown, all-section, and batch surfaces keep their
+evaluated-date order and source-specific lifecycle state without claiming a
+consensus.
+
+```bash
+../../tools/biomcp-ci list gene | mustmatch like 'get gene <symbol> gencc`
+GenCC submission-level gene-disease validity'
+../../tools/biomcp-ci get gene --help | mustmatch like 'clingen, gencc, constraint'
+../../tools/biomcp-ci gencc --help | mustmatch like 'sync  Revalidate the local GenCC gene-disease validity dataset'
+../../tools/biomcp-ci --json get gene ODC1 gencc \
+  | jq -e '.gencc.assertions | ((length == 3) and (map(.submitter.label) == ["G2P", "PanelApp Australia", "Labcorp Genetics (formerly Invitae)"]))' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json get gene ODC1 gencc \
+  | jq -e '.gencc.total_matching_assertions == 3 and (.gencc.truncated | not) and .gencc.status.freshness == "fresh" and .gencc.status.result == "data" and .section_outcomes.gencc == {outcome:"data", sources:["GenCC"]} and (._meta.section_sources | any(.key == "gencc" and .label == "GenCC gene-disease validity" and .outcome == "data" and .sources == ["GenCC"]))' \
+  | mustmatch 'true'
+../../tools/biomcp-ci get gene ODC1 gencc \
+  | mustmatch like '## GenCC gene-disease validity
+G2P (GENCC:000112)
+PanelApp Australia (GENCC:000111)
+Labcorp Genetics (formerly Invitae) (GENCC:000106)
+[PMID 30239107](https://pubmed.ncbi.nlm.nih.gov/30239107/)'
+BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 ../../tools/biomcp-ci --json get gene ODC1 all \
+  | jq -e '.gencc.assertions | length == 3' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json batch gene ODC1,ODC1 --sections gencc \
+  | jq -e '.summary == {total:2,succeeded:2,failed:0} and (.items | all(.status == "ok" and (.result.gencc.assertions | length == 3)))' \
+  | mustmatch 'true'
+```
+
+GenCC and ClinGen remain independent sections and provenance owners. The same
+GenCC projection is available through raw MCP text/JSON and typed MCP `get`.
+
+```bash
+BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE" BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 ../../tools/biomcp-ci --json get gene TP53 clingen gencc \
+  | jq -e '.clingen.validity[0].disease == "Li-Fraumeni syndrome" and .gencc.status.result == "empty" and .section_outcomes.clingen.sources == ["ClinGen"] and .section_outcomes.gencc.sources == ["GenCC"]' \
+  | mustmatch 'true'
+BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache" \
+  bash ../fixtures/run-section-outcome-mcp.sh ../.. gencc-surfaces \
+  | mustmatch like 'RAW TEXT
+GenCC gene-disease validity
+G2P (GENCC:000112)
+RAW JSON
+"gencc": {
+"freshness": "fresh"
+TYPED JSON
+"section_outcomes": {
+"gencc": {
+"outcome": "data"'
+```
+
+Health uses a metadata-only HEAD. An explicit sync then revalidates the
+immutable generation with both validators and a zero-body `304`; ordinary
+fresh reuse above performs no second download.
+
+```bash
+../../tools/biomcp-ci --json health --api GenCC \
+  | jq -e '.total == 1 and .healthy == 1 and .rows[0].api == "GenCC" and .rows[0].status == "ok"' \
+  | mustmatch 'true'
+grep -F 'HEAD /gencc/download/action/submissions-export-csv?format=new' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
+  | mustmatch like 'format=new'
+../../tools/biomcp-ci --json gencc sync | jq -e '.source == "gencc" and (.updated | not)' | mustmatch 'true'
+grep -F 'GET /gencc/download/action/submissions-export-csv?format=new If-None-Match="6ebdbf28b305e99e349ed827a219214b" If-Modified-Since=Sun, 06 Sep 2026 06:00:29 GMT' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
+  | mustmatch like 'If-None-Match="6ebdbf28b305e99e349ed827a219214b"'
+test "$(grep -c '^GET /gencc/download/action/submissions-export-csv?format=new' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG")" -eq 2
 ```
 
 ## All-Section Warm Budget

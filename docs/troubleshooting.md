@@ -86,6 +86,12 @@ that the current account cannot change. BioMCP fails before reading or writing
 provider responses or article queries; do not bypass this check by making the
 directory world-readable.
 
+For the `gene gencc section`, `--no-cache` does not bypass the private GenCC
+dataset. Check `biomcp health --api GenCC` for the quota-exempt HEAD probe and
+run `biomcp gencc sync` for an explicit revalidation. If BioMCP cannot secure
+the default data root, set `BIOMCP_GENCC_DIR` to an absolute private directory
+whose parent already exists; relative paths and linked components are rejected.
+
 ## 3) ClinicalTrials.gov API v2 quirks
 
 ClinicalTrials.gov search behavior can vary with complex query combinations and pagination tokens.

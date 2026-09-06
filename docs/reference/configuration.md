@@ -32,6 +32,7 @@ internal fixture overrides and release/install variables.
 | `BIOMCP_WHO_DIR` | Local WHO Prequalification download root |
 | `BIOMCP_CVX_DIR` | Local CDC CVX/MVX download root |
 | `BIOMCP_GTR_DIR` | Local GTR download root |
+| `BIOMCP_GENCC_DIR` | Private durable GenCC normalized-dataset root; defaults to the platform data directory under `biomcp/gencc` |
 | `BIOMCP_WHO_IVD_DIR` | Local WHO IVD download root |
 | `cache.toml` | Persistent cache defaults under the resolved config root |
 | `RUST_LOG` | stderr tracing filter; default CLI behavior is quiet, and `tools/biomcp-ci` sets `error` |
@@ -46,7 +47,8 @@ repairs overly broad permissions inside the managed root and refuses linked
 regular files rather than risking access through another pathname.
 The global `--no-cache` flag bypasses these HTTP and session stores completely
 for one invocation. It does not override explicit output paths or provider
-retention.
+retention. In particular, it neither deletes nor force-refreshes the GenCC
+durable dataset; use `biomcp gencc sync` for explicit revalidation.
 `BIOMCP_CACHE_MAX_AGE` overrides `[cache].max_age_secs`; both values are
 positive integer seconds.
 

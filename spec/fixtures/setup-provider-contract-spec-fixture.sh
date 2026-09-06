@@ -25,6 +25,7 @@ ema_dir="$fixture_root/ema-human"
 who_dir="$fixture_root/who-pq"
 who_ivd_dir="$fixture_root/who-ivd"
 gtr_dir="$fixture_root/gtr"
+gencc_dir="$fixture_root/gencc"
 : >"$request_log"
 cp -R "$script_dir/ema-human" "$ema_dir"
 cp -R "$script_dir/who-pq" "$who_dir"
@@ -78,6 +79,17 @@ MYGENE = {
     'symbol:"BRCA1"': fixture("mygene/get_brca1_20260811.json"),
     'symbol:"EGFR"': fixture("mygene/get_egfr_20260811.json"),
     'symbol:"ERBB2"': fixture("mygene/get_erbb2_20260811.json"),
+    'symbol:"ODC1"': json.dumps({
+        "total": 1,
+        "hits": [{
+            "symbol": "ODC1",
+            "name": "ornithine decarboxylase 1",
+            "entrezgene": 4953,
+            "type_of_gene": "protein-coding",
+            "ensembl": {"gene": "ENSG00000115758"},
+            "HGNC": 8109,
+        }],
+    }).encode("utf-8"),
     'symbol:"TP53"': json.dumps({
         "total": 1,
         "hits": [{
@@ -93,6 +105,9 @@ MYGENE = {
 CLINGEN_LOOKUP_TP53 = fixture("clingen/lookup_tp53.json")
 CLINGEN_VALIDITY_TP53 = fixture("clingen/validity_tp53.csv")
 CLINGEN_DOSAGE_TP53 = fixture("clingen/dosage_tp53.csv")
+GENCC_ODC1 = fixture("gencc/submissions-new-odc1.csv")
+GENCC_ETAG = '"6ebdbf28b305e99e349ed827a219214b"'
+GENCC_LAST_MODIFIED = "Sun, 06 Sep 2026 06:00:29 GMT"
 OPENFDA_LABEL = fixture("openfda/label_keytruda_20260811.json")
 OPENFDA_DRUGSFDA = fixture("openfda/drugsfda_imatinib_20260811.json")
 OPENFDA_DEVICE_510K = fixture("openfda/device_510k_brca1_20260811.json")
@@ -140,10 +155,33 @@ def send(handler, status, body, content_type="application/json"):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def do_HEAD(self):
+        parsed = urlparse(self.path)
+        with REQUEST_LOG.open("a", encoding="utf-8") as log:
+            log.write(f"HEAD {self.path}\n")
+        if (
+            parsed.path == "/gencc/download/action/submissions-export-csv"
+            and parse_qs(parsed.query) == {"format": ["new"]}
+        ):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=UTF-8")
+            self.send_header("Content-Length", str(len(GENCC_ODC1)))
+            self.send_header("ETag", GENCC_ETAG)
+            self.send_header("Last-Modified", GENCC_LAST_MODIFIED)
+            self.end_headers()
+            return
+        send(self, 404, b'{"error":"fixture route not found"}')
+
     def do_GET(self):
         parsed = urlparse(self.path)
         with REQUEST_LOG.open("a", encoding="utf-8") as log:
-            log.write(f"GET {self.path}\n")
+            conditional = ""
+            if parsed.path == "/gencc/download/action/submissions-export-csv":
+                conditional = (
+                    f" If-None-Match={self.headers.get('If-None-Match', '')}"
+                    f" If-Modified-Since={self.headers.get('If-Modified-Since', '')}"
+                )
+            log.write(f"GET {self.path}{conditional}\n")
 
         if parsed.path == "/healthz":
             send(self, 200, b'{"status":"ok"}')
@@ -177,6 +215,29 @@ class Handler(BaseHTTPRequestHandler):
                 import time
                 time.sleep(0.2)
             send(self, 200, CLINGEN_DOSAGE_TP53, "text/csv")
+            return
+        if (
+            parsed.path == "/gencc/download/action/submissions-export-csv"
+            and parse_qs(parsed.query) == {"format": ["new"]}
+        ):
+            if (
+                self.headers.get("If-None-Match") == GENCC_ETAG
+                and self.headers.get("If-Modified-Since") == GENCC_LAST_MODIFIED
+            ):
+                self.send_response(304)
+                self.send_header("Content-Type", "text/csv; charset=UTF-8")
+                self.send_header("Content-Length", "0")
+                self.send_header("ETag", GENCC_ETAG)
+                self.send_header("Last-Modified", GENCC_LAST_MODIFIED)
+                self.end_headers()
+            else:
+                self.send_response(200)
+                self.send_header("Content-Type", "text/csv; charset=UTF-8")
+                self.send_header("Content-Length", str(len(GENCC_ODC1)))
+                self.send_header("ETag", GENCC_ETAG)
+                self.send_header("Last-Modified", GENCC_LAST_MODIFIED)
+                self.end_headers()
+                self.wfile.write(GENCC_ODC1)
             return
         if parsed.path == "/openfda/drug/label.json":
             search = parse_qs(parsed.query).get("search", [""])[0].lower()
@@ -348,6 +409,8 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_REACTOME_BASE=%q\n' "$base_url/reactome/ContentService"
   printf 'export BIOMCP_WIKIPATHWAYS_BASE=%q\n' "$base_url/wikipathways"
   printf 'export BIOMCP_NCI_CTS_BASE=%q\n' "$base_url/nci/api/v2"
+  printf 'export BIOMCP_GENCC_BASE=%q\n' "$base_url/gencc/download/action/submissions-export-csv?format=new"
+  printf 'export BIOMCP_GENCC_DIR=%q\n' "$gencc_dir"
   printf 'export NCI_API_KEY=%q\n' 'fixture-nci-key'
   printf 'export BIOMCP_EMA_DIR=%q\n' "$ema_dir"
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"

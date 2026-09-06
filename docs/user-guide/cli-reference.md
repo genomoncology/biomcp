@@ -453,7 +453,7 @@ and its `.exact` form; `patient.drug.medicinalproduct[.exact]`;
 ```bash
 biomcp get gene BRAF
 biomcp get gene BRAF pathways ontology diseases protein
-biomcp get gene BRAF go interactions civic expression hpa druggability clingen constraint
+biomcp get gene BRAF go interactions civic expression hpa druggability clingen gencc constraint
 biomcp get gene BRCA1 diagnostics
 biomcp get gene ERBB2 funding
 biomcp get gene BRAF all
@@ -467,6 +467,10 @@ canonical section outcome is `degraded` when one family has data and the other
 is unavailable, and `unavailable` when neither has data and an absence cannot
 be concluded. A missing dosage classification is omitted, while a literal
 ClinGen `No Evidence for ...` classification is retained as data.
+
+The separate `gencc` section returns GenCC submission-level gene–disease
+validity assertions without merging submitters or computing consensus. Run
+`biomcp gencc sync` to revalidate its private weekly dataset explicitly.
 
 `diagnostics` and `funding` stay opt-in and are not included in
 `biomcp get gene <symbol> all`.

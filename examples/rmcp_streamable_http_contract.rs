@@ -432,17 +432,17 @@ async fn main() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     let mode = args.next().ok_or_else(|| {
         anyhow::anyhow!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions|clingen-surfaces> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions|clingen-surfaces|gencc-surfaces> <port>"
         )
     })?;
     let port = args.next().ok_or_else(|| {
         anyhow::anyhow!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions|clingen-surfaces> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions|clingen-surfaces|gencc-surfaces> <port>"
         )
     })?;
     if args.next().is_some() {
         anyhow::bail!(
-            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions|clingen-surfaces> <port>"
+            "usage: rmcp_streamable_http_contract <remote-workflow|boundaries|typed-tools|section-outcome|section-outcome-interactions|clingen-surfaces|gencc-surfaces> <port>"
         );
     }
 
@@ -501,6 +501,14 @@ async fn main() -> anyhow::Result<()> {
             let raw_text = call_biomcp(&client, "biomcp get gene TP53 clingen").await?;
             let raw_json = call_biomcp(&client, "biomcp --json get gene TP53 clingen").await?;
             let typed = call_typed_get(&client, "gene", "TP53", &["clingen"]).await?;
+            println!("RAW TEXT\n{}", first_text(&raw_text)?);
+            println!("RAW JSON\n{}", first_text(&raw_json)?);
+            println!("TYPED JSON\n{}", first_text(&typed)?);
+        }
+        "gencc-surfaces" => {
+            let raw_text = call_biomcp(&client, "biomcp get gene ODC1 gencc").await?;
+            let raw_json = call_biomcp(&client, "biomcp --json get gene ODC1 gencc").await?;
+            let typed = call_typed_get(&client, "gene", "ODC1", &["gencc"]).await?;
             println!("RAW TEXT\n{}", first_text(&raw_text)?);
             println!("RAW JSON\n{}", first_text(&raw_json)?);
             println!("TYPED JSON\n{}", first_text(&typed)?);

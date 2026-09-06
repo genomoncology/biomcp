@@ -47,6 +47,7 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 | CIViC | 1 | direct_api | none | open community knowledgebase; CIViC content is published for unrestricted reuse | reuse is broadly permitted; attribution remains best practice | <https://civicdb.org/home> |
 | ClinGen | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://clinicalgenome.org/> |
 | ClinGen LDH | 1 | direct_api | none | public ClinGen curation resources with publication and attribution expectations | generally queryable and reusable, but users should preserve attribution and source context | <https://ldh.genome.network> |
+| GenCC | 1 | direct_api | none | CC0 1.0 data with requested attribution to GenCC and contributing submitters | reuse is permitted under CC0; preserve GenCC and submitter attribution and the non-diagnostic context | <https://thegencc.org/terms> |
 | ClinicalTrials.gov | 1 | direct_api | none | U.S. government public information service | records are broadly reusable; preserve identifiers and avoid implying NLM endorsement | <https://clinicaltrials.gov/data-api/about-api> |
 | ComplexPortal | 1 | direct_api | none | EMBL-EBI open data service | reuse follows EMBL-EBI resource terms and any embedded third-party source obligations | <https://www.ebi.ac.uk/complexportal/> |
 | CPIC | 1 | direct_api | none | CPIC content is published under CC0 with trademark and attribution guidance | content reuse is broadly allowed, but the CPIC mark/logo has separate restrictions | <https://cpicpgx.org/license/> |
@@ -204,6 +205,18 @@ The canonical machine-readable inventory for this page lives in [`sources.json`]
 - Official terms URL: <https://clinicaltrials.gov/data-api/about-api>
 - Reviewed on: `2026-03-20`
 - Notes: BioMCP uses the public v2 API as the baseline trial backend.
+
+### GenCC
+
+- BioMCP surfaces: `get gene <symbol> gencc; gencc sync`
+- Integration mode: `direct_api`
+- BioMCP auth: `none`
+- Provider access / registration: public weekly new-format CSV export
+- License / terms summary: CC0 1.0 data with requested attribution to GenCC and contributing submitters
+- Redistribution / reuse summary: reuse is permitted under CC0; preserve GenCC and submitter attribution and the non-diagnostic context
+- Official terms URL: <https://thegencc.org/terms>
+- Reviewed on: `2026-09-06`
+- Notes: BioMCP keeps a private normalized local index and exposes separate submission-level assertions without computing consensus. The public export excludes restricted OMIM data.
 
 ### ComplexPortal
 
