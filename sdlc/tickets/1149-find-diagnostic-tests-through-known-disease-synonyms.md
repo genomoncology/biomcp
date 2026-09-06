@@ -26,7 +26,10 @@ punctuation and non-ASCII code points; never apply the disease searcher's
 `carcinoma` rewrite. Provider requests retain the original trimmed bytes and
 the existing Lucene escaping. Reject a disease filter over 512 bytes, fewer
 than three alphanumeric characters, or containing controls before resolver or
-local-source work.
+local-source work. The entity messages are exactly `--disease must be at most
+512 UTF-8 bytes`, the existing `--disease must contain at least 3 alphanumeric
+characters for diagnostic disease matching`, and `--disease must not contain
+control characters`.
 
 The resolver has one five-second total deadline, at most two logical MyDisease
 requests, the existing shared HTTP cache policy, and an 8 MiB body cap per
@@ -34,7 +37,17 @@ response:
 
 - A canonical MONDO/DOID ID performs exactly one existing detail GET.
 - MESH/OMIM/ICD10CM performs one existing xref query with `size=5`, then one
-  detail GET only when exactly one distinct canonical identity remains.
+  detail GET only when exactly one distinct canonical identity remains. The
+  selected detail must itself contain the requested kind/value in its
+  kind-specific fields: MESH in `mondo.xrefs.mesh`,
+  `disease_ontology.xrefs.mesh`, or `umls.mesh`; OMIM in
+  `mondo.xrefs.omim` or `disease_ontology.xrefs.omim`; ICD10CM in
+  `mondo.xrefs.icd10`, `disease_ontology.xrefs.icd10`, or `umls.icd10am`.
+  Compare trimmed ASCII-case-insensitively after stripping at most one matching
+  `MESH:`, `OMIM:`, `ICD10:`, or `ICD10CM:` prefix from both requested and
+  provider values. An irrelevant kind, missing value, or conflicting value is
+  an inconsistent `unavailable` result; never accept the query hit alone or
+  spend a third request searching for a replacement.
 - Free text performs one existing name/synonym query with `size=50`, `from=0`,
   and `MYDISEASE_SEARCH_FIELDS`. Locally retain only hits where the normalized
   query equals the primary MONDO/DO name or one declared MONDO/DO exact
@@ -73,9 +86,11 @@ same predicate with requested term only. A row records the first matching term:
 }
 ```
 
-`resolved_id` is a string for canonical/synonym matches and null for a literal
-match without a resolved identity. Omit `disease_match` only when no disease
-filter exists. Provider condition strings remain unchanged.
+Whenever resolution is `resolved`, `resolved_id` is that ID for **every** match
+kind, including a requested-term match. It is null for requested matches under
+absent, ambiguous, unavailable, or WHO-only inapplicable resolution;
+canonical/synonym kinds cannot occur in those states. Omit `disease_match` only
+when no disease filter exists. Provider condition strings remain unchanged.
 
 Within disease-filtered results, rank requested before canonical before
 synonym; synonyms tie by their resolver order. Then retain the current
@@ -120,16 +135,22 @@ MCP JSON use the same serializer:
 }]
 ```
 
-Omit `disease_resolution` when no disease filter exists. Successful resolver
-outcomes (`resolved`, `absent`, `ambiguous`) name MyDisease; unavailable and
-WHO-only inapplicable use null source. Only resolved has ID/name and synonym
-counts. Resolved has null message. The other exact messages are `No exact
-MyDisease identity matched; the literal disease term was searched.`, `Multiple
-exact MyDisease identities matched; synonyms were not expanded.`, `Disease
-synonym resolution is temporarily unavailable; the literal disease term was
-searched.`, and `WHO IVD uses the literal disease term; ontology synonyms are
-not applied.`, respectively. Do not expose provider text, URLs, paths, or
-credentials.
+Omit `disease_resolution` when no disease filter exists. Otherwise serialize
+every key shown above; no key uses omission. The exact outcome table is:
+
+| outcome | `source` | `resolved_id` / `canonical_name` | `synonyms_returned` / `synonyms_truncated` | `message` |
+| --- | --- | --- | --- | --- |
+| `resolved` | `"MyDisease.info"` | nonblank strings | exact retained count `0..20` / whether additional valid unique synonyms existed | null |
+| `absent` | `"MyDisease.info"` | null / null | `0` / `false` | `No exact MyDisease identity matched; the literal disease term was searched.` |
+| `ambiguous` | `"MyDisease.info"` | null / null | `0` / `false` | `Multiple exact MyDisease identities matched; synonyms were not expanded.` |
+| `unavailable` | null | null / null | `0` / `false` | `Disease synonym resolution is temporarily unavailable; the literal disease term was searched.` |
+| `inapplicable` | null | null / null | `0` / `false` | `WHO IVD uses the literal disease term; ontology synonyms are not applied.` |
+
+`query` is always the caller's trimmed, otherwise unchanged disease string.
+Malformed detail, requested-ID mismatch, requested-xref mismatch, incomplete
+query page, HTTP/transport/body-limit error, and deadline all use the one
+unavailable row without leaking their internal cause. Do not expose provider
+text, URLs, paths, or credentials.
 
 Emit one source-status row for each selected source in `gtr`, then `who-ivd`
 order. A source that loaded and retained rows is data; loaded with none is
@@ -157,8 +178,19 @@ Add `diagnostic` to the existing typed MCP `search` union with fields `gene`,
 `disease`, `test_type`, `manufacturer` (strings), `source` enum
 `gtr|who-ivd|all`, `full` boolean, and existing typed `limit` 1-25, `offset`
 0-1000, and `json`. Require at least one of the four filters; map `test_type`
-to `--type`. This changes only that schema branch: tool count, other branches,
-raw allowlist, CLI arguments, and typed execution owner remain unchanged.
+to `--type`. The diagnostic `disease` schema is `type:string`, `minLength:1`,
+`maxLength:512`; JSON Schema length is Unicode scalar count, so the mapper also
+trims and enforces **UTF-8 byte length** `1..=512` before constructing CLI args.
+It returns typed invalid-params `disease must contain 1-512 UTF-8 bytes after
+trimming` outside that byte range. CLI/entity validation independently uses
+the same byte boundary. Controls and the fewer-than-three-alphanumeric case
+reach entity validation and use the exact entity messages above. All these
+failures occur before MyDisease, GTR readiness, WHO readiness, cache, or
+rendering.
+Other typed diagnostic text fields retain the shared 1-256-character schema
+and runtime rule. This changes only that schema branch: tool count, other
+branches, raw allowlist, CLI arguments, and typed execution owner remain
+unchanged.
 
 Extend the existing GTR/WHO/MyDisease fixture family and diagnostic spec.
 Through executable CLI Markdown/JSON, raw MCP `biomcp` Markdown/JSON, and typed
@@ -166,8 +198,14 @@ MCP `search` Markdown/JSON, pin Bachmann-Bupp by requested and long synonym,
 canonical-name and synonym-only rows, precedence/ties/dedupe, every source
 mode, conjunctive filters, offsets before/at/after the end, exact totals and
 `has_more`, resolution absent/ambiguous/unavailable/malformed/timeout, each
-local-source failure combination, and 0/1/2 resolver request paths. MCP bodies
-are byte-equal to their CLI format after the existing MCP footer rules.
+local-source failure combination, and 0/1/2 resolver request paths. Crosswalk
+fixtures include the requested value in the correct detail field, only under
+an irrelevant xref kind, absent, and a conflicting same-kind value; the last
+three produce unavailable after exactly two requests. Typed/CLI boundary
+fixtures accept 512 ASCII bytes and a multibyte string of exactly 512 bytes,
+reject 513 ASCII bytes and the next multibyte scalar, and prove every rejection
+logs zero resolver/local-source requests. MCP bodies are byte-equal to their
+CLI format after the existing MCP footer rules.
 
 Fixture logs independently assert request path, fields, size, cache reuse,
 deadline and request/body/synonym caps, zero resolver calls for WHO-only or no
