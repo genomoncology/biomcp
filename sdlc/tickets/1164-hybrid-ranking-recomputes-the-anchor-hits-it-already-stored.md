@@ -106,3 +106,10 @@ surface. Implementation begins only after independent design acceptance; code
 review must inspect count alignment and consumption, the deterministic exact
 call-count proof, public serialization neutrality, file caps, package count,
 and the complete diff for unrelated edits.
+
+## Review
+
+Accepted after independent design review. The reviewer confirmed the
+deterministic one-calculation-per-row proof, the aligned private full-width
+carrier, removal of the unsupported 1150 dependency, and the stated ownership,
+source-size, package, and gate constraints.
