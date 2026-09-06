@@ -409,13 +409,25 @@ pub(super) async fn resolve_variant_article_from_pmid(
                 return Err(error);
             };
             let mut article = transform::article::from_pubtator_document(&doc);
-            article.annotations = transform::article::extract_annotations(&doc);
-            unit.record("ok", 1);
+            unit.commit("ok", 1, || {
+                article.annotations = transform::article::extract_annotations(&doc);
+            });
             if let Some(hit) = europe_hint {
                 transform::article::merge_europepmc_metadata(&mut article, hit);
-            } else if let Some((hit, europe_unit)) = variant_europepmc_hit(pmid, execution).await? {
-                transform::article::merge_europepmc_metadata(&mut article, &hit);
-                europe_unit.record("ok", 1);
+            } else {
+                match variant_europepmc_hit(pmid, execution).await {
+                    Ok(Some((hit, europe_unit))) => {
+                        europe_unit.commit("ok", 1, || {
+                            transform::article::merge_europepmc_metadata(&mut article, &hit);
+                        });
+                    }
+                    Ok(None) => {}
+                    Err(error) => crate::error::warn_external_failure(
+                        &error,
+                        crate::error::SourceProvider::EUROPE_PMC,
+                        "enrich completed PubTator article",
+                    ),
+                }
             }
             Ok(article)
         }
@@ -427,9 +439,7 @@ pub(super) async fn resolve_variant_article_from_pmid(
                     .await?
                     .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?,
             };
-            let article = article_from_europepmc_fallback(&hit);
-            europe_unit.record("ok", 1);
-            Ok(article)
+            Ok(europe_unit.commit("ok", 1, || article_from_europepmc_fallback(&hit)))
         }
         Err(error) => {
             unit.record_error(&error);

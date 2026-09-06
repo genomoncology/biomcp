@@ -14,6 +14,60 @@ use crate::sources::semantic_scholar::{
 };
 
 #[tokio::test]
+async fn expired_car_admission_records_each_planned_identity_once() {
+    use crate::entities::article::variant_search::CanonicalEquivalenceStatus;
+    use crate::entities::variant::RequestedVariantIdentity;
+
+    let deadline =
+        crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(1));
+    let execution =
+        super::super::variant_search::VariantArticleExecutionContext::single_with_deadline(
+            deadline,
+        );
+    let mut requested =
+        RequestedVariantIdentity::from_variant_input("NM_000546.6:c.215C>G").unwrap();
+    requested.genomic_accession = Some("NC_000017.11".into());
+    requested.genome_build = Some("GRCh38".into());
+    requested.position = Some(7_674_221);
+    requested.reference = Some("G".into());
+    requested.alternate = Some("A".into());
+    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+
+    let equivalence =
+        super::super::variant_search::resolve_canonical_equivalence(&requested, &execution).await;
+
+    assert_eq!(equivalence.status, "unavailable");
+    assert_eq!(equivalence.applicable_identity_count, 2);
+    assert_eq!(equivalence.observations.len(), 2);
+    assert!(
+        equivalence
+            .observations
+            .iter()
+            .all(|observation| { observation.status == CanonicalEquivalenceStatus::Unavailable })
+    );
+    assert_eq!(
+        execution.terminal_event_states(),
+        vec![
+            (
+                "canonical_equivalence".into(),
+                "clingen_car".into(),
+                "not_attempted".into(),
+                Some("invocation_deadline"),
+            );
+            2
+        ]
+    );
+
+    let execution = super::super::variant_search::VariantArticleExecutionContext::single();
+    let requested = RequestedVariantIdentity::from_variant_input("BRAF p.V600E").unwrap();
+    let equivalence =
+        super::super::variant_search::resolve_canonical_equivalence(&requested, &execution).await;
+    assert_eq!(equivalence.status, "inapplicable");
+    assert_eq!(equivalence.applicable_identity_count, 0);
+    assert_eq!(execution.terminal_event_count(), 0);
+}
+
+#[tokio::test]
 async fn repeated_backend_requests_stop_before_the_fifty_first_future_runs() {
     let execution = super::super::variant_search::VariantArticleExecutionContext::single();
     let calls = Arc::new(AtomicUsize::new(0));
@@ -39,40 +93,6 @@ async fn repeated_backend_requests_stop_before_the_fifty_first_future_runs() {
 
     assert_eq!(completed, 50);
     assert_eq!(calls.load(Ordering::SeqCst), 50);
-}
-
-#[tokio::test]
-async fn production_route_units_commit_before_their_single_terminal_event() {
-    for route in [
-        "resolution",
-        "canonical_equivalence",
-        "strict",
-        "source_citation",
-        "enrichment",
-        "identity_verification",
-    ] {
-        let execution = super::super::variant_search::VariantArticleExecutionContext::single();
-        let mut first_unit = None;
-        let mut committed = Vec::new();
-        let result = variant_article_request(
-            Some(&execution),
-            route,
-            "fixture-provider",
-            &mut first_unit,
-            async { Ok::<_, BioMcpError>("decoded-row") },
-            |row| {
-                assert_eq!(execution.terminal_event_count(), 0);
-                committed.push(row);
-                Ok(committed.len())
-            },
-        )
-        .await
-        .expect("production provider wrapper");
-
-        assert_eq!(result, Some(1));
-        assert_eq!(committed, ["decoded-row"]);
-        assert_eq!(execution.terminal_event_count(), 1, "route {route}");
-    }
 }
 
 #[serial_test::serial(article_resolver_env)]

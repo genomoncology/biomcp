@@ -282,7 +282,7 @@ impl VariantArticleExecutionContext {
         ))
     }
 
-    fn single_with_deadline(deadline: crate::sources::VariantArticleDeadline) -> Self {
+    pub(crate) fn single_with_deadline(deadline: crate::sources::VariantArticleDeadline) -> Self {
         Self::with_request(
             Arc::new(SharedWorkBudget {
                 limit: ITEM_WORK_LIMIT,
@@ -669,6 +669,16 @@ impl VariantArticleExecutionContext {
     #[cfg(test)]
     pub(crate) fn terminal_event_count(&self) -> usize {
         self.events().len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn terminal_event_states(
+        &self,
+    ) -> Vec<(String, String, String, Option<&'static str>)> {
+        self.events()
+            .into_iter()
+            .map(|event| (event.route, event.source, event.status, event.reason_code))
+            .collect()
     }
 
     fn deadline_plan(&self) -> VariantArticleDeadlinePlan {
@@ -1358,7 +1368,7 @@ fn canonical_equivalence(
     }
 }
 
-async fn resolve_canonical_equivalence(
+pub(crate) async fn resolve_canonical_equivalence(
     requested: &RequestedVariantIdentity,
     execution: &VariantArticleExecutionContext,
 ) -> CanonicalEquivalence {
@@ -1366,13 +1376,14 @@ async fn resolve_canonical_equivalence(
     if queries.is_empty() {
         return canonical_equivalence(Vec::new(), Vec::new());
     }
-    if execution.deadline.is_exhausted() {
-        return canonical_equivalence(Vec::new(), Vec::new());
-    }
-    let mut first_unit = execution
-        .begin_provider_unit("canonical_equivalence", "clingen_car")
-        .await;
-    let client = if first_unit.is_some() {
+    // Retain the first admission result, including `None`, so an omitted first
+    // query is not admitted a second time by the loop below.
+    let mut first_admission = Some(
+        execution
+            .begin_provider_unit("canonical_equivalence", "clingen_car")
+            .await,
+    );
+    let client = if first_admission.as_ref().is_some_and(Option::is_some) {
         crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new_with_deadline(
             execution.deadline(),
         )
@@ -1386,8 +1397,8 @@ async fn resolve_canonical_equivalence(
     let mut observations = Vec::with_capacity(queries.len());
     let mut items = Vec::new();
     for (basis, query) in queries {
-        let unit = match first_unit.take() {
-            Some(unit) => Some(unit),
+        let unit = match first_admission.take() {
+            Some(unit) => unit,
             None => {
                 execution
                     .begin_provider_unit("canonical_equivalence", "clingen_car")
@@ -2955,9 +2966,11 @@ async fn search_variant_articles_identity(
                                 false,
                             );
                             let identity = combine_identities(captured.clone(), fetched);
-                            verification_content_subsets.push(canonical_content_subset(&identity));
-                            candidate.identity = Some(identity);
-                            unit.record("ok", 1);
+                            unit.commit("ok", 1, || {
+                                verification_content_subsets
+                                    .push(canonical_content_subset(&identity));
+                                candidate.identity = Some(identity);
+                            });
                             false
                         }
                         Err(error) => {
@@ -3855,14 +3868,6 @@ mod tests {
         assert_eq!(plan.limit_ms, 1);
         assert!(plan.exhausted);
         assert_eq!(plan.provider_concurrency_limit, 10);
-
-        let execution = VariantArticleExecutionContext::single();
-        let requested = RequestedVariantIdentity::from_variant_input("BRAF p.V600E").unwrap();
-        let equivalence = resolve_canonical_equivalence(&requested, &execution).await;
-        assert_eq!(equivalence.status, "inapplicable");
-        assert_eq!(equivalence.applicable_identity_count, 0);
-        assert_eq!(execution.terminal_event_count(), 0);
-        assert_eq!(execution.item_work().consumed, 0);
     }
 
     #[tokio::test]

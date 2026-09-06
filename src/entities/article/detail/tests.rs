@@ -1,6 +1,61 @@
 use super::*;
 use crate::entities::article::{ArticleAuthorCompleteness, ArticleSource};
 use crate::error::BioMcpError;
+
+#[serial_test::serial(article_resolver_env)]
+#[tokio::test]
+async fn completed_pubtator_enrichment_survives_later_europepmc_failure() {
+    use crate::entities::article::test_support::{
+        TestEnv, TestHttpFixture, TestHttpReply, test_http_response,
+    };
+
+    const PUBTATOR: &[u8] =
+        include_bytes!("../../../../testdata/sources/pubtator/export_22663011.json");
+    let fixture = TestHttpFixture::spawn(|request| {
+        let first_line = request.lines().next().unwrap_or_default();
+        if first_line.starts_with("GET /publications/export/biocjson?") {
+            TestHttpReply::Bytes(test_http_response("200 OK", "application/json", PUBTATOR))
+        } else {
+            TestHttpReply::Bytes(test_http_response(
+                "503 Service Unavailable",
+                "application/json",
+                br#"{\"error\":\"fixture Europe PMC failure\"}"#,
+            ))
+        }
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("variant-enrichment-partial-commit");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_EUROPEPMC_BASE", &fixture.base);
+    let execution = super::super::variant_search::VariantArticleExecutionContext::single();
+
+    let article =
+        resolve_variant_article_from_pmid(22_663_011, "22663011", "22663011", None, &execution)
+            .await
+            .expect("completed PubTator leg remains usable");
+
+    assert_eq!(article.pmid.as_deref(), Some("22663011"));
+    assert!(!article.title.trim().is_empty());
+    let events = execution.terminal_event_states();
+    assert_eq!(events.len(), 2);
+    assert_eq!(
+        events[0],
+        ("enrichment".into(), "pubtator".into(), "ok".into(), None)
+    );
+    assert_eq!(
+        events[1],
+        (
+            "enrichment".into(),
+            "europepmc".into(),
+            "unavailable".into(),
+            Some("provider_error")
+        )
+    );
+}
+
 #[tokio::test]
 async fn get_rejects_pdf_without_fulltext_section() {
     let err = get(
