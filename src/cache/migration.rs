@@ -1,6 +1,7 @@
 use std::fs::{self, File, OpenOptions};
+use std::future::Future;
 use std::io::{self, Read, Seek, SeekFrom, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use fs2::FileExt;
@@ -14,7 +15,14 @@ static BODY_LIMIT_STAGE_NONCE: AtomicU64 = AtomicU64::new(0);
 
 struct EpochStaging {
     path: std::path::PathBuf,
-    file: File,
+    file: Option<File>,
+}
+
+impl EpochStaging {
+    fn into_parts(mut self) -> (PathBuf, File) {
+        let path = std::mem::take(&mut self.path);
+        (path, self.file.take().expect("staging file is present"))
+    }
 }
 
 impl Drop for EpochStaging {
@@ -131,8 +139,10 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
     legacy_cache_was_renamed: bool,
     deadline: &crate::sources::VariantArticleDeadline,
 ) -> Result<(), io::Error> {
-    fs::create_dir_all(cache_root)?;
+    deadline_io(deadline, tokio::fs::create_dir_all(cache_root)).await?;
+    deadline.ensure_time_io()?;
     let lock = open_epoch_lock(cache_root)?;
+    deadline.ensure_time_io()?;
     loop {
         match lock.try_lock_exclusive() {
             Ok(()) => break,
@@ -152,13 +162,145 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
     }
     let maintenance = super::lock_cache_maintenance_until(cache_root, deadline).await?;
     deadline.ensure_time_io()?;
-    ensure_body_limited_cache_epoch_locked_with_guard(
+    ensure_body_limited_cache_epoch_async(
         cache_root,
         legacy_cache_was_renamed,
         lock,
         maintenance,
-        &mut |_file, _path| Ok(()),
+        deadline,
+        |_| async {},
     )
+    .await
+}
+
+async fn deadline_io<T>(
+    deadline: &crate::sources::VariantArticleDeadline,
+    operation: impl Future<Output = io::Result<T>>,
+) -> io::Result<T> {
+    // Filesystem futures may dispatch blocking syscalls internally. Do not drop
+    // one at the deadline and let its mutation finish after our guards return:
+    // each atomic operation reaches its safe boundary, then expiry prevents the
+    // traversal from admitting another operation.
+    deadline.ensure_time_io()?;
+    let result = operation.await;
+    deadline.ensure_time_io()?;
+    result
+}
+
+async fn remove_cache_directory_until<F, Fut>(
+    root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+    after_mutation: &mut F,
+) -> io::Result<()>
+where
+    F: FnMut(PathBuf) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    let mut pending = vec![(root.to_path_buf(), false)];
+    while let Some((path, visited)) = pending.pop() {
+        deadline.ensure_time_io()?;
+        let metadata = match deadline_io(deadline, tokio::fs::symlink_metadata(&path)).await {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(error),
+        };
+        if metadata.is_dir() && !visited {
+            pending.push((path.clone(), true));
+            let mut entries = deadline_io(deadline, tokio::fs::read_dir(&path)).await?;
+            let mut children = Vec::new();
+            loop {
+                deadline.ensure_time_io()?;
+                match deadline_io(deadline, entries.next_entry()).await? {
+                    Some(entry) => children.push(entry.path()),
+                    None => break,
+                }
+            }
+            children.sort();
+            pending.extend(children.into_iter().rev().map(|child| (child, false)));
+            continue;
+        }
+        let result = if metadata.is_dir() {
+            deadline_io(deadline, tokio::fs::remove_dir(&path)).await
+        } else {
+            deadline_io(deadline, tokio::fs::remove_file(&path)).await
+        };
+        if let Err(error) = result
+            && error.kind() != io::ErrorKind::NotFound
+        {
+            return Err(error);
+        }
+        after_mutation(path).await;
+        deadline.ensure_time_io()?;
+    }
+    Ok(())
+}
+
+async fn ensure_body_limited_cache_epoch_async<F, Fut>(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+    lock: File,
+    _maintenance: super::private::CacheOperationGuard,
+    deadline: &crate::sources::VariantArticleDeadline,
+    mut after_mutation: F,
+) -> io::Result<()>
+where
+    F: FnMut(PathBuf) -> Fut,
+    Fut: Future<Output = ()>,
+{
+    let marker = cache_root.join(BODY_LIMIT_CACHE_EPOCH);
+    let legacy = cache_root.join("http-cacache");
+    let marker_exists = validated_marker_exists(&marker)?;
+    deadline.ensure_time_io()?;
+    let legacy_exists = deadline_io(deadline, tokio::fs::symlink_metadata(&legacy))
+        .await
+        .map(|_| true)
+        .or_else(|error| {
+            (error.kind() == io::ErrorKind::NotFound)
+                .then_some(false)
+                .ok_or(error)
+        })?;
+    if marker_exists && !legacy_cache_was_renamed && !legacy_exists {
+        return FileExt::unlock(&lock);
+    }
+    if marker_exists && !legacy_cache_was_renamed {
+        remove_cache_directory_until(&legacy, deadline, &mut after_mutation).await?;
+        return FileExt::unlock(&lock);
+    }
+
+    let cache = cache_root.join("http");
+    remove_cache_directory_until(&cache, deadline, &mut after_mutation).await?;
+    remove_cache_directory_until(&legacy, deadline, &mut after_mutation).await?;
+    deadline_io(deadline, tokio::fs::create_dir_all(&cache)).await?;
+    after_mutation(cache).await;
+    deadline.ensure_time_io()?;
+
+    let (staging_path, staging_file) = create_epoch_staging(cache_root)?.into_parts();
+    let mut staging_file = tokio::fs::File::from_std(staging_file);
+    use tokio::io::AsyncWriteExt;
+    deadline_io(deadline, staging_file.write_all(BODY_LIMIT_CACHE_MARKER)).await?;
+    deadline_io(deadline, staging_file.sync_all()).await?;
+    drop(staging_file);
+    deadline_io(deadline, async {
+        match tokio::fs::remove_file(&marker).await {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error),
+        }
+    })
+    .await?;
+    deadline_io(deadline, tokio::fs::rename(&staging_path, &marker)).await?;
+    after_mutation(marker.clone()).await;
+    deadline.ensure_time_io()?;
+    if deadline_io(deadline, tokio::fs::symlink_metadata(&marker))
+        .await?
+        .is_file()
+    {
+        FileExt::unlock(&lock)
+    } else {
+        Err(io::Error::other(
+            "cache epoch marker disappeared after publication",
+        ))
+    }
 }
 
 fn open_epoch_lock(cache_root: &Path) -> io::Result<File> {
@@ -228,9 +370,10 @@ where
         fs::create_dir_all(&cache_path)?;
 
         let mut staging = create_epoch_staging(cache_root)?;
-        staging.file.write_all(BODY_LIMIT_CACHE_MARKER)?;
-        staging.file.sync_all()?;
-        before_publish(&staging.file, &staging.path)?;
+        let file = staging.file.as_mut().expect("staging file is present");
+        file.write_all(BODY_LIMIT_CACHE_MARKER)?;
+        file.sync_all()?;
+        before_publish(file, &staging.path)?;
         if marker_exists {
             fs::remove_file(&marker)?;
         }
@@ -258,7 +401,12 @@ fn create_epoch_staging(cache_root: &Path) -> io::Result<EpochStaging> {
             &path,
         );
         match opened {
-            Ok(file) => return Ok(EpochStaging { path, file }),
+            Ok(file) => {
+                return Ok(EpochStaging {
+                    path,
+                    file: Some(file),
+                });
+            }
             Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
             Err(error) => {
                 let _ = fs::remove_file(path);
@@ -517,6 +665,71 @@ mod tests {
             fs::read(root.path().join("http/sentinel")).unwrap(),
             b"legacy"
         );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn epoch_cleanup_stops_mutating_after_a_mid_traversal_deadline() {
+        let root = TempDirGuard::new("epoch-mid-cleanup-deadline");
+        let cache = root.path().join("http");
+        fs::create_dir_all(&cache).unwrap();
+        fs::write(cache.join("a"), b"first").unwrap();
+        fs::write(cache.join("b"), b"second").unwrap();
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+        let epoch_lock = open_epoch_lock(root.path()).unwrap();
+        epoch_lock.try_lock_exclusive().unwrap();
+        let maintenance = super::super::lock_cache_maintenance_until(root.path(), &deadline)
+            .await
+            .unwrap();
+        let paused = std::sync::Arc::new(tokio::sync::Notify::new());
+        let release = std::sync::Arc::new(tokio::sync::Notify::new());
+        let driving = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(true));
+        let driver = tokio::spawn({
+            let driving = std::sync::Arc::clone(&driving);
+            async move {
+                while driving.load(std::sync::atomic::Ordering::SeqCst) {
+                    tokio::task::yield_now().await;
+                }
+            }
+        });
+        let cleanup = ensure_body_limited_cache_epoch_async(
+            root.path(),
+            false,
+            epoch_lock,
+            maintenance,
+            &deadline,
+            {
+                let (paused, release) = (
+                    std::sync::Arc::clone(&paused),
+                    std::sync::Arc::clone(&release),
+                );
+                move |path| {
+                    let (paused, release) = (
+                        std::sync::Arc::clone(&paused),
+                        std::sync::Arc::clone(&release),
+                    );
+                    async move {
+                        if path.file_name().is_some_and(|name| name == "a") {
+                            paused.notify_one();
+                            release.notified().await;
+                        }
+                    }
+                }
+            },
+        );
+        tokio::pin!(cleanup);
+        tokio::select! {
+            () = paused.notified() => {}
+            result = &mut cleanup => panic!("cleanup settled before injected pause: {result:?}"),
+        }
+        driving.store(false, std::sync::atomic::Ordering::SeqCst);
+        driver.await.unwrap();
+        tokio::time::advance(std::time::Duration::from_secs(11)).await;
+        assert!(cache.join("b").is_file());
+        release.notify_one();
+        assert_eq!(cleanup.await.unwrap_err().kind(), io::ErrorKind::TimedOut);
+        assert!(cache.join("b").is_file());
+        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
     }
 
     #[cfg(unix)]
