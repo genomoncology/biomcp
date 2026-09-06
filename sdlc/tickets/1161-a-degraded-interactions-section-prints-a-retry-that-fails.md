@@ -236,5 +236,7 @@ witness. The implementation now has a direct test-only atomic observer at the
 one positive-control call, resets it, and asserts exactly zero calls for both
 `label interactions` and `all` when required OpenFDA label acquisition fails.
 The executable spec retains the exact public error checks but no longer infers
-reads from filesystem timestamps. Focused validation and re-review remain
-pending; full repository gates remain intentionally deferred.
+reads from filesystem timestamps. The exact observer test passes (one positive
+control call, then zero calls for each required-label failure path), and the
+updated fifteen-case `section-outcomes.md` executable contract passes. Focused
+re-review remains pending; full repository gates remain intentionally deferred.
