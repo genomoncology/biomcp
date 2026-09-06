@@ -26,8 +26,9 @@ tracked markers.
 
 ## Evidence
 
-- Red: the new focused regression failed with `NameError` before the
-  lifecycle-aware scanner existed.
+- Test-first scaffold: the focused regression initially failed with `NameError`
+  because the lifecycle-aware scanner did not yet exist. This was not a
+  behavioral failure of the old scanner.
 - Focused green: the new regression passed, then the complete documentation
   consistency module passed 19 tests both before and after ticket promotion.
 - `make lint` passed, including Python, Bash/workflow, Rust, license, advisory,
