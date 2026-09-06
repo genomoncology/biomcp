@@ -51,6 +51,7 @@ pub(crate) use self::resolution::{
     VariantProviderValidation, VariantProviderValidationStatus, VariantResolutionStatus,
     VariantSearchResolution, coding_change_segment, compare_variant_identity, gnomad_variant_slug,
     is_rsid, normalize_genomic_coordinate, normalize_protein_change, protein_change_segment,
+    protein_changes_equivalent,
 };
 #[cfg(test)]
 pub(crate) use self::search::VariantFilterEvaluationStatus;

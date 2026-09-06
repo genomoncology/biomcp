@@ -537,7 +537,8 @@ python3 - <<'PY' | mustmatch like 'hostile transcript output is bounded across C
 import json, os, subprocess, unicodedata
 
 binary = os.environ["BIOMCP_BIN"]
-base = [binary, "search", "variant", "--gene", "HOSTILE", "--hgvsp", "H2R", "--limit", "1"]
+hostile_protein = "p.His2Arg\n\r\t\x08\x85\x1b[33m\u2066|```MATCH"
+base = [binary, "search", "variant", "--hgvsp", hostile_protein, "--limit", "1"]
 markdown = subprocess.run(base, check=True, text=True, stdout=subprocess.PIPE).stdout
 value = json.loads(subprocess.run(
     [binary, "--json", *base[1:]], check=True, text=True, stdout=subprocess.PIPE
@@ -551,7 +552,10 @@ assert annotations[2] == {
     "hgvs_c": None, "hgvs_p": None, "roles": [],
 }
 assert "\n\r\t\x02\x85\x1b[31m\u2066|`" in annotations[0]["gene"]
-assert "\n\r\t\x05\x85\x1b[31m\u202e|`" in annotations[1]["transcript"]
+for field in ("gene", "transcript", "hgvs_c", "hgvs_p"):
+    assert "\n\r\t" in annotations[1][field]
+    assert "\x85\x1b" in annotations[1][field]
+    assert "|" in annotations[1][field] and "`" in annotations[1][field]
 start = markdown.index("## Transcript match explanations")
 end = markdown.index("\nUse `get variant <id>` for details.", start)
 section = markdown[start:end]

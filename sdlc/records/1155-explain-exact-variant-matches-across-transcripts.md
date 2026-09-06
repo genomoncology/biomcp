@@ -202,9 +202,12 @@ bounded and explanation-free.
 - Synthetic fixtures cover one tuple with both roles, missing transcript,
   missing coding HGVS, missing protein HGVS, exact duplicates, two annotations
   sharing one HGVS value, no SnpEff data, ClinVar-only display fallback,
-  protein and coding requests, a combined request that is split across two
-  annotations, genomic exact search, and rsID exact search. No case constructs
-  a tuple from separate objects.
+  protein and coding requests, a positive combined coding-plus-protein tuple,
+  a combined request that is split across two annotations, a requested
+  transcript with a missing feature ID, genomic exact search, and rsID exact
+  search. A retained complex deletion proves the matched role uses the same
+  body-identical protein-HGVS equivalence as exact admission. No case
+  constructs a tuple from separate objects.
 - Decoder fixtures separately cover absent and null `snpeff`, non-object
   `snpeff`, absent and null `ann`, scalar `ann`, a non-object array element,
   and a wrong-typed identity field. Each malformed case proves exact search's
@@ -214,7 +217,10 @@ bounded and explanation-free.
 - An adversarial explanation fixture uses a safe ordinary result ID and places
   newlines, carriage returns, tabs, C0/C1 and terminal escape sequences, bidi
   controls, backtick runs, and pipe characters across every displayed and
-  matched annotation identity field. For CLI, raw-MCP, and typed-search
+  matched annotation identity field. The protein-only exact request carries
+  the same hostile complex protein value, which lets the matched tuple retain
+  a hostile gene without violating the public gene-filter grammar. For CLI,
+  raw-MCP, and typed-search
   Markdown, the test extracts only the new section from its heading through
   the line before `Use get variant <id> for details.`. That extracted section
   has exactly one heading and one bullet on one physical line, preserves the
@@ -301,10 +307,27 @@ Clippy with warnings denied, the complete quality ratchet, and `git diff
 --check` passed; the offline package inventory remains exactly 1,300 files. No
 repository-wide gate is claimed by this remediation.
 
+A second independent rereview found that the role matcher used only
+single-residue normalization even though exact admission first accepts
+body-identical complex protein HGVS. It also found that the prior evidence did
+not positively exercise a combined coding-plus-protein tuple, a missing
+requested transcript feature, or hostile values in the matched gene and
+protein fields. The second remediation centralizes the exact protein
+equivalence rule for admission and tuple roles, adds those Rust cases, and
+drives the hostile protein request and all four matched tuple fields through
+CLI and raw/typed MCP fixtures. The 20-test variant-search group, formatting, Cargo
+check, Clippy with warnings denied, the complete quality ratchet, and the
+1,300-file offline package inventory pass. The complete routine `make spec`
+gate passes with the prepared shared Python environment; `make lint` and
+`make test` were not rerun or claimed. Fresh independent rereview remains
+pending.
+
 ## Review
 
 - Design review: accepted before implementation in this ticket.
 - First code review: rejected for unsafe rendered-footer lookup and evidence
   gaps; both findings were remediated with focused passing evidence above.
-- Code-stage implementation: complete; fresh independent rereview remains
-  pending.
+- Second code rereview: rejected complex-protein matcher drift and three
+  remaining evidence gaps; the focused remediation above addresses them.
+- Code-stage implementation: complete; another fresh independent rereview
+  remains pending.

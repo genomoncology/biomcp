@@ -130,22 +130,22 @@
     },
     {
       "path": "src/entities/variant/resolution.rs",
-      "baseline_lines": 1303,
+      "baseline_lines": 1316,
       "floor_lines": 1291,
       "authorized_increase": {
-        "ticket": "1056",
-        "delta": 12,
-        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable.",
+        "ticket": "1056, 1155",
+        "delta": 25,
+        "reason": "Genomic HGVS indel grammar and guidance keep emitted complex variant IDs parseable, and one shared protein equivalence helper prevents exact admission and transcript-role drift.",
         "removal_condition": "Remove this allowance when variant identity resolution is decomposed."
       }
     },
     {
       "path": "src/entities/variant/search/mod.rs",
-      "baseline_lines": 1083,
+      "baseline_lines": 1081,
       "floor_lines": 1000,
       "authorized_increase": {
         "ticket": "1155",
-        "delta": 83,
+        "delta": 81,
         "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, and bounded projection beside the existing identity filter and pagination owner without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split exact-search result projection when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }

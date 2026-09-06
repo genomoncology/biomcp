@@ -237,6 +237,11 @@ def call(identifier, name, arguments):
     assert len(result["content"]) == 1 and result["content"][0]["type"] == "text"
     return result["content"][0]["text"]
 
+hostile_protein = "p.His2Arg\n\r\t\x08\x85\x1b[33m\u2066|```MATCH"
+raw_hostile_command = (
+    "biomcp search variant --hgvsp '" + hostile_protein + "' --limit 1"
+)
+
 try:
     proc.stdin.write(json.dumps({
         "jsonrpc": "2.0",
@@ -344,10 +349,10 @@ try:
     assert "transcript_annotations_complete" not in broad_row
 
     raw_hostile_markdown = call(16, "biomcp", {
-        "command": "biomcp search variant --gene HOSTILE --hgvsp H2R --limit 1"
+        "command": raw_hostile_command
     })
     typed_hostile_markdown = call(17, "search", {
-        "entity": "variant", "gene": "HOSTILE", "hgvsp": "H2R", "limit": 1
+        "entity": "variant", "hgvsp": hostile_protein, "limit": 1
     })
     assert typed_hostile_markdown == raw_hostile_markdown
     start = raw_hostile_markdown.index("## Transcript match explanations")
@@ -361,10 +366,10 @@ try:
     )
 
     raw_hostile_json = call(18, "biomcp", {
-        "command": "biomcp search variant --gene HOSTILE --hgvsp H2R --limit 1", "json": True,
+        "command": raw_hostile_command, "json": True,
     })
     typed_hostile_json = call(19, "search", {
-        "entity": "variant", "gene": "HOSTILE", "hgvsp": "H2R", "limit": 1, "json": True,
+        "entity": "variant", "hgvsp": hostile_protein, "limit": 1, "json": True,
     })
     assert typed_hostile_json == raw_hostile_json
     annotations = json.loads(raw_hostile_json)["results"][0]["transcript_annotations"]
@@ -374,7 +379,10 @@ try:
         "hgvs_c": None, "hgvs_p": None, "roles": [],
     }
     assert "\n\r\t\x02\x85\x1b[31m\u2066|`" in annotations[0]["gene"]
-    assert "\n\r\t\x05\x85\x1b[31m\u202e|`" in annotations[1]["transcript"]
+    for field in ("gene", "transcript", "hgvs_c", "hgvs_p"):
+        assert "\n\r\t" in annotations[1][field]
+        assert "\x85\x1b" in annotations[1][field]
+        assert "|" in annotations[1][field] and "`" in annotations[1][field]
 finally:
     proc.terminate()
     proc.wait(timeout=5)

@@ -218,7 +218,13 @@ fn exact_aggregation_retains_identical_complex_protein_hgvs() {
         "dbnsfp": {
             "genename": "EGFR",
             "hgvsp": "NP_005219.2:p.Glu746_Ala750del"
-        }
+        },
+        "snpeff": {"ann": [{
+            "feature_id": "NM_005228.5",
+            "genename": "EGFR",
+            "hgvs_c": "c.2235_2249del",
+            "hgvs_p": "NP_005219.2:p.Glu746_Ala750del"
+        }]}
     }))
     .expect("valid MyVariant hit");
     let mut seen = HashSet::new();
@@ -233,6 +239,13 @@ fn exact_aggregation_retains_identical_complex_protein_hgvs() {
     assert_eq!(
         retained[0].row.matched_alias.as_deref(),
         Some("NP_005219.2:p.Glu746_Ala750del")
+    );
+    let page = finalize_exact_page(&requested, retained, 0, 10, false, true);
+    assert!(
+        page.results[0].transcript_annotations.as_ref().unwrap()[0]
+            .roles
+            .iter()
+            .any(|role| matches!(role, TranscriptAnnotationRole::Matched))
     );
 }
 
@@ -349,6 +362,11 @@ fn matched_role_requires_one_complete_transcript_specific_tuple() {
         ..Default::default()
     };
     assert!(annotation_matches_request(&annotation, &coding));
+    let combined = RequestedVariantIdentity {
+        protein_change: Some("A1V".into()),
+        ..coding.clone()
+    };
+    assert!(annotation_matches_request(&annotation, &combined));
 
     for requested in [
         RequestedVariantIdentity::from_variant_input("rs123").unwrap(),
@@ -369,9 +387,14 @@ fn matched_role_requires_one_complete_transcript_specific_tuple() {
     }
     let missing = MyVariantSnpeffAnnotation {
         hgvs_c: None,
-        ..annotation
+        ..annotation.clone()
     };
     assert!(!annotation_matches_request(&missing, &coding));
+    let missing_feature = MyVariantSnpeffAnnotation {
+        feature_id: None,
+        ..annotation
+    };
+    assert!(!annotation_matches_request(&missing_feature, &coding));
 }
 
 #[test]

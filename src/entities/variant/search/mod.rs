@@ -943,15 +943,13 @@ fn annotation_matches_request(
     {
         return false;
     }
-    if let Some(protein) = requested.protein_change.as_deref() {
-        let wanted = super::normalize_protein_change(protein);
-        let supplied = annotation
+    if let Some(protein) = requested.protein_change.as_deref()
+        && !annotation
             .hgvs_p
             .as_deref()
-            .and_then(super::normalize_protein_change);
-        if wanted.is_none() || supplied != wanted {
-            return false;
-        }
+            .is_some_and(|supplied| super::protein_changes_equivalent(supplied, protein))
+    {
+        return false;
     }
     if let Some(coding) = requested.coding_change.as_deref()
         && !annotation.hgvs_c.as_deref().is_some_and(|value| {

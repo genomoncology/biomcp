@@ -511,6 +511,19 @@ fn protein_alias_body(value: &str) -> &str {
         .unwrap_or_else(|| protein_change_segment(value).trim())
 }
 
+pub(crate) fn protein_changes_equivalent(left: &str, right: &str) -> bool {
+    if protein_alias_body(left).eq_ignore_ascii_case(protein_alias_body(right)) {
+        return true;
+    }
+    match (
+        normalize_protein_change(left),
+        normalize_protein_change(right),
+    ) {
+        (Some(left), Some(right)) => left == right,
+        _ => false,
+    }
+}
+
 pub(crate) fn normalize_protein_change(value: &str) -> Option<String> {
     let trimmed = protein_alias_body(value);
     if trimmed.is_empty() {
@@ -1103,7 +1116,7 @@ pub(crate) fn compare_variant_identity(
         if let Some(alias) = source
             .protein_changes
             .iter()
-            .find(|alias| protein_alias_body(alias).eq_ignore_ascii_case(protein_alias_body(value)))
+            .find(|alias| protein_changes_equivalent(alias, value))
         {
             matched_alias = Some(alias.clone());
         } else if let Some(want) = normalize_protein_change(value) {
