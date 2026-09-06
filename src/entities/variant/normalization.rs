@@ -285,7 +285,7 @@ pub async fn normalize_variant(
                 })),
                 VariantNormalizationAggregate::Car(CarNormalizationAggregate {
                     service: "car".into(),
-                    item: car.unwrap_or_else(|err| unavailable_car_item(&input, err)),
+                    item: car.unwrap_or_else(|_| unavailable_car_item(&input)),
                 }),
             ],
         });
@@ -325,7 +325,7 @@ pub async fn normalize_variant(
     })
 }
 
-fn unavailable_car_item(input: &str, _error: BioMcpError) -> CarNormalizationItem {
+pub(crate) fn unavailable_car_item(input: &str) -> CarNormalizationItem {
     CarNormalizationItem {
         input: input.into(),
         status: CarNormalizationStatus::Unavailable,

@@ -41,6 +41,72 @@ async fn repeated_backend_requests_stop_before_the_fifty_first_future_runs() {
     assert_eq!(calls.load(Ordering::SeqCst), 50);
 }
 
+#[tokio::test]
+async fn production_route_units_commit_before_their_single_terminal_event() {
+    for route in [
+        "resolution",
+        "canonical_equivalence",
+        "strict",
+        "source_citation",
+        "enrichment",
+        "identity_verification",
+    ] {
+        let execution = super::super::variant_search::VariantArticleExecutionContext::single();
+        let mut first_unit = None;
+        let mut committed = Vec::new();
+        let result = variant_article_request(
+            Some(&execution),
+            route,
+            "fixture-provider",
+            &mut first_unit,
+            async { Ok::<_, BioMcpError>("decoded-row") },
+            |row| {
+                assert_eq!(execution.terminal_event_count(), 0);
+                committed.push(row);
+                Ok(committed.len())
+            },
+        )
+        .await
+        .expect("production provider wrapper");
+
+        assert_eq!(result, Some(1));
+        assert_eq!(committed, ["decoded-row"]);
+        assert_eq!(execution.terminal_event_count(), 1, "route {route}");
+    }
+}
+
+#[serial_test::serial(article_resolver_env)]
+#[tokio::test]
+async fn pubtator_search_commits_transformed_page_before_one_terminal_event() {
+    const BODY: &[u8] = include_bytes!("../../../../testdata/sources/pubtator/search_braf.json");
+    let fixture = TestHttpFixture::spawn(|_| {
+        TestHttpReply::Bytes(test_http_response("200 OK", "application/json", BODY))
+    })
+    .await;
+    let cache = crate::test_support::TempDirGuard::new("provider-unit-pubtator-search");
+    let mut env = TestEnv::new();
+    env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
+    env.set("BIOMCP_PUBTATOR_BASE", &fixture.base);
+    env.set("BIOMCP_CACHE_DIR", cache.path());
+    let execution = super::super::variant_search::VariantArticleExecutionContext::single();
+
+    let page = search_pubtator_page_with_context(
+        &empty_filters(),
+        5,
+        0,
+        Some(&execution),
+        "strict",
+        Some("BRAF p.V600E"),
+    )
+    .await
+    .expect("fixture PubTator page");
+
+    assert_eq!(page.results.len(), 1);
+    assert_eq!(page.results[0].pmid, "123");
+    assert_eq!(page.results[0].source_local_position, 0);
+    assert_eq!(execution.terminal_event_count(), 1);
+}
+
 fn query_value<'a>(query: &'a [(String, String)], key: &str) -> Option<&'a str> {
     query
         .iter()

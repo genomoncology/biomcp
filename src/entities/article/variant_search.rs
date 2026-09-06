@@ -1236,6 +1236,17 @@ fn canonical_observation(
     }
 }
 
+fn commit_car_item(
+    observations: &mut Vec<CanonicalEquivalenceObservation>,
+    items: &mut Vec<CarNormalizationItem>,
+    basis: String,
+    query: String,
+    item: CarNormalizationItem,
+) {
+    observations.push(canonical_observation(basis, query, item.clone()));
+    items.push(item);
+}
+
 fn canonical_equivalence(
     observations: Vec<CanonicalEquivalenceObservation>,
     aliases: Vec<String>,
@@ -1352,6 +1363,9 @@ async fn resolve_canonical_equivalence(
     execution: &VariantArticleExecutionContext,
 ) -> CanonicalEquivalence {
     let queries = canonical_equivalence_queries(requested);
+    if queries.is_empty() {
+        return canonical_equivalence(Vec::new(), Vec::new());
+    }
     if execution.deadline.is_exhausted() {
         return canonical_equivalence(Vec::new(), Vec::new());
     }
@@ -1380,82 +1394,34 @@ async fn resolve_canonical_equivalence(
                     .await
             }
         };
-        let item = match (unit, client.as_ref()) {
+        match (unit, client.as_ref()) {
             (Some(unit), Ok(client)) => match client.normalize(&query).await {
                 Ok(item) => {
-                    unit.record("ok", 1);
-                    item
+                    unit.commit("ok", 1, || {
+                        commit_car_item(&mut observations, &mut items, basis, query, item);
+                    });
                 }
                 Err(error) => {
-                    unit.record_error(&error);
-                    CarNormalizationItem {
-                        input: query.clone(),
-                        status: CarNormalizationStatus::Unavailable,
-                        exhaustive: false,
-                        caid: None,
-                        canonical_title: None,
-                        genomic_aliases: Default::default(),
-                        transcript_aliases: Default::default(),
-                        protein_aliases: Default::default(),
-                        external_ids: Default::default(),
-                        source: "clingen_car".into(),
-                        query: query.clone(),
-                        warnings: Vec::new(),
-                        error: None,
-                        provenance: crate::entities::variant::CarProvenance {
-                            request_template_version: "1".into(),
-                            car_version: None,
-                            response_sha256: None,
-                        },
-                    }
+                    let item = crate::entities::variant::unavailable_car_item(&query);
+                    unit.commit_error(&error, || {
+                        commit_car_item(&mut observations, &mut items, basis, query, item);
+                    });
                 }
             },
             (Some(unit), Err(error)) => {
-                unit.record_error(error);
-                CarNormalizationItem {
-                    input: query.clone(),
-                    status: CarNormalizationStatus::Unavailable,
-                    exhaustive: false,
-                    caid: None,
-                    canonical_title: None,
-                    genomic_aliases: Default::default(),
-                    transcript_aliases: Default::default(),
-                    protein_aliases: Default::default(),
-                    external_ids: Default::default(),
-                    source: "clingen_car".into(),
-                    query: query.clone(),
-                    warnings: Vec::new(),
-                    error: None,
-                    provenance: crate::entities::variant::CarProvenance {
-                        request_template_version: "1".into(),
-                        car_version: None,
-                        response_sha256: None,
-                    },
-                }
+                let item = crate::entities::variant::unavailable_car_item(&query);
+                unit.commit_error(error, || {
+                    commit_car_item(&mut observations, &mut items, basis, query, item);
+                });
             }
-            (None, _) => CarNormalizationItem {
-                input: query.clone(),
-                status: CarNormalizationStatus::Unavailable,
-                exhaustive: false,
-                caid: None,
-                canonical_title: None,
-                genomic_aliases: Default::default(),
-                transcript_aliases: Default::default(),
-                protein_aliases: Default::default(),
-                external_ids: Default::default(),
-                source: "clingen_car".into(),
-                query: query.clone(),
-                warnings: Vec::new(),
-                error: None,
-                provenance: crate::entities::variant::CarProvenance {
-                    request_template_version: "1".into(),
-                    car_version: None,
-                    response_sha256: None,
-                },
-            },
-        };
-        items.push(item.clone());
-        observations.push(canonical_observation(basis, query, item));
+            (None, _) => commit_car_item(
+                &mut observations,
+                &mut items,
+                basis,
+                query.clone(),
+                crate::entities::variant::unavailable_car_item(&query),
+            ),
+        }
     }
     let mut aliases = Vec::new();
     for item in &items {
@@ -1659,12 +1625,13 @@ async fn annotation_candidates(
                 return Ok((Vec::new(), true, false, true));
             }
         };
-    let token_result = resolve_variant_entity_tokens(&pubtator, input, &context.requested).await;
-    match &token_result {
-        Ok(_) => unit.record("ok", 1),
-        Err(error) => unit.record_error(error),
-    }
-    let tokens = token_result?;
+    let tokens = match resolve_variant_entity_tokens(&pubtator, input, &context.requested).await {
+        Ok(tokens) => unit.commit("ok", 1, || tokens),
+        Err(error) => {
+            unit.record_error(&error);
+            return Err(error);
+        }
+    };
     let mut candidates = Vec::new();
     let mut incomplete = false;
     let mut succeeded = tokens.is_empty();
@@ -1880,15 +1847,15 @@ async fn strict_provider_candidates(
                     }
                     Err(error) => Err(error),
                 };
-                match &tokens {
-                    Ok(_) => unit.record("ok", 1),
-                    Err(error) => unit.record_error(error),
-                }
                 match tokens {
                     Ok(tokens) => match tokens.first() {
                         Some(token) => {
-                            execution
-                                .record_strict_pubtator_query(&plan.query_alias, &token.entity_id);
+                            unit.commit("ok", 1, || {
+                                execution.record_strict_pubtator_query(
+                                    &plan.query_alias,
+                                    &token.entity_id,
+                                );
+                            });
                             search_pubtator_page_with_context(
                                 &filters,
                                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -1900,9 +1867,15 @@ async fn strict_provider_candidates(
                         }
                         .await
                         .map(|page| page.results),
-                        None => Ok(Vec::new()),
+                        None => {
+                            unit.record("ok", 1);
+                            Ok(Vec::new())
+                        }
                     },
-                    Err(error) => Err(error),
+                    Err(error) => {
+                        unit.record_error(&error);
+                        Err(error)
+                    }
                 }
             }
             _ => continue,
@@ -1999,7 +1972,7 @@ async fn citation_candidates(
     let Some(retained_hit) = context.source_hit.as_ref() else {
         return Ok((Vec::new(), false));
     };
-    let hydrated_hit = if retained_hit.civic.is_none() {
+    let (hydrated_hit, hydration_unit) = if retained_hit.civic.is_none() {
         let Some(unit) = execution
             .begin_provider_unit("source_citation", "myvariant")
             .await
@@ -2025,28 +1998,31 @@ async fn citation_candidates(
             .get_all(&retained_hit.id)
             .await
             .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
-        match &result {
-            Ok(_) => unit.record("ok", 1),
-            Err(error) => unit.record_error(error),
+        match result {
+            Ok(hit) => (Some(hit), Some(unit)),
+            Err(error) => {
+                unit.record_error(&error);
+                return Err(error);
+            }
         }
-        Some(result?)
     } else {
-        None
+        (None, None)
     };
     let hit = hydrated_hit.as_ref().unwrap_or(retained_hit);
     let query_aliases: Vec<String> = primary_exact_alias(context).into_iter().collect();
-    Ok((
-        crate::sources::myvariant::civic_pubmed_ids(hit)
-            .into_iter()
-            .enumerate()
-            .map(|(position, pmid)| {
-                let mut row = pmid_seed(pmid);
-                row.source_local_position = position;
-                candidate_with_provenance(row, "source_citation", "civic", query_aliases.clone())
-            })
-            .collect(),
-        false,
-    ))
+    let candidates = crate::sources::myvariant::civic_pubmed_ids(hit)
+        .into_iter()
+        .enumerate()
+        .map(|(position, pmid)| {
+            let mut row = pmid_seed(pmid);
+            row.source_local_position = position;
+            candidate_with_provenance(row, "source_citation", "civic", query_aliases.clone())
+        })
+        .collect();
+    if let Some(unit) = hydration_unit {
+        unit.record("ok", 1);
+    }
+    Ok((candidates, false))
 }
 
 fn fallback_aliases(input: &str, context: &VariantArticleResolutionContext) -> (Vec<String>, bool) {
@@ -3847,6 +3823,10 @@ mod tests {
         }
     }
 
+    fn source_hit(id: &str) -> crate::sources::myvariant::MyVariantHit {
+        serde_json::from_value(serde_json::json!({"_id": id})).expect("source hit")
+    }
+
     fn lexical_candidate(pmid: &str, positions: &[usize]) -> ArticleCandidate {
         let mut candidate = article_candidate_from_row(row(pmid, ArticleSource::PubTator));
         candidate.variant_provenance = positions
@@ -3875,6 +3855,14 @@ mod tests {
         assert_eq!(plan.limit_ms, 1);
         assert!(plan.exhausted);
         assert_eq!(plan.provider_concurrency_limit, 10);
+
+        let execution = VariantArticleExecutionContext::single();
+        let requested = RequestedVariantIdentity::from_variant_input("BRAF p.V600E").unwrap();
+        let equivalence = resolve_canonical_equivalence(&requested, &execution).await;
+        assert_eq!(equivalence.status, "inapplicable");
+        assert_eq!(equivalence.applicable_identity_count, 0);
+        assert_eq!(execution.terminal_event_count(), 0);
+        assert_eq!(execution.item_work().consumed, 0);
     }
 
     #[tokio::test]
@@ -3968,6 +3956,7 @@ mod tests {
             include_bytes!("../../../testdata/sources/clingen_ldh/ca000072-medium.json");
         const DIRECT: &[u8] =
             include_bytes!("../../../testdata/sources/clingen_ldh/ca000072-pmc8372092-direct.json");
+        const MYVARIANT: &[u8] = br#"{"_id":"fixture","civic":{"molecularProfiles":[{"evidenceItems":[{"source":{"sourceType":"PUBMED","citation":"PMID:12345"}}]}]}}"#;
         let requests = Arc::new(Mutex::new(Vec::new()));
         let observed = requests.clone();
         let fixture = TestHttpFixture::spawn(move |request| {
@@ -3978,6 +3967,8 @@ mod tests {
                 .push(first_line.clone());
             let body = if first_line.starts_with("GET /allele?") {
                 CAR
+            } else if first_line.starts_with("GET /variant/fixture?") {
+                MYVARIANT
             } else if first_line == "GET /ldh/Variant/id/CA000072/ld?detail=med HTTP/1.1" {
                 MEDIUM
             } else if first_line
@@ -3990,10 +3981,13 @@ mod tests {
             TestHttpReply::Bytes(test_http_response("200 OK", "application/json", body))
         })
         .await;
+        let cache = crate::test_support::TempDirGuard::new("provider-unit-real-captures");
         let mut env = TestEnv::new();
+        env.set("BIOMCP_CACHE_DIR", cache.path());
         env.set("BIOMCP_TEST_UNPACED_ORIGIN", &fixture.base);
         env.set("BIOMCP_CLINGEN_CAR_BASE", &fixture.base);
         env.set("BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN", &fixture.base);
+        env.set("BIOMCP_MYVARIANT_BASE", &fixture.base);
 
         let mut requested = RequestedVariantIdentity::from_variant_input("NM_000546.6:c.215C>G")
             .expect("requested identity");
@@ -4003,6 +3997,9 @@ mod tests {
         assert_eq!(equivalence.status, "single_identity");
         assert_eq!(equivalence.caid.as_deref(), Some("CA000072"));
         assert!(equivalence.aliases.iter().any(|alias| alias == "rs1042522"));
+        assert_eq!(execution.terminal_event_count(), 1);
+        assert_eq!(execution.events()[0].route, "canonical_equivalence");
+        assert_eq!(execution.events()[0].status, "ok");
         assert_eq!(
             equivalence.observations[0]
                 .provider_response_sha256
@@ -4036,7 +4033,19 @@ mod tests {
         assert_eq!(linkage["pmcid"], "PMC8372092");
         assert_eq!(linkage["selector_type"], "TableTextSelector");
         assert_eq!(linkage["selector_value"], "rs1042522");
-        assert_eq!(requests.lock().expect("request log").len(), 3);
+        assert_eq!(execution.terminal_event_count(), 3);
+        assert!(execution.events().iter().all(|event| event.status == "ok"));
+
+        let mut citation_context = resolved_context();
+        citation_context.source_identity = None;
+        citation_context.source_hit = Some(source_hit("fixture"));
+        let (citations, stopped) = citation_candidates(&citation_context, &execution)
+            .await
+            .expect("hydrated citations");
+        assert!(!stopped);
+        assert_eq!(citations[0].row.pmid, "12345");
+        assert_eq!(execution.terminal_event_count(), 4);
+        assert_eq!(requests.lock().expect("request log").len(), 4);
     }
 
     #[test]
@@ -4804,21 +4813,7 @@ mod tests {
             assert!(execution.reserve("source_citation").is_some());
         }
         let mut context = resolved_context();
-        context.source_hit = Some(crate::sources::myvariant::MyVariantHit {
-            id: "fixture".into(),
-            cadd: None,
-            clinvar: None,
-            dbnsfp: None,
-            dbsnp: None,
-            gnomad_exome: None,
-            gnomad: None,
-            exac: None,
-            exac_nontcga: None,
-            cosmic: None,
-            cgi: None,
-            civic: None,
-            snpeff: None,
-        });
+        context.source_hit = Some(source_hit("fixture"));
 
         let (rows, pre_call_stopped) = citation_candidates(&context, &execution)
             .await

@@ -117,6 +117,25 @@ quality/source-size ratchets, and the exact 1,300-file package inventory pass.
 The source-size inventory now records the exact post-integration counts rather
 than the stale pre-remediation counts. Full repository gates were not run.
 
+## Final review remediation
+
+The prior downstream-HTTP concurrency test proves the shared ten-permit cap,
+but by itself does not prove production accumulator settlement. The final
+remediation returns zero-query CAR equivalence as `inapplicable` before budget
+reservation or client construction, adds provider-unit commit callbacks that
+retain the permit until synchronous decoded-result mutation completes, and
+uses them for CAR observation/item insertion and PubTator token-plan commits.
+MyVariant citation hydration now retains its unit through PMID candidate and
+provenance construction. Existing backend request commits continue to include
+provider decoding, filtering, transformation, deduplication, and page-vector
+mutation before their one terminal event.
+
+Focused evidence covers the zero-query zero-unit CAR boundary; one-event commit
+ordering for representative resolution, CAR, strict search, citation,
+enrichment, and identity-verification route labels; a real PubTator search page;
+and the existing real CAR/LDH capture path extended through MyVariant citation
+hydration. Full `make test`, `make spec`, and release gates remain unclaimed.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every

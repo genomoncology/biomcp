@@ -53,16 +53,28 @@ impl<'a> VariantArticleProviderUnit<'a> {
         }
     }
 
-    pub(crate) fn record(mut self, status: &str, pages: usize) {
+    pub(crate) fn commit<T>(mut self, status: &str, pages: usize, commit: impl FnOnce() -> T) -> T {
+        let output = commit();
         self.completed = true;
         self.execution
             .record(&self.route, &self.source, self.started, status, pages);
+        output
     }
 
-    pub(crate) fn record_error(mut self, error: &BioMcpError) {
+    pub(crate) fn commit_error<T>(mut self, error: &BioMcpError, commit: impl FnOnce() -> T) -> T {
+        let output = commit();
         self.completed = true;
         self.execution
             .record_error(&self.route, &self.source, self.started, error);
+        output
+    }
+
+    pub(crate) fn record(self, status: &str, pages: usize) {
+        self.commit(status, pages, || ());
+    }
+
+    pub(crate) fn record_error(self, error: &BioMcpError) {
+        self.commit_error(error, || ());
     }
 }
 
