@@ -1,6 +1,21 @@
 use std::collections::BTreeMap;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, AtomicUsize, Ordering},
+};
 
-use super::super::{SharedHttpClientKind, build_uncached_http_client};
+use super::super::{
+    SharedHttpClientKind, build_http_client_with_config_and_manager, build_uncached_http_client,
+};
+use axum::{
+    Router,
+    body::Body,
+    extract::State,
+    http::{HeaderMap, Response},
+    response::IntoResponse,
+    routing::get,
+};
+use http_cache_reqwest::CacheMode;
 use reqwest::StatusCode;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -42,6 +57,212 @@ async fn accept_with_timeout(listener: &tokio::net::TcpListener) -> bool {
     tokio::time::timeout(std::time::Duration::from_millis(250), listener.accept())
         .await
         .is_ok()
+}
+
+#[derive(Clone, Copy)]
+enum CacheOriginMode {
+    Initial,
+    Fresh,
+    Revalidate304,
+    Revalidate200,
+}
+
+#[derive(Clone)]
+struct CacheOriginState {
+    mode: CacheOriginMode,
+    requests: Arc<AtomicUsize>,
+    saw_validator: Arc<AtomicBool>,
+}
+
+async fn cache_origin(State(state): State<CacheOriginState>, headers: HeaderMap) -> Response<Body> {
+    let attempt = state.requests.fetch_add(1, Ordering::SeqCst);
+    if headers.get("if-none-match").is_some() {
+        state.saw_validator.store(true, Ordering::SeqCst);
+    }
+    let (status, cache_control, body) = match (state.mode, attempt) {
+        (CacheOriginMode::Revalidate304, 1..) => (StatusCode::NOT_MODIFIED, "max-age=60", ""),
+        (CacheOriginMode::Revalidate200, 1..) => {
+            (StatusCode::OK, "max-age=60", "replacement-sensitive-body")
+        }
+        (CacheOriginMode::Fresh, _) => (StatusCode::OK, "max-age=3600", "cached-body"),
+        _ => (StatusCode::OK, "max-age=0, must-revalidate", "cached-body"),
+    };
+    (
+        status,
+        [("cache-control", cache_control), ("etag", "\"validator\"")],
+        body,
+    )
+        .into_response()
+}
+
+async fn cached_test_client(
+    mode: CacheOriginMode,
+    name: &str,
+) -> (
+    reqwest_middleware::ClientWithMiddleware,
+    String,
+    Arc<AtomicUsize>,
+    Arc<AtomicUsize>,
+    Arc<AtomicUsize>,
+    Arc<AtomicBool>,
+    Arc<AtomicBool>,
+    crate::test_support::TempDirGuard,
+    tokio::task::JoinHandle<()>,
+) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let base = format!("http://{address}");
+    let requests = Arc::new(AtomicUsize::new(0));
+    let saw_validator = Arc::new(AtomicBool::new(false));
+    let app = Router::new()
+        .route("/resource", get(cache_origin))
+        .with_state(CacheOriginState {
+            mode,
+            requests: Arc::clone(&requests),
+            saw_validator: Arc::clone(&saw_validator),
+        });
+    let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let root = crate::test_support::TempDirGuard::new(name);
+    let gets = Arc::new(AtomicUsize::new(0));
+    let puts = Arc::new(AtomicUsize::new(0));
+    let armed = Arc::new(AtomicBool::new(false));
+    let get_count = Arc::clone(&gets);
+    let put_count = Arc::clone(&puts);
+    let fault = Arc::clone(&armed);
+    let client = build_http_client_with_config_and_manager(
+        SharedHttpClientKind::Default,
+        super::test_cache_config(root.path()),
+        None,
+        move |path, config| {
+            Ok(
+                crate::cache::SizeAwareCacheManager::new_with_cache_observers(
+                    path,
+                    config,
+                    move |_, _| {
+                        get_count.fetch_add(1, Ordering::SeqCst);
+                    },
+                    move |path, key| {
+                        put_count.fetch_add(1, Ordering::SeqCst);
+                        if fault.swap(false, Ordering::SeqCst) {
+                            assert!(cacache::metadata_sync(path, key).unwrap().is_some());
+                            cacache::remove_sync(path, key).unwrap();
+                        }
+                    },
+                ),
+            )
+        },
+    )
+    .unwrap();
+    (
+        client,
+        format!("{base}/resource"),
+        requests,
+        gets,
+        puts,
+        armed,
+        saw_validator,
+        root,
+        server,
+    )
+}
+
+fn assert_sanitized_cache_error(error: &reqwest_middleware::Error, root: &std::path::Path) {
+    let message = error.to_string();
+    assert!(message.contains("cache security finalization failed after successful put"));
+    assert!(!message.contains("resource"));
+    assert!(!message.contains("cached-body"));
+    assert!(!message.contains("sensitive"));
+    assert!(!message.contains(&root.display().to_string()));
+}
+
+#[tokio::test]
+#[serial_test::serial(article_resolver_env)]
+async fn cached_client_post_write_failure_matrix_is_fail_closed() {
+    for mode in [
+        CacheOriginMode::Initial,
+        CacheOriginMode::Revalidate304,
+        CacheOriginMode::Revalidate200,
+    ] {
+        let (client, url, requests, gets, puts, armed, validator, root, server) =
+            cached_test_client(mode, "post-write-client-failure").await;
+        let _env = EnvRestore::set(&[(
+            "BIOMCP_TEST_UNPACED_ORIGIN",
+            Some(url.trim_end_matches("/resource")),
+        )]);
+        if !matches!(mode, CacheOriginMode::Initial) {
+            client.get(&url).send().await.unwrap();
+            assert_eq!(requests.load(Ordering::SeqCst), 1);
+            gets.store(0, Ordering::SeqCst);
+            puts.store(0, Ordering::SeqCst);
+        }
+        armed.store(true, Ordering::SeqCst);
+        let error = client
+            .get(&url)
+            .send()
+            .await
+            .expect_err("post-write fault must fail request");
+        assert_eq!(
+            requests.load(Ordering::SeqCst),
+            if matches!(mode, CacheOriginMode::Initial) {
+                1
+            } else {
+                2
+            }
+        );
+        assert_eq!(gets.load(Ordering::SeqCst), 1);
+        assert_eq!(puts.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            validator.load(Ordering::SeqCst),
+            !matches!(mode, CacheOriginMode::Initial)
+        );
+        assert_sanitized_cache_error(&error, root.path());
+        server.abort();
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(article_resolver_env)]
+async fn cached_client_fresh_hit_and_request_no_store_bypass_writes() {
+    let (client, url, requests, gets, puts, armed, _, _root, server) =
+        cached_test_client(CacheOriginMode::Fresh, "fresh-client-hit").await;
+    let _env = EnvRestore::set(&[(
+        "BIOMCP_TEST_UNPACED_ORIGIN",
+        Some(url.trim_end_matches("/resource")),
+    )]);
+    assert_eq!(
+        client.get(&url).send().await.unwrap().text().await.unwrap(),
+        "cached-body"
+    );
+    gets.store(0, Ordering::SeqCst);
+    puts.store(0, Ordering::SeqCst);
+    armed.store(true, Ordering::SeqCst);
+    assert_eq!(
+        client.get(&url).send().await.unwrap().text().await.unwrap(),
+        "cached-body"
+    );
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+    assert_eq!(gets.load(Ordering::SeqCst), 1);
+    assert_eq!(puts.load(Ordering::SeqCst), 0);
+    server.abort();
+
+    let (client, url, requests, gets, puts, armed, _, _root, server) =
+        cached_test_client(CacheOriginMode::Initial, "no-store-client-request").await;
+    let _env = EnvRestore::set(&[(
+        "BIOMCP_TEST_UNPACED_ORIGIN",
+        Some(url.trim_end_matches("/resource")),
+    )]);
+    armed.store(true, Ordering::SeqCst);
+    let response = client
+        .get(&url)
+        .with_extension(CacheMode::NoStore)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.text().await.unwrap(), "cached-body");
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+    assert_eq!(gets.load(Ordering::SeqCst), 0);
+    assert_eq!(puts.load(Ordering::SeqCst), 0);
+    server.abort();
 }
 
 #[cfg(unix)]

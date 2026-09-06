@@ -24,6 +24,30 @@ is private. Its accepted review considered post-write attribution, but the
 original acceptance criteria did not state this public outcome and no focused
 regression exercises either failure branch.
 
+## Result
+
+The fail-closed boundary is now explicit at both layers. After CACache returns
+from a delegated write, missing or unreadable metadata is mapped to the stable
+BioMCP-owned context `cache security finalization failed after successful put`.
+The cached response is not returned, and the public middleware error contains
+neither the cache root, cache key, nor upstream response body.
+
+A test-only manager factory keeps the production middleware order, cache
+options, and `SizeAwareCacheManager` while allowing exact manager `get` and
+post-delegation `put` observation. Deterministic loopback coverage proves an
+initial cacheable `200`, stale conditional `304`, and stale replacement `200`
+each perform one target upstream request and one target write before failing.
+It also proves a fresh hit performs no upstream request or write, while a
+request-level `CacheMode::NoStore` bypasses manager `get` and `put` and returns
+its one upstream response. Revalidation failures are armed only after the
+stale seed succeeds.
+
+Focused validation passed 23 cache-manager tests and 10 provider-network and
+cache-construction tests. Focused Clippy with warnings denied, formatting,
+diff whitespace validation, and the repository quality ratchet passed. The
+ratchet retains the exact 1,884-line `src/sources/mod.rs` baseline; no tracked
+file was added to the shipped package.
+
 ## Done, observably
 
 - A deterministic manager test first proves that the delegated CACache write
@@ -68,4 +92,4 @@ root; they are not one file per distinct cache key.
 - Design review: accepted after remediation pinned the exact cached-client
   branches, required production-shaped manager injection, distinguished
   request `CacheMode::NoStore`, and bounded internal and public error context.
-- Code review: pending.
+- Code review: implementation complete; independent review pending.

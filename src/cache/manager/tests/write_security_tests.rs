@@ -74,6 +74,110 @@ fn assert_write_path_modes(cache_path: &Path, key: &str, integrity: &ssri::Integ
 }
 
 #[test]
+fn estimate_cache_bytes_fast_handles_missing_and_populated_content_trees() {
+    let root = TempDirGuard::new("estimate-fast");
+    let cache_path = root.path().join("http");
+    assert_eq!(estimate_cache_bytes_fast(&cache_path).unwrap(), 0);
+    let content = cache_path.join("content-v2/sha256/aa/bb");
+    fs::create_dir_all(&content).unwrap();
+    fs::write(content.join("blob-a"), b"abc").unwrap();
+    fs::write(content.join("blob-b"), b"defgh").unwrap();
+    assert_eq!(estimate_cache_bytes_fast(&cache_path).unwrap(), 8);
+}
+
+fn faulting_manager(
+    cache_root: &Path,
+    delegated: Arc<std::sync::atomic::AtomicBool>,
+    break_metadata_read: bool,
+) -> SizeAwareCacheManager {
+    SizeAwareCacheManager::new_with_services_and_observers(
+        cache_root.join("http"),
+        test_config(cache_root, u64::MAX / 2, DiskFreeThreshold::Percent(1)),
+        |_| Ok(0),
+        |_| {
+            Ok(FilesystemSpace {
+                available_bytes: 99,
+                total_bytes: 100,
+            })
+        },
+        |_, _, _, _| unreachable!("test cache must not schedule eviction"),
+        move |path, key| {
+            assert!(
+                cacache::metadata_sync(path, key)
+                    .expect("delegated metadata read")
+                    .is_some(),
+                "the delegated CACache write must complete before fault injection"
+            );
+            delegated.store(true, std::sync::atomic::Ordering::SeqCst);
+            if break_metadata_read {
+                let bucket = crate::cache::index_bucket_path(path, key);
+                fs::remove_file(&bucket).expect("remove written metadata bucket");
+                fs::write(&bucket, b"not cacache metadata").expect("corrupt metadata bucket");
+            } else {
+                cacache::remove_sync(path, key).expect("remove written metadata");
+            }
+        },
+        |_| {},
+    )
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn successful_put_with_missing_metadata_fails_closed_with_stable_context() {
+    let root = TempDirGuard::new("missing-post-put-metadata");
+    let delegated = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let error = faulting_manager(root.path(), Arc::clone(&delegated), false)
+        .put(
+            "sensitive-cache-key".into(),
+            test_http_response(b"secret body"),
+            test_policy(),
+        )
+        .await
+        .expect_err("missing metadata after a delegated write must fail closed");
+
+    assert!(delegated.load(std::sync::atomic::Ordering::SeqCst));
+    assert!(
+        error
+            .to_string()
+            .contains("cache security finalization failed after successful put")
+    );
+    assert!(!error.to_string().contains("sensitive-cache-key"));
+    assert!(!error.to_string().contains("secret body"));
+    assert!(
+        !error
+            .to_string()
+            .contains(&root.path().display().to_string())
+    );
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn successful_put_with_metadata_read_error_fails_closed_with_stable_context() {
+    let root = TempDirGuard::new("failed-post-put-metadata-read");
+    let delegated = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let error = faulting_manager(root.path(), Arc::clone(&delegated), true)
+        .put(
+            "sensitive-cache-key".into(),
+            test_http_response(b"secret body"),
+            test_policy(),
+        )
+        .await
+        .expect_err("metadata read error after a delegated write must fail closed");
+
+    assert!(delegated.load(std::sync::atomic::Ordering::SeqCst));
+    assert!(
+        error
+            .to_string()
+            .contains("cache security finalization failed after successful put")
+    );
+    assert!(!error.to_string().contains("sensitive-cache-key"));
+    assert!(!error.to_string().contains("secret body"));
+    assert!(
+        !error
+            .to_string()
+            .contains(&root.path().display().to_string())
+    );
+}
+
+#[test]
 fn contended_constructor_defers_cleanup_until_a_later_uncontended_constructor() {
     let root = TempDirGuard::new("deferred-open-age-maintenance");
     let cache_path = root.path().join("http");

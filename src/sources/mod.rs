@@ -698,6 +698,23 @@ fn build_http_client_with_config(
     config: crate::cache::ResolvedCacheConfig,
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
+    build_http_client_with_config_and_manager(kind, config, provider_policy, |path, config| {
+        crate::cache::SizeAwareCacheManager::new(path, config)
+    })
+}
+
+fn build_http_client_with_config_and_manager<M>(
+    kind: SharedHttpClientKind,
+    config: crate::cache::ResolvedCacheConfig,
+    provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
+    make_manager: M,
+) -> Result<ClientWithMiddleware, BioMcpError>
+where
+    M: FnOnce(
+        std::path::PathBuf,
+        crate::cache::ResolvedCacheConfig,
+    ) -> Result<crate::cache::SizeAwareCacheManager, BioMcpError>,
+{
     let cache_root = config.cache_root.clone();
     let content_root = crate::cache::content_root(&cache_root.join("http"));
     crate::cache::secure_managed_tree(&cache_root, false, Some(&content_root))?;
@@ -746,7 +763,7 @@ fn build_http_client_with_config(
     let builder = ordinary_url_policy::with_initial_policy(builder, provider_policy);
     let builder = builder.with(Cache(HttpCache {
         mode: CacheMode::Default,
-        manager: crate::cache::SizeAwareCacheManager::new(cache_path, config)?,
+        manager: make_manager(cache_path, config)?,
         options: cache_options,
     }));
     let builder = builder.with(
@@ -1816,69 +1833,52 @@ mod tests {
         assert_eq!(resp.status(), reqwest::StatusCode::OK);
         assert_eq!(attempts.load(Ordering::SeqCst), 2);
     }
-
     #[test]
     fn apply_migration_non_fatal_warns_and_continues_on_error() {
-        let mut warned: Vec<std::io::ErrorKind> = Vec::new();
-
+        let mut warned = Vec::new();
         let outcome = apply_migration_non_fatal(
             Path::new("/unused"),
-            |_| {
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::PermissionDenied,
-                    "test error",
-                ))
-            },
-            |err: &std::io::Error| warned.push(err.kind()),
+            |_| Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied)),
+            |err| warned.push(err.kind()),
         );
-
         assert!(outcome.is_none());
         assert_eq!(warned, vec![std::io::ErrorKind::PermissionDenied]);
     }
     #[test]
     fn build_http_client_migrates_then_clears_pre_limit_legacy_cache() {
         let root = TempDirGuard::new("http-cache-migration");
-        let override_root = root.path().join("override-root");
-        let legacy_dir = override_root.join("http-cacache");
-        std::fs::create_dir_all(&legacy_dir).expect("create legacy dir");
-        std::fs::write(legacy_dir.join("sentinel.txt"), b"cached payload").expect("write sentinel");
-        let config = test_cache_config(&override_root);
-
-        let result = build_http_client_with_config(SharedHttpClientKind::Default, config, None);
-
-        assert!(
-            result.is_ok(),
-            "client should initialize even with legacy cache migration"
-        );
-        assert!(override_root.join("http").is_dir());
-        assert!(!override_root.join("http").join("sentinel.txt").exists());
-        assert!(!override_root.join("http-cacache").exists());
-    }
-    #[test]
-    fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
-        let root = TempDirGuard::new("http-cache-epoch-clear");
-        let cache_root = root.path().join("cache-root");
-        std::fs::create_dir_all(cache_root.join("http-cacache")).expect("create legacy cache");
-        std::fs::write(
-            cache_root.join("http-cacache").join("legacy-sentinel"),
-            b"unbounded legacy response",
-        )
-        .expect("seed legacy entry");
-        std::fs::write(
-            cache_root.join(".body-limit-cache-v1"),
-            b"bounded-response-body-v1\n",
-        )
-        .expect("seed epoch marker from prior initialization");
-
+        let cache_root = root.path().join("override-root");
+        let legacy = cache_root.join("http-cacache");
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(legacy.join("sentinel.txt"), b"cached payload").unwrap();
         build_http_client_with_config(
             SharedHttpClientKind::Default,
             test_cache_config(&cache_root),
             None,
         )
-        .expect("client should repair legacy cache state");
-
+        .unwrap();
         assert!(cache_root.join("http").is_dir());
-        assert!(!cache_root.join("http").join("legacy-sentinel").exists());
-        assert!(!cache_root.join("http-cacache").exists());
+        assert!(!legacy.exists());
+    }
+    #[test]
+    fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
+        let root = TempDirGuard::new("http-cache-epoch-clear");
+        let cache_root = root.path().join("cache-root");
+        let legacy = cache_root.join("http-cacache");
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(legacy.join("legacy-sentinel"), b"legacy").unwrap();
+        std::fs::write(
+            cache_root.join(".body-limit-cache-v1"),
+            b"bounded-response-body-v1\n",
+        )
+        .unwrap();
+        build_http_client_with_config(
+            SharedHttpClientKind::Default,
+            test_cache_config(&cache_root),
+            None,
+        )
+        .unwrap();
+        assert!(cache_root.join("http").is_dir());
+        assert!(!legacy.exists());
     }
 }

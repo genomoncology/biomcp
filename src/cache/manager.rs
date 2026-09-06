@@ -21,15 +21,18 @@ type EstimateCacheBytesFn = dyn Fn(&Path) -> io::Result<u64> + Send + Sync;
 type InspectSpaceFn = dyn Fn(&Path) -> Result<FilesystemSpace, BioMcpError> + Send + Sync;
 type ScheduleEvictionFn =
     dyn Fn(PathBuf, ResolvedCacheConfig, Arc<AtomicU64>, Arc<AtomicBool>) + Send + Sync;
-type AfterPutFn = dyn Fn(&Path, &str) + Send + Sync;
+type CacheAccessObserverFn = dyn Fn(&Path, &str) + Send + Sync;
 type BeforeKeyLockDirCreateFn = dyn Fn(&Path) + Send + Sync;
+const POST_WRITE_FINALIZATION_ERROR: &str =
+    "cache security finalization failed after successful put";
 
 #[derive(Clone)]
 struct ManagerServices {
     estimate_cache_bytes: Arc<EstimateCacheBytesFn>,
     inspect_space: Arc<InspectSpaceFn>,
     schedule_eviction: Arc<ScheduleEvictionFn>,
-    after_put: Arc<AfterPutFn>,
+    observe_get: Arc<CacheAccessObserverFn>,
+    after_put: Arc<CacheAccessObserverFn>,
     before_key_lock_dir_create: Arc<BeforeKeyLockDirCreateFn>,
 }
 
@@ -91,6 +94,7 @@ impl SizeAwareCacheManager {
                 estimate_cache_bytes: Arc::new(estimate_cache_bytes),
                 inspect_space: Arc::new(inspect_space),
                 schedule_eviction: Arc::new(schedule_eviction),
+                observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(|_, _| {}),
                 before_key_lock_dir_create: Arc::new(|_| {}),
             },
@@ -124,10 +128,28 @@ impl SizeAwareCacheManager {
                 estimate_cache_bytes: Arc::new(estimate_cache_bytes),
                 inspect_space: Arc::new(inspect_space),
                 schedule_eviction: Arc::new(schedule_eviction),
+                observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(after_put),
                 before_key_lock_dir_create: Arc::new(before_key_lock_dir_create),
             },
         )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn new_with_cache_observers<G, A>(
+        path: PathBuf,
+        config: ResolvedCacheConfig,
+        observe_get: G,
+        after_put: A,
+    ) -> Self
+    where
+        G: Fn(&Path, &str) + Send + Sync + 'static,
+        A: Fn(&Path, &str) + Send + Sync + 'static,
+    {
+        let mut services = default_services();
+        services.observe_get = Arc::new(observe_get);
+        services.after_put = Arc::new(after_put);
+        Self::build_with_services(path, config, services)
     }
 
     fn build_with_services(
@@ -162,6 +184,7 @@ impl CacheManager for SizeAwareCacheManager {
         &self,
         cache_key: &str,
     ) -> http_cache::Result<Option<(HttpResponse, CachePolicy)>> {
+        (self.services.observe_get)(&self.inner.path, cache_key);
         let content_root = super::content_root(&self.inner.path);
         super::secure_managed_tree(&self.inner.path, false, Some(&content_root))?;
         self.inner.get(cache_key).await
@@ -183,8 +206,9 @@ impl CacheManager for SizeAwareCacheManager {
         let response = self.inner.put(cache_key.clone(), res, policy).await?;
         (self.services.after_put)(&self.inner.path, &cache_key);
         let metadata = cacache::metadata(&self.inner.path, &cache_key)
-            .await?
-            .ok_or_else(|| io::Error::other("cache metadata missing after successful put"))?;
+            .await
+            .map_err(|_| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?
+            .ok_or_else(|| io::Error::other(POST_WRITE_FINALIZATION_ERROR))?;
         super::secure_written_content(&self.inner.path, &metadata.integrity)?;
         self.approx_bytes
             .fetch_add(metadata.size as u64, Ordering::Relaxed);
@@ -239,6 +263,7 @@ fn default_services() -> ManagerServices {
         estimate_cache_bytes: Arc::new(estimate_cache_bytes_fast),
         inspect_space: Arc::new(inspect_filesystem_space),
         schedule_eviction: Arc::new(spawn_eviction_task),
+        observe_get: Arc::new(|_, _| {}),
         after_put: Arc::new(|_, _| {}),
         before_key_lock_dir_create: Arc::new(|_| {}),
     }
@@ -538,35 +563,6 @@ mod tests {
                 self.message = Some(format!("{value:?}"));
             }
         }
-    }
-
-    #[test]
-    fn estimate_cache_bytes_fast_returns_zero_for_missing_tree() {
-        let root = TempDirGuard::new("estimate-empty");
-        assert_eq!(
-            estimate_cache_bytes_fast(&root.path().join("http")).expect("estimate"),
-            0
-        );
-    }
-
-    #[test]
-    fn estimate_cache_bytes_fast_sums_content_tree_file_sizes() {
-        let root = TempDirGuard::new("estimate-sum");
-        let content_root = root
-            .path()
-            .join("http")
-            .join("content-v2")
-            .join("sha256")
-            .join("aa")
-            .join("bb");
-        fs::create_dir_all(&content_root).expect("content tree");
-        fs::write(content_root.join("blob-a"), b"abc").expect("blob a");
-        fs::write(content_root.join("blob-b"), b"defgh").expect("blob b");
-
-        assert_eq!(
-            estimate_cache_bytes_fast(&root.path().join("http")).expect("estimate"),
-            8
-        );
     }
 
     #[test]
