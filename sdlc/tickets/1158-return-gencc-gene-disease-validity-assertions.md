@@ -1037,4 +1037,11 @@ the implementation base.
   owned MyGene Tier-4 `live.rs`, and freezes eight package deletions against
   eight package-visible additions for the existing 1,300-file ceiling without
   an unrelated deletion, filler file, or package-exclusion change.
+- Independent redesign review accepted the corrected arithmetic and ownership:
+  main packages 1,300 paths, the provisional WIP demonstrated the 1,299
+  mismatch, and retaining the distinct MyGene Tier-4 live-test owner makes the
+  revised eight-for-eight packaged plan exact. The reviewer also confirmed
+  that all prior lifecycle/security/parser contracts remain unchanged and that
+  a computed minimized-fixture hash cannot substitute for the required genuine
+  capture receipt.
 - Code review: pending.
