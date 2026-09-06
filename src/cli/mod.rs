@@ -56,6 +56,7 @@ pub use self::study::StudyCommand;
 pub use self::system::{CvxCommand, DdinterCommand, EmaCommand, GtrCommand, WhoCommand};
 pub use self::types::{
     ChartArgs, ChartType, Cli, CliOutput, CommandOutcome, DrugRegionArg, OutputStream,
+    VariantArticlesMcpDisposition,
 };
 pub use self::variant::VariantCommand;
 

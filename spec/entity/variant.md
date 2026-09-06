@@ -824,6 +824,7 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
   "strategy": "annotation",
   "resolution": "unresolved",
   "results": [],
+  "error": null,
   "complete": true,
   "truncated": false,
   "pagination": {
@@ -835,7 +836,7 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
     "next_page_token": null
   },
   "source_status": [
-    {"route": "pubtator_variant", "source": "pubtator", "status": "ok"}
+    {"route": "pubtator_variant", "source": "pubtator", "status": "ok", "work": {"planned": 0, "ok": 0, "degraded": 0, "unavailable": 0, "timed_out": 0, "not_attempted": 0}, "reason_codes": []}
   ]
 }
 ```

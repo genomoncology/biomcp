@@ -106,6 +106,11 @@ source, and matched-alias provenance. Use `--strategy annotation` or
 `--strategy lexical` only to diagnose route recall. If a selected provider is
 incomplete, inspect `complete`, `truncated`, `pagination.total`, and
 `source_status` rather than treating an empty page as a complete miss.
+The command applies one 60-second monotonic provider-work deadline to the
+entire invocation, including all items in a batch. Work completed before the
+deadline is retained. Incomplete responses use an unknown total and
+`has_more: true`; a zero-row incomplete item carries `deadline_exceeded` or
+`source_unavailable`, while a healthy empty search keeps `error: null`.
 
 For a bounded shortlist across several exact variants, write 1-10 structured
 objects and make one JSON request:
@@ -127,6 +132,7 @@ completeness, and retraction facts without abstracts or hydrated article cards.
 Use `_meta.next_commands` for batch/detail/full-text/assets/citation follow-ups.
 The opt-in plan explains normalized aliases, providers, calls/pages, ranking,
 and the two-worker, 50-work-unit-per-item bounds.
+At most ten provider exchanges run concurrently across those two workers.
 
 When your authority is an assembly-aware RefSeq identity, use either complete
 form in the same array:

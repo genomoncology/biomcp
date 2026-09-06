@@ -58,6 +58,7 @@ where
     RK: for<'a, 'b> FnMut(&'a Path, &'b str) -> Result<(), cacache::Error>,
     RB: for<'a, 'b> FnMut(&'a Path, &'b Integrity) -> Result<(), cacache::Error>,
 {
+    check_variant_article_deadline()?;
     let effective_max_age = Some(options.max_age.unwrap_or(config.max_age));
     let effective_max_size =
         resolve_effective_limit(options.max_size, config.max_size, config.origins.max_size);
@@ -82,6 +83,7 @@ where
 
     let mut planned_key_count_by_integrity = HashMap::new();
     for entry in &plan.entry_removals {
+        check_variant_article_deadline()?;
         *planned_key_count_by_integrity
             .entry(entry.integrity.clone())
             .or_insert(0usize) += 1;
@@ -106,6 +108,7 @@ where
     }
 
     for blob in &plan.blob_removals {
+        check_variant_article_deadline()?;
         let eligible = if blob.refcount == 0 {
             true
         } else {
@@ -150,6 +153,19 @@ where
         provider_capture_bytes_freed: 0,
         errors,
     })
+}
+
+fn check_variant_article_deadline() -> Result<(), BioMcpError> {
+    if crate::sources::current_variant_article_deadline()
+        .is_some_and(|deadline| deadline.is_exhausted())
+    {
+        Err(BioMcpError::Io(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "variant article invocation deadline exceeded",
+        )))
+    } else {
+        Ok(())
+    }
 }
 
 fn resolve_effective_limit<T: Copy>(

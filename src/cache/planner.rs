@@ -85,6 +85,7 @@ pub(crate) fn snapshot_cache(cache_path: &Path) -> Result<CacheSnapshot, CachePl
     let mut entries = if path_exists(&index_path)? {
         let mut listed = Vec::new();
         for result in cacache::list_sync(cache_path) {
+            check_variant_article_deadline(cache_path)?;
             let metadata = result.map_err(|source| CachePlannerError::Index {
                 cache_path: cache_path.to_path_buf(),
                 source,
@@ -296,6 +297,7 @@ fn walk_content_dir(
     })?;
 
     for dir_entry in dir_entries {
+        check_variant_article_deadline(current_dir)?;
         let dir_entry = dir_entry.map_err(|source| CachePlannerError::Io {
             path: current_dir.to_path_buf(),
             source,
@@ -331,6 +333,22 @@ fn walk_content_dir(
     }
 
     Ok(())
+}
+
+fn check_variant_article_deadline(path: &Path) -> Result<(), CachePlannerError> {
+    if crate::sources::current_variant_article_deadline()
+        .is_some_and(|deadline| deadline.is_exhausted())
+    {
+        Err(CachePlannerError::Io {
+            path: path.to_path_buf(),
+            source: io::Error::new(
+                io::ErrorKind::TimedOut,
+                "variant article invocation deadline exceeded",
+            ),
+        })
+    } else {
+        Ok(())
+    }
 }
 
 fn integrity_from_blob_path(content_root: &Path, blob_path: &Path) -> Option<Integrity> {

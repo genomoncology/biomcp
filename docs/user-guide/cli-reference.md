@@ -807,6 +807,14 @@ positional ID and requires JSON output. `variant erepo` accepts a CAid, preserve
 source-listed expert assertion facts, and limits detail to one explicitly selected
 versioned document.
 
+One invocation-wide 60-second deadline covers provider, cache, enrichment, and
+verification work for both single and batch forms. `source_status.status` may
+be `ok`, `degraded`, `unavailable`, `timed_out`, `skipped`, or `not_attempted`;
+each entry includes bounded work counts and reason codes. Completed rows are
+returned on timeout. An incomplete zero-row result exits one and carries a
+bounded structured error; healthy empty and known offset-beyond-total pages
+remain successful.
+
 ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.
 
 `--debug-plan` is also JSON-only and adds normalized aliases, strict and
@@ -826,7 +834,8 @@ Verification artifacts record versioned clinically relevant response/content sub
 plus post-response verifier and provider-template versions, not retrieval-cache inputs. Incomplete verification remains truncated with no total;
 frozen fixtures are release proof and live probes are diagnostics. The typed `variant_articles`
 MCP tool accepts the same item fields and equivalent `verify_identity`/`confirmed_only`
-controls in memory.
+controls in memory. Typed and raw MCP mark only an all-error variant-article
+result as `isError`; unrelated raw-command exit behavior is unchanged.
 
 Structured assembly-aware items accept `genomic: "NC_...:g...."` plus `build`,
 or `accession`, `position`, `ref`, and `alt` plus `build`. Versioned RefSeq

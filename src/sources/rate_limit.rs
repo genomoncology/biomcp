@@ -312,7 +312,18 @@ impl Middleware for RateLimitMiddleware {
         extensions: &mut Extensions,
         next: Next<'_>,
     ) -> reqwest_middleware::Result<reqwest::Response> {
-        self.limiter.wait_for_url(req.url()).await;
+        if let Some(deadline) = extensions.get::<super::VariantArticleDeadline>().cloned() {
+            let _provider_permit = deadline
+                .acquire_provider()
+                .await
+                .map_err(reqwest_middleware::Error::middleware)?;
+            deadline
+                .run(self.limiter.wait_for_url(req.url()))
+                .await
+                .map_err(reqwest_middleware::Error::middleware)?;
+        } else {
+            self.limiter.wait_for_url(req.url()).await;
+        }
         next.run(req, extensions).await
     }
 }

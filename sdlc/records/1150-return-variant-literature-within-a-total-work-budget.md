@@ -1,5 +1,5 @@
 ---
-flow: build
+flow: record
 priority: 8
 deps: [1167, 1173]
 ---
@@ -14,6 +14,50 @@ deadline. The same absolute deadline covers a single CLI query and the complete
 1-10 item batch used by CLI `--input` and the typed `variant_articles` MCP tool.
 It is never reset per item, route, provider, retry, page, enrichment, or
 verification phase.
+
+## Result
+
+Implemented one task-local monotonic deadline created after syntax and option
+validation and shared by a single request or all ordered batch items. The
+deadline is copied into request extensions, clips the complete middleware send,
+retry-after and rate-limit waits, bounds cache trait operations, and adds
+deadline checks to recursive security, snapshot, cleanup, estimate, and lock
+paths. Variant cache locks use deadline-aware try-lock polling and do not enter
+the ordinary detached `spawn_blocking` path. One shared ten-permit provider
+semaphore and the existing two-item buffered executor preserve the invocation
+and item concurrency ceilings. Completed alias futures are consumed
+incrementally rather than held behind `join_all`.
+
+The public response now includes the additive single-item `error`, `timed_out`
+source state, terminal work counts/reason codes, and invocation deadline debug
+metadata. Incomplete pagination uses an unknown total and retryable `has_more`;
+healthy empty and known complete pages remain usable. Mixed batches succeed
+when any item is usable. CLI Markdown names incomplete routes, JSON keeps the
+structured envelope, typed MCP marks only all-error batches as errors, and raw
+MCP carries an internal variant-only disposition without reinterpreting other
+nonzero command outcomes. CLI, MCP, how-to, provider documentation, and the
+executable healthy-empty fixture were updated.
+
+Focused evidence passed: `cargo check --no-default-features`; Clippy with
+warnings denied; `make lint` including quality/source-size ratchets; 45 of 46
+variant-search module tests before the one long capture case encountered
+shared concurrent cache contention; the isolated deadline, source-precedence,
+provider-cap, task-local-isolation, raw-MCP, mixed-batch, CLI parsing,
+cache-manager (22 tests), and JSON hard-failure regressions; 13 docs contracts;
+7 MCP catalog contracts; 6 package-boundary contracts with a worktree-local
+temporary root; and the healthy-empty and union executable fixtures. The
+package inventory remains exactly 1,300 files. The contended capture rerun was
+terminated after a duplicate parent gate was observed running the same test;
+the production/test deadline leakage that caused its first failure was fixed,
+but no full `make test` or `make spec` claim is made. A direct mustmatch attempt
+without prepared spec artifacts was stopped after unrelated pre-variant
+fixtures failed; the changed fixture scenarios passed directly against the
+worktree binary.
+
+## Review
+
+- Design review: accepted before implementation.
+- Code review: pending independent review of this commit.
 
 ## Current facts
 

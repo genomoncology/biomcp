@@ -26,6 +26,22 @@ pub(crate) fn lock_cache_maintenance(cache_root: &Path) -> io::Result<CacheOpera
     use fs2::FileExt;
 
     let file = operation_lock_file(cache_root)?;
+    if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+        loop {
+            match file.try_lock_exclusive() {
+                Ok(()) => return Ok(CacheOperationGuard { _file: file }),
+                Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                    check_variant_article_deadline()?;
+                    std::thread::sleep(
+                        deadline
+                            .remaining()
+                            .min(std::time::Duration::from_millis(10)),
+                    );
+                }
+                Err(error) => return Err(error),
+            }
+        }
+    }
     file.lock_exclusive()?;
     Ok(CacheOperationGuard { _file: file })
 }
@@ -47,6 +63,22 @@ pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationG
     use fs2::FileExt;
 
     let file = operation_lock_file(cache_root)?;
+    if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+        loop {
+            match FileExt::try_lock_shared(&file) {
+                Ok(()) => return Ok(CacheOperationGuard { _file: file }),
+                Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                    check_variant_article_deadline()?;
+                    std::thread::sleep(
+                        deadline
+                            .remaining()
+                            .min(std::time::Duration::from_millis(10)),
+                    );
+                }
+                Err(error) => return Err(error),
+            }
+        }
+    }
     FileExt::lock_shared(&file)?;
     Ok(CacheOperationGuard { _file: file })
 }
@@ -77,11 +109,57 @@ pub(crate) async fn lock_cache_key_async(
     key: String,
     before_lock_dir_create: Arc<dyn Fn(&Path) + Send + Sync>,
 ) -> io::Result<CacheKeyGuard> {
+    if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+        let shared_file = operation_lock_file(&cache_root)?;
+        let shared = lock_file_until(shared_file, false, &deadline).await?;
+        let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
+        secure_managed_dir_with(&lock_dir, || before_lock_dir_create(&lock_dir))?;
+        let lock_path = super::key_lock_path(&cache_root, &key);
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true);
+        let key_file = open_private(&mut options, &lock_path)?;
+        let key_guard = lock_file_until(key_file, true, &deadline).await?;
+        return Ok(CacheKeyGuard {
+            _shared: shared,
+            _key: key_guard,
+        });
+    }
     tokio::task::spawn_blocking(move || {
         lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref())
     })
     .await
     .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
+}
+
+async fn lock_file_until(
+    file: File,
+    exclusive: bool,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<CacheOperationGuard> {
+    use fs2::FileExt;
+
+    loop {
+        let result = if exclusive {
+            file.try_lock_exclusive()
+        } else {
+            FileExt::try_lock_shared(&file)
+        };
+        match result {
+            Ok(()) => return Ok(CacheOperationGuard { _file: file }),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                deadline
+                    .run(tokio::time::sleep(std::time::Duration::from_millis(10)))
+                    .await
+                    .map_err(|_| {
+                        io::Error::new(
+                            io::ErrorKind::TimedOut,
+                            "variant article invocation deadline exceeded",
+                        )
+                    })?;
+            }
+            Err(error) => return Err(error),
+        }
+    }
 }
 
 pub(crate) fn prepare_write_paths(cache_path: &Path, cache_key: &str) -> io::Result<()> {
@@ -135,6 +213,7 @@ pub(crate) fn secure_managed_tree(
     recurse: bool,
     managed_content_root: Option<&Path>,
 ) -> io::Result<()> {
+    check_variant_article_deadline()?;
     match fs::symlink_metadata(root) {
         Ok(metadata) if is_link_or_reparse_point(&metadata) || !metadata.is_dir() => {
             return Err(io::Error::new(
@@ -464,6 +543,7 @@ fn create_private_dir_exact(path: &Path) -> io::Result<()> {
 #[cfg(unix)]
 fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::Result<()> {
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
+    check_variant_article_deadline()?;
     let metadata = fs::symlink_metadata(path)?;
     if metadata.file_type().is_symlink() {
         if content_root.is_some_and(|root| path.starts_with(root))
@@ -499,6 +579,7 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
     }
     if recurse {
         for entry in fs::read_dir(path)? {
+            check_variant_article_deadline()?;
             let entry_path = entry?.path();
             secure_entry(&entry_path, true, content_root)?;
         }
@@ -508,6 +589,7 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
 
 #[cfg(windows)]
 fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::Result<()> {
+    check_variant_article_deadline()?;
     let metadata = fs::symlink_metadata(path)?;
     if is_link_or_reparse_point(&metadata) {
         if content_root.is_some_and(|root| path.starts_with(root))
@@ -528,6 +610,7 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
     } else if metadata.is_dir() {
         if recurse {
             for entry in fs::read_dir(path)? {
+                check_variant_article_deadline()?;
                 let entry_path = entry?.path();
                 secure_entry(&entry_path, true, content_root)?;
             }
@@ -553,6 +636,19 @@ fn secure_entry(path: &Path, recurse: bool, content_root: Option<&Path>) -> io::
         .success()
         .then_some(())
         .ok_or_else(|| io::Error::other(format!("cannot secure: {path:?}")))
+}
+
+fn check_variant_article_deadline() -> io::Result<()> {
+    if crate::sources::current_variant_article_deadline()
+        .is_some_and(|deadline| deadline.is_exhausted())
+    {
+        Err(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "variant article invocation deadline exceeded",
+        ))
+    } else {
+        Ok(())
+    }
 }
 
 #[cfg(unix)]

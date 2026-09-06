@@ -1,5 +1,5 @@
 use super::outcome_to_mcp_output;
-use crate::cli::CommandOutcome;
+use crate::cli::{CommandOutcome, VariantArticlesMcpDisposition};
 
 #[test]
 fn non_utf8_binary_outcome_is_never_converted_to_mcp_text() {
@@ -17,4 +17,17 @@ fn mcp_keeps_text_from_a_nonzero_structured_outcome() {
     ))
     .expect("MCP consumes the completed report rather than its process status");
     assert_eq!(output.text, r#"{"summary":{"failed":1}}"#);
+}
+
+#[test]
+fn variant_article_disposition_survives_the_raw_mcp_execution_seam() {
+    let output = outcome_to_mcp_output(
+        CommandOutcome::stdout_with_exit("structured".into(), 1)
+            .with_variant_articles_mcp_disposition(VariantArticlesMcpDisposition::StructuredError),
+    )
+    .expect("text output");
+    assert_eq!(
+        output.variant_articles_mcp_disposition,
+        Some(VariantArticlesMcpDisposition::StructuredError)
+    );
 }
