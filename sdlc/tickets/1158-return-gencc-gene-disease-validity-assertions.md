@@ -1009,5 +1009,10 @@ the implementation base.
   order and late-lease tests, defines the exact no-generation
   `refresh_deferred` projection and zero-GET/timestamp behavior, and pins the
   timestamp, UTF-8-byte, control, Unicode-trim, URL-preservation, and duplicate
-  rules. Pending re-review by the same independent reviewer.
+  rules.
+- Final independent design re-review: accepted. The reviewer confirmed the
+  invariant external bootstrap anchor, distinct refresh/store/generation-lock
+  roles and ordering, zero-request no-generation follower outcome, exact CSV
+  parsing boundaries, additive coexistence with ticket 1159, package-neutral
+  file plan, source-size constraints, and bounded optional-enrichment behavior.
 - Code review: pending.
