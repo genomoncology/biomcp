@@ -223,3 +223,12 @@ their assertions are unchanged, the renderer test is exactly 1,244 lines, and
 the focused Rust source-size ratchet passes without raising its baseline or
 adding a package file. Focused behavior checks and reviewer reacceptance remain
 required after the remediation rebase.
+
+After rebasing onto `6ed5b39b`, all three graph Markdown tests (including the
+ten-case direction/page matrix and adversarial backtick case) and all nine
+article graph entity tests pass. The source-size ratchet, formatting, diff
+whitespace, 1,244-line renderer-test baseline, 700-line CLI ceiling, and exact
+1,300-file package boundary pass. The focused article executable spec was not
+rebuilt because the filesystem had fallen below the 15%-free build guardrail;
+the prior 92-example result remains the latest spec evidence. Independent
+remediation review remains pending.
