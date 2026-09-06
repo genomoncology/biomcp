@@ -75,9 +75,9 @@ pub(crate) use planner::{
     plan_composite_cleanup, plan_orphan_gc, plan_size_lru, snapshot_cache,
 };
 pub(crate) use private::{
-    lock_cache_key_async, lock_cache_maintenance, lock_cache_shared, open_managed_read,
-    open_private, prepare_write_paths, secure_managed_tree, secure_written_content,
-    try_lock_cache_maintenance,
+    lock_cache_key_async, lock_cache_maintenance, lock_cache_shared, lock_cache_shared_until,
+    open_managed_read, open_private, prepare_write_paths, secure_managed_tree,
+    secure_managed_tree_until, secure_written_content, try_lock_cache_maintenance,
 };
 #[allow(unused_imports)]
 pub(crate) use provider_capture::{

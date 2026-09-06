@@ -116,8 +116,21 @@ pub(super) async fn handle(
         )
         .await?
     };
+    let settled_empty_page = outcome.response.complete
+        && outcome.response.results.is_empty()
+        && outcome
+            .response
+            .pagination
+            .total
+            .is_some_and(|total| total > 0 && offset >= total);
     let mut text = if json {
         crate::render::json::to_pretty(&outcome.response)?
+    } else if settled_empty_page {
+        format!(
+            "# Variant articles\n\nNo articles on this page. Known total: {}. Requested offset: {}.",
+            outcome.response.pagination.total.unwrap_or_default(),
+            offset,
+        )
     } else {
         let filters = super::super::related_article_filters();
         let results = outcome
@@ -192,15 +205,28 @@ pub(super) async fn handle(
                 && status.status
                     != crate::entities::article::variant_search::VariantArticleSourceStatusKind::Skipped
         })
-        .map(|status| match status.source.as_str() {
-            "pubtator" => "PubTator 3",
-            "myvariant" => "MyVariant.info",
-            other => other,
+        .map(|status| {
+            let source = match status.source.as_str() {
+                "pubtator" => "PubTator 3",
+                "myvariant" => "MyVariant.info",
+                other => other,
+            };
+            format!("{}/{} ({:?})", status.route, source, status.status).to_ascii_lowercase()
         })
         .collect::<Vec<_>>()
         .join(", ");
+    let cause = if outcome
+        .response
+        .source_status
+        .iter()
+        .any(|status| status.reason_codes.contains(&"invocation_deadline"))
+    {
+        "The invocation deadline expired"
+    } else {
+        "Provider work failed"
+    };
     Ok(CommandOutcome::stderr_with_exit(
-        format!("{sources} variant article route incomplete or timed out; retry the request."),
+        format!("{cause}; unfinished variant article routes: {sources}. Retry the request."),
         1,
     )
     .with_variant_articles_mcp_disposition(VariantArticlesMcpDisposition::StructuredError))

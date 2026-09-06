@@ -57,6 +57,20 @@ impl ClinGenAlleleRegistryClient {
         })
     }
 
+    pub(crate) async fn new_with_deadline(
+        deadline: &crate::sources::VariantArticleDeadline,
+    ) -> Result<Self, BioMcpError> {
+        let base = crate::sources::env_base(CAR_BASE, CAR_BASE_ENV);
+        let parsed = Url::parse(base.as_ref()).map_err(|_| {
+            BioMcpError::InvalidArgument("invalid ClinGen Allele Registry base URL".into())
+        })?;
+        let policy = crate::sources::provider_url_policy::ProviderUrlPolicy::clingen_car(&parsed)?;
+        Ok(Self {
+            client: crate::sources::provider_url_client_with_deadline(&policy, deadline).await?,
+            base,
+        })
+    }
+
     #[cfg(test)]
     pub(crate) fn with_test_client(
         client: reqwest_middleware::ClientWithMiddleware,

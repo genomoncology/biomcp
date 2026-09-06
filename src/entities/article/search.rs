@@ -219,23 +219,28 @@ where
         return with_federated_source_timeout(source, future).await;
     };
     let Some(started) = execution.reserve(route) else {
+        execution.record_not_attempted(route, variant_budget_source_name(source));
         return FederatedSourceOutcome::Unavailable {
             error: None,
             status: source_degraded_status(source, "variant article work budget exhausted".into()),
         };
     };
     let outcome = with_federated_source_timeout(source, future).await;
-    execution.record(
-        route,
-        variant_budget_source_name(source),
-        started,
-        if matches!(&outcome, FederatedSourceOutcome::Available(_)) {
-            "ok"
-        } else {
-            "unavailable"
-        },
-        usize::from(matches!(&outcome, FederatedSourceOutcome::Available(_))),
-    );
+    match &outcome {
+        FederatedSourceOutcome::Available(_) => {
+            execution.record(route, variant_budget_source_name(source), started, "ok", 1)
+        }
+        FederatedSourceOutcome::Unavailable {
+            error: Some(error), ..
+        } => execution.record_error(route, variant_budget_source_name(source), started, error),
+        FederatedSourceOutcome::Unavailable { error: None, .. } => execution.record(
+            route,
+            variant_budget_source_name(source),
+            started,
+            "unavailable",
+            0,
+        ),
+    }
     outcome
 }
 

@@ -209,6 +209,7 @@ struct VariantArticleCallEvent {
     status: String,
     latency_ms: u64,
     pages: usize,
+    reason_code: Option<&'static str>,
 }
 
 #[derive(Debug)]
@@ -355,6 +356,10 @@ impl VariantArticleExecutionContext {
         self.deadline.is_exhausted()
     }
 
+    pub(crate) fn deadline(&self) -> &crate::sources::VariantArticleDeadline {
+        &self.deadline
+    }
+
     pub(crate) fn reserve(&self, route: &str) -> Option<Instant> {
         if self.deadline.is_exhausted() {
             self.stop(route);
@@ -493,6 +498,13 @@ impl VariantArticleExecutionContext {
         } else {
             status
         };
+        let reason_code = match status {
+            "timed_out" => Some("invocation_deadline"),
+            "unavailable" => Some("provider_error"),
+            "not_attempted" if self.deadline.is_exhausted() => Some("invocation_deadline"),
+            "not_attempted" => Some("logical_work_cap"),
+            _ => None,
+        };
         self.events
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -502,6 +514,59 @@ impl VariantArticleExecutionContext {
                 status: status.into(),
                 latency_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
                 pages,
+                reason_code,
+            });
+    }
+
+    pub(crate) fn record_error(
+        &self,
+        route: &str,
+        source: &str,
+        started: Instant,
+        error: &BioMcpError,
+    ) {
+        let (status, reason_code) = if self.deadline.is_exhausted() {
+            ("timed_out", "invocation_deadline")
+        } else if variant_article_error_is_provider_timeout(error) {
+            ("unavailable", "provider_timeout")
+        } else if matches!(
+            variant_article_underlying_error(error),
+            BioMcpError::HttpClientInit(_)
+                | BioMcpError::ApiKeyRequired { .. }
+                | BioMcpError::ApiKeyRejected { .. }
+        ) {
+            ("unavailable", "configuration")
+        } else {
+            ("unavailable", "provider_error")
+        };
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(VariantArticleCallEvent {
+                route: route.into(),
+                source: source.into(),
+                status: status.into(),
+                latency_ms: started.elapsed().as_millis().try_into().unwrap_or(u64::MAX),
+                pages: 0,
+                reason_code: Some(reason_code),
+            });
+    }
+
+    pub(crate) fn record_not_attempted(&self, route: &str, source: &str) {
+        self.events
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .push(VariantArticleCallEvent {
+                route: route.into(),
+                source: source.into(),
+                status: "not_attempted".into(),
+                latency_ms: 0,
+                pages: 0,
+                reason_code: Some(if self.deadline.is_exhausted() {
+                    "invocation_deadline"
+                } else {
+                    "logical_work_cap"
+                }),
             });
     }
 
@@ -610,6 +675,24 @@ impl VariantArticleExecutionContext {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .get(query_alias)
             .cloned()
+    }
+}
+
+fn variant_article_underlying_error(mut error: &BioMcpError) -> &BioMcpError {
+    while let BioMcpError::WithSourceContext { source, .. } = error {
+        error = source;
+    }
+    error
+}
+
+fn variant_article_error_is_provider_timeout(error: &BioMcpError) -> bool {
+    match variant_article_underlying_error(error) {
+        BioMcpError::Http(error) | BioMcpError::HttpClientInit(error) => error.is_timeout(),
+        BioMcpError::HttpMiddleware(reqwest_middleware::Error::Reqwest(error)) => {
+            error.is_timeout()
+        }
+        BioMcpError::Api { message, .. } => message.to_ascii_lowercase().contains("timeout"),
+        _ => false,
     }
 }
 
@@ -1001,17 +1084,29 @@ fn provider_statuses_for_route(
                     .iter()
                     .filter(|event| event.status == "timed_out")
                     .count(),
-                not_attempted: 0,
+                not_attempted: events
+                    .iter()
+                    .filter(|event| event.status == "not_attempted")
+                    .count(),
             };
-            let reasons = if work.timed_out > 0 {
-                vec!["invocation_deadline"]
-            } else if work.unavailable > 0 {
-                vec!["provider_error"]
-            } else {
-                Vec::new()
-            };
+            let reasons = events
+                .iter()
+                .filter_map(|event| event.reason_code)
+                .collect();
             aggregate_source_status(route, &source, work, reasons)
         })
+        .collect()
+}
+
+fn provider_statuses_for_events(
+    events: &[VariantArticleCallEvent],
+) -> Vec<VariantArticleSourceStatus> {
+    events
+        .iter()
+        .map(|event| event.route.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .flat_map(|route| provider_statuses_for_route(&route, events))
         .collect()
 }
 
@@ -1249,69 +1344,91 @@ async fn resolve_canonical_equivalence(
     if execution.deadline.is_exhausted() {
         return canonical_equivalence(Vec::new(), Vec::new());
     }
-    let client = crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new().ok();
+    let client =
+        crate::sources::clingen_allele_registry::ClinGenAlleleRegistryClient::new_with_deadline(
+            execution.deadline(),
+        )
+        .await;
     let mut observations = Vec::with_capacity(queries.len());
     let mut items = Vec::new();
     for (basis, query) in queries {
         let item = match (execution.reserve("canonical_equivalence"), client.as_ref()) {
-            (Some(started), Some(client)) => {
-                let item =
-                    client
-                        .normalize(&query)
-                        .await
-                        .unwrap_or_else(|_| CarNormalizationItem {
-                            input: query.clone(),
-                            status: CarNormalizationStatus::Unavailable,
-                            exhaustive: false,
-                            caid: None,
-                            canonical_title: None,
-                            genomic_aliases: Default::default(),
-                            transcript_aliases: Default::default(),
-                            protein_aliases: Default::default(),
-                            external_ids: Default::default(),
-                            source: "clingen_car".into(),
-                            query: query.clone(),
-                            warnings: Vec::new(),
-                            error: None,
-                            provenance: crate::entities::variant::CarProvenance {
-                                request_template_version: "1".into(),
-                                car_version: None,
-                                response_sha256: None,
-                            },
-                        });
-                execution.record(
-                    "canonical_equivalence",
-                    "clingen_car",
-                    started,
-                    if matches!(item.status, CarNormalizationStatus::Unavailable) {
-                        "unavailable"
-                    } else {
-                        "ok"
+            (Some(started), Ok(client)) => {
+                let result = client.normalize(&query).await;
+                if let Err(error) = &result {
+                    execution.record_error("canonical_equivalence", "clingen_car", started, error);
+                }
+                let item = result.unwrap_or_else(|_| CarNormalizationItem {
+                    input: query.clone(),
+                    status: CarNormalizationStatus::Unavailable,
+                    exhaustive: false,
+                    caid: None,
+                    canonical_title: None,
+                    genomic_aliases: Default::default(),
+                    transcript_aliases: Default::default(),
+                    protein_aliases: Default::default(),
+                    external_ids: Default::default(),
+                    source: "clingen_car".into(),
+                    query: query.clone(),
+                    warnings: Vec::new(),
+                    error: None,
+                    provenance: crate::entities::variant::CarProvenance {
+                        request_template_version: "1".into(),
+                        car_version: None,
+                        response_sha256: None,
                     },
-                    1,
-                );
+                });
+                if !matches!(item.status, CarNormalizationStatus::Unavailable) {
+                    execution.record("canonical_equivalence", "clingen_car", started, "ok", 1);
+                }
                 item
             }
-            _ => CarNormalizationItem {
-                input: query.clone(),
-                status: CarNormalizationStatus::Unavailable,
-                exhaustive: false,
-                caid: None,
-                canonical_title: None,
-                genomic_aliases: Default::default(),
-                transcript_aliases: Default::default(),
-                protein_aliases: Default::default(),
-                external_ids: Default::default(),
-                source: "clingen_car".into(),
-                query: query.clone(),
-                warnings: Vec::new(),
-                error: None,
-                provenance: crate::entities::variant::CarProvenance {
-                    request_template_version: "1".into(),
-                    car_version: None,
-                    response_sha256: None,
-                },
-            },
+            (Some(started), Err(error)) => {
+                execution.record_error("canonical_equivalence", "clingen_car", started, error);
+                CarNormalizationItem {
+                    input: query.clone(),
+                    status: CarNormalizationStatus::Unavailable,
+                    exhaustive: false,
+                    caid: None,
+                    canonical_title: None,
+                    genomic_aliases: Default::default(),
+                    transcript_aliases: Default::default(),
+                    protein_aliases: Default::default(),
+                    external_ids: Default::default(),
+                    source: "clingen_car".into(),
+                    query: query.clone(),
+                    warnings: Vec::new(),
+                    error: None,
+                    provenance: crate::entities::variant::CarProvenance {
+                        request_template_version: "1".into(),
+                        car_version: None,
+                        response_sha256: None,
+                    },
+                }
+            }
+            (None, _) => {
+                execution.record_not_attempted("canonical_equivalence", "clingen_car");
+                CarNormalizationItem {
+                    input: query.clone(),
+                    status: CarNormalizationStatus::Unavailable,
+                    exhaustive: false,
+                    caid: None,
+                    canonical_title: None,
+                    genomic_aliases: Default::default(),
+                    transcript_aliases: Default::default(),
+                    protein_aliases: Default::default(),
+                    external_ids: Default::default(),
+                    source: "clingen_car".into(),
+                    query: query.clone(),
+                    warnings: Vec::new(),
+                    error: None,
+                    provenance: crate::entities::variant::CarProvenance {
+                        request_template_version: "1".into(),
+                        car_version: None,
+                        response_sha256: None,
+                    },
+                }
+            }
         };
         items.push(item.clone());
         observations.push(canonical_observation(basis, query, item));
@@ -1503,24 +1620,24 @@ async fn annotation_candidates(
     execution: &VariantArticleExecutionContext,
 ) -> Result<(Vec<ArticleCandidate>, bool, bool, bool), BioMcpError> {
     let Some(started) = execution.reserve("pubtator_variant") else {
+        execution.record_not_attempted("pubtator_variant", "pubtator");
         return Ok((Vec::new(), true, false, true));
     };
-    let pubtator = match crate::sources::pubtator::PubTatorClient::new() {
-        Ok(client) => client,
-        Err(_) => return Ok((Vec::new(), true, false, true)),
-    };
+    let pubtator =
+        match crate::sources::pubtator::PubTatorClient::new_with_deadline(execution.deadline())
+            .await
+        {
+            Ok(client) => client,
+            Err(error) => {
+                execution.record_error("pubtator_variant", "pubtator", started, &error);
+                return Ok((Vec::new(), true, false, true));
+            }
+        };
     let token_result = resolve_variant_entity_tokens(&pubtator, input, &context.requested).await;
-    execution.record(
-        "pubtator_variant",
-        "pubtator",
-        started,
-        if token_result.is_ok() {
-            "ok"
-        } else {
-            "unavailable"
-        },
-        usize::from(token_result.is_ok()),
-    );
+    match &token_result {
+        Ok(_) => execution.record("pubtator_variant", "pubtator", started, "ok", 1),
+        Err(error) => execution.record_error("pubtator_variant", "pubtator", started, error),
+    }
     let tokens = token_result?;
     let mut candidates = Vec::new();
     let mut incomplete = false;
@@ -1728,23 +1845,24 @@ async fn strict_provider_candidates(
             }),
             "pubtator" => {
                 let Some(started) = execution.reserve("strict") else {
+                    execution.record_not_attempted("strict", "pubtator");
                     incomplete = true;
                     break;
                 };
-                let pubtator = crate::sources::pubtator::PubTatorClient::new();
+                let pubtator = crate::sources::pubtator::PubTatorClient::new_with_deadline(
+                    execution.deadline(),
+                )
+                .await;
                 let tokens = match pubtator {
                     Ok(pubtator) => {
                         resolve_variant_entity_tokens(&pubtator, input, &context.requested).await
                     }
                     Err(error) => Err(error),
                 };
-                execution.record(
-                    "strict",
-                    "pubtator",
-                    started,
-                    if tokens.is_ok() { "ok" } else { "unavailable" },
-                    usize::from(tokens.is_ok()),
-                );
+                match &tokens {
+                    Ok(_) => execution.record("strict", "pubtator", started, "ok", 1),
+                    Err(error) => execution.record_error("strict", "pubtator", started, error),
+                }
                 match tokens {
                     Ok(tokens) => match tokens.first() {
                         Some(token) => {
@@ -1866,27 +1984,32 @@ async fn citation_candidates(
     };
     let hydrated_hit = if retained_hit.civic.is_none() {
         let Some(started) = execution.reserve("source_citation") else {
+            execution.record_not_attempted("source_citation", "myvariant");
             return Ok((Vec::new(), true));
         };
         let source_key = context
             .source_identity
             .as_ref()
             .map(crate::entities::variant::SourceVariantIdentity::normalized_key);
-        let client = match crate::sources::myvariant::MyVariantClient::new() {
+        let client = match crate::sources::myvariant::MyVariantClient::new_with_deadline(
+            execution.deadline(),
+        )
+        .await
+        {
             Ok(client) => client,
-            Err(_) => return Ok((Vec::new(), true)),
+            Err(error) => {
+                execution.record_error("source_citation", "myvariant", started, &error);
+                return Ok((Vec::new(), true));
+            }
         };
         let result = client
             .get_all(&retained_hit.id)
             .await
             .and_then(|hits| select_hydrated_source_hit(hits, source_key.as_deref()));
-        execution.record(
-            "source_citation",
-            "myvariant",
-            started,
-            if result.is_ok() { "ok" } else { "unavailable" },
-            usize::from(result.is_ok()),
-        );
+        match &result {
+            Ok(_) => execution.record("source_citation", "myvariant", started, "ok", 1),
+            Err(error) => execution.record_error("source_citation", "myvariant", started, error),
+        }
         Some(result?)
     } else {
         None
@@ -2459,6 +2582,21 @@ async fn search_variant_articles_identity(
     let (selected_exact_aliases, selected_exact_aliases_truncated) =
         exact_aliases_with_equivalence(&context, &canonical_equivalence);
     if !context.available {
+        let events = execution.events();
+        let mut source_status = provider_statuses_for_events(&events);
+        if source_status.is_empty() {
+            source_status.push(status(
+                "resolution",
+                "myvariant",
+                if execution.deadline.is_exhausted() {
+                    VariantArticleSourceStatusKind::TimedOut
+                } else {
+                    VariantArticleSourceStatusKind::Unavailable
+                },
+            ));
+        }
+        source_status
+            .sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
         let debug_plan = include_debug_plan.then(|| {
             let mut plan =
                 empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
@@ -2483,15 +2621,7 @@ async fn search_variant_articles_identity(
                     has_more: true,
                     next_page_token: None,
                 },
-                source_status: vec![status(
-                    "resolution",
-                    "myvariant",
-                    if execution.deadline.is_exhausted() {
-                        VariantArticleSourceStatusKind::TimedOut
-                    } else {
-                        VariantArticleSourceStatusKind::Unavailable
-                    },
-                )],
+                source_status,
                 retrieval_path: "variant resolution unavailable",
                 results: Vec::new(),
                 error: Some(VariantArticleItemError {
@@ -2522,12 +2652,14 @@ async fn search_variant_articles_identity(
     let mut statuses = provider_statuses_for_route("resolution", &events);
     let canonical_statuses = provider_statuses_for_route("canonical_equivalence", &events);
     if canonical_statuses.is_empty() {
-        statuses.push(status_with_detail(
+        let mut inapplicable = status_with_detail(
             "canonical_equivalence",
             "clingen_car",
             VariantArticleSourceStatusKind::Skipped,
             Some("caller identity has no applicable canonical query"),
-        ));
+        );
+        inapplicable.reason_codes = vec!["identity_inapplicable"];
+        statuses.push(inapplicable);
     } else {
         statuses.extend(canonical_statuses);
     }
@@ -2804,6 +2936,7 @@ async fn search_variant_articles_identity(
             let incomplete = match candidate.row.pmid.parse::<u32>() {
                 Ok(pmid) => {
                     let Some(started) = execution.reserve("identity_verification") else {
+                        execution.record_not_attempted("identity_verification", "pubtator");
                         verification_incomplete = true;
                         candidate.identity = Some(combine_identities(
                             captured.clone(),
@@ -2818,21 +2951,26 @@ async fn search_variant_articles_identity(
                         ));
                         continue;
                     };
-                    let response = match crate::sources::pubtator::PubTatorClient::new() {
-                        Ok(client) => client.export_biocjson(pmid).await,
-                        Err(error) => Err(error),
-                    };
-                    execution.record(
-                        "identity_verification",
-                        "pubtator",
-                        started,
-                        if response.is_ok() {
-                            "ok"
-                        } else {
-                            "unavailable"
-                        },
-                        1,
-                    );
+                    let response =
+                        match crate::sources::pubtator::PubTatorClient::new_with_deadline(
+                            execution.deadline(),
+                        )
+                        .await
+                        {
+                            Ok(client) => client.export_biocjson(pmid).await,
+                            Err(error) => Err(error),
+                        };
+                    match &response {
+                        Ok(_) => {
+                            execution.record("identity_verification", "pubtator", started, "ok", 1)
+                        }
+                        Err(error) => execution.record_error(
+                            "identity_verification",
+                            "pubtator",
+                            started,
+                            error,
+                        ),
+                    }
                     match response {
                         Ok(response) => {
                             verification_response_subsets
@@ -2870,13 +3008,14 @@ async fn search_variant_articles_identity(
         }
         verification_incomplete |=
             verification.confirmed_only && candidates.len() > verification_count;
-        let _ldh_incomplete = add_ldh_observations(
+        let ldh_incomplete = add_ldh_observations(
             &mut candidates,
             &context.requested,
             &canonical_equivalence,
             &execution,
         )
         .await;
+        verification_incomplete |= ldh_incomplete;
         for candidate in &mut candidates {
             let disposition = candidate
                 .identity
@@ -2928,13 +3067,34 @@ async fn search_variant_articles_identity(
         .take(limit)
         .collect::<Vec<_>>();
     enrich_candidates(&mut visible_candidates, &execution).await;
+    // Settlement happens only after every identity, enrichment, and LDH unit
+    // has reached a terminal state. Replace any provisional aggregate for a
+    // route/source that has real events, while retaining zero-work/skipped
+    // skeleton rows.
+    let final_events = execution.events();
+    let event_keys = final_events
+        .iter()
+        .map(|event| (event.route.clone(), event.source.clone()))
+        .collect::<BTreeSet<_>>();
+    statuses.retain(|status| {
+        status.source != "internal"
+            && !event_keys.contains(&(status.route.clone(), status.source.clone()))
+    });
+    for route in final_events
+        .iter()
+        .map(|event| event.route.clone())
+        .collect::<BTreeSet<_>>()
+    {
+        statuses.extend(provider_statuses_for_route(&route, &final_events));
+    }
+    let runtime_incomplete = final_events.iter().any(|event| event.status != "ok");
     let provider_incomplete = matches!(
         context.resolution.provider_validation.status,
         VariantProviderValidationStatus::Indeterminate
             | VariantProviderValidationStatus::Unavailable
     );
     let (complete, truncated) = variant_article_terminal_state(
-        failed_routes,
+        failed_routes + usize::from(runtime_incomplete),
         provider_incomplete,
         verification_incomplete,
         canonical_equivalence.applicable_identity_count < 2 || canonical_equivalence.complete,
@@ -3095,20 +3255,22 @@ async fn add_ldh_observations(
     };
     let Some(caid) = caid else { return false };
     let Some(started) = execution.reserve("clingen_ldh_medium") else {
+        execution.record_not_attempted("clingen_ldh_medium", "clingen_ldh");
         return true;
     };
-    let client = match crate::sources::ClinGenLdhClient::new() {
-        Ok(client) => client,
-        Err(_) => return true,
-    };
+    let client =
+        match crate::sources::ClinGenLdhClient::new_with_deadline(execution.deadline()).await {
+            Ok(client) => client,
+            Err(error) => {
+                execution.record_error("clingen_ldh_medium", "clingen_ldh", started, &error);
+                return true;
+            }
+        };
     let medium = client.medium(caid).await;
-    execution.record(
-        "clingen_ldh_medium",
-        "clingen_ldh",
-        started,
-        if medium.is_ok() { "ok" } else { "unavailable" },
-        1,
-    );
+    match &medium {
+        Ok(_) => execution.record("clingen_ldh_medium", "clingen_ldh", started, "ok", 1),
+        Err(error) => execution.record_error("clingen_ldh_medium", "clingen_ldh", started, error),
+    }
     let Ok(medium) = medium else { return true };
     let rows = medium
         .get("data")
@@ -3165,6 +3327,7 @@ async fn add_ldh_observations(
             .collect::<Vec<_>>();
         for iri in iris {
             let Some(started) = execution.reserve("clingen_ldh_direct") else {
+                execution.record_not_attempted("clingen_ldh_direct", "clingen_ldh");
                 return true;
             };
             let Some(body_limit) =
@@ -3173,13 +3336,12 @@ async fn add_ldh_observations(
                 return true;
             };
             let direct = client.direct(iri, body_limit).await;
-            execution.record(
-                "clingen_ldh_direct",
-                "clingen_ldh",
-                started,
-                if direct.is_ok() { "ok" } else { "unavailable" },
-                1,
-            );
+            match &direct {
+                Ok(_) => execution.record("clingen_ldh_direct", "clingen_ldh", started, "ok", 1),
+                Err(error) => {
+                    execution.record_error("clingen_ldh_direct", "clingen_ldh", started, error)
+                }
+            }
             match direct {
                 Ok((direct, body_bytes)) => {
                     direct_bytes += body_bytes;
@@ -3734,7 +3896,8 @@ mod tests {
         assert!(outcome.response.pagination.has_more);
         assert!(outcome.response.source_status.iter().any(|status| {
             status.route == "resolution"
-                && status.status == VariantArticleSourceStatusKind::TimedOut
+                && status.status == VariantArticleSourceStatusKind::NotAttempted
+                && status.reason_codes == vec!["invocation_deadline"]
         }));
         assert!(
             outcome
@@ -4555,9 +4718,11 @@ mod tests {
             status: "ok".into(),
             latency_ms: 0,
             pages: 1,
+            reason_code: None,
         };
         let unavailable = VariantArticleCallEvent {
             status: "unavailable".into(),
+            reason_code: Some("provider_timeout"),
             ..ok.clone()
         };
 
@@ -4573,13 +4738,9 @@ mod tests {
             provider_terminal_status(&[&unavailable]),
             VariantArticleSourceStatusKind::Unavailable
         );
-        assert_eq!(
-            provider_statuses_for_route("exact_lexical", &[ok, unavailable])
-                .into_iter()
-                .map(|status| status.status)
-                .collect::<Vec<_>>(),
-            vec![VariantArticleSourceStatusKind::Degraded]
-        );
+        let statuses = provider_statuses_for_route("exact_lexical", &[ok, unavailable]);
+        assert_eq!(statuses[0].status, VariantArticleSourceStatusKind::Degraded);
+        assert_eq!(statuses[0].reason_codes, vec!["provider_timeout"]);
     }
 
     #[test]

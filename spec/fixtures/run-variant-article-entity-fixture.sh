@@ -486,6 +486,9 @@ case "$scenario" in
           source_status: [(.source_status // [])[] | select(.route == "pubtator_variant" and .source == "pubtator") | {route, source, status, work, reason_codes}]
         }'
     ;;
+  offset-beyond-total-markdown)
+    "$binary" variant articles "BRAF p.V600E" --limit 3 --offset 999
+    ;;
   batch-compact-json)
     batch="$($binary --json variant articles --input "$batch_input" --limit 3)"
     followups_parseable="$({ jq -r '._meta.next_commands[]?' <<<"$batch"; } \

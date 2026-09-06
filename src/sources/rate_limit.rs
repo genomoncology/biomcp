@@ -294,12 +294,21 @@ pub(crate) fn global_limiter() -> Arc<RateLimiter> {
 #[derive(Clone, Debug)]
 pub(crate) struct RateLimitMiddleware {
     limiter: Arc<RateLimiter>,
+    provider_pool: bool,
 }
 
 impl RateLimitMiddleware {
     pub(crate) fn new() -> Self {
         Self {
             limiter: global_limiter(),
+            provider_pool: false,
+        }
+    }
+
+    pub(crate) fn provider_pool() -> Self {
+        Self {
+            limiter: global_limiter(),
+            provider_pool: true,
         }
     }
 }
@@ -313,15 +322,25 @@ impl Middleware for RateLimitMiddleware {
         next: Next<'_>,
     ) -> reqwest_middleware::Result<reqwest::Response> {
         if let Some(deadline) = extensions.get::<super::VariantArticleDeadline>().cloned() {
-            let _provider_permit = deadline
-                .acquire_provider()
-                .await
-                .map_err(reqwest_middleware::Error::middleware)?;
+            if self.provider_pool {
+                let _provider_permit = deadline
+                    .acquire_provider()
+                    .await
+                    .map_err(reqwest_middleware::Error::middleware)?;
+                return deadline
+                    .run(next.run(req, extensions))
+                    .await
+                    .map_err(reqwest_middleware::Error::middleware)?;
+            }
             deadline
                 .run(self.limiter.wait_for_url(req.url()))
                 .await
                 .map_err(reqwest_middleware::Error::middleware)?;
-        } else {
+            return deadline
+                .run(next.run(req, extensions))
+                .await
+                .map_err(reqwest_middleware::Error::middleware)?;
+        } else if !self.provider_pool {
             self.limiter.wait_for_url(req.url()).await;
         }
         next.run(req, extensions).await
@@ -337,6 +356,64 @@ pub(crate) async fn wait_for_url_str(raw: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn provider_limit_covers_actual_downstream_http_work() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind fixture");
+        let address = listener.local_addr().expect("fixture address");
+        let active = Arc::new(AtomicUsize::new(0));
+        let peak = Arc::new(AtomicUsize::new(0));
+        let server = {
+            let active = active.clone();
+            let peak = peak.clone();
+            tokio::spawn(async move {
+                for _ in 0..20 {
+                    let (mut stream, _) = listener.accept().await.expect("accept fixture request");
+                    let active = active.clone();
+                    let peak = peak.clone();
+                    tokio::spawn(async move {
+                        let mut request = [0_u8; 1024];
+                        let _ = stream.read(&mut request).await;
+                        let now = active.fetch_add(1, Ordering::SeqCst) + 1;
+                        peak.fetch_max(now, Ordering::SeqCst);
+                        tokio::time::sleep(Duration::from_millis(25)).await;
+                        let _ = stream
+                            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
+                            .await;
+                        active.fetch_sub(1, Ordering::SeqCst);
+                    });
+                }
+            })
+        };
+        let client = reqwest_middleware::ClientBuilder::new(reqwest::Client::new())
+            .with(RateLimitMiddleware {
+                limiter: Arc::new(RateLimiter::new(Vec::new(), Duration::ZERO, None)),
+                provider_pool: true,
+            })
+            .build();
+        let deadline = super::super::VariantArticleDeadline::from_now(Duration::from_secs(5));
+        let requests = (0..20).map(|index| {
+            let client = client.clone();
+            let deadline = deadline.clone();
+            async move {
+                client
+                    .get(format!("http://{address}/{index}"))
+                    .with_extension(deadline)
+                    .send()
+                    .await
+                    .expect("fixture response")
+            }
+        });
+        futures::future::join_all(requests).await;
+        server.await.expect("fixture server");
+
+        assert_eq!(peak.load(Ordering::SeqCst), 10);
+    }
 
     fn test_policy(key: &'static str, prefix: &str, ms: u64) -> RateLimitPolicy {
         RateLimitPolicy {

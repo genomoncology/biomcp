@@ -38,21 +38,33 @@ MCP carries an internal variant-only disposition without reinterpreting other
 nonzero command outcomes. CLI, MCP, how-to, provider documentation, and the
 executable healthy-empty fixture were updated.
 
-Focused evidence passed: `cargo check --no-default-features`; Clippy with
-warnings denied; `make lint` including quality/source-size ratchets; 45 of 46
-variant-search module tests before the one long capture case encountered
-shared concurrent cache contention; the isolated deadline, source-precedence,
+Focused evidence passed for the original implementation: `cargo check
+--no-default-features`; Clippy with warnings denied; `make lint` including
+quality/source-size ratchets; the isolated deadline, source-precedence,
 provider-cap, task-local-isolation, raw-MCP, mixed-batch, CLI parsing,
-cache-manager (22 tests), and JSON hard-failure regressions; 13 docs contracts;
-7 MCP catalog contracts; 6 package-boundary contracts with a worktree-local
-temporary root; and the healthy-empty and union executable fixtures. The
-package inventory remains exactly 1,300 files. The contended capture rerun was
-terminated after a duplicate parent gate was observed running the same test;
-the production/test deadline leakage that caused its first failure was fixed,
-but no full `make test` or `make spec` claim is made. A direct mustmatch attempt
-without prepared spec artifacts was stopped after unrelated pre-variant
-fixtures failed; the changed fixture scenarios passed directly against the
-worktree binary.
+cache-manager, JSON hard-failure, documentation, MCP-catalog, package-boundary,
+healthy-empty, and union fixture lanes. Independent review subsequently ran all
+47 variant-search module tests, including the 119-second real-capture case;
+all passed, confirming the earlier 45/46 report was only shared compile/cache
+contention.
+
+Review remediation now keeps the provider permit around the entire downstream
+cache/retry/transport/body/commit chain while retaining per-attempt rate
+pacing; uses explicit async deadline-aware constructors for every
+variant-literature provider; finishes cache metadata/security hardening after
+an atomic put even if the clock expires; rebuilds source status only after
+identity, enrichment, and LDH events; records real MyVariant hydration and LDH
+incompleteness; and distinguishes invocation deadline, provider timeout,
+configuration, identity-inapplicable, and logical-cap reasons without a
+synthetic `internal` provider. CLI Markdown now distinguishes complete
+offset-beyond-total pages from healthy-empty searches and gives incomplete-zero
+items an actionable route/state failure. Added deterministic actual-HTTP
+ten-provider concurrency, cache safe-return, terminal-reason, and executable
+offset Markdown coverage. Remediation evidence includes `cargo check
+--no-default-features`, the actual-HTTP provider concurrency regression, and 31
+focused Python documentation contracts; two additional Python tests required a
+prepared `target/release/biomcp` and were not run as passing claims. Full
+`make test` and `make spec` are not claimed.
 
 ## Review
 
