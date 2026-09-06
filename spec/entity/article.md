@@ -1219,7 +1219,72 @@ test "$(wc -l <"$request_log")" -eq 0
 ../../tools/biomcp-ci --json article references 20516115 --limit 1 --offset 18446744073709551615 \
   | jq -c '{pagination, _meta}' \
   | mustmatch like '{"pagination":{"offset":18446744073709551615,"limit":1,"returned":0,"next_offset":null,"coverage_status":"exhausted"},"_meta":{"next_commands":[]}}'
-test "$(wc -l <"$request_log")" -eq 2
+mustmatch like 's2:seed:x-api-key:absent
+s2:graph:references:limit=1:offset=18446744073709551615:x-api-key:absent' <"$request_log"
+```
+
+Each successful invocation resolves the seed once and then reads exactly the
+requested graph page once. It never reads page zero, the preceding page, or
+the advertised continuation on the caller's behalf.
+
+```bash
+request_log="${BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG:?article request log is not configured}"
+for direction in citations references; do
+  : >"$request_log"
+  ../../tools/biomcp-ci --json article "$direction" 20516115 --limit 1 --offset 1 >/dev/null
+  mustmatch like "s2:seed:x-api-key:absent
+s2:graph:$direction:limit=1:offset=1:x-api-key:absent" <"$request_log"
+  test "$(wc -l <"$request_log")" -eq 2
+done
+```
+
+Malformed provider pagination fails closed for citations and references. Every
+fixture response below contains a captured edge, so its absence proves that a
+bad envelope cannot leak page data or a continuation.
+
+```bash
+python3 - <<'PY' | mustmatch like 'malformed citation and reference pages fail closed'
+import os, subprocess
+
+cases = {
+    2000: "missing offset",
+    2001: "null offset",
+    2002: "mismatched offset",
+    2003: "negative offset",
+    2004: "fractional offset",
+    2005: "string offset",
+    2006: "overflowing offset",
+    2010: "negative next",
+    2011: "fractional next",
+    2012: "string next",
+    2013: "overflowing next",
+    2014: "equal next",
+    2015: "decreasing next",
+}
+for direction in ("citations", "references"):
+    for offset, label in cases.items():
+        result = subprocess.run(
+            [os.environ["BIOMCP_BIN"], "--json", "article", direction, "20516115", "--limit", "1", "--offset", str(offset)],
+            text=True, capture_output=True,
+        )
+        emitted = result.stdout + result.stderr
+        assert result.returncode != 0, (direction, label, emitted)
+        assert "Functional variant analyses (FVAs) predict pathogenicity" not in emitted, (direction, label, emitted)
+        assert "Sign up to receive free email-alerts" not in emitted, (direction, label, emitted)
+        assert "2dc9804f8a6a9e383e15baba4d95dfbf1939bd6b" not in emitted, (direction, label, emitted)
+        assert '"pagination"' not in emitted, (direction, label, emitted)
+        assert "Next:" not in emitted and "next_commands" not in emitted, (direction, label, emitted)
+
+    for offset in (1001, 1002):
+        result = subprocess.run(
+            [os.environ["BIOMCP_BIN"], "--json", "article", direction, "20516115", "--limit", "1", "--offset", str(offset)],
+            text=True, capture_output=True, check=True,
+        )
+        assert '"coverage_status": "exhausted"' in result.stdout
+        assert '"next_offset": null' in result.stdout
+        assert '"next_commands": []' in result.stdout
+print("malformed citation and reference pages fail closed")
+PY
 ```
 
 Raw MCP preserves the same JSON and Markdown contract. Citation/reference
@@ -1235,13 +1300,24 @@ def call(message):
     return json.loads(proc.stdout.readline())
 call({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"spec","version":"1"}}})
 proc.stdin.write(json.dumps({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}) + "\n"); proc.stdin.flush()
-structured = call({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp --json article citations 20516115 --limit 1 --offset 1"}}})["result"]
-readable = call({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":"biomcp article references 20516115 --limit 1 --offset 1"}}})["result"]
-tools = call({"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}})["result"]["tools"]
-payload = json.loads(structured["content"][0]["text"])
-assert structured.get("isError") is False and payload["pagination"] == {"offset":1,"limit":1,"returned":1,"next_offset":2,"coverage_status":"continuable"}
-assert payload["_meta"]["next_commands"] == ["biomcp article citations 20516115 --limit 1 --offset 2"]
-assert readable.get("isError") is False and "Next: `biomcp article references 20516115 --limit 1 --offset 2`" in readable["content"][0]["text"]
+request_id = 2
+for direction in ("citations", "references"):
+    cli_json = subprocess.run([os.environ["BIOMCP_BIN"], "--json", "article", direction, "20516115", "--limit", "1", "--offset", "1"], text=True, capture_output=True, check=True)
+    cli_markdown = subprocess.run([os.environ["BIOMCP_BIN"], "article", direction, "20516115", "--limit", "1", "--offset", "1"], text=True, capture_output=True, check=True).stdout
+    structured = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article {direction} 20516115 --limit 1 --offset 1","json":True}}})["result"]
+    request_id += 1
+    readable = call({"jsonrpc":"2.0","id":request_id,"method":"tools/call","params":{"name":"biomcp","arguments":{"command":f"biomcp article {direction} 20516115 --limit 1 --offset 1"}}})["result"]
+    request_id += 1
+    cli_payload = json.loads(cli_json.stdout)
+    payload = json.loads(structured["content"][0]["text"])
+    command = f"biomcp article {direction} 20516115 --limit 1 --offset 2"
+    assert structured.get("isError") is False and readable.get("isError") is False
+    assert payload["pagination"] == cli_payload["pagination"] == {"offset":1,"limit":1,"returned":1,"next_offset":2,"coverage_status":"continuable"}
+    assert payload["_meta"]["next_commands"] == cli_payload["_meta"]["next_commands"] == [command]
+    readable_text = readable["content"][0]["text"]
+    assert readable_text.rstrip() == cli_markdown.rstrip()
+    assert readable_text.count(f"Next: `{command}`") == cli_markdown.count(f"Next: `{command}`") == 1
+tools = call({"jsonrpc":"2.0","id":request_id,"method":"tools/list","params":{}})["result"]["tools"]
 names = {tool["name"] for tool in tools}
 assert "article_citations" not in names and "article_references" not in names
 proc.terminate(); proc.wait(timeout=5)

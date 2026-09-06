@@ -402,7 +402,7 @@ pub fn article_graph_markdown(
         result.pagination.coverage_status.as_str(),
     ));
     if let Some(command) = result._meta.next_commands.first() {
-        out.push_str(&format!("Next: `{command}`\n"));
+        out.push_str(&format!("Next: {}\n", markdown_code_span(command)));
     }
     Ok(out)
 }

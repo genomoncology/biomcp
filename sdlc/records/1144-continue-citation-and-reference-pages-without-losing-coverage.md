@@ -189,3 +189,28 @@ broader MCP measurement-test invocation could not import the environment's
 optional `tiktoken` package; its unaffected catalog shape and installed-binary
 inventory tests were rerun separately and passed. Independent code review is
 still required before merge.
+
+The first independent code review rejected incomplete executable proof rather
+than the pagination implementation. Remediation now exercises citations and
+references through raw MCP in both Markdown and JSON, compares their exact
+pagination and continuation with CLI output, and reruns the typed catalog
+inventory plus the Rust stdio MCP integration test. A byte-exact Rust matrix
+covers first, middle, terminal, empty-continuable, and empty-exhausted Markdown
+for both directions, including the retained edge table and shared continuation;
+an adversarial caller ID also proves a backtick-safe Markdown code span.
+
+The captured provider fixture now distinguishes the seed lookup from the graph
+endpoint and records direction, limit, and offset. Fixture lifecycle and
+executable spec assertions prove each command makes one seed request followed
+by exactly one requested graph-page read, without fetching page zero, an
+earlier page, or the advertised continuation. Both graph entity paths reject
+missing, null, mismatched, negative, fractional, string, overflowing, equal,
+and decreasing pagination values without leaking the fixture edge or a
+continuation; absent and explicit-null `next` remain successful exhausted
+pages. Focused Rust tests passed, the article mustmatch page passed 92 examples
+with four intentional skips, the focused fixture lifecycle test passed, both
+typed catalog tests passed, and the exact Rust stdio MCP integration test passed
+one test with 15 filtered out. Formatting, Ruff, fixture shell syntax,
+`git diff --check`, and the exact 1,300-path package count passed. Full
+repository gates were not rerun. Fresh independent remediation review remains
+required; this record does not claim acceptance.

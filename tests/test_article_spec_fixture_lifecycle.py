@@ -505,7 +505,7 @@ def test_metadata_resets_only_cold_storage_download_state(tmp_path: Path) -> Non
         )
 
 
-def test_article_graph_fixture_records_only_semantic_scholar_header_presence(
+def test_article_graph_fixture_records_one_requested_page_after_seed_resolution(
     tmp_path: Path,
 ) -> None:
     workspace = tmp_path / "workspace"
@@ -519,19 +519,21 @@ def test_article_graph_fixture_records_only_semantic_scholar_header_presence(
     request_log = Path(exports["BIOMCP_ARTICLE_FULLTEXT_SOURCE_FIXTURE_REQUEST_LOG"])
     sentinel = "fixture-secret-key-663"
     try:
-        result = subprocess.run(
-            [Path(os.environ["BIOMCP_BIN"]), "--json", "article", "citations", "20516115", "--limit", "100"],
-            env=os.environ | exports | {"BIOMCP_CACHE_DIR": str(tmp_path / "cache"), "S2_API_KEY": sentinel},
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        assert request_log.read_text().splitlines() == [
-            "s2:x-api-key:present",
-            "s2:x-api-key:present",
-        ]
-        assert sentinel not in result.stdout
-        assert sentinel not in result.stderr
+        for direction in ("citations", "references"):
+            request_log.write_text("", encoding="utf-8")
+            result = subprocess.run(
+                [Path(os.environ["BIOMCP_BIN"]), "--json", "article", direction, "20516115", "--limit", "1", "--offset", "1"],
+                env=os.environ | exports | {"BIOMCP_CACHE_DIR": str(tmp_path / "cache"), "S2_API_KEY": sentinel},
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            assert request_log.read_text().splitlines() == [
+                "s2:seed:x-api-key:present",
+                f"s2:graph:{direction}:limit=1:offset=1:x-api-key:present",
+            ]
+            assert sentinel not in result.stdout
+            assert sentinel not in result.stderr
     finally:
         subprocess.run(
             ["bash", "spec/fixtures/cleanup-article-fulltext-source-fixture.sh", str(workspace)],

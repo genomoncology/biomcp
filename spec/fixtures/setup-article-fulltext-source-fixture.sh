@@ -562,12 +562,32 @@ def europepmc_search_payload(pmid):
 
 def graph_page_payload(body, offset, limit):
     payload = json.loads(body)
+    sentinel_data = (payload.get("data") or [])[-1:]
+    malformed = {
+        2000: {"next": 2001, "data": sentinel_data},
+        2001: {"offset": None, "next": 2002, "data": sentinel_data},
+        2002: {"offset": 2003, "next": 2004, "data": sentinel_data},
+        2003: {"offset": -1, "next": 2004, "data": sentinel_data},
+        2004: {"offset": 1.5, "next": 2005, "data": sentinel_data},
+        2005: {"offset": "2005", "next": 2006, "data": sentinel_data},
+        2006: {"offset": 18446744073709551616, "next": 2007, "data": sentinel_data},
+        2010: {"offset": 2010, "next": -1, "data": sentinel_data},
+        2011: {"offset": 2011, "next": 1.5, "data": sentinel_data},
+        2012: {"offset": 2012, "next": "2013", "data": sentinel_data},
+        2013: {"offset": 2013, "next": 18446744073709551616, "data": sentinel_data},
+        2014: {"offset": 2014, "next": 2014, "data": sentinel_data},
+        2015: {"offset": 2015, "next": 2014, "data": sentinel_data},
+    }
+    if offset in malformed:
+        return malformed[offset]
     if offset == 999:
-        return {"offset": offset, "next": None, "data": (payload.get("data") or [])[-1:]}
+        return {"offset": offset, "next": None, "data": sentinel_data}
     if offset == 1000:
         return {"offset": offset, "next": 1001, "data": []}
     if offset == 1001:
         return {"offset": offset, "next": None, "data": []}
+    if offset == 1002:
+        return {"offset": offset, "data": []}
     rows = payload.get("data") or []
     page = rows[offset:offset + limit]
     captured_next = payload.get("next")
@@ -588,7 +608,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if decoded_path == "/graph/v1/paper/batch" and body == b'{"ids":["PMID:20516115"]}':
             append_request_log(
-                "s2:x-api-key:" + ("present" if self.headers.get("x-api-key") else "absent")
+                "s2:seed:x-api-key:" + ("present" if self.headers.get("x-api-key") else "absent")
             )
             send_bytes(self, 200, SEMANTIC_SCHOLAR_20516115_BATCH, "application/json")
             return
@@ -693,15 +713,15 @@ class Handler(BaseHTTPRequestHandler):
             "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/references",
             "/recommendations/v1/papers/forpaper/059f780c07b87339c275192f1b82662747c28ccd",
         }:
-            append_request_log(
-                "s2:x-api-key:" + ("present" if self.headers.get("x-api-key") else "absent")
-            )
             if decoded_path.endswith("/citations"):
                 expected_fields = "contexts,intents,isInfluential,citingPaper.paperId,citingPaper.externalIds,citingPaper.title,citingPaper.venue,citingPaper.year"
+                direction = "citations"
             elif decoded_path.endswith("/references"):
                 expected_fields = "contexts,intents,isInfluential,citedPaper.paperId,citedPaper.externalIds,citedPaper.title,citedPaper.venue,citedPaper.year"
+                direction = "references"
             else:
                 expected_fields = None
+                direction = "recommendations"
             body = {
                 "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/citations": SEMANTIC_SCHOLAR_20516115_CITATIONS,
                 "/graph/v1/paper/059f780c07b87339c275192f1b82662747c28ccd/references": SEMANTIC_SCHOLAR_20516115_REFERENCES,
@@ -717,8 +737,16 @@ class Handler(BaseHTTPRequestHandler):
                 except ValueError:
                     send_json(self, 400, {"error": "invalid graph pagination"})
                     return
+                append_request_log(
+                    f"s2:graph:{direction}:limit={limit}:offset={offset}:x-api-key:"
+                    + ("present" if self.headers.get("x-api-key") else "absent")
+                )
                 send_json(self, 200, graph_page_payload(body, offset, limit))
                 return
+            append_request_log(
+                "s2:recommendations:x-api-key:"
+                + ("present" if self.headers.get("x-api-key") else "absent")
+            )
             send_bytes(self, 200, body, "application/json")
             return
 
