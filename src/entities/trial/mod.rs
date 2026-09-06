@@ -14,7 +14,7 @@ mod search;
 #[cfg(test)]
 mod test_support;
 
-pub use self::design::TrialDesign;
+pub use self::design::{TrialDesign, TrialDesignError};
 pub use self::documents::{
     TrialDocumentsManifest, TrialEligibilityProvenance, trial_document_bytes,
     trial_documents_manifest,

@@ -47,6 +47,7 @@ execution failures:
 | `NotFound` | Requested entity ID was not found | Verify identifier format; run `search` before `get` when unsure |
 | `InvalidArgument` | Command arguments are invalid or inconsistent | Re-run with `--help` and correct flag values/section names |
 | `InternalProcessing` | BioMCP could not process data after a successful retrieval | Report the command and error code; retrying the provider will not repair a repeatable local processing failure |
+| `TrialDesign` | BioMCP found an invalid local trial design section or arm relationship | Report the command and `internal_processing` error code; BioMCP retains the typed cause for Rust callers but never exposes trial-local identities in public output |
 | `CaptureUnavailable` | A CSpec capture is missing, expired, or evicted | Select the source document again to create a fresh capture |
 | `CaptureCorrupt` | Stored CSpec binding metadata or captured bytes failed integrity checks | Clear the affected cache and select the source document again |
 | `BindingConflict` | Identical CSpec bytes were already captured under different source identity | Select the correct document identity; do not reuse the handle across sources |

@@ -1,8 +1,49 @@
 use biodata::{
     ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
-    ClinicalTrialArms, ClinicalTrialIntervention, ClinicalTrialInterventionId, ExtensibleCode,
+    ClinicalTrialArmRelationshipError, ClinicalTrialArms, ClinicalTrialIntervention,
+    ClinicalTrialInterventionId, ExtensibleCode,
 };
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+/// A failure validating BioMCP's trial design representation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum TrialDesignError {
+    /// Arms and their assignments were not both present or absent.
+    SectionPresenceMismatch,
+    /// A typed arm relationship failed BioData validation.
+    InvalidRelationship(ClinicalTrialArmRelationshipError),
+}
+
+impl TrialDesignError {
+    /// Returns the typed BioData relationship failure when one caused this error.
+    pub const fn relationship_error(&self) -> Option<&ClinicalTrialArmRelationshipError> {
+        match self {
+            Self::SectionPresenceMismatch => None,
+            Self::InvalidRelationship(source) => Some(source),
+        }
+    }
+}
+
+impl std::fmt::Display for TrialDesignError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SectionPresenceMismatch => {
+                formatter.write_str("trial design arm sections must be present together")
+            }
+            Self::InvalidRelationship(_) => {
+                formatter.write_str("trial design arm relationship is invalid")
+            }
+        }
+    }
+}
+
+impl std::error::Error for TrialDesignError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.relationship_error()
+            .map(|source| source as &(dyn std::error::Error + 'static))
+    }
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct TrialDesign {
@@ -63,16 +104,16 @@ impl TrialDesign {
         interventions: Vec<ClinicalTrialIntervention>,
         arms: Option<Vec<ClinicalTrialArm>>,
         assignments: Option<Vec<ClinicalTrialArmInterventionAssignment>>,
-    ) -> Result<Self, ()> {
+    ) -> Result<Self, TrialDesignError> {
         if arms.is_some() != assignments.is_some() {
-            return Err(());
+            return Err(TrialDesignError::SectionPresenceMismatch);
         }
-        ClinicalTrialArms::new(
-            arms.clone().unwrap_or_default(),
+        ClinicalTrialArms::validate(
+            arms.as_deref().unwrap_or_default(),
             &interventions,
-            assignments.clone().unwrap_or_default(),
+            assignments.as_deref().unwrap_or_default(),
         )
-        .map_err(|_| ())?;
+        .map_err(TrialDesignError::InvalidRelationship)?;
         Ok(Self {
             interventions,
             arms,
@@ -311,13 +352,164 @@ impl<'de> Deserialize<'de> for TrialDesign {
             .transpose()
             .map_err(|()| serde::de::Error::custom("invalid trial assignment"))?;
         Self::new(interventions, arms, assignments)
-            .map_err(|()| serde::de::Error::custom("invalid trial relationships"))
+            .map_err(|_| serde::de::Error::custom("invalid trial relationships"))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::TrialDesign;
+    use biodata::{
+        ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
+        ClinicalTrialArmRelationshipError, ClinicalTrialIntervention, ClinicalTrialInterventionId,
+    };
+
+    use super::{TrialDesign, TrialDesignError};
+    use crate::error::BioMcpError;
+
+    fn arm(id: u64) -> ClinicalTrialArm {
+        ClinicalTrialArm::new(
+            ClinicalTrialArmId::new(id).expect("arm identity"),
+            format!("arm {id}"),
+            None,
+            None,
+        )
+        .expect("arm")
+    }
+
+    fn intervention(id: u64) -> ClinicalTrialIntervention {
+        ClinicalTrialIntervention::new(
+            ClinicalTrialInterventionId::new(id).expect("intervention identity"),
+            format!("intervention {id}"),
+            None,
+            None,
+            None,
+        )
+        .expect("intervention")
+    }
+
+    fn assignment(arm_id: u64, intervention_id: u64) -> ClinicalTrialArmInterventionAssignment {
+        ClinicalTrialArmInterventionAssignment::new(
+            ClinicalTrialArmId::new(arm_id).expect("arm identity"),
+            ClinicalTrialInterventionId::new(intervention_id).expect("intervention identity"),
+        )
+    }
+
+    fn relationship_error(
+        interventions: Vec<ClinicalTrialIntervention>,
+        arms: Vec<ClinicalTrialArm>,
+        assignments: Vec<ClinicalTrialArmInterventionAssignment>,
+    ) -> ClinicalTrialArmRelationshipError {
+        let error = TrialDesign::new(interventions, Some(arms), Some(assignments))
+            .expect_err("invalid relationship");
+        error
+            .relationship_error()
+            .copied()
+            .expect("typed relationship error")
+    }
+
+    #[test]
+    fn trial_design_distinguishes_section_presence_from_relationship_failures() {
+        assert_eq!(
+            TrialDesign::new(Vec::new(), Some(Vec::new()), None).unwrap_err(),
+            TrialDesignError::SectionPresenceMismatch
+        );
+        assert!(
+            TrialDesignError::SectionPresenceMismatch
+                .relationship_error()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn trial_design_preserves_all_relationship_failure_variants() {
+        let arm_id = ClinicalTrialArmId::new(1).unwrap();
+        let intervention_id = ClinicalTrialInterventionId::new(1).unwrap();
+        let missing_arm_id = ClinicalTrialArmId::new(2).unwrap();
+        let missing_intervention_id = ClinicalTrialInterventionId::new(2).unwrap();
+
+        assert_eq!(
+            relationship_error(vec![intervention(1)], vec![arm(1), arm(1)], Vec::new()),
+            ClinicalTrialArmRelationshipError::DuplicateArmId { arm_id }
+        );
+        assert_eq!(
+            relationship_error(
+                vec![intervention(1), intervention(1)],
+                vec![arm(1)],
+                Vec::new()
+            ),
+            ClinicalTrialArmRelationshipError::DuplicateInterventionId { intervention_id }
+        );
+        assert_eq!(
+            relationship_error(vec![intervention(1)], vec![arm(1)], vec![assignment(2, 1)]),
+            ClinicalTrialArmRelationshipError::MissingArmEndpoint {
+                arm_id: missing_arm_id
+            }
+        );
+        assert_eq!(
+            relationship_error(vec![intervention(1)], vec![arm(1)], vec![assignment(1, 2)]),
+            ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+                intervention_id: missing_intervention_id
+            }
+        );
+        assert_eq!(
+            relationship_error(
+                vec![intervention(1)],
+                vec![arm(1)],
+                vec![assignment(1, 1), assignment(1, 1)]
+            ),
+            ClinicalTrialArmRelationshipError::DuplicateAssignment {
+                arm_id,
+                intervention_id
+            }
+        );
+    }
+
+    #[test]
+    fn missing_intervention_is_checked_against_the_supplied_collection() {
+        assert_eq!(
+            relationship_error(vec![intervention(2)], vec![arm(1)], vec![assignment(1, 1)]),
+            ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+                intervention_id: ClinicalTrialInterventionId::new(1).unwrap()
+            }
+        );
+    }
+
+    #[test]
+    fn trial_design_error_retains_sources_and_safe_public_projections() {
+        let relationship = ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+            intervention_id: ClinicalTrialInterventionId::new(42).unwrap(),
+        };
+        let design = TrialDesignError::InvalidRelationship(relationship);
+        let error = BioMcpError::TrialDesign(design);
+
+        assert_eq!(design.relationship_error(), Some(&relationship));
+        assert_eq!(error.code(), "internal_processing");
+        assert_eq!(error.exit_code(), 1);
+        assert_eq!(error.to_string(), "Internal processing failed.");
+        assert_eq!(
+            error.public_projection().message,
+            "Internal processing failed."
+        );
+        assert_eq!(error.public_projection().source, None);
+        assert_eq!(error.public_projection().recovery, None);
+        let design_source = std::error::Error::source(&error)
+            .and_then(|source| source.downcast_ref::<TrialDesignError>())
+            .expect("typed design source");
+        assert_eq!(
+            std::error::Error::source(design_source)
+                .and_then(|source| source.downcast_ref::<ClinicalTrialArmRelationshipError>()),
+            Some(&relationship)
+        );
+
+        let json = crate::render::json::to_error_json(&error).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(value["error"]["code"], "internal_processing");
+        assert_eq!(value["error"]["message"], "Internal processing failed.");
+        assert!(value["error"].get("source").is_none());
+        assert!(value["error"].get("recovery").is_none());
+        assert!(!json.contains("MissingInterventionEndpoint"));
+        assert!(!json.contains("42"));
+    }
 
     #[test]
     fn trial_design_round_trips_shared_relationships() {

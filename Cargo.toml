@@ -33,7 +33,7 @@ name = "biomcp-cli"
 path = "src/main_biomcp_cli.rs"
 
 [dependencies]
-biodata = { git = "https://github.com/genomoncology/biodata", rev = "65f6af05720fdc0fbf630578be98ea34d77122d6" }
+biodata = { git = "https://github.com/genomoncology/biodata", rev = "a4c5bec98ab5185cc50bd6bc8c18f833b8d4097f" }
 
 # CLI
 clap = { version = "4", features = ["derive"] }

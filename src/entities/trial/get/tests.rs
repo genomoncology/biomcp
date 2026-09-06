@@ -167,6 +167,51 @@ fn nci_arm_conversion_preserves_every_occurrence_and_assignment() {
 }
 
 #[test]
+fn product_design_retains_a_relationship_failure_from_mismatched_sections() {
+    let arm_id = biodata::ClinicalTrialArmId::new(1).unwrap();
+    let expected_intervention_id = biodata::ClinicalTrialInterventionId::new(1).unwrap();
+    let original_intervention = biodata::ClinicalTrialIntervention::new(
+        expected_intervention_id,
+        "original",
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    let arm = biodata::ClinicalTrialArm::new(arm_id, "arm", None, None).unwrap();
+    let assignment =
+        biodata::ClinicalTrialArmInterventionAssignment::new(arm_id, expected_intervention_id);
+    let arms =
+        biodata::ClinicalTrialArms::new(vec![arm], &[original_intervention], vec![assignment])
+            .unwrap();
+    let replacement_intervention = biodata::ClinicalTrialIntervention::new(
+        biodata::ClinicalTrialInterventionId::new(2).unwrap(),
+        "replacement",
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+
+    let error = product_design(
+        &ClinicalTrialSection::Present(vec![replacement_intervention]),
+        &ClinicalTrialSection::Present(arms),
+    )
+    .expect_err("mismatched product sections");
+    let BioMcpError::TrialDesign(crate::error::TrialDesignError::InvalidRelationship(relationship)) =
+        error
+    else {
+        panic!("expected typed trial design failure")
+    };
+    assert_eq!(
+        relationship,
+        biodata::ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+            intervention_id: expected_intervention_id
+        }
+    );
+}
+
+#[test]
 fn nci_eligibility_keeps_absence_and_an_explicit_empty_list_distinct() {
     let mut absent = receipted_nci_record();
     absent.as_object_mut().unwrap().remove("eligibility");

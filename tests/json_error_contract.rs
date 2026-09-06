@@ -944,3 +944,22 @@ fn human_mode_error_stays_plain_stderr() {
         "human stderr should not become JSON"
     );
 }
+
+#[test]
+fn public_trial_design_error_path_preserves_the_typed_source_chain() {
+    use biomcp_cli::error::{BioMcpError, TrialDesignError};
+
+    let relationship = biodata::ClinicalTrialArmRelationshipError::MissingArmEndpoint {
+        arm_id: biodata::ClinicalTrialArmId::new(7).expect("arm identity"),
+    };
+    let error = BioMcpError::TrialDesign(TrialDesignError::InvalidRelationship(relationship));
+    let design = std::error::Error::source(&error)
+        .and_then(|source| source.downcast_ref::<TrialDesignError>())
+        .expect("public design error source");
+    let relationship_source = std::error::Error::source(design)
+        .and_then(|source| source.downcast_ref::<biodata::ClinicalTrialArmRelationshipError>())
+        .expect("public relationship error source");
+
+    assert_eq!(design.relationship_error(), Some(&relationship));
+    assert_eq!(relationship_source, &relationship);
+}

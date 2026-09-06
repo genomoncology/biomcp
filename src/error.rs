@@ -1,5 +1,7 @@
 use std::fmt;
 
+pub use crate::entities::trial::TrialDesignError;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SourceProvider {
     label: &'static str,
@@ -71,7 +73,6 @@ impl SourceProvider {
     pub const WHO_PREQUALIFICATION: Self = Self::new("WHO Prequalification");
     pub const WIKIPATHWAYS: Self = Self::new("WikiPathways");
     pub const UNKNOWN: Self = Self::new("BioMCP source");
-
     pub const ALL: &'static [Self] = &[
         Self::ALPHAGENOME,
         Self::CANCER_HOTSPOTS,
@@ -143,11 +144,9 @@ impl SourceProvider {
     const fn new(label: &'static str) -> Self {
         Self { label }
     }
-
     pub const fn label(self) -> &'static str {
         self.label
     }
-
     fn from_legacy(name: &str) -> Option<Self> {
         Some(match name {
             "alphagenome" | "AlphaGenome" => Self::ALPHAGENOME,
@@ -248,19 +247,15 @@ impl SourceContext {
     pub const fn new(provider: SourceProvider, recovery: RecoveryAction) -> Self {
         Self { provider, recovery }
     }
-
     pub const fn retry(provider: SourceProvider) -> Self {
         Self::new(provider, RecoveryAction::RetryRemoteSource)
     }
-
     pub const fn narrow(provider: SourceProvider) -> Self {
         Self::new(provider, RecoveryAction::NarrowRequest)
     }
-
     pub const fn provider(self) -> SourceProvider {
         self.provider
     }
-
     pub const fn recovery(self) -> RecoveryAction {
         self.recovery
     }
@@ -272,9 +267,7 @@ pub struct PublicErrorProjection {
     pub source: Option<&'static str>,
     pub recovery: Option<&'static str>,
 }
-
 const EXTERNAL_FAILURE_MESSAGE_MAX_BYTES: usize = 512;
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct ExternalFailureProjection {
     pub(crate) provider: &'static str,
@@ -283,7 +276,6 @@ pub(crate) struct ExternalFailureProjection {
     pub(crate) status: Option<u16>,
     pub(crate) message: String,
 }
-
 pub(crate) fn bounded_external_message(message: &str) -> String {
     if message.len() <= EXTERNAL_FAILURE_MESSAGE_MAX_BYTES {
         return message.to_string();
@@ -384,6 +376,7 @@ pub enum BioMcpError {
     },
     InvalidArgument(String),
     InternalProcessing,
+    TrialDesign(TrialDesignError),
     CaptureUnavailable,
     CaptureCorrupt,
     BindingConflict,
@@ -488,7 +481,9 @@ impl BioMcpError {
             }
             Self::InvalidArgument(_) => format!("Invalid request for {source}."),
             Self::InputTooLarge { .. } => format!("Input for {source} was too large."),
-            Self::InternalProcessing => "Internal processing failed.".to_string(),
+            Self::InternalProcessing | Self::TrialDesign(_) => {
+                "Internal processing failed.".to_string()
+            }
             Self::CaptureUnavailable | Self::CaptureCorrupt | Self::BindingConflict => {
                 "Captured source material could not be used.".to_string()
             }
@@ -537,7 +532,9 @@ impl BioMcpError {
                 format!("BioMCP is not installed at {path}.")
             }
             Self::InvalidArgument(message) => format!("Invalid argument: {message}"),
-            Self::InternalProcessing => "Internal processing failed.".to_string(),
+            Self::InternalProcessing | Self::TrialDesign(_) => {
+                "Internal processing failed.".to_string()
+            }
             Self::CaptureUnavailable => {
                 "capture_unavailable: captured source material is unavailable".to_string()
             }
@@ -639,7 +636,7 @@ impl BioMcpError {
             Self::PackageManagedInstall { .. } => "package_managed_install",
             Self::NotInstalled { .. } => "not_installed",
             Self::InvalidArgument(_) => "invalid_argument",
-            Self::InternalProcessing => "internal_processing",
+            Self::InternalProcessing | Self::TrialDesign(_) => "internal_processing",
             Self::CaptureUnavailable => "capture_unavailable",
             Self::CaptureCorrupt => "capture_corrupt",
             Self::BindingConflict => "binding_conflict",
@@ -710,7 +707,9 @@ impl fmt::Display for BioMcpError {
             Self::PackageManagedInstall { guidance } => formatter.write_str(guidance),
             Self::NotInstalled { path } => write!(formatter, "BioMCP is not installed at {path}."),
             Self::InvalidArgument(message) => write!(formatter, "Invalid argument: {message}"),
-            Self::InternalProcessing => formatter.write_str("Internal processing failed."),
+            Self::InternalProcessing | Self::TrialDesign(_) => {
+                formatter.write_str("Internal processing failed.")
+            }
             Self::CaptureUnavailable => {
                 formatter.write_str("capture_unavailable: captured source material is unavailable")
             }
@@ -752,6 +751,7 @@ impl std::error::Error for BioMcpError {
             Self::Template(source) => Some(source),
             Self::Io(source) => Some(source),
             Self::WithSourceContext { source, .. } => Some(source),
+            Self::TrialDesign(source) => Some(source),
             _ => None,
         }
     }

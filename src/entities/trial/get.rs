@@ -111,7 +111,7 @@ pub(crate) fn product_design(
         ClinicalTrialSection::Absent | ClinicalTrialSection::NotRequested => (None, None),
         ClinicalTrialSection::Unavailable => return Err(BioMcpError::InternalProcessing),
     };
-    TrialDesign::new(interventions, arms, assignments).map_err(|()| BioMcpError::InternalProcessing)
+    TrialDesign::new(interventions, arms, assignments).map_err(BioMcpError::TrialDesign)
 }
 
 fn product_nci_design(
@@ -127,7 +127,7 @@ fn product_nci_design(
     } else {
         (None, None)
     };
-    TrialDesign::new(interventions, arms, assignments).map_err(|()| BioMcpError::InternalProcessing)
+    TrialDesign::new(interventions, arms, assignments).map_err(BioMcpError::TrialDesign)
 }
 
 fn truncate_inline_text(value: &str, max_chars: usize) -> String {

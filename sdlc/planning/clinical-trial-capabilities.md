@@ -133,4 +133,4 @@ documents
 
 ## Next migration step
 
-Carry typed arm relationship failures through BioData and BioMCP before eligibility migration begins. Preserve sanitized public provider errors while retaining the internal failure category and typed local identities. Complete that narrow diagnostic repair as a paired BioData and BioMCP change, then start the standards-shaped eligibility area for ClinicalTrials.gov and NCI.
+Build the standards-shaped eligibility area for ClinicalTrials.gov and NCI. BioData goes first. It will replace parallel eligibility fields with one aggregate for registry text, age bounds, source-stated sex, healthy-subject inclusion, and ordered identified criteria. FHIR R4 supplies the population boundary. CDISC USDM 4 supplies the useful eligibility structure. Recorded provider evidence does not support cohorts, reusable criterion-item dictionaries, matching, or invented population links, so this area omits them. BioMCP then consumes the shared aggregate directly and removes its duplicate eligibility parsing and storage. Run the planned checkpoint after both changes land.
