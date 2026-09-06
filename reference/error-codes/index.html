@@ -4302,6 +4302,11 @@ execution failures:</p>
 <td>Report the command and error code; retrying the provider will not repair a repeatable local processing failure</td>
 </tr>
 <tr>
+<td><code>TrialDesign</code></td>
+<td>BioMCP found an invalid local trial design section or arm relationship</td>
+<td>Report the command and <code>internal_processing</code> error code; BioMCP retains the typed cause for Rust callers but never exposes trial-local identities in public output</td>
+</tr>
+<tr>
 <td><code>CaptureUnavailable</code></td>
 <td>A CSpec capture is missing, expired, or evicted</td>
 <td>Select the source document again to create a fresh capture</td>
