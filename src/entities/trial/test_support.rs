@@ -41,8 +41,9 @@ impl Drop for CtGovFixtureEnv {
 }
 
 pub(super) async fn ctgov_json_fixture(
-    body: &'static str,
+    body: impl Into<String>,
 ) -> (String, Arc<Mutex<Vec<String>>>, tokio::task::JoinHandle<()>) {
+    let body = Arc::new(body.into());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind synthetic CTGov fixture");
@@ -52,6 +53,7 @@ pub(super) async fn ctgov_json_fixture(
     let task = tokio::spawn(async move {
         while let Ok((mut stream, _)) = listener.accept().await {
             let captured = captured.clone();
+            let body = body.clone();
             tokio::spawn(async move {
                 let mut request = vec![0_u8; 16 * 1024];
                 let len = stream.read(&mut request).await.expect("read CTGov request");

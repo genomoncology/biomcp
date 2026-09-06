@@ -1,6 +1,6 @@
 use crate::entities::trial::{
-    Trial, TrialContact, TrialDesign, TrialEligibility, TrialLocation, TrialOutcome, TrialOutcomes,
-    TrialSearchResult, TrialSiteContact, format_age_range,
+    Trial, TrialContact, TrialDesign, TrialLocation, TrialOutcome, TrialOutcomes,
+    TrialSearchResult, TrialSiteContact,
 };
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::{CtGovContact, CtGovLocation, CtGovStudy};
@@ -209,37 +209,6 @@ fn extract_contacts(study: &CtGovStudy) -> Option<Vec<TrialContact>> {
     (!out.is_empty()).then_some(out)
 }
 
-fn format_sex(value: Option<&str>) -> Option<String> {
-    clean_opt(value).map(|sex| match sex.to_ascii_lowercase().as_str() {
-        "female" | "f" => "Female".to_string(),
-        "male" | "m" => "Male".to_string(),
-        "all" => "All".to_string(),
-        _ => sex,
-    })
-}
-
-fn extract_eligibility(study: &CtGovStudy) -> Option<TrialEligibility> {
-    let module = study
-        .protocol_section
-        .as_ref()
-        .and_then(|p| p.eligibility_module.as_ref())?;
-    let eligibility = TrialEligibility {
-        sex: format_sex(module.sex.as_deref()),
-        minimum_age: module
-            .minimum_age
-            .as_ref()
-            .and_then(|age| age.parsed().cloned()),
-        maximum_age: module
-            .maximum_age
-            .as_ref()
-            .and_then(|age| age.parsed().cloned()),
-    };
-    (eligibility.sex.is_some()
-        || eligibility.minimum_age.is_some()
-        || eligibility.maximum_age.is_some())
-    .then_some(eligibility)
-}
-
 fn extract_outcomes(study: &CtGovStudy) -> Option<TrialOutcomes> {
     let module = study
         .protocol_section
@@ -315,14 +284,6 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string);
-    let age_range = p
-        .and_then(|p| p.eligibility_module.as_ref())
-        .and_then(|module| {
-            format_age_range(
-                module.minimum_age.as_ref().and_then(|age| age.parsed()),
-                module.maximum_age.as_ref().and_then(|age| age.parsed()),
-            )
-        });
     let sponsor = p
         .and_then(|p| p.sponsor_collaborators_module.as_ref())
         .and_then(|m| m.lead_sponsor.as_ref())
@@ -360,7 +321,6 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         why_stopped,
         phase,
         study_type,
-        age_range,
         conditions,
         design: TrialDesign::default(),
         sponsor,
@@ -368,8 +328,7 @@ pub fn from_ctgov_study(study: &CtGovStudy) -> Result<Trial, BioMcpError> {
         summary,
         start_date,
         completion_date,
-        eligibility_text: None,
-        eligibility: extract_eligibility(study),
+        eligibility: None,
         eligibility_provenance: None,
         contacts: extract_contacts(study),
         locations: extract_locations(study),

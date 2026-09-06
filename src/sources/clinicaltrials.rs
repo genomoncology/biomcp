@@ -208,7 +208,11 @@ impl ClinicalTrialsClient {
         if has("arms") {
             plan = plan.with_arms();
         }
-        if has("eligibility") {
+        if sections.iter().all(|value| {
+            let value = value.trim();
+            value.is_empty() || value == "--json" || value == "-j"
+        }) || has("eligibility")
+        {
             plan = plan.with_eligibility();
         }
         if has("contacts") {
@@ -478,7 +482,6 @@ pub struct CtGovArmGroup {
 #[serde(rename_all = "camelCase")]
 pub struct CtGovEligibilityModule {
     pub eligibility_criteria: Option<String>,
-    pub sex: Option<String>,
     pub minimum_age: Option<NormalizedTimeWire>,
     pub maximum_age: Option<NormalizedTimeWire>,
 }

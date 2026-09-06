@@ -52,7 +52,77 @@ def test_gene_schema_closes_clingen_family_status_shapes() -> None:
 def test_packaged_trial_example_matches_the_strict_relationship_schema() -> None:
     schema = json.loads(_read("skills/schemas/trial.json"))
     example = json.loads(_read("skills/examples/get-trial.json"))
-    Draft202012Validator(schema).validate(example)
+    validator = Draft202012Validator(schema)
+    validator.validate(example)
+
+    assert "age_range" not in example
+    assert "eligibility_text" not in example
+    assert set(example["eligibility"]) == {
+        "registry_text",
+        "age_range",
+        "sexes",
+        "includes_healthy_subjects",
+        "criteria",
+    }
+
+    for retired in ("age_range", "eligibility_text"):
+        invalid = json.loads(json.dumps(example))
+        invalid[retired] = None
+        with pytest.raises(ValidationError):
+            validator.validate(invalid)
+
+    invalid = json.loads(json.dumps(example))
+    del invalid["eligibility"]["criteria"]
+    with pytest.raises(ValidationError):
+        validator.validate(invalid)
+
+    invalid = json.loads(json.dumps(example))
+    invalid["eligibility"]["unexpected"] = True
+    with pytest.raises(ValidationError):
+        validator.validate(invalid)
+
+    complete = json.loads(json.dumps(example))
+    complete["eligibility"]["age_range"]["maximum"] = {
+        "kind": "source_stated_no_limit",
+        "source": "999 Years",
+        "source_quantity": "999",
+        "source_unit": "years",
+        "bound": "maximum",
+        "rule": {
+            "name": "nci-cts-v2-999-years-no-upper-bound",
+            "version": "1",
+        },
+    }
+    complete["eligibility"]["criteria"] = [
+        {"id": 1, "description": "First", "classification": {"kind": "inclusion"}},
+        {"id": 2, "description": "Second", "classification": {"kind": "exclusion"}},
+        {
+            "id": 3,
+            "description": "Third",
+            "classification": {
+                "kind": "other",
+                "source": {
+                    "authority": "registry.example",
+                    "code": "OTHER",
+                    "display": None,
+                    "vocabulary_version": None,
+                    "recognized_meaning": None,
+                },
+            },
+        },
+    ]
+    validator.validate(complete)
+
+    invalid = json.loads(json.dumps(complete))
+    invalid["eligibility"]["age_range"]["maximum"]["rule"]["version"] = "2"
+    with pytest.raises(ValidationError):
+        validator.validate(invalid)
+
+
+def test_packaged_trial_jq_example_uses_the_shared_eligibility_path() -> None:
+    examples = _read("skills/jq-examples.md")
+    assert ".eligibility.registry_text[:200]" in examples
+    assert ".eligibility_text" not in examples
 
 def test_public_skill_docs_match_current_cli_contract() -> None:
     readme = _read("README.md")

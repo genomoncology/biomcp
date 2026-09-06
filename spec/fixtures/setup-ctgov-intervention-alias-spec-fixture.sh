@@ -260,7 +260,6 @@ KARMMA_STUDY = {
         "armsInterventionsModule": {"interventions": [], "armGroups": []},
         "eligibilityModule": {
             "minimumAge": "18 Years",
-            "maximumAge": "N/A",
             "sex": "ALL",
             "eligibilityCriteria": "Inadequate organ function",
         },
@@ -365,8 +364,8 @@ CANONICAL_AGE_STUDY = {
         "conditionsModule": {"conditions": ["Canonical Age Fixture"]},
         "eligibilityModule": {
             "minimumAge": "6 Months",
-            "maximumAge": "N/A",
             "sex": "ALL",
+            "healthyVolunteers": False,
         },
     }
 }

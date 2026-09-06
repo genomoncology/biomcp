@@ -42,7 +42,7 @@ protocol resolves every criterion.
 ```bash
 set -o pipefail
 ../../tools/biomcp-ci --json get trial NCT03361748 eligibility \
-  | jq -er '.eligibility_text, ([.eligibility_provenance.source_kind, .eligibility_provenance.source, .eligibility_provenance.posted_documents_available, .eligibility_provenance.documents_handle] | @tsv)' \
+  | jq -er '.eligibility.registry_text, ([.eligibility_provenance.source_kind, .eligibility_provenance.source, .eligibility_provenance.posted_documents_available, .eligibility_provenance.documents_handle] | @tsv)' \
   | mustmatch like 'Inadequate organ function
 registry	ClinicalTrials.gov registry	true	biomcp --json get trial NCT03361748 documents'
 ```
@@ -80,7 +80,7 @@ availability signal has no document handle and does not erase the criteria.
 ```bash
 set -o pipefail
 ../../tools/biomcp-ci --json get trial NCT41300001 eligibility \
-  | jq -er 'select((.eligibility_provenance | has("documents_handle")) | not) | [.eligibility_text, .eligibility_provenance.source_kind, .eligibility_provenance.source, .eligibility_provenance.posted_documents_available] | @tsv' \
+  | jq -er 'select((.eligibility_provenance | has("documents_handle")) | not) | [.eligibility.registry_text, .eligibility_provenance.source_kind, .eligibility_provenance.source, .eligibility_provenance.posted_documents_available] | @tsv' \
   | mustmatch 'Key inclusion: confirmed SHANK3-related neurodevelopmental disorder.	registry	ClinicalTrials.gov registry	false'
 ```
 

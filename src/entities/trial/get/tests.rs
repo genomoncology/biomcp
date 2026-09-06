@@ -58,15 +58,50 @@ fn normalize_nct_id_uppercases_prefix() {
 
 #[test]
 fn parse_sections_accepts_contacts_and_all_includes_contacts() {
-    let contacts = parse_sections(&["contacts".to_string()]).unwrap();
-    assert!(contacts.include_contacts);
-    assert!(!contacts.include_eligibility);
+    for section in ["arms", "contacts", "locations", "outcomes", "references"] {
+        let parsed = parse_sections(&[section.to_string()]).unwrap();
+        assert!(!parsed.request_eligibility, "{section}");
+    }
+
+    for sections in [
+        vec![],
+        vec!["--json".to_string()],
+        vec!["eligibility".to_string()],
+    ] {
+        assert!(parse_sections(&sections).unwrap().request_eligibility);
+    }
 
     let all = parse_sections(&["all".to_string()]).unwrap();
     assert!(all.include_contacts);
-    assert!(all.include_eligibility);
+    assert!(all.request_eligibility);
     assert!(!all.include_eligibility_provenance);
     assert!(all.include_locations);
+}
+
+#[test]
+fn nci_request_state_table_requests_eligibility_exactly_when_selected() {
+    for (sections, expected) in [
+        (vec![], 1),
+        (vec!["eligibility"], 1),
+        (vec!["all"], 1),
+        (vec!["arms"], 0),
+        (vec!["contacts"], 0),
+        (vec!["locations"], 0),
+        (vec!["outcomes"], 0),
+        (vec!["references"], 0),
+    ] {
+        let sections = sections.into_iter().map(str::to_owned).collect::<Vec<_>>();
+        let flags = parse_sections(&sections).expect("valid ordinary sections");
+        let plan = NciCtsV2DetailPlan::new("NCT05879926", flags.request_eligibility).unwrap();
+        assert_eq!(
+            plan.query_pairs()
+                .iter()
+                .filter(|(name, value)| *name == "include" && *value == "eligibility")
+                .count(),
+            expected,
+            "sections {sections:?}"
+        );
+    }
 }
 
 #[test]
@@ -251,46 +286,85 @@ fn nci_eligibility_keeps_absence_and_an_explicit_empty_list_distinct() {
 }
 
 #[test]
-fn nci_eligibility_uses_stable_criterion_order_and_heading_transitions() {
-    let mut record = receipted_nci_record();
-    record["eligibility"]["unstructured"] = serde_json::json!([
-        {"description": "third\ninternal line", "display_order": 3, "inclusion_indicator": true},
-        {"description": "equal first", "display_order": 2, "inclusion_indicator": false},
-        {"description": "equal second", "display_order": 2, "inclusion_indicator": true},
-        {"description": "first", "display_order": 1, "inclusion_indicator": true}
-    ]);
-    let (_, response) = plan_bound_nci_response(record, true);
+fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification() {
+    let original = receipted_nci_record();
+    let rows = original["eligibility"]["unstructured"]
+        .as_array()
+        .expect("recorded criteria");
+    let mut expected = rows.iter().enumerate().collect::<Vec<_>>();
+    expected.sort_by_key(|(_, row)| row["display_order"].as_u64().unwrap());
+    let (_, response) = plan_bound_nci_response(original.clone(), true);
     let ClinicalTrialSection::Present(eligibility) = response.eligibility() else {
-        panic!("present eligibility object");
+        panic!("present eligibility")
     };
-
-    assert_eq!(
-        nci_eligibility_text(eligibility),
-        Some(
-            "Inclusion Criteria:\n- first\n\nExclusion Criteria:\n- equal first\n\nInclusion Criteria:\n- equal second\n- third\ninternal line"
-                .to_string()
-        )
-    );
-}
-
-#[test]
-fn nci_eligibility_truncates_the_composed_text_at_exactly_12000_characters() {
-    let mut record = receipted_nci_record();
-    record["eligibility"]["unstructured"] = serde_json::json!([
-        {"description": "x".repeat(12_000), "display_order": 1, "inclusion_indicator": true}
-    ]);
-    let (_, response) = plan_bound_nci_response(record, true);
+    let criteria = eligibility.criteria().expect("criteria");
+    assert_eq!(criteria.len(), expected.len());
+    for (sorted_index, (source_index, row)) in expected.into_iter().enumerate() {
+        let criterion = &criteria[sorted_index];
+        assert_eq!(
+            criterion.description(),
+            row["description"].as_str().unwrap(),
+            "description at sorted position {sorted_index}"
+        );
+        assert_eq!(
+            criterion.id().get(),
+            source_index as u64 + 1,
+            "occurrence identity at sorted position {sorted_index}"
+        );
+        assert_eq!(
+            row["display_order"].as_u64(),
+            Some(sorted_index as u64 + 1),
+            "recorded display order at sorted position {sorted_index}"
+        );
+        let expected_inclusion = row["inclusion_indicator"].as_bool().unwrap();
+        assert_eq!(
+            matches!(
+                criterion.classification(),
+                biodata::ClinicalTrialEligibilityClassification::Inclusion
+            ),
+            expected_inclusion,
+            "classification at sorted position {sorted_index}"
+        );
+        assert_eq!(
+            matches!(
+                criterion.classification(),
+                biodata::ClinicalTrialEligibilityClassification::Exclusion
+            ),
+            !expected_inclusion,
+            "classification at sorted position {sorted_index}"
+        );
+    }
+    let expected_first = original["eligibility"]["unstructured"][0]["description"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let mut reversed = original;
+    reversed["eligibility"]["unstructured"]
+        .as_array_mut()
+        .unwrap()
+        .reverse();
+    let (_, response) = plan_bound_nci_response(reversed, true);
     let ClinicalTrialSection::Present(eligibility) = response.eligibility() else {
-        panic!("present eligibility object");
+        panic!("present eligibility")
     };
-    let complete = format!("Inclusion Criteria:\n- {}", "x".repeat(12_000));
-    let expected = format!(
-        "{}\n\n(truncated, {} chars total)",
-        complete.chars().take(12_000).collect::<String>(),
-        complete.chars().count()
-    );
+    let criteria = eligibility.criteria().expect("criteria");
+    assert_eq!(criteria[0].description(), expected_first);
+    assert_eq!(criteria[0].id().get(), 36);
+    assert!(matches!(
+        criteria[0].classification(),
+        biodata::ClinicalTrialEligibilityClassification::Inclusion
+    ));
 
-    assert_eq!(nci_eligibility_text(eligibility), Some(expected));
+    let mut changed = receipted_nci_record();
+    changed["eligibility"]["unstructured"][0]["inclusion_indicator"] = serde_json::json!(false);
+    let (_, response) = plan_bound_nci_response(changed, true);
+    let ClinicalTrialSection::Present(eligibility) = response.eligibility() else {
+        panic!("present eligibility")
+    };
+    assert!(matches!(
+        eligibility.criteria().unwrap()[0].classification(),
+        biodata::ClinicalTrialEligibilityClassification::Exclusion
+    ));
 }
 
 #[tokio::test]
@@ -305,6 +379,66 @@ async fn get_rejects_non_nct_id_with_format_hint() {
             assert!(message.contains("got 'WRONG'"));
         }
         other => panic!("expected InvalidArgument, got: {other}"),
+    }
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn ctgov_eligibility_provenance_exists_only_for_explicit_text() {
+    use crate::entities::trial::test_support::{CtGovFixtureEnv, ctgov_json_fixture};
+
+    let recorded =
+        include_str!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
+    let (base, _, server) = ctgov_json_fixture(recorded).await;
+    let _env = CtGovFixtureEnv::set(&base);
+    let explicit = get(
+        "NCT02576665",
+        &["eligibility".to_string()],
+        TrialSource::ClinicalTrialsGov,
+    )
+    .await
+    .expect("explicit eligibility");
+    let default = get("NCT02576665", &[], TrialSource::ClinicalTrialsGov)
+        .await
+        .expect("default detail");
+    let all = get(
+        "NCT02576665",
+        &["all".to_string()],
+        TrialSource::ClinicalTrialsGov,
+    )
+    .await
+    .expect("all detail");
+    server.abort();
+    assert!(explicit.eligibility_provenance.is_some());
+    assert!(default.eligibility.is_some());
+    assert!(default.eligibility_provenance.is_none());
+    assert!(all.eligibility.is_some());
+    assert!(all.eligibility_provenance.is_none());
+
+    for (label, mutation) in [
+        ("without text", Some(serde_json::Value::Null)),
+        ("without eligibility", None),
+    ] {
+        let mut body: serde_json::Value = serde_json::from_str(recorded).unwrap();
+        if let Some(text) = mutation {
+            body["protocolSection"]["eligibilityModule"]["eligibilityCriteria"] = text;
+        } else {
+            body["protocolSection"]
+                .as_object_mut()
+                .unwrap()
+                .remove("eligibilityModule");
+        }
+        let (base, _, server) = ctgov_json_fixture(serde_json::to_string(&body).unwrap()).await;
+        let _env = CtGovFixtureEnv::set(&base);
+        let trial = get(
+            "NCT02576665",
+            &["eligibility".to_string()],
+            TrialSource::ClinicalTrialsGov,
+        )
+        .await
+        .unwrap_or_else(|error| panic!("{label}: {error}"));
+        server.abort();
+        assert!(trial.eligibility_provenance.is_none(), "{label}");
     }
 }
 
@@ -364,23 +498,24 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
     )
     .await
     .expect("NCI trial detail");
-    let eligibility = serde_json::to_value(trial.eligibility.as_ref().expect("typed eligibility"))
-        .expect("eligibility JSON");
+    let eligibility = serde_json::to_value(&trial).expect("trial JSON")["eligibility"].clone();
     assert_eq!(
-        eligibility["minimum_age"],
-        serde_json::json!({
-            "number": 18.0, "unit": "years", "original": "18 Years"
-        })
+        eligibility["age_range"]["minimum"]["source"],
+        serde_json::json!("18 Years")
     );
     assert_eq!(
-        eligibility["maximum_age"],
-        serde_json::json!({
-            "number": null, "unit": null, "original": "999 Years"
-        })
+        eligibility["age_range"]["maximum"]["kind"],
+        serde_json::json!("source_stated_no_limit")
     );
-    let text = trial.eligibility_text.expect("NCI eligibility text");
-    assert!(text.starts_with("Inclusion Criteria:\n- "));
-    assert!(text.contains("Exclusion Criteria:\n- Definitive clinical or radiologic evidence"));
+    assert_eq!(eligibility["criteria"].as_array().unwrap().len(), 36);
+    assert_eq!(eligibility["sexes"][0]["authority"], "nci");
+    assert_eq!(eligibility["sexes"][0]["code"], "FEMALE");
+    assert_eq!(eligibility["includes_healthy_subjects"], false);
+    assert_eq!(eligibility["criteria"][0]["id"], 1);
+    assert_eq!(
+        eligibility["criteria"][0]["classification"]["kind"],
+        "inclusion"
+    );
     assert_eq!(trial.source.as_deref(), Some("NCI CTS"));
     assert_eq!(trial.status, "Active");
     assert_eq!(trial.phase.as_deref(), Some("III"));
@@ -417,12 +552,11 @@ async fn nci_get_eligibility_uses_receipted_trial_record_shape() {
         .await
         .expect("NCI all sections");
     server.abort();
-    assert!(overview.eligibility.is_none());
-    assert!(overview.eligibility_text.is_none());
-    assert_eq!(overview.age_range.as_deref(), Some("18 Years to Any age"));
+    assert!(overview.eligibility.is_some());
+    assert!(overview.eligibility_provenance.is_none());
     assert!(references.references.as_ref().is_some_and(Vec::is_empty));
     assert!(all.eligibility.is_some());
-    assert!(all.eligibility_text.is_some());
+    assert!(all.eligibility_provenance.is_none());
 }
 
 #[tokio::test]

@@ -9,7 +9,7 @@ biomcp --json search article -g BRAF -d melanoma --limit 5 | jq -r '.results[].p
 biomcp --json search trial -c melanoma --status recruiting --limit 5 | jq -r '.results[].nct_id'
 biomcp --json search drug --target BRAF --limit 5 | jq -r '.regions.us.results[].name'
 biomcp --json search variant -g BRAF --significance pathogenic --limit 5 | jq -r '.results[].hgvs_p'
-biomcp --json get trial NCT02576665 eligibility | jq -r '.eligibility_text[:200]'
+biomcp --json get trial NCT02576665 eligibility | jq -r '.eligibility.registry_text[:200]'
 biomcp --json search article -g EGFR --limit 20 | jq '.count'
 biomcp --json enrich BRAF,KRAS,NRAS --limit 3 | jq -r '.results[] | "\(.source) \(.native) \(.name)"'
 biomcp --json get disease melanoma pathways | jq -r '.pathways[]?.id'

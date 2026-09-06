@@ -1,5 +1,127 @@
 use super::*;
 
+fn eligibility_fixture() -> biodata::ClinicalTrialEligibility {
+    let parse =
+        |source, bound| match biodata::TemporalParser::default().parse_duration(source, bound) {
+            biodata::ParseOutcome::Parsed(value) => value,
+            other => panic!("age fixture did not parse: {}", other.code()),
+        };
+    let minimum =
+        biodata::ClinicalTrialAgeBound::limited(parse("2 Years", biodata::Bound::Minimum)).unwrap();
+    let maximum =
+        biodata::ClinicalTrialAgeBound::limited(parse("18 Years", biodata::Bound::Maximum))
+            .unwrap();
+    biodata::ClinicalTrialEligibility::new(
+        Some("Key inclusion.".into()),
+        Some(biodata::ClinicalTrialAgeRange::new(Some(minimum), Some(maximum)).unwrap()),
+        Some(vec![
+            biodata::ExtensibleCode::new(
+                "clinicaltrials.gov",
+                "FEMALE",
+                Some("Female"),
+                None::<String>,
+                None::<String>,
+            )
+            .unwrap(),
+        ]),
+        Some(false),
+        None,
+    )
+    .unwrap()
+}
+
+fn criterion(
+    id: u64,
+    description: &str,
+    classification: biodata::ClinicalTrialEligibilityClassification,
+) -> biodata::ClinicalTrialEligibilityCriterion {
+    biodata::ClinicalTrialEligibilityCriterion::new(
+        biodata::ClinicalTrialEligibilityCriterionId::new(id).unwrap(),
+        description,
+        classification,
+    )
+    .unwrap()
+}
+
+#[test]
+fn eligibility_markdown_preserves_linear_transitions_and_bounds_all_content() {
+    use biodata::ClinicalTrialEligibilityClassification::{Exclusion, Inclusion, Other};
+
+    let future = biodata::ExtensibleCode::new(
+        "future.registry",
+        "MAYBE",
+        None::<String>,
+        None::<String>,
+        None::<String>,
+    )
+    .unwrap();
+    let eligibility = biodata::ClinicalTrialEligibility::new(
+        Some(format!("Registry β {}", "x".repeat(12_100))),
+        None,
+        None,
+        Some(false),
+        Some(vec![
+            criterion(1, "include one", Inclusion),
+            criterion(2, "exclude one", Exclusion),
+            criterion(3, "include two", Inclusion),
+            criterion(4, "other one", Other(future)),
+        ]),
+    )
+    .unwrap();
+    let markdown = eligibility_markdown(&eligibility);
+    assert!(markdown.contains("Healthy Subjects: No"));
+    assert!(markdown.contains("Registry β"));
+    assert!(markdown.contains("(truncated,"));
+    assert!(!markdown.contains("include one"));
+
+    let without_long_text = biodata::ClinicalTrialEligibility::new(
+        None,
+        None,
+        None,
+        eligibility.includes_healthy_subjects(),
+        eligibility.criteria().map(<[_]>::to_vec),
+    )
+    .unwrap();
+    let markdown = eligibility_markdown(&without_long_text);
+    let expected = [
+        "### Inclusion Criteria",
+        "- include one",
+        "### Exclusion Criteria",
+        "- exclude one",
+        "### Inclusion Criteria",
+        "- include two",
+        "### Other Criteria (future.registry: MAYBE)",
+        "- other one",
+    ];
+    let mut prior = 0;
+    for part in expected {
+        let index = markdown[prior..].find(part).expect(part) + prior;
+        prior = index + part.len();
+    }
+}
+
+#[test]
+fn eligibility_markdown_accepts_a_present_empty_aggregate_without_claims() {
+    let empty = biodata::ClinicalTrialEligibility::new(None, None, None, None, None).unwrap();
+    assert_eq!(eligibility_markdown(&empty), "");
+}
+
+#[test]
+fn eligibility_markdown_makes_source_sex_codes_readable_without_changing_json() {
+    let female = biodata::ExtensibleCode::new(
+        "clinicaltrials.gov",
+        "FEMALE",
+        None::<String>,
+        None::<String>,
+        None::<String>,
+    )
+    .unwrap();
+    let eligibility =
+        biodata::ClinicalTrialEligibility::new(None, None, Some(vec![female]), None, None).unwrap();
+
+    assert_eq!(eligibility_markdown(&eligibility), "Sex: Female");
+}
+
 fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
     crate::entities::trial::Trial {
         nct_id: "NCT00000001".to_string(),
@@ -9,7 +131,6 @@ fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
         why_stopped: None,
         phase: None,
         study_type: None,
-        age_range: None,
         conditions: vec![],
         design: crate::entities::trial::TrialDesign::default(),
         sponsor: None,
@@ -17,7 +138,6 @@ fn summary_trial(summary: Option<&str>) -> crate::entities::trial::Trial {
         summary: summary.map(str::to_string),
         start_date: None,
         completion_date: None,
-        eligibility_text: None,
         eligibility: None,
         eligibility_provenance: None,
         contacts: None,
@@ -246,7 +366,6 @@ fn trial_markdown_includes_source_labeled_sections() {
         why_stopped: None,
         phase: Some("Phase 2".to_string()),
         study_type: Some("Interventional".to_string()),
-        age_range: Some("18 Years and older".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
         design: {
             let intervention_id = biodata::ClinicalTrialInterventionId::new(1).unwrap();
@@ -293,8 +412,7 @@ fn trial_markdown_includes_source_labeled_sections() {
         summary: Some("Trial summary.".to_string()),
         start_date: Some("2025-01-01".to_string()),
         completion_date: None,
-        eligibility_text: Some("Eligibility text.".to_string()),
-        eligibility: None,
+        eligibility: Some(eligibility_fixture()),
         eligibility_provenance: None,
         contacts: None,
         locations: Some(vec![crate::entities::trial::TrialLocation {
@@ -471,7 +589,6 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
         why_stopped: None,
         phase: None,
         study_type: None,
-        age_range: Some("2 Years to 18 Years".to_string()),
         conditions: vec![],
         design: crate::entities::trial::TrialDesign::default(),
         sponsor: None,
@@ -479,12 +596,7 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
         summary: None,
         start_date: None,
         completion_date: None,
-        eligibility_text: Some("Key inclusion.".to_string()),
-        eligibility: Some(crate::entities::trial::TrialEligibility {
-            sex: Some("Female".to_string()),
-            minimum_age: crate::entities::trial::TrialAge::from_provider("2 Years"),
-            maximum_age: crate::entities::trial::TrialAge::from_provider("18 Years"),
-        }),
+        eligibility: Some(eligibility_fixture()),
         eligibility_provenance: Some(crate::entities::trial::TrialEligibilityProvenance {
             source_kind: "registry".to_string(),
             source: "ClinicalTrials.gov registry".to_string(),
@@ -566,9 +678,9 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
         "### Central Contact\n- Name: Central Coordinator\n- Role: CONTACT\n- Email: central@example.test\n- Phone: 555-0100"
     ));
     assert!(!contacts.contains("site@example.test"));
-    assert!(
-        eligibility.contains("Sex: Female\nEligible Ages: 2 Years to 18 Years\nKey inclusion.")
-    );
+    assert!(eligibility.contains(
+        "Sex: Female\nEligible Ages: 2 Years to 18 Years\nHealthy Subjects: No\nKey inclusion."
+    ));
     assert!(eligibility.contains(
         "**Posted trial documents:** Posted trial documents are available and may contain additional eligibility detail: `biomcp --json get trial NCT41300001 documents`"
     ));
@@ -584,7 +696,7 @@ fn trial_markdown_renders_contacts_eligibility_and_json_fields() {
 
     let json = serde_json::to_value(&trial).expect("trial json");
     assert_eq!(json["contacts"][0]["email"], "central@example.test");
-    assert_eq!(json["eligibility"]["sex"], "Female");
+    assert_eq!(json["eligibility"]["sexes"][0]["code"], "FEMALE");
     assert_eq!(json["locations"][0]["contact_email"], "site@example.test");
 
     trial.locations.as_mut().unwrap()[0].contacts.clear();

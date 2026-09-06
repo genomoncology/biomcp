@@ -1,5 +1,4 @@
 use super::*;
-use crate::entities::trial::TrialAge;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use reqwest::StatusCode;
 use serde_json::json;
@@ -354,25 +353,6 @@ fn ctgov_meaningful_sites_keep_partial_identity_and_safe_markdown() {
     assert_eq!(escaped_row.matches(" | ").count(), 5);
 }
 #[test]
-fn format_age_range_handles_missing_bounds() {
-    let minimum = TrialAge::from_provider("18 Years").unwrap();
-    let maximum = TrialAge::from_provider("65 Years").unwrap();
-    assert_eq!(
-        format_age_range(Some(&minimum), Some(&maximum)).as_deref(),
-        Some("18 Years to 65 Years")
-    );
-    assert_eq!(
-        format_age_range(Some(&minimum), None).as_deref(),
-        Some("18 Years to Any age")
-    );
-    assert_eq!(
-        format_age_range(None, Some(&maximum)).as_deref(),
-        Some("Any age to 65 Years")
-    );
-    assert_eq!(format_age_range(None, None), None);
-}
-
-#[test]
 fn from_ctgov_study_extracts_age_and_locations_sorted() {
     let study: CtGovStudy = serde_json::from_value(json!({
         "protocolSection": {
@@ -403,7 +383,7 @@ fn from_ctgov_study_extracts_age_and_locations_sorted() {
     .unwrap();
 
     let trial = from_ctgov_study(&study).expect("valid trial fixture");
-    assert_eq!(trial.age_range.as_deref(), Some("18 Years to 75 Years"));
+    assert!(trial.eligibility.is_none());
     let locations = trial.locations.expect("locations");
     assert_eq!(locations.len(), 2);
     assert_eq!(locations[0].facility.as_deref(), Some("Site A"));
@@ -445,16 +425,7 @@ fn from_ctgov_study_preserves_contacts_and_structured_eligibility() {
     .unwrap();
 
     let trial = from_ctgov_study(&study).expect("valid trial fixture");
-    let eligibility = trial.eligibility.expect("eligibility");
-    assert_eq!(eligibility.sex.as_deref(), Some("Female"));
-    assert_eq!(
-        eligibility.minimum_age.as_ref().map(|age| age.original()),
-        Some("2 Years")
-    );
-    assert_eq!(
-        eligibility.maximum_age.as_ref().map(|age| age.original()),
-        Some("18 Years")
-    );
+    assert!(trial.eligibility.is_none());
 
     let contacts = trial.contacts.expect("contacts");
     assert_eq!(contacts[0].level, "central");

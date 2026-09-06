@@ -2,13 +2,14 @@
 
 use std::collections::HashMap;
 
-use biodata::ClinicalTrialReference;
+use biodata::{ClinicalTrialEligibility, ClinicalTrialReference};
 use serde::{Deserialize, Serialize};
 
 use crate::error::BioMcpError;
 
 mod design;
 mod documents;
+mod eligibility;
 mod get;
 mod search;
 #[cfg(test)]
@@ -41,8 +42,6 @@ pub struct Trial {
     pub phase: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub study_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub age_range: Option<String>,
     #[serde(default)]
     pub conditions: Vec<String>,
     #[serde(flatten)]
@@ -57,10 +56,12 @@ pub struct Trial {
     pub start_date: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub completion_date: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub eligibility_text: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub eligibility: Option<TrialEligibility>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "eligibility_wire"
+    )]
+    pub eligibility: Option<ClinicalTrialEligibility>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub eligibility_provenance: Option<TrialEligibilityProvenance>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -80,6 +81,12 @@ pub struct Trial {
 impl Trial {
     pub(crate) fn has_arms(&self) -> bool {
         self.design.arms().is_some()
+    }
+
+    pub(crate) fn has_eligibility_age(&self) -> bool {
+        self.eligibility
+            .as_ref()
+            .is_some_and(|value| value.age_range().is_some())
     }
 }
 
@@ -231,22 +238,14 @@ pub(crate) fn project_contacts_to_locations(
     *contacts = (!retained.is_empty()).then_some(retained);
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TrialEligibility {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sex: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub minimum_age: Option<TrialAge>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub maximum_age: Option<TrialAge>,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrialAge {
     number: Option<f64>,
     unit: Option<TrialAgeUnit>,
     original: String,
 }
+
+use eligibility as eligibility_wire;
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -339,6 +338,7 @@ impl TrialAge {
         self.unit.map(TrialAgeUnit::as_str)
     }
 
+    #[cfg(test)]
     pub fn original(&self) -> &str {
         &self.original
     }
@@ -354,6 +354,7 @@ impl TrialAge {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn is_no_limit(&self) -> bool {
         self.number.is_none()
             && (self.original.eq_ignore_ascii_case("n/a")
@@ -388,24 +389,6 @@ fn valid_age_number_token(value: &str) -> bool {
             !fraction.is_empty() && fraction.bytes().all(|byte| byte.is_ascii_digit())
         }
         _ => false,
-    }
-}
-
-pub(crate) fn format_age_range(
-    minimum: Option<&TrialAge>,
-    maximum: Option<&TrialAge>,
-) -> Option<String> {
-    let minimum = minimum
-        .filter(|age| !age.is_no_limit())
-        .map(TrialAge::original);
-    let maximum = maximum
-        .filter(|age| !age.is_no_limit())
-        .map(TrialAge::original);
-    match (minimum, maximum) {
-        (Some(minimum), Some(maximum)) => Some(format!("{minimum} to {maximum}")),
-        (Some(minimum), None) => Some(format!("{minimum} to Any age")),
-        (None, Some(maximum)) => Some(format!("Any age to {maximum}")),
-        (None, None) => None,
     }
 }
 
@@ -608,19 +591,6 @@ mod age_tests {
             },
         ] {
             assert!(serde_json::to_value(invalid_memory).is_err());
-        }
-    }
-
-    #[test]
-    fn eligibility_null_and_missing_bounds_reserialize_as_omission() {
-        for input in [
-            json!({"sex":"All"}),
-            json!({"sex":"All","minimum_age":null}),
-        ] {
-            let value =
-                serde_json::to_value(serde_json::from_value::<TrialEligibility>(input).unwrap())
-                    .unwrap();
-            assert_eq!(value, json!({"sex":"All"}));
         }
     }
 }

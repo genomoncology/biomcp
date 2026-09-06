@@ -677,7 +677,7 @@ pub(crate) fn trial_section_sources(trial: &Trial) -> Vec<SectionSource> {
         || has_text(&trial.status)
         || has_opt_text(&trial.phase)
         || has_opt_text(&trial.study_type)
-        || has_opt_text(&trial.age_range)
+        || trial.has_eligibility_age()
         || has_opt_text(&trial.sponsor)
         || trial.enrollment.is_some()
         || has_opt_text(&trial.start_date)
@@ -712,7 +712,7 @@ pub(crate) fn trial_section_sources(trial: &Trial) -> Vec<SectionSource> {
     );
     push_section(
         &mut out,
-        has_opt_text(&trial.eligibility_text),
+        trial.eligibility.is_some(),
         "eligibility",
         "Eligibility",
         source_ref,
