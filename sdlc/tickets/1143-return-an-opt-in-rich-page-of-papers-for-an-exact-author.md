@@ -130,10 +130,13 @@ The rich page retains the existing pagination object and metadata ordering.
 Evidence URLs appear once per admitted paper in row order, including
 duplicates. Construct each from the fixed
 `https://www.semanticscholar.org/paper/` base by percent-encoding the normalized
-`paperId` as exactly one UTF-8 path segment; use the URL crate's path-segment
-builder, not interpolation or `join`. RFC 3986 unreserved ASCII stays literal;
-every other byte is uppercase `%HH`, so `/`, `?`, `#`, `%`, whitespace,
-controls, and non-ASCII cannot change URL structure. Article follow-ups appear
+`paperId` as exactly one UTF-8 path segment. Use `url::Url` path-segment
+serialization, or an equivalent explicit encoder for its WHATWG special-URL
+path-segment set: C0 controls and space, `"`, `#`, `<`, `>`, `?`, backtick,
+`{`, `}`, `/`, `%`, and backslash are uppercase `%HH`; other ASCII remains
+literal, including `$`, `&`, `;`, `+`, `,`, `:`, `=`, and `@`. Handle `.` and
+`..` as encoded data rather than allowing URL dot-segment normalization. Do not
+use interpolation or `join`. Article follow-ups appear
 in the same row order using the existing PMID, DOI, arXiv, then valid 40-hex
 paper-ID preference and `NextCommand` quoting. An opaque non-40-hex paper ID
 therefore remains an admitted row with an encoded evidence URL but is never an
@@ -240,8 +243,13 @@ appears.
    admitted `paperId` whose normalized value is `A/?#% \n雪` is preserved
    exactly in JSON, produces the exact evidence URL
    `https://www.semanticscholar.org/paper/A%2F%3F%23%25%20%0A%E9%9B%AA`,
-   and produces no `get article` command; a 40-hex control still produces both
-   its unchanged evidence URL and follow-up.
+   and produces no `get article` command. A second opaque ID `$&;+, :=@`
+   produces exactly
+   `https://www.semanticscholar.org/paper/$&;+,%20:=@`; `.` and `..` produce
+   `https://www.semanticscholar.org/paper/%2E` and
+   `https://www.semanticscholar.org/paper/%2E%2E`, respectively, rather than
+   traversing the base path. A 40-hex control still produces both its unchanged
+   evidence URL and follow-up.
 3. Apply an exhaustive pagination matrix to compact and rich pages: valid
    terminal/continuing/empty pages, missing and mismatched offsets, every
    malformed `next` shape, and `limit + 1` rows. Tests prove exactly one
