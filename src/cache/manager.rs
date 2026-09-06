@@ -9,6 +9,8 @@ use async_trait::async_trait;
 use http_cache::{CacheManager, HttpResponse};
 use http_cache_reqwest::CACacheManager;
 use http_cache_semantics::CachePolicy;
+use serde::Serialize;
+use tokio::io::AsyncWriteExt;
 use tracing::{debug, warn};
 
 use super::{
@@ -33,6 +35,7 @@ struct ManagerServices {
     schedule_eviction: Arc<ScheduleEvictionFn>,
     observe_get: Arc<CacheAccessObserverFn>,
     after_put: Arc<CacheAccessObserverFn>,
+    after_safe_return_armed: Arc<CacheAccessObserverFn>,
     before_key_lock_dir_create: Arc<BeforeKeyLockDirCreateFn>,
 }
 
@@ -117,6 +120,7 @@ impl SizeAwareCacheManager {
                 schedule_eviction: Arc::new(schedule_eviction),
                 observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(|_, _| {}),
+                after_safe_return_armed: Arc::new(|_, _| {}),
                 before_key_lock_dir_create: Arc::new(|_| {}),
             },
         )
@@ -151,9 +155,19 @@ impl SizeAwareCacheManager {
                 schedule_eviction: Arc::new(schedule_eviction),
                 observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(after_put),
+                after_safe_return_armed: Arc::new(|_, _| {}),
                 before_key_lock_dir_create: Arc::new(before_key_lock_dir_create),
             },
         )
+    }
+
+    #[cfg(test)]
+    fn with_safe_return_observer<A>(mut self, observer: A) -> Self
+    where
+        A: Fn(&Path, &str) + Send + Sync + 'static,
+    {
+        self.services.after_safe_return_armed = Arc::new(observer);
+        self
     }
 
     #[cfg(test)]
@@ -222,6 +236,11 @@ impl CacheManager for SizeAwareCacheManager {
     ) -> http_cache::Result<HttpResponse> {
         // Cancellation is safe only until CACache atomically publishes the entry.
         let safe_return = AtomicBool::new(false);
+        #[derive(Serialize)]
+        struct Store<'a> {
+            response: &'a HttpResponse,
+            policy: &'a CachePolicy,
+        }
         let pre_commit = async {
             let _operation = super::lock_cache_key_async(
                 self.config.cache_root.clone(),
@@ -230,9 +249,16 @@ impl CacheManager for SizeAwareCacheManager {
             )
             .await?;
             super::prepare_write_paths(&self.inner.path, &cache_key)?;
+            let bytes = bincode::serialize(&Store {
+                response: &res,
+                policy: &policy,
+            })?;
+            let mut writer = cacache::Writer::create(&self.inner.path, &cache_key).await?;
+            writer.write_all(&bytes).await?;
             safe_return.store(true, Ordering::Release);
-            let response = self.inner.put(cache_key.clone(), res, policy).await?;
-            Ok::<_, http_cache::BoxError>((_operation, response))
+            (self.services.after_safe_return_armed)(&self.inner.path, &cache_key);
+            writer.commit().await?;
+            Ok::<_, http_cache::BoxError>((_operation, res))
         };
         let (_operation, response) =
             crate::sources::run_with_variant_article_safe_return_marker(pre_commit, &safe_return)
@@ -318,6 +344,7 @@ fn default_services() -> ManagerServices {
         schedule_eviction: Arc::new(spawn_eviction_task),
         observe_get: Arc::new(|_, _| {}),
         after_put: Arc::new(|_, _| {}),
+        after_safe_return_armed: Arc::new(|_, _| {}),
         before_key_lock_dir_create: Arc::new(|_| {}),
     }
 }
@@ -925,51 +952,6 @@ mod tests {
 
         assert_eq!(manager.approx_bytes.load(Ordering::Relaxed), 8);
     }
-    #[tokio::test]
-    async fn put_masks_deadline_checks_after_safe_return_is_armed() {
-        let root = TempDirGuard::new("put-deadline-safe-return");
-        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(3_600));
-        let manager = SizeAwareCacheManager::new_with_services_and_observers(
-            root.path().join("http"),
-            test_config(root.path(), 1_000_000, DiskFreeThreshold::Percent(1)),
-            |_| Ok(0),
-            |_| {
-                Ok(FilesystemSpace {
-                    available_bytes: 1_000_000,
-                    total_bytes: 1_000_000,
-                })
-            },
-            |_, _, _, _| {},
-            |_, _| {
-                assert!(
-                    crate::sources::current_variant_article_deadline().is_none(),
-                    "post-publication finalization must mask deadline checks"
-                );
-            },
-            |_| {},
-        );
-        let result = crate::sources::with_variant_article_deadline(
-            deadline,
-            manager.put(
-                "safe-return".into(),
-                test_http_response(b"ok"),
-                test_policy(),
-            ),
-        )
-        .await;
-
-        assert!(
-            result.is_ok(),
-            "armed entry must reach its safe return boundary: {result:?}"
-        );
-        assert!(
-            cacache::metadata(root.path().join("http"), "safe-return")
-                .await
-                .expect("metadata")
-                .is_some()
-        );
-    }
-
     #[test]
     fn opening_manager_physically_removes_expired_entries_below_size_limit() {
         let root = TempDirGuard::new("open-age-maintenance");

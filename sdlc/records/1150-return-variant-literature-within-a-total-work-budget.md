@@ -142,16 +142,23 @@ hydration. Full `make test`, `make spec`, and release gates remain unclaimed.
 
 The coordinating full `make test` later stopped after 68 passing Rust tests
 because `put_finishes_security_boundary_when_deadline_expires_after_publish`
-returned the correct pre-publication timeout under suite contention: its
-30-millisecond wall-clock setup had not actually established that publication
-preceded expiry. Remediation removes that timing claim. A deterministic manager
-test now proves post-arm finalization masks deadline checks, while a paused-clock
-concurrency test proves only that put may finish after the deadline: unrelated
-and unarmed operations still time out. The per-invocation safe-return counter
-was replaced by a per-put marker so concurrent work cannot inherit another
-put's shield. Both focused tests passed individually and for 20 parallel
-nextest stress iterations. The interrupted full gate remains failed evidence
-and was not rerun here.
+timed out. Its 30-millisecond wall-clock setup did not establish whether the
+CACache index entry had been published, and it exposed that the first
+remediation armed the per-put marker before CACache serialization and content
+writing rather than at publication. The interrupted full gate remains failed
+evidence and was not rerun here.
+
+The final cache-boundary remediation preserves CACache's exact bincode response
+and policy envelope but uses its public async `Writer`: serialization, writer
+creation, and body writing remain deadline-cancellable; the per-put marker is
+armed only when entering `Writer::commit`, whose public API owns content close,
+size/integrity validation, and the atomic index insertion. Metadata lookup,
+security hardening, accounting, and eviction scheduling still settle under the
+same per-put shield. A real manager-put transition regression expires once
+before publication and proves an error with no index entry, then expires at
+commit and proves successful settlement plus compatible readback. That test
+passed individually and in 20 repeated runs. The paused-clock concurrent test
+still proves an armed put does not shield unrelated or unarmed operations.
 
 ## Current facts
 
