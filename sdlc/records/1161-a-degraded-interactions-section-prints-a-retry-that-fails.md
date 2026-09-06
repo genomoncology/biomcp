@@ -248,3 +248,18 @@ its local HTTP/environment fixture now live in the existing drug
 `test_support.rs` fixture owner without changing the positive-control or exact
 zero-call assertions. The exact parallel-isolation static contract and the
 relocated Rust test both pass. Full gates remain with the independent reviewer.
+
+The same independent reviewer accepted the relocated implementation at
+`5d187b9574e6f87b991cd010f158a645edc7a02b`: the production reducer, direct
+DDInter observer, positive control, required-label zero-read exclusions, and
+CLI/raw-MCP/typed-MCP recovery matrix now satisfy the ticket without a
+fixture-only shortcut.
+
+## Final integration evidence
+
+After rebasing onto `6767f4c8`, the immutable reviewed head passed `make lint`,
+`make test`, and `make spec`. The Rust and Python contract lane completed
+without failures; Python reported 910 passed and 3 skipped, and strict MkDocs
+validation succeeded. The complete routine specification corpus, including
+the fifteen-case section-outcome contract and static parallel-isolation
+checks, passed. No live-provider verification was part of these routine gates.
