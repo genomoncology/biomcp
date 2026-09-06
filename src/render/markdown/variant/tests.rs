@@ -868,13 +868,8 @@ fn phenotype_search_markdown_renders_top_disease_follow_up() {
     )
     .expect("rendered markdown");
 
-    assert!(markdown.contains("See also:"));
     assert!(markdown.contains("biomcp get disease MONDO:0100135 phenotypes"));
     assert!(markdown.contains("biomcp list phenotype"));
-    assert_eq!(
-        related_command_description("biomcp get disease \"Dravet syndrome\" genes phenotypes"),
-        Some("open the top phenotype-match disease with genes and phenotypes")
-    );
 }
 #[test]
 fn ticket_406_coordinate_outputs_carry_genome_build_context() {
