@@ -130,10 +130,14 @@ provenance construction. Existing backend request commits continue to include
 provider decoding, filtering, transformation, deduplication, and page-vector
 mutation before their one terminal event.
 
-Focused evidence covers the zero-query zero-unit CAR boundary; one-event commit
-ordering for representative resolution, CAR, strict search, citation,
-enrichment, and identity-verification route labels; a real PubTator search page;
-and the existing real CAR/LDH capture path extended through MyVariant citation
+Focused evidence covers the zero-query zero-unit CAR boundary, but an initial
+generic route-label test did not prove those production paths and was removed.
+The follow-up production tests prove two expired, planned CAR identities yield
+exactly two deadline-omitted events rather than an inapplicable result or three
+events; prove a real PubTator search page commits its decoded page; and prove a
+completed PubTator visible-row enrichment remains returned when the later
+Europe PMC leg fails, with exactly one success and one unavailable event. The
+existing real CAR/LDH capture path remains extended through MyVariant citation
 hydration. Full `make test`, `make spec`, and release gates remain unclaimed.
 
 ## Current facts
