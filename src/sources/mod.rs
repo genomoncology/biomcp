@@ -1858,7 +1858,7 @@ mod tests {
         )
         .unwrap();
         assert!(cache_root.join("http").is_dir());
-        assert!(!legacy.exists());
+        assert!(!cache_root.join("http/sentinel.txt").exists() && !legacy.exists());
     }
     #[test]
     fn build_http_client_does_not_restore_legacy_cache_after_epoch_and_clear() {
@@ -1879,6 +1879,6 @@ mod tests {
         )
         .unwrap();
         assert!(cache_root.join("http").is_dir());
-        assert!(!legacy.exists());
+        assert!(!cache_root.join("http/legacy-sentinel").exists() && !legacy.exists());
     }
 }

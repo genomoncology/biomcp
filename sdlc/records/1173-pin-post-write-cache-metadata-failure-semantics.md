@@ -92,4 +92,7 @@ root; they are not one file per distinct cache key.
 - Design review: accepted after remediation pinned the exact cached-client
   branches, required production-shaped manager injection, distinguished
   request `CacheMode::NoStore`, and bounded internal and public error context.
-- Code review: implementation complete; independent review pending.
+- Code review: the first review rejected compaction that retained the legacy
+  migration tests but dropped their decisive migrated-sentinel absence checks.
+  Both assertions are restored at the exact source-line baseline; focused
+  remediation review is pending.
