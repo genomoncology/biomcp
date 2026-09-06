@@ -18,15 +18,22 @@ async fn repeated_backend_requests_stop_before_the_fifty_first_future_runs() {
     let execution = super::super::variant_search::VariantArticleExecutionContext::single();
     let calls = Arc::new(AtomicUsize::new(0));
     let mut completed = 0;
+    let mut first_unit = None;
     for _ in 0..55 {
         let calls = calls.clone();
-        let result =
-            variant_article_request(Some(&execution), "exact_lexical", "fixture", async move {
+        let result = variant_article_request(
+            Some(&execution),
+            "exact_lexical",
+            "fixture",
+            &mut first_unit,
+            async move {
                 calls.fetch_add(1, Ordering::SeqCst);
                 Ok::<_, BioMcpError>(())
-            })
-            .await
-            .expect("fixture request");
+            },
+            Ok,
+        )
+        .await
+        .expect("fixture request");
         completed += usize::from(result.is_some());
     }
 

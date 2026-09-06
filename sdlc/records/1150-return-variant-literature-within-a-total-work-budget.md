@@ -66,10 +66,37 @@ focused Python documentation contracts; two additional Python tests required a
 prepared `target/release/biomcp` and were not run as passing claims. Full
 `make test` and `make spec` are not claimed.
 
+A second independent review rejected four remaining implementation gaps. This
+remediation moves provider admission out of request middleware and into the
+execution ledger: the unit is reserved before cold client construction, owns
+one invocation-shared permit through cache/retry/body decoding and accumulator
+commit, and records cancellation as the actual source's provider timeout or
+invocation timeout. It removes the synthetic `internal` source entirely.
+Deadline-aware cold construction now polls the cache-epoch lock instead of
+blocking on `lock_exclusive`. The cache manager arms a publication guard before
+CACache can expose an entry; production request middleware observes that guard,
+drives metadata/security finalization to its stable success or fail-closed
+result, and then resumes normal deadline cancellation. Full repository gates
+remain unclaimed.
+
 ## Review
 
 - Design review: accepted before implementation.
 - Code review: pending independent review of this commit.
+
+## Second remediation evidence
+
+- `cargo check --no-default-features`: passed without warnings.
+- `cargo clippy --no-default-features --lib -- -D warnings`: passed.
+- Production-shaped post-publication fail-closed test: passed.
+- Contended cold cache-epoch deadline test: passed.
+- Actual-HTTP provider-unit concurrency test: passed with an HTTP peak of ten,
+  a post-body commit peak of ten, and twenty matching terminal ledger events.
+- Backend fifty-call bound, invocation-deadline settlement, source attribution,
+  terminal precedence, cache-manager safe-return, and fail-closed client matrix:
+  passed.
+- `tools/check-quality-ratchet.sh`, formatting, and diff whitespace: passed.
+  No tracked package file was added, preserving the 1,300-file boundary.
 
 ## Prerequisite integration evidence
 

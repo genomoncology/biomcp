@@ -309,6 +309,16 @@ pub(super) async fn resolve_article_from_pmid_with_context(
     europe_hint: Option<&EuropePmcResult>,
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
 ) -> Result<Article, BioMcpError> {
+    if let Some(execution) = execution {
+        return resolve_variant_article_from_pmid(
+            pmid,
+            not_found_id,
+            suggestion_id,
+            europe_hint,
+            execution,
+        )
+        .await;
+    }
     let Some(pubtator_result) =
         variant_detail_request(execution, "pubtator", pubtator.export_biocjson(pmid)).await
     else {
@@ -368,6 +378,97 @@ pub(super) async fn resolve_article_from_pmid_with_context(
                 }
             };
             Ok(article_from_europepmc_fallback(&hit))
+        }
+    }
+}
+
+pub(super) async fn resolve_variant_article_from_pmid(
+    pmid: u32,
+    not_found_id: &str,
+    suggestion_id: &str,
+    europe_hint: Option<&EuropePmcResult>,
+    execution: &super::variant_search::VariantArticleExecutionContext,
+) -> Result<Article, BioMcpError> {
+    let unit = execution
+        .begin_provider_unit("enrichment", "pubtator")
+        .await
+        .ok_or_else(|| BioMcpError::SourceUnavailable {
+            source_name: "variant article work budget".into(),
+            reason: "item work budget exhausted".into(),
+            suggestion: "Retry with a narrower request".into(),
+        })?;
+    let result = match PubTatorClient::new_with_deadline(execution.deadline()).await {
+        Ok(client) => client.export_biocjson(pmid).await,
+        Err(error) => Err(error),
+    };
+    match result {
+        Ok(response) => {
+            let Some(doc) = response.documents.into_iter().next() else {
+                let error = article_not_found(not_found_id, suggestion_id);
+                unit.record_error(&error);
+                return Err(error);
+            };
+            let mut article = transform::article::from_pubtator_document(&doc);
+            article.annotations = transform::article::extract_annotations(&doc);
+            unit.record("ok", 1);
+            if let Some(hit) = europe_hint {
+                transform::article::merge_europepmc_metadata(&mut article, hit);
+            } else if let Some((hit, europe_unit)) = variant_europepmc_hit(pmid, execution).await? {
+                transform::article::merge_europepmc_metadata(&mut article, &hit);
+                europe_unit.record("ok", 1);
+            }
+            Ok(article)
+        }
+        Err(error) if is_pubtator_lag_error(&error) => {
+            unit.record_error(&error);
+            let (hit, europe_unit) = match europe_hint.cloned() {
+                Some(hit) => return Ok(article_from_europepmc_fallback(&hit)),
+                None => variant_europepmc_hit(pmid, execution)
+                    .await?
+                    .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?,
+            };
+            let article = article_from_europepmc_fallback(&hit);
+            europe_unit.record("ok", 1);
+            Ok(article)
+        }
+        Err(error) => {
+            unit.record_error(&error);
+            Err(error)
+        }
+    }
+}
+
+async fn variant_europepmc_hit<'a>(
+    pmid: u32,
+    execution: &'a super::variant_search::VariantArticleExecutionContext,
+) -> Result<
+    Option<(
+        EuropePmcResult,
+        super::backends::VariantArticleProviderUnit<'a>,
+    )>,
+    BioMcpError,
+> {
+    let Some(unit) = execution
+        .begin_provider_unit("enrichment", "europepmc")
+        .await
+    else {
+        return Ok(None);
+    };
+    let result = match EuropePmcClient::new_with_deadline(execution.deadline()).await {
+        Ok(client) => client.search_by_pmid(&pmid.to_string()).await,
+        Err(error) => Err(error),
+    };
+    match result {
+        Ok(response) => match first_europepmc_hit(response) {
+            Some(hit) => Ok(Some((hit, unit))),
+            None => {
+                unit.record("ok", 1);
+                Ok(None)
+            }
+        },
+        Err(error) => {
+            unit.record_error(&error);
+            Err(error)
         }
     }
 }

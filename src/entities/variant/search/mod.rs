@@ -498,8 +498,10 @@ async fn direct_provider_scan(
     input: &str,
     execution: &crate::entities::article::variant_search::VariantArticleExecutionContext,
 ) -> ProviderScan {
-    let Some(started) = execution.reserve("resolution") else {
-        execution.record_not_attempted("resolution", "myvariant");
+    let Some(unit) = execution
+        .begin_provider_unit("resolution", "myvariant")
+        .await
+    else {
         return ProviderScan {
             candidates: Vec::new(),
             exhaustive: false,
@@ -510,31 +512,35 @@ async fn direct_provider_scan(
         Ok(client) => client.get_all(input).await,
         Err(error) => Err(error),
     };
-    match &result {
-        Ok(_) | Err(BioMcpError::NotFound { .. }) => {
-            execution.record("resolution", "myvariant", started, "ok", 1)
-        }
-        Err(error) => execution.record_error("resolution", "myvariant", started, error),
-    }
     match result {
-        Ok(hits) => ProviderScan {
-            candidates: hits
-                .into_iter()
-                .map(|hit| provider_candidate(requested, hit))
-                .collect(),
-            exhaustive: true,
-            available: true,
-        },
-        Err(BioMcpError::NotFound { .. }) => ProviderScan {
-            candidates: Vec::new(),
-            exhaustive: true,
-            available: true,
-        },
-        Err(_) => ProviderScan {
-            candidates: Vec::new(),
-            exhaustive: false,
-            available: false,
-        },
+        Ok(hits) => {
+            let scan = ProviderScan {
+                candidates: hits
+                    .into_iter()
+                    .map(|hit| provider_candidate(requested, hit))
+                    .collect(),
+                exhaustive: true,
+                available: true,
+            };
+            unit.record("ok", 1);
+            scan
+        }
+        Err(BioMcpError::NotFound { .. }) => {
+            unit.record("ok", 1);
+            ProviderScan {
+                candidates: Vec::new(),
+                exhaustive: true,
+                available: true,
+            }
+        }
+        Err(error) => {
+            unit.record_error(&error);
+            ProviderScan {
+                candidates: Vec::new(),
+                exhaustive: false,
+                available: false,
+            }
+        }
     }
 }
 
@@ -551,9 +557,22 @@ async fn searched_provider_scan(
             available: false,
         };
     }
+    let mut first_unit = execution
+        .begin_provider_unit("resolution", "myvariant")
+        .await;
+    if first_unit.is_none() {
+        return ProviderScan {
+            candidates: Vec::new(),
+            exhaustive: false,
+            available: false,
+        };
+    }
     let client = match MyVariantClient::new_with_deadline(execution.deadline()).await {
         Ok(client) => client,
-        Err(_) => {
+        Err(error) => {
+            if let Some(unit) = first_unit.take() {
+                unit.record_error(&error);
+            }
             return ProviderScan {
                 candidates: Vec::new(),
                 exhaustive: false,
@@ -565,8 +584,15 @@ async fn searched_provider_scan(
     let mut candidates = Vec::new();
     let mut exhaustive = false;
     while provider_offset < MAX_CANDIDATES {
-        let Some(started) = execution.reserve("resolution") else {
-            execution.record_not_attempted("resolution", "myvariant");
+        let unit = match first_unit.take() {
+            Some(unit) => Some(unit),
+            None => {
+                execution
+                    .begin_provider_unit("resolution", "myvariant")
+                    .await
+            }
+        };
+        let Some(unit) = unit else {
             break;
         };
         let result = client
@@ -595,13 +621,10 @@ async fn searched_provider_scan(
                 offset: provider_offset,
             })
             .await;
-        match &result {
-            Ok(_) => execution.record("resolution", "myvariant", started, "ok", 1),
-            Err(error) => execution.record_error("resolution", "myvariant", started, error),
-        }
         let response = match result {
             Ok(response) => response,
-            Err(_) => {
+            Err(error) => {
+                unit.record_error(&error);
                 return ProviderScan {
                     candidates: Vec::new(),
                     exhaustive: false,
@@ -619,6 +642,7 @@ async fn searched_provider_scan(
                 .take(examined_count)
                 .map(|hit| provider_candidate(requested, hit)),
         );
+        unit.record("ok", 1);
         provider_offset += examined_count;
         if candidate_scan_exhaustive(provider_total, provider_offset, hit_count) {
             exhaustive = true;

@@ -220,10 +220,7 @@ impl CacheManager for SizeAwareCacheManager {
         res: HttpResponse,
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
-        // Cancellation is safe until cacache atomically publishes the entry.  Keep
-        // the per-key guard and finish metadata hardening after that publication;
-        // returning a deadline error in between would expose a successful write
-        // whose ownership/mode finalization had not run.
+        // Cancellation is safe only until CACache atomically publishes the entry.
         let pre_commit = async {
             let _operation = super::lock_cache_key_async(
                 self.config.cache_root.clone(),
@@ -232,10 +229,13 @@ impl CacheManager for SizeAwareCacheManager {
             )
             .await?;
             super::prepare_write_paths(&self.inner.path, &cache_key)?;
+            // Arm before CACache publication; outer deadlines await finalization.
+            let safe_return = super::begin_variant_article_cache_publication();
             let response = self.inner.put(cache_key.clone(), res, policy).await?;
-            Ok::<_, http_cache::BoxError>((_operation, response))
+            Ok::<_, http_cache::BoxError>((_operation, safe_return, response))
         };
-        let (_operation, response) = run_with_variant_article_deadline(pre_commit).await?;
+        let (_operation, _safe_return, response) =
+            run_with_variant_article_deadline(pre_commit).await?;
 
         let finalization = async {
             (self.services.after_put)(&self.inner.path, &cache_key);

@@ -29,6 +29,7 @@ struct VariantArticleDeadlineInner {
     at: tokio::time::Instant,
     limit: Duration,
     providers: std::sync::Arc<tokio::sync::Semaphore>,
+    safe_returns: std::sync::atomic::AtomicUsize,
 }
 
 impl VariantArticleDeadline {
@@ -38,6 +39,7 @@ impl VariantArticleDeadline {
                 at: tokio::time::Instant::now() + limit,
                 limit,
                 providers: std::sync::Arc::new(tokio::sync::Semaphore::new(10)),
+                safe_returns: std::sync::atomic::AtomicUsize::new(0),
             }),
         }
     }
@@ -60,10 +62,29 @@ impl VariantArticleDeadline {
         &self,
         future: F,
     ) -> Result<F::Output, VariantArticleDeadlineElapsed> {
+        tokio::pin!(future);
         tokio::select! {
             biased;
-            _ = tokio::time::sleep_until(self.inner.at) => Err(VariantArticleDeadlineElapsed),
-            output = future => Ok(output),
+            _ = tokio::time::sleep_until(self.inner.at) => {
+                while self.inner.safe_returns.load(std::sync::atomic::Ordering::Acquire) > 0 {
+                    tokio::select! {
+                        biased;
+                        output = &mut future => return Ok(output),
+                        _ = tokio::task::yield_now() => {}
+                    }
+                }
+                Err(VariantArticleDeadlineElapsed)
+            },
+            output = &mut future => Ok(output),
+        }
+    }
+
+    pub(crate) fn enter_safe_return(&self) -> VariantArticleSafeReturnGuard {
+        self.inner
+            .safe_returns
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+        VariantArticleSafeReturnGuard {
+            deadline: self.clone(),
         }
     }
 
@@ -74,6 +95,19 @@ impl VariantArticleDeadline {
         self.run(acquire)
             .await?
             .map_err(|_| VariantArticleDeadlineElapsed)
+    }
+}
+
+pub(crate) struct VariantArticleSafeReturnGuard {
+    deadline: VariantArticleDeadline,
+}
+
+impl Drop for VariantArticleSafeReturnGuard {
+    fn drop(&mut self) {
+        self.deadline
+            .inner
+            .safe_returns
+            .fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
     }
 }
 
@@ -945,10 +979,12 @@ async fn build_http_client_with_config_deadline(
     if deadline.is_exhausted() {
         return Err(variant_article_deadline_error());
     }
-    crate::cache::ensure_body_limited_cache_epoch(
+    crate::cache::ensure_body_limited_cache_epoch_until(
         &cache_root,
         matches!(migration, Some(crate::cache::MigrationOutcome::Renamed)),
-    )?;
+        deadline,
+    )
+    .await?;
     if deadline.is_exhausted() {
         return Err(variant_article_deadline_error());
     }
@@ -1083,10 +1119,6 @@ pub(crate) fn shared_client() -> Result<ClientWithMiddleware, BioMcpError> {
 pub(crate) async fn shared_client_with_deadline(
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
-    let _permit = deadline
-        .acquire_provider()
-        .await
-        .map_err(|_| variant_article_deadline_error())?;
     if let Some(client) = HTTP_CLIENT.get() {
         return Ok(client.clone());
     }
@@ -1137,10 +1169,6 @@ pub(crate) async fn semantic_scholar_provider_client_with_deadline(
     authenticated: bool,
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
-    let _permit = deadline
-        .acquire_provider()
-        .await
-        .map_err(|_| variant_article_deadline_error())?;
     let kind = if authenticated {
         SharedHttpClientKind::Default
     } else {
@@ -1176,10 +1204,6 @@ pub(crate) async fn provider_url_client_with_deadline(
     policy: &provider_url_policy::ProviderUrlPolicy,
     deadline: &VariantArticleDeadline,
 ) -> Result<ClientWithMiddleware, BioMcpError> {
-    let _permit = deadline
-        .acquire_provider()
-        .await
-        .map_err(|_| variant_article_deadline_error())?;
     if is_no_cache_enabled() {
         return build_uncached_http_client(SharedHttpClientKind::Default, Some(policy));
     }

@@ -323,10 +323,6 @@ impl Middleware for RateLimitMiddleware {
     ) -> reqwest_middleware::Result<reqwest::Response> {
         if let Some(deadline) = extensions.get::<super::VariantArticleDeadline>().cloned() {
             if self.provider_pool {
-                let _provider_permit = deadline
-                    .acquire_provider()
-                    .await
-                    .map_err(reqwest_middleware::Error::middleware)?;
                 return deadline
                     .run(next.run(req, extensions))
                     .await
@@ -390,29 +386,41 @@ mod tests {
                 }
             })
         };
-        let client = reqwest_middleware::ClientBuilder::new(reqwest::Client::new())
-            .with(RateLimitMiddleware {
-                limiter: Arc::new(RateLimiter::new(Vec::new(), Duration::ZERO, None)),
-                provider_pool: true,
-            })
-            .build();
-        let deadline = super::super::VariantArticleDeadline::from_now(Duration::from_secs(5));
+        let client = reqwest::Client::new();
+        let execution = Arc::new(
+            crate::entities::article::variant_search::VariantArticleExecutionContext::single(),
+        );
+        let committing = Arc::new(AtomicUsize::new(0));
+        let commit_peak = Arc::new(AtomicUsize::new(0));
         let requests = (0..20).map(|index| {
             let client = client.clone();
-            let deadline = deadline.clone();
+            let execution = execution.clone();
+            let committing = committing.clone();
+            let commit_peak = commit_peak.clone();
             async move {
-                client
+                let unit = execution
+                    .begin_provider_unit("strict", "fixture")
+                    .await
+                    .expect("provider unit admitted");
+                let response = client
                     .get(format!("http://{address}/{index}"))
-                    .with_extension(deadline)
                     .send()
                     .await
-                    .expect("fixture response")
+                    .expect("fixture response");
+                assert_eq!(response.text().await.expect("decoded body"), "ok");
+                let now = committing.fetch_add(1, Ordering::SeqCst) + 1;
+                commit_peak.fetch_max(now, Ordering::SeqCst);
+                tokio::time::sleep(Duration::from_millis(25)).await;
+                committing.fetch_sub(1, Ordering::SeqCst);
+                unit.record("ok", 1);
             }
         });
         futures::future::join_all(requests).await;
         server.await.expect("fixture server");
 
         assert_eq!(peak.load(Ordering::SeqCst), 10);
+        assert_eq!(commit_peak.load(Ordering::SeqCst), 10);
+        assert_eq!(execution.terminal_event_count(), 20);
     }
 
     fn test_policy(key: &'static str, prefix: &str, ms: u64) -> RateLimitPolicy {
