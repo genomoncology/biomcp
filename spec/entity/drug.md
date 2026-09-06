@@ -42,10 +42,11 @@ match.
 ../../tools/biomcp-ci search drug eflornithine --region eu --limit 5 | mustmatch not like 'Prasugrel Viatris'
 ../../tools/biomcp-ci search drug eflornithine --region all --limit 5 | mustmatch like '## EU (EMA)
 product_name: eflornithine (query)'
-../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 2) and $eu.pagination.has_more and ($eu.continuation_command | endswith("--offset 1")) and ($eu.results[0] | .match_kind == "product_name" and .matched_term == "eflornithine" and .source == "query")' | mustmatch 'true'
-../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 --offset 1 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 2) and ($eu.pagination.has_more == false) and ($eu.results[0].name == "Vaniqa")' | mustmatch 'true'
-../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 --offset 2 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 2) and ($eu.count == 0) and ($eu.pagination.has_more == false) and ($eu.continuation_command == null)' | mustmatch 'true'
-../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 --offset 99 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 2) and ($eu.count == 0) and ($eu.pagination.has_more == false)' | mustmatch 'true'
+../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 3) and $eu.pagination.has_more and ($eu.continuation_command | endswith("--offset 1")) and ($eu.results[0] | .match_kind == "product_name" and .matched_term == "eflornithine" and .source == "query")' | mustmatch 'true'
+../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 --offset 1 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 3) and ($eu.pagination.has_more == true) and ($eu.continuation_command | endswith("--offset 2")) and ($eu.results[0].name == "Vaniqa")' | mustmatch 'true'
+../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 --offset 2 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 3) and ($eu.pagination.has_more == false) and ($eu.continuation_command == null) and ($eu.results[0].name == "Eflornithine cream") and ($eu.results[0].match_kind == "broad_text")' | mustmatch 'true'
+../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 --offset 3 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 3) and ($eu.count == 0) and ($eu.pagination.has_more == false) and ($eu.continuation_command == null)' | mustmatch 'true'
+../../tools/biomcp-ci --json search drug eflornithine --region eu --limit 1 --offset 99 | jq -e '.regions.eu as $eu | ($eu.pagination.total == 3) and ($eu.count == 0) and ($eu.pagination.has_more == false) and ($eu.continuation_command == null)' | mustmatch 'true'
 ```
 
 Raw MCP executes the same CLI surface in readable and structured modes, while

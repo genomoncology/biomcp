@@ -265,6 +265,16 @@ package remains at the enforced 1,300-file ceiling.
   8 drug JSON tests, and 19 drug Markdown tests passed; the complete
   `entities::drug` library lane passed 80 tests. After the package-neutral
   file consolidation, all 17 EMA tests and all 15 drug-search tests passed.
+- Remediation Rust: all 17 drug-search tests passed, including one independent
+  admission case for each allowed MyChem field and a public EU orchestration
+  fixture covering malformed, empty, irrelevant, and excluded-only MyChem
+  responses. Each orchestration case asserted a one-request delta and a
+  positive CVX result. All 13 EMA parsing tests and the complete 82-test drug
+  library lane passed. The get-path regression pins legacy `normalize_term`
+  case/whitespace/period handling and alias deduplication separately from the
+  search-only cleaner. Private EMA, CVX, and HTTP-cache fixture roots keep the
+  orchestration test unpaced and isolated; its four searches finished in 0.15
+  seconds after compilation.
 - Focused Python/docs: 38 tests passed across the source-page, public-skill,
   and upstream-planning documentation contracts. The source capture receipt
   audit passed.
@@ -274,6 +284,10 @@ package remains at the enforced 1,300-file ceiling.
   exclusion, and pagination surfaces. Manual fixture-backed CVX checks returned
   Silgard, Prevenar 13, and the recorded influenza products with the expected
   CVX sources.
+- The remediation contract adds exact public first-, middle-, and final-page
+  assertions for `total`, `has_more`, and continuation offsets. Its focused
+  provider/DDInter-backed run passed all 13 examples after rebuilding the
+  remediated CLI and MCP example.
 - Quality/package: the final `make lint` invocation passed its credential,
   documentation, fixture, Python, shell, formatting, Clippy-with-warnings-
   denied, license, and advisory checks, then failed only because the quality
@@ -289,12 +303,22 @@ paths; consolidating the new identity tests and an existing EMA construction
 test sidecar restored the exact ceiling. A direct verified `cargo package`
 cannot run because the repository intentionally uses the existing Git-only
 BioData dependency without a registry version; the repository-standard
-offline package-list check passed. Full `make test`, full `make spec`, the
-full-feature lane, and the release gate were not run, and no merge was
-performed.
+  offline package-list check passed. Full `make test`, full `make spec`, the
+  full-feature lane, and the release gate were not run, and no merge was
+  performed.
+- Remediation final checks: `make lint` passed completely, `git diff --check`
+  passed, and the offline package-list count remained exactly 1,300 files.
 
 ## Review
 
 - Design review: accepted in the materially detailed ticket before
   implementation.
-- Implementation review: pending independent review of this commit.
+- First implementation review: rejected. The initial record overstated
+  independent coverage of every allowed admission field and the four full
+  unresolved-MyChem orchestration paths; those cases existed only at lower
+  layers or not at all. It also failed to pin the legacy get-path
+  normalization boundary and exact middle-page continuation behavior.
+- Remediation: added the missing independent and fixture-driven coverage,
+  separated the search-only identity constructor from the unchanged legacy
+  get constructor, and strengthened the public pagination contract. Fresh
+  independent implementation rereview is pending; no merge was performed.

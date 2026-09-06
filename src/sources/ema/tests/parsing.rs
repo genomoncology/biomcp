@@ -35,6 +35,41 @@ fn resolve_anchor_matches_brand_and_filters_non_human_rows() {
 }
 
 #[test]
+fn get_identity_keeps_legacy_period_boundaries_while_search_identity_cleans_them() {
+    let client = fixture_client();
+    let normalized_legacy = EmaDrugIdentity::with_aliases(
+        " .Keytruda. ",
+        Some(" PEMBROLIZUMAB "),
+        &[" Brand   Alias ".into(), "brand alias".into()],
+    );
+    assert_eq!(
+        normalized_legacy.terms_for_test(),
+        vec![
+            (".keytruda.", "query"),
+            ("pembrolizumab", "drugbank.name"),
+            ("brand alias", "openfda.brand_name"),
+        ],
+        "get identity retains legacy normalize_term cleaning and stable deduplication"
+    );
+    let boundary_legacy = EmaDrugIdentity::with_aliases(" .Keytruda. ", None, &[]);
+    assert!(
+        client
+            .resolve_anchor(&boundary_legacy)
+            .expect("legacy anchor lookup")
+            .medicines
+            .is_empty(),
+        "get-drug identity historically preserves boundary periods"
+    );
+
+    let search = EmaDrugIdentity::for_search(".Keytruda.", Vec::new());
+    let page = client
+        .search_medicines(&search, 10, 0)
+        .expect("search identity lookup");
+    assert_eq!(page.results[0].name, "Keytruda");
+    assert_eq!(page.results[0].matched_term, "Keytruda");
+}
+
+#[test]
 fn regulatory_reads_live_schema_holder_key_and_cleaned_indication() {
     let client = fixture_client();
     let anchor = client
@@ -125,7 +160,7 @@ fn search_classifies_deduplicates_and_paginates_after_stable_tiering() {
     )
     .expect("fixture write");
     let client = EmaClient::from_root(root.path().to_path_buf());
-    let identity = EmaDrugIdentity::from_typed_terms(
+    let identity = EmaDrugIdentity::for_search(
         "target phrase",
         vec![("Generic X".into(), EmaIdentitySource::OpenFdaGenericName)],
     );
@@ -183,11 +218,7 @@ fn search_medicines_matches_cvx_alias_tokens_on_active_substance() {
         ),
     ];
     let page = client
-        .search_medicines(
-            &EmaDrugIdentity::from_typed_terms("prevnar", aliases),
-            10,
-            0,
-        )
+        .search_medicines(&EmaDrugIdentity::for_search("prevnar", aliases), 10, 0)
         .expect("search page");
     let names = page
         .results
@@ -229,7 +260,7 @@ fn cvx_ordered_signature_compacts_but_does_not_reverse_or_cross_fields() {
 
 #[test]
 fn ema_truth_table_reports_every_typed_source_and_stable_ties() {
-    let product = EmaDrugIdentity::new("Product");
+    let product = EmaDrugIdentity::for_search("Product", Vec::new());
     let matched = classify_ema_match(
         &product,
         Some("product"),
@@ -243,7 +274,7 @@ fn ema_truth_table_reports_every_typed_source_and_stable_ties() {
         ("Product", "query")
     );
 
-    let active = EmaDrugIdentity::new("Substance");
+    let active = EmaDrugIdentity::for_search("Substance", Vec::new());
     assert_eq!(
         classify_ema_match(
             &active,
@@ -263,8 +294,7 @@ fn ema_truth_table_reports_every_typed_source_and_stable_ties() {
         EmaIdentitySource::ChemblPrefName,
         EmaIdentitySource::OpenFdaBrandName,
     ] {
-        let identity =
-            EmaDrugIdentity::from_typed_terms("request", vec![("Typed alias".into(), source)]);
+        let identity = EmaDrugIdentity::for_search("request", vec![("Typed alias".into(), source)]);
         let matched = classify_ema_match(
             &identity,
             Some("other"),
@@ -276,7 +306,7 @@ fn ema_truth_table_reports_every_typed_source_and_stable_ties() {
         assert_eq!(matched.2, source);
     }
 
-    let stable_tie = EmaDrugIdentity::from_typed_terms(
+    let stable_tie = EmaDrugIdentity::for_search(
         "request",
         vec![
             ("Same alias".into(), EmaIdentitySource::DrugbankName),
@@ -295,7 +325,7 @@ fn ema_truth_table_reports_every_typed_source_and_stable_ties() {
         EmaIdentitySource::DrugbankName
     );
 
-    let cvx = EmaDrugIdentity::from_typed_terms(
+    let cvx = EmaDrugIdentity::for_search(
         "request",
         vec![("HPV".into(), EmaIdentitySource::CvxShortDescription)],
     );
@@ -306,7 +336,7 @@ fn ema_truth_table_reports_every_typed_source_and_stable_ties() {
         EmaIdentitySource::CvxShortDescription
     );
 
-    let broad = EmaDrugIdentity::new("target phrase");
+    let broad = EmaDrugIdentity::for_search("target phrase", Vec::new());
     let matched = classify_ema_match(
         &broad,
         Some("other"),
@@ -321,7 +351,7 @@ fn ema_truth_table_reports_every_typed_source_and_stable_ties() {
 #[test]
 fn recorded_cvx_descriptions_bridge_gardasil_prevnar_and_fluzone() {
     let client = fixture_client();
-    let identity = EmaDrugIdentity::from_typed_terms(
+    let identity = EmaDrugIdentity::for_search(
         "brand",
         vec![
             (

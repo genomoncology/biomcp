@@ -106,6 +106,13 @@
       "category": ["Human"]
     },
     {
+      "name_of_medicine": ["Eflornithine cream"],
+      "active_substance": ["other substance"],
+      "ema_product_number": ["EMEA/H/C/009002"],
+      "medicine_status": ["Broad product"],
+      "category": ["Human"]
+    },
+    {
       "name_of_medicine": ["Prasugrel Viatris"],
       "active_substance": ["prasugrel"],
       "ema_product_number": ["EMEA/H/C/005207"],

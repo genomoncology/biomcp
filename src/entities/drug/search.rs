@@ -145,7 +145,7 @@ fn ema_identity_from_mychem_hits(query: &str, hits: &[MyChemHit]) -> Option<EmaD
             );
         }
     }
-    Some(EmaDrugIdentity::from_typed_terms(query, terms))
+    Some(EmaDrugIdentity::for_search(query, terms))
 }
 
 fn mychem_match_kind(hit: &MyChemHit, query: &str) -> DrugSearchMatchKind {
@@ -679,9 +679,9 @@ pub async fn search_name_query_with_region(
             Some(identity) => identity,
             None => {
                 if cvx_search_aliases.is_empty() {
-                    EmaDrugIdentity::new(query)
+                    EmaDrugIdentity::for_search(query, Vec::new())
                 } else {
-                    EmaDrugIdentity::from_typed_terms(
+                    EmaDrugIdentity::for_search(
                         query,
                         cvx_search_aliases
                             .into_iter()
@@ -702,7 +702,7 @@ pub async fn search_name_query_with_region(
             }
         }
     } else {
-        EmaDrugIdentity::new(query)
+        EmaDrugIdentity::for_search(query, Vec::new())
     };
     let who_identity = if who_vaccine_search {
         if cvx_aliases.is_empty() {

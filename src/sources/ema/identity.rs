@@ -48,12 +48,13 @@ struct EmaIdentityTerm {
 }
 
 impl EmaDrugIdentity {
+    #[cfg(test)]
     pub(crate) fn new(primary: &str) -> Self {
-        Self::from_typed_terms(primary, Vec::new())
+        Self::from_legacy_terms([(primary.to_string(), EmaIdentitySource::Query)])
     }
 
     pub(crate) fn with_aliases(primary: &str, canonical: Option<&str>, aliases: &[String]) -> Self {
-        let mut terms = Vec::new();
+        let mut terms = vec![(primary.to_string(), EmaIdentitySource::Query)];
         if let Some(canonical) = canonical {
             terms.push((canonical.to_string(), EmaIdentitySource::DrugbankName));
         }
@@ -63,16 +64,28 @@ impl EmaDrugIdentity {
                 .cloned()
                 .map(|term| (term, EmaIdentitySource::OpenFdaBrandName)),
         );
-        Self::from_typed_terms(primary, terms)
+        Self::from_legacy_terms(terms)
     }
 
-    pub(crate) fn from_typed_terms(primary: &str, terms: Vec<(String, EmaIdentitySource)>) -> Self {
+    fn from_legacy_terms(terms: impl IntoIterator<Item = (String, EmaIdentitySource)>) -> Self {
+        Self::from_terms(terms, normalize_term)
+    }
+
+    pub(crate) fn for_search(primary: &str, terms: Vec<(String, EmaIdentitySource)>) -> Self {
+        Self::from_terms(
+            std::iter::once((primary.to_string(), EmaIdentitySource::Query)).chain(terms),
+            clean_search_identity_text,
+        )
+    }
+
+    fn from_terms(
+        terms: impl IntoIterator<Item = (String, EmaIdentitySource)>,
+        clean: impl Fn(&str) -> Option<String>,
+    ) -> Self {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
-        for (term, source) in
-            std::iter::once((primary.to_string(), EmaIdentitySource::Query)).chain(terms)
-        {
-            let Some(text) = clean_identity_text(&term) else {
+        for (term, source) in terms {
+            let Some(text) = clean(&term) else {
                 continue;
             };
             let normalized = text.to_ascii_lowercase();
@@ -103,7 +116,7 @@ impl EmaDrugIdentity {
     }
 }
 
-fn clean_identity_text(value: &str) -> Option<String> {
+fn clean_search_identity_text(value: &str) -> Option<String> {
     clean_text(value.trim().trim_matches('.'))
 }
 
