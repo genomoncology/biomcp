@@ -59,8 +59,11 @@ command through the existing sanitized provider-error envelope. It emits no
 partial page. An exhausted empty page is a successful available result.
 
 Compact and rich projection share row admission: retain a row only when its
-`paperId` and `title` Unicode-trim to nonblank strings. Optional rich fields do
-not affect admission. Retain admitted rows in provider order, including
+`paperId` and `title` Unicode-trim to nonblank strings. A paper ID is an opaque
+provider identifier; BioMCP does not narrow admission to 40-hex because the
+existing compact fixture and provider contract permit other nonblank IDs.
+Optional rich fields do not affect admission. Retain admitted rows in provider
+order, including
 duplicate papers; do not sort, merge, or deduplicate either papers or authors.
 Thus matching compact and rich responses contain the same admitted paper IDs
 in the same order. Tests include invalid rows before and between duplicates so
@@ -125,9 +128,16 @@ ORCID, inferred identity, or per-author requests.
 The rich page retains the existing pagination object and metadata ordering.
 `_meta.source_status` is exactly one available Semantic Scholar row on success.
 Evidence URLs appear once per admitted paper in row order, including
-duplicates. Article follow-ups appear in the same row order using the existing
-PMID, DOI, arXiv, then valid 40-hex paper-ID preference and `NextCommand`
-quoting. The final continuation, when present, is:
+duplicates. Construct each from the fixed
+`https://www.semanticscholar.org/paper/` base by percent-encoding the normalized
+`paperId` as exactly one UTF-8 path segment; use the URL crate's path-segment
+builder, not interpolation or `join`. RFC 3986 unreserved ASCII stays literal;
+every other byte is uppercase `%HH`, so `/`, `?`, `#`, `%`, whitespace,
+controls, and non-ASCII cannot change URL structure. Article follow-ups appear
+in the same row order using the existing PMID, DOI, arXiv, then valid 40-hex
+paper-ID preference and `NextCommand` quoting. An opaque non-40-hex paper ID
+therefore remains an admitted row with an encoded evidence URL but is never an
+article follow-up fallback. The final continuation, when present, is:
 
 ```text
 biomcp author papers <exact-provider-id> --full --limit <limit> --offset <next>
@@ -226,7 +236,12 @@ appears.
 2. Wire/projection tests cover every rich field, null versus false/zero/empty
    string/empty list, unknown external IDs, an all-null PDF object, complete
    mixed-validity bylines, invalid row admission, duplicate retention, and
-   byte-equal paper identity/order between compact and rich views.
+   byte-equal paper identity/order between compact and rich views. A hostile
+   admitted `paperId` whose normalized value is `A/?#% \n雪` is preserved
+   exactly in JSON, produces the exact evidence URL
+   `https://www.semanticscholar.org/paper/A%2F%3F%23%25%20%0A%E9%9B%AA`,
+   and produces no `get article` command; a 40-hex control still produces both
+   its unchanged evidence URL and follow-up.
 3. Apply an exhaustive pagination matrix to compact and rich pages: valid
    terminal/continuing/empty pages, missing and mismatched offsets, every
    malformed `next` shape, and `limit + 1` rows. Tests prove exactly one
@@ -240,7 +255,11 @@ appears.
    fixture. Compare complete outputs, continuation commands, metadata, hostile
    content containment, error envelopes, and request logs. Parse every emitted
    command with the real CLI parser and recover the original arguments without
-   executing injected shell text.
+   executing injected shell text. Separate compact/rich CLI and raw-MCP hostile
+   fixtures pin the JSON ID and encoded evidence URL above and the exact
+   Markdown line ``- Paper ID: `A/?#% 雪` `` (the embedded control newline is
+   coalesced with the adjacent space); neither surface
+   contains an injected link/heading nor a hostile-ID article command.
 6. Pin typed-MCP non-expansion and rerun the accepted ticket-1145 graph/JATS
    fixture family: citation/reference commands, evidence states, pagination,
    directed matching, and request bounds do not change. The author fixture
