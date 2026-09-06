@@ -337,12 +337,39 @@ fn drug_search_json_all_region_uses_unified_regions_envelope() {
     assert_eq!(value["regions"]["eu"]["count"], 1);
     assert_eq!(value["regions"]["who"]["count"], 1);
     assert_eq!(
-        value["regions"]["who"]["results"][0]["who_reference_number"],
-        "BT-ON002"
+        value["regions"]["us"]["results"][0],
+        serde_json::json!({
+            "name": "pembrolizumab",
+            "target": "PDCD1",
+            "match_kind": "broad_text"
+        })
     );
     assert_eq!(
-        value["regions"]["eu"]["results"][0]["ema_product_number"],
-        "EMEA/H/C/003820"
+        value["regions"]["eu"]["results"][0],
+        serde_json::json!({
+            "name": "Keytruda",
+            "active_substance": "pembrolizumab",
+            "ema_product_number": "EMEA/H/C/003820",
+            "status": "Authorised",
+            "match_kind": "active_substance",
+            "matched_term": "pembrolizumab",
+            "source": "query"
+        })
+    );
+    assert_eq!(
+        value["regions"]["who"]["results"][0],
+        serde_json::json!({
+            "inn": "Pembrolizumab",
+            "product_type": "Biotherapeutic Product",
+            "therapeutic_area": "Oncology",
+            "presentation": "Pembrolizumab Concentrate",
+            "dosage_form": "Concentrate",
+            "applicant": "Merck Sharp & Dohme",
+            "who_reference_number": "BT-ON002",
+            "listing_basis": "Prequalification",
+            "prequalification_date": "2020-01-01",
+            "match_kind": "broad_text"
+        })
     );
     assert_eq!(
         value["_meta"]["next_commands"][0],

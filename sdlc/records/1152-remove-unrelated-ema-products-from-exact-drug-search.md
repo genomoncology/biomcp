@@ -308,6 +308,15 @@ BioData dependency without a registry version; the repository-standard
   performed.
 - Remediation final checks: `make lint` passed completely, `git diff --check`
   passed, and the offline package-list count remained exactly 1,300 files.
+- Final proof remediation: the all-region JSON unit now compares the complete
+  EU result, including `match_kind`, `matched_term`, and `source`, and compares
+  the complete unchanged US and WHO results. A deterministic Herceptin fixture
+  lets the executable `--json search drug trastuzumab --region all` contract
+  assert the same EU provenance while also asserting nonempty US and WHO rows
+  retain `match_kind` without gaining `matched_term` or `source`. The focused
+  Rust unit passed, the provider/DDInter-backed drug spec again passed all 13
+  examples, `cargo fmt --check`, `git diff --check`, and the complete `make
+  lint` gate passed.
 
 ## Review
 
@@ -320,5 +329,10 @@ BioData dependency without a registry version; the repository-standard
   normalization boundary and exact middle-page continuation behavior.
 - Remediation: added the missing independent and fixture-driven coverage,
   separated the search-only identity constructor from the unchanged legacy
-  get constructor, and strengthened the public pagination contract. Fresh
-  independent implementation rereview is pending; no merge was performed.
+  get constructor, and strengthened the public pagination contract.
+- Second independent implementation rereview accepted the implementation
+  behavior and found one remaining proof gap: no executable all-region JSON
+  assertion jointly pinned EU provenance and the legacy US/WHO row shapes.
+  The final proof remediation adds that contract and its exact unit analogue.
+  Fresh independent implementation rereview is pending; no merge was
+  performed.

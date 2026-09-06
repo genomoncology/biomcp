@@ -11,6 +11,14 @@
       "therapeutic_indication": ["Keytruda as monotherapy is indicated for the treatment of adults and adolescents aged 12 years and older with advanced (unresectable or metastatic) melanoma."]
     },
     {
+      "name_of_medicine": ["Herceptin"],
+      "active_substance": ["trastuzumab"],
+      "ema_product_number": ["EMEA/H/C/000278"],
+      "medicine_status": ["Authorised"],
+      "category": ["Human"],
+      "marketing_authorisation_developer_applicant_holder": ["Roche Registration GmbH"]
+    },
+    {
       "name_of_medicine": ["Ozempic"],
       "active_substance": ["semaglutide"],
       "ema_product_number": ["EMEA/H/C/004174"],
