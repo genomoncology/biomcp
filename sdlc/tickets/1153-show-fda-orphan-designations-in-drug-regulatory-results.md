@@ -62,17 +62,23 @@ not sent because FDA's form has no UNII input. Trim, collapse ASCII whitespace,
 deduplicate ASCII-case-insensitively, retain that order, and issue at most six
 logical POSTs with concurrency at most two.
 
-Admit a row only when its normalized generic or trade name equals a candidate,
-or generic name and candidate are salt-qualified forms of one another: after
-ASCII-case folding and whitespace collapse, the longer value begins with the
-complete shorter value plus one space. Brand matching is exact only. Require a
-nonblank generic name and designation, valid `MM/DD/YYYY` designation date,
-and ASCII-decimal CF Grid Key. Deduplicate by key; sort by designation date
-descending, then numeric key ascending. Parse at most 500 wire rows per
-response and return at most 100 unique matches, exposing exact pre-cap
-`total_matching` and `truncated`. Cap each body at 2 MiB. One eight-second
-deadline covers queueing, POSTs, parsing, and cache work; cancellation stops
-outstanding requests and no detached work continues.
+Admit a row only when its normalized generic or trade name exactly equals one
+of those candidates after ASCII-case folding and whitespace collapse. There is
+no prefix, substring, token-removal, or salt-stripping fallback: the existing
+salt transform is owned by WHO product matching, while this FDA path already
+receives salt-qualified names from anchored MyChem aliases. Require a nonblank
+generic name and designation, valid `MM/DD/YYYY` designation date, and
+ASCII-decimal CF Grid Key.
+
+Collect every completed query result before merging. For a repeated CF Grid
+Key, byte-identical normalized records collapse. If any public field differs,
+discard that key and add one merge failure regardless of which POST completed
+first; retain other nonconflicting records and reduce the envelope normally
+(`degraded` when at least one query parsed, `unavailable` otherwise). Only then
+sort by designation date descending and numeric key ascending. Parse at most
+500 wire rows per response and return at most 100 unique matches. Cap each body
+at 2 MiB. One eight-second deadline covers queueing, POSTs, parsing, and cache
+work; cancellation stops outstanding requests and no detached work continues.
 
 Cache each validated normalized query result, including confirmed empty, for
 24 hours under a versioned key derived from effective base plus the complete
@@ -83,7 +89,7 @@ Never cache transport, HTTP, size, HTML-shape, or row-validation failures.
 ## Exact public schema and truth semantics
 
 Add optional `Drug.fda_orphan_designations`. It is omitted when not attempted;
-when attempted it has exactly this shape:
+when attempted it has exactly this shape (shown with a data row):
 
 ```
 {
@@ -126,17 +132,57 @@ Designation, withdrawal/revocation, marketing approval, and exclusivity dates
 remain separate. Never infer approval from designation, current exclusivity
 from its end date, or `not_approved` from missing data.
 
-The envelope follows existing `SectionOutcome` serialization: `message` is
-omitted for data/empty and is a string for degraded/unavailable; `sources` is
-the one-item array for data/empty/degraded and `[]` for unavailable. All
-successful queries with no rows reduce to `empty`; rows and no failures to
-`data`; at least one success plus any failure to `degraded`; all failures or
-total timeout to `unavailable`. Data/empty have the one source and no message;
-degraded has that source and `Some FDA orphan-designation aliases were
-unavailable.`; unavailable has no sources and `FDA orphan-designation data is
-temporarily unavailable.` Records are always an array and empty for
-empty/unavailable. Data, empty, and degraded contribute this source to
-regulatory provenance; unavailable does not falsely claim it.
+Every record field is required in JSON. `record_id`, `generic_name`,
+`designation_date`, `designation`, `orphan_approval`, and `source_url` are
+nonblank strings (`orphan_approval` is the stated enum); `trade_name`,
+`designation_status`, `designation_withdrawn_or_revoked_date`,
+`orphan_approval_status_text`, `approved_labeled_indication`,
+`marketing_approval_date`, `exclusivity_end_date`,
+`exclusivity_protected_indication`, and `sponsor` are `string|null`. Dates are
+ISO strings when nonnull. No record field is omitted.
+
+The envelope follows existing `SectionOutcome` serialization. `outcome` is the
+four-value string enum; `sources` and `records` are always arrays; `message` is
+omitted for data/empty and is the exact string below for degraded/unavailable;
+`total_matching` is `integer|null`; and `truncated` is always boolean.
+`total_matching` counts nonconflicting admitted records across successfully
+parsed aliases before the 100-record cap, not hypothetical records from failed
+aliases. Therefore data is `N>=1` with `truncated == (N>100)`; empty is `0` and
+false; degraded (including degraded with no records) is the observed `N>=0`
+and `truncated == (N>100)`; unavailable is null and false. Records contain the
+first `min(N,100)` sorted rows for data/degraded and are empty for
+empty/unavailable.
+
+All successful queries with no rows reduce to `empty`; rows and no failures to
+`data`; at least one success plus any query or merge failure to `degraded`; all
+query failures or total timeout to `unavailable`. Data/empty have the one
+source and no message; degraded has that source and `Some FDA
+orphan-designation aliases were unavailable.`; unavailable has no sources and
+`FDA orphan-designation data is temporarily unavailable.` Data, empty, and
+degraded contribute this source to regulatory provenance; unavailable does not
+falsely claim it.
+
+## Health contract
+
+Add `ProbeKind::FdaOrphan` rather than pretending this form endpoint is GET or
+JSON. Its source-owned health method honors `BIOMCP_FDA_ORPHAN_BASE` and sends
+one uncached POST to `OOPD_Results.cfm` with the same ordered form, except
+`Product_name=eflornithine hydrochloride`; this read-only search is harmless
+and known to exercise a result table. It follows no redirect,
+accepts only HTTP 200 plus the exact header-only/result-table shape, reads at
+most 2 MiB, and relies on the existing 12-second per-health-probe timeout. A
+valid empty or nonempty table is healthy; transport, status, size, or shape
+failure is the existing `HealthStatus::Error`/`ProbeClass::Error` with no API
+key fields.
+
+Register the canonical health name `FDA Orphan Drug Designations` immediately
+after `OpenFDA`, with affects text `get drug regulatory --region us|all`.
+Fixture-backed runner tests pin the override URL, exact method/path/form,
+healthy and error rows, latency/count reconciliation, and `--fail-on-error`.
+Catalog and CLI tests pin inventory order, exact case-insensitive `--api`
+selection/deduplication, JSON and Markdown row labels, the repeatable `--api`
+help contract, and the same canonical name/example in CLI reference/list help.
+No live FDA health assertion enters routine tests.
 
 ## Production surfaces and acceptance
 
@@ -154,12 +200,17 @@ escape, or command.
 Pin the same fixture through production CLI Markdown/JSON, raw MCP `biomcp`
 Markdown/JSON, and typed MCP `get` Markdown/JSON. Assert exact schema, nulls,
 order, links, outcomes, and CLI/MCP equivalence, including eflornithine key
-992323, an approved row, empty, partial/total failure, malformed/oversize HTML,
-cap boundaries, alias/salt/brand/UNII-selected-hit matching, and all regions.
-Fixture logs prove exact forms, six/two request/concurrency caps, one total
-deadline, cancellation, cache hit/expiry/no-cache, and zero inapplicable
-requests. Raw and typed MCP delegate to production CLI; typed request schema,
-section enum, tool count, and tool inventory remain byte-for-byte unchanged.
+992323, an approved row, empty, degraded with and without records, unavailable,
+malformed/oversize HTML, cap boundaries, exact generic/trade aliases,
+salt-qualified candidate aliases, rejected prefix/substring matches, anchored
+UNII-selected hits, and all regions. Exact JSON assertions pin every record
+key/null and the state table for `total_matching`/`truncated`. Completion-order
+permutations pin identical-key collapse and conflicting-key discard/degradation
+byte-for-byte. Fixture logs prove exact forms, six/two request/concurrency caps,
+one total deadline, cancellation, cache hit/expiry/no-cache, and zero
+inapplicable requests. Raw and typed MCP delegate to production CLI; typed
+request schema, section enum, tool count, and tool inventory remain
+byte-for-byte unchanged.
 
 ## Ownership, ratchets, and boundaries
 
