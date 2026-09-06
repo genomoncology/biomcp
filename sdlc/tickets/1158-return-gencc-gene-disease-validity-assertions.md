@@ -856,7 +856,8 @@ without a generation.
 
 ## Implementation ownership and package neutrality
 
-The implementation adds exactly these nine package paths:
+The implementation adds exactly these nine repository paths, of which eight
+are package-visible:
 `src/sources/gencc.rs` (transport/facade),
 `src/sources/gencc/model.rs` (bounded CSV parsing and normalized model),
 `src/sources/gencc/store.rs` (root, state, generation, lease, and recovery),
@@ -865,15 +866,21 @@ The implementation adds exactly these nine package paths:
 `src/entities/gene/gencc/tests.rs` (identity/lifecycle truth-table tests),
 `docs/sources/gencc.md`, one minimized
 `testdata/sources/gencc/submissions-new-odc1.csv`, and one focused
-`tests/test_gencc_docs_contract.py`. Existing Gene dispatch/rendering, CLI,
-MCP, schemas, fixture setup, receipts/inventory, and executable specs are
-modified in place rather than gaining more files. Each new Rust production or
-test module remains at or below 1,000 lines.
+`tests/test_gencc_docs_contract.py`. `Cargo.toml` deliberately excludes the
+entire `testdata/` tree, so the minimized CSV is a repository test fixture but
+not a Cargo package path; it must remain under the existing source-fixture
+owner and must not be moved or copied merely to affect the package count.
+Existing Gene dispatch/rendering, CLI, MCP, schemas, fixture setup,
+receipts/inventory, and executable specs are modified in place rather than
+gaining more files. Each new Rust production or test module remains at or
+below 1,000 lines.
 
 Before adding those paths, perform these behavior-neutral consolidations and
-delete exactly nine package files: inline
-`src/sources/mygene/tests/{mod.rs,construction.rs,parsing.rs,live.rs}` into a
-single `#[cfg(test)] mod tests` in `src/sources/mygene.rs`; inline
+delete exactly eight package files: inline
+`src/sources/mygene/tests/{mod.rs,construction.rs,parsing.rs}` into a single
+`#[cfg(test)] mod tests` in `src/sources/mygene.rs`, but retain
+`src/sources/mygene/tests/live.rs` as that module's `mod live;` child because
+the ignored real-provider checks have a distinct Tier-4 owner; inline
 `src/sources/clingen_cspec/tests/{mod.rs,construction.rs}` into
 `src/sources/clingen_cspec.rs`; and inline
 `src/sources/clingen_erepo/tests/{mod.rs,construction.rs,parsing.rs}` into
@@ -881,9 +888,12 @@ single `#[cfg(test)] mod tests` in `src/sources/mygene.rs`; inline
 fixture path, and behavior, and run the three consolidated test filters before
 GenCC work. These owners remain below 1,000 lines after consolidation. No
 source-size baseline is raised. `cargo package --list --allow-dirty --locked
---offline` must be exactly 1,291 immediately after consolidation and exactly
-1,300 after the nine additions; any different implementation file plan returns the ticket
-to design review rather than deleting an opportunistic unrelated file.
+--offline` must be exactly 1,292 immediately after the eight deletions and
+exactly 1,300 after the eight package-visible additions. The excluded GenCC
+CSV does not change either Cargo package count. Any different implementation
+file plan returns the ticket to design review rather than deleting an
+opportunistic unrelated file, broadening `Cargo.toml` inclusion, or adding a
+filler path.
 
 ## Acceptance
 
@@ -954,9 +964,14 @@ to design review rather than deleting an opportunistic unrelated file.
   criteria, duplicate PubMed and capped assertions, docs, and 1159 coexistence
   are fixture-tested without live provider access.
 - New Rust modules remain <=1,000 lines. Do not raise any existing exact
-  source-size baseline or CLI 700-line cap. The named nine-file consolidation/
-  addition plan is followed exactly and `cargo package --list --allow-dirty`
-  remains exactly 1,300 files.
+  source-size baseline or CLI 700-line cap. The named eight-package-file
+  deletion/eight-package-visible-addition plan is followed exactly, the ninth
+  repository addition remains the excluded GenCC capture fixture, and `cargo
+  package --list --allow-dirty` remains exactly 1,300 files. The package-list
+  assertion names all eight new included paths, excludes
+  `testdata/sources/gencc/submissions-new-odc1.csv`, and retains
+  `src/sources/mygene/tests/live.rs`; the affected MyGene, ClinGen CSpec, and
+  ClinGen ERepo filters prove consolidation did not lose or rename a test.
 - Focused tests pass, then `make lint`, `make test`, `make spec`, and
   `make full-feature-check`. Live verification is optional and must not spend a
   GenCC successful-download quota merely to close the ticket.
@@ -992,7 +1007,7 @@ the implementation base.
   crash outcomes, shared/refcounted per-generation leases with a
   three-generation test, always-null version semantics, deterministic
   default/override bootstrap locking and zero-request failures, a named
-  nine-for-nine package plan, and canonical duplicate comparison.
+  package-neutral file plan, and canonical duplicate comparison.
 - Third design review rejected one remaining contradiction: state rename was
   the declared namespace authority, but the current ordinary caller still
   rendered its old lease after a post-rename root-fsync failure. This revision
@@ -1015,4 +1030,11 @@ the implementation base.
   roles and ordering, zero-request no-generation follower outcome, exact CSV
   parsing boundaries, additive coexistence with ticket 1159, package-neutral
   file plan, source-size constraints, and bounded optional-enrichment behavior.
+- Implementation observation returned the ticket to design: the previously
+  named nine deletions plus nine repository additions produced 1,299 Cargo
+  package paths because `Cargo.toml` excludes `testdata/`. This revision keeps
+  the minimized capture in its real fixture owner, retains the independently
+  owned MyGene Tier-4 `live.rs`, and freezes eight package deletions against
+  eight package-visible additions for the existing 1,300-file ceiling without
+  an unrelated deletion, filler file, or package-exclusion change.
 - Code review: pending.
