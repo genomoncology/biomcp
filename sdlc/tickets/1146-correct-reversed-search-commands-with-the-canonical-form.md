@@ -178,7 +178,8 @@ typed MCP, or update unrelated documentation.
 
 ## Review
 
-Implementation starts only after independent design acceptance. Code review
-must inspect the nonrecursive raw-Clap validation seam, full envelope goldens,
-lossless quoting and bounds, delimiter/global precedence, raw-versus-typed MCP
-behavior, no-work evidence, and both source/package ratchets.
+Accepted after independent design review. The reviewer confirmed the complete
+15-name detector, delimiter/global/help/version precedence, nonrecursive raw
+Clap validation, separate native/raw/typed MCP outcomes, lossless hostile-argv
+round trips, zero-work proof, ownership, and source/package limits. Code review
+must verify those same boundaries against the implementation diff.
