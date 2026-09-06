@@ -33,6 +33,116 @@ fn unix_mode(path: &Path) -> u32 {
         & 0o777
 }
 
+fn wait_until_exhausted(deadline: &crate::sources::VariantArticleDeadline) {
+    while !deadline.is_exhausted() {
+        std::thread::yield_now();
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn put_deadline_transition_is_exactly_at_writer_commit() {
+    let before_root = TempDirGuard::new("put-before-publication-deadline");
+    let before_deadline =
+        crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(50));
+    let wait_deadline = before_deadline.clone();
+    let before_commit = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let observed_commit = Arc::clone(&before_commit);
+    let before_manager = SizeAwareCacheManager::new_with_services_and_observers(
+        before_root.path().join("http"),
+        test_config(
+            before_root.path(),
+            u64::MAX / 2,
+            DiskFreeThreshold::Percent(1),
+        ),
+        |_| Ok(0),
+        |_| {
+            Ok(FilesystemSpace {
+                available_bytes: 99,
+                total_bytes: 100,
+            })
+        },
+        |_, _, _, _| unreachable!("test cache must not schedule eviction"),
+        |_, _| unreachable!("timed-out pre-publication put must not finalize"),
+        move |_| wait_until_exhausted(&wait_deadline),
+    )
+    .with_safe_return_observer(move |_, _| {
+        observed_commit.store(true, std::sync::atomic::Ordering::SeqCst);
+    });
+    let result = crate::sources::with_variant_article_deadline(
+        before_deadline,
+        before_manager.put(
+            "before".into(),
+            test_http_response(b"before"),
+            test_policy(),
+        ),
+    )
+    .await;
+    assert!(result.is_err(), "pre-publication work remains cancellable");
+    assert!(!before_commit.load(std::sync::atomic::Ordering::SeqCst));
+    assert!(
+        cacache::metadata(before_root.path().join("http"), "before")
+            .await
+            .expect("metadata lookup")
+            .is_none(),
+        "pre-publication timeout must not publish an index entry"
+    );
+
+    let commit_root = TempDirGuard::new("put-at-publication-deadline");
+    let commit_deadline =
+        crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(50));
+    let wait_deadline = commit_deadline.clone();
+    let commit_started = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let observed_commit = Arc::clone(&commit_started);
+    let published_commit = Arc::clone(&commit_started);
+    let commit_manager = SizeAwareCacheManager::new_with_services_and_observers(
+        commit_root.path().join("http"),
+        test_config(
+            commit_root.path(),
+            u64::MAX / 2,
+            DiskFreeThreshold::Percent(1),
+        ),
+        |_| Ok(0),
+        |_| {
+            Ok(FilesystemSpace {
+                available_bytes: 99,
+                total_bytes: 100,
+            })
+        },
+        |_, _, _, _| unreachable!("test cache must not schedule eviction"),
+        move |path, key| {
+            assert!(crate::sources::current_variant_article_deadline().is_none());
+            assert!(published_commit.load(std::sync::atomic::Ordering::SeqCst));
+            assert!(cacache::metadata_sync(path, key).unwrap().is_some());
+            wait_until_exhausted(&wait_deadline);
+        },
+        |_| {},
+    )
+    .with_safe_return_observer(move |_, _| {
+        assert!(crate::sources::current_variant_article_deadline().is_some());
+        observed_commit.store(true, std::sync::atomic::Ordering::SeqCst);
+    });
+    let result = crate::sources::with_variant_article_deadline(
+        commit_deadline,
+        commit_manager.put(
+            "commit".into(),
+            test_http_response(b"commit"),
+            test_policy(),
+        ),
+    )
+    .await;
+    assert!(
+        result.is_ok(),
+        "commit and finalization must settle safely: {result:?}"
+    );
+    assert!(commit_started.load(std::sync::atomic::Ordering::SeqCst));
+    let cached = commit_manager
+        .get("commit")
+        .await
+        .expect("cache get")
+        .expect("published entry");
+    assert_eq!(cached.0.body, b"commit");
+}
+
 fn assert_write_path_modes(cache_path: &Path, key: &str, integrity: &ssri::Integrity) {
     let index_bucket = crate::cache::index_bucket_path(cache_path, key);
     let blob = crate::cache::content_path(cache_path, integrity);
