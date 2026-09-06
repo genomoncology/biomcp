@@ -67,8 +67,8 @@
     },
     {
       "path": "src/entities/drug/get.rs",
-      "baseline_lines": 1097,
-      "floor_lines": 1097,
+      "baseline_lines": 1094,
+      "floor_lines": 1094,
       "authorized_increase": null
     },
     {

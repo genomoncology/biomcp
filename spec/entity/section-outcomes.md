@@ -88,12 +88,60 @@ BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --jso
   | mustmatch 'true'
 ```
 
-Both MCP entry points transport sole-interaction cards in Markdown and JSON
-rather than replacing them with an error envelope.
+All six provider-failure settlements are cards in CLI Markdown and JSON. The
+status, surviving payload, contributor order, and retry are identical to the
+frozen reducer matrix, including the conditional DrugBank contributor.
+
+```bash
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-label interactions \
+  | mustmatch like '**Interactions status (DDInter / DrugBank / OpenFDA label):** degraded (partial/incomplete) — Drug interaction evidence is incomplete because a source was unavailable.
+Retry: `biomcp get drug fixture-drug-label interactions`
+Label interaction evidence survives DDInter failure.'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty interactions \
+  | mustmatch like '**Interactions status (DDInter / DrugBank / OpenFDA label):** unavailable; no conclusion can be drawn — Drug interaction evidence is temporarily unavailable.
+Retry: `biomcp get drug fixture-drug-empty interactions`'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail interactions \
+  | mustmatch like '**Interactions status (DDInter / DrugBank / OpenFDA label):** unavailable; no conclusion can be drawn — Drug interaction evidence is temporarily unavailable.
+Retry: `biomcp get drug fixture-drug-empty-openfda-fail interactions`'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-ddinter-openfda-fail interactions \
+  | mustmatch like '## Interactions (DDInter)
+**Interactions status (DDInter / DrugBank / OpenFDA label):** degraded (partial/incomplete) — Drug interaction evidence is incomplete because a source was unavailable.
+Retry: `biomcp get drug fixture-drug-ddinter-openfda-fail interactions`'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-drugbank-openfda-fail interactions \
+  | mustmatch like '## Interactions (DDInter)
+**Interactions status (DDInter / DrugBank / OpenFDA label):** degraded (partial/incomplete) — Drug interaction evidence is incomplete because a source was unavailable.
+DrugBank narrative survives OpenFDA failure.
+Retry: `biomcp get drug fixture-drug-drugbank-openfda-fail interactions`'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail interactions \
+  | mustmatch like '**Interactions status (DDInter / DrugBank / OpenFDA label):** unavailable; no conclusion can be drawn — Drug interaction evidence is temporarily unavailable.
+Retry: `biomcp get drug fixture-drug-empty-openfda-fail interactions`'
+for fixture in \
+  "$BIOMCP_DDINTER_UNAVAILABLE_DIR fixture-drug-label degraded OpenFDA_label" \
+  "$BIOMCP_DDINTER_UNAVAILABLE_DIR fixture-drug-empty unavailable none" \
+  "$BIOMCP_DDINTER_UNAVAILABLE_DIR fixture-drug-empty-openfda-fail unavailable none" \
+  "$BIOMCP_DDINTER_AVAILABLE_DIR fixture-drug-ddinter-openfda-fail degraded DDInter" \
+  "$BIOMCP_DDINTER_AVAILABLE_DIR fixture-drug-drugbank-openfda-fail degraded DDInter,DrugBank" \
+  "$BIOMCP_DDINTER_AVAILABLE_DIR fixture-drug-empty-openfda-fail unavailable none"; do
+  read -r directory identity outcome source_key <<<"$fixture"
+  sources=$(case "$source_key" in none) printf '[]';; OpenFDA_label) printf '["OpenFDA label"]';; DDInter) printf '["DDInter"]';; *) printf '["DDInter","DrugBank"]';; esac)
+  markdown=$(BIOMCP_DDINTER_DIR="$directory" ../../tools/biomcp-ci get drug "$identity" interactions)
+  case "$markdown" in *SENSITIVE-UPSTREAM-DETAIL*|*ddinter-unavailable*) exit 1;; esac
+  BIOMCP_DDINTER_DIR="$directory" ../../tools/biomcp-ci --json get drug "$identity" interactions \
+    | jq -e --arg outcome "$outcome" --argjson sources "$sources" --arg command "biomcp get drug $identity interactions" \
+      '(.section_outcomes.interactions.outcome == $outcome) and (.section_outcomes.interactions.sources == $sources) and ([._meta.section_sources[] | select(.key == "interactions") | {outcome,sources}] == [{outcome:$outcome,sources:$sources}]) and ([._meta.next_commands[] | select(. == $command)] | length == 1) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|ddinter-unavailable"; "i")) | not)' >/dev/null
+done
+printf 'six CLI failure settlements passed\n' | mustmatch 'six CLI failure settlements passed'
+```
+
+Both MCP entry points transport the same six settlements in Markdown and JSON
+rather than replacing any of them with an error result.
 
 ```bash
 BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" bash ../fixtures/run-section-outcome-mcp.sh ../.. section-outcome-interactions \
-  | jq '(.typed_json == .raw_json) and (.typed_json[0].section_outcomes.interactions.outcome == "degraded") and (.typed_json[0]._meta.section_sources | any(.key == "interactions" and .outcome == "degraded" and .sources == ["OpenFDA label"])) and (.typed_json[1].section_outcomes.interactions.outcome == "unavailable") and (.typed_json[1]._meta.section_sources | any(.key == "interactions" and .outcome == "unavailable" and .sources == [])) and (.typed_markdown == .raw_markdown) and (.typed_markdown | contains("degraded (partial/incomplete)")) and (.typed_markdown | contains("Retry: `biomcp get drug fixture-drug-label interactions`")) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|ddinter-unavailable"; "i")) | not)' \
+  | jq '(length == 3) and all(.[]; . as $row | .typed_json.section_outcomes.interactions as $outcome | (.typed_json == .raw_json) and (.typed_markdown == .raw_markdown) and ([.typed_json_error,.typed_markdown_error,.raw_json_error,.raw_markdown_error] | all(. == false)) and ([.typed_json._meta.section_sources[] | select(.key == "interactions") | {outcome,sources}] == [{outcome:$outcome.outcome,sources:$outcome.sources}]) and ([.typed_json._meta.next_commands[] | select(. == ("biomcp get drug " + $row.id + " interactions"))] | length == 1) and (.typed_markdown | contains("Retry: `biomcp get drug " + .id + " interactions`"))) and (.[0].typed_json.section_outcomes.interactions == {"outcome":"degraded","sources":["OpenFDA label"],"message":"Drug interaction evidence is incomplete because a source was unavailable."}) and (.[0].typed_markdown | contains("Label interaction evidence survives DDInter failure.")) and (.[1].typed_json.section_outcomes.interactions == {"outcome":"unavailable","sources":[],"message":"Drug interaction evidence is temporarily unavailable."}) and (.[2].typed_json.section_outcomes.interactions == {"outcome":"unavailable","sources":[],"message":"Drug interaction evidence is temporarily unavailable."}) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|ddinter-unavailable"; "i")) | not)' \
+  | mustmatch 'true'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" bash ../fixtures/run-section-outcome-mcp.sh ../.. section-outcome-interactions \
+  | jq '(length == 3) and all(.[]; . as $row | .typed_json.section_outcomes.interactions as $outcome | (.typed_json == .raw_json) and (.typed_markdown == .raw_markdown) and ([.typed_json_error,.typed_markdown_error,.raw_json_error,.raw_markdown_error] | all(. == false)) and ([.typed_json._meta.section_sources[] | select(.key == "interactions") | {outcome,sources}] == [{outcome:$outcome.outcome,sources:$outcome.sources}]) and ([.typed_json._meta.next_commands[] | select(. == ("biomcp get drug " + $row.id + " interactions"))] | length == 1) and (.typed_markdown | contains("Retry: `biomcp get drug " + .id + " interactions`"))) and (.[0].typed_json.section_outcomes.interactions == {"outcome":"degraded","sources":["DDInter"],"message":"Drug interaction evidence is incomplete because a source was unavailable."}) and (.[0].typed_json.interactions | length == 1) and (.[1].typed_json.section_outcomes.interactions == {"outcome":"degraded","sources":["DDInter","DrugBank"],"message":"Drug interaction evidence is incomplete because a source was unavailable."}) and (.[1].typed_markdown | contains("DrugBank narrative survives OpenFDA failure.")) and (.[2].typed_json.section_outcomes.interactions == {"outcome":"unavailable","sources":[],"message":"Drug interaction evidence is temporarily unavailable."}) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL"; "i")) | not)' \
   | mustmatch 'true'
 ```
 
@@ -121,10 +169,12 @@ BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --jso
 ```
 
 The pageable interaction report keeps DDInter as its required owner and still
-fails when the bundle is unavailable.
+fails in both Markdown and JSON when the bundle is unavailable.
 
 ```bash
-bash -c 'set +e; output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json drug interactions fixture-drug-label); status=$?; set -e; printf "%s\n" "$output" | jq '\''(.error.code == "source_unavailable") and (.name == null)'\''; printf "exit=%s\n" "$status"' \
+bash -c 'set +e; output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci drug interactions fixture-drug-label 2>&1); status=$?; set -e; test "$status" -eq 1; test "$output" = "Error: Source unavailable: DDInter is not available. Review source configuration and retry."; printf "pageable-markdown=error\n"' \
+  | mustmatch 'pageable-markdown=error'
+bash -c 'set +e; output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json drug interactions fixture-drug-label); status=$?; set -e; printf "%s\n" "$output" | jq '\''(.error == {"code":"source_unavailable","message":"Source unavailable: DDInter is not available.","source":"DDInter","recovery":"Review source configuration and retry."}) and (.name == null) and ((tostring | test("ddinter-unavailable"; "i")) | not)'\''; printf "exit=%s\n" "$status"' \
   | mustmatch like 'true
 exit=1'
 ```
@@ -143,10 +193,34 @@ BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json 
 BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-drugbank-openfda-fail interactions \
   | jq '(.interactions[0].description == "DrugBank narrative survives OpenFDA failure.") and (.section_outcomes.interactions.outcome == "degraded") and (.section_outcomes.interactions.sources == ["DDInter","DrugBank"]) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL"; "i")) | not)' \
   | mustmatch 'true'
-bash -c 'set +e; BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-ddinter-openfda-fail label interactions >/dev/null; status=$?; set -e; printf "exit=%s\n" "$status"' \
-  | mustmatch 'exit=1'
-bash -c 'set +e; BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-ddinter-openfda-fail all >/dev/null; status=$?; set -e; printf "exit=%s\n" "$status"' \
-  | mustmatch 'exit=1'
+assert_required_label_failure() {
+  mode=$1; shift
+  find "$BIOMCP_DDINTER_READ_WITNESS_DIR" -type f -exec touch -a -d @946684800 {} +
+  before=$(stat -c '%n:%X' "$BIOMCP_DDINTER_READ_WITNESS_DIR"/*.csv)
+  set +e
+  if test "$mode" = json; then
+    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_READ_WITNESS_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-empty-openfda-fail "$@")
+  else
+    output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_READ_WITNESS_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty-openfda-fail "$@" 2>&1)
+  fi
+  status=$?
+  set -e
+  after=$(stat -c '%n:%X' "$BIOMCP_DDINTER_READ_WITNESS_DIR"/*.csv)
+  test "$status" -eq 1
+  test "$before" = "$after"
+  case "$output" in *SENSITIVE-UPSTREAM-DETAIL*|*ddinter-read-witness*) return 1;; esac
+  if test "$mode" = json; then
+    printf '%s\n' "$output" | jq -e '.error == {"code":"api","message":"API request to OpenFDA failed.","source":"OpenFDA","recovery":"Retry the remote source."}' >/dev/null
+  else
+    test "$output" = 'Error: API request to OpenFDA failed. Retry the remote source.'
+  fi
+}
+assert_required_label_failure markdown label interactions
+assert_required_label_failure json label interactions
+assert_required_label_failure markdown all
+assert_required_label_failure json all
+printf 'required-label failures abort before DDInter reads\n' \
+  | mustmatch 'required-label failures abort before DDInter reads'
 ```
 
 ## Unrequested sections stay distinguishable

@@ -187,7 +187,7 @@ any recovery route.
   fixture scripts, MCP contract-example mode, and existing test modules. Do
   not add a tracked file or dependency: the source package is already exactly
   1300 files.
-- `src/entities/drug/get.rs` is pinned at exactly 1097 lines and must not grow.
+- `src/entities/drug/get.rs` is pinned at exactly 1094 lines and must not grow.
   `src/mcp/shell.rs` is pinned at exactly 2136 lines and must not grow. Never
   increase any other pinned over-limit inventory; keep ordinary Rust sources
   at or below 1000 lines and `src/cli` Rust files at or below 700 lines.
@@ -218,6 +218,8 @@ recovery commands under the same failures, retains the pageable-report error,
 and covers DDInter evidence when OpenFDA label acquisition fails. Formatting,
 shell syntax, diff whitespace, and the pinned source-file ceilings pass.
 
-Full `make lint`, `make test`, and `make spec` have not been run on this branch.
-Independent code review is pending, so this ticket remains in `sdlc/tickets/`
-and is not yet a completion record.
+The first independent code review rejected incomplete executable coverage and
+an overclaimed 1,097-line source baseline. Remediation restores the truthful
+1,094-line exact baseline and adds the missing failure-surface and exclusion
+proofs. Focused re-review is pending, so this ticket remains in
+`sdlc/tickets/` and is not yet a completion record.

@@ -102,6 +102,7 @@ class Handler(BaseHTTPRequestHandler):
                 "fixture-drug-empty",
                 "fixture-drug-ddinter-openfda-fail",
                 "fixture-drug-drugbank-openfda-fail",
+                "fixture-drug-empty-openfda-fail",
             }
             fixture_name = query if query in fixture_names else "fixture-drug"
             legacy_interactions = []
@@ -223,6 +224,8 @@ for code in B D H L P R V; do
   printf '%s\n' 'DDInterID_A,Drug_A,DDInterID_B,Drug_B,Level' \
     >"$ddinter_available_dir/ddinter_downloads_code_${code}.csv"
 done
+ddinter_read_witness_dir="$fixture_root/ddinter-read-witness"
+cp -R "$ddinter_available_dir" "$ddinter_read_witness_dir"
 
 printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/v1" >"$env_file"
 printf 'export BIOMCP_MYVARIANT_BASE=%q\n' "$base_url/v1" >>"$env_file"
@@ -234,6 +237,7 @@ printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$en
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_DDINTER_UNAVAILABLE_DIR=%q\n' "$ddinter_unavailable_dir" >>"$env_file"
 printf 'export BIOMCP_DDINTER_AVAILABLE_DIR=%q\n' "$ddinter_available_dir" >>"$env_file"
+printf 'export BIOMCP_DDINTER_READ_WITNESS_DIR=%q\n' "$ddinter_read_witness_dir" >>"$env_file"
 
 bash "$ownership_helper" write "$workspace_root" "section-outcomes" "$fixture_root" "$server_pid" "BIOMCP_SECTION_OUTCOMES_FIXTURE" "$owner_arg" >/dev/null
 trap - EXIT

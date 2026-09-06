@@ -71,6 +71,29 @@ fn first_image_mime(result: &rmcp::model::CallToolResult) -> anyhow::Result<&str
         .ok_or_else(|| anyhow::anyhow!("tool call returned no image content"))
 }
 
+async fn interaction_surfaces(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, impl rmcp::Service<rmcp::RoleClient>>,
+    id: &str,
+) -> anyhow::Result<serde_json::Value> {
+    let typed_json = call_typed_get(client, "drug", id, &["interactions"]).await?;
+    let typed_markdown =
+        call_typed_get_with_output(client, "drug", id, &["interactions"], false).await?;
+    let raw_json =
+        call_biomcp(client, &format!("biomcp --json get drug {id} interactions")).await?;
+    let raw_markdown = call_biomcp(client, &format!("biomcp get drug {id} interactions")).await?;
+    Ok(json!({
+        "id": id,
+        "typed_json": serde_json::from_str::<serde_json::Value>(first_text(&typed_json)?)?,
+        "typed_json_error": typed_json.is_error,
+        "typed_markdown": first_text(&typed_markdown)?,
+        "typed_markdown_error": typed_markdown.is_error,
+        "raw_json": serde_json::from_str::<serde_json::Value>(first_text(&raw_json)?)?,
+        "raw_json_error": raw_json.is_error,
+        "raw_markdown": first_text(&raw_markdown)?,
+        "raw_markdown_error": raw_markdown.is_error,
+    }))
+}
+
 fn tool_schema(tool: &Tool) -> serde_json::Value {
     serde_json::to_value(&tool.input_schema).unwrap_or_else(|_| json!({}))
 }
@@ -453,52 +476,26 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", first_text(&result)?);
         }
         "section-outcome-interactions" => {
-            let typed_label_json =
-                call_typed_get(&client, "drug", "fixture-drug-label", &["interactions"]).await?;
-            let typed_empty_json =
-                call_typed_get(&client, "drug", "fixture-drug-empty", &["interactions"]).await?;
-            let typed_documents = [typed_label_json, typed_empty_json]
-                .iter()
-                .map(|result| -> anyhow::Result<serde_json::Value> {
-                    Ok(serde_json::from_str(first_text(result)?)?)
-                })
-                .collect::<anyhow::Result<Vec<_>>>()?;
-            let raw_documents = [
-                call_biomcp(
-                    &client,
-                    "biomcp --json get drug fixture-drug-label interactions",
-                )
-                .await?,
-                call_biomcp(
-                    &client,
-                    "biomcp --json get drug fixture-drug-empty interactions",
-                )
-                .await?,
-            ]
-            .iter()
-            .map(|result| -> anyhow::Result<serde_json::Value> {
-                Ok(serde_json::from_str(first_text(result)?)?)
-            })
-            .collect::<anyhow::Result<Vec<_>>>()?;
-            let typed_markdown = call_typed_get_with_output(
-                &client,
-                "drug",
-                "fixture-drug-label",
-                &["interactions"],
-                false,
-            )
-            .await?;
-            let raw_markdown =
-                call_biomcp(&client, "biomcp get drug fixture-drug-label interactions").await?;
-            println!(
-                "{}",
-                serde_json::to_string(&json!({
-                    "typed_json": typed_documents,
-                    "raw_json": raw_documents,
-                    "typed_markdown": first_text(&typed_markdown)?,
-                    "raw_markdown": first_text(&raw_markdown)?,
-                }))?
-            );
+            let ids: &[&str] = if std::env::var("BIOMCP_DDINTER_DIR")
+                .is_ok_and(|path| path.contains("unavailable"))
+            {
+                &[
+                    "fixture-drug-label",
+                    "fixture-drug-empty",
+                    "fixture-drug-empty-openfda-fail",
+                ]
+            } else {
+                &[
+                    "fixture-drug-ddinter-openfda-fail",
+                    "fixture-drug-drugbank-openfda-fail",
+                    "fixture-drug-empty-openfda-fail",
+                ]
+            };
+            let mut surfaces = Vec::new();
+            for id in ids {
+                surfaces.push(interaction_surfaces(&client, id).await?);
+            }
+            println!("{}", serde_json::to_string(&surfaces)?);
         }
         "clingen-surfaces" => {
             let raw_text = call_biomcp(&client, "biomcp get gene TP53 clingen").await?;
