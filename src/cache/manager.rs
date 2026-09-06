@@ -221,6 +221,7 @@ impl CacheManager for SizeAwareCacheManager {
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
         // Cancellation is safe only until CACache atomically publishes the entry.
+        let safe_return = AtomicBool::new(false);
         let pre_commit = async {
             let _operation = super::lock_cache_key_async(
                 self.config.cache_root.clone(),
@@ -229,13 +230,13 @@ impl CacheManager for SizeAwareCacheManager {
             )
             .await?;
             super::prepare_write_paths(&self.inner.path, &cache_key)?;
-            // Arm before CACache publication; outer deadlines await finalization.
-            let safe_return = super::begin_variant_article_cache_publication();
+            safe_return.store(true, Ordering::Release);
             let response = self.inner.put(cache_key.clone(), res, policy).await?;
-            Ok::<_, http_cache::BoxError>((_operation, safe_return, response))
+            Ok::<_, http_cache::BoxError>((_operation, response))
         };
-        let (_operation, _safe_return, response) =
-            run_with_variant_article_deadline(pre_commit).await?;
+        let (_operation, response) =
+            crate::sources::run_with_variant_article_safe_return_marker(pre_commit, &safe_return)
+                .await?;
 
         let finalization = async {
             (self.services.after_put)(&self.inner.path, &cache_key);
@@ -924,12 +925,10 @@ mod tests {
 
         assert_eq!(manager.approx_bytes.load(Ordering::Relaxed), 8);
     }
-
     #[tokio::test]
-    async fn put_finishes_security_boundary_when_deadline_expires_after_publish() {
+    async fn put_masks_deadline_checks_after_safe_return_is_armed() {
         let root = TempDirGuard::new("put-deadline-safe-return");
-        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_millis(30));
-        let observer_deadline = deadline.clone();
+        let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(3_600));
         let manager = SizeAwareCacheManager::new_with_services_and_observers(
             root.path().join("http"),
             test_config(root.path(), 1_000_000, DiskFreeThreshold::Percent(1)),
@@ -941,10 +940,11 @@ mod tests {
                 })
             },
             |_, _, _, _| {},
-            move |_, _| {
-                while !observer_deadline.is_exhausted() {
-                    std::thread::sleep(Duration::from_millis(1));
-                }
+            |_, _| {
+                assert!(
+                    crate::sources::current_variant_article_deadline().is_none(),
+                    "post-publication finalization must mask deadline checks"
+                );
             },
             |_| {},
         );
@@ -960,7 +960,7 @@ mod tests {
 
         assert!(
             result.is_ok(),
-            "published entry must reach a safe return boundary: {result:?}"
+            "armed entry must reach its safe return boundary: {result:?}"
         );
         assert!(
             cacache::metadata(root.path().join("http"), "safe-return")
