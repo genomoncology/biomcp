@@ -227,8 +227,9 @@ bounded and explanation-free.
 - The compatibility matrix covers CLI Markdown, CLI JSON, raw MCP Markdown,
   raw MCP JSON, typed-search MCP Markdown, and typed-search MCP JSON. Every
   surface pins positive alternate-transcript output and the same-object/no-note
-  case; structured surfaces additionally pin exact keys, nulls, role order,
-  annotation order, broad-search omission, and fail-safe over-cap output.
+  case; structured process surfaces additionally pin exact keys and nulls,
+  role and annotation order, broad-search omission, and hostile identity
+  preservation. Rust page contracts pin malformed and over-cap fail-safe output.
 - `docs/user-guide/variant.md`, `skills/use-cases/13-mutation-catalog.md`, and
   `spec/entity/variant.md` explain and exercise the additive exact-search fields
   and their explanatory-only meaning. `skills/schemas/variant.json` describes
@@ -285,8 +286,25 @@ raw/typed MCP contract block. `cargo package --list --allow-dirty --locked
 test`, and `make spec` gates were intentionally not claimed at this code-stage
 handoff.
 
+Independent review rejected the first implementation because it located the
+explanation insertion point by searching the rendered body for footer prose.
+Remediation passes the explanation through an explicit trusted template slot;
+an exact regression places that same footer sentinel in an untrusted table cell
+and pins the complete table prefix byte-for-byte before the one explanation
+section. The accepted-case matrix now explicitly exercises absent/null SnpEff,
+each malformed/33rd/257-byte case through exact projection plus broad/get
+sibling fallback, the exact 256 KiB + 1 page boundary, protein/coding/combined
+tuple matching and genomic/rsID/missing-field non-matches, and a six-surface
+hostile/null fixture. Focused remediation checks passed the five affected Rust
+test filters and the changed CLI and raw/typed MCP process blocks. Formatting,
+Clippy with warnings denied, the complete quality ratchet, and `git diff
+--check` passed; the offline package inventory remains exactly 1,300 files. No
+repository-wide gate is claimed by this remediation.
+
 ## Review
 
 - Design review: accepted before implementation in this ticket.
-- Code-stage implementation: complete with focused evidence above; independent
-  implementation review and any resulting remediation remain pending.
+- First code review: rejected for unsafe rendered-footer lookup and evidence
+  gaps; both findings were remediated with focused passing evidence above.
+- Code-stage implementation: complete; fresh independent rereview remains
+  pending.

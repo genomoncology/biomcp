@@ -97,6 +97,25 @@ HSD17B4_TRANSCRIPT_HIT = {
         {"feature_id": "XM_017009363.1", "genename": "HSD17B4", "hgvs_c": "c.1544A>G", "hgvs_p": "p.His515Arg"},
     ]},
 }
+HOSTILE_TRANSCRIPT_HIT = {
+    "_id": "chr2:g.2A>G",
+    "dbnsfp": {"genename": "HOSTILE", "hgvsp": "p.His2Arg"},
+    "snpeff": {"ann": [
+        {
+            "feature_id": "NM_1\n\r\t\x01\x85\x1b[31m\u202e# injected|`",
+            "genename": "DISPLAY\n\r\t\x02\x85\x1b[31m\u2066|`",
+            "hgvs_c": "c.1A>G\n\r\t\x03\x85\x1b]0;bad\x07\u2069|- item``",
+            "hgvs_p": "p.A1V\n\r\t\x04\x85\x1bPbad\x1b\\\u202e|```",
+        },
+        {
+            "feature_id": "MATCH\n\r\t\x05\x85\x1b[31m\u202e|`",
+            "genename": "HOSTILE",
+            "hgvs_c": "c.2A>G\n\r\t\x07\x85\x1b]0;bad\u2069|``",
+            "hgvs_p": "p.His2Arg",
+        },
+        {},
+    ]},
+}
 CANCERHOTSPOTS_RESPONSES = {
     "/api/hotspots/single/byGene/BRAF": (ROOT / "testdata/sources/cancerhotspots/by_gene_braf_20260805.json").read_bytes(),
     "/api/hotspots/single/byGene/MYD88": (ROOT / "testdata/sources/cancerhotspots/by_gene_myd88_20260805.json").read_bytes(),
@@ -215,6 +234,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if "dbnsfp.genename:HSD17B4" in query:
                 send_json(self, 200, {"total": 1, "hits": [HSD17B4_TRANSCRIPT_HIT]})
+                return
+            if query == 'dbnsfp.genename:HOSTILE AND dbnsfp.hgvsp:"p.H2R"':
+                send_json(self, 200, {"total": 1, "hits": [HOSTILE_TRANSCRIPT_HIT]})
                 return
             if query == "dbnsfp.genename:NOTAREALGENE1091":
                 send_json(self, 200, {"total": 0, "hits": []})

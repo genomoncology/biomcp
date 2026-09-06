@@ -203,12 +203,12 @@
     },
     {
       "path": "src/render/markdown/variant/tests.rs",
-      "baseline_lines": 1069,
+      "baseline_lines": 1098,
       "floor_lines": 1000,
       "authorized_increase": {
         "ticket": "1155",
-        "delta": 69,
-        "reason": "Keep transcript explanation placement and hostile inline-sanitization regressions beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
+        "delta": 98,
+        "reason": "Keep byte-exact transcript explanation placement, trusted-slot sentinel, and hostile inline-sanitization regressions beside the existing variant Markdown contract without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split variant-search renderer tests when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
     },

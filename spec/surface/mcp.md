@@ -342,6 +342,39 @@ try:
     broad_row = json.loads(raw_broad_json)["results"][0]
     assert "transcript_annotations" not in broad_row
     assert "transcript_annotations_complete" not in broad_row
+
+    raw_hostile_markdown = call(16, "biomcp", {
+        "command": "biomcp search variant --gene HOSTILE --hgvsp H2R --limit 1"
+    })
+    typed_hostile_markdown = call(17, "search", {
+        "entity": "variant", "gene": "HOSTILE", "hgvsp": "H2R", "limit": 1
+    })
+    assert typed_hostile_markdown == raw_hostile_markdown
+    start = raw_hostile_markdown.index("## Transcript match explanations")
+    end = raw_hostile_markdown.index("\nUse `get variant <id>` for details.", start)
+    section = raw_hostile_markdown[start:end]
+    assert len(section.splitlines()) == 3
+    assert len([line for line in section.splitlines() if line.startswith("- `")]) == 1
+    assert not any(
+        __import__("unicodedata").category(ch) in {"Cc", "Cf"}
+        for line in section.splitlines() for ch in line
+    )
+
+    raw_hostile_json = call(18, "biomcp", {
+        "command": "biomcp search variant --gene HOSTILE --hgvsp H2R --limit 1", "json": True,
+    })
+    typed_hostile_json = call(19, "search", {
+        "entity": "variant", "gene": "HOSTILE", "hgvsp": "H2R", "limit": 1, "json": True,
+    })
+    assert typed_hostile_json == raw_hostile_json
+    annotations = json.loads(raw_hostile_json)["results"][0]["transcript_annotations"]
+    assert [item["roles"] for item in annotations] == [["displayed"], ["matched"], []]
+    assert annotations[2] == {
+        "source": "myvariant.info/snpeff.ann", "gene": None, "transcript": None,
+        "hgvs_c": None, "hgvs_p": None, "roles": [],
+    }
+    assert "\n\r\t\x02\x85\x1b[31m\u2066|`" in annotations[0]["gene"]
+    assert "\n\r\t\x05\x85\x1b[31m\u202e|`" in annotations[1]["transcript"]
 finally:
     proc.terminate()
     proc.wait(timeout=5)

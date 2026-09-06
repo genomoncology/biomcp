@@ -528,6 +528,45 @@ jq -n --argjson same "$same_json" --arg same_markdown "$same_markdown" --argjson
   | mustmatch like '{"same_roles":["displayed","matched"],"note_absent":true,"broad_omits":true}'
 ```
 
+Hostile provider identity fields remain structured JSON strings, while the new
+Markdown explanation is confined to one sanitized physical bullet. A partial
+provider annotation remains an exact six-key object with null identity fields.
+
+```bash
+python3 - <<'PY' | mustmatch like 'hostile transcript output is bounded across CLI formats'
+import json, os, subprocess, unicodedata
+
+binary = os.environ["BIOMCP_BIN"]
+base = [binary, "search", "variant", "--gene", "HOSTILE", "--hgvsp", "H2R", "--limit", "1"]
+markdown = subprocess.run(base, check=True, text=True, stdout=subprocess.PIPE).stdout
+value = json.loads(subprocess.run(
+    [binary, "--json", *base[1:]], check=True, text=True, stdout=subprocess.PIPE
+).stdout)
+annotations = value["results"][0]["transcript_annotations"]
+assert value["results"][0]["transcript_annotations_complete"] is True
+assert [item["roles"] for item in annotations] == [["displayed"], ["matched"], []]
+assert set(annotations[2]) == {"source", "gene", "transcript", "hgvs_c", "hgvs_p", "roles"}
+assert annotations[2] == {
+    "source": "myvariant.info/snpeff.ann", "gene": None, "transcript": None,
+    "hgvs_c": None, "hgvs_p": None, "roles": [],
+}
+assert "\n\r\t\x02\x85\x1b[31m\u2066|`" in annotations[0]["gene"]
+assert "\n\r\t\x05\x85\x1b[31m\u202e|`" in annotations[1]["transcript"]
+start = markdown.index("## Transcript match explanations")
+end = markdown.index("\nUse `get variant <id>` for details.", start)
+section = markdown[start:end]
+lines = section.splitlines()
+assert lines[0] == "## Transcript match explanations"
+assert len([line for line in lines if line.startswith("- `")]) == 1
+assert len(lines) == 3 and lines[1] == ""
+assert "# injected" in lines[2] and "|- item" in lines[2]
+assert not any(
+    unicodedata.category(ch) in {"Cc", "Cf"} for line in lines for ch in line
+)
+print("hostile transcript output is bounded across CLI formats")
+PY
+```
+
 ## Residue-Alias Search
 
 Residue aliases should stay on the typed variant path instead of falling

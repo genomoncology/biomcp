@@ -335,6 +335,46 @@ fn split_snpeff_fields_do_not_inherit_dbnsfp_match_role() {
 }
 
 #[test]
+fn matched_role_requires_one_complete_transcript_specific_tuple() {
+    let annotation = MyVariantSnpeffAnnotation {
+        feature_id: Some("NM_000001.2".into()),
+        genename: Some("GENE".into()),
+        hgvs_c: Some("NM_000001.2:c.1A>G".into()),
+        hgvs_p: Some("p.Ala1Val".into()),
+    };
+    let coding = RequestedVariantIdentity {
+        gene: Some("gene".into()),
+        coding_change: Some("c.1a>g".into()),
+        transcript: Some("nm_000001.2".into()),
+        ..Default::default()
+    };
+    assert!(annotation_matches_request(&annotation, &coding));
+
+    for requested in [
+        RequestedVariantIdentity::from_variant_input("rs123").unwrap(),
+        RequestedVariantIdentity::from_variant_input("chr1:g.1A>G").unwrap(),
+        RequestedVariantIdentity {
+            gene: Some("OTHER".into()),
+            coding_change: Some("c.1A>G".into()),
+            ..Default::default()
+        },
+        RequestedVariantIdentity {
+            gene: Some("GENE".into()),
+            coding_change: Some("c.1A>G".into()),
+            protein_change: Some("p.Ala2Val".into()),
+            ..Default::default()
+        },
+    ] {
+        assert!(!annotation_matches_request(&annotation, &requested));
+    }
+    let missing = MyVariantSnpeffAnnotation {
+        hgvs_c: None,
+        ..annotation
+    };
+    assert!(!annotation_matches_request(&missing, &coding));
+}
+
+#[test]
 fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
     fn retained(id: usize, annotations: usize, field_len: usize) -> RetainedVariant {
         let annotation = || MyVariantSnpeffAnnotation {
@@ -382,7 +422,19 @@ fn transcript_annotation_page_budget_is_all_or_nothing_at_256_kib() {
     );
 
     let mut over = (0..8).map(|id| retained(id, 32, 256)).collect::<Vec<_>>();
-    over.push(retained(9, 1, 1));
+    let mut one_byte = retained(9, 0, 0);
+    one_byte
+        .snpeff
+        .as_mut()
+        .unwrap()
+        .ann
+        .push(MyVariantSnpeffAnnotation {
+            feature_id: Some("t".into()),
+            genename: None,
+            hgvs_c: None,
+            hgvs_p: None,
+        });
+    over.push(one_byte);
     let page = finalize_exact_page(&requested, over, 0, 50, false, true);
     assert!(page.results.iter().all(|row| {
         row.transcript_annotations_complete == Some(false)
@@ -450,6 +502,93 @@ fn malformed_snpeff_isolated_from_exact_broad_and_get_siblings() {
             .as_deref()
             .is_some_and(<[VariantTranscriptAnnotation]>::is_empty)
     );
+}
+
+#[test]
+fn every_snpeff_failure_bound_is_empty_false_across_exact_and_safe_for_broad_get() {
+    let annotations = (0..33)
+        .map(|index| serde_json::json!({"feature_id":format!("NM_{index}"), "genename":"HSD17B4"}))
+        .collect::<Vec<_>>();
+    let malformed = vec![
+        serde_json::json!(7),
+        serde_json::json!({"ann":"bad"}),
+        serde_json::json!({"ann":[null]}),
+        serde_json::json!({"ann":[{"feature_id":7}]}),
+        serde_json::json!({"ann":annotations}),
+        serde_json::json!({"ann":{"feature_id":"x".repeat(257)}}),
+    ];
+    let requested = RequestedVariantIdentity::for_search(
+        Some("HSD17B4".into()),
+        Some("H540R".into()),
+        None,
+        None,
+    );
+    for snpeff in malformed {
+        let payload = serde_json::json!({
+            "_id":"chr5:g.118860951A>G",
+            "dbnsfp":{"genename":"HSD17B4", "hgvsp":"p.His540Arg"},
+            "clinvar":{"rcv":{"preferred_name":"NM_000414.3(HSD17B4):c.1544A>G (p.His515Arg)"}},
+            "snpeff":snpeff
+        });
+        let hit = || serde_json::from_value::<MyVariantHit>(payload.clone()).unwrap();
+        let broad = transform::variant::from_myvariant_search_hit(&hit());
+        assert_eq!(broad.transcript.as_deref(), Some("NM_000414.3"));
+        assert!(
+            serde_json::to_value(&broad)
+                .unwrap()
+                .get("transcript_annotations")
+                .is_none()
+        );
+        let detail = transform::variant::from_myvariant_hit(&hit());
+        assert_eq!(detail.hgvs_p.as_deref(), Some("p.His515Arg"));
+        let mut seen = HashSet::new();
+        let mut retained = Vec::new();
+        retain_compatible_hits(&requested, [hit()], &mut seen, &mut retained);
+        let page = finalize_exact_page(&requested, retained, 0, 10, false, true);
+        assert_eq!(page.results[0].transcript_annotations_complete, Some(false));
+        assert!(
+            page.results[0]
+                .transcript_annotations
+                .as_deref()
+                .is_some_and(<[VariantTranscriptAnnotation]>::is_empty)
+        );
+    }
+}
+
+#[test]
+fn absent_and_null_annotation_sets_are_exact_empty_complete() {
+    for snpeff_member in [
+        None,
+        Some(serde_json::Value::Null),
+        Some(serde_json::json!({})),
+        Some(serde_json::json!({"ann":null})),
+    ] {
+        let mut payload = serde_json::json!({
+            "_id":"chr5:g.118860951A>G",
+            "dbnsfp":{"genename":"HSD17B4", "hgvsp":"p.His540Arg"}
+        });
+        if let Some(snpeff) = snpeff_member {
+            payload["snpeff"] = snpeff;
+        }
+        let hit: MyVariantHit = serde_json::from_value(payload).unwrap();
+        let requested = RequestedVariantIdentity::for_search(
+            Some("HSD17B4".into()),
+            Some("H540R".into()),
+            None,
+            None,
+        );
+        let mut seen = HashSet::new();
+        let mut retained = Vec::new();
+        retain_compatible_hits(&requested, [hit], &mut seen, &mut retained);
+        let page = finalize_exact_page(&requested, retained, 0, 10, false, true);
+        assert_eq!(page.results[0].transcript_annotations_complete, Some(true));
+        assert!(
+            page.results[0]
+                .transcript_annotations
+                .as_deref()
+                .is_some_and(<[VariantTranscriptAnnotation]>::is_empty)
+        );
+    }
 }
 
 #[test]

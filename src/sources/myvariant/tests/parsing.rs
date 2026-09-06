@@ -79,6 +79,15 @@ fn snpeff_annotation_projection_isolated_and_bounded() {
                 .is_none_or(|snpeff| snpeff.complete && snpeff.ann.is_empty())
         );
     }
+    for value in [
+        json!({"_id":"x", "snpeff":{}}),
+        json!({"_id":"x", "snpeff":{"ann":null}}),
+    ] {
+        let hit: MyVariantHit = serde_json::from_value(value).unwrap();
+        let snpeff = hit.snpeff.expect("present SnpEff object");
+        assert!(snpeff.complete);
+        assert!(snpeff.ann.is_empty());
+    }
     let malformed_root: MyVariantHit = serde_json::from_value(json!({
         "_id":"x", "dbnsfp":{"genename":"SAFE"}, "snpeff":7
     }))

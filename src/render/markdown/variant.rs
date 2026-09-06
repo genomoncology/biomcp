@@ -287,12 +287,13 @@ pub fn variant_search_markdown_with_context(
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("variant_search.md.j2")?;
     let transcript_explanations = transcript_match_explanations(results);
-    let mut body = tmpl.render(context! {
+    let body = tmpl.render(context! {
         query => query,
         count => results.len(),
         results => results,
         filter_evaluation => filter_evaluation,
         diagnostics => diagnostics,
+        transcript_explanations => transcript_explanations,
         related_block => format_related_block(related_variant_search_results(
             results,
             gene_filter,
@@ -300,13 +301,6 @@ pub fn variant_search_markdown_with_context(
         )),
         pagination_footer => pagination_footer,
     })?;
-    if !transcript_explanations.is_empty() {
-        body = body.replacen(
-            "Use `get variant <id>` for details.",
-            &format!("{transcript_explanations}Use `get variant <id>` for details."),
-            1,
-        );
-    }
     Ok(with_pagination_footer(body, pagination_footer))
 }
 

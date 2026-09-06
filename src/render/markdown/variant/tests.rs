@@ -707,11 +707,40 @@ fn variant_search_explains_distinct_transcript_match_after_unchanged_table() {
     }))
     .unwrap();
     let markdown = variant_search_markdown("gene=HSD17B4, hgvsp=H540R", &[result]).unwrap();
-    let table_end = "| chr5:g.118860951A>G | GRCh37 | HSD17B4 | NM_000414.3 | c.1544A>G | p.His515Arg | - | - | none | - | none | none |\n\n";
-    assert!(markdown.contains(table_end), "{markdown}");
+    let complete_table_prefix = "# Variant Search Results\n\nFound: 1 variant(s)\nQuery: gene=HSD17B4, hgvsp=H540R\n\n\n\n| ID | Build | Gene | Transcript | Coding | Protein | Legacy Name | Significance | ClinVar Stars | gnomAD AF | REVEL | GERP |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n| chr5:g.118860951A>G | GRCh37 | HSD17B4 | NM_000414.3 | c.1544A>G | p.His515Arg | - | - | none | - | none | none |\n\n";
+    assert_eq!(
+        &markdown[..complete_table_prefix.len()],
+        complete_table_prefix
+    );
     assert!(markdown.contains(
         "## Transcript match explanations\n\n- `chr5:g.118860951A>G`: matched `NM_001199291.2 | c.1619A>G | p.His540Arg` from a different source-provided transcript annotation; displayed `NM_000414.3 | c.1544A>G | p.His515Arg`.\n\nUse `get variant <id>` for details."
     ));
+}
+
+#[test]
+fn transcript_explanation_uses_trusted_template_slot_when_table_contains_footer_sentinel() {
+    let sentinel = "Use `get variant <id>` for details.";
+    let result: VariantSearchResult = serde_json::from_value(serde_json::json!({
+        "id": "chr1:g.1A>G", "genome_build": "GRCh37",
+        "genome_build_provenance": "test", "gene": "SAFE",
+        "transcript": sentinel, "hgvs_c": "c.1A>G", "hgvs_p": "p.A1V",
+        "clinvar_stars": null, "revel": null, "gerp": null,
+        "transcript_annotations_complete": true,
+        "transcript_annotations": [
+            {"source":"myvariant.info/snpeff.ann", "gene":"SAFE", "transcript":sentinel, "hgvs_c":"c.1A>G", "hgvs_p":"p.A1V", "roles":["displayed"]},
+            {"source":"myvariant.info/snpeff.ann", "gene":"SAFE", "transcript":"NM_2", "hgvs_c":"c.2A>G", "hgvs_p":"p.A2V", "roles":["matched"]}
+        ]
+    })).unwrap();
+    let markdown = variant_search_markdown("", &[result]).unwrap();
+    let table_prefix = format!(
+        "# Variant Search Results\n\nFound: 1 variant(s)\n\n\n\n\n| ID | Build | Gene | Transcript | Coding | Protein | Legacy Name | Significance | ClinVar Stars | gnomAD AF | REVEL | GERP |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n| chr1:g.1A>G | GRCh37 | SAFE | {sentinel} | c.1A>G | p.A1V | - | - | none | - | none | none |\n\n"
+    );
+    assert_eq!(&markdown[..table_prefix.len()], table_prefix);
+    assert_eq!(
+        markdown.matches("## Transcript match explanations").count(),
+        1
+    );
+    assert!(markdown[table_prefix.len()..].starts_with("\n## Transcript match explanations\n"));
 }
 
 #[test]

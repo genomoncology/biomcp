@@ -24,7 +24,7 @@ No variants found matching the filters.
 | {{ v.id }} | {{ v.genome_build }} | {{ v.gene }} | {{ v.transcript | default("-") }} | {{ v.hgvs_c | default("-") }} | {{ v.hgvs_p | default("-") }} | {{ v.legacy_name | default("-") }} | {{ v.significance | default("-") }} | {{ v.clinvar_stars | default("-") }} | {{ v.gnomad_af | default("-") }} | {{ v.revel | default("-") }} | {{ v.gerp | default("-") }} |
 {% endfor %}
 
-Use `get variant <id>` for details.
+{{ transcript_explanations }}Use `get variant <id>` for details.
 Filters: -g <gene>, --hgvsp <protein>, --significance <value>, --max-frequency <0-1>, --min-cadd <score>, --consequence <term>, --review-status <stars>, --population <pop>, --revel-min <score>, --gerp-min <score>, --tumor-site <site>, --condition <name>, --impact <level>, --lof, --has <field>, --missing <field>, --therapy <name>
 {% if related_block %}
 
