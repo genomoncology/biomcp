@@ -235,3 +235,11 @@ touched, so `make full-feature-check` is not required.
   text remains one inert argv/query value.
 - Named shipped guidance is accurate, MCP schemas/catalog are byte-unchanged,
   all source/package ratchets hold, and the standard gates pass.
+
+## Review
+
+Accepted after independent design review. The reviewer confirmed the literal
+quote-before-each-label rule, exact native/raw/typed encodings and error
+envelopes, deterministic Semantic Scholar request proof, hostile shell-safety
+coverage, corrected guidance ownership, empty dependencies, and source/package
+limits.
