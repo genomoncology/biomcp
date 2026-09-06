@@ -4,11 +4,11 @@
   "entries": [
     {
       "path": "src/cache/manager.rs",
-      "baseline_lines": 1019,
-      "floor_lines": 989,
+      "baseline_lines": 1090,
+      "floor_lines": 985,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 30,
+        "delta": 105,
         "reason": "Deadline-aware cache get, put, delete, and size traversal remain beside the cache manager trait implementation.",
         "removal_condition": "Extract cache deadline adapters when the cache manager is next decomposed."
       }
@@ -61,11 +61,11 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 5230,
+      "baseline_lines": 5391,
       "floor_lines": 4828,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 402,
+        "delta": 563,
         "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
@@ -157,12 +157,12 @@
     },
     {
       "path": "src/entities/variant/search/mod.rs",
-      "baseline_lines": 1081,
+      "baseline_lines": 1088,
       "floor_lines": 1000,
       "authorized_increase": {
-        "ticket": "1155",
-        "delta": 81,
-        "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, and bounded projection beside the existing identity filter and pagination owner without adding a package file beyond the fixed 1300-file boundary.",
+        "ticket": "1155, 1150",
+        "delta": 88,
+        "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split exact-search result projection when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
     },
@@ -253,23 +253,23 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2035,
+      "baseline_lines": 2196,
       "floor_lines": 1847,
       "authorized_increase": {
         "ticket": "1022, 1150",
-        "delta": 188,
+        "delta": 349,
         "reason": "Register dbSNP and carry the task-local variant deadline through shared request, retry, and provider-admission utilities.",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },
     {
       "path": "src/sources/myvariant.rs",
-      "baseline_lines": 1460,
+      "baseline_lines": 1469,
       "floor_lines": 1033,
       "authorized_increase": {
-        "ticket": "1091, 1154, 1155",
-        "delta": 427,
-        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, and stream-isolate bounded SnpEff annotations without adding a package file beyond the fixed 1300-file boundary.",
+        "ticket": "1091, 1154, 1155, 1150",
+        "delta": 436,
+        "reason": "Probe trusted MyGene aliases, preserve ClinVar fallback freshness, stream-isolate bounded SnpEff annotations, and expose deadline-aware construction without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split MyVariant request planning and SnpEff decoding when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
     },
