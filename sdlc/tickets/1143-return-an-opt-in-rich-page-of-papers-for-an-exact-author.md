@@ -300,7 +300,9 @@ ticket 1145's directed-citation evidence contract.
 
 ## Review
 
-The initial ticket established the opt-in outcome but did not freeze the rich
-schema, row/page validation, failure and nullability semantics, resource
-bounds, renderer/MCP behavior, ownership, or compatibility with 1145. This
-revision resolves those findings and awaits independent design re-review.
+Accepted after independent review. The revision freezes the rich schema,
+row/page validation, failure and nullability semantics, resource bounds,
+renderer/MCP behavior, ownership, and sequencing behind 1145. A follow-up
+review required opaque paper IDs to be serialized with the URL crate's exact
+path-segment rules, including deterministic reserved-byte and dot-segment
+cases; the corrected contract was accepted with no remaining findings.
