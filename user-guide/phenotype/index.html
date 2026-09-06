@@ -4233,8 +4233,10 @@
 
 
 <h1 id="phenotype">Phenotype<a class="headerlink" href="#phenotype" title="Permanent link">&para;</a></h1>
-<p>Use phenotype commands to rank disease matches from HPO IDs or symptom phrases
-via the Monarch Initiative similarity search.</p>
+<p>Use phenotype commands to resolve HPO IDs and labels, rank semantic-similarity
+candidates through Monarch, and check the returned page for exact direct
+phenotype associations. Similarity is not evidence that a disease has the
+requested phenotype.</p>
 <h2 id="search-phenotypes">Search phenotypes<a class="headerlink" href="#search-phenotypes" title="Permanent link">&para;</a></h2>
 <p>By HPO identifiers (space- or comma-separated):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span>
@@ -4256,7 +4258,10 @@ via the Monarch Initiative similarity search.</p>
 <li>multiple symptom phrases separated by commas</li>
 </ul>
 <p>Free-text symptom phrases are resolved to HPO IDs before the Monarch similarity
-search runs. A query may contain at most 10 unique HPO terms. Use <code>--limit</code> and
+search runs. Every phrase must resolve; BioMCP does not silently discard a
+phrase with no HPO match. A query may contain at most 10 phrases and at most 10
+unique resolved HPO terms. Output records the original phrase, normalized HPO
+ID, and HPO label for every resolved term. Use <code>--limit</code> and
 <code>--offset</code> within Monarch's first 50 ranked matches; <code>offset + limit</code> cannot
 exceed 50. When that provider window is exhausted, BioMCP reports possible
 truncation and asks you to refine the terms instead of emitting an unusable
@@ -4264,6 +4269,14 @@ continuation.</p>
 <h2 id="get-records">Get records<a class="headerlink" href="#get-records" title="Permanent link">&para;</a></h2>
 <p>Phenotype is search-only. There is no <code>get phenotype</code> subcommand.</p>
 <h2 id="request-sections">Request sections<a class="headerlink" href="#request-sections" title="Permanent link">&para;</a></h2>
+<p>Each candidate retains its semantic similarity score and reports one exact
+direct-support state per resolved HPO term:</p>
+<ul>
+<li><code>supported</code>: an exact, positive direct Monarch disease-to-phenotype row exists</li>
+<li><code>not_supported</code>: a complete lookup contains no such row; this does not prove the disease lacks the phenotype</li>
+<li><code>indeterminate</code>: truncation, missing fields, or inconsistent rows prevent a claim of absence</li>
+<li><code>unavailable</code>: direct-support enrichment failed or exceeded its deadline; similarity results remain usable as candidates</li>
+</ul>
 <p>Phenotype search rows do not expose extra section names. Use <code>search disease</code>
 or <code>get disease &lt;id&gt; phenotypes</code> when you want a normalized disease follow-up.</p>
 <h2 id="helper-commands">Helper commands<a class="headerlink" href="#helper-commands" title="Permanent link">&para;</a></h2>
@@ -4271,10 +4284,11 @@ or <code>get disease &lt;id&gt; phenotypes</code> when you want a normalized dis
 symptom phrases, then switch to disease commands once you have the right
 normalized concept. If you want to inspect candidate HPO terms first, run
 <code>biomcp discover "&lt;symptom text&gt;"</code> and use the suggested <code>HP:</code> IDs.
-Markdown phenotype search results add a <code>See also:</code> block that reuses the
-top-ranked disease match, for example <code>biomcp get disease "Dravet syndrome"
-genes phenotypes</code>. JSON phenotype search responses expose the same disease
-follow-up plus <code>biomcp list phenotype</code> in <code>_meta.next_commands</code>.</p>
+Markdown and JSON suggest <code>biomcp get disease &lt;MONDO_ID&gt; phenotypes</code> only for
+the first provider-ordered candidate that is <code>supported</code> for every resolved
+term. If no row meets that rule, the disease follow-up is suppressed rather
+than falling back to the first similarity result. Pagination remains the first
+continuation when present, and <code>biomcp list phenotype</code> remains available.</p>
 <h2 id="json-mode">JSON mode<a class="headerlink" href="#json-mode" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250&quot;</span>
 </code></pre></div>

@@ -16,7 +16,7 @@ In BioMCP, Monarch is visible in the disease `genes` section, the disease `model
 | `get disease <id> genes` | Disease-gene associations with relationship and provenance context | Monarch-backed disease section that can be augmented with other source scores |
 | `get disease <id> phenotypes` | Phenotype associations for a disease | Monarch-backed disease section |
 | `get disease <id> models` | Model-organism evidence for a disease | Monarch-backed disease section |
-| `search phenotype` | Ranked disease matches from phenotype terms | Search-first phenotype workflow |
+| `search phenotype` | Semantic-similarity disease candidates plus exact direct-association checks for the returned slice | Similarity is not direct phenotype evidence |
 
 ## Example commands
 
@@ -42,7 +42,18 @@ Returns model-organism evidence for the requested disease.
 biomcp search phenotype "HP:0001250 HP:0001263" --limit 10
 ```
 
-Returns ranked disease matches from the supplied HPO term set.
+Returns HPO-resolved semantic-similarity candidates and an ordered direct-support state for every disease/HPO pair.
+
+`supported` means an exact positive
+direct association was returned. `not_supported` is used only when the fixed
+association lookup is complete; it means no association was found in that
+lookup, not that the disease cannot have the phenotype. `indeterminate` marks
+an incomplete or inconsistent lookup, while `unavailable` preserves the
+similarity page when enrichment fails.
+
+BioMCP suggests a disease follow-up only when one returned candidate is
+`supported` for every resolved HPO term. Otherwise it explains why the
+follow-up was suppressed.
 
 ## API access
 

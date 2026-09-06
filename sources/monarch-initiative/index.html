@@ -4218,8 +4218,8 @@
 </tr>
 <tr>
 <td><code>search phenotype</code></td>
-<td>Ranked disease matches from phenotype terms</td>
-<td>Search-first phenotype workflow</td>
+<td>Semantic-similarity disease candidates plus exact direct-association checks for the returned slice</td>
+<td>Similarity is not direct phenotype evidence</td>
 </tr>
 </tbody>
 </table>
@@ -4235,7 +4235,16 @@
 <p>Returns model-organism evidence for the requested disease.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>search<span class="w"> </span>phenotype<span class="w"> </span><span class="s2">&quot;HP:0001250 HP:0001263&quot;</span><span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
-<p>Returns ranked disease matches from the supplied HPO term set.</p>
+<p>Returns HPO-resolved semantic-similarity candidates and an ordered direct-support state for every disease/HPO pair.</p>
+<p><code>supported</code> means an exact positive
+direct association was returned. <code>not_supported</code> is used only when the fixed
+association lookup is complete; it means no association was found in that
+lookup, not that the disease cannot have the phenotype. <code>indeterminate</code> marks
+an incomplete or inconsistent lookup, while <code>unavailable</code> preserves the
+similarity page when enrichment fails.</p>
+<p>BioMCP suggests a disease follow-up only when one returned candidate is
+<code>supported</code> for every resolved HPO term. Otherwise it explains why the
+follow-up was suppressed.</p>
 <h2 id="api-access">API access<a class="headerlink" href="#api-access" title="Permanent link">&para;</a></h2>
 <p>No BioMCP API key required.</p>
 <h2 id="official-source">Official source<a class="headerlink" href="#official-source" title="Permanent link">&para;</a></h2>
