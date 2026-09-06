@@ -516,17 +516,19 @@ the source/message columns are those of the referenced complete truth-table
 row. “Next” and “restart” mean an immediate call at the same injected wall-clock
 instant. A restart genuinely may expose either directory entry because the
 root fsync failed, so the last column names both deterministic branches instead
-of pretending one is durable. In an old-state branch the first post-restart
-call performs exactly the ordinary due/first-use decision (and therefore may
-make one GET); its ultimate row is fixed by that request outcome in the
-complete truth table below.
+of pretending one is durable. A branch retaining an older state performs the
+ordinary due decision and may make one GET. When a first `200` had no older
+state, however, its generation rename and generations-directory fsync already
+made the finalized generation durable: loss of the later state rename triggers
+missing-state recovery, which selects that generation and makes zero additional
+provider requests.
 
 | renamed state update | state before update | current ordinary call | next non-crashed call | first call after restart |
 |---|---|---|---|---|
 | replacement `200`, D | old generation | `fresh/data/conditional_refresh`, `data`, `["GenCC"]`, null | `fresh/data/local_query`, `data`, `["GenCC"]`, null | new visible: `fresh/data/local_query`; old visible: old generation is due and follows a due conditional-request row |
 | replacement `200`, E | old generation | `fresh/empty/conditional_refresh`, `empty`, `["GenCC"]`, null | `fresh/empty/local_query`, `empty`, `["GenCC"]`, null | new visible: `fresh/empty/local_query`; old visible: old generation is due and follows a due conditional-request row |
-| first `200`, D | none | `fresh/data/initial_download`, `data`, `["GenCC"]`, null | `fresh/data/local_query`, `data`, `["GenCC"]`, null | new visible: `fresh/data/local_query`; old/missing visible: follows a no-generation first-use row |
-| first `200`, E | none | `fresh/empty/initial_download`, `empty`, `["GenCC"]`, null | `fresh/empty/local_query`, `empty`, `["GenCC"]`, null | new visible: `fresh/empty/local_query`; old/missing visible: follows a no-generation first-use row |
+| first `200`, D | none | `fresh/data/initial_download`, `data`, `["GenCC"]`, null | `fresh/data/local_query`, `data`, `["GenCC"]`, null | new visible or state rename lost: validate/recover the already durable generation, then `fresh/data/local_query`, `data`, `["GenCC"]`, null; zero GETs |
+| first `200`, E | none | `fresh/empty/initial_download`, `empty`, `["GenCC"]`, null | `fresh/empty/local_query`, `empty`, `["GenCC"]`, null | new visible or state rename lost: validate/recover the already durable generation, then `fresh/empty/local_query`, `empty`, `["GenCC"]`, null; zero GETs |
 | valid `304`, D | due generation | `fresh/data/conditional_refresh`, `data`, `["GenCC"]`, null | `fresh/data/local_query`, `data`, `["GenCC"]`, null | new visible: `fresh/data/local_query`; old visible: same generation is due and follows a due conditional-request row |
 | valid `304`, E | due generation | `fresh/empty/conditional_refresh`, `empty`, `["GenCC"]`, null | `fresh/empty/local_query`, `empty`, `["GenCC"]`, null | new visible: `fresh/empty/local_query`; old visible: same generation is due and follows a due conditional-request row |
 | failed-attempt update | old generation, D | `stale/data/conditional_refresh`, `degraded`, `["GenCC"]`, stale-failed | `stale/data/retry_suppressed`, `degraded`, `["GenCC"]`, stale-failed | new visible: the retry-suppressed row; old visible: eligible due refresh and its resulting due row |
@@ -789,7 +791,9 @@ to design review rather than deleting an opportunistic unrelated file.
   proves the exact current/next/restart matrix—including root-fsync failure
   after replacement `200` with old data or no generation, `304`, and
   failure-state rename—failure-attempt persistence, deterministic fallback
-  ordering, and the shared/refcounted generation lease.
+  ordering, and the shared/refcounted generation lease. The no-prior-generation
+  restart cases specifically prove recovery selects the finalized, fsynced
+  first-`200` generation with zero additional GETs.
   The three-generation in-process and subprocess cases keep a G1 snapshot
   readable across G2/G3 publication and defer its deletion until lease release.
 - CLI direct/all/batch Markdown/JSON, raw MCP text/JSON, typed MCP, help/list,
