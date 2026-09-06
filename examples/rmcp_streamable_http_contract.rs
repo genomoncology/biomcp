@@ -27,11 +27,21 @@ async fn call_typed_get(
     id: &str,
     sections: &[&str],
 ) -> anyhow::Result<rmcp::model::CallToolResult> {
+    call_typed_get_with_output(client, entity, id, sections, true).await
+}
+
+async fn call_typed_get_with_output(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, impl rmcp::Service<rmcp::RoleClient>>,
+    entity: &str,
+    id: &str,
+    sections: &[&str],
+    json_output: bool,
+) -> anyhow::Result<rmcp::model::CallToolResult> {
     let arguments = serde_json::Map::from_iter([
         ("entity".to_string(), json!(entity)),
         ("id".to_string(), json!(id)),
         ("sections".to_string(), json!(sections)),
-        ("json".to_string(), json!(true)),
+        ("json".to_string(), json!(json_output)),
     ]);
     Ok(client
         .peer()
@@ -443,27 +453,52 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", first_text(&result)?);
         }
         "section-outcome-interactions" => {
-            let with_label = call_typed_get(
-                &client,
-                "drug",
-                "fixture-drug-label",
-                &["label", "interactions"],
-            )
-            .await?;
-            let without_label = call_typed_get(
-                &client,
-                "drug",
-                "fixture-drug-empty",
-                &["label", "interactions"],
-            )
-            .await?;
-            let documents = [with_label, without_label]
+            let typed_label_json =
+                call_typed_get(&client, "drug", "fixture-drug-label", &["interactions"]).await?;
+            let typed_empty_json =
+                call_typed_get(&client, "drug", "fixture-drug-empty", &["interactions"]).await?;
+            let typed_documents = [typed_label_json, typed_empty_json]
                 .iter()
                 .map(|result| -> anyhow::Result<serde_json::Value> {
                     Ok(serde_json::from_str(first_text(result)?)?)
                 })
                 .collect::<anyhow::Result<Vec<_>>>()?;
-            println!("{}", serde_json::to_string(&documents)?);
+            let raw_documents = [
+                call_biomcp(
+                    &client,
+                    "biomcp --json get drug fixture-drug-label interactions",
+                )
+                .await?,
+                call_biomcp(
+                    &client,
+                    "biomcp --json get drug fixture-drug-empty interactions",
+                )
+                .await?,
+            ]
+            .iter()
+            .map(|result| -> anyhow::Result<serde_json::Value> {
+                Ok(serde_json::from_str(first_text(result)?)?)
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?;
+            let typed_markdown = call_typed_get_with_output(
+                &client,
+                "drug",
+                "fixture-drug-label",
+                &["interactions"],
+                false,
+            )
+            .await?;
+            let raw_markdown =
+                call_biomcp(&client, "biomcp get drug fixture-drug-label interactions").await?;
+            println!(
+                "{}",
+                serde_json::to_string(&json!({
+                    "typed_json": typed_documents,
+                    "raw_json": raw_documents,
+                    "typed_markdown": first_text(&typed_markdown)?,
+                    "raw_markdown": first_text(&raw_markdown)?,
+                }))?
+            );
         }
         "clingen-surfaces" => {
             let raw_text = call_biomcp(&client, "biomcp get gene TP53 clingen").await?;

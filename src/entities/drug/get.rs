@@ -54,7 +54,6 @@ fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSectio
     let mut out = DrugSections::default();
     let mut include_all = false;
     let mut any_section = false;
-    let mut distinct_sections = HashSet::new();
 
     for raw in sections {
         let section = raw.trim().to_ascii_lowercase();
@@ -65,7 +64,6 @@ fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSectio
             continue;
         }
         any_section = true;
-        distinct_sections.insert(section.clone());
         match section.as_str() {
             DRUG_SECTION_LABEL => {
                 out.include_label = true;
@@ -108,8 +106,7 @@ fn parse_sections_for_name(name: &str, sections: &[String]) -> Result<DrugSectio
     } else if !any_section {
         out.include_targets = true;
     }
-    out.allow_partial_interactions =
-        include_all || (out.include_interactions && distinct_sections.len() > 1);
+    out.allow_partial_interactions = out.include_interactions;
 
     Ok(out)
 }

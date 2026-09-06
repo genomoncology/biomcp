@@ -88,25 +88,65 @@ BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --jso
   | mustmatch 'true'
 ```
 
-Typed MCP transports the same two drug documents rather than replacing either
-with an error envelope.
+Both MCP entry points transport sole-interaction cards in Markdown and JSON
+rather than replacing them with an error envelope.
 
 ```bash
 BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" bash ../fixtures/run-section-outcome-mcp.sh ../.. section-outcome-interactions \
-  | jq '(length == 2) and (.[0].section_outcomes.interactions.outcome == "degraded") and (.[0]._meta.section_sources | any(.key == "interactions" and .outcome == "degraded" and .sources == ["OpenFDA label"])) and (.[1].section_outcomes.interactions.outcome == "unavailable") and (.[1]._meta.section_sources | any(.key == "interactions" and .outcome == "unavailable" and .sources == []))' \
+  | jq '(.typed_json == .raw_json) and (.typed_json[0].section_outcomes.interactions.outcome == "degraded") and (.typed_json[0]._meta.section_sources | any(.key == "interactions" and .outcome == "degraded" and .sources == ["OpenFDA label"])) and (.typed_json[1].section_outcomes.interactions.outcome == "unavailable") and (.typed_json[1]._meta.section_sources | any(.key == "interactions" and .outcome == "unavailable" and .sources == [])) and (.typed_markdown == .raw_markdown) and (.typed_markdown | contains("degraded (partial/incomplete)")) and (.typed_markdown | contains("Retry: `biomcp get drug fixture-drug-label interactions`")) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL|ddinter-unavailable"; "i")) | not)' \
   | mustmatch 'true'
 ```
 
-A logically interaction-only request remains a hard failure. Repeating the
-same selector does not turn it into partial success.
+A logically interaction-only request now settles the same typed partial result.
+Repeating the selector is idempotent, and the printed recovery command is the
+same command recorded in JSON metadata.
 
 ```bash
-bash -c 'set +e; output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-label interactions); status=$?; set -e; printf "%s\n" "$output" | jq '\''(.error.code == "source_unavailable") and (.name == null)'\''; printf "exit=%s\n" "$status"' \
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-label interactions \
+  | jq '(.section_outcomes.interactions == {"outcome":"degraded","sources":["OpenFDA label"],"message":"Drug interaction evidence is incomplete because a source was unavailable."}) and ([._meta.next_commands[] | select(. == "biomcp get drug fixture-drug-label interactions")] | length == 1)' \
+  | mustmatch 'true'
+diff -u \
+  <(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-label interactions | jq '{outcome:.section_outcomes.interactions,commands:._meta.next_commands}') \
+  <(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-label interactions interactions | jq '{outcome:.section_outcomes.interactions,commands:._meta.next_commands}')
+retry=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-label interactions | sed -n 's/^Retry: `\(biomcp .*\)`$/\1/p')
+test "$retry" = "biomcp get drug fixture-drug-label interactions"
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json ${retry#biomcp } \
+  | jq '(.section_outcomes.interactions.outcome == "degraded") and (.section_outcomes.interactions.sources == ["OpenFDA label"])' \
+  | mustmatch 'true'
+retry=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-empty interactions | sed -n 's/^Retry: `\(biomcp .*\)`$/\1/p')
+test "$retry" = "biomcp get drug fixture-drug-empty interactions"
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json ${retry#biomcp } \
+  | jq '(.section_outcomes.interactions.outcome == "unavailable") and (.section_outcomes.interactions.sources == [])' \
+  | mustmatch 'true'
+```
+
+The pageable interaction report keeps DDInter as its required owner and still
+fails when the bundle is unavailable.
+
+```bash
+bash -c 'set +e; output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json drug interactions fixture-drug-label); status=$?; set -e; printf "%s\n" "$output" | jq '\''(.error.code == "source_unavailable") and (.name == null)'\''; printf "exit=%s\n" "$status"' \
   | mustmatch like 'true
 exit=1'
-bash -c 'set +e; output=$(BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_UNAVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-label interactions interactions); status=$?; set -e; printf "%s\n" "$output" | jq '\''(.error.code == "source_unavailable") and (.name == null)'\''; printf "exit=%s\n" "$status"' \
-  | mustmatch like 'true
-exit=1'
+```
+
+When label acquisition fails, a sole interaction card keeps DDInter evidence
+and credits DrugBank only when the retained row has its narrative. The required
+label shapes still fail instead of starting interaction settlement.
+
+```bash
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci get drug fixture-drug-ddinter-openfda-fail interactions \
+  | mustmatch like '**Interactions status (DDInter / DrugBank / OpenFDA label):** degraded (partial/incomplete) — Drug interaction evidence is incomplete because a source was unavailable.
+Retry: `biomcp get drug fixture-drug-ddinter-openfda-fail interactions`'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-ddinter-openfda-fail interactions \
+  | jq '(.interactions | length == 1) and (.section_outcomes.interactions.outcome == "degraded") and (.section_outcomes.interactions.sources == ["DDInter"]) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL"; "i")) | not)' \
+  | mustmatch 'true'
+BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-drugbank-openfda-fail interactions \
+  | jq '(.interactions[0].description == "DrugBank narrative survives OpenFDA failure.") and (.section_outcomes.interactions.outcome == "degraded") and (.section_outcomes.interactions.sources == ["DDInter","DrugBank"]) and ((tostring | test("SENSITIVE-UPSTREAM-DETAIL"; "i")) | not)' \
+  | mustmatch 'true'
+bash -c 'set +e; BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-ddinter-openfda-fail label interactions >/dev/null; status=$?; set -e; printf "exit=%s\n" "$status"' \
+  | mustmatch 'exit=1'
+bash -c 'set +e; BIOMCP_DDINTER_DIR="$BIOMCP_DDINTER_AVAILABLE_DIR" ../../tools/biomcp-ci --json get drug fixture-drug-ddinter-openfda-fail all >/dev/null; status=$?; set -e; printf "exit=%s\n" "$status"' \
+  | mustmatch 'exit=1'
 ```
 
 ## Unrequested sections stay distinguishable

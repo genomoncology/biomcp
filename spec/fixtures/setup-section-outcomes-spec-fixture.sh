@@ -96,7 +96,20 @@ class Handler(BaseHTTPRequestHandler):
                     },
                 )
                 return
-            fixture_name = query if query in {"fixture-drug", "fixture-drug-label", "fixture-drug-empty"} else "fixture-drug"
+            fixture_names = {
+                "fixture-drug",
+                "fixture-drug-label",
+                "fixture-drug-empty",
+                "fixture-drug-ddinter-openfda-fail",
+                "fixture-drug-drugbank-openfda-fail",
+            }
+            fixture_name = query if query in fixture_names else "fixture-drug"
+            legacy_interactions = []
+            if fixture_name == "fixture-drug-drugbank-openfda-fail":
+                legacy_interactions = [{
+                    "drug": "aspirin",
+                    "description": "DrugBank narrative survives OpenFDA failure.",
+                }]
             send_json(
                 self,
                 200,
@@ -110,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
                                 "id": "DBFIXTURE",
                                 "name": fixture_name,
                                 "synonyms": [],
-                                "drug_interactions": [],
+                                "drug_interactions": legacy_interactions,
                             },
                         }
                     ],
@@ -119,6 +132,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/drug/label.json":
             search = parse_qs(urlparse(self.path).query).get("search", [""])[0].lower()
+            if "openfda-fail" in search:
+                send_json(self, 503, {"error": "SENSITIVE-UPSTREAM-DETAIL label unavailable"})
+                return
             payload = {"results": [{
                 "indications_and_usage": ["Fixture indication survives."],
                 "drug_interactions": ["Label interaction evidence survives DDInter failure."],
@@ -196,6 +212,17 @@ base_url="$(cat "$ready_file")"
 curl -fsS "$base_url/v1/query?q=fixture-drug" >/dev/null
 ddinter_unavailable_dir="$fixture_root/ddinter-unavailable"
 mkdir -p "$ddinter_unavailable_dir"
+ddinter_available_dir="$fixture_root/ddinter-available"
+mkdir -p "$ddinter_available_dir"
+cat >"$ddinter_available_dir/ddinter_downloads_code_A.csv" <<'EOF'
+DDInterID_A,Drug_A,DDInterID_B,Drug_B,Level
+DDInterPlain,fixture-drug-ddinter-openfda-fail,DDInterAspirin,aspirin,Major
+DDInterNarrative,fixture-drug-drugbank-openfda-fail,DDInterAspirin,aspirin,Major
+EOF
+for code in B D H L P R V; do
+  printf '%s\n' 'DDInterID_A,Drug_A,DDInterID_B,Drug_B,Level' \
+    >"$ddinter_available_dir/ddinter_downloads_code_${code}.csv"
+done
 
 printf 'export BIOMCP_MYCHEM_BASE=%q\n' "$base_url/v1" >"$env_file"
 printf 'export BIOMCP_MYVARIANT_BASE=%q\n' "$base_url/v1" >>"$env_file"
@@ -206,6 +233,7 @@ printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_PID=%q\n' "$server_pid" >>"$env_f
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_ROOT=%q\n' "$fixture_root" >>"$env_file"
 printf 'export BIOMCP_SECTION_OUTCOMES_FIXTURE_READY_FILE=%q\n' "$ready_file" >>"$env_file"
 printf 'export BIOMCP_DDINTER_UNAVAILABLE_DIR=%q\n' "$ddinter_unavailable_dir" >>"$env_file"
+printf 'export BIOMCP_DDINTER_AVAILABLE_DIR=%q\n' "$ddinter_available_dir" >>"$env_file"
 
 bash "$ownership_helper" write "$workspace_root" "section-outcomes" "$fixture_root" "$server_pid" "BIOMCP_SECTION_OUTCOMES_FIXTURE" "$owner_arg" >/dev/null
 trap - EXIT

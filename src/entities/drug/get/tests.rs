@@ -45,7 +45,7 @@ fn parse_sections_all_with_explicit_label_keeps_label() {
 }
 
 #[test]
-fn interaction_partial_success_requires_a_distinct_second_section() {
+fn interaction_requests_always_permit_typed_partial_settlement() {
     assert!(
         parse_sections(&["all".to_string()])
             .unwrap()
@@ -57,12 +57,12 @@ fn interaction_partial_success_requires_a_distinct_second_section() {
             .allow_partial_interactions
     );
     assert!(
-        !parse_sections(&["interactions".to_string()])
+        parse_sections(&["interactions".to_string()])
             .unwrap()
             .allow_partial_interactions
     );
     assert!(
-        !parse_sections(&["interactions".to_string(), " INTERACTIONS ".to_string()])
+        parse_sections(&["interactions".to_string(), " INTERACTIONS ".to_string()])
             .unwrap()
             .allow_partial_interactions
     );
@@ -416,41 +416,106 @@ fn interaction_failure_preserves_only_surviving_label_evidence_without_leaking_e
 fn interaction_additive_source_state_matrix_is_truthful() {
     let cases = [
         (
-            interaction_report(vec![interaction_row(Some("DrugBank narrative"))], None),
+            Some(vec![interaction_row(None)]),
+            LabelInteractionResult::Unavailable,
+            SectionOutcomeState::Degraded,
+            vec!["DDInter"],
+        ),
+        (
+            Some(vec![interaction_row(Some("DrugBank narrative"))]),
             LabelInteractionResult::Unavailable,
             SectionOutcomeState::Degraded,
             vec!["DDInter", "DrugBank"],
         ),
         (
-            interaction_report(Vec::new(), None),
+            Some(Vec::new()),
             LabelInteractionResult::Unavailable,
             SectionOutcomeState::Unavailable,
             vec![],
         ),
         (
-            interaction_report(vec![interaction_row(None)], None),
+            None,
+            LabelInteractionResult::Data("Label evidence".to_string()),
+            SectionOutcomeState::Degraded,
+            vec!["OpenFDA label"],
+        ),
+        (
+            None,
+            LabelInteractionResult::Empty,
+            SectionOutcomeState::Unavailable,
+            vec![],
+        ),
+        (
+            None,
+            LabelInteractionResult::Unavailable,
+            SectionOutcomeState::Unavailable,
+            vec![],
+        ),
+        (
+            Some(vec![interaction_row(None)]),
             LabelInteractionResult::Empty,
             SectionOutcomeState::Data,
             vec!["DDInter"],
         ),
         (
-            interaction_report(Vec::new(), None),
+            Some(vec![interaction_row(Some("DrugBank narrative"))]),
             LabelInteractionResult::Empty,
-            SectionOutcomeState::Empty,
+            SectionOutcomeState::Data,
+            vec!["DDInter", "DrugBank"],
+        ),
+        (
+            Some(vec![interaction_row(None)]),
+            LabelInteractionResult::Data("Label evidence".to_string()),
+            SectionOutcomeState::Data,
             vec!["DDInter", "OpenFDA label"],
         ),
         (
-            interaction_report(Vec::new(), Some("Label evidence")),
+            Some(vec![interaction_row(Some("DrugBank narrative"))]),
+            LabelInteractionResult::Data("Label evidence".to_string()),
+            SectionOutcomeState::Data,
+            vec!["DDInter", "DrugBank", "OpenFDA label"],
+        ),
+        (
+            Some(Vec::new()),
             LabelInteractionResult::Data("Label evidence".to_string()),
             SectionOutcomeState::Data,
             vec!["OpenFDA label"],
         ),
+        (
+            Some(Vec::new()),
+            LabelInteractionResult::Empty,
+            SectionOutcomeState::Empty,
+            vec!["DDInter", "OpenFDA label"],
+        ),
     ];
 
-    for (report, label, state, sources) in cases {
+    for (rows, label, state, sources) in cases {
         let mut drug = test_approval_drug();
-        apply_interactions_result(&mut drug, Ok(report), label);
+        let ddinter_failed = rows.is_none();
+        let result = rows.map_or_else(
+            || Err(interaction_failure("timeout")),
+            |rows| Ok(interaction_report(rows, None)),
+        );
+        apply_interactions_result(&mut drug, result, label);
         assert_interaction_outcome(&drug, state, &sources);
+        let outcome = drug.section_outcomes.get("interactions").unwrap();
+        assert_eq!(
+            outcome.message(),
+            match state {
+                SectionOutcomeState::Degraded => Some(
+                    "Drug interaction evidence is incomplete because a source was unavailable."
+                ),
+                SectionOutcomeState::Unavailable => {
+                    Some("Drug interaction evidence is temporarily unavailable.")
+                }
+                _ => None,
+            }
+        );
+        if ddinter_failed {
+            assert!(drug.interactions.is_empty());
+            assert!(drug.interaction_pagination.is_none());
+            assert!(drug.interaction_bundle_freshness.is_none());
+        }
         assert_eq!(
             crate::render::provenance::drug_interaction_heading_label(&drug),
             if sources.contains(&"DDInter") {
