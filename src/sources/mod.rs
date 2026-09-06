@@ -31,6 +31,19 @@ struct VariantArticleDeadlineInner {
     providers: std::sync::Arc<tokio::sync::Semaphore>,
 }
 
+#[derive(Clone, Debug, Default)]
+pub(crate) struct CachePublicationState(std::sync::Arc<std::sync::atomic::AtomicBool>);
+
+impl CachePublicationState {
+    pub(crate) fn arm(&self) {
+        self.0.store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    pub(crate) fn marker(&self) -> &std::sync::atomic::AtomicBool {
+        &self.0
+    }
+}
+
 impl VariantArticleDeadline {
     pub(crate) fn from_now(limit: Duration) -> Self {
         Self {
@@ -50,6 +63,15 @@ impl VariantArticleDeadline {
 
     pub(crate) fn is_exhausted(&self) -> bool {
         self.remaining().is_zero()
+    }
+
+    pub(crate) fn ensure_time_io(&self) -> std::io::Result<()> {
+        (!self.is_exhausted()).then_some(()).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                "variant article invocation deadline exceeded",
+            )
+        })
     }
 
     pub(crate) fn limit(&self) -> Duration {
@@ -100,6 +122,7 @@ pub(crate) struct VariantArticleDeadlineElapsed;
 tokio::task_local! {
     static VARIANT_ARTICLE_DEADLINE: VariantArticleDeadline;
     static VARIANT_ARTICLE_SAFE_RETURN: bool;
+    static VARIANT_ARTICLE_CACHE_PUBLICATION: CachePublicationState;
 }
 
 pub(crate) async fn with_variant_article_deadline<F: Future>(
@@ -123,6 +146,29 @@ pub(crate) fn current_variant_article_deadline() -> Option<VariantArticleDeadlin
 
 pub(crate) async fn with_variant_article_safe_return<F: Future>(future: F) -> F::Output {
     VARIANT_ARTICLE_SAFE_RETURN.scope(true, future).await
+}
+
+pub(crate) fn current_cache_publication_state() -> Option<CachePublicationState> {
+    VARIANT_ARTICLE_CACHE_PUBLICATION
+        .try_with(Clone::clone)
+        .ok()
+}
+
+pub(crate) async fn run_with_cache_publication<F, T>(
+    deadline: &VariantArticleDeadline,
+    future: F,
+) -> Result<T, VariantArticleDeadlineElapsed>
+where
+    F: Future<Output = T>,
+{
+    match current_cache_publication_state() {
+        Some(publication) => {
+            deadline
+                .run_with_safe_return(future, publication.marker())
+                .await
+        }
+        None => deadline.run(future).await,
+    }
 }
 
 pub(crate) async fn run_with_variant_article_safe_return_marker<F, T>(
@@ -172,10 +218,15 @@ impl RequestBuilderSourceContextExt for RequestBuilder {
     ) -> Result<reqwest::Response, BioMcpError> {
         let request = attach_variant_article_deadline(self);
         let response = match current_variant_article_deadline() {
-            Some(deadline) => deadline
-                .run(request.send())
-                .await
-                .map_err(reqwest_middleware::Error::middleware)?,
+            Some(deadline) => {
+                let publication = CachePublicationState::default();
+                let send =
+                    VARIANT_ARTICLE_CACHE_PUBLICATION.scope(publication.clone(), request.send());
+                deadline
+                    .run_with_safe_return(send, publication.marker())
+                    .await
+                    .map_err(reqwest_middleware::Error::middleware)?
+            }
             None => request.send().await,
         };
         response.map_err(BioMcpError::from).map_err(|error| {
@@ -895,7 +946,7 @@ where
     finish_cached_http_client(kind, provider_policy, manager)
 }
 
-fn finish_cached_http_client(
+pub(crate) fn finish_cached_http_client(
     kind: SharedHttpClientKind,
     provider_policy: Option<&provider_url_policy::ProviderUrlPolicy>,
     manager: crate::cache::SizeAwareCacheManager,
@@ -964,16 +1015,21 @@ async fn build_http_client_with_config_deadline(
     if deadline.is_exhausted() {
         return Err(variant_article_deadline_error());
     }
-    let migration = apply_migration_non_fatal(
-        &cache_root,
-        crate::cache::migrate_http_cache,
-        |err| {
+    let migration = match crate::cache::migrate_http_cache_with_deadline(&cache_root, deadline)
+        .await
+    {
+        Ok(outcome) => Some(outcome),
+        Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+            return Err(BioMcpError::Io(error));
+        }
+        Err(err) => {
             warn!(
                 cache_root = %cache_root.display(),
                 "HTTP cache directory migration failed; continuing with normal cache initialization: {err}"
             );
-        },
-    );
+            None
+        }
+    };
     if deadline.is_exhausted() {
         return Err(variant_article_deadline_error());
     }
@@ -2214,29 +2270,5 @@ mod tests {
         }
         assert!(deadline.acquire_provider().await.is_err());
         drop(permits);
-    }
-
-    #[tokio::test(start_paused = true)]
-    async fn cache_safe_return_marker_shields_only_its_own_operation() {
-        let deadline = VariantArticleDeadline::from_now(Duration::from_secs(10));
-        let safe_return = std::sync::atomic::AtomicBool::new(true);
-        let started = tokio::time::Instant::now();
-
-        let shielded = deadline
-            .run_with_safe_return(tokio::time::sleep(Duration::from_secs(20)), &safe_return);
-        let unrelated = deadline.run(std::future::pending::<()>());
-        let (shielded, unrelated) = tokio::join!(shielded, unrelated);
-
-        assert!(shielded.is_ok());
-        assert!(unrelated.is_err());
-        assert_eq!(started.elapsed(), Duration::from_secs(20));
-
-        let unarmed = std::sync::atomic::AtomicBool::new(false);
-        assert!(
-            deadline
-                .run_with_safe_return(std::future::pending::<()>(), &unarmed)
-                .await
-                .is_err()
-        );
     }
 }

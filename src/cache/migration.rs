@@ -66,6 +66,20 @@ pub(crate) fn migrate_http_cache(cache_root: &Path) -> Result<MigrationOutcome, 
     migrate_http_cache_locked(cache_root)
 }
 
+pub(crate) async fn migrate_http_cache_with_deadline(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> Result<MigrationOutcome, io::Error> {
+    if !directory_exists(&cache_root.join("http-cacache"), "legacy cache path")? {
+        return Ok(MigrationOutcome::SkippedOldMissing);
+    }
+    let _maintenance = super::lock_cache_maintenance_until(cache_root, deadline).await?;
+    deadline.ensure_time_io()?;
+    let result = migrate_http_cache_locked(cache_root);
+    deadline.ensure_time_io()?;
+    result
+}
+
 fn migrate_http_cache_locked(cache_root: &Path) -> Result<MigrationOutcome, io::Error> {
     let old = cache_root.join("http-cacache");
     let new = cache_root.join("http");
@@ -136,10 +150,13 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
             Err(error) => return Err(error),
         }
     }
-    ensure_body_limited_cache_epoch_locked(
+    let maintenance = super::lock_cache_maintenance_until(cache_root, deadline).await?;
+    deadline.ensure_time_io()?;
+    ensure_body_limited_cache_epoch_locked_with_guard(
         cache_root,
         legacy_cache_was_renamed,
         lock,
+        maintenance,
         &mut |_file, _path| Ok(()),
     )
 }
@@ -165,6 +182,26 @@ fn ensure_body_limited_cache_epoch_locked<F>(
 where
     F: FnMut(&File, &Path) -> io::Result<()>,
 {
+    let maintenance = super::lock_cache_maintenance(cache_root)?;
+    ensure_body_limited_cache_epoch_locked_with_guard(
+        cache_root,
+        legacy_cache_was_renamed,
+        lock,
+        maintenance,
+        before_publish,
+    )
+}
+
+fn ensure_body_limited_cache_epoch_locked_with_guard<F>(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+    lock: File,
+    _maintenance: super::private::CacheOperationGuard,
+    before_publish: &mut F,
+) -> Result<(), io::Error>
+where
+    F: FnMut(&File, &Path) -> io::Result<()>,
+{
     let marker = cache_root.join(BODY_LIMIT_CACHE_EPOCH);
     let legacy_cache = cache_root.join("http-cacache");
 
@@ -180,7 +217,6 @@ where
             return Ok(());
         }
 
-        let _maintenance = super::lock_cache_maintenance(cache_root)?;
         if marker_exists && !legacy_cache_was_renamed {
             remove_cache_directory(&legacy_cache)?;
             return Ok(());
@@ -445,6 +481,42 @@ mod tests {
         assert_eq!(error.kind(), io::ErrorKind::TimedOut);
         assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
         FileExt::unlock(&held).expect("release epoch lock");
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn maintenance_contention_expires_without_partial_migration_and_releases_for_retry() {
+        let root = TempDirGuard::new("migration-maintenance-deadline");
+        fs::create_dir_all(root.path().join("http-cacache")).unwrap();
+        fs::write(root.path().join("http-cacache/sentinel"), b"legacy").unwrap();
+        let held = super::super::try_lock_cache_maintenance(root.path())
+            .unwrap()
+            .expect("hold maintenance lock");
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
+
+        let error = migrate_http_cache_with_deadline(root.path(), &deadline)
+            .await
+            .expect_err("contended migration must expire");
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert_eq!(
+            fs::read(root.path().join("http-cacache/sentinel")).unwrap(),
+            b"legacy"
+        );
+        assert!(!root.path().join("http").exists());
+
+        drop(held);
+        let retry =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(1));
+        assert!(matches!(
+            migrate_http_cache_with_deadline(root.path(), &retry)
+                .await
+                .unwrap(),
+            MigrationOutcome::Renamed
+        ));
+        assert_eq!(
+            fs::read(root.path().join("http/sentinel")).unwrap(),
+            b"legacy"
+        );
     }
 
     #[cfg(unix)]

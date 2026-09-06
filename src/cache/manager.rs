@@ -24,6 +24,8 @@ type InspectSpaceFn = dyn Fn(&Path) -> Result<FilesystemSpace, BioMcpError> + Se
 type ScheduleEvictionFn =
     dyn Fn(PathBuf, ResolvedCacheConfig, Arc<AtomicU64>, Arc<AtomicBool>) + Send + Sync;
 type CacheAccessObserverFn = dyn Fn(&Path, &str) + Send + Sync;
+type CacheAsyncObserverFn =
+    dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> + Send + Sync;
 type BeforeKeyLockDirCreateFn = dyn Fn(&Path) + Send + Sync;
 const POST_WRITE_FINALIZATION_ERROR: &str =
     "cache security finalization failed after successful put";
@@ -35,7 +37,7 @@ struct ManagerServices {
     schedule_eviction: Arc<ScheduleEvictionFn>,
     observe_get: Arc<CacheAccessObserverFn>,
     after_put: Arc<CacheAccessObserverFn>,
-    after_safe_return_armed: Arc<CacheAccessObserverFn>,
+    after_safe_return_armed: Arc<CacheAsyncObserverFn>,
     before_key_lock_dir_create: Arc<BeforeKeyLockDirCreateFn>,
 }
 
@@ -120,7 +122,7 @@ impl SizeAwareCacheManager {
                 schedule_eviction: Arc::new(schedule_eviction),
                 observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(|_, _| {}),
-                after_safe_return_armed: Arc::new(|_, _| {}),
+                after_safe_return_armed: Arc::new(|| Box::pin(async {})),
                 before_key_lock_dir_create: Arc::new(|_| {}),
             },
         )
@@ -155,18 +157,19 @@ impl SizeAwareCacheManager {
                 schedule_eviction: Arc::new(schedule_eviction),
                 observe_get: Arc::new(|_, _| {}),
                 after_put: Arc::new(after_put),
-                after_safe_return_armed: Arc::new(|_, _| {}),
+                after_safe_return_armed: Arc::new(|| Box::pin(async {})),
                 before_key_lock_dir_create: Arc::new(before_key_lock_dir_create),
             },
         )
     }
 
     #[cfg(test)]
-    fn with_safe_return_observer<A>(mut self, observer: A) -> Self
+    pub(crate) fn with_safe_return_observer<A, F>(mut self, observer: A) -> Self
     where
-        A: Fn(&Path, &str) + Send + Sync + 'static,
+        A: Fn() -> F + Send + Sync + 'static,
+        F: std::future::Future<Output = ()> + Send + 'static,
     {
-        self.services.after_safe_return_armed = Arc::new(observer);
+        self.services.after_safe_return_armed = Arc::new(move || Box::pin(observer()));
         self
     }
 
@@ -235,7 +238,7 @@ impl CacheManager for SizeAwareCacheManager {
         policy: CachePolicy,
     ) -> http_cache::Result<HttpResponse> {
         // Cancellation is safe only until CACache atomically publishes the entry.
-        let safe_return = AtomicBool::new(false);
+        let safe_return = crate::sources::current_cache_publication_state().unwrap_or_default();
         #[derive(Serialize)]
         struct Store<'a> {
             response: &'a HttpResponse,
@@ -255,14 +258,16 @@ impl CacheManager for SizeAwareCacheManager {
             })?;
             let mut writer = cacache::Writer::create(&self.inner.path, &cache_key).await?;
             writer.write_all(&bytes).await?;
-            safe_return.store(true, Ordering::Release);
-            (self.services.after_safe_return_armed)(&self.inner.path, &cache_key);
+            safe_return.arm();
+            (self.services.after_safe_return_armed)().await;
             writer.commit().await?;
             Ok::<_, http_cache::BoxError>((_operation, res))
         };
-        let (_operation, response) =
-            crate::sources::run_with_variant_article_safe_return_marker(pre_commit, &safe_return)
-                .await?;
+        let (_operation, response) = crate::sources::run_with_variant_article_safe_return_marker(
+            pre_commit,
+            safe_return.marker(),
+        )
+        .await?;
 
         let finalization = async {
             (self.services.after_put)(&self.inner.path, &cache_key);
@@ -344,7 +349,7 @@ fn default_services() -> ManagerServices {
         schedule_eviction: Arc::new(spawn_eviction_task),
         observe_get: Arc::new(|_, _| {}),
         after_put: Arc::new(|_, _| {}),
-        after_safe_return_armed: Arc::new(|_, _| {}),
+        after_safe_return_armed: Arc::new(|| Box::pin(async {})),
         before_key_lock_dir_create: Arc::new(|_| {}),
     }
 }

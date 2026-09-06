@@ -139,6 +139,13 @@ pub(crate) async fn lock_cache_shared_until(
     lock_file_until(file, false, deadline).await
 }
 
+pub(crate) async fn lock_cache_maintenance_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<CacheOperationGuard> {
+    lock_file_until(operation_lock_file(cache_root)?, true, deadline).await
+}
+
 async fn lock_file_until(
     file: File,
     exclusive: bool,
