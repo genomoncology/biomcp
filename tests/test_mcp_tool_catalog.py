@@ -25,6 +25,46 @@ TOOLS = [
 ]
 
 
+def test_rust_mcp_contract_uses_python_tools_list_byte_ceiling() -> None:
+    rust_contract = (
+        ROOT / "crates/biomcp-mcp-contract-client/src/lib.rs"
+    ).read_text(encoding="utf-8")
+    named_ceiling = re.search(
+        r"const TOOLS_LIST_BYTE_CEILING: usize = ([\d_]+);",
+        rust_contract,
+    )
+    assert named_ceiling is not None, "Rust tools/list byte ceiling must be named"
+    rust_ceiling = int(named_ceiling.group(1).replace("_", ""))
+    assert rust_ceiling == TOOLS_LIST_BYTE_CEILING, (
+        f"Rust tools/list byte ceiling is {rust_ceiling:,} bytes; "
+        f"Python ceiling is {TOOLS_LIST_BYTE_CEILING:,} bytes"
+    )
+
+    serialized_ceiling_assertions = re.findall(
+        r"assert!\(\s*serialized\.len\(\)\s*<=.*?\n\s*\);",
+        rust_contract,
+        re.DOTALL,
+    )
+    assert len(serialized_ceiling_assertions) == 2, (
+        "Rust MCP contract must contain exactly two serialized tools/list "
+        "ceiling assertions"
+    )
+    expected_assertion = re.compile(
+        r"assert!\(\s*"
+        r"serialized\.len\(\)\s*<=\s*TOOLS_LIST_BYTE_CEILING,\s*"
+        r'"tools/list used \{\} bytes; ceiling is \{\} bytes",\s*'
+        r"serialized\.len\(\),\s*"
+        r"TOOLS_LIST_BYTE_CEILING\s*"
+        r"\);",
+    )
+    assert all(
+        expected_assertion.fullmatch(item) for item in serialized_ceiling_assertions
+    ), (
+        "both Rust tools/list assertions must use TOOLS_LIST_BYTE_CEILING and "
+        "report measured bytes plus the ceiling"
+    )
+
+
 @pytest.mark.parametrize(
     ("cache_contents", "message"),
     [(None, "cache is unavailable"), (b"altered", "cache failed validation")],

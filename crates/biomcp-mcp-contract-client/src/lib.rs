@@ -72,6 +72,7 @@ const EXPECTED_HELP_RESOURCE: (&str, &str) = ("biomcp://help", "BioMCP Overview"
 const READ_ONLY_MESSAGE: &str = "BioMCP allows read-only commands only";
 const CACHE_CLI_ONLY_MESSAGE: &str = "CLI-only over MCP";
 const CACHE_FILESYSTEM_MESSAGE: &str = "workstation-local filesystem paths";
+const TOOLS_LIST_BYTE_CEILING: usize = 22_600;
 
 fn assert_tool_metadata(tools: &[Tool]) {
     for tool in tools {
@@ -458,7 +459,12 @@ where
         );
     }
     let serialized = serde_json::to_vec(&tools.tools)?;
-    assert!(serialized.len() <= 16_000);
+    assert!(
+        serialized.len() <= TOOLS_LIST_BYTE_CEILING,
+        "tools/list used {} bytes; ceiling is {} bytes",
+        serialized.len(),
+        TOOLS_LIST_BYTE_CEILING
+    );
 
     Ok(())
 }
@@ -528,9 +534,10 @@ where
     assert!(!names.contains(&"shell"));
     let serialized = serde_json::to_vec(&tools.tools)?;
     assert!(
-        serialized.len() <= 16_000,
-        "tools/list used {} bytes",
-        serialized.len()
+        serialized.len() <= TOOLS_LIST_BYTE_CEILING,
+        "tools/list used {} bytes; ceiling is {} bytes",
+        serialized.len(),
+        TOOLS_LIST_BYTE_CEILING
     );
     let biomcp = tools
         .tools
