@@ -68,7 +68,15 @@ pub(crate) use limits::{
     inspect_filesystem_space, summarize_cache_usage,
 };
 pub(crate) use manager::SizeAwareCacheManager;
-pub(crate) use migration::{MigrationOutcome, ensure_body_limited_cache_epoch, migrate_http_cache};
+
+fn begin_variant_article_cache_publication() -> Option<crate::sources::VariantArticleSafeReturnGuard>
+{
+    crate::sources::current_variant_article_deadline().map(|deadline| deadline.enter_safe_return())
+}
+pub(crate) use migration::{
+    MigrationOutcome, ensure_body_limited_cache_epoch, ensure_body_limited_cache_epoch_until,
+    migrate_http_cache,
+};
 #[allow(unused_imports)]
 pub(crate) use planner::{
     CacheBlob, CacheCleanupPlan, CacheEntry, CachePlannerError, CacheSnapshot, plan_age_cleanup,

@@ -8,7 +8,9 @@ use crate::sources::pubtator::PubTatorClient;
 use crate::sources::semantic_scholar::{SemanticScholarClient, SemanticScholarPaper};
 
 use super::candidates::finalize_article_candidates;
-use super::detail::{parse_pmid, resolve_article_from_pmid_with_context};
+use super::detail::{
+    parse_pmid, resolve_article_from_pmid_with_context, resolve_variant_article_from_pmid,
+};
 use super::{
     Article, ArticleSearchFilters, ArticleSearchResult, ArticleSource, ArticleSourceAvailability,
     ArticleSourceStatus, SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS,
@@ -113,12 +115,32 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
         return None;
     }
 
+    let mut first_unit = match execution {
+        Some(execution) => {
+            execution
+                .begin_provider_unit("enrichment", "semanticscholar")
+                .await
+        }
+        None => None,
+    };
+    if execution.is_some() && first_unit.is_none() {
+        return Some(ArticleSourceStatus {
+            source: ArticleSource::SemanticScholar,
+            enabled: true,
+            auth_mode: None,
+            status: Some(ArticleSourceAvailability::Degraded),
+            message: Some("Variant article work budget exhausted".into()),
+        });
+    }
     let client = match match execution {
         Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
         None => SemanticScholarClient::new(),
     } {
         Ok(client) => client,
         Err(err) => {
+            if let Some(unit) = first_unit.take() {
+                unit.record_error(&err);
+            }
             crate::error::warn_external_failure(
                 &err,
                 crate::error::SourceProvider::SEMANTIC_SCHOLAR,
@@ -143,24 +165,23 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
     };
 
     for chunk in lookup_ids.chunks(SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS) {
-        let started = execution.and_then(|execution| execution.reserve("enrichment"));
-        if let Some(execution) = execution
-            && started.is_none()
-        {
-            execution.record_not_attempted("enrichment", "semanticscholar");
+        let unit = match first_unit.take() {
+            Some(unit) => Some(unit),
+            None => match execution {
+                Some(execution) => {
+                    execution
+                        .begin_provider_unit("enrichment", "semanticscholar")
+                        .await
+                }
+                None => None,
+            },
+        };
+        if execution.is_some() && unit.is_none() {
             status.status = Some(ArticleSourceAvailability::Degraded);
             status.message = Some("Variant article work budget exhausted".into());
             break;
         }
         let result = client.paper_batch_search_enrichment(chunk).await;
-        if let (Some(execution), Some(started)) = (execution, started) {
-            match &result {
-                Ok(_) => execution.record("enrichment", "semanticscholar", started, "ok", 1),
-                Err(error) => {
-                    execution.record_error("enrichment", "semanticscholar", started, error)
-                }
-            }
-        }
         match result {
             Ok(papers) => {
                 for (lookup_id, paper) in chunk.iter().zip(papers) {
@@ -174,8 +195,14 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
                         merge_article_search_row_with_semantic_scholar(&mut rows[*row_idx], &paper);
                     }
                 }
+                if let Some(unit) = unit {
+                    unit.record("ok", 1);
+                }
             }
             Err(err) => {
+                if let Some(unit) = unit {
+                    unit.record_error(&err);
+                }
                 crate::error::warn_external_failure(
                     &err,
                     crate::error::SourceProvider::SEMANTIC_SCHOLAR,
@@ -231,11 +258,26 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
     if lookup_positions.is_empty() {
         return;
     }
+    if let Some(execution) = execution {
+        for (row_idx, pmid) in lookup_positions {
+            let lookup_id = rows[row_idx].pmid.clone();
+            match resolve_variant_article_from_pmid(pmid, &lookup_id, &lookup_id, None, execution)
+                .await
+            {
+                Ok(article) => {
+                    merge_article_search_row_with_article_base(&mut rows[row_idx], &article)
+                }
+                Err(err) => crate::error::warn_external_failure(
+                    &err,
+                    crate::error::SourceProvider::PUBTATOR3,
+                    "visible article metadata fallback",
+                ),
+            }
+        }
+        return;
+    }
 
-    let pubtator = match match execution {
-        Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
-        None => PubTatorClient::new(),
-    } {
+    let pubtator = match PubTatorClient::new() {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(
@@ -246,10 +288,7 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
             return;
         }
     };
-    let europe = match match execution {
-        Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
-        None => EuropePmcClient::new(),
-    } {
+    let europe = match EuropePmcClient::new() {
         Ok(client) => client,
         Err(err) => {
             crate::error::warn_external_failure(

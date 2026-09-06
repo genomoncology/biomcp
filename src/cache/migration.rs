@@ -102,18 +102,71 @@ where
     F: FnMut(&File, &Path) -> io::Result<()>,
 {
     fs::create_dir_all(cache_root)?;
-    let marker = cache_root.join(BODY_LIMIT_CACHE_EPOCH);
-    let legacy_cache = cache_root.join("http-cacache");
+    let lock = open_epoch_lock(cache_root)?;
+    lock.lock_exclusive()?;
+    ensure_body_limited_cache_epoch_locked(
+        cache_root,
+        legacy_cache_was_renamed,
+        lock,
+        &mut before_publish,
+    )
+}
+
+pub(crate) async fn ensure_body_limited_cache_epoch_until(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> Result<(), io::Error> {
+    fs::create_dir_all(cache_root)?;
+    let lock = open_epoch_lock(cache_root)?;
+    loop {
+        match lock.try_lock_exclusive() {
+            Ok(()) => break,
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                deadline
+                    .run(tokio::time::sleep(std::time::Duration::from_millis(10)))
+                    .await
+                    .map_err(|_| {
+                        io::Error::new(
+                            io::ErrorKind::TimedOut,
+                            "variant article invocation deadline exceeded",
+                        )
+                    })?;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    ensure_body_limited_cache_epoch_locked(
+        cache_root,
+        legacy_cache_was_renamed,
+        lock,
+        &mut |_file, _path| Ok(()),
+    )
+}
+
+fn open_epoch_lock(cache_root: &Path) -> io::Result<File> {
     let lock_path = cache_root.join(BODY_LIMIT_CACHE_LOCK);
-    let lock = open_private(
+    open_private(
         OpenOptions::new()
             .create(true)
             .truncate(false)
             .read(true)
             .write(true),
         &lock_path,
-    )?;
-    lock.lock_exclusive()?;
+    )
+}
+
+fn ensure_body_limited_cache_epoch_locked<F>(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+    lock: File,
+    before_publish: &mut F,
+) -> Result<(), io::Error>
+where
+    F: FnMut(&File, &Path) -> io::Result<()>,
+{
+    let marker = cache_root.join(BODY_LIMIT_CACHE_EPOCH);
+    let legacy_cache = cache_root.join("http-cacache");
 
     let result = (|| {
         let marker_exists = validated_marker_exists(&marker)?;
@@ -374,6 +427,24 @@ mod tests {
         }
         assert!(root.path().join(BODY_LIMIT_CACHE_EPOCH).is_file());
         assert!(root.path().join("http").is_dir());
+    }
+
+    #[tokio::test]
+    async fn body_limit_epoch_lock_contention_obeys_variant_article_deadline() {
+        let root = TempDirGuard::new("body-limit-epoch-deadline");
+        fs::create_dir_all(root.path()).expect("cache root");
+        let held = open_epoch_lock(root.path()).expect("epoch lock");
+        held.lock_exclusive().expect("hold epoch lock");
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
+
+        let error = ensure_body_limited_cache_epoch_until(root.path(), false, &deadline)
+            .await
+            .expect_err("contended epoch lock must not outlive the invocation");
+
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+        FileExt::unlock(&held).expect("release epoch lock");
     }
 
     #[cfg(unix)]

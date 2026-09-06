@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::{
     Arc,
-    atomic::{AtomicBool, AtomicUsize, Ordering},
+    atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 };
 
 use super::super::{
@@ -106,6 +106,7 @@ async fn cached_test_client(
     Arc<AtomicUsize>,
     Arc<AtomicBool>,
     Arc<AtomicBool>,
+    Arc<AtomicU64>,
     crate::test_support::TempDirGuard,
     tokio::task::JoinHandle<()>,
 ) {
@@ -126,9 +127,11 @@ async fn cached_test_client(
     let gets = Arc::new(AtomicUsize::new(0));
     let puts = Arc::new(AtomicUsize::new(0));
     let armed = Arc::new(AtomicBool::new(false));
+    let after_put_delay_ms = Arc::new(AtomicU64::new(0));
     let get_count = Arc::clone(&gets);
     let put_count = Arc::clone(&puts);
     let fault = Arc::clone(&armed);
+    let delay = Arc::clone(&after_put_delay_ms);
     let client = build_http_client_with_config_and_manager(
         SharedHttpClientKind::Default,
         super::test_cache_config(root.path()),
@@ -143,6 +146,9 @@ async fn cached_test_client(
                     },
                     move |path, key| {
                         put_count.fetch_add(1, Ordering::SeqCst);
+                        std::thread::sleep(std::time::Duration::from_millis(
+                            delay.load(Ordering::SeqCst),
+                        ));
                         if fault.swap(false, Ordering::SeqCst) {
                             assert!(cacache::metadata_sync(path, key).unwrap().is_some());
                             cacache::remove_sync(path, key).unwrap();
@@ -161,6 +167,7 @@ async fn cached_test_client(
         puts,
         armed,
         saw_validator,
+        after_put_delay_ms,
         root,
         server,
     )
@@ -183,7 +190,7 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
         CacheOriginMode::Revalidate304,
         CacheOriginMode::Revalidate200,
     ] {
-        let (client, url, requests, gets, puts, armed, validator, root, server) =
+        let (client, url, requests, gets, puts, armed, validator, _, root, server) =
             cached_test_client(mode, "post-write-client-failure").await;
         let _env = EnvRestore::set(&[(
             "BIOMCP_TEST_UNPACED_ORIGIN",
@@ -222,8 +229,39 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
 
 #[tokio::test]
 #[serial_test::serial(article_resolver_env)]
+async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
+    let (client, url, requests, gets, puts, armed, _, delay, root, server) =
+        cached_test_client(CacheOriginMode::Initial, "deadline-post-write-finalization").await;
+    let _env = EnvRestore::set(&[(
+        "BIOMCP_TEST_UNPACED_ORIGIN",
+        Some(url.trim_end_matches("/resource")),
+    )]);
+    delay.store(40, Ordering::SeqCst);
+    armed.store(true, Ordering::SeqCst);
+    let deadline =
+        crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(10));
+    let request_deadline = deadline.clone();
+    let result = crate::sources::with_variant_article_deadline(deadline, async move {
+        client
+            .get(&url)
+            .with_extension(request_deadline)
+            .send()
+            .await
+    })
+    .await;
+
+    let error = result.expect_err("post-write finalization must remain fail closed");
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+    assert_eq!(gets.load(Ordering::SeqCst), 1);
+    assert_eq!(puts.load(Ordering::SeqCst), 1);
+    assert_sanitized_cache_error(&error, root.path());
+    server.abort();
+}
+
+#[tokio::test]
+#[serial_test::serial(article_resolver_env)]
 async fn cached_client_fresh_hit_and_request_no_store_bypass_writes() {
-    let (client, url, requests, gets, puts, armed, _, _root, server) =
+    let (client, url, requests, gets, puts, armed, _, _, _root, server) =
         cached_test_client(CacheOriginMode::Fresh, "fresh-client-hit").await;
     let _env = EnvRestore::set(&[(
         "BIOMCP_TEST_UNPACED_ORIGIN",
@@ -245,7 +283,7 @@ async fn cached_client_fresh_hit_and_request_no_store_bypass_writes() {
     assert_eq!(puts.load(Ordering::SeqCst), 0);
     server.abort();
 
-    let (client, url, requests, gets, puts, armed, _, _root, server) =
+    let (client, url, requests, gets, puts, armed, _, _, _root, server) =
         cached_test_client(CacheOriginMode::Initial, "no-store-client-request").await;
     let _env = EnvRestore::set(&[(
         "BIOMCP_TEST_UNPACED_ORIGIN",

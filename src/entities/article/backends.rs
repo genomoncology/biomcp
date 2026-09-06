@@ -1,6 +1,7 @@
 //! Article search backend fetchers for PubMed-family and semantic sources.
 
 use std::collections::{HashMap, HashSet};
+use std::time::Instant;
 
 use crate::entities::SearchPage;
 use crate::error::BioMcpError;
@@ -24,6 +25,55 @@ use super::{
     MAX_FEDERATED_FETCH_RESULTS, MAX_PAGE_FETCHES, PUBMED_PAGE_SIZE, PUBTATOR_PAGE_SIZE,
     WARN_PAGE_THRESHOLD,
 };
+
+pub(crate) struct VariantArticleProviderUnit<'a> {
+    execution: &'a super::variant_search::VariantArticleExecutionContext,
+    route: String,
+    source: String,
+    started: Instant,
+    _permit: tokio::sync::OwnedSemaphorePermit,
+    completed: bool,
+}
+
+impl<'a> VariantArticleProviderUnit<'a> {
+    pub(crate) fn new(
+        execution: &'a super::variant_search::VariantArticleExecutionContext,
+        route: &str,
+        source: &str,
+        started: Instant,
+        permit: tokio::sync::OwnedSemaphorePermit,
+    ) -> Self {
+        Self {
+            execution,
+            route: route.into(),
+            source: source.into(),
+            started,
+            _permit: permit,
+            completed: false,
+        }
+    }
+
+    pub(crate) fn record(mut self, status: &str, pages: usize) {
+        self.completed = true;
+        self.execution
+            .record(&self.route, &self.source, self.started, status, pages);
+    }
+
+    pub(crate) fn record_error(mut self, error: &BioMcpError) {
+        self.completed = true;
+        self.execution
+            .record_error(&self.route, &self.source, self.started, error);
+    }
+}
+
+impl Drop for VariantArticleProviderUnit<'_> {
+    fn drop(&mut self) {
+        if !self.completed {
+            self.execution
+                .record_cancelled(&self.route, &self.source, self.started);
+        }
+    }
+}
 
 fn normalized_bound_year(value: &str) -> Option<&str> {
     let year = value.get(..4)?;
@@ -59,40 +109,71 @@ fn semantic_scholar_status(auth_mode: SemanticScholarAuthMode) -> ArticleSourceS
     }
 }
 
-async fn variant_article_request<T, F>(
+async fn variant_article_request<T, U, F, C>(
     execution: Option<&super::variant_search::VariantArticleExecutionContext>,
     route: &str,
     source: &str,
+    first_unit: &mut Option<VariantArticleProviderUnit<'_>>,
     future: F,
-) -> Result<Option<T>, BioMcpError>
+    commit: C,
+) -> Result<Option<U>, BioMcpError>
 where
     F: std::future::Future<Output = Result<T, BioMcpError>>,
+    C: FnOnce(T) -> Result<U, BioMcpError>,
 {
     let Some(execution) = execution else {
-        return future.await.map(Some);
+        return future.await.and_then(commit).map(Some);
     };
-    let Some(started) = execution.reserve(route) else {
-        execution.record_not_attempted(route, source);
+    let unit = match first_unit.take() {
+        Some(unit) => Some(unit),
+        None => execution.begin_provider_unit(route, source).await,
+    };
+    let Some(unit) = unit else {
         return Ok(None);
     };
-    let result = future.await;
+    let result = future.await.and_then(commit);
     match &result {
-        Ok(_) => execution.record(route, source, started, "ok", 1),
-        Err(error) => execution.record_error(route, source, started, error),
+        Ok(_) => unit.record("ok", 1),
+        Err(error) => unit.record_error(error),
     }
     result.map(Some)
 }
 
-fn record_variant_client_error(
-    execution: Option<&super::variant_search::VariantArticleExecutionContext>,
+async fn first_variant_article_unit<'a>(
+    execution: Option<&'a super::variant_search::VariantArticleExecutionContext>,
     route: &str,
     source: &str,
-    error: &BioMcpError,
-) {
-    let Some(execution) = execution else { return };
-    match execution.reserve(route) {
-        Some(started) => execution.record_error(route, source, started, error),
-        None => execution.record_not_attempted(route, source),
+) -> Option<VariantArticleProviderUnit<'a>> {
+    match execution {
+        Some(execution) => execution.begin_provider_unit(route, source).await,
+        None => None,
+    }
+}
+
+async fn variant_article_client<'a, T, F>(
+    execution: Option<&'a super::variant_search::VariantArticleExecutionContext>,
+    route: &str,
+    source: &str,
+    future: F,
+) -> Result<(T, Option<VariantArticleProviderUnit<'a>>), BioMcpError>
+where
+    F: std::future::Future<Output = Result<T, BioMcpError>>,
+{
+    let unit = first_variant_article_unit(execution, route, source).await;
+    if execution.is_some() && unit.is_none() {
+        return Err(BioMcpError::Api {
+            api: source.into(),
+            message: "variant article provider work was not admitted".into(),
+        });
+    }
+    match future.await {
+        Ok(client) => Ok((client, unit)),
+        Err(error) => {
+            if let Some(unit) = unit {
+                unit.record_error(&error);
+            }
+            Err(error)
+        }
     }
 }
 
@@ -145,16 +226,13 @@ pub(super) async fn search_pubmed_page_with_context(
         None => build_pubmed_search_term(filters)?,
     };
     let (normalized_date_from, normalized_date_to) = normalized_date_bounds(filters)?;
-    let client = match match execution {
-        Some(execution) => PubMedClient::new_with_deadline(execution.deadline()).await,
-        None => PubMedClient::new(),
-    } {
-        Ok(client) => client,
-        Err(error) => {
-            record_variant_client_error(execution, route, "pubmed", &error);
-            return Err(error);
+    let (client, mut first_unit) = variant_article_client(execution, route, "pubmed", async {
+        match execution {
+            Some(execution) => PubMedClient::new_with_deadline(execution.deadline()).await,
+            None => PubMedClient::new(),
         }
-    };
+    })
+    .await?;
 
     let mut out: Vec<ArticleSearchResult> = Vec::with_capacity(limit.min(10));
     let mut seen_pmids: HashSet<String> = HashSet::with_capacity(limit.min(10));
@@ -175,6 +253,7 @@ pub(super) async fn search_pubmed_page_with_context(
             execution,
             route,
             "pubmed",
+            &mut first_unit,
             client.esearch(&PubMedESearchParams {
                 term: term.clone(),
                 retstart: batch_start,
@@ -182,46 +261,52 @@ pub(super) async fn search_pubmed_page_with_context(
                 date_from: normalized_date_from.clone(),
                 date_to: normalized_date_to.clone(),
             }),
+            |response| {
+                if total.is_none() {
+                    total = Some(response.count as usize);
+                }
+                Ok(response)
+            },
         )
         .await?
         else {
             break;
         };
-        if total.is_none() {
-            total = Some(response.count as usize);
-            if total.is_some_and(|value| offset >= value) {
-                return Ok(SearchPage::offset(Vec::new(), total));
-            }
+        if total.is_some_and(|value| offset >= value) {
+            return Ok(SearchPage::offset(Vec::new(), total));
         }
         if response.idlist.is_empty() {
             break;
         }
 
         let batch_len = response.idlist.len();
-        let Some(entries) = variant_article_request(
+        let Some(()) = variant_article_request(
             execution,
             route,
             "pubmed",
+            &mut first_unit,
             client.esummary(&response.idlist),
+            |entries| {
+                append_pubmed_entries(
+                    entries,
+                    filters,
+                    normalized_date_from.as_deref(),
+                    normalized_date_to.as_deref(),
+                    limit,
+                    offset,
+                    PubMedAppendState {
+                        out: &mut out,
+                        seen_pmids: &mut seen_pmids,
+                        visible_skipped: &mut visible_skipped,
+                        source_position: &mut source_position,
+                    },
+                )
+            },
         )
         .await?
         else {
             break;
         };
-        append_pubmed_entries(
-            entries,
-            filters,
-            normalized_date_from.as_deref(),
-            normalized_date_to.as_deref(),
-            limit,
-            offset,
-            PubMedAppendState {
-                out: &mut out,
-                seen_pmids: &mut seen_pmids,
-                visible_skipped: &mut visible_skipped,
-                source_position: &mut source_position,
-            },
-        )?;
         // Once a strict page has made page-eligible PMIDs visible, keep their
         // verification capacity before fetching another discovery page.
         if let Some(execution) = execution {
@@ -299,16 +384,13 @@ pub(super) async fn search_europepmc_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    let europe = match match execution {
-        Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
-        None => EuropePmcClient::new(),
-    } {
-        Ok(client) => client,
-        Err(error) => {
-            record_variant_client_error(execution, route, "europepmc", &error);
-            return Err(error);
+    let (europe, mut first_unit) = variant_article_client(execution, route, "europepmc", async {
+        match execution {
+            Some(execution) => EuropePmcClient::new_with_deadline(execution.deadline()).await,
+            None => EuropePmcClient::new(),
         }
-    };
+    })
+    .await?;
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_search_query(filters)?,
@@ -330,55 +412,60 @@ pub(super) async fn search_europepmc_page_with_context(
                 "article search is deep (>{WARN_PAGE_THRESHOLD} page fetches); continuing up to {MAX_PAGE_FETCHES} — consider narrowing your query"
             );
         }
-        let Some(resp) = variant_article_request(
+        let Some((offset_beyond_total, empty)) = variant_article_request(
             execution,
             route,
             "europepmc",
+            &mut first_unit,
             europe.search_query_with_sort(&query, page, EUROPE_PMC_PAGE_SIZE, europepmc_sort),
+            |resp| {
+                if total.is_none() {
+                    total = resp.hit_count.map(|v| v as usize);
+                }
+                if total.is_some_and(|value| offset >= value) {
+                    return Ok((true, false));
+                }
+                let Some(results) = resp.result_list.map(|v| v.result) else {
+                    return Ok((false, true));
+                };
+                let empty = results.is_empty();
+                for hit in results {
+                    if local_skip > 0 {
+                        local_skip -= 1;
+                        continue;
+                    }
+                    let Some(mut row) = transform::article::from_europepmc_search_result(&hit)
+                    else {
+                        continue;
+                    };
+                    if !matches_result_filters(
+                        &row,
+                        filters,
+                        normalized_date_from.as_deref(),
+                        normalized_date_to.as_deref(),
+                    ) || !seen_pmids.insert(row.pmid.clone())
+                    {
+                        continue;
+                    }
+                    row.source_local_position = source_position;
+                    source_position = source_position.saturating_add(1);
+                    out.push(row);
+                    if out.len() >= limit {
+                        break;
+                    }
+                }
+                Ok((false, empty))
+            },
         )
         .await?
         else {
             break;
         };
-        if total.is_none() {
-            total = resp.hit_count.map(|v| v as usize);
-            if total.is_some_and(|value| offset >= value) {
-                return Ok(SearchPage::offset(Vec::new(), total));
-            }
+        if offset_beyond_total {
+            return Ok(SearchPage::offset(Vec::new(), total));
         }
-        let Some(results) = resp.result_list.map(|v| v.result) else {
+        if empty {
             break;
-        };
-        if results.is_empty() {
-            break;
-        }
-
-        for hit in results {
-            if local_skip > 0 {
-                local_skip -= 1;
-                continue;
-            }
-
-            let Some(mut row) = transform::article::from_europepmc_search_result(&hit) else {
-                continue;
-            };
-            if !matches_result_filters(
-                &row,
-                filters,
-                normalized_date_from.as_deref(),
-                normalized_date_to.as_deref(),
-            ) {
-                continue;
-            }
-            if !seen_pmids.insert(row.pmid.clone()) {
-                continue;
-            }
-            row.source_local_position = source_position;
-            source_position = source_position.saturating_add(1);
-            out.push(row);
-            if out.len() >= limit {
-                break;
-            }
         }
 
         if total.is_some_and(|value| page.saturating_mul(EUROPE_PMC_PAGE_SIZE) >= value) {
@@ -395,41 +482,43 @@ pub(super) async fn search_europepmc_page_with_context(
         && !out.iter().any(|row| row.is_retracted == Some(true))
     {
         let retracted_query = format!("({query}) AND PUB_TYPE:\"retracted publication\"");
-        if let Ok(Some(resp)) = variant_article_request(
+        let _ = variant_article_request(
             execution,
             route,
             "europepmc",
+            &mut first_unit,
             europe.search_query_with_sort(&retracted_query, 1, 10, europepmc_sort),
+            |resp| {
+                let replacement = resp
+                    .result_list
+                    .map(|v| v.result)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter_map(|hit| transform::article::from_europepmc_search_result(&hit))
+                    .find(|row| {
+                        row.is_retracted == Some(true)
+                            && !seen_pmids.contains(&row.pmid)
+                            && matches_result_filters(
+                                row,
+                                filters,
+                                normalized_date_from.as_deref(),
+                                normalized_date_to.as_deref(),
+                            )
+                    });
+                if let Some(mut row) = replacement {
+                    if out.len() >= limit && !out.is_empty() {
+                        out.pop();
+                    }
+                    if out.len() < limit {
+                        row.source_local_position = out.len();
+                        seen_pmids.insert(row.pmid.clone());
+                        out.push(row);
+                    }
+                }
+                Ok(())
+            },
         )
-        .await
-        {
-            let replacement = resp
-                .result_list
-                .map(|v| v.result)
-                .unwrap_or_default()
-                .into_iter()
-                .filter_map(|hit| transform::article::from_europepmc_search_result(&hit))
-                .find(|row| {
-                    row.is_retracted == Some(true)
-                        && !seen_pmids.contains(&row.pmid)
-                        && matches_result_filters(
-                            row,
-                            filters,
-                            normalized_date_from.as_deref(),
-                            normalized_date_to.as_deref(),
-                        )
-                });
-            if let Some(mut row) = replacement {
-                if out.len() >= limit && !out.is_empty() {
-                    out.pop();
-                }
-                if out.len() < limit {
-                    row.source_local_position = out.len();
-                    seen_pmids.insert(row.pmid.clone());
-                    out.push(row);
-                }
-            }
-        }
+        .await;
     }
 
     Ok(SearchPage::offset(out, total))
@@ -451,16 +540,13 @@ pub(super) async fn search_pubtator_page_with_context(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SearchPage<ArticleSearchResult>, BioMcpError> {
-    let pubtator = match match execution {
-        Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
-        None => PubTatorClient::new(),
-    } {
-        Ok(client) => client,
-        Err(error) => {
-            record_variant_client_error(execution, route, "pubtator", &error);
-            return Err(error);
+    let (pubtator, mut first_unit) = variant_article_client(execution, route, "pubtator", async {
+        match execution {
+            Some(execution) => PubTatorClient::new_with_deadline(execution.deadline()).await,
+            None => PubTatorClient::new(),
         }
-    };
+    })
+    .await?;
     let query = match strict_query {
         Some(query) => query.to_string(),
         None => build_pubtator_query(filters, &pubtator).await?,
@@ -477,52 +563,57 @@ pub(super) async fn search_pubtator_page_with_context(
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
-        let Some(resp) = variant_article_request(
+        let Some((offset_beyond_total, empty)) = variant_article_request(
             execution,
             route,
             "pubtator",
+            &mut first_unit,
             pubtator.search(&query, page, PUBTATOR_PAGE_SIZE, sort),
+            |resp| {
+                if total.is_none() {
+                    total = resp.count.map(|v| v as usize);
+                }
+                if total.is_some_and(|value| offset >= value) {
+                    return Ok((true, false));
+                }
+                let empty = resp.results.is_empty();
+                for hit in resp.results {
+                    if local_skip > 0 {
+                        local_skip -= 1;
+                        continue;
+                    }
+                    let Some(mut row) = transform::article::from_pubtator_search_result(&hit)
+                    else {
+                        continue;
+                    };
+                    if !matches_result_filters(
+                        &row,
+                        filters,
+                        normalized_date_from.as_deref(),
+                        normalized_date_to.as_deref(),
+                    ) || !seen_pmids.insert(row.pmid.clone())
+                    {
+                        continue;
+                    }
+                    row.source_local_position = source_position;
+                    source_position = source_position.saturating_add(1);
+                    out.push(row);
+                    if out.len() >= limit {
+                        break;
+                    }
+                }
+                Ok((false, empty))
+            },
         )
         .await?
         else {
             break;
         };
-        if total.is_none() {
-            total = resp.count.map(|v| v as usize);
-            if total.is_some_and(|value| offset >= value) {
-                return Ok(SearchPage::offset(Vec::new(), total));
-            }
+        if offset_beyond_total {
+            return Ok(SearchPage::offset(Vec::new(), total));
         }
-
-        if resp.results.is_empty() {
+        if empty {
             break;
-        }
-
-        for hit in resp.results {
-            if local_skip > 0 {
-                local_skip -= 1;
-                continue;
-            }
-            let Some(mut row) = transform::article::from_pubtator_search_result(&hit) else {
-                continue;
-            };
-            if !matches_result_filters(
-                &row,
-                filters,
-                normalized_date_from.as_deref(),
-                normalized_date_to.as_deref(),
-            ) {
-                continue;
-            }
-            if !seen_pmids.insert(row.pmid.clone()) {
-                continue;
-            }
-            row.source_local_position = source_position;
-            source_position = source_position.saturating_add(1);
-            out.push(row);
-            if out.len() >= limit {
-                break;
-            }
         }
         if total.is_some_and(|value| page.saturating_mul(PUBTATOR_PAGE_SIZE) >= value) {
             break;
@@ -540,16 +631,16 @@ pub(super) async fn search_semantic_scholar_candidates(
     route: &str,
     strict_query: Option<&str>,
 ) -> Result<SemanticScholarCandidateOutcome, BioMcpError> {
-    let client = match match execution {
-        Some(execution) => SemanticScholarClient::new_with_deadline(execution.deadline()).await,
-        None => SemanticScholarClient::new(),
-    } {
-        Ok(client) => client,
-        Err(error) => {
-            record_variant_client_error(execution, route, "semanticscholar", &error);
-            return Err(error);
-        }
-    };
+    let (client, mut first_unit) =
+        variant_article_client(execution, route, "semanticscholar", async {
+            match execution {
+                Some(execution) => {
+                    SemanticScholarClient::new_with_deadline(execution.deadline()).await
+                }
+                None => SemanticScholarClient::new(),
+            }
+        })
+        .await?;
     let auth_mode = client.auth_mode();
     let status = semantic_scholar_status(auth_mode);
 
@@ -573,7 +664,16 @@ pub(super) async fn search_semantic_scholar_candidates(
             execution,
             route,
             "semanticscholar",
+            &mut first_unit,
             client.paper_search_bulk(&query, limit),
+            |response| {
+                Ok(semantic_scholar_rows_from_response(
+                    filters,
+                    normalized_date_from.as_deref(),
+                    normalized_date_to.as_deref(),
+                    response,
+                ))
+            },
         )
         .await
     } else {
@@ -581,7 +681,16 @@ pub(super) async fn search_semantic_scholar_candidates(
             execution,
             route,
             "semanticscholar",
+            &mut first_unit,
             client.paper_search(&query, limit, year_filter.as_deref()),
+            |response| {
+                Ok(semantic_scholar_rows_from_response(
+                    filters,
+                    normalized_date_from.as_deref(),
+                    normalized_date_to.as_deref(),
+                    response,
+                ))
+            },
         )
         .await
     };
@@ -590,12 +699,7 @@ pub(super) async fn search_semantic_scholar_candidates(
         Ok(None) | Err(_) => return Ok(semantic_scholar_unavailable_outcome(auth_mode)),
     };
 
-    let rows = semantic_scholar_rows_from_response(
-        filters,
-        normalized_date_from.as_deref(),
-        normalized_date_to.as_deref(),
-        response,
-    );
+    let rows = response;
     Ok(SemanticScholarCandidateOutcome { rows, status })
 }
 
