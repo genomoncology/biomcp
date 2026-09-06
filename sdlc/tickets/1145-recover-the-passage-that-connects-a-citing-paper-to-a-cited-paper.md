@@ -67,10 +67,14 @@ match has been found.
 Resolve the two seeds with at most two existing Semantic Scholar batch
 requests; PMCID inputs may additionally retain one existing Europe PMC bridge
 lookup apiece. The graph phase has a ten-second deadline in addition to its
-three-request cap. The complete command, including the optional JATS request
-and blocking parse, has a twenty-second deadline. A deadline or the 300-edge
-cap reached while the provider still advertises another page is a bounded
-Semantic Scholar unavailable error, not proof that the edge is absent. An
+three-request cap. The complete command, including seed resolution, the
+optional JATS request, and blocking parse, has one monotonic twenty-two-second
+response deadline. The graph deadline is the earlier of ten seconds after its
+first request and the remaining command deadline; every later admission uses
+the same absolute command instant rather than restarting a duration. A graph
+deadline or the 300-edge cap reached while the provider still advertises
+another page is a bounded Semantic Scholar unavailable command error, not
+proof that the edge is absent. An
 exhausted search with no match constructs the existing
 `BioMcpError::NotFound` with entity `directed citation`, ID
 `<citing-id> -> <cited-id>`, and the suggestion below. Its exact rendered
@@ -139,18 +143,35 @@ do not differ. PMCIDs are Unicode-trimmed, ASCII-uppercased, may have one
 compare titles, or use untyped free text.
 
 A lower-priority identifier match is rejected when that same `<ref>` contains
-a conflicting valid higher-priority identifier. Zero matching references, or
-more than one distinct `<ref>` matching at the winning precedence, produces
-`reference_unresolved`. Duplicate copies of the same normalized identifier
-inside one `<ref>` do not make it ambiguous. The selected `<ref>` must have one
-nonblank `id`; XML ID and `rid` comparison is exact and case-sensitive after
-Unicode trimming.
+a conflicting valid higher-priority identifier. At the winning precedence, a
+candidate `<ref>` must contain exactly one distinct normalized identifier for
+that class and it must equal the resolved cited identifier. Thus a target DOI
+plus a different valid DOI in one reference, including one split between
+`pub-id` and typed `ext-link`, fails closed; the identical rule applies to PMID
+and PMCID. Repeated copies of the same normalized identifier inside one `<ref>`
+remain one distinct value and are allowed. Zero matching references, or more
+than one distinct `<ref>` matching at the winning precedence, produces
+`reference_unresolved`.
+
+The selected `<ref>` must have exactly one Unicode-trimmed nonblank `id`, and
+that exact trimmed ID must occur on exactly one `<ref>` descendant of every
+`ref-list` in the document. A second reference carrying the same ID makes the
+selection `reference_unresolved` even when only one of those references
+matches the cited identifier. ID and `rid` comparison remains exact and
+case-sensitive after Unicode trimming. Tests use conflicting valid identifiers
+and duplicate IDs containing pipes, quotes, backticks, dollar signs,
+semicolons, ampersands, and non-ASCII scalars; these values may only cause the
+closed outcome and cannot enter Markdown, commands, evidence URLs, or public
+errors.
 
 ## Markers, passage scope, order, and bounds
 
 An eligible marker is an `<xref ref-type="bibr">` in the article `<body>`.
 Split `rid` on Unicode whitespace. It is unambiguous only when the distinct
-nonblank token set contains exactly the selected reference ID. A grouped
+nonblank token set contains exactly the selected reference ID. Its normalized
+inline text must also be nonblank. An empty element, whitespace-only text, or
+markup whose normalized text is empty is ineligible before paragraph recovery
+or truncation and therefore supplies no structural insertion point. A grouped
 marker naming the target plus another reference is ignored. Adjacent separate
 single-target `<xref>` elements remain eligible; markup grouping alone does not
 make them ambiguous. Missing `rid`, a different case, or a dangling ID never
@@ -191,14 +212,36 @@ Each passage carries this exact locator:
 titles after the same text normalization. `paragraph` is the one-based ordinal
 among all eligible body paragraphs, including eligible paragraphs without a
 citation. `marker` is the normalized inline text of the first eligible target
-marker and may be empty. These locators and the canonical Europe PMC
+marker and is therefore nonblank. These locators and the canonical Europe PMC
 `/<PMCID>/fullTextXML` evidence URL allow source inspection without claiming a
 stable browser line number.
 
 If the reference resolves but no eligible unambiguous marker reaches an
 eligible paragraph, return `citation_marker_unlinked`. Grouped-only markers,
-markers outside the allowed scope, and markers whose paragraph becomes blank
-all take that state.
+empty-text markers, markers outside the allowed scope, and markers whose
+paragraph becomes blank all take that state. In a paragraph longer than 1,200
+scalars, an empty target marker is still ignored: if no nonblank target marker
+exists, no slice is constructed; if one exists later, its first normalized
+scalar alone supplies the truncation anchor.
+
+## Deadline and blocking-parser settlement
+
+The twenty-two-second value is a response deadline, not a claim that Tokio can
+cancel an already running `spawn_blocking` closure. The JATS extractor reuses
+the current blocking-parser architecture, but admission is guarded by one
+process-wide owned semaphore permit. Acquire that permit within the remaining
+command deadline and move it into the blocking closure. Await the join handle
+only until the same absolute deadline. If admission or waiting expires, return
+the ordinary bounded command deadline error with exit 1; do not emit a
+five-state evidence object. Dropping the join handle does not pretend to stop
+the worker: the worker may finish after the response, retains the sole permit
+until then, and its result is discarded. It performs pure parsing over owned,
+already bounded bytes, makes no request, writes no cache or file, mutates no
+shared result, and emits no output. A second command cannot admit another JATS
+worker while it is still alive and reaches its own absolute deadline normally.
+Success, parse failure, panic, and late completion each release the permit
+exactly once. This bounded one-worker exception is the complete cancellation
+contract; network futures and graph work must not outlive the response.
 
 ## Frozen JSON and messages
 
@@ -256,9 +299,11 @@ does not. The Europe PMC status remains `unavailable` whenever the outcome is
 omitted.
 
 Invalid input, unresolved seeds, directed-edge not-found, malformed Semantic
-Scholar pagination, Semantic Scholar transport/decode failure, and graph
-budget/deadline exhaustion remain command errors with the existing JSON error
-envelope and exit 1. The five states are successful, exit-0 evidence outcomes.
+Scholar pagination, Semantic Scholar transport/decode failure, graph
+budget/deadline exhaustion, and expiration of the absolute twenty-two-second
+command deadline during JATS admission or parsing remain command errors with
+the existing JSON error envelope and exit 1. The five states are successful,
+exit-0 evidence outcomes reached before that deadline.
 Full-text transport/decode details are bounded into the exact public
 `fulltext_unavailable` message. JSON and Markdown must not contain injected
 provider error sentinels.
@@ -349,12 +394,16 @@ file.
    malformed offset/next matrix from 1144 is applied to this traversal.
 2. Pure JATS tests cover both verified documents plus DOI/PMID/PMCID precedence,
    every normalization rule, conflicting higher-priority IDs, zero/multiple
-   refs, duplicate IDs in one ref, missing/blank IDs, case-sensitive `rid`,
-   grouped and adjacent markers, dangling markers, excluded scopes, nested
-   section paths, paragraph ordinals, document-order retention, paragraph
-   dedupe, equal-text non-dedupe, exact 1,199/1,200/1,201-scalar boundaries,
-   three/four-passage truncation, malformed/oversized/node-limit XML, and blank
-   recovered text.
+   refs, same-precedence target-plus-other DOI/PMID/PMCID values, identical
+   normalized duplicates in one ref, selected IDs duplicated on otherwise
+   unrelated refs, missing/blank IDs, hostile identifier/ID text,
+   case-sensitive `rid`, grouped and adjacent markers, dangling markers,
+   excluded scopes, nested section paths, paragraph ordinals, document-order
+   retention, paragraph dedupe, equal-text non-dedupe, exact
+   1,199/1,200/1,201-scalar boundaries, empty/whitespace-only marker text at
+   those boundaries, an empty marker followed by a nonblank marker on each side
+   of the truncation clamp, three/four-passage truncation,
+   malformed/oversized/node-limit XML, and blank recovered text.
 3. Executable CLI Markdown and JSON cover all five statuses, default provider
    precedence, `--fulltext` success and failure despite useful provider
    context, the two verified JATS examples, exact messages/nullability/source
@@ -385,7 +434,16 @@ file.
    contextless and forced calls make exactly one; a first-page match never
    fetches `next`; not-found follows only advertised offsets; malformed pages
    emit no evidence; and construction itself performs no hidden request.
-8. Update CLI help, `biomcp list article`, user/reference documentation, and
+8. A paused-clock, test-only parser seam blocks after acquiring the real
+   process-wide JATS-worker permit. Advancing to the exact twenty-two-second
+   absolute boundary proves the command returns the bounded deadline error; a
+   second command admits no worker and independently reaches its deadline;
+   releasing the first barrier proves one late pure worker settles, releases
+   the permit exactly once, produces no output/state/file mutation, and leaves
+   no worker or permit held. Companion success, parse-error, and panic cases
+   prove ordinary settlement. This seam replaces only the blocking parse
+   function, not deadline, semaphore, HTTP, traversal, or outcome code.
+9. Update CLI help, `biomcp list article`, user/reference documentation, and
    the executable article spec with the exact five states, best-effort bounds,
    `--fulltext`, and the non-interpretive limitation. Run focused Rust,
    Python, MCP, and mustmatch checks, then `make lint`, `make test`, and
@@ -430,3 +488,10 @@ The initial design established the five outcome names but left traversal,
 JATS identity, bounds, nullability, ownership, MCP coverage, and its interaction
 with 1144 open. This revision freezes those contracts and awaits independent
 design re-review before implementation.
+
+The first independent review rejected three remaining ambiguities. This
+revision makes multiple distinct same-precedence identifiers and duplicate
+selected reference IDs fail closed, makes normalized-empty markers ineligible
+before bounded passage slicing, and defines the twenty-two-second absolute
+response deadline plus the single-permit late-settling `spawn_blocking`
+exception and its deterministic proof. A fresh design re-review is pending.
