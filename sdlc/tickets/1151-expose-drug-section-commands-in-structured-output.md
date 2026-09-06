@@ -240,4 +240,10 @@ or pageable-report behavior.
 The initial draft was rejected because “not loaded,” ordering, cap, region
 safety, recovery precedence, batch ownership, and executable MCP evidence were
 not specified. This revision freezes those contracts against current
-production parsing/rendering and awaits independent design review.
+production parsing/rendering.
+
+The independent re-review accepted the revised design at `90ce92c5`. It
+confirmed the exact region-safe selection and deduplication rules, shared
+single/batch projection owner, complete production-path CLI/raw-MCP/typed-MCP
+acceptance matrix, hostile-identity round trip, unchanged schema and inventory,
+narrow exclusions, and the now-landed dependency on ticket 1161.
