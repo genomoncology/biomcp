@@ -470,14 +470,18 @@ The following root fsync establishes crash durability.
 Failure before the state rename leaves the old state authoritative and the
 current ordinary call uses its already-held old-generation lease (stale on a
 due refresh), while explicit sync fails nonzero. Failure of the root fsync
-after a successful rename cannot be rolled back: the leader reports its current
-ordinary call from the pre-refresh lease as refresh-failed (or unavailable if
-there was no generation), and explicit sync fails nonzero, but a subsequent
+after a successful rename cannot be rolled back. The ordinary leader discards
+its pre-refresh fallback for presentation, reloads and leases the generation
+named by the namespace-visible new state, and reports that new state's normal
+success row. In the `304` case it likewise reports the advanced visible state.
+It must not render old validators, timestamps, assertions, or status after the
+rename. Explicit sync still exits nonzero because that command promises a
+durable update, and the root fsync did not establish it. A subsequent
 non-crashed call reloads the namespace-visible new state and uses it. After a
 crash at that point, startup may observe the complete old or new state; it
 validates whichever is visible and never combines them. A later retry of root
-fsync may make the rename durable, but public success is not retroactively
-reported.
+fsync may make the rename durable, but it does not alter the already truthful
+ordinary response or turn the failed explicit-sync invocation into success.
 
 A `304` and a failed-attempt update use the same temporary-file fsync,
 rename-linearization, and root-fsync rules for state only. If a failure-state
@@ -497,7 +501,7 @@ The state-update failure matrix is normative:
 | before generation rename | old state/generation, or none | stale old result / unavailable | reloads old/none; retry follows persisted attempt state | old/none |
 | generation renamed+directory fsynced; before state rename | old state; new generation is inactive | stale old result / unavailable | reloads old; orphan is cleanup/recovery input, never active by implication | valid old state wins; scan only if state requires recovery |
 | state temporary fsynced; before state rename | old state | stale old result / unavailable | reloads old | old |
-| state rename succeeded; root fsync failed | new namespace-visible state | stale pre-refresh leased result / unavailable; explicit sync nonzero | reloads and uses new state | complete old or new state, never mixed |
+| state rename succeeded; root fsync failed | new namespace-visible state | reloads and reports the new visible state; explicit sync nonzero | reloads and uses new state | complete old or new state, never mixed |
 | state rename and root fsync succeeded | new durable state | new result | new result | new |
 | failure-attempt state update failed before rename | prior state | underlying stale/unavailable failure, no suppression claim | prior state decides eligibility | prior state |
 | failure-attempt state renamed; root fsync failed | new namespace-visible failure state | underlying stale/unavailable failure, no durable-suppression claim | suppresses from new `attempted_at` | old or new failure state; whichever validates decides |
@@ -505,6 +509,36 @@ The state-update failure matrix is normative:
 “Stale old result” includes its prior assertions only when positive and uses
 the exact stale-failed mapping; zero remains unavailable. None of these storage
 failures issues a second provider GET inside the same call.
+
+For root-fsync failure after state rename, this public-status matrix is also
+normative. `D` and `E` mean conclusive positive and zero matches respectively;
+the source/message columns are those of the referenced complete truth-table
+row. “Next” and “restart” mean an immediate call at the same injected wall-clock
+instant. A restart genuinely may expose either directory entry because the
+root fsync failed, so the last column names both deterministic branches instead
+of pretending one is durable. In an old-state branch the first post-restart
+call performs exactly the ordinary due/first-use decision (and therefore may
+make one GET); its ultimate row is fixed by that request outcome in the
+complete truth table below.
+
+| renamed state update | state before update | current ordinary call | next non-crashed call | first call after restart |
+|---|---|---|---|---|
+| replacement `200`, D | old generation | `fresh/data/conditional_refresh`, `data`, `["GenCC"]`, null | `fresh/data/local_query`, `data`, `["GenCC"]`, null | new visible: `fresh/data/local_query`; old visible: old generation is due and follows a due conditional-request row |
+| replacement `200`, E | old generation | `fresh/empty/conditional_refresh`, `empty`, `["GenCC"]`, null | `fresh/empty/local_query`, `empty`, `["GenCC"]`, null | new visible: `fresh/empty/local_query`; old visible: old generation is due and follows a due conditional-request row |
+| first `200`, D | none | `fresh/data/initial_download`, `data`, `["GenCC"]`, null | `fresh/data/local_query`, `data`, `["GenCC"]`, null | new visible: `fresh/data/local_query`; old/missing visible: follows a no-generation first-use row |
+| first `200`, E | none | `fresh/empty/initial_download`, `empty`, `["GenCC"]`, null | `fresh/empty/local_query`, `empty`, `["GenCC"]`, null | new visible: `fresh/empty/local_query`; old/missing visible: follows a no-generation first-use row |
+| valid `304`, D | due generation | `fresh/data/conditional_refresh`, `data`, `["GenCC"]`, null | `fresh/data/local_query`, `data`, `["GenCC"]`, null | new visible: `fresh/data/local_query`; old visible: same generation is due and follows a due conditional-request row |
+| valid `304`, E | due generation | `fresh/empty/conditional_refresh`, `empty`, `["GenCC"]`, null | `fresh/empty/local_query`, `empty`, `["GenCC"]`, null | new visible: `fresh/empty/local_query`; old visible: same generation is due and follows a due conditional-request row |
+| failed-attempt update | old generation, D | `stale/data/conditional_refresh`, `degraded`, `["GenCC"]`, stale-failed | `stale/data/retry_suppressed`, `degraded`, `["GenCC"]`, stale-failed | new visible: the retry-suppressed row; old visible: eligible due refresh and its resulting due row |
+| failed-attempt update | old generation, E | `stale/empty/conditional_refresh`, `unavailable`, `[]`, stale-failed | `stale/empty/retry_suppressed`, `unavailable`, `[]`, stale-failed | new visible: the retry-suppressed row; old visible: eligible due refresh and its resulting due row |
+| failed-attempt update | none | `unavailable/unknown/initial_download`, `unavailable`, `[]`, unavailable | `unavailable/unknown/retry_suppressed`, `unavailable`, `[]`, unavailable | new visible: the retry-suppressed row; old/missing visible: eligible no-generation first use and its resulting row |
+
+Every current and next-call row above reads `checked_at`, `attempted_at`,
+`retrieved_at`, validators, and assertions wholly from the named visible state
+and manifest. In particular, the current failed-attempt row reads the newly
+visible `attempted_at` even though its operation truthfully says that this call
+performed `conditional_refresh` or `initial_download`; only a later call says
+`retry_suppressed`.
 
 Startup validates `state.json`, then validates its referenced finalized
 generation by manifest and hashes. If state is missing/corrupt or references an
@@ -752,8 +786,10 @@ to design review rather than deleting an opportunistic unrelated file.
   and no live work or temp files after success/timeout/cancellation. Crash
   injection before and after each file/directory fsync, generation rename,
   state rename, and cleanup recovers only a complete old or new generation and
-  proves the exact current/next/restart matrix, failure-attempt persistence,
-  deterministic fallback ordering, and the shared/refcounted generation lease.
+  proves the exact current/next/restart matrix—including root-fsync failure
+  after replacement `200` with old data or no generation, `304`, and
+  failure-state rename—failure-attempt persistence, deterministic fallback
+  ordering, and the shared/refcounted generation lease.
   The three-generation in-process and subprocess cases keep a G1 snapshot
   readable across G2/G3 publication and defer its deletion until lease release.
 - CLI direct/all/batch Markdown/JSON, raw MCP text/JSON, typed MCP, help/list,
@@ -799,6 +835,13 @@ the implementation base.
   crash outcomes, shared/refcounted per-generation leases with a
   three-generation test, always-null version semantics, deterministic
   default/override bootstrap locking and zero-request failures, a named
-  nine-for-nine package plan, and canonical duplicate comparison. Pending fresh
+  nine-for-nine package plan, and canonical duplicate comparison.
+- Third design review rejected one remaining contradiction: state rename was
+  the declared namespace authority, but the current ordinary caller still
+  rendered its old lease after a post-rename root-fsync failure. This revision
+  consistently makes the namespace-visible state authoritative immediately
+  after rename, keeps explicit sync's durability failure nonzero, and gives
+  exact current/next/restart public-status rows for replacement `200`, `304`,
+  and failed-attempt updates with and without old data. Pending fresh
   independent design re-review.
 - Code review: pending.
