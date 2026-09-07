@@ -255,6 +255,11 @@ pub(super) async fn search_pubmed_page_with_context(
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
+        if fetched_pages > 1
+            && let Some(execution) = execution
+        {
+            execution.add_route_unit(route, "pubmed");
+        }
         if fetched_pages == WARN_PAGE_THRESHOLD + 1 {
             tracing::warn!(
                 "article search is deep (>{WARN_PAGE_THRESHOLD} page fetches); continuing up to {MAX_PAGE_FETCHES} — consider narrowing your query"
@@ -292,6 +297,9 @@ pub(super) async fn search_pubmed_page_with_context(
         }
 
         let batch_len = response.idlist.len();
+        if let Some(execution) = execution {
+            execution.add_route_unit(route, "pubmed");
+        }
         let Some(()) = variant_article_request(
             execution,
             route,
@@ -419,6 +427,11 @@ pub(super) async fn search_europepmc_page_with_context(
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
+        if fetched_pages > 1
+            && let Some(execution) = execution
+        {
+            execution.add_route_unit(route, "europepmc");
+        }
         if fetched_pages == WARN_PAGE_THRESHOLD + 1 {
             tracing::warn!(
                 "article search is deep (>{WARN_PAGE_THRESHOLD} page fetches); continuing up to {MAX_PAGE_FETCHES} — consider narrowing your query"
@@ -493,6 +506,9 @@ pub(super) async fn search_europepmc_page_with_context(
         && filters.sort == ArticleSort::Date
         && !out.iter().any(|row| row.is_retracted == Some(true))
     {
+        if let Some(execution) = execution {
+            execution.add_route_unit(route, "europepmc");
+        }
         let retracted_query = format!("({query}) AND PUB_TYPE:\"retracted publication\"");
         let _ = variant_article_request(
             execution,
@@ -575,6 +591,11 @@ pub(super) async fn search_pubtator_page_with_context(
     let mut fetched_pages = 0usize;
     while out.len() < limit && fetched_pages < MAX_PAGE_FETCHES {
         fetched_pages = fetched_pages.saturating_add(1);
+        if fetched_pages > 1
+            && let Some(execution) = execution
+        {
+            execution.add_route_unit(route, "pubtator");
+        }
         let Some((offset_beyond_total, empty)) = variant_article_request(
             execution,
             route,

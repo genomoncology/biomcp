@@ -14,6 +14,17 @@
       }
     },
     {
+      "path": "src/cache/migration.rs",
+      "baseline_lines": 1086,
+      "floor_lines": 927,
+      "authorized_increase": {
+        "ticket": "1150",
+        "delta": 159,
+        "reason": "Keep deadline-raced epoch filesystem operations, staging cleanup ownership, and deterministic expiry tests beside the cache epoch implementation.",
+        "removal_condition": "Extract cache epoch deadline adapters when package-neutral cache test support is available."
+      }
+    },
+    {
       "path": "src/cache/provider_capture.rs",
       "baseline_lines": 1507,
       "floor_lines": 1507,
@@ -61,11 +72,11 @@
     },
     {
       "path": "src/entities/article/variant_search.rs",
-      "baseline_lines": 5657,
+      "baseline_lines": 6116,
       "floor_lines": 4828,
       "authorized_increase": {
         "ticket": "1150",
-        "delta": 829,
+        "delta": 1288,
         "reason": "Invocation deadline ownership, terminal aggregation, debug metadata, and deterministic tests participate directly in the existing variant-literature orchestrator.",
         "removal_condition": "Extract the variant-literature execution ledger when the orchestrator is next decomposed."
       }
@@ -157,11 +168,11 @@
     },
     {
       "path": "src/entities/variant/search/mod.rs",
-      "baseline_lines": 1112,
+      "baseline_lines": 1113,
       "floor_lines": 1000,
       "authorized_increase": {
         "ticket": "1155, 1150",
-        "delta": 112,
+        "delta": 113,
         "reason": "Keep exact-search transcript role assignment, all-or-nothing page accounting, bounded projection, and invocation-deadline propagation beside the existing identity filter and pagination owner without adding a package file beyond the fixed 1300-file boundary.",
         "removal_condition": "Split exact-search result projection when a package-neutral module extraction can preserve the exact 1300-file source package boundary."
       }
