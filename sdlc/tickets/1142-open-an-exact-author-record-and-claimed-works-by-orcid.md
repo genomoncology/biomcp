@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 6
+priority: 4
 deps: [1143]
 ---
 
@@ -14,7 +14,9 @@ works claimed on that record. Both remain exact **ORCID provider records**.
 BioMCP does not infer that an ORCID and a Semantic Scholar author ID identify
 the same person.
 
-The user explicitly approved reversing the network boundary in record 0581.
+The user approved reversing the network boundary on 2026-09-07. ADR
+`sdlc/planning/adr/0001-call-the-orcid-public-api-for-exact-author-records.md`
+records that decision, the options weighed, and the cost accepted.
 When this ticket closes, its durable record must say exactly that it supersedes
 record 0581's “no ORCID API calls; citation-supplied evidence only” prohibition.
 It does not reinstate the deleted orphan client or supersede record 0581's
