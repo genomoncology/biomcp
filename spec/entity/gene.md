@@ -216,7 +216,7 @@ GenCC submission-level gene-disease validity'
 G2P (GENCC:000112)
 PanelApp Australia (GENCC:000111)
 Labcorp Genetics (formerly Invitae) (GENCC:000106)
-[PMID 30239107](https://pubmed.ncbi.nlm.nih.gov/30239107/)'
+[PMID 30239107](<https://pubmed.ncbi.nlm.nih.gov/30239107/>)'
 BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 ../../tools/biomcp-ci --json get gene ODC1 all \
   | jq -e '.gencc.assertions | length == 3' \
   | mustmatch 'true'
@@ -234,16 +234,12 @@ BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE" BIOMCP_CLINGEN_BASE=
   | mustmatch 'true'
 BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache" \
   bash ../fixtures/run-section-outcome-mcp.sh ../.. gencc-surfaces \
-  | mustmatch like 'RAW TEXT
-GenCC gene-disease validity
-G2P (GENCC:000112)
-RAW JSON
-"gencc": {
-"freshness": "fresh"
-TYPED JSON
-"section_outcomes": {
-"gencc": {
-"outcome": "data"'
+  | jq -e '.raw_text | contains("## GenCC gene-disease validity") and contains("G2P (GENCC:000112)")' \
+  | mustmatch 'true'
+BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache" \
+  bash ../fixtures/run-section-outcome-mcp.sh ../.. gencc-surfaces \
+  | jq -e '.raw_json.gencc == .typed_json.gencc and .raw_json.section_outcomes.gencc == {outcome:"data", sources:["GenCC"]} and .typed_json.section_outcomes.gencc == .raw_json.section_outcomes.gencc and (.raw_json.gencc.assertions | map(.submitter.label)) == ["G2P", "PanelApp Australia", "Labcorp Genetics (formerly Invitae)"]' \
+  | mustmatch 'true'
 ```
 
 Health uses a metadata-only HEAD. An explicit sync then revalidates the
@@ -256,7 +252,7 @@ fresh reuse above performs no second download.
   | mustmatch 'true'
 grep -F 'HEAD /gencc/download/action/submissions-export-csv?format=new' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
   | mustmatch like 'format=new'
-../../tools/biomcp-ci --json gencc sync | jq -e '.source == "gencc" and (.updated | not)' | mustmatch 'true'
+../../tools/biomcp-ci --json gencc sync | jq -e '.source == "gencc" and .status == "synchronized" and (.changed | not) and (has("updated") | not)' | mustmatch 'true'
 grep -F 'GET /gencc/download/action/submissions-export-csv?format=new If-None-Match="6ebdbf28b305e99e349ed827a219214b" If-Modified-Since=Sun, 06 Sep 2026 06:00:29 GMT' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
   | mustmatch like 'If-None-Match="6ebdbf28b305e99e349ed827a219214b"'
 test "$(grep -c '^GET /gencc/download/action/submissions-export-csv?format=new' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG")" -eq 2

@@ -509,9 +509,14 @@ async fn main() -> anyhow::Result<()> {
             let raw_text = call_biomcp(&client, "biomcp get gene ODC1 gencc").await?;
             let raw_json = call_biomcp(&client, "biomcp --json get gene ODC1 gencc").await?;
             let typed = call_typed_get(&client, "gene", "ODC1", &["gencc"]).await?;
-            println!("RAW TEXT\n{}", first_text(&raw_text)?);
-            println!("RAW JSON\n{}", first_text(&raw_json)?);
-            println!("TYPED JSON\n{}", first_text(&typed)?);
+            println!(
+                "{}",
+                serde_json::json!({
+                    "raw_text": first_text(&raw_text)?,
+                    "raw_json": serde_json::from_str::<serde_json::Value>(first_text(&raw_json)?)?,
+                    "typed_json": serde_json::from_str::<serde_json::Value>(first_text(&typed)?)?,
+                })
+            );
         }
         _ => anyhow::bail!("unknown mode: {mode}"),
     }

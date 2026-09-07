@@ -988,6 +988,14 @@ Dependencies: none. Ticket 1159 is independent and may land before or after
 this ticket; coexistence tests adapt to the additive ClinGen status schema on
 the implementation base.
 
+## Result
+
+BioMCP now returns public submission-level GenCC gene-disease validity assertions through direct, all-section, batch, raw MCP, and typed MCP gene surfaces while keeping ClinGen independent. The bounded parser, canonical identity matching, immutable generation store, conditional refresh, retry suppression, health HEAD, explicit sync, provenance, Markdown, schema, source documentation, and receipt-backed minimized ODC1 fixture implement the accepted contracts. The genuine capture receipt records the official endpoint response and deterministic minimization; tests never contact the live provider.
+
+The first implementation review rejected incomplete filesystem trust, durability/fault coverage, hostile rendering/schema evidence, concurrency/deadline coverage, and closure records. Remediation anchors Unix bootstrap, raw, state, generation, lease, recovery, and cleanup operations to validated no-follow descriptors; enforces private ownership/modes and pathname-to-open identity; fsyncs created lock/files/directories and their correct parents; removes only owned unpublished temporaries; retains/logs cleanup failures; uses cryptographically random generation suffixes; and exercises first/replacement and state-only crash boundaries, leases, followers, root recreation, identity precedence, and ten independently timed concurrent batch items. Markdown cells and link destinations are escaped, MCP raw/typed surfaces are compared structurally, the shipped publications schema is exact and capped at 128, and explicit sync evidence checks the real `changed` field rather than a nonexistent `updated` member.
+
+Focused evidence passed `cargo fmt --all -- --check`, `cargo clippy --locked --offline --no-default-features --lib --tests -- -D warnings`, the final GenCC library aggregate (36 passed, 0 failed, and one intentional subprocess helper ignored), the first-publication, replacement, and 304/failure-state restart matrices, the ten-item deadline test, and 16 focused documentation/licensing/package Python contracts. `cargo package --list --allow-dirty --locked --offline` reports exactly 1,300 files, includes the eight required package additions and retained MyGene Tier-4 live test, and excludes the GenCC CSV fixture. The new store/source/entity test modules are 994, 951, and 699 lines respectively. Per coordination instructions, the full `make lint`, `make test`, `make spec`, and full-feature gates were not run during implementation; those gates and independent remediation re-review remain before acceptance.
+
 ## Review
 
 - Initial design review: rejected; the first revision established the public
@@ -1044,4 +1052,4 @@ the implementation base.
   that all prior lifecycle/security/parser contracts remain unchanged and that
   a computed minimized-fixture hash cannot substitute for the required genuine
   capture receipt.
-- Code review: pending.
+- First code review: rejected with descriptor-relative trust, durability/fault-matrix, hostile-surface/schema, deadline/identity, and closure-record findings. The implementation remediation and focused evidence are recorded above; independent remediation re-review is pending.

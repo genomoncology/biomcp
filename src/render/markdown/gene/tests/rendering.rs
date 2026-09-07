@@ -42,14 +42,55 @@ fn gene_markdown_includes_evidence_links() {
 }
 
 #[test]
+fn gencc_markdown_escapes_provider_cells_and_angle_delimits_links() {
+    use crate::entities::section_outcome::SectionOutcome;
+    let mut gene: Gene = serde_json::from_value(serde_json::json!({
+        "symbol": "ODC1", "name": "ornithine decarboxylase 1", "entrez_id": "4953",
+        "aliases": [],
+        "gencc": {
+            "assertions": [{
+                "id": "SGC-1.1", "sgc_id": "SGC-1", "version": 1,
+                "gene": {"id": "HGNC:8109", "label": "ODC1"},
+                "disease": {"id": "MONDO:0000001", "label": "hostile | disease"},
+                "classification": {"id": "GENCC:100002", "label": "Strong | certain", "code": "strong"},
+                "mode_of_inheritance": {"id": "HP:0000006", "label": "AD | dominant"},
+                "submitter": {"id": "GENCC:000106", "label": "Lab | submitter"},
+                "evaluated_date": null, "submitted_date": null,
+                "source_record_url": "https://thegencc.org/submissions/SGC-1.1?a=(b)",
+                "public_report_url": "https://example.org/report_(one)",
+                "assertion_criteria_url": null, "publications": []
+            }],
+            "total_matching_assertions": 1, "truncated": false,
+            "status": {"freshness":"fresh", "result":"data", "operation":"local_query",
+                "checked_at":null, "retrieved_at":null, "attempted_at":null, "etag":null,
+                "last_modified":null, "upstream_version":null, "message":null}
+        }
+    })).unwrap();
+    gene.section_outcomes
+        .complete("gencc", SectionOutcome::data("GenCC"));
+    let markdown = gene_markdown(&gene, &["gencc".into()]).unwrap();
+    assert!(markdown.contains("hostile \\| disease"), "{markdown}");
+    assert!(markdown.contains("Lab \\| submitter"), "{markdown}");
+    assert!(
+        markdown.contains("](<https://thegencc.org/submissions/SGC-1.1?a=(b)>)"),
+        "{markdown}"
+    );
+    assert!(
+        markdown.contains("[public report](<https://example.org/report_(one)>)"),
+        "{markdown}"
+    );
+}
+
+#[test]
 fn clingen_markdown_keeps_partial_evidence_and_distinguishes_missing_dosage() {
     use crate::entities::section_outcome::{SectionOutcome, SectionOutcomes};
     use crate::sources::clingen::{
         ClinGenFamilyStatus, ClinGenOperation, GeneClinGen, VALIDITY_FAILED_MESSAGE,
     };
 
-    let mut section_outcomes =
-        SectionOutcomes::with_keys(&crate::entities::source_state_registry::outcome_keys("gene"));
+    let mut section_outcomes = SectionOutcomes::with_keys(
+        &crate::entities::source_state_registry::outcome_keys("gene"),
+    );
     section_outcomes.complete(
         "clingen",
         SectionOutcome::degraded(
@@ -280,10 +321,15 @@ fn gene_markdown_section_only_shows_new_gene_enrichment_sections() {
     );
     let markdown = gene_markdown(&unavailable, &["civic".to_string(), "hpa".to_string()])
         .expect("unavailable CIViC markdown");
-    let status = markdown.find("**CIViC status (CIViC):**").expect("CIViC status");
+    let status = markdown
+        .find("**CIViC status (CIViC):**")
+        .expect("CIViC status");
     let navigation = markdown.find("More:").expect("section navigation");
 
-    assert!(status < navigation, "status must precede navigation: {markdown}");
+    assert!(
+        status < navigation,
+        "status must precede navigation: {markdown}"
+    );
     assert_eq!(markdown.matches("Retry:").count(), 2, "{markdown}");
     assert!(
         markdown.contains("Retry: ``biomcp get gene \"BR\\` AF;&\" civic``"),

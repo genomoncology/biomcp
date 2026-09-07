@@ -93,7 +93,19 @@
               "source_record_url": { "type": "string" },
               "public_report_url": { "type": ["string", "null"] },
               "assertion_criteria_url": { "type": ["string", "null"] },
-              "publications": { "type": "array" }
+              "publications": {
+                "type": "array",
+                "maxItems": 128,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "pmid": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+                    "url": { "type": "string", "pattern": "^https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/[1-9][0-9]{0,19}/$" }
+                  },
+                  "required": ["pmid", "url"],
+                  "additionalProperties": false
+                }
+              }
             },
             "required": ["id", "sgc_id", "version", "gene", "disease", "classification", "mode_of_inheritance", "submitter", "evaluated_date", "submitted_date", "source_record_url", "public_report_url", "assertion_criteria_url", "publications"],
             "additionalProperties": false

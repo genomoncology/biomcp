@@ -16,13 +16,15 @@ use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
 
 pub(crate) mod model;
+#[rustfmt::skip]
 pub(crate) mod store;
 
 pub(crate) use model::GenCcAssertion;
 use model::GenCcDataset;
 use store::{Attempt, PublishMetadata, Snapshot, State, Store, StoreError};
 
-const ENDPOINT: &str = "https://thegencc.org/download/action/submissions-export-csv?format=new";
+pub(crate) const ENDPOINT: &str =
+    "https://thegencc.org/download/action/submissions-export-csv?format=new";
 const MAX_BODY_BYTES: usize = 64 * 1024 * 1024;
 const FRESH_FOR: i64 = 604_800;
 const RETRY_AFTER: i64 = 86_400;
@@ -685,6 +687,11 @@ fn failed_refresh_now(
 async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation() {
     for seeded in [false, true] {
         let temp = tempfile::tempdir().unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(temp.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        }
         let root = temp.path().join("gencc");
         let previous = std::env::var_os("BIOMCP_GENCC_DIR");
         unsafe { std::env::set_var("BIOMCP_GENCC_DIR", &root) };
@@ -728,4 +735,5 @@ async fn explicit_sync_lock_deadline_preserves_state_with_and_without_generation
 }
 
 #[cfg(test)]
+#[rustfmt::skip]
 mod tests;

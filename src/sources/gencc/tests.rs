@@ -1,29 +1,24 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-
 use sha2::{Digest, Sha256};
-
 use super::model::{GenCcDataset, HEADER};
 use super::{
     ENDPOINT, inside_retry_window, is_fresh, same_endpoint, valid_endpoint, valid_etag,
     valid_http_date,
 };
-
 fn fixture() -> &'static [u8] {
     include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/testdata/sources/gencc/submissions-new-odc1.csv"
     ))
 }
-
 fn fixture_records() -> (csv::StringRecord, Vec<csv::StringRecord>) {
     let mut reader = csv::Reader::from_reader(fixture());
     let header = reader.headers().unwrap().clone();
     let rows = reader.records().collect::<Result<Vec<_>, _>>().unwrap();
     (header, rows)
 }
-
 fn csv_bytes(header: &csv::StringRecord, rows: &[csv::StringRecord]) -> Vec<u8> {
     let mut writer = csv::WriterBuilder::new()
         .terminator(csv::Terminator::Any(b'\n'))
@@ -34,18 +29,15 @@ fn csv_bytes(header: &csv::StringRecord, rows: &[csv::StringRecord]) -> Vec<u8> 
     }
     writer.into_inner().unwrap()
 }
-
 fn one_row() -> (csv::StringRecord, csv::StringRecord) {
     let (header, rows) = fixture_records();
     (header, rows[0].clone())
 }
-
 fn set(row: &mut csv::StringRecord, index: usize, value: impl Into<String>) {
     let mut fields = row.iter().map(str::to_string).collect::<Vec<_>>();
     fields[index] = value.into();
     *row = csv::StringRecord::from(fields);
 }
-
 #[test]
 fn receipt_backed_odc1_rows_remain_separate_and_ordered() {
     let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
@@ -74,7 +66,6 @@ fn receipt_backed_odc1_rows_remain_separate_and_ordered() {
         ["30239107", "30475435"]
     );
 }
-
 #[test]
 fn exact_header_and_all_classification_pairs_are_closed() {
     let (header, base) = one_row();
@@ -102,7 +93,6 @@ fn exact_header_and_all_classification_pairs_are_closed() {
         assert_eq!(parsed.assertions()[0].classification.code, code);
     }
 }
-
 #[test]
 fn malformed_classification_version_and_pmid_fail_closed() {
     let (header, base) = one_row();
@@ -121,7 +111,6 @@ fn malformed_classification_version_and_pmid_fail_closed() {
         assert!(GenCcDataset::parse(&csv, &AtomicBool::new(false)).is_err());
     }
 }
-
 #[test]
 fn duplicate_comparison_uses_normalized_retained_tuple() {
     let (header, row) = one_row();
@@ -137,7 +126,6 @@ fn duplicate_comparison_uses_normalized_retained_tuple() {
     set(&mut changed, 13, "Different submitter");
     let conflict = csv_bytes(&header, &[row.clone(), changed]);
     assert!(GenCcDataset::parse(&conflict, &AtomicBool::new(false)).is_err());
-
     let mut excluded_change = row.clone();
     set(&mut excluded_change, 26, "different excluded note");
     let equivalent = csv_bytes(&header, &[row, excluded_change]);
@@ -149,7 +137,6 @@ fn duplicate_comparison_uses_normalized_retained_tuple() {
         1
     );
 }
-
 #[test]
 fn numeric_date_url_and_pmid_boundaries_are_exact() {
     let (header, base) = one_row();
@@ -176,7 +163,6 @@ fn numeric_date_url_and_pmid_boundaries_are_exact() {
             .collect::<Vec<_>>(),
         ["42", "18446744073709551615"]
     );
-
     for bad_date in [
         "2026-02-29",
         "2026-01-01T00:00:00",
@@ -188,7 +174,6 @@ fn numeric_date_url_and_pmid_boundaries_are_exact() {
         assert!(GenCcDataset::parse(&csv_bytes(&header, &[row]), &AtomicBool::new(false)).is_err());
     }
 }
-
 #[test]
 fn raw_field_label_and_link_bounds_apply_before_optional_nulling() {
     let (header, base) = one_row();
@@ -217,7 +202,6 @@ fn raw_field_label_and_link_bounds_apply_before_optional_nulling() {
         }
     }
 }
-
 #[test]
 fn current_version_selection_and_cancellation_fail_closed() {
     let (header, mut old) = one_row();
@@ -232,12 +216,10 @@ fn current_version_selection_and_cancellation_fail_closed() {
     .unwrap();
     assert_eq!(parsed.assertions().len(), 1);
     assert_eq!(parsed.assertions()[0].version, 2);
-
     let cancelled = AtomicBool::new(false);
     cancelled.store(true, Ordering::Relaxed);
     assert!(GenCcDataset::parse(fixture(), &cancelled).is_err());
 }
-
 #[test]
 fn endpoint_redirect_and_validator_policy_is_closed() {
     let endpoint = reqwest::Url::parse(ENDPOINT).unwrap();
@@ -263,11 +245,9 @@ fn endpoint_redirect_and_validator_policy_is_closed() {
     assert!(valid_http_date("Sun, 06 Sep 2026 06:00:29 GMT"));
     assert!(!valid_http_date("2026-09-06T06:00:29Z"));
 }
-
 #[test]
 fn freshness_and_retry_boundaries_include_rollback_rules() {
     use chrono::{TimeZone, Utc};
-
     let checked = "2026-01-01T00:00:00Z";
     let base = Utc.with_ymd_and_hms(2026, 1, 1, 0, 0, 0).unwrap();
     assert!(is_fresh(
@@ -282,7 +262,6 @@ fn freshness_and_retry_boundaries_include_rollback_rules() {
         Some(checked),
         base - chrono::Duration::seconds(1)
     ));
-
     assert!(inside_retry_window(
         Some(checked),
         base + chrono::Duration::seconds(86_399)
@@ -296,21 +275,24 @@ fn freshness_and_retry_boundaries_include_rollback_rules() {
         base - chrono::Duration::seconds(1)
     ));
 }
-
 struct EnvRestore {
     name: &'static str,
     previous: Option<std::ffi::OsString>,
 }
-
+#[rustfmt::skip]
 impl EnvRestore {
     fn set(name: &'static str, value: &std::ffi::OsStr) -> Self {
         let previous = std::env::var_os(name);
+        #[cfg(unix)]
+        if name == "BIOMCP_GENCC_DIR" {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(std::path::Path::new(value).parent().unwrap(), std::fs::Permissions::from_mode(0o700)).unwrap();
+        }
         // SAFETY: GenCC tests serialize mutations of their unique environment keys.
         unsafe { std::env::set_var(name, value) };
         Self { name, previous }
     }
 }
-
 impl Drop for EnvRestore {
     fn drop(&mut self) {
         // SAFETY: GenCC tests serialize mutations of their unique environment keys.
@@ -322,7 +304,6 @@ impl Drop for EnvRestore {
         }
     }
 }
-
 #[tokio::test(flavor = "current_thread")]
 #[serial_test::serial(gencc_env)]
 async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
@@ -330,12 +311,10 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
     use axum::body::Body;
     use axum::extract::State as AxumState;
     use axum::http::{HeaderMap, Method, Response, StatusCode};
-
     #[derive(Clone)]
     struct FixtureState {
         requests: Arc<Mutex<Vec<(Method, HeaderMap)>>>,
     }
-
     async fn handler(
         AxumState(state): AxumState<FixtureState>,
         method: Method,
@@ -364,7 +343,6 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
             .body(Body::empty())
             .unwrap()
     }
-
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -382,7 +360,6 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
     );
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
     let _base = EnvRestore::set("BIOMCP_GENCC_BASE", std::ffi::OsStr::new(&endpoint));
-
     let client = super::GenCcClient::new().unwrap();
     let initial = client.acquire(Duration::from_secs(2)).await;
     assert_eq!(
@@ -427,7 +404,6 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
         manifest["body_sha256"],
         format!("{:x}", Sha256::digest(fixture()))
     );
-
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -452,7 +428,6 @@ async fn initial_fresh_and_conditional_304_lifecycle_uses_one_get() {
     }
     server.abort();
 }
-
 #[tokio::test(flavor = "current_thread")]
 #[serial_test::serial(gencc_env)]
 async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
@@ -460,7 +435,6 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
     use axum::body::Body;
     use axum::extract::State as AxumState;
     use axum::http::{Response, StatusCode};
-
     async fn handler(
         AxumState(count): AxumState<Arc<std::sync::atomic::AtomicUsize>>,
     ) -> Response<Body> {
@@ -473,7 +447,6 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
             ))
             .unwrap()
     }
-
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -491,7 +464,6 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
     });
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
     let _base = EnvRestore::set("BIOMCP_GENCC_BASE", std::ffi::OsStr::new(&endpoint));
-
     let client = super::GenCcClient::new().unwrap();
     let failed = client.acquire(Duration::from_secs(2)).await;
     assert_eq!(
@@ -520,12 +492,10 @@ async fn failed_initial_attempt_is_durably_suppressed_without_body_leakage() {
     }));
     server.abort();
 }
-
 #[test]
 #[serial_test::serial(gencc_env)]
 fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
     use super::store::{PublishMetadata, Store};
-
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
@@ -583,7 +553,6 @@ fn generation_cleanup_retains_an_actively_leased_old_snapshot() {
         2
     );
 }
-
 #[tokio::test]
 async fn parser_work_obeys_an_expired_refresh_deadline() {
     let result = super::parse_with_deadline(
@@ -593,12 +562,10 @@ async fn parser_work_obeys_an_expired_refresh_deadline() {
     .await;
     assert!(result.is_none());
 }
-
 #[test]
 #[serial_test::serial(gencc_env)]
 fn refresh_leader_removes_only_owned_abandoned_temporaries() {
     use super::store::Store;
-
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
@@ -610,27 +577,21 @@ fn refresh_leader_removes_only_owned_abandoned_temporaries() {
     std::fs::write(&state, b"state").unwrap();
     std::fs::create_dir(&generation).unwrap();
     std::fs::write(root.join("unrelated.tmp"), b"keep").unwrap();
-
     store.cleanup_abandoned();
-
     assert!(!raw.exists());
     assert!(!state.exists());
     assert!(!generation.exists());
     assert!(root.join("unrelated.tmp").exists());
 }
-
 #[test]
 #[serial_test::serial(gencc_env)]
 fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     use fs2::FileExt;
-
     use super::store::{Store, StoreError};
-
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().join("gencc");
     let _root = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
     drop(Store::open().unwrap());
-
     let anchor_path = std::fs::read_dir(temp.path())
         .unwrap()
         .map(|entry| entry.unwrap().path())
@@ -653,7 +614,6 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     drop(Store::open_until(started + Duration::from_secs(1)).unwrap());
     assert!(started.elapsed() >= Duration::from_millis(50));
     release.join().unwrap();
-
     let held = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -668,7 +628,6 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     drop(Store::open_until(started + Duration::from_secs(1)).unwrap());
     assert!(started.elapsed() >= Duration::from_millis(50));
     release.join().unwrap();
-
     let held = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -679,10 +638,18 @@ fn bootstrap_and_store_lock_waits_are_bounded_by_the_call_deadline() {
     assert!(matches!(result, Err(StoreError::Deadline)));
     drop(held);
 }
-
 #[test]
 #[ignore = "subprocess helper"]
+#[rustfmt::skip]
 fn gencc_subprocess_client() {
+    if std::env::var_os("BIOMCP_GENCC_CHILD_OPEN").is_some() { drop(super::store::Store::open().unwrap()); return; }
+    if let Ok(kind) = std::env::var("BIOMCP_GENCC_CHILD_CRASH_STATE") {
+        let store = super::store::Store::open().unwrap();
+        let state = store.load_state().unwrap();
+        if kind == "304" { store.record_304(state, "2026-03-01T00:00:00Z").unwrap(); }
+        else { store.record_failure(state, "2026-03-01T00:00:00Z").unwrap(); }
+        panic!("configured state crash point was not reached");
+    }
     if let Some(entered) = std::env::var_os("BIOMCP_GENCC_CHILD_HOLD_LEASE") {
         use super::store::Store;
         let snapshot = Store::open().unwrap().load().unwrap().unwrap();
@@ -699,15 +666,17 @@ fn gencc_subprocess_client() {
     if std::env::var_os("BIOMCP_GENCC_CHILD_CRASH_PUBLISH").is_some() {
         #[cfg(unix)]
         unsafe {
-            libc::setrlimit(
-                libc::RLIMIT_CORE,
-                &libc::rlimit {
-                    rlim_cur: 0,
-                    rlim_max: 0,
-                },
-            );
+            libc::setrlimit(libc::RLIMIT_CORE, &libc::rlimit { rlim_cur: 0, rlim_max: 0 });
         }
         use super::store::{PublishMetadata, Store};
+        if std::env::var("BIOMCP_GENCC_TEST_CRASH_AT").unwrap().contains("raw-") {
+            let store = Store::open().unwrap();
+            let mut raw = store.create_raw_temp().unwrap();
+            raw.write_chunk(fixture(), usize::MAX).unwrap();
+            raw.finish().unwrap();
+            drop(raw);
+            panic!("configured raw crash point was not reached");
+        }
         let dataset = GenCcDataset::parse(fixture(), &AtomicBool::new(false)).unwrap();
         Store::open()
             .unwrap()
@@ -732,10 +701,7 @@ fn gencc_subprocess_client() {
         .unwrap()
         .parse::<u64>()
         .unwrap();
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
+    let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
     let data = runtime.block_on(async {
         super::GenCcClient::new()
             .unwrap()
@@ -748,7 +714,6 @@ fn gencc_subprocess_client() {
     );
     assert_eq!(actual, expected);
 }
-
 #[tokio::test(flavor = "current_thread")]
 #[serial_test::serial(gencc_env)]
 async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
@@ -758,7 +723,6 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
     use axum::http::{Response, StatusCode};
     use std::path::{Path, PathBuf};
     use std::process::{Child, Command, Stdio};
-
     #[derive(Clone)]
     struct Barrier {
         entered: PathBuf,
@@ -767,7 +731,6 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
         fail: bool,
         conditional: bool,
     }
-
     async fn handler(AxumState(state): AxumState<Barrier>) -> Response<Body> {
         state.requests.fetch_add(1, Ordering::Relaxed);
         std::fs::write(&state.entered, b"entered").unwrap();
@@ -798,7 +761,6 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
             .body(Body::from(fixture()))
             .unwrap()
     }
-
     fn child(root: &Path, endpoint: &str, timeout: u64, expected: &str) -> Child {
         Command::new(std::env::current_exe().unwrap())
             .args([
@@ -815,7 +777,6 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
             .spawn()
             .unwrap()
     }
-
     async fn wait(child: &mut Child) {
         let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
         loop {
@@ -827,7 +788,6 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
     }
-
     async fn wait_for(path: &Path, child: &mut Child) {
         let deadline = tokio::time::Instant::now() + Duration::from_secs(5);
         while !path.exists() {
@@ -842,7 +802,6 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
     }
-
     fn seed(root: &Path) {
         use super::store::{PublishMetadata, Store};
         let restore = EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str());
@@ -863,17 +822,16 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
             .unwrap();
         drop(restore);
     }
-
     fn status(data: &super::GenCcData) -> String {
         format!(
             "{:?}/{:?}/{:?}",
             data.status.operation, data.status.freshness, data.status.result
         )
     }
-
     for (conditional, fail) in [(false, false), (false, true), (true, false), (true, true)] {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path().join("gencc");
+        drop(EnvRestore::set("BIOMCP_GENCC_DIR", root.as_os_str()));
         if conditional {
             seed(&root);
         }
@@ -943,7 +901,6 @@ async fn cross_process_first_use_elects_one_leader_and_settles_followers() {
         );
         wait(&mut settled).await;
         assert_eq!(requests.load(Ordering::Relaxed), 1);
-
         std::fs::remove_file(&entered).unwrap();
         std::fs::remove_file(&release).unwrap();
         let local_root = temp.path().join("local-gencc");
