@@ -218,6 +218,13 @@ struct VariantArticleWorkAllocation {
     identity_verification_consumed: AtomicUsize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RouteUnitPlan {
+    Pending,
+    Inapplicable,
+    Applicable(usize),
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct VariantArticleExecutionContext {
     deadline: crate::sources::VariantArticleDeadline,
@@ -229,6 +236,7 @@ pub(crate) struct VariantArticleExecutionContext {
     identity_request: Arc<SharedWorkBudget>,
     allocation: Arc<VariantArticleWorkAllocation>,
     events: Arc<Mutex<Vec<VariantArticleCallEvent>>>,
+    route_unit_plans: Arc<Mutex<BTreeMap<(String, String), RouteUnitPlan>>>,
     stopped_routes: Arc<Mutex<BTreeSet<String>>>,
     strict_pubtator_queries: Arc<Mutex<BTreeMap<String, String>>>,
     ldh_medium: Arc<AtomicUsize>,
@@ -268,6 +276,7 @@ impl VariantArticleExecutionContext {
                 identity_verification_consumed: AtomicUsize::new(0),
             }),
             events: Arc::new(Mutex::new(Vec::new())),
+            route_unit_plans: Arc::new(Mutex::new(BTreeMap::new())),
             stopped_routes: Arc::new(Mutex::new(BTreeSet::new())),
             strict_pubtator_queries: Arc::new(Mutex::new(BTreeMap::new())),
             ldh_medium: Arc::new(AtomicUsize::new(0)),
@@ -358,6 +367,61 @@ impl VariantArticleExecutionContext {
 
     pub(crate) fn deadline(&self) -> &crate::sources::VariantArticleDeadline {
         &self.deadline
+    }
+
+    fn initialize_route_unit_plans(
+        &self,
+        skeleton: &[(&'static str, &'static str)],
+        requested: &RequestedVariantIdentity,
+    ) {
+        let mut plans = self
+            .route_unit_plans
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        plans.clear();
+        plans.extend(skeleton.iter().map(|(route, source)| {
+            (
+                (route.to_string(), source.to_string()),
+                RouteUnitPlan::Pending,
+            )
+        }));
+        plans.insert(
+            ("resolution".into(), "myvariant".into()),
+            RouteUnitPlan::Applicable(1),
+        );
+        let car_units = canonical_equivalence_queries(requested).len();
+        plans.insert(
+            ("canonical_equivalence".into(), "clingen_car".into()),
+            if car_units == 0 {
+                RouteUnitPlan::Inapplicable
+            } else {
+                RouteUnitPlan::Applicable(car_units)
+            },
+        );
+    }
+
+    pub(crate) fn set_route_unit_plan(&self, route: &str, source: &str, units: Option<usize>) {
+        let mut plans = self
+            .route_unit_plans
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(plan) = plans.get_mut(&(route.into(), source.into())) {
+            *plan = units.map_or(RouteUnitPlan::Inapplicable, RouteUnitPlan::Applicable);
+        }
+    }
+
+    pub(crate) fn add_route_unit(&self, route: &str, source: &str) {
+        let mut plans = self
+            .route_unit_plans
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let Some(plan) = plans.get_mut(&(route.into(), source.into())) else {
+            return;
+        };
+        *plan = RouteUnitPlan::Applicable(match *plan {
+            RouteUnitPlan::Applicable(units) => units.saturating_add(1),
+            RouteUnitPlan::Pending | RouteUnitPlan::Inapplicable => 1,
+        });
     }
 
     pub(crate) async fn begin_provider_unit(
@@ -1241,6 +1305,84 @@ fn provider_statuses_for_events(
         .collect()
 }
 
+fn deadline_reconciled_statuses(
+    execution: &VariantArticleExecutionContext,
+    events: &[VariantArticleCallEvent],
+) -> Vec<VariantArticleSourceStatus> {
+    let plans = execution
+        .route_unit_plans
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
+    plans
+        .into_iter()
+        .map(|((route, source), plan)| {
+            let matching = events
+                .iter()
+                .filter(|event| event.route == route && event.source == source)
+                .collect::<Vec<_>>();
+            if plan == RouteUnitPlan::Inapplicable && matching.is_empty() {
+                let mut status = status_with_detail(
+                    &route,
+                    &source,
+                    VariantArticleSourceStatusKind::Skipped,
+                    Some("completed prerequisites make this route inapplicable"),
+                );
+                status.reason_codes = vec!["identity_inapplicable"];
+                return status;
+            }
+            let planned = match plan {
+                RouteUnitPlan::Pending => matching.len().saturating_add(1),
+                RouteUnitPlan::Inapplicable => matching.len(),
+                RouteUnitPlan::Applicable(units) => units.max(matching.len()),
+            };
+            let started = matching
+                .iter()
+                .filter(|event| event.status != "not_attempted")
+                .count();
+            let mut work = VariantArticleSourceWork {
+                planned,
+                ok: matching.iter().filter(|event| event.status == "ok").count(),
+                degraded: matching
+                    .iter()
+                    .filter(|event| event.status == "degraded")
+                    .count(),
+                unavailable: matching
+                    .iter()
+                    .filter(|event| event.status == "unavailable")
+                    .count(),
+                timed_out: matching
+                    .iter()
+                    .filter(|event| event.status == "timed_out")
+                    .count(),
+                not_attempted: matching
+                    .iter()
+                    .filter(|event| event.status == "not_attempted")
+                    .count(),
+            };
+            let terminal =
+                work.ok + work.degraded + work.unavailable + work.timed_out + work.not_attempted;
+            work.not_attempted = work
+                .not_attempted
+                .saturating_add(planned.saturating_sub(terminal));
+            let mut reasons = matching
+                .iter()
+                .filter_map(|event| event.reason_code)
+                .collect::<Vec<_>>();
+            if work.not_attempted > 0 && execution.deadline.is_exhausted() {
+                reasons.push("invocation_deadline");
+            }
+            let mut status = aggregate_source_status(&route, &source, work, reasons);
+            if planned == 0 && started == 0 {
+                status.status = VariantArticleSourceStatusKind::Ok;
+                status.detail = None;
+                status.reason_codes.clear();
+            }
+            status
+        })
+        .collect()
+}
+
 fn candidate_with_provenance(
     row: ArticleSearchResult,
     route: &str,
@@ -1728,6 +1870,9 @@ async fn annotation_candidates(
     let mut candidates = Vec::new();
     let mut incomplete = false;
     let mut succeeded = tokens.is_empty();
+    for _ in &tokens {
+        execution.add_route_unit("pubtator_variant", "pubtator");
+    }
     for token in tokens {
         let mut filters = article_filters();
         filters.variant = Some(ArticleVariantIntent {
@@ -1949,6 +2094,7 @@ async fn strict_provider_candidates(
                                     &token.entity_id,
                                 );
                             });
+                            execution.add_route_unit("strict", "pubtator");
                             search_pubtator_page_with_context(
                                 &filters,
                                 LEXICAL_ALIAS_FETCH_LIMIT,
@@ -2376,6 +2522,119 @@ fn provider_variant_query_plan_with_aliases(
     queries
 }
 
+fn materialize_discovery_route_plans(
+    input: &str,
+    context: &VariantArticleResolutionContext,
+    strategy: VariantArticleStrategy,
+    exact_aliases: &[String],
+    execution: &VariantArticleExecutionContext,
+) {
+    let resolved = matches!(context.resolution.status, VariantResolutionStatus::Resolved);
+    let compatible = !matches!(
+        context.resolution.provider_validation.status,
+        VariantProviderValidationStatus::Contradictory
+    );
+    let federated = ["pubmed", "europepmc", "pubtator", "semanticscholar"];
+    let strict_applicable = compatible
+        && (strategy == VariantArticleStrategy::Union
+            || (strategy == VariantArticleStrategy::Lexical && resolved));
+    let strict = provider_variant_query_plan_with_aliases(input, context, strategy, exact_aliases);
+    for source in federated {
+        let units = strict_applicable.then(|| {
+            strict
+                .iter()
+                .filter(|plan| plan.route == "strict" && plan.provider == source)
+                .count()
+        });
+        execution.set_route_unit_plan("strict", source, units);
+    }
+
+    let exact_applicable = compatible
+        && resolved
+        && matches!(
+            strategy,
+            VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
+        );
+    for source in federated {
+        execution.set_route_unit_plan(
+            "exact_lexical",
+            source,
+            exact_applicable.then_some(exact_aliases.len()),
+        );
+    }
+
+    let fallback_applicable = strategy == VariantArticleStrategy::Union && !resolved;
+    let fallback_units = fallback_aliases(input, context).0.len();
+    for source in federated {
+        execution.set_route_unit_plan(
+            "best_effort_free_text",
+            source,
+            fallback_applicable.then_some(fallback_units),
+        );
+    }
+
+    let annotation_applicable = compatible
+        && resolved
+        && matches!(
+            strategy,
+            VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
+        );
+    execution.set_route_unit_plan(
+        "pubtator_variant",
+        "pubtator",
+        annotation_applicable.then_some(1),
+    );
+
+    let citation_units = (strategy == VariantArticleStrategy::Union
+        && matches!(
+            context.resolution.provider_validation.status,
+            VariantProviderValidationStatus::Confirmed
+        ))
+    .then(|| {
+        context
+            .source_hit
+            .as_ref()
+            .map(|hit| usize::from(hit.civic.is_none()))
+    })
+    .flatten();
+    execution.set_route_unit_plan("source_citation", "myvariant", citation_units);
+}
+
+fn materialize_identity_verification_plan(
+    candidates: &[ArticleCandidate],
+    requested: &RequestedVariantIdentity,
+    offset: usize,
+    limit: usize,
+    confirmed_only: bool,
+    execution: &VariantArticleExecutionContext,
+) -> (usize, usize) {
+    let (start, count) = if confirmed_only {
+        (0, candidates.len().min(ITEM_WORK_LIMIT))
+    } else {
+        (offset, candidates.len().saturating_sub(offset).min(limit))
+    };
+    let units = candidates
+        .iter()
+        .skip(start)
+        .take(count)
+        .filter(|candidate| {
+            verify_captured_abstract(
+                requested,
+                candidate
+                    .row
+                    .abstract_snippet
+                    .as_deref()
+                    .unwrap_or(&candidate.row.normalized_abstract),
+            )
+            .status
+                == "unverified"
+                && candidate.row.pmid.parse::<u32>().is_ok()
+        })
+        .count();
+    execution.set_route_unit_plan("identity_verification", "pubtator", Some(units));
+    (start, count)
+}
+
 struct VariantArticleDebugPlanState {
     counts: VariantArticleCountsPlan,
     truncated: bool,
@@ -2663,6 +2922,7 @@ async fn search_variant_articles_identity(
         ));
     }
     let route_skeleton = strategy_route_skeleton(strategy, verification.verify_identity);
+    execution.initialize_route_unit_plans(&route_skeleton, &requested);
     let mut context =
         crate::entities::variant::resolve_article_variant_identity(requested, input, &execution)
             .await?;
@@ -2670,9 +2930,22 @@ async fn search_variant_articles_identity(
     let canonical_equivalence = resolve_canonical_equivalence(&context.requested, &execution).await;
     let (selected_exact_aliases, selected_exact_aliases_truncated) =
         exact_aliases_with_equivalence(&context, &canonical_equivalence);
+    if context.available {
+        materialize_discovery_route_plans(
+            input,
+            &context,
+            strategy,
+            &selected_exact_aliases,
+            &execution,
+        );
+    }
     if !context.available {
         let events = execution.events();
-        let mut source_status = provider_statuses_for_events(&events);
+        let mut source_status = if execution.deadline.is_exhausted() {
+            deadline_reconciled_statuses(&execution, &events)
+        } else {
+            provider_statuses_for_events(&events)
+        };
         if source_status.is_empty() {
             source_status.push(if execution.deadline.is_exhausted() {
                 deadline_blocked_status("resolution", "myvariant", &context.requested)
@@ -2684,7 +2957,7 @@ async fn search_variant_articles_identity(
                 )
             });
         }
-        if execution.deadline.is_exhausted() {
+        if execution.deadline.is_exhausted() && source_status.is_empty() {
             let decided = source_status
                 .iter()
                 .map(|status| (status.route.clone(), status.source.clone()))
@@ -3001,11 +3274,14 @@ async fn search_variant_articles_identity(
     let mut verification_incomplete = false;
     if verification.verify_identity {
         rank_candidates(&mut candidates);
-        let (verification_start, verification_count) = if verification.confirmed_only {
-            (0, candidates.len().min(ITEM_WORK_LIMIT))
-        } else {
-            (offset, candidates.len().saturating_sub(offset).min(limit))
-        };
+        let (verification_start, verification_count) = materialize_identity_verification_plan(
+            &candidates,
+            &context.requested,
+            offset,
+            limit,
+            verification.confirmed_only,
+            &execution,
+        );
         execution.reserve_identity_verification_through(verification_count);
         for candidate in candidates
             .iter_mut()
@@ -3172,26 +3448,7 @@ async fn search_variant_articles_identity(
         statuses.extend(provider_statuses_for_route(&route, &final_events));
     }
     if execution.deadline.is_exhausted() {
-        let skeleton_keys = route_skeleton
-            .iter()
-            .map(|(route, source)| (route.to_string(), source.to_string()))
-            .collect::<BTreeSet<_>>();
-        statuses.retain(|status| {
-            let key = (status.route.clone(), status.source.clone());
-            event_keys.contains(&key) || !skeleton_keys.contains(&key)
-        });
-        let decided = statuses
-            .iter()
-            .map(|status| (status.route.clone(), status.source.clone()))
-            .collect::<BTreeSet<_>>();
-        statuses.extend(
-            route_skeleton
-                .iter()
-                .filter(|(route, source)| {
-                    !decided.contains(&(route.to_string(), source.to_string()))
-                })
-                .map(|(route, source)| deadline_blocked_status(route, source, &context.requested)),
-        );
+        statuses = deadline_reconciled_statuses(&execution, &final_events);
     }
     let runtime_incomplete = final_events.iter().any(|event| event.status != "ok");
     let provider_incomplete = matches!(
@@ -3359,7 +3616,12 @@ async fn add_ldh_observations(
     } else {
         None
     };
-    let Some(caid) = caid else { return false };
+    let Some(caid) = caid else {
+        execution.set_route_unit_plan("clingen_ldh_medium", "clingen_ldh", None);
+        execution.set_route_unit_plan("clingen_ldh_direct", "clingen_ldh", None);
+        return false;
+    };
+    execution.set_route_unit_plan("clingen_ldh_medium", "clingen_ldh", Some(1));
     let Some(unit) = execution
         .begin_provider_unit("clingen_ldh_medium", "clingen_ldh")
         .await
@@ -3398,87 +3660,86 @@ async fn add_ldh_observations(
     }
     unit.record("ok", 1);
     let rows = rows.unwrap();
-    let mut incomplete = false;
-    let mut direct_bytes = 0;
-    for candidate in candidates
-        .iter_mut()
-        .filter(|candidate| {
-            candidate
-                .row
-                .pmcid
-                .as_deref()
-                .and_then(canonical_pmcid)
-                .is_some_and(|pmcid| {
-                    rows.iter().any(|row| {
-                        row.get("entId").and_then(serde_json::Value::as_str) == Some(pmcid.as_str())
-                    })
+    let direct_targets = candidates
+        .iter()
+        .enumerate()
+        .filter_map(|(candidate_index, candidate)| {
+            let pmcid = candidate.row.pmcid.as_deref().and_then(canonical_pmcid)?;
+            rows.iter()
+                .any(|row| {
+                    row.get("entId").and_then(serde_json::Value::as_str) == Some(pmcid.as_str())
                 })
+                .then_some((candidate_index, pmcid))
         })
         .take(5)
-    {
-        let Some(pmcid) = candidate.row.pmcid.as_deref().and_then(canonical_pmcid) else {
-            continue;
-        };
+        .flat_map(|(candidate_index, pmcid)| {
+            rows.iter()
+                .filter_map(move |row| {
+                    let id = row.get("entId").and_then(serde_json::Value::as_str)?;
+                    let iri = row.get("entIri").and_then(serde_json::Value::as_str)?;
+                    (id == pmcid
+                        && row
+                            .get("entDisposition")
+                            .and_then(serde_json::Value::as_str)
+                            == Some("external")
+                        && row.get("entType").and_then(serde_json::Value::as_str)
+                            == Some("VariantsInLiterature")
+                        && ldh_iri_matches(iri, id))
+                    .then(|| (candidate_index, pmcid.clone(), iri.to_string()))
+                })
+                .take(2)
+        })
+        .collect::<Vec<_>>();
+    execution.set_route_unit_plan(
+        "clingen_ldh_direct",
+        "clingen_ldh",
+        Some(direct_targets.len()),
+    );
+    let mut incomplete = false;
+    let mut direct_bytes = 0;
+    for (candidate_index, pmcid, iri) in direct_targets {
+        let candidate = &mut candidates[candidate_index];
         let pmcid = pmcid.as_str();
-        let iris = rows
-            .iter()
-            .filter_map(|row| {
-                let id = row.get("entId").and_then(serde_json::Value::as_str)?;
-                let iri = row.get("entIri").and_then(serde_json::Value::as_str)?;
-                (id == pmcid
-                    && row
-                        .get("entDisposition")
-                        .and_then(serde_json::Value::as_str)
-                        == Some("external")
-                    && row.get("entType").and_then(serde_json::Value::as_str)
-                        == Some("VariantsInLiterature")
-                    && ldh_iri_matches(iri, id))
-                .then_some(iri)
-            })
-            .take(2)
-            .collect::<Vec<_>>();
-        for iri in iris {
-            let Some(body_limit) =
-                crate::sources::clingen_ldh::remaining_direct_body_limit(direct_bytes)
-            else {
-                return true;
-            };
-            let Some(unit) = execution
-                .begin_provider_unit("clingen_ldh_direct", "clingen_ldh")
-                .await
-            else {
-                return true;
-            };
-            let direct = client.direct(iri, body_limit).await;
-            match direct {
-                Ok((direct, body_bytes)) => {
-                    direct_bytes += body_bytes;
-                    let ldh = verify_ldh_annotation(
+        let Some(body_limit) =
+            crate::sources::clingen_ldh::remaining_direct_body_limit(direct_bytes)
+        else {
+            return true;
+        };
+        let Some(unit) = execution
+            .begin_provider_unit("clingen_ldh_direct", "clingen_ldh")
+            .await
+        else {
+            return true;
+        };
+        let direct = client.direct(&iri, body_limit).await;
+        match direct {
+            Ok((direct, body_bytes)) => {
+                direct_bytes += body_bytes;
+                let ldh = verify_ldh_annotation(
+                    requested,
+                    caid,
+                    &equivalence.aliases,
+                    pmcid,
+                    &iri,
+                    &direct,
+                );
+                incomplete |= ldh.incomplete;
+                let existing = candidate.identity.take().unwrap_or_else(|| {
+                    verify_captured_abstract(
                         requested,
-                        caid,
-                        &equivalence.aliases,
-                        pmcid,
-                        iri,
-                        &direct,
-                    );
-                    incomplete |= ldh.incomplete;
-                    let existing = candidate.identity.take().unwrap_or_else(|| {
-                        verify_captured_abstract(
-                            requested,
-                            candidate
-                                .row
-                                .abstract_snippet
-                                .as_deref()
-                                .unwrap_or(&candidate.row.normalized_abstract),
-                        )
-                    });
-                    candidate.identity = Some(combine_identities(existing, ldh));
-                    unit.record("ok", 1);
-                }
-                Err(error) => {
-                    unit.record_error(&error);
-                    incomplete = true;
-                }
+                        candidate
+                            .row
+                            .abstract_snippet
+                            .as_deref()
+                            .unwrap_or(&candidate.row.normalized_abstract),
+                    )
+                });
+                candidate.identity = Some(combine_identities(existing, ldh));
+                unit.record("ok", 1);
+            }
+            Err(error) => {
+                unit.record_error(&error);
+                incomplete = true;
             }
         }
     }
@@ -4100,34 +4361,39 @@ mod tests {
                         .collect::<BTreeSet<_>>();
                     assert_eq!(actual, expected, "incomplete {strategy:?} route ledger");
                     for status in &outcome.response.source_status {
-                        let planned = if status.route == "resolution" {
-                            1
+                        let authoritative = car_units == 2;
+                        let skipped = (status.route == "canonical_equivalence" && car_units == 0)
+                            || (authoritative
+                                && matches!(
+                                    status.route.as_str(),
+                                    "best_effort_free_text" | "source_citation"
+                                ));
+                        let healthy_zero = authoritative && status.route == "strict";
+                        let late_zero = authoritative
+                            && (status.route == "enrichment"
+                                || status.route == "identity_verification");
+                        let late_skipped = authoritative
+                            && matches!(
+                                status.route.as_str(),
+                                "clingen_ldh_medium" | "clingen_ldh_direct"
+                            );
+                        let skipped = skipped || late_skipped;
+                        let healthy_zero = healthy_zero || late_zero;
+                        let planned = if skipped || healthy_zero {
+                            0
                         } else if status.route == "canonical_equivalence" {
                             car_units
-                        } else if car_units == 2
-                            && status.route == "pubtator_variant"
-                            && matches!(
-                                strategy,
-                                VariantArticleStrategy::Union | VariantArticleStrategy::Annotation
-                            )
-                        {
-                            1
-                        } else if car_units == 2
-                            && status.route == "exact_lexical"
-                            && matches!(
-                                strategy,
-                                VariantArticleStrategy::Union | VariantArticleStrategy::Lexical
-                            )
-                        {
+                        } else if authoritative && status.route == "exact_lexical" {
                             2
                         } else {
-                            0
+                            1
                         };
-                        let skipped = status.route == "canonical_equivalence" && car_units == 0;
                         assert_eq!(
                             status.status,
                             if skipped {
                                 VariantArticleSourceStatusKind::Skipped
+                            } else if healthy_zero {
+                                VariantArticleSourceStatusKind::Ok
                             } else {
                                 VariantArticleSourceStatusKind::NotAttempted
                             },
@@ -4153,6 +4419,8 @@ mod tests {
                             status.reason_codes,
                             if skipped {
                                 vec!["identity_inapplicable"]
+                            } else if healthy_zero {
+                                Vec::new()
                             } else {
                                 vec!["invocation_deadline"]
                             }
@@ -4164,6 +4432,197 @@ mod tests {
                             .debug_plan
                             .is_some_and(|plan| plan.deadline.exhausted)
                     );
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn mid_route_expiry_preserves_materialized_units_across_strategy_identity_matrix() {
+        let mut unresolved = resolved_context();
+        unresolved.requested = RequestedVariantIdentity {
+            gene: Some("BRAF".into()),
+            ..Default::default()
+        };
+        unresolved.resolution.status = VariantResolutionStatus::Unresolved;
+        unresolved.resolution.normalized_aliases = unresolved.requested.normalized_aliases();
+        unresolved.resolution.provider_validation.status =
+            VariantProviderValidationStatus::NotFound;
+        unresolved.resolution.basis = None;
+        unresolved.source_id = None;
+        unresolved.source_identity = None;
+        unresolved.source_hit = None;
+
+        let mut resolved = resolved_context();
+        resolved.requested = RequestedVariantIdentity {
+            gene: Some("BRAF".into()),
+            transcript: Some("NM_004333.6".into()),
+            coding_change: Some("c.1799T>A".into()),
+            protein_change: Some("p.V600E".into()),
+            ..Default::default()
+        };
+        resolved.source_id = None;
+        resolved.resolution.normalized_aliases = resolved.requested.normalized_aliases();
+        resolved.source_identity = None;
+        resolved.source_hit = None;
+
+        let mut authoritative = resolved_context();
+        authoritative.requested = RequestedVariantIdentity {
+            transcript: Some("NM_004333.6".into()),
+            coding_change: Some("c.1799T>A".into()),
+            genomic_accession: Some("NC_000007.14".into()),
+            genome_build: Some("GRCh38".into()),
+            position: Some(140753336),
+            reference: Some("A".into()),
+            alternate: Some("T".into()),
+            ..Default::default()
+        };
+        authoritative.resolution.basis = Some(VariantArticleResolutionBasis::CallerSupplied);
+        authoritative.resolution.normalized_aliases = authoritative.requested.normalized_aliases();
+        authoritative.resolution.provider_validation.status =
+            VariantProviderValidationStatus::NotFound;
+        authoritative.source_id = None;
+        authoritative.source_identity = None;
+        authoritative.source_hit = None;
+
+        let identities = [
+            (unresolved, 0, 0, 0, 1),
+            (resolved, 1, 3, 3, 0),
+            (authoritative, 2, 2, 0, 0),
+        ];
+        for (context, car_units, exact_units, expected_strict_units, fallback_units) in identities {
+            for strategy in [
+                VariantArticleStrategy::Union,
+                VariantArticleStrategy::Annotation,
+                VariantArticleStrategy::Lexical,
+            ] {
+                for verify_identity in [false, true] {
+                    let deadline = crate::sources::VariantArticleDeadline::from_now(
+                        std::time::Duration::from_millis(1),
+                    );
+                    let execution = VariantArticleExecutionContext::single_with_deadline(deadline);
+                    let skeleton = strategy_route_skeleton(strategy, verify_identity);
+                    execution.initialize_route_unit_plans(&skeleton, &context.requested);
+                    let aliases = exact_aliases(&context).0;
+                    materialize_discovery_route_plans(
+                        "BRAF variant",
+                        &context,
+                        strategy,
+                        &aliases,
+                        &execution,
+                    );
+                    if verify_identity {
+                        let mut candidates = vec![
+                            lexical_candidate("1001", &[0]),
+                            lexical_candidate("1002", &[1]),
+                        ];
+                        for candidate in &mut candidates {
+                            candidate.row.abstract_snippet = None;
+                            candidate.row.normalized_abstract.clear();
+                        }
+                        assert_eq!(
+                            materialize_identity_verification_plan(
+                                &candidates,
+                                &context.requested,
+                                0,
+                                2,
+                                false,
+                                &execution,
+                            ),
+                            (0, 2)
+                        );
+                    }
+
+                    let strict_units = if strategy == VariantArticleStrategy::Union
+                        || (strategy == VariantArticleStrategy::Lexical && car_units > 0)
+                    {
+                        expected_strict_units
+                    } else {
+                        0
+                    };
+                    if strict_units > 0 {
+                        execution.record("strict", "pubmed", Instant::now(), "ok", 1);
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+                    let mut visible = vec![lexical_candidate("1003", &[2])];
+                    visible[0].row.source = ArticleSource::PubMed;
+                    visible[0].row.matched_sources = vec![ArticleSource::PubMed];
+                    visible[0].row.abstract_snippet = None;
+                    visible[0].row.normalized_abstract.clear();
+                    enrich_candidates(&mut visible, &execution).await;
+                    let statuses = deadline_reconciled_statuses(&execution, &execution.events());
+                    for status in statuses {
+                        let (planned, skipped, healthy_zero) = match status.route.as_str() {
+                            "resolution" => (1, false, false),
+                            "canonical_equivalence" => (car_units, car_units == 0, false),
+                            "strict" => {
+                                let applicable = strategy == VariantArticleStrategy::Union
+                                    || (strategy == VariantArticleStrategy::Lexical
+                                        && car_units > 0);
+                                (strict_units, !applicable, applicable && strict_units == 0)
+                            }
+                            "exact_lexical" => {
+                                let applicable = car_units > 0
+                                    && matches!(
+                                        strategy,
+                                        VariantArticleStrategy::Union
+                                            | VariantArticleStrategy::Lexical
+                                    );
+                                (exact_units, !applicable, false)
+                            }
+                            "best_effort_free_text" => {
+                                let applicable =
+                                    strategy == VariantArticleStrategy::Union && car_units == 0;
+                                (fallback_units, !applicable, false)
+                            }
+                            "pubtator_variant" => {
+                                let applicable = car_units > 0
+                                    && matches!(
+                                        strategy,
+                                        VariantArticleStrategy::Union
+                                            | VariantArticleStrategy::Annotation
+                                    );
+                                (usize::from(applicable), !applicable, false)
+                            }
+                            "source_citation" => (0, true, false),
+                            "enrichment" => match status.source.as_str() {
+                                "semanticscholar" | "pubtator" => (1, false, false),
+                                "europepmc" => (0, false, true),
+                                _ => unreachable!("fixed enrichment source"),
+                            },
+                            "identity_verification" => {
+                                (if verify_identity { 2 } else { 0 }, false, false)
+                            }
+                            _ => (1, false, false),
+                        };
+                        assert_eq!(status.work.planned, planned, "{strategy:?} {status:?}");
+                        let completed = usize::from(
+                            status.route == "strict"
+                                && status.source == "pubmed"
+                                && strict_units > 0,
+                        );
+                        assert_eq!(status.work.ok, completed, "{strategy:?} {status:?}");
+                        assert_eq!(
+                            status.work.not_attempted,
+                            planned.saturating_sub(completed),
+                            "{strategy:?} {status:?}"
+                        );
+                        assert_eq!(
+                            status.status,
+                            if skipped {
+                                VariantArticleSourceStatusKind::Skipped
+                            } else if healthy_zero {
+                                VariantArticleSourceStatusKind::Ok
+                            } else if completed > 0 && completed < planned {
+                                VariantArticleSourceStatusKind::TimedOut
+                            } else if completed == planned {
+                                VariantArticleSourceStatusKind::Ok
+                            } else {
+                                VariantArticleSourceStatusKind::NotAttempted
+                            },
+                            "{strategy:?} {status:?}"
+                        );
+                    }
                 }
             }
         }

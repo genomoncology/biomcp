@@ -109,6 +109,30 @@ independent expected route and identity tables across all strategies and both
 verification modes, including exact CAR 0/1/2 work totals. Full repository
 gates remain unclaimed.
 
+The follow-up remediation makes the filesystem boundary executable rather than
+check-only. Every cancellable pre-publication Tokio filesystem future is raced
+against the invocation clock; if expiry wins, the admitted atomic operation is
+still owned and settled before either lock is released. Marker reads, lock-file
+opens, and staging-file creation run on an owned blocking worker with deadline
+cancellation observed before mutation. The staging guard retains its path
+through write and sync; every pre-publication timeout removes the private
+temporary file, while a successful atomic rename completes marker validation
+as mandatory safe-return work. Controlled tests pin an I/O operation across expiry, event-loop
+responsiveness during the synchronous staging window, no later cleanup
+mutation, and no orphan or false marker.
+
+The route ledger now stores explicit pending, inapplicable, or exact-count unit
+plans. Resolution and CAR are planned from parsed identity; strict, annotation,
+exact/fallback, and citation work materializes from the resolved context and
+final aliases; conditional pages, PubMed summaries, and PubTator token searches
+are added only when prior responses require them; visible candidates materialize
+enrichment and fetched-verification units; and committed LDH medium data
+materializes the bounded direct IRI set. Terminal reconciliation combines that
+plan with real events, retaining every unstarted serial query. A normal-duration
+18-case strategy/verification/identity matrix expires after multiple planning
+boundaries and pins exact zero/one/two/three-unit and partial strict outcomes.
+Full repository gates remain unclaimed.
+
 ## Review
 
 - Design review: accepted before implementation.
@@ -122,6 +146,10 @@ gates remain unclaimed.
 - Contended cold cache-epoch deadline test: passed.
 - Mid-cleanup epoch expiry/no-subsequent-mutation test: passed.
 - Zero-deadline strategy/verification/identity ledger oracle matrix: passed.
+- Normal-duration 3-strategy x 2-verification x 3-identity mid-route ledger
+  matrix: passed.
+- Deadline-raced I/O/staging responsiveness and cleanup matrix: passed (19
+  migration tests total).
 - Actual-HTTP provider-unit concurrency test: passed with an HTTP peak of ten,
   a post-body commit peak of ten, and twenty matching terminal ledger events.
 - Backend fifty-call bound, invocation-deadline settlement, source attribution,

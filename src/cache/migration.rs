@@ -13,15 +13,19 @@ const BODY_LIMIT_CACHE_LOCK: &str = ".body-limit-cache-v1.lock";
 const BODY_LIMIT_CACHE_MARKER: &[u8] = b"bounded-response-body-v1\n";
 static BODY_LIMIT_STAGE_NONCE: AtomicU64 = AtomicU64::new(0);
 
+#[derive(Debug)]
 struct EpochStaging {
     path: std::path::PathBuf,
     file: Option<File>,
 }
 
 impl EpochStaging {
-    fn into_parts(mut self) -> (PathBuf, File) {
-        let path = std::mem::take(&mut self.path);
-        (path, self.file.take().expect("staging file is present"))
+    fn take_file(&mut self) -> File {
+        self.file.take().expect("staging file is present")
+    }
+
+    fn mark_published(&mut self) {
+        self.path.clear();
     }
 }
 
@@ -140,9 +144,14 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
     deadline: &crate::sources::VariantArticleDeadline,
 ) -> Result<(), io::Error> {
     deadline_io(deadline, tokio::fs::create_dir_all(cache_root)).await?;
-    deadline.ensure_time_io()?;
-    let lock = open_epoch_lock(cache_root)?;
-    deadline.ensure_time_io()?;
+    let lock_root = cache_root.to_path_buf();
+    let lock = deadline_blocking_io(deadline, move |cancelled| {
+        if cancelled.load(Ordering::Acquire) {
+            return Err(deadline_elapsed());
+        }
+        open_epoch_lock(&lock_root)
+    })
+    .await?;
     loop {
         match lock.try_lock_exclusive() {
             Ok(()) => break,
@@ -177,14 +186,50 @@ async fn deadline_io<T>(
     deadline: &crate::sources::VariantArticleDeadline,
     operation: impl Future<Output = io::Result<T>>,
 ) -> io::Result<T> {
-    // Filesystem futures may dispatch blocking syscalls internally. Do not drop
-    // one at the deadline and let its mutation finish after our guards return:
-    // each atomic operation reaches its safe boundary, then expiry prevents the
-    // traversal from admitting another operation.
     deadline.ensure_time_io()?;
-    let result = operation.await;
+    tokio::pin!(operation);
+    match deadline.run(&mut operation).await {
+        Ok(result) => result,
+        Err(_) => {
+            // Tokio filesystem futures can own a blocking syscall. Settle the
+            // admitted atomic operation before returning and before releasing
+            // either cache lock; no detached mutation may outlive the caller.
+            let _ = operation.await;
+            Err(deadline_elapsed())
+        }
+    }
+}
+
+fn deadline_elapsed() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::TimedOut,
+        "variant article invocation deadline exceeded",
+    )
+}
+
+async fn deadline_blocking_io<T, F>(
+    deadline: &crate::sources::VariantArticleDeadline,
+    operation: F,
+) -> io::Result<T>
+where
+    T: Send + 'static,
+    F: FnOnce(&std::sync::atomic::AtomicBool) -> io::Result<T> + Send + 'static,
+{
     deadline.ensure_time_io()?;
-    result
+    let cancelled = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let worker_cancelled = std::sync::Arc::clone(&cancelled);
+    let mut worker = tokio::task::spawn_blocking(move || operation(&worker_cancelled));
+    match deadline.run(&mut worker).await {
+        Ok(joined) => joined.map_err(io::Error::other)?,
+        Err(_) => {
+            cancelled.store(true, Ordering::Release);
+            // Ownership stays with this future until the bounded synchronous
+            // operation either observes cancellation or reaches its safe
+            // return. In particular an EpochStaging result is dropped here.
+            let _ = worker.await;
+            Err(deadline_elapsed())
+        }
+    }
 }
 
 async fn remove_cache_directory_until<F, Fut>(
@@ -249,8 +294,14 @@ where
 {
     let marker = cache_root.join(BODY_LIMIT_CACHE_EPOCH);
     let legacy = cache_root.join("http-cacache");
-    let marker_exists = validated_marker_exists(&marker)?;
-    deadline.ensure_time_io()?;
+    let marker_for_read = marker.clone();
+    let marker_exists = deadline_blocking_io(deadline, move |cancelled| {
+        if cancelled.load(Ordering::Acquire) {
+            return Err(deadline_elapsed());
+        }
+        validated_marker_exists(&marker_for_read)
+    })
+    .await?;
     let legacy_exists = deadline_io(deadline, tokio::fs::symlink_metadata(&legacy))
         .await
         .map(|_| true)
@@ -274,11 +325,29 @@ where
     after_mutation(cache).await;
     deadline.ensure_time_io()?;
 
-    let (staging_path, staging_file) = create_epoch_staging(cache_root)?.into_parts();
-    let mut staging_file = tokio::fs::File::from_std(staging_file);
+    let staging_root = cache_root.to_path_buf();
+    let mut staging = deadline_blocking_io(deadline, move |cancelled| {
+        if cancelled.load(Ordering::Acquire) {
+            return Err(deadline_elapsed());
+        }
+        create_epoch_staging(&staging_root)
+    })
+    .await?;
+    let mut staging_file = tokio::fs::File::from_std(staging.take_file());
     use tokio::io::AsyncWriteExt;
-    deadline_io(deadline, staging_file.write_all(BODY_LIMIT_CACHE_MARKER)).await?;
-    deadline_io(deadline, staging_file.sync_all()).await?;
+    if let Err(error) = deadline_io(deadline, staging_file.write_all(BODY_LIMIT_CACHE_MARKER)).await
+    {
+        drop(staging_file);
+        let _ = tokio::fs::remove_file(&staging.path).await;
+        staging.mark_published();
+        return Err(error);
+    }
+    if let Err(error) = deadline_io(deadline, staging_file.sync_all()).await {
+        drop(staging_file);
+        let _ = tokio::fs::remove_file(&staging.path).await;
+        staging.mark_published();
+        return Err(error);
+    }
     drop(staging_file);
     deadline_io(deadline, async {
         match tokio::fs::remove_file(&marker).await {
@@ -288,13 +357,18 @@ where
         }
     })
     .await?;
-    deadline_io(deadline, tokio::fs::rename(&staging_path, &marker)).await?;
+    if let Err(error) = deadline_io(deadline, tokio::fs::rename(&staging.path, &marker)).await {
+        let _ = tokio::fs::remove_file(&staging.path).await;
+        let _ = tokio::fs::remove_file(&marker).await;
+        staging.mark_published();
+        return Err(error);
+    }
+    staging.mark_published();
     after_mutation(marker.clone()).await;
-    deadline.ensure_time_io()?;
-    if deadline_io(deadline, tokio::fs::symlink_metadata(&marker))
-        .await?
-        .is_file()
-    {
+    // Rename is the epoch publication boundary. Once it succeeds, finish the
+    // bounded validation and unlock even if the invocation clock expires;
+    // returning a timeout with a published marker would be a false outcome.
+    if tokio::fs::symlink_metadata(&marker).await?.is_file() {
         FileExt::unlock(&lock)
     } else {
         Err(io::Error::other(
@@ -729,6 +803,91 @@ mod tests {
         release.notify_one();
         assert_eq!(cleanup.await.unwrap_err().kind(), io::ErrorKind::TimedOut);
         assert!(cache.join("b").is_file());
+        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+    }
+
+    #[tokio::test]
+    async fn synchronous_staging_window_is_deadline_raced_responsive_and_orphan_free() {
+        let root = TempDirGuard::new("epoch-staging-window-deadline");
+        fs::create_dir_all(root.path()).unwrap();
+        let entered = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(20));
+        let task = tokio::spawn({
+            let root = root.path().to_path_buf();
+            let entered = std::sync::Arc::clone(&entered);
+            let barrier = std::sync::Arc::clone(&barrier);
+            async move {
+                deadline_blocking_io(&deadline, move |cancelled| {
+                    entered.store(true, Ordering::Release);
+                    barrier.wait();
+                    if cancelled.load(Ordering::Acquire) {
+                        return Err(deadline_elapsed());
+                    }
+                    create_epoch_staging(&root)
+                })
+                .await
+            }
+        });
+        while !entered.load(Ordering::Acquire) {
+            tokio::task::yield_now().await;
+        }
+        let responsive = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let heartbeat = tokio::spawn({
+            let responsive = std::sync::Arc::clone(&responsive);
+            async move {
+                tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+                responsive.store(true, Ordering::Release);
+            }
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+        assert!(responsive.load(Ordering::Acquire));
+        barrier.wait();
+        heartbeat.await.unwrap();
+        assert_eq!(
+            task.await.unwrap().unwrap_err().kind(),
+            io::ErrorKind::TimedOut
+        );
+        assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
+        assert!(fs::read_dir(root.path()).unwrap().all(|entry| {
+            !entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .contains(".tmp-")
+        }));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn async_io_crossing_expiry_settles_without_admitting_a_mutation() {
+        let root = TempDirGuard::new("epoch-io-crossing-deadline");
+        let source = root.path().join("source");
+        let untouched = root.path().join("untouched");
+        fs::write(&source, b"read-only").unwrap();
+        fs::write(&untouched, b"preserve").unwrap();
+        let entered = std::sync::Arc::new(tokio::sync::Notify::new());
+        let release = std::sync::Arc::new(tokio::sync::Notify::new());
+        let deadline =
+            crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_secs(10));
+        let io = deadline_io(&deadline, {
+            let entered = std::sync::Arc::clone(&entered);
+            let release = std::sync::Arc::clone(&release);
+            async move {
+                entered.notify_one();
+                release.notified().await;
+                tokio::fs::read(source).await.map(|_| ())
+            }
+        });
+        tokio::pin!(io);
+        tokio::select! {
+            () = entered.notified() => {}
+            result = &mut io => panic!("I/O settled before injected pause: {result:?}"),
+        }
+        tokio::time::advance(std::time::Duration::from_secs(11)).await;
+        release.notify_one();
+        assert_eq!(io.await.unwrap_err().kind(), io::ErrorKind::TimedOut);
+        assert_eq!(fs::read(&untouched).unwrap(), b"preserve");
         assert!(!root.path().join(BODY_LIMIT_CACHE_EPOCH).exists());
     }
 

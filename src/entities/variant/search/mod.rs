@@ -587,6 +587,7 @@ async fn searched_provider_scan(
         let unit = match first_unit.take() {
             Some(unit) => Some(unit),
             None => {
+                execution.add_route_unit("resolution", "myvariant");
                 execution
                     .begin_provider_unit("resolution", "myvariant")
                     .await

@@ -415,6 +415,7 @@ pub(super) async fn resolve_variant_article_from_pmid(
             if let Some(hit) = europe_hint {
                 transform::article::merge_europepmc_metadata(&mut article, hit);
             } else {
+                execution.add_route_unit("enrichment", "europepmc");
                 match variant_europepmc_hit(pmid, execution).await {
                     Ok(Some((hit, europe_unit))) => {
                         europe_unit.commit("ok", 1, || {
@@ -435,9 +436,12 @@ pub(super) async fn resolve_variant_article_from_pmid(
             unit.record_error(&error);
             let (hit, europe_unit) = match europe_hint.cloned() {
                 Some(hit) => return Ok(article_from_europepmc_fallback(&hit)),
-                None => variant_europepmc_hit(pmid, execution)
-                    .await?
-                    .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?,
+                None => {
+                    execution.add_route_unit("enrichment", "europepmc");
+                    variant_europepmc_hit(pmid, execution)
+                        .await?
+                        .ok_or_else(|| article_not_found(not_found_id, suggestion_id))?
+                }
             };
             Ok(europe_unit.commit("ok", 1, || article_from_europepmc_fallback(&hit)))
         }

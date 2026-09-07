@@ -111,6 +111,17 @@ pub(super) async fn enrich_article_search_rows_with_semantic_scholar_context(
         }
     }
 
+    if let Some(execution) = execution {
+        execution.set_route_unit_plan(
+            "enrichment",
+            "semanticscholar",
+            Some(
+                lookup_ids
+                    .len()
+                    .div_ceil(SEMANTIC_SCHOLAR_BATCH_LOOKUP_MAX_IDS),
+            ),
+        );
+    }
     if lookup_ids.is_empty() {
         return None;
     }
@@ -255,6 +266,10 @@ pub(super) async fn enrich_visible_article_search_rows_with_article_base_context
                 .flatten()
         })
         .collect::<Vec<_>>();
+    if let Some(execution) = execution {
+        execution.set_route_unit_plan("enrichment", "pubtator", Some(lookup_positions.len()));
+        execution.set_route_unit_plan("enrichment", "europepmc", Some(0));
+    }
     if lookup_positions.is_empty() {
         return;
     }
