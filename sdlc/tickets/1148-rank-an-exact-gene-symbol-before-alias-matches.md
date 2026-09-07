@@ -1,6 +1,7 @@
 ---
 flow: build
-priority: 8
+priority: 7
+deps: []
 ---
 
 # Rank an exact gene symbol before alias matches

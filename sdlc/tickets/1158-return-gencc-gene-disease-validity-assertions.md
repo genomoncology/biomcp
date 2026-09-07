@@ -1,6 +1,7 @@
 ---
 flow: build
-priority: 7
+priority: 9
+deps: []
 ---
 
 # Return GenCC gene-disease validity assertions

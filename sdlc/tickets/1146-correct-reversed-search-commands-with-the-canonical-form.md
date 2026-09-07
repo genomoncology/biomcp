@@ -1,6 +1,6 @@
 ---
 flow: build
-priority: 3
+priority: 5
 deps: []
 ---
 
