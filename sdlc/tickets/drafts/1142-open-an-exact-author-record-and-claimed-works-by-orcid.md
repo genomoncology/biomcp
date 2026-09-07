@@ -52,7 +52,14 @@ render 10 as X, otherwise render the decimal digit
 controls. Wrong checksum, lowercase `x`, wrong hyphen positions/count, leading
 or trailing whitespace, missing prefix, uppercase prefix, extra suffix, path,
 query, control, overlong, and non-ASCII inputs return one static
-`invalid_argument` diagnostic naming the canonical form and checksum, exit 2,
+`BioMcpError::InvalidArgument` with this exact inner message:
+
+```text
+author ID must use the exact form orcid:dddd-dddd-dddd-dddC with a valid ISO/IEC 7064 MOD 11-2 checksum.
+```
+
+Its public code is `invalid_argument`, human diagnostic is `Invalid argument: `
+plus that message, source/recovery are absent, and its CLI exit is 2,
 before client construction, cache access, semaphore/rate admission, or network
 work. The diagnostic never echoes the rejected input. Existing exact
 `semanticscholar:<nonempty ASCII decimal>` parsing and serialization are
@@ -82,7 +89,22 @@ space only; require 1-4096 visible ASCII bytes and reject control/non-ASCII
 bytes without displaying the value. The caller obtains a bearer token with
 ORCID's `/read-public` scope outside BioMCP. BioMCP does not accept client ID or
 secret variables, perform OAuth/token refresh, persist the token, or log it.
-Missing/blank token is `api_key_required`; 401/403 is `api_key_rejected`.
+Missing/ASCII-space-only token is `api_key_required`; invalid nonblank token is
+the new `BioMcpError::ApiCredentialInvalid { api, env_var }`; 401/403 is
+`api_key_rejected`.
+
+Freeze these credential projections rather than overloading provider rejection:
+
+| token state | variant/code | exact message | source | recovery | CLI exit/work |
+| --- | --- | --- | --- | --- | --- |
+| missing or ASCII-space-only | `ApiKeyRequired { api:"ORCID", env_var:"ORCID_ACCESS_TOKEN", docs_url:"https://info.orcid.org/documentation/features/public-api/" }` / `api_key_required` | `API key required: ORCID requires ORCID_ACCESS_TOKEN environment variable.\n\nTo set:\n  export ORCID_ACCESS_TOKEN=your-key\n\nMore info: https://info.orcid.org/documentation/features/public-api/` | absent | absent | 1 / zero |
+| nonblank but over 4,096 bytes or containing space/control/non-ASCII after outer-ASCII-space trim | `ApiCredentialInvalid { api:"ORCID", env_var:"ORCID_ACCESS_TOKEN" }` / `api_credential_invalid` | `ORCID credential in ORCID_ACCESS_TOKEN is invalid.` | `ORCID` | `Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry.` | 1 / zero |
+| provider 401/403 after a valid token | existing `ApiKeyRejected { api:"ORCID", env_var:"ORCID_ACCESS_TOKEN", docs_url:<same URL> }` / `api_key_rejected` | existing `ApiKeyRejected` message | absent | absent | 1 / one physical GET, no retry |
+
+`ApiCredentialInvalid`'s human display is its message, one space, then recovery;
+the executable prefix is therefore exact
+`Error: ORCID credential in ORCID_ACCESS_TOKEN is invalid. Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry.`.
+Offset additions elsewhere in `error.rs` keep its line baseline unchanged.
 
 The pure request plan stores only `auth_mode: bearer_env`, never the token or
 an Authorization value; the source attaches the validated token after the URL
@@ -170,8 +192,9 @@ decoded corpus is mapped once and never refetched or prefetched.
 
 Require a root object with exact `path = "/<id>/works"` and a present `group`
 array of at most 10,000 entries. Each group must have 1-64 `work-summary`
-entries and at most 64 group-level external IDs; each summary may have at most
-64 external IDs. Only exact string `visibility:"PUBLIC"` is eligible; missing,
+entries; each summary may have at most 64 external IDs. Group-level
+`external-ids` are neither deserialized nor consulted. Only exact string
+`visibility:"PUBLIC"` is eligible; missing,
 null, or another string is privacy-filtered before reading other fields, while a
 wrong-typed visibility is a contract error. A public summary must have an
 unsigned nonzero 64-bit `put-code`, a canonical
@@ -192,8 +215,8 @@ Its stable provider work ID is
 `orcid:0000-0002-1825-0097/work:42`), and its evidence URL is constructed only
 as `https://orcid.org/<16-digit-hyphenated-id>/work/<put-code>`.
 
-Combine `external-ids.external-id` at group level first and the same array on
-the representative second. Each entry must have string
+Read identifiers only from the selected PUBLIC representative's
+`external-ids.external-id` array. Each entry must have string
 `external-id-type`, string `external-id-value`, and string
 `external-id-relationship`; admit only the exact relationship `SELF`. Normalize
 a case-insensitive ASCII type to lowercase
@@ -203,6 +226,12 @@ project provider external-ID URLs. A structurally wrong-typed external ID is a
 contract error; a correctly shaped non-`SELF` or value-invalid ID is ignored.
 Absent or null `external-ids` means an empty list; if present it must be an
 object with an absent/null-or-array `external-id`, subject to the caps above.
+Identifiers present only at group level, or only on a private/nonselected
+summary, are absent from `identifiers[]`, flattened IDs, evidence, and follow-up
+commands and do not participate in cross-group deduplication. A hostile fixture
+puts a unique PMID/DOI exclusively in each of those three excluded locations
+and freezes their absence from CLI and raw-MCP works JSON/Markdown; typed detail
+continues to expose no works collection at all.
 Canonicalize recognized types to `doi`, `pmid`, `pmcid`, or `arxiv` and their
 values as follows:
 
@@ -253,7 +282,8 @@ URLs follow row order; the continuation follows all row commands.
 | condition | public outcome | requests |
 | --- | --- | --- |
 | invalid ORCID grammar/checksum or bad limit/offset | static `invalid_argument`, exit 2; no card | 0 |
-| missing/blank/invalid token | sanitized `api_key_required`/configuration error, exit 1 | 0 |
+| missing/ASCII-space-only token | exact `api_key_required` projection above, exit 1 | 0 |
+| invalid nonblank token | exact `api_credential_invalid` projection above, exit 1 | 0 |
 | valid 200 person with matching path/name | available ORCID detail; nullable fields exactly as above | 1 logical |
 | valid 200 works, zero groups or offset beyond total | available page, `papers:[]`, exact total, `next:null`, `truncated:false` | 1 logical |
 | valid 200 works with rows | available page and exact local continuation | 1 logical |
@@ -279,13 +309,46 @@ biomcp --json author papers orcid:0000-0002-1825-0097 --limit 10 --offset 0
 ```
 
 The provider-specific Markdown branches are exactly these templates (`?` lines
-are omitted when their value is null/empty). Add one author-renderer-local
-`safe` operation: after entity validation, preserve every non-ASCII Unicode
-scalar plus ASCII letters, digits, and spaces; encode every other ASCII graphic
-as the decimal HTML entity `&#<codepoint>;`. Apply it only to provider display
-name, title, journal, and displayed identifier type/value. Trusted canonical IDs
-and numeric fields remain literal. Provider text is therefore single-line inert
-Markdown and never an HTML/link target or shell argument.
+are omitted when their value is null/empty). Extend the established
+`src/render/human.rs` sanitizer with `sanitize_provider_inline`; do not build a
+second author-local escape policy. It performs, in order:
+
+1. NFC normalization with direct dependency `unicode-normalization = "0.1.25"`
+   (already locked at that version; the package path count does not change).
+2. Replace each U+2028 LINE SEPARATOR or U+2029 PARAGRAPH SEPARATOR with one
+   ASCII space. Replace each maximal run in the Unicode 16.0
+   `Default_Ignorable_Code_Point` property **or** General_Category `Cf` with one
+   visible U+FFFD, using checked-in scalar-range match tables named with that
+   Unicode version; this includes bidi controls, soft hyphen, variation/tag
+   selectors, joiners, and zero-width spaces.
+3. Before a remaining scalar whose Unicode canonical combining class is
+   nonzero, insert U+25CC DOTTED CIRCLE when no retained non-space scalar has
+   occurred since the start or last whitespace. Combining marks following a
+   base remain attached; NFC-composable sequences are already composed.
+4. Pass the result through existing `sanitize_inline` for ANSI/C0/C1 handling.
+   Then preserve every non-ASCII scalar plus ASCII letters, digits, and spaces,
+   while encoding every other ASCII graphic as decimal HTML
+   `&#<codepoint>;` with no leading zeroes.
+
+Apply this operation only to provider display name, title, journal, and
+displayed identifier type/value. JSON retains the validated, Unicode-trimmed
+provider value; trusted canonical IDs and numeric fields remain literal in
+Markdown. Exact sanitizer controls are:
+
+```text
+provider input:  "e\u{0301}" | "\u{0301}A" | "A\u{2028}B\u{2029}C"
+Markdown output: "é" | "◌́A" | "A B C"
+
+provider input:  "A\u{202E}B\u{200B}\u{200D}C 👩\u{200D}🔬 <x&`$()>"
+Markdown output: "A�B�C 👩�🔬 &#60;x&#38;&#96;&#36;&#40;&#41;&#62;"
+```
+
+The second output's leading mark includes an inserted U+25CC. Fixture assertions compare
+UTF-8 bytes for isolated/attached combining marks, consecutive line separators,
+every table boundary, bidi isolates/overrides, zero-width/joiner/variation/tag
+characters, and NFC composition. The operation is called exactly once at the
+Markdown leaf. Provider text is single-line visible Markdown and
+never an HTML/link target or shell argument.
 
 ```text
 # <safe display_name>
@@ -355,6 +418,30 @@ post-mapping argv is
 `[biomcp,get,author,orcid:0000-0002-1825-0097,--json]` and the runtime ID is
 unchanged. There is no typed author-papers operation.
 
+Invalid-ID and invalid-nonblank-token surfaces freeze the same projections:
+
+| surface | exact disposition |
+| --- | --- |
+| human CLI | stderr is `Error: ` plus the exact human diagnostic above and one newline; exit 2 for ID, 1 for credential; stdout empty |
+| JSON CLI detail | stdout is the exact logical object below plus final newline; stderr empty; exit 2 or 1 |
+| JSON CLI papers | same object plus the existing top-level `"papers":[]`; no other partial field; exit 2 or 1 |
+| raw MCP and typed `get`, default Markdown mode | `isError:true`, one text content equal to the exact human CLI line without its final newline; no process exit |
+| raw MCP and typed `get`, `json:true` | preserve the existing generic CLI/MCP wrapper: `isError:false`, one text content byte-equal to the JSON CLI object without its final newline; no process exit |
+
+```json
+{"error":{"code":"invalid_argument","message":"Invalid argument: author ID must use the exact form orcid:dddd-dddd-dddd-dddC with a valid ISO/IEC 7064 MOD 11-2 checksum."},"_meta":{"not_found":false}}
+{"error":{"code":"api_credential_invalid","message":"ORCID credential in ORCID_ACCESS_TOKEN is invalid.","source":"ORCID","recovery":"Set ORCID_ACCESS_TOKEN to 1-4096 visible ASCII bytes and retry."},"_meta":{"not_found":false}}
+```
+
+These are logical one-line fixtures; CLI pretty-print whitespace/key order is
+separately frozen byte-for-byte. Missing and blank-token MCP text is the existing
+inline sanitization of its exact multiline diagnostic:
+`Error: API key required: ORCID requires ORCID_ACCESS_TOKEN environment variable. To set:   export ORCID_ACCESS_TOKEN=your-key More info: https://info.orcid.org/documentation/features/public-api/`.
+No diagnostic contains the invalid ID, token, token length, or provider body.
+Tests exercise invalid ID and each credential state through both feature
+commands, human/JSON CLI, raw MCP, and typed detail, then make a healthy MCP call
+to prove the session remains usable.
+
 Ticket 1143 lands first and retains `--full` only for Semantic Scholar's rich
 author-papers endpoint. `author papers orcid:<id> --full` returns this exact
 static `invalid_argument` guidance:
@@ -379,10 +466,18 @@ and works. It performs one non-retried GET of
 and bearer headers, under the existing 12-second per-probe deadline and
 16-probe global concurrency. Missing token yields exact `excluded (set
 ORCID_ACCESS_TOKEN)`, `required_env_var:"ORCID_ACCESS_TOKEN"`,
-`key_configured:false`, and zero GETs. The health probe uses the same token
-validator; blank/invalid values yield a sanitized configuration-error row,
-`key_configured:false`, and zero GETs. Configured 2xx is `ok (key configured)`;
-401/403/timeout/other failure is an error row without token/body leakage.
+`status:"excluded"`, `latency:"n/a"`, `affects:"get author and author papers for
+ORCID IDs"`, `key_configured:false`, and zero GETs; ASCII-space-only is identical.
+The selected row's exact logical JSON is
+`{"api":"ORCID","status":"excluded","latency":"n/a","affects":"get author and author papers for ORCID IDs","key_configured":false,"required_env_var":"ORCID_ACCESS_TOKEN"}`.
+The health probe uses the same token validator. Invalid nonblank input yields
+exact Markdown `error (key configured)` and the JSON row
+`{"api":"ORCID","status":"error","latency":"n/a","affects":"get author and author papers for ORCID IDs","key_configured":true,"required_env_var":"ORCID_ACCESS_TOKEN"}`
+with zero GETs. Health rows have no error variant/code/source/recovery fields;
+report-only exits 0, while `--fail-on-error` exits 1 for this invalid row (the
+missing/blank excluded row is not an error). Configured 2xx is
+`ok (key configured)`; 401/403/timeout/other failure is an error row without
+token/body leakage.
 `--apis-only` includes the row and `--api ORCID` selects it.
 
 Update `biomcp get author --help`, `biomcp author papers --help`,
@@ -411,8 +506,11 @@ Test first at the owning layers:
    four-attempt cap, and no permit/task leak.
 3. Person wire tables cover requested-path match, every name precedence/null
    combination, byte/control boundaries, all status/error rows, privacy
-   allowlisting, and exact public JSON/Markdown.
-4. Works tables cover 0/1/64/65 summaries and external IDs, 10,000/10,001
+   allowlisting, and exact public JSON/Markdown. Shared human-renderer tables
+   freeze the Unicode-16 predicate boundaries and every sanitizer byte example
+   above without changing JSON values.
+4. Works tables cover 0/1/64/65 summaries and selected-summary external IDs,
+   ignored hostile group/private/nonselected IDs, 10,000/10,001
    groups, representative ties, private filtering, identifier normalization and
    conflicts, stable dedupe, groups without IDs, first/middle/terminal/empty
    slices, offset/limit arithmetic, article-command priority/quoting, and one
@@ -447,7 +545,9 @@ The package has exactly 1,300 paths at the design base. Add
 `src/entities/author/detail.rs` implementation/tests into the 251-line
 `src/entities/author/mod.rs`, and delete `detail.rs`: one real owner replaces
 one real owner, so the package remains exactly 1,300 with no filler or Cargo
-exclusion change. Keep the merged author module and new source below 700 lines;
+exclusion change. Add the already locked `unicode-normalization = "0.1.25"` as a
+direct dependency without changing its lock resolution or package path count.
+Keep the merged author module and new source below 700 lines;
 `src/cli/commands.rs` (686), CLI author/list modules, health modules,
 `src/sources/rate_limit.rs` (605), and `src/sources/provider_url_policy.rs`
 (945) remain below 700/1,000 as applicable. Keep `src/sources/mod.rs` exactly
