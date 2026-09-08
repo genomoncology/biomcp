@@ -134,11 +134,11 @@ fn product_references_maps_each_section_state() {
             .expect("source-stated reference");
     assert_eq!(
         product_references(ClinicalTrialSection::Present(vec![
-            without_citation,
+            without_citation.clone(),
             retained.clone(),
         ]))
         .expect("present references"),
-        vec![retained]
+        vec![without_citation, retained]
     );
 }
 

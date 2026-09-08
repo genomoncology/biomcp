@@ -33,7 +33,7 @@ name = "biomcp-cli"
 path = "src/main_biomcp_cli.rs"
 
 [dependencies]
-biodata = { git = "https://github.com/genomoncology/biodata", rev = "ae640f079314617583e22e099dc63d9c07f57b7c" }
+biodata = { git = "https://github.com/genomoncology/biodata", rev = "cfafc69d27c9a2fc74909f21692a418a8b17db83" }
 
 # CLI
 clap = { version = "4", features = ["derive"] }
@@ -64,7 +64,7 @@ zstd = { version = "0.13", optional = true }
 
 # JSON
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["raw_value"] }
 base64 = "0.22"
 
 # Hashing (download cache keys)

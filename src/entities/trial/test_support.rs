@@ -185,151 +185,113 @@ mod reference_wire_tests {
         );
 
         let populated = serde_json::json!([
-            {"pmid":" 123 ", "citation":" Étude α. ", "reference_type":" DERIVED "},
-            {"citation":"研究 β", "pmid":" \t ", "reference_type":null}
+            {
+                "pmid":" 123 ",
+                "citation":" Étude α. ",
+                "source_type": {
+                    "authority": "other.example",
+                    "code": " DERIVED ",
+                    "display": " Dérivé ",
+                    "vocabulary_version": " 2026-β ",
+                    "recognized_meaning": " Supporting result "
+                }
+            },
+            {"citation":"研究 β", "pmid":" \t ", "source_type":null}
         ]);
         let trial: Trial =
-            serde_json::from_value(trial_wire(Some(populated))).expect("populated section");
+            serde_json::from_value(trial_wire(Some(populated.clone()))).expect("populated section");
         let references = trial.references.as_ref().expect("shared values");
-        assert_eq!(references[0].pmid(), Some("123"));
-        assert_eq!(references[0].citation(), Some("Étude α."));
+        assert_eq!(references[0].pmid(), Some(" 123 "));
+        assert_eq!(references[0].citation(), Some(" Étude α. "));
         assert_eq!(references[1].citation(), Some("研究 β"));
         assert_eq!(
             serde_json::to_value(trial).expect("populated serialization")["references"],
+            populated
+        );
+    }
+
+    #[test]
+    fn trial_reference_wire_emits_exact_complete_shapes() {
+        let mut trial: Trial = serde_json::from_value(trial_wire(None)).unwrap();
+        trial.references = Some(vec![
+            shared_reference(None, None, None),
+            shared_reference(
+                Some("pmid-α"),
+                Some("Citation β"),
+                Some(
+                    ExtensibleCode::new(
+                        "other.example",
+                        "PRIMARY",
+                        Some("Primary source"),
+                        Some("v2"),
+                        Some("Main publication"),
+                    )
+                    .unwrap(),
+                ),
+            ),
+            shared_reference(
+                None,
+                None,
+                Some(
+                    ExtensibleCode::new(
+                        "clinicaltrials.gov",
+                        "BACKGROUND",
+                        None::<String>,
+                        None::<String>,
+                        None::<String>,
+                    )
+                    .unwrap(),
+                ),
+            ),
+        ]);
+        assert_eq!(
+            serde_json::to_value(trial).unwrap()["references"],
             serde_json::json!([
-                {"pmid":"123", "citation":"Étude α.", "reference_type":"DERIVED"},
-                {"citation":"研究 β"}
+                {"pmid":null,"citation":null,"source_type":null},
+                {"pmid":"pmid-α","citation":"Citation β","source_type":{"authority":"other.example","code":"PRIMARY","display":"Primary source","vocabulary_version":"v2","recognized_meaning":"Main publication"}},
+                {"pmid":null,"citation":null,"source_type":{"authority":"clinicaltrials.gov","code":"BACKGROUND","display":null,"vocabulary_version":null,"recognized_meaning":null}}
             ])
         );
     }
 
     #[test]
-    fn trial_reference_wire_rejects_unusable_citations() {
-        for citation in [
-            None,
-            Some(serde_json::Value::Null),
-            Some(serde_json::json!("")),
-            Some(serde_json::json!(" \t ")),
-        ] {
-            let mut reference = serde_json::json!({});
-            if let Some(citation) = citation {
-                reference["citation"] = citation;
-            }
-            assert!(
-                serde_json::from_value::<Trial>(trial_wire(Some(serde_json::json!([reference]))))
-                    .is_err()
-            );
-        }
-
-        let mut trial: Trial = serde_json::from_value(trial_wire(None)).unwrap();
-        trial.references = Some(vec![shared_reference(None, Some(" \t "), None)]);
-        assert!(serde_json::to_value(trial).is_err());
-    }
-
-    #[test]
-    fn trial_reference_wire_normalizes_direct_shared_optional_whitespace() {
-        let mut trial: Trial = serde_json::from_value(trial_wire(None)).unwrap();
-        trial.references = Some(vec![shared_reference(
-            Some(" \t "),
-            Some(" Citation "),
-            Some(
-                ExtensibleCode::new(
-                    "clinicaltrials.gov",
-                    " \t ",
-                    None::<String>,
-                    None::<String>,
-                    None::<String>,
-                )
-                .unwrap(),
-            ),
-        )]);
+    fn trial_reference_wire_accepts_every_shared_value_state() {
+        let references = serde_json::json!([
+            {"pmid":"123","citation":null,"source_type":null},
+            {"pmid":null,"citation":"Citation","source_type":null},
+            {"pmid":null,"citation":null,"source_type":{"authority":"nci.nih.gov","code":"OTHER","display":null,"vocabulary_version":null,"recognized_meaning":null}},
+            {"pmid":null,"citation":null,"source_type":null},
+            {"pmid":"456","citation":"Complete","source_type":{"authority":"example.org","code":"CODE","display":"Display","vocabulary_version":"v1","recognized_meaning":"Meaning"}}
+        ]);
+        let trial: Trial = serde_json::from_value(trial_wire(Some(references.clone()))).unwrap();
         assert_eq!(
             serde_json::to_value(trial).unwrap()["references"],
-            serde_json::json!([{"citation":"Citation"}])
+            references
         );
     }
 
     #[test]
-    fn trial_reference_wire_rejects_shared_information_it_cannot_emit() {
-        let invalid = [
-            shared_reference(None, None, None),
-            shared_reference(
-                None,
-                Some("Citation"),
-                Some(
-                    ExtensibleCode::new(
-                        "nci.nih.gov",
-                        " ",
-                        None::<String>,
-                        None::<String>,
-                        None::<String>,
-                    )
-                    .unwrap(),
-                ),
-            ),
-            shared_reference(
-                None,
-                Some("Citation"),
-                Some(
-                    ExtensibleCode::new(
-                        "clinicaltrials.gov",
-                        " ",
-                        Some("Display"),
-                        None::<String>,
-                        None::<String>,
-                    )
-                    .unwrap(),
-                ),
-            ),
-            shared_reference(
-                None,
-                Some("Citation"),
-                Some(
-                    ExtensibleCode::new(
-                        "clinicaltrials.gov",
-                        "BACKGROUND",
-                        Some("Display"),
-                        None::<String>,
-                        None::<String>,
-                    )
-                    .unwrap(),
-                ),
-            ),
-            shared_reference(
-                None,
-                Some("Citation"),
-                Some(
-                    ExtensibleCode::new(
-                        "clinicaltrials.gov",
-                        "BACKGROUND",
-                        None::<String>,
-                        Some("v1"),
-                        None::<String>,
-                    )
-                    .unwrap(),
-                ),
-            ),
-            shared_reference(
-                None,
-                Some("Citation"),
-                Some(
-                    ExtensibleCode::new(
-                        "clinicaltrials.gov",
-                        "BACKGROUND",
-                        None::<String>,
-                        None::<String>,
-                        Some("meaning"),
-                    )
-                    .unwrap(),
-                ),
-            ),
+    fn trial_reference_wire_preserves_duplicates_for_strict_biodata_rejection() {
+        let cases = [
+            r#"[{"pmid":"private-root","pmid":"duplicate","citation":null,"source_type":null}]"#,
+            r#"[{"pmid":null,"citation":null,"source_type":{"authority":"private-nested","authority":"duplicate","code":"TYPE","display":null,"vocabulary_version":null,"recognized_meaning":null}}]"#,
+            r#"[{"pmid":null,"citation":null,"source_type":null,"reference_type":"retired-private"}]"#,
         ];
-        for reference in invalid {
-            let mut trial: Trial = serde_json::from_value(trial_wire(None)).unwrap();
-            trial.references = Some(vec![reference]);
-            let error = serde_json::to_value(trial).expect_err("unsupported shared value");
-            assert!(error.to_string().contains("Invalid trial reference data"));
-            assert!(!error.to_string().contains("nci.nih.gov"));
+        for references in cases {
+            let json = format!(
+                r#"{{"nct_id":"NCT00000001","title":"Reference test","status":"RECRUITING","conditions":[],"interventions":[],"references":{references}}}"#
+            );
+            let error = serde_json::from_str::<Trial>(&json).expect_err("invalid reference");
+            let message = error.to_string();
+            assert!(message.starts_with("invalid clinical trial reference"));
+            for private in [
+                "private-root",
+                "private-nested",
+                "retired-private",
+                "duplicate",
+            ] {
+                assert!(!message.contains(private));
+            }
         }
     }
 }

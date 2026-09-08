@@ -520,6 +520,110 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
 
 #[tokio::test]
 #[serial_test::serial(source_env)]
+async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let study = json!({"protocolSection": {
+        "identificationModule": {"nctId":"NCT60000002","briefTitle":"Reference trial"},
+        "statusModule": {"overallStatus":"RECRUITING"},
+        "referencesModule": {"references":[{
+            "pmid":"pmid-α", "citation":"Citation β", "type":"PRIMARY"
+        }]}
+    }});
+    let router = Router::new().route(
+        "/studies/{id}",
+        axum_get(move || {
+            let study = study.clone();
+            async move { Json(study) }
+        }),
+    );
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let _env = CtGovAgeMcpEnv::set(&base);
+
+    let cli = crate::cli::execute(
+        [
+            "biomcp",
+            "--json",
+            "get",
+            "trial",
+            "NCT60000002",
+            "references",
+        ]
+        .map(str::to_owned)
+        .to_vec(),
+    )
+    .await
+    .unwrap();
+    let typed = BioMcpServer::new()
+        .get(rmcp::handler::server::wrapper::Parameters(TypedGet(
+            json!({
+                "entity":"trial", "id":"NCT60000002", "sections":["references"], "json":true
+            }),
+        )))
+        .await
+        .unwrap();
+    let raw = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp get trial NCT60000002 references".into(),
+            json: true,
+        }))
+        .await
+        .unwrap();
+
+    server.abort();
+    let response_json = |result| {
+        let value = serde_json::to_value(result).unwrap();
+        serde_json::from_str::<serde_json::Value>(value["content"][0]["text"].as_str().unwrap())
+            .unwrap()
+    };
+    let cli = serde_json::from_str::<serde_json::Value>(&cli).unwrap();
+    let typed = response_json(typed);
+    let raw = response_json(raw);
+    let expected = json!([{
+        "pmid":"pmid-α",
+        "citation":"Citation β",
+        "source_type":{
+            "authority":"clinicaltrials.gov",
+            "code":"PRIMARY",
+            "display":null,
+            "vocabulary_version":null,
+            "recognized_meaning":null
+        }
+    }]);
+    assert_eq!(cli["references"], expected);
+    assert_eq!(typed["references"], expected);
+    assert_eq!(raw["references"], expected);
+    assert_eq!(
+        expected[0]
+            .as_object()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from_iter(["citation", "pmid", "source_type"].map(str::to_owned))
+    );
+    assert_eq!(
+        expected[0]["source_type"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from_iter(
+            [
+                "authority",
+                "code",
+                "display",
+                "recognized_meaning",
+                "vocabulary_version",
+            ]
+            .map(str::to_owned)
+        )
+    );
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
 async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());

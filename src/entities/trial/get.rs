@@ -81,15 +81,7 @@ fn product_references(
     section: biodata::ClinicalTrialSection<Vec<biodata::ClinicalTrialReference>>,
 ) -> Result<Vec<biodata::ClinicalTrialReference>, BioMcpError> {
     match section {
-        biodata::ClinicalTrialSection::Present(values) => Ok(values
-            .into_iter()
-            .filter(|value| {
-                value
-                    .citation()
-                    .map(str::trim)
-                    .is_some_and(|citation| !citation.is_empty())
-            })
-            .collect()),
+        biodata::ClinicalTrialSection::Present(values) => Ok(values),
         biodata::ClinicalTrialSection::Absent => Ok(Vec::new()),
         biodata::ClinicalTrialSection::NotRequested
         | biodata::ClinicalTrialSection::Unavailable => Err(BioMcpError::InternalProcessing),
@@ -252,7 +244,6 @@ pub async fn get(
             let mut study = response.study;
             if let Some(protocol) = study.protocol_section.as_mut() {
                 protocol.arms_interventions_module = None;
-                protocol.references_module = None;
             }
             let mut trial = transform::trial::from_ctgov_study(&study)?;
             trial.design = product_design(response.shared.interventions(), response.shared.arms())?;

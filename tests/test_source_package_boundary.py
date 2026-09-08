@@ -11,7 +11,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 MAX_PACKAGE_FILES = 1_300
-BIODATA_REVISION = "ae640f079314617583e22e099dc63d9c07f57b7c"
+BIODATA_REVISION = "cfafc69d27c9a2fc74909f21692a418a8b17db83"
 
 
 def _cargo_package_list() -> list[str]:
@@ -120,6 +120,27 @@ def test_biodata_owns_the_clinical_trial_eligibility_value_codec() -> None:
         "BoundWire",
     ):
         assert retired not in production
+
+
+def test_biodata_owns_the_clinical_trial_reference_value_codec() -> None:
+    source = (ROOT / "src/entities/trial/mod.rs").read_text(encoding="utf-8")
+    production = source.split("#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TrialSearchResult", maxsplit=1)[0]
+    assert "ClinicalTrialReference::from_json_bytes" in production
+    assert ".to_json()" in production
+    for retired in (
+        "reference_type",
+        "const AUTHORITY",
+        "fn normalized",
+        "fn from_parts",
+        "struct Wire",
+    ):
+        assert retired not in production
+
+    provider = (ROOT / "src/sources/clinicaltrials.rs").read_text(encoding="utf-8")
+    detail = (ROOT / "src/entities/trial/get.rs").read_text(encoding="utf-8")
+    for retired in ("references_module", "CtGovReference", "CtGovReferencesModule"):
+        assert retired not in provider
+    assert "protocol.references_module = None" not in detail
 
 
 def test_artifact_checker_rejects_renamed_fixture_bytes(tmp_path: Path) -> None:

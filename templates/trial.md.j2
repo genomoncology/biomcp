@@ -102,7 +102,7 @@ _and {{ intervention_details | length - 5 }} more (see `arms` section)_
 No references found.
 {% else -%}
 {% for ref in references -%}
-{{ loop.index }}. {% if ref.pmid %}[PMID: {{ ref.pmid }}] {% endif %}{{ ref.citation }}{% if ref.reference_type %} *({{ ref.reference_type }})*{% endif %}
+{{ loop.index }}. {% if ref.citation %}{% if ref.pmid %}[PMID: {{ ref.pmid }}] {% endif %}{{ ref.citation }}{% elif ref.pmid %}[PMID: {{ ref.pmid }}]{% elif ref.source_type_label %}{{ ref.source_type_label }}{% else %}Reference details unavailable.{% endif %}{% if ref.source_type_label and (ref.citation or ref.pmid) %} *({{ ref.source_type_label }})*{% endif %}
 {% endfor -%}
 {% endif -%}
 {% endif -%}

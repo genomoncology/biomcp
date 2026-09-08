@@ -231,7 +231,7 @@ def test_repository_audit_classifies_every_source_file_and_preserves_erepo_histo
     assert report["classified_files"] == report["audited_files"]
     assert report["fixture_keys_checked"] > 0
     assert report["fixture_key_exceptions"] == 0
-    assert report["code_keys_checked"] == 107
+    assert report["code_keys_checked"] == 102
     assert report["confirmed_byte_unfaithful"] == 0
     assert set(report["classifications"]) == {
         "authored",
@@ -1026,11 +1026,6 @@ def test_code_key_contract_checks_each_nci_alternative_independently(
             '#[serde(rename = "type")]\n    pub arm_group_type',
             "pub arm_group_type",
             "armGroupType",
-        ),
-        (
-            '#[serde(rename = "type")]\n    pub reference_type',
-            "pub reference_type",
-            "referenceType",
         ),
         (
             "pub contacts: Vec<CtGovContact>,\n    pub geo_point",

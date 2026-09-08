@@ -477,33 +477,88 @@ fn trial_markdown_includes_source_labeled_sections() {
 }
 
 #[test]
-fn trial_markdown_rejects_invalid_shared_references_without_exposing_them() {
+fn trial_markdown_uses_each_safe_reference_fallback() {
     let mut trial = summary_trial(None);
     trial.references = Some(vec![
         biodata::ClinicalTrialReference::new(
-            Some("private-pmid".to_string()),
-            Some("private-citation".to_string()),
+            Some(" 12345 ".to_string()),
+            Some(" Citation with identifier ".to_string()),
             Some(
                 biodata::ExtensibleCode::new(
-                    "unsupported.example",
-                    "private-type",
+                    "example.org",
+                    "CODE",
+                    Some(" Preferred display ".to_string()),
                     None::<String>,
-                    None::<String>,
-                    None::<String>,
+                    Some("Recognized meaning".to_string()),
                 )
                 .expect("shared source type"),
             ),
         )
         .expect("shared reference"),
+        biodata::ClinicalTrialReference::new(Some("67890".to_string()), None, None)
+            .expect("PMID-only reference"),
+        biodata::ClinicalTrialReference::new(
+            None,
+            None,
+            Some(
+                biodata::ExtensibleCode::new(
+                    "example.org",
+                    "CODE-TWO",
+                    None::<String>,
+                    None::<String>,
+                    Some(" Recognized only ".to_string()),
+                )
+                .expect("recognized source type"),
+            ),
+        )
+        .expect("source-only reference"),
+        biodata::ClinicalTrialReference::new(
+            None,
+            None,
+            Some(
+                biodata::ExtensibleCode::new(
+                    "example.org",
+                    " Code only ",
+                    None::<String>,
+                    None::<String>,
+                    None::<String>,
+                )
+                .expect("code source type"),
+            ),
+        )
+        .expect("source-only code reference"),
+        biodata::ClinicalTrialReference::new(None, None, None).expect("all-null reference"),
+        biodata::ClinicalTrialReference::new(
+            Some(" \t ".to_string()),
+            Some(" \t ".to_string()),
+            Some(
+                biodata::ExtensibleCode::new(
+                    "example.org",
+                    " \t ",
+                    Some(" \t ".to_string()),
+                    None::<String>,
+                    Some(" \t ".to_string()),
+                )
+                .expect("whitespace source type"),
+            ),
+        )
+        .expect("whitespace reference"),
     ]);
 
-    let error = trial_markdown(&trial, &["references".to_string()])
-        .expect_err("unsupported reference must not render");
-    assert!(matches!(error, BioMcpError::InternalProcessing));
-    let message = error.to_string();
-    for private_value in ["private-pmid", "private-citation", "private-type"] {
-        assert!(!message.contains(private_value));
+    let markdown = trial_markdown(&trial, &["references".to_string()]).expect("references");
+    for expected in [
+        "[PMID: 12345] Citation with identifier *(Preferred display)*",
+        "[PMID: 67890]",
+        "Recognized only",
+        "Code only",
+    ] {
+        assert!(markdown.contains(expected), "missing {expected}");
     }
+    assert_eq!(
+        markdown.matches("Reference details unavailable.").count(),
+        2
+    );
+    assert!(!markdown.contains("Recognized meaning"));
 }
 
 #[test]

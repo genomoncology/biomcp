@@ -354,7 +354,6 @@ pub struct CtGovProtocolSection {
     pub eligibility_module: Option<CtGovEligibilityModule>,
     pub contacts_locations_module: Option<CtGovContactsLocationsModule>,
     pub outcomes_module: Option<CtGovOutcomesModule>,
-    pub references_module: Option<CtGovReferencesModule>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -599,22 +598,6 @@ pub struct CtGovOutcomesModule {
     pub primary_outcomes: Vec<CtGovOutcome>,
     #[serde(default)]
     pub secondary_outcomes: Vec<CtGovOutcome>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovReference {
-    pub pmid: Option<String>,
-    #[serde(rename = "type")]
-    pub reference_type: Option<String>,
-    pub citation: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovReferencesModule {
-    #[serde(default)]
-    pub references: Vec<CtGovReference>,
 }
 
 #[cfg(test)]

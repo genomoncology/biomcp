@@ -315,9 +315,17 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
             )
             expected = [
                 {
-                    "pmid": row["pmid"],
-                    "citation": row["citation"],
-                    "reference_type": row["type"],
+                    "pmid": row.get("pmid"),
+                    "citation": row.get("citation"),
+                    "source_type": {
+                        "authority": "clinicaltrials.gov",
+                        "code": row["type"],
+                        "display": None,
+                        "vocabulary_version": None,
+                        "recognized_meaning": None,
+                    }
+                    if row.get("type")
+                    else None,
                 }
                 for row in source
             ]
@@ -335,7 +343,8 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
                     if row["pmid"] in line
                 )
                 assert row["citation"] in entry
-                assert row["reference_type"] in entry
+                if row["source_type"]:
+                    assert row["source_type"]["code"] in entry
                 positions.append(markdown.stdout.index(row["pmid"]))
             assert positions == sorted(positions)
             if not expected:
@@ -351,7 +360,7 @@ def test_recorded_references_and_empty_result_keep_section_behavior(
                 assert "PrimaryOutcomeMeasure" in fields
 
 
-def test_synthetic_partial_reply_normalizes_and_reflects_changed_references(
+def test_synthetic_partial_reply_preserves_complete_changed_references(
     tmp_path: Path,
 ) -> None:
     with _reference_trial_server() as (base, replies, _requests):
@@ -384,13 +393,32 @@ def test_synthetic_partial_reply_normalizes_and_reflects_changed_references(
         }
         expected = [
             {
-                "pmid": "12345",
-                "citation": "Changed Étude α.",
-                "reference_type": "PRIMARY",
+                "pmid": " 12345 ",
+                "citation": " Changed Étude α. ",
+                "source_type": {
+                    "authority": "clinicaltrials.gov",
+                    "code": " PRIMARY ",
+                    "display": None,
+                    "vocabulary_version": None,
+                    "recognized_meaning": None,
+                },
             },
-            {"citation": "Citation without identifiers."},
-            {"citation": "Another citation."},
-            {"citation": "Missing optional members."},
+            {
+                "pmid": None,
+                "citation": " Citation without identifiers. ",
+                "source_type": {
+                    "authority": "clinicaltrials.gov",
+                    "code": " \t ",
+                    "display": None,
+                    "vocabulary_version": None,
+                    "recognized_meaning": None,
+                },
+            },
+            {"pmid": " ", "citation": " Another citation. ", "source_type": None},
+            {"pmid": None, "citation": "Missing optional members.", "source_type": None},
+            {"pmid": "discard-empty", "citation": " \t ", "source_type": None},
+            {"pmid": "discard-null", "citation": None, "source_type": None},
+            {"pmid": "discard-missing", "citation": None, "source_type": None},
         ]
         result = _run_reference(base, tmp_path, "NCT02576665", "references")
         assert result.returncode == 0, result.stderr
@@ -401,7 +429,9 @@ def test_synthetic_partial_reply_normalizes_and_reflects_changed_references(
         assert markdown.returncode == 0, markdown.stderr
         assert "Changed Étude α." in markdown.stdout
         assert "Therapeutic activity" not in markdown.stdout
-        assert "discard-" not in markdown.stdout
+        assert "discard-empty" in markdown.stdout
+        assert "discard-null" in markdown.stdout
+        assert "discard-missing" in markdown.stdout
 
 
 def test_other_trial_section_and_not_found_still_work(tmp_path: Path) -> None:

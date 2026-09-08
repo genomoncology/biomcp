@@ -613,104 +613,72 @@ pub struct TrialOutcome {
 }
 
 pub(crate) mod reference_wire {
-    use biodata::{ClinicalTrialReference, ExtensibleCode};
+    use biodata::ClinicalTrialReference;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    const AUTHORITY: &str = "clinicaltrials.gov";
-    #[derive(Deserialize, Serialize)]
-    pub(crate) struct Wire<T> {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pmid: Option<T>,
-        citation: Option<T>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        reference_type: Option<T>,
-    }
-    fn normalized(value: Option<String>) -> Option<String> {
-        value
-            .map(|text| text.trim().to_owned())
-            .filter(|text| !text.is_empty())
+    use serde_json::value::RawValue;
+
+    const INVALID_REFERENCE: &str = "invalid clinical trial reference";
+
+    #[derive(Serialize)]
+    pub(crate) struct View<'a> {
+        pub(crate) pmid: Option<&'a str>,
+        pub(crate) citation: Option<&'a str>,
+        pub(crate) source_type_label: Option<&'a str>,
     }
 
-    fn from_parts(
-        pmid: Option<String>,
-        citation: Option<String>,
-        reference_type: Option<String>,
-    ) -> Result<ClinicalTrialReference, ()> {
-        let citation = normalized(citation).ok_or(())?;
-        let source_type = normalized(reference_type)
-            .map(|code| {
-                ExtensibleCode::new(
-                    AUTHORITY,
-                    code,
-                    None::<String>,
-                    None::<String>,
-                    None::<String>,
-                )
-            })
-            .transpose()
-            .map_err(|_| ())?;
-        ClinicalTrialReference::new(normalized(pmid), Some(citation), source_type).map_err(|_| ())
+    fn display_text(value: Option<&str>) -> Option<&str> {
+        value.map(str::trim).filter(|value| !value.is_empty())
     }
 
-    fn wire(reference: &ClinicalTrialReference) -> Result<Wire<&str>, ()> {
-        let citation = reference
-            .citation()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .ok_or(())?;
-        let pmid = reference
-            .pmid()
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
-        let reference_type = match reference.source_type() {
-            None => None,
-            Some(source_type)
-                if source_type.authority() == AUTHORITY
-                    && source_type.display().is_none()
-                    && source_type.vocabulary_version().is_none()
-                    && source_type.recognized_meaning().is_none() =>
-            {
-                match source_type.code().trim() {
-                    "" => None,
-                    code => Some(code),
-                }
-            }
-            Some(_) => return Err(()),
-        };
-        Ok(Wire {
-            pmid,
-            citation: Some(citation),
-            reference_type,
-        })
+    fn view(reference: &ClinicalTrialReference) -> View<'_> {
+        let source_type_label = reference.source_type().and_then(|source_type| {
+            display_text(source_type.display())
+                .or_else(|| display_text(source_type.recognized_meaning()))
+                .or_else(|| display_text(Some(source_type.code())))
+        });
+        View {
+            pmid: display_text(reference.pmid()),
+            citation: display_text(reference.citation()),
+            source_type_label,
+        }
     }
 
-    pub(crate) fn views(
-        references: &Option<Vec<ClinicalTrialReference>>,
-    ) -> Result<Option<Vec<Wire<&str>>>, ()> {
+    pub(crate) fn views(references: &Option<Vec<ClinicalTrialReference>>) -> Option<Vec<View<'_>>> {
         references
             .as_ref()
-            .map(|values| values.iter().map(wire).collect())
-            .transpose()
+            .map(|values| values.iter().map(view).collect())
     }
 
     pub(super) fn serialize<S: Serializer>(
         references: &Option<Vec<ClinicalTrialReference>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        views(references)
-            .map_err(|()| serde::ser::Error::custom("Invalid trial reference data"))?
-            .serialize(serializer)
+        let Some(references) = references else {
+            return serializer.serialize_none();
+        };
+        let encoded = references
+            .iter()
+            .map(|reference| {
+                let json = reference
+                    .to_json()
+                    .map_err(|_| serde::ser::Error::custom(INVALID_REFERENCE))?;
+                RawValue::from_string(json)
+                    .map_err(|_| serde::ser::Error::custom(INVALID_REFERENCE))
+            })
+            .collect::<Result<Vec<_>, S::Error>>()?;
+        encoded.serialize(serializer)
     }
 
     pub(super) fn deserialize<'de, D: Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Option<Vec<ClinicalTrialReference>>, D::Error> {
-        Option::<Vec<Wire<String>>>::deserialize(deserializer)?
+        Option::<Vec<Box<RawValue>>>::deserialize(deserializer)?
             .map(|values| {
                 values
                     .into_iter()
                     .map(|value| {
-                        from_parts(value.pmid, value.citation, value.reference_type)
-                            .map_err(|()| serde::de::Error::custom("Invalid trial reference data"))
+                        ClinicalTrialReference::from_json_bytes(value.get().as_bytes())
+                            .map_err(|_| serde::de::Error::custom(INVALID_REFERENCE))
                     })
                     .collect()
             })
