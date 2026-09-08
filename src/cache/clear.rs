@@ -123,15 +123,22 @@ pub(super) fn epoch_state(
 
 pub(crate) struct CacheOperationGuard {
     file: File,
-    shared_root: Option<PathBuf>,
+    _shared_lease: Option<SharedLease>,
 }
 
 impl Drop for CacheOperationGuard {
     fn drop(&mut self) {
         let _ = FileExt::unlock(&self.file);
-        if let Some(root) = &self.shared_root {
-            unregister_shared(root);
-        }
+    }
+}
+
+struct SharedLease {
+    root: PathBuf,
+}
+
+impl Drop for SharedLease {
+    fn drop(&mut self) {
+        unregister_shared(&self.root);
     }
 }
 
@@ -151,9 +158,10 @@ fn lease_registry() -> io::Result<MutexGuard<'static, LeaseMap>> {
         .map_err(|_| io::Error::other("cache operation lease registry is poisoned"))
 }
 
-fn register_shared(root: &Path) -> io::Result<()> {
-    *lease_registry()?.entry(root.to_path_buf()).or_default() += 1;
-    Ok(())
+fn register_shared(root: &Path) -> io::Result<SharedLease> {
+    let root = root.to_path_buf();
+    *lease_registry()?.entry(root.clone()).or_default() += 1;
+    Ok(SharedLease { root })
 }
 
 fn unregister_shared(root: &Path) {
@@ -258,7 +266,7 @@ pub(crate) fn try_lock_cache_maintenance(
 
 pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
     let file = operation_lock_file(cache_root)?;
-    register_shared(cache_root)?;
+    let lease = register_shared(cache_root)?;
     let result = if let Some(deadline) = crate::sources::current_variant_article_deadline() {
         loop {
             match FileExt::try_lock_shared(&file) {
@@ -279,22 +287,20 @@ pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationG
     } else {
         FileExt::lock_shared(&file)
     };
-    result
-        .map(|()| shared_guard(file, cache_root))
-        .inspect_err(|_| unregister_shared(cache_root))
+    result.map(|()| shared_guard(file, lease))
 }
 
-fn shared_guard(file: File, cache_root: &Path) -> CacheOperationGuard {
+fn shared_guard(file: File, lease: SharedLease) -> CacheOperationGuard {
     CacheOperationGuard {
         file,
-        shared_root: Some(cache_root.to_path_buf()),
+        _shared_lease: Some(lease),
     }
 }
 
 fn exclusive_guard(file: File) -> CacheOperationGuard {
     CacheOperationGuard {
         file,
-        shared_root: None,
+        _shared_lease: None,
     }
 }
 
@@ -346,9 +352,20 @@ pub(crate) async fn lock_cache_shared_until(
     cache_root: &Path,
     deadline: &crate::sources::VariantArticleDeadline,
 ) -> io::Result<CacheOperationGuard> {
+    lock_cache_shared_until_with(cache_root, deadline, || {}).await
+}
+
+async fn lock_cache_shared_until_with<F>(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+    waiting: F,
+) -> io::Result<CacheOperationGuard>
+where
+    F: FnMut(),
+{
     let file = operation_lock_file(cache_root)?;
-    register_shared(cache_root)?;
-    lock_file_shared_until(file, cache_root, deadline).await
+    let lease = register_shared(cache_root)?;
+    lock_file_shared_until(file, lease, deadline, waiting).await
 }
 
 pub(crate) async fn lock_cache_maintenance_until(
@@ -364,24 +381,23 @@ pub(crate) async fn lock_cache_maintenance_until(
     }
 }
 
-async fn lock_file_shared_until(
+async fn lock_file_shared_until<F>(
     file: File,
-    cache_root: &Path,
+    lease: SharedLease,
     deadline: &crate::sources::VariantArticleDeadline,
-) -> io::Result<CacheOperationGuard> {
+    mut waiting: F,
+) -> io::Result<CacheOperationGuard>
+where
+    F: FnMut(),
+{
     loop {
         match FileExt::try_lock_shared(&file) {
-            Ok(()) => return Ok(shared_guard(file, cache_root)),
+            Ok(()) => return Ok(shared_guard(file, lease)),
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
-                if let Err(error) = wait(deadline).await {
-                    unregister_shared(cache_root);
-                    return Err(error);
-                }
+                waiting();
+                wait(deadline).await?;
             }
-            Err(error) => {
-                unregister_shared(cache_root);
-                return Err(error);
-            }
+            Err(error) => return Err(error),
         }
     }
 }
@@ -472,6 +488,48 @@ mod operation_lock_tests {
         drop(second);
         drop(lock_cache_maintenance(root.path()).expect("maintenance after shared release"));
         drop(lock_cache_shared(root.path()).expect("shared lease after maintenance release"));
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn cancelled_pending_shared_lock_releases_its_provisional_lease() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let held = try_lock_cache_maintenance(root.path())
+            .expect("maintenance lock attempt")
+            .expect("maintenance lock");
+        let root_path = root.path().to_path_buf();
+        let (waiting_tx, waiting_rx) = tokio::sync::oneshot::channel();
+        let waiter = tokio::spawn(async move {
+            let deadline = crate::sources::VariantArticleDeadline::from_now(Duration::from_secs(5));
+            let mut waiting_tx = Some(waiting_tx);
+            lock_cache_shared_until_with(&root_path, &deadline, move || {
+                if let Some(waiting_tx) = waiting_tx.take() {
+                    waiting_tx.send(()).expect("report blocked shared flock");
+                }
+            })
+            .await
+        });
+
+        waiting_rx
+            .await
+            .expect("shared waiter reached flock contention");
+        waiter.abort();
+        let cancelled = match waiter.await {
+            Ok(_) => panic!("shared waiter must be cancelled"),
+            Err(cancelled) => cancelled,
+        };
+        assert!(cancelled.is_cancelled());
+        drop(held);
+
+        drop(
+            try_lock_cache_maintenance(root.path())
+                .expect("maintenance attempt after cancellation")
+                .expect("cancelled waiter must not retain a provisional lease"),
+        );
+        drop(
+            lock_cache_maintenance_after_shared(root.path())
+                .expect("background maintenance after cancellation"),
+        );
+        drop(lock_cache_shared(root.path()).expect("shared lock after cancellation"));
     }
 }
 

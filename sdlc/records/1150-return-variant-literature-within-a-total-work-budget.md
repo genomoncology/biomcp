@@ -311,6 +311,23 @@ and all six source-package-boundary contracts also passed. The interrupted
 `make test` remains failed evidence; full lint, test, spec, and feature gates
 were not rerun or claimed here.
 
+Final review found that a cancelled async shared-lock waiter could outlive its
+manual process-local lease accounting: registration happened before the first
+await, but ownership did not transfer to a guard until flock acquisition. A
+provisional RAII lease now owns every successful registration immediately.
+It remains owned across synchronous or asynchronous flock waits and transfers
+into the returned shared guard; cancellation, error, panic unwinding, or normal
+guard drop releases it exactly once and notifies maintenance waiters.
+
+A controlled production-path regression holds the exclusive operation lock,
+signals only after async shared acquisition has registered and observed flock
+contention, cancels and joins that waiter, then proves ordinary maintenance,
+background-eviction maintenance, and a later shared lock all acquire. All 71
+focused cache maintenance, manager, migration, provider-construction, and
+article-asset tests passed. Warning-denied no-default-features library/test
+Clippy, formatting, diff whitespace, the exact source-size ratchet, and all six
+source-package-boundary contracts also passed. No full gate is claimed.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every
