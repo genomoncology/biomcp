@@ -45,8 +45,7 @@ fn plan_bound_nci_response(
 ) -> (NciCtsV2DetailPlan, NciCtsV2DetailResponse) {
     let plan = NciCtsV2DetailPlan::new("NCT05879926", eligibility_requested).unwrap();
     let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "data": [record]})).unwrap();
-    let response =
-        NciCtsV2DetailResponse::parse(&plan, &bytes, &biodata::NciCtsV2Limits::default()).unwrap();
+    let response = NciCtsV2DetailResponse::parse(&plan, &bytes).unwrap();
     (plan, response)
 }
 
@@ -106,7 +105,7 @@ fn nci_request_state_table_requests_eligibility_exactly_when_selected() {
 
 #[test]
 fn product_references_maps_each_section_state() {
-    use biodata::{ClinicalTrialReference, ClinicalTrialSection};
+    use crate::entities::trial::shared::{ClinicalTrialReference, ClinicalTrialSection};
 
     assert!(
         product_references(ClinicalTrialSection::Absent)
@@ -203,9 +202,10 @@ fn nci_arm_conversion_preserves_every_occurrence_and_assignment() {
 
 #[test]
 fn product_design_retains_a_relationship_failure_from_mismatched_sections() {
-    let arm_id = biodata::ClinicalTrialArmId::new(1).unwrap();
-    let expected_intervention_id = biodata::ClinicalTrialInterventionId::new(1).unwrap();
-    let original_intervention = biodata::ClinicalTrialIntervention::new(
+    let arm_id = crate::entities::trial::shared::ClinicalTrialArmId::new(1).unwrap();
+    let expected_intervention_id =
+        crate::entities::trial::shared::ClinicalTrialInterventionId::new(1).unwrap();
+    let original_intervention = crate::entities::trial::shared::ClinicalTrialIntervention::new(
         expected_intervention_id,
         "original",
         None,
@@ -213,14 +213,20 @@ fn product_design_retains_a_relationship_failure_from_mismatched_sections() {
         None,
     )
     .unwrap();
-    let arm = biodata::ClinicalTrialArm::new(arm_id, "arm", None, None).unwrap();
-    let assignment =
-        biodata::ClinicalTrialArmInterventionAssignment::new(arm_id, expected_intervention_id);
-    let arms =
-        biodata::ClinicalTrialArms::new(vec![arm], &[original_intervention], vec![assignment])
-            .unwrap();
-    let replacement_intervention = biodata::ClinicalTrialIntervention::new(
-        biodata::ClinicalTrialInterventionId::new(2).unwrap(),
+    let arm =
+        crate::entities::trial::shared::ClinicalTrialArm::new(arm_id, "arm", None, None).unwrap();
+    let assignment = crate::entities::trial::shared::ClinicalTrialArmInterventionAssignment::new(
+        arm_id,
+        expected_intervention_id,
+    );
+    let arms = crate::entities::trial::shared::ClinicalTrialArms::new(
+        vec![arm],
+        &[original_intervention],
+        vec![assignment],
+    )
+    .unwrap();
+    let replacement_intervention = crate::entities::trial::shared::ClinicalTrialIntervention::new(
+        crate::entities::trial::shared::ClinicalTrialInterventionId::new(2).unwrap(),
         "replacement",
         None,
         None,
@@ -240,7 +246,7 @@ fn product_design_retains_a_relationship_failure_from_mismatched_sections() {
     };
     assert_eq!(
         relationship,
-        biodata::ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+        crate::entities::trial::shared::ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
             intervention_id: expected_intervention_id
         }
     );
@@ -268,6 +274,19 @@ fn nci_eligibility_keeps_absence_and_an_explicit_empty_list_distinct() {
         panic!("present eligibility object");
     };
     assert!(eligibility.criteria().is_none());
+
+    let mut null_criteria = receipted_nci_record();
+    null_criteria["eligibility"]["unstructured"] = serde_json::Value::Null;
+    null_criteria["eligibility"]["structured"]["accepts_healthy_volunteers"] =
+        serde_json::json!(true);
+    let (_, null_criteria) = plan_bound_nci_response(null_criteria, true);
+    let ClinicalTrialSection::Present(eligibility) = null_criteria.eligibility() else {
+        panic!("null criteria keeps the eligibility siblings present");
+    };
+    assert!(eligibility.criteria().is_none());
+    assert_eq!(eligibility.includes_healthy_subjects(), Some(true));
+    assert!(eligibility.age_range().is_some());
+    assert!(eligibility.sexes().is_some_and(|values| !values.is_empty()));
 
     let mut empty = receipted_nci_record();
     empty["eligibility"]["unstructured"] = serde_json::json!([]);
@@ -320,7 +339,7 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
         assert_eq!(
             matches!(
                 criterion.classification(),
-                biodata::ClinicalTrialEligibilityClassification::Inclusion
+                crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Inclusion
             ),
             expected_inclusion,
             "classification at sorted position {sorted_index}"
@@ -328,7 +347,7 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
         assert_eq!(
             matches!(
                 criterion.classification(),
-                biodata::ClinicalTrialEligibilityClassification::Exclusion
+                crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Exclusion
             ),
             !expected_inclusion,
             "classification at sorted position {sorted_index}"
@@ -352,7 +371,7 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
     assert_eq!(criteria[0].id().get(), 36);
     assert!(matches!(
         criteria[0].classification(),
-        biodata::ClinicalTrialEligibilityClassification::Inclusion
+        crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Inclusion
     ));
 
     let mut changed = receipted_nci_record();
@@ -363,8 +382,26 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
     };
     assert!(matches!(
         eligibility.criteria().unwrap()[0].classification(),
-        biodata::ClinicalTrialEligibilityClassification::Exclusion
+        crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Exclusion
     ));
+
+    let mut changed = receipted_nci_record();
+    changed["eligibility"]["unstructured"][0]["description"] =
+        serde_json::json!("ticket 1183 local description mutation");
+    let (_, response) = plan_bound_nci_response(changed, true);
+    let ClinicalTrialSection::Present(eligibility) = response.eligibility() else {
+        panic!("present eligibility")
+    };
+    let mutated = eligibility
+        .criteria()
+        .unwrap()
+        .iter()
+        .find(|criterion| criterion.id().get() == 1)
+        .expect("source occurrence one");
+    assert_eq!(
+        mutated.description(),
+        "ticket 1183 local description mutation"
+    );
 }
 
 #[tokio::test]
@@ -604,5 +641,267 @@ async fn nci_not_found_status_wins_before_an_oversized_body_is_read() {
             );
         }
         other => panic!("expected NotFound, got: {other:?}"),
+    }
+}
+#[cfg(test)]
+mod trial_design_contracts {
+    use crate::entities::trial::shared::{
+        ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
+        ClinicalTrialArmRelationshipError, ClinicalTrialIntervention, ClinicalTrialInterventionId,
+    };
+
+    use crate::entities::trial::{TrialDesign, TrialDesignError};
+    use crate::error::BioMcpError;
+
+    fn arm(id: u64) -> ClinicalTrialArm {
+        ClinicalTrialArm::new(
+            ClinicalTrialArmId::new(id).expect("arm identity"),
+            format!("arm {id}"),
+            None,
+            None,
+        )
+        .expect("arm")
+    }
+
+    fn intervention(id: u64) -> ClinicalTrialIntervention {
+        ClinicalTrialIntervention::new(
+            ClinicalTrialInterventionId::new(id).expect("intervention identity"),
+            format!("intervention {id}"),
+            None,
+            None,
+            None,
+        )
+        .expect("intervention")
+    }
+
+    fn assignment(arm_id: u64, intervention_id: u64) -> ClinicalTrialArmInterventionAssignment {
+        ClinicalTrialArmInterventionAssignment::new(
+            ClinicalTrialArmId::new(arm_id).expect("arm identity"),
+            ClinicalTrialInterventionId::new(intervention_id).expect("intervention identity"),
+        )
+    }
+
+    fn relationship_error(
+        interventions: Vec<ClinicalTrialIntervention>,
+        arms: Vec<ClinicalTrialArm>,
+        assignments: Vec<ClinicalTrialArmInterventionAssignment>,
+    ) -> ClinicalTrialArmRelationshipError {
+        let error = TrialDesign::new(interventions, Some(arms), Some(assignments))
+            .expect_err("invalid relationship");
+        error
+            .relationship_error()
+            .copied()
+            .expect("typed relationship error")
+    }
+
+    #[test]
+    fn trial_design_distinguishes_section_presence_from_relationship_failures() {
+        assert_eq!(
+            TrialDesign::new(Vec::new(), Some(Vec::new()), None).unwrap_err(),
+            TrialDesignError::SectionPresenceMismatch
+        );
+        assert!(
+            TrialDesignError::SectionPresenceMismatch
+                .relationship_error()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn trial_design_preserves_all_relationship_failure_variants() {
+        let arm_id = ClinicalTrialArmId::new(1).unwrap();
+        let intervention_id = ClinicalTrialInterventionId::new(1).unwrap();
+        let missing_arm_id = ClinicalTrialArmId::new(2).unwrap();
+        let missing_intervention_id = ClinicalTrialInterventionId::new(2).unwrap();
+
+        assert_eq!(
+            relationship_error(vec![intervention(1)], vec![arm(1), arm(1)], Vec::new()),
+            ClinicalTrialArmRelationshipError::DuplicateArmId { arm_id }
+        );
+        assert_eq!(
+            relationship_error(
+                vec![intervention(1), intervention(1)],
+                vec![arm(1)],
+                Vec::new()
+            ),
+            ClinicalTrialArmRelationshipError::DuplicateInterventionId { intervention_id }
+        );
+        assert_eq!(
+            relationship_error(vec![intervention(1)], vec![arm(1)], vec![assignment(2, 1)]),
+            ClinicalTrialArmRelationshipError::MissingArmEndpoint {
+                arm_id: missing_arm_id
+            }
+        );
+        assert_eq!(
+            relationship_error(vec![intervention(1)], vec![arm(1)], vec![assignment(1, 2)]),
+            ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+                intervention_id: missing_intervention_id
+            }
+        );
+        assert_eq!(
+            relationship_error(
+                vec![intervention(1)],
+                vec![arm(1)],
+                vec![assignment(1, 1), assignment(1, 1)]
+            ),
+            ClinicalTrialArmRelationshipError::DuplicateAssignment {
+                arm_id,
+                intervention_id
+            }
+        );
+    }
+
+    #[test]
+    fn missing_intervention_is_checked_against_the_supplied_collection() {
+        assert_eq!(
+            relationship_error(vec![intervention(2)], vec![arm(1)], vec![assignment(1, 1)]),
+            ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+                intervention_id: ClinicalTrialInterventionId::new(1).unwrap()
+            }
+        );
+    }
+
+    #[test]
+    fn trial_design_error_retains_sources_and_safe_public_projections() {
+        let relationship = ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+            intervention_id: ClinicalTrialInterventionId::new(42).unwrap(),
+        };
+        let design = TrialDesignError::InvalidRelationship(relationship);
+        let error = BioMcpError::TrialDesign(design);
+
+        assert_eq!(design.relationship_error(), Some(&relationship));
+        assert_eq!(error.code(), "internal_processing");
+        assert_eq!(error.exit_code(), 1);
+        assert_eq!(error.to_string(), "Internal processing failed.");
+        assert_eq!(
+            error.public_projection().message,
+            "Internal processing failed."
+        );
+        assert_eq!(error.public_projection().source, None);
+        assert_eq!(error.public_projection().recovery, None);
+        let design_source = std::error::Error::source(&error)
+            .and_then(|source| source.downcast_ref::<TrialDesignError>())
+            .expect("typed design source");
+        assert_eq!(
+            std::error::Error::source(design_source)
+                .and_then(|source| source.downcast_ref::<ClinicalTrialArmRelationshipError>()),
+            Some(&relationship)
+        );
+
+        let json = crate::render::json::to_error_json(&error).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(value["error"]["code"], "internal_processing");
+        assert_eq!(value["error"]["message"], "Internal processing failed.");
+        assert!(value["error"].get("source").is_none());
+        assert!(value["error"].get("recovery").is_none());
+        assert!(!json.contains("MissingInterventionEndpoint"));
+        assert!(!json.contains("42"));
+    }
+
+    #[test]
+    fn trial_design_round_trips_shared_relationships() {
+        for design in [
+            TrialDesign::default(),
+            TrialDesign::from_names_and_arm(
+                &["drug", "device"],
+                "arm",
+                Some("future"),
+                Some("description"),
+            ),
+        ] {
+            let encoded = serde_json::to_value(&design).expect("serialize design");
+            let decoded: TrialDesign =
+                serde_json::from_value(encoded.clone()).expect("deserialize design");
+            assert_eq!(serde_json::to_value(decoded).unwrap(), encoded);
+        }
+    }
+
+    #[test]
+    fn flattened_design_keeps_assignment_member() {
+        #[derive(serde::Serialize)]
+        struct Flat<'a> {
+            name: &'a str,
+            #[serde(flatten)]
+            design: &'a TrialDesign,
+        }
+        let design = TrialDesign::from_names_and_arm(&["drug"], "arm", None, None);
+        let value = serde_json::to_value(Flat {
+            name: "trial",
+            design: &design,
+        })
+        .unwrap();
+        assert_eq!(
+            value["arm_intervention_assignments"]
+                .as_array()
+                .map(Vec::len),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn type_wire_rejects_missing_unknown_and_empty_members() {
+        let complete = serde_json::json!({"interventions": [{"id": 1, "name": "study drug", "type": {"authority": "future.registry", "code": "FUTURE", "display": null, "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]});
+        let decoded: TrialDesign = serde_json::from_value(complete.clone()).expect("complete code");
+        assert_eq!(
+            decoded.interventions()[0].source_type().unwrap().code(),
+            "FUTURE"
+        );
+        assert_eq!(serde_json::to_value(decoded).unwrap(), complete);
+        for invalid in [
+            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "", "code": "X", "display": null, "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]}),
+            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": null}, "description": null, "other_names": []}]}),
+            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": null, "recognized_meaning": null, "extra": null}, "description": null, "other_names": []}]}),
+            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "", "display": null, "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]}),
+            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": "", "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]}),
+            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": "", "recognized_meaning": null}, "description": null, "other_names": []}]}),
+            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": null, "recognized_meaning": ""}, "description": null, "other_names": []}]}),
+            serde_json::json!({"interventions": [], "unexpected": true}),
+        ] {
+            assert!(serde_json::from_value::<TrialDesign>(invalid).is_err());
+        }
+    }
+
+    #[test]
+    fn deserialization_rejects_duplicate_and_dangling_relationships() {
+        let intervention = serde_json::json!({
+            "id": 1, "name": "drug", "type": null, "description": null, "other_names": []
+        });
+        let arm = serde_json::json!({
+            "id": 1, "name": "arm", "type": null, "description": null
+        });
+        for invalid in [
+            serde_json::json!({
+                "interventions": [intervention.clone(), intervention.clone()],
+                "arms": [arm.clone()], "arm_intervention_assignments": []
+            }),
+            serde_json::json!({
+                "interventions": [intervention.clone()], "arms": [arm.clone()],
+                "arm_intervention_assignments": [{"arm_id": 1, "intervention_id": 2}]
+            }),
+            serde_json::json!({
+                "interventions": [intervention], "arms": [arm],
+                "arm_intervention_assignments": [
+                    {"arm_id": 1, "intervention_id": 1},
+                    {"arm_id": 1, "intervention_id": 1}
+                ]
+            }),
+            serde_json::json!({
+                "interventions": [],
+                "arms": [
+                    {"id": 1, "name": "first", "type": null, "description": null},
+                    {"id": 1, "name": "second", "type": null, "description": null}
+                ],
+                "arm_intervention_assignments": []
+            }),
+            serde_json::json!({
+                "interventions": [{"id": 1, "name": "drug", "type": null, "description": null, "other_names": []}],
+                "arms": [{"id": 1, "name": "arm", "type": null, "description": null}],
+                "arm_intervention_assignments": [{"arm_id": 2, "intervention_id": 1}]
+            }),
+            serde_json::json!({"interventions": [], "arms": []}),
+            serde_json::json!({"interventions": [], "arm_intervention_assignments": []}),
+        ] {
+            assert!(serde_json::from_value::<TrialDesign>(invalid).is_err());
+        }
     }
 }

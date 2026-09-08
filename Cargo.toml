@@ -17,12 +17,10 @@ exclude = [
     "sdlc/",
     "testdata/",
     "tools/alphagenome-proto-generator/",
+    "tools/check-zero-coupling.py",
+    "tools/zero-coupling-historical.json",
+    "tests/test_zero_coupling_ratchet.py",
 ]
-
-[package.metadata.biodata-development]
-extracted-package-compile = "deferred"
-until = "BioMCP 1.0 complete and used internally"
-reason = "Cargo removes exact Git dependencies from registry packages"
 
 [[bin]]
 name = "biomcp"
@@ -33,7 +31,6 @@ name = "biomcp-cli"
 path = "src/main_biomcp_cli.rs"
 
 [dependencies]
-biodata = { git = "https://github.com/genomoncology/biodata", rev = "cfafc69d27c9a2fc74909f21692a418a8b17db83" }
 
 # CLI
 clap = { version = "4", features = ["derive"] }
@@ -65,7 +62,7 @@ zstd = { version = "0.13", optional = true }
 
 # JSON
 serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["raw_value"] }
+serde_json = { version = "1", features = ["raw_value", "unbounded_depth"] }
 base64 = "0.22"
 
 # Hashing (download cache keys)

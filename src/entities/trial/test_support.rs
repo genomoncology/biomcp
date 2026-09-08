@@ -126,7 +126,7 @@ pub(super) fn studies_with_age_matches(
 #[cfg(test)]
 mod reference_wire_tests {
     use super::super::*;
-    use biodata::ExtensibleCode;
+    use crate::entities::trial::shared::ExtensibleCode;
 
     #[test]
     fn trial_stores_shared_references_directly() {
@@ -271,7 +271,7 @@ mod reference_wire_tests {
     }
 
     #[test]
-    fn trial_reference_wire_preserves_duplicates_for_strict_biodata_rejection() {
+    fn trial_reference_wire_preserves_duplicates_for_strict_local_trial_rejection() {
         let cases = [
             r#"[{"pmid":"private-root","pmid":"duplicate","citation":null,"source_type":null}]"#,
             r#"[{"pmid":null,"citation":null,"source_type":{"authority":"private-nested","authority":"duplicate","code":"TYPE","display":null,"vocabulary_version":null,"recognized_meaning":null}}]"#,

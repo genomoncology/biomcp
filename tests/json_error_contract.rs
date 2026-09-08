@@ -947,17 +947,19 @@ fn human_mode_error_stays_plain_stderr() {
 
 #[test]
 fn public_trial_design_error_path_preserves_the_typed_source_chain() {
-    use biomcp_cli::error::{BioMcpError, TrialDesignError};
+    use biomcp_cli::error::{
+        BioMcpError, ClinicalTrialArmId, ClinicalTrialArmRelationshipError, TrialDesignError,
+    };
 
-    let relationship = biodata::ClinicalTrialArmRelationshipError::MissingArmEndpoint {
-        arm_id: biodata::ClinicalTrialArmId::new(7).expect("arm identity"),
+    let relationship = ClinicalTrialArmRelationshipError::MissingArmEndpoint {
+        arm_id: ClinicalTrialArmId::new(7).expect("arm identity"),
     };
     let error = BioMcpError::TrialDesign(TrialDesignError::InvalidRelationship(relationship));
     let design = std::error::Error::source(&error)
         .and_then(|source| source.downcast_ref::<TrialDesignError>())
         .expect("public design error source");
     let relationship_source = std::error::Error::source(design)
-        .and_then(|source| source.downcast_ref::<biodata::ClinicalTrialArmRelationshipError>())
+        .and_then(|source| source.downcast_ref::<ClinicalTrialArmRelationshipError>())
         .expect("public relationship error source");
 
     assert_eq!(design.relationship_error(), Some(&relationship));

@@ -5,7 +5,6 @@ use crate::error::{BioMcpError, RecoveryAction};
 use crate::sources::decode_json;
 use crate::sources::nci_cts::{NciCtsClient, NciSearchResponse};
 use reqwest::StatusCode;
-use sha2::{Digest, Sha256};
 
 macro_rules! fixture {
     ($name:expr) => {
@@ -77,8 +76,8 @@ fn decode_json_maps_http_error_for_nci() {
     assert!(msg.contains("500"), "got: {msg}");
 }
 
-fn detail_plan() -> biodata::NciCtsV2DetailPlan {
-    biodata::NciCtsV2DetailPlan::new("NCT00000001", true).unwrap()
+fn detail_plan() -> super::super::NciCtsV2DetailPlan {
+    super::super::NciCtsV2DetailPlan::new("NCT00000001", true).unwrap()
 }
 
 fn valid_detail(identity: &str) -> Vec<u8> {
@@ -138,7 +137,7 @@ fn detail_response_checks_status_before_parsing_and_never_stores_the_body() {
 }
 
 #[test]
-fn detail_response_maps_biodata_failures_without_source_values() {
+fn detail_response_maps_local_failures_without_source_values() {
     let plan = detail_plan();
     let cases = [
         (br#"{"total":0,"data":[]}"#.as_slice(), "not_found"),
@@ -220,9 +219,7 @@ fn detail_response_rejects_identity_and_old_lenient_shapes() {
             .unwrap_err();
         assert_eq!(error.code(), "api");
         assert!(
-            format!("{error:?}").contains(&format!(
-                "BioData response validation failed: {expected_code}"
-            )),
+            format!("{error:?}").contains(&format!("response validation failed: {expected_code}")),
             "{shape} returned {error:?}"
         );
         assert_sanitized(&error, &["NCT00000001", "Synthetic trial"]);
@@ -230,7 +227,7 @@ fn detail_response_rejects_identity_and_old_lenient_shapes() {
 }
 
 #[test]
-fn detail_response_maps_the_biodata_resource_limit_to_narrow_recovery() {
+fn detail_response_maps_the_resource_limit_to_narrow_recovery() {
     let bytes = vec![b' '; 8 * 1024 * 1024 + 1];
     let error =
         NciCtsClient::decode_detail_response(&detail_plan(), StatusCode::OK, &bytes).unwrap_err();
@@ -238,16 +235,5 @@ fn detail_response_maps_the_biodata_resource_limit_to_narrow_recovery() {
     assert_eq!(
         error.public_projection().recovery,
         Some(RecoveryAction::NarrowRequest.message())
-    );
-}
-
-#[test]
-fn detail_response_passes_untouched_success_bytes_to_biodata() {
-    let bytes = valid_detail("NCT00000001");
-    let response =
-        NciCtsClient::decode_detail_response(&detail_plan(), StatusCode::OK, &bytes).unwrap();
-    assert_eq!(
-        response.projection().capture().digest(),
-        format!("sha256:{:x}", Sha256::digest(&bytes))
     );
 }

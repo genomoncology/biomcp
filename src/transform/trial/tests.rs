@@ -77,7 +77,7 @@ fn ctgov_case_13_preserves_every_site_contact_in_provider_order() {
         StatusCode::OK,
         include_bytes!("../../../testdata/sources/clinicaltrials/case-13-location-contacts.json"),
     )
-    .expect("byte-pinned BioData case 13 fixture");
+    .expect("byte-pinned trial case 13 fixture");
     let provider_count = study
         .protocol_section
         .as_ref()
@@ -583,7 +583,7 @@ fn trial_status_normalization_variants() {
 
 #[test]
 fn receipted_ctgov_intervention_descriptions_keep_their_associations_in_json() {
-    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+    let response = ClinicalTrialsClient::decode_detail_response(
         "NCT02576665",
         &["arms".to_string()],
         StatusCode::OK,
@@ -649,7 +649,7 @@ fn receipted_ctgov_intervention_descriptions_keep_their_associations_in_json() {
 
 #[test]
 fn receipted_ctgov_two_arm_trial_keeps_independent_typed_assignments() {
-    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+    let response = ClinicalTrialsClient::decode_detail_response(
         "NCT00791778",
         &["arms".to_string()],
         StatusCode::OK,
