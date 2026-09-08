@@ -811,9 +811,10 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. unresolved-json
 
 <!-- mustmatch-lint: skip -->
 
-A healthy annotation miss is different from a provider failure. JSON keeps the
-empty collection, resolution, source status, completeness, and pagination facts
-so callers do not have to infer state from missing keys.
+A healthy resolution miss that makes annotation inapplicable is different from
+a provider failure. JSON keeps the empty collection, resolution, source status,
+completeness, and pagination facts so callers do not infer state from missing
+keys.
 
 ```bash run id=variant-article-empty exit=0
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
@@ -836,7 +837,7 @@ bash ../fixtures/run-variant-article-entity-fixture.sh ../.. healthy-empty-json
     "next_page_token": null
   },
   "source_status": [
-    {"route": "pubtator_variant", "source": "pubtator", "status": "ok", "work": {"planned": 0, "ok": 0, "degraded": 0, "unavailable": 0, "timed_out": 0, "not_attempted": 0}, "reason_codes": []}
+    {"route": "pubtator_variant", "source": "pubtator", "status": "skipped", "work": {"planned": 0, "ok": 0, "degraded": 0, "unavailable": 0, "timed_out": 0, "not_attempted": 0}, "reason_codes": ["identity_inapplicable"]}
   ]
 }
 ```
@@ -846,7 +847,7 @@ not a false empty-search conclusion:
 
 ```sh
 bash ../fixtures/run-variant-article-entity-fixture.sh ../.. offset-beyond-total-markdown \
-  | mustmatch like 'No articles on this page. Known total: <N:int>. Requested offset: 999.'
+  | mustmatch like 'No articles on this page. Known total: 8. Requested offset: 999.'
 ```
 
 ## Caller-supplied RefSeq identities remain exact when MyVariant has no record

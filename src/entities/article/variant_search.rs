@@ -3381,20 +3381,20 @@ async fn search_variant_articles_identity(
     enrich_candidates(&mut visible_candidates, &execution).await;
     // Rebuild after every identity, enrichment, and LDH unit settles, retaining
     // only zero-work/skipped skeleton rows without real events.
+    // Keep each route's specific applicability explanation while the terminal
+    // ledger remains authoritative for status, work counts, and reason codes.
     let final_events = execution.events();
-    let event_keys = final_events
-        .iter()
-        .map(|event| (event.route.clone(), event.source.clone()))
-        .collect::<BTreeSet<_>>();
-    statuses.retain(|status| !event_keys.contains(&(status.route.clone(), status.source.clone())));
-    for route in final_events
-        .iter()
-        .map(|event| event.route.clone())
-        .collect::<BTreeSet<_>>()
-    {
-        statuses.extend(provider_statuses_for_route(&route, &final_events));
-    }
+    let prior_statuses = statuses;
     statuses = terminal_reconciled_statuses(&execution, &final_events);
+    for status in &mut statuses {
+        if matches!(status.status, VariantArticleSourceStatusKind::Skipped)
+            && let Some(prior) = prior_statuses
+                .iter()
+                .find(|prior| prior.route == status.route && prior.source == status.source)
+        {
+            status.detail.clone_from(&prior.detail);
+        }
+    }
     let runtime_incomplete = source_statuses_incomplete(&statuses);
     let provider_incomplete = matches!(
         context.resolution.provider_validation.status,
