@@ -2913,17 +2913,12 @@ async fn search_variant_articles_identity(
                 VariantArticleSourceStatusKind::Unavailable,
             ));
         }
-        source_status.sort_by(|left, right| {
+        source_status.sort_by_key(|status| {
             (
-                left.route != "resolution",
-                left.route.as_str(),
-                left.source.as_str(),
+                status.route != "resolution",
+                status.route.clone(),
+                status.source.clone(),
             )
-                .cmp(&(
-                    right.route != "resolution",
-                    right.route.as_str(),
-                    right.source.as_str(),
-                ))
         });
         let debug_plan = include_debug_plan.then(|| {
             let mut plan =

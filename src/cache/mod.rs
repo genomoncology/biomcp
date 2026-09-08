@@ -54,7 +54,7 @@ pub(crate) fn content_path(cache_path: &Path, integrity: &Integrity) -> PathBuf 
 }
 
 #[allow(unused_imports)]
-pub(crate) use clean::{CleanOptions, CleanReport, execute_cache_clean, execute_cache_clean_until};
+pub(crate) use clean::{CleanOptions, CleanReport, execute_cache_clean};
 #[allow(unused_imports)]
 pub(crate) use clear::{ClearReport, execute_cache_clear};
 #[allow(unused_imports)]

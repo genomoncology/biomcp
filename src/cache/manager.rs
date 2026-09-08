@@ -15,7 +15,7 @@ use tracing::{debug, warn};
 
 use super::{
     CleanOptions, FilesystemSpace, ResolvedCacheConfig, evaluate_cache_limits, execute_cache_clean,
-    execute_cache_clean_until, inspect_filesystem_space, snapshot_cache, summarize_cache_usage,
+    inspect_filesystem_space, snapshot_cache, summarize_cache_usage,
 };
 use crate::error::BioMcpError;
 
@@ -59,35 +59,12 @@ impl SizeAwareCacheManager {
         config: ResolvedCacheConfig,
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
-        if deadline.is_exhausted() {
-            return Err(BioMcpError::Io(io::Error::new(
-                io::ErrorKind::TimedOut,
-                "variant article invocation deadline exceeded",
-            )));
-        }
-        let now_ms = current_time_ms();
-        if let Some(_maintenance) = super::try_lock_cache_maintenance(&config.cache_root)? {
-            execute_cache_clean_until(
-                &path,
-                CleanOptions {
-                    max_age: None,
-                    max_size: None,
-                    dry_run: false,
-                },
-                &config,
-                now_ms,
-                deadline,
-            )?;
-        } else {
-            debug!("cache initialization cleanup skipped while another cache operation is active");
-        }
-        let manager = Self::build_with_services(path, config, default_services());
-        if deadline.is_exhausted() {
-            return Err(BioMcpError::Io(io::Error::new(
-                io::ErrorKind::TimedOut,
-                "variant article invocation deadline exceeded",
-            )));
-        }
+        deadline.ensure_time_io().map_err(BioMcpError::Io)?;
+        let manager = crate::sources::with_variant_article_deadline(deadline.clone(), async move {
+            Self::new_at(path, config, current_time_ms())
+        })
+        .await?;
+        deadline.ensure_time_io().map_err(BioMcpError::Io)?;
         Ok(manager)
     }
 

@@ -44,25 +44,6 @@ pub(crate) fn execute_cache_clean(
     )
 }
 
-pub(crate) fn execute_cache_clean_until(
-    cache_path: &Path,
-    options: CleanOptions,
-    config: &ResolvedCacheConfig,
-    now_ms: u128,
-    deadline: &crate::sources::VariantArticleDeadline,
-) -> Result<CleanReport, BioMcpError> {
-    execute_cache_clean_with_check(
-        cache_path,
-        options,
-        config,
-        now_ms,
-        snapshot_cache,
-        |path, key| cacache::remove_sync(path, key),
-        |path, integrity| cacache::remove_hash_sync(path, integrity),
-        || check_deadline(deadline),
-    )
-}
-
 fn execute_cache_clean_with<S, RK, RB>(
     cache_path: &Path,
     options: CleanOptions,
