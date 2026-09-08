@@ -168,8 +168,8 @@ two exact source-size baselines. The deadline-aware constructor now enters the
 existing task-local deadline scope and reuses the ordinary maintenance path,
 eliminating its duplicate cleanup wrapper without changing either constructor's
 semantics. The compatibility ordering was expressed more compactly. No
-inventory baseline increased: `src/cache/manager.rs` is 1,070 lines against
-1,077 and `src/entities/article/variant_search.rs` is 6,114 against 6,116. The
+inventory baseline increased: `src/cache/manager.rs` is exactly 1,077 lines and
+`src/entities/article/variant_search.rs` is exactly 6,116 lines. The
 quality/source-size ratchet and the same 92 focused tests pass after this
 reduction. The complete `make lint` gate was not rerun in this worktree.
 

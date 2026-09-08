@@ -2913,6 +2913,8 @@ async fn search_variant_articles_identity(
                 VariantArticleSourceStatusKind::Unavailable,
             ));
         }
+        // Preserve legacy failure priority while ordering any additionally
+        // materialized terminal routes deterministically.
         source_status.sort_by_key(|status| {
             (
                 status.route != "resolution",

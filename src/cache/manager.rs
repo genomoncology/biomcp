@@ -59,6 +59,13 @@ impl SizeAwareCacheManager {
         config: ResolvedCacheConfig,
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {
+        // Scope the explicit deadline around ordinary construction so its
+        // task-local cleanup checkpoints observe this invocation. This keeps
+        // ordinary non-deadline maintenance on the same implementation.
+        // The preflight rejects already-expired work; the postflight rejects
+        // construction that finished only after its caller's deadline.
+        // Neither check permits cleanup to continue beyond its per-removal
+        // deadline checkpoints.
         deadline.ensure_time_io().map_err(BioMcpError::Io)?;
         let manager = crate::sources::with_variant_article_deadline(deadline.clone(), async move {
             Self::new_at(path, config, current_time_ms())
