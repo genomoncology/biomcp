@@ -1153,50 +1153,6 @@ fn strategy_route_skeleton(
     rows
 }
 
-fn deadline_blocked_status(
-    route: &str,
-    source: &str,
-    requested: &RequestedVariantIdentity,
-) -> VariantArticleSourceStatus {
-    let planned = match route {
-        "resolution" => 1,
-        "canonical_equivalence" => canonical_equivalence_queries(requested).len(),
-        _ => 0,
-    };
-    if route == "canonical_equivalence" && planned == 0 {
-        let mut status = status_with_detail(
-            route,
-            source,
-            VariantArticleSourceStatusKind::Skipped,
-            Some("caller identity has no applicable canonical query"),
-        );
-        status.reason_codes = vec!["identity_inapplicable"];
-        return status;
-    }
-    if planned > 0 {
-        return aggregate_source_status(
-            route,
-            source,
-            VariantArticleSourceWork {
-                planned,
-                not_attempted: planned,
-                ..Default::default()
-            },
-            vec!["invocation_deadline"],
-        );
-    }
-    VariantArticleSourceStatus {
-        route: route.into(),
-        source: source.into(),
-        status: VariantArticleSourceStatusKind::NotAttempted,
-        detail: Some(
-            "0 planned: 0 ok, 0 degraded, 0 unavailable, 0 timed out, 0 not attempted (invocation_deadline)".into(),
-        ),
-        work: VariantArticleSourceWork::default(),
-        reason_codes: vec!["invocation_deadline"],
-    }
-}
-
 fn provider_terminal_status(events: &[&VariantArticleCallEvent]) -> VariantArticleSourceStatusKind {
     if events.iter().any(|event| event.status == "timed_out") {
         return VariantArticleSourceStatusKind::TimedOut;
@@ -1293,19 +1249,7 @@ fn provider_statuses_for_route(
         .collect()
 }
 
-fn provider_statuses_for_events(
-    events: &[VariantArticleCallEvent],
-) -> Vec<VariantArticleSourceStatus> {
-    events
-        .iter()
-        .map(|event| event.route.clone())
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .flat_map(|route| provider_statuses_for_route(&route, events))
-        .collect()
-}
-
-fn deadline_reconciled_statuses(
+fn terminal_reconciled_statuses(
     execution: &VariantArticleExecutionContext,
     events: &[VariantArticleCallEvent],
 ) -> Vec<VariantArticleSourceStatus> {
@@ -1314,8 +1258,16 @@ fn deadline_reconciled_statuses(
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .clone();
+    let deadline_exhausted = execution.deadline.is_exhausted();
     plans
         .into_iter()
+        .filter(|((route, source), plan)| {
+            *plan != RouteUnitPlan::Pending
+                || deadline_exhausted
+                || events
+                    .iter()
+                    .any(|event| event.route == *route && event.source == *source)
+        })
         .map(|((route, source), plan)| {
             let matching = events
                 .iter()
@@ -1362,15 +1314,18 @@ fn deadline_reconciled_statuses(
             };
             let terminal =
                 work.ok + work.degraded + work.unavailable + work.timed_out + work.not_attempted;
-            work.not_attempted = work
-                .not_attempted
-                .saturating_add(planned.saturating_sub(terminal));
+            let residual = planned.saturating_sub(terminal);
+            work.not_attempted = work.not_attempted.saturating_add(residual);
             let mut reasons = matching
                 .iter()
                 .filter_map(|event| event.reason_code)
                 .collect::<Vec<_>>();
-            if work.not_attempted > 0 && execution.deadline.is_exhausted() {
-                reasons.push("invocation_deadline");
+            if residual > 0 {
+                reasons.push(if deadline_exhausted {
+                    "invocation_deadline"
+                } else {
+                    "logical_work_cap"
+                });
             }
             let mut status = aggregate_source_status(&route, &source, work, reasons);
             if planned == 0 && started == 0 {
@@ -1381,6 +1336,15 @@ fn deadline_reconciled_statuses(
             status
         })
         .collect()
+}
+
+fn source_statuses_incomplete(statuses: &[VariantArticleSourceStatus]) -> bool {
+    statuses.iter().any(|status| {
+        !matches!(
+            status.status,
+            VariantArticleSourceStatusKind::Ok | VariantArticleSourceStatusKind::Skipped
+        )
+    })
 }
 
 fn candidate_with_provenance(
@@ -2941,40 +2905,26 @@ async fn search_variant_articles_identity(
     }
     if !context.available {
         let events = execution.events();
-        let mut source_status = if execution.deadline.is_exhausted() {
-            deadline_reconciled_statuses(&execution, &events)
-        } else {
-            provider_statuses_for_events(&events)
-        };
+        let mut source_status = terminal_reconciled_statuses(&execution, &events);
         if source_status.is_empty() {
-            source_status.push(if execution.deadline.is_exhausted() {
-                deadline_blocked_status("resolution", "myvariant", &context.requested)
-            } else {
-                status(
-                    "resolution",
-                    "myvariant",
-                    VariantArticleSourceStatusKind::Unavailable,
-                )
-            });
+            source_status.push(status(
+                "resolution",
+                "myvariant",
+                VariantArticleSourceStatusKind::Unavailable,
+            ));
         }
-        if execution.deadline.is_exhausted() && source_status.is_empty() {
-            let decided = source_status
-                .iter()
-                .map(|status| (status.route.clone(), status.source.clone()))
-                .collect::<BTreeSet<_>>();
-            source_status.extend(
-                route_skeleton
-                    .iter()
-                    .filter(|(route, source)| {
-                        !decided.contains(&(route.to_string(), source.to_string()))
-                    })
-                    .map(|(route, source)| {
-                        deadline_blocked_status(route, source, &context.requested)
-                    }),
-            );
-        }
-        source_status
-            .sort_by(|left, right| (&left.route, &left.source).cmp(&(&right.route, &right.source)));
+        source_status.sort_by(|left, right| {
+            (
+                left.route != "resolution",
+                left.route.as_str(),
+                left.source.as_str(),
+            )
+                .cmp(&(
+                    right.route != "resolution",
+                    right.route.as_str(),
+                    right.source.as_str(),
+                ))
+        });
         let debug_plan = include_debug_plan.then(|| {
             let mut plan =
                 empty_debug_plan(&context.requested, true, vec!["resolution".into()], offset);
@@ -3447,10 +3397,8 @@ async fn search_variant_articles_identity(
     {
         statuses.extend(provider_statuses_for_route(&route, &final_events));
     }
-    if execution.deadline.is_exhausted() {
-        statuses = deadline_reconciled_statuses(&execution, &final_events);
-    }
-    let runtime_incomplete = final_events.iter().any(|event| event.status != "ok");
+    statuses = terminal_reconciled_statuses(&execution, &final_events);
+    let runtime_incomplete = source_statuses_incomplete(&statuses);
     let provider_incomplete = matches!(
         context.resolution.provider_validation.status,
         VariantProviderValidationStatus::Indeterminate
@@ -4550,7 +4498,7 @@ mod tests {
                     visible[0].row.abstract_snippet = None;
                     visible[0].row.normalized_abstract.clear();
                     enrich_candidates(&mut visible, &execution).await;
-                    let statuses = deadline_reconciled_statuses(&execution, &execution.events());
+                    let statuses = terminal_reconciled_statuses(&execution, &execution.events());
                     for status in statuses {
                         let (planned, skipped, healthy_zero) = match status.route.as_str() {
                             "resolution" => (1, false, false),
@@ -5483,6 +5431,61 @@ mod tests {
         let statuses = provider_statuses_for_route("exact_lexical", &[ok, unavailable]);
         assert_eq!(statuses[0].status, VariantArticleSourceStatusKind::Degraded);
         assert_eq!(statuses[0].reason_codes, vec!["provider_timeout"]);
+    }
+
+    #[test]
+    fn terminal_reconciliation_reports_residual_materialized_work_as_logical_cap() {
+        let execution = VariantArticleExecutionContext::single();
+        let requested = resolved_context().requested;
+        execution.initialize_route_unit_plans(
+            &[("strict", "pubmed"), ("strict", "europepmc")],
+            &requested,
+        );
+        execution.set_route_unit_plan("strict", "pubmed", Some(3));
+        execution.set_route_unit_plan("strict", "europepmc", Some(2));
+        let started = execution.reserve("strict").expect("one admitted unit");
+        execution.record("strict", "pubmed", started, "ok", 1);
+
+        let statuses = terminal_reconciled_statuses(&execution, &execution.events());
+        let pubmed = statuses
+            .iter()
+            .find(|status| status.route == "strict" && status.source == "pubmed")
+            .expect("materialized PubMed status");
+        assert_eq!(pubmed.status, VariantArticleSourceStatusKind::Degraded);
+        assert_eq!(
+            (
+                pubmed.work.planned,
+                pubmed.work.ok,
+                pubmed.work.degraded,
+                pubmed.work.unavailable,
+                pubmed.work.timed_out,
+                pubmed.work.not_attempted,
+            ),
+            (3, 1, 0, 0, 0, 2),
+        );
+        assert_eq!(pubmed.reason_codes, vec!["logical_work_cap"]);
+
+        let europepmc = statuses
+            .iter()
+            .find(|status| status.route == "strict" && status.source == "europepmc")
+            .expect("materialized Europe PMC status");
+        assert_eq!(
+            europepmc.status,
+            VariantArticleSourceStatusKind::NotAttempted
+        );
+        assert_eq!(
+            (
+                europepmc.work.planned,
+                europepmc.work.ok,
+                europepmc.work.degraded,
+                europepmc.work.unavailable,
+                europepmc.work.timed_out,
+                europepmc.work.not_attempted,
+            ),
+            (2, 0, 0, 0, 0, 2),
+        );
+        assert_eq!(europepmc.reason_codes, vec!["logical_work_cap"]);
+        assert!(source_statuses_incomplete(&statuses));
     }
 
     #[test]

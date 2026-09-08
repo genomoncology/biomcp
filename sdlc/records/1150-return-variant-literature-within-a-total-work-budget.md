@@ -136,7 +136,32 @@ Full repository gates remain unclaimed.
 ## Review
 
 - Design review: accepted before implementation.
-- Code review: pending independent review of this commit.
+- Code review: rejected two residual-boundary findings; remediation is pending
+  independent re-review.
+
+## Independent review remediation
+
+Deadline-aware constructor cleanup now carries its explicit invocation deadline
+through the same maintenance-lock and cleanup policy as the ordinary
+constructor. Cleanup checks immediately before every key and eligible blob
+removal, so expiry after one admitted atomic removal prevents every later
+mutation. A controlled mid-key regression proves the next key and both blobs
+remain untouched.
+
+Terminal source status now reconciles every materialized route plan, regardless
+of whether work stopped at the invocation deadline or a logical cap. Residual
+units become `not_attempted` with `logical_work_cap`; a partially completed
+route is `degraded`, a wholly unstarted route is `not_attempted`, and either
+makes the response incomplete. Undecided non-deadline skeleton placeholders
+remain absent, and hard resolution failures retain `resolution` as the first
+public status row.
+
+Focused remediation validation passed all 92 cache-clean, cache-manager,
+variant-search, and public variant-article CLI/MCP tests, including the two new
+controlled regressions and the hard-failure JSON compatibility contract.
+Formatting, diff whitespace, warning-denied no-default-features library Clippy,
+the quality/source-size ratchet, and all 6 source-package-boundary contracts
+also passed. Full repository and feature gates remain unclaimed.
 
 ## BioData eligibility integration rebase evidence
 

@@ -44,7 +44,53 @@ pub(crate) fn execute_cache_clean(
     )
 }
 
+pub(crate) fn execute_cache_clean_until(
+    cache_path: &Path,
+    options: CleanOptions,
+    config: &ResolvedCacheConfig,
+    now_ms: u128,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> Result<CleanReport, BioMcpError> {
+    execute_cache_clean_with_check(
+        cache_path,
+        options,
+        config,
+        now_ms,
+        snapshot_cache,
+        |path, key| cacache::remove_sync(path, key),
+        |path, integrity| cacache::remove_hash_sync(path, integrity),
+        || check_deadline(deadline),
+    )
+}
+
 fn execute_cache_clean_with<S, RK, RB>(
+    cache_path: &Path,
+    options: CleanOptions,
+    config: &ResolvedCacheConfig,
+    now_ms: u128,
+    snapshotter: S,
+    remove_key: RK,
+    remove_blob: RB,
+) -> Result<CleanReport, BioMcpError>
+where
+    S: FnOnce(&Path) -> Result<CacheSnapshot, CachePlannerError>,
+    RK: for<'a, 'b> FnMut(&'a Path, &'b str) -> Result<(), cacache::Error>,
+    RB: for<'a, 'b> FnMut(&'a Path, &'b Integrity) -> Result<(), cacache::Error>,
+{
+    execute_cache_clean_with_check(
+        cache_path,
+        options,
+        config,
+        now_ms,
+        snapshotter,
+        remove_key,
+        remove_blob,
+        check_variant_article_deadline,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn execute_cache_clean_with_check<S, RK, RB, C>(
     cache_path: &Path,
     options: CleanOptions,
     config: &ResolvedCacheConfig,
@@ -52,13 +98,15 @@ fn execute_cache_clean_with<S, RK, RB>(
     snapshotter: S,
     mut remove_key: RK,
     mut remove_blob: RB,
+    mut check_deadline: C,
 ) -> Result<CleanReport, BioMcpError>
 where
     S: FnOnce(&Path) -> Result<CacheSnapshot, CachePlannerError>,
     RK: for<'a, 'b> FnMut(&'a Path, &'b str) -> Result<(), cacache::Error>,
     RB: for<'a, 'b> FnMut(&'a Path, &'b Integrity) -> Result<(), cacache::Error>,
+    C: FnMut() -> Result<(), BioMcpError>,
 {
-    check_variant_article_deadline()?;
+    check_deadline()?;
     let effective_max_age = Some(options.max_age.unwrap_or(config.max_age));
     let effective_max_size =
         resolve_effective_limit(options.max_size, config.max_size, config.origins.max_size);
@@ -83,7 +131,7 @@ where
 
     let mut planned_key_count_by_integrity = HashMap::new();
     for entry in &plan.entry_removals {
-        check_variant_article_deadline()?;
+        check_deadline()?;
         *planned_key_count_by_integrity
             .entry(entry.integrity.clone())
             .or_insert(0usize) += 1;
@@ -96,6 +144,7 @@ where
     let mut errors = Vec::new();
 
     for entry in &plan.entry_removals {
+        check_deadline()?;
         match remove_key(cache_path, &entry.key) {
             Ok(()) => {
                 entries_removed += 1;
@@ -108,7 +157,6 @@ where
     }
 
     for blob in &plan.blob_removals {
-        check_variant_article_deadline()?;
         let eligible = if blob.refcount == 0 {
             true
         } else {
@@ -130,6 +178,7 @@ where
             continue;
         }
 
+        check_deadline()?;
         match remove_blob(cache_path, &blob.integrity) {
             Ok(()) => {
                 bytes_freed += blob.size_bytes;
@@ -156,9 +205,15 @@ where
 }
 
 fn check_variant_article_deadline() -> Result<(), BioMcpError> {
-    if crate::sources::current_variant_article_deadline()
-        .is_some_and(|deadline| deadline.is_exhausted())
-    {
+    if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+        check_deadline(&deadline)
+    } else {
+        Ok(())
+    }
+}
+
+fn check_deadline(deadline: &crate::sources::VariantArticleDeadline) -> Result<(), BioMcpError> {
+    if deadline.is_exhausted() {
         Err(BioMcpError::Io(std::io::Error::new(
             std::io::ErrorKind::TimedOut,
             "variant article invocation deadline exceeded",
@@ -186,7 +241,10 @@ mod tests {
 
     use ssri::Integrity;
 
-    use super::{CleanOptions, CleanReport, execute_cache_clean, execute_cache_clean_with};
+    use super::{
+        CleanOptions, CleanReport, execute_cache_clean, execute_cache_clean_with,
+        execute_cache_clean_with_check,
+    };
     use crate::cache::{
         CacheConfigOrigins, CachePlannerError, ConfigOrigin, DiskFreeThreshold,
         ResolvedCacheConfig, snapshot_cache,
@@ -484,6 +542,64 @@ mod tests {
                 .iter()
                 .any(|err| err.contains("not all planned key removals succeeded"))
         );
+    }
+
+    #[test]
+    fn deadline_expiry_between_key_removals_leaves_the_next_key_untouched() {
+        let root = TempDirGuard::new("mid-key-cleanup-deadline");
+        let cache_path = root.path().join("http");
+        let first_integrity = write_entry(&cache_path, "a", b"first", 100);
+        let second_integrity = write_entry(&cache_path, "b", b"second", 101);
+        let config = test_config(
+            root.path(),
+            10_000_000_000,
+            Duration::from_secs(86_400),
+            ConfigOrigin::Default,
+            ConfigOrigin::Default,
+        );
+        let removed_keys = Cell::new(0usize);
+        let removed_blobs = Cell::new(0usize);
+
+        let error = execute_cache_clean_with_check(
+            &cache_path,
+            CleanOptions {
+                max_age: Some(Duration::from_millis(500)),
+                max_size: None,
+                dry_run: false,
+            },
+            &config,
+            1_000,
+            snapshot_cache,
+            |cache, key| {
+                cacache::remove_sync(cache, key)?;
+                removed_keys.set(removed_keys.get() + 1);
+                Ok(())
+            },
+            |cache, integrity| {
+                removed_blobs.set(removed_blobs.get() + 1);
+                cacache::remove_hash_sync(cache, integrity)
+            },
+            || {
+                if removed_keys.get() == 1 {
+                    Err(BioMcpError::Io(io::Error::new(
+                        io::ErrorKind::TimedOut,
+                        "controlled deadline expiry",
+                    )))
+                } else {
+                    Ok(())
+                }
+            },
+        )
+        .expect_err("the controlled deadline must stop before the second key");
+
+        assert!(
+            matches!(error, BioMcpError::Io(ref source) if source.kind() == io::ErrorKind::TimedOut)
+        );
+        assert_eq!(removed_keys.get(), 1);
+        assert_eq!(removed_blobs.get(), 0);
+        assert_eq!(snapshot_keys(&cache_path), vec!["b"]);
+        assert!(blob_path_for_integrity(&cache_path, &first_integrity).exists());
+        assert!(blob_path_for_integrity(&cache_path, &second_integrity).exists());
     }
 
     #[test]
