@@ -17,6 +17,19 @@ fn cache_open_narrows_only_managed_paths_and_rejects_hardlinks() {
     fs::set_permissions(&root, fs::Permissions::from_mode(0o777)).expect("broad root");
     fs::set_permissions(&http, fs::Permissions::from_mode(0o777)).expect("broad http");
     fs::set_permissions(&file, fs::Permissions::from_mode(0o666)).expect("broad file");
+    let expected_parent_mode = 0o755;
+    fs::set_permissions(
+        parent.path(),
+        fs::Permissions::from_mode(expected_parent_mode),
+    )
+    .expect("known parent mode");
+    assert_eq!(
+        fs::metadata(parent.path())
+            .expect("parent precondition")
+            .mode()
+            & 0o777,
+        expected_parent_mode
+    );
 
     let status = Command::new(env!("CARGO_BIN_EXE_biomcp"))
         .args(["cache", "stats"])
@@ -36,9 +49,9 @@ fn cache_open_narrows_only_managed_paths_and_rejects_hardlinks() {
         fs::metadata(&file).expect("file mode").mode() & 0o777,
         0o600
     );
-    assert_ne!(
+    assert_eq!(
         fs::metadata(parent.path()).expect("parent mode").mode() & 0o777,
-        0o700
+        expected_parent_mode
     );
 
     fs::hard_link(&file, parent.path().join("outside-link")).expect("hard link");
