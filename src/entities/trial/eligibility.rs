@@ -1,132 +1,31 @@
-use biodata::{
-    Bound, ClinicalTrialAgeBound, ClinicalTrialAgeBoundForm, ClinicalTrialAgeRange,
-    ClinicalTrialEligibility, ClinicalTrialEligibilityClassification,
-    ClinicalTrialEligibilityCriterion, ClinicalTrialEligibilityCriterionId, DurationUnit,
-    ExtensibleCode, ParseOutcome, TemporalParser,
-};
+use biodata::ClinicalTrialEligibility;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::{Value, json};
+use serde_json::value::RawValue;
 
-const NO_LIMIT_RULE: &str = "nci-cts-v2-999-years-no-upper-bound";
-
-#[derive(Clone, Copy, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum UnitWire {
-    Years,
-    Months,
-    Weeks,
-    Days,
-}
-
-#[derive(Clone, Copy, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum BoundWire {
-    Minimum,
-    Maximum,
-}
-
-impl From<UnitWire> for DurationUnit {
-    fn from(value: UnitWire) -> Self {
-        match value {
-            UnitWire::Years => Self::Years,
-            UnitWire::Months => Self::Months,
-            UnitWire::Weeks => Self::Weeks,
-            UnitWire::Days => Self::Days,
-        }
-    }
-}
-
-impl From<BoundWire> for Bound {
-    fn from(value: BoundWire) -> Self {
-        match value {
-            BoundWire::Minimum => Self::Minimum,
-            BoundWire::Maximum => Self::Maximum,
-        }
-    }
-}
-
-fn unit(value: DurationUnit) -> &'static str {
-    match value {
-        DurationUnit::Years => "years",
-        DurationUnit::Months => "months",
-        DurationUnit::Weeks => "weeks",
-        DurationUnit::Days => "days",
-    }
-}
-
-fn bound(value: Bound) -> &'static str {
-    match value {
-        Bound::Minimum => "minimum",
-        Bound::Maximum => "maximum",
-    }
-}
-
-fn code_value(value: &ExtensibleCode) -> Value {
-    json!({
-        "authority": value.authority(),
-        "code": value.code(),
-        "display": value.display(),
-        "vocabulary_version": value.vocabulary_version(),
-        "recognized_meaning": value.recognized_meaning()
-    })
-}
-
-fn age_bound_value(value: &ClinicalTrialAgeBound) -> Value {
-    let source = value.source();
-    let mut out = json!({
-        "kind": "limited",
-        "source": source.source(),
-        "source_quantity": source.source_quantity(),
-        "source_unit": unit(source.source_unit()),
-        "bound": bound(source.bound())
-    });
-    if value.form() == ClinicalTrialAgeBoundForm::SourceStatedNoLimit {
-        out["kind"] = json!("source_stated_no_limit");
-        out["rule"] = json!({"name": NO_LIMIT_RULE, "version": "1"});
-    }
-    out
-}
-
-fn classification_value(value: &ClinicalTrialEligibilityClassification) -> Value {
-    match value {
-        ClinicalTrialEligibilityClassification::Inclusion => json!({"kind": "inclusion"}),
-        ClinicalTrialEligibilityClassification::Exclusion => json!({"kind": "exclusion"}),
-        ClinicalTrialEligibilityClassification::Other(source) => {
-            json!({"kind": "other", "source": code_value(source)})
-        }
-    }
-}
-
-fn eligibility_value(value: &ClinicalTrialEligibility) -> Value {
-    json!({
-        "registry_text": value.registry_text(),
-        "age_range": value.age_range().map(|range| json!({
-            "minimum": range.minimum().map(age_bound_value),
-            "maximum": range.maximum().map(age_bound_value)
-        })),
-        "sexes": value.sexes().map(|values| values.iter().map(code_value).collect::<Vec<_>>()),
-        "includes_healthy_subjects": value.includes_healthy_subjects(),
-        "criteria": value.criteria().map(|values| values.iter().map(|criterion| json!({
-            "id": criterion.id().get(),
-            "description": criterion.description(),
-            "classification": classification_value(criterion.classification())
-        })).collect::<Vec<_>>())
-    })
-}
+const INVALID_ELIGIBILITY: &str = "invalid clinical trial eligibility";
 
 pub(super) fn serialize<S: Serializer>(
     value: &Option<ClinicalTrialEligibility>,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
-    value.as_ref().map(eligibility_value).serialize(serializer)
+    let Some(value) = value else {
+        return serializer.serialize_none();
+    };
+    let json = value
+        .to_json()
+        .map_err(|_| serde::ser::Error::custom(INVALID_ELIGIBILITY))?;
+    RawValue::from_string(json)
+        .map_err(|_| serde::ser::Error::custom(INVALID_ELIGIBILITY))?
+        .serialize(serializer)
 }
 
-fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
-where
-    D: Deserializer<'de>,
-    T: Deserialize<'de>,
-{
-    Option::<T>::deserialize(deserializer)
+pub(super) fn deserialize<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<ClinicalTrialEligibility>, D::Error> {
+    Option::<Box<RawValue>>::deserialize(deserializer)?
+        .map(|raw| ClinicalTrialEligibility::from_json_bytes(raw.get().as_bytes()))
+        .transpose()
+        .map_err(|_| serde::de::Error::custom(INVALID_ELIGIBILITY))
 }
 
 #[cfg(test)]
@@ -313,197 +212,4 @@ mod tests {
             expected
         );
     }
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct EligibilityOwned {
-    #[serde(deserialize_with = "required_nullable")]
-    registry_text: Option<String>,
-    #[serde(deserialize_with = "required_nullable")]
-    age_range: Option<AgeRangeOwned>,
-    #[serde(deserialize_with = "required_nullable")]
-    sexes: Option<Vec<CodeOwned>>,
-    #[serde(deserialize_with = "required_nullable")]
-    includes_healthy_subjects: Option<bool>,
-    #[serde(deserialize_with = "required_nullable")]
-    criteria: Option<Vec<CriterionOwned>>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct AgeRangeOwned {
-    #[serde(deserialize_with = "required_nullable")]
-    minimum: Option<AgeBoundOwned>,
-    #[serde(deserialize_with = "required_nullable")]
-    maximum: Option<AgeBoundOwned>,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-enum AgeBoundOwned {
-    Limited {
-        source: String,
-        source_quantity: String,
-        source_unit: UnitWire,
-        bound: BoundWire,
-    },
-    SourceStatedNoLimit {
-        source: String,
-        source_quantity: String,
-        source_unit: UnitWire,
-        bound: BoundWire,
-        rule: RuleOwned,
-    },
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct RuleOwned {
-    name: String,
-    version: String,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CodeOwned {
-    authority: String,
-    code: String,
-    #[serde(deserialize_with = "required_nullable")]
-    display: Option<String>,
-    #[serde(deserialize_with = "required_nullable")]
-    vocabulary_version: Option<String>,
-    #[serde(deserialize_with = "required_nullable")]
-    recognized_meaning: Option<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CriterionOwned {
-    id: u64,
-    description: String,
-    classification: ClassificationOwned,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-enum ClassificationOwned {
-    Inclusion,
-    Exclusion,
-    Other { source: CodeOwned },
-}
-
-fn code(value: CodeOwned) -> Result<ExtensibleCode, ()> {
-    ExtensibleCode::new(
-        value.authority,
-        value.code,
-        value.display,
-        value.vocabulary_version,
-        value.recognized_meaning,
-    )
-    .map_err(|_| ())
-}
-
-fn parsed_bound(
-    source: String,
-    source_quantity: String,
-    source_unit: UnitWire,
-    bound: BoundWire,
-) -> Result<biodata::Duration, ()> {
-    let expected_unit: DurationUnit = source_unit.into();
-    let expected_bound: Bound = bound.into();
-    let ParseOutcome::Parsed(parsed) =
-        TemporalParser::default().parse_duration(&source, expected_bound)
-    else {
-        return Err(());
-    };
-    if parsed.source_quantity() != source_quantity || parsed.source_unit() != expected_unit {
-        return Err(());
-    }
-    Ok(parsed)
-}
-
-fn age_bound(value: AgeBoundOwned) -> Result<ClinicalTrialAgeBound, ()> {
-    match value {
-        AgeBoundOwned::Limited {
-            source,
-            source_quantity,
-            source_unit,
-            bound,
-        } => ClinicalTrialAgeBound::limited(parsed_bound(
-            source,
-            source_quantity,
-            source_unit,
-            bound,
-        )?)
-        .map_err(|_| ()),
-        AgeBoundOwned::SourceStatedNoLimit {
-            source,
-            source_quantity,
-            source_unit,
-            bound,
-            rule,
-        } => {
-            if rule.name != NO_LIMIT_RULE || rule.version != "1" {
-                return Err(());
-            }
-            ClinicalTrialAgeBound::source_stated_no_limit(parsed_bound(
-                source,
-                source_quantity,
-                source_unit,
-                bound,
-            )?)
-            .map_err(|_| ())
-        }
-    }
-}
-
-fn age_range(value: AgeRangeOwned) -> Result<ClinicalTrialAgeRange, ()> {
-    ClinicalTrialAgeRange::new(
-        value.minimum.map(age_bound).transpose()?,
-        value.maximum.map(age_bound).transpose()?,
-    )
-    .map_err(|_| ())
-}
-
-fn criterion(value: CriterionOwned) -> Result<ClinicalTrialEligibilityCriterion, ()> {
-    let classification = match value.classification {
-        ClassificationOwned::Inclusion => ClinicalTrialEligibilityClassification::Inclusion,
-        ClassificationOwned::Exclusion => ClinicalTrialEligibilityClassification::Exclusion,
-        ClassificationOwned::Other { source } => {
-            ClinicalTrialEligibilityClassification::Other(code(source)?)
-        }
-    };
-    ClinicalTrialEligibilityCriterion::new(
-        ClinicalTrialEligibilityCriterionId::new(value.id).map_err(|_| ())?,
-        value.description,
-        classification,
-    )
-    .map_err(|_| ())
-}
-
-fn eligibility(value: EligibilityOwned) -> Result<ClinicalTrialEligibility, ()> {
-    ClinicalTrialEligibility::new(
-        value.registry_text,
-        value.age_range.map(age_range).transpose()?,
-        value
-            .sexes
-            .map(|values| values.into_iter().map(code).collect())
-            .transpose()?,
-        value.includes_healthy_subjects,
-        value
-            .criteria
-            .map(|values| values.into_iter().map(criterion).collect())
-            .transpose()?,
-    )
-    .map_err(|_| ())
-}
-
-pub(super) fn deserialize<'de, D: Deserializer<'de>>(
-    deserializer: D,
-) -> Result<Option<ClinicalTrialEligibility>, D::Error> {
-    Option::<EligibilityOwned>::deserialize(deserializer)?
-        .map(eligibility)
-        .transpose()
-        .map_err(|()| serde::de::Error::custom("invalid clinical trial eligibility"))
 }
