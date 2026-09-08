@@ -81,6 +81,19 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         return
 
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        length = int(self.headers.get("content-length", "0"))
+        payload = json.loads(self.rfile.read(length) or b"{}")
+        with request_log.open("a", encoding="utf-8") as handle:
+            handle.write(f"{parsed.path}?{parsed.query}\n")
+
+        if parsed.path == "/graph/v1/paper/batch":
+            send_json(self, 200, [None for _ in payload.get("ids", [])])
+            return
+
+        send_json(self, 404, {"error": "unexpected fixture POST"})
+
     def do_GET(self):
         parsed = urlparse(self.path)
         params = parse_qs(parsed.query)
