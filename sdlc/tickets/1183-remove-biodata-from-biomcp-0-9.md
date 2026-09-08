@@ -130,11 +130,13 @@ Before implementation, prove `git merge-base --is-ancestor a694f1dc68c548a1ab711
 - The `windows-contracts` lane passes `cargo check --locked` and `cargo test --locked --test managed_state_permissions` on `windows-2022`. Read-only review of release configuration proves the `x86_64-pc-windows-msvc` build uses the same dependency graph; do not run candidate staging to satisfy this ticket.
 - A clean/offline `cargo metadata`, `cargo tree`, package verification, and extracted-package compile all pass, and their output contains no forbidden dependency evidence.
 
-Local completion and hosted confirmation are separate evidence. After the implementation commit is pushed, the canonical Linux gates, `full-features`, `windows-contracts`, and `repository-contracts` jobs must all be green for that exact pushed SHA; record the SHA and job URLs/results in the 1183 completion record. Hosted success on a different SHA does not count. Do not dispatch, stage, sign, publish, or promote a release workflow without separate user authorization. This ticket permits only read-only/local validation of release configuration and the ordinary non-release CI jobs associated with the implementation branch.
+Local completion and hosted confirmation are separate evidence. Finish code, tests, ratchets, planning disposition, the initial 1183 record, and removal of the active 1183 ticket in one reviewed implementation/pre-closure SHA, then push it. The canonical Linux gates, `full-features`, `windows-contracts`, and `repository-contracts` jobs must all be green for that exact SHA. After those results exist, a final closure commit may edit only `sdlc/records/1183-remove-biodata-from-biomcp-0-9.md` to name the reviewed implementation/pre-closure SHA and its green hosted job URLs/results.
+
+The final closure SHA is the sole bounded exception to the exact-SHA recording rule because a commit cannot record its own future hosted results. Prove with its parent diff that the closure commit changes only that record and does not change behavior, dependencies, package membership, source or test code, fixtures, gates, ratchet code or exception inventory, or release configuration. Push the closure commit and observe the same required ordinary hosted checks for that closure SHA; report those subsequent results and URLs in the final handoff rather than attempting a self-referential record amendment. Any closure diff outside the one record cancels this exception and requires a new reviewed pre-closure SHA and exact-SHA hosted evidence.
 
 ## Boundaries
 
-This ticket does not change trial search, provider URLs, public success JSON or Markdown, schemas, section names, source attribution, fixtures, capture receipts, release version, unrelated dependencies, or AlphaGenome behavior. It does not publish a release, BioData crate, package, branch, or repository; contact external systems; add CI credentials; or rewrite history. It does not import BioData source under another name or broaden BioMCP into a general biomedical data library.
+This ticket does not change trial search, provider URLs, public success JSON or Markdown, schemas, section names, source attribution, fixtures, capture receipts, release version, unrelated dependencies, or AlphaGenome behavior. Pushing the focused implementation and closure branches and running or observing their ordinary non-release hosted CI are authorized and required. No provider or live-smoke calls, release-workflow dispatch, candidate staging, signing, promotion, release publication, BioData publication, new CI credential, or other external coordination is authorized. The work must not rewrite history, import BioData source under another name, or broaden BioMCP into a general biomedical data library.
 
 ## Dependencies
 
@@ -142,5 +144,5 @@ None. The required provider fixtures, product contracts, historical implementati
 
 ## Review
 
-- Design review: REQUEST CHANGES addressed; re-review pending
+- Design review: second REQUEST CHANGES addressed; re-review pending
 - Code review: pending
