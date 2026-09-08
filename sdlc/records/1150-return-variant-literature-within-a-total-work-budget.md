@@ -138,6 +138,25 @@ Full repository gates remain unclaimed.
 - Design review: accepted before implementation.
 - Code review: pending independent review of this commit.
 
+## BioData eligibility integration rebase evidence
+
+Rebased the completed implementation onto BioMCP `aafb52b7`, which consumes
+BioData's shared clinical-trial eligibility model. The rebase retained the
+completed ticket record at priority 10, preserved the exact BioData revision
+and all trial-owned files from the new base, and added only the ticket's
+`bincode` dependency beside that pin.
+
+Focused post-rebase validation passed: formatting and diff whitespace;
+`cargo clippy --locked --no-default-features --lib -- -D warnings`; the
+quality/source-size ratchet; all 6 source-package-boundary contracts with a
+worktree-local temporary root; all 47 variant-search, 24 cache-manager, and 19
+cache-migration tests; 60 article backend/detail/enrichment/search and deadline
+tests; and 10 public variant-article CLI/MCP contracts. A local
+no-default-features release binary then passed all 41 focused documentation and
+MCP-catalog contracts plus the executable healthy-empty JSON and
+offset-beyond-total Markdown scenarios. Independent code review and the full
+repository lint, test, spec, and feature gates remain unclaimed.
+
 ## Second remediation evidence
 
 - `cargo check --no-default-features`: passed without warnings.
