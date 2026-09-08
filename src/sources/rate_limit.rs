@@ -384,6 +384,9 @@ mod tests {
                 }
             })
         };
+        // Test-only loopback transport: keeping policy middleware out of this
+        // fixture isolates the execution permit's downstream ownership. The
+        // exact constructor is inventoried by the network-policy contract.
         let client = reqwest::Client::new();
         let execution = Arc::new(
             crate::entities::article::variant_search::VariantArticleExecutionContext::single(),

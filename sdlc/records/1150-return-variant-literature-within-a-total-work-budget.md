@@ -359,6 +359,25 @@ whitespace, all quality ratchets, the exact 1,300-file package list, and all six
 source-package-boundary contracts passed. This remediation does not claim a
 rerun of full `make test`, `make spec`, or the feature/release gates.
 
+The canonical `make test` rerun then completed all 3,320 Rust tests successfully
+with 30 skipped. The Python lane completed 910 tests with three skipped and one
+failure: its fail-closed Reqwest-construction inventory found the controlled
+loopback client used by the ticket's provider-permit lifetime regression. That
+constructor is inside the `rate_limit` module's `cfg(test)` block and
+intentionally excludes production URL-policy middleware so the fixture measures
+only whether the execution permit covers transport, body decoding, and commit.
+It is now named explicitly in the exact inventory and at the construction site;
+no production builder, redirect, proxy, DNS, or destination policy changed.
+
+The complete Python provider-network-policy contract passed four tests. The 17
+focused Rust ordinary/provider URL-policy and downstream-permit tests passed,
+including redirect revalidation and builder ownership. Formatting,
+warning-denied no-default-features library/test Clippy, diff whitespace, all
+quality ratchets, the exact 1,300-file package list, and all six
+source-package-boundary contracts passed. The successful Rust lane and failed
+Python lane remain the canonical full-test evidence; `make spec`, feature, and
+release gates remain unclaimed.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every

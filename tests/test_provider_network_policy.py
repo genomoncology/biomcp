@@ -39,15 +39,17 @@ def test_reqwest_transport_construction_has_a_fail_closed_inventory() -> None:
             if count:
                 found[str(path.relative_to(ROOT))] = count
 
-    # ordinary_url_policy.rs owns the two production builders. The remaining
-    # entries are either test fixtures or provider-returned downloads which
-    # install the stronger ProviderUrlPolicy directly.
+    # ordinary_url_policy.rs owns the production builders. The remaining
+    # entries are either controlled test fixtures or provider-returned downloads
+    # which install the stronger ProviderUrlPolicy directly. rate_limit.rs is a
+    # cfg(test) loopback fixture kept raw to isolate provider-permit ownership.
     assert found == Counter(
         {
             "src/sources/mod.rs": 3,
             "src/sources/ordinary_url_policy.rs": 3,
             "src/sources/clingen_cspec.rs": 1,
             "src/sources/provider_url_policy.rs": 1,
+            "src/sources/rate_limit.rs": 1,
             "src/sources/pubmed/tests/parsing.rs": 1,
             "src/entities/trial/documents.rs": 1,
             "src/entities/trial/search/ctgov/tests.rs": 1,
