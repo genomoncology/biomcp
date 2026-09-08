@@ -4461,16 +4461,9 @@ request rather than silently ignoring them.</p>
 <p>Eligibility:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
 </code></pre></div>
-<p>CTGov eligibility is registry-supplied text. JSON eligibility output identifies
-that provenance and reports whether posted trial documents are available. When
-documents exist, Markdown offers a cautious follow-up because they may contain
-additional eligibility detail; BioMCP does not claim that a protocol resolves
-any criterion.</p>
-<p>Age bounds in JSON are objects, not strings. For example, <code>6 Months</code> is
-<code>{"number":6.0,"unit":"months","original":"6 Months"}</code>. All three members
-are always present. A retained no-limit or malformed bound has null <code>number</code>
-and <code>unit</code> while preserving its nonblank <code>original</code>; absent or blank bounds are
-omitted. Human-readable age ranges retain the provider notation.</p>
+<p>BioMCP stores eligibility in BioData's shared value for both ClinicalTrials.gov and NCI. JSON keeps registry text, age bounds, source-coded sex, healthy-subject state, and ordered identified criteria as separate facts. Every eligibility object contains all five members. Missing source facts appear as <code>null</code>. Explicit empty sex or criterion lists remain empty arrays.</p>
+<p>Age bounds preserve the source text, quantity, unit, and minimum or maximum role. NCI's <code>999 Years</code> maximum uses the named <code>nci-cts-v2-999-years-no-upper-bound</code> rule and renders as <code>Any age</code>. Default trial Markdown keeps the concise age summary. The explicit <code>eligibility</code> section shows the full readable eligibility presentation.</p>
+<p>ClinicalTrials.gov registry text also reports whether posted trial documents are available. Markdown offers a cautious follow-up when documents exist. BioMCP does not claim that a protocol resolves any criterion.</p>
 <p>Posted CTGov documents use standalone manifest and retrieval forms:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>documents
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>document<span class="w"> </span>Prot_SAP_000.pdf<span class="w"> </span>&gt;<span class="w"> </span>protocol.pdf
@@ -4526,7 +4519,7 @@ This keeps repeated lookups responsive.</p>
 <ul>
 <li>Start broad on condition, then add intervention and biomarker filters.</li>
 <li>Keep limits low while tuning search criteria.</li>
-<li>Use <code>eligibility</code> for registry-supplied criteria text, provenance, and structured sex/age facts.</li>
+<li>Use <code>eligibility</code> for registry text, source-coded sex, age bounds, healthy-subject state, ordered NCI criteria, and ClinicalTrials.gov document provenance.</li>
 <li>Use <code>contacts</code> when you need CTGov central or site contact details.</li>
 </ul>
 <h2 id="related-guides">Related guides<a class="headerlink" href="#related-guides" title="Permanent link">&para;</a></h2>

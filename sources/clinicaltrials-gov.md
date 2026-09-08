@@ -15,7 +15,7 @@ This page covers BioMCP's default trial backend. BioMCP also supports `--source 
 |---|---|---|
 | `search trial` | Filtered trial search with condition, status, biomarker, and pagination controls | Default backend is ClinicalTrials.gov v2 |
 | `get trial <nct_id>` | Trial summary card for a specific NCT record | Uses the default ClinicalTrials.gov detail path |
-| `get trial <nct_id> eligibility` | Inclusion and exclusion criteria text | Section expansion from the same trial record |
+| `get trial <nct_id> eligibility` | Registry text, age, sex, healthy-subject state, and criteria | Section expansion from the same trial record |
 | `get trial <nct_id> locations` | Facility and contact rows | Uses site data from the default backend |
 | `get trial <nct_id> outcomes` | Primary and secondary outcome measures | Detail-section view |
 | `get trial <nct_id> arms` | Study arms and interventions | Detail-section view |
@@ -47,7 +47,7 @@ Returns a trial card with the NCT heading, status, and condition context.
 biomcp get trial NCT02576665 eligibility
 ```
 
-Returns an eligibility section with inclusion and exclusion criteria text.
+Returns a shared eligibility section with registry text, source age bounds, source-coded sex, and healthy-subject state. JSON keeps each fact discrete. Markdown presents a readable bounded view.
 
 ```bash
 biomcp get trial NCT02576665 --limit 3 locations

@@ -4235,7 +4235,7 @@
 </tr>
 <tr>
 <td><code>get trial &lt;nct_id&gt; eligibility</code></td>
-<td>Inclusion and exclusion criteria text</td>
+<td>Registry text, age, sex, healthy-subject state, and criteria</td>
 <td>Section expansion from the same trial record</td>
 </tr>
 <tr>
@@ -4282,7 +4282,7 @@
 <p>Returns a trial card with the NCT heading, status, and condition context.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>eligibility
 </code></pre></div>
-<p>Returns an eligibility section with inclusion and exclusion criteria text.</p>
+<p>Returns a shared eligibility section with registry text, source age bounds, source-coded sex, and healthy-subject state. JSON keeps each fact discrete. Markdown presents a readable bounded view.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT02576665<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span><span class="w"> </span>locations
 </code></pre></div>
 <p>Returns a locations table with facility, city, country, status, and contact fields.</p>

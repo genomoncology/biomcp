@@ -178,17 +178,11 @@ Eligibility:
 biomcp get trial NCT02576665 eligibility
 ```
 
-CTGov eligibility is registry-supplied text. JSON eligibility output identifies
-that provenance and reports whether posted trial documents are available. When
-documents exist, Markdown offers a cautious follow-up because they may contain
-additional eligibility detail; BioMCP does not claim that a protocol resolves
-any criterion.
+BioMCP stores eligibility in BioData's shared value for both ClinicalTrials.gov and NCI. JSON keeps registry text, age bounds, source-coded sex, healthy-subject state, and ordered identified criteria as separate facts. Every eligibility object contains all five members. Missing source facts appear as `null`. Explicit empty sex or criterion lists remain empty arrays.
 
-Age bounds in JSON are objects, not strings. For example, `6 Months` is
-`{"number":6.0,"unit":"months","original":"6 Months"}`. All three members
-are always present. A retained no-limit or malformed bound has null `number`
-and `unit` while preserving its nonblank `original`; absent or blank bounds are
-omitted. Human-readable age ranges retain the provider notation.
+Age bounds preserve the source text, quantity, unit, and minimum or maximum role. NCI's `999 Years` maximum uses the named `nci-cts-v2-999-years-no-upper-bound` rule and renders as `Any age`. Default trial Markdown keeps the concise age summary. The explicit `eligibility` section shows the full readable eligibility presentation.
+
+ClinicalTrials.gov registry text also reports whether posted trial documents are available. Markdown offers a cautious follow-up when documents exist. BioMCP does not claim that a protocol resolves any criterion.
 
 Posted CTGov documents use standalone manifest and retrieval forms:
 
@@ -276,7 +270,7 @@ biomcp --json search trial -i daraxonrasib --limit 20
 
 - Start broad on condition, then add intervention and biomarker filters.
 - Keep limits low while tuning search criteria.
-- Use `eligibility` for registry-supplied criteria text, provenance, and structured sex/age facts.
+- Use `eligibility` for registry text, source-coded sex, age bounds, healthy-subject state, ordered NCI criteria, and ClinicalTrials.gov document provenance.
 - Use `contacts` when you need CTGov central or site contact details.
 
 ## Related guides

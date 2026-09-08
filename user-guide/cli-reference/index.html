@@ -5517,12 +5517,7 @@ a failed source with no successful fallback is <code>source_unavailable</code>.<
 <a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>biomcp<span class="w"> </span>--json<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>documents
 <a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>biomcp<span class="w"> </span>get<span class="w"> </span>trial<span class="w"> </span>NCT03361748<span class="w"> </span>document<span class="w"> </span>Prot_SAP_000.pdf
 </code></pre></div>
-<p><code>eligibility</code> is registry-supplied text and reports CTGov posted-document
-availability. The CTGov-only <code>documents</code> form is a standalone JSON manifest;
-<code>document &lt;filename&gt;</code> accepts an exact advertised name and returns raw,
-unconverted bytes up to 32 MiB. Documents may contain additional eligibility
-detail but do not guarantee that a criterion is resolved, and they remain
-outside ordinary <code>all</code>.</p>
+<p><code>eligibility</code> exposes BioData's shared registry text, age, sex, healthy-subject state, and ordered criteria. It also reports ClinicalTrials.gov posted-document availability. The CTGov-only <code>documents</code> form is a standalone JSON manifest. <code>document &lt;filename&gt;</code> accepts an exact advertised name and returns raw, unconverted bytes up to 32 MiB. Documents may contain additional eligibility detail but do not guarantee that a criterion is resolved. They remain outside ordinary <code>all</code>.</p>
 <h3 id="variant_1">Variant<a class="headerlink" href="#variant_1" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span><span class="s2">&quot;BRAF V600E&quot;</span>
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>biomcp<span class="w"> </span>get<span class="w"> </span>variant<span class="w"> </span>--assembly<span class="w"> </span>hg38<span class="w"> </span><span class="s1">&#39;chr7:g.140753336A&gt;T&#39;</span>
