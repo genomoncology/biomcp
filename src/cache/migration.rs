@@ -6,12 +6,18 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use fs2::FileExt;
 
+use super::maintenance::{BODY_LIMIT_CACHE_MARKER, epoch_state};
 use super::private::open_private;
 
 const BODY_LIMIT_CACHE_EPOCH: &str = ".body-limit-cache-v1";
 const BODY_LIMIT_CACHE_LOCK: &str = ".body-limit-cache-v1.lock";
-const BODY_LIMIT_CACHE_MARKER: &[u8] = b"bounded-response-body-v1\n";
 static BODY_LIMIT_STAGE_NONCE: AtomicU64 = AtomicU64::new(0);
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum EpochState {
+    Current,
+    RemoveLegacy,
+    Rebuild,
+}
 
 #[derive(Debug)]
 struct EpochStaging {
@@ -130,6 +136,9 @@ where
     fs::create_dir_all(cache_root)?;
     let lock = open_epoch_lock(cache_root)?;
     lock.lock_exclusive()?;
+    if epoch_state(cache_root, legacy_cache_was_renamed)? == EpochState::Current {
+        return FileExt::unlock(&lock);
+    }
     ensure_body_limited_cache_epoch_locked(
         cache_root,
         legacy_cache_was_renamed,
@@ -169,13 +178,24 @@ pub(crate) async fn ensure_body_limited_cache_epoch_until(
             Err(error) => return Err(error),
         }
     }
+    let current_root = cache_root.to_path_buf();
+    let state = deadline_blocking_io(deadline, move |cancelled| {
+        if cancelled.load(Ordering::Acquire) {
+            return Err(deadline_elapsed());
+        }
+        epoch_state(&current_root, legacy_cache_was_renamed)
+    })
+    .await?;
+    if state == EpochState::Current {
+        return FileExt::unlock(&lock);
+    }
     let maintenance = super::lock_cache_maintenance_until(cache_root, deadline).await?;
     deadline.ensure_time_io()?;
     ensure_body_limited_cache_epoch_async(
         cache_root,
-        legacy_cache_was_renamed,
         lock,
         maintenance,
+        state,
         deadline,
         |_| async {},
     )
@@ -282,9 +302,9 @@ where
 
 async fn ensure_body_limited_cache_epoch_async<F, Fut>(
     cache_root: &Path,
-    legacy_cache_was_renamed: bool,
     lock: File,
-    _maintenance: super::private::CacheOperationGuard,
+    _maintenance: super::CacheOperationGuard,
+    state: EpochState,
     deadline: &crate::sources::VariantArticleDeadline,
     mut after_mutation: F,
 ) -> io::Result<()>
@@ -294,30 +314,10 @@ where
 {
     let marker = cache_root.join(BODY_LIMIT_CACHE_EPOCH);
     let legacy = cache_root.join("http-cacache");
-    let marker_for_read = marker.clone();
-    let marker_exists = deadline_blocking_io(deadline, move |cancelled| {
-        if cancelled.load(Ordering::Acquire) {
-            return Err(deadline_elapsed());
-        }
-        validated_marker_exists(&marker_for_read)
-    })
-    .await?;
-    let legacy_exists = deadline_io(deadline, tokio::fs::symlink_metadata(&legacy))
-        .await
-        .map(|_| true)
-        .or_else(|error| {
-            (error.kind() == io::ErrorKind::NotFound)
-                .then_some(false)
-                .ok_or(error)
-        })?;
-    if marker_exists && !legacy_cache_was_renamed && !legacy_exists {
-        return FileExt::unlock(&lock);
-    }
-    if marker_exists && !legacy_cache_was_renamed {
+    if state == EpochState::RemoveLegacy {
         remove_cache_directory_until(&legacy, deadline, &mut after_mutation).await?;
         return FileExt::unlock(&lock);
     }
-
     let cache = cache_root.join("http");
     remove_cache_directory_until(&cache, deadline, &mut after_mutation).await?;
     remove_cache_directory_until(&legacy, deadline, &mut after_mutation).await?;
@@ -412,7 +412,7 @@ fn ensure_body_limited_cache_epoch_locked_with_guard<F>(
     cache_root: &Path,
     legacy_cache_was_renamed: bool,
     lock: File,
-    _maintenance: super::private::CacheOperationGuard,
+    _maintenance: super::CacheOperationGuard,
     before_publish: &mut F,
 ) -> Result<(), io::Error>
 where
@@ -504,7 +504,7 @@ fn open_existing_private(path: &Path) -> io::Result<Option<File>> {
     }
 }
 
-fn validated_marker_exists(path: &Path) -> io::Result<bool> {
+pub(super) fn validated_marker_exists(path: &Path) -> io::Result<bool> {
     let Some(mut marker) = open_existing_private(path)? else {
         return Ok(false);
     };
@@ -768,9 +768,9 @@ mod tests {
         });
         let cleanup = ensure_body_limited_cache_epoch_async(
             root.path(),
-            false,
             epoch_lock,
             maintenance,
+            EpochState::Rebuild,
             &deadline,
             {
                 let (paused, release) = (

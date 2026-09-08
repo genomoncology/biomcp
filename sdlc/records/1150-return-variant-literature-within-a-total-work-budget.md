@@ -285,6 +285,32 @@ dispatcher state without changing the worker stack or cache behavior. The
 exact disease-card and ticket-1120 raw-MCP reproductions now pass on the normal
 worker stack. The coordinating full gate remains unclaimed pending rerun.
 
+The next coordinating gate ran `make lint` successfully, then interrupted
+`make test` after more than 11 minutes in
+`manifest_and_bytes_preserve_induced_archive_failure_after_figshare_miss`.
+A narrow 30-second timeout reproduced the hang. The process held multiple
+shared `.biomcp-operation.lock` leases while another joined asset leg blocked
+trying to upgrade the same inode to exclusive maintenance. Ticket 1150 had
+moved cache-epoch maintenance ahead of the already-current marker fast path.
+
+Cache maintenance now tracks process-local shared leases before entering the
+OS lock. Nested or deadline-aware maintenance rejects a local upgrade without
+a blocking flock, while the explicit background eviction path waits for local
+readers before taking the cross-process exclusive lock. Both ordinary and
+deadline-aware epoch initialization return under the epoch lock when the
+validated marker is already current. Cross-process flock exclusion and normal
+eviction waiting remain unchanged. A deterministic regression holds two local
+read leases, proves the upgrade returns `WouldBlock`, releases both, and then
+proves exclusive and shared locks can be reacquired with no retained lease.
+
+The former hanging asset test now settles successfully, and 70 focused cache
+maintenance, manager, migration, provider-construction, and article-asset tests
+passed. Warning-denied no-default-features library/test Clippy, formatting,
+diff whitespace, the exact source-size ratchet, the 1,300-file package list,
+and all six source-package-boundary contracts also passed. The interrupted
+`make test` remains failed evidence; full lint, test, spec, and feature gates
+were not rerun or claimed here.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every

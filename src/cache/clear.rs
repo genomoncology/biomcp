@@ -1,7 +1,11 @@
 use std::cmp::Reverse;
-use std::fs;
-use std::io::ErrorKind;
+use std::collections::HashMap;
+use std::fs::{self, File, OpenOptions};
+use std::io::{self, ErrorKind};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, OnceLock};
+
+use fs2::FileExt;
 
 use crate::error::BioMcpError;
 
@@ -91,6 +95,384 @@ fn reject_linked_file(path: &Path, metadata: &fs::Metadata) -> Result<(), BioMcp
         )));
     }
     Ok(())
+}
+
+const CACHE_OPERATION_LOCK: &str = ".biomcp-operation.lock";
+pub(super) const BODY_LIMIT_CACHE_MARKER: &[u8] = b"bounded-response-body-v1\n";
+type LeaseMap = HashMap<PathBuf, usize>;
+static SHARED_LEASES: OnceLock<(Mutex<LeaseMap>, Condvar)> = OnceLock::new();
+
+pub(super) fn epoch_state(
+    cache_root: &Path,
+    legacy_cache_was_renamed: bool,
+) -> io::Result<super::migration::EpochState> {
+    use super::migration::EpochState;
+    let marker =
+        super::migration::validated_marker_exists(&cache_root.join(".body-limit-cache-v1"))?;
+    let legacy = match fs::symlink_metadata(cache_root.join("http-cacache")) {
+        Ok(_) => true,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => false,
+        Err(error) => return Err(error),
+    };
+    Ok(match (marker, legacy_cache_was_renamed, legacy) {
+        (true, false, false) => EpochState::Current,
+        (true, false, true) => EpochState::RemoveLegacy,
+        _ => EpochState::Rebuild,
+    })
+}
+
+pub(crate) struct CacheOperationGuard {
+    file: File,
+    shared_root: Option<PathBuf>,
+}
+
+impl Drop for CacheOperationGuard {
+    fn drop(&mut self) {
+        let _ = FileExt::unlock(&self.file);
+        if let Some(root) = &self.shared_root {
+            unregister_shared(root);
+        }
+    }
+}
+
+pub(crate) struct CacheKeyGuard {
+    _shared: CacheOperationGuard,
+    _key: CacheOperationGuard,
+}
+
+fn shared_leases() -> &'static (Mutex<LeaseMap>, Condvar) {
+    SHARED_LEASES.get_or_init(|| (Mutex::new(HashMap::new()), Condvar::new()))
+}
+
+fn lease_registry() -> io::Result<MutexGuard<'static, LeaseMap>> {
+    shared_leases()
+        .0
+        .lock()
+        .map_err(|_| io::Error::other("cache operation lease registry is poisoned"))
+}
+
+fn register_shared(root: &Path) -> io::Result<()> {
+    *lease_registry()?.entry(root.to_path_buf()).or_default() += 1;
+    Ok(())
+}
+
+fn unregister_shared(root: &Path) {
+    if let Ok(mut leases) = shared_leases().0.lock()
+        && let Some(count) = leases.get_mut(root)
+    {
+        *count -= 1;
+        if *count == 0 {
+            leases.remove(root);
+            shared_leases().1.notify_all();
+        }
+    }
+}
+
+fn operation_lock_file(cache_root: &Path) -> io::Result<File> {
+    super::private::secure_managed_dir(cache_root)?;
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true);
+    super::private::open_private(&mut options, &cache_root.join(CACHE_OPERATION_LOCK))
+}
+
+fn local_shared_upgrade_error() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::WouldBlock,
+        "cache maintenance cannot upgrade an active in-process shared operation",
+    )
+}
+
+fn try_exclusive_without_local_shared(cache_root: &Path, file: &File) -> io::Result<bool> {
+    let leases = lease_registry()?;
+    if leases.get(cache_root).copied().unwrap_or_default() > 0 {
+        return Err(local_shared_upgrade_error());
+    }
+    match file.try_lock_exclusive() {
+        Ok(()) => Ok(true),
+        Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
+pub(crate) fn lock_cache_maintenance(cache_root: &Path) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    if crate::sources::current_variant_article_deadline().is_some() {
+        return lock_maintenance_with_deadline(cache_root, file);
+    }
+    let leases = lease_registry()?;
+    if leases.get(cache_root).copied().unwrap_or_default() > 0 {
+        return Err(local_shared_upgrade_error());
+    }
+    file.lock_exclusive()?;
+    drop(leases);
+    Ok(exclusive_guard(file))
+}
+
+pub(crate) fn lock_cache_maintenance_after_shared(
+    cache_root: &Path,
+) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    let mut leases = lease_registry()?;
+    while leases.get(cache_root).copied().unwrap_or_default() > 0 {
+        leases = shared_leases()
+            .1
+            .wait(leases)
+            .map_err(|_| io::Error::other("cache operation lease registry is poisoned"))?;
+    }
+    file.lock_exclusive()?;
+    drop(leases);
+    Ok(exclusive_guard(file))
+}
+
+fn lock_maintenance_with_deadline(
+    cache_root: &Path,
+    file: File,
+) -> io::Result<CacheOperationGuard> {
+    let deadline = crate::sources::current_variant_article_deadline().expect("deadline exists");
+    loop {
+        match try_exclusive_without_local_shared(cache_root, &file)? {
+            true => return Ok(exclusive_guard(file)),
+            false => {
+                deadline.ensure_time_io()?;
+                std::thread::sleep(
+                    deadline
+                        .remaining()
+                        .min(std::time::Duration::from_millis(10)),
+                );
+            }
+        }
+    }
+}
+
+pub(crate) fn try_lock_cache_maintenance(
+    cache_root: &Path,
+) -> io::Result<Option<CacheOperationGuard>> {
+    let file = operation_lock_file(cache_root)?;
+    match try_exclusive_without_local_shared(cache_root, &file) {
+        Ok(true) => Ok(Some(exclusive_guard(file))),
+        Ok(false) => Ok(None),
+        Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+
+pub(crate) fn lock_cache_shared(cache_root: &Path) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    register_shared(cache_root)?;
+    let result = if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+        loop {
+            match FileExt::try_lock_shared(&file) {
+                Ok(()) => break Ok(()),
+                Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                    if let Err(error) = deadline.ensure_time_io() {
+                        break Err(error);
+                    }
+                    std::thread::sleep(
+                        deadline
+                            .remaining()
+                            .min(std::time::Duration::from_millis(10)),
+                    );
+                }
+                Err(error) => break Err(error),
+            }
+        }
+    } else {
+        FileExt::lock_shared(&file)
+    };
+    result
+        .map(|()| shared_guard(file, cache_root))
+        .inspect_err(|_| unregister_shared(cache_root))
+}
+
+fn shared_guard(file: File, cache_root: &Path) -> CacheOperationGuard {
+    CacheOperationGuard {
+        file,
+        shared_root: Some(cache_root.to_path_buf()),
+    }
+}
+
+fn exclusive_guard(file: File) -> CacheOperationGuard {
+    CacheOperationGuard {
+        file,
+        shared_root: None,
+    }
+}
+
+fn lock_cache_key(
+    cache_root: &Path,
+    key: &str,
+    before_lock_dir_create: &dyn Fn(&Path),
+) -> io::Result<CacheKeyGuard> {
+    let shared = lock_cache_shared(cache_root)?;
+    let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
+    super::private::secure_managed_dir_with(&lock_dir, || before_lock_dir_create(&lock_dir))?;
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true);
+    let file = super::private::open_private(&mut options, &super::key_lock_path(cache_root, key))?;
+    file.lock_exclusive()?;
+    Ok(CacheKeyGuard {
+        _shared: shared,
+        _key: exclusive_guard(file),
+    })
+}
+
+pub(crate) async fn lock_cache_key_async(
+    cache_root: PathBuf,
+    key: String,
+    before_lock_dir_create: Arc<dyn Fn(&Path) + Send + Sync>,
+) -> io::Result<CacheKeyGuard> {
+    if let Some(deadline) = crate::sources::current_variant_article_deadline() {
+        let shared = lock_cache_shared_until(&cache_root, &deadline).await?;
+        let lock_dir = cache_root.join(super::KEY_LOCK_DIR);
+        super::private::secure_managed_dir_with(&lock_dir, || before_lock_dir_create(&lock_dir))?;
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true);
+        let key_file =
+            super::private::open_private(&mut options, &super::key_lock_path(&cache_root, &key))?;
+        let key_guard = lock_file_until(key_file, deadline).await?;
+        return Ok(CacheKeyGuard {
+            _shared: shared,
+            _key: key_guard,
+        });
+    }
+    tokio::task::spawn_blocking(move || {
+        lock_cache_key(&cache_root, &key, before_lock_dir_create.as_ref())
+    })
+    .await
+    .map_err(|error| io::Error::other(format!("cache key lock task failed: {error}")))?
+}
+
+pub(crate) async fn lock_cache_shared_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    register_shared(cache_root)?;
+    lock_file_shared_until(file, cache_root, deadline).await
+}
+
+pub(crate) async fn lock_cache_maintenance_until(
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<CacheOperationGuard> {
+    let file = operation_lock_file(cache_root)?;
+    loop {
+        match try_exclusive_without_local_shared(cache_root, &file)? {
+            true => return Ok(exclusive_guard(file)),
+            false => wait(deadline).await?,
+        }
+    }
+}
+
+async fn lock_file_shared_until(
+    file: File,
+    cache_root: &Path,
+    deadline: &crate::sources::VariantArticleDeadline,
+) -> io::Result<CacheOperationGuard> {
+    loop {
+        match FileExt::try_lock_shared(&file) {
+            Ok(()) => return Ok(shared_guard(file, cache_root)),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                if let Err(error) = wait(deadline).await {
+                    unregister_shared(cache_root);
+                    return Err(error);
+                }
+            }
+            Err(error) => {
+                unregister_shared(cache_root);
+                return Err(error);
+            }
+        }
+    }
+}
+
+async fn lock_file_until(
+    file: File,
+    deadline: crate::sources::VariantArticleDeadline,
+) -> io::Result<CacheOperationGuard> {
+    loop {
+        match file.try_lock_exclusive() {
+            Ok(()) => return Ok(exclusive_guard(file)),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => wait(&deadline).await?,
+            Err(error) => return Err(error),
+        }
+    }
+}
+
+async fn wait(deadline: &crate::sources::VariantArticleDeadline) -> io::Result<()> {
+    deadline
+        .run(tokio::time::sleep(std::time::Duration::from_millis(10)))
+        .await
+        .map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::TimedOut,
+                "variant article invocation deadline exceeded",
+            )
+        })
+}
+
+#[cfg(test)]
+mod operation_lock_tests {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    use super::*;
+
+    #[test]
+    fn constructor_repairs_and_independent_key_operations_do_not_serialize_globally() {
+        let root = tempfile::tempdir().expect("temporary root");
+        let constructor_a = lock_cache_shared(root.path()).expect("first shared constructor lock");
+        let (constructor_tx, constructor_rx) = mpsc::channel();
+        let root_path = root.path().to_path_buf();
+        let constructor_b = std::thread::spawn(move || {
+            let guard = lock_cache_shared(&root_path).expect("second shared constructor lock");
+            constructor_tx.send(()).expect("report shared acquisition");
+            guard
+        });
+        constructor_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("constructor repairs must overlap while first lock remains held");
+        drop(constructor_a);
+        drop(constructor_b.join().expect("constructor thread"));
+
+        let key_a = "independent-key-a";
+        let key_b = (0..10_000)
+            .map(|candidate| format!("independent-key-{candidate}"))
+            .find(|candidate| {
+                super::super::key_lock_path(root.path(), candidate)
+                    != super::super::key_lock_path(root.path(), key_a)
+            })
+            .expect("key in another lock shard");
+        let operation_a = lock_cache_key(root.path(), key_a, &|_| {}).expect("first key lock");
+        let (key_tx, key_rx) = mpsc::channel();
+        let root_path = root.path().to_path_buf();
+        let operation_b = std::thread::spawn(move || {
+            let guard = lock_cache_key(&root_path, &key_b, &|_| {}).expect("independent key lock");
+            key_tx.send(()).expect("report independent acquisition");
+            guard
+        });
+        key_rx
+            .recv_timeout(Duration::from_secs(1))
+            .expect("independent key operations must overlap");
+        drop(operation_a);
+        drop(operation_b.join().expect("key operation thread"));
+    }
+
+    #[test]
+    fn same_process_readers_never_block_on_an_exclusive_upgrade() {
+        let root = tempfile::tempdir().expect("temporary cache root");
+        let first = lock_cache_shared(root.path()).expect("first shared lease");
+        let second = lock_cache_shared(root.path()).expect("second shared lease");
+        let error = match lock_cache_maintenance(root.path()) {
+            Ok(_) => panic!("maintenance must reject an in-process shared-to-exclusive upgrade"),
+            Err(error) => error,
+        };
+        assert_eq!(error.kind(), io::ErrorKind::WouldBlock);
+        drop(first);
+        drop(second);
+        drop(lock_cache_maintenance(root.path()).expect("maintenance after shared release"));
+        drop(lock_cache_shared(root.path()).expect("shared lease after maintenance release"));
+    }
 }
 
 #[cfg(not(unix))]

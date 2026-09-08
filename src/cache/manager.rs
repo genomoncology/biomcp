@@ -443,7 +443,7 @@ fn run_eviction_cycle(
     config: &ResolvedCacheConfig,
     approx_bytes: &AtomicU64,
 ) -> Result<(), BioMcpError> {
-    let _operation = super::lock_cache_maintenance(&config.cache_root)?;
+    let _operation = super::lock_cache_maintenance_after_shared(&config.cache_root)?;
     run_eviction_cycle_with(
         cache_path,
         config,
