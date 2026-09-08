@@ -498,6 +498,21 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
         biodata::ClinicalTrialReference::new(Some("67890".to_string()), None, None)
             .expect("PMID-only reference"),
         biodata::ClinicalTrialReference::new(
+            Some("24680".to_string()),
+            None,
+            Some(
+                biodata::ExtensibleCode::new(
+                    "example.org",
+                    "HIDDEN",
+                    Some("Should stay hidden".to_string()),
+                    None::<String>,
+                    None::<String>,
+                )
+                .expect("PMID source type"),
+            ),
+        )
+        .expect("PMID and source-type reference"),
+        biodata::ClinicalTrialReference::new(
             None,
             None,
             Some(
@@ -549,6 +564,7 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
     for expected in [
         "[PMID: 12345] Citation with identifier *(Preferred display)*",
         "[PMID: 67890]",
+        "[PMID: 24680]",
         "Recognized only",
         "Code only",
     ] {
@@ -559,6 +575,7 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
         2
     );
     assert!(!markdown.contains("Recognized meaning"));
+    assert!(!markdown.contains("Should stay hidden"));
 }
 
 #[test]

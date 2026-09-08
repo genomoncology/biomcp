@@ -24,7 +24,9 @@ BioMCP deleted `CtGovProtocolSection.references_module`, `CtGovReference`, `CtGo
 
 The initial focused adapter run produced four failures across five tests. The old adapter rejected valid shared states, returned its former error, and trimmed stored whitespace. The same five tests passed after the codec handoff. Focused Markdown, product section-state, CLI, raw MCP, typed MCP, provider-recording, ownership, and capture-receipt tests also passed.
 
-The final required-environment gates passed `make lint`, `make test`, `make spec`, and `make full-feature-check`. Routine tests passed 3,298 Rust tests with 30 skipped and 912 Python tests with 3 skipped. Strict documentation and every offline specification group passed. The source package remains at the 1,300-file ceiling.
+Independent code review rejected the first implementation because a valid PMID-only reference also displayed its source-type label. A focused assertion reproduced that output. The remediation limits the source-type suffix to references with a citation. The focused Markdown test now proves that a reference with PMID and source type renders the PMID alone.
+
+The complete implementation passed `make lint`, `make test`, `make spec`, and `make full-feature-check`. The Markdown-only review remediation then passed the focused reference and Markdown tests plus `make lint`, `make test`, and `make spec`. Routine tests passed 3,298 Rust tests with 30 skipped and 912 Python tests with 3 skipped. Strict documentation and every offline specification group passed. The source package remains at the 1,300-file ceiling.
 
 ## Boundary
 
