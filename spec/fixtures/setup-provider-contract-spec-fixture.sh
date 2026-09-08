@@ -66,6 +66,33 @@ MYCHEM = {
 }
 MYGENE = {
     "(symbol:BRAF OR alias:BRAF)": fixture("mygene/search_braf_20260811.json"),
+    "(symbol:ODC1 OR alias:ODC1)": json.dumps({
+        "total": 4,
+        "hits": [
+            {"symbol": "SLC25A21", "name": "solute carrier family 25 member 21", "entrezgene": 23530},
+            {"symbol": "ODC1", "name": "ornithine decarboxylase 1", "entrezgene": 4953},
+            {"symbol": "ODC1", "name": "duplicate ODC1", "entrezgene": 4953},
+            {"symbol": "OAZ1", "name": "ornithine decarboxylase antizyme 1", "entrezgene": 4946},
+        ],
+    }).encode("utf-8"),
+    "odc1": json.dumps({
+        "total": 4,
+        "hits": [
+            {"symbol": "SLC25A21", "name": "solute carrier family 25 member 21", "entrezgene": 23530},
+            {"symbol": "ODC1", "name": "ornithine decarboxylase 1", "entrezgene": 4953},
+            {"symbol": "ODC1", "name": "duplicate ODC1", "entrezgene": 4953},
+            {"symbol": "OAZ1", "name": "ornithine decarboxylase antizyme 1", "entrezgene": 4946},
+        ],
+    }).encode("utf-8"),
+    "OdC1": json.dumps({
+        "total": 4,
+        "hits": [
+            {"symbol": "SLC25A21", "name": "solute carrier family 25 member 21", "entrezgene": 23530},
+            {"symbol": "ODC1", "name": "ornithine decarboxylase 1", "entrezgene": 4953},
+            {"symbol": "ODC1", "name": "duplicate ODC1", "entrezgene": 4953},
+            {"symbol": "OAZ1", "name": "ornithine decarboxylase antizyme 1", "entrezgene": 4946},
+        ],
+    }).encode("utf-8"),
     "(symbol:H3\\-3A OR alias:H3\\-3A)": json.dumps({
         "total": 1,
         "hits": [{"_id": "3020", "symbol": "H3-3A", "alias": ["H3F3A"]}],
