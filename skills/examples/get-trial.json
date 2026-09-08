@@ -5,7 +5,36 @@
   "status": "TERMINATED",
   "phase": "PHASE1",
   "study_type": "INTERVENTIONAL",
-  "age_range": "18 Years to 75 Years",
+  "eligibility": {
+    "registry_text": "Inclusion Criteria:\n\n1. Patient has given written informed consent.",
+    "age_range": {
+      "minimum": {
+        "kind": "limited",
+        "source": "18 Years",
+        "source_quantity": "18",
+        "source_unit": "years",
+        "bound": "minimum"
+      },
+      "maximum": {
+        "kind": "limited",
+        "source": "75 Years",
+        "source_quantity": "75",
+        "source_unit": "years",
+        "bound": "maximum"
+      }
+    },
+    "sexes": [
+      {
+        "authority": "clinicaltrials.gov",
+        "code": "ALL",
+        "display": "All",
+        "vocabulary_version": null,
+        "recognized_meaning": null
+      }
+    ],
+    "includes_healthy_subjects": false,
+    "criteria": null
+  },
   "conditions": [
     "Colorectal Cancer",
     "Triple Negative Breast Cancer",

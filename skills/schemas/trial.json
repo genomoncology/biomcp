@@ -16,6 +16,131 @@
       },
       "additionalProperties": false
     },
+    "limitedAgeBound": {
+      "type": "object",
+      "required": ["kind", "source", "source_quantity", "source_unit", "bound"],
+      "properties": {
+        "kind": { "const": "limited" },
+        "source": { "type": "string", "minLength": 1 },
+        "source_quantity": { "type": "string", "minLength": 1 },
+        "source_unit": { "enum": ["years", "months", "weeks", "days"] },
+        "bound": { "enum": ["minimum", "maximum"] }
+      },
+      "additionalProperties": false
+    },
+    "noLimitAgeBound": {
+      "type": "object",
+      "required": ["kind", "source", "source_quantity", "source_unit", "bound", "rule"],
+      "properties": {
+        "kind": { "const": "source_stated_no_limit" },
+        "source": { "type": "string", "minLength": 1 },
+        "source_quantity": { "const": "999" },
+        "source_unit": { "const": "years" },
+        "bound": { "const": "maximum" },
+        "rule": {
+          "type": "object",
+          "required": ["name", "version"],
+          "properties": {
+            "name": { "const": "nci-cts-v2-999-years-no-upper-bound" },
+            "version": { "const": "1" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "minimumAgeBound": {
+      "allOf": [
+        { "$ref": "#/$defs/limitedAgeBound" },
+        { "properties": { "bound": { "const": "minimum" } } }
+      ]
+    },
+    "maximumLimitedAgeBound": {
+      "allOf": [
+        { "$ref": "#/$defs/limitedAgeBound" },
+        { "properties": { "bound": { "const": "maximum" } } }
+      ]
+    },
+    "eligibilityClassification": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": { "kind": { "const": "inclusion" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": { "kind": { "const": "exclusion" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source"],
+          "properties": {
+            "kind": { "const": "other" },
+            "source": { "$ref": "#/$defs/extensibleCode" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "eligibilityCriterion": {
+      "type": "object",
+      "required": ["id", "description", "classification"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "description": { "type": "string", "minLength": 1 },
+        "classification": { "$ref": "#/$defs/eligibilityClassification" }
+      },
+      "additionalProperties": false
+    },
+    "eligibility": {
+      "type": "object",
+      "required": ["registry_text", "age_range", "sexes", "includes_healthy_subjects", "criteria"],
+      "properties": {
+        "registry_text": { "type": ["string", "null"], "minLength": 1 },
+        "age_range": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["minimum", "maximum"],
+              "properties": {
+                "minimum": { "oneOf": [{ "$ref": "#/$defs/minimumAgeBound" }, { "type": "null" }] },
+                "maximum": {
+                  "oneOf": [
+                    { "$ref": "#/$defs/maximumLimitedAgeBound" },
+                    { "$ref": "#/$defs/noLimitAgeBound" },
+                    { "type": "null" }
+                  ]
+                }
+              },
+              "anyOf": [
+                { "properties": { "minimum": { "type": "object" } } },
+                { "properties": { "maximum": { "type": "object" } } }
+              ],
+              "additionalProperties": false
+            },
+            { "type": "null" }
+          ]
+        },
+        "sexes": {
+          "oneOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/extensibleCode" } },
+            { "type": "null" }
+          ]
+        },
+        "includes_healthy_subjects": { "type": ["boolean", "null"] },
+        "criteria": {
+          "oneOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/eligibilityCriterion" } },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "intervention": {
       "type": "object",
       "required": ["id", "name", "type", "description", "other_names"],
@@ -56,7 +181,6 @@
     "status": { "type": ["string", "null"] },
     "phase": { "type": ["string", "null"] },
     "study_type": { "type": ["string", "null"] },
-    "age_range": { "type": ["string", "null"] },
     "conditions": {
       "type": ["array", "null"],
       "items": { "type": "string" }
@@ -78,7 +202,9 @@
     "summary": { "type": ["string", "null"] },
     "start_date": { "type": ["string", "null"] },
     "completion_date": { "type": ["string", "null"] },
-    "eligibility_text": { "type": ["string", "null"] },
+    "eligibility": {
+      "oneOf": [{ "$ref": "#/$defs/eligibility" }, { "type": "null" }]
+    },
     "_meta": {
       "type": ["object", "null"],
       "properties": {
@@ -108,6 +234,12 @@
   "dependentRequired": {
     "arms": ["arm_intervention_assignments"],
     "arm_intervention_assignments": ["arms"]
+  },
+  "not": {
+    "anyOf": [
+      { "required": ["age_range"] },
+      { "required": ["eligibility_text"] }
+    ]
   },
   "additionalProperties": true
 }

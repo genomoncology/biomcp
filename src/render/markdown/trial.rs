@@ -2,6 +2,8 @@
 
 use super::*;
 
+const ELIGIBILITY_MAX_CHARS: usize = 12_000;
+
 #[derive(serde::Serialize)]
 struct InterventionView<'a> {
     name: &'a str,
@@ -60,6 +62,85 @@ fn arm_views(trial: &Trial) -> Vec<ArmView<'_>> {
             }
         })
         .collect()
+}
+
+fn eligibility_age_range(value: &biodata::ClinicalTrialEligibility) -> Option<String> {
+    let range = value.age_range()?;
+    let minimum = range.minimum().map(|bound| bound.source().source());
+    let maximum = range.maximum().and_then(|bound| {
+        (bound.form() == biodata::ClinicalTrialAgeBoundForm::Limited)
+            .then(|| bound.source().source())
+    });
+    match (minimum, maximum) {
+        (Some(minimum), Some(maximum)) => Some(format!("{minimum} to {maximum}")),
+        (Some(minimum), None) => Some(format!("{minimum} to Any age")),
+        (None, Some(maximum)) => Some(format!("Any age to {maximum}")),
+        (None, None) => None,
+    }
+}
+
+fn eligibility_heading(classification: &biodata::ClinicalTrialEligibilityClassification) -> String {
+    match classification {
+        biodata::ClinicalTrialEligibilityClassification::Inclusion => "Inclusion Criteria".into(),
+        biodata::ClinicalTrialEligibilityClassification::Exclusion => "Exclusion Criteria".into(),
+        biodata::ClinicalTrialEligibilityClassification::Other(source) => {
+            format!("Other Criteria ({}: {})", source.authority(), source.code())
+        }
+    }
+}
+
+fn eligibility_sex_label(code: &biodata::ExtensibleCode) -> &str {
+    if let Some(display) = code.display() {
+        return display;
+    }
+    match code.code() {
+        "FEMALE" => "Female",
+        "MALE" => "Male",
+        "ALL" => "All",
+        other => other,
+    }
+}
+
+fn eligibility_markdown(value: &biodata::ClinicalTrialEligibility) -> String {
+    let mut out = String::new();
+    if let Some(sexes) = value.sexes() {
+        let labels = sexes.iter().map(eligibility_sex_label).collect::<Vec<_>>();
+        if !labels.is_empty() {
+            let _ = writeln!(out, "Sex: {}", labels.join(", "));
+        }
+    }
+    if let Some(range) = eligibility_age_range(value) {
+        let _ = writeln!(out, "Eligible Ages: {range}");
+    }
+    if let Some(includes) = value.includes_healthy_subjects() {
+        let label = if includes { "Yes" } else { "No" };
+        let _ = writeln!(out, "Healthy Subjects: {label}");
+    }
+    if let Some(text) = value.registry_text() {
+        let _ = writeln!(out, "{text}");
+    }
+    let mut heading = None;
+    for criterion in value.criteria().unwrap_or_default() {
+        let next = eligibility_heading(criterion.classification());
+        if heading.as_deref() != Some(next.as_str()) {
+            if !out.is_empty() {
+                out.push('\n');
+            }
+            let _ = writeln!(out, "### {next}");
+            heading = Some(next);
+        }
+        let _ = writeln!(out, "- {}", criterion.description());
+    }
+    truncate_inline_text(out.trim_end(), ELIGIBILITY_MAX_CHARS)
+}
+
+fn truncate_inline_text(value: &str, max_chars: usize) -> String {
+    let count = value.chars().count();
+    if count <= max_chars {
+        return value.to_string();
+    }
+    let truncated = value.chars().take(max_chars).collect::<String>();
+    format!("{truncated}\n\n(truncated, {count} chars total)")
 }
 
 #[cfg(test)]
@@ -281,6 +362,8 @@ fn render_trial_markdown(
         .filter(|summary| !summary.is_empty());
     let intervention_details = intervention_views(trial);
     let arms = arm_views(trial);
+    let age_range = trial.eligibility.as_ref().and_then(eligibility_age_range);
+    let eligibility_text = trial.eligibility.as_ref().map(eligibility_markdown);
     let body = tmpl.render(context! {
         section_only => section_only,
         section_header => section_header(&trial.nct_id, requested_sections),
@@ -292,7 +375,7 @@ fn render_trial_markdown(
         why_stopped => trial.why_stopped.as_ref().and_then(|reason| reason.as_deref()),
         phase => &trial.phase,
         study_type => &trial.study_type,
-        age_range => &trial.age_range,
+        age_range => &age_range,
         conditions => &trial.conditions,
         intervention_details => &intervention_details,
         sponsor => &trial.sponsor,
@@ -300,8 +383,8 @@ fn render_trial_markdown(
         summary => &summary,
         start_date => &trial.start_date,
         completion_date => &trial.completion_date,
-        eligibility_text => &trial.eligibility_text,
-        eligibility => &trial.eligibility,
+        eligibility_text => &eligibility_text,
+        eligibility_present => trial.eligibility.is_some(),
         eligibility_provenance => &trial.eligibility_provenance,
         contacts => &trial.contacts,
         locations => &trial.locations,

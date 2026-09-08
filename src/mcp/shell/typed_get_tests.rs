@@ -452,7 +452,7 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     let study = json!({"protocolSection": {
         "identificationModule": {"nctId":"NCT60000001","briefTitle":"Infant trial"},
         "statusModule": {"overallStatus":"RECRUITING"},
-        "eligibilityModule": {"minimumAge":"6 Months","maximumAge":"N/A"},
+        "eligibilityModule": {"minimumAge":"6 Months","sex":"ALL","healthyVolunteers":false},
         "armsInterventionsModule": {
             "armGroups": [{"label":"Arm one","interventionNames":["Drug: first drug"]}],
             "interventions": [{"type":"DRUG","name":"first drug","armGroupLabels":["Arm one"]}]
@@ -492,10 +492,17 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
     };
     let typed = response_json(typed);
     let raw = response_json(raw);
-    let expected_minimum = json!({"number":6.0,"unit":"months","original":"6 Months"});
-    let expected_maximum = json!({"number":null,"unit":null,"original":"N/A"});
-    assert_eq!(typed["eligibility"]["minimum_age"], expected_minimum);
-    assert_eq!(typed["eligibility"]["maximum_age"], expected_maximum);
+    assert_eq!(
+        typed["eligibility"]["age_range"]["minimum"]["source"],
+        "6 Months"
+    );
+    assert!(typed["eligibility"]["age_range"]["maximum"].is_null());
+    assert_eq!(
+        typed["eligibility"]["sexes"][0]["authority"],
+        "clinicaltrials.gov"
+    );
+    assert_eq!(typed["eligibility"]["sexes"][0]["code"], "ALL");
+    assert_eq!(typed["eligibility"]["includes_healthy_subjects"], false);
     assert_eq!(typed["eligibility"], raw["eligibility"]);
     assert_eq!(typed["interventions"], raw["interventions"]);
     assert_eq!(typed["arms"], raw["arms"]);
@@ -507,8 +514,8 @@ async fn typed_and_raw_trial_get_return_exact_age_objects() {
         typed["arm_intervention_assignments"],
         json!([{"arm_id":1,"intervention_id":1}])
     );
-    assert!(!typed["eligibility"]["minimum_age"].is_string());
-    assert!(!raw["eligibility"]["maximum_age"].is_string());
+    assert!(!typed["eligibility"]["age_range"]["minimum"].is_string());
+    assert!(raw["eligibility"]["age_range"]["maximum"].is_null());
 }
 
 #[tokio::test]
@@ -568,6 +575,42 @@ async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
     };
     let typed = response_json(typed);
     let raw = response_json(raw);
+    assert_eq!(typed["eligibility"], raw["eligibility"]);
+    let eligibility_property_names = typed["eligibility"]
+        .as_object()
+        .expect("typed eligibility object")
+        .keys()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        eligibility_property_names,
+        BTreeSet::from_iter(
+            [
+                "registry_text",
+                "age_range",
+                "sexes",
+                "includes_healthy_subjects",
+                "criteria",
+            ]
+            .map(str::to_owned)
+        )
+    );
+    assert!(typed["eligibility"]["registry_text"].is_null());
+    assert_eq!(
+        typed["eligibility"]["age_range"]["minimum"]["source"],
+        "18 Years"
+    );
+    assert_eq!(
+        typed["eligibility"]["age_range"]["maximum"]["source"],
+        "999 Years"
+    );
+    assert_eq!(typed["eligibility"]["sexes"][0]["authority"], "nci");
+    assert_eq!(typed["eligibility"]["sexes"][0]["code"], "FEMALE");
+    assert_eq!(typed["eligibility"]["includes_healthy_subjects"], false);
+    assert_eq!(
+        typed["eligibility"]["criteria"].as_array().map(Vec::len),
+        Some(36)
+    );
     assert_eq!(typed["interventions"], raw["interventions"]);
     assert_eq!(typed["arms"], raw["arms"]);
     assert_eq!(

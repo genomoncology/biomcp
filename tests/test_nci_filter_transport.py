@@ -85,15 +85,15 @@ def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
         "brief_summary",
     ]
     class DetailHandler(BaseHTTPRequestHandler):
-        request_path = ""
-        query: list[tuple[str, str]] = []
+        request_paths: list[str] = []
+        queries: list[list[tuple[str, str]]] = []
         api_keys: list[str] = []
 
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlsplit(self.path)
-            type(self).request_path = parsed.path
-            type(self).query = parse_qsl(parsed.query, keep_blank_values=True)
-            type(self).api_keys = self.headers.get_all("X-API-KEY", failobj=[])
+            type(self).request_paths.append(parsed.path)
+            type(self).queries.append(parse_qsl(parsed.query, keep_blank_values=True))
+            type(self).api_keys.extend(self.headers.get_all("X-API-KEY", failobj=[]))
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
@@ -110,6 +110,7 @@ def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
     env = os.environ | {
         "NCI_API_KEY": "detail-secret",
         "BIOMCP_NCI_CTS_BASE": f"http://127.0.0.1:{server.server_port}",
+        "BIOMCP_TEST_UNPACED_ORIGIN": f"http://127.0.0.1:{server.server_port}",
     }
     try:
         result = subprocess.run(
@@ -121,7 +122,16 @@ def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
             check=False,
         )
         markdown = subprocess.run(
-            [binary, "get", "trial", "NCT05879926", "--source", "nci", "arms"],
+            [
+                binary,
+                "get",
+                "trial",
+                "NCT05879926",
+                "--source",
+                "nci",
+                "eligibility",
+                "arms",
+            ],
             cwd=REPO_ROOT,
             env=env,
             text=True,
@@ -137,23 +147,54 @@ def test_nci_detail_executes_the_biodata_plan_through_the_real_cli() -> None:
     assert markdown.returncode == 0, markdown.stderr
     assert "and 20 more" in markdown.stdout
     assert "and 23 more" in markdown.stdout
+    assert "Sex: Female" in markdown.stdout
+    assert "Eligible Ages: 18 Years to Any age" in markdown.stdout
+    assert "Healthy Subjects: No" in markdown.stdout
+    criteria = json.loads(response)["data"][0]["eligibility"]["unstructured"]
+    normalized_markdown = "\n".join(line.rstrip() for line in markdown.stdout.splitlines())
+    prior = -1
+    for row in sorted(criteria, key=lambda item: item["display_order"]):
+        description = "\n".join(
+            line.rstrip() for line in row["description"].splitlines()
+        )
+        position = normalized_markdown.find(description)
+        assert position > prior, row["display_order"]
+        prior = position
+    inclusion = markdown.stdout.index("### Inclusion Criteria")
+    exclusion = markdown.stdout.index("### Exclusion Criteria")
+    assert inclusion < exclusion
+    assert markdown.stdout.count("### Inclusion Criteria") == 1
+    assert markdown.stdout.count("### Exclusion Criteria") == 1
     trial = json.loads(result.stdout)
     assert len(trial["arms"]) == 2
     assert len(trial["interventions"]) == 53
     assert len(trial["arm_intervention_assignments"]) == 53
     assert len({row["id"] for row in trial["interventions"]}) == 53
     assert "intervention_details" not in trial
-    assert DetailHandler.request_path == "/trials"
-    assert DetailHandler.query == [
+    assert DetailHandler.request_paths == ["/trials", "/trials"]
+    assert DetailHandler.queries[0] == [
         ("size", "1"),
         ("nct_id", "NCT05879926"),
         *[("include", field) for field in fields],
     ]
-    assert DetailHandler.api_keys == ["detail-secret"]
+    assert DetailHandler.queries[1] == [
+        ("size", "1"),
+        ("nct_id", "NCT05879926"),
+        *[("include", field) for field in fields],
+    ]
+    assert DetailHandler.api_keys == ["detail-secret", "detail-secret"]
     assert "detail-secret" not in result.stdout + result.stderr
     trial = json.loads(result.stdout)
     assert trial["nct_id"] == "NCT05879926"
     assert trial["source"] == "NCI CTS"
-    assert trial["age_range"] == "18 Years to Any age"
-    assert trial["eligibility"]["maximum_age"]["original"] == "999 Years"
-    assert trial["eligibility_text"].startswith("Inclusion Criteria:\n- ")
+    eligibility = trial["eligibility"]
+    assert eligibility["age_range"]["minimum"]["source"] == "18 Years"
+    assert eligibility["age_range"]["maximum"]["kind"] == "source_stated_no_limit"
+    assert eligibility["age_range"]["maximum"]["source"] == "999 Years"
+    assert eligibility["sexes"][0]["authority"] == "nci"
+    assert eligibility["sexes"][0]["code"] == "FEMALE"
+    assert eligibility["includes_healthy_subjects"] is False
+    assert len(eligibility["criteria"]) == 36
+    assert [row["id"] for row in eligibility["criteria"][:3]] == [1, 2, 3]
+    assert "age_range" not in trial
+    assert "eligibility_text" not in trial

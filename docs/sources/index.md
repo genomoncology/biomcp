@@ -14,7 +14,7 @@ Use these pages when you already know the provider you trust, the keyword you ar
 | Source | Best when you want | Guide |
 |---|---|---|
 | PubMed | Article search, PubTator annotations, and PMC full-text handoff | [PubMed](pubmed.md) |
-| ClinicalTrials.gov | Recruiting-study search, eligibility text, and site details | [ClinicalTrials.gov](clinicaltrials-gov.md) |
+| ClinicalTrials.gov | Recruiting-study search, structured eligibility, and site details | [ClinicalTrials.gov](clinicaltrials-gov.md) |
 | ClinVar | Clinical significance and review-status context for variants | [ClinVar](clinvar.md) |
 | ClinGen Allele Registry | Canonical CAids and bounded aliases for supported RefSeq HGVS identities | [ClinGen Allele Registry](clingen-allele-registry.md) |
 | ClinGen CSpec | Versioned VCEP criteria source documents with exact captures | [ClinGen CSpec](clingen-cspec.md) |

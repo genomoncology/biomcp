@@ -5,21 +5,13 @@ use super::super::*;
 use crate::error::BioMcpError;
 use reqwest::StatusCode;
 
-macro_rules! fixture {
-    ($name:expr) => {
-        include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/testdata/sources/clinicaltrials/",
-            $name
-        ))
-    };
-}
-
 #[test]
 fn parses_search_response_fixture() {
-    let response: CtGovSearchResponse =
-        ClinicalTrialsClient::decode_json_response(StatusCode::OK, fixture!("search.json"))
-            .unwrap();
+    let response: CtGovSearchResponse = ClinicalTrialsClient::decode_json_response(
+        StatusCode::OK,
+        include_bytes!("../../../../testdata/sources/clinicaltrials/search.json"),
+    )
+    .unwrap();
 
     assert_eq!(response.total_count, Some(1));
     assert_eq!(response.studies.len(), 1);
@@ -37,23 +29,16 @@ fn parses_search_response_fixture() {
 }
 
 #[test]
-fn parses_contacts_and_eligibility_fixture() {
+fn parses_contacts_fixture_without_consuming_detail_eligibility() {
     let study = ClinicalTrialsClient::decode_get_response(
         "NCT41300001",
         StatusCode::OK,
-        fixture!("study_contacts.json"),
+        include_bytes!("../../../../testdata/sources/clinicaltrials/study_contacts.json"),
     )
     .unwrap();
 
     let protocol = study.protocol_section.expect("protocol");
-    assert_eq!(
-        protocol
-            .eligibility_module
-            .expect("eligibility")
-            .sex
-            .as_deref(),
-        Some("FEMALE")
-    );
+    assert!(protocol.eligibility_module.is_some());
     assert_eq!(
         protocol
             .contacts_locations_module
@@ -79,7 +64,6 @@ fn ctgov_age_wire_round_trips_only_provider_strings() {
         serde_json::to_value(&module).unwrap(),
         serde_json::json!({
             "eligibilityCriteria": null,
-            "sex": null,
             "minimumAge": " 6 Months ",
             "maximumAge": "N/A"
         })
@@ -236,6 +220,59 @@ fn biodata_detail_response_returns_shared_references() {
         biodata::ClinicalTrialSection::Present(references) if references.is_empty()
     ));
     assert!(response.study.protocol_section.is_some());
+}
+
+#[test]
+fn recorded_ctgov_eligibility_reaches_the_shared_projection_without_loss() {
+    let bytes =
+        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
+    let source: serde_json::Value = serde_json::from_slice(bytes).expect("recorded response");
+    let expected_text = source["protocolSection"]["eligibilityModule"]["eligibilityCriteria"]
+        .as_str()
+        .expect("recorded registry text");
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &["eligibility".to_string()],
+        StatusCode::OK,
+        bytes,
+    )
+    .expect("valid recorded BioData response");
+    let biodata::ClinicalTrialSection::Present(eligibility) = response.shared.eligibility() else {
+        panic!("present shared eligibility")
+    };
+    assert_eq!(eligibility.registry_text(), Some(expected_text));
+    let age = eligibility.age_range().expect("recorded age range");
+    assert_eq!(age.minimum().unwrap().source().source(), "18 Years");
+    assert_eq!(age.maximum().unwrap().source().source(), "75 Years");
+    let sex = &eligibility.sexes().expect("recorded sex")[0];
+    assert_eq!(sex.authority(), "clinicaltrials.gov");
+    assert_eq!(sex.code(), "ALL");
+    assert_eq!(eligibility.includes_healthy_subjects(), Some(false));
+}
+
+#[test]
+fn ctgov_eligibility_mutations_change_only_the_shared_values() {
+    let source =
+        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
+    let mut changed: serde_json::Value = serde_json::from_slice(source).unwrap();
+    let module = &mut changed["protocolSection"]["eligibilityModule"];
+    module["eligibilityCriteria"] = serde_json::json!("Mutated β criteria");
+    module["sex"] = serde_json::json!("FEMALE");
+    module["healthyVolunteers"] = serde_json::json!(true);
+    let bytes = serde_json::to_vec(&changed).unwrap();
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
+        "NCT02576665",
+        &["eligibility".to_string()],
+        StatusCode::OK,
+        &bytes,
+    )
+    .expect("valid mutated BioData response");
+    let biodata::ClinicalTrialSection::Present(eligibility) = response.shared.eligibility() else {
+        panic!("present shared eligibility")
+    };
+    assert_eq!(eligibility.registry_text(), Some("Mutated β criteria"));
+    assert_eq!(eligibility.sexes().unwrap()[0].code(), "FEMALE");
+    assert_eq!(eligibility.includes_healthy_subjects(), Some(true));
 }
 
 #[test]

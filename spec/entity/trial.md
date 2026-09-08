@@ -161,14 +161,12 @@ stay explicit that the returned total is approximate.
 
 ## Canonical Trial Age Bounds
 
-ClinicalTrials.gov age strings are parsed once for filtering and public output.
-The provider spelling remains visible, while JSON exposes the validated number
-and unit object and retains the registry's no-limit sentinel.
+ClinicalTrials.gov age strings remain visible inside the shared eligibility value. JSON exposes the source spelling, quantity, unit, and bound.
 
 ```bash
 ../../tools/biomcp-ci --json get trial NCT60000001 eligibility \
-  | jq -c '{minimum_age:.eligibility.minimum_age,maximum_age:.eligibility.maximum_age}' \
-  | mustmatch '{"minimum_age":{"number":6.0,"unit":"months","original":"6 Months"},"maximum_age":{"number":null,"unit":null,"original":"N/A"}}'
+  | jq -c '{minimum:.eligibility.age_range.minimum,maximum:.eligibility.age_range.maximum,sex:.eligibility.sexes[0].code,healthy:.eligibility.includes_healthy_subjects}' \
+  | mustmatch '{"minimum":{"kind":"limited","source":"6 Months","source_quantity":"6","source_unit":"months","bound":"minimum"},"maximum":null,"sex":"ALL","healthy":false}'
 ../../tools/biomcp-ci get trial NCT60000001 \
   | grep -F 'Eligible Ages: 6 Months to Any age' \
   | mustmatch 'Eligible Ages: 6 Months to Any age'
@@ -444,7 +442,7 @@ detail, mutation, and NCI routes.
 grep -F 'query.cond=Phelan-McDermid+Syndrome&countTotal=true&pageSize=50' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like 'fields=NCTId%2CBriefTitle'
 grep -F 'query.cond=non-small+cell+lung+cancer' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | grep -F 'pageSize=50' | mustmatch like 'EGFR+L858R'
 grep -F '/api/v2/studies/NCT02576665?fields=' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | grep -F 'LocationFacility' | mustmatch like 'EligibilityCriteria'
-grep -F '/api/v2/studies/NCT00791778?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CMaximumAge%2CMinimumAge%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00791778?fields='
-grep -F '/api/v2/studies/NCT00000000?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CMaximumAge%2CMinimumAge%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00000000?fields='
+grep -F '/api/v2/studies/NCT00791778?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00791778?fields='
+grep -F '/api/v2/studies/NCT00000000?fields=BriefSummary%2CBriefTitle%2CCentralContactEMail%2CCentralContactName%2CCentralContactPhone%2CCentralContactRole%2CCompletionDate%2CCondition%2CEnrollmentCount%2CInterventionDescription%2CInterventionName%2CInterventionOtherName%2CInterventionType%2CLeadSponsorName%2CLocationCity%2CLocationContactEMail%2CLocationContactName%2CLocationContactPhone%2CLocationContactRole%2CLocationCountry%2CLocationFacility%2CLocationGeoPoint%2CLocationState%2CLocationStatus%2CLocationZip%2CNCTId%2COverallStatus%2CPhase%2CStartDate%2CStudyType%2CWhyStopped' "$BIOMCP_CTGOV_INTERVENTION_ALIAS_REQUEST_LOG" | mustmatch like '/api/v2/studies/NCT00000000?fields='
 grep -F 'GET /nci/api/v2/trials?keyword=melanoma&size=1&from=0' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'keyword=melanoma'
 ```

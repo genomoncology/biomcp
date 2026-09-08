@@ -133,4 +133,4 @@ documents
 
 ## Next migration step
 
-Build the standards-shaped eligibility area for ClinicalTrials.gov and NCI. BioData goes first. It will replace parallel eligibility fields with one aggregate for registry text, age bounds, source-stated sex, healthy-subject inclusion, and ordered identified criteria. FHIR R4 supplies the population boundary. CDISC USDM 4 supplies the useful eligibility structure. Recorded provider evidence does not support cohorts, reusable criterion-item dictionaries, matching, or invented population links, so this area omits them. BioMCP then consumes the shared aggregate directly and removes its duplicate eligibility parsing and storage. Run the planned checkpoint after both changes land.
+Run the planned two-area checkpoint for arms and eligibility. Measure the architecture, integration size, provider evidence, standards contribution, public contracts, and gate cost against the stopping rules in the accepted clinical-trial plan. Stop further model widening if any mandatory condition fails. If the checkpoint passes, select the next area from the recorded BioMCP capability surface and repeat the bounded three-input design loop.

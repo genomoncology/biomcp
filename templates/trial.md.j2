@@ -48,15 +48,9 @@ _and {{ intervention_details | length - 5 }} more (see `arms` section)_
 {% endif -%}
 {% endfor %}
 {% endif -%}
-{% if show_eligibility_section and (eligibility or eligibility_text) -%}
+{% if show_eligibility_section and eligibility_present -%}
 ## Eligibility ({{ trial_source_label }})
 
-{% if eligibility -%}
-{% if eligibility.sex %}Sex: {{ eligibility.sex }}
-{% endif -%}
-{% if age_range %}Eligible Ages: {{ age_range }}
-{% endif -%}
-{% endif -%}
 {% if eligibility_text %}{{ eligibility_text }}
 {% endif -%}
 {% if eligibility_provenance and eligibility_provenance.posted_documents_available -%}

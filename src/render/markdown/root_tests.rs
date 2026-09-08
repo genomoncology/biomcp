@@ -300,7 +300,6 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         why_stopped: None,
         phase: Some("Phase 2".to_string()),
         study_type: Some("Interventional".to_string()),
-        age_range: Some("18 Years and older".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
         design: crate::entities::trial::TrialDesign::from_names_and_arm(
             &["ivacaftor"],
@@ -313,8 +312,16 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         summary: Some("Trial summary.".to_string()),
         start_date: Some("2025-01-01".to_string()),
         completion_date: None,
-        eligibility_text: Some("Eligibility text.".to_string()),
-        eligibility: None,
+        eligibility: Some(
+            biodata::ClinicalTrialEligibility::new(
+                Some("Eligibility text.".to_string()),
+                None,
+                None,
+                None,
+                None,
+            )
+            .expect("valid eligibility"),
+        ),
         eligibility_provenance: None,
         contacts: None,
         locations: Some(vec![crate::entities::trial::TrialLocation {
