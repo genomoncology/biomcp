@@ -127,6 +127,12 @@ Prefer the typed tools when possible:
 - `gene_cspec` for bounded ClinGen CSpec manifests and pages.
 - `variant_articles` for compact multi-variant literature shortlists.
 
+`variant_articles` shares one 60-second provider-work deadline across its
+ordered 1-10 items and returns committed partial rows. Its tool result is an
+MCP error only when every item is an error. The raw `biomcp variant articles`
+surface uses the same narrow rule without reclassifying other nonzero CLI
+outcomes.
+
 Their schemas enumerate valid entity names, valid get section tokens, and the bounded search `limit`.
 
 ### Raw command escape hatch

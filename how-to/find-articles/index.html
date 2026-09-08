@@ -4505,7 +4505,12 @@ then merges, ranks, and paginates once. JSON preserves each paper's route,
 source, and matched-alias provenance. Use <code>--strategy annotation</code> or
 <code>--strategy lexical</code> only to diagnose route recall. If a selected provider is
 incomplete, inspect <code>complete</code>, <code>truncated</code>, <code>pagination.total</code>, and
-<code>source_status</code> rather than treating an empty page as a complete miss.</p>
+<code>source_status</code> rather than treating an empty page as a complete miss.
+The command applies one 60-second monotonic provider-work deadline to the
+entire invocation, including all items in a batch. Work completed before the
+deadline is retained. Incomplete responses use an unknown total and
+<code>has_more: true</code>; a zero-row incomplete item carries <code>deadline_exceeded</code> or
+<code>source_unavailable</code>, while a healthy empty search keeps <code>error: null</code>.</p>
 <p>For a bounded shortlist across several exact variants, write 1-10 structured
 objects and make one JSON request:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">[</span>
@@ -4520,7 +4525,8 @@ objects and make one JSON request:</p>
 completeness, and retraction facts without abstracts or hydrated article cards.
 Use <code>_meta.next_commands</code> for batch/detail/full-text/assets/citation follow-ups.
 The opt-in plan explains normalized aliases, providers, calls/pages, ranking,
-and the two-worker, 50-work-unit-per-item bounds.</p>
+and the two-worker, 50-work-unit-per-item bounds.
+At most ten provider exchanges run concurrently across those two workers.</p>
 <p>When your authority is an assembly-aware RefSeq identity, use either complete
 form in the same array:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">[</span>

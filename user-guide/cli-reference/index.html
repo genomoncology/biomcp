@@ -5668,6 +5668,13 @@ objects and returns ordered compact <code>items</code>; it cannot be combined wi
 positional ID and requires JSON output. <code>variant erepo</code> accepts a CAid, preserves
 source-listed expert assertion facts, and limits detail to one explicitly selected
 versioned document.</p>
+<p>One invocation-wide 60-second deadline covers provider, cache, enrichment, and
+verification work for both single and batch forms. <code>source_status.status</code> may
+be <code>ok</code>, <code>degraded</code>, <code>unavailable</code>, <code>timed_out</code>, <code>skipped</code>, or <code>not_attempted</code>;
+each entry includes bounded work counts and reason codes. Completed rows are
+returned on timeout. An incomplete zero-row result exits one and carries a
+bounded structured error; healthy empty and known offset-beyond-total pages
+remain successful.</p>
 <p>ClinGen ERepo contains germline variant interpretations. For somatic tumor questions, use CIViC: get gene <symbol> civic or get variant <id> civic.</p>
 <p><code>--debug-plan</code> is also JSON-only and adds normalized aliases, strict and
 discovery provider requests (with exact query/template version), provider/call/page
@@ -5686,7 +5693,8 @@ Verification artifacts record versioned clinically relevant response/content sub
 plus post-response verifier and provider-template versions, not retrieval-cache inputs. Incomplete verification remains truncated with no total;
 frozen fixtures are release proof and live probes are diagnostics. The typed <code>variant_articles</code>
 MCP tool accepts the same item fields and equivalent <code>verify_identity</code>/<code>confirmed_only</code>
-controls in memory.</p>
+controls in memory. Typed and raw MCP mark only an all-error variant-article
+result as <code>isError</code>; unrelated raw-command exit behavior is unchanged.</p>
 <p>Structured assembly-aware items accept <code>genomic: "NC_...:g...."</code> plus <code>build</code>,
 or <code>accession</code>, <code>position</code>, <code>ref</code>, and <code>alt</code> plus <code>build</code>. Versioned RefSeq
 requires explicit <code>GRCh37</code> or <code>GRCh38</code>; existing <code>chrN</code> identities remain

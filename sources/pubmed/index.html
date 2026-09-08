@@ -4198,6 +4198,8 @@ filters are PubMed-compatible. <code>variant articles --strategy union</code> al
 bounded strict request with quoted gene and variant <code>Title/Abstract</code> clauses,
 then retains the discovery federation; <code>--debug-plan</code> exposes the versioned
 strict request. Direct PubMed search and the compatible federated PubMed leg
+share the variant-article invocation's 60-second deadline; completed ESearch/
+ESummary exchanges remain usable when later provider work times out. They
 clean question-format unfielded article terms before ESearch; BioMCP keeps the
 raw gene, disease, drug, or keyword wording in
 markdown and JSON query echoes, and other article sources keep their existing

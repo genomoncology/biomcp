@@ -4521,6 +4521,11 @@ still enforces that read-only boundary when a tool is called.</p>
 <li><code>gene_cspec</code> for bounded ClinGen CSpec manifests and pages.</li>
 <li><code>variant_articles</code> for compact multi-variant literature shortlists.</li>
 </ul>
+<p><code>variant_articles</code> shares one 60-second provider-work deadline across its
+ordered 1-10 items and returns committed partial rows. Its tool result is an
+MCP error only when every item is an error. The raw <code>biomcp variant articles</code>
+surface uses the same narrow rule without reclassifying other nonzero CLI
+outcomes.</p>
 <p>Their schemas enumerate valid entity names, valid get section tokens, and the bounded search <code>limit</code>.</p>
 <h3 id="raw-command-escape-hatch">Raw command escape hatch<a class="headerlink" href="#raw-command-escape-hatch" title="Permanent link">&para;</a></h3>
 <p>The raw <code>biomcp</code> tool remains available for read-only CLI commands outside the first typed slice. It is an escape hatch, not the preferred first call. It accepts read-only commands such as <code>discover</code>, <code>biomcp skill list</code>, <code>biomcp skill render</code>, embedded <code>biomcp skill &lt;number-or-slug&gt;</code> lookups, the catalog-only <code>study download --list</code> form, and one-page <code>article citations|references &lt;id&gt; --limit N --offset N</code> graph traversal. Graph pages expose provider-relative continuation in JSON and Markdown; citation and reference graph tools are not added to the typed catalog.</p>
