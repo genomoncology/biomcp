@@ -1,6 +1,7 @@
 //! CLI outcome execution seam and MCP chart argument rewriting.
 use super::response_contract::{
-    JsonResponseContract, command_requests_json, finalize_structured_error,
+    JsonResponseContract, command_requests_json, finalize_structured_error, outcome_to_mcp_output,
+    require_json_document,
 };
 use super::skill::SkillCommand;
 use super::{Cli, CliOutput, CommandOutcome, Commands, GetEntity, SearchEntity, StudyCommand};
@@ -18,36 +19,10 @@ fn outcome_to_string(outcome: CommandOutcome) -> anyhow::Result<String> {
         anyhow::bail!("{}", outcome.text)
     }
 }
-fn outcome_to_mcp_output(outcome: CommandOutcome) -> anyhow::Result<CliOutput> {
-    if outcome.bytes.is_some() {
-        anyhow::bail!("binary downloads are CLI-only and cannot be returned as MCP text");
-    }
-    Ok(CliOutput {
-        text: outcome.text,
-        metadata_json: outcome.metadata_json,
-        svg: outcome.svg,
-        variant_articles_mcp_disposition: outcome.variant_articles_mcp_disposition,
-    })
-}
-
 fn mcp_output_flag_error() -> crate::error::BioMcpError {
     crate::error::BioMcpError::InvalidArgument(
         "MCP chart responses do not support --output/-o. Omit file output and consume the inline SVG image content instead.".into(),
     )
-}
-
-fn require_json_document(mut outcome: CommandOutcome) -> CommandOutcome {
-    if outcome.exit_code == 0
-        && outcome.stream == super::OutputStream::Stdout
-        && outcome.bytes.is_none()
-        && serde_json::from_str::<serde_json::Value>(&outcome.text).is_err()
-    {
-        let error = crate::error::BioMcpError::InternalProcessing;
-        outcome.text = crate::render::json::to_error_json(&error)
-            .expect("static JSON contract error must serialize");
-        outcome.exit_code = error.exit_code();
-    }
-    outcome
 }
 
 pub fn server_json_rejection() -> CommandOutcome {
@@ -134,7 +109,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<String> {
             } => outcome_to_string(Box::pin(super::article::handle_get(args, json, false)).await?),
             Commands::Get {
                 entity: GetEntity::Disease(args),
-            } => outcome_to_string(super::disease::handle_get(args, json).await?),
+            } => outcome_to_string(Box::pin(super::disease::handle_get(args, json)).await?),
             Commands::Get {
                 entity: GetEntity::Diagnostic(args),
             } => outcome_to_string(super::diagnostic::handle_get(args, json).await?),
@@ -488,12 +463,30 @@ async fn run_outcome_inner(
             })
             .await
         }
+        Commands::Search {
+            entity: SearchEntity::Article(args),
+        } => {
+            crate::sources::with_no_cache(
+                no_cache,
+                Box::pin(super::article::handle_search(args, json)),
+            )
+            .await
+        }
         Commands::Get {
             entity: GetEntity::Article(args),
         } => {
             crate::sources::with_no_cache(no_cache, async move {
                 super::article::handle_get(args, json, alias_suggestions_as_json).await
             })
+            .await
+        }
+        Commands::Get {
+            entity: GetEntity::Disease(args),
+        } => {
+            crate::sources::with_no_cache(
+                no_cache,
+                Box::pin(super::disease::handle_get(args, json)),
+            )
             .await
         }
         Commands::Article { cmd } => {

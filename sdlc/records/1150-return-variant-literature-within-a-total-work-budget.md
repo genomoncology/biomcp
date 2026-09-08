@@ -328,6 +328,37 @@ article-asset tests passed. Warning-denied no-default-features library/test
 Clippy, formatting, diff whitespace, the exact source-size ratchet, and all six
 source-package-boundary contracts also passed. No full gate is claimed.
 
+The next coordinating full `make test` completed without the prior deadlock but
+failed five of 3,320 tests. Explicit CLI clean/clear had inherited the
+nonwaiting nested-maintenance acquisition intended for deadline-aware cache
+construction; those user-requested blocking operations now wait on the local
+shared-lease condition before taking the unchanged cross-process exclusive
+lock. A direct middleware send also lacked the cache-publication marker created
+by the outer provider boundary, so expiry could cancel a committed put before
+fail-closed finalization. The outermost deadline layer now creates and scopes
+that marker while nested layers continue to share it. Its regression pauses at
+the actual publication arm before advancing beyond the deadline, avoiding the
+earlier wall-clock race while proving finalization still settles.
+
+The remaining failures were integration seams rather than deadline-policy
+changes. Variant-article failure rendering had lowercased its complete source
+description after mapping provider names; it now preserves the established
+`PubTator 3` spelling without weakening credential-redaction assertions. The
+shared CLI dispatcher had also retained the enlarged article-search and
+disease-get futures inside its fallback state, overflowing the existing fixed
+8 MiB worker stack. Dedicated boxed arms bound those two futures, including the
+direct disease path, without increasing the stack. Existing JSON-document and
+MCP-output helpers moved to their response-contract module so the CLI source
+line cap remains satisfied.
+
+All five exact failures passed together, and 68 affected cache CLI, provider
+network, disease, variant-article, JSON-error, and RMCP contract tests passed.
+The publication regression additionally passed five repeated stress runs.
+Warning-denied no-default-features library/test Clippy, formatting, diff
+whitespace, all quality ratchets, the exact 1,300-file package list, and all six
+source-package-boundary contracts passed. This remediation does not claim a
+rerun of full `make test`, `make spec`, or the feature/release gates.
+
 ## Current facts
 
 Ticket 1167 has landed. It removed recursive whole-cache repair after every

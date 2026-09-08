@@ -1,6 +1,32 @@
 //! Command-owned JSON collection contracts and structured-error finalization.
 
-use super::{CommandOutcome, Commands, GetEntity, OutputStream, SearchEntity};
+use super::{CliOutput, CommandOutcome, Commands, GetEntity, OutputStream, SearchEntity};
+
+pub(super) fn outcome_to_mcp_output(outcome: CommandOutcome) -> anyhow::Result<CliOutput> {
+    if outcome.bytes.is_some() {
+        anyhow::bail!("binary downloads are CLI-only and cannot be returned as MCP text");
+    }
+    Ok(CliOutput {
+        text: outcome.text,
+        metadata_json: outcome.metadata_json,
+        svg: outcome.svg,
+        variant_articles_mcp_disposition: outcome.variant_articles_mcp_disposition,
+    })
+}
+
+pub(super) fn require_json_document(mut outcome: CommandOutcome) -> CommandOutcome {
+    if outcome.exit_code == 0
+        && outcome.stream == OutputStream::Stdout
+        && outcome.bytes.is_none()
+        && serde_json::from_str::<serde_json::Value>(&outcome.text).is_err()
+    {
+        let error = crate::error::BioMcpError::InternalProcessing;
+        outcome.text = crate::render::json::to_error_json(&error)
+            .expect("static JSON contract error must serialize");
+        outcome.exit_code = error.exit_code();
+    }
+    outcome
+}
 
 type JsonPath = &'static [&'static str];
 

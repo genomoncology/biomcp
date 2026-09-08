@@ -161,14 +161,14 @@ pub(crate) async fn run_with_cache_publication<F, T>(
 where
     F: Future<Output = T>,
 {
-    match current_cache_publication_state() {
-        Some(publication) => {
-            deadline
-                .run_with_safe_return(future, publication.marker())
-                .await
-        }
-        None => deadline.run(future).await,
-    }
+    let publication = current_cache_publication_state().unwrap_or_default();
+
+    // The outermost deadline layer creates the marker; nested rate-limit
+    // layers and cache publication observe the same safe-return boundary.
+    let future = VARIANT_ARTICLE_CACHE_PUBLICATION.scope(publication.clone(), future);
+    deadline
+        .run_with_safe_return(future, publication.marker())
+        .await
 }
 
 pub(crate) async fn run_with_variant_article_safe_return_marker<F, T>(

@@ -213,6 +213,7 @@ async fn cache_origin(State(state): State<CacheOriginState>, headers: HeaderMap)
 async fn cached_test_client(
     mode: CacheOriginMode,
     name: &str,
+    safe_return_pause: Option<(Arc<tokio::sync::Notify>, Arc<tokio::sync::Notify>)>,
 ) -> (
     reqwest_middleware::ClientWithMiddleware,
     String,
@@ -252,25 +253,34 @@ async fn cached_test_client(
         super::test_cache_config(root.path()),
         None,
         move |path, config| {
-            Ok(
-                crate::cache::SizeAwareCacheManager::new_with_cache_observers(
-                    path,
-                    config,
-                    move |_, _| {
-                        get_count.fetch_add(1, Ordering::SeqCst);
-                    },
-                    move |path, key| {
-                        put_count.fetch_add(1, Ordering::SeqCst);
-                        std::thread::sleep(std::time::Duration::from_millis(
-                            delay.load(Ordering::SeqCst),
-                        ));
-                        if fault.swap(false, Ordering::SeqCst) {
-                            assert!(cacache::metadata_sync(path, key).unwrap().is_some());
-                            cacache::remove_sync(path, key).unwrap();
-                        }
-                    },
-                ),
-            )
+            let mut manager = crate::cache::SizeAwareCacheManager::new_with_cache_observers(
+                path,
+                config,
+                move |_, _| {
+                    get_count.fetch_add(1, Ordering::SeqCst);
+                },
+                move |path, key| {
+                    put_count.fetch_add(1, Ordering::SeqCst);
+                    std::thread::sleep(std::time::Duration::from_millis(
+                        delay.load(Ordering::SeqCst),
+                    ));
+                    if fault.swap(false, Ordering::SeqCst) {
+                        assert!(cacache::metadata_sync(path, key).unwrap().is_some());
+                        cacache::remove_sync(path, key).unwrap();
+                    }
+                },
+            );
+            if let Some((publication_armed, publication_release)) = safe_return_pause.clone() {
+                manager = manager.with_safe_return_observer(move || {
+                    let publication_armed = Arc::clone(&publication_armed);
+                    let publication_release = Arc::clone(&publication_release);
+                    async move {
+                        publication_armed.notify_one();
+                        publication_release.notified().await;
+                    }
+                });
+            }
+            Ok(manager)
         },
     )
     .unwrap();
@@ -306,7 +316,7 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
         CacheOriginMode::Revalidate200,
     ] {
         let (client, url, requests, gets, puts, armed, validator, _, root, server) =
-            cached_test_client(mode, "post-write-client-failure").await;
+            cached_test_client(mode, "post-write-client-failure", None).await;
         let _env = EnvRestore::set(&[(
             "BIOMCP_TEST_UNPACED_ORIGIN",
             Some(url.trim_end_matches("/resource")),
@@ -345,8 +355,17 @@ async fn cached_client_post_write_failure_matrix_is_fail_closed() {
 #[tokio::test]
 #[serial_test::serial(article_resolver_env)]
 async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
-    let (client, url, requests, gets, puts, armed, _, delay, root, server) =
-        cached_test_client(CacheOriginMode::Initial, "deadline-post-write-finalization").await;
+    let publication_armed = Arc::new(tokio::sync::Notify::new());
+    let publication_release = Arc::new(tokio::sync::Notify::new());
+    let (client, url, requests, gets, puts, armed, _, delay, root, server) = cached_test_client(
+        CacheOriginMode::Initial,
+        "deadline-post-write-finalization",
+        Some((
+            Arc::clone(&publication_armed),
+            Arc::clone(&publication_release),
+        )),
+    )
+    .await;
     let _env = EnvRestore::set(&[(
         "BIOMCP_TEST_UNPACED_ORIGIN",
         Some(url.trim_end_matches("/resource")),
@@ -356,14 +375,26 @@ async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
     let deadline =
         crate::sources::VariantArticleDeadline::from_now(std::time::Duration::from_millis(10));
     let request_deadline = deadline.clone();
-    let result = crate::sources::with_variant_article_deadline(deadline, async move {
-        client
-            .get(&url)
-            .with_extension(request_deadline)
-            .send()
-            .await
-    })
-    .await;
+    let request = tokio::spawn(crate::sources::with_variant_article_deadline(
+        deadline.clone(),
+        async move {
+            client
+                .get(&url)
+                .with_extension(request_deadline)
+                .send()
+                .await
+        },
+    ));
+    tokio::time::timeout(
+        std::time::Duration::from_secs(1),
+        publication_armed.notified(),
+    )
+    .await
+    .expect("cache publication must arm before the deadline assertion");
+    tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    assert!(deadline.is_exhausted());
+    publication_release.notify_one();
+    let result = request.await.unwrap();
 
     let error = result.expect_err("post-write finalization must remain fail closed");
     assert_eq!(requests.load(Ordering::SeqCst), 1);
@@ -377,7 +408,7 @@ async fn provider_deadline_waits_for_post_publish_fail_closed_finalization() {
 #[serial_test::serial(article_resolver_env)]
 async fn cached_client_fresh_hit_and_request_no_store_bypass_writes() {
     let (client, url, requests, gets, puts, armed, _, _, _root, server) =
-        cached_test_client(CacheOriginMode::Fresh, "fresh-client-hit").await;
+        cached_test_client(CacheOriginMode::Fresh, "fresh-client-hit", None).await;
     let _env = EnvRestore::set(&[(
         "BIOMCP_TEST_UNPACED_ORIGIN",
         Some(url.trim_end_matches("/resource")),
@@ -399,7 +430,7 @@ async fn cached_client_fresh_hit_and_request_no_store_bypass_writes() {
     server.abort();
 
     let (client, url, requests, gets, puts, armed, _, _, _root, server) =
-        cached_test_client(CacheOriginMode::Initial, "no-store-client-request").await;
+        cached_test_client(CacheOriginMode::Initial, "no-store-client-request", None).await;
     let _env = EnvRestore::set(&[(
         "BIOMCP_TEST_UNPACED_ORIGIN",
         Some(url.trim_end_matches("/resource")),

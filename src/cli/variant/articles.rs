@@ -211,7 +211,7 @@ pub(super) async fn handle(
                 "myvariant" => "MyVariant.info",
                 other => other,
             };
-            format!("{}/{} ({:?})", status.route, source, status.status).to_ascii_lowercase()
+            format!("{}/{} ({:?})", status.route, source, status.status)
         })
         .collect::<Vec<_>>()
         .join(", ");
