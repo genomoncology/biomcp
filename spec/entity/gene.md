@@ -14,6 +14,104 @@ table before the user pivots into deeper sections.
 B-Raf proto-oncogene'
 ```
 
+## Exact Symbol Ranking and Pagination
+
+An exact canonical symbol is promoted from the complete bounded provider set,
+with duplicates removed before pagination and follow-up commands built from the
+first retained row.
+
+```bash
+for offset in 0 1 2 3; do
+  actual="$(../../tools/biomcp-ci --json search gene ODC1 --limit 1 --offset "$offset")"
+  case "$offset" in
+    0) expected='["ODC1"]' ;;
+    1) expected='["SLC25A21"]' ;;
+    2) expected='["OAZ1"]' ;;
+    3) expected='[]' ;;
+  esac
+  jq -e --argjson expected "$expected" '.results | map(.symbol) == $expected' <<<"$actual" | mustmatch 'true'
+  jq -e --argjson offset "$offset" '.count == (if $offset == 3 then 0 else 1 end) and .pagination.total == 3' <<<"$actual" | mustmatch 'true'
+done
+for query in odc1 ' OdC1 '; do
+  ../../tools/biomcp-ci --json search gene "$query" --limit 2 \
+    | jq -e '.results | map(.symbol) == ["ODC1", "SLC25A21"]' \
+    | mustmatch 'true'
+done
+../../tools/biomcp-ci --json search gene ODC1 --limit 2 --offset 1 \
+  | jq -e '(.results | map(.symbol)) == ["SLC25A21", "OAZ1"] and .count == 2 and .pagination.total == 3' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json search gene ODC1 --limit 1 \
+  | jq -e '._meta.next_commands == ["biomcp get gene ODC1", "biomcp list gene"]' \
+  | mustmatch 'true'
+../../tools/biomcp-ci search gene ODC1 --limit 1 \
+  | mustmatch like 'ODC1
+Showing 1-1 of 3 results. Use --offset 1 for more.'
+grep -F 'GET /mygene/v3/query?q=%28symbol%3AODC1+OR+alias%3AODC1%29' \
+  "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=50&from=0'
+```
+
+## Raw and Typed MCP Gene Search Match the CLI
+
+Both MCP search surfaces reuse the CLI's ordered rows and follow-up commands;
+MCP adds only its existing next-command section to Markdown.
+
+```bash
+python3 - <<'PY' | mustmatch like 'raw and typed gene search converges'
+import json, os, subprocess
+
+binary = os.environ["BIOMCP_BIN"]
+env = os.environ.copy()
+
+def cli(args, json_output):
+    command = [binary] + (["--json"] if json_output else []) + args
+    return subprocess.check_output(command, text=True, env=env)
+
+proc = subprocess.Popen([binary, "serve"], stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE, text=True, env=env)
+def call(identifier, name, arguments):
+    proc.stdin.write(json.dumps({"jsonrpc": "2.0", "id": identifier,
+        "method": "tools/call", "params": {"name": name,
+        "arguments": arguments}}) + "\n")
+    proc.stdin.flush()
+    result = json.loads(proc.stdout.readline())["result"]
+    assert result.get("isError") is not True
+    return result["content"][0]["text"]
+
+try:
+    proc.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 1,
+        "method": "initialize", "params": {"protocolVersion": "2025-03-26",
+        "capabilities": {}, "clientInfo": {"name": "spec", "version": "1"}}}) + "\n")
+    proc.stdin.flush()
+    json.loads(proc.stdout.readline())
+    proc.stdin.write('{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}\n')
+    proc.stdin.flush()
+    for identifier, offset in enumerate((0, 1), 2):
+        args = ["search", "gene", "ODC1", "--limit", "1", "--offset", str(offset)]
+        cli_markdown = cli(args, False)
+        raw_markdown = call(identifier, "biomcp", {"command": "biomcp " + " ".join(args)})
+        typed_markdown = call(identifier + 10, "search", {"entity": "gene", "query": "ODC1",
+            "limit": 1, "offset": offset})
+        table = lambda text: [line for line in text.splitlines() if line.startswith("|")]
+        assert table(raw_markdown) == table(typed_markdown) == table(cli_markdown)
+        assert cli_markdown.strip() in raw_markdown
+        cli_json_text = cli(args, True)
+        cli_json = json.loads(cli_json_text)
+        raw_json = call(identifier + 20, "biomcp", {"command": "biomcp " + " ".join(args), "json": True})
+        typed_json = call(identifier + 30, "search", {"entity": "gene", "query": "ODC1",
+            "limit": 1, "offset": offset, "json": True})
+        raw_value = json.loads(raw_json)
+        typed_value = json.loads(typed_json)
+        assert raw_json == typed_json
+        assert raw_value["results"] == typed_value["results"] == cli_json["results"]
+        assert raw_value["_meta"]["next_commands"] == typed_value["_meta"]["next_commands"] == cli_json["_meta"]["next_commands"]
+        assert raw_value["results"][0]["symbol"] == ("ODC1" if offset == 0 else "SLC25A21")
+finally:
+    proc.terminate()
+    proc.wait(timeout=5)
+print("raw and typed gene search converges")
+PY
+```
+
 ## Search Table Contract
 
 The search surface needs to stay readable for humans and still expose machine
@@ -117,7 +215,7 @@ The local fixture records requests emitted by the production client, including
 the bounded search and exact-symbol identity plans.
 
 ```bash
-grep -F 'GET /mygene/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=3&from=0'
+grep -F 'GET /mygene/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=50&from=0'
 grep -F 'GET /mygene/v3/query?q=symbol%3A%22BRCA1%22' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'symbol%3A%22BRCA1%22'
 ```
 
