@@ -72,6 +72,11 @@ disease field and continues to use only the literal requested phrase. A
 WHO-only disease search performs zero MyDisease requests and reports resolution
 `inapplicable`. Existing `--source who-ivd --gene` rejection remains unchanged;
 with `source=all` plus a gene, WHO remains inapplicable and only GTR is loaded.
+Whenever GTR and a disease filter are selected, MyDisease resolution runs
+independently of GTR local loading. A GTR readiness or query failure therefore
+does not suppress or change the resolver's documented one- or two-request path,
+deadline, or public outcome. Fixture request counts must prove this for every
+GTR/WHO partial-failure combination.
 
 Construct the GTR term list in this order: requested, distinct canonical name,
 then distinct synonyms. Match each term with the existing Unicode-safe
@@ -86,16 +91,21 @@ same predicate with requested term only. A row records the first matching term:
 }
 ```
 
-Whenever resolution is `resolved`, `resolved_id` is that ID for **every** match
-kind, including a requested-term match. It is null for requested matches under
-absent, ambiguous, unavailable, or WHO-only inapplicable resolution;
-canonical/synonym kinds cannot occur in those states. Omit `disease_match` only
-when no disease filter exists. Provider condition strings remain unchanged.
+Whenever resolution is `resolved`, `resolved_id` is that ID for every GTR match
+kind, including a requested-term match. A WHO requested match always keeps
+`resolved_id: null`, including under `source=all` when the GTR branch resolved;
+WHO literal text is never attributed to a MyDisease ontology identity. It is
+also null for GTR requested matches under absent, ambiguous, or unavailable
+resolution and for WHO-only inapplicable resolution. Canonical/synonym kinds
+cannot occur in those states. Omit `disease_match` only when no disease filter
+exists. Provider condition strings remain unchanged.
 
-Within disease-filtered results, rank requested before canonical before
-synonym; synonyms tie by their resolver order. Then retain the current
-case-insensitive trimmed result-name order, accession order, and finally source
-key. Without a disease filter, ordering is byte-for-byte unchanged. Deduplicate
+Within the complete merged disease-filtered page, rank requested before
+canonical before synonym globally across sources; WHO literal requested rows
+therefore occupy the requested tier. Resolver synonym order breaks ties only
+among GTR synonym rows. Then retain the current case-insensitive trimmed
+result-name order, accession order, and source key as the final cross-source
+tie-breaker. Without a disease filter, ordering is byte-for-byte unchanged. Deduplicate
 after matching/ranking and before slicing by `(source, accession)`, each trimmed
 and ASCII-case-folded; best-ranked first wins, while equal accessions from GTR
 and WHO remain distinct.
@@ -206,6 +216,10 @@ fixtures accept 512 ASCII bytes and a multibyte string of exactly 512 bytes,
 reject 513 ASCII bytes and the next multibyte scalar, and prove every rejection
 logs zero resolver/local-source requests. MCP bodies are byte-equal to their
 CLI format after the existing MCP footer rules.
+An exact `source=all` case must include a resolved GTR requested/canonical/
+synonym row and a WHO literal requested row, proving global tier ordering while
+the WHO row retains `resolved_id: null` across CLI JSON/Markdown, raw MCP, and
+typed MCP.
 
 Fixture logs independently assert request path, fields, size, cache reuse,
 deadline and request/body/synonym caps, zero resolver calls for WHO-only or no
@@ -238,6 +252,17 @@ work. It is a scheduling preference, not a dependency; neither ticket may
 absorb or wait on the other. This ticket adds no ontology traversal, fuzzy
 matching, diagnostic interpretation, or new GTR/WHO ingestion.
 
+Schedule implementation from the merged post-1158 SHA because the tickets
+overlap MCP, source, package, and gate-sensitive owners, but keep `deps: []`:
+1158 is not a behavioral dependency. Preserve ticket 1148's gene-search
+ranking and request sequence, ticket 1158's GenCC behavior, and all ClinGen
+behavior. Diagnostic `--gene` remains its current local exact GTR predicate and
+must not acquire MyGene canonical or alias resolution. Add no external-project
+dependency, source, generated artifact, or runtime path. The direct 0.9
+independence gate is:
+
+`uv run --no-project python tools/check-zero-coupling.py --root .`
+
 ## Review
 
 Accepted after independent design review. The reviewer confirmed exact
@@ -245,3 +270,10 @@ kind-specific xref proof within the two-request bound, the exhaustive public
 resolution/nullability table, typed 512-byte runtime boundaries with zero-work
 rejection, and all previously accepted ranking, source, surface, ownership,
 package, and dependency contracts.
+
+The 2026-09-09 freshness review rejected a cross-source provenance
+contradiction and underspecified partial failure. This revision keeps WHO
+literal rows ontology-null, defines global merged ordering and GTR-only synonym
+ties, makes MyDisease resolution independent of GTR local failure, schedules
+the work after 1158 without adding a semantic dependency, and freezes the
+combined gene/GenCC/ClinGen and 0.9-independence boundaries.
