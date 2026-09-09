@@ -100,3 +100,34 @@ pub(super) fn instructions() -> String {
         "BioMCP provides data from leading public biomedical data sources through seven read-only tools: {names}. Prefer bounded typed tools before the raw `biomcp` escape hatch. Use `search` and `get` for ordinary entity lookup, `variant_articles` for bounded literature batches, and the three ClinGen tools for their named contracts. For long-tail commands, start raw discovery with `biomcp list` or `biomcp list <entity>`; use `biomcp skill list` for worked workflows."
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{TOOLS, list_server_tools};
+
+    #[test]
+    fn generated_tool_inventory_is_the_pinned_read_only_catalog() {
+        let expected = [
+            "biomcp",
+            "search",
+            "get",
+            "variant_normalize_car",
+            "variant_erepo",
+            "gene_cspec",
+            "variant_articles",
+        ];
+        assert_eq!(TOOLS.len(), expected.len());
+        assert_eq!(
+            TOOLS.iter().map(|entry| entry.name).collect::<Vec<_>>(),
+            expected
+        );
+        assert_eq!(
+            list_server_tools()
+                .iter()
+                .map(|tool| tool.name.as_ref())
+                .collect::<Vec<_>>(),
+            expected,
+        );
+        assert!(!expected.contains(&"batch"));
+    }
+}

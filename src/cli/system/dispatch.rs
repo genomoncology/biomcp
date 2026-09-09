@@ -147,7 +147,7 @@ pub(crate) async fn handle_batch(args: BatchArgs, json: bool) -> anyhow::Result<
                     crate::render::json::to_entity_json_value(
                         item,
                         crate::render::markdown::drug_evidence_urls(item),
-                        crate::render::markdown::related_drug(item),
+                        crate::cli::drug::batch_next_commands(item, &batch_sections),
                         crate::render::provenance::drug_section_sources(item),
                     )
                 },

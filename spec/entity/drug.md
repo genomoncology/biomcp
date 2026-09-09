@@ -6,6 +6,380 @@ surface focused on region truthfulness, canonical identity routing, and the new
 structured DDInter interaction workflow before operators widen to safety or
 literature.
 
+## Card follow-up projection
+
+Every successful drug card uses one projection for Markdown guidance and JSON
+`_meta.next_commands`. The list is capped at ten and ordered as loaded-section
+retries, up to three not-loaded section commands, an optional regional `all`
+command, then related pivots. Default cards implicitly load only `targets`;
+explicit section tokens load exactly those sections. `all` expands to
+`label`, `regulatory`, `safety`, `shortage`, `targets`, `indications`,
+`interactions`, and `civic`, leaving legacy `approvals` discoverable. Regional
+section and aggregate commands carry the canonical effective region, and WHO
+cards omit standalone safety and shortage commands.
+
+```bash
+../../tools/biomcp-ci --json get drug pembrolizumab | jq -e '._meta.next_commands | length <= 10 and .[0] == "biomcp get drug pembrolizumab approvals" and .[1] == "biomcp get drug pembrolizumab label" and .[2] == "biomcp get drug pembrolizumab regulatory --region us"' | mustmatch 'true'
+../../tools/biomcp-ci get drug pembrolizumab | mustmatch like 'More:'
+../../tools/biomcp-ci get drug pembrolizumab all | mustmatch not like 'All:'
+../../tools/biomcp-ci --json get drug pembrolizumab all | jq -e '._meta.next_commands[0] == "biomcp get drug pembrolizumab approvals" and (._meta.next_commands | any(. == "biomcp get drug pembrolizumab all --region us") | not)' | mustmatch 'true'
+```
+
+## Drug-card projection production matrix
+
+The existing provider-contract fixture exercises the shipped CLI and both MCP
+entry points with the same resolved identities. This matrix keeps the exact
+single-card, two-item batch, recovery, parser, request-count, and tool-surface
+contracts executable without adding a second fixture family.
+
+```bash
+python3 - <<'PY' | mustmatch like 'drug-card projection production matrix passed'
+import json
+import os
+import select
+import subprocess
+import tempfile
+
+binary = os.environ["BIOMCP_BIN"]
+env = os.environ.copy()
+log = env["BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"]
+ddinter = tempfile.TemporaryDirectory()
+env["BIOMCP_DDINTER_DIR"] = ddinter.name
+
+def cli(*args, extra_env=None):
+    with tempfile.TemporaryDirectory() as cache:
+        child_env = env | {"BIOMCP_CACHE_DIR": cache} | (extra_env or {})
+        result = subprocess.run(
+            [binary, *args], cwd=os.environ["PWD"], env=child_env,
+            check=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, timeout=60,
+        )
+        return result.stdout
+
+def shell(command, extra_env=None):
+    with tempfile.TemporaryDirectory() as cache:
+        child_env = env | {"BIOMCP_CACHE_DIR": cache, "PATH": os.path.dirname(binary) + ":" + env.get("PATH", "")} | (extra_env or {})
+        return subprocess.run(
+            command, shell=True, executable="/bin/bash", cwd=os.environ["PWD"],
+            env=child_env, check=True, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, timeout=60,
+        )
+
+def json_card(*args, extra_env=None):
+    return json.loads(cli("--json", *args, extra_env=extra_env))
+
+def guidance(markdown):
+    start = markdown.index("More:\n")
+    end = markdown.find("\n\n[", start)
+    return markdown[start:] if end < 0 else markdown[start:end] + "\n"
+
+default = [
+    "biomcp get drug pembrolizumab approvals",
+    "biomcp get drug pembrolizumab label",
+    "biomcp get drug pembrolizumab regulatory --region us",
+    "biomcp get drug pembrolizumab all --region us",
+    "biomcp search article --drug pembrolizumab --type review --limit 5",
+    "biomcp drug trials pembrolizumab",
+    "biomcp drug adverse-events pembrolizumab",
+    "biomcp search pgx -d pembrolizumab",
+    "biomcp get gene PDCD1",
+]
+all_commands = [
+    "biomcp get drug pembrolizumab interactions",
+    "biomcp get drug pembrolizumab approvals",
+    "biomcp drug trials pembrolizumab",
+    "biomcp drug adverse-events pembrolizumab",
+    "biomcp search pgx -d pembrolizumab",
+    "biomcp get gene PDCD1",
+]
+multi = [
+    "biomcp get drug pembrolizumab approvals",
+    "biomcp get drug pembrolizumab regulatory --region us",
+    "biomcp get drug pembrolizumab safety --region us",
+    "biomcp get drug pembrolizumab all --region us",
+    "biomcp search article --drug pembrolizumab --type review --limit 5",
+    "biomcp drug trials pembrolizumab",
+    "biomcp drug adverse-events pembrolizumab",
+    "biomcp search pgx -d pembrolizumab",
+    "biomcp get gene PDCD1",
+]
+eu = [
+    "biomcp get drug pembrolizumab safety --region eu",
+    "biomcp get drug pembrolizumab approvals",
+    "biomcp get drug pembrolizumab label",
+    "biomcp get drug pembrolizumab regulatory --region eu",
+    "biomcp get drug pembrolizumab all --region eu",
+    "biomcp search article --drug pembrolizumab --type review --limit 5",
+    "biomcp drug trials pembrolizumab",
+    "biomcp drug adverse-events pembrolizumab",
+    "biomcp search pgx -d pembrolizumab",
+    "biomcp get gene PDCD1",
+]
+assert json_card("get", "drug", "pembrolizumab")["_meta"]["next_commands"] == default
+assert json_card("get", "drug", "pembrolizumab", "all")["_meta"]["next_commands"] == all_commands
+assert json_card("get", "drug", "pembrolizumab", "label", "targets")["_meta"]["next_commands"] == multi
+
+default_guidance = """More:
+  biomcp get drug pembrolizumab approvals   - Drugs@FDA approval history
+  biomcp get drug pembrolizumab label   - approved-indication and FDA label detail beyond the base card
+  biomcp get drug pembrolizumab regulatory --region us   - approval and supplement history; use only if the base card lacks approval context
+
+All:
+  biomcp get drug pembrolizumab all --region us
+See also:
+  biomcp search article --drug pembrolizumab --type review --limit 5   - supplement sparse structured data with review literature for indication context
+  biomcp drug trials pembrolizumab
+  biomcp drug adverse-events pembrolizumab   - inspect safety reports and adverse-event signal
+  biomcp search pgx -d pembrolizumab   - pharmacogenomics interactions
+  biomcp get gene PDCD1
+"""
+assert guidance(cli("get", "drug", "pembrolizumab")) == default_guidance
+all_guidance = """More:
+  biomcp get drug pembrolizumab approvals   - Drugs@FDA approval history
+See also:
+  biomcp drug trials pembrolizumab
+  biomcp drug adverse-events pembrolizumab   - inspect safety reports and adverse-event signal
+  biomcp search pgx -d pembrolizumab   - pharmacogenomics interactions
+  biomcp get gene PDCD1
+"""
+assert guidance(cli("get", "drug", "pembrolizumab", "all")) == all_guidance
+multi_guidance = """More:
+  biomcp get drug pembrolizumab approvals   - Drugs@FDA approval history
+  biomcp get drug pembrolizumab regulatory --region us   - approval and supplement history; use only if the base card lacks approval context
+  biomcp get drug pembrolizumab safety --region us   - regulatory safety detail; use `biomcp drug adverse-events <name>` first when you want post-marketing signal
+
+All:
+  biomcp get drug pembrolizumab all --region us
+See also:
+  biomcp search article --drug pembrolizumab --type review --limit 5   - supplement sparse structured data with review literature for indication context
+  biomcp drug trials pembrolizumab
+  biomcp drug adverse-events pembrolizumab   - inspect safety reports and adverse-event signal
+  biomcp search pgx -d pembrolizumab   - pharmacogenomics interactions
+  biomcp get gene PDCD1
+"""
+assert guidance(cli("get", "drug", "pembrolizumab", "label", "targets")) == multi_guidance
+
+default_trast = [command.replace("pembrolizumab", "trastuzumab") for command in default[:-1]]
+all_trast = [
+    "biomcp get drug trastuzumab interactions",
+    "biomcp get drug trastuzumab approvals",
+    "biomcp search article --drug trastuzumab --type review --limit 5",
+    "biomcp drug trials trastuzumab",
+    "biomcp drug adverse-events trastuzumab",
+    "biomcp search pgx -d trastuzumab",
+]
+multi_trast = [command.replace("pembrolizumab", "trastuzumab") for command in multi[:-1]]
+
+def expected_guidance(identity, mode, commands):
+    labels = {
+        "approvals": "   - Drugs@FDA approval history",
+        "label": "   - approved-indication and FDA label detail beyond the base card",
+        "regulatory": "   - approval and supplement history; use only if the base card lacks approval context",
+        "safety": "   - regulatory safety detail; use `biomcp drug adverse-events <name>` first when you want post-marketing signal",
+    }
+    lines = ["More:"]
+    if mode == "default":
+        more = commands[:3]
+    elif mode == "multi":
+        more = commands[:3]
+    else:
+        more = [commands[1]]
+    for command in more:
+        section = next((name for name in labels if " drug " + identity + " " + name in command), "")
+        lines.append("  " + command + labels.get(section, ""))
+    if mode != "all":
+        lines.extend(["", "All:", "  " + next(command for command in commands if " all " in command)])
+    lines.append("See also:")
+    related = commands[(4 if mode != "all" else 2):]
+    lines.extend("  " + command + ("   - supplement sparse structured data with review literature for indication context" if "search article" in command else "   - inspect safety reports and adverse-event signal" if "adverse-events" in command else "   - pharmacogenomics interactions" if "search pgx" in command else "") for command in related)
+    return "\n".join(lines) + "\n"
+
+batch_modes = {
+    "default": ([], [default, default_trast]),
+    "all": (["--sections", "all"], [all_commands, all_trast]),
+    "multi": (["--sections", "label,targets"], [multi, multi_trast]),
+}
+request_counts = {"default": 10, "all": 15, "multi": 8}
+single_request_counts = {"default": 5, "all": 8, "multi": 4}
+single_options = {"default": [], "all": ["all"], "multi": ["label", "targets"]}
+identities = ["pembrolizumab", "trastuzumab"]
+
+def reset_log():
+    open(log, "w", encoding="utf-8").close()
+    assert open(log, encoding="utf-8").read() == ""
+
+def batch_item(markdown, identity):
+    start = markdown.index("## " + identity + " — ok\n\n")
+    end = markdown.find("\n\n---\n\n", start)
+    if end < 0:
+        end = markdown.index("\n## Summary", start)
+    return markdown[start:end]
+
+for mode, (options, expected_items) in batch_modes.items():
+    reset_log()
+    batch_json = json.loads(cli("--json", "batch", "drug", "pembrolizumab,trastuzumab", *options))
+    assert batch_json["summary"] == {"total": 2, "succeeded": 2, "failed": 0}
+    assert [item["input"] for item in batch_json["items"]] == identities
+    assert [item["result"]["name"] for item in batch_json["items"]] == identities
+    assert [item["result"]["_meta"]["next_commands"] for item in batch_json["items"]] == expected_items
+    assert len(open(log, encoding="utf-8").readlines()) == request_counts[mode]
+    reset_log()
+    batch_markdown = cli("batch", "drug", "pembrolizumab,trastuzumab", *options)
+    assert batch_markdown.index("## pembrolizumab — ok") < batch_markdown.index("## trastuzumab — ok")
+    for identity, commands in zip(identities, expected_items):
+        assert guidance(batch_item(batch_markdown, identity)) == expected_guidance(identity, mode, commands)
+    assert len(open(log, encoding="utf-8").readlines()) == request_counts[mode]
+
+for mode in batch_modes:
+    for json_output in (False, True):
+        reset_log()
+        cli(*( ["--json"] if json_output else []), "get", "drug", "pembrolizumab", *single_options[mode])
+        assert len(open(log, encoding="utf-8").readlines()) == single_request_counts[mode]
+
+with tempfile.NamedTemporaryFile() as missing_ema:
+    recovery_env = {"BIOMCP_EMA_DIR": missing_ema.name}
+    recovered = json_card("get", "drug", "pembrolizumab", "safety", "--region", "eu", extra_env=recovery_env)
+    assert recovered["section_outcomes"]["safety"]["outcome"] == "unavailable"
+    assert recovered["_meta"]["next_commands"] == eu
+    shell(recovered["_meta"]["next_commands"][0], recovery_env)
+    recovery_markdown = cli("get", "drug", "pembrolizumab", "safety", "--region", "eu", extra_env=recovery_env)
+    assert recovery_markdown.count("Retry: `biomcp get drug pembrolizumab safety --region eu`") == 1
+    eu_guidance = """More:
+  biomcp get drug pembrolizumab approvals   - Drugs@FDA approval history
+  biomcp get drug pembrolizumab label   - approved-indication and FDA label detail beyond the base card
+  biomcp get drug pembrolizumab regulatory --region eu   - approval and supplement history; use only if the base card lacks approval context
+
+All:
+  biomcp get drug pembrolizumab all --region eu
+See also:
+  biomcp search article --drug pembrolizumab --type review --limit 5   - supplement sparse structured data with review literature for indication context
+  biomcp drug trials pembrolizumab
+  biomcp drug adverse-events pembrolizumab   - inspect safety reports and adverse-event signal
+  biomcp search pgx -d pembrolizumab   - pharmacogenomics interactions
+  biomcp get gene PDCD1
+"""
+    assert guidance(recovery_markdown) == eu_guidance
+
+# Parse and execute representative commands emitted by the production JSON owner.
+for command in default:
+    if command.endswith((" approvals", " all --region us", "adverse-events pembrolizumab")):
+        shell(command)
+
+with tempfile.NamedTemporaryFile(delete=False) as sentinel:
+    sentinel_path = sentinel.name
+os.unlink(sentinel_path)
+hostile = "ticket1151 hostile  'x' \"q\" \\ $x `rm` ; & $(touch " + sentinel_path + ") path"
+with open(log, "w", encoding="utf-8"):
+    pass
+hostile_card = json_card("get", "drug", "--name", hostile)
+hostile_command = hostile_card["_meta"]["next_commands"][0]
+shell(hostile_command)
+assert not os.path.exists(sentinel_path)
+mychem_lines = [line for line in open(log, encoding="utf-8") if line.startswith("GET /mychem/")]
+assert len(mychem_lines) == 2
+from urllib.parse import parse_qs, urlparse
+for line in mychem_lines:
+    assert parse_qs(urlparse(line.split(" ", 1)[1]).query)["q"][0] == hostile
+
+def rpc(proc, request):
+    proc.stdin.write(json.dumps(request) + "\n")
+    proc.stdin.flush()
+    ready, _, _ = select.select([proc.stdout], [], [], 60)
+    if not ready:
+        raise TimeoutError("MCP response deadline exceeded")
+    return json.loads(proc.stdout.readline())
+
+def start_server(server_env):
+    cache = tempfile.TemporaryDirectory()
+    child_env = server_env | {"BIOMCP_CACHE_DIR": cache.name}
+    proc = subprocess.Popen(
+        [binary, "serve"], cwd=os.environ["PWD"], env=child_env,
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    try:
+        rpc(proc, {"jsonrpc":"2.0", "id":1, "method":"initialize", "params":{"protocolVersion":"2025-03-26", "capabilities":{}, "clientInfo":{"name":"ticket-1151", "version":"1"}}})
+        proc.stdin.write(json.dumps({"jsonrpc":"2.0", "method":"notifications/initialized", "params":{}}) + "\n")
+        proc.stdin.flush()
+        return proc, cache
+    except BaseException:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5)
+        cache.cleanup()
+        raise
+
+def stop_server(proc, cache):
+    try:
+        proc.terminate()
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=5)
+    finally:
+        cache.cleanup()
+
+def mcp(proc, tool, arguments, request_id):
+    result = rpc(proc, {"jsonrpc":"2.0", "id":request_id, "method":"tools/call", "params":{"name":tool, "arguments":arguments}})["result"]
+    assert result.get("isError") is False
+    return result["content"][0]["text"]
+
+def same_output(left, right):
+    # stdio CLI adds a final blank line; MCP content framing carries one newline.
+    return left.rstrip("\n") == right.rstrip("\n")
+
+server, server_cache = start_server(env)
+try:
+    request_id = 2
+    for json_output in (False, True):
+        cli_text = cli(*( ["--json"] if json_output else []), "get", "drug", "pembrolizumab")
+        raw_text = mcp(server, "biomcp", {"command":"biomcp get drug pembrolizumab", "json":json_output}, request_id)
+        request_id += 1
+        typed_text = mcp(server, "get", {"entity":"drug", "id":"pembrolizumab", "sections":[], "json":json_output}, request_id)
+        request_id += 1
+        assert same_output(raw_text, cli_text) and same_output(typed_text, cli_text)
+    for mode, (options, expected_items) in batch_modes.items():
+        batch_cli = cli("--json", "batch", "drug", "pembrolizumab,trastuzumab", *options)
+        batch_payload = json.loads(batch_cli)
+        assert [item["result"]["_meta"]["next_commands"] for item in batch_payload["items"]] == expected_items
+        assert same_output(mcp(server, "biomcp", {"command":"biomcp batch drug pembrolizumab,trastuzumab" + (" " + " ".join(options) if options else ""), "json":True}, request_id), batch_cli)
+        request_id += 1
+        batch_cli_markdown = cli("batch", "drug", "pembrolizumab,trastuzumab", *options)
+        assert same_output(mcp(server, "biomcp", {"command":"biomcp batch drug pembrolizumab,trastuzumab" + (" " + " ".join(options) if options else ""), "json":False}, request_id), batch_cli_markdown)
+        request_id += 1
+        for identity, commands in zip(identities, expected_items):
+            assert guidance(batch_item(batch_cli_markdown, identity)) == expected_guidance(identity, mode, commands)
+    tools = rpc(server, {"jsonrpc":"2.0", "id":request_id, "method":"tools/list", "params":{}})["result"]["tools"]
+    get_schema = next(tool["inputSchema"] for tool in tools if tool["name"] == "get")
+    drug_branch = next(branch for branch in get_schema["oneOf"] if branch["properties"]["entity"]["const"] == "drug")
+    assert [tool["name"] for tool in tools] == ["biomcp", "search", "get", "variant_normalize_car", "variant_erepo", "gene_cspec", "variant_articles"]
+    assert drug_branch["properties"]["sections"]["items"]["enum"] == ["label", "regulatory", "safety", "shortage", "targets", "indications", "interactions", "civic", "approvals", "all"]
+    assert not any(tool["name"] == "batch" for tool in tools)
+finally:
+    stop_server(server, server_cache)
+
+with tempfile.NamedTemporaryFile() as missing_ema:
+    recovery_cli = cli("--json", "get", "drug", "pembrolizumab", "safety", "--region", "eu", extra_env={"BIOMCP_EMA_DIR": missing_ema.name})
+    recovery_server, recovery_cache = start_server(env | {"BIOMCP_EMA_DIR": missing_ema.name})
+    try:
+        recovery_raw = mcp(recovery_server, "biomcp", {"command":"biomcp get drug pembrolizumab safety --region eu", "json":True}, 2)
+        assert same_output(recovery_raw, recovery_cli)
+        # Typed get has no region field; interactions is the fixture's unavailable
+        # section, proving unavailable data is still a successful tool result.
+        recovery_result = rpc(recovery_server, {"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":"get", "arguments":{"entity":"drug", "id":"pembrolizumab", "sections":["interactions"], "json":True}}})["result"]
+        assert recovery_result.get("isError") is False
+        recovery_payload = json.loads(recovery_result["content"][0]["text"])
+        assert recovery_payload["section_outcomes"]["interactions"]["outcome"] == "unavailable"
+    finally:
+        stop_server(recovery_server, recovery_cache)
+
+print("drug-card projection production matrix passed")
+PY
+```
+
 ## Multi-Region Search
 
 Plain-name search should still show the same drug family across the U.S., EU,

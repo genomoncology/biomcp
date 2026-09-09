@@ -337,6 +337,43 @@ fn typed_get_schema_and_mapper_match_independent_cli_catalog_oracle() {
 }
 
 #[test]
+fn typed_drug_get_schema_is_exact_and_has_no_batch_variant() {
+    let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
+    let branch = schema["oneOf"]
+        .as_array()
+        .and_then(|branches| {
+            branches
+                .iter()
+                .find(|branch| branch["properties"]["entity"]["const"] == "drug")
+        })
+        .expect("typed get drug branch");
+    assert_eq!(
+        branch["properties"]["sections"]["items"]["enum"],
+        json!([
+            "label",
+            "regulatory",
+            "safety",
+            "shortage",
+            "targets",
+            "indications",
+            "interactions",
+            "civic",
+            "approvals",
+            "all"
+        ])
+    );
+    assert!(!schema.to_string().contains("batch"));
+    assert!(
+        get_args(TypedGet(json!({
+            "entity": "drug",
+            "id": "eflornithine",
+            "sections": ["label"]
+        })))
+        .is_ok()
+    );
+}
+
+#[test]
 fn adverse_event_schema_and_mapper_deduplicate_sections_only_for_that_entity() {
     let schema = serde_json::to_value(rmcp::schemars::schema_for!(TypedGet)).unwrap();
     let branches = schema["oneOf"].as_array().unwrap();

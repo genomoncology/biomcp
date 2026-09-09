@@ -37,6 +37,44 @@ const GENE_DISCOVERY_SECTION_NAMES: &[&str] = &[
     "all",
 ];
 
+const DRUG_DISCOVERY_PRIORITY: &[&str] = &[
+    "approvals",
+    "label",
+    "regulatory",
+    "safety",
+    "shortage",
+    "interactions",
+    "indications",
+    "targets",
+    "civic",
+];
+
+const DRUG_ALL_EXPANSION: &[&str] = &[
+    "label",
+    "regulatory",
+    "safety",
+    "shortage",
+    "targets",
+    "indications",
+    "interactions",
+    "civic",
+];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct DrugCommand {
+    pub(crate) section: String,
+    pub(crate) command: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct DrugCommandDiscovery {
+    pub(crate) recovery: Vec<DrugCommand>,
+    pub(crate) sections: Vec<DrugCommand>,
+    pub(crate) all: Option<String>,
+    pub(crate) related: Vec<String>,
+    pub(crate) next_commands: Vec<String>,
+}
+
 pub(super) fn has_all_section(requested: &[String]) -> bool {
     requested
         .iter()
@@ -138,6 +176,7 @@ pub(super) fn section_description(entity: &str, section: &str) -> &'static str {
         ("drug", "safety") => {
             "regulatory safety detail; use `biomcp drug adverse-events <name>` first when you want post-marketing signal"
         }
+        ("drug", "shortage") => "current US, EU, or WHO shortage information",
         ("drug", "targets") => "ChEMBL and OpenTargets targets",
         ("drug", "indications") => "OpenTargets indication evidence",
         ("drug", "interactions") => "label interactions and public-data fallback",
@@ -336,15 +375,175 @@ pub(super) fn sections_trial(trial: &Trial, requested: &[String]) -> Vec<String>
     sections_for(requested, available)
 }
 
-pub(super) fn sections_drug(drug: &Drug, requested: &[String]) -> Vec<String> {
-    let name = quote_arg(&drug.name);
-    if name.is_empty() {
-        return Vec::new();
+fn drug_command(name: &str, section: &str, region: DrugRegion) -> Option<String> {
+    let mut command = crate::next_command::NextCommand::biomcp()
+        .args(["get", "drug"])
+        .arg(name)
+        .arg(section);
+    if matches!(section, "regulatory" | "safety" | "shortage") {
+        if matches!(region, DrugRegion::Who) && matches!(section, "safety" | "shortage") {
+            return None;
+        }
+        command = command.args(["--region", region.as_str()]);
     }
-    without_failed_recovery_sections(
-        sections_for(requested, crate::entities::drug::DRUG_SECTION_NAMES),
-        &drug.section_outcomes,
-    )
+    Some(command.render_shell())
+}
+
+fn drug_loaded_sections(requested: &[String]) -> (HashSet<String>, bool) {
+    let normalized = requested
+        .iter()
+        .map(|value| value.trim().to_ascii_lowercase())
+        .filter(|value| !value.is_empty() && value != "--json" && value != "-j")
+        .collect::<Vec<_>>();
+    let has_all = normalized.iter().any(|value| value == "all");
+    let mut loaded = HashSet::new();
+    if has_all {
+        loaded.extend(DRUG_ALL_EXPANSION.iter().map(|value| (*value).to_string()));
+        if normalized.iter().any(|value| value == "approvals") {
+            loaded.insert("approvals".to_string());
+        }
+    } else if normalized.is_empty() {
+        loaded.insert("targets".to_string());
+    } else {
+        loaded.extend(
+            normalized
+                .iter()
+                .filter(|value| *value != "all")
+                .filter(|value| crate::entities::drug::DRUG_SECTION_NAMES.contains(&value.as_str()))
+                .cloned(),
+        );
+    }
+    (loaded, has_all)
+}
+
+fn push_exact_capped(command: String, seen: &mut HashSet<String>, output: &mut Vec<String>) {
+    if output.len() < 10 && !command.is_empty() && seen.insert(command.clone()) {
+        output.push(command);
+    }
+}
+
+pub(crate) fn drug_command_discovery(
+    drug: &Drug,
+    requested_sections: &[String],
+    effective_region: DrugRegion,
+) -> DrugCommandDiscovery {
+    if drug.name.trim().is_empty() {
+        return DrugCommandDiscovery {
+            recovery: Vec::new(),
+            sections: Vec::new(),
+            all: None,
+            related: Vec::new(),
+            next_commands: Vec::new(),
+        };
+    }
+    assert!(
+        DRUG_DISCOVERY_PRIORITY
+            .iter()
+            .enumerate()
+            .all(|(index, section)| {
+                DRUG_DISCOVERY_PRIORITY[..index]
+                    .iter()
+                    .all(|prior| prior != section)
+                    && crate::entities::drug::DRUG_SECTION_NAMES.contains(section)
+                    && *section != "all"
+            })
+    );
+
+    let (loaded, requested_all) = drug_loaded_sections(requested_sections);
+    let mut recovery = Vec::new();
+    for row in crate::entities::source_state_registry::SOURCE_STATE_ROWS
+        .iter()
+        .filter(|row| row.entity == "drug")
+    {
+        if !loaded.contains(row.key) {
+            continue;
+        }
+        let failed = drug.section_outcomes.get(row.key).is_some_and(|outcome| {
+            matches!(
+                outcome.outcome(),
+                SectionOutcomeState::Degraded | SectionOutcomeState::Unavailable
+            )
+        });
+        if !failed {
+            continue;
+        }
+        if let Some(crate::entities::source_state_registry::RecoveryRoute::Section {
+            section, ..
+        }) = crate::entities::source_state_registry::recovery_route("drug", row.key)
+            && let Some(command) = drug_command(&drug.name, section, effective_region)
+        {
+            recovery.push(DrugCommand {
+                section: row.key.to_string(),
+                command,
+            });
+        }
+    }
+
+    let mut sections = Vec::new();
+    for section in DRUG_DISCOVERY_PRIORITY {
+        if loaded.contains(*section) {
+            continue;
+        }
+        if let Some(command) = drug_command(&drug.name, section, effective_region) {
+            sections.push(DrugCommand {
+                section: (*section).to_string(),
+                command,
+            });
+            if sections.len() == 3 {
+                break;
+            }
+        }
+    }
+
+    let all = (!requested_all
+        && DRUG_ALL_EXPANSION
+            .iter()
+            .any(|section| !loaded.contains(*section)))
+    .then(|| {
+        crate::next_command::NextCommand::biomcp()
+            .args(["get", "drug"])
+            .arg(&drug.name)
+            .arg("all")
+            .args(["--region", effective_region.as_str()])
+            .render_shell()
+    });
+    let related = super::related_drug(drug);
+
+    let mut seen = HashSet::new();
+    let mut next_commands = Vec::new();
+    for command in recovery
+        .iter()
+        .map(|entry| &entry.command)
+        .chain(sections.iter().map(|entry| &entry.command))
+        .chain(all.iter())
+        .chain(related.iter())
+    {
+        push_exact_capped(command.clone(), &mut seen, &mut next_commands);
+    }
+
+    recovery.retain(|entry| {
+        next_commands
+            .iter()
+            .any(|command| command == &entry.command)
+    });
+    sections.retain(|entry| {
+        next_commands
+            .iter()
+            .any(|command| command == &entry.command)
+    });
+    let all = all.filter(|command| next_commands.iter().any(|candidate| candidate == command));
+    let related = related
+        .into_iter()
+        .filter(|command| next_commands.iter().any(|candidate| candidate == command))
+        .collect();
+
+    DrugCommandDiscovery {
+        recovery,
+        sections,
+        all,
+        related,
+        next_commands,
+    }
 }
 
 pub(super) fn sections_disease(disease: &Disease, requested: &[String]) -> Vec<String> {

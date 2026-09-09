@@ -682,6 +682,14 @@ U.S.-only. WHO vaccine support in this ticket is search-only, so
 If you omit `--region` on `get drug <name> regulatory`, BioMCP checks U.S. and
 EU regulatory data. Other no-flag `get drug` shapes stay on the default U.S.
 path unless you pass `--region`.
+Drug card Markdown and JSON share one follow-up projection. JSON exposes the
+ordered commands in `_meta.next_commands`, capped at ten; Markdown places the
+same surviving commands in `More:`, `All:`, and `See also:` categories. The
+plan starts with retries for loaded degraded/unavailable sections, then up to
+three not-loaded section commands, an optional regional `all` command, and
+related pivots. Only explicitly requested sections count as loaded (with
+default `targets` and the documented `all` expansion); populated fields do not
+implicitly suppress discovery.
 
 ### Diagnostic
 

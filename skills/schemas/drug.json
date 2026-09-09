@@ -2,6 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "BioMCP Drug",
   "type": "object",
+  "examples": [
+    {
+      "name": "eflornithine",
+      "_meta": {
+        "next_commands": [
+          "biomcp get drug eflornithine approvals",
+          "biomcp get drug eflornithine label",
+          "biomcp get drug eflornithine regulatory --region us"
+        ]
+      }
+    }
+  ],
   "required": ["name"],
   "properties": {
     "name": { "type": "string" },

@@ -153,6 +153,24 @@ class Handler(BaseHTTPRequestHandler):
             if query == "fixture-provider-failure":
                 send(self, 503, b'{"error":"synthetic provider failure"}')
                 return
+            if query.startswith("ticket1151 hostile "):
+                send(
+                    self,
+                    200,
+                    json.dumps({
+                        "total": 1,
+                        "hits": [{
+                            "_id": "DB-TICKET1151",
+                            "_score": 10.0,
+                            "drugbank": {
+                                "id": "DB-TICKET1151",
+                                "name": query,
+                                "synonyms": [],
+                            },
+                        }],
+                    }).encode("utf-8"),
+                )
+                return
             body = MYCHEM.get(query)
             if body is not None:
                 send(self, 200, body)

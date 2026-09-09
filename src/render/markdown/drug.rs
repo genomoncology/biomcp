@@ -18,6 +18,7 @@ pub fn drug_markdown_with_region(
     raw_label: bool,
 ) -> Result<String, BioMcpError> {
     let tmpl = env()?.get_template("drug.md.j2")?;
+    let discovery = super::drug_command_discovery(drug, requested_sections, region);
     let section_only = is_section_only_requested(requested_sections);
     let include_all = has_all_section(requested_sections);
     let requested = requested_section_names(requested_sections);
@@ -40,7 +41,12 @@ pub fn drug_markdown_with_region(
     } else {
         None
     };
-    let source_states = section_render_contexts("drug", &drug.name, &drug.section_outcomes);
+    let source_states = section_render_contexts_with_recovery(
+        "drug",
+        &drug.name,
+        &drug.section_outcomes,
+        Some(&discovery.recovery),
+    );
     let safety_state = source_states
         .get("safety")
         .expect("registered drug safety state");
@@ -103,8 +109,15 @@ pub fn drug_markdown_with_region(
         } else {
             String::new()
         },
-        sections_block => format_sections_block("drug", &drug.name, sections_drug(drug, requested_sections)),
-        related_block => format_related_block(related_drug(drug)),
+        sections_block => format_drug_sections_block(&discovery),
+        related_block => format_related_block(
+            discovery
+                .related
+                .iter()
+                .filter(|command| discovery.next_commands.iter().any(|candidate| candidate == *command))
+                .cloned()
+                .collect(),
+        ),
         source_states => source_states,
     })?;
     let mut evidence_urls = drug_evidence_urls(drug)
@@ -115,6 +128,39 @@ pub fn drug_markdown_with_region(
         evidence_urls.extend(ddinter_interaction_evidence_urls(&drug.interactions));
     }
     Ok(append_evidence_urls(body, evidence_urls))
+}
+
+fn format_drug_sections_block(discovery: &super::sections::DrugCommandDiscovery) -> String {
+    let survives = |command: &str| {
+        discovery
+            .next_commands
+            .iter()
+            .any(|candidate| candidate == command)
+    };
+    let mut blocks = Vec::new();
+    let sections = discovery
+        .sections
+        .iter()
+        .filter(|entry| survives(&entry.command))
+        .collect::<Vec<_>>();
+    if !sections.is_empty() {
+        let mut block = String::from("More:");
+        for entry in sections {
+            let _ = std::fmt::Write::write_fmt(
+                &mut block,
+                format_args!(
+                    "\n  {}   - {}",
+                    entry.command,
+                    super::section_description("drug", &entry.section)
+                ),
+            );
+        }
+        blocks.push(block);
+    }
+    if let Some(command) = discovery.all.as_deref().filter(|command| survives(command)) {
+        blocks.push(format!("All:\n  {command}"));
+    }
+    blocks.join("\n\n")
 }
 
 pub fn drug_markdown(drug: &Drug, requested_sections: &[String]) -> Result<String, BioMcpError> {

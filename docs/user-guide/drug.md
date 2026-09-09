@@ -84,6 +84,17 @@ generic targets from ChEMBL/Open Targets and may add a separate `Variant
 Targets (CIViC): ...` line when CIViC surfaces a variant-specific molecular
 profile such as `EGFRvIII`.
 
+Both Markdown and JSON cards expose the same bounded follow-up plan. Structured
+cards put it in `_meta.next_commands` (at most ten commands); Markdown renders
+the same commands under `More:`, `All:`, and `See also:`. Commands are ordered
+as recovery retries, up to three not-yet-loaded sections, an optional `all`
+aggregate, and related pivots. A section is considered loaded only when the
+request selected it: the default request loads `targets`, and `all` expands to
+`label`, `regulatory`, `safety`, `shortage`, `targets`, `indications`,
+`interactions`, and `civic`; legacy U.S. `approvals` remains separately
+discoverable. Regional `regulatory`, `safety`, `shortage`, and `all` commands
+carry the effective canonical `--region` value.
+
 ## Request drug sections
 
 Supported sections: `label`, `regulatory`, `safety`, `shortage`, `targets`,
