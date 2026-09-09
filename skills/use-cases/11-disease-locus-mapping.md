@@ -4,9 +4,9 @@ Use this when the question asks which chromosomes, loci, deletions, duplications
 
 ```bash
 biomcp search article -k "Arnold Chiari syndrome chromosome" --type review --limit 10
-biomcp article batch 39309470 17103432 12210325
+biomcp batch article 39309470,17103432,12210325 --mode compact
 biomcp search article -k "\"Arnold Chiari\" deletion duplication trisomy chromosome" --limit 10
-biomcp article batch 12522795 15742475 29410707
+biomcp batch article 12522795,15742475,29410707 --mode compact
 ```
 
 Interpretation:

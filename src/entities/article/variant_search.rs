@@ -3953,7 +3953,6 @@ fn stable_row_id(row: &CompactVariantArticleRow) -> Option<String> {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
 }
-
 fn batch_next_commands(items: &[VariantArticleBatchItem]) -> Vec<String> {
     let mut seen = BTreeSet::new();
     let ids = items
@@ -3966,8 +3965,9 @@ fn batch_next_commands(items: &[VariantArticleBatchItem]) -> Vec<String> {
     if !ids.is_empty() {
         commands.push(
             crate::next_command::NextCommand::biomcp()
-                .args(["article", "batch"])
-                .args(ids.iter().take(10).cloned())
+                .args(["batch", "article"])
+                .arg(ids.iter().take(10).cloned().collect::<Vec<_>>().join(","))
+                .args(["--mode", "compact"])
                 .render_shell(),
         );
     }

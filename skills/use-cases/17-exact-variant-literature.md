@@ -5,7 +5,7 @@ Use this when you have a complete gene plus protein change and need a compact, e
 ```bash
 biomcp search variant MSH2 p.L341P --limit 5
 biomcp variant articles "MSH2 p.L341P" --limit 5
-biomcp article batch 26951660 31433521
+biomcp batch article 26951660,31433521 --mode compact
 biomcp get article 26951660 fulltext
 biomcp --json get article 26951660 assets
 biomcp article citations 26951660 --limit 5

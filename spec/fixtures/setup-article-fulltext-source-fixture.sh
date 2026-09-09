@@ -613,6 +613,16 @@ class Handler(BaseHTTPRequestHandler):
             send_bytes(self, 200, SEMANTIC_SCHOLAR_20516115_BATCH, "application/json")
             return
 
+        if decoded_path == "/graph/v1/paper/batch" and body == b'{"ids":["PMID:22663011"]}':
+            send_json(self, 200, [{
+                "paperId": "paper-1",
+                "title": ARTICLES["22663011"]["title"],
+                "tldr": {"text": "Fixture compact summary", "model": "tldr@v2"},
+                "citationCount": 12,
+                "influentialCitationCount": 3,
+            }])
+            return
+
         if decoded_path == "/v2/articles/search":
             send_json(self, 200, [
                 {
@@ -1049,6 +1059,14 @@ class Handler(BaseHTTPRequestHandler):
             send_text(self, 404, "not found", "text/plain")
             return
 
+        if decoded_path == "/graph/v1/paper/PMID:22663012":
+            send_json(self, 503, {"error": "fixture Semantic Scholar outage"})
+            return
+
+        if decoded_path == "/graph/v1/paper/PMID:22663023":
+            send_json(self, 200, {})
+            return
+
         if decoded_path.startswith("/graph/v1/paper/PMID:"):
             pmid = decoded_path.rsplit(":", 1)[-1]
             article = ARTICLES.get(pmid)
@@ -1059,6 +1077,13 @@ class Handler(BaseHTTPRequestHandler):
                 "paperId": article["paper_id"],
                 "title": article["title"],
             }
+            if pmid == "22663011":
+                payload["tldr"] = {
+                    "text": "Fixture detail summary",
+                    "model": "tldr@v2",
+                }
+                payload["citationCount"] = 12
+                payload["influentialCitationCount"] = 3
             if pmid == "22663013":
                 payload["openAccessPdf"] = {
                     "url": f"http://127.0.0.1:{self.server.server_port}/pdf/22663013.pdf",

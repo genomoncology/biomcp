@@ -86,6 +86,44 @@ impl SemanticScholarClient {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn new_with_cache_observers<G, A>(
+        base: &str,
+        observe_get: G,
+        after_put: A,
+    ) -> Result<Self, BioMcpError>
+    where
+        G: Fn(&std::path::Path, &str) + Send + Sync + 'static,
+        A: Fn(&std::path::Path, &str) + Send + Sync + 'static,
+    {
+        let base_url = reqwest::Url::parse(base).map_err(|_| BioMcpError::Api {
+            api: SEMANTIC_SCHOLAR_API.to_string(),
+            message: "invalid test fixture base URL".into(),
+        })?;
+        let policy = ProviderUrlPolicy::semantic_scholar_api(&base_url)?;
+        let config = crate::cache::resolve_cache_config()?;
+        let client = crate::sources::build_http_client_with_config_and_manager(
+            crate::sources::SharedHttpClientKind::SemanticScholarSharedPool,
+            config,
+            Some(&policy),
+            |path, config| {
+                Ok(
+                    crate::cache::SizeAwareCacheManager::new_with_cache_observers(
+                        path,
+                        config,
+                        observe_get,
+                        after_put,
+                    ),
+                )
+            },
+        )?;
+        Ok(Self {
+            client,
+            base: Cow::Owned(base.to_string()),
+            api_key: None,
+        })
+    }
+
     pub(crate) async fn new_with_deadline(
         deadline: &crate::sources::VariantArticleDeadline,
     ) -> Result<Self, BioMcpError> {

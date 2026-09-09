@@ -16,7 +16,7 @@ fn batch_source_is_optional_and_trial_only() {
     let Commands::Batch(args) = cli.command else {
         panic!("expected batch command");
     };
-    let err = super::super::dispatch::validate_batch_args(&args)
+    let err = super::super::validate_batch_args(&args)
         .expect_err("non-trial source should fail before provider work");
     assert!(
         err.to_string()
