@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly TEST_FILES=(
+  "tests/test_biodata_boundary.py"
+  "tests/test_source_package_boundary.py"
+  "tests/test_ctgov_trial_search_detail_reuse.py"
+  "tests/test_nci_filter_transport.py"
+  "tests/test_biodata_branch_workflow.py"
+)
+
+unset NCI_API_KEY
+
+biomcp_bin="${BIOMCP_BIN:-$ROOT/target/debug/biomcp}"
+if [[ "$biomcp_bin" != /* ]]; then
+  biomcp_bin="$PWD/$biomcp_bin"
+fi
+if [[ ! -x "$biomcp_bin" ]]; then
+  echo "focused BioData verification requires an already-built BioMCP binary: $biomcp_bin" >&2
+  exit 2
+fi
+case "$biomcp_bin" in
+  "$ROOT"/*) ;;
+  *)
+    echo "focused BioData verification requires a worktree-local BioMCP binary" >&2
+    exit 2
+    ;;
+esac
+
+mkdir -p "$ROOT/.cache"
+scratch="$(mktemp -d "$ROOT/.cache/biodata-1.0.XXXXXX")"
+cleanup() {
+  rm -rf -- "$scratch"
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+python3 "$ROOT/tools/check-biodata-boundary.py" --root "$ROOT"
+TMPDIR="$scratch" "$ROOT/tools/run-offline" -- \
+  env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \
+  uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}"

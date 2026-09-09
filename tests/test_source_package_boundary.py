@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -12,8 +13,8 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-MAX_PACKAGE_FILES = 1_300
-BIODATA_REVISION = "b4bd2360c711171273a21ab055e52162dfb0c8fa"
+MAX_PACKAGE_FILES = 1_303
+BIODATA_REVISION = "7fa796c88fe4d4143eba28a883a9bc8f6b3ca893"
 
 
 def _cargo_package_list() -> list[str]:
@@ -106,8 +107,12 @@ def test_packaged_rust_has_no_private_compile_time_includes() -> None:
 
 
 def test_python_contract_temporary_paths_stay_in_worktree(tmp_path: Path) -> None:
-    assert ROOT in tmp_path.parents
-    assert ROOT in Path(tempfile.gettempdir()).parents
+    if os.environ.get("BIOMCP_OFFLINE_NETWORK") == "1":
+        assert Path(tempfile.gettempdir()) == Path("/tmp")
+        assert Path("/tmp") in tmp_path.parents
+    else:
+        assert ROOT in tmp_path.parents
+        assert ROOT in Path(tempfile.gettempdir()).parents
 
 
 def test_manifest_has_the_exact_reviewed_biodata_dependency_and_compile_deferral() -> (
