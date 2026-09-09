@@ -231,7 +231,8 @@ def test_repository_audit_classifies_every_source_file_and_preserves_erepo_histo
     assert report["classified_files"] == report["audited_files"]
     assert report["fixture_keys_checked"] > 0
     assert report["fixture_key_exceptions"] == 0
-    assert report["code_keys_checked"] == 109
+    # BioData owns the two CTGov eligibility reads and the five reference reads.
+    assert report["code_keys_checked"] == 102
     assert report["confirmed_byte_unfaithful"] == 0
     assert set(report["classifications"]) == {
         "authored",
