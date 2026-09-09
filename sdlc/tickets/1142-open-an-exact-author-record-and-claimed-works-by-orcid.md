@@ -26,11 +26,21 @@ all existing Semantic Scholar search/detail/byline warnings
 `orcid_link_not_established` and all non-linkage behavior remain byte-for-byte
 unchanged.
 
-Current `origin/main` at `e95bb7a4` rejects every `orcid:` author ID and has no
+Current `origin/main` at `a068fabd4d57af646bc3b577879a8acbdd4136a9` rejects every `orcid:` author ID and has no
 ORCID source module or source-inventory row. The ORCID v3 Public API exposes
 the public person and works resources needed here. Anonymous responses are not
 the supported BioMCP contract: callers supply a pre-issued public-read bearer
 token.
+
+Record 1183 is already closed on this base. Its zero-coupling boundary remains
+fully in force: this ticket adds no foreign Rust package, source checkout,
+generated handoff, path/patch dependency, release coordination, credential for
+a code dependency, or external owner for a BioMCP contract. The accepted ADR
+reverses only record 0581's product decision not to make ORCID network calls.
+The new `src/sources/orcid.rs` is BioMCP-owned production code that calls one
+documented upstream HTTP API, just as the other local source adapters do. This
+is not a reversal of record 1183 and must pass its unchanged worktree and crate
+zero-coupling ratchets.
 
 ## Exact identity grammar
 
@@ -533,31 +543,58 @@ Test first at the owning layers:
    offline package list at exactly 1,300 paths. AlphaGenome is untouched, so no
    full-feature gate is required.
 
-`src/sources/orcid.rs` owns request plans, wire structs, response validation,
-and the bounded transport. `src/entities/author/mod.rs` owns qualified identity
-and detail projection; `src/entities/author/papers.rs` owns group mapping,
-dedupe, paging, metadata, and follow-ups. Existing CLI and Markdown author
-modules only select/render; health catalog/runner, rate limit, provider URL
-policy, `SourceProvider`, inventory/docs, and existing fixture/test sidecars
-receive their narrow additions. Do not put ORCID behavior in Semantic Scholar,
-MCP mapping, or fixture-only branches.
+`src/sources/orcid.rs` owns the production request plans, credential attachment,
+wire allowlists, response validation, and bounded transport. It accepts only an
+already-validated canonical ORCID value from the author entity and never
+imports entity or CLI types. `src/entities/author/mod.rs` continues to own the
+public provider-qualified identity grammar and detail projection;
+`src/entities/author/papers.rs` owns group mapping, dedupe, paging, metadata,
+and follow-ups. The entity selects a source by `AuthorIdProvider`; neither
+source selects an entity workflow.
 
-The package has exactly 1,300 paths at the design base. Add
-`src/sources/orcid.rs`, merge the directly owned 174-line
-`src/entities/author/detail.rs` implementation/tests into the 251-line
-`src/entities/author/mod.rs`, and delete `detail.rs`: one real owner replaces
-one real owner, so the package remains exactly 1,300 with no filler or Cargo
-exclusion change. Add the already locked `unicode-normalization = "0.1.25"` as a
-direct dependency without changing its lock resolution or package path count.
-Keep the merged author module and new source below 700 lines;
-`src/cli/commands.rs` (686), CLI author/list modules, health modules,
-`src/sources/rate_limit.rs` (605), and `src/sources/provider_url_policy.rs`
-(945) remain below 700/1,000 as applicable. Keep `src/sources/mod.rs` exactly
-1,884 lines and `src/error.rs` at or below its 1,125-line over-cap baseline by
-offsetting their registry additions locally; do not raise an allowance.
-`src/mcp/shell.rs` stays byte-identical at 2,136 lines. Net production `src/`
-growth must stay at or below 800 lines and all existing quality/source/CLI
-ratchets remain enforced.
+Add `src/sources/provider.rs` as the provider-neutral source abstraction. Move
+the existing `SourceProvider` registry, labels, legacy mapping, and their tests
+out of `src/error.rs` into that module. `src/error.rs` must publicly re-export
+`SourceProvider` from the new owner so the existing public
+`biomcp::error::SourceProvider` name, equality/copy behavior, and every current
+source import remain compatible. Move the small shared HTTP-client-kind enum
+from `src/sources/mod.rs` into the same module and re-export it at
+`crate::sources::SharedHttpClientKind`; this both preserves current internal
+call sites and offsets the new `orcid`/`provider` module declarations. Keep URL,
+redirect, DNS, and credential-origin enforcement in
+`src/sources/provider_url_policy.rs`; the new abstraction does not duplicate or
+weaken that policy.
+
+Existing CLI and Markdown author modules only select/render. Health
+catalog/runner, rate limiting, provider URL policy, source registry,
+inventory/docs, and existing fixture/test sidecars receive their narrow
+additions. Do not put ORCID behavior in Semantic Scholar, MCP mapping,
+`error.rs`, or fixture-only branches.
+
+The package has exactly 1,300 paths at design base
+`a068fabd4d57af646bc3b577879a8acbdd4136a9`. Add exactly
+`src/sources/orcid.rs` and `src/sources/provider.rs`. Merge the directly owned
+174-line `src/entities/author/detail.rs` implementation/tests into the 251-line
+`src/entities/author/mod.rs`, preserving its `AuthorDetail`, `detail`, and
+test-only `ProviderAuthorRecord` re-exports, then delete `detail.rs`. Merge the
+17-line `src/cli/author/papers.rs` dispatch shim into the 81-line
+`src/cli/author/mod.rs`, preserving `handle_papers` visibility, arguments,
+validation order, and dispatch, then delete that shim. These are relocations of
+real owners, not filler; two packaged additions replace two packaged paths, so
+the package remains exactly 1,300 with no Cargo exclusion or package-membership
+change.
+
+Add the already locked `unicode-normalization = "0.1.25"` as a direct dependency
+without changing its lock resolution or the package path count. Keep the merged
+author modules, new provider module, and new ORCID source below 1,000 lines;
+keep every CLI module below 700. `src/sources/provider_url_policy.rs` remains at
+or below its current 945 lines. `src/sources/mod.rs` remains at or below its
+current exact 2,274-line source-size baseline, and `src/error.rs` remains at or
+below its current exact 1,125-line baseline; lower their inventory baselines
+when relocation lowers the measured files and never add or raise an allowance.
+`src/mcp/shell.rs` stays byte-identical at its current 2,148 lines. Net
+production `src/` growth stays at or below 800 lines, and all existing
+quality/source/CLI and record-1183 zero-coupling ratchets remain enforced.
 
 ## Exclusions
 
