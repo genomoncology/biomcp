@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 4
-deps: [1143]
+deps: [1143, 1186]
 ---
 
 # Open an exact author record and claimed works by ORCID
@@ -311,45 +311,11 @@ biomcp --json author papers orcid:0000-0002-1825-0097 --limit 10 --offset 0
 ```
 
 The provider-specific Markdown branches are exactly these templates (`?` lines
-are omitted when their value is null/empty). Extend the established
-`src/render/human.rs` sanitizer with `sanitize_provider_inline`; do not build a
-second author-local escape policy. It performs, in order:
-
-1. NFC normalization with direct dependency `unicode-normalization = "0.1.25"`
-   (already locked at that version; the package path count does not change).
-2. Replace each U+2028 LINE SEPARATOR or U+2029 PARAGRAPH SEPARATOR with one
-   ASCII space. Replace each maximal run in the Unicode 16.0
-   `Default_Ignorable_Code_Point` property **or** General_Category `Cf` with one
-   visible U+FFFD, using checked-in scalar-range match tables named with that
-   Unicode version; this includes bidi controls, soft hyphen, variation/tag
-   selectors, joiners, and zero-width spaces.
-3. Before a remaining scalar whose Unicode canonical combining class is
-   nonzero, insert U+25CC DOTTED CIRCLE when no retained non-space scalar has
-   occurred since the start or last whitespace. Combining marks following a
-   base remain attached; NFC-composable sequences are already composed.
-4. Pass the result through existing `sanitize_inline` for ANSI/C0/C1 handling.
-   Then preserve every non-ASCII scalar plus ASCII letters, digits, and spaces,
-   while encoding every other ASCII graphic as decimal HTML
-   `&#<codepoint>;` with no leading zeroes.
-
-Apply this operation only to provider display name, title, journal, and
-displayed identifier type/value. JSON retains the validated, Unicode-trimmed
-provider value; trusted canonical IDs and numeric fields remain literal in
-Markdown. Exact sanitizer controls are:
-
-```text
-provider input:  "e\u{0301}" | "\u{0301}A" | "A\u{2028}B\u{2029}C"
-Markdown output: "é" | "◌́A" | "A B C"
-
-provider input:  "A\u{202E}B\u{200B}\u{200D}C 👩\u{200D}🔬 <x&`$()>"
-Markdown output: "A�B�C 👩�🔬 &#60;x&#38;&#96;&#36;&#40;&#41;&#62;"
-```
-
-The second output's leading mark includes an inserted U+25CC. Fixture assertions compare
-UTF-8 bytes for isolated/attached combining marks, consecutive line separators,
-every table boundary, bidi isolates/overrides, zero-width/joiner/variation/tag
-characters, and NFC composition. The operation is called exactly once at the
-Markdown leaf. Provider text is single-line visible Markdown and
+are omitted when their value is null/empty). Provider display name, title,
+journal, and displayed identifier type/value render through
+`sanitize_provider_inline` from ticket 1186. JSON retains the validated,
+Unicode-trimmed provider value; trusted canonical IDs and numeric fields
+remain literal in Markdown. Provider text is single-line visible Markdown and
 never an HTML/link target or shell argument.
 
 ```text
@@ -508,9 +474,7 @@ Test first at the owning layers:
    four-attempt cap, and no permit/task leak.
 3. Person wire tables cover requested-path match, every name precedence/null
    combination, byte/control boundaries, all status/error rows, privacy
-   allowlisting, and exact public JSON/Markdown. Shared human-renderer tables
-   freeze the Unicode-16 predicate boundaries and every sanitizer byte example
-   above without changing JSON values.
+   allowlisting, and exact public JSON/Markdown.
 4. Works tables cover 0/1/64/65 summaries and selected-summary external IDs,
    ignored hostile group/private/nonselected IDs, 10,000/10,001
    groups, representative ties, private filtering, identifier normalization and
@@ -547,9 +511,7 @@ The package has exactly 1,300 paths at the design base. Add
 `src/entities/author/detail.rs` implementation/tests into the 251-line
 `src/entities/author/mod.rs`, and delete `detail.rs`: one real owner replaces
 one real owner, so the package remains exactly 1,300 with no filler or Cargo
-exclusion change. Add the already locked `unicode-normalization = "0.1.25"` as a
-direct dependency without changing its lock resolution or package path count.
-Keep the merged author module and new source below 700 lines;
+exclusion change. Keep the merged author module and new source below 700 lines;
 `src/cli/commands.rs` (686), CLI author/list modules, health modules,
 `src/sources/rate_limit.rs` (605), and `src/sources/provider_url_policy.rs`
 (945) remain below 700/1,000 as applicable. Keep `src/sources/mod.rs` exactly

@@ -243,3 +243,13 @@ anchored-alias matching, completion-order-independent duplicate handling, the
 bounded uncached form-POST health probe, explicit field/envelope nullability,
 the provider and surface contracts, package-neutral file plan, and removal of
 the unsupported 1151 dependency.
+
+## Upstream drift hardening
+
+- Commit a redacted byte-for-byte fixture of the live `OOPD_Results.cfm` HTML
+  response under `testdata/sources/fda_orphan/`.
+- Add an `FDA_ORPHAN_PARSE_VERSION` constant baked into the cache key so any
+  parser change invalidates cached entries.
+- A live page-shape mismatch beyond header normalization surfaces as
+  source-level `unavailable` and `HealthStatus::Error`, never a silent empty.
+- Any parser change updates the captured fixture in the same commit.
