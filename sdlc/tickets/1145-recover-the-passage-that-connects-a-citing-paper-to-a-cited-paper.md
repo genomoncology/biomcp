@@ -25,6 +25,17 @@ preserved in git at `995fa87e` under
 The result retrieves evidence only. It does not summarize the passage, infer
 how the cited work was used, or claim that the citation supports a conclusion.
 
+## Integration baseline
+
+Implement only from fresh main after ticket 1147 and the planned predecessors
+have landed. Ticket 1147 overlaps the article dispatcher/module, Semantic
+Scholar source, article specification, both existing article/provider fixture
+scripts, user/reference documentation, and raw MCP contracts. Preserve its
+canonical and compatibility batch bytes and merge fixture handlers
+structurally; never replace a newer fixture file wholesale. Re-record all exact
+source baselines after the final rebase. Preserve ticket 1183's independence
+boundary and variant-article behavior byte-for-byte.
+
 ## Directed edge lookup
 
 Resolve the trimmed citing and cited inputs through the existing article-to-
@@ -66,12 +77,32 @@ match has been found.
 
 Resolve the two seeds with at most two existing Semantic Scholar batch
 requests; PMCID inputs may additionally retain one existing Europe PMC bridge
-lookup apiece. The graph phase has a ten-second deadline in addition to its
-three-request cap. The complete command, including seed resolution, the
-optional JATS request, and blocking parse, has one monotonic twenty-two-second
-response deadline. The graph deadline is the earlier of ten seconds after its
-first request and the remaining command deadline; every later admission uses
-the same absolute command instant rather than restarting a duration. A graph
+lookup apiece. Reuse the existing deadline-aware transport internally, but map
+every expiration to a citation-evidence-specific sanitized command error;
+never expose `variant article` wording. Whole-command expiry constructs
+`BioMcpError::Api { api: "citation-evidence", message: "invocation deadline exceeded" }`;
+the ten-second graph expiry constructs
+`BioMcpError::Api { api: "semantic_scholar", message: "citation-evidence graph deadline exceeded" }`.
+If both absolute instants are reached together, the whole-command expiry wins.
+The direct CLI stderr is respectively exactly
+`Error: API request to BioMCP source failed. Review source configuration and retry.\n`
+and
+`Error: API request to Semantic Scholar failed. Retry the remote source.\n`.
+Their JSON error projections are respectively exactly
+`{"error":{"code":"api","message":"API request to BioMCP source failed.","source":"BioMCP source","recovery":"Review source configuration and retry."},"_meta":{"not_found":false}}`
+and
+`{"error":{"code":"api","message":"API request to Semantic Scholar failed.","source":"Semantic Scholar","recovery":"Retry the remote source."},"_meta":{"not_found":false}}`,
+apart from the existing pretty-print whitespace. Tests pin the complete emitted
+bytes on both surfaces. One monotonic twenty-two-second
+deadline starts before client/cache construction and covers seed resolution,
+the optional JATS request, bounded decode/projection/rendering, and blocking
+parse. The graph phase uses a nested ten-second deadline beginning at its first
+request and bounded by the command deadline. No provider request, retry, or
+graph work begins after expiration, and no successful output returns after it.
+Synchronous decode, projection, and rendering check the deadline before and
+after each bounded stage and discard late results. An already-published cache
+write may finish local security/finalization before the sanitized timeout is
+returned; no other task survives and no detached work is introduced. A graph
 deadline or the 300-edge cap reached while the provider still advertises
 another page is a bounded Semantic Scholar unavailable command error, not
 proof that the edge is absent. An
@@ -104,9 +135,16 @@ does not silently fall back to `context_from_provider`.
 
 The full-text fallback is deliberately Europe PMC JATS only. It does not call
 the broader full-text waterfall, PMC HTML, PDF extraction, or `--pdf`. Resolve
-the citing PMCID from the citing seed's `PubMedCentral` external ID, or through
-the existing exact PMID/DOI-to-PMCID bridge when necessary, then make at most
-one `/<PMCID>/fullTextXML` request. Keep the existing eight-MiB source-body
+the citing PMCID from a private resolved-seed representation that retains a
+validated `PubMedCentral` external ID without adding PMCID to the public 1144
+`ArticleRelatedPaper` schema. Carry forward a PMCID learned during an input
+bridge lookup. A valid private provider PMCID is used directly. An absent or
+invalid provider PMCID is treated as unavailable and permits at most one exact
+citing-paper PMID/DOI-to-PMCID bridge lookup before the JATS request. Only a
+valid normalized bridge result may construct the JATS URL; an absent,
+malformed, ambiguous, or failed bridge result produces
+`fulltext_unavailable` without a JATS request. Then make at most one
+`/<PMCID>/fullTextXML` request. Keep the existing eight-MiB source-body
 limit, the one-million-node external-XML limit, DTD/entity protections, and
 source-context sanitization. Missing PMCID, 404/204, transport failure,
 oversize, malformed XML, a non-article root, or a document without a body maps
@@ -240,8 +278,12 @@ already bounded bytes, makes no request, writes no cache or file, mutates no
 shared result, and emits no output. A second command cannot admit another JATS
 worker while it is still alive and reaches its own absolute deadline normally.
 Success, parse failure, panic, and late completion each release the permit
-exactly once. This bounded one-worker exception is the complete cancellation
-contract; network futures and graph work must not outlive the response.
+exactly once. This bounded one-worker exception and the already-published local
+cache security/finalization exception above are the complete cancellation
+contract and the only two permitted late-settlement cases. The parser worker
+is pure and the cache work is limited to required finalization; neither may
+return successful output, perform provider work, or leave detached mutable
+state. Network futures and graph work must not outlive the response.
 
 ## Frozen JSON and messages
 
@@ -392,7 +434,10 @@ file.
    duplicate matching edges and contexts, exact paper-ID comparison, exhausted
    not-found, cap exhaustion, and graph/whole-command deadline errors. The full
    malformed offset/next matrix from 1144 is applied to this traversal.
-2. Pure JATS tests cover both verified documents plus DOI/PMID/PMCID precedence,
+2. Pure JATS tests cover both verified documents using minimal authored,
+   provider-shaped fragments in the existing fixture owners; the historical
+   provider observations remain evidence and are never fetched live. Pin each
+   real DOI, reference ID, xref relationship, and expected passage count, plus DOI/PMID/PMCID precedence,
    every normalization rule, conflicting higher-priority IDs, zero/multiple
    refs, same-precedence target-plus-other DOI/PMID/PMCID values, identical
    normalized duplicates in one ref, selected IDs duplicated on otherwise
@@ -440,14 +485,19 @@ file.
    second command admits no worker and independently reaches its deadline;
    releasing the first barrier proves one late pure worker settles, releases
    the permit exactly once, produces no output/state/file mutation, and leaves
-   no worker or permit held. Companion success, parse-error, and panic cases
-   prove ordinary settlement. This seam replaces only the blocking parse
-   function, not deadline, semaphore, HTTP, traversal, or outcome code.
+   no worker or permit held. Paused-time cache tests separately prove that an
+   already-published cache write may complete security/finalization after the
+   deadline, returns only the sanitized citation-evidence timeout, and leaves no
+   detached work; no new request/retry/work is admitted after expiration.
+   Companion success, parse-error, and panic cases prove ordinary settlement.
+   This seam replaces only the blocking parse function, not deadline,
+   semaphore, HTTP, traversal, or outcome code.
 9. Update CLI help, `biomcp list article`, user/reference documentation, and
    the executable article spec with the exact five states, best-effort bounds,
    `--fulltext`, and the non-interpretive limitation. Run focused Rust,
    Python, MCP, and mustmatch checks, then `make lint`, `make test`, and
    `make spec`, followed by package inventory and `git diff --check`.
+   Also run `uv run --no-project python tools/check-zero-coupling.py --root .`.
 
 ## Ownership, boundaries, and order
 
@@ -467,7 +517,11 @@ does not modify the broad full-text waterfall. Preserve ticket 1144's exact
 1,244-line `src/render/markdown/article/tests.rs` authorized baseline; place
 new graph/render integration tests in the existing article CLI test modules
 and new extractor cases in the existing JATS tests. Do not raise any other
-over-threshold source baseline. The source package remains exactly 1,300 paths.
+over-threshold source baseline. Keep `src/entities/article/graph.rs`,
+`src/transform/article/jats/refs.rs`, `src/render/markdown/article.rs`, and
+`src/sources/semantic_scholar.rs` at or below 1,000 lines. Keep
+`src/sources/mod.rs` at its exact 2,274-line baseline. The source package
+remains exactly 1,300 paths. Add no package, path, or repository dependency.
 
 This ticket does not alter ordinary graph edge acquisition, pagination,
 provider order/duplicates, context values, totals, continuation construction,
@@ -502,3 +556,12 @@ handling, empty-marker eligibility and truncation boundaries, and the bounded
 late-settling parser worker under one absolute deadline. Previously accepted
 traversal, public outcomes, 1144 compatibility, surface coverage, ownership,
 and ratchets remain unchanged.
+
+The 2026-09-09 freshness review rejected the old deadline/cache assumptions,
+implicit PMCID ownership, and pre-1147 integration plan. This revision permits
+only already-published cache security finalization after the response deadline,
+maps all transport expiry to citation-evidence wording, defines a private
+resolved-seed PMCID plus one bounded bridge, requires post-1147 structural
+fixture merging and fresh baselines, freezes sub-1,000/exact source limits and
+0.9 independence, and replaces live examples with authored provider-shaped
+JATS fragments. Independent re-review is required before implementation.
