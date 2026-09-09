@@ -1674,6 +1674,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../sources/gencc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GenCC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../sources/clinvar/" class="md-nav__link">
         
   
@@ -4314,6 +4342,10 @@ internal fixture overrides and release/install variables.</p>
 <td>Local GTR download root</td>
 </tr>
 <tr>
+<td><code>BIOMCP_GENCC_DIR</code></td>
+<td>Private durable GenCC normalized-dataset root; defaults to the platform data directory under <code>biomcp/gencc</code></td>
+</tr>
+<tr>
 <td><code>BIOMCP_WHO_IVD_DIR</code></td>
 <td>Local WHO IVD download root</td>
 </tr>
@@ -4337,7 +4369,8 @@ repairs overly broad permissions inside the managed root and refuses linked
 regular files rather than risking access through another pathname.
 The global <code>--no-cache</code> flag bypasses these HTTP and session stores completely
 for one invocation. It does not override explicit output paths or provider
-retention.
+retention. In particular, it neither deletes nor force-refreshes the GenCC
+durable dataset; use <code>biomcp gencc sync</code> for explicit revalidation.
 <code>BIOMCP_CACHE_MAX_AGE</code> overrides <code>[cache].max_age_secs</code>; both values are
 positive integer seconds.</p>
 <h2 id="internal-and-measurement-controls">Internal and Measurement Controls<a class="headerlink" href="#internal-and-measurement-controls" title="Permanent link">&para;</a></h2>

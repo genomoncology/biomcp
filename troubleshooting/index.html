@@ -1672,6 +1672,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../sources/gencc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GenCC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../sources/clinvar/" class="md-nav__link">
         
   
@@ -4512,6 +4540,11 @@ the configured root for symlinks, hard links, unsupported file types, or an ACL
 that the current account cannot change. BioMCP fails before reading or writing
 provider responses or article queries; do not bypass this check by making the
 directory world-readable.</p>
+<p>For the <code>gene gencc section</code>, <code>--no-cache</code> does not bypass the private GenCC
+dataset. Check <code>biomcp health --api GenCC</code> for the quota-exempt HEAD probe and
+run <code>biomcp gencc sync</code> for an explicit revalidation. If BioMCP cannot secure
+the default data root, set <code>BIOMCP_GENCC_DIR</code> to an absolute private directory
+whose parent already exists; relative paths and linked components are rejected.</p>
 <h2 id="3-clinicaltrialsgov-api-v2-quirks">3) ClinicalTrials.gov API v2 quirks<a class="headerlink" href="#3-clinicaltrialsgov-api-v2-quirks" title="Permanent link">&para;</a></h2>
 <p>ClinicalTrials.gov search behavior can vary with complex query combinations and pagination tokens.
 The most common symptoms are empty pages after filters or unstable totals between repeated calls.</p>
