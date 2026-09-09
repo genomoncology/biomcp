@@ -161,6 +161,14 @@ fn detail_response_maps_local_failures_without_source_values() {
         }
     }
 
+    let capped = String::from_utf8(valid_detail("NCT00000001"))
+        .unwrap()
+        .replacen("\"total\":1", "\"total\":6546", 1);
+    let error =
+        NciCtsClient::decode_detail_response(&plan, StatusCode::OK, capped.as_bytes()).unwrap_err();
+    assert!(format!("{error:?}").contains("unexpected_row_count"));
+    assert_sanitized(&error, &["NCT00000001", "6546"]);
+
     let wrong = valid_detail("NCT00000002");
     let error = NciCtsClient::decode_detail_response(&plan, StatusCode::OK, &wrong).unwrap_err();
     assert!(format!("{error:?}").contains("identity_mismatch"));

@@ -122,7 +122,7 @@ impl NciCtsV2DetailResponse {
         if total == 0 && rows.is_empty() {
             return Err("not_found");
         }
-        if rows.len() != 1 {
+        if total != 1 || rows.len() != 1 {
             return Err("unexpected_row_count");
         }
         let row = rows[0].as_object().ok_or("unsupported_json")?;

@@ -14,6 +14,10 @@ TOOL = ROOT / "tools" / "check-zero-coupling.py"
 TOKEN = "bio" + "data"
 
 
+def _handoff(*words: str) -> str:
+    return "clinical " + "trial " + " ".join(words)
+
+
 def _module():
     spec = importlib.util.spec_from_file_location("zero_coupling", TOOL)
     assert spec and spec.loader
@@ -54,7 +58,37 @@ def test_tracked_text_scan_is_default_deny_and_case_insensitive(tmp_path: Path) 
     assert checker.scan_files(tmp_path, list(cases), inventory) == sorted(cases)
 
 
-def test_exact_historical_digest_passes_but_mutation_and_rename_fail(tmp_path: Path) -> None:
+def test_tracked_path_scan_rejects_forbidden_names_with_clean_contents(
+    tmp_path: Path,
+) -> None:
+    checker = _module()
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    name = "src/" + TOKEN.swapcase() + "_adapter.rs"
+    path = tmp_path / name
+    path.parent.mkdir(parents=True)
+    path.write_text("pub struct LocalTrial;", encoding="utf-8")
+    assert checker.scan_files(tmp_path, [name], inventory) == [name]
+
+
+def test_equivalent_trial_handoff_mechanisms_are_rejected(tmp_path: Path) -> None:
+    checker = _module()
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    cases = {
+        "checkout.txt": _handoff("check" + "out"),
+        "path.txt": _handoff("path", "depend" + "ency"),
+        "patch.txt": _handoff("patch", "depend" + "ency"),
+        "deferred.txt": _handoff("defer" + "red", "package"),
+        "generated.txt": _handoff("gener" + "ated", "source"),
+        "renamed.txt": _handoff("rename" + "d", "handoff"),
+    }
+    for name, content in cases.items():
+        (tmp_path / name).write_text(content, encoding="utf-8")
+    assert checker.scan_files(tmp_path, list(cases), inventory) == sorted(cases)
+
+
+def test_exact_historical_digest_passes_but_mutation_and_rename_fail(
+    tmp_path: Path,
+) -> None:
     checker = _module()
     name = "sdlc/records/known.md"
     data = f"historical {TOKEN}".encode()
@@ -70,7 +104,9 @@ def test_exact_historical_digest_passes_but_mutation_and_rename_fail(tmp_path: P
     assert checker.scan_files(tmp_path, [renamed], inventory)
 
 
-def test_archive_scan_rejects_packaged_only_text_and_skips_binary(tmp_path: Path) -> None:
+def test_archive_scan_rejects_packaged_only_text_and_skips_binary(
+    tmp_path: Path,
+) -> None:
     checker = _module()
     archive_path = tmp_path / "package.crate"
     with tarfile.open(archive_path, "w:gz") as archive:
@@ -82,6 +118,20 @@ def test_archive_scan_rejects_packaged_only_text_and_skips_binary(tmp_path: Path
             info.size = len(data)
             archive.addfile(info, io.BytesIO(data))
     assert checker.scan_archive(archive_path) == ["pkg/only-in-package.txt"]
+
+
+def test_archive_scan_rejects_forbidden_member_name_with_clean_contents(
+    tmp_path: Path,
+) -> None:
+    checker = _module()
+    archive_path = tmp_path / "package.crate"
+    name = "pkg/generated-" + TOKEN.swapcase() + ".rs"
+    data = b"pub struct LocalTrial;"
+    with tarfile.open(archive_path, "w:gz") as archive:
+        info = tarfile.TarInfo(name)
+        info.size = len(data)
+        archive.addfile(info, io.BytesIO(data))
+    assert checker.scan_archive(archive_path) == [name]
 
 
 def test_repository_historical_inventory_is_exact_and_current() -> None:

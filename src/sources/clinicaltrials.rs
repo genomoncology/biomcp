@@ -307,6 +307,10 @@ impl ClinicalTrialsClient {
         }
         if has("locations") {
             add(&[
+                "CentralContactEMail",
+                "CentralContactName",
+                "CentralContactPhone",
+                "CentralContactRole",
                 "LocationCity",
                 "LocationContactEMail",
                 "LocationContactName",

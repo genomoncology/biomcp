@@ -144,5 +144,33 @@ None. The required provider fixtures, product contracts, historical implementati
 
 ## Review
 
-- Design review: second REQUEST CHANGES addressed; re-review pending
-- Code review: pending
+- Design review: accepted before implementation.
+- Initial implementation review: `6baa38452acaed1bf482f26de36fbdbd73e03036`
+  received REQUEST CHANGES; its findings are remediated in this reviewed
+  pre-closure branch.
+- Hosted canonical Linux, `full-features`, `windows-contracts`, and
+  `repository-contracts` checks: pending for the reviewed pre-closure SHA.
+  This initial record does not claim hosted success.
+
+## Initial completion status
+
+BioMCP now owns the strict trial values, codecs, request plans, and provider
+adapters it uses. The runtime graph, source package, and active source surfaces
+have no BioData dependency or handoff. The completed records for 1169, 1170,
+1171, 1175, 1176, 1177, 1178, 1180, and 1181 remain unedited historical
+evidence, while their BioData-dependent implementation decisions are
+superseded by 1183. Ticket 1182 is archived and its NCI public-boundary proofs
+are absorbed here. The stale active copies of 1180 and 1181 are removed; 1172
+remains absent; unrelated work 1173, 1174, and 1179 remains unchanged.
+
+Local Linux evidence on the reviewed tree is green: `make lint`, `make test`
+(3,327 Rust tests and 920 Python tests, with documented skips), `make spec`,
+`make full-feature-check`, and the complete `make release-gate`. The package
+contract reports exactly 1,300 source members and proves archive ratcheting plus
+a fresh offline extracted compile. The network-denied metadata, tree, package,
+and extracted-check commands also pass. The exact reviewed pre-closure SHA will
+be supplied by the commit containing this record and implementation.
+
+Hosted results remain explicitly pending. Only a later record-only closure
+commit may add the reviewed SHA and green job URLs under the bounded closure
+rule above.

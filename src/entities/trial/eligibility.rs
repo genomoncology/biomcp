@@ -561,26 +561,16 @@ pub(crate) mod strict_json {
     struct Seed {
         depth: usize,
         events: Rc<Cell<usize>>,
+        count_event: bool,
     }
 
     impl Seed {
-        fn child<E: serde::de::Error>(&self) -> Result<Self, E> {
-            if self.depth >= MAX_DEPTH {
-                return Err(E::custom("__resource_limit__"));
-            }
-            let events = self
-                .events
-                .get()
-                .checked_add(1)
-                .ok_or_else(|| E::custom("__resource_limit__"))?;
-            if events > MAX_EVENTS {
-                return Err(E::custom("__resource_limit__"));
-            }
-            self.events.set(events);
-            Ok(Self {
+        fn child(&self) -> Self {
+            Self {
                 depth: self.depth + 1,
                 events: self.events.clone(),
-            })
+                count_event: true,
+            }
         }
         fn string<E: serde::de::Error>(&self, value: &str) -> Result<(), E> {
             if value.chars().take(MAX_STRING_CHARS + 1).count() > MAX_STRING_CHARS {
@@ -594,6 +584,20 @@ pub(crate) mod strict_json {
     impl<'de> DeserializeSeed<'de> for Seed {
         type Value = ();
         fn deserialize<D: serde::Deserializer<'de>>(self, deserializer: D) -> Result<(), D::Error> {
+            if self.depth > MAX_DEPTH {
+                return Err(serde::de::Error::custom("__resource_limit__"));
+            }
+            if self.count_event {
+                let events = self
+                    .events
+                    .get()
+                    .checked_add(1)
+                    .ok_or_else(|| serde::de::Error::custom("__resource_limit__"))?;
+                if events > MAX_EVENTS {
+                    return Err(serde::de::Error::custom("__resource_limit__"));
+                }
+                self.events.set(events);
+            }
             deserializer.deserialize_any(self)
         }
     }
@@ -629,7 +633,7 @@ pub(crate) mod strict_json {
         }
         fn visit_seq<A: SeqAccess<'de>>(self, mut sequence: A) -> Result<(), A::Error> {
             let mut count = 0;
-            while sequence.next_element_seed(self.child()?)?.is_some() {
+            while sequence.next_element_seed(self.child())?.is_some() {
                 count += 1;
                 if count > MAX_COLLECTION_ITEMS {
                     return Err(serde::de::Error::custom("__resource_limit__"));
@@ -640,27 +644,30 @@ pub(crate) mod strict_json {
         fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<(), A::Error> {
             let mut keys = HashSet::new();
             let mut count = 0;
+            let mut duplicate = false;
             while let Some(key) = map.next_key::<String>()? {
                 self.string::<A::Error>(&key)?;
                 count += 1;
                 if count > MAX_OBJECT_MEMBERS {
                     return Err(serde::de::Error::custom("__resource_limit__"));
                 }
-                if !keys.insert(key) {
-                    return Err(serde::de::Error::custom("__duplicate_member__"));
-                }
-                map.next_value_seed(self.child()?)?;
+                duplicate |= !keys.insert(key);
+                map.next_value_seed(self.child())?;
             }
-            Ok(())
+            if duplicate {
+                Err(serde::de::Error::custom("__duplicate_member__"))
+            } else {
+                Ok(())
+            }
         }
         fn visit_newtype_struct<D: serde::Deserializer<'de>>(
             self,
             deserializer: D,
         ) -> Result<(), D::Error> {
-            self.child()?.deserialize(deserializer)
+            self.child().deserialize(deserializer)
         }
         fn visit_some<D: serde::Deserializer<'de>>(self, deserializer: D) -> Result<(), D::Error> {
-            self.child()?.deserialize(deserializer)
+            self.child().deserialize(deserializer)
         }
         fn visit_bytes<E: serde::de::Error>(self, _: &[u8]) -> Result<(), E> {
             Err(E::custom("__unsupported_json__"))
@@ -678,7 +685,8 @@ pub(crate) mod strict_json {
         deserializer.disable_recursion_limit();
         let seed = Seed {
             depth: 0,
-            events: Rc::new(Cell::new(1)),
+            events: Rc::new(Cell::new(0)),
+            count_event: false,
         };
         seed.deserialize(&mut deserializer)
             .and_then(|()| deserializer.end())
@@ -709,6 +717,9 @@ pub(crate) mod strict_json {
         #[test]
         fn rejects_trailing_and_oversized_input() {
             assert_eq!(validate(b"{}{}"), Err(StrictJsonError::Malformed));
+            let mut exact = b"[]".to_vec();
+            exact.resize(MAX_BYTES, b' ');
+            assert_eq!(validate(&exact), Ok(()));
             assert_eq!(
                 validate(&vec![b' '; MAX_BYTES + 1]),
                 Err(StrictJsonError::Resource)
@@ -732,6 +743,68 @@ pub(crate) mod strict_json {
                 validate(over_limit.as_bytes()),
                 Err(StrictJsonError::Resource)
             );
+        }
+
+        fn null_array(items: usize) -> Vec<u8> {
+            let mut json = Vec::with_capacity(items.saturating_mul(5) + 2);
+            json.push(b'[');
+            for index in 0..items {
+                if index != 0 {
+                    json.push(b',');
+                }
+                json.extend_from_slice(b"null");
+            }
+            json.push(b']');
+            json
+        }
+        fn null_object(members: usize, duplicate_keys: bool) -> Vec<u8> {
+            let mut json = Vec::with_capacity(members.saturating_mul(16) + 2);
+            json.push(b'{');
+            for index in 0..members {
+                if index != 0 {
+                    json.push(b',');
+                }
+                let key = if duplicate_keys { 0 } else { index };
+                json.extend_from_slice(format!("\"{key}\":null").as_bytes());
+            }
+            json.push(b'}');
+            json
+        }
+        #[test]
+        fn collection_element_limit_is_inclusive() {
+            assert_eq!(validate(&null_array(MAX_COLLECTION_ITEMS)), Ok(()));
+            assert_eq!(
+                validate(&null_array(MAX_COLLECTION_ITEMS + 1)),
+                Err(StrictJsonError::Resource)
+            );
+        }
+        #[test]
+        fn object_member_limit_is_inclusive_and_counts_duplicates() {
+            assert_eq!(validate(&null_object(MAX_OBJECT_MEMBERS, false)), Ok(()));
+            assert_eq!(
+                validate(&null_object(MAX_OBJECT_MEMBERS + 1, false)),
+                Err(StrictJsonError::Resource)
+            );
+            assert_eq!(
+                validate(&null_object(MAX_OBJECT_MEMBERS, true)),
+                Err(StrictJsonError::Unsupported)
+            );
+            assert_eq!(
+                validate(&null_object(MAX_OBJECT_MEMBERS + 1, true)),
+                Err(StrictJsonError::Resource)
+            );
+        }
+        #[test]
+        fn normalized_event_limit_is_inclusive() {
+            let wrap = |items: usize| {
+                let mut json = Vec::with_capacity(items.saturating_mul(5) + 4);
+                json.push(b'[');
+                json.extend_from_slice(&null_array(items));
+                json.push(b']');
+                json
+            };
+            assert_eq!(validate(&wrap(MAX_EVENTS - 1)), Ok(()));
+            assert_eq!(validate(&wrap(MAX_EVENTS)), Err(StrictJsonError::Resource));
         }
     }
 }

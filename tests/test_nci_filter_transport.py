@@ -63,9 +63,15 @@ def test_rejected_nci_filters_never_reach_local_transport() -> None:
 
 
 def test_nci_detail_executes_the_strict_local_plan_through_the_real_cli() -> None:
-    response = (
-        REPO_ROOT / "testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
-    ).read_bytes()
+    receipted_response = json.loads(
+        (
+            REPO_ROOT / "testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
+        ).read_text(encoding="utf-8")
+    )
+    # The receipt is a broad search capture. The detail plan is an exact filtered
+    # size-one request, so its response envelope reports the one matching row.
+    receipted_response["total"] = 1
+    response = json.dumps(receipted_response, separators=(",", ":")).encode()
     fields = [
         "nci_id",
         "nct_id",
@@ -84,6 +90,7 @@ def test_nci_detail_executes_the_strict_local_plan_through_the_real_cli() -> Non
         "eligibility",
         "brief_summary",
     ]
+
     class DetailHandler(BaseHTTPRequestHandler):
         request_paths: list[str] = []
         queries: list[list[tuple[str, str]]] = []
@@ -151,7 +158,9 @@ def test_nci_detail_executes_the_strict_local_plan_through_the_real_cli() -> Non
     assert "Eligible Ages: 18 Years to Any age" in markdown.stdout
     assert "Healthy Subjects: No" in markdown.stdout
     criteria = json.loads(response)["data"][0]["eligibility"]["unstructured"]
-    normalized_markdown = "\n".join(line.rstrip() for line in markdown.stdout.splitlines())
+    normalized_markdown = "\n".join(
+        line.rstrip() for line in markdown.stdout.splitlines()
+    )
     prior = -1
     for row in sorted(criteria, key=lambda item: item["display_order"]):
         description = "\n".join(
