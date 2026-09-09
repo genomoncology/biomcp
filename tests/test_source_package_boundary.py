@@ -13,7 +13,7 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
-MAX_PACKAGE_FILES = 1_303
+MAX_PACKAGE_FILES = 1_305
 BIODATA_REVISION = "7fa796c88fe4d4143eba28a883a9bc8f6b3ca893"
 
 

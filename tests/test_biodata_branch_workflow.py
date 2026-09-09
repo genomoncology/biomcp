@@ -32,6 +32,16 @@ PINNED_VERSIONS = {
     "BUBBLEWRAP_VERSION": "0.9.0-1ubuntu0.1",
     "APPARMOR_VERSION": "4.0.1really4.0.1-0ubuntu0.24.04.7",
 }
+STEP_NAMES = (
+    "Check out the exact revision",
+    "Install pinned Rust",
+    "Install pinned Python",
+    "Install pinned uv",
+    "Install the offline sandbox",
+    "Prepare the Python development environment",
+    "Build BioMCP without default features",
+    "Run focused BioData verification",
+)
 BROAD_OR_EXTERNAL_COMMANDS = (
     "make lint",
     "make test",
@@ -110,8 +120,8 @@ def _violations(workflow_text: str, runner: str) -> list[str]:
     if "if" in job or job.get("continue-on-error") is not None:
         violations.append("the focused job must not be skipped or made non-blocking")
     steps = job.get("steps", [])
-    if not steps:
-        violations.append("the focused job must contain steps")
+    if tuple(step.get("name") for step in steps) != STEP_NAMES:
+        violations.append("the focused job must keep every required step in order")
     for step in steps:
         if "if" in step or step.get("continue-on-error") is not None:
             violations.append("focused steps must not be skipped or made non-blocking")
@@ -130,6 +140,63 @@ def _violations(workflow_text: str, runner: str) -> list[str]:
     )
     if checkout.get("with", {}).get("persist-credentials") is not False:
         violations.append("checkout credentials must not persist")
+    rust = next(
+        (
+            step
+            for step in steps
+            if str(step.get("uses", "")).startswith("dtolnay/rust-toolchain@")
+        ),
+        {},
+    )
+    python = next(
+        (
+            step
+            for step in steps
+            if str(step.get("uses", "")).startswith("actions/setup-python@")
+        ),
+        {},
+    )
+    uv = next(
+        (
+            step
+            for step in steps
+            if str(step.get("uses", "")).startswith("astral-sh/setup-uv@")
+        ),
+        {},
+    )
+    if rust.get("with") != {"toolchain": PINNED_VERSIONS["RUST_TOOLCHAIN"]}:
+        violations.append("the Rust setup must use the exact accepted version")
+    if python.get("with") != {"python-version": PINNED_VERSIONS["PYTHON_VERSION"]}:
+        violations.append("the Python setup must use the exact accepted version")
+    if uv.get("with") != {"version": PINNED_VERSIONS["UV_VERSION"]}:
+        violations.append("the uv setup must use the exact accepted version")
+
+    runs = {step.get("name"): step.get("run", "") for step in steps}
+    sandbox = runs.get("Install the offline sandbox", "")
+    for required in (
+        '"bubblewrap=$BUBBLEWRAP_VERSION"',
+        '"apparmor=$APPARMOR_VERSION"',
+        '"apparmor-profiles=$APPARMOR_VERSION"',
+        "/usr/share/apparmor/extra-profiles/bwrap-userns-restrict",
+        "/etc/apparmor.d/bwrap-userns-restrict",
+        "apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict",
+        "sysctl -n kernel.apparmor_restrict_unprivileged_userns",
+        "tools/run-offline -- true",
+    ):
+        if required not in sandbox:
+            violations.append(f"offline sandbox setup must retain: {required}")
+    if runs.get("Prepare the Python development environment") != (
+        "uv sync --extra dev --locked"
+    ):
+        violations.append(
+            "the workflow must prepare the locked development environment"
+        )
+    if runs.get("Build BioMCP without default features") != (
+        "cargo build --locked --no-default-features --bin biomcp"
+    ):
+        violations.append("the workflow must build one no-default-features binary")
+    if runs.get("Run focused BioData verification") != "tools/check-biodata-1.0":
+        violations.append("the workflow must invoke only the focused runner")
 
     combined = f"{workflow_text}\n{runner}".lower()
     for command in BROAD_OR_EXTERNAL_COMMANDS:
@@ -153,6 +220,14 @@ def _violations(workflow_text: str, runner: str) -> list[str]:
         violations.append("runner temporary storage must stay in the worktree")
     if "cargo build" in runner or "cargo run" in runner:
         violations.append("runner must require an already-built binary")
+    if '[[ ! -x "$biomcp_bin" ]]' not in runner:
+        violations.append("runner must reject a missing or non-executable binary")
+    if runner.find("tools/check-biodata-boundary.py") > runner.find(
+        "tools/run-offline"
+    ):
+        violations.append(
+            "runner must check the ownership boundary before product tests"
+        )
     if _runner_test_files(runner) != TEST_FILES:
         violations.append("runner must select exactly the five accepted test files")
     return violations
@@ -172,6 +247,8 @@ def test_focused_workflow_and_runner_match_the_accepted_contract() -> None:
         ("workflow", "persist-credentials: false", "persist-credentials: true"),
         ("workflow", next(iter(PINNED_ACTIONS)), "actions/checkout@v4"),
         ("workflow", "RUST_TOOLCHAIN: 1.93.1", "RUST_TOOLCHAIN: stable"),
+        ("workflow", "toolchain: 1.93.1", "toolchain: stable"),
+        ("workflow", "version: 0.8.0", "version: latest"),
         ("workflow", "timeout-minutes: 30", "timeout-minutes: 45"),
         ("workflow", f"branches: [{BRANCH}]", "branches: [main]"),
         ("workflow", "runs-on: ubuntu-24.04", "if: false\n    runs-on: ubuntu-24.04"),
@@ -194,6 +271,13 @@ def test_focused_workflow_and_runner_match_the_accepted_contract() -> None:
             "uv sync --extra dev --locked",
             "uv sync --extra dev --locked\n          uv publish",
         ),
+        ("workflow", "tools/run-offline -- true", "true"),
+        (
+            "workflow",
+            "cargo build --locked --no-default-features --bin biomcp",
+            "true",
+        ),
+        ("runner", '[[ ! -x "$biomcp_bin" ]]', '[[ -x "$biomcp_bin" ]]'),
     ),
 )
 def test_representative_mutations_are_rejected(target: str, old: str, new: str) -> None:
