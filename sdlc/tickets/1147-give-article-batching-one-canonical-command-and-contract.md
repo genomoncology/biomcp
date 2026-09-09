@@ -16,7 +16,9 @@ word order.
 
 ## Current facts
 
-Reconfirmed at `e2e08701ab9790ec5cc40a6b33eb51b9f5decafe`:
+Reconfirmed on current `main` at
+`2b3129f0e52fcc56f5b92d571be6b7c1956344c1` after BioMCP regained local
+ownership of its 0.9 trial code:
 
 - `src/cli/system/mod.rs::BatchArgs` parses
   `biomcp batch <entity> <one-comma-separated-argument> [--sections ...]`.
@@ -75,8 +77,11 @@ current grammar and behavior.
 existing comma-separated article section vocabulary and ordinary article
 section semantics. Supplying `--sections` with `--mode compact`, including an
 empty value, is rejected before provider work. Compact mode does not silently
-ignore sections. Existing section behavior for non-article batch entities is
-unchanged.
+ignore sections. Canonical detail validates every normalized section against
+that closed vocabulary during batch preflight; an unknown or malformed section
+is an exit-2 invalid argument with zero item polling, provider/client/cache
+construction, or filesystem work. Existing section behavior for non-article
+batch entities is unchanged.
 
 The compatibility grammar remains exactly:
 
@@ -85,9 +90,12 @@ biomcp article batch <id1> <id2> ...
 ```
 
 It is compact mode and gains no `--mode`, `--sections`, pagination, or comma
-list interpretation. Except for its help text, every previously valid call
-must preserve stdout bytes, stderr bytes, JSON formatting, input echo, and exit
-status exactly. Execution prints no deprecation or migration warning. Only
+list interpretation. Except for its help text and the intentional rejection of
+an ID longer than 512 UTF-8 bytes, every previously valid call must preserve
+stdout bytes, deterministic diagnostic bytes, JSON formatting, input echo, and
+exit status exactly. Timestamped tracing output is not a byte-stable interface;
+its provider identity, sanitized warning text, count, and ordering relative to
+other warnings remain stable. Execution prints no deprecation or migration warning. Only
 `biomcp article batch --help` identifies the route as compatibility syntax and
 shows the copyable replacement
 `biomcp batch article <id1,id2,...> --mode compact`.
@@ -169,17 +177,28 @@ opening the HTTP cache, starting a retry sleep, or polling an item future:
 - canonical compact accepts 1–20 comma-separated IDs;
 - canonical detail accepts 1–10 comma-separated IDs;
 - compatibility compact accepts 1–20 space-separated IDs as it does today;
-- after the route's existing trimming rules, every accepted ID is nonempty and
-  at most 512 UTF-8 bytes; one invalid ID rejects the whole command with exit 2
-  and zero provider requests; and
+- every canonical ID retained after comma parsing is nonempty and at most 512
+  UTF-8 bytes; one overlong canonical ID rejects the whole command with exit 2
+  and zero provider requests;
+- compatibility preserves every positional value exactly as today, including
+  an explicitly supplied empty value; its only new per-ID validation is the
+  512-byte limit, applied without trimming or rewriting the echoed value; and
 - unsupported `--mode`, `--sections`, `--source`, pagination-like flags, and
   over-limit input are rejected before providers.
 
-Canonical comma parsing preserves the current `batch` behavior for valid
-lists: trim each component and ignore empty components, then enforce the
-post-parse lower and upper count. Compatibility passes each positional value
-through exactly as today; the new all-ID length preflight is the only added
-input safety check and must not rewrite the echoed value.
+Canonical comma parsing preserves the current `batch` behavior: trim each
+component, ignore empty components, then enforce the post-parse lower and upper
+count and the 512-byte limit. Compatibility passes each positional value
+through exactly as today; the new all-ID byte-length preflight is its only
+added input safety check. Do not make canonical normalization retroactively
+reject, trim, drop, or rewrite a compatibility value.
+
+The compatibility length guard is an explicit, narrow safety break: a
+513-byte positional value that previously reached settlement and produced an
+exit-1 item error now fails preflight with exit 2 and zero work. Baseline and
+post-change goldens must pin both sides of that intentional change without
+generalizing it to shorter, empty, whitespace-only, or comma-containing
+positional values.
 
 Settlement owns at most ten live item futures at once in either mode. Pending
 items enter in request order; completion order never changes output order.
@@ -215,10 +234,13 @@ from the baseline executable. Afterward prove:
    commas/whitespace/empty components, unsupported pagination flags, and
    `--source`. Limit and length failures must expose request count zero.
 2. Canonical compact and compatibility compact have identical full stdout,
-   stderr, JSON bytes, and exit codes for ordered success, duplicates, mixed
-   failure, all failure, optional Semantic Scholar success, and fail-open
-   Semantic Scholar failure. The committed baseline goldens make the
-   compatibility claim independent of shared implementation.
+   deterministic diagnostic bytes, JSON bytes, and exit codes for ordered
+   success, duplicates, mixed failure, all failure, and optional Semantic
+   Scholar success. For fail-open Semantic Scholar failure, compare exact
+   stdout/JSON/exit behavior and assert the same sanitized provider warning,
+   warning count, and relative order while ignoring formatter timestamps. The
+   committed baseline goldens make the compatibility claim independent of
+   shared implementation.
 3. Canonical detail default and explicit-detail JSON contain the ordinary
    article projection and `_meta`; Markdown contains the exact wrapper and
    unmodified ordinary article rendering. Section fixtures prove Semantic
@@ -246,6 +268,29 @@ from the baseline executable. Afterward prove:
    green. Package inventory/quality ratchets remain within their existing
    limits; implementation must split modules instead of weakening ratchets.
 
+The preflight matrix separately freezes canonical `a,,b`, empty-only,
+whitespace-only, 512-byte, and 513-byte components, plus compatibility empty,
+whitespace-only, literal-comma, 512-byte, and 513-byte positional arguments.
+For compatibility, compare baseline and new stdout/stderr/JSON/input/exit bytes
+for every case up to 512 bytes and separately prove the intentional 513-byte
+exit-1-to-exit-2 change with zero provider/cache work. For detail mode, include
+unknown, empty, duplicated, and mixed-validity section lists and prove invalid
+lists poll no item future.
+
+Cancellation proof must use the actual injected provider middleware
+retry/backoff future rather than an unrelated sleeping future: start a batch
+whose item has entered retry backoff, drop the CLI or raw-MCP batch future,
+advance paused time past the retry interval, and assert no later provider
+request, cache operation, task, or permit remains.
+
+On the current base, `src/cli/article/dispatch.rs` is 696 lines and the
+preserved WIP would raise it to the 700-line CLI ceiling. Finish this ticket at
+or below 696 lines by consolidating the added routing at its existing owner or
+moving shared preflight/settlement logic into the existing system-batch owner;
+do not consume the four-line headroom needed by the dependent article work.
+The source package remains exactly 1,300 paths, and ticket 1183's external-
+project coupling ratchet remains unchanged and green.
+
 Run focused Rust CLI/entity/renderer/MCP tests, the affected Python
 docs/skills/MCP contracts, and the affected article and skills mustmatch specs,
 then the repository's standard `make lint`, `make test`, and `make spec` gates.
@@ -269,6 +314,17 @@ reference pivots, change provider retry/cache/rate-limit policy, or change
 historical records.
 
 ## Review
+
+The 2026-09-09 current-main refresh resolves the prior contradiction between a
+global nonempty-ID statement and the stronger compatibility promise. Canonical
+comma parsing ignores empty components; compatibility retains its existing
+positional semantics through 512 bytes and gains one explicitly documented
+overlength safety break. It also narrows timestamped warning equivalence,
+requires route-specific normalization and length goldens, moves detail-section
+validation into preflight, strengthens cancellation proof through real retry
+middleware, and freezes the current dispatch and package ceilings. This
+refresh requires fresh independent design acceptance before implementation
+resumes.
 
 Implementation starts only after fresh design acceptance. Code review must
 compare compatibility bytes to the pre-change goldens, inspect preflight
