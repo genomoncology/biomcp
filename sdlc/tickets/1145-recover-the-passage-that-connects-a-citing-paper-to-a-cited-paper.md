@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 5
-deps: [1144]
+deps: [1144, 1146]
 ---
 
 # Recover the passage that connects a citing paper to a cited paper
@@ -344,12 +344,13 @@ passage sub-block with consecutive one-based headings and exactly one blank
 line between blocks. A resolved label is the existing
 `article_related_label`: PMID, then DOI, then arXiv ID, then Semantic Scholar
 paper ID, with title only if none exists. A blank section path or marker
-renders the code span for `-`. Output ends in one newline. A shared new
-evidence/edge code-span wrapper uses a delimiter one backtick longer than the
-longest run in the value and the standard padding needed for leading/trailing
-backticks or spaces; it does not alter 1144's existing root-continuation
-rendering. Thus hostile provider/JATS text cannot add tables, headings, links,
-HTML, or commands.
+renders the code span for `-`. Output ends in one newline. All evidence and
+edge values render through the adaptive `markdown_code_span` renderer in
+`src/render/markdown/support.rs`, as upgraded by ticket 1146. It uses a
+delimiter one backtick longer than the longest run in the value and the
+standard padding needed for leading/trailing backticks or spaces; it does not
+alter 1144's existing root-continuation rendering. Thus hostile provider/JATS
+text cannot add tables, headings, links, HTML, or commands.
 
 Tests pin the complete Markdown output byte-for-byte for every state and
 separately prove its values agree with the JSON projection. No `Debug`
@@ -374,7 +375,9 @@ continuation array and never receives evidence commands. Instead, a graph edge
 whose contexts contain no nonblank value gains an optional edge-local
 `_meta.next_commands` containing exactly the evidence command; it is absent on
 an edge with useful provider context. In Markdown, only that blank edge's
-existing `-` Context cell changes to `Try: <safe variable-length code span>`.
+existing `-` Context cell changes to
+`Try: <safe variable-length code span>`, rendered by the same shared
+`markdown_code_span` renderer.
 The graph heading, rows and cells with nonblank context, edge order and
 duplicates, pagination sentences, empty-page row, and `Next:` footer remain
 byte-for-byte as landed by 1144. Update 1144's exact graph matrix only for this
