@@ -126,9 +126,9 @@ fn search_plan_includes_interventions_and_biomarkers_when_present() {
 }
 
 #[test]
-fn get_plan_executes_the_exact_biodata_detail_plan_with_one_credential_header() {
-    let biodata_plan = biodata::NciCtsV2DetailPlan::new("nct01234567", true).unwrap();
-    let plan = NciCtsClient::get_plan("test-key", &biodata_plan);
+fn get_plan_executes_the_exact_local_detail_plan_with_one_credential_header() {
+    let detail_plan = super::super::NciCtsV2DetailPlan::new("nct01234567", true).unwrap();
+    let plan = NciCtsClient::get_plan("test-key", &detail_plan);
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "trials");
     assert_eq!(plan.header_value("X-API-KEY"), Some("test-key"));
@@ -139,7 +139,7 @@ fn get_plan_executes_the_exact_biodata_detail_plan_with_one_credential_header() 
             .count(),
         1
     );
-    let expected = biodata_plan
+    let expected = detail_plan
         .query_pairs()
         .into_iter()
         .map(|(name, value)| (name.to_owned(), value.to_owned()))

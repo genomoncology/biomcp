@@ -1,6 +1,6 @@
+pub use crate::entities::trial::ClinicalTrialArmId;
+pub use crate::entities::trial::{ClinicalTrialArmRelationshipError, TrialDesignError};
 use std::fmt;
-
-pub use crate::entities::trial::TrialDesignError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SourceProvider {

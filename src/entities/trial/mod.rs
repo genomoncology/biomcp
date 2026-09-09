@@ -2,8 +2,9 @@
 
 use std::collections::HashMap;
 
-use biodata::{ClinicalTrialEligibility, ClinicalTrialReference};
 use serde::{Deserialize, Serialize};
+
+use self::shared::{ClinicalTrialEligibility, ClinicalTrialReference};
 
 use crate::error::BioMcpError;
 
@@ -12,6 +13,8 @@ mod documents;
 mod eligibility;
 mod get;
 mod search;
+pub(crate) use self::design::shared;
+pub(crate) use self::eligibility::strict_json;
 #[cfg(test)]
 mod test_support;
 
@@ -24,6 +27,7 @@ pub use self::get::get;
 #[cfg(test)]
 pub(crate) use self::get::product_design;
 pub use self::search::{count_all, search, search_page};
+pub use self::shared::{ClinicalTrialArmId, ClinicalTrialArmRelationshipError};
 
 pub(crate) fn validate_search_filters(filters: &TrialSearchFilters) -> Result<(), BioMcpError> {
     search::validate_trial_search(filters).map(|_| ())
@@ -613,11 +617,61 @@ pub struct TrialOutcome {
 }
 
 pub(crate) mod reference_wire {
-    use biodata::ClinicalTrialReference;
+    use super::shared::{ClinicalTrialReference, ExtensibleCode};
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use serde_json::value::RawValue;
 
     const INVALID_REFERENCE: &str = "invalid clinical trial reference";
+
+    fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+    where
+        D: Deserializer<'de>,
+        T: Deserialize<'de>,
+    {
+        Option::<T>::deserialize(deserializer)
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct CodeWire {
+        authority: String,
+        code: String,
+        #[serde(deserialize_with = "required_nullable")]
+        display: Option<String>,
+        #[serde(deserialize_with = "required_nullable")]
+        vocabulary_version: Option<String>,
+        #[serde(deserialize_with = "required_nullable")]
+        recognized_meaning: Option<String>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct ReferenceWire {
+        #[serde(deserialize_with = "required_nullable")]
+        pmid: Option<String>,
+        #[serde(deserialize_with = "required_nullable")]
+        citation: Option<String>,
+        #[serde(deserialize_with = "required_nullable")]
+        source_type: Option<CodeWire>,
+    }
+
+    fn decode(input: &[u8]) -> Result<ClinicalTrialReference, ()> {
+        super::strict_json::validate(input).map_err(|_| ())?;
+        let value: ReferenceWire = serde_json::from_slice(input).map_err(|_| ())?;
+        let source_type = value
+            .source_type
+            .map(|code| {
+                ExtensibleCode::new(
+                    code.authority,
+                    code.code,
+                    code.display,
+                    code.vocabulary_version,
+                    code.recognized_meaning,
+                )
+            })
+            .transpose()?;
+        ClinicalTrialReference::new(value.pmid, value.citation, source_type)
+    }
 
     #[derive(Serialize)]
     pub(crate) struct View<'a> {
@@ -659,8 +713,7 @@ pub(crate) mod reference_wire {
         let encoded = references
             .iter()
             .map(|reference| {
-                let json = reference
-                    .to_json()
+                let json = serde_json::to_string(reference)
                     .map_err(|_| serde::ser::Error::custom(INVALID_REFERENCE))?;
                 RawValue::from_string(json)
                     .map_err(|_| serde::ser::Error::custom(INVALID_REFERENCE))
@@ -677,7 +730,7 @@ pub(crate) mod reference_wire {
                 values
                     .into_iter()
                     .map(|value| {
-                        ClinicalTrialReference::from_json_bytes(value.get().as_bytes())
+                        decode(value.get().as_bytes())
                             .map_err(|_| serde::de::Error::custom(INVALID_REFERENCE))
                     })
                     .collect()

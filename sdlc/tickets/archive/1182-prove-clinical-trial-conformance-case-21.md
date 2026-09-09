@@ -4,6 +4,8 @@ priority: 10
 ---
 # Prove clinical-trial conformance case 21 at the product boundary
 
+Archived as superseded by ticket 1183. Its local NCI public-boundary proof remains part of ticket 1183 acceptance; its former cross-repository handoff is no longer active.
+
 ## Goal
 
 Focused, stable tests prove that BioMCP turns recorded NCI structured eligibility into complete JSON and readable Markdown. A malformed present eligibility value reaches the caller as a sanitized error.

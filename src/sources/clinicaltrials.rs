@@ -1,12 +1,15 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use biodata::{
-    ClinicalTrialsGovApiV2DetailPlan, ClinicalTrialsGovApiV2Limits, ClinicalTrialsGovApiV2Response,
-};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::entities::trial::shared::{
+    Bound, ClinicalTrialAgeBound, ClinicalTrialAgeRange, ClinicalTrialArm, ClinicalTrialArmId,
+    ClinicalTrialArmInterventionAssignment, ClinicalTrialArms, ClinicalTrialEligibility,
+    ClinicalTrialIntervention, ClinicalTrialInterventionId, ClinicalTrialReference,
+    ClinicalTrialSection, ExtensibleCode, ParseOutcome, TemporalParser,
+};
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
@@ -25,9 +28,46 @@ pub struct ClinicalTrialsClient {
 }
 
 #[derive(Debug)]
-pub(crate) struct CtGovBiodataDetailResponse {
+pub(crate) struct CtGovDetailResponse {
     pub(crate) study: CtGovStudy,
-    pub(crate) shared: ClinicalTrialsGovApiV2Response,
+    pub(crate) shared: CtGovProjection,
+}
+
+#[derive(Debug)]
+pub(crate) struct CtGovProjection {
+    interventions: ClinicalTrialSection<Vec<ClinicalTrialIntervention>>,
+    arms: ClinicalTrialSection<ClinicalTrialArms>,
+    eligibility: ClinicalTrialSection<ClinicalTrialEligibility>,
+    references: ClinicalTrialSection<Vec<ClinicalTrialReference>>,
+}
+
+impl CtGovProjection {
+    pub(crate) fn interventions(&self) -> &ClinicalTrialSection<Vec<ClinicalTrialIntervention>> {
+        &self.interventions
+    }
+    pub(crate) fn arms(&self) -> &ClinicalTrialSection<ClinicalTrialArms> {
+        &self.arms
+    }
+    pub(crate) fn eligibility(&self) -> &ClinicalTrialSection<ClinicalTrialEligibility> {
+        &self.eligibility
+    }
+    pub(crate) fn references(&self) -> &ClinicalTrialSection<Vec<ClinicalTrialReference>> {
+        &self.references
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct CtGovDetailPlan {
+    identity: String,
+    fields: String,
+}
+impl CtGovDetailPlan {
+    pub(crate) fn relative_path(&self) -> String {
+        format!("studies/{}", self.identity)
+    }
+    pub(crate) fn field_query(&self) -> &str {
+        &self.fields
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -191,10 +231,10 @@ impl ClinicalTrialsClient {
         self.get_json(req).await
     }
 
-    pub(crate) fn biodata_detail_plan(
+    pub(crate) fn detail_plan(
         nct_id: &str,
         sections: &[String],
-    ) -> Result<ClinicalTrialsGovApiV2DetailPlan, BioMcpError> {
+    ) -> Result<CtGovDetailPlan, BioMcpError> {
         let all = sections
             .iter()
             .any(|value| value.trim().eq_ignore_ascii_case("all"));
@@ -203,26 +243,96 @@ impl ClinicalTrialsClient {
                 .iter()
                 .any(|value| value.trim().eq_ignore_ascii_case(name))
         };
-        let mut plan = ClinicalTrialsGovApiV2DetailPlan::new(nct_id, has("references"))
-            .map_err(|_| BioMcpError::InternalProcessing)?;
+        let mut fields = [
+            "BriefSummary",
+            "BriefTitle",
+            "CompletionDate",
+            "Condition",
+            "EnrollmentCount",
+            "InterventionDescription",
+            "InterventionName",
+            "InterventionOtherName",
+            "InterventionType",
+            "LeadSponsorName",
+            "NCTId",
+            "OverallStatus",
+            "Phase",
+            "StartDate",
+            "StudyType",
+            "WhyStopped",
+        ]
+        .into_iter()
+        .collect::<std::collections::BTreeSet<_>>();
+        let mut add = |values: &[&'static str]| fields.extend(values.iter().copied());
+        if has("references") {
+            add(&["ReferenceCitation", "ReferencePMID", "ReferenceType"]);
+        }
         if has("arms") {
-            plan = plan.with_arms();
+            add(&[
+                "ArmGroupDescription",
+                "ArmGroupInterventionName",
+                "ArmGroupLabel",
+                "ArmGroupType",
+                "InterventionArmGroupLabel",
+            ]);
         }
         if sections.iter().all(|value| {
             let value = value.trim();
             value.is_empty() || value == "--json" || value == "-j"
         }) || has("eligibility")
         {
-            plan = plan.with_eligibility();
+            add(&[
+                "EligibilityCriteria",
+                "HealthyVolunteers",
+                "MaximumAge",
+                "MinimumAge",
+                "Sex",
+            ]);
         }
         if has("contacts") {
-            plan = plan.with_contacts();
+            add(&[
+                "CentralContactEMail",
+                "CentralContactName",
+                "CentralContactPhone",
+                "CentralContactRole",
+                "LocationCity",
+                "LocationContactEMail",
+                "LocationContactName",
+                "LocationContactPhone",
+                "LocationContactRole",
+                "LocationCountry",
+                "LocationFacility",
+                "LocationState",
+            ]);
         }
         if has("locations") {
-            plan = plan.with_locations();
+            add(&[
+                "CentralContactEMail",
+                "CentralContactName",
+                "CentralContactPhone",
+                "CentralContactRole",
+                "LocationCity",
+                "LocationContactEMail",
+                "LocationContactName",
+                "LocationContactPhone",
+                "LocationContactRole",
+                "LocationCountry",
+                "LocationFacility",
+                "LocationGeoPoint",
+                "LocationState",
+                "LocationStatus",
+                "LocationZip",
+            ]);
         }
         if has("outcomes") {
-            plan = plan.with_outcomes();
+            add(&[
+                "PrimaryOutcomeDescription",
+                "PrimaryOutcomeMeasure",
+                "PrimaryOutcomeTimeFrame",
+                "SecondaryOutcomeDescription",
+                "SecondaryOutcomeMeasure",
+                "SecondaryOutcomeTimeFrame",
+            ]);
         }
         if sections
             .iter()
@@ -231,41 +341,65 @@ impl ClinicalTrialsClient {
                 .iter()
                 .any(|value| value.trim().eq_ignore_ascii_case("eligibility"))
         {
-            plan = plan.with_documents();
+            add(&["LargeDocumentModule"]);
         }
-        Ok(plan)
+        Ok(CtGovDetailPlan {
+            identity: nct_id.to_string(),
+            fields: fields.into_iter().collect::<Vec<_>>().join(","),
+        })
     }
 
     #[cfg(test)]
     pub(crate) fn get_plan(nct_id: &str, sections: &[String]) -> RequestPlan {
-        let plan = Self::biodata_detail_plan(nct_id, sections)
+        let plan = Self::detail_plan(nct_id, sections)
             .expect("validated trial identity reaches source planning");
         RequestPlan::get(plan.relative_path()).query("fields", plan.field_query())
     }
 
-    pub(crate) fn decode_biodata_detail_response(
+    pub(crate) fn decode_detail_response(
         nct_id: &str,
         sections: &[String],
         status: reqwest::StatusCode,
         bytes: &[u8],
-    ) -> Result<CtGovBiodataDetailResponse, BioMcpError> {
+    ) -> Result<CtGovDetailResponse, BioMcpError> {
         if !status.is_success() {
             return Self::decode_get_response(nct_id, status, bytes)
                 .and(Err(BioMcpError::InternalProcessing));
         }
-        let plan = Self::biodata_detail_plan(nct_id, sections)?;
-        let shared = ClinicalTrialsGovApiV2Response::parse(
-            &plan,
-            bytes,
-            &ClinicalTrialsGovApiV2Limits::default(),
-        )
-        .map_err(Self::map_biodata_response_error)?;
-        let study = Self::decode_get_response(nct_id, status, bytes)?;
-        Ok(CtGovBiodataDetailResponse { study, shared })
+        crate::entities::trial::strict_json::validate(bytes).map_err(|error| {
+            Self::map_detail_response_error(match error {
+                crate::entities::trial::strict_json::StrictJsonError::Malformed => "malformed_json",
+                crate::entities::trial::strict_json::StrictJsonError::Unsupported => {
+                    "unsupported_json"
+                }
+                crate::entities::trial::strict_json::StrictJsonError::Resource => {
+                    "json_resource_limit"
+                }
+            })
+        })?;
+        let value: serde_json::Value = serde_json::from_slice(bytes)
+            .map_err(|_| Self::map_detail_response_error("malformed_json"))?;
+        if !value.is_object() {
+            return Err(Self::map_detail_response_error("unsupported_json"));
+        }
+        let study: CtGovStudy = serde_json::from_value(value)
+            .map_err(|_| Self::map_detail_response_error("invalid_projection"))?;
+        let actual = study
+            .protocol_section
+            .as_ref()
+            .and_then(|p| p.identification_module.as_ref())
+            .and_then(|m| m.nct_id.as_deref())
+            .ok_or_else(|| Self::map_detail_response_error("invalid_projection"))?;
+        if actual != nct_id {
+            return Err(Self::map_detail_response_error("identity_mismatch"));
+        }
+        let shared = CtGovProjection::from_study(&study, sections)
+            .map_err(Self::map_detail_response_error)?;
+        Ok(CtGovDetailResponse { study, shared })
     }
 
-    fn map_biodata_response_error(error: biodata::ClinicalTrialsGovApiV2Error) -> BioMcpError {
-        let context = if error.code() == "json_resource_limit" {
+    fn map_detail_response_error(code: &str) -> BioMcpError {
+        let context = if code == "json_resource_limit" {
             crate::error::SourceContext::narrow(crate::error::SourceProvider::CLINICAL_TRIALS)
         } else {
             crate::error::SourceContext::retry(crate::error::SourceProvider::CLINICAL_TRIALS)
@@ -274,7 +408,7 @@ impl ClinicalTrialsClient {
             api: crate::error::SourceProvider::CLINICAL_TRIALS
                 .label()
                 .to_string(),
-            message: format!("BioData response validation failed: {}", error.code()),
+            message: format!("response validation failed: {code}"),
         }
         .with_source_context(context)
     }
@@ -296,22 +430,21 @@ impl ClinicalTrialsClient {
     }
 
     pub async fn get(&self, nct_id: &str, sections: &[String]) -> Result<CtGovStudy, BioMcpError> {
-        self.get_biodata_detail(nct_id, sections)
+        self.get_detail(nct_id, sections)
             .await
             .map(|value| value.study)
     }
 
-    pub(crate) async fn get_biodata_detail(
+    pub(crate) async fn get_detail(
         &self,
         nct_id: &str,
         sections: &[String],
-    ) -> Result<CtGovBiodataDetailResponse, BioMcpError> {
-        let biodata_plan = Self::biodata_detail_plan(nct_id, sections)?;
-        let plan = RequestPlan::get(biodata_plan.relative_path())
-            .query("fields", biodata_plan.field_query());
+    ) -> Result<CtGovDetailResponse, BioMcpError> {
+        let detail = Self::detail_plan(nct_id, sections)?;
+        let plan = RequestPlan::get(detail.relative_path()).query("fields", detail.field_query());
         let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
         let (status, bytes) = self.send(req).await?;
-        Self::decode_biodata_detail_response(nct_id, sections, status, &bytes).map_err(|error| {
+        Self::decode_detail_response(nct_id, sections, status, &bytes).map_err(|error| {
             if matches!(error, BioMcpError::WithSourceContext { .. }) {
                 error
             } else {
@@ -319,6 +452,198 @@ impl ClinicalTrialsClient {
                     crate::error::SourceProvider::CLINICAL_TRIALS,
                 ))
             }
+        })
+    }
+}
+
+fn requested(sections: &[String], name: &str) -> bool {
+    sections.iter().any(|value| {
+        let value = value.trim();
+        value.eq_ignore_ascii_case("all") || value.eq_ignore_ascii_case(name)
+    })
+}
+
+fn clean(value: Option<&str>) -> Option<String> {
+    value
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+}
+
+fn code(authority: &str, value: Option<&str>) -> Result<Option<ExtensibleCode>, &'static str> {
+    clean(value)
+        .map(|value| {
+            ExtensibleCode::new(
+                authority,
+                value,
+                None::<String>,
+                None::<String>,
+                None::<String>,
+            )
+            .map_err(|_| "invalid_projection")
+        })
+        .transpose()
+}
+
+fn age(
+    value: Option<&NormalizedTimeWire>,
+    bound: Bound,
+) -> Result<Option<ClinicalTrialAgeBound>, &'static str> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    match TemporalParser::default().parse_duration(value.original().trim(), bound) {
+        ParseOutcome::Parsed(value) => ClinicalTrialAgeBound::limited(value)
+            .map(Some)
+            .map_err(|_| "invalid_projection"),
+        ParseOutcome::Unparsed => Err("invalid_projection"),
+    }
+}
+
+impl CtGovProjection {
+    fn from_study(study: &CtGovStudy, sections: &[String]) -> Result<Self, &'static str> {
+        let protocol = study
+            .protocol_section
+            .as_ref()
+            .ok_or("invalid_projection")?;
+        let arms_requested = requested(sections, "arms");
+        let eligibility_requested = sections
+            .iter()
+            .all(|value| matches!(value.trim(), "" | "--json" | "-j"))
+            || requested(sections, "eligibility");
+        let references_requested = requested(sections, "references");
+
+        let module = protocol.arms_interventions_module.as_ref();
+        let intervention_rows = module.and_then(|value| value.interventions.as_ref());
+        let mut interventions = Vec::new();
+        if let Some(rows) = intervention_rows {
+            for (index, row) in rows.iter().enumerate() {
+                interventions.push(
+                    ClinicalTrialIntervention::new(
+                        ClinicalTrialInterventionId::new((index + 1) as u64)
+                            .map_err(|_| "invalid_projection")?,
+                        clean(row.name.as_deref()).ok_or("invalid_projection")?,
+                        code("clinicaltrials.gov", row.intervention_type.as_deref())?,
+                        clean(row.description.as_deref()),
+                        Some(
+                            row.other_names
+                                .iter()
+                                .filter_map(|value| clean(Some(value)))
+                                .collect(),
+                        ),
+                    )
+                    .map_err(|_| "invalid_projection")?,
+                );
+            }
+        }
+        let interventions_section = intervention_rows.map_or(ClinicalTrialSection::Absent, |_| {
+            ClinicalTrialSection::Present(interventions.clone())
+        });
+
+        let arms = if !arms_requested {
+            ClinicalTrialSection::NotRequested
+        } else if let Some(rows) = module.and_then(|value| value.arm_groups.as_ref()) {
+            let mut values = Vec::new();
+            let mut labels = std::collections::HashMap::new();
+            for (index, row) in rows.iter().enumerate() {
+                let label = clean(row.label.as_deref()).ok_or("invalid_projection")?;
+                if labels.insert(label.clone(), index).is_some() {
+                    return Err("invalid_projection");
+                }
+                values.push(
+                    ClinicalTrialArm::new(
+                        ClinicalTrialArmId::new((index + 1) as u64)
+                            .map_err(|_| "invalid_projection")?,
+                        label,
+                        code("clinicaltrials.gov", row.arm_group_type.as_deref())?,
+                        clean(row.description.as_deref()),
+                    )
+                    .map_err(|_| "invalid_projection")?,
+                );
+            }
+            let mut assignments = Vec::new();
+            for (intervention_index, row) in module
+                .and_then(|value| value.interventions.as_ref())
+                .into_iter()
+                .flatten()
+                .enumerate()
+            {
+                for label in &row.arm_group_labels {
+                    let arm_index = labels.get(label.trim()).ok_or("invalid_projection")?;
+                    assignments.push(ClinicalTrialArmInterventionAssignment::new(
+                        ClinicalTrialArmId::new((*arm_index + 1) as u64)
+                            .map_err(|_| "invalid_projection")?,
+                        ClinicalTrialInterventionId::new((intervention_index + 1) as u64)
+                            .map_err(|_| "invalid_projection")?,
+                    ));
+                }
+            }
+            ClinicalTrialSection::Present(
+                ClinicalTrialArms::new(values, &interventions, assignments)
+                    .map_err(|_| "invalid_projection")?,
+            )
+        } else {
+            ClinicalTrialSection::Absent
+        };
+
+        let eligibility = if !eligibility_requested {
+            ClinicalTrialSection::NotRequested
+        } else if let Some(value) = protocol.eligibility_module.as_ref() {
+            let minimum = age(value.minimum_age.as_ref(), Bound::Minimum)?;
+            let maximum = age(value.maximum_age.as_ref(), Bound::Maximum)?;
+            let age_range = (minimum.is_some() || maximum.is_some())
+                .then(|| ClinicalTrialAgeRange::new(minimum, maximum))
+                .transpose()
+                .map_err(|_| "invalid_projection")?;
+            let sexes = code("clinicaltrials.gov", value.sex.as_deref())?.map(|value| vec![value]);
+            ClinicalTrialSection::Present(
+                ClinicalTrialEligibility::new(
+                    clean(value.eligibility_criteria.as_deref()),
+                    age_range,
+                    sexes,
+                    value.healthy_volunteers,
+                    None,
+                )
+                .map_err(|_| "invalid_projection")?,
+            )
+        } else {
+            ClinicalTrialSection::Absent
+        };
+
+        let references = if !references_requested {
+            ClinicalTrialSection::NotRequested
+        } else if let Some(value) = protocol.references_module.as_ref() {
+            let rows = value
+                .references
+                .iter()
+                .map(|row| {
+                    let source_type = row
+                        .reference_type
+                        .as_ref()
+                        .map(|value| {
+                            ExtensibleCode::new(
+                                "clinicaltrials.gov",
+                                value,
+                                None::<String>,
+                                None::<String>,
+                                None::<String>,
+                            )
+                        })
+                        .transpose()
+                        .map_err(|_| "invalid_projection")?;
+                    ClinicalTrialReference::new(row.pmid.clone(), row.citation.clone(), source_type)
+                        .map_err(|_| "invalid_projection")
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            ClinicalTrialSection::Present(rows)
+        } else {
+            ClinicalTrialSection::Absent
+        };
+        Ok(Self {
+            interventions: interventions_section,
+            arms,
+            eligibility,
+            references,
         })
     }
 }
@@ -354,6 +679,7 @@ pub struct CtGovProtocolSection {
     pub eligibility_module: Option<CtGovEligibilityModule>,
     pub contacts_locations_module: Option<CtGovContactsLocationsModule>,
     pub outcomes_module: Option<CtGovOutcomesModule>,
+    pub references_module: Option<CtGovReferencesModule>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -477,12 +803,44 @@ pub struct CtGovArmGroup {
     pub intervention_names: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovEligibilityModule {
     pub eligibility_criteria: Option<String>,
     pub minimum_age: Option<NormalizedTimeWire>,
     pub maximum_age: Option<NormalizedTimeWire>,
+    pub sex: Option<String>,
+    pub healthy_volunteers: Option<bool>,
+}
+
+impl Serialize for CtGovEligibilityModule {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(3))?;
+        map.serialize_entry("eligibilityCriteria", &self.eligibility_criteria)?;
+        map.serialize_entry("minimumAge", &self.minimum_age)?;
+        map.serialize_entry("maximumAge", &self.maximum_age)?;
+        map.end()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CtGovReferencesModule {
+    #[serde(default)]
+    pub references: Vec<CtGovReference>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CtGovReference {
+    pub pmid: Option<String>,
+    pub citation: Option<String>,
+    #[serde(rename = "type")]
+    pub reference_type: Option<String>,
 }
 
 #[derive(Debug, Clone)]

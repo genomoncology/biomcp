@@ -1,10 +1,16 @@
 use crate::sources::RequestBuilderSourceContextExt;
 use std::borrow::Cow;
 
-use biodata::{NciCtsV2DetailPlan, NciCtsV2DetailResponse, NciCtsV2Limits};
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
+use crate::entities::trial::shared::{
+    Bound, ClinicalTrialAgeBound, ClinicalTrialAgeRange, ClinicalTrialArm, ClinicalTrialArmId,
+    ClinicalTrialArmInterventionAssignment, ClinicalTrialEligibility,
+    ClinicalTrialEligibilityClassification, ClinicalTrialEligibilityCriterion,
+    ClinicalTrialEligibilityCriterionId, ClinicalTrialIntervention, ClinicalTrialInterventionId,
+    ClinicalTrialSection, ExtensibleCode, ParseOutcome, TemporalParser,
+};
 use crate::error::BioMcpError;
 use crate::sources::{RequestPlan, request_from_plan};
 
@@ -12,6 +18,382 @@ const NCI_CTS_BASE: &str = "https://clinicaltrialsapi.cancer.gov/api/v2";
 const NCI_CTS_API: &str = "nci_cts";
 const NCI_CTS_BASE_ENV: &str = "BIOMCP_NCI_CTS_BASE";
 const NCI_API_KEY_ENV: &str = "NCI_API_KEY";
+const NCI_DETAIL_FIELDS: &[&str] = &[
+    "nci_id",
+    "nct_id",
+    "brief_title",
+    "official_title",
+    "current_trial_status",
+    "why_study_stopped",
+    "study_protocol_type",
+    "phase",
+    "diseases",
+    "minimum_target_accrual_number",
+    "arms",
+    "lead_org",
+    "start_date",
+    "completion_date",
+    "eligibility",
+    "brief_summary",
+];
+
+#[derive(Debug, Clone)]
+pub(crate) struct NciCtsV2DetailPlan {
+    identity: String,
+    include_eligibility: bool,
+}
+impl NciCtsV2DetailPlan {
+    pub(crate) fn new(identity: &str, include_eligibility: bool) -> Result<Self, ()> {
+        let identity = identity.trim().to_ascii_uppercase();
+        if identity.len() != 11
+            || !identity.starts_with("NCT")
+            || !identity[3..].bytes().all(|b| b.is_ascii_digit())
+        {
+            return Err(());
+        }
+        Ok(Self {
+            identity,
+            include_eligibility,
+        })
+    }
+    pub(crate) fn requested_identity(&self) -> &str {
+        &self.identity
+    }
+    pub(crate) fn relative_path(&self) -> &str {
+        "trials"
+    }
+    pub(crate) fn query_pairs(&self) -> Vec<(&str, &str)> {
+        let mut out = vec![("size", "1"), ("nct_id", self.identity.as_str())];
+        out.extend(
+            NCI_DETAIL_FIELDS
+                .iter()
+                .filter(|field| self.include_eligibility || **field != "eligibility")
+                .map(|field| ("include", *field)),
+        );
+        out
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct NciCtsV2DetailResponse {
+    pub(crate) title: String,
+    pub(crate) status: String,
+    pub(crate) stop_reason: Option<String>,
+    pub(crate) phase: Option<String>,
+    pub(crate) study_type: String,
+    pub(crate) conditions: Vec<String>,
+    pub(crate) interventions: Vec<ClinicalTrialIntervention>,
+    pub(crate) arms: Vec<ClinicalTrialArm>,
+    pub(crate) assignments: Vec<ClinicalTrialArmInterventionAssignment>,
+    pub(crate) sponsor: String,
+    pub(crate) enrollment: Option<u64>,
+    pub(crate) summary: Option<String>,
+    pub(crate) start_date: Option<String>,
+    pub(crate) completion_date: Option<String>,
+    eligibility: ClinicalTrialSection<ClinicalTrialEligibility>,
+}
+impl NciCtsV2DetailResponse {
+    pub(crate) fn eligibility(&self) -> ClinicalTrialSection<&ClinicalTrialEligibility> {
+        match &self.eligibility {
+            ClinicalTrialSection::Present(v) => ClinicalTrialSection::Present(v),
+            ClinicalTrialSection::Absent => ClinicalTrialSection::Absent,
+            ClinicalTrialSection::NotRequested => ClinicalTrialSection::NotRequested,
+            ClinicalTrialSection::Unavailable => ClinicalTrialSection::Unavailable,
+        }
+    }
+
+    pub(crate) fn parse(plan: &NciCtsV2DetailPlan, bytes: &[u8]) -> Result<Self, &'static str> {
+        crate::entities::trial::strict_json::validate(bytes).map_err(|error| match error {
+            crate::entities::trial::strict_json::StrictJsonError::Malformed => "malformed_json",
+            crate::entities::trial::strict_json::StrictJsonError::Unsupported => "unsupported_json",
+            crate::entities::trial::strict_json::StrictJsonError::Resource => "json_resource_limit",
+        })?;
+        let root: serde_json::Value =
+            serde_json::from_slice(bytes).map_err(|_| "malformed_json")?;
+        let root = root.as_object().ok_or("unsupported_json")?;
+        let total = root
+            .get("total")
+            .and_then(serde_json::Value::as_u64)
+            .ok_or("invalid_projection")?;
+        let rows = root
+            .get("data")
+            .and_then(serde_json::Value::as_array)
+            .ok_or("invalid_projection")?;
+        if total == 0 && rows.is_empty() {
+            return Err("not_found");
+        }
+        if total != 1 || rows.len() != 1 {
+            return Err("unexpected_row_count");
+        }
+        let row = rows[0].as_object().ok_or("unsupported_json")?;
+        let required = |name: &str| {
+            row.get(name)
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(str::to_owned)
+                .ok_or("invalid_projection")
+        };
+        let nullable = |name: &str| match row.get(name) {
+            None => Err("invalid_projection"),
+            Some(serde_json::Value::Null) => Ok(None),
+            Some(value) => value
+                .as_str()
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(str::to_owned)
+                .map(Some)
+                .ok_or("invalid_projection"),
+        };
+        let _nci_id = required("nci_id")?;
+        let _official_title = nullable("official_title")?;
+        let identity = required("nct_id")?;
+        if identity != plan.requested_identity() {
+            return Err("identity_mismatch");
+        }
+        let diseases = row
+            .get("diseases")
+            .and_then(serde_json::Value::as_array)
+            .ok_or("invalid_projection")?
+            .iter()
+            .map(|value| {
+                value
+                    .as_object()
+                    .and_then(|v| v.get("name"))
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|v| !v.is_empty())
+                    .map(str::to_owned)
+                    .ok_or("invalid_projection")
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let arm_rows = row
+            .get("arms")
+            .and_then(serde_json::Value::as_array)
+            .ok_or("invalid_projection")?;
+        let mut arms = Vec::new();
+        let mut interventions = Vec::new();
+        let mut assignments = Vec::new();
+        for (arm_index, value) in arm_rows.iter().enumerate() {
+            let arm = value.as_object().ok_or("unsupported_json")?;
+            let string = |name: &str| {
+                arm.get(name)
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|v| !v.is_empty())
+                    .map(str::to_owned)
+                    .ok_or("invalid_projection")
+            };
+            let arm_id = ClinicalTrialArmId::new((arm_index + 1) as u64)
+                .map_err(|_| "invalid_projection")?;
+            arms.push(
+                ClinicalTrialArm::new(
+                    arm_id,
+                    string("name")?,
+                    code("nci", arm.get("type").and_then(serde_json::Value::as_str))?,
+                    optional_object_string(arm, "description")?,
+                )
+                .map_err(|_| "invalid_projection")?,
+            );
+            for value in arm
+                .get("interventions")
+                .and_then(serde_json::Value::as_array)
+                .ok_or("invalid_projection")?
+            {
+                let value = value.as_object().ok_or("unsupported_json")?;
+                let id = ClinicalTrialInterventionId::new((interventions.len() + 1) as u64)
+                    .map_err(|_| "invalid_projection")?;
+                let name = value
+                    .get("name")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|v| !v.is_empty())
+                    .ok_or("invalid_projection")?;
+                let aliases = value
+                    .get("synonyms")
+                    .and_then(serde_json::Value::as_array)
+                    .map(|rows| {
+                        rows.iter()
+                            .map(|v| {
+                                v.as_str()
+                                    .map(str::trim)
+                                    .filter(|v| !v.is_empty())
+                                    .map(str::to_owned)
+                                    .ok_or("invalid_projection")
+                            })
+                            .collect()
+                    })
+                    .transpose()?
+                    .unwrap_or_default();
+                interventions.push(
+                    ClinicalTrialIntervention::new(
+                        id,
+                        name,
+                        code("nci", value.get("type").and_then(serde_json::Value::as_str))?,
+                        optional_object_string(value, "description")?,
+                        Some(aliases),
+                    )
+                    .map_err(|_| "invalid_projection")?,
+                );
+                assignments.push(ClinicalTrialArmInterventionAssignment::new(arm_id, id));
+            }
+        }
+        let eligibility = if !plan.include_eligibility {
+            ClinicalTrialSection::NotRequested
+        } else if row
+            .get("eligibility")
+            .is_some_and(serde_json::Value::is_null)
+        {
+            ClinicalTrialSection::Absent
+        } else if let Some(value) = row.get("eligibility") {
+            let value = value.as_object().ok_or("unsupported_json")?;
+            let structured = value
+                .get("structured")
+                .and_then(serde_json::Value::as_object)
+                .ok_or("unsupported_json")?;
+            let minimum = nci_age(structured.get("min_age"), Bound::Minimum, false)?;
+            let maximum = nci_age(structured.get("max_age"), Bound::Maximum, true)?;
+            let age_range = (minimum.is_some() || maximum.is_some())
+                .then(|| ClinicalTrialAgeRange::new(minimum, maximum))
+                .transpose()
+                .map_err(|_| "invalid_projection")?;
+            let sexes = code(
+                "nci",
+                structured.get("sex").and_then(serde_json::Value::as_str),
+            )?
+            .map(|v| vec![v]);
+            let healthy = match structured.get("accepts_healthy_volunteers") {
+                None | Some(serde_json::Value::Null) => None,
+                Some(v) => Some(v.as_bool().ok_or("invalid_projection")?),
+            };
+            let rows = match value.get("unstructured") {
+                None | Some(serde_json::Value::Null) => None,
+                Some(value) => Some(value.as_array().ok_or("unsupported_json")?),
+            };
+            let mut criteria = rows
+                .map(|rows| {
+                    rows.iter()
+                        .enumerate()
+                        .map(|(index, value)| {
+                            let value = value.as_object().ok_or("unsupported_json")?;
+                            let description = value
+                                .get("description")
+                                .and_then(serde_json::Value::as_str)
+                                .ok_or("invalid_projection")?;
+                            let inclusion = value
+                                .get("inclusion_indicator")
+                                .and_then(serde_json::Value::as_bool)
+                                .ok_or("invalid_projection")?;
+                            let order = value
+                                .get("display_order")
+                                .and_then(serde_json::Value::as_i64)
+                                .ok_or("invalid_projection")?;
+                            let criterion = ClinicalTrialEligibilityCriterion::new(
+                                ClinicalTrialEligibilityCriterionId::new((index + 1) as u64)
+                                    .map_err(|_| "invalid_projection")?,
+                                description,
+                                if inclusion {
+                                    ClinicalTrialEligibilityClassification::Inclusion
+                                } else {
+                                    ClinicalTrialEligibilityClassification::Exclusion
+                                },
+                            )
+                            .map_err(|_| "invalid_projection")?;
+                            Ok((order, index, criterion))
+                        })
+                        .collect::<Result<Vec<_>, &'static str>>()
+                })
+                .transpose()?;
+            if let Some(criteria) = &mut criteria {
+                criteria.sort_by_key(|(order, index, _)| (*order, *index));
+            }
+            ClinicalTrialSection::Present(
+                ClinicalTrialEligibility::new(
+                    None,
+                    age_range,
+                    sexes,
+                    healthy,
+                    criteria.map(|rows| rows.into_iter().map(|(_, _, value)| value).collect()),
+                )
+                .map_err(|_| "invalid_projection")?,
+            )
+        } else {
+            ClinicalTrialSection::Absent
+        };
+        let enrollment = match row.get("minimum_target_accrual_number") {
+            None | Some(serde_json::Value::Null) => None,
+            Some(v) => Some(v.as_u64().ok_or("invalid_projection")?),
+        };
+        Ok(Self {
+            title: required("brief_title")?,
+            status: required("current_trial_status")?,
+            stop_reason: nullable("why_study_stopped")?,
+            phase: nullable("phase")?,
+            study_type: required("study_protocol_type")?,
+            conditions: diseases,
+            interventions,
+            arms,
+            assignments,
+            sponsor: required("lead_org")?,
+            enrollment,
+            summary: nullable("brief_summary")?,
+            start_date: nullable("start_date")?,
+            completion_date: nullable("completion_date")?,
+            eligibility,
+        })
+    }
+}
+
+fn optional_object_string(
+    value: &serde_json::Map<String, serde_json::Value>,
+    name: &str,
+) -> Result<Option<String>, &'static str> {
+    match value.get(name) {
+        None | Some(serde_json::Value::Null) => Ok(None),
+        Some(value) => value
+            .as_str()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(str::to_owned)
+            .map(Some)
+            .ok_or("invalid_projection"),
+    }
+}
+
+fn code(authority: &str, value: Option<&str>) -> Result<Option<ExtensibleCode>, &'static str> {
+    value
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(|v| {
+            ExtensibleCode::new(authority, v, None::<String>, None::<String>, None::<String>)
+                .map_err(|_| "invalid_projection")
+        })
+        .transpose()
+}
+
+fn nci_age(
+    value: Option<&serde_json::Value>,
+    bound: Bound,
+    recognize_no_limit: bool,
+) -> Result<Option<ClinicalTrialAgeBound>, &'static str> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let value = value.as_str().ok_or("invalid_projection")?;
+    let ParseOutcome::Parsed(duration) = TemporalParser::default().parse_duration(value, bound)
+    else {
+        return Err("invalid_projection");
+    };
+    if recognize_no_limit && value == "999 Years" {
+        ClinicalTrialAgeBound::source_stated_no_limit(duration)
+            .map(Some)
+            .map_err(|_| "invalid_projection")
+    } else {
+        ClinicalTrialAgeBound::limited(duration)
+            .map(Some)
+            .map_err(|_| "invalid_projection")
+    }
+}
 
 #[derive(Clone)]
 pub struct NciCtsClient {
@@ -252,18 +634,12 @@ impl NciCtsClient {
         if let Some(error) = Self::detail_status_error(detail, status) {
             return Err(error);
         }
-        NciCtsV2DetailResponse::parse(detail, bytes, &NciCtsV2Limits::default()).map_err(|error| {
-            match error.code() {
-                "not_found" => Self::detail_not_found(detail.requested_identity()),
-                "json_resource_limit" => Self::detail_api_error(
-                    format!("BioData response validation failed: {}", error.code()),
-                    true,
-                ),
-                _ => Self::detail_api_error(
-                    format!("BioData response validation failed: {}", error.code()),
-                    false,
-                ),
+        NciCtsV2DetailResponse::parse(detail, bytes).map_err(|code| match code {
+            "not_found" => Self::detail_not_found(detail.requested_identity()),
+            "json_resource_limit" => {
+                Self::detail_api_error(format!("response validation failed: {code}"), true)
             }
+            _ => Self::detail_api_error(format!("response validation failed: {code}"), false),
         })
     }
 

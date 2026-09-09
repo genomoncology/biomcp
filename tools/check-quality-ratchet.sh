@@ -22,6 +22,8 @@ fi
 
 mkdir -p "$OUTPUT_DIR"
 
+uv run --no-project python "$ROOT_DIR/tools/check-zero-coupling.py" --root "$ROOT_DIR"
+
 exec uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --root-dir "$ROOT_DIR" \
   --output-dir "$OUTPUT_DIR" \

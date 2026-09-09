@@ -18,8 +18,8 @@ use super::{BioMcpServer, ShellCommand, TypedGet, TypedVariantErepo, get_args};
 
 #[test]
 fn shared_mcp_error_conversion_hides_trial_design_details() {
-    let relationship = biodata::ClinicalTrialArmRelationshipError::MissingArmEndpoint {
-        arm_id: biodata::ClinicalTrialArmId::new(42).unwrap(),
+    let relationship = crate::error::ClinicalTrialArmRelationshipError::MissingArmEndpoint {
+        arm_id: crate::entities::trial::shared::ClinicalTrialArmId::new(42).unwrap(),
     };
     let error = crate::error::BioMcpError::TrialDesign(
         crate::error::TrialDesignError::InvalidRelationship(relationship),
@@ -627,14 +627,18 @@ async fn cli_typed_and_raw_trial_get_return_exact_structured_references() {
 async fn typed_and_raw_nci_trial_get_preserve_all_recorded_assignments() {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
-    let bytes =
-        include_bytes!("../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json");
+    let mut envelope: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "../../../testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"
+    ))
+    .unwrap();
+    envelope["total"] = json!(1);
+    let bytes = serde_json::to_vec(&envelope).unwrap();
     let router = Router::new().route(
         "/trials",
         axum_get(move || async move {
             Response::builder()
                 .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(bytes.as_slice()))
+                .body(Body::from(bytes.clone()))
                 .unwrap()
         }),
     );

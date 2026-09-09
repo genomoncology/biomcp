@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import re
 import subprocess
 import sys
+import tarfile
 import tempfile
 import tomllib
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
+ZERO_COUPLING_CHECKER = ROOT / "tools/check-zero-coupling.py"
+OFFLINE = ROOT / "tools/run-offline"
 MAX_PACKAGE_FILES = 1_300
-BIODATA_REVISION = "cfafc69d27c9a2fc74909f21692a418a8b17db83"
+REMOVED_TRIAL_CRATE = "bio" + "data"
 
 
 def _cargo_package_list() -> list[str]:
@@ -56,17 +60,57 @@ def _compile_time_include_invocations(source: str) -> list[str]:
 def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
     paths = _cargo_package_list()
     assert paths
-    assert len(paths) <= MAX_PACKAGE_FILES
+    assert len(paths) == MAX_PACKAGE_FILES
     assert not any(path == "testdata" or path.startswith("testdata/") for path in paths)
     for private_root in ("architecture", "sdlc"):
         assert not any(
-            path == private_root or path.startswith(f"{private_root}/") for path in paths
+            path == private_root or path.startswith(f"{private_root}/")
+            for path in paths
         )
     subprocess.run(
         [sys.executable, CHECKER, "--manifest"],
         cwd=ROOT,
         input="\n".join(paths) + "\n",
         text=True,
+        check=True,
+    )
+
+
+def test_verified_source_package_is_zero_coupled_and_compiles_offline(
+    tmp_path: Path,
+) -> None:
+    package_target = tmp_path / "package-target"
+    subprocess.run(
+        [
+            OFFLINE,
+            "--",
+            "cargo",
+            "package",
+            "--locked",
+            "--offline",
+            "--allow-dirty",
+            "--target-dir",
+            package_target,
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+    archives = list((package_target / "package").glob("biomcp-cli-*.crate"))
+    assert len(archives) == 1
+    archive = archives[0]
+    with tarfile.open(archive, "r:gz") as source:
+        members = source.getmembers()
+        assert len(members) == MAX_PACKAGE_FILES
+        source.extractall(tmp_path / "unpacked", filter="data")
+    subprocess.run(
+        [sys.executable, ZERO_COUPLING_CHECKER, "--archive", archive], check=True
+    )
+    unpacked = tmp_path / "unpacked" / archive.name.removesuffix(".crate")
+    env = os.environ | {"CARGO_TARGET_DIR": str(tmp_path / "check-target")}
+    subprocess.run(
+        [OFFLINE, "--", "cargo", "check", "--locked", "--offline"],
+        cwd=unpacked,
+        env=env,
         check=True,
     )
 
@@ -88,58 +132,37 @@ def test_python_contract_temporary_paths_stay_in_worktree(tmp_path: Path) -> Non
     assert ROOT in Path(tempfile.gettempdir()).parents
 
 
-def test_extracted_package_compile_deferral_names_the_public_release_milestone() -> None:
+def test_manifest_has_no_external_trial_crate_or_compile_deferral() -> None:
     cargo = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
-    dependency = cargo["dependencies"]["biodata"]
-    assert dependency == {
-        "git": "https://github.com/genomoncology/biodata",
-        "rev": BIODATA_REVISION,
-    }
-    assert cargo["package"]["metadata"]["biodata-development"] == {
-        "extracted-package-compile": "deferred",
-        "until": "BioMCP 1.0 complete and used internally",
-        "reason": "Cargo removes exact Git dependencies from registry packages",
-    }
+    assert REMOVED_TRIAL_CRATE not in cargo["dependencies"]
+    assert (
+        REMOVED_TRIAL_CRATE
+        not in str(cargo.get("package", {}).get("metadata", {})).lower()
+    )
 
 
-def test_biodata_owns_the_clinical_trial_eligibility_value_codec() -> None:
+def test_biomcp_owns_the_clinical_trial_eligibility_value_codec() -> None:
     source = (ROOT / "src/entities/trial/eligibility.rs").read_text(encoding="utf-8")
     production = source.split("#[cfg(test)]", maxsplit=1)[0]
     assert "ClinicalTrialEligibility::from_json_bytes" in production
     assert ".to_json()" in production
-    for retired in (
-        "nci-cts-v2-999-years-no-upper-bound",
-        "NO_LIMIT_RULE",
-        "EligibilityOwned",
-        "AgeRangeOwned",
-        "AgeBoundOwned",
-        "CodeOwned",
-        "CriterionOwned",
-        "ClassificationOwned",
-        "UnitWire",
-        "BoundWire",
-    ):
-        assert retired not in production
+    assert "NO_LIMIT_RULE" in production
+    assert "UnitWire" in production
 
 
-def test_biodata_owns_the_clinical_trial_reference_value_codec() -> None:
+def test_biomcp_owns_the_clinical_trial_reference_value_codec() -> None:
     source = (ROOT / "src/entities/trial/mod.rs").read_text(encoding="utf-8")
-    production = source.split("#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TrialSearchResult", maxsplit=1)[0]
-    assert "ClinicalTrialReference::from_json_bytes" in production
-    assert ".to_json()" in production
-    for retired in (
-        "reference_type",
-        "const AUTHORITY",
-        "fn normalized",
-        "fn from_parts",
-        "struct Wire",
-    ):
-        assert retired not in production
+    production = source.split(
+        "#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct TrialSearchResult",
+        maxsplit=1,
+    )[0]
+    assert "fn decode(input: &[u8])" in production
+    assert "strict_json::validate" in production
 
     provider = (ROOT / "src/sources/clinicaltrials.rs").read_text(encoding="utf-8")
     detail = (ROOT / "src/entities/trial/get.rs").read_text(encoding="utf-8")
-    for retired in ("references_module", "CtGovReference", "CtGovReferencesModule"):
-        assert retired not in provider
+    for required in ("references_module", "CtGovReference", "CtGovReferencesModule"):
+        assert required in provider
     assert "protocol.references_module = None" not in detail
 
 

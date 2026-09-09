@@ -183,7 +183,7 @@ fn get_plan_builds_study_path_and_section_fields() {
 }
 
 #[test]
-fn biodata_detail_plan_uses_the_exact_shared_path_and_fields() {
+fn local_detail_plan_uses_the_exact_shared_path_and_fields() {
     let plan = ClinicalTrialsClient::get_plan("NCT02576665", &["references".to_string()]);
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "studies/NCT02576665");
@@ -217,6 +217,10 @@ fn every_product_detail_route_has_one_exact_composed_request() {
         (
             vec!["documents"],
             "BriefSummary,BriefTitle,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LargeDocumentModule,LeadSponsorName,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
+        ),
+        (
+            vec!["locations"],
+            "BriefSummary,BriefTitle,CentralContactEMail,CentralContactName,CentralContactPhone,CentralContactRole,CompletionDate,Condition,EnrollmentCount,InterventionDescription,InterventionName,InterventionOtherName,InterventionType,LeadSponsorName,LocationCity,LocationContactEMail,LocationContactName,LocationContactPhone,LocationContactRole,LocationCountry,LocationFacility,LocationGeoPoint,LocationState,LocationStatus,LocationZip,NCTId,OverallStatus,Phase,StartDate,StudyType,WhyStopped",
         ),
         (
             vec!["arms", "outcomes"],

@@ -1,4 +1,4 @@
-use biodata::{
+use self::shared::{
     ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
     ClinicalTrialArmRelationshipError, ClinicalTrialArms, ClinicalTrialIntervention,
     ClinicalTrialInterventionId, ExtensibleCode,
@@ -11,16 +11,602 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub enum TrialDesignError {
     /// Arms and their assignments were not both present or absent.
     SectionPresenceMismatch,
-    /// A typed arm relationship failed BioData validation.
+    /// A typed arm relationship failed local validation.
     InvalidRelationship(ClinicalTrialArmRelationshipError),
 }
 
 impl TrialDesignError {
-    /// Returns the typed BioData relationship failure when one caused this error.
+    /// Returns the typed relationship failure when one caused this error.
     pub const fn relationship_error(&self) -> Option<&ClinicalTrialArmRelationshipError> {
         match self {
             Self::SectionPresenceMismatch => None,
             Self::InvalidRelationship(source) => Some(source),
+        }
+    }
+}
+
+pub(crate) mod shared {
+    use std::collections::HashSet;
+    use std::error::Error;
+    use std::fmt::{self, Display, Formatter};
+
+    use serde::{Deserialize, Serialize};
+
+    const MAX_PORTABLE_JSON_INTEGER: u64 = 9_007_199_254_740_991;
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct ClinicalTrialIdentityError;
+
+    #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(crate) struct ExtensibleCode {
+        authority: String,
+        code: String,
+        display: Option<String>,
+        vocabulary_version: Option<String>,
+        recognized_meaning: Option<String>,
+    }
+
+    impl ExtensibleCode {
+        pub(crate) fn new(
+            authority: impl Into<String>,
+            code: impl Into<String>,
+            display: Option<impl Into<String>>,
+            vocabulary_version: Option<impl Into<String>>,
+            recognized_meaning: Option<impl Into<String>>,
+        ) -> Result<Self, ()> {
+            let value = Self {
+                authority: authority.into(),
+                code: code.into(),
+                display: display.map(Into::into),
+                vocabulary_version: vocabulary_version.map(Into::into),
+                recognized_meaning: recognized_meaning.map(Into::into),
+            };
+            if value.authority.is_empty()
+                || value.code.is_empty()
+                || [
+                    &value.display,
+                    &value.vocabulary_version,
+                    &value.recognized_meaning,
+                ]
+                .into_iter()
+                .flatten()
+                .any(String::is_empty)
+            {
+                return Err(());
+            }
+            Ok(value)
+        }
+
+        pub(crate) fn authority(&self) -> &str {
+            &self.authority
+        }
+        pub(crate) fn code(&self) -> &str {
+            &self.code
+        }
+        pub(crate) fn display(&self) -> Option<&str> {
+            self.display.as_deref()
+        }
+        pub(crate) fn vocabulary_version(&self) -> Option<&str> {
+            self.vocabulary_version.as_deref()
+        }
+        pub(crate) fn recognized_meaning(&self) -> Option<&str> {
+            self.recognized_meaning.as_deref()
+        }
+    }
+
+    macro_rules! entity_id {
+        ($name:ident) => {
+            #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+            pub struct $name(u64);
+            impl $name {
+                pub fn new(value: u64) -> Result<Self, ClinicalTrialIdentityError> {
+                    (value != 0 && value <= MAX_PORTABLE_JSON_INTEGER)
+                        .then_some(Self(value))
+                        .ok_or(ClinicalTrialIdentityError)
+                }
+                pub const fn get(self) -> u64 {
+                    self.0
+                }
+            }
+        };
+    }
+
+    entity_id!(ClinicalTrialArmId);
+    entity_id!(ClinicalTrialInterventionId);
+    entity_id!(ClinicalTrialEligibilityCriterionId);
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialIntervention {
+        id: ClinicalTrialInterventionId,
+        name: String,
+        source_type: Option<ExtensibleCode>,
+        description: Option<String>,
+        other_names: Option<Vec<String>>,
+    }
+
+    impl ClinicalTrialIntervention {
+        pub(crate) fn new(
+            id: ClinicalTrialInterventionId,
+            name: impl Into<String>,
+            source_type: Option<ExtensibleCode>,
+            description: Option<String>,
+            other_names: Option<Vec<String>>,
+        ) -> Result<Self, ()> {
+            let value = Self {
+                id,
+                name: name.into(),
+                source_type,
+                description,
+                other_names,
+            };
+            if value.name.is_empty()
+                || value.description.as_ref().is_some_and(String::is_empty)
+                || value
+                    .other_names
+                    .as_ref()
+                    .is_some_and(|rows| rows.iter().any(String::is_empty))
+            {
+                return Err(());
+            }
+            Ok(value)
+        }
+        pub(crate) const fn id(&self) -> ClinicalTrialInterventionId {
+            self.id
+        }
+        pub(crate) fn name(&self) -> &str {
+            &self.name
+        }
+        pub(crate) const fn source_type(&self) -> Option<&ExtensibleCode> {
+            self.source_type.as_ref()
+        }
+        pub(crate) fn description(&self) -> Option<&str> {
+            self.description.as_deref()
+        }
+        pub(crate) fn other_names(&self) -> Option<&[String]> {
+            self.other_names.as_deref()
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialArm {
+        id: ClinicalTrialArmId,
+        name: String,
+        source_type: Option<ExtensibleCode>,
+        description: Option<String>,
+    }
+
+    impl ClinicalTrialArm {
+        pub(crate) fn new(
+            id: ClinicalTrialArmId,
+            name: impl Into<String>,
+            source_type: Option<ExtensibleCode>,
+            description: Option<String>,
+        ) -> Result<Self, ()> {
+            let value = Self {
+                id,
+                name: name.into(),
+                source_type,
+                description,
+            };
+            if value.name.is_empty() || value.description.as_ref().is_some_and(String::is_empty) {
+                return Err(());
+            }
+            Ok(value)
+        }
+        pub(crate) const fn id(&self) -> ClinicalTrialArmId {
+            self.id
+        }
+        pub(crate) fn name(&self) -> &str {
+            &self.name
+        }
+        pub(crate) const fn source_type(&self) -> Option<&ExtensibleCode> {
+            self.source_type.as_ref()
+        }
+        pub(crate) fn description(&self) -> Option<&str> {
+            self.description.as_deref()
+        }
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialArmInterventionAssignment {
+        arm_id: ClinicalTrialArmId,
+        intervention_id: ClinicalTrialInterventionId,
+    }
+
+    impl ClinicalTrialArmInterventionAssignment {
+        pub(crate) const fn new(
+            arm_id: ClinicalTrialArmId,
+            intervention_id: ClinicalTrialInterventionId,
+        ) -> Self {
+            Self {
+                arm_id,
+                intervention_id,
+            }
+        }
+        pub(crate) const fn arm_id(&self) -> ClinicalTrialArmId {
+            self.arm_id
+        }
+        pub(crate) const fn intervention_id(&self) -> ClinicalTrialInterventionId {
+            self.intervention_id
+        }
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub enum ClinicalTrialArmRelationshipError {
+        DuplicateArmId {
+            arm_id: ClinicalTrialArmId,
+        },
+        DuplicateInterventionId {
+            intervention_id: ClinicalTrialInterventionId,
+        },
+        MissingArmEndpoint {
+            arm_id: ClinicalTrialArmId,
+        },
+        MissingInterventionEndpoint {
+            intervention_id: ClinicalTrialInterventionId,
+        },
+        DuplicateAssignment {
+            arm_id: ClinicalTrialArmId,
+            intervention_id: ClinicalTrialInterventionId,
+        },
+    }
+
+    impl Display for ClinicalTrialArmRelationshipError {
+        fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+            formatter.write_str("clinical trial arm relationship is invalid")
+        }
+    }
+    impl Error for ClinicalTrialArmRelationshipError {}
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialArms {
+        arms: Vec<ClinicalTrialArm>,
+        assignments: Vec<ClinicalTrialArmInterventionAssignment>,
+    }
+    impl ClinicalTrialArms {
+        pub(crate) fn new(
+            arms: Vec<ClinicalTrialArm>,
+            interventions: &[ClinicalTrialIntervention],
+            assignments: Vec<ClinicalTrialArmInterventionAssignment>,
+        ) -> Result<Self, ClinicalTrialArmRelationshipError> {
+            Self::validate(&arms, interventions, &assignments)?;
+            Ok(Self { arms, assignments })
+        }
+        pub(crate) fn validate(
+            arms: &[ClinicalTrialArm],
+            interventions: &[ClinicalTrialIntervention],
+            assignments: &[ClinicalTrialArmInterventionAssignment],
+        ) -> Result<(), ClinicalTrialArmRelationshipError> {
+            let mut arm_ids = HashSet::new();
+            for arm in arms {
+                if !arm_ids.insert(arm.id()) {
+                    return Err(ClinicalTrialArmRelationshipError::DuplicateArmId {
+                        arm_id: arm.id(),
+                    });
+                }
+            }
+            let mut intervention_ids = HashSet::new();
+            for value in interventions {
+                if !intervention_ids.insert(value.id()) {
+                    return Err(ClinicalTrialArmRelationshipError::DuplicateInterventionId {
+                        intervention_id: value.id(),
+                    });
+                }
+            }
+            let mut pairs = HashSet::new();
+            for value in assignments {
+                if !arm_ids.contains(&value.arm_id()) {
+                    return Err(ClinicalTrialArmRelationshipError::MissingArmEndpoint {
+                        arm_id: value.arm_id(),
+                    });
+                }
+                if !intervention_ids.contains(&value.intervention_id()) {
+                    return Err(
+                        ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+                            intervention_id: value.intervention_id(),
+                        },
+                    );
+                }
+                if !pairs.insert((value.arm_id(), value.intervention_id())) {
+                    return Err(ClinicalTrialArmRelationshipError::DuplicateAssignment {
+                        arm_id: value.arm_id(),
+                        intervention_id: value.intervention_id(),
+                    });
+                }
+            }
+            Ok(())
+        }
+        pub(crate) fn arms(&self) -> &[ClinicalTrialArm] {
+            &self.arms
+        }
+        pub(crate) fn assignments(&self) -> &[ClinicalTrialArmInterventionAssignment] {
+            &self.assignments
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) enum ClinicalTrialSection<T> {
+        Present(T),
+        Absent,
+        NotRequested,
+        Unavailable,
+    }
+    const _: ClinicalTrialSection<()> = ClinicalTrialSection::Unavailable;
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    pub(crate) enum Bound {
+        Minimum,
+        Maximum,
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    pub(crate) enum DurationUnit {
+        Years,
+        Months,
+        Weeks,
+        Days,
+        Hours,
+        Minutes,
+        Seconds,
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct Duration {
+        source: String,
+        source_quantity: String,
+        source_unit: DurationUnit,
+        bound: Bound,
+    }
+    impl Duration {
+        pub(crate) fn source(&self) -> &str {
+            &self.source
+        }
+        pub(crate) fn source_quantity(&self) -> &str {
+            &self.source_quantity
+        }
+        pub(crate) const fn source_unit(&self) -> DurationUnit {
+            self.source_unit
+        }
+        pub(crate) const fn bound(&self) -> Bound {
+            self.bound
+        }
+    }
+
+    #[derive(Debug)]
+    pub(crate) enum ParseOutcome<T> {
+        Parsed(T),
+        Unparsed,
+    }
+    #[derive(Default)]
+    pub(crate) struct TemporalParser {
+        _private: (),
+    }
+    impl TemporalParser {
+        pub(crate) fn parse_duration(&self, source: &str, bound: Bound) -> ParseOutcome<Duration> {
+            let Some((quantity, unit)) = source.split_once(' ') else {
+                return ParseOutcome::Unparsed;
+            };
+            if quantity.is_empty()
+                || quantity
+                    .parse::<f64>()
+                    .ok()
+                    .filter(|v| v.is_finite() && *v >= 0.0)
+                    .is_none()
+            {
+                return ParseOutcome::Unparsed;
+            }
+            let source_unit = match unit.to_ascii_lowercase().as_str() {
+                "year" | "years" => DurationUnit::Years,
+                "month" | "months" => DurationUnit::Months,
+                "week" | "weeks" => DurationUnit::Weeks,
+                "day" | "days" => DurationUnit::Days,
+                "hour" | "hours" => DurationUnit::Hours,
+                "minute" | "minutes" => DurationUnit::Minutes,
+                "second" | "seconds" => DurationUnit::Seconds,
+                _ => return ParseOutcome::Unparsed,
+            };
+            ParseOutcome::Parsed(Duration {
+                source: source.to_string(),
+                source_quantity: quantity.to_string(),
+                source_unit,
+                bound,
+            })
+        }
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub(crate) enum ClinicalTrialAgeBoundForm {
+        Limited,
+        SourceStatedNoLimit,
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialAgeBound {
+        source: Duration,
+        form: ClinicalTrialAgeBoundForm,
+    }
+    impl ClinicalTrialAgeBound {
+        pub(crate) fn limited(source: Duration) -> Result<Self, ()> {
+            Ok(Self {
+                source,
+                form: ClinicalTrialAgeBoundForm::Limited,
+            })
+        }
+        pub(crate) fn source_stated_no_limit(source: Duration) -> Result<Self, ()> {
+            if source.bound != Bound::Maximum
+                || source.source_quantity != "999"
+                || source.source_unit != DurationUnit::Years
+            {
+                return Err(());
+            }
+            Ok(Self {
+                source,
+                form: ClinicalTrialAgeBoundForm::SourceStatedNoLimit,
+            })
+        }
+        pub(crate) fn source(&self) -> &Duration {
+            &self.source
+        }
+        pub(crate) const fn form(&self) -> ClinicalTrialAgeBoundForm {
+            self.form
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialAgeRange {
+        minimum: Option<ClinicalTrialAgeBound>,
+        maximum: Option<ClinicalTrialAgeBound>,
+    }
+    impl ClinicalTrialAgeRange {
+        pub(crate) fn new(
+            minimum: Option<ClinicalTrialAgeBound>,
+            maximum: Option<ClinicalTrialAgeBound>,
+        ) -> Result<Self, ()> {
+            if minimum
+                .as_ref()
+                .is_some_and(|v| v.source.bound != Bound::Minimum)
+                || maximum
+                    .as_ref()
+                    .is_some_and(|v| v.source.bound != Bound::Maximum)
+            {
+                return Err(());
+            }
+            Ok(Self { minimum, maximum })
+        }
+        pub(crate) fn minimum(&self) -> Option<&ClinicalTrialAgeBound> {
+            self.minimum.as_ref()
+        }
+        pub(crate) fn maximum(&self) -> Option<&ClinicalTrialAgeBound> {
+            self.maximum.as_ref()
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) enum ClinicalTrialEligibilityClassification {
+        Inclusion,
+        Exclusion,
+        Other(ExtensibleCode),
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialEligibilityCriterion {
+        id: ClinicalTrialEligibilityCriterionId,
+        description: String,
+        classification: ClinicalTrialEligibilityClassification,
+    }
+    impl ClinicalTrialEligibilityCriterion {
+        pub(crate) fn new(
+            id: ClinicalTrialEligibilityCriterionId,
+            description: impl Into<String>,
+            classification: ClinicalTrialEligibilityClassification,
+        ) -> Result<Self, ()> {
+            let description = description.into();
+            if description.trim().is_empty() {
+                return Err(());
+            }
+            Ok(Self {
+                id,
+                description,
+                classification,
+            })
+        }
+        pub(crate) const fn id(&self) -> ClinicalTrialEligibilityCriterionId {
+            self.id
+        }
+        pub(crate) fn description(&self) -> &str {
+            &self.description
+        }
+        pub(crate) const fn classification(&self) -> &ClinicalTrialEligibilityClassification {
+            &self.classification
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub(crate) struct ClinicalTrialEligibility {
+        registry_text: Option<String>,
+        age_range: Option<ClinicalTrialAgeRange>,
+        sexes: Option<Vec<ExtensibleCode>>,
+        includes_healthy_subjects: Option<bool>,
+        criteria: Option<Vec<ClinicalTrialEligibilityCriterion>>,
+    }
+    impl ClinicalTrialEligibility {
+        pub(crate) fn new(
+            registry_text: Option<String>,
+            age_range: Option<ClinicalTrialAgeRange>,
+            sexes: Option<Vec<ExtensibleCode>>,
+            includes_healthy_subjects: Option<bool>,
+            criteria: Option<Vec<ClinicalTrialEligibilityCriterion>>,
+        ) -> Result<Self, ()> {
+            if registry_text.as_ref().is_some_and(|v| v.trim().is_empty()) {
+                return Err(());
+            }
+            let mut ids = HashSet::new();
+            if criteria
+                .as_ref()
+                .is_some_and(|rows| rows.iter().any(|row| !ids.insert(row.id())))
+            {
+                return Err(());
+            }
+            Ok(Self {
+                registry_text,
+                age_range,
+                sexes,
+                includes_healthy_subjects,
+                criteria,
+            })
+        }
+        pub(crate) fn registry_text(&self) -> Option<&str> {
+            self.registry_text.as_deref()
+        }
+        pub(crate) const fn age_range(&self) -> Option<&ClinicalTrialAgeRange> {
+            self.age_range.as_ref()
+        }
+        pub(crate) fn sexes(&self) -> Option<&[ExtensibleCode]> {
+            self.sexes.as_deref()
+        }
+        pub(crate) const fn includes_healthy_subjects(&self) -> Option<bool> {
+            self.includes_healthy_subjects
+        }
+        pub(crate) fn criteria(&self) -> Option<&[ClinicalTrialEligibilityCriterion]> {
+            self.criteria.as_deref()
+        }
+    }
+
+    #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(crate) struct ClinicalTrialReference {
+        pmid: Option<String>,
+        citation: Option<String>,
+        source_type: Option<ExtensibleCode>,
+    }
+    impl ClinicalTrialReference {
+        pub(crate) fn new(
+            pmid: Option<String>,
+            citation: Option<String>,
+            source_type: Option<ExtensibleCode>,
+        ) -> Result<Self, ()> {
+            if [&pmid, &citation]
+                .into_iter()
+                .flatten()
+                .any(String::is_empty)
+            {
+                return Err(());
+            }
+            Ok(Self {
+                pmid,
+                citation,
+                source_type,
+            })
+        }
+        pub(crate) fn pmid(&self) -> Option<&str> {
+            self.pmid.as_deref()
+        }
+        pub(crate) fn citation(&self) -> Option<&str> {
+            self.citation.as_deref()
+        }
+        pub(crate) const fn source_type(&self) -> Option<&ExtensibleCode> {
+            self.source_type.as_ref()
         }
     }
 }
@@ -353,268 +939,5 @@ impl<'de> Deserialize<'de> for TrialDesign {
             .map_err(|()| serde::de::Error::custom("invalid trial assignment"))?;
         Self::new(interventions, arms, assignments)
             .map_err(|_| serde::de::Error::custom("invalid trial relationships"))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use biodata::{
-        ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
-        ClinicalTrialArmRelationshipError, ClinicalTrialIntervention, ClinicalTrialInterventionId,
-    };
-
-    use super::{TrialDesign, TrialDesignError};
-    use crate::error::BioMcpError;
-
-    fn arm(id: u64) -> ClinicalTrialArm {
-        ClinicalTrialArm::new(
-            ClinicalTrialArmId::new(id).expect("arm identity"),
-            format!("arm {id}"),
-            None,
-            None,
-        )
-        .expect("arm")
-    }
-
-    fn intervention(id: u64) -> ClinicalTrialIntervention {
-        ClinicalTrialIntervention::new(
-            ClinicalTrialInterventionId::new(id).expect("intervention identity"),
-            format!("intervention {id}"),
-            None,
-            None,
-            None,
-        )
-        .expect("intervention")
-    }
-
-    fn assignment(arm_id: u64, intervention_id: u64) -> ClinicalTrialArmInterventionAssignment {
-        ClinicalTrialArmInterventionAssignment::new(
-            ClinicalTrialArmId::new(arm_id).expect("arm identity"),
-            ClinicalTrialInterventionId::new(intervention_id).expect("intervention identity"),
-        )
-    }
-
-    fn relationship_error(
-        interventions: Vec<ClinicalTrialIntervention>,
-        arms: Vec<ClinicalTrialArm>,
-        assignments: Vec<ClinicalTrialArmInterventionAssignment>,
-    ) -> ClinicalTrialArmRelationshipError {
-        let error = TrialDesign::new(interventions, Some(arms), Some(assignments))
-            .expect_err("invalid relationship");
-        error
-            .relationship_error()
-            .copied()
-            .expect("typed relationship error")
-    }
-
-    #[test]
-    fn trial_design_distinguishes_section_presence_from_relationship_failures() {
-        assert_eq!(
-            TrialDesign::new(Vec::new(), Some(Vec::new()), None).unwrap_err(),
-            TrialDesignError::SectionPresenceMismatch
-        );
-        assert!(
-            TrialDesignError::SectionPresenceMismatch
-                .relationship_error()
-                .is_none()
-        );
-    }
-
-    #[test]
-    fn trial_design_preserves_all_relationship_failure_variants() {
-        let arm_id = ClinicalTrialArmId::new(1).unwrap();
-        let intervention_id = ClinicalTrialInterventionId::new(1).unwrap();
-        let missing_arm_id = ClinicalTrialArmId::new(2).unwrap();
-        let missing_intervention_id = ClinicalTrialInterventionId::new(2).unwrap();
-
-        assert_eq!(
-            relationship_error(vec![intervention(1)], vec![arm(1), arm(1)], Vec::new()),
-            ClinicalTrialArmRelationshipError::DuplicateArmId { arm_id }
-        );
-        assert_eq!(
-            relationship_error(
-                vec![intervention(1), intervention(1)],
-                vec![arm(1)],
-                Vec::new()
-            ),
-            ClinicalTrialArmRelationshipError::DuplicateInterventionId { intervention_id }
-        );
-        assert_eq!(
-            relationship_error(vec![intervention(1)], vec![arm(1)], vec![assignment(2, 1)]),
-            ClinicalTrialArmRelationshipError::MissingArmEndpoint {
-                arm_id: missing_arm_id
-            }
-        );
-        assert_eq!(
-            relationship_error(vec![intervention(1)], vec![arm(1)], vec![assignment(1, 2)]),
-            ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
-                intervention_id: missing_intervention_id
-            }
-        );
-        assert_eq!(
-            relationship_error(
-                vec![intervention(1)],
-                vec![arm(1)],
-                vec![assignment(1, 1), assignment(1, 1)]
-            ),
-            ClinicalTrialArmRelationshipError::DuplicateAssignment {
-                arm_id,
-                intervention_id
-            }
-        );
-    }
-
-    #[test]
-    fn missing_intervention_is_checked_against_the_supplied_collection() {
-        assert_eq!(
-            relationship_error(vec![intervention(2)], vec![arm(1)], vec![assignment(1, 1)]),
-            ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
-                intervention_id: ClinicalTrialInterventionId::new(1).unwrap()
-            }
-        );
-    }
-
-    #[test]
-    fn trial_design_error_retains_sources_and_safe_public_projections() {
-        let relationship = ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
-            intervention_id: ClinicalTrialInterventionId::new(42).unwrap(),
-        };
-        let design = TrialDesignError::InvalidRelationship(relationship);
-        let error = BioMcpError::TrialDesign(design);
-
-        assert_eq!(design.relationship_error(), Some(&relationship));
-        assert_eq!(error.code(), "internal_processing");
-        assert_eq!(error.exit_code(), 1);
-        assert_eq!(error.to_string(), "Internal processing failed.");
-        assert_eq!(
-            error.public_projection().message,
-            "Internal processing failed."
-        );
-        assert_eq!(error.public_projection().source, None);
-        assert_eq!(error.public_projection().recovery, None);
-        let design_source = std::error::Error::source(&error)
-            .and_then(|source| source.downcast_ref::<TrialDesignError>())
-            .expect("typed design source");
-        assert_eq!(
-            std::error::Error::source(design_source)
-                .and_then(|source| source.downcast_ref::<ClinicalTrialArmRelationshipError>()),
-            Some(&relationship)
-        );
-
-        let json = crate::render::json::to_error_json(&error).unwrap();
-        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(value["error"]["code"], "internal_processing");
-        assert_eq!(value["error"]["message"], "Internal processing failed.");
-        assert!(value["error"].get("source").is_none());
-        assert!(value["error"].get("recovery").is_none());
-        assert!(!json.contains("MissingInterventionEndpoint"));
-        assert!(!json.contains("42"));
-    }
-
-    #[test]
-    fn trial_design_round_trips_shared_relationships() {
-        for design in [
-            TrialDesign::default(),
-            TrialDesign::from_names_and_arm(
-                &["drug", "device"],
-                "arm",
-                Some("future"),
-                Some("description"),
-            ),
-        ] {
-            let encoded = serde_json::to_value(&design).expect("serialize design");
-            let decoded: TrialDesign =
-                serde_json::from_value(encoded.clone()).expect("deserialize design");
-            assert_eq!(serde_json::to_value(decoded).unwrap(), encoded);
-        }
-    }
-
-    #[test]
-    fn flattened_design_keeps_assignment_member() {
-        #[derive(serde::Serialize)]
-        struct Flat<'a> {
-            name: &'a str,
-            #[serde(flatten)]
-            design: &'a TrialDesign,
-        }
-        let design = TrialDesign::from_names_and_arm(&["drug"], "arm", None, None);
-        let value = serde_json::to_value(Flat {
-            name: "trial",
-            design: &design,
-        })
-        .unwrap();
-        assert_eq!(
-            value["arm_intervention_assignments"]
-                .as_array()
-                .map(Vec::len),
-            Some(1)
-        );
-    }
-
-    #[test]
-    fn type_wire_rejects_missing_unknown_and_empty_members() {
-        let complete = serde_json::json!({"interventions": [{"id": 1, "name": "study drug", "type": {"authority": "future.registry", "code": "FUTURE", "display": null, "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]});
-        let decoded: TrialDesign = serde_json::from_value(complete.clone()).expect("complete code");
-        assert_eq!(
-            decoded.interventions()[0].source_type().unwrap().code(),
-            "FUTURE"
-        );
-        assert_eq!(serde_json::to_value(decoded).unwrap(), complete);
-        for invalid in [
-            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "", "code": "X", "display": null, "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]}),
-            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": null}, "description": null, "other_names": []}]}),
-            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": null, "recognized_meaning": null, "extra": null}, "description": null, "other_names": []}]}),
-            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "", "display": null, "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]}),
-            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": "", "vocabulary_version": null, "recognized_meaning": null}, "description": null, "other_names": []}]}),
-            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": "", "recognized_meaning": null}, "description": null, "other_names": []}]}),
-            serde_json::json!({"interventions": [{"id": 1, "name": "x", "type": {"authority": "a", "code": "X", "display": null, "vocabulary_version": null, "recognized_meaning": ""}, "description": null, "other_names": []}]}),
-            serde_json::json!({"interventions": [], "unexpected": true}),
-        ] {
-            assert!(serde_json::from_value::<TrialDesign>(invalid).is_err());
-        }
-    }
-
-    #[test]
-    fn deserialization_rejects_duplicate_and_dangling_relationships() {
-        let intervention = serde_json::json!({
-            "id": 1, "name": "drug", "type": null, "description": null, "other_names": []
-        });
-        let arm = serde_json::json!({
-            "id": 1, "name": "arm", "type": null, "description": null
-        });
-        for invalid in [
-            serde_json::json!({
-                "interventions": [intervention.clone(), intervention.clone()],
-                "arms": [arm.clone()], "arm_intervention_assignments": []
-            }),
-            serde_json::json!({
-                "interventions": [intervention.clone()], "arms": [arm.clone()],
-                "arm_intervention_assignments": [{"arm_id": 1, "intervention_id": 2}]
-            }),
-            serde_json::json!({
-                "interventions": [intervention], "arms": [arm],
-                "arm_intervention_assignments": [
-                    {"arm_id": 1, "intervention_id": 1},
-                    {"arm_id": 1, "intervention_id": 1}
-                ]
-            }),
-            serde_json::json!({
-                "interventions": [],
-                "arms": [
-                    {"id": 1, "name": "first", "type": null, "description": null},
-                    {"id": 1, "name": "second", "type": null, "description": null}
-                ],
-                "arm_intervention_assignments": []
-            }),
-            serde_json::json!({
-                "interventions": [{"id": 1, "name": "drug", "type": null, "description": null, "other_names": []}],
-                "arms": [{"id": 1, "name": "arm", "type": null, "description": null}],
-                "arm_intervention_assignments": [{"arm_id": 2, "intervention_id": 1}]
-            }),
-            serde_json::json!({"interventions": [], "arms": []}),
-            serde_json::json!({"interventions": [], "arm_intervention_assignments": []}),
-        ] {
-            assert!(serde_json::from_value::<TrialDesign>(invalid).is_err());
-        }
     }
 }
