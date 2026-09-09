@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 9
-deps: []
+deps: [1148]
 ---
 
 # Return GenCC gene-disease validity assertions
@@ -17,6 +17,28 @@ ClinGen is not an absence from other public curation groups.
 `biomcp get gene ODC1 gencc` is the new direct surface. `clingen` remains the
 existing ClinGen-only section. Neither source is collapsed into a consensus or
 a strongest-classification claim.
+
+## Integration base and preservation rules
+
+Implement this ticket on BioMCP 0.9 after tickets 1183 and 1148. Ticket 1159
+has already landed. Preserve its exact ClinGen validity and dosage fields,
+status values, provenance, requests, timeouts, and rendering. Preserve ticket
+1148's exact-symbol and alias search ordering, filters, pagination, request
+counts, and CLI/MCP output byte-for-byte.
+
+The MyGene wire change belongs only to the gene-detail/get seam. Append `HGNC`
+only in `MyGeneClient::get_plan`, retain the private HGNC wire value before
+`from_mygene_get` consumes the response, and populate GenCC only after the
+ordinary Gene card is converted. Do not alter search projections, query
+construction, exact-symbol ranking, alias ranking, public Gene identity fields,
+or search request sequences. Regression tests must exercise ticket 1148's
+exact/alias cases and exact request logs on the combined tree.
+
+Preserve ticket 1183's `serde_json` features `raw_value` and
+`unbounded_depth`, package exclusions, and external-project coupling checks.
+The only direct dependency addition is `getrandom = "0.3"`, used for
+cryptographically random GenCC generation suffixes. Add no external-project
+dependency, source, generated artifact, or runtime path.
 
 ## Current provider facts
 
@@ -279,10 +301,12 @@ is the pre-cap count and `truncated` is true exactly above 100.
 ## Identity matching
 
 GenCC matching uses the canonical identity already resolved for the Gene card,
-not the caller's spelling or aliases. Extend the private MyGene fetch projection
-from its current exact field list by appending `HGNC`, and extend the private
-response to retain that wire value without changing a top-level public `Gene`
-field. MyGene documents `HGNC` as the annotation key and shows a decimal string,
+not the caller's spelling or aliases. Extend only the private MyGene detail/get
+projection in `MyGeneClient::get_plan` from its current exact field list by
+appending `HGNC`, and retain that private wire value before
+`from_mygene_get` consumes the response, without changing a top-level public
+`Gene` field. The MyGene search projection and every search path remain
+unchanged. MyGene documents `HGNC` as the annotation key and shows a decimal string,
 but the decoder deliberately accepts the provider shapes already encountered
 for identifier fields: one JSON string, one unsigned JSON integer, or a flat
 array containing strings and/or unsigned integers. Missing, `null`, or an empty
@@ -888,7 +912,14 @@ the ignored real-provider checks have a distinct Tier-4 owner; inline
 `src/sources/clingen_erepo.rs`. Preserve every test name, ignored/live marker,
 fixture path, and behavior, and run the three consolidated test filters before
 GenCC work. These owners remain below 1,000 lines after consolidation. No
-source-size baseline is raised. `cargo package --list --allow-dirty --locked
+source-size baseline is raised. After ticket 1148,
+`src/entities/gene.rs` is exactly 3,859 lines and must remain at or below that
+ceiling. Move the existing tests
+`outcome_inventory_matches_parser_visible_sections`,
+`gene_section_names_include_new_enrichment_sections`, and
+`parse_sections_accepts_new_enrichment_sections` into the existing
+`src/entities/gene/gencc/tests.rs`; do not delete or weaken them. That module
+must remain below 1,000 lines. `cargo package --list --allow-dirty --locked
 --offline` must be exactly 1,292 immediately after the eight deletions and
 exactly 1,300 after the eight package-visible additions. The excluded GenCC
 CSV does not change either Cargo package count. Any different implementation
@@ -985,9 +1016,9 @@ infer diagnosis/treatment, add disease-side search, expose notes/original
 disease fields, redistribute OMIM content, add an MCP tool, change ClinGen
 semantics, or confuse source availability with validity.
 
-Dependencies: none. Ticket 1159 is independent and may land before or after
-this ticket; coexistence tests adapt to the additive ClinGen status schema on
-the implementation base.
+Dependency: ticket 1148. Ticket 1159 has already landed; combined-tree tests
+must preserve its exact ClinGen fields, status schema, provenance, and
+behavior. Ticket 1183's 0.9 independence boundary also remains immutable.
 
 ## Review
 
@@ -1046,3 +1077,12 @@ the implementation base.
   a computed minimized-fixture hash cannot substitute for the required genuine
   capture receipt.
 - Code review: pending.
+- 2026-09-09 integration refresh: independent review rejected replaying the
+  preserved implementation wholesale because it predates tickets 1183, 1148,
+  and landed 1159. Apply preserved commits `a7e8ad08`, `4c1444d0`, `60812217`,
+  and `5a517b89` together with `git cherry-pick --no-commit` on the post-1148
+  base. Resolve the eight overlapping paths additively, keep every 1148 search
+  helper and assertion, retain 1183's decoupling features and exclusions, add
+  only `getrandom 0.3`, relocate the three named tests to hold the 3,859-line
+  Gene ceiling, and undo the preserved branch's premature ticket-to-record
+  move. This active ticket remains until final review and all gates pass.
