@@ -17,10 +17,14 @@ exclude = [
     "sdlc/",
     "testdata/",
     "tools/alphagenome-proto-generator/",
-    "tools/check-zero-coupling.py",
-    "tools/zero-coupling-historical.json",
-    "tests/test_zero_coupling_ratchet.py",
+    "tools/check-biodata-boundary.py",
+    "tests/test_biodata_boundary.py",
 ]
+
+[package.metadata.biodata-development]
+extracted-package-compile = "deferred"
+until = "BioMCP 1.0 complete and used internally"
+reason = "Cargo removes exact Git dependencies from registry packages"
 
 [[bin]]
 name = "biomcp"
@@ -31,6 +35,7 @@ name = "biomcp-cli"
 path = "src/main_biomcp_cli.rs"
 
 [dependencies]
+biodata = { git = "https://github.com/genomoncology/biodata", rev = "cfafc69d27c9a2fc74909f21692a418a8b17db83" }
 
 # CLI
 clap = { version = "4", features = ["derive"] }

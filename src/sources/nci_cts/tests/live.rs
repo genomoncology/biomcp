@@ -42,7 +42,7 @@ async fn live_get_trial_by_id_round_trips() {
         .and_then(|t| t.get("nct_id"))
         .and_then(|v| v.as_str())
         .expect("a trial with an nct_id");
-    let plan = super::super::NciCtsV2DetailPlan::new(id, true).expect("valid NCT identity");
+    let plan = biodata::NciCtsV2DetailPlan::new(id, true).expect("valid NCT identity");
     let trial = client().get(&plan).await.expect("live nci get");
-    assert!(!trial.title.is_empty());
+    assert_eq!(trial.projection().trial().identities().len(), 2);
 }

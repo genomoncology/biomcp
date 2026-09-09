@@ -1,6 +1,6 @@
 # Clinical-trial capability contract
 
-This inventory defines the user capabilities that BioMCP's locally owned trial contract must preserve or improve. It describes operations and observable behavior. It does not require historical byte parity. A later area may change an answer when the change preserves the capability and provides equal or better information.
+This inventory defines the user capabilities that BioData adoption must preserve or improve. It describes operations and observable behavior. It does not require historical byte parity. A later area may change an answer when the change preserves the capability and provides equal or better information.
 
 ## Capability inventory
 

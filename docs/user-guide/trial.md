@@ -178,7 +178,7 @@ Eligibility:
 biomcp get trial NCT02576665 eligibility
 ```
 
-BioMCP stores eligibility in its local strict trial value for both ClinicalTrials.gov and NCI. JSON keeps registry text, age bounds, source-coded sex, healthy-subject state, and ordered identified criteria as separate facts. Every eligibility object contains all five members. Missing source facts appear as `null`. Explicit empty sex or criterion lists remain empty arrays.
+BioMCP stores eligibility in BioData's shared value for both ClinicalTrials.gov and NCI. JSON keeps registry text, age bounds, source-coded sex, healthy-subject state, and ordered identified criteria as separate facts. Every eligibility object contains all five members. Missing source facts appear as `null`. Explicit empty sex or criterion lists remain empty arrays.
 
 Age bounds preserve the source text, quantity, unit, and minimum or maximum role. NCI's `999 Years` maximum uses the named `nci-cts-v2-999-years-no-upper-bound` rule and renders as `Any age`. Default trial Markdown keeps the concise age summary. The explicit `eligibility` section shows the full readable eligibility presentation.
 

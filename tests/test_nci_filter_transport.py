@@ -62,7 +62,7 @@ def test_rejected_nci_filters_never_reach_local_transport() -> None:
         server.server_close()
 
 
-def test_nci_detail_executes_the_strict_local_plan_through_the_real_cli() -> None:
+def test_nci_detail_executes_the_strict_biodata_plan_through_the_real_cli() -> None:
     receipted_response = json.loads(
         (
             REPO_ROOT / "testdata/sources/nci_cts/get_nci_2023_04529_full_20260903.json"

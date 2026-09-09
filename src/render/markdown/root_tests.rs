@@ -313,7 +313,7 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
         start_date: Some("2025-01-01".to_string()),
         completion_date: None,
         eligibility: Some(
-            crate::entities::trial::shared::ClinicalTrialEligibility::new(
+            biodata::ClinicalTrialEligibility::new(
                 Some("Eligibility text.".to_string()),
                 None,
                 None,
@@ -348,11 +348,11 @@ fn markdown_detail_outputs_label_article_trial_and_pathway_sources() {
             secondary: Vec::new(),
         }),
         references: Some(vec![
-            crate::entities::trial::shared::ClinicalTrialReference::new(
+            biodata::ClinicalTrialReference::new(
                 Some("22663011".to_string()),
                 Some("Example citation".to_string()),
                 Some(
-                    crate::entities::trial::shared::ExtensibleCode::new(
+                    biodata::ExtensibleCode::new(
                         "clinicaltrials.gov",
                         "background",
                         None::<String>,

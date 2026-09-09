@@ -612,7 +612,7 @@ biomcp --json get trial NCT03361748 documents
 biomcp get trial NCT03361748 document Prot_SAP_000.pdf
 ```
 
-`eligibility` exposes BioMCP's local strict registry text, age, sex, healthy-subject state, and ordered criteria. It also reports ClinicalTrials.gov posted-document availability. The CTGov-only `documents` form is a standalone JSON manifest. `document <filename>` accepts an exact advertised name and returns raw, unconverted bytes up to 32 MiB. Documents may contain additional eligibility detail but do not guarantee that a criterion is resolved. They remain outside ordinary `all`.
+`eligibility` exposes BioData's shared registry text, age, sex, healthy-subject state, and ordered criteria. It also reports ClinicalTrials.gov posted-document availability. The CTGov-only `documents` form is a standalone JSON manifest. `document <filename>` accepts an exact advertised name and returns raw, unconverted bytes up to 32 MiB. Documents may contain additional eligibility detail but do not guarantee that a criterion is resolved. They remain outside ordinary `all`.
 
 ### Variant
 

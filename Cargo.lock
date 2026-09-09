@@ -292,6 +292,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "biodata"
+version = "0.0.11"
+source = "git+https://github.com/genomoncology/biodata?rev=cfafc69d27c9a2fc74909f21692a418a8b17db83#cfafc69d27c9a2fc74909f21692a418a8b17db83"
+dependencies = [
+ "quick-xml",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "biomcp-cli"
 version = "0.9.0-dev.6"
 dependencies = [
@@ -300,6 +311,7 @@ dependencies = [
  "axum 0.8.8",
  "base64 0.22.1",
  "bincode",
+ "biodata",
  "biomcp-mcp-contract-client",
  "bytesize",
  "cacache",
@@ -2401,6 +2413,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41b1177fdf999d2321d3fb46ff47159d9c1fb9ad66a4879f8c50a0b504615e9b"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]

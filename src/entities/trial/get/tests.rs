@@ -45,7 +45,8 @@ fn plan_bound_nci_response(
 ) -> (NciCtsV2DetailPlan, NciCtsV2DetailResponse) {
     let plan = NciCtsV2DetailPlan::new("NCT05879926", eligibility_requested).unwrap();
     let bytes = serde_json::to_vec(&serde_json::json!({"total": 1, "data": [record]})).unwrap();
-    let response = NciCtsV2DetailResponse::parse(&plan, &bytes).unwrap();
+    let response =
+        NciCtsV2DetailResponse::parse(&plan, &bytes, &biodata::NciCtsV2Limits::default()).unwrap();
     (plan, response)
 }
 
@@ -105,7 +106,7 @@ fn nci_request_state_table_requests_eligibility_exactly_when_selected() {
 
 #[test]
 fn product_references_maps_each_section_state() {
-    use crate::entities::trial::shared::{ClinicalTrialReference, ClinicalTrialSection};
+    use biodata::{ClinicalTrialReference, ClinicalTrialSection};
 
     assert!(
         product_references(ClinicalTrialSection::Absent)
@@ -202,10 +203,9 @@ fn nci_arm_conversion_preserves_every_occurrence_and_assignment() {
 
 #[test]
 fn product_design_retains_a_relationship_failure_from_mismatched_sections() {
-    let arm_id = crate::entities::trial::shared::ClinicalTrialArmId::new(1).unwrap();
-    let expected_intervention_id =
-        crate::entities::trial::shared::ClinicalTrialInterventionId::new(1).unwrap();
-    let original_intervention = crate::entities::trial::shared::ClinicalTrialIntervention::new(
+    let arm_id = biodata::ClinicalTrialArmId::new(1).unwrap();
+    let expected_intervention_id = biodata::ClinicalTrialInterventionId::new(1).unwrap();
+    let original_intervention = biodata::ClinicalTrialIntervention::new(
         expected_intervention_id,
         "original",
         None,
@@ -213,20 +213,14 @@ fn product_design_retains_a_relationship_failure_from_mismatched_sections() {
         None,
     )
     .unwrap();
-    let arm =
-        crate::entities::trial::shared::ClinicalTrialArm::new(arm_id, "arm", None, None).unwrap();
-    let assignment = crate::entities::trial::shared::ClinicalTrialArmInterventionAssignment::new(
-        arm_id,
-        expected_intervention_id,
-    );
-    let arms = crate::entities::trial::shared::ClinicalTrialArms::new(
-        vec![arm],
-        &[original_intervention],
-        vec![assignment],
-    )
-    .unwrap();
-    let replacement_intervention = crate::entities::trial::shared::ClinicalTrialIntervention::new(
-        crate::entities::trial::shared::ClinicalTrialInterventionId::new(2).unwrap(),
+    let arm = biodata::ClinicalTrialArm::new(arm_id, "arm", None, None).unwrap();
+    let assignment =
+        biodata::ClinicalTrialArmInterventionAssignment::new(arm_id, expected_intervention_id);
+    let arms =
+        biodata::ClinicalTrialArms::new(vec![arm], &[original_intervention], vec![assignment])
+            .unwrap();
+    let replacement_intervention = biodata::ClinicalTrialIntervention::new(
+        biodata::ClinicalTrialInterventionId::new(2).unwrap(),
         "replacement",
         None,
         None,
@@ -246,7 +240,7 @@ fn product_design_retains_a_relationship_failure_from_mismatched_sections() {
     };
     assert_eq!(
         relationship,
-        crate::entities::trial::shared::ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
+        biodata::ClinicalTrialArmRelationshipError::MissingInterventionEndpoint {
             intervention_id: expected_intervention_id
         }
     );
@@ -339,7 +333,7 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
         assert_eq!(
             matches!(
                 criterion.classification(),
-                crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Inclusion
+                biodata::ClinicalTrialEligibilityClassification::Inclusion
             ),
             expected_inclusion,
             "classification at sorted position {sorted_index}"
@@ -347,7 +341,7 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
         assert_eq!(
             matches!(
                 criterion.classification(),
-                crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Exclusion
+                biodata::ClinicalTrialEligibilityClassification::Exclusion
             ),
             !expected_inclusion,
             "classification at sorted position {sorted_index}"
@@ -371,7 +365,7 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
     assert_eq!(criteria[0].id().get(), 36);
     assert!(matches!(
         criteria[0].classification(),
-        crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Inclusion
+        biodata::ClinicalTrialEligibilityClassification::Inclusion
     ));
 
     let mut changed = receipted_nci_record();
@@ -382,7 +376,7 @@ fn nci_criterion_sorting_preserves_source_occurrence_identity_and_classification
     };
     assert!(matches!(
         eligibility.criteria().unwrap()[0].classification(),
-        crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Exclusion
+        biodata::ClinicalTrialEligibilityClassification::Exclusion
     ));
 
     let mut changed = receipted_nci_record();
@@ -645,7 +639,7 @@ async fn nci_not_found_status_wins_before_an_oversized_body_is_read() {
 }
 #[cfg(test)]
 mod trial_design_contracts {
-    use crate::entities::trial::shared::{
+    use biodata::{
         ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
         ClinicalTrialArmRelationshipError, ClinicalTrialIntervention, ClinicalTrialInterventionId,
     };

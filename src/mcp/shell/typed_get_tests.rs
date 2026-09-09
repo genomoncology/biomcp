@@ -19,7 +19,7 @@ use super::{BioMcpServer, ShellCommand, TypedGet, TypedVariantErepo, get_args};
 #[test]
 fn shared_mcp_error_conversion_hides_trial_design_details() {
     let relationship = crate::error::ClinicalTrialArmRelationshipError::MissingArmEndpoint {
-        arm_id: crate::entities::trial::shared::ClinicalTrialArmId::new(42).unwrap(),
+        arm_id: biodata::ClinicalTrialArmId::new(42).unwrap(),
     };
     let error = crate::error::BioMcpError::TrialDesign(
         crate::error::TrialDesignError::InvalidRelationship(relationship),

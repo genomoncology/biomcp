@@ -1,5 +1,5 @@
-pub use crate::entities::trial::ClinicalTrialArmId;
-pub use crate::entities::trial::{ClinicalTrialArmRelationshipError, TrialDesignError};
+pub use crate::entities::trial::TrialDesignError;
+pub use biodata::{ClinicalTrialArmId, ClinicalTrialArmRelationshipError};
 use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

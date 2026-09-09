@@ -1,13 +1,13 @@
 //! Trial detail retrieval exposed through the stable trial facade.
 
-use super::shared::{
-    ClinicalTrialArms, ClinicalTrialEligibility, ClinicalTrialIntervention, ClinicalTrialReference,
-    ClinicalTrialSection,
-};
 use crate::error::BioMcpError;
 use crate::sources::clinicaltrials::ClinicalTrialsClient;
-use crate::sources::nci_cts::{NciCtsClient, NciCtsV2DetailPlan, NciCtsV2DetailResponse};
+use crate::sources::nci_cts::NciCtsClient;
 use crate::transform;
+use biodata::{
+    ClinicalTrialArms, ClinicalTrialEligibility, ClinicalTrialIntervention, ClinicalTrialSection,
+    NciCtsV2DetailPlan, NciCtsV2DetailResponse,
+};
 
 use super::{
     TRIAL_SECTION_ALL, TRIAL_SECTION_ARMS, TRIAL_SECTION_CONTACTS, TRIAL_SECTION_ELIGIBILITY,
@@ -78,14 +78,13 @@ fn parse_sections(sections: &[String]) -> Result<TrialSections, BioMcpError> {
 }
 
 fn product_references(
-    section: ClinicalTrialSection<Vec<ClinicalTrialReference>>,
-) -> Result<Vec<ClinicalTrialReference>, BioMcpError> {
+    section: biodata::ClinicalTrialSection<Vec<biodata::ClinicalTrialReference>>,
+) -> Result<Vec<biodata::ClinicalTrialReference>, BioMcpError> {
     match section {
-        ClinicalTrialSection::Present(values) => Ok(values),
-        ClinicalTrialSection::Absent => Ok(Vec::new()),
-        ClinicalTrialSection::NotRequested | ClinicalTrialSection::Unavailable => {
-            Err(BioMcpError::InternalProcessing)
-        }
+        biodata::ClinicalTrialSection::Present(values) => Ok(values),
+        biodata::ClinicalTrialSection::Absent => Ok(Vec::new()),
+        biodata::ClinicalTrialSection::NotRequested
+        | biodata::ClinicalTrialSection::Unavailable => Err(BioMcpError::InternalProcessing),
     }
 }
 
@@ -112,14 +111,14 @@ pub(crate) fn product_design(
 }
 
 fn product_nci_design(
-    response: &NciCtsV2DetailResponse,
+    shared: &biodata::ClinicalTrial,
     include_arms: bool,
 ) -> Result<TrialDesign, BioMcpError> {
-    let interventions = response.interventions.clone();
+    let interventions = shared.interventions().unwrap_or_default().to_vec();
     let (arms, assignments) = if include_arms {
         (
-            Some(response.arms.clone()),
-            Some(response.assignments.clone()),
+            shared.arms().map(<[_]>::to_vec),
+            shared.arm_intervention_assignments().map(<[_]>::to_vec),
         )
     } else {
         (None, None)
@@ -146,37 +145,40 @@ fn product_from_nci_response(
     request_eligibility: bool,
     include_arms: bool,
 ) -> Result<Trial, BioMcpError> {
+    let shared = response.projection().trial();
+    let phase = shared
+        .phases()
+        .first()
+        .map(|value| value.code().to_string());
     let eligibility = product_eligibility(response.eligibility(), request_eligibility)?;
 
     Ok(Trial {
         nct_id: plan.requested_identity().to_string(),
         source: Some("NCI CTS".to_string()),
-        title: response.title.clone(),
-        status: response.status.clone(),
+        title: shared.brief_title().to_string(),
+        status: shared.overall_status().code().to_string(),
         why_stopped: Some(
-            response
-                .stop_reason
-                .as_deref()
+            shared
+                .stop_reason()
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .map(str::to_owned),
         ),
-        phase: response.phase.clone(),
-        study_type: Some(response.study_type.clone()),
-        conditions: response.conditions.clone(),
-        design: product_nci_design(response, include_arms)?,
-        sponsor: Some(response.sponsor.clone()),
-        enrollment: response
-            .enrollment
+        phase,
+        study_type: Some(shared.study_type().code().to_string()),
+        conditions: shared.conditions().to_vec(),
+        design: product_nci_design(shared, include_arms)?,
+        sponsor: Some(shared.lead_sponsor_name().to_string()),
+        enrollment: shared
+            .enrollment_count()
             .and_then(|value| i32::try_from(value).ok()),
         summary: response
-            .summary
-            .as_deref()
+            .brief_summary()
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_owned),
-        start_date: response.start_date.clone(),
-        completion_date: response.completion_date.clone(),
+        start_date: shared.start_date().map(str::to_owned),
+        completion_date: shared.completion_date().map(str::to_owned),
         eligibility,
         eligibility_provenance: None,
         contacts: None,
@@ -238,7 +240,7 @@ pub async fn get(
     match source {
         TrialSource::ClinicalTrialsGov => {
             let client = ClinicalTrialsClient::new()?;
-            let response = client.get_detail(nct_id, sections).await?;
+            let response = client.get_biodata_detail(nct_id, sections).await?;
             let mut study = response.study;
             if let Some(protocol) = study.protocol_section.as_mut() {
                 protocol.arms_interventions_module = None;

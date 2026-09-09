@@ -64,13 +64,11 @@ fn arm_views(trial: &Trial) -> Vec<ArmView<'_>> {
         .collect()
 }
 
-fn eligibility_age_range(
-    value: &crate::entities::trial::shared::ClinicalTrialEligibility,
-) -> Option<String> {
+fn eligibility_age_range(value: &biodata::ClinicalTrialEligibility) -> Option<String> {
     let range = value.age_range()?;
     let minimum = range.minimum().map(|bound| bound.source().source());
     let maximum = range.maximum().and_then(|bound| {
-        (bound.form() == crate::entities::trial::shared::ClinicalTrialAgeBoundForm::Limited)
+        (bound.form() == biodata::ClinicalTrialAgeBoundForm::Limited)
             .then(|| bound.source().source())
     });
     match (minimum, maximum) {
@@ -81,23 +79,17 @@ fn eligibility_age_range(
     }
 }
 
-fn eligibility_heading(
-    classification: &crate::entities::trial::shared::ClinicalTrialEligibilityClassification,
-) -> String {
+fn eligibility_heading(classification: &biodata::ClinicalTrialEligibilityClassification) -> String {
     match classification {
-        crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Inclusion => {
-            "Inclusion Criteria".into()
-        }
-        crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Exclusion => {
-            "Exclusion Criteria".into()
-        }
-        crate::entities::trial::shared::ClinicalTrialEligibilityClassification::Other(source) => {
+        biodata::ClinicalTrialEligibilityClassification::Inclusion => "Inclusion Criteria".into(),
+        biodata::ClinicalTrialEligibilityClassification::Exclusion => "Exclusion Criteria".into(),
+        biodata::ClinicalTrialEligibilityClassification::Other(source) => {
             format!("Other Criteria ({}: {})", source.authority(), source.code())
         }
     }
 }
 
-fn eligibility_sex_label(code: &crate::entities::trial::shared::ExtensibleCode) -> &str {
+fn eligibility_sex_label(code: &biodata::ExtensibleCode) -> &str {
     if let Some(display) = code.display() {
         return display;
     }
@@ -109,9 +101,7 @@ fn eligibility_sex_label(code: &crate::entities::trial::shared::ExtensibleCode) 
     }
 }
 
-fn eligibility_markdown(
-    value: &crate::entities::trial::shared::ClinicalTrialEligibility,
-) -> String {
+fn eligibility_markdown(value: &biodata::ClinicalTrialEligibility) -> String {
     let mut out = String::new();
     if let Some(sexes) = value.sexes() {
         let labels = sexes.iter().map(eligibility_sex_label).collect::<Vec<_>>();

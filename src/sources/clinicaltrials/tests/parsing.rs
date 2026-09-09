@@ -171,7 +171,7 @@ fn detail_response_maps_every_stable_validation_code() {
             "identity_mismatch",
         ),
     ] {
-        let error = ClinicalTrialsClient::decode_detail_response(
+        let error = ClinicalTrialsClient::decode_biodata_detail_response(
             "NCT00000001",
             &["references".to_string()],
             StatusCode::OK,
@@ -182,7 +182,7 @@ fn detail_response_maps_every_stable_validation_code() {
     }
 
     let oversized = vec![b' '; 8 * 1024 * 1024 + 1];
-    let error = ClinicalTrialsClient::decode_detail_response(
+    let error = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT00000001",
         &["references".to_string()],
         StatusCode::OK,
@@ -196,8 +196,9 @@ fn detail_response_maps_every_stable_validation_code() {
 fn detail_response_checks_http_status_before_valid_json() {
     let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"}}}"#;
     for status in [StatusCode::BAD_GATEWAY, StatusCode::SERVICE_UNAVAILABLE] {
-        let error = ClinicalTrialsClient::decode_detail_response("NCT00000001", &[], status, body)
-            .expect_err("HTTP failure");
+        let error =
+            ClinicalTrialsClient::decode_biodata_detail_response("NCT00000001", &[], status, body)
+                .expect_err("HTTP failure");
         assert_eq!(error.code(), "api");
         assert!(format!("{error:?}").contains(status.as_str()));
     }
@@ -206,17 +207,17 @@ fn detail_response_checks_http_status_before_valid_json() {
 #[test]
 fn detail_response_returns_shared_references() {
     let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"referencesModule":{"references":[]}}}"#;
-    let response = ClinicalTrialsClient::decode_detail_response(
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT00000001",
         &["references".to_string()],
         StatusCode::OK,
         body,
     )
-    .expect("valid local trial response");
+    .expect("valid BioData response");
 
     assert!(matches!(
         response.shared.references(),
-        crate::entities::trial::shared::ClinicalTrialSection::Present(references) if references.is_empty()
+        biodata::ClinicalTrialSection::Present(references) if references.is_empty()
     ));
     assert!(response.study.protocol_section.is_some());
 }
@@ -229,16 +230,14 @@ fn recorded_ctgov_eligibility_reaches_the_shared_projection_without_loss() {
     let expected_text = source["protocolSection"]["eligibilityModule"]["eligibilityCriteria"]
         .as_str()
         .expect("recorded registry text");
-    let response = ClinicalTrialsClient::decode_detail_response(
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT02576665",
         &["eligibility".to_string()],
         StatusCode::OK,
         bytes,
     )
-    .expect("valid recorded local trial response");
-    let crate::entities::trial::shared::ClinicalTrialSection::Present(eligibility) =
-        response.shared.eligibility()
-    else {
+    .expect("valid recorded BioData response");
+    let biodata::ClinicalTrialSection::Present(eligibility) = response.shared.eligibility() else {
         panic!("present shared eligibility")
     };
     assert_eq!(eligibility.registry_text(), Some(expected_text));
@@ -261,16 +260,14 @@ fn ctgov_eligibility_mutations_change_only_the_shared_values() {
     module["sex"] = serde_json::json!("FEMALE");
     module["healthyVolunteers"] = serde_json::json!(true);
     let bytes = serde_json::to_vec(&changed).unwrap();
-    let response = ClinicalTrialsClient::decode_detail_response(
+    let response = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT02576665",
         &["eligibility".to_string()],
         StatusCode::OK,
         &bytes,
     )
-    .expect("valid mutated local trial response");
-    let crate::entities::trial::shared::ClinicalTrialSection::Present(eligibility) =
-        response.shared.eligibility()
-    else {
+    .expect("valid mutated BioData response");
+    let biodata::ClinicalTrialSection::Present(eligibility) = response.shared.eligibility() else {
         panic!("present shared eligibility")
     };
     assert_eq!(eligibility.registry_text(), Some("Mutated β criteria"));
@@ -281,7 +278,7 @@ fn ctgov_eligibility_mutations_change_only_the_shared_values() {
 #[test]
 fn detail_response_sanitizes_ambiguous_arm_labels() {
     let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"same"},{"label":"same"}],"interventions":[{"name":"I","armGroupLabels":["same"]}]}}}"#;
-    let error = ClinicalTrialsClient::decode_detail_response(
+    let error = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT00000001",
         &["arms".to_string()],
         StatusCode::OK,
@@ -309,7 +306,7 @@ fn product_arm_states_survive_dedicated_mixed_and_all_routes() {
         vec!["all".to_string()],
     ] {
         for (body, expected_arms) in states {
-            let response = ClinicalTrialsClient::decode_detail_response(
+            let response = ClinicalTrialsClient::decode_biodata_detail_response(
                 "NCT00000001",
                 &sections,
                 StatusCode::OK,
@@ -365,7 +362,7 @@ fn arm_label_mutations_rebuild_or_reject_assignments_without_leaking_values() {
     let before = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm A"]},{"name":"J","armGroupLabels":["Arm B"]}]}}}"#;
     let after = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm B"]},{"name":"J","armGroupLabels":["Arm B"]}]}}}"#;
     let parse_design = |body: &[u8]| {
-        let response = ClinicalTrialsClient::decode_detail_response(
+        let response = ClinicalTrialsClient::decode_biodata_detail_response(
             "NCT00000001",
             &["arms".to_string()],
             StatusCode::OK,
@@ -413,7 +410,7 @@ fn arm_label_mutations_rebuild_or_reject_assignments_without_leaking_values() {
         br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"known-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["unknown-label-secret"]}]}}}"#.as_slice(),
         br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"ambiguous-label-secret"},{"label":"ambiguous-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["ambiguous-label-secret"]}]}}}"#.as_slice(),
     ] {
-        let error = ClinicalTrialsClient::decode_detail_response(
+        let error = ClinicalTrialsClient::decode_biodata_detail_response(
             "NCT00000001", &["arms".to_string()], StatusCode::OK, invalid,
         )
         .expect_err("invalid label relationship");

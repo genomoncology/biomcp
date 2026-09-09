@@ -1,33 +1,21 @@
 use super::*;
 
-fn eligibility_fixture() -> crate::entities::trial::shared::ClinicalTrialEligibility {
-    let parse = |source, bound| match crate::entities::trial::shared::TemporalParser::default()
-        .parse_duration(source, bound)
-    {
-        crate::entities::trial::shared::ParseOutcome::Parsed(value) => value,
-        other => panic!("age fixture did not parse: {other:?}"),
-    };
-    let minimum = crate::entities::trial::shared::ClinicalTrialAgeBound::limited(parse(
-        "2 Years",
-        crate::entities::trial::shared::Bound::Minimum,
-    ))
-    .unwrap();
-    let maximum = crate::entities::trial::shared::ClinicalTrialAgeBound::limited(parse(
-        "18 Years",
-        crate::entities::trial::shared::Bound::Maximum,
-    ))
-    .unwrap();
-    crate::entities::trial::shared::ClinicalTrialEligibility::new(
+fn eligibility_fixture() -> biodata::ClinicalTrialEligibility {
+    let parse =
+        |source, bound| match biodata::TemporalParser::default().parse_duration(source, bound) {
+            biodata::ParseOutcome::Parsed(value) => value,
+            other => panic!("age fixture did not parse: {other:?}"),
+        };
+    let minimum =
+        biodata::ClinicalTrialAgeBound::limited(parse("2 Years", biodata::Bound::Minimum)).unwrap();
+    let maximum =
+        biodata::ClinicalTrialAgeBound::limited(parse("18 Years", biodata::Bound::Maximum))
+            .unwrap();
+    biodata::ClinicalTrialEligibility::new(
         Some("Key inclusion.".into()),
-        Some(
-            crate::entities::trial::shared::ClinicalTrialAgeRange::new(
-                Some(minimum),
-                Some(maximum),
-            )
-            .unwrap(),
-        ),
+        Some(biodata::ClinicalTrialAgeRange::new(Some(minimum), Some(maximum)).unwrap()),
         Some(vec![
-            crate::entities::trial::shared::ExtensibleCode::new(
+            biodata::ExtensibleCode::new(
                 "clinicaltrials.gov",
                 "FEMALE",
                 Some("Female"),
@@ -45,10 +33,10 @@ fn eligibility_fixture() -> crate::entities::trial::shared::ClinicalTrialEligibi
 fn criterion(
     id: u64,
     description: &str,
-    classification: crate::entities::trial::shared::ClinicalTrialEligibilityClassification,
-) -> crate::entities::trial::shared::ClinicalTrialEligibilityCriterion {
-    crate::entities::trial::shared::ClinicalTrialEligibilityCriterion::new(
-        crate::entities::trial::shared::ClinicalTrialEligibilityCriterionId::new(id).unwrap(),
+    classification: biodata::ClinicalTrialEligibilityClassification,
+) -> biodata::ClinicalTrialEligibilityCriterion {
+    biodata::ClinicalTrialEligibilityCriterion::new(
+        biodata::ClinicalTrialEligibilityCriterionId::new(id).unwrap(),
         description,
         classification,
     )
@@ -57,11 +45,9 @@ fn criterion(
 
 #[test]
 fn eligibility_markdown_preserves_linear_transitions_and_bounds_all_content() {
-    use crate::entities::trial::shared::ClinicalTrialEligibilityClassification::{
-        Exclusion, Inclusion, Other,
-    };
+    use biodata::ClinicalTrialEligibilityClassification::{Exclusion, Inclusion, Other};
 
-    let future = crate::entities::trial::shared::ExtensibleCode::new(
+    let future = biodata::ExtensibleCode::new(
         "future.registry",
         "MAYBE",
         None::<String>,
@@ -69,7 +55,7 @@ fn eligibility_markdown_preserves_linear_transitions_and_bounds_all_content() {
         None::<String>,
     )
     .unwrap();
-    let eligibility = crate::entities::trial::shared::ClinicalTrialEligibility::new(
+    let eligibility = biodata::ClinicalTrialEligibility::new(
         Some(format!("Registry β {}", "x".repeat(12_100))),
         None,
         None,
@@ -88,7 +74,7 @@ fn eligibility_markdown_preserves_linear_transitions_and_bounds_all_content() {
     assert!(markdown.contains("(truncated,"));
     assert!(!markdown.contains("include one"));
 
-    let without_long_text = crate::entities::trial::shared::ClinicalTrialEligibility::new(
+    let without_long_text = biodata::ClinicalTrialEligibility::new(
         None,
         None,
         None,
@@ -116,15 +102,13 @@ fn eligibility_markdown_preserves_linear_transitions_and_bounds_all_content() {
 
 #[test]
 fn eligibility_markdown_accepts_a_present_empty_aggregate_without_claims() {
-    let empty =
-        crate::entities::trial::shared::ClinicalTrialEligibility::new(None, None, None, None, None)
-            .unwrap();
+    let empty = biodata::ClinicalTrialEligibility::new(None, None, None, None, None).unwrap();
     assert_eq!(eligibility_markdown(&empty), "");
 }
 
 #[test]
 fn eligibility_markdown_makes_source_sex_codes_readable_without_changing_json() {
-    let female = crate::entities::trial::shared::ExtensibleCode::new(
+    let female = biodata::ExtensibleCode::new(
         "clinicaltrials.gov",
         "FEMALE",
         None::<String>,
@@ -132,14 +116,8 @@ fn eligibility_markdown_makes_source_sex_codes_readable_without_changing_json() 
         None::<String>,
     )
     .unwrap();
-    let eligibility = crate::entities::trial::shared::ClinicalTrialEligibility::new(
-        None,
-        None,
-        Some(vec![female]),
-        None,
-        None,
-    )
-    .unwrap();
+    let eligibility =
+        biodata::ClinicalTrialEligibility::new(None, None, Some(vec![female]), None, None).unwrap();
 
     assert_eq!(eligibility_markdown(&eligibility), "Sex: Female");
 }
@@ -390,11 +368,10 @@ fn trial_markdown_includes_source_labeled_sections() {
         study_type: Some("Interventional".to_string()),
         conditions: vec!["cystic fibrosis".to_string()],
         design: {
-            let intervention_id =
-                crate::entities::trial::shared::ClinicalTrialInterventionId::new(1).unwrap();
-            let arm_id = crate::entities::trial::shared::ClinicalTrialArmId::new(1).unwrap();
+            let intervention_id = biodata::ClinicalTrialInterventionId::new(1).unwrap();
+            let arm_id = biodata::ClinicalTrialArmId::new(1).unwrap();
             let code = |value: &str| {
-                crate::entities::trial::shared::ExtensibleCode::new(
+                biodata::ExtensibleCode::new(
                     "test",
                     value,
                     None::<String>,
@@ -405,7 +382,7 @@ fn trial_markdown_includes_source_labeled_sections() {
             };
             crate::entities::trial::TrialDesign::new(
                 vec![
-                    crate::entities::trial::shared::ClinicalTrialIntervention::new(
+                    biodata::ClinicalTrialIntervention::new(
                         intervention_id,
                         "ivacaftor",
                         Some(code("BIOLOGICAL")),
@@ -415,7 +392,7 @@ fn trial_markdown_includes_source_labeled_sections() {
                     .unwrap(),
                 ],
                 Some(vec![
-                    crate::entities::trial::shared::ClinicalTrialArm::new(
+                    biodata::ClinicalTrialArm::new(
                         arm_id,
                         "Arm A",
                         Some(code("Experimental")),
@@ -423,12 +400,10 @@ fn trial_markdown_includes_source_labeled_sections() {
                     )
                     .unwrap(),
                 ]),
-                Some(vec![
-                    crate::entities::trial::shared::ClinicalTrialArmInterventionAssignment::new(
-                        arm_id,
-                        intervention_id,
-                    ),
-                ]),
+                Some(vec![biodata::ClinicalTrialArmInterventionAssignment::new(
+                    arm_id,
+                    intervention_id,
+                )]),
             )
             .unwrap()
         },
@@ -464,11 +439,11 @@ fn trial_markdown_includes_source_labeled_sections() {
             secondary: Vec::new(),
         }),
         references: Some(vec![
-            crate::entities::trial::shared::ClinicalTrialReference::new(
+            biodata::ClinicalTrialReference::new(
                 Some("22663011".to_string()),
                 Some("Example citation".to_string()),
                 Some(
-                    crate::entities::trial::shared::ExtensibleCode::new(
+                    biodata::ExtensibleCode::new(
                         "clinicaltrials.gov",
                         "background",
                         None::<String>,
@@ -505,11 +480,11 @@ fn trial_markdown_includes_source_labeled_sections() {
 fn trial_markdown_uses_each_safe_reference_fallback() {
     let mut trial = summary_trial(None);
     trial.references = Some(vec![
-        crate::entities::trial::shared::ClinicalTrialReference::new(
+        biodata::ClinicalTrialReference::new(
             Some(" 12345 ".to_string()),
             Some(" Citation with identifier ".to_string()),
             Some(
-                crate::entities::trial::shared::ExtensibleCode::new(
+                biodata::ExtensibleCode::new(
                     "example.org",
                     "CODE",
                     Some(" Preferred display ".to_string()),
@@ -520,17 +495,13 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
             ),
         )
         .expect("shared reference"),
-        crate::entities::trial::shared::ClinicalTrialReference::new(
-            Some("67890".to_string()),
-            None,
-            None,
-        )
-        .expect("PMID-only reference"),
-        crate::entities::trial::shared::ClinicalTrialReference::new(
+        biodata::ClinicalTrialReference::new(Some("67890".to_string()), None, None)
+            .expect("PMID-only reference"),
+        biodata::ClinicalTrialReference::new(
             Some("24680".to_string()),
             None,
             Some(
-                crate::entities::trial::shared::ExtensibleCode::new(
+                biodata::ExtensibleCode::new(
                     "example.org",
                     "HIDDEN",
                     Some("Should stay hidden".to_string()),
@@ -541,11 +512,11 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
             ),
         )
         .expect("PMID and source-type reference"),
-        crate::entities::trial::shared::ClinicalTrialReference::new(
+        biodata::ClinicalTrialReference::new(
             None,
             None,
             Some(
-                crate::entities::trial::shared::ExtensibleCode::new(
+                biodata::ExtensibleCode::new(
                     "example.org",
                     "CODE-TWO",
                     None::<String>,
@@ -556,11 +527,11 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
             ),
         )
         .expect("source-only reference"),
-        crate::entities::trial::shared::ClinicalTrialReference::new(
+        biodata::ClinicalTrialReference::new(
             None,
             None,
             Some(
-                crate::entities::trial::shared::ExtensibleCode::new(
+                biodata::ExtensibleCode::new(
                     "example.org",
                     " Code only ",
                     None::<String>,
@@ -571,13 +542,12 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
             ),
         )
         .expect("source-only code reference"),
-        crate::entities::trial::shared::ClinicalTrialReference::new(None, None, None)
-            .expect("all-null reference"),
-        crate::entities::trial::shared::ClinicalTrialReference::new(
+        biodata::ClinicalTrialReference::new(None, None, None).expect("all-null reference"),
+        biodata::ClinicalTrialReference::new(
             Some(" \t ".to_string()),
             Some(" \t ".to_string()),
             Some(
-                crate::entities::trial::shared::ExtensibleCode::new(
+                biodata::ExtensibleCode::new(
                     "example.org",
                     " \t ",
                     Some(" \t ".to_string()),
@@ -610,7 +580,7 @@ fn trial_markdown_uses_each_safe_reference_fallback() {
 
 #[test]
 fn arm_rendering_follows_assignment_ids_when_names_do_not_change() {
-    use crate::entities::trial::shared::{
+    use biodata::{
         ClinicalTrialArm, ClinicalTrialArmId, ClinicalTrialArmInterventionAssignment,
         ClinicalTrialIntervention, ClinicalTrialInterventionId,
     };

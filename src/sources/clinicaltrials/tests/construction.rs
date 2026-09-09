@@ -183,7 +183,7 @@ fn get_plan_builds_study_path_and_section_fields() {
 }
 
 #[test]
-fn local_detail_plan_uses_the_exact_shared_path_and_fields() {
+fn biodata_detail_plan_uses_the_exact_shared_path_and_fields() {
     let plan = ClinicalTrialsClient::get_plan("NCT02576665", &["references".to_string()]);
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "studies/NCT02576665");

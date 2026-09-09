@@ -22,7 +22,7 @@ fi
 
 mkdir -p "$OUTPUT_DIR"
 
-uv run --no-project python "$ROOT_DIR/tools/check-zero-coupling.py" --root "$ROOT_DIR"
+uv run --no-project python "$ROOT_DIR/tools/check-biodata-boundary.py" --root "$ROOT_DIR"
 
 exec uv run --no-project python "$ROOT_DIR/tools/check-quality-ratchet.py" \
   --root-dir "$ROOT_DIR" \

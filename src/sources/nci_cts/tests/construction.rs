@@ -126,8 +126,8 @@ fn search_plan_includes_interventions_and_biomarkers_when_present() {
 }
 
 #[test]
-fn get_plan_executes_the_exact_local_detail_plan_with_one_credential_header() {
-    let detail_plan = super::super::NciCtsV2DetailPlan::new("nct01234567", true).unwrap();
+fn get_plan_executes_the_exact_biodata_detail_plan_with_one_credential_header() {
+    let detail_plan = biodata::NciCtsV2DetailPlan::new("nct01234567", true).unwrap();
     let plan = NciCtsClient::get_plan("test-key", &detail_plan);
     assert_eq!(plan.method, HttpMethod::Get);
     assert_eq!(plan.path, "trials");
