@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 from urllib.error import HTTPError
@@ -33,7 +34,9 @@ def _exports(path: Path) -> dict[str, str]:
     return dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
 
 
-@pytest.mark.skipif(not Path("/proc").is_dir(), reason="fixture supervision needs procfs")
+@pytest.mark.skipif(
+    not Path("/proc").is_dir(), reason="fixture supervision needs procfs"
+)
 def test_provider_fixture_serves_receipted_routes_and_fails_closed(
     tmp_path: Path,
 ) -> None:
@@ -82,6 +85,9 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
         assert "GET /mygene/v3/query?q=symbol%3A%22BRAF%22" in request_log.read_text()
         assert "POST /opentargets/api/v4/graphql" in request_log.read_text()
         assert values["BIOMCP_CACHE_MODE"] == "off"
+        expected_gencc_tmp = "/tmp" if os.environ.get("BIOMCP_OFFLINE_NETWORK") == "1" else os.environ.get("TMPDIR", "/tmp")
+        assert values["BIOMCP_GENCC_FIXTURE_TMP_ROOT"] == expected_gencc_tmp
+        assert Path(values["BIOMCP_GENCC_FIXTURE_PARENT"]).parent == Path(expected_gencc_tmp)
         assert Path(values["BIOMCP_EMA_DIR"]).is_dir()
         assert Path(values["BIOMCP_WHO_DIR"]).is_dir()
         assert Path(values["BIOMCP_GTR_DIR"], "test_version.gz").is_file()
@@ -90,3 +96,19 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
 
     assert not (workspace / ".cache/spec-provider-contract-env").exists()
     assert not (workspace / ".cache/spec-provider-contract-ownership").exists()
+    assert not Path(values["BIOMCP_GENCC_FIXTURE_PARENT"]).exists()
+
+
+def test_provider_fixture_early_failure_removes_external_gencc_root(
+    tmp_path: Path,
+) -> None:
+    workspace = _workspace(tmp_path)
+    external = tmp_path / "external"
+    external.mkdir()
+    environment = os.environ | {
+        "TMPDIR": str(external),
+        "BIOMCP_TEST_PROVIDER_FIXTURE_FAIL_AFTER_GENCC": "1",
+    }
+    result = subprocess.run(["bash", str(SETUP), str(workspace)], env=environment)
+    assert result.returncode == 86
+    assert list(external.glob("biomcp-gencc-provider-contract.*")) == []

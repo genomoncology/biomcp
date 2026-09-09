@@ -65,6 +65,19 @@ def test_cargo_source_package_keeps_the_runtime_boundary() -> None:
             path == private_root or path.startswith(f"{private_root}/")
             for path in paths
         )
+    for required in (
+        "docs/sources/gencc.md",
+        "src/entities/gene/gencc.rs",
+        "src/entities/gene/gencc/tests.rs",
+        "src/sources/gencc.rs",
+        "src/sources/gencc/model.rs",
+        "src/sources/gencc/store.rs",
+        "src/sources/gencc/tests.rs",
+        "src/sources/mygene/tests/live.rs",
+        "tests/test_gencc_docs_contract.py",
+    ):
+        assert required in paths
+    assert "testdata/sources/gencc/submissions-new-odc1.csv" not in paths
     subprocess.run(
         [sys.executable, CHECKER, "--manifest"],
         cwd=ROOT,

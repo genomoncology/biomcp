@@ -91,6 +91,8 @@ def test_offline_runner_maps_root_inside_an_isolated_user_namespace() -> None:
     assert "--uid 0" in runner
     assert "--gid 0" in runner
     assert "--unshare-net" in runner
+    assert '--bind "$sandbox_tmp" /tmp' in runner
+    assert "--setenv TMPDIR /tmp" in runner
     assert "BIOMCP_OFFLINE_OWNERSHIP_SENTINEL" in runner
     assert "BIOMCP_OFFLINE_OWNERSHIP_TOKEN" in runner
 
@@ -143,10 +145,14 @@ def test_failed_verifier_preserves_isolation_error_and_status(tmp_path: Path) ->
         "    [[ $2 == BIOMCP_OFFLINE_OWNERSHIP_SENTINEL ]] && sentinel=$3\n"
         "    [[ $2 == BIOMCP_OFFLINE_OWNERSHIP_TOKEN ]] && token=$3\n"
         "    shift 3\n"
+        "  elif [[ $1 == --bind ]]; then\n"
+        "    [[ $3 == /tmp ]] && sandbox_tmp=$2\n"
+        "    shift 3\n"
         "  else\n"
         "    shift\n"
         "  fi\n"
         "done\n"
+        'sentinel="$sandbox_tmp/${sentinel#/tmp/}"\n'
         'printf "started:%s" "$token" > "$sentinel"\n'
         'echo "offline privilege isolation failed: simulated verifier failure" >&2\n'
         "exit 24\n",
@@ -231,6 +237,9 @@ print(json.dumps({
         for key in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb")
     },
     "no_new_privileges": status["NoNewPrivs"].strip(),
+    "tmp_uid": Path("/tmp").stat().st_uid,
+    "tmp_mode": oct(Path("/tmp").stat().st_mode & 0o777),
+    "tmpdir": os.environ.get("TMPDIR"),
 }))
 """
     completed = subprocess.run(
@@ -275,6 +284,9 @@ print(json.dumps({
     report = json.loads(next(line for line in completed.stdout.splitlines() if line.startswith("{")))
     assert report["uid"] == 0
     assert report["gid"] == 0
+    assert report["tmp_uid"] == 0
+    assert report["tmp_mode"] == "0o700"
+    assert report["tmpdir"] == "/tmp"
     assert set(report["capabilities"].values()) == {"0000000000000000"}
     assert report["no_new_privileges"] == "1"
     assert list(tmp_path.iterdir()) == []

@@ -886,7 +886,7 @@ def test_data_sources_reference_covers_new_gene_and_article_sources() -> None:
     data_sources = _read("docs/reference/data-sources.md")
 
     assert (
-        "UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, OpenTargets, ClinGen, gnomAD GraphQL API"
+        "UniProt, QuickGO, STRING, GTEx, Human Protein Atlas, DGIdb, OpenTargets, ClinGen, GenCC, gnomAD GraphQL API"
         in data_sources
     )
     assert "https://gtexportal.org/api/v2" in data_sources
@@ -926,7 +926,7 @@ def test_cli_and_quick_reference_cover_search_all_and_gene_sections() -> None:
     assert "biomcp search all --gene BRAF --disease melanoma" in cli_reference
     assert "biomcp get gene BRAF pathways ontology diseases protein" in cli_reference
     assert (
-        "biomcp get gene BRAF go interactions civic expression hpa druggability clingen constraint"
+        "biomcp get gene BRAF go interactions civic expression hpa druggability clingen gencc constraint"
         in cli_reference
     )
     assert "biomcp get gene BRAF all" in cli_reference

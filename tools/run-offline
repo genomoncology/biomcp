@@ -26,13 +26,13 @@ fi
 
 host_uid="$(id -u)"
 host_gid="$(id -g)"
-sentinel_dir="$(mktemp -d "${TMPDIR:-/tmp}/biomcp-offline-ownership.XXXXXX")"
-sentinel="$sentinel_dir/created"
+sandbox_tmp="$(mktemp -d "${TMPDIR:-/tmp}/biomcp-offline-tmp.XXXXXX")"
+chmod 700 "$sandbox_tmp"
+sentinel="$sandbox_tmp/ownership-created"
+sandbox_sentinel="/tmp/ownership-created"
 sentinel_token="$$.$RANDOM.$RANDOM"
 cleanup() {
-  rm -f -- "$sentinel" 2>/dev/null || true
-  rmdir -- "$sentinel" 2>/dev/null || true
-  rmdir -- "$sentinel_dir" 2>/dev/null || true
+  rm -rf -- "$sandbox_tmp" 2>/dev/null || true
 }
 trap cleanup EXIT
 trap 'exit 129' HUP
@@ -46,10 +46,12 @@ bwrap \
   --gid 0 \
   --unshare-net \
   --dev-bind / / \
+  --bind "$sandbox_tmp" /tmp \
   --proc /proc \
   --die-with-parent \
+  --setenv TMPDIR /tmp \
   --setenv BIOMCP_OFFLINE_NETWORK 1 \
-  --setenv BIOMCP_OFFLINE_OWNERSHIP_SENTINEL "$sentinel" \
+  --setenv BIOMCP_OFFLINE_OWNERSHIP_SENTINEL "$sandbox_sentinel" \
   --setenv BIOMCP_OFFLINE_OWNERSHIP_TOKEN "$sentinel_token" \
   --chdir "$PWD" \
   -- "$ROOT/tools/check-offline-network" "$@"

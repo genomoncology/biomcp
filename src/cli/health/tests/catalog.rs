@@ -8,6 +8,7 @@ fn health_inventory_includes_all_expected_sources() {
     assert_eq!(
         names,
         vec![
+            "GenCC",
             "MyGene",
             "MyVariant",
             "Cancerhotspots.org",
@@ -65,6 +66,16 @@ fn health_inventory_includes_all_expected_sources() {
             "cBioPortal",
         ]
     );
+}
+
+#[test]
+fn gencc_health_uses_dedicated_head_contract() {
+    let source = health_sources()
+        .iter()
+        .find(|source| source.api == "GenCC")
+        .expect("GenCC health source");
+    assert!(matches!(source.probe, ProbeKind::GenCcHead));
+    assert_eq!(source.affects, Some("gene gencc section"));
 }
 
 #[test]

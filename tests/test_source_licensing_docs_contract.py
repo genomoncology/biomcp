@@ -17,6 +17,7 @@ DIRECT_SOURCE_MODULES = {
     "clingen_cspec": "ClinGen CSpec",
     "clingen_erepo": "ClinGen ERepo",
     "clingen_ldh": "ClinGen LDH",
+    "gencc": "GenCC",
     "clinicaltrials": "ClinicalTrials.gov",
     "complexportal": "ComplexPortal",
     "cpic": "CPIC",

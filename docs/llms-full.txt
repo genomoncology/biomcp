@@ -69,6 +69,7 @@ An expanded index of the BioMCP documentation.
 - [ClinGen Criteria Specification Registry](https://biomcp.org/sources/clingen-cspec/): Access details and query guidance for the ClinGen Criteria Specification Registry data source.
 - [ClinGen Evidence Repository](https://biomcp.org/sources/clingen-erepo/): Access details and query guidance for the ClinGen Evidence Repository data source.
 - [ClinGen Linked Data Hub](https://biomcp.org/sources/clingen-ldh/): Access details and query guidance for the ClinGen Linked Data Hub data source.
+- [GenCC](https://biomcp.org/sources/gencc/): Submission-level gene-disease validity assertions and durable dataset lifecycle guidance.
 - [ClinicalTrials.gov](https://biomcp.org/sources/clinicaltrials-gov/): Access details and query guidance for the ClinicalTrials.gov data source.
 - [ClinVar](https://biomcp.org/sources/clinvar/): Access details and query guidance for the ClinVar data source.
 - [DDInter](https://biomcp.org/sources/ddinter/): Access details and query guidance for the DDInter data source.

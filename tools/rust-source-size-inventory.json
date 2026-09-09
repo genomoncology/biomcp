@@ -100,11 +100,11 @@
     },
     {
       "path": "src/entities/gene.rs",
-      "baseline_lines": 3859,
+      "baseline_lines": 3857,
       "floor_lines": 3812,
       "authorized_increase": {
         "ticket": "0973",
-        "delta": 47,
+        "delta": 45,
         "reason": "Canonical MyGene alias identity reuses the existing gene query and ambiguity rules rather than duplicating them in discovery.",
         "removal_condition": "Extract MyGene identity resolution when the gene entity provider helpers are next decomposed."
       }
@@ -196,12 +196,12 @@
     },
     {
       "path": "src/mcp/shell.rs",
-      "baseline_lines": 2148,
+      "baseline_lines": 2149,
       "floor_lines": 1956,
       "authorized_increase": {
-        "ticket": "1031, 1150",
-        "delta": 192,
-        "reason": "The ERepo selector transform and narrow variant-article tool-error projection belong with the typed MCP schema definitions.",
+        "ticket": "1031, 1150, 1158",
+        "delta": 193,
+        "reason": "The ERepo selector transform, narrow variant-article tool-error projection, and GenCC maintenance-command boundary belong with the typed MCP schema definitions.",
         "removal_condition": "Extract typed tool schema transforms when the MCP shell is next decomposed."
       }
     },
@@ -213,9 +213,14 @@
     },
     {
       "path": "src/render/json.rs",
-      "baseline_lines": 1555,
+      "baseline_lines": 1557,
       "floor_lines": 1555,
-      "authorized_increase": null
+      "authorized_increase": {
+        "ticket": "1158",
+        "delta": 2,
+        "reason": "Project the optional GenCC section through the shared JSON entity surface.",
+        "removal_condition": "Absorb the GenCC projection when the gene JSON renderer is decomposed."
+      }
     },
     {
       "path": "src/render/markdown/article/tests.rs",
@@ -247,12 +252,12 @@
     },
     {
       "path": "src/render/provenance.rs",
-      "baseline_lines": 1813,
+      "baseline_lines": 1817,
       "floor_lines": 1810,
       "authorized_increase": {
-        "ticket": "1022",
-        "delta": 3,
-        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD.",
+        "ticket": "1022, 1158",
+        "delta": 7,
+        "reason": "Attribute resolved variant population coordinates to dbSNP and gnomAD and project GenCC evidence URLs.",
         "removal_condition": "Extract variant provenance into its own renderer module."
       }
     },
@@ -264,12 +269,12 @@
     },
     {
       "path": "src/sources/mod.rs",
-      "baseline_lines": 2274,
+      "baseline_lines": 2275,
       "floor_lines": 1847,
       "authorized_increase": {
-        "ticket": "1022, 1150",
-        "delta": 427,
-        "reason": "Register dbSNP and carry the task-local variant deadline through shared request, retry, and provider-admission utilities.",
+        "ticket": "1022, 1150, 1158",
+        "delta": 428,
+        "reason": "Register dbSNP and GenCC and carry the task-local variant deadline through shared request, retry, and provider-admission utilities.",
         "removal_condition": "Move source registration beside the provider registry when source utilities are decomposed."
       }
     },

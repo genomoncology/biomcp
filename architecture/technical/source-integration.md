@@ -501,6 +501,7 @@ top-level `lookup_outcomes` rather than `_meta.section_sources`.
 | gene | hpa | canonical | fallback | Human Protein Atlas | `hpa` outcome and provenance projection |
 | gene | druggability | canonical | additive | DGIdb / Open Targets | `druggability` outcome and provenance projection |
 | gene | clingen | canonical | fallback | ClinGen | `clingen` outcome and provenance projection |
+| gene | gencc | canonical | additive | GenCC | `gencc` outcome and provenance projection |
 | gene | constraint | canonical | fallback | gnomAD | `constraint` outcome and provenance projection |
 | gene | disgenet | canonical | additive | DisGeNET | `disgenet` outcome and provenance projection |
 | gene | funding | canonical | additive | NIH Reporter | `funding` outcome and provenance projection |
