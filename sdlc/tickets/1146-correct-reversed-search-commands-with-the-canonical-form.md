@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 5
-deps: []
+deps: [1147]
 ---
 
 # Correct reversed search commands with the canonical form
@@ -21,8 +21,11 @@ The original observation is preserved at commit `fe2f9fc1` in
 ## Exact detector
 
 Own the recovery hook beside `build_cli` and `try_parse_cli` in
-`src/cli/shared.rs`. It applies only after the original argv fails ordinary
-Clap parsing with an error other than `DisplayHelp` or `DisplayVersion`.
+`src/cli/shared.rs`. Preserve the existing `skill uninstall` reserved-command
+recovery first and byte-for-byte. Only after that special recovery does the
+ordinary raw `build_cli` parse run; reversed-search recovery applies only when
+that original argv fails with an error other than `DisplayHelp` or
+`DisplayVersion`.
 
 The searchable-name allowlist is exactly the fifteen `SearchEntity` spellings:
 
@@ -56,7 +59,11 @@ error envelope.
 
 The classifier examines at most 256 argv entries and 16 KiB of UTF-8 argument
 data, and emits at most 32 KiB. Non-UTF-8 input, C0/C1 controls, or a breached
-bound keeps the original sanitized Clap error. These are recovery-output
+bound keeps the original sanitized Clap error. The same fallback applies when
+the terminal sanitizer would not preserve any argument byte-for-byte,
+including DEL U+007F, U+061C, U+200E, U+200F, U+202A through U+202E, and U+2066
+through U+2069. Negative tests cover each stripped value; ordinary biomedical
+Unicode remains a positive lossless round-trip. These are recovery-output
 bounds, not new limits on valid canonical search commands.
 
 ## Copyable command and error envelopes
@@ -88,6 +95,11 @@ envelope: stdout is one pretty-printed object, stderr is empty, exit status is
 sentence and quoted command once, and `_meta.not_found` is false. No result,
 pagination, or provider metadata is added. Other human and JSON parse errors,
 including candidate-invalid reversals, remain byte-for-byte unchanged.
+Recognized corrections alone use the pre-`--` JSON selection stated above.
+Candidate-invalid and unrelated errors retain the current
+`args_request_json` behavior byte-for-byte. Paired tests place `--json` after
+`--` for one recognized correction and one candidate-invalid command so this
+ticket cannot globally change error-envelope selection.
 
 For hostile commands the code-span fence grows as required; the prose before
 the span is unchanged and the span's content is the exact shell command.
@@ -125,13 +137,15 @@ entity handler, or issue a provider request. Candidate validation constructs
 only a fresh Clap command.
 
 Keep the small integration hook and global-flag/error-envelope ownership in
-`src/cli/shared.rs`, which must remain at or below the repository's 700-line CLI
-cap. Put matrix tests in the existing CLI test sidecars rather than inline.
-Raw-MCP integration stays in `src/mcp/shell.rs`; do not raise its existing
-source-size allowance. If production logic cannot fit those rails, perform a
+`src/cli/shared.rs`, which is 626 lines on the accepted 1147 baseline and must
+remain at or below the repository's 700-line CLI cap. `src/cli/commands.rs` is
+687 lines and remains untouched. Put matrix tests in existing CLI sidecars.
+Raw-MCP integration stays in `src/mcp/shell.rs`, whose accepted 1147 baseline
+is the exact over-threshold inventory value 2,148 lines. Do not exceed it; move
+or remove equal code, or deliberately lower the inventory. If production logic cannot fit those rails, perform a
 package-neutral extraction/rename and lower the corresponding inventory rather
 than increasing a ratchet. Add no dependency and keep the package at exactly
-1,300 paths.
+1,300 paths. The external-project coupling check remains required.
 
 ## Acceptance
 
@@ -164,12 +178,12 @@ than increasing a ratchet. Add no dependency and keep the package at exactly
 
 ## Dependencies and boundary
 
-This ticket has no dependency on 1147. That ticket changes valid article batch
-grammar; it does not change any `SearchEntity` spelling or this invalid-command
-recovery seam. Draft 1163 changes reserved-keyword validation prose after a
-canonical article search has parsed and is likewise independent. Whichever
-lands first must preserve the other's public contract; do not add either edge
-without new code evidence.
+Ticket 1147 is the behavioral baseline and dependency. Capture all error and
+surface goldens after its final rebase and landing. Its `article batch` remains
+compatibility grammar while `batch article ... --mode` is canonical; this
+ticket changes neither. Draft 1163 changes reserved-keyword validation prose
+after a canonical article search has parsed and is scheduled after this ticket;
+it must preserve this ticket's public contract.
 
 This ticket does not add reversed aliases, change valid search arguments,
 rename `search|get|batch <entity>`, change provider behavior, redesign general
@@ -183,3 +197,10 @@ Accepted after independent design review. The reviewer confirmed the complete
 Clap validation, separate native/raw/typed MCP outcomes, lossless hostile-argv
 round trips, zero-work proof, ownership, and source/package limits. Code review
 must verify those same boundaries against the implementation diff.
+
+The 2026-09-09 freshness review rejected the stale pre-1147 baseline and a
+lossless-Unicode contradiction with terminal sanitization. This revision makes
+1147 the dependency, preserves its two article-batch grammars, keeps the
+existing skill recovery first, rejects every sanitizer-mutated input, freezes
+recognized versus unrelated JSON-envelope selection around `--`, and pins the
+post-1147 source/package/coupling rails. Independent re-review is required.
