@@ -55,6 +55,11 @@ BROAD_OR_EXTERNAL_COMMANDS = (
     "git push",
     "deploy",
 )
+EXPECTED_RUNNER_INVOCATION = (
+    'TMPDIR="$scratch" "$ROOT/tools/run-offline" -- \\\n'
+    '  env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \\\n'
+    '  uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}"\n'
+)
 
 
 def _action_references(value: object) -> list[str]:
@@ -186,7 +191,7 @@ def _violations(workflow_text: str, runner: str) -> list[str]:
         if required not in sandbox:
             violations.append(f"offline sandbox setup must retain: {required}")
     if runs.get("Prepare the Python development environment") != (
-        "uv sync --extra dev --locked"
+        "uv sync --extra dev --no-install-project --locked"
     ):
         violations.append(
             "the workflow must prepare the locked development environment"
@@ -228,6 +233,11 @@ def _violations(workflow_text: str, runner: str) -> list[str]:
         violations.append(
             "runner must check the ownership boundary before product tests"
         )
+    if runner.count(EXPECTED_RUNNER_INVOCATION) != 1:
+        violations.append(
+            "runner must use the exact scratch, sandbox, credential, binary, "
+            "basetemp, and selected-test invocation"
+        )
     if _runner_test_files(runner) != TEST_FILES:
         violations.append("runner must select exactly the five accepted test files")
     return violations
@@ -263,13 +273,18 @@ def test_focused_workflow_and_runner_match_the_accepted_contract() -> None:
         ("runner", "uv run --no-sync pytest", "make test && uv run --no-sync pytest"),
         (
             "workflow",
-            "uv sync --extra dev --locked",
-            "uv sync --extra dev --locked\n          curl https://example.com",
+            "uv sync --extra dev --no-install-project --locked",
+            "uv sync --extra dev --no-install-project --locked\n          curl https://example.com",
         ),
         (
             "workflow",
+            "uv sync --extra dev --no-install-project --locked",
+            "uv sync --extra dev --no-install-project --locked\n          uv publish",
+        ),
+        (
+            "workflow",
+            "uv sync --extra dev --no-install-project --locked",
             "uv sync --extra dev --locked",
-            "uv sync --extra dev --locked\n          uv publish",
         ),
         ("workflow", "tools/run-offline -- true", "true"),
         (
@@ -278,6 +293,10 @@ def test_focused_workflow_and_runner_match_the_accepted_contract() -> None:
             "true",
         ),
         ("runner", '[[ ! -x "$biomcp_bin" ]]', '[[ -x "$biomcp_bin" ]]'),
+        ("runner", 'TMPDIR="$scratch"', "TMPDIR=/tmp"),
+        ("runner", "--basetemp /tmp/pytest", "--basetemp /var/tmp/pytest"),
+        ("runner", ' "${TEST_FILES[@]}"', ""),
+        ("runner", ' "${TEST_FILES[@]}"', ' "${TEST_FILES[@]}" tests/'),
     ),
 )
 def test_representative_mutations_are_rejected(target: str, old: str, new: str) -> None:

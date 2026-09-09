@@ -49,7 +49,7 @@ jobs:
           test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
           tools/run-offline -- true
       - name: Prepare the Python development environment
-        run: uv sync --extra dev --locked
+        run: uv sync --extra dev --no-install-project --locked
       - name: Build BioMCP without default features
         run: cargo build --locked --no-default-features --bin biomcp
       - name: Run focused BioData verification
