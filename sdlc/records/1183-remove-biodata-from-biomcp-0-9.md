@@ -174,3 +174,17 @@ be supplied by the commit containing this record and implementation.
 Hosted results remain explicitly pending. Only a later record-only closure
 commit may add the reviewed SHA and green job URLs under the bounded closure
 rule above.
+
+## Hosted closure evidence protocol
+
+This pre-closure commit makes the one-time checker and inventory amendment
+needed to avoid a self-referential record digest. The record bytes before and
+after the sentinels below are immutable. A later closure commit may replace
+only the bytes between the sentinels, once, using the checker's fixed closed
+grammar; the checker-provided closure-diff helper must prove that its parent
+and child differ only inside this block. Pending evidence makes no hosted
+success claim.
+
+<!-- biomcp-1183-hosted-evidence-begin -->
+status: pending
+<!-- biomcp-1183-hosted-evidence-end -->
