@@ -757,9 +757,9 @@ fn validate_directory_owner_mode(directory: &File, private: bool) -> Result<(), 
     use std::os::unix::fs::{MetadataExt, PermissionsExt};
     let metadata = directory.metadata().map_err(|_| StoreError::Unavailable)?;
     let mode = metadata.permissions().mode() & 0o7777;
-    let owner_ok = metadata.uid() == unsafe { libc::geteuid() };
-    let trusted_system = metadata.uid() == 0 && (mode & 0o022 == 0 || mode & 0o1000 != 0);
-    if !metadata.is_dir() || (!owner_ok && !trusted_system)
+    let effective_uid = unsafe { libc::geteuid() }; let owner_ok = metadata.uid() == effective_uid;
+    let trusted_owner = super::directory_owner_trusted(metadata.uid(), effective_uid);
+    if !metadata.is_dir() || (!trusted_owner || (!owner_ok && mode & 0o022 != 0 && mode & 0o1000 == 0))
         || (private && (!owner_ok || mode & 0o777 != 0o700))
         || (!private && mode & 0o022 != 0 && mode & 0o1000 == 0) { return Err(StoreError::Unavailable); }
     Ok(())

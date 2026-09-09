@@ -413,7 +413,7 @@ The checked-in gene schema must validate the actual JSON emitted from the captur
 
 ```bash
 gene_json="$(../../tools/biomcp-ci --json get gene BRAF)"
-gencc_gene_json="$(../../tools/biomcp-ci --json get gene ODC1 gencc)"
+gencc_gene_json="$(BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE" ../../tools/biomcp-ci --json get gene ODC1 gencc)"
 GENE_JSON="$gene_json" GENCC_GENE_JSON="$gencc_gene_json" uv run --no-sync python3 - ../../skills/schemas/gene.json <<'PY' | mustmatch like 'gene schema matches fixture-backed CLI payload'
 import json
 import os

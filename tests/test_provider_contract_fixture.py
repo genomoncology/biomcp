@@ -85,6 +85,9 @@ def test_provider_fixture_serves_receipted_routes_and_fails_closed(
         assert "GET /mygene/v3/query?q=symbol%3A%22BRAF%22" in request_log.read_text()
         assert "POST /opentargets/api/v4/graphql" in request_log.read_text()
         assert values["BIOMCP_CACHE_MODE"] == "off"
+        expected_gencc_tmp = "/tmp" if os.environ.get("BIOMCP_OFFLINE_NETWORK") == "1" else os.environ.get("TMPDIR", "/tmp")
+        assert values["BIOMCP_GENCC_FIXTURE_TMP_ROOT"] == expected_gencc_tmp
+        assert Path(values["BIOMCP_GENCC_FIXTURE_PARENT"]).parent == Path(expected_gencc_tmp)
         assert Path(values["BIOMCP_EMA_DIR"]).is_dir()
         assert Path(values["BIOMCP_WHO_DIR"]).is_dir()
         assert Path(values["BIOMCP_GTR_DIR"], "test_version.gz").is_file()

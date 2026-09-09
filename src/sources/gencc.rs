@@ -18,6 +18,8 @@ use tokio::sync::Mutex;
 pub(crate) mod model;
 #[rustfmt::skip]
 pub(crate) mod store;
+#[rustfmt::skip]
+pub(crate) fn directory_owner_trusted(uid: u32, effective_uid: u32) -> bool { uid == effective_uid || uid == 0 }
 
 pub(crate) use model::GenCcAssertion;
 use model::GenCcDataset;

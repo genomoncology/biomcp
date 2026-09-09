@@ -7,7 +7,8 @@ if [[ -s "$env_file" ]]; then
   # shellcheck source=/dev/null
   source "$env_file"
   candidate="${BIOMCP_GENCC_FIXTURE_PARENT:-}"
-  if [[ "$candidate" == "${TMPDIR:-/tmp}/biomcp-gencc-provider-contract."* && -d "$candidate" && ! -L "$candidate" ]]; then
+  candidate_root="${BIOMCP_GENCC_FIXTURE_TMP_ROOT:-${TMPDIR:-/tmp}}"
+  if [[ "$candidate" == "$candidate_root/biomcp-gencc-provider-contract."* && -d "$candidate" && ! -L "$candidate" ]]; then
     rm -rf -- "$candidate"
   fi
 fi

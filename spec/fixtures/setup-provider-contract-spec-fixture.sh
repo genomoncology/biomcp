@@ -25,10 +25,14 @@ ema_dir="$fixture_root/ema-human"
 who_dir="$fixture_root/who-pq"
 who_ivd_dir="$fixture_root/who-ivd"
 gtr_dir="$fixture_root/gtr"
-gencc_parent="$(mktemp -d "${TMPDIR:-/tmp}/biomcp-gencc-provider-contract.XXXXXX")"
+gencc_tmp_root="${TMPDIR:-/tmp}"
+if [[ "${BIOMCP_OFFLINE_NETWORK:-0}" == 1 ]]; then
+  gencc_tmp_root=/tmp
+fi
+gencc_parent="$(mktemp -d "$gencc_tmp_root/biomcp-gencc-provider-contract.XXXXXX")"
 gencc_dir="$gencc_parent/gencc"
 cleanup_gencc_parent() {
-  if [[ "$gencc_parent" == "${TMPDIR:-/tmp}/biomcp-gencc-provider-contract."* && -d "$gencc_parent" && ! -L "$gencc_parent" ]]; then
+  if [[ "$gencc_parent" == "$gencc_tmp_root/biomcp-gencc-provider-contract."* && -d "$gencc_parent" && ! -L "$gencc_parent" ]]; then
     rm -rf -- "$gencc_parent"
   fi
 }
@@ -537,6 +541,7 @@ curl --fail --silent "$base_url/healthz" >/dev/null
   printf 'export BIOMCP_GENCC_BASE=%q\n' "$base_url/gencc/download/action/submissions-export-csv?format=new"
   printf 'export BIOMCP_GENCC_DIR=%q\n' "$gencc_dir"
   printf 'export BIOMCP_GENCC_FIXTURE_PARENT=%q\n' "$gencc_parent"
+  printf 'export BIOMCP_GENCC_FIXTURE_TMP_ROOT=%q\n' "$gencc_tmp_root"
   printf 'export NCI_API_KEY=%q\n' 'fixture-nci-key'
   printf 'export BIOMCP_EMA_DIR=%q\n' "$ema_dir"
   printf 'export BIOMCP_WHO_DIR=%q\n' "$who_dir"

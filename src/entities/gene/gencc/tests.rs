@@ -445,6 +445,13 @@ fn secure_anchor(path: &std::path::Path) {
 #[cfg(not(unix))]
 fn secure_anchor(_path: &std::path::Path) {}
 
+#[test]
+fn overflow_uid_never_inherits_system_owner_trust() {
+    assert!(!crate::sources::gencc::directory_owner_trusted(65_534, 0));
+    assert!(crate::sources::gencc::directory_owner_trusted(0, 0));
+    assert!(crate::sources::gencc::directory_owner_trusted(1_000, 1_000));
+}
+
 fn publish(store: &Store, dataset: &GenCcDataset, now: &str, etag: &str) -> Snapshot {
     store
         .publish(
