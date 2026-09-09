@@ -46,6 +46,39 @@ pub enum GtrCommand {
 }
 
 #[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GenCcCommand {
+    /// Revalidate the local GenCC gene-disease validity dataset
+    Sync,
+}
+
+pub(crate) async fn handle_gencc(
+    cmd: GenCcCommand,
+    json: bool,
+) -> anyhow::Result<crate::cli::CommandOutcome> {
+    let changed = match cmd {
+        GenCcCommand::Sync => {
+            crate::sources::gencc::GenCcClient::new()
+                .map_err(|()| anyhow::anyhow!("GenCC client initialization failed"))?
+                .sync()
+                .await?
+        }
+    };
+    let text = if json {
+        crate::render::json::to_pretty(&serde_json::json!({
+            "kind": "data_sync",
+            "source": "gencc",
+            "status": "synchronized",
+            "changed": changed,
+        }))?
+    } else if changed {
+        "GenCC dataset updated.\n".to_string()
+    } else {
+        "GenCC dataset is already current.\n".to_string()
+    };
+    Ok(crate::cli::CommandOutcome::stdout(text))
+}
+
+#[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WhoIvdCommand {
     /// Force refresh the WHO Prequalified IVD diagnostic CSV export
     Sync,

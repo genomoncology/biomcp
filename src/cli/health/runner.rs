@@ -11,7 +11,7 @@ use super::catalog::{ProbeKind, SourceDescriptor};
 #[cfg(feature = "alphagenome")]
 use super::http::check_alphagenome_connect;
 use super::http::{
-    check_auth_get, check_auth_post_json, check_auth_query_param, check_get,
+    check_auth_get, check_auth_post_json, check_auth_query_param, check_gencc_head, check_get,
     check_optional_auth_get, check_post_json, check_vaers_query, configured_key,
 };
 use super::local::{
@@ -146,6 +146,7 @@ pub(in crate::cli::health) async fn probe_source(
             outcome(row, ProbeClass::Excluded)
         }
         ProbeKind::VaersQuery => check_vaers_query(source.api, source.affects).await,
+        ProbeKind::GenCcHead => check_gencc_head(source.api, source.affects).await,
     }
 }
 
@@ -184,7 +185,10 @@ where
         #[cfg(feature = "alphagenome")]
         ProbeKind::AlphaGenomeConnect { .. } => Some(true),
         ProbeKind::OptionalAuthGet { env_var, .. } => Some(configured_key_fn(env_var).is_some()),
-        ProbeKind::Get { .. } | ProbeKind::PostJson { .. } | ProbeKind::VaersQuery => None,
+        ProbeKind::Get { .. }
+        | ProbeKind::PostJson { .. }
+        | ProbeKind::VaersQuery
+        | ProbeKind::GenCcHead => None,
         #[cfg(not(feature = "alphagenome"))]
         ProbeKind::Unavailable => None,
     }

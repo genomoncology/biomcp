@@ -14,6 +14,7 @@ BLOCKED_FAMILIES = {
     "ddinter",
     "ema",
     "gtr",
+    "gencc",
     "who-ivd",
     "mcp",
     "mcp-config",

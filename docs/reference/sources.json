@@ -119,6 +119,26 @@
     "notes": "BioMCP performs read-only projected CAR lookups for supported versioned RefSeq HGVS values."
   },
   {
+    "id": "gencc",
+    "name": "GenCC",
+    "tier": 1,
+    "integration_mode": "direct_api",
+    "via": null,
+    "bioMcp_surfaces": [
+      "get gene <symbol> gencc",
+      "gencc sync"
+    ],
+    "bioMcp_auth": "none",
+    "env_var": null,
+    "provider_access": "public weekly new-format CSV export",
+    "license_summary": "CC0 1.0 data with requested attribution to GenCC and contributing submitters",
+    "redistribution_summary": "reuse is permitted under CC0; preserve GenCC and submitter attribution and the non-diagnostic context",
+    "terms_url": "https://thegencc.org/terms",
+    "key_url": null,
+    "reviewed_on": "2026-09-06",
+    "notes": "BioMCP retains a private normalized local index, refreshes no more than once daily after failure, and exposes separate submission-level assertions without computing consensus. The public export excludes restricted OMIM data."
+  },
+  {
     "id": "clingen_cspec",
     "name": "ClinGen CSpec",
     "tier": 1,

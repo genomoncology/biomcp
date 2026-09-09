@@ -25,6 +25,7 @@ fn gene_markdown_section_only_shows_constraint_section() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: Some(crate::entities::gene::GeneConstraint {
             pli: None,
@@ -81,6 +82,7 @@ fn gene_markdown_section_only_shows_disgenet_section() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: Some(crate::entities::gene::GeneDisgenet {
@@ -138,6 +140,7 @@ fn gene_markdown_disgenet_renders_sparse_optional_fields() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: Some(crate::entities::gene::GeneDisgenet {
@@ -190,6 +193,7 @@ fn gene_markdown_funding_renders_linked_rows_and_currency() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,
@@ -267,6 +271,7 @@ fn gene_markdown_all_keeps_opt_in_sections_hidden() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,
@@ -321,6 +326,7 @@ fn gene_markdown_pathways_show_source_labels() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,

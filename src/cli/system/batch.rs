@@ -60,3 +60,62 @@ where
     };
     Ok(CommandOutcome::stdout_with_exit(text, u8::from(failed > 0)))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::future::BoxFuture;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
+    use std::time::{Duration, Instant};
+
+    #[tokio::test]
+    async fn ten_items_start_together_and_each_owns_its_deadline() {
+        let inputs = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+        let started = Arc::new(AtomicUsize::new(0));
+        let futures: Vec<BoxFuture<'_, Result<usize, crate::error::BioMcpError>>> = (0usize..10)
+            .map(|index| {
+                let started = Arc::clone(&started);
+                Box::pin(async move {
+                    started.fetch_add(1, Ordering::SeqCst);
+                    while started.load(Ordering::SeqCst) != 10 {
+                        tokio::task::yield_now().await;
+                    }
+                    tokio::time::timeout(Duration::from_millis(30), async {
+                        tokio::time::sleep(Duration::from_millis(if index == 0 { 80 } else { 2 }))
+                            .await;
+                        index
+                    })
+                    .await
+                    .map_err(|_| {
+                        crate::error::BioMcpError::SourceUnavailable {
+                            source_name: "GenCC".into(),
+                            reason: "per-gene deadline".into(),
+                            suggestion: "retry".into(),
+                        }
+                    })
+                }) as BoxFuture<'_, _>
+            })
+            .collect();
+        let began = Instant::now();
+        let outcome = settle_batch(
+            "gene",
+            &inputs,
+            futures,
+            true,
+            |value| Ok((*value).into()),
+            |value| Ok(value.to_string()),
+        )
+        .await
+        .unwrap();
+        assert!(began.elapsed() < Duration::from_millis(100));
+        let value: serde_json::Value = serde_json::from_str(&outcome.text).unwrap();
+        assert_eq!(
+            value["summary"],
+            serde_json::json!({"total":10,"succeeded":9,"failed":1})
+        );
+        assert_eq!(value["items"][9]["result"], 9);
+    }
+}

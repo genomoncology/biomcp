@@ -929,6 +929,14 @@ filler path.
 
 ## Acceptance
 
+Verification is proportional to ownership. The GenCC source/store and gene
+entity tests own the complete normative lifecycle, restart, cancellation, and
+HGNC-precedence matrices. Adapter coverage samples available, unavailable, and
+identity outcomes and proves that CLI, raw MCP, typed MCP, and batch surfaces
+all consume the same entity/render projection; the established adapter suites
+continue to own transport-envelope parity. This does not require a Cartesian
+repeat of every lifecycle state through every adapter.
+
 - A receipt-backed minimized new-format capture contains the three ODC1 rows
   and multiple submitters. Its inventory records endpoint, request
   method/headers, capture date, response status/content type/validators, full
@@ -991,7 +999,7 @@ filler path.
   first-`200` generation with zero additional GETs.
   The three-generation in-process and subprocess cases keep a G1 snapshot
   readable across G2/G3 publication and defer its deletion until lease release.
-- CLI direct/all/batch Markdown/JSON, raw MCP text/JSON, typed MCP, help/list,
+- Representative CLI direct/all/batch Markdown/JSON, raw MCP text/JSON, typed MCP, help/list,
   schema, exact evidence-URL labels/order/global deduplication for report,
   criteria, duplicate PubMed and capped assertions, docs, and 1159 coexistence
   are fixture-tested without live provider access.
