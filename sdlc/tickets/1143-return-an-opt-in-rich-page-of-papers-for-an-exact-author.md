@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 4
-deps: [1145]
+deps: [1145, 1147]
 ---
 
 # Return an opt-in rich page of papers for an exact author
@@ -24,6 +24,9 @@ This ticket does not traverse citation edges or inspect JATS. Ticket 1145 owns
 directed-edge traversal and JATS reference matching and lands first; 1143 must
 retain its accepted graph behavior and prove the author request makes no graph,
 paper-detail, Europe PMC, full-text, or JATS request.
+Ticket 1147 is not a semantic dependency, but its canonical compact/detail and
+compatibility article-batch contracts must already be landed and remain
+byte-for-byte unchanged on the implementation base.
 
 ## Request and page contract
 
@@ -44,11 +47,29 @@ paperId,corpusId,externalIds,title,abstract,venue,year,publicationDate,citationC
 ```
 
 No batch enrichment or N+1 lookup is allowed. The operation has one monotonic
-35-second response deadline around request admission, shared retry/cache work,
-body read, decode, projection, and rendering. The shared HTTP layer may retry a
-transient attempt under its existing policy, but it may neither start nor
-complete work after that absolute deadline. Timeout is the existing sanitized
-Semantic Scholar unavailable command error, exit 1.
+35-second work-admission and success deadline beginning before client/cache construction and
+covering request admission, shared retry/cache work, body read, decode,
+projection, and rendering. No provider request or retry begins after expiry and
+no successful output returns after it. Bounded synchronous decode, projection,
+and rendering check the deadline before and after each stage and discard late
+results. Once a cache write has been published, its local permission/security
+finalization may complete after the deadline before the sanitized Semantic
+Scholar unavailable command error is returned with exit 1. No other task
+survives and no detached work is introduced.
+
+Reuse ticket 1145's padded Markdown code-span primitive from
+`render/markdown/support.rs`. If 1145 initially places the helper beside its
+evidence renderer, relocate it package-neutrally to that shared owner while
+preserving every accepted 1145 output byte.
+
+Compact and rich use distinct wire decoders and field lists. Do not add rich
+typed members to the compact wire type: compact mode must continue to ignore an
+unsolicited malformed rich-only field, while rich mode rejects it. In rich
+mode, `externalIds` is null or an object. Recognized `PubMed`,
+`PubMedCentral`, `DOI`, and `ArXiv` values are each null or string; any other
+type fails the complete page. Unknown object members remain ignored regardless
+of their value type. Apply the same fail-closed typed validation to every
+nested rich field.
 
 Every successful page must contain an unsigned `offset` equal to the requested
 offset, at most `limit` data rows, and either absent/null `next` or an unsigned
@@ -120,8 +141,9 @@ trim-only normalization.
 
 An `openAccessPdf` object remains an object even when all three members are
 null; an absent/null object is null. Preserve every supplied author array
-entry. A valid nonblank ASCII-decimal `authorId` becomes an exact-provider
-identity; otherwise its identity is null. A missing/null author name is null,
+entry. A valid nonblank ASCII-decimal `authorId` of at most 512 UTF-8 bytes
+becomes an exact-provider identity; 513 bytes, non-ASCII digits, or any other
+invalid provider grammar yields a null identity. A missing/null author name is null,
 and a present name is trim-only. Rich author rows do not add affiliations,
 ORCID, inferred identity, or per-author requests.
 
@@ -208,13 +230,22 @@ JSON. A missing byline and an empty byline remain distinct in JSON even though
 their Markdown sentinel rows differ as specified above. Separate paper blocks
 have exactly one blank line between them, and output ends in one newline.
 
-Use the repository's safe inline/code-span renderers for every provider value.
+Define one rich-author prose primitive for headings, prose, list values, and
+author names. It first applies `sanitize_inline`, then HTML-escapes `&`, `<`,
+and `>`, and prefixes a backslash before each remaining Markdown ASCII syntax
+byte ``\ ` * _ { } [ ] ( ) # + - . ! |``. Identifiers and commands first use
+`sanitize_inline` and then ticket 1145's padded variable-length code-span
+helper; never interpolate an unescaped provider value. Use these exact
+primitives for every provider value.
 Titles, abstracts, venue, dates, identifiers, PDF values, field/type names, and
 author names containing pipes, angle brackets, backticks, newlines, quotes,
 backslashes, dollar signs, semicolons, and ampersands cannot create headings,
 tables, links, raw HTML, code fences, or shell commands. JSON preserves the
 normalized plain values. Complete Markdown and complete JSON fixtures must
 agree field-for-field; no `Debug` representation is public.
+Byte-exact hostile goldens cover raw HTML, Markdown links and emphasis,
+backticks, pipes, backslashes, and control whitespace in every prose/code
+context.
 
 CLI help, `biomcp list author`, `docs/user-guide/author.md`, and the CLI
 reference describe the compact default, rich opt-in, one-page/100-row bound,
@@ -239,7 +270,12 @@ appears.
 2. Wire/projection tests cover every rich field, null versus false/zero/empty
    string/empty list, unknown external IDs, an all-null PDF object, complete
    mixed-validity bylines, invalid row admission, duplicate retention, and
-   byte-equal paper identity/order between compact and rich views. A hostile
+   byte-equal paper identity/order between compact and rich views. Compact mode
+   ignores an unsolicited wrong-typed rich-only member while rich mode fails
+   closed. Rich tests cover null/object `externalIds`, null/string values for
+   every recognized ID, arbitrary unknown-member value types, wrong types for
+   every recognized ID and other nested field, and author IDs at 512/513 bytes
+   plus non-ASCII digits. A hostile
    admitted `paperId` whose normalized value is `A/?#% \n雪` is preserved
    exactly in JSON, produces the exact evidence URL
    `https://www.semanticscholar.org/paper/A%2F%3F%23%25%20%0A%E9%9B%AA`,
@@ -256,11 +292,15 @@ appears.
    provider page is requested and a returned `next` is never prefetched.
 4. Paused-time tests hold the real request future across the exact 35-second
    boundary and prove one bounded unavailable result, no late output or second
-   page, and no task surviving the response. Companion transport, HTTP,
+   page, and no surviving provider/retry work. A separate post-publication case
+   proves required cache permission finalization completes before the sanitized
+   timeout returns, with no successful output or detached task. Companion transport, HTTP,
    rate-limit, oversize-body, and decode cases preserve sanitized errors and do
    not leak provider bodies, URLs, credentials, or hostile sentinels.
-5. Execute compact and rich CLI Markdown/JSON plus raw MCP against the captured
-   fixture. Compare complete outputs, continuation commands, metadata, hostile
+5. Execute compact and rich CLI Markdown/JSON plus raw MCP against the existing
+   authored loopback fixture. The historical `author_papers.json` capture
+   remains unchanged and supports only the provider claim; authored rich rows
+   provide the executable field matrix. Compare complete outputs, continuation commands, metadata, hostile
    content containment, error envelopes, and request logs. Parse every emitted
    command with the real CLI parser and recover the original arguments without
    executing injected shell text. Separate compact/rich CLI and raw-MCP hostile
@@ -272,22 +312,32 @@ appears.
    fixture family: citation/reference commands, evidence states, pagination,
    directed matching, and request bounds do not change. The author fixture
    itself records no graph or JATS traffic.
+   Also rerun ticket 1147's canonical compact/detail and compatibility batch
+   outputs and ticket 1144's pagination and root-continuation contract.
 7. Run focused Rust source/entity/renderer/CLI tests, Python CLI/MCP/docs
    contracts, and `spec/entity/author.md`, then `make lint`, `make test`, and
    `make spec`; finish with `git diff --check` and the locked/offline package
-   list at exactly 1,300 paths.
+   list at exactly 1,300 paths, plus
+   `uv run --no-project python tools/check-zero-coupling.py --root .`.
 
 ## Ownership and exclusions
 
-`sources/semantic_scholar.rs` owns the two field lists, request planning, wire
-types, page validation, and deadline-aware request. `entities/author/papers.rs`
+After tickets 1145 and 1147 land, record the exact Semantic Scholar source
+baseline. The current file is already 904 lines and its ordinary tests are
+already extracted, so do not claim that in-file tests can be moved. Preserve
+package count by folding the tiny ignored live test from
+`src/sources/semantic_scholar/tests/live.rs` into the existing
+`semantic_scholar/tests/mod.rs`, then rename that tracked path to production
+`src/sources/semantic_scholar/author_papers.rs`. That module owns the compact
+and rich field lists, distinct wire types, validation, and deadline-aware
+author-paper request. `entities/author/papers.rs`
 owns row admission, normalization, public compact/rich types, metadata, and
 continuations. `render/markdown/author.rs` renders those types; CLI and raw MCP
 only select the mode and serialization.
 
-Add no dependency or packaged path. Keep `src/sources/semantic_scholar.rs`
-below 1,000 lines by moving its existing in-file tests if necessary only
-through a package-neutral rename/removal, not by raising a ratchet. Do not grow
+Add no dependency or packaged path. Keep both the parent and new production
+module below 1,000 lines and preserve every live-test assertion and ignored
+marker. Do not grow
 `src/mcp/shell.rs` or change its authorized baseline. Do not raise any existing
 over-threshold source allowance; update a baseline only for measured movement
 caused by a package-neutral extraction. The package stays exactly 1,300 paths.
@@ -306,3 +356,13 @@ renderer/MCP behavior, ownership, and sequencing behind 1145. A follow-up
 review required opaque paper IDs to be serialized with the URL crate's exact
 path-segment rules, including deterministic reserved-byte and dot-segment
 cases; the corrected contract was accepted with no remaining findings.
+
+The 2026-09-09 freshness review rejected the old hard-deadline claim, shared
+compact/rich decoder risk, nonexistent in-file test move, undefined Markdown
+safety helper, underbounded provider author identity, and mutable rich capture.
+This revision preserves cache finalization after publication, requires distinct
+wire decoders and typed rich fields, defines exact prose/code escaping, enforces
+the 512-byte provider-ID grammar, uses authored rich fixtures, freezes all
+1144/1145/1147 and 0.9-independence regressions, and specifies the exact
+package-neutral live-test-to-production-module rename. Independent re-review is
+required before implementation.
