@@ -6,6 +6,7 @@ import base64
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import tarfile
 
@@ -20,6 +21,27 @@ HANDOFF_MECHANISMS = (
     "defer" + "red package",
     "gener" + "ated source",
     "rename" + "d handoff",
+)
+TRIAL_OWNER = re.compile(
+    r"(?:clinical[\W_]*trials?|"
+    r"(?:shared|external)[\W_]*trials?(?:[\W_]*(?:core|contract|types?|schema|model|domain))?|"
+    r"trials?[\W_]*(?:core|contract|types?|schema|model|domain|shared))",
+    re.IGNORECASE,
+)
+INLINE_CARGO_ENTRY = re.compile(
+    r"(?m)^\s*(?P<key>[A-Za-z0-9_.-]+)\s*=\s*\{(?P<body>[^}]{0,2000})\}"
+)
+CARGO_DEPENDENCY_TABLE = re.compile(
+    r"(?ms)^\s*\[(?:dev-|build-)?dependencies\.(?P<key>[^]]+)\]\s*"
+    r"(?P<body>.*?)(?=^\s*\[|\Z)"
+)
+CARGO_PATCH_TABLE = re.compile(
+    r"(?ms)^\s*\[patch\.[^]]+\]\s*(?P<body>.*?)(?=^\s*\[|\Z)"
+)
+INCLUDE_STATEMENT = re.compile(r"(?is)\binclude\s*!\s*\([^;]{0,2000}\)\s*;")
+EXTERNAL_GIT_COMMAND = re.compile(
+    r"(?i)\bgit(?:\s+-[^\s]+)*\s+"
+    r"(?:clone|submodule\s+add|worktree\s+add)\b"
 )
 
 
@@ -42,7 +64,41 @@ def _forbidden_text(text: str) -> bool:
         for mechanism in HANDOFF_MECHANISMS
     ):
         return True
-    return False
+    return _has_external_trial_handoff(text)
+
+
+def _has_external_trial_handoff(text: str) -> bool:
+    for entry in INLINE_CARGO_ENTRY.finditer(text):
+        key_and_body = entry.group("key") + " " + entry.group("body")
+        if TRIAL_OWNER.search(key_and_body) and re.search(
+            r"(?i)\b(?:path|git|rev)\s*=", entry.group("body")
+        ):
+            return True
+
+    for table in CARGO_DEPENDENCY_TABLE.finditer(text):
+        key_and_body = table.group("key") + " " + table.group("body")
+        if TRIAL_OWNER.search(key_and_body) and re.search(
+            r"(?i)^\s*path\s*=", table.group("body"), re.MULTILINE
+        ):
+            return True
+
+    for table in CARGO_PATCH_TABLE.finditer(text):
+        body = table.group("body")
+        if TRIAL_OWNER.search(body) and re.search(r"(?i)\b(?:path|git|rev)\s*=", body):
+            return True
+
+    for statement in INCLUDE_STATEMENT.findall(text):
+        if (
+            TRIAL_OWNER.search(statement)
+            and re.search(r"(?i)\benv\s*!\s*\(", statement)
+            and re.search(r"(?i)generated(?:[._/-]|\b)", statement)
+        ):
+            return True
+
+    return any(
+        EXTERNAL_GIT_COMMAND.search(line) and TRIAL_OWNER.search(line)
+        for line in text.splitlines()
+    )
 
 
 def _matches(data: bytes) -> bool:

@@ -70,20 +70,58 @@ def test_tracked_path_scan_rejects_forbidden_names_with_clean_contents(
     assert checker.scan_files(tmp_path, [name], inventory) == [name]
 
 
-def test_equivalent_trial_handoff_mechanisms_are_rejected(tmp_path: Path) -> None:
+def test_realistic_external_trial_handoffs_are_rejected(tmp_path: Path) -> None:
     checker = _module()
     inventory = _inventory(tmp_path / "inventory.json", {})
+    owner_a = "trial" + "-core"
+    owner_b = "shared" + "-trial-types"
+    owner_c = "trial" + "-contract"
+    owner_d = "clinical" + "-trial-contract"
+    owner_env_a = "TRIAL" + "_CORE_DIR"
+    owner_env_b = "SHARED" + "_TRIAL_SCHEMA_ROOT"
+    owner_upper = "TRIAL" + "-CORE"
     cases = {
-        "checkout.txt": _handoff("check" + "out"),
-        "path.txt": _handoff("path", "depend" + "ency"),
-        "patch.txt": _handoff("patch", "depend" + "ency"),
-        "deferred.txt": _handoff("defer" + "red", "package"),
-        "generated.txt": _handoff("gener" + "ated", "source"),
-        "renamed.txt": _handoff("rename" + "d", "handoff"),
+        "Cargo.toml": (f'[dependencies]\n{owner_a} = {{ path = "../{owner_a}" }}\n'),
+        "renamed.toml": (
+            f'[dependencies]\ntransport = {{ package = "{owner_b}", '
+            'path = "../contracts" }\n'
+        ),
+        "table.toml": (f'[dependencies.{owner_c}]\npath = "../{owner_c}"\n'),
+        "patch.toml": (
+            f'[patch.crates-io]\n{owner_a} = {{ git = "https://example.test/core", '
+            'rev = "abc" }\n'
+        ),
+        "generated.rs": (
+            f'include!(concat!(env!("{owner_env_a}"), "/generated.rs"));\n'
+        ),
+        "generated-renamed.rs": (
+            f'include!(concat!(env!("{owner_env_b}"), "/bindings/generated.rs"));\n'
+        ),
+        "checkout.sh": f"git clone https://example.test/contracts {owner_a}\n",
+        "worktree.sh": f"git worktree add ../{owner_d} feature\n",
+        "case.toml": (
+            f'[DEPENDENCIES]\n{owner_upper} = {{ PATH = "../{owner_upper}" }}\n'
+        ),
     }
     for name, content in cases.items():
         (tmp_path / name).write_text(content, encoding="utf-8")
     assert checker.scan_files(tmp_path, list(cases), inventory) == sorted(cases)
+
+
+def test_unrelated_local_build_mechanisms_remain_allowed(tmp_path: Path) -> None:
+    checker = _module()
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    cases = {
+        "Cargo.toml": '[dependencies]\nhelper-core = { path = "../helper-core" }\n',
+        "src/generated.rs": 'include!(concat!(env!("OUT_DIR"), "/generated.rs"));\n',
+        "scripts/setup.sh": "git clone https://example.test/tools billing-core\n",
+        "docs/source.md": "The clinical trials source returns generated identifiers.\n",
+    }
+    for name, content in cases.items():
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    assert checker.scan_files(tmp_path, list(cases), inventory) == []
 
 
 def test_exact_historical_digest_passes_but_mutation_and_rename_fail(
@@ -109,15 +147,22 @@ def test_archive_scan_rejects_packaged_only_text_and_skips_binary(
 ) -> None:
     checker = _module()
     archive_path = tmp_path / "package.crate"
+    owner = "trial" + "-core"
     with tarfile.open(archive_path, "w:gz") as archive:
         for name, data in {
             "pkg/only-in-package.txt": TOKEN.encode(),
+            "pkg/Cargo.toml": (
+                f'[dependencies]\n{owner} = {{ path = "../{owner}" }}\n'.encode()
+            ),
             "pkg/binary.bin": b"\0\xff" + TOKEN.encode(),
         }.items():
             info = tarfile.TarInfo(name)
             info.size = len(data)
             archive.addfile(info, io.BytesIO(data))
-    assert checker.scan_archive(archive_path) == ["pkg/only-in-package.txt"]
+    assert checker.scan_archive(archive_path) == [
+        "pkg/Cargo.toml",
+        "pkg/only-in-package.txt",
+    ]
 
 
 def test_archive_scan_rejects_forbidden_member_name_with_clean_contents(
