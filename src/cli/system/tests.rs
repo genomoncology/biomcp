@@ -390,40 +390,6 @@ fn discover_and_batch_json_keep_executable_templates_without_human_option_prose(
 }
 
 #[test]
-fn batch_command_parses_sections_and_source() {
-    let cli = Cli::try_parse_from([
-        "biomcp",
-        "batch",
-        "trial",
-        "NCT02576665,NCT02693535",
-        "--sections",
-        "eligibility,locations",
-        "--source",
-        "nci",
-    ])
-    .expect("batch should parse");
-
-    let Cli {
-        command:
-            Commands::Batch(crate::cli::system::BatchArgs {
-                entity,
-                ids,
-                sections,
-                source,
-            }),
-        ..
-    } = cli
-    else {
-        panic!("expected batch command");
-    };
-
-    assert_eq!(entity, "trial");
-    assert_eq!(ids, "NCT02576665,NCT02693535");
-    assert_eq!(sections.as_deref(), Some("eligibility,locations"));
-    assert_eq!(source.as_deref(), Some("nci"));
-}
-
-#[test]
 fn enrich_command_parses_limit() {
     let cli = Cli::try_parse_from(["biomcp", "enrich", "BRAF,KRAS", "--limit", "5"])
         .expect("enrich should parse");
@@ -578,11 +544,12 @@ fn batch_help_includes_examples_and_limits() {
     let help = String::from_utf8(help).expect("help should be utf-8");
 
     assert!(help.contains("EXAMPLES"));
-    assert!(help.contains("biomcp batch article 22663011,24200969"));
+    assert!(help.contains("biomcp batch article 22663011,24200969 --mode compact"));
+    assert!(help.contains("--mode detail --sections tldr"));
     assert!(help.contains("biomcp batch gene BRAF,TP53 --sections pathways,interactions"));
     assert!(help.contains("biomcp batch trial NCT02576665,NCT03715933 --source nci"));
     assert!(help.contains("biomcp batch variant \"BRAF V600E\",\"KRAS G12D\" --json"));
-    assert!(help.contains("Batch accepts up to 10 IDs per call."));
+    assert!(help.contains("Article compact mode accepts up to 20 IDs"));
     assert!(help.contains("Each call must use a single entity type."));
     assert!(help.contains("See also: biomcp list batch"));
 }

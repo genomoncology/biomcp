@@ -118,7 +118,7 @@ New to BioMCP? Try:
 - Multi-concept keyword phrases and searches that already use `-g`, `-d`, or `--drug` do not get direct entity suggestions
 - Article result pages can also suggest year-refinement follow-ups when visible rows expose publication years and the current search has no explicit date bounds
 - `--session <token>` is a local non-secret caller label for JSON loop-breakers.
-- Same-session article searches can suggest prior `article batch`, `discover`,
+- Same-session article searches can suggest prior `batch article --mode compact`, `discover`,
   and date-narrowing follow-ups.
 - `search drug ... --region <us|eu|ema|who|all>`
   - omitted `--region` checks U.S., EU, and WHO for plain name/alias lookups
@@ -149,8 +149,9 @@ New to BioMCP? Try:
 - `disease articles <name>`
 - `disease drugs <name>`
 - `article entities <pmid> --limit <N>`
-- `article batch <id> [<id>...]` - up to 20 compact cards in request order
-  - bare-array JSON includes all source-supplied authors plus returned count
+- `batch article <id1,id2,...> [--mode compact|detail] [--sections <s1,s2,...>]`
+  - detail by default; up to 20 compact cards or 10 detail records in request order
+  - settlement-envelope JSON includes all source-supplied authors plus returned count in compact results
   - completeness is `complete`, `source_limited`, or `unavailable`
   - source is `pubtator` or `europepmc`
 - Article detail carries the same authorship contract.

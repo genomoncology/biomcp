@@ -296,7 +296,7 @@ export ONCOKB_TOKEN="..."        # OncoKB variant helper
 export ALPHAGENOME_API_KEY="..." # AlphaGenome variant effect prediction
 ```
 
-`search article`, `get article`, `article batch`, `get article ... tldr`, and
+`search article`, `get article`, `batch article`, `get article ... tldr`, and
 the explicit Semantic Scholar helpers all work without `S2_API_KEY`. With the
 key, BioMCP sends authenticated requests and uses a dedicated rate limit at
 1 req/sec. Without it, BioMCP uses the shared unauthenticated pool at 1 req/2sec.

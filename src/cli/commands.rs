@@ -201,16 +201,17 @@ EXAMPLES:
 EXAMPLES:
   biomcp list gene")]
     List(system::ListArgs),
-    /// Parallel get operations (comma-separated IDs, max 10)
+    /// Parallel get operations (article supports compact or detail mode)
     #[command(after_help = "\
 EXAMPLES:
-  biomcp batch article 22663011,24200969
+  biomcp batch article 22663011,24200969 --mode compact
+  biomcp batch article 22663011,24200969 --mode detail --sections tldr
   biomcp batch gene BRAF,TP53 --sections pathways,interactions
   biomcp batch trial NCT02576665,NCT03715933 --source nci
   biomcp batch variant \"BRAF V600E\",\"KRAS G12D\" --json
 
 NOTES:
-  - Batch accepts up to 10 IDs per call.
+  - Article compact mode accepts up to 20 IDs; detail and other batches accept up to 10.
   - Each call must use a single entity type.
 
 See also: biomcp list batch")]
@@ -373,7 +374,7 @@ CAPPING:
 SESSION LOOP BREAKER:
   - `--session <TOKEN>` is an optional local caller label for consecutive article keyword searches.
   - Tokens are not secrets; use a short non-identifying label such as `lit-review-1`.
-  - In JSON mode, overlapping same-session keyword searches can add `_meta.suggestions[]` fallbacks: prior `article batch`, `discover`, then a date-narrowed retry when available.
+  - In JSON mode, overlapping same-session keyword searches can add `_meta.suggestions[]` fallbacks: prior `batch article --mode compact`, `discover`, then a date-narrowed retry when available.
   - Markdown output is unchanged.
 
 QUERY FORMULATION:

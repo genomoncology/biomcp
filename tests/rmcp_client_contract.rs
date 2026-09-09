@@ -9,6 +9,362 @@ use biomcp_mcp_contract_client::{
 };
 use rmcp::model::CallToolRequestParams;
 use serde_json::json;
+const MCP_COMPACT_ORDERED_JSON: &str = r###"{
+  "items": [
+    {
+      "input": "22663011",
+      "result": {
+        "author_completeness": "complete",
+        "author_count": 6,
+        "author_source": "pubtator",
+        "authors": [
+          "Ada First",
+          "Ben Second",
+          "Cyra Middle",
+          "Dev Fourth",
+          "Eli Fifth",
+          "Fay Last"
+        ],
+        "citation_count": 12,
+        "influential_citation_count": 3,
+        "journal": "Journal One",
+        "pmcid": "PMC123456",
+        "pmid": "22663011",
+        "requested_id": "22663011",
+        "title": "Europe full text winner",
+        "tldr": "Fixture compact summary",
+        "year": 2025
+      },
+      "status": "ok"
+    },
+    {
+      "input": "22663012",
+      "result": {
+        "author_completeness": "unavailable",
+        "author_count": 0,
+        "author_source": "pubtator",
+        "authors": [],
+        "journal": "Journal One",
+        "pmcid": "PMC123457",
+        "pmid": "22663012",
+        "requested_id": "22663012",
+        "title": "PMC HTML fallback winner",
+        "year": 2025
+      },
+      "status": "ok"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "succeeded": 2,
+    "total": 2
+  }
+}"###;
+
+const MCP_COMPACT_DUPLICATE_JSON: &str = r###"{
+  "items": [
+    {
+      "input": "22663011",
+      "result": {
+        "author_completeness": "complete",
+        "author_count": 6,
+        "author_source": "pubtator",
+        "authors": [
+          "Ada First",
+          "Ben Second",
+          "Cyra Middle",
+          "Dev Fourth",
+          "Eli Fifth",
+          "Fay Last"
+        ],
+        "citation_count": 12,
+        "influential_citation_count": 3,
+        "journal": "Journal One",
+        "pmcid": "PMC123456",
+        "pmid": "22663011",
+        "requested_id": "22663011",
+        "title": "Europe full text winner",
+        "tldr": "Fixture compact summary",
+        "year": 2025
+      },
+      "status": "ok"
+    },
+    {
+      "input": "22663011",
+      "result": {
+        "author_completeness": "complete",
+        "author_count": 6,
+        "author_source": "pubtator",
+        "authors": [
+          "Ada First",
+          "Ben Second",
+          "Cyra Middle",
+          "Dev Fourth",
+          "Eli Fifth",
+          "Fay Last"
+        ],
+        "citation_count": 12,
+        "influential_citation_count": 3,
+        "journal": "Journal One",
+        "pmcid": "PMC123456",
+        "pmid": "22663011",
+        "requested_id": "22663011",
+        "title": "Europe full text winner",
+        "tldr": "Fixture compact summary",
+        "year": 2025
+      },
+      "status": "ok"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "succeeded": 2,
+    "total": 2
+  }
+}"###;
+
+const MCP_COMPACT_MIXED_JSON: &str = r###"{
+  "items": [
+    {
+      "input": "22663011",
+      "result": {
+        "author_completeness": "complete",
+        "author_count": 6,
+        "author_source": "pubtator",
+        "authors": [
+          "Ada First",
+          "Ben Second",
+          "Cyra Middle",
+          "Dev Fourth",
+          "Eli Fifth",
+          "Fay Last"
+        ],
+        "citation_count": 12,
+        "influential_citation_count": 3,
+        "journal": "Journal One",
+        "pmcid": "PMC123456",
+        "pmid": "22663011",
+        "requested_id": "22663011",
+        "title": "Europe full text winner",
+        "tldr": "Fixture compact summary",
+        "year": 2025
+      },
+      "status": "ok"
+    },
+    {
+      "error": {
+        "code": "invalid_argument",
+        "message": "Invalid argument: Unsupported identifier format. BioMCP resolves PMID (digits only, e.g., 22663011), PMCID (starts with PMC, e.g., PMC9984800), and DOI (starts with 10., e.g., 10.1056/NEJMoa1203421). publisher PIIs (e.g., S1535610826000103) are not indexed by PubMed or Europe PMC and cannot be resolved."
+      },
+      "input": "not-an-article-id",
+      "status": "error"
+    },
+    {
+      "input": "22663011",
+      "result": {
+        "author_completeness": "complete",
+        "author_count": 6,
+        "author_source": "pubtator",
+        "authors": [
+          "Ada First",
+          "Ben Second",
+          "Cyra Middle",
+          "Dev Fourth",
+          "Eli Fifth",
+          "Fay Last"
+        ],
+        "citation_count": 12,
+        "influential_citation_count": 3,
+        "journal": "Journal One",
+        "pmcid": "PMC123456",
+        "pmid": "22663011",
+        "requested_id": "22663011",
+        "title": "Europe full text winner",
+        "tldr": "Fixture compact summary",
+        "year": 2025
+      },
+      "status": "ok"
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "succeeded": 2,
+    "total": 3
+  }
+}"###;
+
+const MCP_S2_SUCCESS_JSON: &str = r###"{
+  "items": [
+    {
+      "input": "22663011",
+      "result": {
+        "author_completeness": "complete",
+        "author_count": 6,
+        "author_source": "pubtator",
+        "authors": [
+          "Ada First",
+          "Ben Second",
+          "Cyra Middle",
+          "Dev Fourth",
+          "Eli Fifth",
+          "Fay Last"
+        ],
+        "citation_count": 12,
+        "influential_citation_count": 3,
+        "journal": "Journal One",
+        "pmcid": "PMC123456",
+        "pmid": "22663011",
+        "requested_id": "22663011",
+        "title": "Europe full text winner",
+        "tldr": "Fixture compact summary",
+        "year": 2025
+      },
+      "status": "ok"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "succeeded": 1,
+    "total": 1
+  }
+}"###;
+
+const MCP_S2_FAIL_OPEN_JSON: &str = r###"{
+  "items": [
+    {
+      "input": "22663012",
+      "result": {
+        "author_completeness": "unavailable",
+        "author_count": 0,
+        "author_source": "pubtator",
+        "authors": [],
+        "journal": "Journal One",
+        "pmcid": "PMC123457",
+        "pmid": "22663012",
+        "requested_id": "22663012",
+        "title": "PMC HTML fallback winner",
+        "year": 2025
+      },
+      "status": "ok"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "succeeded": 1,
+    "total": 1
+  }
+}"###;
+
+const MCP_DETAIL_JSON: &str = r###"{
+  "items": [
+    {
+      "input": "22663011",
+      "result": {
+        "_meta": {
+          "evidence_urls": [
+            {
+              "label": "PubMed",
+              "url": "https://pubmed.ncbi.nlm.nih.gov/22663011/"
+            },
+            {
+              "label": "PMC",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC123456/"
+            }
+          ],
+          "next_commands": [
+            "biomcp article references 22663011 --limit 3",
+            "biomcp article citations 22663011 --limit 3",
+            "biomcp article recommendations 22663011 --limit 3"
+          ],
+          "section_sources": [
+            {
+              "key": "bibliography",
+              "label": "Bibliography",
+              "outcome": "data",
+              "sources": [
+                "PubMed",
+                "Europe PMC"
+              ]
+            },
+            {
+              "key": "authors",
+              "label": "Authors",
+              "outcome": "data",
+              "sources": [
+                "PubTator3"
+              ]
+            },
+            {
+              "key": "abstract",
+              "label": "Abstract",
+              "outcome": "data",
+              "sources": [
+                "PubMed",
+                "Europe PMC"
+              ]
+            },
+            {
+              "key": "tldr",
+              "label": "Semantic Scholar",
+              "outcome": "data",
+              "sources": [
+                "Semantic Scholar"
+              ]
+            }
+          ]
+        },
+        "abstract_text": "Abstract text.",
+        "author_completeness": "complete",
+        "author_count": 6,
+        "author_source": "pubtator",
+        "authors": [
+          "Ada First",
+          "Ben Second",
+          "Cyra Middle",
+          "Dev Fourth",
+          "Eli Fifth",
+          "Fay Last"
+        ],
+        "date": "2025-01-01",
+        "journal": "Journal One",
+        "open_access": true,
+        "pmcid": "PMC123456",
+        "pmid": "22663011",
+        "pubtator_fallback": false,
+        "section_outcomes": {
+          "fulltext": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "indexing": {
+            "outcome": "not_requested",
+            "sources": []
+          },
+          "tldr": {
+            "outcome": "data",
+            "sources": [
+              "Semantic Scholar"
+            ]
+          }
+        },
+        "semantic_scholar": {
+          "citation_count": 12,
+          "influential_citation_count": 3,
+          "paper_id": "paper-1",
+          "tldr": "Fixture detail summary"
+        },
+        "title": "Europe full text winner"
+      },
+      "status": "ok"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "succeeded": 1,
+    "total": 1
+  }
+}"###;
+
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -186,11 +542,279 @@ where
     Ok(())
 }
 
+async fn assert_raw_article_batch_contract<T>(
+    client: &rmcp::service::RunningService<rmcp::RoleClient, T>,
+    fixture: &biomcp_mcp_contract_client::ArticleFulltextFixture,
+) -> anyhow::Result<()>
+where
+    T: rmcp::Service<rmcp::RoleClient>,
+{
+    const COMPACT_MARKDOWN: &str = "# Batch: article (2)\n\n---\n\n## 22663011 — ok\n\n# Article Batch (1)\n\n## 1. Europe full text winner\nPMID: 22663011\nJournal: Journal One\nYear: 2025\nAuthors: Ada First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last\nAuthorship: complete (6 returned; PubTator3)\nTLDR: Fixture compact summary\nCitations: 12 (influential: 3)\n\n\n---\n\n## 22663012 — ok\n\n# Article Batch (1)\n\n## 1. PMC HTML fallback winner\nPMID: 22663012\nJournal: Journal One\nYear: 2025\nAuthorship: unavailable (no author list supplied by PubTator3)\n\n\n## Summary\n\nTotal: 2; succeeded: 2; failed: 0.\n";
+    const DETAIL_MARKDOWN: &str = "# Batch: article (1)\n\n---\n\n## 22663011 — ok\n\n# Europe full text winner\n\nPMID: 22663011\nPMCID: PMC123456\n\nJournal: Journal One\nDate: 2025-01-01\n\n\nOpen Access: Yes\n[PubMed](https://pubmed.ncbi.nlm.nih.gov/22663011/)\nSource: PubMed / Europe PMC\n\n## Authors (PubTator3)\n\nAda First, Ben Second, Cyra Middle, Dev Fourth, Eli Fifth, Fay Last\nAuthorship: complete (6 returned; PubTator3)\n## Abstract (PubMed / Europe PMC)\n\nAbstract text.\n## Semantic Scholar\n\nPaper ID: paper-1\nTLDR: Fixture detail summary\nCitations: 12\nInfluential citations: 3\nReferences: \nOpen access: No\nMore:\n  biomcp get article 22663011 annotations   - PubTator normalized entity mentions\n  biomcp get article 22663011 fulltext   - cached full text when available\n  biomcp get article 22663011 tldr   - Semantic Scholar summary and influence\nAll:\n  biomcp get article 22663011 all\nSee also:\n  biomcp article references 22663011 --limit 3   - background evidence this paper builds on; use if the primary paper lacks context\n  biomcp article citations 22663011 --limit 3   - later papers that cite this article; use only if the primary paper lacks your answer\n  biomcp article recommendations 22663011 --limit 3   - related papers to broaden coverage; use only if the primary paper lacks your answer\n\n[PubMed](https://pubmed.ncbi.nlm.nih.gov/22663011/) | [PMC](https://pmc.ncbi.nlm.nih.gov/articles/PMC123456/)\n\n## Summary\n\nTotal: 1; succeeded: 1; failed: 0.\n";
+    assert_initialize_and_tools(client, env!("CARGO_MANIFEST_DIR")).await?;
+    let tools = client.peer().list_tools(Default::default()).await?;
+    assert_eq!(tools.tools.len(), 7);
+    let schemas = serde_json::to_value(&tools.tools)?;
+    fn has_property(value: &serde_json::Value, needle: &str) -> bool {
+        match value {
+            serde_json::Value::Object(map) => {
+                map.get("properties")
+                    .and_then(serde_json::Value::as_object)
+                    .is_some_and(|properties| properties.contains_key(needle))
+                    || map.values().any(|child| has_property(child, needle))
+            }
+            serde_json::Value::Array(values) => {
+                values.iter().any(|child| has_property(child, needle))
+            }
+            _ => false,
+        }
+    }
+    for forbidden in ["ids", "mode"] {
+        assert!(
+            !has_property(&schemas, forbidden),
+            "typed MCP schemas exposed batch field {forbidden}: {schemas}"
+        );
+    }
+
+    let compact_expected = json!({
+        "items": [
+            {"input":"22663011","status":"ok","result":{
+                "requested_id":"22663011","pmid":"22663011","pmcid":"PMC123456",
+                "title":"Europe full text winner","authors":["Ada First","Ben Second","Cyra Middle","Dev Fourth","Eli Fifth","Fay Last"],
+                "author_count":6,"author_completeness":"complete","author_source":"pubtator",
+                "journal":"Journal One","year":2025,"tldr":"Fixture compact summary",
+                "citation_count":12,"influential_citation_count":3
+            }},
+            {"input":"22663012","status":"ok","result":{
+                "requested_id":"22663012","pmid":"22663012","pmcid":"PMC123457",
+                "title":"PMC HTML fallback winner","authors":[],"author_count":0,
+                "author_completeness":"unavailable","author_source":"pubtator",
+                "journal":"Journal One","year":2025
+            }}
+        ],
+        "summary":{"total":2,"succeeded":2,"failed":0}
+    });
+    let detail_expected = json!({
+        "items":[{"input":"22663011","status":"ok","result":{
+            "pmid":"22663011","pmcid":"PMC123456","title":"Europe full text winner",
+            "authors":["Ada First","Ben Second","Cyra Middle","Dev Fourth","Eli Fifth","Fay Last"],
+            "author_count":6,"author_completeness":"complete","author_source":"pubtator",
+            "journal":"Journal One","date":"2025-01-01","abstract_text":"Abstract text.",
+            "open_access":true,"pubtator_fallback":false,
+            "semantic_scholar":{"paper_id":"paper-1","tldr":"Fixture detail summary","citation_count":12,"influential_citation_count":3},
+            "section_outcomes":{"fulltext":{"outcome":"not_requested","sources":[]},"indexing":{"outcome":"not_requested","sources":[]},"tldr":{"outcome":"data","sources":["Semantic Scholar"]}},
+            "_meta":{
+                "evidence_urls":[{"label":"PubMed","url":"https://pubmed.ncbi.nlm.nih.gov/22663011/"},{"label":"PMC","url":"https://pmc.ncbi.nlm.nih.gov/articles/PMC123456/"}],
+                "next_commands":["biomcp article references 22663011 --limit 3","biomcp article citations 22663011 --limit 3","biomcp article recommendations 22663011 --limit 3"],
+                "section_sources":[
+                    {"key":"bibliography","label":"Bibliography","outcome":"data","sources":["PubMed","Europe PMC"]},
+                    {"key":"authors","label":"Authors","outcome":"data","sources":["PubTator3"]},
+                    {"key":"abstract","label":"Abstract","outcome":"data","sources":["PubMed","Europe PMC"]},
+                    {"key":"tldr","label":"Semantic Scholar","outcome":"data","sources":["Semantic Scholar"]}
+                ]
+            }
+        }}],"summary":{"total":1,"succeeded":1,"failed":0}
+    });
+
+    for json in [false, true] {
+        let compatibility = if json {
+            biomcp_mcp_contract_client::call_biomcp_json(
+                client,
+                "biomcp article batch 22663011 22663012",
+            )
+            .await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(
+                client,
+                "biomcp article batch 22663011 22663012",
+            )
+            .await?
+        };
+        let canonical = if json {
+            biomcp_mcp_contract_client::call_biomcp_json(
+                client,
+                "biomcp batch article 22663011,22663012 --mode compact",
+            )
+            .await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(
+                client,
+                "biomcp batch article 22663011,22663012 --mode compact",
+            )
+            .await?
+        };
+        // Settled item errors are data over raw MCP, not tool-call errors.
+        assert_eq!(compatibility.is_error, Some(false));
+        assert_eq!(canonical.is_error, Some(false));
+        assert_eq!(compatibility.structured_content, None);
+        assert_eq!(canonical.structured_content, None);
+        let text = biomcp_mcp_contract_client::first_text(&canonical.content);
+        let compatibility_text = biomcp_mcp_contract_client::first_text(&compatibility.content);
+        if json {
+            assert_eq!(compatibility_text, MCP_COMPACT_ORDERED_JSON);
+            assert_eq!(text, MCP_COMPACT_ORDERED_JSON);
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(compatibility_text)?,
+                compact_expected
+            );
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(text)?,
+                compact_expected
+            );
+        } else {
+            assert_eq!(compatibility_text, COMPACT_MARKDOWN);
+            assert_eq!(text, COMPACT_MARKDOWN);
+        }
+
+        let detail_command = "biomcp batch article 22663011";
+        let explicit_command = "biomcp batch article 22663011 --mode detail";
+        let detail = if json {
+            biomcp_mcp_contract_client::call_biomcp_json(client, detail_command).await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(client, detail_command).await?
+        };
+        let explicit_detail = if json {
+            biomcp_mcp_contract_client::call_biomcp_json(client, explicit_command).await?
+        } else {
+            biomcp_mcp_contract_client::call_biomcp(client, explicit_command).await?
+        };
+        assert_eq!(detail.is_error, Some(false));
+        assert_eq!(detail.structured_content, None);
+        assert_eq!(explicit_detail.structured_content, None);
+        for result in [&detail, &explicit_detail] {
+            let rendered = biomcp_mcp_contract_client::first_text(&result.content);
+            if json {
+                assert_eq!(rendered, MCP_DETAIL_JSON);
+                assert_eq!(
+                    serde_json::from_str::<serde_json::Value>(rendered)?,
+                    detail_expected
+                );
+            } else {
+                assert_eq!(rendered, DETAIL_MARKDOWN);
+            }
+        }
+    }
+
+    let mixed = biomcp_mcp_contract_client::call_biomcp_json(
+        client,
+        "biomcp batch article 22663011,not-an-article-id,22663011 --mode compact",
+    )
+    .await?;
+    assert_eq!(mixed.is_error, Some(false));
+    assert_eq!(mixed.structured_content, None);
+    let mixed_text = biomcp_mcp_contract_client::first_text(&mixed.content);
+    assert_eq!(mixed_text, MCP_COMPACT_MIXED_JSON);
+    let mixed: serde_json::Value = serde_json::from_str(mixed_text)?;
+    assert_eq!(
+        mixed["summary"],
+        json!({"total":3,"succeeded":2,"failed":1})
+    );
+    assert_eq!(
+        mixed["items"][0],
+        json!({"input":"22663011","status":"ok","result":compact_expected["items"][0]["result"]})
+    );
+    assert_eq!(mixed["items"][1]["input"], "not-an-article-id");
+    assert_eq!(
+        mixed["items"][1],
+        json!({
+            "input":"not-an-article-id","status":"error","error":{
+                "code":"invalid_argument",
+                "message":"Invalid argument: Unsupported identifier format. BioMCP resolves PMID (digits only, e.g., 22663011), PMCID (starts with PMC, e.g., PMC9984800), and DOI (starts with 10., e.g., 10.1056/NEJMoa1203421). publisher PIIs (e.g., S1535610826000103) are not indexed by PubMed or Europe PMC and cannot be resolved."
+            }
+        })
+    );
+    assert_eq!(
+        mixed["items"][2],
+        json!({"input":"22663011","status":"ok","result":compact_expected["items"][0]["result"]})
+    );
+
+    for (command, literal, expected_items) in [
+        (
+            "biomcp batch article 22663011,22663011 --mode compact",
+            MCP_COMPACT_DUPLICATE_JSON,
+            json!([compact_expected["items"][0], compact_expected["items"][0]]),
+        ),
+        (
+            "biomcp batch article 22663011 --mode compact",
+            MCP_S2_SUCCESS_JSON,
+            json!([compact_expected["items"][0]]),
+        ),
+        (
+            "biomcp batch article 22663012 --mode compact",
+            MCP_S2_FAIL_OPEN_JSON,
+            json!([compact_expected["items"][1]]),
+        ),
+    ] {
+        let result = biomcp_mcp_contract_client::call_biomcp_json(client, command).await?;
+        assert_eq!(result.is_error, Some(false));
+        assert_eq!(result.structured_content, None);
+        let rendered = biomcp_mcp_contract_client::first_text(&result.content);
+        assert_eq!(rendered, literal);
+        let parsed: serde_json::Value = serde_json::from_str(rendered)?;
+        assert_eq!(parsed["items"], expected_items);
+    }
+
+    for forbidden in [
+        fixture.base_url.as_str(),
+        fixture.cache_dir.to_string_lossy().as_ref(),
+        "signed.example.invalid",
+        "token=secret",
+    ] {
+        assert!(
+            !mixed.to_string().contains(forbidden),
+            "raw batch leaked fixture-private text: {forbidden}"
+        );
+    }
+
+    for (command, expected) in [
+        (
+            "biomcp batch article 1 --mode compact --sections tldr",
+            "Error: Invalid argument: --sections is not supported for compact article batches",
+        ),
+        (
+            "biomcp batch article 1 --mode compact --offset 1",
+            "Error: BioMCP allows read-only commands only. Allowed families are search/get/helpers/list/version/health/batch/enrich/discover/skill plus MCP-safe study commands (`study list`, `study download --list`, `study top-mutated`, `study query`, `study filter`, `study cohort`, `study survival`, `study compare`, `study co-occurrence`).",
+        ),
+        (
+            "biomcp batch article 1 --sections unknown",
+            "Error: Invalid argument: Unknown section \"unknown\" for article. Available: annotations, fulltext, tldr, indexing, assets, asset, all",
+        ),
+        (
+            "biomcp batch article 1 --sections ''",
+            "Error: Invalid argument: Article batch sections must be a comma-separated list of nonempty section names",
+        ),
+        (
+            "biomcp batch gene BRAF --mode detail",
+            "Error: Invalid argument: --mode is only supported for article batches",
+        ),
+    ] {
+        let result = biomcp_mcp_contract_client::call_biomcp(client, command).await?;
+        assert_eq!(result.is_error, Some(true), "command={command}");
+        assert_eq!(result.structured_content, None);
+        assert_eq!(
+            biomcp_mcp_contract_client::first_text(&result.content),
+            expected
+        );
+    }
+    Ok(())
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn raw_mcp_global_flags_are_safe_over_stdio() -> anyhow::Result<()> {
     let harness = harness();
     let client = harness.spawn_stdio_client(&[]).await?;
     assert_raw_mcp_global_flags_follow_the_parsed_command(&client).await?;
+    client.cancel().await?;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_article_batch_contract_is_safe_over_stdio() -> anyhow::Result<()> {
+    let harness = harness();
+    let fixture = provision_article_fulltext_fixture(&harness.repo_root)?;
+    let env = article_fulltext_fixture_env(&fixture);
+    let client = harness.spawn_stdio_client(&env).await?;
+    assert_raw_article_batch_contract(&client, &fixture).await?;
     client.cancel().await?;
     Ok(())
 }
@@ -207,6 +831,23 @@ async fn raw_mcp_global_flags_are_safe_over_http() -> anyhow::Result<()> {
     }
     .await;
 
+    child.kill().await.ok();
+    result
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn raw_article_batch_contract_is_safe_over_http() -> anyhow::Result<()> {
+    let harness = harness();
+    let fixture = provision_article_fulltext_fixture(&harness.repo_root)?;
+    let env = article_fulltext_fixture_env(&fixture);
+    let (mut child, base_url) = harness.spawn_http_server(&env).await?;
+    let result = async {
+        let client = harness.http_client(format!("{base_url}/mcp")).await?;
+        assert_raw_article_batch_contract(&client, &fixture).await?;
+        client.cancel().await?;
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
     child.kill().await.ok();
     result
 }

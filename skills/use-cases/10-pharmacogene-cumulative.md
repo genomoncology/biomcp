@@ -6,7 +6,7 @@ Use this when the question asks which genes collectively influence response, dos
 biomcp search pgx -d warfarin --limit 10
 biomcp get pgx warfarin recommendations annotations
 biomcp search article --drug warfarin -k "CYP2C9 VKORC1 dose response" --limit 10
-biomcp article batch 17048007 19794411 19958090
+biomcp batch article 17048007,19794411,19958090 --mode compact
 ```
 
 Interpretation:

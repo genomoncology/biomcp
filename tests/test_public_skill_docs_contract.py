@@ -13,6 +13,59 @@ def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
+def test_legacy_article_batch_spelling_is_confined_to_compatibility_contracts() -> None:
+    legacy_cli = "biomcp article " + "batch"
+    legacy_spec = "biomcp-ci" + ' "${json_args[@]}" article batch'
+    occurrences: list[tuple[str, str]] = []
+    for root in ["README.md", "docs", "skills", "spec", "src", "tests"]:
+        path = REPO_ROOT / root
+        candidates = [path] if path.is_file() else path.rglob("*")
+        for candidate in candidates:
+            if (
+                not candidate.is_file()
+                or candidate == Path(__file__)
+                or "docs/blog" in candidate.as_posix()
+            ):
+                continue
+            try:
+                text = candidate.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            relative = candidate.relative_to(REPO_ROOT).as_posix()
+            for line in text.splitlines():
+                if legacy_cli in line or legacy_spec in line:
+                    occurrences.append((relative, line.strip()))
+
+    assert occurrences == [
+        (
+            "docs/user-guide/article.md",
+            "The compatibility spelling `biomcp article batch <id1> <id2> ...` remains",
+        ),
+        (
+            "spec/entity/article.md",
+            '../../tools/biomcp-ci "${json_args[@]}" article batch "$@" >"$tmp/compat.out" 2>"$tmp/compat.err"',
+        ),
+        (
+            "src/cli/article/mod.rs",
+            "biomcp article batch <id1> <id2> ...",
+        ),
+        (
+            "tests/rmcp_client_contract.rs",
+            '"biomcp article batch 22663011 22663012",',
+        ),
+        (
+            "tests/rmcp_client_contract.rs",
+            '"biomcp article batch 22663011 22663012",',
+        ),
+    ]
+
+    recommendation_markers = ("recommend", "default", "prefer", "use ")
+    for path, line in occurrences:
+        if path.startswith(("docs/", "skills/", "spec/")):
+            lowered = line.lower()
+            assert not any(marker in lowered for marker in recommendation_markers), (path, line)
+
+
 def test_gene_schema_closes_clingen_family_status_shapes() -> None:
     schema = json.loads(_read("skills/schemas/gene.json"))
     validator = Draft202012Validator(schema)
@@ -367,7 +420,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "../docs/" not in how_to_table
     assert ".md)" not in how_to_table
     assert (
-        "After `search article`, default to `biomcp article batch <id1> <id2> ...` instead of repeated `get article` calls."
+        "After `search article`, default to `biomcp batch article <id1,id2,...> --mode compact` instead of repeated `get article` calls."
         in skill_file
     )
     assert (
@@ -388,7 +441,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "DDInter is the local drug-interaction bundle" in skill_file
     assert "_meta.workflow" in skill_file
     assert "_meta.workflow_playbook" in skill_file
-    assert "`biomcp article batch <pmid1> <pmid2> ...` uses spaces between PMIDs." in skill_file
+    assert "`biomcp batch article <pmid1,pmid2,...> --mode compact` uses commas between PMIDs." in skill_file
     assert "Only add more commands if a needed claim is still unsupported." in skill_file
     assert "If one command already answers the question, stop searching and answer." in skill_file
     assert "biomcp get drug nivolumab regulatory" in skill_file
@@ -413,7 +466,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     )
     assert "biomcp get gene <symbol>" in anti_patterns
 
-    assert "Use `article batch` as the default follow-up after `search article`" in article_guide
+    assert "Use `batch article --mode compact` as the default follow-up after `search article`" in article_guide
     assert "`--type` on `--source all` uses Europe PMC + PubMed" in article_guide
     assert "PMC-only note" in article_guide
     assert "LitSense2-derived semantic signal" in article_guide
@@ -433,7 +486,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
         in article_guide
     )
     assert (
-        "Use `article batch` after search when you already know the candidate PMIDs or"
+        "Use `batch article --mode compact` after search when you already know the candidate PMIDs or"
         in find_articles
     )
     assert "`--type` on the default `--source all` route uses Europe PMC + PubMed" in find_articles
@@ -470,7 +523,7 @@ def test_public_skill_docs_match_current_cli_contract() -> None:
     assert "biomcp get gene IPO8" in orientation_use_case
     assert 'biomcp search article -g IPO8 -k "biallelic loss-of-function Loeys-Dietz Shprintzen-Goldberg thoracic aortic aneurysm" --limit 5' in orientation_use_case
     assert "biomcp get gene IPO8 diseases" in orientation_use_case
-    assert "biomcp article batch 36905820 34010605" in orientation_use_case
+    assert "biomcp batch article 36905820,34010605 --mode compact" in orientation_use_case
     assert "# Pattern: Article follow-up via citations and recommendations" in article_follow_up
     assert "biomcp article citations 22663011 --limit 5" in article_follow_up
 
