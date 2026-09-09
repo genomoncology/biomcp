@@ -1084,7 +1084,8 @@ behavior. Ticket 1183's 0.9 independence boundary also remains immutable.
   that all prior lifecycle/security/parser contracts remain unchanged and that
   a computed minimized-fixture hash cannot substitute for the required genuine
   capture receipt.
-- Code review: pending.
+- Code review: accepted after remediation. The final independent review found
+  no remaining correctness, security, compatibility, or coverage defects.
 - 2026-09-09 integration refresh: independent review rejected replaying the
   preserved implementation wholesale because it predates tickets 1183, 1148,
   and landed 1159. Apply preserved commits `a7e8ad08`, `4c1444d0`, `60812217`,
@@ -1094,3 +1095,48 @@ behavior. Ticket 1183's 0.9 independence boundary also remains immutable.
   only `getrandom 0.3`, relocate the three named tests to hold the 3,859-line
   Gene ceiling, and undo the preserved branch's premature ticket-to-record
   move. This active ticket remains until final review and all gates pass.
+
+## Result
+
+BioMCP 0.9 now returns submission-level GenCC gene-disease validity evidence
+through `get gene … gencc` without changing the existing ClinGen result or the
+gene-search behavior landed by ticket 1148. The additive result retains each
+submission separately, exposes typed freshness/result/operation status and
+source provenance, and agrees across CLI Markdown, CLI JSON, raw MCP, typed
+MCP, and batch output.
+
+The implementation stores the weekly GenCC export in a private, generation-
+based local cache. Refreshes use bounded advisory locking, conditional HTTP,
+atomic publication, reader leases, durable retry state, and one eight-second
+deadline spanning acquisition through projection. Failures preserve the last
+validated generation where possible and otherwise report that absence cannot
+be concluded. The explicit maintenance sync remains CLI-only.
+
+Integration remediation moved GenCC work into the existing request fanout,
+made the namespace-visible generation authoritative immediately after rename,
+bounded cancellation and follower outcomes, and added deterministic crash,
+leader/follower, stale-data, schema, and adapter-parity proofs. The offline
+runner now supplies a genuinely namespace-owned private temporary directory;
+production ownership checks still trust only the effective user or literal
+UID 0 and explicitly reject overflow UID 65534. The fixture override is
+limited to an exact signaled numeric loopback address behind the normal
+security policy.
+
+The BioMCP 0.9 repository remains self-contained. Package contents remain
+exactly 1,300 files, and no live-provider, release, version, tag, or
+publication operation was performed.
+
+## Verification
+
+- Independent final code review: accepted with no findings at
+  `ea8eb3f59e395d746f6c629a7077f0b3954bfbb6`.
+- `make lint`: passed.
+- `make test`: passed with 3,375 Rust tests (31 skipped), 954 Python/CLI/MCP
+  contracts (3 skipped), and strict MkDocs validation.
+- `make spec`: passed, including all 22 GenCC gene examples, 39 parallel-
+  isolation checks, and 8 static checks.
+- `make full-feature-check`: passed, including all-feature Clippy, all 6
+  AlphaGenome tests, the locked all-feature release build, and PNG/SVG/terminal
+  artifact smoke checks.
+- Focused lifecycle, security, fixture, adapter, package-count, and zero-
+  coupling checks passed during remediation.
