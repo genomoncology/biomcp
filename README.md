@@ -15,6 +15,17 @@ habits. Researchers, clinicians, and agents use the same command grammar to
 search, focus, and pivot without rebuilding the workflow for each source. You
 get compact, evidence-oriented results across live public data plus local study analytics.
 
+## Watch the introduction
+
+A project using BioMCP won St. Jude's KIDS BioHackathon in 2025. The talk that
+followed is a one-hour introduction to BioMCP, recorded October 24, 2025.
+
+[![BioMCP: An Introduction to Biomedical AI Agents](docs/assets/st-jude-2025-talk-1280x720.png)](https://www.youtube.com/watch?v=lXoe-4TENDE)
+
+[Watch on YouTube](https://www.youtube.com/watch?v=lXoe-4TENDE) &middot;
+[Read the write-up](https://biomcp.org/blog/st-jude-2025-hackathon-talk/) &middot;
+[Full transcript](https://www.imaurer.com/talks/biomcp-st-jude/)
+
 ## Features
 
 - **Search the literature:** `search article` fans out across PubTator3 and
