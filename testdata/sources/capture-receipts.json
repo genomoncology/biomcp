@@ -590,6 +590,26 @@
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."
     },
     {
+      "path": "gencc/submissions-new-odc1.csv",
+      "classification": "real_and_receipted",
+      "receipt": {
+        "provider": "Gene Curation Coalition",
+        "request": "https://thegencc.org/download/action/submissions-export-csv?format=new",
+        "request_method": "GET",
+        "request_headers": "Accept: text/csv; Accept-Encoding: identity; User-Agent: BioMCP-fixture-capture/1158. No authentication or conditional validators.",
+        "captured_at": "2026-09-06T20:41:34Z",
+        "response_status": 200,
+        "response_content_type": "text/csv; charset=UTF-8",
+        "response_etag": "\"6ebdbf28b305e99e349ed827a219214b\"",
+        "response_last_modified": "Sun, 06 Sep 2026 06:00:29 GMT",
+        "original_content_length": 26826920,
+        "original_sha256": "d66768e9146ad833369eca7f6099af87ce4710dcc14078b07baa11eb29ccde82",
+        "sha256": "71ce30cda7d25bf2c08eccd0505997fc6b4b9cddf635907b474c18e86e8091f9",
+        "minimization_or_redaction": "Deterministically parsed the RFC 4180 capture, retained the exact 31 header fields and the three HGNC:8109 rows in provider order, and re-serialized them with minimal quoting and LF record terminators; no decoded retained field value was rewritten.",
+        "provider_origin_statement": "Bytes were recorded from GenCC's public new-format submissions export before deterministic row minimization."
+      }
+    },
+    {
       "path": "gnomad/constraint_ddx3x_null.json",
       "classification": "pending_verification",
       "ineligible_reason": "Existing parser fixture has no receipt-backed provider provenance."

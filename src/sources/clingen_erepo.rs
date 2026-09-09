@@ -264,4 +264,74 @@ fn decode_envelope(status: StatusCode, bytes: &[u8]) -> Result<Value, BioMcpErro
 }
 
 #[cfg(test)]
-mod tests;
+mod tests {
+    mod construction {
+        use super::super::*;
+        use crate::sources::HttpMethod;
+
+        #[test]
+        fn erepo_plans_use_exact_search_and_encoded_detail_segments() {
+            let summary = ERepoClient::summary_plan("CA 015543");
+            assert_eq!(summary.method, HttpMethod::Get);
+            assert_eq!(summary.path, "evrepo/api/summary/classifications");
+            assert_eq!(summary.query_value("columns"), Some("caId"));
+            assert_eq!(summary.query_value("values"), Some("CA 015543"));
+            assert_eq!(summary.query_value("matchTypes"), Some("exact"));
+            assert_eq!(summary.query_value("pgSize"), Some("25"));
+            assert_eq!(summary.query_value("pg"), Some("1"));
+
+            let detail = ERepoClient::detail_plan("id/one", "1.0/rc");
+            assert_eq!(detail.method, HttpMethod::Get);
+            assert_eq!(
+                detail.path,
+                "evrepo/api/summary/classification/id%2Fone/doc/sepio/version/1.0%2Frc"
+            );
+        }
+
+        #[test]
+        fn gene_plan_requests_one_extra_row_at_the_requested_offset() {
+            let plan = ERepoClient::gene_plan("PTEN", 25, 50);
+            assert_eq!(plan.method, HttpMethod::Get);
+            assert_eq!(plan.path, "evrepo/api/classifications");
+            assert_eq!(plan.query_value("gene"), Some("PTEN"));
+            assert_eq!(plan.query_value("matchLimit"), Some("26"));
+            assert_eq!(plan.query_value("matchSkip"), Some("50"));
+        }
+    }
+
+    mod parsing {
+
+        use super::super::*;
+        use crate::error::BioMcpError;
+        use reqwest::StatusCode;
+
+        #[test]
+        fn exact_search_no_records_404_requires_the_provider_shape() {
+            assert!(is_no_records_404(
+                br#"{"status":{"code":404,"msg":"No records were found for given query"}}"#
+            ));
+            assert!(!is_no_records_404(
+                br#"{"status":{"code":404,"msg":"not found"}}"#
+            ));
+            assert!(!is_no_records_404(
+                br#"{"status":{"code":200,"msg":"No records were found for given query"}}"#
+            ));
+        }
+
+        #[test]
+        fn envelope_requires_the_contract_keys_and_success_code() {
+            let valid = br#"{"status":{"code":200},"metadata":{},"data":[]}"#;
+            assert!(decode_envelope(StatusCode::OK, valid).is_ok());
+
+            let missing_data = br#"{"status":{"code":200},"metadata":{}}"#;
+            assert!(matches!(
+                decode_envelope(StatusCode::OK, missing_data),
+                Err(BioMcpError::Api { .. })
+            ));
+            assert!(matches!(
+                decode_envelope(StatusCode::NOT_FOUND, valid),
+                Err(BioMcpError::Api { .. })
+            ));
+        }
+    }
+}

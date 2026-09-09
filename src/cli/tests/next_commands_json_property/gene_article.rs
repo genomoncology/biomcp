@@ -29,6 +29,7 @@ fn gene_json_next_commands_parse() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,
@@ -94,6 +95,7 @@ fn gene_json_next_commands_omit_requested_section_follow_up() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,
@@ -147,6 +149,7 @@ fn gene_json_suggestions_match_see_also_without_section_hints() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,
@@ -197,6 +200,7 @@ fn gene_json_next_commands_include_clingen_trial_search() {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: Some(crate::sources::clingen::GeneClinGen::from_parts(
             vec![crate::sources::clingen::ClinGenValidity {
                 disease: "genetic developmental and epileptic encephalopathy".to_string(),

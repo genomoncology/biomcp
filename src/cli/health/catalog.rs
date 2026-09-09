@@ -49,9 +49,15 @@ pub(in crate::cli::health) enum ProbeKind {
     #[cfg(not(feature = "alphagenome"))]
     Unavailable,
     VaersQuery,
+    GenCcHead,
 }
 
 pub(in crate::cli::health) const HEALTH_SOURCES: &[SourceDescriptor] = &[
+    SourceDescriptor {
+        api: "GenCC",
+        affects: Some("gene gencc section"),
+        probe: ProbeKind::GenCcHead,
+    },
     SourceDescriptor {
         api: "MyGene",
         affects: Some("get/search gene and gene helper commands"),

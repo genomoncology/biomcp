@@ -11,9 +11,9 @@ RUST_BIOMCP_CONST_RE = re.compile(
     r'(?m)\b(?:pub\(crate\)\s+)?const\s+([A-Z][A-Z0-9_]*)\s*:\s*&str\s*=\s*"(BIOMCP_[A-Z0-9_]+)"'
 )
 RUST_DIRECT_ENV_READ_RE = re.compile(
-    r'(?:std::)?env::var\(\s*"(BIOMCP_[A-Z0-9_]+)"\s*\)'
+    r'(?:std::)?env::var(?:_os)?\(\s*"(BIOMCP_[A-Z0-9_]+)"\s*\)'
 )
-RUST_INDIRECT_ENV_READ_RE = re.compile(r"(?:std::)?env::var\(\s*([A-Z][A-Z0-9_]*)\s*\)")
+RUST_INDIRECT_ENV_READ_RE = re.compile(r"(?:std::)?env::var(?:_os)?\(\s*([A-Z][A-Z0-9_]*)\s*\)")
 RUST_OPTION_ENV_RE = re.compile(r'option_env!\(\s*"(BIOMCP_[A-Z0-9_]+)"\s*\)')
 RUST_ENV_BASE_RE = re.compile(r"env_base\([^)]*,\s*([A-Z][A-Z0-9_]*)\s*\)", re.S)
 
@@ -23,6 +23,20 @@ PUBLIC_BIOMCP_SECTIONS = {
 }
 
 PRODUCTION_READ_ENV_ALLOWLIST = {
+    "BIOMCP_GENCC_BASE": "fixture endpoint gated by an exact loopback test signal",
+    "BIOMCP_GENCC_CHILD_CRASH_PUBLISH": "test-subprocess instruction, not operator configuration",
+    "BIOMCP_GENCC_CHILD_CRASH_STATE": "test-subprocess instruction, not operator configuration",
+    "BIOMCP_GENCC_CHILD_EXPECT": "test-subprocess assertion, not operator configuration",
+    "BIOMCP_GENCC_CHILD_HOLD_LEASE": "test-subprocess barrier, not operator configuration",
+    "BIOMCP_GENCC_CHILD_OPEN": "test-subprocess instruction, not operator configuration",
+    "BIOMCP_GENCC_CHILD_RELEASE": "test-subprocess barrier, not operator configuration",
+    "BIOMCP_GENCC_CHILD_TIMEOUT_MS": "test-subprocess deadline, not operator configuration",
+    "BIOMCP_GENCC_TEST_BLOCK_PUBLICATION": "debug-only test barrier, not operator configuration",
+    "BIOMCP_GENCC_TEST_CRASH_AT": "debug-only crash injection, not operator configuration",
+    "BIOMCP_GENCC_TEST_CRASH_MARKER": "debug-only crash marker, not operator configuration",
+    "BIOMCP_GENCC_TEST_EXPIRE_AT": "debug-only deadline injection, not operator configuration",
+    "BIOMCP_GENCC_TEST_FAIL_AT": "debug-only failure injection, not operator configuration",
+    "BIOMCP_GENCC_TEST_NOW": "debug-only clock injection, not operator configuration",
     "BIOMCP_TEST_UNPACED_ORIGIN": "fixture-only signal, not operator configuration",
     "BIOMCP_CLINGEN_LDH_FIXTURE_ORIGIN": "fixture-only signal, not operator configuration",
     "BIOMCP_BUILD_DATE": "compile-time build metadata, not runtime operator configuration",
@@ -164,3 +178,7 @@ def test_biomcp_env_docs_match_runtime_reads() -> None:
     )
 
     assert all(PRODUCTION_READ_ENV_ALLOWLIST.values())
+
+
+def test_runtime_env_scanner_recognizes_non_utf8_path_reads() -> None:
+    assert "BIOMCP_GENCC_DIR" in _production_biomcp_env_names()

@@ -31,6 +31,7 @@ fn test_gene(entrez_id: &str) -> Gene {
         expression: None,
         hpa: None,
         druggability: None,
+        gencc: None,
         clingen: None,
         constraint: None,
         disgenet: None,

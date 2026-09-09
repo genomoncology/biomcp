@@ -736,7 +736,7 @@ SOURCE_PAGE_SPECS = {
     },
 }
 
-EXPECTED_SOURCE_FILES = [OVERVIEW_FILE, *SOURCE_PAGE_SPECS]
+EXPECTED_SOURCE_FILES = [OVERVIEW_FILE, *SOURCE_PAGE_SPECS, "gencc.md"]
 
 EXPECTED_NAV_BLOCK = """  - Sources:
       - Overview: sources/index.md
@@ -746,6 +746,7 @@ EXPECTED_NAV_BLOCK = """  - Sources:
       - ClinGen CSpec: sources/clingen-cspec.md
       - ClinGen ERepo: sources/clingen-erepo.md
       - ClinGen LDH: sources/clingen-ldh.md
+      - GenCC: sources/gencc.md
       - ClinVar: sources/clinvar.md
       - OpenFDA: sources/openfda.md
       - UniProt: sources/uniprot.md

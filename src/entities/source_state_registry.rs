@@ -160,6 +160,13 @@ pub(crate) const SOURCE_STATE_ROWS: &[SourceStateRow] = &[
     ),
     state(
         "gene",
+        "gencc",
+        "GenCC gene-disease validity",
+        &["GenCC"],
+        Aggregation::Additive,
+    ),
+    state(
+        "gene",
         "constraint",
         "Constraint",
         &["gnomAD"],
@@ -523,6 +530,7 @@ pub(crate) const SELECTOR_ROWS: &[SelectorRow] = &[
         Some("druggability"),
     ),
     selector("gene", "clingen", SelectorClass::Canonical, Some("clingen")),
+    selector("gene", "gencc", SelectorClass::Canonical, Some("gencc")),
     selector(
         "gene",
         "constraint",

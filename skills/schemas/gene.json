@@ -62,6 +62,53 @@
       "required": ["validity_status", "dosage_status"],
       "additionalProperties": false
     },
+    "gencc": {
+      "type": "object",
+      "properties": {
+        "assertions": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "pattern": "^SGC-[1-9][0-9]*\\.[1-9][0-9]*$" },
+              "sgc_id": { "type": "string", "pattern": "^SGC-[1-9][0-9]*$" },
+              "version": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+              "gene": { "$ref": "#/$defs/genccGeneTerm" },
+              "disease": { "$ref": "#/$defs/genccDiseaseTerm" },
+              "classification": { "$ref": "#/$defs/genccClassification" },
+              "mode_of_inheritance": { "$ref": "#/$defs/genccInheritanceTerm" },
+              "submitter": { "$ref": "#/$defs/genccSubmitterTerm" },
+              "evaluated_date": { "$ref": "#/$defs/genccDate" },
+              "submitted_date": { "$ref": "#/$defs/genccDate" },
+              "source_record_url": { "type": "string", "pattern": "^https://thegencc\\.org/submissions/SGC-[1-9][0-9]*\\.[1-9][0-9]*$" },
+              "public_report_url": { "$ref": "#/$defs/genccUrl" },
+              "assertion_criteria_url": { "$ref": "#/$defs/genccUrl" },
+              "publications": {
+                "type": "array",
+                "maxItems": 128,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "pmid": { "type": "string", "pattern": "^[1-9][0-9]{0,19}$" },
+                    "url": { "type": "string", "pattern": "^https://pubmed\\.ncbi\\.nlm\\.nih\\.gov/[1-9][0-9]{0,19}/$" }
+                  },
+                  "required": ["pmid", "url"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["id", "sgc_id", "version", "gene", "disease", "classification", "mode_of_inheritance", "submitter", "evaluated_date", "submitted_date", "source_record_url", "public_report_url", "assertion_criteria_url", "publications"],
+            "additionalProperties": false
+          }
+        },
+        "total_matching_assertions": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" },
+        "status": { "$ref": "#/$defs/genccStatus" }
+      },
+      "required": ["assertions", "total_matching_assertions", "truncated", "status"],
+      "additionalProperties": false
+    },
     "_meta": {
       "type": ["object", "null"],
       "properties": {
@@ -89,6 +136,73 @@
     }
   },
   "$defs": {
+    "genccLabel": { "type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^[^\\x00-\\x1F\\x7F]*\\S[^\\x00-\\x1F\\x7F]*$" },
+    "genccGeneTerm": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^HGNC:[1-9][0-9]*$" },
+        "label": { "$ref": "#/$defs/genccLabel" }
+      },
+      "required": ["id", "label"],
+      "additionalProperties": false
+    },
+    "genccDiseaseTerm": {
+      "type": "object",
+      "properties": { "id": { "type": "string", "pattern": "^MONDO:[0-9]{7}$" }, "label": { "$ref": "#/$defs/genccLabel" } },
+      "required": ["id", "label"], "additionalProperties": false
+    },
+    "genccInheritanceTerm": {
+      "type": "object",
+      "properties": { "id": { "type": "string", "pattern": "^HP:[0-9]{7}$" }, "label": { "$ref": "#/$defs/genccLabel" } },
+      "required": ["id", "label"], "additionalProperties": false
+    },
+    "genccSubmitterTerm": {
+      "type": "object",
+      "properties": { "id": { "type": "string", "pattern": "^GENCC:[0-9]{6}$" }, "label": { "$ref": "#/$defs/genccLabel" } },
+      "required": ["id", "label"], "additionalProperties": false
+    },
+    "genccClassification": {
+      "oneOf": [
+        { "$ref": "#/$defs/genccDefinitive" }, { "$ref": "#/$defs/genccStrong" },
+        { "$ref": "#/$defs/genccModerate" }, { "$ref": "#/$defs/genccLimited" },
+        { "$ref": "#/$defs/genccDisputed" }, { "$ref": "#/$defs/genccRefuted" },
+        { "$ref": "#/$defs/genccAnimal" }, { "$ref": "#/$defs/genccNoRelationship" },
+        { "$ref": "#/$defs/genccSupportive" }
+      ]
+    },
+    "genccDefinitive": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100001" }, "label": { "const": "Definitive" }, "code": { "const": "definitive" } } },
+    "genccStrong": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100002" }, "label": { "const": "Strong" }, "code": { "const": "strong" } } },
+    "genccModerate": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100003" }, "label": { "const": "Moderate" }, "code": { "const": "moderate" } } },
+    "genccLimited": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100004" }, "label": { "const": "Limited" }, "code": { "const": "limited" } } },
+    "genccDisputed": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100005" }, "label": { "const": "Disputed Evidence" }, "code": { "const": "disputed_evidence" } } },
+    "genccRefuted": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100006" }, "label": { "const": "Refuted Evidence" }, "code": { "const": "refuted_evidence" } } },
+    "genccAnimal": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100007" }, "label": { "const": "Animal Model Only" }, "code": { "const": "animal_model_only" } } },
+    "genccNoRelationship": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100008" }, "label": { "const": "No Known Disease Relationship" }, "code": { "const": "no_known_disease_relationship" } } },
+    "genccSupportive": { "$ref": "#/$defs/genccClassificationBase", "properties": { "id": { "const": "GENCC:100009" }, "label": { "const": "Supportive" }, "code": { "const": "supportive" } } },
+    "genccClassificationBase": {
+      "type": "object", "required": ["id", "label", "code"], "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "code": { "type": "string" } }
+    },
+    "genccDate": { "oneOf": [{ "type": "null" }, { "type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }] },
+    "genccUrl": { "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^https?://[^\\s]+$" }] },
+    "genccStatus": {
+      "type": "object",
+      "properties": {
+        "freshness": { "enum": ["fresh", "stale", "unavailable"] },
+        "result": { "enum": ["data", "empty", "unknown"] },
+        "operation": { "enum": ["local_query", "initial_download", "conditional_refresh", "retry_suppressed", "refresh_deferred", "identity_match"] },
+        "checked_at": { "$ref": "#/$defs/genccTimestamp" },
+        "retrieved_at": { "$ref": "#/$defs/genccTimestamp" },
+        "attempted_at": { "$ref": "#/$defs/genccTimestamp" },
+        "etag": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^(W/)?\\\"[^\\\"]*\\\"$" }] },
+        "last_modified": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-9]{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$" }] },
+        "upstream_version": { "type": "null" },
+        "message": { "enum": [null, "GenCC refresh failed; results come from the last validated dataset.", "GenCC refresh is still in progress; results come from the last validated dataset.", "GenCC data is unavailable; no GenCC absence can be concluded.", "GenCC refresh is still in progress; no GenCC absence can be concluded.", "GenCC gene identity is inconclusive; no GenCC absence can be concluded."] }
+      },
+      "required": ["freshness", "result", "operation", "checked_at", "retrieved_at", "attempted_at", "etag", "last_modified", "upstream_version", "message"],
+      "additionalProperties": false
+    },
+    "genccTimestamp": { "oneOf": [{ "type": "null" }, { "type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" }] },
     "validityStatus": {
       "oneOf": [
         {

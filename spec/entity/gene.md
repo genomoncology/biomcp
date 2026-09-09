@@ -413,7 +413,8 @@ The checked-in gene schema must validate the actual JSON emitted from the captur
 
 ```bash
 gene_json="$(../../tools/biomcp-ci --json get gene BRAF)"
-GENE_JSON="$gene_json" uv run --no-sync python3 - ../../skills/schemas/gene.json <<'PY' | mustmatch like 'gene schema matches fixture-backed CLI payload'
+gencc_gene_json="$(BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE" ../../tools/biomcp-ci --json get gene ODC1 gencc)"
+GENE_JSON="$gene_json" GENCC_GENE_JSON="$gencc_gene_json" uv run --no-sync python3 - ../../skills/schemas/gene.json <<'PY' | mustmatch like 'gene schema matches fixture-backed CLI payload'
 import json
 import os
 from copy import deepcopy
@@ -427,6 +428,7 @@ Draft202012Validator.check_schema(schema)
 validator = Draft202012Validator(schema)
 payload = json.loads(os.environ["GENE_JSON"])
 validator.validate(payload)
+validator.validate(json.loads(os.environ["GENCC_GENE_JSON"]))
 
 without_coordinates = deepcopy(payload)
 without_coordinates.pop("genomic_coordinates")
@@ -561,6 +563,166 @@ TYPED JSON
 "clingen": {
 "outcome": "degraded"
 "section_sources":'
+```
+
+## GenCC submission-level validity
+
+The receipt-backed new-format fixture preserves the three independent ODC1
+assertions. JSON, Markdown, all-section, and batch surfaces keep their
+evaluated-date order and source-specific lifecycle state without claiming a
+consensus.
+
+```bash
+export BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE"
+../../tools/biomcp-ci list gene | mustmatch like 'get gene <symbol> gencc`
+GenCC submission-level gene-disease validity'
+../../tools/biomcp-ci get gene --help | mustmatch like 'clingen, gencc, constraint'
+../../tools/biomcp-ci gencc --help | mustmatch like 'sync  Revalidate the local GenCC gene-disease validity dataset'
+../../tools/biomcp-ci --json get gene ODC1 gencc \
+  | jq -e '.gencc.assertions | ((length == 3) and (map(.submitter.label) == ["G2P", "PanelApp Australia", "Labcorp Genetics (formerly Invitae)"]))' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json get gene ODC1 gencc \
+  | jq -e '.gencc.total_matching_assertions == 3 and (.gencc.truncated | not) and .gencc.status.freshness == "fresh" and .gencc.status.result == "data" and .section_outcomes.gencc == {outcome:"data", sources:["GenCC"]} and (._meta.section_sources | any(.key == "gencc" and .label == "GenCC gene-disease validity" and .outcome == "data" and .sources == ["GenCC"]))' \
+  | mustmatch 'true'
+../../tools/biomcp-ci get gene ODC1 gencc \
+  | mustmatch like '## GenCC gene-disease validity
+G2P (GENCC:000112)
+PanelApp Australia (GENCC:000111)
+Labcorp Genetics (formerly Invitae) (GENCC:000106)
+[PMID 30239107](<https://pubmed.ncbi.nlm.nih.gov/30239107/>)'
+BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 ../../tools/biomcp-ci --json get gene ODC1 all \
+  | jq -e '.gencc.assertions | length == 3' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json batch gene ODC1,ODC1 --sections gencc \
+  | jq -e '.summary == {total:2,succeeded:2,failed:0} and (.items | all(.status == "ok" and (.result.gencc.assertions | length == 3)))' \
+  | mustmatch 'true'
+unset BIOMCP_TEST_UNPACED_ORIGIN
+```
+
+GenCC and ClinGen remain independent sections and provenance owners. The same
+GenCC projection is available through raw MCP text/JSON and typed MCP `get`.
+
+```bash
+export BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE"
+BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE" BIOMCP_CLINGEN_BASE="$BIOMCP_PROVIDER_CONTRACT_BASE/clingen" BIOMCP_GENE_OPTIONAL_TIMEOUT_MS=200 ../../tools/biomcp-ci --json get gene TP53 clingen gencc \
+  | jq -e '.clingen.validity[0].disease == "Li-Fraumeni syndrome" and .gencc.status.result == "empty" and .section_outcomes.clingen.sources == ["ClinGen"] and .section_outcomes.gencc.sources == ["GenCC"]' \
+  | mustmatch 'true'
+BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache" \
+  bash ../fixtures/run-section-outcome-mcp.sh ../.. gencc-surfaces \
+  | jq -e '.raw_text | contains("## GenCC gene-disease validity") and contains("G2P (GENCC:000112)")' \
+  | mustmatch 'true'
+BIOMCP_CACHE_DIR="${BIOMCP_PROVIDER_CONTRACT_READY_FILE%/base-url}/gencc-mcp-cache" \
+  bash ../fixtures/run-section-outcome-mcp.sh ../.. gencc-surfaces \
+  | jq -e '.raw_json.gencc == .typed_json.gencc and .raw_json.section_outcomes.gencc == {outcome:"data", sources:["GenCC"]} and .typed_json.section_outcomes.gencc == .raw_json.section_outcomes.gencc and (.raw_json.gencc.assertions | map(.submitter.label)) == ["G2P", "PanelApp Australia", "Labcorp Genetics (formerly Invitae)"]' \
+  | mustmatch 'true'
+unset BIOMCP_TEST_UNPACED_ORIGIN
+```
+
+## GenCC adapter projection parity
+
+The adapter's available, identity-match, and unavailable representatives are
+enough to prove the public surfaces consume one projection. The four calls in
+each representative compare the section payload, outcome, and provenance;
+they do not repeat the full lifecycle matrix through every transport.
+
+```bash
+python3 - <<'PY' | mustmatch like 'GenCC adapter projections converge across CLI, raw MCP, typed MCP, and batch'
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+
+binary = os.environ["BIOMCP_BIN"]
+base_env = os.environ.copy()
+base_env["BIOMCP_TEST_UNPACED_ORIGIN"] = base_env["BIOMCP_PROVIDER_CONTRACT_BASE"]
+
+def cli(args, env):
+    return json.loads(subprocess.check_output(
+        [binary, "--json", *args], text=True, env=env))
+
+def raw_and_typed(symbol, env):
+    mcp_env = env.copy()
+    mcp_env["BIOMCP_GENCC_SURFACES_GENE"] = symbol
+    output = subprocess.check_output(
+        ["bash", "../fixtures/run-section-outcome-mcp.sh", "../..", "gencc-surfaces"],
+        text=True, env=mcp_env)
+    surfaces = json.loads(output)
+    return surfaces["raw_json"], surfaces["typed_json"]
+
+def section_projection(card):
+    return {
+        "gencc": card["gencc"],
+        "outcome": card["section_outcomes"]["gencc"],
+        "provenance": [entry for entry in card["_meta"]["section_sources"]
+                       if entry["key"] == "gencc"],
+    }
+
+def assert_surfaces(symbol, env, expected):
+    cli_card = cli(["get", "gene", symbol, "gencc"], env)
+    raw_card, typed_card = raw_and_typed(symbol, env)
+    batch = cli(["batch", "gene", symbol, "--sections", "gencc"], env)
+    batch_card = batch["items"][0]["result"]
+    projections = [section_projection(card) for card in
+                   (cli_card, raw_card, typed_card, batch_card)]
+    assert all(projection == projections[0] for projection in projections), projections
+    assert projections[0]["outcome"] == expected, projections[0]
+    return projections[0]
+
+# Available data: warm once so all four representative calls use local_query.
+available_env = base_env.copy()
+cli(["get", "gene", "ODC1", "gencc"], available_env)
+available = assert_surfaces("ODC1", available_env,
+    {"outcome": "data", "sources": ["GenCC"]})
+assert len(available["gencc"]["assertions"]) == 3
+
+# A resolved HGNC that belongs to a different symbol is identity_match, not an
+# empty GenCC result. The fixture route supplies that conflicting MyGene card.
+identity = assert_surfaces("GENCCIDENTITY", base_env,
+    {"outcome": "unavailable", "sources": [],
+     "message": "GenCC gene identity is inconclusive; no GenCC absence can be concluded."})
+assert identity["gencc"]["status"]["operation"] == "identity_match"
+assert identity["gencc"]["assertions"] == []
+
+# Establish the failed acquisition once; subsequent calls share its durable
+# retry-suppressed projection without multiplying the unavailable matrix.
+unavailable_env = base_env.copy()
+unavailable_env["BIOMCP_GENCC_BASE"] = base_env["BIOMCP_PROVIDER_CONTRACT_BASE"] + "/gencc/missing"
+unavailable_env["BIOMCP_GENCC_TEST_NOW"] = "2026-09-09T00:00:00Z"
+unavailable_dir = tempfile.mkdtemp(prefix="gencc-adapter-unavailable-",
+                                    dir=base_env["BIOMCP_GENCC_FIXTURE_PARENT"])
+unavailable_env["BIOMCP_GENCC_DIR"] = unavailable_dir
+try:
+    first = cli(["get", "gene", "ODC1", "gencc"], unavailable_env)
+    assert first["gencc"]["status"]["freshness"] == "unavailable"
+    unavailable = assert_surfaces("ODC1", unavailable_env,
+        {"outcome": "unavailable", "sources": [],
+         "message": "GenCC data is unavailable; no GenCC absence can be concluded."})
+    assert unavailable["gencc"]["status"]["result"] == "unknown"
+    assert unavailable["gencc"]["assertions"] == []
+finally:
+    shutil.rmtree(unavailable_dir)
+
+print("GenCC adapter projections converge across CLI, raw MCP, typed MCP, and batch")
+PY
+```
+
+Health uses a metadata-only HEAD. An explicit sync then revalidates the
+immutable generation with both validators and a zero-body `304`; ordinary
+fresh reuse above performs no second download.
+
+```bash
+export BIOMCP_TEST_UNPACED_ORIGIN="$BIOMCP_PROVIDER_CONTRACT_BASE"
+../../tools/biomcp-ci --json health --api GenCC \
+  | jq -e '.total == 1 and .healthy == 1 and .rows[0].api == "GenCC" and .rows[0].status == "ok"' \
+  | mustmatch 'true'
+grep -F 'HEAD /gencc/download/action/submissions-export-csv?format=new' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
+  | mustmatch like 'format=new'
+../../tools/biomcp-ci --json gencc sync | jq -e '.source == "gencc" and .status == "synchronized" and (.changed | not) and (has("updated") | not)' | mustmatch 'true'
+grep -F 'GET /gencc/download/action/submissions-export-csv?format=new If-None-Match="6ebdbf28b305e99e349ed827a219214b" If-Modified-Since=Sun, 06 Sep 2026 06:00:29 GMT' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
+  | mustmatch like 'If-None-Match="6ebdbf28b305e99e349ed827a219214b"'
+test "$(grep -c '^GET /gencc/download/action/submissions-export-csv?format=new' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG")" -eq 2
+unset BIOMCP_TEST_UNPACED_ORIGIN
 ```
 
 ## All-Section Warm Budget
