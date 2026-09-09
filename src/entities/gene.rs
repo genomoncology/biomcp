@@ -391,6 +391,7 @@ const GENE_GET_STRATEGY_ENV: &str = "BIOMCP_GENE_GET_STRATEGY";
 const FUNDING_NO_DATA_NOTE: &str = "No NIH funding data found for this query.";
 const FUNDING_UNAVAILABLE_NOTE: &str = "NIH Reporter funding data is temporarily unavailable.";
 const DIAGNOSTIC_PIVOT_LIMIT: usize = 10;
+const MAX_SEARCH_LIMIT: usize = 50;
 const GENE_DIAGNOSTICS_UNAVAILABLE_NOTE: &str =
     "Diagnostic local data is unavailable. Run `biomcp gtr sync` to enable gene diagnostic pivots.";
 
@@ -1799,18 +1800,15 @@ async fn add_druggability_section(gene: &mut Gene, target_id: Option<&str>, time
     gene.section_outcomes
         .complete(GENE_SECTION_DRUGGABILITY, outcome);
 }
-
 fn merge_druggability_results(
     dgidb_result: Result<GeneDruggability, BioMcpError>,
     opentargets_result: Result<OpenTargetsTargetDruggabilityContext, BioMcpError>,
 ) -> GeneDruggability {
     let mut merged = GeneDruggability::default();
-
     if let Ok(dgidb) = dgidb_result {
         merged.categories = dgidb.categories;
         merged.interactions = dgidb.interactions;
     }
-
     if let Ok(context) = opentargets_result {
         merged.tractability = context
             .tractability
@@ -1832,10 +1830,8 @@ fn merge_druggability_results(
             })
             .collect();
     }
-
     merged
 }
-
 fn gnomad_constraint_section(
     transcript: Option<String>,
     pli: Option<f64>,
@@ -1854,7 +1850,6 @@ fn gnomad_constraint_section(
         reference_genome: GNOMAD_CONSTRAINT_REFERENCE_GENOME.to_string(),
     }
 }
-
 fn gnomad_constraint_outcome(constraint: &GeneConstraint) -> SectionOutcome {
     if constraint.transcript.is_some()
         || constraint.pli.is_some()
@@ -1867,7 +1862,6 @@ fn gnomad_constraint_outcome(constraint: &GeneConstraint) -> SectionOutcome {
         SectionOutcome::empty("gnomAD")
     }
 }
-
 async fn fetch_constraint_section(
     symbol: &str,
     timeout: Duration,
@@ -1879,12 +1873,10 @@ async fn fetch_constraint_section(
             SectionOutcome::empty("gnomAD"),
         );
     }
-
     let constraint_fut = async {
         let client = GnomadClient::new()?;
         client.gene_constraint(symbol).await
     };
-
     match tokio::time::timeout(timeout, constraint_fut).await {
         Ok(Ok(Some(constraint))) => {
             let section = gnomad_constraint_section(
@@ -1924,14 +1916,12 @@ async fn fetch_constraint_section(
         }
     }
 }
-
 async fn add_constraint_section(gene: &mut Gene, timeout: Duration) {
     let (constraint, outcome) = fetch_constraint_section(&gene.symbol, timeout).await;
     gene.constraint = Some(constraint);
     gene.section_outcomes
         .complete(GENE_SECTION_CONSTRAINT, outcome);
 }
-
 fn map_disgenet_gene_association(row: DisgenetAssociationRecord) -> GeneDisgenetAssociation {
     GeneDisgenetAssociation {
         disease_name: row.disease_name,
@@ -1943,7 +1933,6 @@ fn map_disgenet_gene_association(row: DisgenetAssociationRecord) -> GeneDisgenet
         evidence_level: row.evidence_level,
     }
 }
-
 async fn add_disgenet_section(gene: &mut Gene) -> Result<(), BioMcpError> {
     let client = DisgenetClient::new()?;
     let associations = client
@@ -1955,7 +1944,6 @@ async fn add_disgenet_section(gene: &mut Gene) -> Result<(), BioMcpError> {
     gene.disgenet = Some(GeneDisgenet { associations });
     Ok(())
 }
-
 async fn add_funding_section(gene: &mut Gene, timeout: Duration) {
     let symbol = gene.symbol.trim();
     if symbol.is_empty() {
@@ -1968,12 +1956,10 @@ async fn add_funding_section(gene: &mut Gene, timeout: Duration) {
         gene.funding_note = Some(FUNDING_NO_DATA_NOTE.into());
         return;
     }
-
     let funding_fut = async {
         let client = NihReporterClient::new()?;
         client.funding(symbol).await
     };
-
     match tokio::time::timeout(timeout, funding_fut).await {
         Ok(Ok(section)) => {
             let no_hits = section.matching_project_years == 0 && section.grants.is_empty();
@@ -2000,7 +1986,6 @@ async fn add_funding_section(gene: &mut Gene, timeout: Duration) {
         }
     }
 }
-
 async fn add_diagnostics_section(gene: &mut Gene) {
     let query = gene.symbol.trim().to_string();
     if query.is_empty() {
@@ -2008,12 +1993,10 @@ async fn add_diagnostics_section(gene: &mut Gene) {
         gene.diagnostics_note = None;
         return;
     }
-
     let filters = DiagnosticSearchFilters {
         gene: Some(query.clone()),
         ..Default::default()
     };
-
     match crate::entities::diagnostic::search_page(&filters, DIAGNOSTIC_PIVOT_LIMIT, 0).await {
         Ok(page) => {
             apply_diagnostics_section_result(gene, &query, Ok(page.results));
@@ -2023,7 +2006,6 @@ async fn add_diagnostics_section(gene: &mut Gene) {
         }
     }
 }
-
 fn apply_diagnostics_section_result(
     gene: &mut Gene,
     query: &str,
@@ -2041,7 +2023,6 @@ fn apply_diagnostics_section_result(
         }
     }
 }
-
 async fn populate_sections_parallel_top(
     gene: &mut Gene,
     include: &[GeneIncludeType],
@@ -2058,10 +2039,8 @@ async fn populate_sections_parallel_top(
         .copied()
         .filter(|value| matches!(value, GeneIncludeType::Ontology | GeneIncludeType::Diseases))
         .collect();
-
     let clinical_target_id = opentargets_id.map(str::to_string);
     let druggability_target_id = clinical_target_id.clone();
-
     let clinical_context_fut = timed_section(
         "clinical_context",
         fetch_clinical_context(&symbol, clinical_target_id.as_deref()),
@@ -2073,7 +2052,6 @@ async fn populate_sections_parallel_top(
             Err(_) => "error".to_string(),
         },
     );
-
     let enrichr_fut = async {
         if enrichr_sections.is_empty() {
             None
@@ -2100,7 +2078,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let expression_fut = async {
         if !include.contains(&GeneIncludeType::Expression) {
             None
@@ -2115,7 +2092,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let hpa_fut = async {
         if !include.contains(&GeneIncludeType::Hpa) {
             None
@@ -2130,7 +2106,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let druggability_fut = async {
         if !include.contains(&GeneIncludeType::Druggability) {
             None
@@ -2149,7 +2124,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let clingen_fut = async {
         if !include.contains(&GeneIncludeType::ClinGen) {
             None
@@ -2181,7 +2155,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let pathways_fut = async {
         if !include.contains(&GeneIncludeType::Pathways) {
             None
@@ -2200,7 +2173,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let protein_fut = async {
         if !include.contains(&GeneIncludeType::Protein) {
             None
@@ -2219,7 +2191,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let go_fut = async {
         if !include.contains(&GeneIncludeType::Go) {
             None
@@ -2238,7 +2209,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let interactions_fut = async {
         if !include.contains(&GeneIncludeType::Interactions) {
             None
@@ -2257,7 +2227,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let civic_fut = async {
         if !include.contains(&GeneIncludeType::Civic) {
             None
@@ -2272,7 +2241,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let constraint_fut = async {
         if !include.contains(&GeneIncludeType::Constraint) {
             None
@@ -2287,7 +2255,6 @@ async fn populate_sections_parallel_top(
             )
         }
     };
-
     let (
         (clinical_context_result, clinical_context_entry),
         enrichr_result,
@@ -2315,7 +2282,6 @@ async fn populate_sections_parallel_top(
         Box::pin(civic_fut),
         Box::pin(constraint_fut),
     );
-
     timing.push(clinical_context_entry);
     match clinical_context_result {
         Ok(context) => {
@@ -2324,7 +2290,6 @@ async fn populate_sections_parallel_top(
         }
         Err(err) => warn!("OpenTargets unavailable for gene clinical context: {err}"),
     }
-
     if let Some((result, entry)) = enrichr_result {
         timing.push(entry);
         let (ontology, diseases) = match result {
@@ -2342,34 +2307,29 @@ async fn populate_sections_parallel_top(
         gene.ontology = ontology;
         gene.diseases = diseases;
     }
-
     if let Some(((expression, outcome), entry)) = expression_result {
         timing.push(entry);
         gene.expression = Some(expression);
         gene.section_outcomes
             .complete(GENE_SECTION_EXPRESSION, outcome);
     }
-
     if let Some(((hpa, outcome), entry)) = hpa_result {
         timing.push(entry);
         gene.hpa = Some(hpa);
         gene.section_outcomes.complete(GENE_SECTION_HPA, outcome);
     }
-
     if let Some(((druggability, outcome), entry)) = druggability_result {
         timing.push(entry);
         gene.druggability = Some(druggability);
         gene.section_outcomes
             .complete(GENE_SECTION_DRUGGABILITY, outcome);
     }
-
     if let Some(((clingen, outcome), entry)) = clingen_result {
         timing.push(entry);
         gene.clingen = Some(clingen);
         gene.section_outcomes
             .complete(GENE_SECTION_CLINGEN, outcome);
     }
-
     if let Some((result, entry)) = pathways_result {
         timing.push(entry);
         gene.pathways = match result {
@@ -2392,7 +2352,6 @@ async fn populate_sections_parallel_top(
     } else {
         gene.pathways = None;
     }
-
     if let Some((result, entry)) = protein_result {
         timing.push(entry);
         gene.protein = match result {
@@ -2406,30 +2365,25 @@ async fn populate_sections_parallel_top(
             }
         };
     }
-
     if let Some((result, entry)) = go_result {
         timing.push(entry);
         apply_go_section_result(gene, result);
     }
-
     if let Some((result, entry)) = interactions_result {
         timing.push(entry);
         apply_gene_interactions_result(gene, result);
     }
-
     if let Some(((civic, outcome), entry)) = civic_result {
         timing.push(entry);
         gene.civic = Some(civic);
         gene.section_outcomes.complete(GENE_SECTION_CIVIC, outcome);
     }
-
     if let Some(((constraint, outcome), entry)) = constraint_result {
         timing.push(entry);
         gene.constraint = Some(constraint);
         gene.section_outcomes
             .complete(GENE_SECTION_CONSTRAINT, outcome);
     }
-
     if include.contains(&GeneIncludeType::Disgenet) {
         let started = Instant::now();
         let timing_outcome = if add_disgenet_section(gene).await.is_err() {
@@ -2449,7 +2403,6 @@ async fn populate_sections_parallel_top(
         };
         timing.record("disgenet", started, timing_outcome);
     }
-
     if include.contains(&GeneIncludeType::Diagnostics) {
         let started = Instant::now();
         add_diagnostics_section(gene).await;
@@ -2469,7 +2422,6 @@ async fn populate_sections_parallel_top(
             },
         );
     }
-
     if include.contains(&GeneIncludeType::Funding) {
         let started = Instant::now();
         add_funding_section(gene, optional_timeout).await;
@@ -2487,21 +2439,17 @@ async fn populate_sections_parallel_top(
             },
         );
     }
-
     complete_gene_section_outcomes(gene, include);
     sync_timing_outcomes(timing, gene);
     Ok(())
 }
-
 pub async fn get(symbol: &str, sections: &[String]) -> Result<Gene, BioMcpError> {
     let options = GeneGetOptions::from_env_and_sections(symbol, sections)?;
     get_with_options(symbol, &options).await
 }
-
 pub async fn get_with_options(symbol: &str, options: &GeneGetOptions) -> Result<Gene, BioMcpError> {
     Ok(get_with_report(symbol, options).await?.gene)
 }
-
 pub async fn get_with_report(
     symbol: &str,
     options: &GeneGetOptions,
@@ -2511,7 +2459,6 @@ pub async fn get_with_report(
             "Gene symbol is required. Example: biomcp get gene BRAF".into(),
         ));
     }
-
     let strategy = options.strategy;
     let optional_timeout = if options.optional_timeout.is_zero() {
         Duration::from_millis(DEFAULT_OPTIONAL_ENRICHMENT_TIMEOUT_MS)
@@ -2535,7 +2482,6 @@ pub async fn get_with_report(
     } else {
         None
     };
-
     let client = match MyGeneClient::new() {
         Ok(client) => client,
         Err(err) => {
@@ -2570,10 +2516,8 @@ pub async fn get_with_report(
             return Err(err);
         }
     };
-
     let mut gene = transform::gene::from_mygene_get(resp);
     let opentargets_id = preferred_opentargets_id(&gene, strategy).map(str::to_string);
-
     if use_parallel_top {
         populate_sections_parallel_top(
             &mut gene,
@@ -2587,7 +2531,6 @@ pub async fn get_with_report(
         let timing = timing.finish();
         return Ok(GeneGetResult { gene, timing });
     }
-
     let started = Instant::now();
     match add_clinical_context(&mut gene, opentargets_id.as_deref()).await {
         Ok(()) => timing.record(
@@ -2604,7 +2547,6 @@ pub async fn get_with_report(
             warn!("OpenTargets unavailable for gene clinical context: {err}");
         }
     }
-
     if include.contains(&GeneIncludeType::Pathways) {
         let started = Instant::now();
         gene.pathways = match fetch_pathways_section(&gene.symbol).await {
@@ -2636,13 +2578,11 @@ pub async fn get_with_report(
     } else {
         gene.pathways = None;
     }
-
     let enrichr_sections: Vec<GeneIncludeType> = include
         .iter()
         .copied()
         .filter(|v| matches!(v, GeneIncludeType::Ontology | GeneIncludeType::Diseases))
         .collect();
-
     if !enrichr_sections.is_empty() {
         let started = Instant::now();
         let enrichr = enrich_gene(&gene.symbol, &enrichr_sections).await;
@@ -2679,7 +2619,6 @@ pub async fn get_with_report(
             },
         );
     }
-
     if include.contains(&GeneIncludeType::Protein) {
         let started = Instant::now();
         gene.protein = match fetch_protein_section(gene.uniprot_id.as_deref(), &gene.symbol).await {
@@ -2702,7 +2641,6 @@ pub async fn get_with_report(
             },
         );
     }
-
     if include.contains(&GeneIncludeType::Go) {
         let started = Instant::now();
         let result = fetch_go_section(gene.uniprot_id.as_deref(), &gene.symbol).await;
@@ -2717,7 +2655,6 @@ pub async fn get_with_report(
             },
         );
     }
-
     if include.contains(&GeneIncludeType::Interactions) {
         let started = Instant::now();
         let result = fetch_interactions_section(&gene.symbol).await;
@@ -2909,13 +2846,11 @@ pub async fn get_with_report(
             },
         );
     }
-
     complete_gene_section_outcomes(&mut gene, &include);
     sync_timing_outcomes(&mut timing, &gene);
     let timing = timing.finish();
     Ok(GeneGetResult { gene, timing })
 }
-
 // dead-code reason: gene::search is exercised by native tests or binary dispatch
 #[allow(dead_code)]
 pub async fn search(
@@ -2924,14 +2859,110 @@ pub async fn search(
 ) -> Result<Vec<GeneSearchResult>, BioMcpError> {
     Ok(search_page(filters, limit, 0).await?.results)
 }
-
+fn is_exact_gene_query_candidate(query: &str) -> bool {
+    let query = query.trim();
+    !query.is_empty()
+        && query.len() <= 256
+        && query
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+        && query.bytes().any(|c| c.is_ascii_alphabetic())
+}
+fn exact_search_needs_followup(total: usize, offset: usize) -> bool {
+    total > MAX_SEARCH_LIMIT && offset > 0
+}
+fn gene_hit_matches_local_filters(
+    hit: &MyGeneHit,
+    expected_gene_type: Option<&str>,
+    expected_chr: Option<&str>,
+    normalized_region: Option<&(String, i64, i64)>,
+) -> bool {
+    let type_ok = expected_gene_type.is_none_or(|expected| {
+        hit.type_of_gene
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .is_some_and(|actual| actual.eq_ignore_ascii_case(expected))
+    });
+    let chr_ok = expected_chr.is_none_or(|expected| {
+        hit.genomic_pos
+            .as_ref()
+            .and_then(|g| g.chr())
+            .map(|v| v.trim_start_matches("chr").to_ascii_uppercase())
+            .as_deref()
+            == Some(expected)
+    });
+    let region_ok = normalized_region.is_none_or(|(region_chr, start, end)| {
+        let Some(pos) = hit.genomic_pos.as_ref() else {
+            return false;
+        };
+        let Some(actual_chr) = pos.chr() else {
+            return false;
+        };
+        let (Some(actual_start), Some(actual_end)) = (pos.start(), pos.end()) else {
+            return false;
+        };
+        actual_chr
+            .trim_start_matches("chr")
+            .eq_ignore_ascii_case(region_chr)
+            && actual_start <= *end
+            && actual_end >= *start
+    });
+    type_ok && chr_ok && region_ok
+}
+fn filtered_gene_results(
+    hits: &[MyGeneHit],
+    expected_gene_type: Option<&str>,
+    expected_chr: Option<&str>,
+    normalized_region: Option<&(String, i64, i64)>,
+) -> Vec<GeneSearchResult> {
+    hits.iter()
+        .filter(|hit| {
+            gene_hit_matches_local_filters(hit, expected_gene_type, expected_chr, normalized_region)
+        })
+        .map(transform::gene::from_mygene_hit)
+        .collect()
+}
+fn rank_and_dedupe_gene_results(
+    results: Vec<GeneSearchResult>,
+    query: &str,
+) -> Vec<GeneSearchResult> {
+    let query = query.trim();
+    let mut ranked = results;
+    ranked.sort_by_key(|row| !row.symbol.trim().eq_ignore_ascii_case(query));
+    let mut out = Vec::with_capacity(ranked.len());
+    for row in ranked {
+        let id = row.entrez_id.trim();
+        let symbol = row.symbol.trim();
+        let duplicate = out.iter().any(|existing: &GeneSearchResult| {
+            let existing_id = existing.entrez_id.trim();
+            let existing_symbol = existing.symbol.trim();
+            (!id.is_empty() && id == existing_id)
+                || ((id.is_empty() || existing_id.is_empty())
+                    && !symbol.is_empty()
+                    && !existing_symbol.is_empty()
+                    && symbol.eq_ignore_ascii_case(existing_symbol))
+        });
+        if !duplicate {
+            out.push(row);
+        }
+    }
+    out
+}
+fn slice_gene_results(
+    results: &[GeneSearchResult],
+    limit: usize,
+    offset: usize,
+) -> Vec<GeneSearchResult> {
+    let start = offset.min(results.len());
+    let end = offset.saturating_add(limit).min(results.len());
+    results[start..end].to_vec()
+}
 pub async fn search_page(
     filters: &GeneSearchFilters,
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<GeneSearchResult>, BioMcpError> {
-    const MAX_SEARCH_LIMIT: usize = 50;
-
     let query = filters
         .query
         .as_deref()
@@ -2942,13 +2973,11 @@ pub async fn search_page(
                 "Query is required. Example: biomcp search gene -q BRAF".into(),
             )
         })?;
-
     if query.len() > 256 {
         return Err(BioMcpError::InvalidArgument(
             "Query is too long. Example: biomcp search gene -q BRAF".into(),
         ));
     }
-
     let gene_type = filters
         .gene_type
         .as_deref()
@@ -2974,13 +3003,11 @@ pub async fn search_page(
         .as_deref()
         .map(str::trim)
         .filter(|v| !v.is_empty());
-
     if gene_type.is_some_and(|v| v.len() > 64) {
         return Err(BioMcpError::InvalidArgument(
             "--type is too long. Example: --type protein-coding".into(),
         ));
     }
-
     if chromosome.is_some_and(|v| v.len() > 16) {
         return Err(BioMcpError::InvalidArgument(
             "--chromosome is too long. Example: --chromosome 7".into(),
@@ -2996,35 +3023,29 @@ pub async fn search_page(
             "--go is too long. Example: --go GO:0004672".into(),
         ));
     }
-
     let normalized_gene_type = gene_type.map(normalize_gene_type).transpose()?;
     let mut normalized_chromosome = chromosome.map(normalize_gene_chromosome).transpose()?;
     let normalized_region = region.map(parse_region_filter).transpose()?;
     if let Some((region_chr, _, _)) = normalized_region.as_ref() {
         normalized_chromosome.get_or_insert_with(|| region_chr.clone());
     }
-
     if limit == 0 || limit > MAX_SEARCH_LIMIT {
         return Err(BioMcpError::InvalidArgument(format!(
             "--limit must be between 1 and {MAX_SEARCH_LIMIT}"
         )));
     }
-
     let mut terms: Vec<String> = vec![mygene_query_term(query)];
-
     if let Some(v) = normalized_gene_type {
         let escaped = MyGeneClient::escape_query_value(v);
         let value = format!("\"{escaped}\"");
         terms.push(format!("type_of_gene:{value}"));
     }
-
     if let Some(pathway) = pathway {
         let escaped = MyGeneClient::escape_query_value(pathway);
         terms.push(format!(
             "(pathway.kegg.id:\"{escaped}\" OR pathway.reactome.id:\"{escaped}\" OR pathway.kegg.name:*{escaped}*)"
         ));
     }
-
     if let Some(go_term) = go_term {
         let normalized_go = normalize_go_id(go_term)?;
         let escaped = MyGeneClient::escape_query_value(&normalized_go);
@@ -3032,86 +3053,66 @@ pub async fn search_page(
             "(go.BP.id:\"{escaped}\" OR go.CC.id:\"{escaped}\" OR go.MF.id:\"{escaped}\")"
         ));
     }
-
     if let Some((chr, start, end)) = normalized_region.as_ref() {
         terms.push(format!(
             "(genomic_pos.chr:{chr} AND genomic_pos.start:[{start} TO {end}])"
         ));
     }
-
     let q = terms.join(" AND ");
-
     let client = MyGeneClient::new()?;
     let fetch_limit = if normalized_chromosome.is_some() || normalized_gene_type.is_some() {
         (limit.saturating_add(offset)).clamp(limit, MAX_SEARCH_LIMIT)
     } else {
         limit
     };
-    let resp = client
-        .search(&q, fetch_limit, offset, normalized_chromosome.as_deref())
-        .await?;
+    MyGeneClient::search_plan(&q, limit, offset, normalized_chromosome.as_deref())?;
     let expected_gene_type = normalized_gene_type.map(str::to_ascii_lowercase);
-    let expected_chr = normalized_chromosome.map(|v| v.to_ascii_uppercase());
-
-    let mut out = resp
-        .hits
-        .iter()
-        .filter(|hit| {
-            if let Some(expected) = expected_gene_type.as_deref() {
-                let actual = hit
-                    .type_of_gene
-                    .as_deref()
-                    .map(str::trim)
-                    .filter(|v| !v.is_empty())
-                    .map(str::to_ascii_lowercase);
-                if actual.as_deref() != Some(expected) {
-                    return false;
-                }
-            }
-
-            if let Some(expected) = expected_chr.as_deref() {
-                let actual = hit
-                    .genomic_pos
-                    .as_ref()
-                    .and_then(|g| g.chr())
-                    .map(|v| v.trim_start_matches("chr").to_ascii_uppercase());
-                if actual.as_deref() != Some(expected) {
-                    return false;
-                }
-            }
-
-            if let Some((region_chr, region_start, region_end)) = normalized_region.as_ref() {
-                let Some(pos) = hit.genomic_pos.as_ref() else {
-                    return false;
-                };
-                let actual_chr = pos
-                    .chr()
-                    .map(|v| v.trim_start_matches("chr").to_ascii_uppercase());
-                if actual_chr.as_deref() != Some(region_chr.as_str()) {
-                    return false;
-                }
-                let Some(actual_start) = pos.start() else {
-                    return false;
-                };
-                let Some(actual_end) = pos.end() else {
-                    return false;
-                };
-                if actual_start > *region_end || actual_end < *region_start {
-                    return false;
-                }
-            }
-
-            true
-        })
-        .map(transform::gene::from_mygene_hit)
-        .collect::<Vec<_>>();
+    let expected_chr = normalized_chromosome
+        .as_ref()
+        .map(|v| v.to_ascii_uppercase());
+    let resp = if is_exact_gene_query_candidate(query) {
+        let probe = client
+            .search(&q, MAX_SEARCH_LIMIT, 0, normalized_chromosome.as_deref())
+            .await?;
+        if probe.total <= MAX_SEARCH_LIMIT {
+            let ranked = rank_and_dedupe_gene_results(
+                filtered_gene_results(
+                    &probe.hits,
+                    expected_gene_type.as_deref(),
+                    expected_chr.as_deref(),
+                    normalized_region.as_ref(),
+                ),
+                query,
+            );
+            let total = ranked.len();
+            return Ok(SearchPage::offset(
+                slice_gene_results(&ranked, limit, offset),
+                Some(total),
+            ));
+        }
+        if exact_search_needs_followup(probe.total, offset) {
+            client
+                .search(&q, fetch_limit, offset, normalized_chromosome.as_deref())
+                .await?
+        } else {
+            probe
+        }
+    } else {
+        client
+            .search(&q, fetch_limit, offset, normalized_chromosome.as_deref())
+            .await?
+    };
+    let mut out = filtered_gene_results(
+        &resp.hits,
+        expected_gene_type.as_deref(),
+        expected_chr.as_deref(),
+        normalized_region.as_ref(),
+    );
     out.truncate(limit);
     Ok(SearchPage::offset(out, Some(resp.total)))
 }
-
 pub fn search_query_summary(filters: &GeneSearchFilters) -> String {
     let mut parts: Vec<String> = Vec::new();
-
     if let Some(v) = filters
         .query
         .as_deref()
@@ -3120,7 +3121,6 @@ pub fn search_query_summary(filters: &GeneSearchFilters) -> String {
     {
         parts.push(v.to_string());
     }
-
     if let Some(v) = filters
         .gene_type
         .as_deref()
@@ -3129,7 +3129,6 @@ pub fn search_query_summary(filters: &GeneSearchFilters) -> String {
     {
         parts.push(format!("type={v}"));
     }
-
     if let Some(v) = filters
         .chromosome
         .as_deref()
@@ -3162,14 +3161,11 @@ pub fn search_query_summary(filters: &GeneSearchFilters) -> String {
     {
         parts.push(format!("go={v}"));
     }
-
     parts.join(", ")
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     fn test_gene(symbol: &str) -> Gene {
         Gene {
             section_outcomes: SectionOutcomes::with_keys(GENE_OUTCOME_KEYS),
@@ -3205,7 +3201,68 @@ mod tests {
             diagnostics_note: None,
         }
     }
-
+    fn search_result(symbol: &str, entrez_id: &str) -> GeneSearchResult {
+        GeneSearchResult {
+            symbol: symbol.into(),
+            name: format!("{symbol} gene"),
+            entrez_id: entrez_id.into(),
+            genomic_coordinates: None,
+            uniprot_id: None,
+            omim_id: None,
+        }
+    }
+    #[test]
+    fn exact_gene_results_promote_then_dedupe_first_wins() {
+        let rows = rank_and_dedupe_gene_results(
+            vec![
+                search_result("SLC25A21", "100"),
+                search_result("ODC1", "200"),
+                search_result("ODC1", "200"),
+                search_result("OAZ1", "300"),
+            ],
+            " OdC1 ",
+        );
+        assert_eq!(
+            rows.iter()
+                .map(|row| row.symbol.as_str())
+                .collect::<Vec<_>>(),
+            vec!["ODC1", "SLC25A21", "OAZ1"]
+        );
+    }
+    #[test]
+    fn exact_gene_results_keep_distinct_ids_and_missing_identity_rows() {
+        let rows = rank_and_dedupe_gene_results(
+            vec![
+                search_result("ODC1", "2"),
+                search_result("odc1", "3"),
+                search_result("Alias", ""),
+                search_result(" alias ", "9"),
+                search_result("", ""),
+                search_result("", ""),
+            ],
+            "ODC1",
+        );
+        assert_eq!(
+            rows.iter()
+                .map(|row| (row.symbol.as_str(), row.entrez_id.as_str()))
+                .collect::<Vec<_>>(),
+            vec![
+                ("ODC1", "2"),
+                ("odc1", "3"),
+                ("Alias", ""),
+                ("", ""),
+                ("", ""),
+            ]
+        );
+    }
+    #[test]
+    fn exact_gene_query_candidate_requires_symbol_safe_ascii_with_a_letter() {
+        assert!(is_exact_gene_query_candidate(" OdC1 "));
+        assert!(is_exact_gene_query_candidate("\u{2003}ODC1\u{2003}"));
+        assert!(!is_exact_gene_query_candidate("123"));
+        assert!(!is_exact_gene_query_candidate("ODC1:alias"));
+        assert!(!is_exact_gene_query_candidate(" "));
+    }
     #[test]
     fn gnomad_constraint_without_metrics_is_healthy_empty() {
         let empty = gnomad_constraint_section(None, None, None, None, None);
@@ -3213,14 +3270,12 @@ mod tests {
             gnomad_constraint_outcome(&empty).outcome(),
             SectionOutcomeState::Empty
         );
-
         let data = gnomad_constraint_section(Some("ENST0001".to_string()), None, None, None, None);
         assert_eq!(
             gnomad_constraint_outcome(&data).outcome(),
             SectionOutcomeState::Data
         );
     }
-
     #[test]
     fn outcome_inventory_matches_parser_visible_sections() {
         let registry = SectionOutcomes::with_keys(GENE_OUTCOME_KEYS);
@@ -3234,7 +3289,6 @@ mod tests {
                 .all(|(_, value)| value.outcome() == SectionOutcomeState::NotRequested)
         );
     }
-
     #[test]
     fn search_query_summary_includes_new_filters() {
         let summary = search_query_summary(&GeneSearchFilters {
@@ -3247,19 +3301,16 @@ mod tests {
         });
         assert_eq!(summary, "kinase, type=protein-coding, chromosome=7");
     }
-
     #[test]
     fn mygene_query_term_escapes_free_text_special_chars() {
         assert_eq!(mygene_query_term("BRAF:V600E"), r"BRAF\:V600E");
         assert_eq!(mygene_query_term("ALK (fusion)"), r"ALK \(fusion\)");
     }
-
     #[test]
     fn mygene_query_term_searches_aliases_for_symbol_like_input() {
         assert_eq!(mygene_query_term("ERBB1"), "(symbol:ERBB1 OR alias:ERBB1)");
         assert_eq!(mygene_query_term("P53"), "(symbol:P53 OR alias:P53)");
     }
-
     fn mygene_hit(symbol: &str, aliases: &[&str]) -> MyGeneHit {
         MyGeneHit {
             symbol: Some(symbol.to_string()),
@@ -3274,7 +3325,6 @@ mod tests {
             uniprot: None,
         }
     }
-
     #[test]
     fn canonical_alias_matches_cover_common_gene_aliases() {
         let hits = vec![
@@ -3282,7 +3332,6 @@ mod tests {
             mygene_hit("ERBB2", &["HER2", "NEU"]),
             mygene_hit("TP53", &["P53"]),
         ];
-
         assert_eq!(
             matching_canonical_alias_symbols("PD-L1", &hits),
             vec!["CD274"]
@@ -3293,20 +3342,17 @@ mod tests {
         );
         assert_eq!(matching_canonical_alias_symbols("P53", &hits), vec!["TP53"]);
     }
-
     #[test]
     fn canonical_alias_matches_keep_ambiguous_aliases_ambiguous() {
         let hits = vec![
             mygene_hit("GENE1", &["SHARED"]),
             mygene_hit("GENE2", &["SHARED"]),
         ];
-
         assert_eq!(
             matching_canonical_alias_symbols("SHARED", &hits),
             vec!["GENE1", "GENE2"]
         );
     }
-
     #[test]
     fn canonical_alias_identity_keeps_the_entrez_identifier() {
         let aliases = matching_canonical_aliases("ERBB1", &[mygene_hit("EGFR", &["ERBB1"])]);
@@ -3318,20 +3364,15 @@ mod tests {
             }]
         );
     }
-
     #[test]
-    fn search_query_includes_chromosome_filter() {
-        let summary = search_query_summary(&GeneSearchFilters {
-            query: Some("BRCA1".into()),
-            gene_type: None,
-            chromosome: Some("17".into()),
-            region: None,
-            pathway: None,
-            go_term: None,
-        });
-        assert_eq!(summary, "BRCA1, chromosome=17");
+    fn exact_search_followup_boundary_covers_fifty_and_fifty_one() {
+        assert!(!exact_search_needs_followup(50, 1));
+        assert!(!exact_search_needs_followup(50, 0));
+        assert!(exact_search_needs_followup(51, 1));
+        assert!(!exact_search_needs_followup(51, 0));
+        assert!(exact_search_needs_followup(usize::MAX, 1));
+        assert!(!exact_search_needs_followup(usize::MAX, 0));
     }
-
     #[test]
     fn normalize_gene_type_accepts_supported_aliases() {
         assert_eq!(
@@ -3351,13 +3392,11 @@ mod tests {
             "pseudo"
         );
     }
-
     #[test]
     fn normalize_gene_type_rejects_invalid_value() {
         let err = normalize_gene_type("invalid").expect_err("invalid gene type should fail");
         assert!(err.to_string().contains("protein-coding"));
     }
-
     #[test]
     fn normalize_gene_chromosome_accepts_chr_prefix_and_special_values() {
         assert_eq!(
@@ -3370,13 +3409,11 @@ mod tests {
             "MT"
         );
     }
-
     #[test]
     fn normalize_gene_chromosome_rejects_invalid_values() {
         let err = normalize_gene_chromosome("99").expect_err("99 should fail");
         assert!(err.to_string().contains("1-22"));
     }
-
     #[test]
     fn normalize_go_id_accepts_canonical_and_lowercase_prefix() {
         assert_eq!(
@@ -3388,13 +3425,11 @@ mod tests {
             "GO:0008150"
         );
     }
-
     #[test]
     fn normalize_go_id_rejects_free_text() {
         let err = normalize_go_id("DNA repair").expect_err("free text should fail");
         assert!(err.to_string().contains("GO:0000000"));
     }
-
     #[test]
     fn gene_section_names_include_new_enrichment_sections() {
         assert!(GENE_SECTION_NAMES.contains(&"expression"));
@@ -3406,7 +3441,6 @@ mod tests {
         assert!(GENE_SECTION_NAMES.contains(&"funding"));
         assert!(GENE_SECTION_NAMES.contains(&"diagnostics"));
     }
-
     #[test]
     fn parse_sections_accepts_new_enrichment_sections() {
         let parsed = parse_sections(
@@ -3426,7 +3460,6 @@ mod tests {
         assert_eq!(parsed.len(), 8);
         assert!(parsed.contains(&GeneIncludeType::Diagnostics));
     }
-
     #[test]
     fn parse_sections_accepts_diagnostics() {
         let parsed =
@@ -3434,7 +3467,6 @@ mod tests {
         assert_eq!(parsed.len(), 1);
         assert!(parsed.contains(&GeneIncludeType::Diagnostics));
     }
-
     #[test]
     fn parse_sections_all_keeps_optional_sections_opt_in() {
         let parsed = parse_sections("BRAF", &["all".to_string()]).expect("all should parse");
@@ -3443,13 +3475,11 @@ mod tests {
         assert!(!parsed.contains(&GeneIncludeType::Disgenet));
         assert!(!parsed.contains(&GeneIncludeType::Funding));
     }
-
     #[test]
     fn parse_sections_all_keeps_optional_diagnostics_opt_in() {
         let parsed = parse_sections("BRAF", &["all".to_string()]).expect("all should parse");
         assert!(!parsed.contains(&GeneIncludeType::Diagnostics));
     }
-
     #[test]
     fn gene_diagnostics_section_populates_from_rows() {
         let mut gene = test_gene("BRCA1");
@@ -3466,7 +3496,6 @@ mod tests {
                 conditions: vec!["Hereditary breast ovarian cancer".to_string()],
             }]),
         );
-
         let rows = gene.diagnostics.as_ref().expect("diagnostics rows");
         assert!(gene.diagnostics_note.is_none());
         assert!(rows.iter().any(|row| {
@@ -3476,7 +3505,6 @@ mod tests {
                 && row.genes.iter().any(|gene| gene == "BRCA1")
         }));
     }
-
     #[test]
     fn gene_diagnostics_unavailable_sets_note() {
         let mut gene = test_gene("BRCA1");
@@ -3489,25 +3517,21 @@ mod tests {
                 suggestion: "Run `biomcp gtr sync`".to_string(),
             }),
         );
-
         assert!(gene.diagnostics.is_none());
         assert_eq!(
             gene.diagnostics_note.as_deref(),
             Some(GENE_DIAGNOSTICS_UNAVAILABLE_NOTE)
         );
     }
-
     #[test]
     fn parse_sections_redirects_variants_to_variant_search() {
         let err = parse_sections("SCN5A", &["variants".to_string()])
             .expect_err("variants should redirect");
-
         let message = err.to_string();
         assert!(message.contains("Gene does not have a \"variants\" section."));
         assert!(message.contains("`biomcp search variant -g SCN5A`"));
         assert!(!message.contains("Available:"));
     }
-
     #[test]
     fn merge_pathways_keeps_kegg_then_appends_reactome_without_duplicates() {
         let merged = merge_pathways(
@@ -3530,12 +3554,10 @@ mod tests {
             ]),
         )
         .expect("merged");
-
         assert_eq!(merged.len(), 2);
         assert_eq!(merged[0].source, "KEGG");
         assert_eq!(merged[1].source, "Reactome");
     }
-
     #[test]
     fn pathway_outcome_credits_merged_sources_and_only_retained_sources_on_failure() {
         let pathways = vec![
@@ -3550,20 +3572,16 @@ mod tests {
                 name: "RAF/MAP kinase cascade".to_string(),
             },
         ];
-
         let healthy = pathway_outcome(Some(&pathways), true);
         assert_eq!(healthy.outcome(), SectionOutcomeState::Data);
         assert_eq!(healthy.sources(), &["KEGG", "Reactome"]);
-
         let degraded = pathway_outcome(Some(&pathways[..1]), false);
         assert_eq!(degraded.outcome(), SectionOutcomeState::Degraded);
         assert_eq!(degraded.sources(), &["KEGG"]);
-
         let unavailable = pathway_outcome(None, false);
         assert_eq!(unavailable.outcome(), SectionOutcomeState::Unavailable);
         assert!(unavailable.sources().is_empty());
     }
-
     #[test]
     fn merge_druggability_keeps_successful_source_data_when_other_source_fails() {
         let merged = merge_druggability_results(
@@ -3591,12 +3609,10 @@ mod tests {
                 },
             ),
         );
-
         assert!(merged.categories.is_empty());
         assert!(merged.interactions.is_empty());
         assert_eq!(merged.tractability.len(), 1);
         assert_eq!(merged.safety_liabilities.len(), 1);
-
         let merged = merge_druggability_results(
             Ok(GeneDruggability {
                 categories: vec!["Kinase".to_string()],
@@ -3609,12 +3625,10 @@ mod tests {
                 message: "down".to_string(),
             }),
         );
-
         assert_eq!(merged.categories, vec!["Kinase"]);
         assert!(merged.tractability.is_empty());
         assert!(merged.safety_liabilities.is_empty());
     }
-
     fn injected_section_failure(source: &str, kind: &str) -> BioMcpError {
         match kind {
             "connection-refused" => BioMcpError::Api {
@@ -3634,7 +3648,6 @@ mod tests {
             other => panic!("unknown injected failure: {other}"),
         }
     }
-
     fn assert_gene_section_outcome(
         gene: &Gene,
         key: &str,
@@ -3652,7 +3665,6 @@ mod tests {
             assert_eq!(outcome.sources(), &[successful_source.to_string()]);
         }
     }
-
     #[test]
     fn quickgo_and_string_failure_state_matrix() {
         for failure in ["connection-refused", "timeout", "malformed-body"] {
@@ -3672,7 +3684,6 @@ mod tests {
                 SectionOutcomeState::Unavailable,
                 "QuickGO",
             );
-
             let mut gene = test_gene("BRAF");
             let error = injected_section_failure("STRING", failure);
             let private_detail = error.to_string();
@@ -3690,7 +3701,6 @@ mod tests {
                 "STRING",
             );
         }
-
         let mut empty = test_gene("BRAF");
         apply_go_section_result(&mut empty, Ok(Vec::new()));
         assert!(empty.go.as_ref().is_some_and(Vec::is_empty));
@@ -3712,7 +3722,6 @@ mod tests {
         );
         assert_eq!(data.go.as_ref().expect("GO payload")[0].id, "GO:0004672");
         assert_gene_section_outcome(&data, GENE_SECTION_GO, SectionOutcomeState::Data, "QuickGO");
-
         let mut empty = test_gene("BRAF");
         apply_gene_interactions_result(&mut empty, Ok(Vec::new()));
         assert!(empty.interactions.as_ref().is_some_and(Vec::is_empty));
@@ -3741,7 +3750,6 @@ mod tests {
             "STRING",
         );
     }
-
     fn normalized_timing(timing: &GeneTimingCollector) -> Vec<(String, SectionOutcomeState)> {
         let mut entries = timing
             .sections
@@ -3751,7 +3759,6 @@ mod tests {
         entries.sort_by(|left, right| left.0.cmp(&right.0));
         entries
     }
-
     fn parity_go_result(case: &str) -> Result<Vec<GeneGoTerm>, BioMcpError> {
         match case {
             "healthy-empty" => Ok(Vec::new()),
@@ -3764,7 +3771,6 @@ mod tests {
             failure => Err(injected_section_failure("QuickGO", failure)),
         }
     }
-
     fn parity_interactions_result(case: &str) -> Result<Vec<GeneInteraction>, BioMcpError> {
         match case {
             "healthy-empty" => Ok(Vec::new()),
@@ -3775,7 +3781,6 @@ mod tests {
             failure => Err(injected_section_failure("STRING", failure)),
         }
     }
-
     #[test]
     fn gene_section_result_application_is_strategy_order_invariant() {
         for case in [
@@ -3788,11 +3793,9 @@ mod tests {
             let mut baseline = test_gene("BRAF");
             apply_go_section_result(&mut baseline, parity_go_result(case));
             apply_gene_interactions_result(&mut baseline, parity_interactions_result(case));
-
             let mut parallel_top = test_gene("BRAF");
             apply_gene_interactions_result(&mut parallel_top, parity_interactions_result(case));
             apply_go_section_result(&mut parallel_top, parity_go_result(case));
-
             assert_eq!(
                 serde_json::to_value(&baseline).expect("baseline serializes"),
                 serde_json::to_value(&parallel_top).expect("parallel-top serializes"),
@@ -3803,7 +3806,6 @@ mod tests {
                 crate::render::provenance::gene_section_sources(&parallel_top),
                 "provenance parity failed for {case}"
             );
-
             let mut baseline_timing =
                 GeneTimingCollector::new("BRAF", GeneGetStrategy::Baseline, None);
             baseline_timing.push(GeneTimingEntry {
@@ -3817,7 +3819,6 @@ mod tests {
                 outcome: SectionOutcomeState::Unavailable,
             });
             sync_timing_outcomes(&mut baseline_timing, &baseline);
-
             let mut parallel_timing =
                 GeneTimingCollector::new("BRAF", GeneGetStrategy::ParallelTop, None);
             parallel_timing.push(GeneTimingEntry {
@@ -3831,7 +3832,6 @@ mod tests {
                 outcome: SectionOutcomeState::Unavailable,
             });
             sync_timing_outcomes(&mut parallel_timing, &parallel_top);
-
             let expected_outcome = match case {
                 "healthy-empty" => SectionOutcomeState::Empty,
                 "data" => SectionOutcomeState::Data,
