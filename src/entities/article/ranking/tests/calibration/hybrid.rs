@@ -1,6 +1,30 @@
 use super::*;
 
 #[test]
+fn hybrid_calculates_anchor_hits_once_per_candidate() {
+    let (mut filters, rows) = hybrid_worked_example_fixture();
+    filters.ranking.requested_mode = Some(ArticleRankingMode::Hybrid);
+    let mut rows = rows
+        .into_iter()
+        .map(article_candidate_from_row)
+        .collect::<Vec<_>>();
+    let duplicate = rows.pop().expect("fixture candidate");
+    rows.extend([duplicate.clone(), duplicate]);
+    let row_count = rows.len();
+    let mut calls = 0;
+    {
+        let mut calculate_hits = |row: &ArticleSearchResult, anchors: &[String]| {
+            calls += 1;
+            lexical_anchor_hits(row, anchors)
+        };
+        rank_articles_hybrid_with_calculator(&mut rows, &filters, &mut calculate_hits);
+    }
+    assert_eq!(calls, row_count);
+    rank_articles_hybrid_with_calculator(&mut [], &filters, &mut |_, _| {
+        panic!("empty input must not calculate hits")
+    });
+}
+#[test]
 fn hybrid_lexical_coverage_beats_a_high_citation_one_anchor_match() {
     let mut filters = empty_filters();
     filters.keyword = Some("zolgensma treatment of retinoblastoma randomized trial".into());
@@ -51,8 +75,25 @@ fn hybrid_lexical_coverage_beats_a_high_citation_one_anchor_match() {
     assert_eq!(five.lexical_score, Some(5.0 / 6.0));
     assert_eq!(one.lexical_score, Some(1.0 / 6.0));
     assert!(five.composite_score > one.composite_score);
+    let markdown = crate::render::markdown::article_search_markdown_with_footer_and_context(
+        "keyword=zolgensma treatment of retinoblastoma randomized trial",
+        &page.results,
+        "",
+        &filters,
+        crate::render::markdown::ArticleSearchRenderContext {
+            source_filter: ArticleSourceFilter::All,
+            semantic_scholar_enabled: false,
+            warning: None,
+            note: None,
+            debug_plan: None,
+            exact_entity_commands: &[],
+            source_status: &[],
+            retry_page: None,
+        },
+    )
+    .expect("ranked article Markdown");
+    assert!(markdown.contains("hybrid 0.345 + title 5/6"));
 }
-
 #[test]
 fn hybrid_coverage_counts_title_and_abstract_duplicate_once() {
     let mut filters = empty_filters();
@@ -76,7 +117,6 @@ fn hybrid_coverage_counts_title_and_abstract_duplicate_once() {
     assert_eq!(ranking.combined_anchor_hits, 2);
     assert_eq!(ranking.lexical_score, Some(1.0));
 }
-
 #[test]
 fn hybrid_zero_anchor_lexical_score_is_finite_zero() {
     let mut filters = empty_filters();

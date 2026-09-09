@@ -15,7 +15,7 @@ use super::{
     ArticleRankingMetadata, ArticleRankingMode, ArticleRankingWeights, ArticleSearchFilters,
     ArticleSearchResult, ArticleSort, ArticleSource,
 };
-
+type LexicalHitCalculator<'a> = dyn FnMut(&ArticleSearchResult, &[String]) -> [usize; 3] + 'a;
 #[derive(Debug, Clone, Copy)]
 pub(super) struct ResolvedArticleRanking {
     pub(super) mode: ArticleRankingMode,
@@ -274,12 +274,18 @@ fn pubmed_rescue_metadata(
     )
 }
 
-fn lexical_ranking_metadata(
+struct LexicalRankingCalculation {
+    metadata: ArticleRankingMetadata,
+    anchor_count: usize,
+    union_hits: usize,
+}
+fn lexical_ranking_calculation(
     row: &ArticleSearchResult,
     source_positions: &[ArticleSourcePosition],
     anchors: &[String],
-) -> ArticleRankingMetadata {
-    let (title_hits, abstract_hits, combined_hits) = lexical_anchor_hits(row, anchors);
+    calculate_hits: &mut LexicalHitCalculator<'_>,
+) -> LexicalRankingCalculation {
+    let [title_hits, abstract_hits, combined_hits] = calculate_hits(row, anchors);
     let anchor_count = anchors.len();
     let all_anchors_in_title = anchor_count > 0 && title_hits == anchor_count;
     let all_anchors_in_text = anchor_count > 0 && combined_hits == anchor_count;
@@ -296,29 +302,33 @@ fn lexical_ranking_metadata(
     let (pubmed_rescue, pubmed_rescue_kind, pubmed_source_position) =
         pubmed_rescue_metadata(row, source_positions, directness_tier, combined_hits);
 
-    ArticleRankingMetadata {
-        directness_tier,
-        anchor_count: anchor_count.min(u8::MAX as usize) as u8,
-        title_anchor_hits: title_hits.min(u8::MAX as usize) as u8,
-        abstract_anchor_hits: abstract_hits.min(u8::MAX as usize) as u8,
-        combined_anchor_hits: combined_hits.min(u8::MAX as usize) as u8,
-        all_anchors_in_title,
-        all_anchors_in_text,
-        study_or_review_cue,
-        pubmed_rescue,
-        pubmed_rescue_kind,
-        pubmed_source_position,
-        mode: None,
-        semantic_score: None,
-        lexical_score: None,
-        citation_score: None,
-        position_score: None,
-        composite_score: None,
-        avg_source_rank: None,
+    LexicalRankingCalculation {
+        metadata: ArticleRankingMetadata {
+            directness_tier,
+            anchor_count: anchor_count.min(u8::MAX as usize) as u8,
+            title_anchor_hits: title_hits.min(u8::MAX as usize) as u8,
+            abstract_anchor_hits: abstract_hits.min(u8::MAX as usize) as u8,
+            combined_anchor_hits: combined_hits.min(u8::MAX as usize) as u8,
+            all_anchors_in_title,
+            all_anchors_in_text,
+            study_or_review_cue,
+            pubmed_rescue,
+            pubmed_rescue_kind,
+            pubmed_source_position,
+            mode: None,
+            semantic_score: None,
+            lexical_score: None,
+            citation_score: None,
+            position_score: None,
+            composite_score: None,
+            avg_source_rank: None,
+        },
+        anchor_count,
+        union_hits: combined_hits,
     }
 }
 
-fn lexical_anchor_hits(row: &ArticleSearchResult, anchors: &[String]) -> (usize, usize, usize) {
+fn lexical_anchor_hits(row: &ArticleSearchResult, anchors: &[String]) -> [usize; 3] {
     let title_hits = anchors
         .iter()
         .filter(|anchor| anchor_matches_text(&row.normalized_title, anchor))
@@ -334,23 +344,24 @@ fn lexical_anchor_hits(row: &ArticleSearchResult, anchors: &[String]) -> (usize,
                 || anchor_matches_text(&row.normalized_abstract, anchor)
         })
         .count();
-    (title_hits, abstract_hits, combined_hits)
+    [title_hits, abstract_hits, combined_hits]
 }
 
-fn populate_lexical_ranking_metadata(
+fn populate_lexical_ranking_metadata_with_calculator(
     rows: &mut [ArticleCandidate],
     filters: &ArticleSearchFilters,
-) {
+    calculate_hits: &mut LexicalHitCalculator<'_>,
+) -> Vec<LexicalRankingCalculation> {
     let anchors = build_anchor_set(filters);
+    let mut calculations = Vec::with_capacity(rows.len());
 
     for row in rows.iter_mut() {
         ensure_matched_sources(&mut row.row);
-        row.row.ranking = Some(lexical_ranking_metadata(
-            &row.row,
-            &row.source_positions,
-            &anchors,
-        ));
+        let calc =
+            lexical_ranking_calculation(&row.row, &row.source_positions, &anchors, calculate_hits);
+        calculations.push(calc);
     }
+    calculations
 }
 
 fn compare_article_candidates_lexical(
@@ -434,23 +445,23 @@ pub(super) fn rank_articles_by_directness(
     rows: &mut [ArticleCandidate],
     filters: &ArticleSearchFilters,
 ) {
-    populate_lexical_ranking_metadata(rows, filters);
-    for row in rows.iter_mut() {
-        if let Some(ranking) = row.row.ranking.as_mut() {
-            ranking.mode = Some(ArticleRankingMode::Lexical);
-        }
+    let calculations =
+        populate_lexical_ranking_metadata_with_calculator(rows, filters, &mut lexical_anchor_hits);
+    for (row, mut calculation) in rows.iter_mut().zip(calculations) {
+        calculation.metadata.mode = Some(ArticleRankingMode::Lexical);
+        row.row.ranking = Some(calculation.metadata);
     }
     rows.sort_by(compare_article_candidates_lexical);
 }
 
 fn rank_articles_by_semantic(rows: &mut [ArticleCandidate], filters: &ArticleSearchFilters) {
-    populate_lexical_ranking_metadata(rows, filters);
-    for row in rows.iter_mut() {
+    let calculations =
+        populate_lexical_ranking_metadata_with_calculator(rows, filters, &mut lexical_anchor_hits);
+    for (row, mut calculation) in rows.iter_mut().zip(calculations) {
         let semantic_score = semantic_signal(row);
-        if let Some(ranking) = row.row.ranking.as_mut() {
-            ranking.mode = Some(ArticleRankingMode::Semantic);
-            ranking.semantic_score = Some(semantic_score);
-        }
+        calculation.metadata.mode = Some(ArticleRankingMode::Semantic);
+        calculation.metadata.semantic_score = Some(semantic_score);
+        row.row.ranking = Some(calculation.metadata);
     }
     rows.sort_by(|left, right| {
         semantic_signal(right)
@@ -460,9 +471,18 @@ fn rank_articles_by_semantic(rows: &mut [ArticleCandidate], filters: &ArticleSea
 }
 
 fn rank_articles_hybrid(rows: &mut [ArticleCandidate], filters: &ArticleSearchFilters) {
-    populate_lexical_ranking_metadata(rows, filters);
+    rank_articles_hybrid_with_calculator(rows, filters, &mut lexical_anchor_hits);
+}
+
+fn rank_articles_hybrid_with_calculator(
+    rows: &mut [ArticleCandidate],
+    filters: &ArticleSearchFilters,
+    calculate_hits: &mut LexicalHitCalculator<'_>,
+) {
+    let calculations =
+        populate_lexical_ranking_metadata_with_calculator(rows, filters, calculate_hits);
+    assert_eq!(rows.len(), calculations.len());
     let ranking = resolve_article_ranking(filters);
-    let anchors = build_anchor_set(filters);
     let max_citation_count = rows
         .iter()
         .filter_map(|candidate| candidate.row.citation_count)
@@ -478,13 +498,17 @@ fn rank_articles_hybrid(rows: &mut [ArticleCandidate], filters: &ArticleSearchFi
         })
         .fold(0.0, f64::max);
 
-    for row in rows.iter_mut() {
+    for (row, calculation) in rows.iter_mut().zip(calculations) {
+        let (mut metadata, anchor_count, union_hits) = (
+            calculation.metadata,
+            calculation.anchor_count,
+            calculation.union_hits,
+        );
         let semantic_score = semantic_signal(row);
-        let lexical_score = if anchors.is_empty() {
+        let lexical_score = if anchor_count == 0 {
             0.0
         } else {
-            let (_, _, combined_hits) = lexical_anchor_hits(&row.row, &anchors);
-            combined_hits as f64 / anchors.len() as f64
+            union_hits as f64 / anchor_count as f64
         };
         let citation_score = normalized_citation_score(row.row.citation_count, max_citation_count);
         let avg_source_rank = avg_source_rank(&row.source_positions, row.row.source_local_position);
@@ -494,15 +518,14 @@ fn rank_articles_hybrid(rows: &mut [ArticleCandidate], filters: &ArticleSearchFi
             + ranking.weights.citations * citation_score
             + ranking.weights.position * position_score;
 
-        if let Some(metadata) = row.row.ranking.as_mut() {
-            metadata.mode = Some(ArticleRankingMode::Hybrid);
-            metadata.semantic_score = Some(semantic_score);
-            metadata.lexical_score = Some(lexical_score);
-            metadata.citation_score = Some(citation_score);
-            metadata.position_score = Some(position_score);
-            metadata.composite_score = Some(composite_score);
-            metadata.avg_source_rank = Some(avg_source_rank);
-        }
+        metadata.mode = Some(ArticleRankingMode::Hybrid);
+        metadata.semantic_score = Some(semantic_score);
+        metadata.lexical_score = Some(lexical_score);
+        metadata.citation_score = Some(citation_score);
+        metadata.position_score = Some(position_score);
+        metadata.composite_score = Some(composite_score);
+        metadata.avg_source_rank = Some(avg_source_rank);
+        row.row.ranking = Some(metadata);
     }
 
     rows.sort_by(|left, right| {
