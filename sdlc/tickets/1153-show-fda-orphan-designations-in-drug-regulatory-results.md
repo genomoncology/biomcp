@@ -1,7 +1,7 @@
 ---
 flow: build
 priority: 6
-deps: []
+deps: [1151]
 ---
 
 # Show FDA orphan designations in drug regulatory results
@@ -53,14 +53,20 @@ the effective region is `us` or `all`. Do not call it for `approvals` alone or
 for `eu`/`who`; then the new field is absent and no orphan source is claimed.
 Existing Drugs@FDA, EMA, WHO, label, and approval acquisition is unchanged.
 
-Build candidates from the already selected MyChem hits for the resolved drug:
-caller spelling, resolved `Drug.name`, UNII display name, DrugBank name and
-synonyms, ChEMBL preferred name, NDC nonproprietary names, and MyChem OpenFDA
-generic/brand names. A hit contributes only when it belongs to the selected
-identity (same selected DrugBank/ChEMBL/UNII anchor); the UNII value itself is
-not sent because FDA's form has no UNII input. Trim, collapse ASCII whitespace,
-deduplicate ASCII-case-insensitively, retain that order, and issue at most six
-logical POSTs with concurrency at most two.
+Build candidates from the already resolved drug. Caller spelling and resolved
+`Drug.name` are always candidates. A selected MyChem hit may contribute UNII
+display name, DrugBank name and synonyms, ChEMBL preferred name, NDC
+nonproprietary names, and MyChem OpenFDA generic/brand names only when one of
+its typed DrugBank, ChEMBL, or UNII identifiers exactly matches the
+corresponding nonblank selected-drug anchor, and every other nonblank typed
+anchor present on both the hit and selected drug also agrees. Thus at least one
+typed anchor must match and any comparable nonblank conflicting anchor rejects
+the hit. An anchorless or conflicting hit contributes nothing; an unrelated fallback hit never contributes merely
+because it has attractive aliases. The UNII value itself is not sent because
+FDA's form has no UNII input. Collect categories in the stated category order,
+hits in selected-hit order, and provider arrays in provider order. Then trim,
+collapse ASCII whitespace, deduplicate ASCII-case-insensitively, retain the
+first six, and issue at most six logical POSTs with concurrency at most two.
 
 Admit a row only when its normalized generic or trade name exactly equals one
 of those candidates after ASCII-case folding and whitespace collapse. There is
@@ -77,14 +83,63 @@ first; retain other nonconflicting records and reduce the envelope normally
 (`degraded` when at least one query parsed, `unavailable` otherwise). Only then
 sort by designation date descending and numeric key ascending. Parse at most
 500 wire rows per response and return at most 100 unique matches. Cap each body
-at 2 MiB. One eight-second deadline covers queueing, POSTs, parsing, and cache
-work; cancellation stops outstanding requests and no detached work continues.
+at 2 MiB. One eight-second deadline starts before cache initialization and
+covers cache lookup/deletion, queueing, provider retry, body reading, parsing,
+cache publication, and permission finalization. Work may be cancelled before
+cache publication. Once publication is armed, await its finalization and then
+report timeout or failure if the deadline expired. Cancellation stops
+outstanding requests, retries, cleanup, and writes; no detached work continues.
+Total deadline expiry reduces the complete orphan lookup to `unavailable`, even
+when an earlier alias succeeded.
 
-Cache each validated normalized query result, including confirmed empty, for
-24 hours under a versioned key derived from effective base plus the complete
-canonical form body. Use the managed private cache and its normal size,
-permission, and maintenance rules; honor global no-cache/force-cache behavior.
-Never cache transport, HTTP, size, HTML-shape, or row-validation failures.
+Raw form POST responses always use HTTP `NoStore`; provider HTML is never
+cached. Add `ManagedResultCache` under the existing `src/cache/mod.rs`, backed
+by the managed private cache so normal permissions, locking, capacity, clean,
+and clear behavior apply. Construct one cache instance for the whole orphan
+lookup, not once per alias. Store only validated normalized successes,
+including confirmed empty results, in a private envelope that denies unknown
+fields and contains exactly schema version `1`, a stored Unix timestamp, and
+the normalized success payload.
+
+The key is `fda-orphan:v1:sha256:<lowercase hex>`, whose digest uses this exact
+preimage and concatenation order:
+
+```text
+b"biomcp:fda-orphan-result:v1\0"
+|| u64_be(base.len) || base.trim_end_matches('/').as_bytes()
+|| u64_be(form.len) || exact_ordered_form_body
+```
+
+`base.len` is the UTF-8 byte length after removing every trailing ASCII `/`;
+`form.len` is the byte length of the exact form body. Both are unsigned 64-bit
+big-endian integers. The private envelope uses `deny_unknown_fields` and has
+exactly these field names and types:
+
+```json
+{
+  "schema": 1,
+  "stored_at_unix_seconds": 0,
+  "success": {}
+}
+```
+
+`schema` is `u8` and must equal 1, `stored_at_unix_seconds` is `u64`, and
+`success` is the normalized source-owned success payload.
+
+Request-local no-cache wins; then global cache `off` maps to `NoStore`,
+`infinite` to `Force`, and every other configuration to `Default`. `NoStore`
+does not initialize, read, delete, or write this result cache. `Default` uses a
+valid entry only when `0 <= age < 86400`; equality is stale, so a stale entry is
+deleted before provider fallback. `Force` uses every valid non-future entry
+regardless of age; a miss calls the provider and stores a successful result.
+In both `Default` and `Force`, a future timestamp, corrupt payload, or wrong
+schema is deleted and fails that alias without provider fallback. One shared
+initialization failure makes every planned alias a failure.
+
+Cache initialization, get, required delete, decode, put, and permission-
+finalization failures count as alias failures. A provider success is not
+exposed until cache publication and secure finalization finish. Never cache
+transport, HTTP, size, HTML-shape, or row-validation failures.
 
 ## Exact public schema and truth semantics
 
@@ -212,6 +267,22 @@ inapplicable requests. Raw and typed MCP delegate to production CLI; typed
 request schema, section enum, tool count, and tool inventory remain
 byte-for-byte unchanged.
 
+All implementation and acceptance evidence is deterministic. The eflornithine
+observation is historical evidence from commit `f8ff2a78`; tests use only
+authored inline/generated HTML and loopback fixture responses. Do not contact
+live FDA, edit `testdata/sources/capture-receipts.json`, add
+`SPEC_LIVE_PATHS`, run `make verify`, or run `make release-live-smoke` for this
+ticket. A fixture with an unrelated fallback hit containing attractive aliases
+must prove that an anchorless or conflicting hit contributes no POST candidate.
+Deterministic fault injection and paused time must prove initialization, get,
+delete, decode, put, and secure-finalization failures; ages 86,399 and exactly
+86,400; future timestamps, corrupt envelopes, and wrong schemas; request-local
+no-cache precedence; global `off`, `infinite`, and default hit/miss behavior;
+cancellation before publication; deadline expiry after publication where
+finalization completes but the result remains unavailable and no task remains;
+and total deadline expiry after an earlier alias success still yielding overall
+`unavailable`.
+
 ## Ownership, ratchets, and boundaries
 
 Own transport/parser/types and inline tests in one bounded
@@ -223,6 +294,13 @@ provider parsing belongs in CLI/renderers and MCP gets no duplicate model.
 Routine gates gain deterministic fixtures, not live FDA assertions. Existing
 source-size ceilings and CLI 700-line caps may not rise.
 
+On the post-1151 base, `src/entities/drug/get.rs` must remain at or below 1,094
+lines, `src/sources/mod.rs` at or below 2,274 lines,
+`src/cli/system/dispatch.rs` at or below 700 lines, and
+`src/render/markdown/related.rs` exactly 1,123 lines. Keep
+`src/sources/fda_orphan.rs` below 1,000 lines and the regulatory renderer at or
+below 700 lines.
+
 Balance that one new packaged path by folding the two declarations from the
 one-line `src/sources/openfda/tests/mod.rs` index into its existing parent test
 module and deleting only that index; its two test owners and behavior remain.
@@ -231,15 +309,24 @@ No other deletion, filler, or package exclusion is authorized. `cargo package
 then `make lint`, `make test`, `make spec`, `make full-feature-check`, exact
 package inventory, and `git diff --check`.
 
-Ticket 1151 is command discovery only and is not a dependency: this ticket
-neither consumes nor changes `_meta.next_commands`. This work does not add a
+Ticket 1151 is a dependency. Implement from its accepted branch after it lands
+and preserve `DrugCommandDiscovery`, `_meta.next_commands`, ordering and cap,
+typed schemas, and MCP inventory byte-for-byte. This work does not add a
 requestable section, change region parsing/`all`, alter Drugs@FDA/label
 semantics, offer clinical advice, or add non-FDA orphan programs.
 
+The external-project coupling check must remain green:
+
+`uv run --no-project python tools/check-zero-coupling.py --root .`
+
 ## Review
 
-Accepted after independent design review. The reviewer confirmed exact
-anchored-alias matching, completion-order-independent duplicate handling, the
-bounded uncached form-POST health probe, explicit field/envelope nullability,
-the provider and surface contracts, package-neutral file plan, and removal of
-the unsupported 1151 dependency.
+The previous design review accepted an underspecified cache and removed the
+1151 dependency. The 2026-09-09 freshness review rejected that state. This
+revision restores the dependency and freezes the shared command owner;
+replaces raw-response caching with the exact managed normalized-success cache
+contract; places every cache/provider/finalization action under one eight-
+second deadline; defines fail-closed publication, corruption, and timestamp
+behavior; restricts aliases to typed selected-identity anchors; requires
+deterministic fixtures only; and records exact post-1151 source/package/
+coupling ratchets. Independent re-review is required before implementation.
