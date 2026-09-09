@@ -45,9 +45,10 @@ hatch, beginning with `biomcp list` for compact command discovery. CI measures
 the real local `tools/list` response with
 `uv run --no-sync python scripts/measure-mcp-tools.py` and rejects catalogs over
 22,600 UTF-8 bytes or 5,800 `cl100k_base` tokens. The 22,600-byte /
-5,800-token CI budget applies to the 0.9.0-dev.5 development build. Those
-ceilings combine its current 15,841-byte, 3,996-token catalog with the largest
-typed entry (`search`) and leave 99 bytes and 52 tokens of margin.
+5,800-token CI budget applies to the current 1.0.0-dev.1 development build. The
+recorded 0.9.0-dev.5 measurement was a 15,841-byte, 3,996-token catalog. The
+ceilings combined that catalog with the largest typed entry (`search`) and left
+99 bytes and 52 tokens of margin.
 
 ## Operational tips
 

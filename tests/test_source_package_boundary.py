@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
 MAX_PACKAGE_FILES = 1_300
-BIODATA_REVISION = "cfafc69d27c9a2fc74909f21692a418a8b17db83"
+BIODATA_REVISION = "b4bd2360c711171273a21ab055e52162dfb0c8fa"
 
 
 def _cargo_package_list() -> list[str]:

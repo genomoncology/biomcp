@@ -473,13 +473,14 @@ def test_blog_try_it_and_install_copy_are_consistent() -> None:
             assert "## Try It" not in blog_text
 
 
-def test_mcp_catalog_docs_name_the_development_build_they_measure() -> None:
+def test_mcp_catalog_docs_name_the_current_build_and_preserve_the_measurement() -> None:
     for path in (
         "docs/getting-started/claude-desktop.md",
         "docs/reference/mcp-server.md",
     ):
         text = _normalize_whitespace(_read(path))
-        assert "0.9.0-dev.5 development build" in text
+        assert "current 1.0.0-dev.1 development build" in text
+        assert "recorded 0.9.0-dev.5 measurement" in text
         assert "15,841-byte, 3,996-token catalog" in text
         assert "22,600-byte / 5,800-token CI budget" in text
 
