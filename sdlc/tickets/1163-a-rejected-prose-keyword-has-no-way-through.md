@@ -13,7 +13,7 @@ A caller whose article keyword legitimately contains `gene:`, `disease:`, or
 provider-neutral query they intended. The current fixed diagnostic only points
 to the structured filter, which expresses a different search.
 
-Reconfirmed on `origin/main` at `e95bb7a4`: `review of drug: safety`,
+Reconfirmed on current 0.9 main at `076dc3be`: `review of drug: safety`,
 `disease: mechanisms`, and `melanoma (gene:RB1)` are rejected before provider
 work. The shared recognizer in `src/entities/article/filters.rs` intentionally
 matches a case-insensitive reserved label when it begins the trimmed runtime
@@ -25,6 +25,16 @@ quote parser and enclosing a whole multiword value does not protect a later
 label. Runtime `"review of drug: safety"` still rejects `drug:`, while runtime
 `review of "drug: safety"` is admitted because `drug:` is immediately preceded
 by a literal `"` byte. BioMCP preserves both quote bytes as query text.
+
+## Integration baseline
+
+This ticket has no semantic dependency, so `deps` remains empty, but enforced
+execution order starts implementation only from a base containing landed 1147
+and 1146. Reconfirm the defect and record the final base SHA and source counts
+there. Preserve 1147's canonical `batch article ... --mode` wording and its
+`article batch` compatibility wording across every overlapping help, docs,
+specification, and test file. Preserve 1146's reversed-command correction and
+generic raw-MCP fallback behavior byte-for-byte.
 
 ## Accepted behavior
 
@@ -121,8 +131,11 @@ For all six successful combinations (native CLI, raw MCP, typed MCP, each in
 Markdown and JSON mode), reset the owned fixture log immediately before the
 call and require exactly one `GET /graph/v1/paper/search`. Its decoded `query`
 is exactly `review of "drug: safety"`; it contains no structured gene, disease,
-or drug filter—the request has only Semantic Scholar's ordinary `query`,
-`fields`, and `limit` parameters. The Markdown heading contains exactly
+or drug filter. The captured fixture log proves exactly one request and the
+exact decoded query value. A separate exact `paper_search_plan` assertion
+proves the ordered request parameters and values `query`, `fields`, and
+`limit`; do not infer that key set from a fixture log that records only the
+decoded query. The Markdown heading contains exactly
 `keyword=review of "drug: safety"` and the JSON response's `query` string
 contains that same substring. A fixture response supplies one stable Semantic
 Scholar row so success cannot be inferred from an empty/degraded card.
@@ -173,6 +186,9 @@ unit sidecar plus `src/cli/article/tests/filters.rs`,
 `tests/json_error_contract.rs`, and `tests/rmcp_client_contract.rs`. Extend the
 prepared-fixture contracts in `spec/entity/article.md` and
 `spec/surface/mcp.md`; do not add a parallel recognizer or fixture-only bypass.
+If the request-capture shape must change, its only additional owners are
+`spec/fixtures/setup-article-fulltext-source-fixture.sh` and
+`tests/test_article_spec_fixture_lifecycle.py`; add no packaged fixture file.
 
 Correct the overbroad “quotes around the value/text” guidance, naming the
 immediate-before-each-label rule and surface-specific encodings, in:
@@ -199,7 +215,9 @@ author/affiliation/journal or gene-value recognizers, touch non-article fields,
 or change any MCP schema. Article get/batch/graph/fulltext and variant-article
 paths are unaffected.
 
-No unlanded dependency is required; `deps` is deliberately empty. Record 1100,
+No semantic dependency is required; `deps` is deliberately empty. Tickets
+1147 and 1146 are enforced landing prerequisites as described above, not
+behavioral dependencies. Record 1100,
 the Semantic Scholar selectable source, typed-search mapping, raw MCP allowlist,
 and fixture runners are landed behavior to preserve, not dependencies.
 
@@ -209,7 +227,8 @@ and fixture runners are landed behavior to preserve, not dependencies.
 paths at the design base. Add no files, raise no ceiling, and retain exactly
 1,300 package paths. Keep production changes to replacement wording in the
 existing owners: `src/entities/article/filters.rs` is 330 lines,
-`src/cli/commands.rs` 686, `src/cli/list/literature.rs` 211, and
+`src/cli/commands.rs` 687 after accepted 1147,
+`src/cli/list/literature.rs` 211, and
 `src/cli/list/helpers.rs` 156. All remain under the enforced 700-line Rust-file
 cap and net production `src/` line growth is zero. Tests/docs/specs grow only in
 their existing files; split a test sidecar rather than raising a ratchet if an
@@ -222,6 +241,13 @@ schema/catalog inventory tests on final HEAD and verify a base-to-HEAD byte diff
 for `src/mcp/shell.rs` and `src/mcp/catalog.rs`. Re-run the offline package list
 and require exactly 1,300 paths. No AlphaGenome behavior or feature graph is
 touched, so `make full-feature-check` is not required.
+
+Measure and freeze `src/mcp/shell.rs`, its catalog/schema behavior, and every
+over-threshold inventory value from the final post-1146 base; do not use a
+pre-1146 byte baseline. Prove Cargo manifests, the zero-coupling checker and
+inventory, and 1183's package exclusions are unchanged from that base. Run:
+
+`uv run --no-project python tools/check-zero-coupling.py --root .`
 
 ## Done, observably
 
@@ -243,3 +269,11 @@ quote-before-each-label rule, exact native/raw/typed encodings and error
 envelopes, deterministic Semantic Scholar request proof, hostile shell-safety
 coverage, corrected guidance ownership, empty dependencies, and source/package
 limits.
+
+The 2026-09-09 freshness review rejected stale SHA/source baselines and a
+request-log claim stronger than the fixture could prove. This revision fixes
+the enforced post-1147/post-1146 integration order without inventing semantic
+dependencies, preserves both tickets' overlapping public contracts, splits
+decoded request capture from exact request-plan proof, names the only fixture
+capture owners, and requires final-base MCP/Cargo/package/coupling evidence.
+Independent re-review is required before implementation.
