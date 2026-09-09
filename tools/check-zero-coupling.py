@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from collections.abc import Iterator
 import hashlib
 import json
 from pathlib import Path
@@ -29,15 +30,19 @@ TRIAL_OWNER = re.compile(
     re.IGNORECASE,
 )
 INLINE_CARGO_ENTRY = re.compile(
-    r"(?m)^\s*(?P<key>[A-Za-z0-9_.-]+)\s*=\s*\{(?P<body>[^}]{0,2000})\}"
+    r"(?m)^\s*(?P<key>\"[^\"\r\n]+\"|'[^'\r\n]+'|[A-Za-z0-9_.-]+)"
+    r"\s*=\s*\{(?P<body>[^}]{0,2000})\}"
 )
-CARGO_DEPENDENCY_TABLE = re.compile(
-    r"(?ms)^\s*\[(?:dev-|build-)?dependencies\.(?P<key>[^]]+)\]\s*"
-    r"(?P<body>.*?)(?=^\s*\[|\Z)"
+CARGO_ASSIGNMENT = re.compile(
+    r"(?m)^\s*(?P<key>\"[^\"\r\n]+\"|'[^'\r\n]+'|[A-Za-z0-9_.-]+)"
+    r"\s*=\s*(?P<value>[^\r\n]+)"
 )
-CARGO_PATCH_TABLE = re.compile(
-    r"(?ms)^\s*\[patch\.[^]]+\]\s*(?P<body>.*?)(?=^\s*\[|\Z)"
-)
+TOML_TABLE_HEADER = re.compile(r"(?m)^\s*\[(?!\[)(?P<header>[^]\r\n]+)\]\s*(?:#.*)?$")
+TOML_ARRAY_HEADER = re.compile(r"(?m)^\s*\[\[(?P<header>[^]\r\n]+)\]\]\s*(?:#.*)?$")
+DEPENDENCY_SECTION = re.compile(r"(?i)(?:^|\.)(?:dev-|build-)?dependencies$")
+DEPENDENCY_TABLE = re.compile(r"(?i)(?:^|\.)(?:dev-|build-)?dependencies\.(?P<key>.+)$")
+TOML_NAME = re.compile(r"(?mi)^\s*name\s*=\s*[\"'](?P<value>[^\"']+)[\"']")
+TOML_SOURCE = re.compile(r"(?mi)^\s*source\s*=\s*[\"'](?P<value>[^\"']+)[\"']")
 INCLUDE_STATEMENT = re.compile(r"(?is)\binclude\s*!\s*\([^;]{0,2000}\)\s*;")
 EXTERNAL_GIT_COMMAND = re.compile(
     r"(?i)\bgit(?:\s+-[^\s]+)*\s+"
@@ -75,17 +80,42 @@ def _has_external_trial_handoff(text: str) -> bool:
         ):
             return True
 
-    for table in CARGO_DEPENDENCY_TABLE.finditer(text):
-        key_and_body = table.group("key") + " " + table.group("body")
-        if TRIAL_OWNER.search(key_and_body) and re.search(
-            r"(?i)^\s*path\s*=", table.group("body"), re.MULTILINE
-        ):
-            return True
-
-    for table in CARGO_PATCH_TABLE.finditer(text):
-        body = table.group("body")
-        if TRIAL_OWNER.search(body) and re.search(r"(?i)\b(?:path|git|rev)\s*=", body):
-            return True
+    for is_array, header, body in _toml_sections(text):
+        dependency = DEPENDENCY_TABLE.search(header)
+        if dependency:
+            if TRIAL_OWNER.search(dependency.group("key")):
+                return True
+            for assignment in CARGO_ASSIGNMENT.finditer(body):
+                field = assignment.group("key").strip("\"'").casefold()
+                if field in {"package", "path", "git"} and TRIAL_OWNER.search(
+                    assignment.group("value")
+                ):
+                    return True
+        if DEPENDENCY_SECTION.search(header):
+            for assignment in CARGO_ASSIGNMENT.finditer(body):
+                if TRIAL_OWNER.search(
+                    assignment.group("key") + " " + assignment.group("value")
+                ):
+                    return True
+        header_folded = header.casefold()
+        if header_folded.startswith("patch.") or header_folded.startswith("replace"):
+            if TRIAL_OWNER.search(header):
+                return True
+            for assignment in CARGO_ASSIGNMENT.finditer(body):
+                if TRIAL_OWNER.search(
+                    assignment.group("key") + " " + assignment.group("value")
+                ):
+                    return True
+        if is_array and header_folded == "package":
+            name = TOML_NAME.search(body)
+            source = TOML_SOURCE.search(body)
+            if (
+                name
+                and source
+                and TRIAL_OWNER.search(name.group("value"))
+                and source.group("value").casefold().startswith("git+")
+            ):
+                return True
 
     for statement in INCLUDE_STATEMENT.findall(text):
         if (
@@ -99,6 +129,21 @@ def _has_external_trial_handoff(text: str) -> bool:
         EXTERNAL_GIT_COMMAND.search(line) and TRIAL_OWNER.search(line)
         for line in text.splitlines()
     )
+
+
+def _toml_sections(text: str) -> Iterator[tuple[bool, str, str]]:
+    headers = [
+        (match.start(), match.end(), False, match.group("header"))
+        for match in TOML_TABLE_HEADER.finditer(text)
+    ]
+    headers.extend(
+        (match.start(), match.end(), True, match.group("header"))
+        for match in TOML_ARRAY_HEADER.finditer(text)
+    )
+    headers.sort()
+    for index, (_, end, is_array, header) in enumerate(headers):
+        body_end = headers[index + 1][0] if index + 1 < len(headers) else len(text)
+        yield is_array, header.strip(), text[end:body_end]
 
 
 def _matches(data: bytes) -> bool:

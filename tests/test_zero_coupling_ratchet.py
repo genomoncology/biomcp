@@ -124,6 +124,74 @@ def test_unrelated_local_build_mechanisms_remain_allowed(tmp_path: Path) -> None
     assert checker.scan_files(tmp_path, list(cases), inventory) == []
 
 
+def test_cargo_table_target_replace_and_lock_handoffs_are_rejected(
+    tmp_path: Path,
+) -> None:
+    checker = _module()
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    owner_a = "trial" + "-core"
+    owner_b = "shared" + "-trial-types"
+    owner_c = "trial" + "-contract"
+    cases = {
+        "dependency-git.toml": (
+            f'[dependencies.{owner_a}]\ngit = "https://example.test/core"\n'
+            'rev = "abc"\n'
+        ),
+        "dependency-alias-git.toml": (
+            "[dependencies.transport]\n"
+            f'package = "{owner_b}"\ngit = "https://example.test/types"\n'
+        ),
+        "target-path.toml": (
+            f"[target.'cfg(windows)'.dependencies.{owner_a}]\npath = \"../{owner_a}\"\n"
+        ),
+        "Cargo.lock": (
+            f'[[package]]\nname = "{owner_a}"\nversion = "0.1.0"\n'
+            'source = "git+https://example.test/core#abc"\n'
+        ),
+        "target-build-alias.toml": (
+            "[target.x86_64-pc-windows-msvc.build-dependencies.transport]\n"
+            f'package = "{owner_b}"\npath = "../types"\n'
+        ),
+        "patch-subtable.toml": (
+            f'[patch.crates-io.{owner_c}]\ngit = "https://example.test/contract"\n'
+        ),
+        "patch-registry.toml": (
+            f'[patch.crates-io]\n{owner_a} = {{ registry = "internal" }}\n'
+        ),
+        "replace.toml": (
+            f'[replace]\n"{owner_a}:0.1.0" = {{ path = "../replacement" }}\n'
+        ),
+    }
+    for name, content in cases.items():
+        (tmp_path / name).write_text(content, encoding="utf-8")
+    assert checker.scan_files(tmp_path, list(cases), inventory) == sorted(cases)
+
+
+def test_unrelated_cargo_tables_targets_and_lock_sources_remain_allowed(
+    tmp_path: Path,
+) -> None:
+    checker = _module()
+    inventory = _inventory(tmp_path / "inventory.json", {})
+    owner = "trial" + "-core"
+    cases = {
+        "dependency.toml": (
+            '[dependencies.helper-core]\ngit = "https://example.test/helper"\n'
+        ),
+        "target.toml": (
+            "[target.'cfg(windows)'.dependencies.windows-sys]\n"
+            'path = "../windows-sys"\n'
+        ),
+        "Cargo.lock": (
+            f'[[package]]\nname = "{owner}"\nversion = "0.1.0"\n'
+            'source = "registry+https://github.com/rust-lang/crates.io-index"\n'
+        ),
+        "docs.md": "Clinical trial results can mention a Git source in prose.\n",
+    }
+    for name, content in cases.items():
+        (tmp_path / name).write_text(content, encoding="utf-8")
+    assert checker.scan_files(tmp_path, list(cases), inventory) == []
+
+
 def test_exact_historical_digest_passes_but_mutation_and_rename_fail(
     tmp_path: Path,
 ) -> None:
