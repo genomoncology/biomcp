@@ -186,5 +186,10 @@ and child differ only inside this block. Pending evidence makes no hosted
 success claim.
 
 <!-- biomcp-1183-hosted-evidence-begin -->
-status: pending
+status: closed
+reviewed-sha: 9cbd45123eacf9eca2d492822a3bbc9052b5f382
+canonical-gates: success https://github.com/genomoncology/biomcp/actions/runs/34305259049/job/102320505977
+full-features: success https://github.com/genomoncology/biomcp/actions/runs/34305259049/job/102320505962
+windows-contracts: success https://github.com/genomoncology/biomcp/actions/runs/34305259049/job/102320505966
+repository-contracts: success https://github.com/genomoncology/biomcp/actions/runs/34305259049/job/102320505804
 <!-- biomcp-1183-hosted-evidence-end -->
