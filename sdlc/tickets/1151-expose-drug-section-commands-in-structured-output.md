@@ -18,6 +18,12 @@ partial section list, while batch JSON emitted only related-entity pivots.
 The result is command discovery only. It does not load another section, infer
 that a populated side-effect field was requested, or change drug evidence.
 
+Reconfirmed on current `main` at
+`2b3129f0e52fcc56f5b92d571be6b7c1956344c1`: single-card JSON combines only
+section recovery with existing related pivots, batch JSON emits only related
+pivots, and Markdown separately computes its section guidance. The dependency
+on completed ticket 1161 remains satisfied.
+
 ## One projection owner
 
 Add one shared owner,
@@ -228,7 +234,13 @@ expansion, default loading, provider requests, drug identity matching,
 regional acquisition, outcome classification, evidence/provenance, related
 candidate generation, MCP request schemas, typed tool inventory, or add a
 file/dependency. Existing exact source-size baselines and CLI 700-line caps may
-not increase; package inventory remains exactly 1,300.
+not increase; package inventory remains exactly 1,300. On this base,
+`src/cli/system/dispatch.rs` is already 699 lines, so replace its direct batch
+command assembly with a compact call to the shared owner and do not cross the
+700-line CLI cap. `src/render/markdown/related.rs` is pinned at exactly 1,123
+lines and must not grow; place the new internal projection in an existing
+non-pinned Markdown owner. Ticket 1183's external-project coupling ratchet
+remains unchanged and green.
 
 Dependency `1161` is real: it reverses the old sole-interactions hard-failure
 contract so the recovery command selected here can execute as a typed card.
@@ -247,3 +259,7 @@ confirmed the exact region-safe selection and deduplication rules, shared
 single/batch projection owner, complete production-path CLI/raw-MCP/typed-MCP
 acceptance matrix, hostile-identity round trip, unchanged schema and inventory,
 narrow exclusions, and the now-landed dependency on ticket 1161.
+
+The 2026-09-09 current-main refresh changes no public behavior. It records the
+current implementation evidence and closes the remaining file-cap ambiguity;
+fresh independent review must confirm the compact call-site plan before coding.
