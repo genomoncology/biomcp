@@ -826,7 +826,7 @@ the operator's quick proof that those identities agree while MCP registry,
 citation, and plugin metadata truthfully remain on the latest public release.
 
 ```bash
-bash ../../scripts/check-version-sync.sh | mustmatch like "Versions in sync: 0.9.0-dev.6 (Python 0.9.0.dev6; development candidate)"
+bash ../../scripts/check-version-sync.sh | mustmatch like "Versions in sync: 1.0.0-dev.1 (Python 1.0.0.dev1; development candidate)"
 ```
 
 ## Spec Corpus Uses Robust Mustmatch Blocks
