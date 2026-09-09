@@ -75,6 +75,22 @@ MYGENE = {
             {"symbol": "OAZ1", "name": "ornithine decarboxylase antizyme 1", "entrezgene": 4946},
         ],
     }).encode("utf-8"),
+    "(symbol:ALIASONLY OR alias:ALIASONLY)": json.dumps({
+        "total": 1,
+        "hits": [{"symbol": "CANONICAL_ALIAS", "alias": ["ALIASONLY"],
+                  "name": "canonical alias target", "entrezgene": 9050}],
+    }).encode("utf-8"),
+    "(symbol:NOEXACT OR alias:NOEXACT)": json.dumps({
+        "total": 6,
+        "hits": [
+            {"name": "missing symbol and id"},
+            {"symbol": "NOEXACT_A", "name": "missing id"},
+            {"symbol": "", "name": "blank symbol", "entrezgene": 9303},
+            {"symbol": "NOEXACT_B", "name": "later row", "entrezgene": 9304},
+            {"symbol": "NOEXACT_B", "name": "duplicate later row", "entrezgene": 9304},
+            {"symbol": "", "name": "second blank symbol"},
+        ],
+    }).encode("utf-8"),
     "odc1": json.dumps({
         "total": 4,
         "hits": [
@@ -117,6 +133,45 @@ MYGENE = {
         }],
     }).encode("utf-8"),
 }
+
+
+def synthetic_gene_response(total, offset=0, size=50):
+    """Deterministic rows for bounded acquisition and overflow contracts."""
+    hits = []
+    for index in range(offset, min(offset + size, total)):
+        # Keep a duplicate in the overflow page: overflow must preserve the
+        # provider page exactly, while complete sets deduplicate after rank.
+        symbol = "OVERFLOW_DUP" if index < 2 else f"ALIAS{index}"
+        if total == 50 and index == 49:
+            symbol = "TOTAL50"
+        if total == 51 and index == 50:
+            symbol = "TOTAL51"
+        entrezgene = 9000 if total == 51 and index < 2 else 9000 + index
+        hits.append({"symbol": symbol, "name": f"synthetic {symbol}", "entrezgene": entrezgene})
+    return json.dumps({"total": total, "hits": hits}).encode("utf-8")
+
+
+FILTER_HITS = json.dumps({
+    "total": 5,
+    "hits": [
+        {"symbol": "FILTERCASE", "name": "matching row", "entrezgene": 9101,
+         "type_of_gene": "protein-coding", "genomic_pos": {"chr": "chr7", "start": 100, "end": 200}},
+        {"symbol": "FILTER_WRONG_TYPE", "name": "wrong type", "entrezgene": 9102,
+         "type_of_gene": "ncRNA", "genomic_pos": {"chr": "7", "start": 100, "end": 200}},
+        {"symbol": "FILTER_WRONG_CHR", "name": "wrong chromosome", "entrezgene": 9103,
+         "type_of_gene": "protein-coding", "genomic_pos": {"chr": "8", "start": 100, "end": 200}},
+        {"symbol": "FILTER_OUTSIDE", "name": "outside region", "entrezgene": 9104,
+         "type_of_gene": "protein-coding", "genomic_pos": {"chr": "7", "start": 1000, "end": 1100}},
+        {"symbol": "FILTER_ALIAS", "name": "alias row", "entrezgene": 9105,
+         "type_of_gene": "protein-coding", "genomic_pos": {"chr": "7", "start": 150, "end": 250}},
+    ],
+}).encode("utf-8")
+HOSTILE_SYMBOL = 'bad " quote \\ slash $HOME `tick`; &amp'
+HOSTILE = json.dumps({"total": 1, "hits": [{"symbol": HOSTILE_SYMBOL, "name": "hostile provider symbol", "entrezgene": 9201}]}).encode("utf-8")
+FILTER_PATHWAY_QUERY = '(symbol:FILTERCASE OR alias:FILTERCASE) AND (pathway.kegg.id:"R\\-HSA\\-5673001" OR pathway.reactome.id:"R\\-HSA\\-5673001" OR pathway.kegg.name:*R\\-HSA\\-5673001*)'
+FILTER_GO_QUERY = '(symbol:FILTERCASE OR alias:FILTERCASE) AND (go.BP.id:"GO\\:0004672" OR go.CC.id:"GO\\:0004672" OR go.MF.id:"GO\\:0004672")'
+LUCENE_QUERY = '+-=&&||><!(){}[]^"~*?:/\\'
+LUCENE_ESCAPED = ''.join(f"\\{char}" if char in r'\\+-!(){}[]^"~*?:/&|' else char for char in LUCENE_QUERY)
 CLINGEN_LOOKUP_TP53 = fixture("clingen/lookup_tp53.json")
 CLINGEN_VALIDITY_TP53 = fixture("clingen/validity_tp53.csv")
 CLINGEN_DOSAGE_TP53 = fixture("clingen/dosage_tp53.csv")
@@ -185,7 +240,29 @@ class Handler(BaseHTTPRequestHandler):
                 send(self, 200, body)
                 return
         if parsed.path == "/mygene/v3/query":
-            query = parse_qs(parsed.query).get("q", [""])[0]
+            params = parse_qs(parsed.query)
+            query = params.get("q", [""])[0]
+            offset = int(params.get("from", ["0"])[0])
+            size = int(params.get("size", ["0"])[0])
+            if query in {"(symbol:TOTAL50 OR alias:TOTAL50)", "(symbol:TOTAL51 OR alias:TOTAL51)"}:
+                total = 50 if "TOTAL50" in query else 51
+                send(self, 200, synthetic_gene_response(total, offset, size))
+                return
+            if query == FILTER_PATHWAY_QUERY:
+                send(self, 200, FILTER_HITS)
+                return
+            if query == FILTER_GO_QUERY:
+                send(self, 200, FILTER_HITS)
+                return
+            if "FILTERCASE" in query and "pathway." not in query and "go." not in query:
+                send(self, 200, FILTER_HITS)
+                return
+            if query == "(symbol:HOSTILE OR alias:HOSTILE)":
+                send(self, 200, HOSTILE)
+                return
+            if query in {r"ALK \(fusion\)", r"BRAF\:V600E", LUCENE_ESCAPED, "kinase"}:
+                send(self, 200, b'{"total":0,"hits":[]}')
+                return
             body = MYGENE.get(query)
             if body is not None:
                 send(self, 200, body)

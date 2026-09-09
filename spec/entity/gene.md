@@ -29,10 +29,13 @@ for offset in 0 1 2 3; do
     2) expected='["OAZ1"]' ;;
     3) expected='[]' ;;
   esac
-  jq -e --argjson expected "$expected" '.results | map(.symbol) == $expected' <<<"$actual" | mustmatch 'true'
-  jq -e --argjson offset "$offset" '.count == (if $offset == 3 then 0 else 1 end) and .pagination.total == 3' <<<"$actual" | mustmatch 'true'
+  jq -e --argjson expected "$expected" '.results | map(.symbol) == $expected' \
+    <<<"$actual" | mustmatch 'true'
+  jq -e --argjson offset "$offset" \
+    '.count == (if $offset == 3 then 0 else 1 end) and .pagination == {"offset":$offset,"limit":1,"returned":(if $offset == 3 then 0 else 1 end),"total":3,"has_more":($offset < 2),"next_page_token":null} and (if $offset == 3 then ._meta == null else ._meta.next_commands == (if $offset == 0 then ["biomcp get gene ODC1","biomcp list gene"] elif $offset == 1 then ["biomcp get gene SLC25A21","biomcp list gene"] else ["biomcp get gene OAZ1","biomcp list gene"] end) end)' \
+    <<<"$actual" | mustmatch 'true'
 done
-for query in odc1 ' OdC1 '; do
+for query in odc1 ' OdC1 ' $'\u2003OdC1\u2003'; do
   ../../tools/biomcp-ci --json search gene "$query" --limit 2 \
     | jq -e '.results | map(.symbol) == ["ODC1", "SLC25A21"]' \
     | mustmatch 'true'
@@ -46,8 +49,128 @@ done
 ../../tools/biomcp-ci search gene ODC1 --limit 1 \
   | mustmatch like 'ODC1
 Showing 1-1 of 3 results. Use --offset 1 for more.'
-grep -F 'GET /mygene/v3/query?q=%28symbol%3AODC1+OR+alias%3AODC1%29' \
-  "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=50&from=0'
+
+# Count each unique provider request so concurrent specs cannot perturb the
+# exact acquisition deltas, including the second request made only for a
+# positive-offset overflow page.
+log="$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"
+request_count() {
+  grep -Fc "$1" "$log" || true
+}
+request_count_window() {
+  grep -F "$1" "$log" | grep -Fc "$2" || true
+}
+total50_query='GET /mygene/v3/query?q=%28symbol%3ATOTAL50+OR+alias%3ATOTAL50%29'
+total51_query='GET /mygene/v3/query?q=%28symbol%3ATOTAL51+OR+alias%3ATOTAL51%29'
+before_total50="$(request_count "$total50_query")"
+before_total50_window="$(request_count_window "$total50_query" '&size=50&from=0')"
+../../tools/biomcp-ci --json search gene TOTAL50 --limit 1 \
+  | jq -e '(.results | map(.symbol)) == ["TOTAL50"] and .pagination.total == 50' \
+  | mustmatch 'true'
+test "$(( $(request_count "$total50_query") - before_total50 ))" -eq 1
+test "$(( $(request_count_window "$total50_query" '&size=50&from=0') - before_total50_window ))" -eq 1
+before_total51="$(request_count "$total51_query")"
+../../tools/biomcp-ci --json search gene TOTAL51 --limit 1 \
+  | jq -e '(.results | map(.symbol)) == ["OVERFLOW_DUP"] and .pagination.total == 51' \
+  | mustmatch 'true'
+test "$(( $(request_count "$total51_query") - before_total51 ))" -eq 1
+before_total51="$(request_count "$total51_query")"
+before_total51_first_window="$(request_count_window "$total51_query" '&size=50&from=0')"
+before_total51_second_window="$(request_count_window "$total51_query" '&size=1&from=1')"
+../../tools/biomcp-ci --json search gene TOTAL51 --limit 1 --offset 1 \
+  | jq -e '(.results | map(.symbol)) == ["OVERFLOW_DUP"] and .pagination.total == 51' \
+  | mustmatch 'true'
+test "$(( $(request_count "$total51_query") - before_total51 ))" -eq 2
+test "$(( $(request_count_window "$total51_query" '&size=50&from=0') - before_total51_first_window ))" -eq 1
+test "$(( $(request_count_window "$total51_query" '&size=1&from=1') - before_total51_second_window ))" -eq 1
+before_last_window="$(request_count_window "$total51_query" '&size=1&from=9999')"
+../../tools/biomcp-ci --json search gene TOTAL51 --limit 1 --offset 9999 >/dev/null
+test "$(( $(request_count_window "$total51_query" '&size=1&from=9999') - before_last_window ))" -eq 1
+before_last_invalid="$(request_count "$total51_query")"
+set +e
+../../tools/biomcp-ci --json search gene TOTAL51 --limit 2 --offset 9999 >/dev/null
+status=$?
+set -e
+test "$status" -eq 2
+test "$(( $(request_count "$total51_query") - before_last_invalid ))" -eq 0
+before_alk="$(request_count 'GET /mygene/v3/query?q=ALK+%5C%28fusion%5C%29')"
+../../tools/biomcp-ci --json search gene 'ALK (fusion)' --limit 1 >/dev/null
+test "$(( $(request_count 'GET /mygene/v3/query?q=ALK+%5C%28fusion%5C%29') - before_alk ))" -eq 1
+
+# Local filters run against the complete retained set; provider predicates are
+# present in the outbound query while their fixture response is deterministic.
+../../tools/biomcp-ci --json search gene FILTERCASE --type protein-coding --chromosome chr7 --region chr7:150-250 \
+  | jq -e '((.results | map(.symbol)) == ["FILTERCASE","FILTER_ALIAS"]) and .count == 2 and .pagination.total == 2' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json search gene FILTERCASE --type ncRNA \
+  | jq -e '((.results | map(.symbol)) == ["FILTER_WRONG_TYPE"]) and .pagination.total == 1' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json search gene FILTERCASE --region chr7:300-400 \
+  | jq -e '.results == [] and .count == 0 and .pagination.total == 0' \
+  | mustmatch 'true'
+../../tools/biomcp-ci --json search gene FILTERCASE --chromosome CHR7 \
+  | jq -e '(.results | map(.symbol)) == ["FILTERCASE","FILTER_WRONG_TYPE","FILTER_OUTSIDE","FILTER_ALIAS"]' \
+  | mustmatch 'true'
+pathway_request='GET /mygene/v3/query?q=%28symbol%3AFILTERCASE+OR+alias%3AFILTERCASE%29+AND+%28pathway.kegg.id%3A%22R%5C-HSA%5C-5673001%22+OR+pathway.reactome.id%3A%22R%5C-HSA%5C-5673001%22+OR+pathway.kegg.name%3A*R%5C-HSA%5C-5673001*%29&species'
+before_pathway="$(request_count "$pathway_request")"
+../../tools/biomcp-ci --json search gene FILTERCASE --pathway R-HSA-5673001 \
+  | jq -e '(.results | map(.symbol)) == ["FILTERCASE","FILTER_WRONG_TYPE","FILTER_WRONG_CHR","FILTER_OUTSIDE","FILTER_ALIAS"]' \
+  | mustmatch 'true'
+test "$(( $(request_count "$pathway_request") - before_pathway ))" -eq 1
+go_request='GET /mygene/v3/query?q=%28symbol%3AFILTERCASE+OR+alias%3AFILTERCASE%29+AND+%28go.BP.id%3A%22GO%5C%3A0004672%22+OR+go.CC.id%3A%22GO%5C%3A0004672%22+OR+go.MF.id%3A%22GO%5C%3A0004672%22%29&species'
+before_go="$(request_count "$go_request")"
+../../tools/biomcp-ci --json search gene FILTERCASE --go GO:0004672 \
+  | jq -e '(.results | map(.symbol)) == ["FILTERCASE","FILTER_WRONG_TYPE","FILTER_WRONG_CHR","FILTER_OUTSIDE","FILTER_ALIAS"]' \
+  | mustmatch 'true'
+test "$(( $(request_count "$go_request") - before_go ))" -eq 1
+
+# Alias-only and no-exact queries retain canonical identity without inventing a
+# provider row, while Lucene metacharacters remain escaped free-text terms.
+../../tools/biomcp-ci --json search gene ALIASONLY --limit 1 \
+  | jq -e '(.results | map(.symbol)) == ["CANONICAL_ALIAS"] and .pagination.total == 1' \
+  | mustmatch 'true'
+noexact_query='GET /mygene/v3/query?q=%28symbol%3ANOEXACT+OR+alias%3ANOEXACT%29'
+before_noexact="$(request_count "$noexact_query")"
+before_noexact_window="$(request_count_window "$noexact_query" '&size=50&from=0')"
+../../tools/biomcp-ci --json search gene NOEXACT --limit 6 \
+  | jq -e '((.results | map({symbol,entrez_id})) == [{symbol:"",entrez_id:""},{symbol:"NOEXACT_A",entrez_id:""},{symbol:"",entrez_id:"9303"},{symbol:"NOEXACT_B",entrez_id:"9304"},{symbol:"",entrez_id:""}]) and .count == 5 and .pagination.total == 5' \
+  | mustmatch 'true'
+test "$(( $(request_count "$noexact_query") - before_noexact ))" -eq 1
+test "$(( $(request_count_window "$noexact_query" '&size=50&from=0') - before_noexact_window ))" -eq 1
+before_no_exact="$(request_count 'GET /mygene/v3/query?q=%28symbol%3ANOTAREALGENE1091+OR+alias%3ANOTAREALGENE1091%29')"
+../../tools/biomcp-ci --json search gene NOTAREALGENE1091 --limit 1 \
+  | jq -e '.results == [] and .pagination.total == 0' \
+  | mustmatch 'true'
+test "$(( $(request_count 'GET /mygene/v3/query?q=%28symbol%3ANOTAREALGENE1091+OR+alias%3ANOTAREALGENE1091%29') - before_no_exact ))" -eq 1
+before_braf_escape="$(request_count 'GET /mygene/v3/query?q=BRAF%5C%3AV600E')"
+before_alk_escape="$(request_count 'GET /mygene/v3/query?q=ALK+%5C%28fusion%5C%29')"
+for query in 'BRAF:V600E' 'ALK (fusion)'; do
+  ../../tools/biomcp-ci --json search gene "$query" --limit 1 \
+    | jq -e '.results == [] and .pagination.total == 0' \
+    | mustmatch 'true'
+done
+test "$(( $(request_count 'GET /mygene/v3/query?q=BRAF%5C%3AV600E') - before_braf_escape ))" -eq 1
+test "$(( $(request_count 'GET /mygene/v3/query?q=ALK+%5C%28fusion%5C%29') - before_alk_escape ))" -eq 1
+lucene_query='+-=&&||><!(){}[]^"~*?:/\'
+../../tools/biomcp-ci --json search gene "$lucene_query" --limit 1 \
+  | jq -e '.results == [] and .pagination.total == 0' \
+  | mustmatch 'true'
+
+# Empty/invalid windows reject before any provider work.
+before_invalid_window="$(request_count 'GET /mygene/v3/query?q=%28symbol%3AODC1+OR+alias%3AODC1%29')"
+set +e
+../../tools/biomcp-ci --json search gene ODC1 --limit 1 --offset 10000 >/dev/null
+status=$?
+set -e
+test "$status" -eq 2
+test "$(( $(request_count 'GET /mygene/v3/query?q=%28symbol%3AODC1+OR+alias%3AODC1%29') - before_invalid_window ))" -eq 0
+before_invalid_limit="$(request_count 'GET /mygene/v3/query?q=%28symbol%3AODC1+OR+alias%3AODC1%29')"
+set +e
+../../tools/biomcp-ci --json search gene ODC1 --limit 51 >/dev/null
+status=$?
+set -e
+test "$status" -eq 2
+test "$(( $(request_count 'GET /mygene/v3/query?q=%28symbol%3AODC1+OR+alias%3AODC1%29') - before_invalid_limit ))" -eq 0
 ```
 
 ## Raw and Typed MCP Gene Search Match the CLI
@@ -88,12 +211,53 @@ try:
     for identifier, offset in enumerate((0, 1), 2):
         args = ["search", "gene", "ODC1", "--limit", "1", "--offset", str(offset)]
         cli_markdown = cli(args, False)
+        if offset == 0:
+            expected_markdown = """# Genes: ODC1
+
+Found 1 gene
+
+| Symbol | Name | Entrez ID | Coordinate | Build | UniProt | OMIM |
+|---|---|---|---|---|---|---|
+| ODC1 | ornithine decarboxylase 1 | 4953 | - | - | none | none |
+
+
+Use `get gene <symbol>` for details.
+Filters: -q <query>, --type <protein-coding|ncRNA|pseudo>, --chromosome <N>, --region <chr:start-end>, --pathway <id>, --go <term>
+
+
+Showing 1-1 of 3 results. Use --offset 1 for more.
+
+
+"""
+        else:
+            expected_markdown = """# Genes: ODC1, offset=1
+
+Found 1 gene
+
+| Symbol | Name | Entrez ID | Coordinate | Build | UniProt | OMIM |
+|---|---|---|---|---|---|---|
+| SLC25A21 | solute carrier family 25 member 21 | 23530 | - | - | none | none |
+
+
+Use `get gene <symbol>` for details.
+Filters: -q <query>, --type <protein-coding|ncRNA|pseudo>, --chromosome <N>, --region <chr:start-end>, --pathway <id>, --go <term>
+
+
+Showing 2-2 of 3 results. Use --offset 2 for more.
+
+
+"""
+        assert cli_markdown == expected_markdown
         raw_markdown = call(identifier, "biomcp", {"command": "biomcp " + " ".join(args)})
         typed_markdown = call(identifier + 10, "search", {"entity": "gene", "query": "ODC1",
             "limit": 1, "offset": offset})
         table = lambda text: [line for line in text.splitlines() if line.startswith("|")]
         assert table(raw_markdown) == table(typed_markdown) == table(cli_markdown)
-        assert cli_markdown.strip() in raw_markdown
+        assert raw_markdown == typed_markdown
+        expected_command = "biomcp get gene " + ("ODC1" if offset == 0 else "SLC25A21")
+        expected_footer = ("\n## Next commands\n- `" + expected_command
+                          + "`\n- `biomcp list gene`")
+        assert raw_markdown == expected_markdown + expected_footer
         cli_json_text = cli(args, True)
         cli_json = json.loads(cli_json_text)
         raw_json = call(identifier + 20, "biomcp", {"command": "biomcp " + " ".join(args), "json": True})
@@ -101,14 +265,123 @@ try:
             "limit": 1, "offset": offset, "json": True})
         raw_value = json.loads(raw_json)
         typed_value = json.loads(typed_json)
-        assert raw_json == typed_json
         assert raw_value["results"] == typed_value["results"] == cli_json["results"]
-        assert raw_value["_meta"]["next_commands"] == typed_value["_meta"]["next_commands"] == cli_json["_meta"]["next_commands"]
-        assert raw_value["results"][0]["symbol"] == ("ODC1" if offset == 0 else "SLC25A21")
+        assert raw_value["count"] == typed_value["count"] == cli_json["count"]
+        assert raw_value["pagination"] == typed_value["pagination"] == cli_json["pagination"]
+        assert raw_value["_meta"] == typed_value["_meta"] == cli_json["_meta"]
+        assert raw_value["results"] == ([{"symbol": "ODC1", "name": "ornithine decarboxylase 1", "entrez_id": "4953", "genomic_coordinates": None, "uniprot_id": None, "omim_id": None}] if offset == 0 else [{"symbol": "SLC25A21", "name": "solute carrier family 25 member 21", "entrez_id": "23530", "genomic_coordinates": None, "uniprot_id": None, "omim_id": None}])
+        assert raw_value["_meta"]["next_commands"] == (["biomcp get gene ODC1", "biomcp list gene"] if offset == 0 else ["biomcp get gene SLC25A21", "biomcp list gene"])
 finally:
     proc.terminate()
     proc.wait(timeout=5)
 print("raw and typed gene search converges")
+PY
+```
+
+## Adversarial identity and public-surface proof
+
+The production parser receives the exact emitted follow-up command, including a
+provider symbol that exercises shell quoting. It must remain one argument and
+gene-get validation must reject it before a second provider request.
+
+```bash
+python3 - <<'PY' | mustmatch like 'hostile gene command is inert and public surfaces are unchanged'
+import json, os, shlex, subprocess
+
+binary = os.environ["BIOMCP_BIN"]
+env = os.environ.copy()
+log = os.environ["BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG"]
+def hostile_requests():
+    return [line for line in open(log, encoding="utf-8")
+            if "q=%28symbol%3AHOSTILE+OR+alias%3AHOSTILE%29" in line]
+before_search = hostile_requests()
+payload = json.loads(subprocess.check_output(
+    [binary, "--json", "search", "gene", "HOSTILE", "--limit", "1"], text=True))
+hostile_symbol = 'bad " quote \\ slash $HOME `tick`; &amp'
+assert payload["results"][0]["symbol"] == hostile_symbol
+assert len(hostile_requests()) - len(before_search) == 1
+command = payload["_meta"]["next_commands"][0]
+parts = shlex.split(command)
+assert parts[:3] == ["biomcp", "get", "gene"] and len(parts) == 4
+assert command == 'biomcp get gene "bad \\" quote \\\\ slash \\$HOME \\`tick\\`; &amp"'
+before = hostile_requests()
+result = subprocess.run(command.replace("biomcp", binary, 1), shell=True, text=True, capture_output=True, env=env)
+assert result.returncode == 2
+assert hostile_requests() == before
+
+def mcp_tools():
+    server = subprocess.Popen([binary, "serve"], stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE, text=True, env=env)
+    try:
+        for message in (
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params":
+             {"protocolVersion": "2025-03-26", "capabilities": {},
+              "clientInfo": {"name": "spec", "version": "1"}}},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+        ):
+            server.stdin.write(json.dumps(message) + "\n")
+            server.stdin.flush()
+            response = json.loads(server.stdout.readline())
+            if message["id"] == 2:
+                return response["result"]["tools"]
+    finally:
+        server.terminate()
+        server.wait(timeout=5)
+
+tools_before = mcp_tools()
+tools_after = mcp_tools()
+assert tools_before == tools_after
+assert [tool["name"] for tool in tools_before] == [
+    "biomcp", "search", "get", "variant_normalize_car", "variant_erepo",
+    "gene_cspec", "variant_articles"]
+assert len(tools_before) == 7
+search_schema = next(tool["inputSchema"] for tool in tools_before if tool["name"] == "search")
+gene_branch = next(branch for branch in search_schema["oneOf"]
+                   if branch["properties"]["entity"] == {"const": "gene"})
+assert gene_branch == {
+    "additionalProperties": False,
+    "anyOf": [{"required": ["query"]}, {"required": ["gene_type"]},
+              {"required": ["chromosome"]}, {"required": ["region"]}],
+    "properties": {
+        "chromosome": {"maxLength": 256, "minLength": 1, "type": "string"},
+        "entity": {"const": "gene"},
+        "gene_type": {"maxLength": 256, "minLength": 1, "type": "string"},
+        "json": {"default": False, "type": "boolean"},
+        "limit": {"default": 10, "maximum": 25, "minimum": 1, "type": "integer"},
+        "offset": {"default": 0, "maximum": 1000, "minimum": 0, "type": "integer"},
+        "query": {"maxLength": 256, "minLength": 1, "type": "string"},
+        "region": {"maxLength": 256, "minLength": 1, "type": "string"}},
+    "required": ["entity"], "type": "object"}
+help_before = subprocess.check_output([binary, "search", "gene", "--help"], text=True, env=env)
+help_after = subprocess.check_output([binary, "search", "gene", "--help"], text=True, env=env)
+assert help_before == help_after == """Search genes by symbol, name, type, or chromosome (MyGene.info)
+
+Usage: biomcp search gene [OPTIONS] [QUERY]
+
+Arguments:
+  [QUERY]  Optional positional query alias for -q/--query
+
+Options:
+  -q, --query <QUERY>            Free text query (gene name, symbol, or keyword)
+      --type <GENE_TYPE>         Filter by gene type (e.g., protein-coding, ncRNA, pseudo)
+      --chromosome <CHROMOSOME>  Filter by chromosome (e.g., 7, X)
+      --region <REGION>          Filter by genomic region (chr:start-end)
+      --pathway <PATHWAY>        Filter by pathway ID/name (e.g., R-HSA-5673001)
+      --go <GO_TERM>             Filter by GO term ID/text (e.g., GO:0004672)
+  -l, --limit <LIMIT>            Maximum results, 1-50 (default: 10) [default: 10]
+      --offset <OFFSET>          Skip the first N results [default: 0]
+  -j, --json                     Output as JSON instead of Markdown
+      --no-cache                 Use no managed request state: bypass HTTP cache and article sessions
+  -h, --help                     Print help
+
+EXAMPLES:
+  biomcp search gene BRAF
+  biomcp search gene -q kinase --type protein-coding --region chr7:140424943-140624564 --limit 5
+
+See also: biomcp list gene
+"""
+
+print("hostile gene command is inert and public surfaces are unchanged")
 PY
 ```
 
@@ -215,7 +488,8 @@ The local fixture records requests emitted by the production client, including
 the bounded search and exact-symbol identity plans.
 
 ```bash
-grep -F 'GET /mygene/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like '&size=50&from=0'
+grep -F 'GET /mygene/v3/query?q=%28symbol%3ABRAF+OR+alias%3ABRAF%29' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" \
+  | grep -Fq '&size=50&from=0'
 grep -F 'GET /mygene/v3/query?q=symbol%3A%22BRCA1%22' "$BIOMCP_PROVIDER_CONTRACT_REQUEST_LOG" | mustmatch like 'symbol%3A%22BRCA1%22'
 ```
 

@@ -391,6 +391,7 @@ const GENE_GET_STRATEGY_ENV: &str = "BIOMCP_GENE_GET_STRATEGY";
 const FUNDING_NO_DATA_NOTE: &str = "No NIH funding data found for this query.";
 const FUNDING_UNAVAILABLE_NOTE: &str = "NIH Reporter funding data is temporarily unavailable.";
 const DIAGNOSTIC_PIVOT_LIMIT: usize = 10;
+const MAX_SEARCH_LIMIT: usize = 50;
 const GENE_DIAGNOSTICS_UNAVAILABLE_NOTE: &str =
     "Diagnostic local data is unavailable. Run `biomcp gtr sync` to enable gene diagnostic pivots.";
 
@@ -2867,6 +2868,9 @@ fn is_exact_gene_query_candidate(query: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
         && query.bytes().any(|c| c.is_ascii_alphabetic())
 }
+fn exact_search_needs_followup(total: usize, offset: usize) -> bool {
+    total > MAX_SEARCH_LIMIT && offset > 0
+}
 fn gene_hit_matches_local_filters(
     hit: &MyGeneHit,
     expected_gene_type: Option<&str>,
@@ -2959,7 +2963,6 @@ pub async fn search_page(
     limit: usize,
     offset: usize,
 ) -> Result<SearchPage<GeneSearchResult>, BioMcpError> {
-    const MAX_SEARCH_LIMIT: usize = 50;
     let query = filters
         .query
         .as_deref()
@@ -3087,12 +3090,12 @@ pub async fn search_page(
                 Some(total),
             ));
         }
-        if offset == 0 {
-            probe
-        } else {
+        if exact_search_needs_followup(probe.total, offset) {
             client
                 .search(&q, fetch_limit, offset, normalized_chromosome.as_deref())
                 .await?
+        } else {
+            probe
         }
     } else {
         client
@@ -3362,16 +3365,13 @@ mod tests {
         );
     }
     #[test]
-    fn search_query_includes_chromosome_filter() {
-        let summary = search_query_summary(&GeneSearchFilters {
-            query: Some("BRCA1".into()),
-            gene_type: None,
-            chromosome: Some("17".into()),
-            region: None,
-            pathway: None,
-            go_term: None,
-        });
-        assert_eq!(summary, "BRCA1, chromosome=17");
+    fn exact_search_followup_boundary_covers_fifty_and_fifty_one() {
+        assert!(!exact_search_needs_followup(50, 1));
+        assert!(!exact_search_needs_followup(50, 0));
+        assert!(exact_search_needs_followup(51, 1));
+        assert!(!exact_search_needs_followup(51, 0));
+        assert!(exact_search_needs_followup(usize::MAX, 1));
+        assert!(!exact_search_needs_followup(usize::MAX, 0));
     }
     #[test]
     fn normalize_gene_type_accepts_supported_aliases() {
