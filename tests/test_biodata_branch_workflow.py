@@ -12,6 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 RETIRED_WORKFLOW = ROOT / ".github/workflows/biodata-1.0.yml"
 RUNNER = ROOT / "tools/check-biodata-1.0"
+OFFLINE_CHECKER = ROOT / "tools/check-offline-network"
 TEST_FILES = (
     "tests/test_biodata_boundary.py",
     "tests/test_source_package_boundary.py",
@@ -45,6 +46,19 @@ def _runner_test_files(runner: str) -> tuple[str, ...]:
     if match is None:
         return ()
     return tuple(re.findall(r'^\s+"([^"]+)"$', match.group("body"), re.MULTILINE))
+
+
+def _current_process_has_verified_offline_isolation() -> bool:
+    try:
+        probe = subprocess.run(
+            [str(OFFLINE_CHECKER), "true"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return probe.returncode == 0
 
 
 def _runner_violations(runner: str) -> list[str]:
@@ -106,6 +120,8 @@ def test_representative_runner_mutations_are_rejected(old: str, new: str) -> Non
 
 
 def test_forged_offline_marker_fails_in_the_normal_namespace() -> None:
+    if _current_process_has_verified_offline_isolation():
+        pytest.skip("host-only forged-marker check cannot run inside offline isolation")
     cache = ROOT / ".cache"
     cache.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(dir=cache) as directory:
@@ -126,3 +142,26 @@ def test_forged_offline_marker_fails_in_the_normal_namespace() -> None:
         )
     assert result.returncode != 0
     assert "offline privilege isolation failed" in result.stdout + result.stderr
+
+
+def test_host_only_skip_requires_a_successful_live_isolation_probe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    returncodes = iter((1, 0))
+    calls: list[tuple[object, ...]] = []
+
+    def probe(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        calls.append(args)
+        return subprocess.CompletedProcess(args, next(returncodes))
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        probe,
+    )
+    assert not _current_process_has_verified_offline_isolation()
+    assert _current_process_has_verified_offline_isolation()
+    assert calls == [
+        ([str(OFFLINE_CHECKER), "true"],),
+        ([str(OFFLINE_CHECKER), "true"],),
+    ]
