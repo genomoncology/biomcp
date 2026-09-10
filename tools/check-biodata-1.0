@@ -11,7 +11,6 @@ readonly TEST_FILES=(
 )
 
 unset NCI_API_KEY
-
 biomcp_bin="${BIOMCP_BIN:-$ROOT/target/debug/biomcp}"
 if [[ "$biomcp_bin" != /* ]]; then
   biomcp_bin="$PWD/$biomcp_bin"
@@ -28,17 +27,12 @@ case "$biomcp_bin" in
     ;;
 esac
 
-mkdir -p "$ROOT/.cache"
-scratch="$(mktemp -d "$ROOT/.cache/biodata-1.0.XXXXXX")"
-cleanup() {
-  rm -rf -- "$scratch"
-}
-trap cleanup EXIT
-trap 'exit 129' HUP
-trap 'exit 130' INT
-trap 'exit 143' TERM
-
+if (($# != 1)) || [[ "${1:-}" != --already-isolated ]] \
+  || [[ "${BIOMCP_OFFLINE_NETWORK:-0}" != 1 ]]; then
+  echo "usage: run this checker through BioData's isolation launcher with --already-isolated" >&2
+  exit 2
+fi
+"$ROOT/tools/check-offline-network" true
 python3 "$ROOT/tools/check-biodata-boundary.py" --root "$ROOT"
-TMPDIR="$scratch" "$ROOT/tools/run-offline" -- \
-  env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \
+exec env -u NCI_API_KEY BIOMCP_BIN="$biomcp_bin" \
   uv run --no-sync pytest --basetemp /tmp/pytest "${TEST_FILES[@]}"

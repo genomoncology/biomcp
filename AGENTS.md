@@ -72,6 +72,10 @@ small Cargo graph; that graph does not exercise AlphaGenome. Run `make
 full-feature-check` for all shipped features and the AlphaGenome behavior tests.
 `make release-gate` includes both lanes.
 
+## BioData 1.0 migration verification
+
+BioMCP keeps the repository-owned `tools/check-biodata-1.0` focused runner on the dedicated `biodata/biomcp-1.0` branch. BioMCP does not host an automatic branch workflow for this migration. After each reviewed BioData migration ticket, push the exact dedicated-branch revision. The migration manager then manually dispatches BioData's hosted verification workflow with that revision. The hosted workflow requires the supplied revision to equal the public branch tip, derives the exact BioData dependency from BioMCP, prepares dependencies without credentials, and runs the focused build and tests offline. The final live provider smoke remains a separate human-only action. Do not replace this focused check with routine broad BioMCP gates.
+
 ## Skill rail
 
 Use this hybrid repo rail for dispatched work:
