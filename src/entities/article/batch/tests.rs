@@ -200,3 +200,70 @@ fn batch_semantic_scholar_merge_fills_fields_and_skips_none_rows_and_pmcid_only(
     assert_eq!(items[2].tldr, None);
     assert_eq!(items[2].citation_count, None);
 }
+
+#[test]
+fn post_construction_semantic_scholar_failure_emits_one_normalized_warning() {
+    use std::sync::{Arc, Mutex};
+    use tracing::Event;
+    use tracing::field::{Field, Visit};
+    use tracing_subscriber::layer::{Context, SubscriberExt};
+    use tracing_subscriber::{Layer, Registry};
+
+    type EventFields = Vec<(String, String)>;
+    type CapturedEvents = Arc<Mutex<Vec<EventFields>>>;
+
+    #[derive(Clone, Default)]
+    struct Capture {
+        events: CapturedEvents,
+    }
+    #[derive(Default)]
+    struct Fields(EventFields);
+    impl Visit for Fields {
+        fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+            self.0.push((field.name().into(), format!("{value:?}")));
+        }
+        fn record_str(&mut self, field: &Field, value: &str) {
+            self.0.push((field.name().into(), value.into()));
+        }
+        fn record_u64(&mut self, field: &Field, value: u64) {
+            self.0.push((field.name().into(), value.to_string()));
+        }
+    }
+    impl<S: tracing::Subscriber> Layer<S> for Capture {
+        fn on_event(&self, event: &Event<'_>, _ctx: Context<'_, S>) {
+            assert_eq!(*event.metadata().level(), tracing::Level::WARN);
+            let mut fields = Fields::default();
+            event.record(&mut fields);
+            self.events.lock().expect("warning capture").push(fields.0);
+        }
+    }
+
+    let capture = Capture::default();
+    let events = Arc::clone(&capture.events);
+    let subscriber = Registry::default().with(capture);
+    tracing::subscriber::with_default(subscriber, || {
+        settle_semantic_scholar_enrichment(
+            &mut [],
+            &[],
+            Err(BioMcpError::InvalidArgument("fixture failure".into())),
+        );
+    });
+    let events = events.lock().expect("warning capture");
+    assert_eq!(events.len(), 1);
+    assert_eq!(
+        events[0],
+        vec![
+            (
+                "message".into(),
+                "External provider operation failed".into()
+            ),
+            ("provider".into(), "Semantic Scholar".into()),
+            (
+                "operation".into(),
+                "compact article batch enrichment".into()
+            ),
+            ("class".into(), "internal".into()),
+            ("message".into(), "internal failure".into()),
+        ]
+    );
+}

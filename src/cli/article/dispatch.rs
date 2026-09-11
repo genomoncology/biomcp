@@ -412,6 +412,9 @@ pub(in crate::cli) async fn handle_command(
             }
         }
         ArticleCommand::Batch { ids } => {
+            // This compatibility route intentionally retains each raw positional
+            // value. Its only new preflight is the byte ceiling; canonical comma
+            // parsing and trimming remain owned by `batch article`, not this arm.
             crate::cli::system::validate_compatibility_article_batch_ids(&ids)?;
             let input_refs = ids.iter().map(String::as_str).collect::<Vec<_>>();
             let futures = ids

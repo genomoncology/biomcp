@@ -141,16 +141,28 @@ async fn enrich_article_batch_with_semantic_scholar(
         return Ok(());
     }
 
-    match client.paper_batch_compact(&lookup_ids).await {
-        Ok(rows) => merge_semantic_scholar_compact_rows(items, &item_positions, rows),
+    settle_semantic_scholar_enrichment(
+        items,
+        &item_positions,
+        client.paper_batch_compact(&lookup_ids).await,
+    );
+
+    Ok(())
+}
+
+fn settle_semantic_scholar_enrichment(
+    items: &mut [ArticleBatchItem],
+    item_positions: &[usize],
+    result: Result<Vec<Option<SemanticScholarPaper>>, BioMcpError>,
+) {
+    match result {
+        Ok(rows) => merge_semantic_scholar_compact_rows(items, item_positions, rows),
         Err(err) => crate::error::warn_external_failure(
             &err,
             crate::error::SourceProvider::SEMANTIC_SCHOLAR,
             "compact article batch enrichment",
         ),
     }
-
-    Ok(())
 }
 
 #[cfg(test)]

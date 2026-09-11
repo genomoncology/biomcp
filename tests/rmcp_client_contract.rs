@@ -646,6 +646,8 @@ where
         // Settled item errors are data over raw MCP, not tool-call errors.
         assert_eq!(compatibility.is_error, Some(false));
         assert_eq!(canonical.is_error, Some(false));
+        assert_eq!(compatibility.content.len(), 1);
+        assert_eq!(canonical.content.len(), 1);
         assert_eq!(compatibility.structured_content, None);
         assert_eq!(canonical.structured_content, None);
         let text = biomcp_mcp_contract_client::first_text(&canonical.content);
@@ -679,6 +681,8 @@ where
             biomcp_mcp_contract_client::call_biomcp(client, explicit_command).await?
         };
         assert_eq!(detail.is_error, Some(false));
+        assert_eq!(detail.content.len(), 1);
+        assert_eq!(explicit_detail.content.len(), 1);
         assert_eq!(detail.structured_content, None);
         assert_eq!(explicit_detail.structured_content, None);
         for result in [&detail, &explicit_detail] {
@@ -701,6 +705,7 @@ where
     )
     .await?;
     assert_eq!(mixed.is_error, Some(false));
+    assert_eq!(mixed.content.len(), 1);
     assert_eq!(mixed.structured_content, None);
     let mixed_text = biomcp_mcp_contract_client::first_text(&mixed.content);
     assert_eq!(mixed_text, MCP_COMPACT_MIXED_JSON);
@@ -747,6 +752,7 @@ where
     ] {
         let result = biomcp_mcp_contract_client::call_biomcp_json(client, command).await?;
         assert_eq!(result.is_error, Some(false));
+        assert_eq!(result.content.len(), 1);
         assert_eq!(result.structured_content, None);
         let rendered = biomcp_mcp_contract_client::first_text(&result.content);
         assert_eq!(rendered, literal);
@@ -790,12 +796,28 @@ where
     ] {
         let result = biomcp_mcp_contract_client::call_biomcp(client, command).await?;
         assert_eq!(result.is_error, Some(true), "command={command}");
+        assert_eq!(result.content.len(), 1, "command={command}");
         assert_eq!(result.structured_content, None);
         assert_eq!(
             biomcp_mcp_contract_client::first_text(&result.content),
             expected
         );
     }
+
+    let hostile = biomcp_mcp_contract_client::call_biomcp(
+        client,
+        concat!("biomcp article ", "batch 'bad\u{1b}[31m-id'"),
+    )
+    .await?;
+    assert_eq!(hostile.is_error, Some(false));
+    assert_eq!(hostile.content.len(), 1);
+    assert_eq!(hostile.structured_content, None);
+    let hostile_text = biomcp_mcp_contract_client::first_text(&hostile.content);
+    assert!(!hostile_text.contains('\u{1b}'));
+    assert!(
+        hostile_text.contains("## bad-id — error"),
+        "sanitized response: {hostile_text:?}"
+    );
     Ok(())
 }
 

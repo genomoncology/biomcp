@@ -43,7 +43,7 @@ def test_legacy_article_batch_spelling_is_confined_to_compatibility_contracts() 
         ),
         (
             "spec/entity/article.md",
-            '../../tools/biomcp-ci "${json_args[@]}" article batch "$@" >"$tmp/compat.out" 2>"$tmp/compat.err"',
+            'RUST_LOG=off ../../tools/biomcp-ci "${json_args[@]}" article batch "$@" >"$tmp/compat.out" 2>"$tmp/compat.err"',
         ),
         (
             "src/cli/article/mod.rs",

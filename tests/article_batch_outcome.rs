@@ -192,6 +192,27 @@ const COMPACT_MIXED_JSON: &str = r###"{
 }
 "###;
 
+const S2_CONSTRUCTION_FAILURE_JSON: &str = r###"{
+  "items": [
+    {
+      "error": {
+        "code": "api",
+        "message": "API request to Semantic Scholar failed.",
+        "recovery": "Retry the remote source.",
+        "source": "Semantic Scholar"
+      },
+      "input": "22663011",
+      "status": "error"
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "succeeded": 0,
+    "total": 1
+  }
+}
+"###;
+
 const S2_SUCCESS_JSON: &str = r###"{
   "items": [
     {
@@ -369,6 +390,7 @@ const DETAIL_JSON: &str = r###"{
 
 fn run_compatibility(json: bool) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    command.env("RUST_LOG", "off");
     command.args(["--no-cache"]);
     if json {
         command.arg("--json");
@@ -381,6 +403,7 @@ fn run_compatibility(json: bool) -> Output {
 
 fn run_canonical(json: bool) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    command.env("RUST_LOG", "off");
     command.args(["--no-cache"]);
     if json {
         command.arg("--json");
@@ -399,6 +422,7 @@ fn run_canonical(json: bool) -> Output {
 
 fn run_compatibility_ids(ids: &[&str], json: bool) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    command.env("RUST_LOG", "off");
     command.args(["--no-cache"]);
     if json {
         command.arg("--json");
@@ -412,6 +436,7 @@ fn run_compatibility_ids(ids: &[&str], json: bool) -> Output {
 
 fn run_canonical_ids(ids: &str, json: bool) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    command.env("RUST_LOG", "off");
     command.args(["--no-cache"]);
     if json {
         command.arg("--json");
@@ -427,11 +452,24 @@ fn run_fixture(
     args: &[&str],
 ) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    command.env("RUST_LOG", "off");
     command.args(args);
     for (name, value) in article_fulltext_fixture_env(fixture) {
         command.env(name, value);
     }
     command.output().expect("run fixture-backed article batch")
+}
+
+fn run_fixture_with_warnings(
+    fixture: &biomcp_mcp_contract_client::ArticleFulltextFixture,
+    args: &[&str],
+) -> Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+    command.args(args).env("RUST_LOG", "warn");
+    for (name, value) in article_fulltext_fixture_env(fixture) {
+        command.env(name, value);
+    }
+    command.output().expect("run traced article batch fixture")
 }
 
 fn run_preflight_sentinel(
@@ -441,6 +479,7 @@ fn run_preflight_sentinel(
     let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
     command
         .args(args)
+        .env("RUST_LOG", "off")
         .env("BIOMCP_CACHE_DIR", &fixture.cache_dir);
     for name in [
         "BIOMCP_PUBTATOR_BASE",
@@ -712,7 +751,7 @@ fn fixture_backed_batches_match_independent_literal_goldens() {
         ],
     );
     assert_eq!(compact_json.status.code(), Some(0));
-    assert_s2_fail_open_warning(&compact_json.stderr);
+    assert!(compact_json.stderr.is_empty());
     assert_eq!(compact_json.stdout, COMPACT_ORDERED_JSON.as_bytes());
     assert_eq!(
         serde_json::from_slice::<serde_json::Value>(&compact_json.stdout).unwrap(),
@@ -723,7 +762,7 @@ fn fixture_backed_batches_match_independent_literal_goldens() {
         &["batch", "article", "22663011,22663012", "--mode", "compact"],
     );
     assert_eq!(compact_markdown.status.code(), Some(0));
-    assert_s2_fail_open_warning(&compact_markdown.stderr);
+    assert!(compact_markdown.stderr.is_empty());
     assert_eq!(
         String::from_utf8(compact_markdown.stdout).unwrap(),
         COMPACT_SUCCESS_MARKDOWN
@@ -733,7 +772,7 @@ fn fixture_backed_batches_match_independent_literal_goldens() {
         &["--json", "article", "batch", "22663011", "22663012"],
     );
     assert_eq!(compatibility_json.status.code(), Some(0));
-    assert_s2_fail_open_warning(&compatibility_json.stderr);
+    assert!(compatibility_json.stderr.is_empty());
     assert_eq!(compatibility_json.stdout, COMPACT_ORDERED_JSON.as_bytes());
     assert_eq!(
         serde_json::from_slice::<serde_json::Value>(&compatibility_json.stdout).unwrap(),
@@ -742,7 +781,7 @@ fn fixture_backed_batches_match_independent_literal_goldens() {
     let compatibility_markdown =
         run_fixture(&fixture, &["article", "batch", "22663011", "22663012"]);
     assert_eq!(compatibility_markdown.status.code(), Some(0));
-    assert_s2_fail_open_warning(&compatibility_markdown.stderr);
+    assert!(compatibility_markdown.stderr.is_empty());
     assert_eq!(
         String::from_utf8(compatibility_markdown.stdout).unwrap(),
         COMPACT_SUCCESS_MARKDOWN
@@ -836,7 +875,17 @@ fn fixture_backed_batches_match_independent_literal_goldens() {
         serde_json::from_slice::<serde_json::Value>(&s2_fail_open.stdout).unwrap(),
         json!({"items":[{"input":"22663012","status":"ok","result":second}],"summary":{"total":1,"succeeded":1,"failed":0}})
     );
-    assert_s2_fail_open_warning(&s2_fail_open.stderr);
+    assert!(s2_fail_open.stderr.is_empty());
+
+    let warned = run_fixture_with_warnings(
+        &fixture,
+        &[
+            "--json", "batch", "article", "22663012", "--mode", "compact",
+        ],
+    );
+    assert_eq!(warned.status.code(), Some(0));
+    assert_eq!(warned.stdout, S2_FAIL_OPEN_JSON.as_bytes());
+    assert_s2_fail_open_warning(&warned.stderr);
 
     for args in [
         ["--json", "batch", "article", "22663011", "", ""],
@@ -871,6 +920,40 @@ fn fixture_backed_batches_match_independent_literal_goldens() {
             DETAIL_MARKDOWN.replace("References:\n", "References: \n")
         );
     }
+}
+
+#[test]
+fn semantic_scholar_client_construction_failure_remains_a_settled_item_error() {
+    let fixture = provision_article_fulltext_fixture(env!("CARGO_MANIFEST_DIR"))
+        .expect("provision article fixture");
+    let run = |args: &[&str]| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_biomcp"));
+        command.args(args).env("RUST_LOG", "off");
+        for (name, value) in article_fulltext_fixture_env(&fixture) {
+            command.env(name, value);
+        }
+        command
+            .env("BIOMCP_S2_BASE", "not a provider URL")
+            .output()
+            .expect("run S2 construction failure")
+    };
+    let canonical = run(&[
+        "--json", "batch", "article", "22663011", "--mode", "compact",
+    ]);
+    let compatibility = run(&["--json", "article", "batch", "22663011"]);
+    assert_eq!(canonical.status.code(), Some(1));
+    assert_eq!(canonical.stdout, compatibility.stdout);
+    assert_eq!(canonical.stderr, compatibility.stderr);
+    assert!(canonical.stderr.is_empty());
+    assert_eq!(canonical.stdout, S2_CONSTRUCTION_FAILURE_JSON.as_bytes());
+    let payload: serde_json::Value = serde_json::from_slice(&canonical.stdout).unwrap();
+    assert_eq!(
+        payload["summary"],
+        json!({"total":1,"succeeded":0,"failed":1})
+    );
+    assert_eq!(payload["items"][0]["input"], "22663011");
+    assert_eq!(payload["items"][0]["status"], "error");
+    assert_eq!(payload["items"][0]["error"]["code"], "api");
 }
 
 #[test]

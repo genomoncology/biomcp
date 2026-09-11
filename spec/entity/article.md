@@ -481,18 +481,14 @@ compare_compact_routes() {
     json_args=()
     test "$format" = json && json_args=(--json)
     set +e
-    ../../tools/biomcp-ci "${json_args[@]}" article batch "$@" >"$tmp/compat.out" 2>"$tmp/compat.err"
+    RUST_LOG=off ../../tools/biomcp-ci "${json_args[@]}" article batch "$@" >"$tmp/compat.out" 2>"$tmp/compat.err"
     compat_status="$?"
-    ../../tools/biomcp-ci "${json_args[@]}" batch article "$comma_ids" --mode compact >"$tmp/canonical.out" 2>"$tmp/canonical.err"
+    RUST_LOG=off ../../tools/biomcp-ci "${json_args[@]}" batch article "$comma_ids" --mode compact >"$tmp/canonical.out" 2>"$tmp/canonical.err"
     canonical_status="$?"
     set -e
     test "$canonical_status" = "$compat_status"
     cmp "$tmp/canonical.out" "$tmp/compat.out"
-    if ! cmp -s "$tmp/canonical.err" "$tmp/compat.err"; then
-      sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[^ ]+ //' "$tmp/canonical.err" >"$tmp/canonical.normalized.err"
-      sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[^ ]+ //' "$tmp/compat.err" >"$tmp/compat.normalized.err"
-      cmp "$tmp/canonical.normalized.err" "$tmp/compat.normalized.err"
-    fi
+    cmp "$tmp/canonical.err" "$tmp/compat.err"
   done
 }
 compare_compact_routes '22663011,22663012' 22663011 22663012
@@ -501,7 +497,7 @@ compare_compact_routes '22663011,not-an-article-id' 22663011 not-an-article-id
 compare_compact_routes 'not-an-article-id,also-invalid' not-an-article-id also-invalid
 ../../tools/biomcp-ci --json batch article 22663011 --mode compact \
   | jq -e '.items[0].result | .tldr == "Fixture compact summary" and .citation_count == 12 and .influential_citation_count == 3' >/dev/null
-../../tools/biomcp-ci --json batch article 22663012 --mode compact >"$tmp/fail-open.out" 2>"$tmp/fail-open.err"
+RUST_LOG=warn ../../tools/biomcp-ci --json batch article 22663012 --mode compact >"$tmp/fail-open.out" 2>"$tmp/fail-open.err"
 jq -e '.summary == {"total":1,"succeeded":1,"failed":0} and .items[0].status == "ok" and (.items[0].result | has("tldr") | not)' "$tmp/fail-open.out" >/dev/null
 test "$(grep -c 'Semantic Scholar' "$tmp/fail-open.err")" = 1
 ! grep -q 'fixture Semantic Scholar outage' "$tmp/fail-open.err"
