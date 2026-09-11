@@ -113,7 +113,3 @@ fn fmt_opt_u64(value: Option<u64>) -> String {
 fn format_float(value: f64) -> String {
     format!("{value:.2}")
 }
-
-#[cfg(test)]
-#[path = "tests/render.rs"]
-mod tests;

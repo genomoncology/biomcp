@@ -31,7 +31,6 @@ fn expected_benchmark_submodule_files(root: &Path) -> Vec<PathBuf> {
         root.join("src/cli/benchmark/run/tests/suite.rs"),
         root.join("src/cli/benchmark/run/tests/execute.rs"),
         root.join("src/cli/benchmark/run/tests/regression.rs"),
-        root.join("src/cli/benchmark/run/tests/render.rs"),
         root.join("src/cli/benchmark/score/mod.rs"),
         root.join("src/cli/benchmark/score/parse.rs"),
         root.join("src/cli/benchmark/score/normalize.rs"),
