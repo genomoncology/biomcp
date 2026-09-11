@@ -3,6 +3,18 @@
   "title": "BioMCP Drug",
   "type": "object",
   "required": ["name"],
+  "examples": [
+    {
+      "name": "eflornithine",
+      "_meta": {
+        "next_commands": [
+          "biomcp get drug eflornithine approvals",
+          "biomcp get drug eflornithine label",
+          "biomcp get drug eflornithine regulatory --region us"
+        ]
+      }
+    }
+  ],
   "properties": {
     "name": { "type": "string" },
     "drugbank_id": { "type": ["string", "null"] },
@@ -57,6 +69,7 @@
         },
         "next_commands": {
           "type": ["array", "null"],
+          "description": "At most ten executable follow-ups, ordered by recovery, unloaded sections, aggregate, and related pivots.",
           "items": { "type": "string" }
         },
         "workflow": { "type": ["string", "null"] },

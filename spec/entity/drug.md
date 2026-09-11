@@ -6,6 +6,27 @@ surface focused on region truthfulness, canonical identity routing, and the new
 structured DDInter interaction workflow before operators widen to safety or
 literature.
 
+## Card command discovery
+
+Successful drug cards expose one bounded follow-up projection. JSON places the
+flattened list in `_meta.next_commands`; Markdown categorizes the same surviving
+commands under `More:`, `All:`, and `See also:`. The list is capped at ten and
+orders recovery, up to three unloaded sections, a regional `all` command, then
+related pivots. Default requests load only `targets`, explicit sections load
+only their tokens, and WHO cards omit standalone safety and shortage commands.
+
+```bash
+../../tools/biomcp-ci --json get drug pembrolizumab | jq -e '._meta.next_commands | length <= 10 and .[0] == "biomcp get drug pembrolizumab approvals" and .[1] == "biomcp get drug pembrolizumab label" and .[2] == "biomcp get drug pembrolizumab regulatory --region us"' | mustmatch 'true'
+../../tools/biomcp-ci get drug pembrolizumab | mustmatch like 'More:
+  biomcp get drug pembrolizumab approvals
+  biomcp get drug pembrolizumab label
+  biomcp get drug pembrolizumab regulatory --region us
+
+All:
+  biomcp get drug pembrolizumab all --region us'
+../../tools/biomcp-ci --json get drug pembrolizumab all | jq -e '((._meta.next_commands | any(. == "biomcp get drug pembrolizumab all --region us")) | not) and (._meta.next_commands | any(. == "biomcp get drug pembrolizumab approvals"))' | mustmatch 'true'
+```
+
 ## Multi-Region Search
 
 Plain-name search should still show the same drug family across the U.S., EU,

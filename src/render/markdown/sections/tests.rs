@@ -1,5 +1,186 @@
 use super::*;
 
+fn discovery_drug() -> Drug {
+    serde_json::from_value(serde_json::json!({
+        "name": "eflornithine",
+        "targets": ["ODC1"]
+    }))
+    .expect("drug fixture")
+}
+
+#[test]
+fn drug_command_discovery_matches_default_projection_order() {
+    let discovery = drug_command_discovery(&discovery_drug(), &[], DrugRegion::Us);
+    assert_eq!(
+        discovery.next_commands,
+        vec![
+            "biomcp get drug eflornithine approvals",
+            "biomcp get drug eflornithine label",
+            "biomcp get drug eflornithine regulatory --region us",
+            "biomcp get drug eflornithine all --region us",
+            "biomcp search article --drug eflornithine --type review --limit 5",
+            "biomcp drug trials eflornithine",
+            "biomcp drug adverse-events eflornithine",
+            "biomcp search pgx -d eflornithine",
+            "biomcp get gene ODC1",
+        ]
+    );
+    assert_eq!(
+        discovery
+            .sections
+            .iter()
+            .map(|entry| entry.section.as_str())
+            .collect::<Vec<_>>(),
+        vec!["approvals", "label", "regulatory"]
+    );
+    assert_eq!(
+        discovery.all.as_deref(),
+        Some("biomcp get drug eflornithine all --region us")
+    );
+}
+
+#[test]
+fn drug_command_discovery_respects_loaded_sections_regions_and_who_exclusions() {
+    let requests = [
+        (vec!["label"], vec!["approvals", "regulatory", "safety"]),
+        (vec!["all"], vec!["approvals"]),
+        (
+            vec![" approvals ", "LABEL", "approvals"],
+            vec!["regulatory", "safety", "shortage"],
+        ),
+    ];
+    for (requested, expected) in requests {
+        let requested = requested
+            .into_iter()
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let discovery = drug_command_discovery(&discovery_drug(), &requested, DrugRegion::Us);
+        assert_eq!(
+            discovery
+                .sections
+                .iter()
+                .map(|entry| entry.section.as_str())
+                .collect::<Vec<_>>(),
+            expected
+        );
+        assert_eq!(
+            discovery.all.is_some(),
+            requested.iter().all(|s| s != "all")
+        );
+    }
+
+    for (region, label) in [
+        (DrugRegion::Us, "us"),
+        (DrugRegion::Eu, "eu"),
+        (DrugRegion::All, "all"),
+    ] {
+        let discovery = drug_command_discovery(&discovery_drug(), &["targets".to_string()], region);
+        assert!(discovery.next_commands.contains(&format!(
+            "biomcp get drug eflornithine regulatory --region {label}"
+        )));
+        assert!(discovery.next_commands.contains(&format!(
+            "biomcp get drug eflornithine all --region {label}"
+        )));
+    }
+    let who = drug_command_discovery(&discovery_drug(), &["targets".to_string()], DrugRegion::Who);
+    assert!(who.next_commands.iter().all(|command| {
+        !command.contains(" get drug eflornithine safety")
+            && !command.contains(" get drug eflornithine shortage")
+    }));
+}
+
+#[test]
+fn drug_command_discovery_prioritizes_recovery_and_caps_exact_commands() {
+    let mut drug = discovery_drug();
+    for key in [
+        "approvals",
+        "safety",
+        "targets",
+        "indications",
+        "interactions",
+        "civic",
+    ] {
+        drug.section_outcomes.complete(
+            key,
+            crate::entities::section_outcome::SectionOutcome::unavailable("test outage"),
+        );
+    }
+    let discovery = drug_command_discovery(
+        &drug,
+        &["all".to_string(), "approvals".to_string()],
+        DrugRegion::Us,
+    );
+    assert_eq!(discovery.recovery.len(), 6);
+    assert_eq!(discovery.next_commands.len(), 10);
+    assert_eq!(
+        discovery.next_commands[..6],
+        [
+            "biomcp get drug eflornithine approvals",
+            "biomcp get drug eflornithine safety --region us",
+            "biomcp get drug eflornithine targets",
+            "biomcp get drug eflornithine indications",
+            "biomcp get drug eflornithine interactions",
+            "biomcp get drug eflornithine civic",
+        ]
+    );
+    assert!(
+        !discovery
+            .next_commands
+            .iter()
+            .any(|command| command.contains("get gene"))
+    );
+}
+
+#[test]
+fn drug_command_discovery_quotes_identity_and_recovery_is_rendered_once() {
+    use clap::Parser;
+
+    let mut blank = discovery_drug();
+    blank.name = "   ".to_string();
+    assert!(
+        drug_command_discovery(&blank, &[], DrugRegion::Us)
+            .next_commands
+            .is_empty()
+    );
+
+    let mut drug = discovery_drug();
+    drug.name = " Dose $x `rm` ; & path ".to_string();
+    let discovery = drug_command_discovery(&drug, &[], DrugRegion::Us);
+    let command = &discovery.next_commands[0];
+    let argv = shlex::split(command).expect("shell command parses");
+    let parsed = crate::cli::Cli::try_parse_from(argv).expect("command parses with CLI");
+    let crate::cli::Commands::Get {
+        entity: crate::cli::GetEntity::Drug(args),
+    } = parsed.command
+    else {
+        panic!("expected get drug command");
+    };
+    assert_eq!(
+        args.args.first().map(String::as_str),
+        Some(drug.name.trim())
+    );
+    assert!(command.contains("\\$x") && command.contains("\\`rm\\`"));
+
+    let mut failed = discovery_drug();
+    failed.section_outcomes.complete(
+        "safety",
+        crate::entities::section_outcome::SectionOutcome::unavailable("fixture outage"),
+    );
+    let markdown = crate::render::markdown::drug_markdown_with_region(
+        &failed,
+        &["safety".to_string()],
+        DrugRegion::Eu,
+        false,
+    )
+    .expect("drug markdown");
+    assert_eq!(
+        markdown
+            .matches("Retry: `biomcp get drug eflornithine safety --region eu`")
+            .count(),
+        1
+    );
+}
+
 #[test]
 fn sections_pathway_for_kegg_excludes_unsupported_sections() {
     let pathway = Pathway {

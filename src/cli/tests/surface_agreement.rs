@@ -149,24 +149,7 @@ fn every_detail_card_markdown_and_json_commands_agree() {
         "drug",
         crate::cli::drug::render_loaded_card(&drug, &[], DrugRegion::Us, false, false).unwrap(),
         crate::cli::drug::render_loaded_card(&drug, &[], DrugRegion::Us, false, true).unwrap(),
-        &[
-            (
-                "biomcp get drug osimertinib all",
-                "Markdown offers full-card navigation; JSON metadata carries follow-up pivots.",
-            ),
-            (
-                "biomcp get drug osimertinib label",
-                "Markdown offers a requested-section navigation shortcut; JSON metadata carries follow-up pivots.",
-            ),
-            (
-                "biomcp get drug osimertinib regulatory",
-                "Markdown offers a requested-section navigation shortcut; JSON metadata carries follow-up pivots.",
-            ),
-            (
-                "biomcp get drug osimertinib safety",
-                "Markdown offers a requested-section navigation shortcut; JSON metadata carries follow-up pivots.",
-            ),
-        ],
+        &[],
     );
 
     let trial: Trial = serde_json::from_value(serde_json::json!({
@@ -387,4 +370,29 @@ fn every_detail_card_markdown_and_json_commands_agree() {
             ),
         ],
     );
+}
+
+#[test]
+fn drug_command_discovery_has_one_renderer_owner_per_surface() {
+    let renderer_sources = [
+        ("cli/drug/render.rs", include_str!("../drug/render.rs")),
+        (
+            "cli/system/dispatch.rs",
+            include_str!("../system/dispatch.rs"),
+        ),
+        (
+            "render/markdown/drug.rs",
+            include_str!("../../render/markdown/drug.rs"),
+        ),
+    ];
+    for (path, source) in renderer_sources {
+        for forbidden in ["related_drug", "sections_drug", "with_section_recovery"] {
+            let called = source.match_indices(forbidden).any(|(offset, _)| {
+                source[offset + forbidden.len()..]
+                    .trim_start()
+                    .starts_with('(')
+            });
+            assert!(!called, "{path} must delegate {forbidden} to the owner");
+        }
+    }
 }
