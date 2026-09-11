@@ -18,6 +18,9 @@ exclude = [
     "testdata/",
     "tools/alphagenome-proto-generator/",
     "tools/check-biodata-boundary.py",
+    "tools/biodata-1.0-focused.toml",
+    "tools/biodata_focused_pytest.py",
+    "tools/biodata_focused_selection.py",
     "tests/test_biodata_boundary.py",
 ]
 

@@ -43,6 +43,15 @@ def _load_runner() -> object:
 RUNNER_MODULE = _load_runner()
 
 
+def _current_process_has_verified_offline_isolation() -> bool:
+    probe = subprocess.run(
+        [str(TOOLS / "check-offline-network"), "true"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return probe.returncode == 0
+
+
 def _manifest_with(replacements: tuple[tuple[str, str], ...]) -> str:
     text = MANIFEST.read_text(encoding="utf-8")
     for old, new in replacements:
@@ -182,6 +191,8 @@ def test_runner_requires_the_prebuilt_worktree_local_binary(
 
 
 def test_forged_offline_marker_fails_in_the_normal_namespace() -> None:
+    if _current_process_has_verified_offline_isolation():
+        pytest.skip("host-only forged-marker check cannot run inside offline isolation")
     with tempfile.TemporaryDirectory(dir=ROOT) as directory:
         binary = Path(directory) / "biomcp"
         binary.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
