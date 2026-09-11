@@ -3,6 +3,7 @@
 An expanded index of the BioMCP documentation.
 
 - [Generate Charts Easily from Study Data](https://biomcp.org/blog/biomcp-charts/): An article about Generate Charts Easily from Study Data.
+- [The 2025 KIDS BioHackathon Winner Used BioMCP](https://biomcp.org/blog/st-jude-2025-hackathon-talk/): An article about The 2025 KIDS BioHackathon Winner Used BioMCP.
 - [Kuva Charting Examples](https://biomcp.org/blog/biomcp-kuva-charts/): An article about Kuva Charting Examples.
 - [Navigate 200 Million Published Articles with BioMCP](https://biomcp.org/blog/biomcp-pubmed-articles/): An article about Navigate 200 Million Published Articles with BioMCP.
 - [cBioPortal Study Analytics in BioMCP](https://biomcp.org/blog/cbioportal-study-analytics/): An article about cBioPortal Study Analytics in BioMCP.
