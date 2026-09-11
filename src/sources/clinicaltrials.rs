@@ -24,11 +24,6 @@ pub struct ClinicalTrialsClient {
     base: Cow<'static, str>,
 }
 
-pub(crate) struct CtGovBiodataDetailResponse {
-    pub(crate) study: CtGovStudy,
-    pub(crate) shared: ClinicalTrialsGovApiV2Response,
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct CtGovSearchParams {
     pub condition: Option<String>,
@@ -247,20 +242,31 @@ impl ClinicalTrialsClient {
         sections: &[String],
         status: reqwest::StatusCode,
         bytes: &[u8],
-    ) -> Result<CtGovBiodataDetailResponse, BioMcpError> {
+    ) -> Result<ClinicalTrialsGovApiV2Response, BioMcpError> {
         if !status.is_success() {
-            return Self::decode_get_response(nct_id, status, bytes)
-                .and(Err(BioMcpError::InternalProcessing));
+            return Err(Self::detail_status_error(nct_id, status, bytes));
         }
         let plan = Self::biodata_detail_plan(nct_id, sections)?;
-        let shared = ClinicalTrialsGovApiV2Response::parse(
+        ClinicalTrialsGovApiV2Response::parse(
             &plan,
             bytes,
             &ClinicalTrialsGovApiV2Limits::default(),
         )
-        .map_err(Self::map_biodata_response_error)?;
-        let study = Self::decode_get_response(nct_id, status, bytes)?;
-        Ok(CtGovBiodataDetailResponse { study, shared })
+        .map_err(Self::map_biodata_response_error)
+    }
+
+    fn detail_status_error(nct_id: &str, status: reqwest::StatusCode, bytes: &[u8]) -> BioMcpError {
+        if status == reqwest::StatusCode::NOT_FOUND {
+            return BioMcpError::NotFound {
+                entity: "trial".into(),
+                id: nct_id.to_string(),
+                suggestion: format!("Try searching: biomcp search trial -c \"{nct_id}\""),
+            };
+        }
+        match Self::decode_json_response::<serde_json::Value>(status, bytes) {
+            Ok(_) => BioMcpError::InternalProcessing,
+            Err(error) => error,
+        }
     }
 
     fn map_biodata_response_error(error: biodata::ClinicalTrialsGovApiV2Error) -> BioMcpError {
@@ -295,16 +301,19 @@ impl ClinicalTrialsClient {
     }
 
     pub async fn get(&self, nct_id: &str, sections: &[String]) -> Result<CtGovStudy, BioMcpError> {
-        self.get_biodata_detail(nct_id, sections)
-            .await
-            .map(|value| value.study)
+        let biodata_plan = Self::biodata_detail_plan(nct_id, sections)?;
+        let plan = RequestPlan::get(biodata_plan.relative_path())
+            .query("fields", biodata_plan.field_query());
+        let req = request_from_plan(&self.client, self.base.as_ref(), &plan);
+        let (status, bytes) = self.send(req).await?;
+        Self::decode_get_response(nct_id, status, &bytes)
     }
 
     pub(crate) async fn get_biodata_detail(
         &self,
         nct_id: &str,
         sections: &[String],
-    ) -> Result<CtGovBiodataDetailResponse, BioMcpError> {
+    ) -> Result<ClinicalTrialsGovApiV2Response, BioMcpError> {
         let biodata_plan = Self::biodata_detail_plan(nct_id, sections)?;
         let plan = RequestPlan::get(biodata_plan.relative_path())
             .query("fields", biodata_plan.field_query());
@@ -335,7 +344,6 @@ pub struct CtGovSearchResponse {
 #[serde(rename_all = "camelCase")]
 pub struct CtGovStudy {
     pub protocol_section: Option<CtGovProtocolSection>,
-    pub document_section: Option<CtGovDocumentSection>,
     pub has_results: Option<bool>,
     pub results_section: Option<CtGovResultsSection>,
 }
@@ -516,33 +524,6 @@ impl<'de> Deserialize<'de> for NormalizedTimeWire {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovDocumentSection {
-    pub large_document_module: Option<CtGovLargeDocumentModule>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovLargeDocumentModule {
-    #[serde(default)]
-    pub large_docs: Vec<CtGovLargeDocument>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtGovLargeDocument {
-    pub type_abbrev: Option<String>,
-    pub label: Option<String>,
-    pub date: Option<String>,
-    pub upload_date: Option<String>,
-    pub filename: Option<String>,
-    pub size: Option<u64>,
-    pub has_protocol: Option<bool>,
-    pub has_sap: Option<bool>,
-    pub has_icf: Option<bool>,
-}
-
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CtGovContactsLocationsModule {
@@ -579,7 +560,6 @@ macro_rules! redacted_debug {
 }
 
 redacted_debug!(
-    CtGovBiodataDetailResponse,
     CtGovSearchResponse,
     CtGovStudy,
     CtGovProtocolSection,

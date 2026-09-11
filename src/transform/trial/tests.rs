@@ -158,11 +158,8 @@ fn receipted_ctgov_intervention_descriptions_keep_their_associations_in_json() {
         include_bytes!("../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json"),
     )
     .expect("receipted unrestricted NCT02576665 capture");
-    let design = crate::entities::trial::product_design(
-        response.shared.interventions(),
-        response.shared.arms(),
-    )
-    .expect("shared trial design");
+    let design = crate::entities::trial::product_design(response.interventions(), response.arms())
+        .expect("shared trial design");
     assert_eq!(design.interventions().len(), 2);
     assert_eq!(design.assignments().map(<[_]>::len), Some(2));
     let first = &design.interventions()[0];
@@ -224,11 +221,8 @@ fn receipted_ctgov_two_arm_trial_keeps_independent_typed_assignments() {
         include_bytes!("../../../testdata/sources/ctgov/get_nct00791778_20260902.json"),
     )
     .expect("receipted NCT00791778 capture");
-    let design = crate::entities::trial::product_design(
-        response.shared.interventions(),
-        response.shared.arms(),
-    )
-    .expect("shared trial design");
+    let design = crate::entities::trial::product_design(response.interventions(), response.arms())
+        .expect("shared trial design");
     assert_eq!(design.arms().map(<[_]>::len), Some(2));
     assert_eq!(design.interventions().len(), 2);
     assert_eq!(design.assignments().map(<[_]>::len), Some(2));

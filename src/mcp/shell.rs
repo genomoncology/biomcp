@@ -352,6 +352,23 @@ impl BioMcpServer {
         args: Vec<String>,
         json: bool,
     ) -> Result<CallToolResult, McpError> {
+        if is_trial_document_download(&cli) {
+            return match crate::cli::run_outcome(cli).await {
+                Ok(outcome) if outcome.exit_code != 0 => Ok(Self::tool_error(outcome.text)),
+                Ok(outcome) => match outcome.bytes {
+                    Some(binary) => {
+                        let blob = base64::engine::general_purpose::STANDARD.encode(binary.bytes);
+                        Ok(CallToolResult::success(vec![Content::resource(
+                            ResourceContents::blob(blob, "biomcp://trial-document"),
+                        )]))
+                    }
+                    None => Ok(Self::tool_error(
+                        "Error: trial document bytes were unavailable",
+                    )),
+                },
+                Err(error) => Ok(Self::tool_error(format!("Error: {error}"))),
+            };
+        }
         if let Some(message) = binary_download_rejection(&cli, &args) {
             return Ok(Self::tool_error(message));
         }
@@ -417,17 +434,19 @@ impl BioMcpServer {
     }
 }
 
-fn binary_download_rejection(cli: &crate::cli::Cli, args: &[String]) -> Option<String> {
-    let (entity, section) = match &cli.command {
+fn is_trial_document_download(cli: &crate::cli::Cli) -> bool {
+    matches!(
+        &cli.command,
         crate::cli::Commands::Get {
             entity: crate::cli::GetEntity::Trial(args),
-        } if args
-            .sections
-            .first()
-            .is_some_and(|section| section == "document") =>
-        {
-            ("trial", "document")
-        }
+        } if args.sections.first().is_some_and(|section| {
+            section.trim().eq_ignore_ascii_case("document")
+        })
+    )
+}
+
+fn binary_download_rejection(cli: &crate::cli::Cli, args: &[String]) -> Option<String> {
+    let (entity, section) = match &cli.command {
         crate::cli::Commands::Get {
             entity: crate::cli::GetEntity::Article(args),
         } if args
@@ -1489,45 +1508,34 @@ mod tests {
     mod ticket_1120;
 
     #[test]
-    fn binary_downloads_are_rejected_but_manifests_remain_allowed() {
-        for (args, label) in [
-            (
-                [
-                    "biomcp",
-                    "get",
-                    "--json",
-                    "trial",
-                    "NCT1",
-                    "document",
-                    "protocol.pdf",
-                ],
-                "trial document",
-            ),
-            (
-                [
-                    "biomcp",
-                    "get",
-                    "--no-cache",
-                    "article",
-                    "1",
-                    "asset",
-                    "table.xlsx",
-                ],
-                "article asset",
-            ),
-        ] {
-            let args = args.into_iter().map(String::from).collect::<Vec<_>>();
-            let message =
-                binary_download_rejection_for_args(&args).expect("binary route is rejected");
-            assert!(message.contains(label));
-            assert!(message.contains("CLI-only"));
-            assert!(message.contains("biomcp get"));
-        }
+    fn article_binary_download_is_rejected_but_raw_trial_document_and_manifests_are_allowed() {
+        let article = [
+            "biomcp",
+            "get",
+            "--no-cache",
+            "article",
+            "1",
+            "asset",
+            "table.xlsx",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect::<Vec<_>>();
+        let message =
+            binary_download_rejection_for_args(&article).expect("article binary route is rejected");
+        assert!(message.contains("article asset"));
+        assert!(message.contains("CLI-only"));
+        assert!(message.contains("biomcp get"));
+
         for args in [
-            ["biomcp", "get", "trial", "NCT1", "documents"],
-            ["biomcp", "get", "article", "1", "assets"],
+            &["biomcp", "get", "trial", "NCT1", "document", "x.pdf"][..],
+            &["biomcp", "get", "trial", "NCT1", "documents"][..],
+            &["biomcp", "get", "article", "1", "assets"][..],
         ] {
-            let args = args.into_iter().map(String::from).collect::<Vec<_>>();
+            let args = args
+                .iter()
+                .map(|value| String::from(*value))
+                .collect::<Vec<_>>();
             assert!(binary_download_rejection_for_args(&args).is_none());
         }
 

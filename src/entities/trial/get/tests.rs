@@ -57,80 +57,6 @@ fn normalize_nct_id_uppercases_prefix() {
 }
 
 #[test]
-fn ctgov_product_core_ignores_every_legacy_core_field() {
-    let bytes =
-        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
-    let sections = ["all".to_owned()];
-    let original = ClinicalTrialsClient::decode_biodata_detail_response(
-        "NCT02576665",
-        &sections,
-        reqwest::StatusCode::OK,
-        bytes,
-    )
-    .unwrap();
-    let mut mutated = ClinicalTrialsClient::decode_biodata_detail_response(
-        "NCT02576665",
-        &sections,
-        reqwest::StatusCode::OK,
-        bytes,
-    )
-    .unwrap();
-    let protocol = mutated.study.protocol_section.as_mut().unwrap();
-    let identity = protocol.identification_module.as_mut().unwrap();
-    identity.nct_id = Some("NCT99999999".into());
-    identity.brief_title = Some("legacy title mutation".into());
-    let status = protocol.status_module.as_mut().unwrap();
-    status.overall_status = Some("legacy status mutation".into());
-    status.why_stopped = Some("legacy reason mutation".into());
-    status.start_date_struct = None;
-    status.completion_date_struct = None;
-    let design = protocol.design_module.as_mut().unwrap();
-    design.phases = Some(vec!["legacy phase mutation".into()]);
-    design.study_type = Some("legacy type mutation".into());
-    design.enrollment_info = None;
-    protocol.conditions_module.as_mut().unwrap().conditions =
-        vec!["legacy condition mutation".into()];
-    protocol.sponsor_collaborators_module = None;
-    protocol.description_module = None;
-    if let Some(location) = protocol
-        .contacts_locations_module
-        .as_mut()
-        .and_then(|module| module.locations.first_mut())
-    {
-        location.facility = Some("legacy site mutation".into());
-        location.status = Some("legacy status mutation".into());
-        location.city = Some("legacy city mutation".into());
-        location.state = Some("legacy state mutation".into());
-        location.zip = Some("legacy postal mutation".into());
-        location.country = Some("legacy country mutation".into());
-        location.geo_point = None;
-    }
-
-    let flags = parse_sections(&sections).unwrap();
-    let expected = product_from_ctgov_response(original, flags, "NCT02576665").unwrap();
-    let actual = product_from_ctgov_response(mutated, flags, "NCT02576665").unwrap();
-    assert_eq!(actual.identities, expected.identities);
-    assert_eq!(actual.nct_id, expected.nct_id);
-    assert_eq!(actual.title, expected.title);
-    assert_eq!(actual.official_title, expected.official_title);
-    assert_eq!(actual.status, expected.status);
-    assert_eq!(actual.why_stopped, expected.why_stopped);
-    assert_eq!(actual.phases, expected.phases);
-    assert_eq!(actual.phase, expected.phase);
-    assert_eq!(actual.study_type, expected.study_type);
-    assert_eq!(actual.conditions, expected.conditions);
-    assert_eq!(actual.sponsor, expected.sponsor);
-    assert_eq!(actual.enrollment, expected.enrollment);
-    assert_eq!(actual.summary, expected.summary);
-    assert_eq!(actual.start_date, expected.start_date);
-    assert_eq!(actual.completion_date, expected.completion_date);
-    assert_eq!(
-        serde_json::to_value(&actual).unwrap(),
-        serde_json::to_value(&expected).unwrap()
-    );
-}
-
-#[test]
 fn ctgov_product_uses_shared_directory_for_ordered_locations_and_states() {
     let sections = ["contacts".to_owned(), "locations".to_owned()];
     let response = ClinicalTrialsClient::decode_biodata_detail_response(
@@ -141,8 +67,7 @@ fn ctgov_product_uses_shared_directory_for_ordered_locations_and_states() {
     )
     .unwrap();
     let product =
-        product_from_ctgov_response(response, parse_sections(&sections).unwrap(), "NCT02576665")
-            .unwrap();
+        product_from_ctgov_response(response, parse_sections(&sections).unwrap()).unwrap();
     let value = serde_json::to_value(product).unwrap();
 
     assert_eq!(value["section_states"]["locations"], "present");
@@ -177,8 +102,7 @@ fn shared_directory_views_authorize_output_and_redact_diagnostics() {
     )
     .unwrap();
     let mut product =
-        product_from_ctgov_response(response, parse_sections(&sections).unwrap(), "NCT02576665")
-            .unwrap();
+        product_from_ctgov_response(response, parse_sections(&sections).unwrap()).unwrap();
     let role = |code| {
         biodata::ExtensibleCode::new(
             "clinicaltrials.gov",
@@ -252,51 +176,6 @@ fn shared_directory_views_authorize_output_and_redact_diagnostics() {
 }
 
 #[test]
-fn ctgov_product_outcomes_ignore_raw_legacy_study_mutation() {
-    let bytes =
-        include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
-    let sections = ["outcomes".to_owned()];
-    let expected = ClinicalTrialsClient::decode_biodata_detail_response(
-        "NCT02576665",
-        &sections,
-        reqwest::StatusCode::OK,
-        bytes,
-    )
-    .unwrap();
-    let mut actual = ClinicalTrialsClient::decode_biodata_detail_response(
-        "NCT02576665",
-        &sections,
-        reqwest::StatusCode::OK,
-        bytes,
-    )
-    .unwrap();
-    let mut mutation: serde_json::Value = serde_json::from_slice(bytes).unwrap();
-    mutation["protocolSection"]["outcomesModule"] = serde_json::json!({
-        "primaryOutcomes": [{
-            "measure": "legacy mutation",
-            "description": "must not enter the product",
-            "timeFrame": "never"
-        }],
-        "secondaryOutcomes": [{"measure": "legacy secondary mutation"}],
-        "otherOutcomes": [{"measure": "legacy other mutation"}]
-    });
-    actual.study = ClinicalTrialsClient::decode_get_response(
-        "NCT02576665",
-        reqwest::StatusCode::OK,
-        &serde_json::to_vec(&mutation).unwrap(),
-    )
-    .unwrap();
-
-    let flags = parse_sections(&sections).unwrap();
-    let expected = product_from_ctgov_response(expected, flags, "NCT02576665").unwrap();
-    let actual = product_from_ctgov_response(actual, flags, "NCT02576665").unwrap();
-    assert_eq!(
-        serde_json::to_value(actual).unwrap()["outcomes"],
-        serde_json::to_value(expected).unwrap()["outcomes"]
-    );
-}
-
-#[test]
 fn outcome_product_preserves_grouped_values_and_every_section_state() {
     let bytes =
         include_bytes!("../../../../testdata/sources/ctgov/get_nct02576665_full_20260903.json");
@@ -309,8 +188,7 @@ fn outcome_product_preserves_grouped_values_and_every_section_state() {
     )
     .unwrap();
     let present =
-        product_from_ctgov_response(response, parse_sections(&sections).unwrap(), "NCT02576665")
-            .unwrap();
+        product_from_ctgov_response(response, parse_sections(&sections).unwrap()).unwrap();
     let present_json = serde_json::to_value(&present).unwrap();
     assert_eq!(present.section_states.outcomes, TrialSectionState::Present);
     assert_eq!(
@@ -334,9 +212,7 @@ fn outcome_product_preserves_grouped_values_and_every_section_state() {
         &serde_json::to_vec(&empty_bytes).unwrap(),
     )
     .unwrap();
-    let empty =
-        product_from_ctgov_response(empty, parse_sections(&sections).unwrap(), "NCT02576665")
-            .unwrap();
+    let empty = product_from_ctgov_response(empty, parse_sections(&sections).unwrap()).unwrap();
     assert_eq!(empty.section_states.outcomes, TrialSectionState::Present);
     assert_eq!(
         serde_json::to_value(&empty).unwrap()["outcomes"],
@@ -355,9 +231,7 @@ fn outcome_product_preserves_grouped_values_and_every_section_state() {
         &serde_json::to_vec(&absent_bytes).unwrap(),
     )
     .unwrap();
-    let absent =
-        product_from_ctgov_response(absent, parse_sections(&sections).unwrap(), "NCT02576665")
-            .unwrap();
+    let absent = product_from_ctgov_response(absent, parse_sections(&sections).unwrap()).unwrap();
     let absent_json = serde_json::to_value(&absent).unwrap();
     assert_eq!(absent.section_states.outcomes, TrialSectionState::Absent);
     assert!(absent_json.get("outcomes").is_none());
@@ -370,7 +244,7 @@ fn outcome_product_preserves_grouped_values_and_every_section_state() {
     )
     .unwrap();
     let not_requested =
-        product_from_ctgov_response(response, parse_sections(&[]).unwrap(), "NCT02576665").unwrap();
+        product_from_ctgov_response(response, parse_sections(&[]).unwrap()).unwrap();
     assert_eq!(
         not_requested.section_states.outcomes,
         TrialSectionState::NotRequested

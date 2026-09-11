@@ -14,7 +14,21 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "tools/check-artifact-fixtures"
 BIODATA_BOUNDARY_CHECKER = ROOT / "tools/check-biodata-boundary.py"
 MAX_PACKAGE_FILES = 1_302
-BIODATA_REVISION = "036dd1e2cb51ccbdece3fc1e4ebb2cf8d2509807"
+BIODATA_REVISION = "522de494c8fcbfbd9581c11ec99259b643dfc371"
+
+
+def _rust_function(source: str, signature: str) -> str:
+    start = source.index(signature)
+    opening = source.index("{", start)
+    depth = 0
+    for index in range(opening, len(source)):
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[start : index + 1]
+    raise AssertionError(f"unterminated Rust function: {signature}")
 
 
 def _cargo_package_list() -> list[str]:
@@ -180,6 +194,58 @@ def test_biodata_owns_trial_sites_contacts_and_product_projection() -> None:
     assert "TrialContactView<'a>" in model
     assert "TrialLocationView<'a>" in model
     assert "TrialSiteContactView<'a>" in model
+
+
+def test_biodata_owns_trial_document_detail_manifest_and_provenance_paths() -> None:
+    provider = (ROOT / "src/sources/clinicaltrials.rs").read_text(encoding="utf-8")
+    detail = (ROOT / "src/entities/trial/get.rs").read_text(encoding="utf-8")
+    documents = (ROOT / "src/entities/trial/documents.rs").read_text(encoding="utf-8")
+    migrated = provider + detail + documents
+    for retired in (
+        "CtGovBiodataDetailResponse",
+        "CtGovLargeDocument",
+        "document_section",
+        "large_documents",
+        "map_document",
+    ):
+        assert retired not in migrated
+    migrated_bodies = (
+        _rust_function(provider, "pub(crate) fn decode_biodata_detail_response"),
+        _rust_function(provider, "pub(crate) async fn get_biodata_detail"),
+        _rust_function(documents, "pub async fn trial_documents_manifest"),
+        _rust_function(documents, "pub async fn trial_document_bytes"),
+    )
+    for body in migrated_bodies:
+        assert "decode_get_response" not in body
+        assert "client.get(" not in body
+    product_get = _rust_function(detail, "pub async fn get(")
+    ctgov_get = product_get.split("TrialSource::ClinicalTrialsGov =>", maxsplit=1)[1].split(
+        "TrialSource::NciCts =>", maxsplit=1
+    )[0]
+    assert "decode_get_response" not in ctgov_get
+    assert "client.get(" not in ctgov_get
+    assert ".get_biodata_detail(" in ctgov_get
+    assert ".get_biodata_detail(" in migrated_bodies[2]
+    assert "ClinicalTrialsGovArtifactDescriptor" in documents
+    assert "response.capture()" in documents
+
+    eligibility = (ROOT / "src/entities/trial/search/eligibility.rs").read_text(
+        encoding="utf-8"
+    )
+    adverse_events = (ROOT / "src/entities/adverse_event.rs").read_text(encoding="utf-8")
+    verifier = _rust_function(eligibility, "pub(super) async fn verify_detail_filters")
+    assert verifier.count("client.get(&nct_id, &sections).await") == 1
+
+    search_decode = _rust_function(provider, "pub async fn search(")
+    assert "Result<CtGovSearchResponse" in search_decode
+    assert "self.get_json(req).await" in search_decode
+    fetch = _rust_function(adverse_events, "async fn fetch_ctgov_studies_for_alias")
+    assert "Result<Vec<CtGovStudy>" in fetch
+    assert "client: &ClinicalTrialsClient" in fetch
+    assert ".search(" in fetch
+    assert "response.studies" in fetch
+    aggregate = _rust_function(adverse_events, "fn trial_adverse_events_from_study_batches")
+    assert aggregate.count("CtGovStudy") >= 2
 
 
 def test_artifact_checker_rejects_renamed_fixture_bytes(tmp_path: Path) -> None:

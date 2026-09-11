@@ -5,8 +5,26 @@ use super::super::*;
 use crate::error::BioMcpError;
 use reqwest::StatusCode;
 
+fn synthetic_detail(protocol_members: serde_json::Value) -> Vec<u8> {
+    let mut protocol = serde_json::json!({
+        "identificationModule": {
+            "nctId": "NCT00000001",
+            "briefTitle": "Synthetic validation study"
+        },
+        "statusModule": {"overallStatus": "RECRUITING"},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Example sponsor"}},
+        "conditionsModule": {"conditions": ["Example condition"]},
+        "designModule": {"studyType": "INTERVENTIONAL"}
+    });
+    protocol
+        .as_object_mut()
+        .unwrap()
+        .extend(protocol_members.as_object().unwrap().clone());
+    serde_json::to_vec(&serde_json::json!({"protocolSection": protocol})).unwrap()
+}
+
 #[test]
-fn biodata_detail_wrapper_redacts_field_distinct_site_values_but_shared_getters_retain_them() {
+fn biodata_detail_response_redacts_field_distinct_site_values_but_getters_retain_them() {
     let body = serde_json::to_vec(&serde_json::json!({"protocolSection": {
         "identificationModule": {"nctId":"NCT60000015","briefTitle":"Wrapper trial"},
         "statusModule": {"overallStatus":"RECRUITING"},
@@ -60,7 +78,7 @@ fn biodata_detail_wrapper_redacts_field_distinct_site_values_but_shared_getters_
     for sentinel in forbidden {
         assert!(!debug.contains(sentinel), "Debug leaked {sentinel}");
     }
-    let biodata::ClinicalTrialSection::Present(directory) = response.shared.site_directory() else {
+    let biodata::ClinicalTrialSection::Present(directory) = response.site_directory() else {
         panic!("selected directory must be present");
     };
     assert_eq!(
@@ -215,26 +233,6 @@ fn ctgov_age_wire_distinguishes_absent_null_and_blank() {
 }
 
 #[test]
-fn parses_large_document_module() {
-    let study = ClinicalTrialsClient::decode_get_response(
-        "NCT03361748",
-        StatusCode::OK,
-        br#"{"documentSection":{"largeDocumentModule":{"largeDocs":[{"typeAbbrev":"Prot_SAP","filename":"Prot_SAP_000.pdf","size":50,"hasProtocol":true,"hasSap":true,"hasIcf":false}]}}}"#,
-    )
-    .unwrap();
-
-    let document = &study
-        .document_section
-        .expect("document section")
-        .large_document_module
-        .expect("large document module")
-        .large_docs[0];
-    assert_eq!(document.type_abbrev.as_deref(), Some("Prot_SAP"));
-    assert_eq!(document.filename.as_deref(), Some("Prot_SAP_000.pdf"));
-    assert_eq!(document.size, Some(50));
-}
-
-#[test]
 fn get_response_maps_not_found_to_trial_not_found() {
     let err =
         ClinicalTrialsClient::decode_get_response("NCT404", StatusCode::NOT_FOUND, b"not found")
@@ -327,20 +325,22 @@ fn detail_response_checks_http_status_before_valid_json() {
 
 #[test]
 fn detail_response_returns_shared_references() {
-    let body = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"referencesModule":{"references":[]}}}"#;
+    let body = synthetic_detail(serde_json::json!({
+        "referencesModule": {"references": []}
+    }));
     let response = ClinicalTrialsClient::decode_biodata_detail_response(
         "NCT00000001",
         &["references".to_string()],
         StatusCode::OK,
-        body,
+        &body,
     )
     .expect("valid BioData response");
 
     assert!(matches!(
-        response.shared.references(),
+        response.references(),
         biodata::ClinicalTrialSection::Present(references) if references.is_empty()
     ));
-    assert!(response.study.protocol_section.is_some());
+    assert_eq!(response.capture().provider_record_identity(), "NCT00000001");
 }
 
 #[test]
@@ -358,7 +358,7 @@ fn recorded_ctgov_eligibility_reaches_the_shared_projection_without_loss() {
         bytes,
     )
     .expect("valid recorded BioData response");
-    let biodata::ClinicalTrialSection::Present(eligibility) = response.shared.eligibility() else {
+    let biodata::ClinicalTrialSection::Present(eligibility) = response.eligibility() else {
         panic!("present shared eligibility")
     };
     assert_eq!(eligibility.registry_text(), Some(expected_text));
@@ -388,7 +388,7 @@ fn ctgov_eligibility_mutations_change_only_the_shared_values() {
         &bytes,
     )
     .expect("valid mutated BioData response");
-    let biodata::ClinicalTrialSection::Present(eligibility) = response.shared.eligibility() else {
+    let biodata::ClinicalTrialSection::Present(eligibility) = response.eligibility() else {
         panic!("present shared eligibility")
     };
     assert_eq!(eligibility.registry_text(), Some("Mutated β criteria"));
@@ -415,18 +415,33 @@ fn detail_response_sanitizes_ambiguous_arm_labels() {
 
 #[test]
 fn product_arm_states_survive_dedicated_mixed_and_all_routes() {
-    let states: [(&[u8], Option<usize>); 4] = [
-        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"}}}"#, None),
-        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":null,"interventions":null}}}"#, None),
-        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[],"interventions":[]}}}"#, Some(0)),
-        (br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"A"}],"interventions":[{"name":"I","armGroupLabels":["A"]}]}}}"#, Some(1)),
+    let states = [
+        (synthetic_detail(serde_json::json!({})), None),
+        (
+            synthetic_detail(
+                serde_json::json!({"armsInterventionsModule":{"armGroups":null,"interventions":null}}),
+            ),
+            None,
+        ),
+        (
+            synthetic_detail(
+                serde_json::json!({"armsInterventionsModule":{"armGroups":[],"interventions":[]}}),
+            ),
+            Some(0),
+        ),
+        (
+            synthetic_detail(
+                serde_json::json!({"armsInterventionsModule":{"armGroups":[{"label":"A"}],"interventions":[{"name":"I","armGroupLabels":["A"]}]}}),
+            ),
+            Some(1),
+        ),
     ];
     for sections in [
         vec!["arms".to_string()],
         vec!["arms".to_string(), "outcomes".to_string()],
         vec!["all".to_string()],
     ] {
-        for (body, expected_arms) in states {
+        for (body, expected_arms) in &states {
             let response = ClinicalTrialsClient::decode_biodata_detail_response(
                 "NCT00000001",
                 &sections,
@@ -434,13 +449,11 @@ fn product_arm_states_survive_dedicated_mixed_and_all_routes() {
                 body,
             )
             .unwrap_or_else(|error| panic!("valid arm state for {sections:?}: {error:?}"));
-            let design = crate::entities::trial::product_design(
-                response.shared.interventions(),
-                response.shared.arms(),
-            )
-            .expect("product arm state");
-            assert_eq!(design.arms().map(<[_]>::len), expected_arms);
-            assert_eq!(design.assignments().map(<[_]>::len), expected_arms);
+            let design =
+                crate::entities::trial::product_design(response.interventions(), response.arms())
+                    .expect("product arm state");
+            assert_eq!(design.arms().map(<[_]>::len), *expected_arms);
+            assert_eq!(design.assignments().map(<[_]>::len), *expected_arms);
         }
     }
 }
@@ -480,8 +493,12 @@ fn legacy_capture_keeps_missing_null_and_empty_arm_arrays_distinct() {
 
 #[test]
 fn arm_label_mutations_rebuild_or_reject_assignments_without_leaking_values() {
-    let before = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm A"]},{"name":"J","armGroupLabels":["Arm B"]}]}}}"#;
-    let after = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm B"]},{"name":"J","armGroupLabels":["Arm B"]}]}}}"#;
+    let before = synthetic_detail(
+        serde_json::json!({"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm A"]},{"name":"J","armGroupLabels":["Arm B"]}]}}),
+    );
+    let after = synthetic_detail(
+        serde_json::json!({"armsInterventionsModule":{"armGroups":[{"label":"Arm A"},{"label":"Arm B"}],"interventions":[{"name":"I","armGroupLabels":["Arm B"]},{"name":"J","armGroupLabels":["Arm B"]}]}}),
+    );
     let parse_design = |body: &[u8]| {
         let response = ClinicalTrialsClient::decode_biodata_detail_response(
             "NCT00000001",
@@ -490,14 +507,11 @@ fn arm_label_mutations_rebuild_or_reject_assignments_without_leaking_values() {
             body,
         )
         .expect("forward label resolves");
-        crate::entities::trial::product_design(
-            response.shared.interventions(),
-            response.shared.arms(),
-        )
-        .expect("forward relationship")
+        crate::entities::trial::product_design(response.interventions(), response.arms())
+            .expect("forward relationship")
     };
-    let before = parse_design(before);
-    let after = parse_design(after);
+    let before = parse_design(&before);
+    let after = parse_design(&after);
     let entity_names = |design: &crate::entities::trial::TrialDesign| {
         (
             design
@@ -528,11 +542,18 @@ fn arm_label_mutations_rebuild_or_reject_assignments_without_leaking_values() {
     assert_eq!(assigned_arm(&after), 2);
 
     for invalid in [
-        br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"known-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["unknown-label-secret"]}]}}}"#.as_slice(),
-        br#"{"protocolSection":{"identificationModule":{"nctId":"NCT00000001"},"armsInterventionsModule":{"armGroups":[{"label":"ambiguous-label-secret"},{"label":"ambiguous-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["ambiguous-label-secret"]}]}}}"#.as_slice(),
+        synthetic_detail(
+            serde_json::json!({"armsInterventionsModule":{"armGroups":[{"label":"known-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["unknown-label-secret"]}]}}),
+        ),
+        synthetic_detail(
+            serde_json::json!({"armsInterventionsModule":{"armGroups":[{"label":"ambiguous-label-secret"},{"label":"ambiguous-label-secret"}],"interventions":[{"name":"I","armGroupLabels":["ambiguous-label-secret"]}]}}),
+        ),
     ] {
         let error = ClinicalTrialsClient::decode_biodata_detail_response(
-            "NCT00000001", &["arms".to_string()], StatusCode::OK, invalid,
+            "NCT00000001",
+            &["arms".to_string()],
+            StatusCode::OK,
+            &invalid,
         )
         .expect_err("invalid label relationship");
         assert!(matches!(

@@ -45,6 +45,7 @@ impl CtGovAgeMcpEnv {
         let cache = tempfile::tempdir().expect("ClinicalTrials.gov MCP cache directory");
         let values = [
             ("BIOMCP_CTGOV_BASE", base.to_owned()),
+            ("BIOMCP_CTGOV_CDN_BASE", base.to_owned()),
             (
                 "BIOMCP_CACHE_DIR",
                 cache.path().to_string_lossy().into_owned(),
@@ -155,6 +156,207 @@ async fn trial_json_channels(nct_id: &str, sections: &[&str]) -> [serde_json::Va
         mcp_json(typed),
         mcp_json(raw),
     ]
+}
+
+#[tokio::test]
+#[serial_test::serial(source_env)]
+async fn trial_artifacts_and_capture_match_across_cli_raw_typed_and_markdown() {
+    use base64::Engine as _;
+    use sha2::{Digest, Sha256};
+
+    let provider_bytes = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT03361748","briefTitle":"Synthetic artifact trial"},"statusModule":{"overallStatus":"RECRUITING"},"sponsorCollaboratorsModule":{"leadSponsor":{"name":"Example sponsor"}},"conditionsModule":{"conditions":["Example condition"]},"designModule":{"studyType":"INTERVENTIONAL"},"eligibilityModule":{"eligibilityCriteria":"Synthetic registry eligibility"}},"documentSection":{"largeDocumentModule":{"largeDocs":[{"typeAbbrev":"Prot_SAP","label":"  Synthetic protocol  ","date":"2026-09","uploadDate":"opaque","filename":"Protocol final.pdf","size":20,"hasProtocol":true,"hasSap":false,"hasIcf":null},{"filename":"../unsafe.pdf"}]}}}"#.to_vec();
+    let document_bytes = b"%PDF synthetic\0bytes".to_vec();
+    let expected_digest = format!("sha256:{:x}", Sha256::digest(&provider_bytes));
+    let downloaded_digest = format!("sha256:{:x}", Sha256::digest(&document_bytes));
+    assert_ne!(downloaded_digest, expected_digest);
+    let absent_provider_bytes = br#"{"protocolSection":{"identificationModule":{"nctId":"NCT03361749","briefTitle":"Synthetic absent artifact trial"},"statusModule":{"overallStatus":"RECRUITING"},"sponsorCollaboratorsModule":{"leadSponsor":{"name":"Example sponsor"}},"conditionsModule":{"conditions":["Example condition"]},"designModule":{"studyType":"INTERVENTIONAL"}}}"#.to_vec();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let detail = provider_bytes.clone();
+    let absent_detail = absent_provider_bytes.clone();
+    let document = document_bytes.clone();
+    let router = Router::new()
+        .route(
+            "/studies/{id}",
+            axum_get(move |AxumPath(id): AxumPath<String>| {
+                let detail = detail.clone();
+                let absent_detail = absent_detail.clone();
+                async move {
+                    let body = if id == "NCT03361749" {
+                        absent_detail
+                    } else {
+                        detail
+                    };
+                    Response::builder()
+                        .header(header::CONTENT_TYPE, "application/json")
+                        .body(Body::from(body))
+                        .unwrap()
+                }
+            }),
+        )
+        .route(
+            "/large-docs/48/NCT03361748/Protocol%20final.pdf",
+            axum_get(move || {
+                let document = document.clone();
+                async move { document }
+            }),
+        );
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let _env = CtGovAgeMcpEnv::set(&base);
+
+    let [cli, typed, raw] = trial_json_channels("NCT03361748", &["eligibility"]).await;
+    for value in [&cli, &typed, &raw] {
+        let provenance = &value["eligibility_provenance"];
+        assert_eq!(provenance["source_authority"], "clinicaltrials.gov");
+        assert_eq!(provenance["provider_record_identity"], "NCT03361748");
+        assert_eq!(provenance["capture_digest"], expected_digest);
+        assert_eq!(provenance["source_kind"], "registry");
+        assert_eq!(provenance["source"], "ClinicalTrials.gov registry");
+        assert_eq!(provenance["posted_documents_available"], true);
+        assert_ne!(provenance["capture_digest"], downloaded_digest);
+        assert!(
+            !serde_json::to_string(provenance)
+                .unwrap()
+                .contains(&downloaded_digest)
+        );
+    }
+
+    let markdown = crate::cli::execute(
+        ["biomcp", "get", "trial", "NCT03361748", "eligibility"]
+            .map(str::to_owned)
+            .to_vec(),
+    )
+    .await
+    .unwrap();
+    assert!(markdown.contains("Registry response source:** clinicaltrials.gov"));
+    assert!(markdown.contains("Registry response record:** NCT03361748"));
+    assert!(markdown.contains(&format!(
+        "Registry response capture digest:** `{expected_digest}`"
+    )));
+    assert!(markdown.contains("may contain additional eligibility detail"));
+
+    let manifest = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp --json get trial NCT03361748 documents".into(),
+            json: true,
+        }))
+        .await
+        .unwrap();
+    let manifest = serde_json::to_value(manifest).unwrap();
+    let manifest: serde_json::Value =
+        serde_json::from_str(manifest["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(manifest["documents"][0]["label"], "  Synthetic protocol  ");
+    assert_eq!(manifest["documents"][0]["filename"], "Protocol final.pdf");
+    assert!(manifest["documents"][0]["handle"].as_str().is_some());
+    assert!(manifest["documents"][1].get("handle").is_none());
+
+    let absent_manifest = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp --json get trial NCT03361749 documents".into(),
+            json: true,
+        }))
+        .await
+        .unwrap();
+    let absent_manifest = serde_json::to_value(absent_manifest).unwrap();
+    let absent_manifest: serde_json::Value =
+        serde_json::from_str(absent_manifest["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(absent_manifest["documents"], json!([]));
+
+    let parsed = crate::cli::try_parse_cli(
+        [
+            "biomcp",
+            "get",
+            "trial",
+            "NCT03361748",
+            "document",
+            "Protocol final.pdf",
+        ]
+        .map(str::to_owned)
+        .to_vec(),
+    )
+    .unwrap();
+    let cli_document = crate::cli::run_outcome(parsed).await.unwrap();
+    assert_eq!(cli_document.bytes.unwrap().bytes, document_bytes);
+
+    let raw_document = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: "biomcp get trial NCT03361748 DoCuMeNt 'Protocol final.pdf'".into(),
+            json: false,
+        }))
+        .await
+        .unwrap();
+    let raw_document = serde_json::to_value(raw_document).unwrap();
+    let blob = raw_document["content"][0]["resource"]["blob"]
+        .as_str()
+        .unwrap();
+    assert_eq!(
+        base64::engine::general_purpose::STANDARD
+            .decode(blob)
+            .unwrap(),
+        document_bytes
+    );
+
+    const ERROR_SENTINEL: &str = "PUBLIC-MCP-FILENAME-SENTINEL-0116.pdf";
+    let not_advertised = BioMcpServer::new()
+        .biomcp(rmcp::handler::server::wrapper::Parameters(ShellCommand {
+            command: format!("biomcp get trial NCT03361748 document {ERROR_SENTINEL}"),
+            json: false,
+        }))
+        .await
+        .unwrap();
+    assert!(
+        !serde_json::to_string(&not_advertised)
+            .unwrap()
+            .contains(ERROR_SENTINEL)
+    );
+
+    let mut mutated = provider_bytes;
+    mutated.push(b' ');
+    server.abort();
+    drop(_env);
+
+    let mutated_digest = format!("sha256:{:x}", Sha256::digest(&mutated));
+    assert_ne!(mutated_digest, expected_digest);
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let router = Router::new().route(
+        "/studies/{id}",
+        axum_get(move || {
+            let mutated = mutated.clone();
+            async move {
+                Response::builder()
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(mutated))
+                    .unwrap()
+            }
+        }),
+    );
+    let server = tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
+    let _env = CtGovAgeMcpEnv::set(&base);
+    let mutated_cli = crate::cli::execute(
+        [
+            "biomcp",
+            "--json",
+            "get",
+            "trial",
+            "NCT03361748",
+            "eligibility",
+        ]
+        .map(str::to_owned)
+        .to_vec(),
+    )
+    .await
+    .unwrap();
+    let mutated_cli: serde_json::Value = serde_json::from_str(&mutated_cli).unwrap();
+    assert_eq!(
+        mutated_cli["eligibility_provenance"]["capture_digest"],
+        mutated_digest
+    );
+    assert_ne!(
+        mutated_cli["eligibility_provenance"]["capture_digest"],
+        downloaded_digest
+    );
+    server.abort();
 }
 
 #[tokio::test]

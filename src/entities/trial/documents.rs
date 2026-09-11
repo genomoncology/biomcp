@@ -1,7 +1,10 @@
 use crate::error::BioMcpError;
 use crate::sources::RequestBuilderSourceContextExt;
-use crate::sources::clinicaltrials::{ClinicalTrialsClient, CtGovLargeDocument, CtGovStudy};
+use crate::sources::clinicaltrials::ClinicalTrialsClient;
 use crate::sources::provider_url_policy::{ProviderUrlConsumer, ProviderUrlPolicy};
+use biodata::{
+    ClinicalTrialSection, ClinicalTrialsGovApiV2Response, ClinicalTrialsGovArtifactDescriptor,
+};
 
 const CTGOV_CDN_BASE: &str = "https://cdn.clinicaltrials.gov";
 const CTGOV_CDN_BASE_ENV: &str = "BIOMCP_CTGOV_CDN_BASE";
@@ -10,14 +13,14 @@ const DOCUMENT_CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::from_
 const DOCUMENT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 const CTGOV_CDN_API: &str = "ClinicalTrials.gov document CDN";
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Clone, serde::Serialize)]
 pub struct TrialDocumentsManifest {
     pub nct_id: String,
     pub source: String,
     pub documents: Vec<TrialDocument>,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Clone, serde::Serialize)]
 pub struct TrialDocument {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub document_type: Option<String>,
@@ -41,21 +44,53 @@ pub struct TrialDocument {
     pub handle: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct TrialEligibilityProvenance {
     pub source_kind: String,
     pub source: String,
+    pub source_authority: String,
+    pub provider_record_identity: String,
+    pub capture_digest: String,
     pub posted_documents_available: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub documents_handle: Option<String>,
 }
 
+impl std::fmt::Debug for TrialDocumentsManifest {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TrialDocumentsManifest")
+            .field("document_count", &self.documents.len())
+            .finish_non_exhaustive()
+    }
+}
+
+impl std::fmt::Debug for TrialDocument {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TrialDocument")
+            .finish_non_exhaustive()
+    }
+}
+
+impl std::fmt::Debug for TrialEligibilityProvenance {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TrialEligibilityProvenance")
+            .field(
+                "posted_documents_available",
+                &self.posted_documents_available,
+            )
+            .finish_non_exhaustive()
+    }
+}
+
 pub async fn trial_documents_manifest(nct_id: &str) -> Result<TrialDocumentsManifest, BioMcpError> {
     let nct_id = super::get::validated_nct_id(nct_id)?;
-    let study = ClinicalTrialsClient::new()?
-        .get(&nct_id, &["documents".to_string()])
+    let response = ClinicalTrialsClient::new()?
+        .get_biodata_detail(&nct_id, &["documents".to_string()])
         .await?;
-    Ok(manifest_from_study(&nct_id, &study))
+    Ok(manifest_from_response(&response))
 }
 
 pub async fn trial_document_bytes(nct_id: &str, filename: &str) -> Result<Vec<u8>, BioMcpError> {
@@ -71,7 +106,7 @@ async fn document_bytes_from_manifest(
     if !is_advertised(manifest, filename) {
         return Err(BioMcpError::NotFound {
             entity: "trial document".into(),
-            id: filename.to_string(),
+            id: "unadvertised filename".into(),
             suggestion: format!(
                 "List documents: biomcp --json get trial {} documents",
                 manifest.nct_id
@@ -83,15 +118,19 @@ async fn document_bytes_from_manifest(
 }
 
 pub(super) fn eligibility_provenance(
-    nct_id: &str,
-    study: &CtGovStudy,
+    response: &ClinicalTrialsGovApiV2Response,
 ) -> TrialEligibilityProvenance {
-    let available = large_documents(study).next().is_some();
+    let capture = response.capture();
+    let available =
+        matches!(response.artifacts(), ClinicalTrialSection::Present(rows) if !rows.is_empty());
     TrialEligibilityProvenance {
         source_kind: "registry".into(),
         source: "ClinicalTrials.gov registry".into(),
+        source_authority: capture.source_authority().to_owned(),
+        provider_record_identity: capture.provider_record_identity().to_owned(),
+        capture_digest: capture.digest().to_owned(),
         posted_documents_available: available,
-        documents_handle: available.then(|| documents_command(nct_id)),
+        documents_handle: available.then(|| documents_command(capture.provider_record_identity())),
     }
 }
 
@@ -102,41 +141,42 @@ fn is_advertised(manifest: &TrialDocumentsManifest, filename: &str) -> bool {
         .any(|document| document.filename.as_deref() == Some(filename))
 }
 
-fn manifest_from_study(nct_id: &str, study: &CtGovStudy) -> TrialDocumentsManifest {
+fn manifest_from_response(response: &ClinicalTrialsGovApiV2Response) -> TrialDocumentsManifest {
+    let nct_id = response.capture().provider_record_identity();
     TrialDocumentsManifest {
         nct_id: nct_id.to_string(),
         source: "ClinicalTrials.gov".into(),
-        documents: large_documents(study)
-            .map(|document| map_document(nct_id, document))
-            .collect(),
+        documents: match response.artifacts() {
+            ClinicalTrialSection::Present(rows) => rows
+                .iter()
+                .map(|document| document_view(nct_id, document))
+                .collect(),
+            ClinicalTrialSection::NotRequested
+            | ClinicalTrialSection::Unavailable
+            | ClinicalTrialSection::Absent => Vec::new(),
+        },
     }
 }
 
-fn large_documents(study: &CtGovStudy) -> impl Iterator<Item = &CtGovLargeDocument> {
-    study
-        .document_section
-        .as_ref()
-        .and_then(|section| section.large_document_module.as_ref())
-        .into_iter()
-        .flat_map(|module| module.large_docs.iter())
-}
-
-fn map_document(nct_id: &str, document: &CtGovLargeDocument) -> TrialDocument {
-    let filename = document.filename.clone();
+fn document_view(nct_id: &str, source: &ClinicalTrialsGovArtifactDescriptor) -> TrialDocument {
+    let document = source.descriptor();
+    let filename = source.advertised_file_name().map(str::to_owned);
     let handle = filename
         .as_deref()
         .filter(|value| validate_filename(value).is_ok())
         .map(|value| document_command(nct_id, value));
     TrialDocument {
-        document_type: document.type_abbrev.clone(),
-        label: document.label.clone(),
-        date: document.date.clone(),
-        upload_date: document.upload_date.clone(),
+        document_type: document
+            .document_type()
+            .map(|value| value.code().to_owned()),
+        label: document.label().map(str::to_owned),
+        date: document.document_date().map(str::to_owned),
+        upload_date: document.upload_date().map(str::to_owned),
         filename,
-        size_bytes: document.size,
-        has_protocol: document.has_protocol,
-        has_sap: document.has_sap,
-        has_icf: document.has_icf,
+        size_bytes: document.size_bytes(),
+        has_protocol: document.has_protocol(),
+        has_sap: document.has_statistical_analysis_plan(),
+        has_icf: document.has_informed_consent_form(),
         handle,
     }
 }
@@ -312,16 +352,35 @@ mod tests {
         download_document_with_policy(base, nct_id, filename, policy).await
     }
 
-    fn study_with_documents(documents: serde_json::Value) -> CtGovStudy {
-        serde_json::from_value(serde_json::json!({
+    fn response_with_documents(documents: serde_json::Value) -> ClinicalTrialsGovApiV2Response {
+        let body = serde_json::to_vec(&serde_json::json!({
+            "protocolSection": {
+                "identificationModule": {
+                    "nctId": "NCT03361748",
+                    "briefTitle": "Synthetic validation study"
+                },
+                "statusModule": {"overallStatus": "RECRUITING"},
+                "sponsorCollaboratorsModule": {
+                    "leadSponsor": {"name": "Example sponsor"}
+                },
+                "conditionsModule": {"conditions": ["Example condition"]},
+                "designModule": {"studyType": "INTERVENTIONAL"}
+            },
             "documentSection": {"largeDocumentModule": {"largeDocs": documents}}
         }))
+        .unwrap();
+        ClinicalTrialsClient::decode_biodata_detail_response(
+            "NCT03361748",
+            &["documents".to_string()],
+            reqwest::StatusCode::OK,
+            &body,
+        )
         .unwrap()
     }
 
     #[test]
     fn maps_manifest_metadata_handles_and_empty_state() {
-        let study = study_with_documents(serde_json::json!([{
+        let response = response_with_documents(serde_json::json!([{
             "typeAbbrev": "Prot_SAP",
             "label": "Protocol and SAP",
             "date": "2019-07-18",
@@ -335,7 +394,7 @@ mod tests {
             "filename": "Oversized.pdf",
             "size": 33554433
         }]));
-        let manifest = manifest_from_study("NCT03361748", &study);
+        let manifest = manifest_from_response(&response);
         assert_eq!(manifest.documents.len(), 2);
         assert_eq!(manifest.documents[0].size_bytes, Some(50));
         assert_eq!(
@@ -346,8 +405,12 @@ mod tests {
         assert!(!is_advertised(&manifest, "protocol final.pdf"));
         assert!(!is_advertised(&manifest, "Unknown.pdf"));
         assert_eq!(manifest.documents[1].size_bytes, Some(33_554_433));
+        let diagnostic = format!("{manifest:?} {:?}", manifest.documents[0]);
+        for sentinel in ["Protocol and SAP", "2019-07-18", "Protocol final.pdf"] {
+            assert!(!diagnostic.contains(sentinel));
+        }
         assert!(
-            manifest_from_study("NCT41300001", &study_with_documents(serde_json::json!([])))
+            manifest_from_response(&response_with_documents(serde_json::json!([])))
                 .documents
                 .is_empty()
         );
@@ -355,20 +418,30 @@ mod tests {
 
     #[test]
     fn eligibility_provenance_tracks_document_availability() {
-        let available = eligibility_provenance(
-            "NCT03361748",
-            &study_with_documents(serde_json::json!([{"filename": "Protocol.pdf"}])),
-        );
+        let response = response_with_documents(serde_json::json!([{"filename": "Protocol.pdf"}]));
+        let available = eligibility_provenance(&response);
         assert!(available.posted_documents_available);
+        assert_eq!(available.source_authority, "clinicaltrials.gov");
+        assert_eq!(available.provider_record_identity, "NCT03361748");
+        assert_eq!(available.capture_digest, response.capture().digest());
+        let diagnostic = format!("{available:?}");
+        for sentinel in ["clinicaltrials.gov", "NCT03361748", "sha256:"] {
+            assert!(!diagnostic.contains(sentinel));
+        }
         assert_eq!(
             available.documents_handle.as_deref(),
             Some("biomcp --json get trial NCT03361748 documents")
         );
 
-        let unavailable =
-            eligibility_provenance("NCT41300001", &study_with_documents(serde_json::json!([])));
+        let response = response_with_documents(serde_json::json!([]));
+        let unavailable = eligibility_provenance(&response);
         assert!(!unavailable.posted_documents_available);
         assert!(unavailable.documents_handle.is_none());
+
+        let response = response_with_documents(serde_json::Value::Null);
+        let absent = eligibility_provenance(&response);
+        assert!(!absent.posted_documents_available);
+        assert!(absent.documents_handle.is_none());
     }
 
     #[test]
@@ -391,12 +464,27 @@ mod tests {
         assert!(validate_filename("Protocol 1%.pdf").is_ok());
     }
 
+    #[tokio::test]
+    async fn unadvertised_filename_is_absent_from_error_diagnostics() {
+        const SENTINEL: &str = "UNADVERTISED-FILENAME-SENTINEL-0116.pdf";
+        let response = response_with_documents(serde_json::json!([]));
+        let manifest = manifest_from_response(&response);
+        let error = document_bytes_from_manifest(
+            &manifest,
+            SENTINEL,
+            reqwest::Url::parse("https://cdn.clinicaltrials.gov").unwrap(),
+        )
+        .await
+        .unwrap_err();
+        assert!(!error.to_string().contains(SENTINEL));
+        assert!(!format!("{error:?}").contains(SENTINEL));
+    }
+
     #[test]
     fn omits_handles_for_unsafe_advertised_filenames() {
-        let manifest = manifest_from_study(
-            "NCT03361748",
-            &study_with_documents(serde_json::json!([{"filename": "../Protocol.pdf"}])),
-        );
+        let response =
+            response_with_documents(serde_json::json!([{"filename": "../Protocol.pdf"}]));
+        let manifest = manifest_from_response(&response);
         assert_eq!(
             manifest.documents[0].filename.as_deref(),
             Some("../Protocol.pdf")
@@ -415,11 +503,11 @@ mod tests {
 
     #[tokio::test]
     async fn reported_oversize_remains_listable_and_actual_small_body_is_retrievable() {
-        let study = study_with_documents(serde_json::json!([{
+        let response = response_with_documents(serde_json::json!([{
             "filename": "reported-oversize.pdf",
             "size": 33554433
         }]));
-        let manifest = manifest_from_study("NCT03361748", &study);
+        let manifest = manifest_from_response(&response);
         assert_eq!(manifest.documents[0].size_bytes, Some(33_554_433));
 
         let router = Router::new().route(
